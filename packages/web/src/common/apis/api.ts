@@ -31,20 +31,6 @@ const Apis = {
     return response.data;
   },
 
-  async getFocusEvts() {
-    const url = `${BASEURL}/event/find?isFocus=true`;
-    const response = await axios.get(url, headers);
-    return response.data;
-  },
-
-  async getTimeByPriority(start, end) {
-    const response = await axios.get(
-      `${BASEURL}/report/timeByPriority?startTime=${start}&endTime=${end}`,
-      headers
-    );
-    return response.data;
-  },
-
   async getUser() {
     const response = await axios.get(`${BASEURL}/user/find`, {
       headers,
