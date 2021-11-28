@@ -28,6 +28,7 @@
     "prod": "yarn prod:build && electron .",
     "prod:build": "cross-env NODE_ENV=production npx webpack --mode=production --config ./webpack.production.js",
     "test": "jest",
+    "test:w": "jest --watch",
     "translate": "node ./app/localization/translateMissing.js",
     "type-check": "tsc",
     "type-check:watch": "tsc --watch"
