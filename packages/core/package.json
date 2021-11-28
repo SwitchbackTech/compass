@@ -1,0 +1,13 @@
+{
+  "name": "@compass/core",
+  "description": "core module",
+  "author": "Switchback Tech LLC <hello@switchback.tech>",
+  "version": "1.0.0",
+  "license": "SEE LICENSE IN LICENSE",
+  "private": true,
+  "main": "",
+  "scripts": {
+    "precommit": "exit",
+    "lint-fix": "exit"
+  }
+}

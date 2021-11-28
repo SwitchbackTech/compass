@@ -1,0 +1,1 @@
+export { EditingWeekEvent } from './EditingWeekEvent';

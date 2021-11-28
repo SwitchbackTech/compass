@@ -1,0 +1,120 @@
+import dayjs from 'dayjs';
+import React from 'react';
+
+import { SHORT_HOURS_AM_FORMAT } from '@common/constants/dates';
+import { Flex } from '@components/Flex';
+import { AlignItems, FlexWrap } from '@components/Flex/styled';
+import { SpaceCharacter } from '@components/SpaceCharacter';
+import { Text } from '@components/Text';
+import { WeekViewProps } from '@views/Calendar/weekViewHooks/useGetWeekViewProps';
+import { GridEventEntity } from '@views/Calendar/weekViewHooks/types';
+
+import { StyledEvent, StyledEventScaler } from './styled';
+
+export interface Props {
+  event: GridEventEntity;
+  weekViewProps: WeekViewProps;
+}
+
+const WeekEventComponent = (
+  { event, weekViewProps }: Props,
+  ref: React.ForwardedRef<HTMLDivElement>
+) => {
+  if (!event) return null;
+
+  const { component, core, eventHandlers } = weekViewProps;
+
+  const eventStartDay = dayjs(event.startDate);
+  const eventEndDay = dayjs(event.endDate);
+  const startDay = eventStartDay.get('day');
+  const startTime =
+    component.times.indexOf(eventStartDay.format(SHORT_HOURS_AM_FORMAT)) / 4;
+
+  // ms to hours
+  const duration = eventEndDay.diff(eventStartDay) * 2.7777777777778e-7;
+
+  let top = core.getEventCellHeight() * startTime;
+  let height = core.getEventCellHeight() * duration;
+
+  const eventEndShortAmTime = eventEndDay.format(SHORT_HOURS_AM_FORMAT);
+
+  const isActive = component.editingEvent?.id === event.id;
+  const isPlaceholder =
+    component.editingEvent?.id === event.id && !event.isEditing;
+
+  let width =
+    component.weekDaysRef.current?.children[startDay].clientWidth || 0;
+
+  width -= 15;
+
+  let left = core.getLeftPositionByDayIndex(startDay);
+
+  if (event.allDay) {
+    height = core.getEventCellHeight() / 4;
+    const eventOrder = event.allDayOrder || 1;
+    top = core.getAllDayEventCellHeight() - height * eventOrder;
+    width = core.getMultiDayEventWidth(
+      startDay,
+      eventEndDay.diff(eventStartDay, 'days')
+    );
+  }
+
+  if (event.groupCount && event.groupOrder) {
+    width /= event.groupCount;
+    left += event.groupOrder * width - width;
+  }
+
+  return (
+    <StyledEvent
+      ref={ref}
+      height={height}
+      isPlaceholder={isPlaceholder}
+      isDragging={component.eventState?.name === 'dragging'}
+      className={isActive ? 'active' : ''}
+      onMouseDown={(e) => eventHandlers.onEventMouseDown(e, event)}
+      priority={event.priority}
+      left={left}
+      width={width}
+      top={top}
+      isTimeShown={!!event.isTimeSelected}
+      duration={+duration.toFixed(2) || 0.25}
+      allDay={event.allDay || false}
+    >
+      <Flex flexWrap={FlexWrap.WRAP} alignItems={AlignItems.CENTER}>
+        <Text size={10}>
+          {event.title}
+          <SpaceCharacter />
+        </Text>
+
+        {event.isTimeSelected && event.showStartTimeLabel && (
+          <Text lineHeight={7} size={7}>
+            {eventStartDay.format(SHORT_HOURS_AM_FORMAT)}
+            {eventEndShortAmTime && ` - ${eventEndShortAmTime}`}
+          </Text>
+        )}
+      </Flex>
+
+      {component.eventState?.name !== 'dragging' && !event.allDay && (
+        <>
+          <StyledEventScaler
+            top="-5px"
+            onMouseDown={(e) =>
+              eventHandlers.onScalerMouseDown(e, event, 'startDate')
+            }
+            onMouseMove={eventHandlers.onEventGridMouseMove}
+          />
+
+          <StyledEventScaler
+            bottom="-5px"
+            onMouseDown={(e) =>
+              eventHandlers.onScalerMouseDown(e, event, 'endDate')
+            }
+            onMouseMove={eventHandlers.onEventGridMouseMove}
+          />
+        </>
+      )}
+    </StyledEvent>
+  );
+};
+
+export const WeekEvent = React.forwardRef(WeekEventComponent);

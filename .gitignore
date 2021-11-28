@@ -1,0 +1,9 @@
+.DS_Store
+dist/
+node_modules/
+.idea/
+.env
+app/dist
+package-lock.json
+*.log
+app/localization/locales/en/translation.missing.json

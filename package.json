@@ -1,0 +1,113 @@
+{
+  "name": "compass-calendar",
+  "description": "desktop calendar",
+  "author": "Switchback Tech LLC <hello@switchback.tech>",
+  "version": "2.0.0",
+  "license": "SEE LICENSE IN LICENSE",
+  "private": true,
+  "browserslist": "last 2 Chrome versions",
+  "main": "packages/electron/main.js",
+  "scripts": {
+    "audit-app": "npx electronegativity -i ./ -x LimitNavigationGlobalCheck,PermissionRequestHandlerGlobalCheck",
+    "clean": "node dev-scripts/cli.js --delete",
+    "start:web": "cross-env yarn workspace @compass/web start",
+    "build:web": "cross-env yarn workspace @compass/web build",
+    "precommit": "cross-env yarn workspaces run precommit",
+    "lint-fix": "cross-env yarn workspaces run lint-fix",
+    "dev-initial-server": "cross-env NODE_ENV=development webpack serve --config ./webpack.development.js > dev-scripts/webpack-dev-server.log 2> dev-scripts/webpack-dev-server-error.log",
+    "dev": "cross-env NODE_ENV=development electron .",
+    "dist": "yarn test && yarn prod:build && electron-builder",
+    "dist:all": "yarn test && yarn prod:build && electron-builder --mac --linux --windows",
+    "dist:mac": "yarn test && yarn prod:build && electron-builder --mac",
+    "dist:linux": "yarn test && yarn prod:build && electron-builder --linux",
+    "dist:windows": "yarn test && yarn prod:build && electron-builder --windows",
+    "lint:css": "stylelint './app/src/**/*.ts'",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps",
+    "prepare": "husky install",
+    "prod": "yarn prod:build && electron .",
+    "prod:build": "cross-env NODE_ENV=production npx webpack --mode=production --config ./webpack.production.js",
+    "test": "jest",
+    "translate": "node ./app/localization/translateMissing.js",
+    "type-check": "tsc",
+    "type-check:watch": "tsc --watch"
+  },
+  "build": {
+    "productName": "Compass Calendar",
+    "appId": "app.compasscalendar",
+    "directories": {
+      "buildResources": "resources"
+    },
+    "files": [
+      "app/dist/**/*",
+      "app/electron/**/*",
+      "app/localization/!(locales)",
+      "LICENSE"
+    ],
+    "extraFiles": [
+      "app/localization/locales/**/*",
+      "license.data",
+      "public.key"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "msi"
+      ]
+    },
+    "linux": {
+      "target": [
+        "deb",
+        "rpm",
+        "snap",
+        "AppImage"
+      ]
+    }
+  },
+  "dependencies": {
+    "@compass/core": "*",
+    "@compass/web": "*",
+    "electron-devtools-installer": "^3.2.0",
+    "focus-trap-react": "^8.7.0",
+    "i18next": "^20.3.1",
+    "i18next-electron-fs-backend": "^1.3.6",
+    "i18next-fs-backend": "^1.1.1",
+    "inquirer": "^8.1.2",
+    "jsonwebtoken": "^8.5.1",
+    "lerna": "^4.0.0",
+    "lodash": "4.17.21",
+    "lodash.merge": "^4.6.2",
+    "process": "^0.11.10",
+    "secure-electron-context-menu": "^1.3.1",
+    "secure-electron-license-keys": "^1.1.1",
+    "secure-electron-store": "^3.0.1",
+    "source-map-support": "^0.5.16",
+    "styled-components": "^5.3.1",
+    "styled-theming": "^2.2.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@babel/preset-typescript": "^7.15.0",
+    "@doyensec/electronegativity": "^1.9.1",
+    "@google-cloud/translate": "^6.2.2",
+    "buffer": "^6.0.3",
+    "commander": "^8.1.0",
+    "concurrently": "^6.2.0",
+    "cross-env": "^7.0.3",
+    "crypto-browserify": "^3.12.0",
+    "electron": "^13.1.2",
+    "electron-builder": "^22.11.3",
+    "electron-debug": "^3.2.0",
+    "husky": "^7.0.0",
+    "path-browserify": "^1.0.1",
+    "spectron": "^15.0.0",
+    "stream-browserify": "^3.0.0",
+    "typescript": "^4.4.2"
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ],
+    "nohoist": []
+  }
+}
