@@ -12,6 +12,7 @@ import { CommonRoutesConfig } from "./common/common.routes.config";
 import { AuthRoutes } from "./auth/auth.routes.config";
 import { EventRoutes } from "./event/event.routes.config";
 import { PriorityRoutes } from "./priority/priority.routes.config";
+import { SyncRoutes } from "./sync/sync.routes.config";
 import mongoService from "./common/services/mongo.service";
 import expressLogger from "./common/logger/express.logger";
 import { Logger } from "./common/logger/common.logger";
@@ -43,6 +44,7 @@ app.use(promiseMiddleware());
 routes.push(new AuthRoutes(app));
 routes.push(new PriorityRoutes(app));
 routes.push(new EventRoutes(app));
+routes.push(new SyncRoutes(app));
 
 const runningMessage = `Server running at: http://localhost:${port}`;
 app.get("/", (req: express.Request, res: express.Response) => {

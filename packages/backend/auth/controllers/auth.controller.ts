@@ -3,8 +3,9 @@ import jwt, { Jwt } from "jsonwebtoken";
 import crypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
 
+import { GOOGLE } from "@compass/core/src/core.constants";
+
 import googleOauthService from "../services/google.auth.service";
-import { GOOGLE } from "../../common/constants/common";
 import CompassAuthService from "../services/compass.auth.service";
 import { loginCompleteHtml } from "../services/login.complete";
 import { Logger } from "../../common/logger/common.logger";

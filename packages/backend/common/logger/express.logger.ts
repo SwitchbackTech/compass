@@ -2,7 +2,7 @@ import * as winston from "winston";
 import * as expressWinston from "express-winston";
 
 import { isDev } from "../helpers/common.helpers";
-import { MB_50 } from "../constants/common";
+import { MB_50 } from "../constants/backend.constants";
 
 const configExpressLogger = () => {
   const loggerOptions: expressWinston.LoggerOptions = {

@@ -1,8 +1,13 @@
 import { calendar_v3 } from "googleapis";
 
+import { BASEURL } from "@compass/core/src/core.constants";
+
 import { Logger } from "../../common/logger/common.logger";
 import { gParamsEventsList, gSchema$Event } from "../../declarations";
-import { GCAL_PRIMARY } from "../constants/common";
+import {
+  GCAL_NOTIFICATION_URL,
+  GCAL_PRIMARY,
+} from "../constants/backend.constants";
 import { BaseError } from "../errors/errors.base";
 import { Status } from "../errors/status.codes";
 
@@ -48,7 +53,19 @@ class GCalService {
     const response = await gcal.events.list(params);
     return response;
   }
-
+  async stopWatching(
+    gcal: calendar_v3.Calendar,
+    state: string,
+    resourceId: string
+  ) {
+    const response = await gcal.channels.stop({
+      requestBody: {
+        id: state,
+        resourceId: resourceId,
+      },
+    });
+    console.log("Stop =>", state);
+  }
   async updateEvent(
     gcal: calendar_v3.Calendar,
     gEventId: string,
@@ -65,42 +82,31 @@ class GCalService {
       return new BaseError("GCal Update Failed", e, Status.BAD_REQUEST, true);
     }
   }
-  /*
 
-  async watch(state: string) {
-    logger.warn("Watching (not really) ...");
-    const calendar = google.calendar({
-      version: "v3",
-      auth: this.oAuth2Client,
-    });
-    //TODO replace with env
-    let response = await calendar.events.watch({
-      calendarId: "primary",
-      resource: {
+  /*
+  Setup the notification channel for a user's calendar,
+  telling google where to notify us when an event changes
+  */
+  async watchCalendar(
+    gcal: calendar_v3.Calendar,
+    calendarId: string,
+    state: string
+  ) {
+    logger.info(`Setting up watch for calendarId: ${calendarId}`);
+    //TODO replace address with env
+    const response = await gcal.events.watch({
+      calendarId: calendarId,
+      requestBody: {
         id: state,
-        address: "https://***REMOVED***/app/notifications",
+        // address: "https://***REMOVED***/gcal/notifications",
+        address: `${BASEURL}${GCAL_NOTIFICATION_URL}`,
         type: "web_hook",
       },
     });
     logger.debug("Watching =>", response);
     logger.debug("reminder: address is hardcoded");
-    return ''
+    return "";
   }
-
-  async stop(state, resourceId) {
-    const calendar = google.calendar({
-      version: "v3",
-      auth: this.oAuth2Client,
-    });
-    let response = await calendar.channels.stop({
-      resource: {
-        id: state,
-        resourceId: resourceId,
-      },
-    });
-    console.log("Stop =>", state);
-  }
-  */
 }
 
 export default new GCalService();

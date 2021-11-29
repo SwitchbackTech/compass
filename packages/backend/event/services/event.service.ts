@@ -13,7 +13,11 @@ import { Status } from "../../common/errors/status.codes";
 import { Collections } from "../../common/constants/collections";
 import gcalService from "../../common/services/gcal.service";
 import { getGcal } from "../../auth/services/google.auth.service";
-import { gParamsEventsList } from "../../declarations";
+import {
+  gParamsEventsList,
+  gSchema$Event,
+  gSchema$Events,
+} from "../../declarations";
 import { getReadAllFilter } from "./event.service.helpers";
 import { yearsAgo } from "../../common/helpers/common.helpers";
 import { GcalMapper } from "../../common/helpers/map.gcal";
@@ -205,6 +209,34 @@ class EventService {
       logger.error(e);
       return new BaseError("Read Failed", e, 500, true);
     }
+  }
+
+  async syncGcalChanges(gEvents: gSchema$Events, userId: string) {
+    gEvents.map(async (event: gSchema$Event) => {
+      // Deleted Events //
+      if (event.status && event.status == "cancelled") {
+        await mongoService.db
+          .collection(Collections.EVENT)
+          .deleteOne({ id: event.id });
+        console.log("Removed event =>", event.id);
+      }
+
+      // Updated or New Events //
+      else {
+        const updatedEvent = GcalMapper.toCompass(userId, [event]);
+        //TODO validate
+
+        await mongoService.db
+          .collection(Collections.EVENT)
+          .findOneAndUpdate(
+            { id: event.id },
+            { $set: updatedEvent[0] },
+            { upsert: true }
+          );
+        console.log("Updated Event =>", event.id);
+      }
+      return event;
+    });
   }
 
   async updateById(

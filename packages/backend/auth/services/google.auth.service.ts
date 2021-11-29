@@ -12,6 +12,7 @@ import { BaseError } from "../../common/errors/errors.base";
 const logger = Logger("app:google.auth.service");
 const SCOPES = process.env.SCOPES.split(",");
 
+/* Helpers */
 export const getGcal = async (userId: string) => {
   const oAuthUser = await mongoService.db
     .collection(Collections.OAUTH)
@@ -165,4 +166,3 @@ class GoogleOauthService {
 }
 
 export default GoogleOauthService;
-// export default new GoogleOauthService();
