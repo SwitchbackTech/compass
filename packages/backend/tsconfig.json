@@ -20,11 +20,11 @@
     "strict": false,
     "esModuleInterop": true,
     "inlineSourceMap": true,
-    "baseUrl": "./",
+    "baseUrl": ".", 
+    // "moduleResolution": "node", //testing
     "paths": {
-      // "@*": ["./src/*"],
-      "@compass/core/*": ["../core/src/*"]
-    }
-    // "sourceMap": true
+      "@*": ["src/*"],
+      "@core/*": ["../core/src/*"]
+    },
   }
 }
