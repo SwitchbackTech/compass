@@ -1,5 +1,4 @@
-import { Db, MongoClient, ObjectId, Filter } from "mongodb";
-import { BaseError } from "../errors/errors.base";
+import { Db, MongoClient, ObjectId } from "mongodb";
 
 import { Logger } from "../logger/common.logger";
 

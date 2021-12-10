@@ -11,9 +11,9 @@ class GcalSyncController {
     const expiration = req.headers["x-goog-channel-expiration"];
 
     const notifResponse = await syncService.syncGcalEvents(
+      calendarId,
       resourceId,
       resourceState,
-      calendarId,
       expiration
     );
     res.promise(Promise.resolve(notifResponse));

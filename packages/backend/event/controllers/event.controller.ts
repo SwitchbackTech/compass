@@ -1,13 +1,20 @@
 import express from "express";
 
-import EventService from "../services/event.service";
-import { ReqBody, Res } from "../../../core/src/types/types.express";
+import { ReqBody, Res } from "@compass/core/src/types/express.types";
+import { ImportResult$GCal } from "@compass/core/src/types/sync.types";
+import { OAuthDTO } from "@compass/core/src/types/auth.types";
+
+import gcalService from "../../common/services/gcal.service";
+import { GCAL_PRIMARY } from "../../common/constants/backend.constants";
 import eventService from "../services/event.service";
 import { Event } from "../../../core/src/types/event.types";
 import { Collections } from "../../common/constants/collections";
 import mongoService from "../../common/services/mongo.service";
 import { Logger } from "../../common/logger/common.logger";
-import { updateNextSyncToken } from "../../auth/services/google.auth.service";
+import {
+  getGcal,
+  updateNextSyncToken,
+} from "../../auth/services/google.auth.service";
 
 const logger = Logger("app:event.service");
 class EventController {
@@ -41,9 +48,32 @@ class EventController {
       await eventService.deleteMany(userId);
     }
 
-    const importResult = await eventService.import(userId);
-    await updateNextSyncToken(userId, importResult.nextSyncToken);
-    res.promise(Promise.resolve(importResult));
+    const gcal = await getGcal(userId);
+
+    const importEventsResult = await eventService.import(userId, gcal);
+
+    const tokenUpdateResult = await updateNextSyncToken(
+      userId,
+      importEventsResult.nextSyncToken
+    );
+
+    const oauth: OAuthDTO = await mongoService.db
+      .collection(Collections.OAUTH)
+      .findOne({ user: userId });
+
+    const channelId = oauth.state;
+    const watchResult = await gcalService.watchCalendar(
+      gcal,
+      GCAL_PRIMARY,
+      channelId
+    );
+
+    const fullResults = {
+      events: importEventsResult,
+      tokenUpdate: tokenUpdateResult,
+      watch: watchResult,
+    };
+    res.promise(Promise.resolve(fullResults));
   };
 
   readById = async (req: express.Request, res: Res) => {
@@ -55,7 +85,7 @@ class EventController {
 
   readAll = async (req: express.Request, res: Res) => {
     const userId = res.locals.user.id;
-    const usersEvents = await EventService.readAll(userId, req.query);
+    const usersEvents = await eventService.readAll(userId, req.query);
     res.promise(Promise.resolve(usersEvents));
   };
 
@@ -67,7 +97,7 @@ class EventController {
     const userId = res.locals.user.id;
     const event = req.body;
     const eventId: string = req.params.id;
-    const response = await EventService.updateById(userId, eventId, event);
+    const response = await eventService.updateById(userId, eventId, event);
     res.promise(Promise.resolve(response));
   };
 }

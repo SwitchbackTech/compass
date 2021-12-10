@@ -90,22 +90,20 @@ class GCalService {
   async watchCalendar(
     gcal: calendar_v3.Calendar,
     calendarId: string,
-    state: string
+    channelId: string
   ) {
     logger.info(`Setting up watch for calendarId: ${calendarId}`);
-    //TODO replace address with env
     const response = await gcal.events.watch({
       calendarId: calendarId,
       requestBody: {
-        id: state,
-        // address: "https://***REMOVED***/gcal/notifications",
+        id: channelId,
         address: `${BASEURL}${GCAL_NOTIFICATION_URL}`,
         type: "web_hook",
       },
     });
     logger.debug("Watching =>", response);
     logger.debug("reminder: address is hardcoded");
-    return "";
+    return response;
   }
 }
 

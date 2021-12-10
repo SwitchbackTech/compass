@@ -32,7 +32,6 @@ Keep the channel active
   - Keep track of when it expires
   - Before it does, `POST` another `/watch` 
     - Use a new uuid
-  - GCal updates your channel whenever the calendar events change
 
 
 

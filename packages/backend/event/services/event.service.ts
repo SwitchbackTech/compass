@@ -1,12 +1,13 @@
 import { InsertManyResult } from "mongodb";
 
+import { ImportResult$GCal } from "@compass/core/src/types/sync.types";
+
 import mongoService from "../../common/services/mongo.service";
 import { Logger } from "../../common/logger/common.logger";
 import {
   Event,
   EventDTO,
   Query$Event,
-  ImportResult$GCal,
 } from "../../../core/src/types/event.types";
 import { BaseError } from "../../common/errors/errors.base";
 import { Status } from "../../common/errors/status.codes";
@@ -14,6 +15,7 @@ import { Collections } from "../../common/constants/collections";
 import gcalService from "../../common/services/gcal.service";
 import { getGcal } from "../../auth/services/google.auth.service";
 import {
+  gCalendar,
   gParamsEventsList,
   gSchema$Event,
   gSchema$Events,
@@ -122,12 +124,11 @@ class EventService {
     return response;
   }
 
-  async import(userId: string): Promise<ImportResult$GCal | BaseError> {
+  async import(userId: string, gcal: gCalendar): Promise<ImportResult$GCal> {
     try {
       let nextPageToken = undefined;
       let nextSyncToken = undefined;
       let total = 0;
-      const gcal = await getGcal(userId);
 
       // always fetches once, then continues until
       // there are no more events
@@ -155,13 +156,22 @@ class EventService {
         }
       } while (nextPageToken !== undefined);
 
-      const summary = { total: total, nextSyncToken: nextSyncToken };
+      const summary = {
+        total: total,
+        nextSyncToken: nextSyncToken,
+        errors: [],
+      };
       return summary;
     } catch (e) {
       // TODO catch 401 error and start from the top
       // this shouldn't happen for a first-time import
       logger.error(e.message);
-      return new BaseError("Import Failed", e.message, 500, true);
+      const errorSummary = {
+        total: -1,
+        nextSyncToken: "unsure",
+        errors: [e],
+      };
+      return errorSummary;
     }
   }
 

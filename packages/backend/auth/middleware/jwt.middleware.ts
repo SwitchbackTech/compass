@@ -2,7 +2,8 @@ import express from "express";
 import jwt, { JsonWebTokenError } from "jsonwebtoken";
 import crypto from "crypto";
 
-import { Jwt } from "../../../core/src/types/jwt";
+import { Jwt } from "@compass/core/src/types/jwt.types";
+
 import { BaseError } from "../../common/errors/errors.base";
 
 const jwtSecret: string = process.env.JWT_SECRET;

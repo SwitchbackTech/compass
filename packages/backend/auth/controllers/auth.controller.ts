@@ -3,7 +3,7 @@ import jwt, { Jwt } from "jsonwebtoken";
 import crypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
 
-import { GOOGLE } from "@compass/core/src/core.constants";
+import { GOOGLE } from "@compass/core/core.constants";
 
 import googleOauthService from "../services/google.auth.service";
 import CompassAuthService from "../services/compass.auth.service";

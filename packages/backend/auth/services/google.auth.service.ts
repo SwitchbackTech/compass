@@ -8,12 +8,13 @@ import { Collections } from "../../common/constants/collections";
 import { isDev } from "../../common/helpers/common.helpers";
 import { OAuthTokens$Gcal } from "../../../core/src/types/auth.types";
 import { BaseError } from "../../common/errors/errors.base";
+import { gCalendar } from "../../declarations";
 
 const logger = Logger("app:google.auth.service");
 const SCOPES = process.env.SCOPES.split(",");
 
 /* Helpers */
-export const getGcal = async (userId: string) => {
+export const getGcal = async (userId: string): Promise<gCalendar> => {
   const oAuthUser = await mongoService.db
     .collection(Collections.OAUTH)
     .findOne({ user: userId });

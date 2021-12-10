@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { NextFunction, Response, Request } from "express";
 
 interface CustomResponse extends Response {
   customProperty?: string;

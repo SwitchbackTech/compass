@@ -9,6 +9,7 @@
     "dev": "export DEV=true DEBUG=app* && yarn dev-start",
     "dev -verbose": "export DEV=true DEBUG=* && yarn dev-start",
     "dev-start": "ts-node-dev --respawn --pretty --transpile-only app.ts",
+    "dist": "rm -r dist/ && tsc",
     "start": "tsc && node --unhandled-rejections=strict ./dist/app.js",
     "start --no-typecheck": "ts-node ./app.ts -P tsconfig.json -T"
   },
