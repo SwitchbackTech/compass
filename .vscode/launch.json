@@ -2,6 +2,13 @@
       "version": "0.2.0",
       "configurations": [
         {
+          "type": "node-terminal",
+          "name": "Backend: dev",
+          "request": "launch",
+          "command": "yarn dev",
+          "cwd": "${workspaceFolder}/packages/backend/"
+        },
+        {
           "type": "node",
           "request": "launch",
           "name": "Jest: Current",

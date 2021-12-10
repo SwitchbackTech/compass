@@ -40,8 +40,4 @@ export interface Query$Event extends Query {
   priorities?: string; // example: 'p1,p2,p3'
 }
 
-export interface ImportResult$GCal {
-  total: number;
-  nextSyncToken: string | null | undefined;
-  errors: [];
-}
+

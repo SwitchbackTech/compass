@@ -17,9 +17,14 @@
     "target": "es2016",
     "module": "commonjs",
     "outDir": "./dist",
-    "strict": true,
+    "strict": false,
     "esModuleInterop": true,
-    "inlineSourceMap": true
-    // "sourceMap": true
+    "inlineSourceMap": true,
+    "baseUrl": ".", 
+    // "moduleResolution": "node", //testing
+    "paths": {
+      "@*": ["src/*"],
+      "@core/*": ["../core/src/*"]
+    },
   }
 }
