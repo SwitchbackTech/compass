@@ -40,7 +40,9 @@ class SyncService {
 
       // This means there is new data to sync from GCal //
       if (resourceState === "exists") {
-        logger.info("Initiating Sync for calendarId/state =>", calendarId);
+        logger.info(
+          `Initiating Sync for \ncalendarId/state: ${calendarId}\nresourceId: ${resourceId}`
+        );
 
         // Get the tokens and initialize GoogleOauth //
         // TODO move this to google.auth.service
@@ -125,8 +127,30 @@ class SyncService {
     }
   }
 
-  async stopWatchingChannel(channelId: string, resourceId: string) {
-    return { stop: "some status" };
+  async stopWatchingChannel(
+    userId: string,
+    channelId: string,
+    resourceId: string
+  ) {
+    try {
+      const gcal = await getGcal(userId);
+      const params = {
+        requestBody: {
+          id: channelId,
+          resourceId: resourceId,
+        },
+      };
+      const stopResult = await gcal.channels.stop(params);
+      return { stopWatching: stopResult };
+    } catch (e) {
+      logger.error(e);
+      return new BaseError(
+        "Stop Watch Failed",
+        e,
+        Status.INTERNAL_SERVER,
+        true
+      );
+    }
   }
 }
 
