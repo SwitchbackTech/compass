@@ -93,17 +93,28 @@ class GCalService {
     channelId: string
   ) {
     logger.info(`Setting up watch for calendarId: ${calendarId}`);
-    const response = await gcal.events.watch({
-      calendarId: calendarId,
-      requestBody: {
-        id: channelId,
-        address: `${BASEURL}${GCAL_NOTIFICATION_URL}`,
-        type: "web_hook",
-      },
-    });
-    logger.debug("Watching =>", response);
-    logger.debug("reminder: address is hardcoded");
-    return response;
+    try {
+      const response = await gcal.events.watch({
+        calendarId: calendarId,
+        requestBody: {
+          id: channelId,
+          address: `${BASEURL}${GCAL_NOTIFICATION_URL}`,
+          type: "web_hook",
+        },
+      });
+      logger.debug("Watching =>", response);
+      logger.debug("reminder: address is hardcoded");
+      return response;
+    } catch (e) {
+      if (e.code && e.code === 400) {
+        const msg = {
+          errors: [{ ignored: `We're already watching channel: ${channelId}` }],
+        };
+        return msg;
+      } else {
+        logger.error(e);
+      }
+    }
   }
 }
 
