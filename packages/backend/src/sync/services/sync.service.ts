@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { calendar_v3 } from "googleapis";
 
 import { SyncResult$Gcal } from "@core/types/sync.types";
 import { OAuthDTO } from "@core/types/auth.types";
@@ -12,6 +13,8 @@ import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
 import { Logger } from "@common/logger/common.logger";
 import eventService from "@event/services/event.service";
+import { BASEURL } from "@core/core.constants";
+import { GCAL_NOTIFICATION_URL } from "@common/constants/backend.constants";
 
 const logger = Logger("app:sync.service");
 
@@ -127,6 +130,47 @@ class SyncService {
     }
   }
 
+  /*
+  Setup the notification channel for a user's calendar,
+  telling google where to notify us when an event changes
+  */
+  async startWatchingChannel(
+    gcal: calendar_v3.Calendar,
+    calendarId: string,
+    channelId: string
+  ) {
+    logger.info(`Setting up watch for calendarId: ${calendarId}`);
+    try {
+      const response = await gcal.events.watch({
+        calendarId: calendarId,
+        requestBody: {
+          id: channelId,
+          address: `${BASEURL}${GCAL_NOTIFICATION_URL}`,
+          type: "web_hook",
+        },
+      });
+      logger.debug("Watching =>", response);
+      return response;
+    } catch (e) {
+      if (e.code && e.code === 400) {
+        return new BaseError(
+          "Start Watch Failed",
+          `We're already watching this channel: ${channelId}`,
+          Status.BAD_REQUEST,
+          true
+        );
+      } else {
+        logger.error(e);
+        return new BaseError(
+          "Start Watch Failed",
+          e,
+          Status.INTERNAL_SERVER,
+          true
+        );
+      }
+    }
+  }
+
   async stopWatchingChannel(
     userId: string,
     channelId: string,
@@ -140,7 +184,9 @@ class SyncService {
           resourceId: resourceId,
         },
       };
+
       const stopResult = await gcal.channels.stop(params);
+
       if (stopResult.status === 204) {
         return {
           stopWatching: {

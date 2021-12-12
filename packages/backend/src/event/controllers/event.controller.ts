@@ -13,6 +13,7 @@ import {
   getGcal,
   updateNextSyncToken,
 } from "@auth/services/google.auth.service";
+import syncService from "@sync/services/sync.service";
 
 import eventService from "../services/event.service";
 
@@ -62,7 +63,7 @@ class EventController {
       .findOne({ user: userId });
 
     const channelId = oauth.state;
-    const watchResult = await gcalService.watchCalendar(
+    const watchResult = await syncService.startWatchingChannel(
       gcal,
       GCAL_PRIMARY,
       channelId

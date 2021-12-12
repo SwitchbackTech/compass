@@ -1,8 +1,9 @@
 import express from "express";
 
 import { Logger } from "@common/logger/common.logger";
-import { Body$StopNotif } from "@core/types/sync.types";
-import { ReqBody } from "@core/types/express.types";
+import { Body$Watch$Start, Body$Watch$Stop } from "@core/types/sync.types";
+import { ReqBody, Res } from "@core/types/express.types";
+import { getGcal } from "@auth/services/google.auth.service";
 
 import syncService from "../services/sync.service";
 
@@ -15,8 +16,13 @@ class GcalSyncController {
     const resourceState = req.headers["x-goog-resource-state"];
     const expiration = req.headers["x-goog-channel-expiration"];
 
-    logger.debug("request:");
-    logger.debug(req);
+    logger.debug("request data:");
+    logger.debug({
+      calid: calendarId,
+      resid: resourceId,
+      resstate: resourceState,
+      expir: expiration,
+    });
 
     const notifResponse = await syncService.syncGcalEvents(
       calendarId,
@@ -27,7 +33,22 @@ class GcalSyncController {
     res.promise(Promise.resolve(notifResponse));
   };
 
-  stopWatching = async (req: ReqBody<Body$StopNotif>, res: Res) => {
+  startWatching = async (req: ReqBody<Body$Watch$Start>, res: Res) => {
+    const userId = res.locals.user.id;
+    const calendarId = req.body.calendarId;
+    const channelId = req.body.channelId;
+
+    const gcal = await getGcal(userId);
+    const watchResult = await syncService.startWatchingChannel(
+      gcal,
+      calendarId,
+      channelId
+    );
+
+    res.promise(Promise.resolve(watchResult));
+  };
+
+  stopWatching = async (req: ReqBody<Body$Watch$Stop>, res: Res) => {
     const userId = res.locals.user.id;
     const channelId = req.body.channelId;
     const resourceId = req.body.resourceId;
