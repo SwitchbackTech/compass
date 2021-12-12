@@ -1,6 +1,10 @@
 import express from "express";
 
+import { Logger } from "@common/logger/common.logger";
+
 import syncService from "../services/sync.service";
+
+const logger = Logger("app:sync.gcal.controller");
 
 class GcalSyncController {
   handleNotification = async (req: express.Request, res: express.Response) => {
@@ -9,7 +13,8 @@ class GcalSyncController {
     const resourceState = req.headers["x-goog-resource-state"];
     const expiration = req.headers["x-goog-channel-expiration"];
 
-    console.log(req);
+    logger.debug("request:");
+    logger.debug(req);
 
     const notifResponse = await syncService.syncGcalEvents(
       calendarId,
