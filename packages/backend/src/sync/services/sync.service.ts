@@ -149,8 +149,7 @@ class SyncService {
           type: "web_hook",
         },
       });
-      logger.debug("Watching =>", response);
-      return response;
+      return response.data;
     } catch (e) {
       if (e.code && e.code === 400) {
         return new BaseError(
