@@ -124,6 +124,10 @@ class SyncService {
       return new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, true);
     }
   }
+
+  async stopWatchingChannel(channelId: string, resourceId: string) {
+    return { stop: "some status" };
+  }
 }
 
 export default new SyncService();

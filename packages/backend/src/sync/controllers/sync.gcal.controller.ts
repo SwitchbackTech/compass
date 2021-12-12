@@ -24,6 +24,17 @@ class GcalSyncController {
     );
     res.promise(Promise.resolve(notifResponse));
   };
+
+  stopWatching = async (req: express.Request, res: express.Response) => {
+    logger.info(`Stopping watch for channel: `);
+    const channelId = "123";
+    const resourceId = "456";
+    const stopResult = await syncService.stopWatchingChannel(
+      channelId,
+      resourceId
+    );
+    res.promise(Promise.resolve(stopResult));
+  };
 }
 
 export default new GcalSyncController();
