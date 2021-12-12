@@ -141,12 +141,28 @@ class SyncService {
         },
       };
       const stopResult = await gcal.channels.stop(params);
+      if (stopResult.status === 204) {
+        return {
+          stopWatching: {
+            result: "success",
+            channelId: channelId,
+            resourceId: resourceId,
+          },
+        };
+      }
       return { stopWatching: stopResult };
     } catch (e) {
+      let msg;
+      if ("statusText" in e) {
+        msg = e.statusText;
+      } else {
+        msg = e;
+      }
+
       logger.error(e);
       return new BaseError(
         "Stop Watch Failed",
-        e,
+        msg,
         Status.INTERNAL_SERVER,
         true
       );
