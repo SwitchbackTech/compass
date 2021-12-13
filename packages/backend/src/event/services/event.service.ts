@@ -1,6 +1,7 @@
 import { InsertManyResult } from "mongodb";
 
 import { ImportResult$GCal } from "@compass/core/src/types/sync.types";
+import { GCAL_PRIMARY } from "@common/constants/backend.constants";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
 import { Event, EventDTO, Query$Event } from "@core/types/event.types";
@@ -133,7 +134,7 @@ class EventService {
       const twoYearsAgo = yearsAgo(2);
       do {
         const params: gParamsEventsList = {
-          calendarId: "primary",
+          calendarId: GCAL_PRIMARY,
           timeMin: twoYearsAgo,
           pageToken: nextPageToken,
         };
@@ -162,6 +163,7 @@ class EventService {
       // TODO catch 401 error and start from the top
       // this shouldn't happen for a first-time import
       logger.error(e.message);
+
       const errorSummary = {
         total: -1,
         nextSyncToken: "unsure",

@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { calendar_v3 } from "googleapis";
+import { gParamsEventsList } from "declarations";
 
 import { SyncResult$Gcal } from "@core/types/sync.types";
 import { OAuthDTO } from "@core/types/auth.types";
@@ -70,6 +71,7 @@ class SyncService {
         // Fetch the changes to events //
         // Note: will potentially need to handle pageToken in case a lot of new events
         // changed
+
         const updatedEvents = await gcalService.getEvents(gcal, {
           // calendarId: calendarId, // todo revert back to actual id?
           calendarId: GCAL_PRIMARY, // todo revert back to actual id?
@@ -77,7 +79,7 @@ class SyncService {
           syncToken: "CJCW-cH24PQCEJCW-cH24PQCGAUg8PPzxQE=",
         });
         logger.debug(`found ${updatedEvents.length} events`);
-        logger.debug(updatedEvents[0]);
+        logger.debug(JSON.stringify(updatedEvents));
 
         // Update the nextSyncToken for future syncs //
         // TODO error-handle response
