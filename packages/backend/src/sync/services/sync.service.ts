@@ -16,6 +16,8 @@ import eventService from "@event/services/event.service";
 import { BASEURL } from "@core/core.constants";
 import { GCAL_NOTIFICATION_URL } from "@common/constants/backend.constants";
 
+import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
+
 const logger = Logger("app:sync.service");
 
 class SyncService {
@@ -43,9 +45,12 @@ class SyncService {
 
       // This means there is new data to sync from GCal //
       if (resourceState === "exists") {
-        logger.info(
-          `Initiating Sync for \ncalendarId/state: ${calendarId}\nresourceId: ${resourceId}`
-        );
+        logger.debug(`Initiating sync for:
+            calendarId: ${calendarId},
+            resourceId: ${resourceId},
+            resourceState: ${resourceState},
+            expiration: ${expiration},
+    `);
 
         // Get the tokens and initialize GoogleOauth //
         // TODO move this to google.auth.service
@@ -141,12 +146,15 @@ class SyncService {
   ) {
     logger.info(`Setting up watch for calendarId: ${calendarId}`);
     try {
+      const expiration = daysFromNowTimestamp(14, "ms").toString();
+
       const response = await gcal.events.watch({
         calendarId: calendarId,
         requestBody: {
           id: channelId,
           address: `${BASEURL}${GCAL_NOTIFICATION_URL}`,
           type: "web_hook",
+          expiration: expiration,
         },
       });
       return response.data;
@@ -197,17 +205,19 @@ class SyncService {
       }
       return { stopWatching: stopResult };
     } catch (e) {
-      let msg;
-      if ("statusText" in e) {
-        msg = e.statusText;
-      } else {
-        msg = e;
+      if (e.code && e.code === 404) {
+        return new BaseError(
+          "Stop Watch Failed",
+          e.message,
+          Status.NOT_FOUND,
+          true
+        );
       }
 
       logger.error(e);
       return new BaseError(
         "Stop Watch Failed",
-        msg,
+        e,
         Status.INTERNAL_SERVER,
         true
       );
