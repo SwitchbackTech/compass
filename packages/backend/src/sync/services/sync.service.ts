@@ -19,10 +19,52 @@ import {
   GCAL_NOTIFICATION_URL,
   GCAL_PRIMARY,
 } from "@common/constants/backend.constants";
+import { GcalMapper } from "@common/helpers/map.gcal";
 
 import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
 
 const logger = Logger("app:sync.service");
+
+/* 
+Helpers
+*/
+const updateStateAndResourceId = async (
+  calendarId: string,
+  resourceId: string
+) => {
+  logger.debug("Updating state/calendarId for future reference");
+  const result = await mongoService.db
+    .collection(Collections.OAUTH)
+    .findOneAndUpdate(
+      { state: calendarId },
+      {
+        $set: {
+          resourceId: resourceId,
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    );
+  return result;
+};
+
+const updateNextSyncToken = async (
+  calendarId: string,
+  nextSyncToken: string
+) => {
+  logger.debug(`Updating nextSyncToken to: ${nextSyncToken}`);
+  const result = await mongoService.db
+    .collection(Collections.OAUTH)
+    .findOneAndUpdate(
+      { state: calendarId },
+      {
+        $set: {
+          nextSyncToken: nextSyncToken,
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    );
+  return result;
+};
 
 class SyncService {
   async syncGcalEvents(
@@ -32,22 +74,16 @@ class SyncService {
     expiration: number
   ): Promise<SyncResult$Gcal | BaseError> {
     try {
-      // This means a channel was setup successfully to listen for changes //
+      // A channel was setup successfully to listen for changes //
       if (resourceState === "sync") {
-        logger.debug("Updating state/calendarId for future reference");
-        // TODO error-handle
-        await mongoService.db.collection(Collections.OAUTH).findOneAndUpdate(
-          { state: calendarId },
-          {
-            $set: {
-              resourceId: resourceId,
-              updatedAt: new Date().toISOString(),
-            },
-          }
+        //TODO error handle
+        const updateIdsResult = updateStateAndResourceId(
+          calendarId,
+          resourceId
         );
       }
 
-      // This means there is new data to sync from GCal //
+      // There is new data to sync from GCal //
       if (resourceState === "exists") {
         logger.debug(`Initiating sync for:
             calendarId: ${calendarId},
@@ -67,32 +103,33 @@ class SyncService {
 
         if (oauth && oauth.state == calendarId) {
           logger.debug("Finding new events");
+
+          // Fetch the changes to events //
+          // Note: will potentially need to handle pageToken in case a lot of new events
+          // changed
+
+          const updatedEvents = await gcalService.getEvents(gcal, {
+            // calendarId: calendarId, // todo revert back to actual id?
+            calendarId: GCAL_PRIMARY, // todo revert back to actual id?
+            // syncToken: oauth.tokens.nextSyncToken,
+            syncToken: "CKilrNXP4fQCEKilrNXP4fQCGAUg8PPzxQE=",
+          });
+          logger.debug(`found ${updatedEvents.data.items.length} events`);
+          logger.debug(JSON.stringify(updatedEvents));
+
+          // TODO error-handle response
+          const syncTokenUpdateResult = await updateNextSyncToken(
+            calendarId,
+            updatedEvents.data.nextSyncToken
+          );
+
+          const cEvents = GcalMapper.toCompass(
+            oauth.user,
+            updatedEvents.data.items
+          );
+          logger.debug("events mapped to compass:");
+          logger.debug(JSON.stringify(cEvents));
         }
-        // Fetch the changes to events //
-        // Note: will potentially need to handle pageToken in case a lot of new events
-        // changed
-
-        const updatedEvents = await gcalService.getEvents(gcal, {
-          // calendarId: calendarId, // todo revert back to actual id?
-          calendarId: GCAL_PRIMARY, // todo revert back to actual id?
-          // syncToken: oauth.tokens.nextSyncToken,
-          syncToken: "CJCW-cH24PQCEJCW-cH24PQCGAUg8PPzxQE=",
-        });
-        logger.debug(`found ${updatedEvents.length} events`);
-        logger.debug(JSON.stringify(updatedEvents));
-
-        // Update the nextSyncToken for future syncs //
-        // TODO error-handle response
-        await mongoService.db.collection(Collections.OAUTH).findOneAndUpdate(
-          { state: calendarId },
-          {
-            $set: {
-              nextSyncToken: updatedEvents.nextSyncToken,
-              updatedAt: new Date().toISOString(),
-            },
-          }
-        );
-
         /*
           // Sync the changes to our DB //
           //TODO error-handle response
