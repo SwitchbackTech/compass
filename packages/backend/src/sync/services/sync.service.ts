@@ -63,8 +63,9 @@ const updateNextSyncToken = async (
         },
       }
     );
-  logger.debug(`update result (stringified):`);
-  logger.debug(JSON.stringify(result));
+  if (result.ok !== 1) {
+    logger.debug("nextSyncToken not updated", result.lastErrorObject);
+  }
   return result;
 };
 
@@ -117,22 +118,37 @@ class SyncService {
           logger.debug(`found ${updatedEvents.data.items.length} events:`);
           logger.debug(JSON.stringify(updatedEvents.data.items));
 
-          // TODO error-handle response
-          const syncTokenUpdateResult = await updateNextSyncToken(
+          await updateNextSyncToken(
             calendarId,
             updatedEvents.data.nextSyncToken
           );
+
+          /*
+          instead of just omitting deleted events,
+          you need to keep track of them and delete from compass also
+
+          approach 1 - categorize:
+            - eventsToDel = [{}, {}]
+            - eventsToUpdate = [{}, {}]
+
+            updateMany(upsert: true, eventsToUpdate)
+            - creates doc if none match already
+          */
 
           const cEvents = GcalMapper.toCompass(
             oauth.user,
             updatedEvents.data.items
           );
-          logger.debug("events mapped to compass:");
-          logger.debug(JSON.stringify(cEvents));
+          const updateResult = await eventService.updateManyForGcalSync(
+            oauth.user,
+            cEvents
+          );
+          logger.debug(updateResult);
+          logger.debug(JSON.stringify(updateResult));
         }
+        // Sync the changes to our DB //
+        // findOneAndUpdate based on the id / gcalId
         /*
-          // Sync the changes to our DB //
-          // TODO figure out if you should CREATE, PUT, OR DEL for each event
 
           //TODO error-handle response
           // await sync.events(events, oauth.user);

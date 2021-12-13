@@ -4,7 +4,7 @@ import { ImportResult$GCal } from "@compass/core/src/types/sync.types";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
-import { Event, EventDTO, Query$Event } from "@core/types/event.types";
+import { Event$NoId, Event, Query$Event } from "@core/types/event.types";
 import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
 import { Collections } from "@common/constants/collections";
@@ -24,7 +24,7 @@ import { getReadAllFilter } from "./event.service.helpers";
 const logger = Logger("app:event.service");
 
 class EventService {
-  async create(userId: string, event: Event): Promise<EventDTO | BaseError> {
+  async create(userId: string, event: Event$NoId): Promise<Event | BaseError> {
     try {
       const _gEvent = GcalMapper.toGcal(userId, event);
       const gcal = await getGcal(userId);
@@ -37,7 +37,7 @@ class EventService {
         .insertOne(eventWithGcalId);
 
       if ("acknowledged" in response) {
-        const dto: EventDTO = {
+        const dto: Event = {
           ...eventWithGcalId,
           _id: response.insertedId.toString(),
         };
@@ -54,7 +54,7 @@ class EventService {
 
   async createMany(
     userId: string,
-    data: Event[]
+    data: Event$NoId[]
   ): Promise<InsertManyResult | BaseError> {
     //TODO verify userId exists first (?)
 
@@ -75,7 +75,7 @@ class EventService {
       const filter = { _id: mongoService.objectId(id), user: userId };
 
       //get event so you can see the googleId
-      const event: Event = await mongoService.db
+      const event: Event$NoId = await mongoService.db
         .collection(Collections.EVENT)
         .findOne(filter);
 
@@ -173,16 +173,13 @@ class EventService {
     }
   }
 
-  async readById(
-    userId: string,
-    eventId: string
-  ): Promise<EventDTO | BaseError> {
+  async readById(userId: string, eventId: string): Promise<Event | BaseError> {
     try {
       const filter = {
         _id: mongoService.objectId(eventId),
         user: userId,
       };
-      const event: EventDTO = await mongoService.db
+      const event: Event = await mongoService.db
         .collection(Collections.EVENT)
         .findOne(filter);
 
@@ -205,10 +202,10 @@ class EventService {
   async readAll(
     userId: string,
     query: Query$Event
-  ): Promise<EventDTO[] | BaseError> {
+  ): Promise<Event[] | BaseError> {
     try {
       const filter = getReadAllFilter(userId, query);
-      const response: EventDTO[] = await mongoService.db
+      const response: Event[] = await mongoService.db
         .collection(Collections.EVENT)
         .find(filter)
         .toArray();
@@ -219,39 +216,11 @@ class EventService {
     }
   }
 
-  async syncGcalChanges(gEvents: gSchema$Events, userId: string) {
-    gEvents.map(async (event: gSchema$Event) => {
-      // Deleted Events //
-      if (event.status && event.status == "cancelled") {
-        await mongoService.db
-          .collection(Collections.EVENT)
-          .deleteOne({ id: event.id });
-        console.log("Removed event =>", event.id);
-      }
-
-      // Updated or New Events //
-      else {
-        const updatedEvent = GcalMapper.toCompass(userId, [event]);
-        //TODO validate
-
-        await mongoService.db
-          .collection(Collections.EVENT)
-          .findOneAndUpdate(
-            { id: event.id },
-            { $set: updatedEvent[0] },
-            { upsert: true }
-          );
-        console.log("Updated Event =>", event.id);
-      }
-      return event;
-    });
-  }
-
   async updateById(
     userId: string,
     eventId: string,
-    event: Event
-  ): Promise<EventDTO | BaseError> {
+    event: Event$NoId
+  ): Promise<Event | BaseError> {
     try {
       const response = await mongoService.db
         .collection(Collections.EVENT)
@@ -289,6 +258,43 @@ class EventService {
     } catch (e) {
       logger.error(e);
       return new BaseError("Update Failed", e, 500, true);
+    }
+  }
+
+  async updateManyForGcalSync(userId: string, events: Event$NoId[]) {
+    try {
+      //TODO try getting this to work in one `updateMany` query
+      // - map the gEventIds before hand and push onto a [] for all updates (?)
+      //    - could be risky
+      const results = [];
+      events.map(async (event: Event) => {
+        /* TODO move this somewhere before this step
+      // Deleted Events //
+      if (event.status && event.status == "cancelled") {
+        await mongoService.db
+          .collection(Collections.EVENT)
+          .deleteOne({ id: event.id });
+        console.log("TODO: Removed event =>", event.id);
+      }
+      */
+
+        //TODO validate
+
+        //using gcal id cuz won't know ccal id when it comes from google
+        const updateResult = await mongoService.db
+          .collection(Collections.EVENT)
+          .updateOne(
+            { gEventId: event.gEventId, user: userId },
+            { $set: event },
+            { upsert: true }
+          );
+        console.log("Updated Event with gEventId =>", event.gEventId);
+        results.push(updateResult);
+      });
+      return results;
+    } catch (e) {
+      logger.error(e);
+      return new BaseError("Update Many Failed", e, 500, true);
     }
   }
 }
