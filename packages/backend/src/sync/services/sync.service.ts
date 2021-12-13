@@ -14,7 +14,10 @@ import { Status } from "@common/errors/status.codes";
 import { Logger } from "@common/logger/common.logger";
 import eventService from "@event/services/event.service";
 import { BASEURL } from "@core/core.constants";
-import { GCAL_NOTIFICATION_URL } from "@common/constants/backend.constants";
+import {
+  GCAL_NOTIFICATION_URL,
+  GCAL_PRIMARY,
+} from "@common/constants/backend.constants";
 
 import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
 
@@ -54,6 +57,7 @@ class SyncService {
 
         // Get the tokens and initialize GoogleOauth //
         // TODO move this to google.auth.service
+        // TODO should you be using resourceId for find?
         const oauth: OAuthDTO = await mongoService.db
           .collection(Collections.OAUTH)
           .findOne({ resourceId: resourceId });
@@ -68,25 +72,26 @@ class SyncService {
         // changed
         const updatedEvents = await gcalService.getEvents(gcal, {
           // calendarId: calendarId, // todo revert back to actual id?
-          calendarId: "primary", // todo revert back to actual id?
-          syncToken: oauth.tokens.nextSyncToken,
+          calendarId: GCAL_PRIMARY, // todo revert back to actual id?
+          // syncToken: oauth.tokens.nextSyncToken,
+          syncToken: "CJCW-cH24PQCEJCW-cH24PQCGAUg8PPzxQE=",
         });
         logger.debug(`found ${updatedEvents.length} events`);
         logger.debug(updatedEvents[0]);
 
-        /*
-          // Update the nextSyncToken for future syncs //
-          // TODO error-handle response
-          await mongoService.db.collection(Collections.OAUTH).findOneAndUpdate(
-            { state: calendarId },
-            {
-              $set: {
-                nextSyncToken: nextSyncToken,
-                updatedAt: new Date().toISOString(),
-              },
-            }
-          );
+        // Update the nextSyncToken for future syncs //
+        // TODO error-handle response
+        await mongoService.db.collection(Collections.OAUTH).findOneAndUpdate(
+          { state: calendarId },
+          {
+            $set: {
+              nextSyncToken: updatedEvents.nextSyncToken,
+              updatedAt: new Date().toISOString(),
+            },
+          }
+        );
 
+        /*
           // Sync the changes to our DB //
           //TODO error-handle response
           // await sync.events(events, oauth.user);
