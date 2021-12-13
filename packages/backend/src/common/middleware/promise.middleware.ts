@@ -32,13 +32,13 @@ export const catchSyncErrors = (
 };
 
 const sendResponse = (res: express.Response, data: Record<string, unknown>) => {
-  if (data !== null) {
-    const code: number = data.statusCode || 200;
-    res.status(code).send(data);
-  } else {
-    logger.error(`Sync error caught using this data: ${data}`);
-    res.status(500).send("uh oh, no status");
+  if (data === null) {
+    //todo extend to allow for sending no data, just success code?
+    logger.error(`Sync error cuz no data provided for response`);
+    res.status(500).send("uh oh, no data provided");
   }
+  const code: number = data.statusCode || 200;
+  res.status(code).send(data);
 };
 
 export function promiseMiddleware() {

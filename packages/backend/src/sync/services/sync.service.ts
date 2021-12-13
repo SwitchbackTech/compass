@@ -63,12 +63,14 @@ class SyncService {
         if (oauth && oauth.state == calendarId) {
           logger.debug("Finding new events (not really, stopping here)");
         }
-        /*
-          // Fetch the changes to events //
-          const { nextSyncToken } = await gcalService.getEvents(gcal, {
-            syncToken: oauth.tokens.nextSyncToken,
-          });
+        // Fetch the changes to events //
+        const updatedEvents = await gcalService.getEvents(gcal, {
+          syncToken: oauth.tokens.nextSyncToken,
+        });
+        console.log(`found ${updatedEvents.length} events`);
+        console.log(updatedEvents[0]);
 
+        /*
           // Update the nextSyncToken for future syncs //
           // TODO error-handle response
           await mongoService.db.collection(Collections.OAUTH).findOneAndUpdate(
