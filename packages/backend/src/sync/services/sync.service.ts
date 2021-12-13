@@ -58,15 +58,13 @@ const updateNextSyncToken = async (
       { state: calendarId },
       {
         $set: {
-          nextSyncToken: nextSyncToken,
+          "tokens.nextSyncToken": nextSyncToken,
           updatedAt: new Date().toISOString(),
         },
       }
     );
   logger.debug(`update result (stringified):`);
   logger.debug(JSON.stringify(result));
-  const first = JSON.stringify(result);
-  logger.debug(JSON.stringify(first));
   return result;
 };
 
