@@ -16,13 +16,14 @@ class GcalSyncController {
     const resourceState = req.headers["x-goog-resource-state"];
     const expiration = req.headers["x-goog-channel-expiration"];
 
-    logger.debug("request data:");
-    logger.debug({
-      calid: calendarId,
-      resid: resourceId,
-      resstate: resourceState,
-      expir: expiration,
-    });
+    logger.debug(req.headers);
+
+    logger.debug(`
+      calid: ${calendarId},
+      resid: ${resourceId},
+      resstate: ${resourceState},
+      expir: ${expiration},
+    `);
 
     const notifResponse = await syncService.syncGcalEvents(
       calendarId,
