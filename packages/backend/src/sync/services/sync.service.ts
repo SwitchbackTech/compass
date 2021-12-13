@@ -109,13 +109,10 @@ class SyncService {
           // changed
 
           const updatedEvents = await gcalService.getEvents(gcal, {
-            // calendarId: calendarId, // todo revert back to actual id?
             calendarId: GCAL_PRIMARY, // todo revert back to actual id?
-            // syncToken: oauth.tokens.nextSyncToken,
-            syncToken: "CKilrNXP4fQCEKilrNXP4fQCGAUg8PPzxQE=",
+            syncToken: oauth.tokens.nextSyncToken,
           });
           logger.debug(`found ${updatedEvents.data.items.length} events`);
-          logger.debug(JSON.stringify(updatedEvents));
 
           // TODO error-handle response
           const syncTokenUpdateResult = await updateNextSyncToken(
@@ -132,6 +129,8 @@ class SyncService {
         }
         /*
           // Sync the changes to our DB //
+          // TODO figure out if you should CREATE, PUT, OR DEL for each event
+
           //TODO error-handle response
           // await sync.events(events, oauth.user);
           await eventService.syncGcalChanges(events, oauth.user);
