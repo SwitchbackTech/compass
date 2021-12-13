@@ -61,14 +61,17 @@ class SyncService {
         const gcal = await getGcal(oauth.user);
 
         if (oauth && oauth.state == calendarId) {
-          logger.debug("Finding new events (not really, stopping here)");
+          logger.debug("Finding new events");
         }
         // Fetch the changes to events //
+        // Note: will potentially need to handle pageToken in case a lot of new events
+        // changed
         const updatedEvents = await gcalService.getEvents(gcal, {
+          calendarId: calendarId,
           syncToken: oauth.tokens.nextSyncToken,
         });
-        console.log(`found ${updatedEvents.length} events`);
-        console.log(updatedEvents[0]);
+        logger.debug(`found ${updatedEvents.length} events`);
+        logger.debug(updatedEvents[0]);
 
         /*
           // Update the nextSyncToken for future syncs //
