@@ -63,8 +63,10 @@ const updateNextSyncToken = async (
         },
       }
     );
-  logger.debug(`update result:`);
-  logger.debug(result);
+  logger.debug(`update result (stringified):`);
+  logger.debug(JSON.stringify(result));
+  const first = JSON.stringify(result);
+  logger.debug(JSON.stringify(first));
   return result;
 };
 
@@ -115,7 +117,7 @@ class SyncService {
             syncToken: oauth.tokens.nextSyncToken,
           });
           logger.debug(`found ${updatedEvents.data.items.length} events:`);
-          logger.debug(updatedEvents.data.items);
+          logger.debug(JSON.stringify(updatedEvents.data.items));
 
           // TODO error-handle response
           const syncTokenUpdateResult = await updateNextSyncToken(
