@@ -39,16 +39,25 @@ pm2 logs $version
 
 ### Making changes:
 
-push local changes to `compass-backend` repo
+push local changes to `compass-calendar` repo
 
-sign into cloud VM and run:
+SSH into cloud VM
 
 ```
 cd /$version
-git pull  # or `get pull origin <branch>` if not using `main`
+git fetch
+
+# if using a branch other than main:
+git checkout <branch>
+
+cd package/<package>
+```
+
+Start: `yarn start` (production, compiled) or `yarn dev`
+
+pm2 [wip]:
+```
 pm2 restart $version #if pm2 not in watch mode already
-)
-or: `node dist/app.js`
 ```
 
 ## Troubleshooting

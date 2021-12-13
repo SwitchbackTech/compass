@@ -5,5 +5,16 @@ export interface ImportResult$GCal {
 }
 
 export interface SyncResult$Gcal {
-   foo: string; 
+   foo: any; 
+}
+
+export interface Body$Watch$Stop {
+  channelId: string;
+  resourceId: string;
+}
+
+export interface Body$Watch$Start {
+  calendarId: string;
+  channelId: string;
+  
 }
