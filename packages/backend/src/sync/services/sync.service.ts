@@ -67,7 +67,8 @@ class SyncService {
         // Note: will potentially need to handle pageToken in case a lot of new events
         // changed
         const updatedEvents = await gcalService.getEvents(gcal, {
-          calendarId: calendarId,
+          // calendarId: calendarId, // todo revert back to actual id?
+          calendarId: "primary", // todo revert back to actual id?
           syncToken: oauth.tokens.nextSyncToken,
         });
         logger.debug(`found ${updatedEvents.length} events`);
