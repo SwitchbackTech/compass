@@ -63,6 +63,8 @@ const updateNextSyncToken = async (
         },
       }
     );
+  logger.debug(`update result:`);
+  logger.debug(result);
   return result;
 };
 
@@ -112,7 +114,8 @@ class SyncService {
             calendarId: GCAL_PRIMARY, // todo revert back to actual id?
             syncToken: oauth.tokens.nextSyncToken,
           });
-          logger.debug(`found ${updatedEvents.data.items.length} events`);
+          logger.debug(`found ${updatedEvents.data.items.length} events:`);
+          logger.debug(updatedEvents.data.items);
 
           // TODO error-handle response
           const syncTokenUpdateResult = await updateNextSyncToken(
