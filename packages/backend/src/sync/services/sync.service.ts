@@ -13,7 +13,6 @@ import mongoService from "@common/services/mongo.service";
 import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
 import { Logger } from "@common/logger/common.logger";
-import eventService from "@event/services/event.service";
 import { BASEURL } from "@core/core.constants";
 import {
   GCAL_NOTIFICATION_URL,
@@ -24,50 +23,6 @@ import { GcalMapper } from "@common/helpers/map.gcal";
 import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
 
 const logger = Logger("app:sync.service");
-
-/* 
-Helpers
-*/
-const updateStateAndResourceId = async (
-  calendarId: string,
-  resourceId: string
-) => {
-  logger.debug("Updating state/calendarId for future reference");
-  const result = await mongoService.db
-    .collection(Collections.OAUTH)
-    .findOneAndUpdate(
-      { state: calendarId },
-      {
-        $set: {
-          resourceId: resourceId,
-          updatedAt: new Date().toISOString(),
-        },
-      }
-    );
-  return result;
-};
-
-const updateNextSyncToken = async (
-  calendarId: string,
-  nextSyncToken: string
-) => {
-  logger.debug(`Updating nextSyncToken to: ${nextSyncToken}`);
-  const result = await mongoService.db
-    .collection(Collections.OAUTH)
-    .findOneAndUpdate(
-      { state: calendarId },
-      {
-        $set: {
-          "tokens.nextSyncToken": nextSyncToken,
-          updatedAt: new Date().toISOString(),
-        },
-      }
-    );
-  if (result.ok !== 1) {
-    logger.debug("nextSyncToken not updated", result.lastErrorObject);
-  }
-  return result;
-};
 
 class SyncService {
   async syncGcalEvents(
@@ -123,38 +78,20 @@ class SyncService {
             updatedEvents.data.nextSyncToken
           );
 
-          /*
-          instead of just omitting deleted events,
-          you need to keep track of them and delete from compass also
-
-          approach 1 - categorize:
-            - eventsToDel = [{}, {}]
-            - eventsToUpdate = [{}, {}]
-
-            updateMany(upsert: true, eventsToUpdate)
-            - creates doc if none match already
-          */
-
+          // Sync the changes to our DB //
           const cEvents = GcalMapper.toCompass(
             oauth.user,
             updatedEvents.data.items
           );
-          const updateResult = await eventService.updateManyForGcalSync(
+          const updateResult = await updateEventsAfterGcalChange(
             oauth.user,
             cEvents
           );
-          logger.debug(updateResult);
           logger.debug(JSON.stringify(updateResult));
         }
-        // Sync the changes to our DB //
-        // findOneAndUpdate based on the id / gcalId
         /*
 
-          //TODO error-handle response
-          // await sync.events(events, oauth.user);
-          await eventService.syncGcalChanges(events, oauth.user);
-        }
-
+        
         // If `oauth.state` does not match, it means the channel has expired and and we need to `stop` listening to this channel //
         else {
           //TODO error-handle response

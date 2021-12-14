@@ -5,7 +5,7 @@ import { ImportResult$GCal } from "@compass/core/src/types/sync.types";
 import { OAuthDTO } from "@compass/core/src/types/auth.types";
 import gcalService from "@common/services/gcal.service";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
-import { Event } from "@core/types/event.types";
+import { Event$NoId } from "@core/types/event.types";
 import { Collections } from "@common/constants/collections";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
@@ -19,7 +19,7 @@ import eventService from "../services/event.service";
 
 const logger = Logger("app:event.service");
 class EventController {
-  create = async (req: ReqBody<Event>, res: Res) => {
+  create = async (req: ReqBody<Event$NoId>, res: Res) => {
     const userId = res.locals.user.id;
 
     if (req.body instanceof Array) {
@@ -90,7 +90,7 @@ class EventController {
     res.promise(Promise.resolve(usersEvents));
   };
 
-  update = async (req: ReqBody<Event>, res: Res) => {
+  update = async (req: ReqBody<Event$NoId>, res: Res) => {
     /* 
     TODO validate: 
      - that no id in body (cuz id is immutable and will cause mongo err)

@@ -260,43 +260,6 @@ class EventService {
       return new BaseError("Update Failed", e, 500, true);
     }
   }
-
-  async updateManyForGcalSync(userId: string, events: Event$NoId[]) {
-    try {
-      //TODO try getting this to work in one `updateMany` query
-      // - map the gEventIds before hand and push onto a [] for all updates (?)
-      //    - could be risky
-      const results = [];
-      events.map(async (event: Event) => {
-        /* TODO move this somewhere before this step
-      // Deleted Events //
-      if (event.status && event.status == "cancelled") {
-        await mongoService.db
-          .collection(Collections.EVENT)
-          .deleteOne({ id: event.id });
-        console.log("TODO: Removed event =>", event.id);
-      }
-      */
-
-        //TODO validate
-
-        //using gcal id cuz won't know ccal id when it comes from google
-        const updateResult = await mongoService.db
-          .collection(Collections.EVENT)
-          .updateOne(
-            { gEventId: event.gEventId, user: userId },
-            { $set: event },
-            { upsert: true }
-          );
-        console.log("Updated Event with gEventId =>", event.gEventId);
-        results.push(updateResult);
-      });
-      return results;
-    } catch (e) {
-      logger.error(e);
-      return new BaseError("Update Many Failed", e, 500, true);
-    }
-  }
 }
 
 export default new EventService();
