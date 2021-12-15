@@ -1,5 +1,6 @@
 import { gSchema$Event, gSchema$Events } from "declarations";
 
+import { Event } from "@core/types/event.types";
 import { BaseError } from "@common/errors/errors.base";
 import { Collections } from "@common/constants/collections";
 import { Logger } from "@common/logger/common.logger";
@@ -33,38 +34,20 @@ export const updateEventsAfterGcalChange = async (
   events: gSchema$Event[]
 ) => {
   /*
-          1 - categorize:
-            eventsToDel = [{}, {}]
-              - event.status === cancelled
-              - future: handle recurring events, too (not just deleting them like here)
-
-            eventsToUpdate = [{}, {}]
-              - event.status === confirmed | tentative
-
-          2 update 
-            updateMany(upsert: true, eventsToUpdate)
-            - creates doc if none match already
-          */
-
+    TODO change to
+      updateMany(upsert: true, eventsToUpdate)
+      - creates doc if none match already
+      //TODO try getting this to work in one `updateMany` query
+      // - map the gEventIds before hand and push onto a [] for all updates (?)
+      //    - could be risky
+  */
   try {
-    //TODO try getting this to work in one `updateMany` query
-    // - map the gEventIds before hand and push onto a [] for all updates (?)
-    //    - could be risky
     events.map(async (event: Event) => {
-      /* TODO move this somewhere before this step
-      // Deleted Events //
-      if (event.status && event.status == "cancelled") {
-        await mongoService.db
-          .collection(Collections.EVENT)
-          .deleteOne({ id: event.id });
-        console.log("TODO: Removed event =>", event.id);
-      }
-      */
-
       //  TODO validate
 
-      //  find and update the event, by using gcal id
+      //  finds and updates the event, by using gcal id
       // (cuz won't know ccal id when it comes from google)
+      // if the event isnt found, its created
       const updateResult = await mongoService.db
         .collection(Collections.EVENT)
         .updateOne(
@@ -72,11 +55,12 @@ export const updateEventsAfterGcalChange = async (
           { $set: event },
           { upsert: true }
         );
-      logger.debug("update Result:");
-      logger.debug(JSON.stringify(updateResult));
-      logger.debug("Updated Event with gEventId =>", event.gEventId);
+      // logger.debug(`Updated Event with gEventId => ${JSON.stringify(event.gEventId}`);
     });
-    return "idk - i think it worked";
+    const gEventIds = events.filter((e: Event) => e.gEventId);
+    return `Tried updating/creating events with these gEventIds: ${JSON.stringify(
+      gEventIds
+    )}`;
   } catch (e) {
     logger.error(e);
     return new BaseError(

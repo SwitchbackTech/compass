@@ -94,14 +94,18 @@ class SyncService {
           );
 
           if (eventsToDelete.length > 0) {
-            logger.debug(`Found ${eventsToDelete.length} events to delete`);
+            logger.debug(
+              `Found ${eventsToDelete.length} events to delete: ${eventsToDelete}`
+            );
             const deleteParams: Params$DeleteMany = {
               key: "gEventId",
               ids: eventsToDelete,
             };
-            const deleteResult: Result$DeleteMany =
-              await eventService.deleteMany(oauth.user, deleteParams);
-            logger.debug(`Delete result: ${deleteResult}`);
+            const deleteResult = await eventService.deleteMany(
+              oauth.user,
+              deleteParams
+            );
+            logger.debug(`Delete result: ${JSON.stringify(deleteResult)}`);
           }
 
           // - prep events to update and update
