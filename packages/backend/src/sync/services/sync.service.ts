@@ -20,6 +20,7 @@ import {
   GCAL_PRIMARY,
 } from "@common/constants/backend.constants";
 import { GcalMapper } from "@common/services/gcal/map.gcal";
+import eventService from "@event/services/event.service";
 
 import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
 import {
@@ -88,6 +89,7 @@ class SyncService {
             updatedEvents.data.items
           );
 
+          const deleteResult = await eventService.deleteMany(eventsToDelete);
           // - deleteMany $in gidarray
 
           // - prep events to update and update

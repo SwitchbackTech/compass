@@ -1,11 +1,11 @@
-import express from "express";
+import express, { Request } from "express";
 
 import { ReqBody, Res } from "@compass/core/src/types/express.types";
 import { ImportResult$GCal } from "@compass/core/src/types/sync.types";
 import { OAuthDTO } from "@compass/core/src/types/auth.types";
 import gcalService from "@common/services/gcal.service";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
-import { Event$NoId } from "@core/types/event.types";
+import { Event$NoId, Params$DeleteMany } from "@core/types/event.types";
 import { Collections } from "@common/constants/collections";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
@@ -38,6 +38,17 @@ class EventController {
     res.promise(Promise.resolve(deleteResponse));
   };
 
+  deleteMany = async (
+    req: ReqBody<{ key: string; ids: string[] }>,
+    // req: ReqBody<Params$DeleteMany>,
+    res: Res
+  ) => {
+    const userId = res.locals.user.id;
+    //TODO validate body
+    const deleteResponse = await eventService.deleteMany(userId, req.body);
+    res.promise(Promise.resolve(deleteResponse));
+  };
+
   import = async (req: express.Request, res: Res) => {
     const userId: string = res.locals.user.id;
 
@@ -46,7 +57,7 @@ class EventController {
     });
     if (userExists) {
       logger.debug(`Deleting events for clean import for user: ${userId}`);
-      await eventService.deleteMany(userId);
+      await eventService.deleteAllByUser(userId);
     }
 
     const gcal = await getGcal(userId);

@@ -4,7 +4,13 @@ import { ImportResult$GCal } from "@compass/core/src/types/sync.types";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
-import { Event$NoId, Event, Query$Event } from "@core/types/event.types";
+import {
+  Event$NoId,
+  Event,
+  Query$Event,
+  Params$DeleteMany,
+  Result$DeleteMany,
+} from "@core/types/event.types";
 import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
 import { Collections } from "@common/constants/collections";
@@ -69,6 +75,14 @@ class EventService {
     }
   }
 
+  /* Deletes all of a user's events */
+  async deleteAllByUser(userId: string) {
+    const response = await mongoService.db
+      .collection(Collections.EVENT)
+      .deleteMany({ user: userId });
+    return response;
+  }
+
   async deleteById(userId: string, id: string) {
     // TODO refactor this so it doesn't require so many calls
     try {
@@ -114,17 +128,27 @@ class EventService {
     }
   }
 
-  async deleteMany(userId: string) {
-    const response = await mongoService.db
-      .collection(Collections.EVENT)
-      .deleteMany({ user: userId });
-    return response;
-  }
-  async deleteMany(userId: string) {
-    const response = await mongoService.db
-      .collection(Collections.EVENT)
-      .deleteMany({ user: userId });
-    return response;
+  async deleteMany(
+    userId: string,
+    params: Params$DeleteMany
+  ): Promise<Result$DeleteMany | BaseError> {
+    const errors = [];
+    try {
+      const response = await mongoService.db
+        .collection(Collections.EVENT)
+        .deleteMany({ user: userId, [params.key]: { $in: params.ids } });
+
+      if (response.deletedCount !== params.ids.length) {
+        errors.push(
+          `Only deleted ${response.deletedCount}/${params.ids.length} events`
+        );
+      }
+      const result = { deletedCount: response.deletedCount, errors: errors };
+      return result;
+    } catch (e) {
+      logger.error(e);
+      return new BaseError("DeleteMany Failed", e, 500, true);
+    }
   }
 
   async import(userId: string, gcal: gCalendar): Promise<ImportResult$GCal> {

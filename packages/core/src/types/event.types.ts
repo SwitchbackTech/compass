@@ -25,6 +25,16 @@ export interface Event extends Event$NoId {
   _id: string; // needs to always return events id
 }
 
+export interface Params$DeleteMany {
+  key: string;
+  ids: string[];
+}
+
+export interface Result$DeleteMany {
+  deletedCount: number;
+  errors: any[];
+}
+
 export interface Query$Event extends Query {
   start?: string;
   end?: string;

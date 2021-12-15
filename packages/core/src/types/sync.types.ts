@@ -16,5 +16,4 @@ export interface Body$Watch$Stop {
 export interface Body$Watch$Start {
   calendarId: string;
   channelId: string;
-  
 }
