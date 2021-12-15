@@ -9,7 +9,6 @@ export const cancelledEventsIds = (events: gSchema$Event[]) => {
   events.filter(cancelled).forEach((e: gSchema$Event) => {
     cancelledIds.push(e.id);
   });
-  console.log(cancelledIds);
   return cancelledIds;
 };
 

@@ -120,6 +120,12 @@ class EventService {
       .deleteMany({ user: userId });
     return response;
   }
+  async deleteMany(userId: string) {
+    const response = await mongoService.db
+      .collection(Collections.EVENT)
+      .deleteMany({ user: userId });
+    return response;
+  }
 
   async import(userId: string, gcal: gCalendar): Promise<ImportResult$GCal> {
     try {

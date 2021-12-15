@@ -87,13 +87,10 @@ class SyncService {
           const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
             updatedEvents.data.items
           );
-          //todo turn into array of geventids
 
-          // - find events to delete
-          // - delete events
           // - deleteMany $in gidarray
 
-          // - find events to update
+          // - prep events to update and update
           const cEvents = GcalMapper.toCompass(
             oauth.user,
             updatedEvents.data.items

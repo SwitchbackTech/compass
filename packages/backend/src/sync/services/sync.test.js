@@ -3,29 +3,41 @@ import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
 import { gcalEventsExample } from "./sync.test.data";
 import { categorizeGcalEvents } from "./sync.service.helpers";
 describe("Categorize GCal Updates", () => {
-  const toDelete = cancelledEventsIds(gcalEventsExample);
-  const categorized = categorizeGcalEvents(gcalEventsExample);
+  const { eventsToDelete, eventsToUpdate } =
+    categorizeGcalEvents(gcalEventsExample);
 
-  test("returns array of cancelled gEventIds", () => {
-    expect(toDelete.length).toBeGreaterThan(0);
+  test("Returns array of cancelled gEventIds", () => {
+    expect(eventsToDelete.length).toBeGreaterThan(0);
 
     // should be array of string numbers
-    expect(typeof toDelete[1]).toBe("string");
-    const parsedToInt = parseInt(toDelete[1]);
+    expect(typeof eventsToDelete[1]).toBe("string");
+    const parsedToInt = parseInt(eventsToDelete[1]);
     expect(typeof parsedToInt).toBe("number");
   });
-  test("finds deleted/cancelled events", () => {
-    const cancelledIds = [];
-    gcalEventsExample.forEach((e) => {
-      if (e.status === "cancelled") {
-        cancelledIds.push(e.id);
+
+  test("Event doesn't exist in delete and update category", () => {
+    eventsToUpdate.forEach((e) => {
+      if (eventsToDelete.includes(e.id)) {
+        throw new Error("An event was found in the delete and update category");
       }
     });
+  });
 
-    categorized.eventsToDelete.forEach((e) => {
-      if (!cancelledIds.includes(e.id)) {
+  test("Finds deleted/cancelled events", () => {
+    /*
+    const cancelledIds = cancelledEventsIds(gcalEventsExample)
+    // const cancelledIds = [];
+    // gcalEventsExample.forEach((e) => {
+    //   if (e.status === "cancelled") {
+    //     cancelledIds.push(e.id);
+    //   }
+    // });
+
+    eventsToDelete.forEach((e) => {
+      if (cancelledIds.includes(e.id)) {
         throw new Error("a cancelled event was missed");
       }
     });
+    */
   });
 });

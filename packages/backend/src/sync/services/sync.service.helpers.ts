@@ -1,12 +1,10 @@
 import { gSchema$Event, gSchema$Events } from "declarations";
-import { GaxiosResponse } from "gaxios";
-import { calendar_v3 } from "googleapis";
 
 import { BaseError } from "@common/errors/errors.base";
 import { Collections } from "@common/constants/collections";
 import { Logger } from "@common/logger/common.logger";
 import mongoService from "@common/services/mongo.service";
-import { cancelled } from "@common/services/gcal/gcal.helpers";
+import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
 import eventService from "@event/services/event.service";
 
 /* 
@@ -16,9 +14,11 @@ Helpers
 const logger = Logger("app:sync.service.helpers");
 
 export const categorizeGcalEvents = (events: gSchema$Event[]) => {
-  //todo turn into array of geventids
-  const toDelete = events.filter(cancelled);
-  const toUpdate = ["events - those to delete"];
+  const toDelete = cancelledEventsIds(events);
+
+  // assume that everything that shouldnt be deleted
+  // should be updated
+  const toUpdate = events.filter((e) => !toDelete.includes(e.id));
 
   const categorized = {
     eventsToDelete: toDelete,
