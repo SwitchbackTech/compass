@@ -39,8 +39,8 @@ class EventController {
   };
 
   deleteMany = async (
-    req: ReqBody<{ key: string; ids: string[] }>,
-    // req: ReqBody<Params$DeleteMany>,
+    // req: ReqBody<{ key: string; ids: string[] }>,
+    req: ReqBody<Params$DeleteMany>,
     res: Res
   ) => {
     const userId = res.locals.user.id;

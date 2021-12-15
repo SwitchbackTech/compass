@@ -28,7 +28,7 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   return categorized;
 };
 
-const updateEventsAfterGcalChange = async (
+export const updateEventsAfterGcalChange = async (
   userId: string,
   events: gSchema$Event[]
 ) => {

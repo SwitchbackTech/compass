@@ -21,10 +21,12 @@ import {
 } from "@common/constants/backend.constants";
 import { GcalMapper } from "@common/services/gcal/map.gcal";
 import eventService from "@event/services/event.service";
+import { Params$DeleteMany, Result$DeleteMany } from "@core/types/event.types";
 
 import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
 import {
   categorizeGcalEvents,
+  updateEventsAfterGcalChange,
   updateStateAndResourceId,
 } from "./sync.service.helpers";
 
@@ -89,14 +91,19 @@ class SyncService {
             updatedEvents.data.items
           );
 
-          const deleteResult = await eventService.deleteMany(eventsToDelete);
-          // - deleteMany $in gidarray
+          if (eventsToDelete.length > 0) {
+            logger.debug(`Found ${eventsToDelete.length} events to delete`);
+            const deleteParams: Params$DeleteMany = {
+              key: "gEventId",
+              ids: eventsToDelete,
+            };
+            const deleteResult: Result$DeleteMany =
+              await eventService.deleteMany(oauth.user, deleteParams);
+            logger.debug(`Delete result: ${deleteResult}`);
+          }
 
           // - prep events to update and update
-          const cEvents = GcalMapper.toCompass(
-            oauth.user,
-            updatedEvents.data.items
-          );
+          const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
           const updateResult = await updateEventsAfterGcalChange(
             oauth.user,
             cEvents
