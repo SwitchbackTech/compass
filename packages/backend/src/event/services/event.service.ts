@@ -131,7 +131,7 @@ class EventService {
   async deleteMany(
     userId: string,
     params: Params$DeleteMany
-  ): Promise<Result$DeleteMany | BaseError> {
+  ): Promise<Result$DeleteMany> {
     const errors = [];
     try {
       const response = await mongoService.db
@@ -147,7 +147,7 @@ class EventService {
       return result;
     } catch (e) {
       logger.error(e);
-      return new BaseError("DeleteMany Failed", e, 500, true);
+      throw new BaseError("DeleteMany Failed", e, 500, true);
     }
   }
 

@@ -108,13 +108,15 @@ class SyncService {
             logger.debug(`Delete result: ${JSON.stringify(deleteResult)}`);
           }
 
-          // - prep events to update and update
-          const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
-          const updateResult = await updateEventsAfterGcalChange(
-            oauth.user,
-            cEvents
-          );
-          logger.debug(JSON.stringify(updateResult));
+          if (eventsToUpdate.length > 0) {
+            // - prep events to update and update
+            const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
+            const updateResult = await updateEventsAfterGcalChange(
+              oauth.user,
+              cEvents
+            );
+            // logger.debug(JSON.stringify(updateResult));
+          }
         }
         /*
 

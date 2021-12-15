@@ -55,12 +55,13 @@ export const updateEventsAfterGcalChange = async (
           { $set: event },
           { upsert: true }
         );
-      // logger.debug(`Updated Event with gEventId => ${JSON.stringify(event.gEventId}`);
     });
-    const gEventIds = events.filter((e: Event) => e.gEventId);
-    return `Tried updating/creating events with these gEventIds: ${JSON.stringify(
+    const gEventIds = events.map((e: Event) => e.gEventId);
+    logger.debug(
+      "Tried updating/creating events with these gEventIds:",
       gEventIds
-    )}`;
+    );
+    return "it worked i think";
   } catch (e) {
     logger.error(e);
     return new BaseError(
