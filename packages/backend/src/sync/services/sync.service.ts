@@ -164,7 +164,7 @@ class SyncService {
         */
       }
 
-      logger.debug(syncResult);
+      logger.debug(JSON.stringify(syncResult, null, 2));
       return syncResult;
     } catch (e) {
       logger.error(e);
