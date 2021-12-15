@@ -78,8 +78,10 @@ class SyncService {
             calendarId: GCAL_PRIMARY, // todo revert back to actual id?
             syncToken: oauth.tokens.nextSyncToken,
           });
-          logger.debug(`found ${updatedEvents.data.items.length} events:`);
-          logger.debug(JSON.stringify(updatedEvents.data.items));
+          logger.debug(
+            `found ${updatedEvents.data.items.length} events. Full response:`
+          );
+          logger.debug(JSON.stringify(updatedEvents.data));
 
           await updateNextSyncToken(
             calendarId,
