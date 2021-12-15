@@ -40,6 +40,17 @@ class SyncService {
     expiration: number
   ): Promise<SyncResult$Gcal | BaseError> {
     try {
+      const syncResult = {
+        foo: {
+          syncToken: undefined,
+          deleted: undefined,
+          updated: undefined,
+          calendarId: calendarId,
+          resourceId: resourceId,
+          resourceState: resourceState,
+          expiration: expiration,
+        },
+      };
       // A channel was setup successfully to listen for changes //
       if (resourceState === "sync") {
         //TODO error handle
@@ -78,15 +89,14 @@ class SyncService {
             calendarId: GCAL_PRIMARY, // todo revert back to actual id?
             syncToken: oauth.tokens.nextSyncToken,
           });
-          logger.debug(
-            `found ${updatedEvents.data.items.length} events. Full response:`
-          );
-          logger.debug(JSON.stringify(updatedEvents.data));
+          logger.debug(`found ${updatedEvents.data.items.length} events:`);
+          logger.debug(JSON.stringify(updatedEvents.data.items));
 
-          await updateNextSyncToken(
+          const syncTokenUpdateResult = await updateNextSyncToken(
             oauth.user,
             updatedEvents.data.nextSyncToken
           );
+          syncResult.foo.syncToken = syncTokenUpdateResult;
 
           // Sync the changes to our DB //
           const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
@@ -105,7 +115,8 @@ class SyncService {
               oauth.user,
               deleteParams
             );
-            logger.debug(`Delete result: ${JSON.stringify(deleteResult)}`);
+            // logger.debug(`Delete result: ${JSON.stringify(deleteResult)}`);
+            syncResult.foo.deleted = deleteResult;
           }
 
           if (eventsToUpdate.length > 0) {
@@ -115,7 +126,7 @@ class SyncService {
               oauth.user,
               cEvents
             );
-            // logger.debug(JSON.stringify(updateResult));
+            syncResult.foo.updated = updateResult;
           }
         }
         /*
@@ -153,16 +164,8 @@ class SyncService {
         */
       }
 
-      const result = {
-        foo: {
-          calendarId: calendarId,
-          resourceId: resourceId,
-          resourceState: resourceState,
-          expiration: expiration,
-        },
-      };
-
-      return result;
+      logger.debug(syncResult);
+      return syncResult;
     } catch (e) {
       logger.error(e);
       return new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, true);
