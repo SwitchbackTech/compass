@@ -1,20 +1,18 @@
 /* eslint-disable @typescript-eslint/no-namespace */
+import { gSchema$Event } from "declarations";
+
+import { BaseError } from "@common/errors/errors.base";
 import { Event, Event$NoId } from "@compass/core/src/types/event.types";
 
-import { gSchema$Event } from "../../../declarations";
-import { BaseError } from "../errors/errors.base";
+import { notCancelled } from "./gcal.helpers";
 
 export namespace GcalMapper {
-  const notCancelled = (e: gSchema$Event) => {
-    return e.status && e.status !== "cancelled";
-  };
-
   export const toCompass = (
     userId: string,
     events: gSchema$Event[]
   ): Event[] | Event$NoId[] => {
     const mapped = events
-      .filter(notCancelled) //todo dont remove this for sync updates
+      .filter(notCancelled)
       .map((e: gSchema$Event) => _toCompass(userId, e));
 
     return mapped;

@@ -21,7 +21,6 @@
     "esModuleInterop": true,
     "inlineSourceMap": true,
     "baseUrl": ".", 
-    // "moduleResolution": "node", //testing
     "paths": {
       "@*": ["src/*"],
       "@core/*": ["../core/src/*"]

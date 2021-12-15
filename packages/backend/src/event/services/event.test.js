@@ -1,5 +1,6 @@
+import { GcalMapper } from "@common/services/gcal/map.gcal";
+
 import { gcalEvents } from "./test.gcal.data";
-import { GcalMapper } from "../../common/helpers/map.gcal";
 
 describe("Map: GCal -> CCal", () => {
   test("skips cancelled events", () => {

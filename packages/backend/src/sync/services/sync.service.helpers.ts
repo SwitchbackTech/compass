@@ -1,9 +1,12 @@
-import { gSchema$Event } from "declarations";
+import { gSchema$Event, gSchema$Events } from "declarations";
+import { GaxiosResponse } from "gaxios";
+import { calendar_v3 } from "googleapis";
 
 import { BaseError } from "@common/errors/errors.base";
 import { Collections } from "@common/constants/collections";
 import { Logger } from "@common/logger/common.logger";
 import mongoService from "@common/services/mongo.service";
+import { cancelled } from "@common/services/gcal/gcal.helpers";
 import eventService from "@event/services/event.service";
 
 /* 
@@ -12,11 +15,16 @@ Helpers
 
 const logger = Logger("app:sync.service.helpers");
 
-export const categorizeGcalEvents = (
-  userId: string,
-  events: gSchema$Event[]
-) => {
-  const categorized = { delete: [], update: [], ignore: [] };
+export const categorizeGcalEvents = (events: gSchema$Event[]) => {
+  //todo turn into array of geventids
+  const toDelete = events.filter(cancelled);
+  const toUpdate = ["events - those to delete"];
+
+  const categorized = {
+    eventsToDelete: toDelete,
+    eventsToUpdate: toUpdate,
+    ignore: [],
+  };
   return categorized;
 };
 
@@ -80,7 +88,7 @@ const updateEventsAfterGcalChange = async (
   }
 };
 
-const updateStateAndResourceId = async (
+export const updateStateAndResourceId = async (
   calendarId: string,
   resourceId: string
 ) => {

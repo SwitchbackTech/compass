@@ -8,10 +8,10 @@ import { Event$NoId, Event, Query$Event } from "@core/types/event.types";
 import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
 import { Collections } from "@common/constants/collections";
-import gcalService from "@common/services/gcal.service";
+import gcalService from "@common/services/gcal/gcal.service";
 import { getGcal } from "@auth/services/google.auth.service";
 import { yearsAgo } from "@common/helpers/common.helpers";
-import { GcalMapper } from "@common/helpers/map.gcal";
+import { GcalMapper } from "@common/services/gcal/map.gcal";
 
 import {
   gCalendar,

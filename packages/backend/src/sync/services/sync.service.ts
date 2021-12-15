@@ -4,11 +4,12 @@ import { gParamsEventsList } from "declarations";
 
 import { SyncResult$Gcal } from "@core/types/sync.types";
 import { OAuthDTO } from "@core/types/auth.types";
-import GoogleOauthService, {
+import {
   getGcal,
+  updateNextSyncToken,
 } from "@auth/services/google.auth.service";
 import { Collections } from "@common/constants/collections";
-import gcalService from "@common/services/gcal.service";
+import gcalService from "@common/services/gcal/gcal.service";
 import mongoService from "@common/services/mongo.service";
 import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
@@ -18,9 +19,13 @@ import {
   GCAL_NOTIFICATION_URL,
   GCAL_PRIMARY,
 } from "@common/constants/backend.constants";
-import { GcalMapper } from "@common/helpers/map.gcal";
+import { GcalMapper } from "@common/services/gcal/map.gcal";
 
 import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
+import {
+  categorizeGcalEvents,
+  updateStateAndResourceId,
+} from "./sync.service.helpers";
 
 const logger = Logger("app:sync.service");
 
@@ -79,6 +84,16 @@ class SyncService {
           );
 
           // Sync the changes to our DB //
+          const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
+            updatedEvents.data.items
+          );
+          //todo turn into array of geventids
+
+          // - find events to delete
+          // - delete events
+          // - deleteMany $in gidarray
+
+          // - find events to update
           const cEvents = GcalMapper.toCompass(
             oauth.user,
             updatedEvents.data.items
