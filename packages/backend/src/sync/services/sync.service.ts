@@ -84,7 +84,7 @@ class SyncService {
           logger.debug(JSON.stringify(updatedEvents.data));
 
           await updateNextSyncToken(
-            calendarId,
+            oauth.user,
             updatedEvents.data.nextSyncToken
           );
 
