@@ -29,9 +29,10 @@ class SyncService {
         init: undefined,
         sync: undefined,
       };
-      // A new channel was successfully create (we can expect to start receiving notifications for it)
       if (params.resourceState === "sync") {
-        //TODO error handle
+        logger.info(
+          "A new notification channel was successfully created. Expect to receive notifications from Gcal upon changes"
+        );
         const updateIdsResult = updateStateAndResourceId(
           params.calendarId,
           params.resourceId

@@ -1,19 +1,19 @@
 import { gSchema$Event, gSchema$Events } from "declarations";
-import { param } from "express-validator";
 
+import { OAuthDTO } from "@core/types/auth.types";
 import { Event, Params$DeleteMany } from "@core/types/event.types";
+import { SyncParams$Gcal } from "@core/types/sync.types";
 import { BaseError } from "@common/errors/errors.base";
 import { Collections } from "@common/constants/collections";
 import { Logger } from "@common/logger/common.logger";
 import mongoService from "@common/services/mongo.service";
 import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
-import { OAuthDTO } from "@core/types/auth.types";
 import { getGcal } from "@auth/services/google.auth.service";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
 import gcalService from "@common/services/gcal/gcal.service";
 import { GcalMapper } from "@common/services/gcal/map.gcal";
 import eventService from "@event/services/event.service";
-import { SyncParams$Gcal } from "@core/types/sync.types";
+import { Status } from "@common/errors/status.codes";
 
 const logger = Logger("app:sync.helpers");
 
@@ -39,20 +39,36 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
     deleted: undefined,
   };
   // use calendarId to find the compass user
-  const oauth = await mongoService.db
+  const oauth: OAuthDTO = await mongoService.db
     .collection(Collections.OAUTH)
     .findOne({ resourceId: params.resourceId });
 
-  //todo validate oauth response
+  return new BaseError(
+    "Sync Failed",
+    `Calendar id and oauth state didnt match. calendarId: ${params.calendarId}
+    oauth.state: ${oauth.state}`,
+    Status.INTERNAL_SERVER,
+    false
+  );
+
+  //TODO move to validation func
+  if (oauth.state !== params.calendarId) {
+    return new BaseError(
+      "Sync Failed",
+      `Calendar id and oauth state didnt match. calendarId: ${params.calendarId}
+    oauth.state: ${oauth.state}`,
+      Status.INTERNAL_SERVER,
+      false
+    );
+  }
 
   const gcal = await getGcal(oauth.user);
 
   if (oauth && oauth.state == params.calendarId) {
-    logger.debug("Finding new events");
+    logger.debug("Finding changes");
 
     // Fetch the changes to events //
-    // Note: will potentially need to handle pageToken in case a lot of new events
-    // changed
+    // TODO: handle pageToken in case a lot of new events changed
 
     const updatedEvents = await gcalService.getEvents(gcal, {
       calendarId: GCAL_PRIMARY, // todo revert back to actual id?
