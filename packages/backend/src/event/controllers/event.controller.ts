@@ -1,9 +1,7 @@
 import express, { Request } from "express";
 
 import { ReqBody, Res } from "@compass/core/src/types/express.types";
-import { ImportResult$GCal } from "@compass/core/src/types/sync.types";
 import { OAuthDTO } from "@compass/core/src/types/auth.types";
-import gcalService from "@common/services/gcal.service";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
 import { Event$NoId, Params$DeleteMany } from "@core/types/event.types";
 import { Collections } from "@common/constants/collections";

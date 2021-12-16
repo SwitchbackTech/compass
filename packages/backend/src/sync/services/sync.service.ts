@@ -38,21 +38,23 @@ class SyncService {
     resourceId: string,
     resourceState: string,
     expiration: number
-  ): Promise<SyncResult$Gcal | BaseError> {
+  ): Promise<SyncResult$Gcal> {
     try {
       const syncResult = {
-        foo: {
-          syncToken: undefined,
-          deleted: undefined,
-          updated: undefined,
+        request: {
           calendarId: calendarId,
           resourceId: resourceId,
           resourceState: resourceState,
           expiration: expiration,
         },
+        operation: undefined,
+        syncToken: undefined,
+        updated: undefined,
+        deleted: undefined,
       };
       // A channel was setup successfully to listen for changes //
       if (resourceState === "sync") {
+        syncResult.operation = "sync";
         //TODO error handle
         const updateIdsResult = updateStateAndResourceId(
           calendarId,
@@ -96,7 +98,7 @@ class SyncService {
             oauth.user,
             updatedEvents.data.nextSyncToken
           );
-          syncResult.foo.syncToken = syncTokenUpdateResult;
+          syncResult.syncToken = syncTokenUpdateResult;
 
           // Sync the changes to our DB //
           const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
@@ -115,8 +117,7 @@ class SyncService {
               oauth.user,
               deleteParams
             );
-            // logger.debug(`Delete result: ${JSON.stringify(deleteResult)}`);
-            syncResult.foo.deleted = deleteResult;
+            syncResult.deleted = deleteResult;
           }
 
           if (eventsToUpdate.length > 0) {
@@ -126,7 +127,7 @@ class SyncService {
               oauth.user,
               cEvents
             );
-            syncResult.foo.updated = updateResult;
+            syncResult.updated = updateResult;
           }
         }
         /*
@@ -134,6 +135,7 @@ class SyncService {
         
         // If `oauth.state` does not match, it means the channel has expired and and we need to `stop` listening to this channel //
         else {
+        syncResult.operation = "change/stop watch";
           //TODO error-handle response
           await gcalService.stopWatching(
             "gcalInstance",
@@ -165,10 +167,11 @@ class SyncService {
       }
 
       logger.debug(JSON.stringify(syncResult, null, 2));
+      throw new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, true);
       return syncResult;
     } catch (e) {
       logger.error(e);
-      return new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, true);
+      throw new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, true);
     }
   }
 

@@ -5,7 +5,11 @@ export interface ImportResult$GCal {
 }
 
 export interface SyncResult$Gcal {
-   foo: any; 
+   request: object;
+   operation: "sync" | "exists";
+   syncToken?: object;
+   updated?: object;
+   deleted?: object
 }
 
 export interface Body$Watch$Stop {
