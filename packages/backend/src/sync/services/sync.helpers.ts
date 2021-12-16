@@ -79,6 +79,7 @@ const syncUpdatedEventsToCompass = async (
             { $set: event },
             { upsert: true }
           );
+        logger.debug("updateResult:", updateResult);
       });
 
       return "it worked maybe";
