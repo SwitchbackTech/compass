@@ -1,4 +1,4 @@
-import { gSchema$Event, gSchema$Events } from "declarations";
+import { gSchema$Event } from "declarations";
 
 import { OAuthDTO } from "@core/types/auth.types";
 import { Event, Params$DeleteMany } from "@core/types/event.types";
@@ -32,6 +32,68 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   return categorized;
 };
 
+const syncDeletedEventsToCompass = async (
+  userId: string,
+  eventsToDelete: string[]
+) => {
+  logger.debug(
+    `Found ${eventsToDelete.length} events to delete:`,
+    eventsToDelete
+  );
+  const deleteParams: Params$DeleteMany = {
+    key: "gEventId",
+    ids: eventsToDelete,
+  };
+  const deleteResult = await eventService.deleteMany(userId, deleteParams);
+  return deleteResult;
+};
+
+const syncUpdatedEventsToCompass = async (
+  userId: string,
+  eventsToUpdate: gSchema$Event[]
+) => {
+  const cEvents = GcalMapper.toCompass(userId, eventsToUpdate);
+  {
+    const gEventIds = cEvents.map((e: Event) => e.gEventId);
+    logger.debug(
+      "Tried updating/creating events with these gEventIds:",
+      gEventIds
+    );
+    try {
+      /*
+      TODO change to
+        updateMany(upsert: true, eventsToUpdate)
+        ?- map the gEventIds before hand and push onto a [] for all updates (?)
+        - creates doc if none match already
+    */
+      cEvents.map(async (event: Event) => {
+        //  TODO validate
+
+        //  finds and updates the event, by using gcal id
+        // (cuz won't know ccal id when it comes from google)
+        // if the event isnt found, its created
+        const updateResult = await mongoService.db
+          .collection(Collections.EVENT)
+          .updateOne(
+            { gEventId: event.gEventId, user: userId },
+            { $set: event },
+            { upsert: true }
+          );
+      });
+
+      return "it worked maybe";
+    } catch (e) {
+      logger.error(e);
+      return new BaseError(
+        "Updating changes from GCal -> CCal Failed",
+        e,
+        500,
+        true
+      );
+    }
+  }
+};
+
 export const syncUpdates = async (params: SyncParams$Gcal) => {
   const syncResult = {
     syncToken: undefined,
@@ -43,14 +105,6 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
     .collection(Collections.OAUTH)
     .findOne({ resourceId: params.resourceId });
 
-  throw new BaseError(
-    "Sync Failed",
-    `Calendar id and oauth state didnt match. calendarId: ${params.calendarId}
-    oauth.state: ${oauth.state}`,
-    Status.INTERNAL_SERVER,
-    false
-  );
-
   //TODO move to validation func
   if (oauth.state !== params.calendarId) {
     return new BaseError(
@@ -58,105 +112,42 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
       `Calendar id and oauth state didnt match. calendarId: ${params.calendarId}
     oauth.state: ${oauth.state}`,
       Status.INTERNAL_SERVER,
-      false
+      false // this isnt currently stopping the program like expected. not sure why
     );
   }
 
+  // Fetch the changes to events //
+  // TODO: handle pageToken in case a lot of new events changed
   const gcal = await getGcal(oauth.user);
 
-  if (oauth && oauth.state == params.calendarId) {
-    logger.debug("Finding changes");
+  const updatedEvents = await gcalService.getEvents(gcal, {
+    calendarId: GCAL_PRIMARY, // todo revert back to actual id?
+    syncToken: oauth.tokens.nextSyncToken,
+  });
+  logger.debug(`found ${updatedEvents.data.items.length} events:`);
+  logger.debug(JSON.stringify(updatedEvents.data.items));
 
-    // Fetch the changes to events //
-    // TODO: handle pageToken in case a lot of new events changed
+  // Save the updated sync token for next time
+  const syncTokenUpdateResult = await updateNextSyncToken(
+    oauth.user,
+    updatedEvents.data.nextSyncToken
+  );
+  syncResult.syncToken = syncTokenUpdateResult;
 
-    const updatedEvents = await gcalService.getEvents(gcal, {
-      calendarId: GCAL_PRIMARY, // todo revert back to actual id?
-      syncToken: oauth.tokens.nextSyncToken,
-    });
-    logger.debug(`found ${updatedEvents.data.items.length} events:`);
-    logger.debug(JSON.stringify(updatedEvents.data.items));
+  // Update Compass' DB
+  const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
+    updatedEvents.data.items
+  );
 
-    const syncTokenUpdateResult = await updateNextSyncToken(
-      oauth.user,
-      updatedEvents.data.nextSyncToken
-    );
-    syncResult.syncToken = syncTokenUpdateResult;
-
-    // Sync the changes to our DB //
-    const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
-      updatedEvents.data.items
-    );
-
-    if (eventsToDelete.length > 0) {
-      logger.debug(
-        `Found ${eventsToDelete.length} events to delete: ${eventsToDelete}`
-      );
-      const deleteParams: Params$DeleteMany = {
-        key: "gEventId",
-        ids: eventsToDelete,
-      };
-      const deleteResult = await eventService.deleteMany(
-        oauth.user,
-        deleteParams
-      );
-      syncResult.deleted = deleteResult;
-    }
-
-    if (eventsToUpdate.length > 0) {
-      const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
-      const updateResult = await updateEventsAfterGcalChange(
-        oauth.user,
-        cEvents
-      );
-      syncResult.updated = updateResult;
-    }
+  if (eventsToDelete.length > 0) {
+    syncResult.deleted = syncDeletedEventsToCompass(oauth.user, eventsToDelete);
   }
+
+  if (eventsToUpdate.length > 0) {
+    syncResult.updated = syncUpdatedEventsToCompass(oauth.user, eventsToUpdate);
+  }
+
   return syncResult;
-};
-
-export const updateEventsAfterGcalChange = async (
-  userId: string,
-  events: gSchema$Event[]
-) => {
-  /*
-    TODO change to
-      updateMany(upsert: true, eventsToUpdate)
-      - creates doc if none match already
-      //TODO try getting this to work in one `updateMany` query
-      // - map the gEventIds before hand and push onto a [] for all updates (?)
-      //    - could be risky
-  */
-  try {
-    events.map(async (event: Event) => {
-      //  TODO validate
-
-      //  finds and updates the event, by using gcal id
-      // (cuz won't know ccal id when it comes from google)
-      // if the event isnt found, its created
-      const updateResult = await mongoService.db
-        .collection(Collections.EVENT)
-        .updateOne(
-          { gEventId: event.gEventId, user: userId },
-          { $set: event },
-          { upsert: true }
-        );
-    });
-    const gEventIds = events.map((e: Event) => e.gEventId);
-    logger.debug(
-      "Tried updating/creating events with these gEventIds:",
-      gEventIds
-    );
-    return "it worked i think";
-  } catch (e) {
-    logger.error(e);
-    return new BaseError(
-      "Updating changes from GCal -> CCal Failed",
-      e,
-      500,
-      true
-    );
-  }
 };
 
 export const updateStateAndResourceId = async (

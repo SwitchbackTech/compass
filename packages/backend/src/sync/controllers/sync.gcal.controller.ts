@@ -29,7 +29,7 @@ class GcalSyncController {
         expiration: req.headers["x-goog-channel-expiration"],
       };
 
-      const notifResponse = await syncService.syncGcalEvents(params);
+      const notifResponse = await syncService.syncGcalChanges(params);
 
       res.promise(Promise.resolve(notifResponse));
     }

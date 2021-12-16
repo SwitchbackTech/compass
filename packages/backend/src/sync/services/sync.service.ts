@@ -20,7 +20,7 @@ import { syncUpdates, updateStateAndResourceId } from "./sync.helpers";
 const logger = Logger("app:sync.service");
 
 class SyncService {
-  async syncGcalEvents(
+  async syncGcalChanges(
     params: SyncParams$Gcal
   ): Promise<SyncResult$Gcal | BaseError> {
     try {
