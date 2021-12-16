@@ -148,7 +148,7 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
     bulkArr.push({
       deleteMany: {
         user: oauth.user,
-        ["gEventId"]: { $in: eventsToDelete },
+        gEventId: { $in: eventsToDelete },
       },
     });
   }
