@@ -217,7 +217,9 @@ const updateNextSyncToken = async (
       }
     );
 
-  if (result.ok !== 1 && result.lastErrorObject.updatedExisting !== true) {
+  logger.debug("result.ok:", result.ok);
+  logger.debug("result.lastErrorObject:", result.lastErrorObject);
+  if (result.ok !== 1 || result.lastErrorObject.updatedExisting !== true) {
     return { status: `syncToken updated to: ${nextSyncToken}` };
   } else {
     logger.error("nextSyncToken not updated");
