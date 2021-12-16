@@ -123,7 +123,9 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
     .collection(Collections.OAUTH)
     .findOne({ resourceId: params.resourceId });
 
-  //TODO move to validation func
+  //TODO create validation function and move there
+  // the calendarId created during watch channel setup used the oauth.state,
+  //  so these should be the same.
   if (oauth.state !== params.calendarId) {
     return new BaseError(
       "Sync Failed",
@@ -139,15 +141,16 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
   const gcal = await getGcal(oauth.user);
 
   const updatedEvents = await gcalService.getEvents(gcal, {
-    calendarId: GCAL_PRIMARY, // todo revert back to actual id?
+    calendarId: params.calendarId,
     syncToken: oauth.tokens.nextSyncToken,
   });
   logger.debug(`found ${updatedEvents.data.items.length} events:`);
-  logger.debug(JSON.stringify(updatedEvents.data.items));
+  const eventNames = updatedEvents.data.items.map((e) => e.summary);
+  logger.debug(JSON.stringify(eventNames));
 
   // Save the updated sync token for next time
   const syncTokenUpdateResult = await updateNextSyncToken(
-    oauth.user,
+    oauth.state,
     updatedEvents.data.nextSyncToken
   );
   syncResult.syncToken = syncTokenUpdateResult;
@@ -196,14 +199,14 @@ export const updateStateAndResourceId = async (
 };
 
 const updateNextSyncToken = async (
-  calendarId: string,
+  oauthState: string,
   nextSyncToken: string
 ) => {
   logger.debug(`Updating nextSyncToken to: ${nextSyncToken}`);
   const result = await mongoService.db
     .collection(Collections.OAUTH)
     .findOneAndUpdate(
-      { state: calendarId },
+      { state: oauthState },
       {
         $set: {
           "tokens.nextSyncToken": nextSyncToken,
@@ -211,8 +214,8 @@ const updateNextSyncToken = async (
         },
       }
     );
-  if (result.ok !== 1) {
-    logger.debug("nextSyncToken not updated", result.lastErrorObject);
+  if (result.ok !== 1 || result.lastErrorObject) {
+    logger.debug("nextSyncToken not updated. error:", result.lastErrorObject);
   }
-  return { value: result.value, anyErr: result.lastErrorObject, ok: result.ok };
+  return { value: result.value, errors: result.lastErrorObject };
 };
