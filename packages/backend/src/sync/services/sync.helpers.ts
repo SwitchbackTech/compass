@@ -143,23 +143,28 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
   );
 
   const bulkArr = [];
-  bulkArr.push({
-    deleteMany: {
-      user: oauth.user,
-      ["gEventId"]: { $in: eventsToDelete },
-    },
-  });
 
-  const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
-  cEvents.forEach((e: Event) => {
+  if (eventsToDelete.length > 0) {
     bulkArr.push({
-      updateOne: {
-        filter: { gEventId: e.gEventId, user: oauth.user },
-        update: { $set: e },
-        options: { upsert: true },
+      deleteMany: {
+        user: oauth.user,
+        ["gEventId"]: { $in: eventsToDelete },
       },
     });
-  });
+  }
+  if (eventsToUpdate.length > 0) {
+    const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
+    cEvents.forEach((e: Event) => {
+      bulkArr.push({
+        updateOne: {
+          filter: { gEventId: e.gEventId, user: oauth.user },
+          update: { $set: e },
+          options: { upsert: true },
+        },
+      });
+    });
+  }
+
   const res = await mongoService.db
     .collection(Collections.EVENT)
     .bulkWrite(bulkArr);
