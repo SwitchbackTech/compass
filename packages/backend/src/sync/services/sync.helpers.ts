@@ -27,7 +27,6 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   const categorized = {
     eventsToDelete: toDelete,
     eventsToUpdate: toUpdate,
-    ignore: [],
   };
   return categorized;
 };
@@ -59,7 +58,12 @@ const syncUpdatedEventsToCompass = async (
       "Tried updating/creating events with these gEventIds:",
       gEventIds
     );
+
     try {
+      const problemEvents = [];
+      const updated = [];
+      const created = [];
+
       /*
       TODO change to
         updateMany(upsert: true, eventsToUpdate)
@@ -79,10 +83,23 @@ const syncUpdatedEventsToCompass = async (
             { $set: event },
             { upsert: true }
           );
-        logger.debug("updateResult:", updateResult);
+
+        // parse
+        if (updateResult.upsertedCount > 0) {
+          created.push(updateResult.upsertedId);
+        } else {
+          updated.push(event._id);
+        }
+
+        if (
+          updateResult.acknowledged !== true ||
+          updateResult.matchedCount !== 1
+        ) {
+          problemEvents.push(updateResult);
+        }
       });
 
-      return "it worked maybe";
+      return { updated: updated, created: created, problems: problemEvents };
     } catch (e) {
       logger.error(e);
       return new BaseError(
