@@ -1,7 +1,11 @@
 import express from "express";
 
 import { Logger } from "@common/logger/common.logger";
-import { Body$Watch$Start, Body$Watch$Stop } from "@core/types/sync.types";
+import {
+  Body$Watch$Start,
+  Body$Watch$Stop,
+  SyncParams$Gcal,
+} from "@core/types/sync.types";
 import { ReqBody, Res } from "@core/types/express.types";
 import { getGcal } from "@auth/services/google.auth.service";
 
@@ -11,17 +15,15 @@ const logger = Logger("app:sync.gcal.controller");
 
 class GcalSyncController {
   handleNotification = async (req: express.Request, res: express.Response) => {
-    const calendarId = req.headers["x-goog-channel-id"];
-    const resourceId = req.headers["x-goog-resource-id"];
-    const resourceState = req.headers["x-goog-resource-state"];
-    const expiration = req.headers["x-goog-channel-expiration"];
+    const params: SyncParams$Gcal = {
+      calendarId: req.headers["x-goog-channel-id"],
+      resourceId: req.headers["x-goog-resource-id"],
+      resourceState: req.headers["x-goog-resource-state"],
+      expiration: req.headers["x-goog-channel-expiration"],
+    };
 
-    const notifResponse = await syncService.syncGcalEvents(
-      calendarId,
-      resourceId,
-      resourceState,
-      expiration
-    );
+    const notifResponse = await syncService.syncGcalEvents(params);
+
     res.promise(Promise.resolve(notifResponse));
   };
 

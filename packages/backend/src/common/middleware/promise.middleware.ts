@@ -1,5 +1,7 @@
 import express from "express";
 
+import { Res$Promise } from "@core/types/express.types";
+
 import { handleExpressError } from "../errors/handlers/error.express.handler";
 import { BaseError } from "../errors/errors.base";
 import { Logger } from "../logger/common.logger";
@@ -49,12 +51,14 @@ handle both sync and async errors
 */
   return (
     req: express.Request,
-    res: express.Response,
+    // res: express.Response,
+    res: Res$Promise,
     next: express.NextFunction
   ) => {
-    res.promise = (p) => {
+    // res.promise = (p) => {
+    res.promise = (p: Promise<unknown> | (() => any)) => {
       //function or promise
-      let promiseToResolve;
+      let promiseToResolve: Promise<unknown> | (() => any);
 
       if (p.then && p.catch) {
         promiseToResolve = p;

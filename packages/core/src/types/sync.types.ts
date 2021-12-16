@@ -6,10 +6,19 @@ export interface ImportResult$GCal {
 
 export interface SyncResult$Gcal {
    request: object;
-   operation: "sync" | "exists";
-   syncToken?: object;
-   updated?: object;
-   deleted?: object
+   init?: object;
+   sync?: {
+     syncToken?: object;
+     updated?: object;
+     deleted?: object
+   }
+}
+
+export interface SyncParams$Gcal {
+  calendarId: string; 
+  resourceId: string; 
+  resourceState: string;
+  expiration:  string; 
 }
 
 export interface Body$Watch$Stop {
