@@ -290,6 +290,17 @@ class EventService {
       return new BaseError("Update Failed", e, 500, true);
     }
   }
+  async updateMany(userId: string, events: Event[]) {
+    const updateResult = mongoService.db
+      .collection(Collections.EVENT)
+      .updateMany(
+        // { user: userId, _id: mongoService.objectId("cEvents.$[_id]") },
+        { user: "testUser1", gEventId: "events.$[gEventId]" },
+        { $set: events },
+        { upsert: true }
+      );
+    return updateResult;
+  }
 }
 
 export default new EventService();

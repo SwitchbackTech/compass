@@ -51,66 +51,75 @@ const syncUpdatedEventsToCompass = async (
   userId: string,
   eventsToUpdate: gSchema$Event[]
 ) => {
-  const cEvents = GcalMapper.toCompass(userId, eventsToUpdate);
-  {
+  try {
+    const cEvents = GcalMapper.toCompass(userId, eventsToUpdate);
     const gEventIds = cEvents.map((e: Event) => e.gEventId);
     logger.debug(
-      "Tried updating/creating events with these gEventIds:",
+      "Trying to update/create events with these gEventIds:",
       gEventIds
     );
 
-    try {
-      const problemEvents = [];
-      const updated = [];
-      const created = [];
-
-      /*
-      TODO change to
-        updateMany(upsert: true, eventsToUpdate)
-        ?- map the gEventIds before hand and push onto a [] for all updates (?)
-        - creates doc if none match already
-    */
-      cEvents.map(async (event: Event) => {
-        //  TODO validate
-
-        //  finds and updates the event, by using gcal id
-        // (cuz won't know ccal id when it comes from google)
-        // if the event isnt found, its created
-        const updateResult = await mongoService.db
-          .collection(Collections.EVENT)
-          .updateOne(
-            { gEventId: event.gEventId, user: userId },
-            { $set: event },
-            { upsert: true }
-          );
-
-        logger.debug("udpatedRes:", updateResult);
-
-        // parse
-        if (updateResult.upsertedCount > 0) {
-          created.push(updateResult.upsertedId);
-        } else {
-          updated.push(event._id);
-        }
-
-        if (
-          updateResult.acknowledged !== true ||
-          updateResult.matchedCount !== 1
-        ) {
-          problemEvents.push(updateResult);
-        }
-      });
-
-      return { updated: updated, created: created, problems: problemEvents };
-    } catch (e) {
-      logger.error(e);
-      return new BaseError(
-        "Updating changes from GCal -> CCal Failed",
-        e,
-        500,
-        true
+    /* insertMany - not working
+    const updateResult = mongoService.db
+      .collection(Collections.EVENT)
+      .updateMany(
+        { user: userId, _id: mongoService.objectId("cEvents.$[_id]") },
+        { $set: { test: "success" } },
+        { upsert: true }
       );
-    }
+    return updateResult;
+    */
+
+    /* old way - not getting statuses*/
+    // const problemEvents = [];
+    // const updated = [];
+    // const created = [];
+
+    const updatePromises = cEvents.map(async (event: Event) => {
+      //  TODO validate
+
+      //  finds and updates the event, by using gcal id
+      // (cuz won't know ccal id when it comes from google)
+      // if the event isnt found, its created
+      const updateResult = await mongoService.db
+        .collection(Collections.EVENT)
+        .updateOne(
+          { gEventId: event.gEventId, user: userId },
+          { $set: event },
+          { upsert: true }
+        );
+
+      return updateResult;
+      /*
+      logger.debug("udpatedRes:", updateResult);
+
+      // parse
+      if (updateResult.upsertedCount > 0) {
+        created.push(updateResult.upsertedId);
+      } else {
+        updated.push(event._id);
+      }
+
+      if (
+        updateResult.acknowledged !== true ||
+        updateResult.matchedCount !== 1
+      ) {
+        problemEvents.push(updateResult);
+      }
+      */
+    });
+    const allResults = await Promise.all(updatePromises);
+
+    return allResults;
+    // return { updated: updated, created: created, problems: problemEvents };
+  } catch (e) {
+    logger.error(e);
+    return new BaseError(
+      "Updating changes from GCal -> CCal Failed",
+      e,
+      500,
+      true
+    );
   }
 };
 

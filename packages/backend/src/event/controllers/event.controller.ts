@@ -110,6 +110,13 @@ class EventController {
     const response = await eventService.updateById(userId, eventId, event);
     res.promise(Promise.resolve(response));
   };
+
+  updateMany = async (req: ReqBody<Event[]>, res: Res) => {
+    const userId = res.locals.user.id;
+    const events = req.body;
+    const response = await eventService.updateMany(userId, events);
+    res.promise(Promise.resolve(response));
+  };
 }
 
 export default new EventController();
