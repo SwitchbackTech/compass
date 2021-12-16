@@ -43,7 +43,7 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
     .collection(Collections.OAUTH)
     .findOne({ resourceId: params.resourceId });
 
-  return new BaseError(
+  throw new BaseError(
     "Sync Failed",
     `Calendar id and oauth state didnt match. calendarId: ${params.calendarId}
     oauth.state: ${oauth.state}`,
