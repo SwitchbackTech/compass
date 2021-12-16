@@ -216,8 +216,11 @@ const updateNextSyncToken = async (
         },
       }
     );
-  if (result.ok !== 1 || result.lastErrorObject) {
-    logger.debug("nextSyncToken not updated. error:", result.lastErrorObject);
+
+  if (result.ok !== 1 && result.lastErrorObject.updatedExisting !== true) {
+    return { status: `syncToken updated to: ${nextSyncToken}` };
+  } else {
+    logger.error("nextSyncToken not updated");
+    return { status: "syncToken failed to update", debugResult: result };
   }
-  return { resultToParseBetter: result };
 };
