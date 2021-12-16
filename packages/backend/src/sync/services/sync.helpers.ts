@@ -145,7 +145,7 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
   const bulkArr = [];
   // might need to do [gEventId]
   bulkArr.push({
-    deleteMany: { user: oauth.user, gEventId: { $in: eventsToDelete } },
+    deleteMany: { user: oauth.user, ["gEventId"]: { $in: eventsToDelete } },
   });
 
   const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
