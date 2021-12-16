@@ -43,7 +43,9 @@ class SyncService {
       // There is new data to sync from GCal //
       else if (params.resourceState === "exists") {
         logger.debug(`Running sync for:
-              calendarId: ${params.calendarId},
+              calendarId /oauth.state: 
+                now: ${GCAL_PRIMARY} (hard-coded)
+                future: ${params.calendarId},
               resourceId: ${params.resourceId},
               resourceState: ${params.resourceState},
               expiration: ${params.expiration},
@@ -119,8 +121,8 @@ class SyncService {
     } catch (e) {
       if (e.code && e.code === 400) {
         return new BaseError(
-          "Start Watch Failed",
-          `We're already watching this channel: ${channelId}`,
+          "Start Watch Failed (Ignored?)",
+          `We're already watching this channel: ${channelId}. Not sure if the watch will still work`,
           Status.BAD_REQUEST,
           true
         );
