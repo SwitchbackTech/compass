@@ -140,12 +140,20 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
     updatedEvents.data.items
   );
 
+  // TODO - optimize by running delete and updates independently
+  // using Promise.all, as opposed to serially like here
   if (eventsToDelete.length > 0) {
-    syncResult.deleted = syncDeletedEventsToCompass(oauth.user, eventsToDelete);
+    syncResult.deleted = await syncDeletedEventsToCompass(
+      oauth.user,
+      eventsToDelete
+    );
   }
 
   if (eventsToUpdate.length > 0) {
-    syncResult.updated = syncUpdatedEventsToCompass(oauth.user, eventsToUpdate);
+    syncResult.updated = await syncUpdatedEventsToCompass(
+      oauth.user,
+      eventsToUpdate
+    );
   }
 
   return syncResult;
