@@ -92,83 +92,88 @@ const syncUpdatedEventsToCompass = async (
 
 export const syncUpdates = async (params: SyncParams$Gcal) => {
   //todo try-catch
+  try {
+    const syncResult = {
+      syncToken: undefined,
+      updated: undefined,
+      deleted: undefined,
+    };
+    const oauth: OAuthDTO = await mongoService.db
+      .collection(Collections.OAUTH)
+      .findOne({ resourceId: params.resourceId });
 
-  const syncResult = {
-    syncToken: undefined,
-    updated: undefined,
-    deleted: undefined,
-  };
-  const oauth: OAuthDTO = await mongoService.db
-    .collection(Collections.OAUTH)
-    .findOne({ resourceId: params.resourceId });
-
-  //TODO create validation function and move there
-  // the calendarId created during watch channel setup used the oauth.state,
-  //  so these should be the same.
-  if (oauth.state !== params.calendarId) {
-    return new BaseError(
-      "Sync Failed",
-      `Calendar id and oauth state didnt match. calendarId: ${params.calendarId}
+    //TODO create validation function and move there
+    // the calendarId created during watch channel setup used the oauth.state,
+    //  so these should be the same.
+    if (oauth.state !== params.calendarId) {
+      return new BaseError(
+        "Sync Failed",
+        `Calendar id and oauth state didnt match. calendarId: ${params.calendarId}
     oauth.state: ${oauth.state}`,
-      Status.INTERNAL_SERVER,
-      false // this isnt currently stopping the program like expected. not sure why
-    );
-  }
+        Status.INTERNAL_SERVER,
+        false // this isnt currently stopping the program like expected. not sure why
+      );
+    }
 
-  // Fetch the changes to events //
-  // TODO: handle pageToken in case a lot of new events changed
-  const gcal = await getGcal(oauth.user);
+    // Fetch the changes to events //
+    // TODO: handle pageToken in case a lot of new events changed
+    const gcal = await getGcal(oauth.user);
 
-  logger.debug("Fetching gcal events");
-  const updatedEvents = await gcalService.getEvents(gcal, {
-    // TODO use calendarId once supporting non-'primary' calendars
-    // calendarId: params.calendarId,
-    calendarId: GCAL_PRIMARY,
-    syncToken: oauth.tokens.nextSyncToken,
-  });
-  logger.debug(`Found ${updatedEvents.data.items.length} events:`);
-  const eventNames = updatedEvents.data.items.map((e) => e.summary);
-  logger.debug(JSON.stringify(eventNames));
-
-  // Save the updated sync token for next time
-  const syncTokenUpdateResult = await updateNextSyncToken(
-    oauth.state,
-    updatedEvents.data.nextSyncToken
-  );
-  syncResult.syncToken = syncTokenUpdateResult;
-
-  // Update Compass' DB
-  const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
-    updatedEvents.data.items
-  );
-
-  const bulkArr = [];
-
-  if (eventsToDelete.length > 0) {
-    bulkArr.push({
-      deleteMany: {
-        user: oauth.user,
-        gEventId: { $in: eventsToDelete },
-      },
+    logger.debug("Fetching gcal events");
+    const updatedEvents = await gcalService.getEvents(gcal, {
+      // TODO use calendarId once supporting non-'primary' calendars
+      // calendarId: params.calendarId,
+      calendarId: GCAL_PRIMARY,
+      syncToken: oauth.tokens.nextSyncToken,
     });
-  }
-  if (eventsToUpdate.length > 0) {
-    const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
-    cEvents.forEach((e: Event) => {
+    logger.debug(`Found ${updatedEvents.data.items.length} events:`);
+    const eventNames = updatedEvents.data.items.map((e) => e.summary);
+    logger.debug(JSON.stringify(eventNames));
+
+    // Save the updated sync token for next time
+    const syncTokenUpdateResult = await updateNextSyncToken(
+      oauth.state,
+      updatedEvents.data.nextSyncToken
+    );
+    syncResult.syncToken = syncTokenUpdateResult;
+
+    // Update Compass' DB
+    const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
+      updatedEvents.data.items
+    );
+
+    const bulkArr = [];
+
+    if (eventsToDelete.length > 0) {
       bulkArr.push({
-        updateOne: {
-          filter: { gEventId: e.gEventId, user: oauth.user },
-          update: { $set: e },
-          options: { upsert: true },
+        deleteMany: {
+          filter: {
+            user: oauth.user,
+            gEventId: { $in: eventsToDelete },
+          },
         },
       });
-    });
-  }
+    }
+    if (eventsToUpdate.length > 0) {
+      const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
+      cEvents.forEach((e: Event) => {
+        bulkArr.push({
+          updateOne: {
+            filter: { gEventId: e.gEventId, user: oauth.user },
+            update: { $set: e },
+            options: { upsert: true },
+          },
+        });
+      });
+    }
 
-  const res = await mongoService.db
-    .collection(Collections.EVENT)
-    .bulkWrite(bulkArr);
-  return res;
+    const res = await mongoService.db
+      .collection(Collections.EVENT)
+      .bulkWrite(bulkArr);
+    return res;
+  } catch (e) {
+    logger.error(`Errow while sycning\n`, e);
+  }
 
   /*
   if (eventsToDelete.length > 0) {
