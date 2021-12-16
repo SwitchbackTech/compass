@@ -58,19 +58,6 @@ const syncUpdatedEventsToCompass = async (
       "Trying to update/create events with these gEventIds:",
       gEventIds
     );
-
-    /* insertMany - not working
-    const updateResult = mongoService.db
-      .collection(Collections.EVENT)
-      .updateMany(
-        { user: userId, _id: mongoService.objectId("cEvents.$[_id]") },
-        { $set: { test: "success" } },
-        { upsert: true }
-      );
-    return updateResult;
-    */
-
-    /* old way - not getting statuses*/
     // const problemEvents = [];
     // const updated = [];
     // const created = [];
