@@ -33,7 +33,7 @@ class SyncService {
         logger.info(
           "A new notification channel was successfully created. Expect to receive notifications from Gcal upon changes"
         );
-        const updateIdsResult = updateStateAndResourceId(
+        const updateIdsResult = await updateStateAndResourceId(
           params.calendarId,
           params.resourceId
         );

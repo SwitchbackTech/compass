@@ -118,7 +118,6 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
     updated: undefined,
     deleted: undefined,
   };
-  // use calendarId to find the compass user
   const oauth: OAuthDTO = await mongoService.db
     .collection(Collections.OAUTH)
     .findOne({ resourceId: params.resourceId });
@@ -140,11 +139,14 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
   // TODO: handle pageToken in case a lot of new events changed
   const gcal = await getGcal(oauth.user);
 
+  logger.debug("Fetching gcal events");
   const updatedEvents = await gcalService.getEvents(gcal, {
-    calendarId: params.calendarId,
+    // TODO use calendarId once supporting non-'primary' calendars
+    // calendarId: params.calendarId,
+    calendarId: GCAL_PRIMARY,
     syncToken: oauth.tokens.nextSyncToken,
   });
-  logger.debug(`found ${updatedEvents.data.items.length} events:`);
+  logger.debug(`Found ${updatedEvents.data.items.length} events:`);
   const eventNames = updatedEvents.data.items.map((e) => e.summary);
   logger.debug(JSON.stringify(eventNames));
 
