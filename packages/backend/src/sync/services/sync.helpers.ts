@@ -205,7 +205,7 @@ const updateNextSyncToken = async (
   nextSyncToken: string
 ) => {
   logger.debug(`Updating nextSyncToken to: ${nextSyncToken}`);
-  const result: OAuthDTO = await mongoService.db
+  const result = await mongoService.db
     .collection(Collections.OAUTH)
     .findOneAndUpdate(
       { state: oauthState },
@@ -218,11 +218,9 @@ const updateNextSyncToken = async (
       { returnDocument: "after" }
     );
 
-  if (result.value.tokens.nextSyncToken === nextSyncToken) {
-    return {
-      status: `syncToken updated to: ${nextSyncToken}`,
-      debugResult: result,
-    };
+  const updatedOauth: OAuthDTO = result.value;
+  if (updatedOauth.tokens.nextSyncToken === nextSyncToken) {
+    return { status: `syncToken updated to: ${nextSyncToken}` };
   } else {
     logger.error("nextSyncToken not updated");
     return { status: "syncToken failed to update", debugResult: result };
