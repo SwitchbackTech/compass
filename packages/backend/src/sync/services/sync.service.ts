@@ -167,7 +167,12 @@ class SyncService {
       }
 
       logger.debug(JSON.stringify(syncResult, null, 2));
-      throw new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, true);
+      throw new BaseError(
+        "Sync Failed",
+        "testing",
+        Status.INTERNAL_SERVER,
+        true
+      );
       return syncResult;
     } catch (e) {
       logger.error(e);
