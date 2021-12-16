@@ -214,7 +214,8 @@ const updateNextSyncToken = async (
           "tokens.nextSyncToken": nextSyncToken,
           updatedAt: new Date().toISOString(),
         },
-      }
+      },
+      { returnDocument: "after" }
     );
 
   if (result.value.tokens.nextSyncToken === nextSyncToken) {
