@@ -84,6 +84,8 @@ const syncUpdatedEventsToCompass = async (
             { upsert: true }
           );
 
+        logger.debug("udpatedRes:", updateResult);
+
         // parse
         if (updateResult.upsertedCount > 0) {
           created.push(updateResult.upsertedId);
@@ -220,9 +222,9 @@ const updateNextSyncToken = async (
 
   const updatedOauth: OAuthDTO = result.value;
   if (updatedOauth.tokens.nextSyncToken === nextSyncToken) {
-    return { status: `syncToken updated to: ${nextSyncToken}` };
+    return { status: `updated to: ${nextSyncToken}` };
   } else {
     logger.error("nextSyncToken not updated");
-    return { status: "syncToken failed to update", debugResult: result };
+    return { status: "Failed to update", debugResult: result };
   }
 };
