@@ -58,9 +58,6 @@ const syncUpdatedEventsToCompass = async (
       "Trying to update/create events with these gEventIds:",
       gEventIds
     );
-    // const problemEvents = [];
-    // const updated = [];
-    // const created = [];
 
     const updatePromises = cEvents.map(async (event: Event) => {
       //  TODO validate
@@ -77,23 +74,6 @@ const syncUpdatedEventsToCompass = async (
         );
 
       return updateResult;
-      /*
-      logger.debug("udpatedRes:", updateResult);
-
-      // parse
-      if (updateResult.upsertedCount > 0) {
-        created.push(updateResult.upsertedId);
-      } else {
-        updated.push(event._id);
-      }
-
-      if (
-        updateResult.acknowledged !== true ||
-        updateResult.matchedCount !== 1
-      ) {
-        problemEvents.push(updateResult);
-      }
-      */
     });
     const allResults = await Promise.all(updatePromises);
 
@@ -111,6 +91,8 @@ const syncUpdatedEventsToCompass = async (
 };
 
 export const syncUpdates = async (params: SyncParams$Gcal) => {
+  //todo try-catch
+
   const syncResult = {
     syncToken: undefined,
     updated: undefined,
@@ -160,8 +142,28 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
     updatedEvents.data.items
   );
 
-  // TODO - optimize by running delete and updates independently
-  // using Promise.all, as opposed to serially like here
+  const bulkArr = [];
+  // might need to do [gEventId]
+  bulkArr.push({
+    deleteMany: { user: oauth.user, gEventId: { $in: eventsToDelete } },
+  });
+
+  const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
+  cEvents.forEach((e: Event) => {
+    bulkArr.push({
+      updateOne: {
+        filter: { gEventId: e.gEventId, user: oauth.user },
+        update: { $set: e },
+        options: { upsert: true },
+      },
+    });
+  });
+  const res = await mongoService.db
+    .collection(Collections.EVENT)
+    .bulkWrite(bulkArr);
+  return res;
+
+  /*
   if (eventsToDelete.length > 0) {
     syncResult.deleted = await syncDeletedEventsToCompass(
       oauth.user,
@@ -177,6 +179,7 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
   }
 
   return syncResult;
+  */
 };
 
 export const updateStateAndResourceId = async (
