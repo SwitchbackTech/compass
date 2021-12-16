@@ -1,7 +1,7 @@
 import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
 
 import { gcalEventsExample } from "./sync.test.data";
-import { categorizeGcalEvents } from "./sync.service.helpers";
+import { categorizeGcalEvents } from "./sync.helpers";
 describe("Categorize GCal Updates", () => {
   const { eventsToDelete, eventsToUpdate } =
     categorizeGcalEvents(gcalEventsExample);

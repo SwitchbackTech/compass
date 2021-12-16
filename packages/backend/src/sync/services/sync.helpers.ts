@@ -188,5 +188,5 @@ const updateNextSyncToken = async (
   if (result.ok !== 1) {
     logger.debug("nextSyncToken not updated", result.lastErrorObject);
   }
-  return result;
+  return { value: result.value, anyErr: result.lastErrorObject, ok: result.ok };
 };
