@@ -1,3 +1,4 @@
+import { BulkWriteResult } from "mongodb";
 import { gSchema$Event } from "declarations";
 
 import { OAuthDTO } from "@core/types/auth.types";
@@ -90,8 +91,9 @@ const syncUpdatedEventsToCompass = async (
   }
 };
 
-export const syncUpdates = async (params: SyncParams$Gcal) => {
-  //todo try-catch
+export const syncUpdates = async (
+  params: SyncParams$Gcal
+): Promise<BulkWriteResult | BaseError> => {
   try {
     const syncResult = {
       syncToken: undefined,
@@ -119,16 +121,16 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
     // TODO: handle pageToken in case a lot of new events changed
     const gcal = await getGcal(oauth.user);
 
-    logger.debug("Fetching gcal events");
+    logger.debug("Fetching updated gcal events");
     const updatedEvents = await gcalService.getEvents(gcal, {
       // TODO use calendarId once supporting non-'primary' calendars
       // calendarId: params.calendarId,
       calendarId: GCAL_PRIMARY,
       syncToken: oauth.tokens.nextSyncToken,
     });
-    logger.debug(`Found ${updatedEvents.data.items.length} events:`);
-    const eventNames = updatedEvents.data.items.map((e) => e.summary);
-    logger.debug(JSON.stringify(eventNames));
+    logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
+    // const eventNames = updatedEvents.data.items.map((e) => e.summary);
+    // logger.debug(JSON.stringify(eventNames));
 
     // Save the updated sync token for next time
     const syncTokenUpdateResult = await updateNextSyncToken(
@@ -142,11 +144,10 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
       updatedEvents.data.items
     );
 
-    const bulkArr = [];
+    const bulkOperations = [];
 
-    logger.debug("eventsToDelete:", eventsToDelete);
     if (eventsToDelete.length > 0) {
-      bulkArr.push({
+      bulkOperations.push({
         deleteMany: {
           filter: {
             user: oauth.user,
@@ -155,27 +156,28 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
         },
       });
     }
+
     if (eventsToUpdate.length > 0) {
       const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
       cEvents.forEach((e: Event) => {
-        bulkArr.push({
+        bulkOperations.push({
           updateOne: {
             filter: { gEventId: e.gEventId, user: oauth.user },
             update: { $set: e },
-            // options: { upsert: true },
             upsert: true,
           },
         });
       });
     }
 
-    logger.debug("bulkArr:", bulkArr);
-    const res = await mongoService.db
+    logger.debug("bulkOperations:", bulkOperations);
+    const bulkWriteResult = await mongoService.db
       .collection(Collections.EVENT)
-      .bulkWrite(bulkArr);
-    return res;
+      .bulkWrite(bulkOperations);
+    return bulkWriteResult;
   } catch (e) {
     logger.error(`Errow while sycning\n`, e);
+    return new BaseError("Sync Update Failed", e, Status.INTERNAL_SERVER, true);
   }
 
   /*
