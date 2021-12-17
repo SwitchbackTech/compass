@@ -163,8 +163,7 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
             filter: { gEventId: e.gEventId, user: oauth.user },
             update: { $set: e },
             // options: { upsert: true },
-            upsert: true 
-          },
+            upsert: true,
           },
         });
       });
