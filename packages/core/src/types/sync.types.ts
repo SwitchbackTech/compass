@@ -13,7 +13,7 @@ export interface NotifResult$Gcal {
 
 export interface SyncEventsResult$Gcal {
      syncToken?: object;
-     result?: undefined | BulkWriteResult;
+     events?: undefined | BulkWriteResult;
    }
 
 

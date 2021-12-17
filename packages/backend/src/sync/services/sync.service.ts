@@ -24,7 +24,7 @@ class SyncService {
       const result = {
         request: params,
         init: undefined,
-        sync: undefined,
+        events: undefined,
       };
       if (params.resourceState === "sync") {
         logger.info(
@@ -47,7 +47,7 @@ class SyncService {
               resourceState: ${params.resourceState},
               expiration: ${params.expiration},
       `);
-        result.sync = await syncUpdates(params);
+        result.events = await syncUpdates(params);
       }
       /*
         // If `oauth.state` does not match, it means the channel has expired and and we need to `stop` listening to this channel //
