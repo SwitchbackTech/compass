@@ -3,7 +3,7 @@ import { gSchema$Event } from "declarations";
 
 import { OAuthDTO } from "@core/types/auth.types";
 import { Event, Params$DeleteMany } from "@core/types/event.types";
-import { SyncParams$Gcal } from "@core/types/sync.types";
+import { SyncParams$Gcal, SyncEventsResult$Gcal } from "@core/types/sync.types";
 import { BaseError } from "@common/errors/errors.base";
 import { Collections } from "@common/constants/collections";
 import { Logger } from "@common/logger/common.logger";
@@ -69,13 +69,13 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
 
 export const syncUpdates = async (
   params: SyncParams$Gcal
-): Promise<BulkWriteResult | BaseError> => {
+): Promise<SyncEventsResult$Gcal | BaseError> => {
+  const syncResult = {
+    syncToken: undefined,
+    result: undefined,
+  };
+
   try {
-    const syncResult = {
-      syncToken: undefined,
-      updated: undefined,
-      deleted: undefined,
-    };
     const oauth: OAuthDTO = await mongoService.db
       .collection(Collections.OAUTH)
       .findOne({ resourceId: params.resourceId });
@@ -135,10 +135,12 @@ export const syncUpdates = async (
       eventsToDelete,
       eventsToUpdate
     );
-    const bulkWriteResult = await mongoService.db
+
+    syncResult.result = await mongoService.db
       .collection(Collections.EVENT)
       .bulkWrite(bulkOperations);
-    return bulkWriteResult;
+
+    return syncResult;
   } catch (e) {
     logger.error(`Errow while sycning\n`, e);
     return new BaseError("Sync Update Failed", e, Status.INTERNAL_SERVER, true);

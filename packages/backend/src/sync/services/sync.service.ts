@@ -1,10 +1,7 @@
 import { calendar_v3 } from "googleapis";
 
-import { SyncParams$Gcal, SyncResult$Gcal } from "@core/types/sync.types";
-import {
-  getGcal,
-  updateNextSyncToken,
-} from "@auth/services/google.auth.service";
+import { SyncParams$Gcal, NotifResult$Gcal } from "@core/types/sync.types";
+import { getGcal } from "@auth/services/google.auth.service";
 import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
 import { Logger } from "@common/logger/common.logger";
@@ -20,11 +17,11 @@ import { syncUpdates, updateStateAndResourceId } from "./sync.helpers";
 const logger = Logger("app:sync.service");
 
 class SyncService {
-  async syncGcalChanges(
+  async handleGcalNotification(
     params: SyncParams$Gcal
-  ): Promise<SyncResult$Gcal | BaseError> {
+  ): Promise<NotifResult$Gcal | BaseError> {
     try {
-      const syncResult = {
+      const result = {
         request: params,
         init: undefined,
         sync: undefined,
@@ -37,7 +34,7 @@ class SyncService {
           params.calendarId,
           params.resourceId
         );
-        syncResult.init = updateIdsResult;
+        result.init = updateIdsResult;
       }
 
       // There is new data to sync from GCal //
@@ -50,11 +47,9 @@ class SyncService {
               resourceState: ${params.resourceState},
               expiration: ${params.expiration},
       `);
-        syncResult.sync = await syncUpdates(params);
+        result.sync = await syncUpdates(params);
       }
       /*
-
-        
         // If `oauth.state` does not match, it means the channel has expired and and we need to `stop` listening to this channel //
         else {
           //TODO error-handle response
@@ -87,8 +82,8 @@ class SyncService {
         */
       // }
 
-      logger.debug(JSON.stringify(syncResult, null, 2));
-      return syncResult;
+      logger.debug(JSON.stringify(result, null, 2));
+      return result;
     } catch (e) {
       logger.error(e);
       return new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, true);
