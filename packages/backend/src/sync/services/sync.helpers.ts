@@ -1,4 +1,4 @@
-import { BulkWriteResult } from "mongodb";
+import { AnyBulkWriteOperation, BulkWriteResult } from "mongodb";
 import { gSchema$Event } from "declarations";
 
 import { OAuthDTO } from "@core/types/auth.types";
@@ -13,10 +13,45 @@ import { getGcal } from "@auth/services/google.auth.service";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
 import gcalService from "@common/services/gcal/gcal.service";
 import { GcalMapper } from "@common/services/gcal/map.gcal";
-import eventService from "@event/services/event.service";
 import { Status } from "@common/errors/status.codes";
 
 const logger = Logger("app:sync.helpers");
+
+const assembleBulkOperations = (
+  userId: string,
+  eventsToDelete: string[],
+  eventsToUpdate: gSchema$Event[]
+) => {
+  const bulkOperations: AnyBulkWriteOperation[] = [];
+
+  if (eventsToDelete.length > 0) {
+    bulkOperations.push({
+      deleteMany: {
+        filter: {
+          user: userId,
+          gEventId: { $in: eventsToDelete },
+        },
+      },
+    });
+  }
+
+  if (eventsToUpdate.length > 0) {
+    const cEvents = GcalMapper.toCompass(userId, eventsToUpdate);
+
+    cEvents.forEach((e: Event) => {
+      bulkOperations.push({
+        updateOne: {
+          filter: { gEventId: e.gEventId, user: userId },
+          update: { $set: e },
+          upsert: true,
+        },
+      });
+    });
+  }
+
+  logger.debug("bulkOperations:", bulkOperations);
+  return bulkOperations;
+};
 
 export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   const toDelete = cancelledEventsIds(events);
@@ -30,65 +65,6 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
     eventsToUpdate: toUpdate,
   };
   return categorized;
-};
-
-const syncDeletedEventsToCompass = async (
-  userId: string,
-  eventsToDelete: string[]
-) => {
-  logger.debug(
-    `Found ${eventsToDelete.length} events to delete:`,
-    eventsToDelete
-  );
-  const deleteParams: Params$DeleteMany = {
-    key: "gEventId",
-    ids: eventsToDelete,
-  };
-  const deleteResult = await eventService.deleteMany(userId, deleteParams);
-  return deleteResult;
-};
-
-const syncUpdatedEventsToCompass = async (
-  userId: string,
-  eventsToUpdate: gSchema$Event[]
-) => {
-  try {
-    const cEvents = GcalMapper.toCompass(userId, eventsToUpdate);
-    const gEventIds = cEvents.map((e: Event) => e.gEventId);
-    logger.debug(
-      "Trying to update/create events with these gEventIds:",
-      gEventIds
-    );
-
-    const updatePromises = cEvents.map(async (event: Event) => {
-      //  TODO validate
-
-      //  finds and updates the event, by using gcal id
-      // (cuz won't know ccal id when it comes from google)
-      // if the event isnt found, its created
-      const updateResult = await mongoService.db
-        .collection(Collections.EVENT)
-        .updateOne(
-          { gEventId: event.gEventId, user: userId },
-          { $set: event },
-          { upsert: true }
-        );
-
-      return updateResult;
-    });
-    const allResults = await Promise.all(updatePromises);
-
-    return allResults;
-    // return { updated: updated, created: created, problems: problemEvents };
-  } catch (e) {
-    logger.error(e);
-    return new BaseError(
-      "Updating changes from GCal -> CCal Failed",
-      e,
-      500,
-      true
-    );
-  }
 };
 
 export const syncUpdates = async (
@@ -154,33 +130,11 @@ export const syncUpdates = async (
       updatedEvents.data.items
     );
 
-    const bulkOperations = [];
-
-    if (eventsToDelete.length > 0) {
-      bulkOperations.push({
-        deleteMany: {
-          filter: {
-            user: oauth.user,
-            gEventId: { $in: eventsToDelete },
-          },
-        },
-      });
-    }
-
-    if (eventsToUpdate.length > 0) {
-      const cEvents = GcalMapper.toCompass(oauth.user, eventsToUpdate);
-      cEvents.forEach((e: Event) => {
-        bulkOperations.push({
-          updateOne: {
-            filter: { gEventId: e.gEventId, user: oauth.user },
-            update: { $set: e },
-            upsert: true,
-          },
-        });
-      });
-    }
-
-    logger.debug("bulkOperations:", bulkOperations);
+    const bulkOperations = assembleBulkOperations(
+      oauth.user,
+      eventsToDelete,
+      eventsToUpdate
+    );
     const bulkWriteResult = await mongoService.db
       .collection(Collections.EVENT)
       .bulkWrite(bulkOperations);
@@ -189,24 +143,6 @@ export const syncUpdates = async (
     logger.error(`Errow while sycning\n`, e);
     return new BaseError("Sync Update Failed", e, Status.INTERNAL_SERVER, true);
   }
-
-  /*
-  if (eventsToDelete.length > 0) {
-    syncResult.deleted = await syncDeletedEventsToCompass(
-      oauth.user,
-      eventsToDelete
-    );
-  }
-
-  if (eventsToUpdate.length > 0) {
-    syncResult.updated = await syncUpdatedEventsToCompass(
-      oauth.user,
-      eventsToUpdate
-    );
-  }
-
-  return syncResult;
-  */
 };
 
 export const updateStateAndResourceId = async (
