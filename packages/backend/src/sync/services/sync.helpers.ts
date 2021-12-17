@@ -128,17 +128,27 @@ export const syncUpdates = async (
       calendarId: GCAL_PRIMARY,
       syncToken: oauth.tokens.nextSyncToken,
     });
-    logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
-    // const eventNames = updatedEvents.data.items.map((e) => e.summary);
-    // logger.debug(JSON.stringify(eventNames));
 
     // Save the updated sync token for next time
+    // Should you do this even if no update found;?
     const syncTokenUpdateResult = await updateNextSyncToken(
       oauth.state,
       updatedEvents.data.nextSyncToken
     );
     syncResult.syncToken = syncTokenUpdateResult;
 
+    if (updatedEvents.data.items.length === 0) {
+      return new BaseError(
+        "No updates found",
+        "Not sure if this is normal or not",
+        Status.NOT_FOUND,
+        true
+      );
+    }
+
+    logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
+    // const eventNames = updatedEvents.data.items.map((e) => e.summary);
+    // logger.debug(JSON.stringify(eventNames));
     // Update Compass' DB
     const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
       updatedEvents.data.items
