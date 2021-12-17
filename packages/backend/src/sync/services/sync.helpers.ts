@@ -144,6 +144,7 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
 
     const bulkArr = [];
 
+    logger.debug("eventsToDelete:", eventsToDelete);
     if (eventsToDelete.length > 0) {
       bulkArr.push({
         deleteMany: {
@@ -161,12 +162,15 @@ export const syncUpdates = async (params: SyncParams$Gcal) => {
           updateOne: {
             filter: { gEventId: e.gEventId, user: oauth.user },
             update: { $set: e },
-            options: { upsert: true },
+            // options: { upsert: true },
+            upsert: true 
+          },
           },
         });
       });
     }
 
+    logger.debug("bulkArr:", bulkArr);
     const res = await mongoService.db
       .collection(Collections.EVENT)
       .bulkWrite(bulkArr);
