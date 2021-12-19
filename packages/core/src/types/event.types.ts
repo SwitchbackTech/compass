@@ -1,8 +1,7 @@
-import { InsertManyResult } from "mongodb";
 import { Query } from "express-serve-static-core";
 
-export interface Event {
-  // note: no id field here
+export interface Event$NoId {
+  // note: no compass _id field here
   gEventId?: string;
   // this user field can cause issues if someone adds it and it doesnt match the one
   // created during JWT middleware
@@ -22,17 +21,19 @@ export interface Event {
   };
 }
 
-export type EventData = Event | Event[];
-
-export interface EventWithId extends Event {
-  _id?: string; // not all requests will know the id (eg POSTs)
-}
-
-export interface EventDTO extends Event {
+export interface Event extends Event$NoId {
   _id: string; // needs to always return events id
 }
 
-export interface EventsDTO extends InsertManyResult {}
+export interface Params$DeleteMany {
+  key: string;
+  ids: string[];
+}
+
+export interface Result$DeleteMany {
+  deletedCount: number;
+  errors: any[];
+}
 
 export interface Query$Event extends Query {
   start?: string;

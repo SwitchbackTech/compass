@@ -10,8 +10,9 @@
     "dev -verbose": "export DEV=true DEBUG=* && yarn dev-start",
     "dev-start": "ts-node-dev --respawn --pretty --transpile-only -r tsconfig-paths/register src/app.ts",
     "dist": "rm -r dist/ && tsc",
-    "dist2": "tsc && cp ./tsconfig.json ./dist/",
-    "start": "ts-node -r tsconfig-paths/register ./dist/backend/src/app.js"
+    "start": "ts-node -r tsconfig-paths/register ./dist/backend/src/app.js",
+    "test": "jest",
+    "test:w": "jest ---watch"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
@@ -54,6 +55,7 @@
     "lint-staged": "^11.2.3",
     "prettier": "2.4.1",
     "source-map-support": "^0.5.20",
+    "ts-jest": "^27.1.1",
     "ts-node": "^10.4.0",
     "ts-node-dev": "^1.1.8",
     "tsconfig-paths": "^3.12.0",

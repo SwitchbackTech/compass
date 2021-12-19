@@ -126,7 +126,11 @@ module.exports = {
   // restoreMocks: false,
 
   // The root directory that Jest should scan for tests and modules within
+  // This means only web tests will run, and you
+  // have to run yarn test in the backend dir for backend tests
+  // TODO update so you can run 'yarn test' from root and run all tests
   rootDir: 'packages/web/',
+  // rootDir: 'packages/',
 
   // A list of paths to directories that Jest should use to search for files in
   // roots: [

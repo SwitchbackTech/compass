@@ -1,4 +1,4 @@
-import { Event, EventDTO, Query$Event } from "@core/types/event.types";
+import { Event$NoId, Event, Query$Event } from "@core/types/event.types";
 import { InsertedIds } from "@core/types/mongo.types";
 
 export const getReadAllFilter = (userId: string, query: Query$Event) => {
@@ -44,9 +44,9 @@ export const getReadAllFilter = (userId: string, query: Query$Event) => {
 
 //TODO abstract for any DTO type
 //TODO delete if unneeded
-export const mapManyToDTO = (data: Event[], newIds: InsertedIds) => {
+export const mapManyToDTO = (data: Event$NoId[], newIds: InsertedIds) => {
   //TODO change to just include a summary of events imported
-  const events: EventDTO = [];
+  const events: Event = [];
 
   for (const [key, id] of Object.entries(newIds)) {
     const i = parseInt(key);

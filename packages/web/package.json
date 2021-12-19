@@ -63,7 +63,7 @@
     "webpack-dev-server": "^4.2.1"
   },
   "scripts": {
-    "start": "webpack serve --env development --mode=development",
+    "dev": "webpack serve --env development --mode=development",
     "build": "yarn clean && webpack --env production --mode=production",
     "lint": "eslint . --ext .ts,.tsx",
     "lint-fix": "yarn lint --fix",
