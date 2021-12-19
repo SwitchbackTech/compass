@@ -19,7 +19,7 @@ class GcalSyncController {
       typeof req.headers["x-goog-channel-expiration"] === "string"
     ) {
       const params = {
-        calendarId: req.headers["x-goog-channel-id"],
+        channelId: req.headers["x-goog-channel-id"],
         resourceId: req.headers["x-goog-resource-id"],
         resourceState: req.headers["x-goog-resource-state"],
         expiration: req.headers["x-goog-channel-expiration"],
@@ -51,17 +51,11 @@ class GcalSyncController {
     const channelId = req.body.channelId;
     const resourceId = req.body.resourceId;
 
-    logger.info(
-      `Stopping watch for channel: ${channelId} and resource: ${resourceId}`
-    );
-
     const stopResult = await syncService.stopWatchingChannel(
       userId,
       channelId,
       resourceId
     );
-    //todo respond to the google api with success/failure
-    // so google can decide to re-try if needed
     res.promise(Promise.resolve(stopResult));
   };
 }

@@ -62,14 +62,14 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
 };
 
 export const updateStateAndResourceId = async (
-  calendarId: string,
+  channelId: string,
   resourceId: string
 ) => {
   logger.debug("Updating state/calendarId and resourceId for future reference");
   const result = await mongoService.db
     .collection(Collections.OAUTH)
     .findOneAndUpdate(
-      { state: calendarId },
+      { state: channelId },
       {
         $set: {
           resourceId: resourceId,

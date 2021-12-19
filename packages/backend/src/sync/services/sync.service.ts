@@ -1,9 +1,10 @@
-import { calendar_v3 } from "googleapis";
+import { gCalendar } from "declarations";
 
 import {
-  SyncParams$Gcal,
+  SyncRequest$Gcal,
   NotifResult$Gcal,
   SyncEventsResult$Gcal,
+  SyncParams$Gcal,
 } from "@core/types/sync.types";
 import { getGcal } from "@auth/services/google.auth.service";
 import { BaseError } from "@common/errors/errors.base";
@@ -29,152 +30,51 @@ import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
 
 const logger = Logger("app:sync.service");
 
-const _syncUpdates = async (
-  params: SyncParams$Gcal
-): Promise<SyncEventsResult$Gcal | BaseError> => {
-  const syncResult = {
-    syncToken: undefined,
-    result: undefined,
-  };
-
-  try {
-    const oauth: OAuthDTO = await mongoService.db
-      .collection(Collections.OAUTH)
-      .findOne({ resourceId: params.resourceId });
-
-    //TODO create validation function and move there
-    // the calendarId created during watch channel setup used the oauth.state,
-    //  so these should be the same.
-    if (oauth.state !== params.calendarId) {
-      return new BaseError(
-        "Sync Failed",
-        `Calendar id and oauth state didnt match. calendarId: ${params.calendarId}
-    oauth.state: ${oauth.state}`,
-        Status.INTERNAL_SERVER,
-        false // this isnt currently stopping the program like expected. not sure why
-      );
-    }
-
-    // Fetch the changes to events //
-    // TODO: handle pageToken in case a lot of new events changed
-    const gcal = await getGcal(oauth.user);
-
-    logger.debug("Fetching updated gcal events");
-    const updatedEvents = await gcalService.getEvents(gcal, {
-      // TODO use calendarId once supporting non-'primary' calendars
-      // calendarId: params.calendarId,
-      calendarId: GCAL_PRIMARY,
-      syncToken: oauth.tokens.nextSyncToken,
-    });
-
-    // Save the updated sync token for next time
-    // Should you do this even if no update found;?
-    // could potentially do this without awaiting to speed up
-    const syncTokenUpdateResult = await updateNextSyncToken(
-      oauth.user,
-      updatedEvents.data.nextSyncToken
-    );
-    syncResult.syncToken = syncTokenUpdateResult;
-
-    if (updatedEvents.data.items.length === 0) {
-      return new BaseError(
-        "No updates found",
-        "Not sure if this is normal or not",
-        Status.NOT_FOUND,
-        true
-      );
-    }
-
-    logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
-    // const eventNames = updatedEvents.data.items.map((e) => e.summary);
-    // logger.debug(JSON.stringify(eventNames));
-    // Update Compass' DB
-    const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
-      updatedEvents.data.items
-    );
-
-    const bulkOperations = assembleBulkOperations(
-      oauth.user,
-      eventsToDelete,
-      eventsToUpdate
-    );
-
-    syncResult.result = await mongoService.db
-      .collection(Collections.EVENT)
-      .bulkWrite(bulkOperations);
-
-    return syncResult;
-  } catch (e) {
-    logger.error(`Errow while sycning\n`, e);
-    return new BaseError("Sync Update Failed", e, Status.INTERNAL_SERVER, true);
-  }
-};
-
 class SyncService {
   async handleGcalNotification(
-    params: SyncParams$Gcal
+    reqParams: SyncRequest$Gcal
   ): Promise<NotifResult$Gcal | BaseError> {
     try {
       const result = {
-        request: params,
+        requestParams: reqParams,
         init: undefined,
         events: undefined,
       };
-      if (params.resourceState === "sync") {
+
+      if (reqParams.resourceState === "sync") {
         logger.info(
           "A new notification channel was successfully created. Expect to receive notifications from Gcal upon changes"
         );
         const updateIdsResult = await updateStateAndResourceId(
-          params.calendarId,
-          params.resourceId
+          reqParams.channelId,
+          reqParams.resourceId
         );
         result.init = updateIdsResult;
       }
 
       // There is new data to sync from GCal //
-      else if (params.resourceState === "exists") {
+      //TODO create validation function and move there
+      else if (reqParams.resourceState === "exists") {
+        const { oauth, gcal } = await this._prepareSyncChannels(reqParams);
+
+        const params: SyncParams$Gcal = {
+          ...reqParams,
+          userId: oauth.user,
+          nextSyncToken: oauth.tokens.nextSyncToken,
+        };
+
         logger.debug(`Running sync for:
-              calendarId /oauth.state: 
-                now: ${GCAL_PRIMARY} (hard-coded)
-                future: ${params.calendarId},
-              resourceId: ${params.resourceId},
-              resourceState: ${params.resourceState},
-              expiration: ${params.expiration},
+              calendarId: ${GCAL_PRIMARY} (hard-coded)
+              channelId /oauth.state: ${params.channelId}
+              resourceId: ${params.resourceId}
+              resourceState: ${params.resourceState}
+              expiration: ${params.expiration}
+              userId: ${params.userId}
+              nextSyncToken: ${params.nextSyncToken}
       `);
-        result.events = await _syncUpdates(params);
+
+        result.events = await _syncUpdates(gcal, params);
       }
-      /*
-        // If `oauth.state` does not match, it means the channel has expired and and we need to `stop` listening to this channel //
-        else {
-          //TODO error-handle response
-          await gcalService.stopWatching(
-            "gcalInstance",
-            calendarId,
-            resourceId
-          );
-        }
-
-        // If the channel is going to expire soon (within 3 days), create a new channel with extended expiry //
-        if (new Date(expiration).getTime() - new Date().getTime() < 259200000) {
-          logger.info(
-            `Channel expires soon. Creating a new one for resourceId: => ${resourceId}`
-          );
-
-          // Create a new state ID //
-          const newState = uuidv4();
-          // Listen to resources using this new state //
-          await gcalService.watchCalendar("gcalinstance", calendarId, newState);
-          // Update the state in User OAuth //
-          //TODO error-handle response
-          await mongoService.db
-            .collection(Collections.OAUTH)
-            .findOneAndUpdate(
-              { state: calendarId },
-              { $set: { state: newState, updatedAt: new Date().toISOString() } }
-            );
-        }
-        */
-      // }
 
       logger.debug(JSON.stringify(result, null, 2));
       return result;
@@ -189,7 +89,7 @@ class SyncService {
   telling google where to notify us when an event changes
   */
   async startWatchingChannel(
-    gcal: calendar_v3.Calendar,
+    gcal: gCalendar,
     calendarId: string,
     channelId: string
   ) {
@@ -200,7 +100,6 @@ class SyncService {
       const response = await gcal.events.watch({
         calendarId: calendarId,
         requestBody: {
-          id: channelId,
           address: `${BASEURL}${GCAL_NOTIFICATION_URL}`,
           type: "web_hook",
           expiration: expiration,
@@ -232,6 +131,9 @@ class SyncService {
     channelId: string,
     resourceId: string
   ) {
+    logger.info(
+      `Stopping watch for channel: ${channelId} and resource: ${resourceId}`
+    );
     try {
       const gcal = await getGcal(userId);
       const params = {
@@ -252,6 +154,7 @@ class SyncService {
           },
         };
       }
+
       return { stopWatching: stopResult };
     } catch (e) {
       if (e.code && e.code === 404) {
@@ -272,6 +175,116 @@ class SyncService {
       );
     }
   }
-}
 
+  _prepareSyncChannels = async (reqParams: SyncRequest$Gcal) => {
+    // initialize what you'll need later
+    const oauth: OAuthDTO = await mongoService.db
+      .collection(Collections.OAUTH)
+      .findOne({ resourceId: reqParams.resourceId });
+
+    const gcal = await getGcal(oauth.user);
+
+    // The calendarId created during watch channel setup used the oauth.state,so
+    // these should be the same.
+    const channelExpired = oauth.state !== reqParams.channelId;
+    if (channelExpired) {
+      logger.info(`Channel expired, so stopping watch on the old channel and resource: 
+          channel: ${reqParams.channelId}, 
+          resource: ${reqParams.resourceId}`);
+      const foo = await this.stopWatchingChannel(
+        oauth.user,
+        reqParams.channelId,
+        reqParams.resourceId
+      );
+      logger.debug("temp: stop watch res:", foo);
+    }
+
+    const xDaysFromNow = daysFromNowTimestamp(3, "ms");
+    const expiration = new Date(reqParams.expiration).getTime();
+    const channelExpiresSoon = expiration < xDaysFromNow;
+
+    if (channelExpiresSoon) {
+      logger.info(
+        `Channel expires soon, so creating new one for resourceId: ${reqParams.resourceId}`
+      );
+      const startRes = await this.startWatchingChannel(
+        gcal,
+        GCAL_PRIMARY,
+        reqParams.channelId
+      );
+      logger.debug(`Temp: StartWatch res:`, startRes);
+    }
+
+    return { oauth, gcal };
+  };
+}
 export default new SyncService();
+
+/*  Internal Helpers
+      These have too many dependencies to go in sync.helpers, 
+      which makes testing harder. So, keep here for now
+*/
+
+const _syncUpdates = async (
+  gcal: gCalendar,
+  params: SyncParams$Gcal
+): Promise<SyncEventsResult$Gcal | BaseError> => {
+  const syncResult = {
+    syncToken: undefined,
+    result: undefined,
+  };
+
+  try {
+    // Fetch the changes to events //
+    // TODO: handle pageToken in case a lot of new events changed
+
+    logger.debug("Fetching updated gcal events");
+    const updatedEvents = await gcalService.getEvents(gcal, {
+      // TODO use calendarId once supporting non-'primary' calendars
+      // calendarId: params.calendarId,
+      calendarId: GCAL_PRIMARY,
+      syncToken: params.nextSyncToken,
+    });
+
+    // Save the updated sync token for next time
+    // Should you do this even if no update found;?
+    // could potentially do this without awaiting to speed up
+    const syncTokenUpdateResult = await updateNextSyncToken(
+      params.userId,
+      updatedEvents.data.nextSyncToken
+    );
+    syncResult.syncToken = syncTokenUpdateResult;
+
+    if (updatedEvents.data.items.length === 0) {
+      return new BaseError(
+        "No updates found",
+        "Not sure if this is normal or not",
+        Status.NOT_FOUND,
+        true
+      );
+    }
+
+    logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
+    // const eventNames = updatedEvents.data.items.map((e) => e.summary);
+    // logger.debug(JSON.stringify(eventNames));
+    // Update Compass' DB
+    const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
+      updatedEvents.data.items
+    );
+
+    const bulkOperations = assembleBulkOperations(
+      params.userId,
+      eventsToDelete,
+      eventsToUpdate
+    );
+
+    syncResult.result = await mongoService.db
+      .collection(Collections.EVENT)
+      .bulkWrite(bulkOperations);
+
+    return syncResult;
+  } catch (e) {
+    logger.error(`Errow while sycning\n`, e);
+    return new BaseError("Sync Update Failed", e, Status.INTERNAL_SERVER, true);
+  }
+};
