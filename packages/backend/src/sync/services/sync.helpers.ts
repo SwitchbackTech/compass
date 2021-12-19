@@ -44,7 +44,6 @@ export const assembleBulkOperations = (
     });
   }
 
-  logger.debug("bulkOperations:", bulkOperations);
   return bulkOperations;
 };
 

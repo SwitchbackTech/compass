@@ -210,8 +210,8 @@ class SyncService {
     } catch (e) {
       if (e.code && e.code === 400) {
         return new BaseError(
-          "Start Watch Failed (Ignored?)",
-          `We're already watching this channel: ${channelId}. Not sure if the watch will still work`,
+          "Watch request ignored",
+          `We're already watching this channel: ${channelId}. The watch should still be active`,
           Status.BAD_REQUEST,
           true
         );
