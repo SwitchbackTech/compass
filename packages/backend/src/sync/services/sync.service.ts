@@ -1,7 +1,14 @@
 import { calendar_v3 } from "googleapis";
 
-import { SyncParams$Gcal, NotifResult$Gcal } from "@core/types/sync.types";
-import { getGcal } from "@auth/services/google.auth.service";
+import {
+  SyncParams$Gcal,
+  NotifResult$Gcal,
+  SyncEventsResult$Gcal,
+} from "@core/types/sync.types";
+import {
+  getGcal,
+  updateNextSyncToken,
+} from "@auth/services/google.auth.service";
 import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
 import { Logger } from "@common/logger/common.logger";
@@ -10,11 +17,99 @@ import {
   GCAL_NOTIFICATION_URL,
   GCAL_PRIMARY,
 } from "@common/constants/backend.constants";
+import { Collections } from "@common/constants/collections";
+import gcalService from "@common/services/gcal/gcal.service";
+import mongoService from "@common/services/mongo.service";
+import { OAuthDTO } from "@core/types/auth.types";
 
+import {
+  assembleBulkOperations,
+  categorizeGcalEvents,
+  updateStateAndResourceId,
+} from "./sync.helpers";
 import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
-import { syncUpdates, updateStateAndResourceId } from "./sync.helpers";
 
 const logger = Logger("app:sync.service");
+
+const _syncUpdates = async (
+  params: SyncParams$Gcal
+): Promise<SyncEventsResult$Gcal | BaseError> => {
+  const syncResult = {
+    syncToken: undefined,
+    result: undefined,
+  };
+
+  try {
+    const oauth: OAuthDTO = await mongoService.db
+      .collection(Collections.OAUTH)
+      .findOne({ resourceId: params.resourceId });
+
+    //TODO create validation function and move there
+    // the calendarId created during watch channel setup used the oauth.state,
+    //  so these should be the same.
+    if (oauth.state !== params.calendarId) {
+      return new BaseError(
+        "Sync Failed",
+        `Calendar id and oauth state didnt match. calendarId: ${params.calendarId}
+    oauth.state: ${oauth.state}`,
+        Status.INTERNAL_SERVER,
+        false // this isnt currently stopping the program like expected. not sure why
+      );
+    }
+
+    // Fetch the changes to events //
+    // TODO: handle pageToken in case a lot of new events changed
+    const gcal = await getGcal(oauth.user);
+
+    logger.debug("Fetching updated gcal events");
+    const updatedEvents = await gcalService.getEvents(gcal, {
+      // TODO use calendarId once supporting non-'primary' calendars
+      // calendarId: params.calendarId,
+      calendarId: GCAL_PRIMARY,
+      syncToken: oauth.tokens.nextSyncToken,
+    });
+
+    // Save the updated sync token for next time
+    // Should you do this even if no update found;?
+    const syncTokenUpdateResult = await updateNextSyncToken(
+      oauth.state,
+      updatedEvents.data.nextSyncToken
+    );
+    syncResult.syncToken = syncTokenUpdateResult;
+
+    if (updatedEvents.data.items.length === 0) {
+      return new BaseError(
+        "No updates found",
+        "Not sure if this is normal or not",
+        Status.NOT_FOUND,
+        true
+      );
+    }
+
+    logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
+    // const eventNames = updatedEvents.data.items.map((e) => e.summary);
+    // logger.debug(JSON.stringify(eventNames));
+    // Update Compass' DB
+    const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
+      updatedEvents.data.items
+    );
+
+    const bulkOperations = assembleBulkOperations(
+      oauth.user,
+      eventsToDelete,
+      eventsToUpdate
+    );
+
+    syncResult.result = await mongoService.db
+      .collection(Collections.EVENT)
+      .bulkWrite(bulkOperations);
+
+    return syncResult;
+  } catch (e) {
+    logger.error(`Errow while sycning\n`, e);
+    return new BaseError("Sync Update Failed", e, Status.INTERNAL_SERVER, true);
+  }
+};
 
 class SyncService {
   async handleGcalNotification(
@@ -47,7 +142,7 @@ class SyncService {
               resourceState: ${params.resourceState},
               expiration: ${params.expiration},
       `);
-        result.events = await syncUpdates(params);
+        result.events = await _syncUpdates(params);
       }
       /*
         // If `oauth.state` does not match, it means the channel has expired and and we need to `stop` listening to this channel //

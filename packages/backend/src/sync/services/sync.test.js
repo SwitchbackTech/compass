@@ -2,6 +2,7 @@ import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
 
 import { gcalEventsExample } from "./sync.test.data";
 import { categorizeGcalEvents } from "./sync.helpers";
+
 describe("Categorize GCal Updates", () => {
   const { eventsToDelete, eventsToUpdate } =
     categorizeGcalEvents(gcalEventsExample);
@@ -24,20 +25,18 @@ describe("Categorize GCal Updates", () => {
   });
 
   test("Finds deleted/cancelled events", () => {
-    /*
-    const cancelledIds = cancelledEventsIds(gcalEventsExample)
+    const cancelledIds = cancelledEventsIds(gcalEventsExample);
     // const cancelledIds = [];
-    // gcalEventsExample.forEach((e) => {
-    //   if (e.status === "cancelled") {
-    //     cancelledIds.push(e.id);
-    //   }
-    // });
+    gcalEventsExample.forEach((e) => {
+      if (e.status === "cancelled") {
+        cancelledIds.push(e.id);
+      }
+    });
 
     eventsToDelete.forEach((e) => {
       if (cancelledIds.includes(e.id)) {
         throw new Error("a cancelled event was missed");
       }
     });
-    */
   });
 });
