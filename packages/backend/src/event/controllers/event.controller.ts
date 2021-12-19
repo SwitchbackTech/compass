@@ -75,6 +75,7 @@ class EventController {
       GCAL_PRIMARY,
       channelId
     );
+    //todo save resourceId
 
     const fullResults = {
       events: importEventsResult,

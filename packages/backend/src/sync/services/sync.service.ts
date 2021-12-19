@@ -85,12 +85,15 @@ class SyncService {
     calendarId: string,
     channelId: string
   ) {
-    logger.info(`Setting up watch for calendarId: ${calendarId}`);
+    logger.info(
+      `Setting up watch for calendarId: ${calendarId} and channelId: ${channelId}`
+    );
     try {
       const expiration = daysFromNowTimestamp(14, "ms").toString();
 
       const response = await gcal.events.watch({
         calendarId: calendarId,
+        // channelId: channelId,
         requestBody: {
           address: `${BASEURL}${GCAL_NOTIFICATION_URL}`,
           type: "web_hook",
@@ -101,8 +104,8 @@ class SyncService {
     } catch (e) {
       if (e.code && e.code === 400) {
         return new BaseError(
-          "Watch request ignored",
-          `We're already watching this channel: ${channelId}. The watch should still be active`,
+          "Start Watch Failed",
+          e.errors,
           Status.BAD_REQUEST,
           true
         );

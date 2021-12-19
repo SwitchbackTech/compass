@@ -9,6 +9,7 @@ import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
 import { GcalMapper } from "@common/services/gcal/map.gcal";
 import { Collections } from "@common/constants/collections";
 import { BaseError } from "@common/errors/errors.base";
+import { daysFromNowTimestamp } from "@core/util/date.utils";
 
 const logger = Logger("app:sync.helpers");
 
@@ -80,7 +81,7 @@ export const updateStateAndResourceId = async (
   return result;
 };
 
-export const channelExpiresSoon = (expiry) => {
+export const channelExpiresSoon = (expiry: string) => {
   const xDaysFromNow = daysFromNowTimestamp(3, "ms");
   const expiration = new Date(expiry).getTime();
   const channelExpiresSoon = expiration < xDaysFromNow;
