@@ -42,40 +42,6 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
   return calendar;
 };
 
-export const updateNextSyncToken = async (
-  userId: string,
-  nextSyncToken: string
-) => {
-  const err = new BaseError(
-    "Update Failed",
-    `Failed to update the nextSyncToken for oauth record of user: ${userId}`,
-    500,
-    true
-  );
-
-  try {
-    const response = await mongoService.db
-      .collection(Collections.OAUTH)
-      .updateOne(
-        { user: userId },
-        {
-          $set: {
-            "tokens.nextSyncToken": nextSyncToken,
-          },
-        }
-      );
-
-    if (response.matchedCount !== 1) {
-      throw err;
-    }
-
-    return response;
-  } catch (e) {
-    logger.error(e);
-    throw err;
-  }
-};
-
 class GoogleOauthService {
   tokens: {};
   oAuth2Client;

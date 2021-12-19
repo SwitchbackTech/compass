@@ -7,11 +7,9 @@ import { Event$NoId, Params$DeleteMany } from "@core/types/event.types";
 import { Collections } from "@common/constants/collections";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
-import {
-  getGcal,
-  updateNextSyncToken,
-} from "@auth/services/google.auth.service";
+import { getGcal } from "@auth/services/google.auth.service";
 import syncService from "@sync/services/sync.service";
+import { updateNextSyncToken } from "@sync/services/sync.helpers";
 
 import eventService from "../services/event.service";
 

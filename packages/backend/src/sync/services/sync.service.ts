@@ -5,10 +5,7 @@ import {
   NotifResult$Gcal,
   SyncEventsResult$Gcal,
 } from "@core/types/sync.types";
-import {
-  getGcal,
-  updateNextSyncToken,
-} from "@auth/services/google.auth.service";
+import { getGcal } from "@auth/services/google.auth.service";
 import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
 import { Logger } from "@common/logger/common.logger";
@@ -25,6 +22,7 @@ import { OAuthDTO } from "@core/types/auth.types";
 import {
   assembleBulkOperations,
   categorizeGcalEvents,
+  updateNextSyncToken,
   updateStateAndResourceId,
 } from "./sync.helpers";
 import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
@@ -71,8 +69,9 @@ const _syncUpdates = async (
 
     // Save the updated sync token for next time
     // Should you do this even if no update found;?
+    // could potentially do this without awaiting to speed up
     const syncTokenUpdateResult = await updateNextSyncToken(
-      oauth.state,
+      oauth.user,
       updatedEvents.data.nextSyncToken
     );
     syncResult.syncToken = syncTokenUpdateResult;

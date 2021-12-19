@@ -8,6 +8,7 @@ import mongoService from "@common/services/mongo.service";
 import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
 import { GcalMapper } from "@common/services/gcal/map.gcal";
 import { Collections } from "@common/constants/collections";
+import { BaseError } from "@common/errors/errors.base";
 
 const logger = Logger("app:sync.helpers");
 
@@ -81,28 +82,41 @@ export const updateStateAndResourceId = async (
 };
 
 export const updateNextSyncToken = async (
-  oauthState: string,
+  userId: string,
   nextSyncToken: string
 ) => {
   logger.debug(`Updating nextSyncToken to: ${nextSyncToken}`);
-  const result = await mongoService.db
-    .collection(Collections.OAUTH)
-    .findOneAndUpdate(
-      { state: oauthState },
-      {
-        $set: {
-          "tokens.nextSyncToken": nextSyncToken,
-          updatedAt: new Date().toISOString(),
-        },
-      },
-      { returnDocument: "after" }
-    );
 
-  const updatedOauth: OAuthDTO = result.value;
-  if (updatedOauth.tokens.nextSyncToken === nextSyncToken) {
-    return { status: `updated to: ${nextSyncToken}` };
-  } else {
-    logger.error("nextSyncToken not updated");
-    return { status: "Failed to update", debugResult: result };
+  const err = new BaseError(
+    "Update Failed",
+    `Failed to update the nextSyncToken for oauth record of user: ${userId}`,
+    500,
+    true
+  );
+
+  try {
+    const result = await mongoService.db
+      .collection(Collections.OAUTH)
+      .findOneAndUpdate(
+        { user: userId },
+        {
+          $set: {
+            "tokens.nextSyncToken": nextSyncToken,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+        { returnDocument: "after" }
+      );
+
+    const updatedOauth: OAuthDTO = result.value;
+    if (updatedOauth.tokens.nextSyncToken === nextSyncToken) {
+      return { status: `updated to: ${nextSyncToken}` };
+    } else {
+      logger.error("nextSyncToken not properly updated");
+      return { status: "Failed to update properly", debugResult: result };
+    }
+  } catch (e) {
+    logger.error(e);
+    throw err;
   }
 };
