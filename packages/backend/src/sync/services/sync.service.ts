@@ -23,6 +23,7 @@ import { OAuthDTO } from "@core/types/auth.types";
 import {
   assembleBulkOperations,
   categorizeGcalEvents,
+  channelExpiresSoon,
   updateNextSyncToken,
   updateStateAndResourceId,
 } from "./sync.helpers";
@@ -177,10 +178,7 @@ class SyncService {
 
     // The calendarId created during watch channel setup used the oauth.state,so
     // these should be the same.
-    // const channelExpired = oauth.state !== reqParams.channelId;
-
-    //todo remove
-    const channelExpired = true;
+    const channelExpired = oauth.state !== reqParams.channelId;
     if (channelExpired) {
       logger.info(`Channel expired, so stopping watch on the old channel and resource: 
           channel: ${reqParams.channelId}, 
@@ -193,13 +191,13 @@ class SyncService {
       logger.debug("temp: stop watch res:", foo);
     }
 
-    const xDaysFromNow = daysFromNowTimestamp(3, "ms");
-    const expiration = new Date(reqParams.expiration).getTime();
-    const channelExpiresSoon = expiration < xDaysFromNow;
+    // const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
+    // TODO replace
+    const _channelExpiresSoon = true;
 
-    if (channelExpiresSoon) {
+    if (channelExpired || _channelExpiresSoon) {
       logger.info(
-        `Channel expires soon, so creating new one for resourceId: ${reqParams.resourceId}`
+        `Creating new channel watch for resourceId: ${reqParams.resourceId}`
       );
       const startRes = await this.startWatchingChannel(
         gcal,

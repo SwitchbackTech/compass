@@ -80,6 +80,13 @@ export const updateStateAndResourceId = async (
   return result;
 };
 
+export const channelExpiresSoon = (expiry) => {
+  const xDaysFromNow = daysFromNowTimestamp(3, "ms");
+  const expiration = new Date(expiry).getTime();
+  const channelExpiresSoon = expiration < xDaysFromNow;
+  return channelExpiresSoon;
+};
+
 export const updateNextSyncToken = async (
   userId: string,
   nextSyncToken: string
