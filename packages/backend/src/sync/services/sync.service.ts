@@ -86,15 +86,15 @@ class SyncService {
     channelId: string
   ) {
     logger.info(
-      `Setting up watch for calendarId: ${calendarId} and channelId: ${channelId}`
+      `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
     try {
       const expiration = daysFromNowTimestamp(14, "ms").toString();
 
       const response = await gcal.events.watch({
         calendarId: calendarId,
-        // channelId: channelId,
         requestBody: {
+          id: channelId,
           address: `${BASEURL}${GCAL_NOTIFICATION_URL}`,
           type: "web_hook",
           expiration: expiration,
