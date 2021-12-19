@@ -36,7 +36,7 @@ class SyncService {
   ): Promise<NotifResult$Gcal | BaseError> {
     try {
       const result = {
-        requestParams: reqParams,
+        params: undefined,
         init: undefined,
         events: undefined,
       };
@@ -61,18 +61,9 @@ class SyncService {
           ...reqParams,
           userId: oauth.user,
           nextSyncToken: oauth.tokens.nextSyncToken,
+          calendarId: `${GCAL_NOTIFICATION_URL} <- hard-coded for now`,
         };
-
-        logger.debug(`Running sync for:
-              calendarId: ${GCAL_PRIMARY} (hard-coded)
-              channelId /oauth.state: ${params.channelId}
-              resourceId: ${params.resourceId}
-              resourceState: ${params.resourceState}
-              expiration: ${params.expiration}
-              userId: ${params.userId}
-              nextSyncToken: ${params.nextSyncToken}
-      `);
-
+        result.params = params;
         result.events = await _syncUpdates(gcal, params);
       }
 
@@ -186,7 +177,10 @@ class SyncService {
 
     // The calendarId created during watch channel setup used the oauth.state,so
     // these should be the same.
-    const channelExpired = oauth.state !== reqParams.channelId;
+    // const channelExpired = oauth.state !== reqParams.channelId;
+
+    //todo remove
+    const channelExpired = true;
     if (channelExpired) {
       logger.info(`Channel expired, so stopping watch on the old channel and resource: 
           channel: ${reqParams.channelId}, 
