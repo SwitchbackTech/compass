@@ -40,6 +40,7 @@ class SyncService {
       const result = {
         params: undefined,
         init: undefined,
+        watch: undefined,
         events: undefined,
       };
 
@@ -56,13 +57,15 @@ class SyncService {
           oauthState,
           reqParams.resourceId
         );
-        result.init = resourceIdInitResult;
+        result.init = resourceIdInit;
       }
 
       // There is new data to sync from GCal //
       //TODO create validation function and move there
       else if (reqParams.resourceState === "exists") {
-        const { oauth, gcal } = await this._prepareSyncChannels(reqParams);
+        const { channelPrepResult, oauth, gcal } =
+          await this._prepareSyncChannels(reqParams);
+        result.watch = channelPrepResult;
 
         const params: SyncParams$Gcal = {
           ...reqParams,
@@ -78,7 +81,7 @@ class SyncService {
       return result;
     } catch (e) {
       logger.error(e);
-      return new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, true);
+      return new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, false);
     }
   }
 
@@ -178,6 +181,12 @@ class SyncService {
   }
 
   _prepareSyncChannels = async (reqParams: SyncRequest$Gcal) => {
+    const channelPrepResult = {
+      stop: undefined,
+      createNew: undefined,
+      stillActive: undefined,
+    };
+
     // initialize what you'll need later
     const oauth: OAuthDTO = await mongoService.db
       .collection(Collections.OAUTH)
@@ -192,12 +201,12 @@ class SyncService {
       logger.info(`Channel expired, so stopping watch on the old channel and resource: 
           channel: ${reqParams.channelId}, 
           resource: ${reqParams.resourceId}`);
-      const foo = await this.stopWatchingChannel(
+      const stopResult = await this.stopWatchingChannel(
         oauth.user,
         reqParams.channelId,
         reqParams.resourceId
       );
-      logger.debug("temp: stop watch res:", foo);
+      channelPrepResult.stop = stopResult;
     }
 
     // const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
@@ -205,23 +214,22 @@ class SyncService {
     const _channelExpiresSoon = true;
 
     if (channelExpired || _channelExpiresSoon) {
+      // create new channelId to prevent `channelIdNotUnique` google api error
       const newChannelId = uuidv4();
       logger.info(
-        `Channel expired (${channelExpired.toString()}) or is expiring soon (${_channelExpiresSoon.toString()})
-        Creating new channel watch using: resourceId: ${
-          reqParams.resourceId
-        } and new channelId: ${newChannelId}`
+        `Channel expired (${channelExpired.toString()}) or is expiring soon (${_channelExpiresSoon.toString()}`
       );
-      // create new channelId to prevent `channelIdNotUnique` google api error
-      const startRes = await this.startWatchingChannel(
+      const startResult = await this.startWatchingChannel(
         gcal,
         GCAL_PRIMARY,
-        reqParams.channelId
+        newChannelId
       );
-      logger.debug(`Temp: StartWatch res:`, startRes);
+      channelPrepResult.createNew = startResult;
+    } else {
+      channelPrepResult.stillActive = true;
     }
 
-    return { oauth, gcal };
+    return { channelPrepResult: channelPrepResult, oauth, gcal };
   };
 }
 export default new SyncService();
