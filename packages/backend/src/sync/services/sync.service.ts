@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import { gCalendar, gSchema$Channel } from "declarations";
 
 import {
@@ -51,7 +52,7 @@ class SyncService {
         // oauth.state and channelId should be the same
         const oauthState = reqParams.channelId;
 
-        const resourceIdInitResult = await updateResourceId(
+        const resourceIdInit = await updateResourceId(
           oauthState,
           reqParams.resourceId
         );
@@ -108,19 +109,19 @@ class SyncService {
       return response.data;
     } catch (e) {
       if (e.code && e.code === 400) {
-        return new BaseError(
+        throw new BaseError(
           "Start Watch Failed",
           e.errors,
           Status.BAD_REQUEST,
-          true
+          false
         );
       } else {
         logger.error(e);
-        return new BaseError(
+        throw new BaseError(
           "Start Watch Failed",
           e,
           Status.INTERNAL_SERVER,
-          true
+          false
         );
       }
     }
@@ -162,7 +163,7 @@ class SyncService {
           "Stop Watch Failed",
           e.message,
           Status.NOT_FOUND,
-          true
+          false
         );
       }
 
@@ -171,7 +172,7 @@ class SyncService {
         "Stop Watch Failed",
         e,
         Status.INTERNAL_SERVER,
-        true
+        false
       );
     }
   }
@@ -204,9 +205,14 @@ class SyncService {
     const _channelExpiresSoon = true;
 
     if (channelExpired || _channelExpiresSoon) {
+      const newChannelId = uuidv4();
       logger.info(
-        `Creating new channel watch for resourceId: ${reqParams.resourceId}`
+        `Channel expired (${channelExpired.toString()}) or is expiring soon (${_channelExpiresSoon.toString()})
+        Creating new channel watch using: resourceId: ${
+          reqParams.resourceId
+        } and new channelId: ${newChannelId}`
       );
+      // create new channelId to prevent `channelIdNotUnique` google api error
       const startRes = await this.startWatchingChannel(
         gcal,
         GCAL_PRIMARY,

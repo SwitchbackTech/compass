@@ -1,4 +1,4 @@
-import express, { Request } from "express";
+import express from "express";
 
 import { ReqBody, Res } from "@compass/core/src/types/express.types";
 import { OAuthDTO } from "@compass/core/src/types/auth.types";
