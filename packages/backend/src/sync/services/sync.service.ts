@@ -1,4 +1,4 @@
-import { gCalendar } from "declarations";
+import { gCalendar, gSchema$Channel } from "declarations";
 
 import {
   SyncRequest$Gcal,
@@ -25,7 +25,7 @@ import {
   categorizeGcalEvents,
   channelExpiresSoon,
   updateNextSyncToken,
-  updateStateAndResourceId,
+  updateResourceId,
 } from "./sync.helpers";
 import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
 
@@ -46,11 +46,16 @@ class SyncService {
         logger.info(
           "A new notification channel was successfully created. Expect to receive notifications from Gcal upon changes"
         );
-        const updateIdsResult = await updateStateAndResourceId(
-          reqParams.channelId,
+
+        // declaring this variable as a reminder that the
+        // oauth.state and channelId should be the same
+        const oauthState = reqParams.channelId;
+
+        const resourceIdInitResult = await updateResourceId(
+          oauthState,
           reqParams.resourceId
         );
-        result.init = updateIdsResult;
+        result.init = resourceIdInitResult;
       }
 
       // There is new data to sync from GCal //
@@ -84,7 +89,7 @@ class SyncService {
     gcal: gCalendar,
     calendarId: string,
     channelId: string
-  ) {
+  ): Promise<gSchema$Channel> {
     logger.info(
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
