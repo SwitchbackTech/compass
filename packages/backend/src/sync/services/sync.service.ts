@@ -68,7 +68,7 @@ class SyncService {
       //TODO create validation function and move there
       else if (reqParams.resourceState === "exists") {
         const { channelPrepResult, oauth, gcal } =
-          await this._prepareSyncChannels(reqParams);
+          await this.prepareSyncChannels(reqParams);
         result.watch = channelPrepResult;
 
         const params: SyncParams$Gcal = {
@@ -191,7 +191,7 @@ class SyncService {
     }
   }
 
-  _prepareSyncChannels = async (reqParams: SyncRequest$Gcal) => {
+  prepareSyncChannels = async (reqParams: SyncRequest$Gcal) => {
     const channelPrepResult = {
       stop: undefined,
       createNew: undefined,
@@ -212,6 +212,8 @@ class SyncService {
     const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
 
     if (channelExpired || _channelExpiresSoon) {
+      // const {refreshResult } = await _refreshChannelWatch()
+      logger.info("Refreshing channel watch");
       //TODO move to a 'refreshChannel' func after validating logic
       logger.info(
         `Channel expired? : ${channelExpired.toString()})
@@ -222,7 +224,6 @@ class SyncService {
         reqParams.channelId,
         reqParams.resourceId
       );
-      channelPrepResult.stop = stopResult;
 
       // create new channelId to prevent `channelIdNotUnique` google api error
       const newChannelId = uuidv4();
@@ -238,6 +239,7 @@ class SyncService {
         reqParams.resourceId
       );
 
+      channelPrepResult.stop = stopResult;
       channelPrepResult.createNew = startResult;
       channelPrepResult.updateResourceId = resourceIdUpdate.ok;
     } else {
@@ -247,12 +249,14 @@ class SyncService {
     return { channelPrepResult: channelPrepResult, oauth, gcal };
   };
 }
+
 export default new SyncService();
 
+/*************************************************************/
 /*  Internal Helpers
       These have too many dependencies to go in sync.helpers, 
-      which makes testing harder. So, keep here for now
-*/
+      which makes testing harder. So, keep here for now */
+/*************************************************************/
 
 const _syncUpdates = async (
   gcal: gCalendar,
@@ -317,3 +321,5 @@ const _syncUpdates = async (
     return new BaseError("Sync Update Failed", e, Status.INTERNAL_SERVER, true);
   }
 };
+
+const _refreshChannelWatch = async () => {};
