@@ -6,7 +6,7 @@ export interface ImportResult$GCal {
 }
 
 export interface NotifResult$Gcal {
-   request: object;
+   params: object;
    init?: object;
    sync?: SyncEventsResult$Gcal
   }
@@ -17,11 +17,17 @@ export interface SyncEventsResult$Gcal {
    }
 
 
-export interface SyncParams$Gcal {
-  calendarId: string; 
+export interface SyncRequest$Gcal {
+  channelId: string; 
   resourceId: string; 
   resourceState: string;
   expiration:  string; 
+}
+
+export interface SyncParams$Gcal extends SyncRequest$Gcal {
+  nextSyncToken: string; 
+  userId: string;
+  calendarId?: string;
 }
 
 export interface Body$Watch$Stop {

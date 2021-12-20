@@ -16,9 +16,14 @@ TL;DR Google notifies you when something changes, then you do an incremental syn
 ### Setup a notification channel
 One for each resource (eg 'primary' calendar)
 - Each notification channel is associated both with a particular user and a particular resource (or set of resources)
-- the `channelId` is created by Compass 
+
+There are lots of ids involved. Here's the breakdown:
+- the `calendarId` refers to the user's calendar. 
+  - default is `primary`
+  - you can find the others in `calendarList.list` method
 - the `resourceId` is created by GCal to refer to a user's calendar (eg their primary calendar)
   - the `resourceId` looks like: `_erSB7UuK4_7Uy3CibSlcMLPwMg"`
+- the `channelId` is a uuid created by Compass 
 
 How: 
 `POST` to the user's primary calendar's `/watch` endpoint
