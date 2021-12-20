@@ -258,7 +258,7 @@ class SyncService {
     const refreshResult = {
       stop: stopResult,
       start: startResult,
-      resourceIdUpdate: resourceIdUpdate,
+      resourceIdUpdateWorked: resourceIdUpdate.ok === 1,
     };
     return refreshResult;
   };
