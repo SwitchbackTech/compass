@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { gCalendar, gSchema$Channel } from "declarations";
+import { calendar_v3 } from "googleapis";
 
 import { BASEURL } from "@core/core.constants";
 import { OAuthDTO } from "@core/types/auth.types";
@@ -194,8 +195,7 @@ class SyncService {
   prepareSyncChannels = async (reqParams: SyncRequest$Gcal) => {
     const channelPrepResult = {
       stop: undefined,
-      createNew: undefined,
-      updateResourceId: undefined,
+      refresh: undefined,
       stillActive: undefined,
     };
 
@@ -212,41 +212,55 @@ class SyncService {
     const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
 
     if (channelExpired || _channelExpiresSoon) {
-      // const {refreshResult } = await _refreshChannelWatch()
-      logger.info("Refreshing channel watch");
       //TODO move to a 'refreshChannel' func after validating logic
       logger.info(
         `Channel expired? : ${channelExpired.toString()})
         Channel expiring soon? : ${_channelExpiresSoon.toString()}`
       );
-      const stopResult = await this.stopWatchingChannel(
-        oauth.user,
-        reqParams.channelId,
-        reqParams.resourceId
-      );
 
-      // create new channelId to prevent `channelIdNotUnique` google api error
-      const newChannelId = uuidv4();
-      const startResult = await this.startWatchingChannel(
+      channelPrepResult.refresh = await this.refreshChannelWatch(
+        oauth,
         gcal,
-        GCAL_PRIMARY,
-        newChannelId
+        reqParams
       );
-
-      //todo update resource id
-      const resourceIdUpdate = await updateResourceId(
-        newChannelId,
-        reqParams.resourceId
-      );
-
-      channelPrepResult.stop = stopResult;
-      channelPrepResult.createNew = startResult;
-      channelPrepResult.updateResourceId = resourceIdUpdate.ok;
     } else {
       channelPrepResult.stillActive = true;
     }
 
     return { channelPrepResult: channelPrepResult, oauth, gcal };
+  };
+
+  refreshChannelWatch = async (
+    oauth: OAuthDTO,
+    gcal: gCalendar,
+    reqParams: SyncRequest$Gcal
+  ) => {
+    const stopResult = await this.stopWatchingChannel(
+      oauth.user,
+      reqParams.channelId,
+      reqParams.resourceId
+    );
+
+    // create new channelId to prevent `channelIdNotUnique` google api error
+    const newChannelId = uuidv4();
+    const startResult = await this.startWatchingChannel(
+      gcal,
+      GCAL_PRIMARY,
+      newChannelId
+    );
+
+    //todo update resource id
+    const resourceIdUpdate = await updateResourceId(
+      newChannelId,
+      reqParams.resourceId
+    );
+
+    const refreshResult = {
+      stop: stopResult,
+      start: startResult,
+      resourceIdUpdate: resourceIdUpdate,
+    };
+    return refreshResult;
   };
 }
 
