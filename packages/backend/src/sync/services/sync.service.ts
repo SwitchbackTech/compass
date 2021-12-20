@@ -197,24 +197,22 @@ class SyncService {
     // The calendarId created during watch channel setup used the oauth.state,so
     // these should be the same.
     const channelExpired = oauth.state !== reqParams.channelId;
-    if (channelExpired) {
-      logger.info(`Channel expired, so stopping its watch`);
+    const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
+
+    if (channelExpired || _channelExpiresSoon) {
+      logger.info(
+        `Channel expired? : ${channelExpired.toString()}) 
+        Channel expiring soon? : ${_channelExpiresSoon.toString()}`
+      );
       const stopResult = await this.stopWatchingChannel(
         oauth.user,
         reqParams.channelId,
         reqParams.resourceId
       );
       channelPrepResult.stop = stopResult;
-    }
 
-    const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
-
-    if (channelExpired || _channelExpiresSoon) {
       // create new channelId to prevent `channelIdNotUnique` google api error
       const newChannelId = uuidv4();
-      logger.info(
-        `Channel expired (${channelExpired.toString()}) or is expiring soon (${_channelExpiresSoon.toString()}`
-      );
       const startResult = await this.startWatchingChannel(
         gcal,
         GCAL_PRIMARY,
