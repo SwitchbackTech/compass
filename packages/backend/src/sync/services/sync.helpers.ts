@@ -79,12 +79,6 @@ export const updateResourceId = async (
       }
     );
 
-  if (result.ok === 1) {
-    return "success";
-  } else {
-    //TODO make this more readable
-    return { "something bad happened:": result };
-  }
   return result;
 };
 

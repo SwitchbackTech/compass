@@ -45,19 +45,26 @@ class SyncService {
       };
 
       if (reqParams.resourceState === "sync") {
-        logger.info(
-          "A new notification channel was successfully created. Expect to receive notifications from Gcal upon changes"
-        );
-
         // declaring this variable as a reminder that the
         // oauth.state and channelId should be the same
         const oauthState = reqParams.channelId;
 
-        const resourceIdInit = await updateResourceId(
+        const resourceIdResult = await updateResourceId(
           oauthState,
           reqParams.resourceId
         );
-        result.init = resourceIdInit;
+        if (resourceIdResult.ok === 1) {
+          const msg = `A new notification channel was successfully created for:
+           channelId / oauth.state:  ${reqParams.channelId}
+           resourceId: ${reqParams.resourceId}
+          
+          Expect to receive notifications from Gcal upon changes`;
+          result.init = msg;
+        } else {
+          result.init = {
+            "something failed while setting the resourceId:": resourceIdResult,
+          };
+        }
       }
 
       // There is new data to sync from GCal //
