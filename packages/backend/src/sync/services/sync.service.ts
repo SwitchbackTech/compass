@@ -102,12 +102,14 @@ class SyncService {
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
     try {
+      const numMin = 1;
+
       // TODO uncomment
       // const expiration = daysFromNowTimestamp(14, "ms").toString();
       console.log(
-        `**REMINDER: channel is expiring in just 1 min. Change before deploying **`
+        `**REMINDER: channel is expiring in just ${numMin} mins. Change before deploying **`
       );
-      const expiration = minutesFromNow(1, "ms").toString();
+      const expiration = minutesFromNow(numMin, "ms").toString();
 
       const response = await gcal.events.watch({
         calendarId: calendarId,
@@ -193,6 +195,7 @@ class SyncService {
     const channelPrepResult = {
       stop: undefined,
       createNew: undefined,
+      updateResourceId: undefined,
       stillActive: undefined,
     };
 
@@ -228,7 +231,15 @@ class SyncService {
         GCAL_PRIMARY,
         newChannelId
       );
+
+      //todo update resource id
+      const resourceIdUpdate = await updateResourceId(
+        newChannelId,
+        reqParams.resourceId
+      );
+
       channelPrepResult.createNew = startResult;
+      channelPrepResult.updateResourceId = resourceIdUpdate.ok;
     } else {
       channelPrepResult.stillActive = true;
     }
