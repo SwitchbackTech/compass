@@ -1,6 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
 import { gCalendar, gSchema$Channel } from "declarations";
 
+import { BASEURL } from "@core/core.constants";
+import { OAuthDTO } from "@core/types/auth.types";
+import { minutesFromNow, daysFromNowTimestamp } from "@core/util/date.utils";
 import {
   SyncRequest$Gcal,
   NotifResult$Gcal,
@@ -11,7 +14,6 @@ import { getGcal } from "@auth/services/google.auth.service";
 import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
 import { Logger } from "@common/logger/common.logger";
-import { BASEURL } from "@core/core.constants";
 import {
   GCAL_NOTIFICATION_URL,
   GCAL_PRIMARY,
@@ -19,7 +21,6 @@ import {
 import { Collections } from "@common/constants/collections";
 import gcalService from "@common/services/gcal/gcal.service";
 import mongoService from "@common/services/mongo.service";
-import { OAuthDTO } from "@core/types/auth.types";
 
 import {
   assembleBulkOperations,
@@ -28,7 +29,6 @@ import {
   updateNextSyncToken,
   updateResourceId,
 } from "./sync.helpers";
-import { daysFromNowTimestamp } from "../../../../core/src/util/date.utils";
 
 const logger = Logger("app:sync.service");
 
@@ -54,15 +54,12 @@ class SyncService {
           reqParams.resourceId
         );
         if (resourceIdResult.ok === 1) {
-          const msg = `A new notification channel was successfully created for:
-           channelId / oauth.state:  ${reqParams.channelId}
-           resourceId: ${reqParams.resourceId}
-          
-          Expect to receive notifications from Gcal upon changes`;
+          const msg = `A new notification channel was successfully created for: 
+          channelId / oauth.state:'${reqParams.channelId}' resourceId: '${reqParams.resourceId}'`;
           result.init = msg;
         } else {
           result.init = {
-            "something failed while setting the resourceId:": resourceIdResult,
+            "Something failed while setting the resourceId:": resourceIdResult,
           };
         }
       }
@@ -105,7 +102,12 @@ class SyncService {
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
     try {
-      const expiration = daysFromNowTimestamp(14, "ms").toString();
+      // TODO uncomment
+      // const expiration = daysFromNowTimestamp(14, "ms").toString();
+      console.log(
+        `**REMINDER: channel is expiring in just 1 min. Change before deploying **`
+      );
+      const expiration = minutesFromNow(1, "ms").toString();
 
       const response = await gcal.events.watch({
         calendarId: calendarId,
@@ -207,8 +209,9 @@ class SyncService {
     const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
 
     if (channelExpired || _channelExpiresSoon) {
+      //TODO move to a 'refreshChannel' func after validating logic
       logger.info(
-        `Channel expired? : ${channelExpired.toString()}) 
+        `Channel expired? : ${channelExpired.toString()})
         Channel expiring soon? : ${_channelExpiresSoon.toString()}`
       );
       const stopResult = await this.stopWatchingChannel(
