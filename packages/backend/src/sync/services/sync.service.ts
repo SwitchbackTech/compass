@@ -135,8 +135,8 @@ class SyncService {
     channelId: string,
     resourceId: string
   ) {
-    logger.info(
-      `Stopping watch for channel: ${channelId} and resource: ${resourceId}`
+    logger.debug(
+      `Stopping watch for channelId: ${channelId} and resourceId: ${resourceId}`
     );
     try {
       const gcal = await getGcal(userId);
@@ -198,9 +198,7 @@ class SyncService {
     // these should be the same.
     const channelExpired = oauth.state !== reqParams.channelId;
     if (channelExpired) {
-      logger.info(`Channel expired, so stopping watch on the old channel and resource: 
-          channel: ${reqParams.channelId}, 
-          resource: ${reqParams.resourceId}`);
+      logger.info(`Channel expired, so stopping its watch`);
       const stopResult = await this.stopWatchingChannel(
         oauth.user,
         reqParams.channelId,
@@ -209,9 +207,7 @@ class SyncService {
       channelPrepResult.stop = stopResult;
     }
 
-    // const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
-    // TODO replace
-    const _channelExpiresSoon = true;
+    const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
 
     if (channelExpired || _channelExpiresSoon) {
       // create new channelId to prevent `channelIdNotUnique` google api error
