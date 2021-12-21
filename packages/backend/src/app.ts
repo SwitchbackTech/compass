@@ -46,11 +46,6 @@ routes.push(new PriorityRoutes(app));
 routes.push(new EventRoutes(app));
 routes.push(new SyncRoutes(app));
 
-const runningMessage = `Server running at: http://localhost:${port}`;
-app.get("/", (req: express.Request, res: express.Response) => {
-  res.status(200).send(runningMessage);
-});
-
 // app.use(catchUndefinedSyncErrors);
 app.use(catchSyncErrors);
 
@@ -59,5 +54,5 @@ server.listen(port, () => {
   routes.forEach((route: CommonRoutesConfig) => {
     logger.debug(`Routes configured for ${route.getName()}`);
   });
-  logger.info(runningMessage);
+  logger.info(`Server running at: http://localhost:${port}`);
 });

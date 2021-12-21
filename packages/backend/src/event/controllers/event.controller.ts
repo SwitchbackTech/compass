@@ -1,4 +1,4 @@
-import express, { Request } from "express";
+import express from "express";
 
 import { ReqBody, Res } from "@compass/core/src/types/express.types";
 import { OAuthDTO } from "@compass/core/src/types/auth.types";
@@ -9,7 +9,10 @@ import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
 import { getGcal } from "@auth/services/google.auth.service";
 import syncService from "@sync/services/sync.service";
-import { updateNextSyncToken } from "@sync/services/sync.helpers";
+import {
+  updateNextSyncToken,
+  updateResourceId,
+} from "@sync/services/sync.helpers";
 
 import eventService from "../services/event.service";
 
@@ -69,17 +72,26 @@ class EventController {
       .collection(Collections.OAUTH)
       .findOne({ user: userId });
 
+    // use this existing oauth.state as the channelId,
+    // so you can use it to identify
+    // this channel for future sync updates
     const channelId = oauth.state;
+
     const watchResult = await syncService.startWatchingChannel(
       gcal,
       GCAL_PRIMARY,
       channelId
+    );
+    const resourceIdInit = await updateResourceId(
+      oauth.state,
+      watchResult.resourceId
     );
 
     const fullResults = {
       events: importEventsResult,
       tokenUpdate: tokenUpdateResult,
       watch: watchResult,
+      resourceIdSave: resourceIdInit,
     };
     res.promise(Promise.resolve(fullResults));
   };

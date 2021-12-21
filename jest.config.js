@@ -130,7 +130,7 @@ module.exports = {
   // have to run yarn test in the backend dir for backend tests
   // TODO update so you can run 'yarn test' from root and run all tests
   rootDir: 'packages/web/',
-  // rootDir: 'packages/',
+  // rootDir: './',
 
   // A list of paths to directories that Jest should use to search for files in
   // roots: [

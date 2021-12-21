@@ -9,6 +9,10 @@ import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
 import { GcalMapper } from "@common/services/gcal/map.gcal";
 import { Collections } from "@common/constants/collections";
 import { BaseError } from "@common/errors/errors.base";
+import { daysFromNowTimestamp } from "@core/util/date.utils";
+import { SyncRequest$Gcal } from "@core/types/sync.types";
+
+import { minutesFromNow } from "../../../../core/src/util/date.utils";
 
 const logger = Logger("app:sync.helpers");
 
@@ -61,15 +65,37 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   return categorized;
 };
 
-export const updateStateAndResourceId = async (
-  calendarId: string,
+export const channelRefreshNeeded = (
+  reqParams: SyncRequest$Gcal,
+  oauth: OAuthDTO
+) => {
+  // The calendarId created during watch channel setup used the oauth.state,so
+  // these should be the same.
+  const channelExpired = oauth.state !== reqParams.channelId;
+  const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
+
+  const refreshNeeded = channelExpired || _channelExpiresSoon;
+
+  if (refreshNeeded) {
+    logger.debug(
+      `Refresh needed:
+        Channel expired? : ${channelExpired.toString()}
+        Channel expiring soon? : ${_channelExpiresSoon.toString()}`
+    );
+  }
+
+  return refreshNeeded;
+};
+
+export const updateResourceId = async (
+  oauthState: string,
   resourceId: string
 ) => {
-  logger.debug("Updating state/calendarId and resourceId for future reference");
+  logger.debug(`Updating resourceId to: ${resourceId}`);
   const result = await mongoService.db
     .collection(Collections.OAUTH)
     .findOneAndUpdate(
-      { state: calendarId },
+      { state: oauthState },
       {
         $set: {
           resourceId: resourceId,
@@ -77,7 +103,21 @@ export const updateStateAndResourceId = async (
         },
       }
     );
+
   return result;
+};
+
+export const channelExpiresSoon = (expiry: string) => {
+  // Temp: testing sync
+  const xMinFromNow = minutesFromNow(2, "ms");
+  const expiration = new Date(expiry).getTime();
+  const channelExpiresSoon = expiration < xMinFromNow;
+
+  // TODO re-enable
+  // const xDaysFromNow = daysFromNowTimestamp(3, "ms");
+  // const expiration = new Date(expiry).getTime();
+  // const channelExpiresSoon = expiration < xDaysFromNow;
+  return channelExpiresSoon;
 };
 
 export const updateNextSyncToken = async (
