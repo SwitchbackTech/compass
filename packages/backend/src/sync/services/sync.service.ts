@@ -27,6 +27,7 @@ import {
   assembleBulkOperations,
   categorizeGcalEvents,
   channelExpiresSoon,
+  channelRefreshNeeded,
   updateNextSyncToken,
   updateResourceId,
 } from "./sync.helpers";
@@ -46,6 +47,8 @@ class SyncService {
       };
 
       if (reqParams.resourceState === "sync") {
+        const msg = `A new notification channel was successfully created for: channelId / oauth.state:'${reqParams.channelId}' resourceId: '${reqParams.resourceId}'`;
+        logger.debug(msg);
         // declaring this variable as a reminder that the
         // oauth.state and channelId should be the same
         const oauthState = reqParams.channelId;
@@ -55,8 +58,6 @@ class SyncService {
           reqParams.resourceId
         );
         if (resourceIdResult.ok === 1) {
-          const msg = `A new notification channel was successfully created for: 
-          channelId / oauth.state:'${reqParams.channelId}' resourceId: '${reqParams.resourceId}'`;
           result.init = msg;
         } else {
           result.init = {
@@ -70,6 +71,7 @@ class SyncService {
       else if (reqParams.resourceState === "exists") {
         const { channelPrepResult, oauth, gcal } =
           await this.prepareSyncChannels(reqParams);
+
         result.watch = channelPrepResult;
 
         const params: SyncParams$Gcal = {
@@ -206,18 +208,8 @@ class SyncService {
 
     const gcal = await getGcal(oauth.user);
 
-    // The calendarId created during watch channel setup used the oauth.state,so
-    // these should be the same.
-    const channelExpired = oauth.state !== reqParams.channelId;
-    const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
-
-    if (channelExpired || _channelExpiresSoon) {
-      //TODO move to a 'refreshChannel' func after validating logic
-      logger.info(
-        `Channel expired? : ${channelExpired.toString()})
-        Channel expiring soon? : ${_channelExpiresSoon.toString()}`
-      );
-
+    const refreshNeeded = channelRefreshNeeded(reqParams, oauth);
+    if (refreshNeeded) {
       channelPrepResult.refresh = await this.refreshChannelWatch(
         oauth,
         gcal,

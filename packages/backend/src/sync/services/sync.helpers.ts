@@ -10,6 +10,9 @@ import { GcalMapper } from "@common/services/gcal/map.gcal";
 import { Collections } from "@common/constants/collections";
 import { BaseError } from "@common/errors/errors.base";
 import { daysFromNowTimestamp } from "@core/util/date.utils";
+import { SyncRequest$Gcal } from "@core/types/sync.types";
+
+import { minutesFromNow } from "../../../../core/src/util/date.utils";
 
 const logger = Logger("app:sync.helpers");
 
@@ -62,6 +65,28 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   return categorized;
 };
 
+export const channelRefreshNeeded = (
+  reqParams: SyncRequest$Gcal,
+  oauth: OAuthDTO
+) => {
+  // The calendarId created during watch channel setup used the oauth.state,so
+  // these should be the same.
+  const channelExpired = oauth.state !== reqParams.channelId;
+  const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
+
+  const refreshNeeded = channelExpired || _channelExpiresSoon;
+
+  if (refreshNeeded) {
+    logger.debug(
+      `Refresh needed:
+        Channel expired? : ${channelExpired.toString()})
+        Channel expiring soon? : ${_channelExpiresSoon.toString()}`
+    );
+  }
+
+  return refreshNeeded;
+};
+
 export const updateResourceId = async (
   oauthState: string,
   resourceId: string
@@ -83,9 +108,15 @@ export const updateResourceId = async (
 };
 
 export const channelExpiresSoon = (expiry: string) => {
-  const xDaysFromNow = daysFromNowTimestamp(3, "ms");
+  // Temp: testing sync
+  const xMinFromNow = minutesFromNow(2, "ms");
   const expiration = new Date(expiry).getTime();
-  const channelExpiresSoon = expiration < xDaysFromNow;
+  const channelExpiresSoon = expiration < xMinFromNow;
+
+  // TODO re-enable
+  // const xDaysFromNow = daysFromNowTimestamp(3, "ms");
+  // const expiration = new Date(expiry).getTime();
+  // const channelExpiresSoon = expiration < xDaysFromNow;
   return channelExpiresSoon;
 };
 
