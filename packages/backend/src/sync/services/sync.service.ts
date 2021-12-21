@@ -6,10 +6,10 @@ import { BASEURL } from "@core/core.constants";
 import { OAuthDTO } from "@core/types/auth.types";
 import { minutesFromNow, daysFromNowTimestamp } from "@core/util/date.utils";
 import {
-  SyncRequest$Gcal,
-  NotifResult$Gcal,
-  SyncEventsResult$Gcal,
-  SyncParams$Gcal,
+  Request_Sync_Gcal,
+  Result_Notif_Gcal,
+  Result_Sync_Gcal,
+  Params_Sync_Gcal,
 } from "@core/types/sync.types";
 import { getGcal } from "@auth/services/google.auth.service";
 import { BaseError } from "@common/errors/errors.base";
@@ -35,8 +35,8 @@ const logger = Logger("app:sync.service");
 
 class SyncService {
   async handleGcalNotification(
-    reqParams: SyncRequest$Gcal
-  ): Promise<NotifResult$Gcal | BaseError> {
+    reqParams: Request_Sync_Gcal
+  ): Promise<Result_Notif_Gcal | BaseError> {
     try {
       const result = {
         params: undefined,
@@ -71,7 +71,7 @@ class SyncService {
 
         result.watch = channelPrepResult;
 
-        const params: SyncParams$Gcal = {
+        const params: Params_Sync_Gcal = {
           ...reqParams,
           userId: oauth.user,
           nextSyncToken: oauth.tokens.nextSyncToken,
@@ -191,7 +191,7 @@ class SyncService {
     }
   }
 
-  prepareSyncChannels = async (reqParams: SyncRequest$Gcal) => {
+  prepareSyncChannels = async (reqParams: Request_Sync_Gcal) => {
     const channelPrepResult = {
       stop: undefined,
       refresh: undefined,
@@ -222,7 +222,7 @@ class SyncService {
   refreshChannelWatch = async (
     oauth: OAuthDTO,
     gcal: gCalendar,
-    reqParams: SyncRequest$Gcal
+    reqParams: Request_Sync_Gcal
   ) => {
     const stopResult = await this.stopWatchingChannel(
       oauth.user,
@@ -263,8 +263,8 @@ export default new SyncService();
 
 const _syncUpdates = async (
   gcal: gCalendar,
-  params: SyncParams$Gcal
-): Promise<SyncEventsResult$Gcal | BaseError> => {
+  params: Params_Sync_Gcal
+): Promise<Result_Sync_Gcal | BaseError> => {
   const syncResult = {
     syncToken: undefined,
     result: undefined,

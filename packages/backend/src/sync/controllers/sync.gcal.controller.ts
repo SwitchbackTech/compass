@@ -1,7 +1,10 @@
 import express from "express";
 
 import { Logger } from "@common/logger/common.logger";
-import { Body$Watch$Start, Body$Watch$Stop } from "@core/types/sync.types";
+import {
+  Body_Watch_Gcal_Start,
+  Body_Watch_Gcal_Stop,
+} from "@core/types/sync.types";
 import { ReqBody, Res } from "@core/types/express.types";
 import { getGcal } from "@auth/services/google.auth.service";
 
@@ -31,7 +34,7 @@ class GcalSyncController {
     }
   };
 
-  startWatching = async (req: ReqBody<Body$Watch$Start>, res: Res) => {
+  startWatching = async (req: ReqBody<Body_Watch_Gcal_Start>, res: Res) => {
     const userId = res.locals.user.id;
     const calendarId = req.body.calendarId;
     const channelId = req.body.channelId;
@@ -46,7 +49,7 @@ class GcalSyncController {
     res.promise(Promise.resolve(watchResult));
   };
 
-  stopWatching = async (req: ReqBody<Body$Watch$Stop>, res: Res) => {
+  stopWatching = async (req: ReqBody<Body_Watch_Gcal_Stop>, res: Res) => {
     const userId = res.locals.user.id;
     const channelId = req.body.channelId;
     const resourceId = req.body.resourceId;

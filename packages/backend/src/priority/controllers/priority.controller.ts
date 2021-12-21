@@ -1,11 +1,12 @@
 import express from "express";
 
 import { PriorityReq } from "@compass/core/src/types/priority.types";
+import { Res } from "@core/types/express.types";
 
 import priorityService from "../services/priority.service";
 
 class PriorityController {
-  create = async (req: express.Request, res: express.Response) => {
+  create = async (req: express.Request, res: Res) => {
     const userId: string = res.locals.user.id;
     const data: PriorityReq = req.body;
     const createRes = await priorityService.create(userId, data);

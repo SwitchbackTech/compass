@@ -1,6 +1,6 @@
 import { DeleteResult } from "mongodb";
 
-export interface CompassUser {
+export interface Schema_User {
   // TODO either create new interface with _id or make optional ?
   // _id?: string;
   email: string;
@@ -9,7 +9,7 @@ export interface CompassUser {
   googleId: string;
 }
 
-export interface DeleteUserDataResult {
+export interface Result_Delete_User {
   events: DeleteResult;
   oauth: DeleteResult;
   user: DeleteResult;

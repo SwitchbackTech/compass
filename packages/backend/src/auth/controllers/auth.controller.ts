@@ -9,8 +9,8 @@ import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
 import {
   GoogleUser,
-  Params$AfterOAuth,
-  CombinedLogin$Google,
+  CombinedLogin_Google,
+  Params_AfterOAuth,
 } from "@core/types/auth.types";
 
 import googleOauthService from "../services/google.auth.service";
@@ -106,7 +106,7 @@ class AuthController {
   ) => {
     const _integration = GOOGLE;
     if (_integration === GOOGLE) {
-      const query: Params$AfterOAuth = req.query;
+      const query: Params_AfterOAuth = req.query;
 
       const gAuthService = new googleOauthService();
       await gAuthService.setTokens(query.code, null);
@@ -115,7 +115,7 @@ class AuthController {
       // TODO use query.state to start watching for that channel
       // via gcal.service
 
-      const compassLoginData: CombinedLogin$Google = {
+      const compassLoginData: CombinedLogin_Google = {
         user: gUser,
         oauth: Object.assign(
           {},

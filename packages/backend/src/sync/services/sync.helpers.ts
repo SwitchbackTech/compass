@@ -10,7 +10,7 @@ import { GcalMapper } from "@common/services/gcal/map.gcal";
 import { Collections } from "@common/constants/collections";
 import { BaseError } from "@common/errors/errors.base";
 import { daysFromNowTimestamp } from "@core/util/date.utils";
-import { SyncRequest$Gcal } from "@core/types/sync.types";
+import { Request_Sync_Gcal } from "@core/types/sync.types";
 
 import { minutesFromNow } from "../../../../core/src/util/date.utils";
 
@@ -66,7 +66,7 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
 };
 
 export const channelRefreshNeeded = (
-  reqParams: SyncRequest$Gcal,
+  reqParams: Request_Sync_Gcal,
   oauth: OAuthDTO
 ) => {
   // The calendarId created during watch channel setup used the oauth.state,so

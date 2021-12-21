@@ -1,41 +1,41 @@
 import { BulkWriteResult } from 'mongodb';
-export interface ImportResult$GCal {
+export interface Result_Import_Gcal {
   total: number;
   nextSyncToken: string | null | undefined;
   errors: any[];
 }
 
-export interface NotifResult$Gcal {
+export interface Result_Notif_Gcal {
    params: object;
    init?: object;
-   sync?: SyncEventsResult$Gcal
+   sync?: Result_Sync_Gcal
   }
 
-export interface SyncEventsResult$Gcal {
+export interface Result_Sync_Gcal {
      syncToken?: object;
      events?: undefined | BulkWriteResult;
    }
 
 
-export interface SyncRequest$Gcal {
+export interface Request_Sync_Gcal {
   channelId: string; 
   resourceId: string; 
   resourceState: string;
   expiration:  string; 
 }
 
-export interface SyncParams$Gcal extends SyncRequest$Gcal {
+export interface Params_Sync_Gcal extends Request_Sync_Gcal {
   nextSyncToken: string; 
   userId: string;
   calendarId?: string;
 }
 
-export interface Body$Watch$Stop {
+export interface Body_Watch_Gcal_Stop {
   channelId: string;
   resourceId: string;
 }
 
-export interface Body$Watch$Start {
+export interface Body_Watch_Gcal_Start {
   calendarId: string;
   channelId: string;
 }

@@ -3,7 +3,7 @@ import express from "express";
 import { ReqBody, Res } from "@compass/core/src/types/express.types";
 import { OAuthDTO } from "@compass/core/src/types/auth.types";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
-import { Event$NoId, Params$DeleteMany } from "@core/types/event.types";
+import { Event_NoId, Params_DeleteMany } from "@core/types/event.types";
 import { Collections } from "@common/constants/collections";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
@@ -17,7 +17,7 @@ import eventService from "@event/services/event.service";
 
 const logger = Logger("app:event.controller");
 class EventController {
-  create = async (req: ReqBody<Event$NoId>, res: Res) => {
+  create = async (req: ReqBody<Event_NoId>, res: Res) => {
     const userId = res.locals.user.id;
 
     if (req.body instanceof Array) {
@@ -38,7 +38,7 @@ class EventController {
 
   deleteMany = async (
     // req: ReqBody<{ key: string; ids: string[] }>,
-    req: ReqBody<Params$DeleteMany>,
+    req: ReqBody<Params_DeleteMany>,
     res: Res
   ) => {
     const userId = res.locals.user.id;
@@ -108,7 +108,7 @@ class EventController {
     res.promise(Promise.resolve(usersEvents));
   };
 
-  update = async (req: ReqBody<Event$NoId>, res: Res) => {
+  update = async (req: ReqBody<Event_NoId>, res: Res) => {
     /* 
     TODO validate: 
      - that no id in body (cuz id is immutable and will cause mongo err)
