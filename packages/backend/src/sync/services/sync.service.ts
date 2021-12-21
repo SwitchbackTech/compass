@@ -47,8 +47,6 @@ class SyncService {
       };
 
       if (reqParams.resourceState === "sync") {
-        const msg = `A new notification channel was successfully created for: channelId / oauth.state:'${reqParams.channelId}' resourceId: '${reqParams.resourceId}'`;
-        logger.debug(msg);
         // declaring this variable as a reminder that the
         // oauth.state and channelId should be the same
         const oauthState = reqParams.channelId;
@@ -58,7 +56,7 @@ class SyncService {
           reqParams.resourceId
         );
         if (resourceIdResult.ok === 1) {
-          result.init = msg;
+          result.init = `A new notification channel was successfully created for: channelId / oauth.state:'${reqParams.channelId}' resourceId: '${reqParams.resourceId}'`;
         } else {
           result.init = {
             "Something failed while setting the resourceId:": resourceIdResult,
