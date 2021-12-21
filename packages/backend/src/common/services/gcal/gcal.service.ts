@@ -49,8 +49,12 @@ class GCalService {
   }
 
   async listCalendars(gcal: gCalendar) {
-    const response = await gcal.calendarList.list();
-    return response;
+    try {
+      const response = await gcal.calendarList.list();
+      return response.data;
+    } catch (e) {
+      return new BaseError("GCal Calendar List Failed", e, Status.UNSURE, true);
+    }
   }
 
   async updateEvent(gcal: gCalendar, gEventId: string, event: gSchema$Event) {

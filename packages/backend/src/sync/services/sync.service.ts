@@ -26,7 +26,6 @@ import mongoService from "@common/services/mongo.service";
 import {
   assembleBulkOperations,
   categorizeGcalEvents,
-  channelExpiresSoon,
   channelRefreshNeeded,
   updateNextSyncToken,
   updateResourceId,

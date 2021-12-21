@@ -16,6 +16,11 @@ export class CalendarRoutes extends CommonRoutesConfig {
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
       .get(calendarController.list);
 
+    this.app
+      .route(`/calendar/demo`)
+      .all(jwtMiddleware.verifyTokenAndSaveUserId)
+      .post(calendarController.testingSetup);
+
     return this.app;
   }
 }
