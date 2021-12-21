@@ -13,10 +13,9 @@ import {
   updateNextSyncToken,
   updateResourceId,
 } from "@sync/services/sync.helpers";
+import eventService from "@event/services/event.service";
 
-import eventService from "../services/event.service";
-
-const logger = Logger("app:event.service");
+const logger = Logger("app:event.controller");
 class EventController {
   create = async (req: ReqBody<Event$NoId>, res: Res) => {
     const userId = res.locals.user.id;

@@ -1,8 +1,9 @@
 import { google } from "googleapis";
 import jwt from "jsonwebtoken";
 import express from "express";
+import { OAuth2Client } from "google-auth-library";
 
-import { OAuthTokens$Gcal } from "@core/types/auth.types";
+import { OAuthDTO, OAuthTokens$Gcal } from "@core/types/auth.types";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
 import { Collections } from "@common/constants/collections";
@@ -16,12 +17,12 @@ const SCOPES = process.env.SCOPES.split(",");
 
 /* Helpers */
 export const getGcal = async (userId: string): Promise<gCalendar> => {
-  const oAuthUser = await mongoService.db
+  const oAuthUser: OAuthDTO = await mongoService.db
     .collection(Collections.OAUTH)
     .findOne({ user: userId });
 
   if (oAuthUser === null) {
-    // throw to force middleware error handler to address
+    // throwing error forces middleware error handler to address
     // before other bad stuff can happen
     throw new BaseError(
       "Gcal Auth failed",
@@ -36,7 +37,7 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
 
   const calendar = google.calendar({
     version: "v3",
-    auth: googleClient.oAuth2Client,
+    auth: googleClient.oauthClient,
   });
 
   return calendar;
@@ -44,7 +45,7 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
 
 class GoogleOauthService {
   tokens: {};
-  oAuth2Client;
+  oauthClient: OAuth2Client;
 
   constructor() {
     logger.debug("Creating new oauth service ");
@@ -52,7 +53,7 @@ class GoogleOauthService {
       ? process.env.REDIRECT_URI_DEV
       : process.env.REDIRECT_URI;
 
-    this.oAuth2Client = new google.auth.OAuth2(
+    this.oauthClient = new google.auth.OAuth2(
       process.env.CLIENT_ID,
       process.env.CLIENT_SECRET,
       redirectUri
@@ -63,7 +64,7 @@ class GoogleOauthService {
   async checkOauthStatus(req: express.Request) {
     const state = req.query.state;
 
-    const oauth = await mongoService.db
+    const oauth: OAuthDTO = await mongoService.db
       .collection(Collections.OAUTH)
       .findOne({ state: state });
 
@@ -87,7 +88,7 @@ class GoogleOauthService {
   }
 
   generateAuthUrl(state: string) {
-    const authUrl = this.oAuth2Client.generateAuthUrl({
+    const authUrl = this.oauthClient.generateAuthUrl({
       access_type: "offline",
       prompt: "consent",
       scope: SCOPES,
@@ -98,7 +99,7 @@ class GoogleOauthService {
 
   async getUser() {
     const oauth2 = google.oauth2({
-      auth: this.oAuth2Client,
+      auth: this.oauthClient,
       version: "v2",
     });
     const response = await oauth2.userinfo.get();
@@ -123,12 +124,12 @@ class GoogleOauthService {
     // TODO after implementing the notification sync feature
     // - refactor so not so buggy
     if (tokens === null) {
-      const { tokens } = await this.oAuth2Client.getToken(code);
+      const { tokens } = await this.oauthClient.getToken(code);
       this.tokens = tokens;
     } else {
       this.tokens = tokens;
     }
-    this.oAuth2Client.setCredentials(this.tokens);
+    this.oauthClient.setCredentials(this.tokens);
     logger.debug("Credentials set");
   }
 }

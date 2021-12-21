@@ -1,5 +1,4 @@
-import { gSchema$Event, gParamsEventsList } from "declarations";
-import { calendar_v3 } from "googleapis";
+import { gSchema$Event, gParamsEventsList, gCalendar } from "declarations";
 
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
 import { BaseError } from "@common/errors/errors.base";
@@ -9,7 +8,7 @@ import { Logger } from "@common/logger/common.logger";
 const logger = Logger("app:compass.gcal.service");
 
 class GCalService {
-  async createEvent(gcal: calendar_v3.Calendar, event: gSchema$Event) {
+  async createEvent(gcal: gCalendar, event: gSchema$Event) {
     const response = await gcal.events.insert({
       calendarId: "primary",
       requestBody: event,
@@ -18,7 +17,7 @@ class GCalService {
   }
 
   async deleteEvent(
-    gcal: calendar_v3.Calendar,
+    gcal: gCalendar,
     gcalEventId: string
   ): Promise<void | BaseError> {
     try {
@@ -44,16 +43,17 @@ class GCalService {
     }
   }
 
-  async getEvents(gcal: calendar_v3.Calendar, params: gParamsEventsList) {
+  async getEvents(gcal: gCalendar, params: gParamsEventsList) {
     const response = await gcal.events.list(params);
     return response;
   }
 
-  async updateEvent(
-    gcal: calendar_v3.Calendar,
-    gEventId: string,
-    event: gSchema$Event
-  ) {
+  async listCalendars(gcal: gCalendar) {
+    const response = await gcal.calendarList.list();
+    return response;
+  }
+
+  async updateEvent(gcal: gCalendar, gEventId: string, event: gSchema$Event) {
     try {
       const response = await gcal.events.update({
         calendarId: GCAL_PRIMARY,

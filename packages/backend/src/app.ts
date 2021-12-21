@@ -13,6 +13,7 @@ import { AuthRoutes } from "@auth/auth.routes.config";
 import { EventRoutes } from "@event/event.routes.config";
 import { PriorityRoutes } from "@priority/priority.routes.config";
 import { SyncRoutes } from "@sync/sync.routes.config";
+import { CalendarRoutes } from "@calendar/calendar.routes.config";
 import mongoService from "@common/services/mongo.service";
 import expressLogger from "@common/logger/express.logger";
 import { Logger } from "@common/logger/common.logger";
@@ -45,6 +46,7 @@ routes.push(new AuthRoutes(app));
 routes.push(new PriorityRoutes(app));
 routes.push(new EventRoutes(app));
 routes.push(new SyncRoutes(app));
+routes.push(new CalendarRoutes(app));
 
 // app.use(catchUndefinedSyncErrors);
 app.use(catchSyncErrors);
