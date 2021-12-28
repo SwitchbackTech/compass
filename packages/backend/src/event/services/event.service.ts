@@ -19,12 +19,7 @@ import { getGcal } from "@auth/services/google.auth.service";
 import { yearsAgo } from "@common/helpers/common.helpers";
 import { GcalMapper } from "@common/services/gcal/map.gcal";
 
-import {
-  gCalendar,
-  gParamsEventsList,
-  gSchema$Event,
-  gSchema$Events,
-} from "../../../declarations";
+import { gCalendar, gParamsEventsList } from "../../../declarations";
 import { getReadAllFilter } from "./event.service.helpers";
 
 const logger = Logger("app:event.service");

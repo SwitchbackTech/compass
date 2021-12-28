@@ -65,12 +65,17 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   return categorized;
 };
 
-export const channelExpired = (calendar: Schema_Calendar, channelId: string) => {
-  const matchingChannelIds = calendar.google.items.filter((c) => c.sync.channelId === channelId) 
+export const channelExpired = (
+  calendar: Schema_Calendar,
+  channelId: string
+) => {
+  const matchingChannelIds = calendar.google.items.filter(
+    (c) => c.sync.channelId === channelId
+  );
   if (matchingChannelIds.length < 1) {
-    return false
+    return false;
   } else {
-    return true
+    return true;
   }
 };
 
@@ -92,10 +97,7 @@ export const channelRefreshNeeded = (
   calendar: Schema_Calendar
 ) => {
   //todo test if any channelIds in items match
-  const _channelExpired = channelExpired(
-    calendar,
-    reqParams.channelId
-  );
+  const _channelExpired = channelExpired(calendar, reqParams.channelId);
   const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
 
   const refreshNeeded = _channelExpired || _channelExpiresSoon;

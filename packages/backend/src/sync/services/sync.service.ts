@@ -62,7 +62,6 @@ class SyncService {
       }
 
       // There is new data to sync from GCal //
-      //TODO create validation function and move there
       else if (reqParams.resourceState === "exists") {
         const { channelPrepResult, calendar, gcal } =
           await this.prepareSyncChannels(reqParams);

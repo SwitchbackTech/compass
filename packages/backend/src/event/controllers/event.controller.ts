@@ -1,7 +1,6 @@
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
 
-
 import { ReqBody, Res } from "@compass/core/src/types/express.types";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
 import { Event_NoId, Params_DeleteMany } from "@core/types/event.types";
@@ -64,13 +63,13 @@ class EventController {
 
     const importEventsResult = await eventService.import(userId, gcal);
 
-    const tokenUpdateResult = await updateNextSyncToken(
+    const syncTokenUpdateResult = await updateNextSyncToken(
       userId,
       importEventsResult.nextSyncToken
     );
 
     // TODO remove 'primary-' after supporting multiple channels/user
-    const channelId = `primary-${uuidv4()}`
+    const channelId = `primary-${uuidv4()}`;
 
     const watchResult = await syncService.startWatchingChannel(
       gcal,
@@ -78,16 +77,23 @@ class EventController {
       channelId
     );
 
-    const idUpdateResult = await updateResourceIdAndChannelId(userId, channelId, watchResult.resourceId)
-    const updateIdSummary = idUpdateResult.idUpdates === 1 && idUpdateResult.lastErrorObject.updatedExisting ? "success" : "failed"
+    const idUpdateResult = await updateResourceIdAndChannelId(
+      userId,
+      channelId,
+      watchResult.resourceId
+    );
+    const updateIdSummary =
+      idUpdateResult.ok === 1 && idUpdateResult.lastErrorObject.updatedExisting
+        ? "success"
+        : "failed";
 
     const fullResults = {
       events: importEventsResult,
-      tokenUpdate: tokenUpdateResult,
       sync: {
         watch: watchResult,
-        saveIds: updateIdSummary
-      }
+        nextSyncToken: syncTokenUpdateResult,
+        saveIds: updateIdSummary,
+      },
     };
     res.promise(Promise.resolve(fullResults));
   };

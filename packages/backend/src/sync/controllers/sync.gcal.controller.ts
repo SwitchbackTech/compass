@@ -11,6 +11,8 @@ import syncService from "../services/sync.service";
 
 class GcalSyncController {
   handleNotification = async (req: express.Request, res: express.Response) => {
+    //TODO validate request
+
     // hacky way to appease typescript, since these headers can also be string[]
     if (
       typeof req.headers["x-goog-channel-id"] === "string" &&
