@@ -2,7 +2,7 @@ import express from "express";
 
 import { Logger } from "@common/logger/common.logger";
 import { Res } from "@compass/core/src/types/express.types";
-import { Schema_Calendar } from "@compass/core/src/types/calendar.types";
+import { Schema_CalendarList } from "@compass/core/src/types/calendar.types";
 import gcalService from "@common/services/gcal/gcal.service";
 import mongoService from "@common/services/mongo.service";
 import { Collections } from "@common/constants/collections";
@@ -20,7 +20,7 @@ class CalendarController {
 
   testingSetup = async (req: express.Request, res: Res) => {
     const userId = res.locals.user.id;
-    const data: Schema_Calendar = {
+    const data: Schema_CalendarList = {
       user: userId,
       google: {
         nextSyncToken: "calendarListSyncToken",

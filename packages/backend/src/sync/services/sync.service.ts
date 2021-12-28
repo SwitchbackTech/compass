@@ -1,10 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import { gCalendar, gSchema$Channel } from "declarations";
-import { calendar_v3 } from "googleapis";
 
 import { BASEURL } from "@core/core.constants";
-import { Schema_Oauth } from "@core/types/auth.types";
-import { Schema_Calendar } from "@core/types/calendar.types";
+import { Schema_CalendarList } from "@core/types/calendar.types";
 import { minutesFromNow, daysFromNowTimestamp } from "@core/util/date.utils";
 import {
   Request_Sync_Gcal,
@@ -197,7 +195,7 @@ class SyncService {
     };
 
     // initialize what you'll need later
-    const calendarList: Schema_Calendar = await mongoService.db
+    const calendarList: Schema_CalendarList = await mongoService.db
       .collection(Collections.CALENDAR)
       .findOne({ "google.items.sync.resourceId": reqParams.resourceId });
 

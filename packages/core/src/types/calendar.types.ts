@@ -1,4 +1,4 @@
-export interface Schema_Calendar {
+export interface Schema_CalendarList {
     user: string;
     google?: Schema_GCalList;
 }

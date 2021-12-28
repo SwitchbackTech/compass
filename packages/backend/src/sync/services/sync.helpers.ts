@@ -10,7 +10,7 @@ import { Collections } from "@common/constants/collections";
 import { BaseError } from "@common/errors/errors.base";
 import { daysFromNowTimestamp } from "@core/util/date.utils";
 import { Request_Sync_Gcal } from "@core/types/sync.types";
-import { Schema_Calendar, Schema_GCal } from "@core/types/calendar.types";
+import { Schema_CalendarList, Schema_GCal } from "@core/types/calendar.types";
 import { Status } from "@common/errors/status.codes";
 
 import { minutesFromNow } from "../../../../core/src/util/date.utils";
@@ -67,7 +67,7 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
 };
 
 export const channelExpired = (
-  calendar: Schema_Calendar,
+  calendar: Schema_CalendarList,
   channelId: string
 ) => {
   const matchingChannelIds = calendar.google.items.filter(
@@ -95,7 +95,7 @@ export const channelExpiresSoon = (expiry: string) => {
 
 export const channelRefreshNeeded = (
   reqParams: Request_Sync_Gcal,
-  calendar: Schema_Calendar
+  calendar: Schema_CalendarList
 ) => {
   //todo test if any channelIds in items match
   const _channelExpired = channelExpired(calendar, reqParams.channelId);
@@ -160,7 +160,7 @@ export const findCalendarByResourceId = (
   //todo loop through items.sync for the one that matches the resourceId,
   // then grab that one's nextSyncToken
   resourceId: string,
-  calendarList: Schema_Calendar
+  calendarList: Schema_CalendarList
 ) => {
   const matches = calendarList.google.items.filter((g) => {
     return g.sync.resourceId === resourceId;
