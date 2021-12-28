@@ -1,7 +1,11 @@
 import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
 
-import { gcalEventsExample, calendarsExample } from "./sync.test.data";
-import { categorizeGcalEvents, channelExpired } from "./sync.helpers";
+import { gcalEventsExample, calendarListExample } from "./sync.test.data";
+import {
+  categorizeGcalEvents,
+  channelExpired,
+  findCalendarByResourceId,
+} from "./sync.helpers";
 
 describe("Categorize GCal Updates", () => {
   const { eventsToDelete, eventsToUpdate } =
@@ -43,10 +47,18 @@ describe("Categorize GCal Updates", () => {
 
 describe("Refreshes channel watch", () => {
   test("Decides if channel is expired", () => {
-    const isExpired1 = channelExpired(calendarsExample, "channel1");
+    const isExpired1 = channelExpired(calendarListExample, "channel1");
     expect(isExpired1).toBe(true);
 
-    const isExpired2 = channelExpired(calendarsExample, "oldChannelId");
+    const isExpired2 = channelExpired(calendarListExample, "oldChannelId");
     expect(isExpired2).toBe(false);
+  });
+});
+
+describe("Miscellaneous", () => {
+  test("finds resourceId", () => {
+    const cal = findCalendarByResourceId("resource2", calendarListExample);
+    const resourceId = cal.sync.resourceId;
+    expect(resourceId).toBe("resource2");
   });
 });

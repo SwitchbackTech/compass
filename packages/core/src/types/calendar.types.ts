@@ -8,7 +8,7 @@ export interface Schema_GCalList {
     items: Schema_GCal[];
 }
 
-interface Schema_GCal {
+export interface Schema_GCal {
     primary?: boolean;
     id: string;
     summary: string;

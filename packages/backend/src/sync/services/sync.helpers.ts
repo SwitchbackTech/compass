@@ -10,7 +10,8 @@ import { Collections } from "@common/constants/collections";
 import { BaseError } from "@common/errors/errors.base";
 import { daysFromNowTimestamp } from "@core/util/date.utils";
 import { Request_Sync_Gcal } from "@core/types/sync.types";
-import { Schema_Calendar } from "@core/types/calendar.types";
+import { Schema_Calendar, Schema_GCal } from "@core/types/calendar.types";
+import { Status } from "@common/errors/status.codes";
 
 import { minutesFromNow } from "../../../../core/src/util/date.utils";
 
@@ -153,6 +154,32 @@ export const updateNextSyncToken = async (
     logger.error(e);
     throw err;
   }
+};
+
+export const findCalendarByResourceId = (
+  //todo loop through items.sync for the one that matches the resourceId,
+  // then grab that one's nextSyncToken
+  resourceId: string,
+  calendarList: Schema_Calendar
+) => {
+  const matches = calendarList.google.items.filter((g) => {
+    return g.sync.resourceId === resourceId;
+  });
+
+  if (matches.length !== 1) {
+    logger.error(`No calendar has resourceId: ${resourceId}`);
+  }
+
+  if (matches.length > 1) {
+    throw new BaseError(
+      "Duplicate resourceIds",
+      `Multiple calendars share resourceId: ${resourceId}`,
+      Status.BAD_REQUEST,
+      false
+    );
+  }
+
+  return matches[0];
 };
 
 export const updateResourceId = async (

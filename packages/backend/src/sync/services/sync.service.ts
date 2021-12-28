@@ -28,6 +28,7 @@ import {
   assembleBulkOperations,
   categorizeGcalEvents,
   channelRefreshNeeded,
+  findCalendarByResourceId,
   updateNextSyncToken,
   updateResourceId,
   updateResourceIdAndChannelId,
@@ -63,7 +64,7 @@ class SyncService {
 
       // There is new data to sync from GCal //
       else if (reqParams.resourceState === "exists") {
-        const { channelPrepResult, userId, gcal } =
+        const { channelPrepResult, userId, gcal, nextSyncToken } =
           await this.prepareSyncChannels(reqParams);
 
         result.watch = channelPrepResult;
@@ -71,8 +72,7 @@ class SyncService {
         const params: Params_Sync_Gcal = {
           ...reqParams,
           userId: userId,
-          // nextSyncToken: oauth.tokens.nextSyncToken,
-          nextSyncToken: oauth.tokens.nextSyncToken,
+          nextSyncToken: nextSyncToken,
           calendarId: `${GCAL_NOTIFICATION_URL} <- hard-coded for now`,
         };
         result.params = params;
@@ -197,19 +197,21 @@ class SyncService {
     };
 
     // initialize what you'll need later
-    const calendar: Schema_Calendar = await mongoService.db
+    const calendarList: Schema_Calendar = await mongoService.db
       .collection(Collections.CALENDAR)
       .findOne({ "google.items.sync.resourceId": reqParams.resourceId });
 
     logger.debug(`calendar response:`);
-    logger.debug(JSON.stringify(calendar));
+    logger.debug(JSON.stringify(calendarList));
 
-    const userId = calendar.user;
-    // const nextSyncToken = calendar.google.items.sync.nextSyncToken;
+    const userId = calendarList.user;
+
+    const cal = findCalendarByResourceId(reqParams.resourceId, calendarList);
+    const nextSyncToken = cal.sync.nextSyncToken;
 
     const gcal = await getGcal(userId);
 
-    const refreshNeeded = channelRefreshNeeded(reqParams, calendar);
+    const refreshNeeded = channelRefreshNeeded(reqParams, calendarList);
     if (refreshNeeded) {
       channelPrepResult.refresh = await this.refreshChannelWatch(
         userId,
@@ -220,7 +222,7 @@ class SyncService {
       channelPrepResult.stillActive = true;
     }
 
-    return { channelPrepResult, userId, gcal };
+    return { channelPrepResult, userId, gcal, nextSyncToken };
   };
 
   refreshChannelWatch = async (
