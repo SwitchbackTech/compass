@@ -3,7 +3,8 @@ import { gCalendar, gSchema$Channel } from "declarations";
 import { calendar_v3 } from "googleapis";
 
 import { BASEURL } from "@core/core.constants";
-import { OAuthDTO } from "@core/types/auth.types";
+import { Schema_Oauth } from "@core/types/auth.types";
+import { Schema_Calendar } from "@core/types/calendar.types";
 import { minutesFromNow, daysFromNowTimestamp } from "@core/util/date.utils";
 import {
   Request_Sync_Gcal,
@@ -29,6 +30,7 @@ import {
   channelRefreshNeeded,
   updateNextSyncToken,
   updateResourceId,
+  updateResourceIdAndChannelId,
 } from "./sync.helpers";
 
 const logger = Logger("app:sync.service");
@@ -46,16 +48,12 @@ class SyncService {
       };
 
       if (reqParams.resourceState === "sync") {
-        // declaring this variable as a reminder that the
-        // oauth.state and channelId should be the same
-        const oauthState = reqParams.channelId;
-
         const resourceIdResult = await updateResourceId(
-          oauthState,
+          reqParams.channelId,
           reqParams.resourceId
         );
         if (resourceIdResult.ok === 1) {
-          result.init = `A new notification channel was successfully created for: channelId / oauth.state:'${reqParams.channelId}' resourceId: '${reqParams.resourceId}'`;
+          result.init = `A new notification channel was successfully created for: channelId '${reqParams.channelId}' resourceId: '${reqParams.resourceId}'`;
         } else {
           result.init = {
             "Something failed while setting the resourceId:": resourceIdResult,
@@ -66,14 +64,15 @@ class SyncService {
       // There is new data to sync from GCal //
       //TODO create validation function and move there
       else if (reqParams.resourceState === "exists") {
-        const { channelPrepResult, oauth, gcal } =
+        const { channelPrepResult, calendar, gcal } =
           await this.prepareSyncChannels(reqParams);
 
         result.watch = channelPrepResult;
 
         const params: Params_Sync_Gcal = {
           ...reqParams,
-          userId: oauth.user,
+          userId: calendar.user,
+          // nextSyncToken: oauth.tokens.nextSyncToken,
           nextSyncToken: oauth.tokens.nextSyncToken,
           calendarId: `${GCAL_NOTIFICATION_URL} <- hard-coded for now`,
         };
@@ -133,7 +132,7 @@ class SyncService {
         logger.error(e);
         throw new BaseError(
           "Start Watch Failed",
-          e,
+          e.toString(),
           Status.INTERNAL_SERVER,
           false
         );
@@ -199,16 +198,19 @@ class SyncService {
     };
 
     // initialize what you'll need later
-    const oauth: OAuthDTO = await mongoService.db
-      .collection(Collections.OAUTH)
-      .findOne({ resourceId: reqParams.resourceId });
+    const calendar: Schema_Calendar = await mongoService.db
+      .collection(Collections.CALENDAR)
+      .findOne({ "google.items.sync.resourceId": reqParams.resourceId });
 
-    const gcal = await getGcal(oauth.user);
+    logger.debug(`calendar, need to get nextSyncToken`);
+    logger.debug(JSON.stringify(calendar));
 
-    const refreshNeeded = channelRefreshNeeded(reqParams, oauth);
+    const gcal = await getGcal(calendar.user);
+
+    const refreshNeeded = channelRefreshNeeded(reqParams, calendar);
     if (refreshNeeded) {
       channelPrepResult.refresh = await this.refreshChannelWatch(
-        oauth,
+        calendar.user,
         gcal,
         reqParams
       );
@@ -216,30 +218,30 @@ class SyncService {
       channelPrepResult.stillActive = true;
     }
 
-    return { channelPrepResult: channelPrepResult, oauth, gcal };
+    return { channelPrepResult, calendar, gcal };
   };
 
   refreshChannelWatch = async (
-    oauth: OAuthDTO,
+    userId: string,
     gcal: gCalendar,
     reqParams: Request_Sync_Gcal
   ) => {
     const stopResult = await this.stopWatchingChannel(
-      oauth.user,
+      userId,
       reqParams.channelId,
       reqParams.resourceId
     );
 
     // create new channelId to prevent `channelIdNotUnique` google api error
-    const newChannelId = uuidv4();
+    const newChannelId = `pri-rfrshd${uuidv4()}`;
     const startResult = await this.startWatchingChannel(
       gcal,
       GCAL_PRIMARY,
       newChannelId
     );
 
-    //todo update resource id
-    const resourceIdUpdate = await updateResourceId(
+    const idUpdates = await updateResourceIdAndChannelId(
+      userId,
       newChannelId,
       reqParams.resourceId
     );
@@ -247,7 +249,7 @@ class SyncService {
     const refreshResult = {
       stop: stopResult,
       start: startResult,
-      resourceIdUpdateWorked: resourceIdUpdate.ok === 1,
+      idUpdates: idUpdates.ok === 1,
     };
     return refreshResult;
   };
@@ -324,5 +326,3 @@ const _syncUpdates = async (
     return new BaseError("Sync Update Failed", e, Status.INTERNAL_SERVER, true);
   }
 };
-
-const _refreshChannelWatch = async () => {};

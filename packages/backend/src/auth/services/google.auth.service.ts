@@ -1,9 +1,9 @@
 import { google } from "googleapis";
 import jwt from "jsonwebtoken";
 import express from "express";
-import { OAuth2Client } from "google-auth-library";
+import { Credentials, OAuth2Client } from "google-auth-library";
 
-import { OAuthDTO, OAuthTokens$Gcal } from "@core/types/auth.types";
+import { Schema_Oauth } from "@core/types/auth.types";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
 import { Collections } from "@common/constants/collections";
@@ -15,13 +15,15 @@ import { gCalendar } from "../../../declarations";
 const logger = Logger("app:google.auth.service");
 const SCOPES = process.env.SCOPES.split(",");
 
-/* Helpers */
+/********
+Helpers 
+********/
 export const getGcal = async (userId: string): Promise<gCalendar> => {
-  const oAuthUser: OAuthDTO = await mongoService.db
+  const oauth: Schema_Oauth = await mongoService.db
     .collection(Collections.OAUTH)
     .findOne({ user: userId });
 
-  if (oAuthUser === null) {
+  if (oauth === null) {
     // throwing error forces middleware error handler to address
     // before other bad stuff can happen
     throw new BaseError(
@@ -33,7 +35,7 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
   }
 
   const googleClient = new GoogleOauthService();
-  await googleClient.setTokens(null, oAuthUser.tokens);
+  await googleClient.setTokens(null, oauth.tokens);
 
   const calendar = google.calendar({
     version: "v3",
@@ -64,7 +66,7 @@ class GoogleOauthService {
   async checkOauthStatus(req: express.Request) {
     const state = req.query.state;
 
-    const oauth: OAuthDTO = await mongoService.db
+    const oauth: Schema_Oauth = await mongoService.db
       .collection(Collections.OAUTH)
       .findOne({ state: state });
 
@@ -102,7 +104,9 @@ class GoogleOauthService {
       auth: this.oauthClient,
       version: "v2",
     });
+
     const response = await oauth2.userinfo.get();
+
     if (response.status === 200) {
       return response.data;
     } else {
@@ -120,15 +124,14 @@ class GoogleOauthService {
     return this.tokens;
   }
 
-  async setTokens(code: string, tokens: OAuthTokens$Gcal | null) {
-    // TODO after implementing the notification sync feature
-    // - refactor so not so buggy
+  async setTokens(code: string, tokens: Credentials | null) {
     if (tokens === null) {
       const { tokens } = await this.oauthClient.getToken(code);
       this.tokens = tokens;
     } else {
       this.tokens = tokens;
     }
+
     this.oauthClient.setCredentials(this.tokens);
     logger.debug("Credentials set");
   }

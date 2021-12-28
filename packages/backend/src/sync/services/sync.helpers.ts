@@ -1,7 +1,6 @@
 import { AnyBulkWriteOperation } from "mongodb";
 import { gSchema$Event } from "declarations";
 
-import { OAuthDTO } from "@core/types/auth.types";
 import { Event } from "@core/types/event.types";
 import { Logger } from "@common/logger/common.logger";
 import mongoService from "@common/services/mongo.service";
@@ -11,6 +10,7 @@ import { Collections } from "@common/constants/collections";
 import { BaseError } from "@common/errors/errors.base";
 import { daysFromNowTimestamp } from "@core/util/date.utils";
 import { Request_Sync_Gcal } from "@core/types/sync.types";
+import { Schema_Calendar } from "@core/types/calendar.types";
 
 import { minutesFromNow } from "../../../../core/src/util/date.utils";
 
@@ -65,46 +65,13 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   return categorized;
 };
 
-export const channelRefreshNeeded = (
-  reqParams: Request_Sync_Gcal,
-  oauth: OAuthDTO
-) => {
-  // The calendarId created during watch channel setup used the oauth.state,so
-  // these should be the same.
-  const channelExpired = oauth.state !== reqParams.channelId;
-  const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
-
-  const refreshNeeded = channelExpired || _channelExpiresSoon;
-
-  if (refreshNeeded) {
-    logger.debug(
-      `Refresh needed:
-        Channel expired? : ${channelExpired.toString()}
-        Channel expiring soon? : ${_channelExpiresSoon.toString()}`
-    );
+export const channelExpired = (calendar: Schema_Calendar, channelId: string) => {
+  const matchingChannelIds = calendar.google.items.filter((c) => c.sync.channelId === channelId) 
+  if (matchingChannelIds.length < 1) {
+    return false
+  } else {
+    return true
   }
-
-  return refreshNeeded;
-};
-
-export const updateResourceId = async (
-  oauthState: string,
-  resourceId: string
-) => {
-  logger.debug(`Updating resourceId to: ${resourceId}`);
-  const result = await mongoService.db
-    .collection(Collections.OAUTH)
-    .findOneAndUpdate(
-      { state: oauthState },
-      {
-        $set: {
-          resourceId: resourceId,
-          updatedAt: new Date().toISOString(),
-        },
-      }
-    );
-
-  return result;
 };
 
 export const channelExpiresSoon = (expiry: string) => {
@@ -120,35 +87,61 @@ export const channelExpiresSoon = (expiry: string) => {
   return channelExpiresSoon;
 };
 
+export const channelRefreshNeeded = (
+  reqParams: Request_Sync_Gcal,
+  calendar: Schema_Calendar
+) => {
+  //todo test if any channelIds in items match
+  const _channelExpired = channelExpired(
+    calendar,
+    reqParams.channelId
+  );
+  const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
+
+  const refreshNeeded = _channelExpired || _channelExpiresSoon;
+
+  if (refreshNeeded) {
+    logger.debug(
+      `Refresh needed:
+        Channel expired? : ${channelExpired.toString()}
+        Channel expiring soon? : ${_channelExpiresSoon.toString()}`
+    );
+  }
+
+  return refreshNeeded;
+};
+
 export const updateNextSyncToken = async (
   userId: string,
   nextSyncToken: string
 ) => {
+  //TODO update the next sync token on the calendar list, not the user
   logger.debug(`Updating nextSyncToken to: ${nextSyncToken}`);
 
   const err = new BaseError(
     "Update Failed",
-    `Failed to update the nextSyncToken for oauth record of user: ${userId}`,
+    `Failed to update the nextSyncToken for calendar record of user: ${userId}`,
     500,
     true
   );
 
   try {
+    // updates the primary calendar's nextSyncToken
+    // query will need to be updated once supporting non-primary calendars
     const result = await mongoService.db
-      .collection(Collections.OAUTH)
+      .collection(Collections.CALENDAR)
       .findOneAndUpdate(
-        { user: userId },
+        { user: userId, "google.items.primary": true },
         {
           $set: {
-            "tokens.nextSyncToken": nextSyncToken,
+            "google.items.$.sync.nextSyncToken": nextSyncToken,
             updatedAt: new Date().toISOString(),
           },
         },
         { returnDocument: "after" }
       );
 
-    const updatedOauth: OAuthDTO = result.value;
-    if (updatedOauth.tokens.nextSyncToken === nextSyncToken) {
+    if (result.value !== null) {
       return { status: `updated to: ${nextSyncToken}` };
     } else {
       logger.error("nextSyncToken not properly updated");
@@ -158,4 +151,45 @@ export const updateNextSyncToken = async (
     logger.error(e);
     throw err;
   }
+};
+
+export const updateResourceId = async (
+  channelId: string,
+  resourceId: string
+) => {
+  logger.debug(`Updating resourceId to: ${resourceId}`);
+  const result = await mongoService.db
+    .collection(Collections.CALENDAR)
+    .findOneAndUpdate(
+      { "google.items.sync.channelId": channelId },
+      {
+        $set: {
+          "google.items.$.sync.resourceId": resourceId,
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    );
+
+  return result;
+};
+
+export const updateResourceIdAndChannelId = async (
+  userId: string,
+  channelId: string,
+  resourceId: string
+) => {
+  const result = await mongoService.db
+    .collection(Collections.CALENDAR)
+    .findOneAndUpdate(
+      // TODO update after supporting more calendars
+      { user: userId, "google.items.primary": true },
+      {
+        $set: {
+          "google.items.$.sync.channelId": channelId,
+          "google.items.$.sync.resourceId": resourceId,
+        },
+      }
+    );
+
+  return result;
 };

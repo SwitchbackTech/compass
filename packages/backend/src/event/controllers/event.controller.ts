@@ -1,7 +1,8 @@
 import express from "express";
+import { v4 as uuidv4 } from "uuid";
+
 
 import { ReqBody, Res } from "@compass/core/src/types/express.types";
-import { OAuthDTO } from "@compass/core/src/types/auth.types";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
 import { Event_NoId, Params_DeleteMany } from "@core/types/event.types";
 import { Collections } from "@common/constants/collections";
@@ -10,6 +11,7 @@ import { Logger } from "@common/logger/common.logger";
 import { getGcal } from "@auth/services/google.auth.service";
 import syncService from "@sync/services/sync.service";
 import {
+  updateResourceIdAndChannelId,
   updateNextSyncToken,
   updateResourceId,
 } from "@sync/services/sync.helpers";
@@ -67,30 +69,25 @@ class EventController {
       importEventsResult.nextSyncToken
     );
 
-    const oauth: OAuthDTO = await mongoService.db
-      .collection(Collections.OAUTH)
-      .findOne({ user: userId });
-
-    // use this existing oauth.state as the channelId,
-    // so you can use it to identify
-    // this channel for future sync updates
-    const channelId = oauth.state;
+    // TODO remove 'primary-' after supporting multiple channels/user
+    const channelId = `primary-${uuidv4()}`
 
     const watchResult = await syncService.startWatchingChannel(
       gcal,
       GCAL_PRIMARY,
       channelId
     );
-    const resourceIdInit = await updateResourceId(
-      oauth.state,
-      watchResult.resourceId
-    );
+
+    const idUpdateResult = await updateResourceIdAndChannelId(userId, channelId, watchResult.resourceId)
+    const updateIdSummary = idUpdateResult.ok === 1 && idUpdateResult.lastErrorObject.updatedExisting ? "success" : "failed"
 
     const fullResults = {
       events: importEventsResult,
       tokenUpdate: tokenUpdateResult,
-      watch: watchResult,
-      resourceIdSave: resourceIdInit,
+      sync: {
+        watch: watchResult,
+        saveIds: updateIdSummary
+      }
     };
     res.promise(Promise.resolve(fullResults));
   };

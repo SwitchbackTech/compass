@@ -26,21 +26,23 @@ class CalendarController {
         nextSyncToken: "calendarListSyncToken",
         items: [
           {
-            primary: true, // this doesnt appear for all non-primary cals
-            id: "kdkdkdkkd",
+            id: "27th kdkdkdkkd",
             summary: "My Primary",
             description: "hardCoded testing",
             sync: {
+              channelId: "foo",
               resourceId: "bb",
               nextSyncToken: "883838jjjj",
               expiration: "somestring",
             },
           },
           {
-            id: "iiiiiii",
-            summary: "work",
+            primary: true, // this doesnt appear for all non-primary cals
+            id: "27th iiiiiii",
+            summary: "27th work",
             description: "just work stuff here",
             sync: {
+              channelId: "bar",
               resourceId: "wiwk",
               nextSyncToken: "bnamske",
               expiration: "string2",

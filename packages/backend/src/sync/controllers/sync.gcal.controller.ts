@@ -1,6 +1,5 @@
 import express from "express";
 
-import { Logger } from "@common/logger/common.logger";
 import {
   Body_Watch_Gcal_Start,
   Body_Watch_Gcal_Stop,
@@ -9,8 +8,6 @@ import { ReqBody, Res } from "@core/types/express.types";
 import { getGcal } from "@auth/services/google.auth.service";
 
 import syncService from "../services/sync.service";
-
-const logger = Logger("app:sync.gcal.controller");
 
 class GcalSyncController {
   handleNotification = async (req: express.Request, res: express.Response) => {

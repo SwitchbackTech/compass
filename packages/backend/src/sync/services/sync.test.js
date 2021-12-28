@@ -1,7 +1,7 @@
 import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
 
-import { gcalEventsExample } from "./sync.test.data";
-import { categorizeGcalEvents } from "./sync.helpers";
+import { gcalEventsExample, calendarsExample } from "./sync.test.data";
+import { categorizeGcalEvents, channelExpired } from "./sync.helpers";
 
 describe("Categorize GCal Updates", () => {
   const { eventsToDelete, eventsToUpdate } =
@@ -38,5 +38,15 @@ describe("Categorize GCal Updates", () => {
         throw new Error("a cancelled event was missed");
       }
     });
+  });
+});
+
+describe("Refreshes channel watch", () => {
+  test("Decides if channel is expired", () => {
+    const isExpired1 = channelExpired(calendarsExample, "channel1");
+    expect(isExpired1).toBe(true);
+
+    const isExpired2 = channelExpired(calendarsExample, "oldChannelId");
+    expect(isExpired2).toBe(false);
   });
 });

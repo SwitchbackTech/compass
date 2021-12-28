@@ -16,6 +16,7 @@ interface Schema_GCal {
     sync?: {
         expiration: string; 
         nextSyncToken: string; 
+        channelId: string;
         resourceId: string;
     }
 }
