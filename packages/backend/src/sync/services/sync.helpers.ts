@@ -73,10 +73,10 @@ export const channelExpired = (
   const matchingChannelIds = calendar.google.items.filter(
     (c) => c.sync.channelId === channelId
   );
-  if (matchingChannelIds.length < 1) {
-    return false;
-  } else {
+  if (matchingChannelIds.length != 1) {
     return true;
+  } else {
+    return false;
   }
 };
 
@@ -105,7 +105,7 @@ export const channelRefreshNeeded = (
 
   if (refreshNeeded) {
     logger.debug(
-      `Refresh needed:
+      `Refresh needed because:
         Channel expired? : ${_channelExpired.toString()}
         Channel expiring soon? : ${_channelExpiresSoon.toString()}`
     );

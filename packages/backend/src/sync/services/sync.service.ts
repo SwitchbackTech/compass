@@ -201,9 +201,6 @@ class SyncService {
       .collection(Collections.CALENDAR)
       .findOne({ "google.items.sync.resourceId": reqParams.resourceId });
 
-    logger.debug(`calendar response:`);
-    logger.debug(JSON.stringify(calendarList));
-
     const userId = calendarList.user;
 
     const cal = findCalendarByResourceId(reqParams.resourceId, calendarList);
