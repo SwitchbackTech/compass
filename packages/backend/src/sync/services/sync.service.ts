@@ -100,7 +100,7 @@ class SyncService {
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
     try {
-      const numMin = 10;
+      const numMin = 4;
 
       // TODO uncomment
       // const expiration = daysFromNowTimestamp(14, "ms").toString();
