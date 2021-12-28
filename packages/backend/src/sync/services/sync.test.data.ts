@@ -1,5 +1,5 @@
 export const calendarListExample = {
-  user: "someuserid",
+  user: "auserid",
   google: {
     nextSyncToken: "calendarListSyncToken",
     items: [
