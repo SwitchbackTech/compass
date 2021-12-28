@@ -105,7 +105,7 @@ export const channelRefreshNeeded = (
   if (refreshNeeded) {
     logger.debug(
       `Refresh needed:
-        Channel expired? : ${channelExpired.toString()}
+        Channel expired? : ${_channelExpired.toString()}
         Channel expiring soon? : ${_channelExpiresSoon.toString()}`
     );
   }

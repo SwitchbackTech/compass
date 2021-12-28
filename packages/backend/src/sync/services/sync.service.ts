@@ -63,14 +63,14 @@ class SyncService {
 
       // There is new data to sync from GCal //
       else if (reqParams.resourceState === "exists") {
-        const { channelPrepResult, calendar, gcal } =
+        const { channelPrepResult, userId, gcal } =
           await this.prepareSyncChannels(reqParams);
 
         result.watch = channelPrepResult;
 
         const params: Params_Sync_Gcal = {
           ...reqParams,
-          userId: calendar.user,
+          userId: userId,
           // nextSyncToken: oauth.tokens.nextSyncToken,
           nextSyncToken: oauth.tokens.nextSyncToken,
           calendarId: `${GCAL_NOTIFICATION_URL} <- hard-coded for now`,
@@ -201,15 +201,18 @@ class SyncService {
       .collection(Collections.CALENDAR)
       .findOne({ "google.items.sync.resourceId": reqParams.resourceId });
 
-    logger.debug(`calendar, need to get nextSyncToken`);
-    logger.debug(calendar);
+    logger.debug(`calendar response:`);
+    logger.debug(JSON.stringify(calendar));
 
-    const gcal = await getGcal(calendar.user);
+    const userId = calendar.user;
+    // const nextSyncToken = calendar.google.items.sync.nextSyncToken;
+
+    const gcal = await getGcal(userId);
 
     const refreshNeeded = channelRefreshNeeded(reqParams, calendar);
     if (refreshNeeded) {
       channelPrepResult.refresh = await this.refreshChannelWatch(
-        calendar.user,
+        userId,
         gcal,
         reqParams
       );
@@ -217,7 +220,7 @@ class SyncService {
       channelPrepResult.stillActive = true;
     }
 
-    return { channelPrepResult, calendar, gcal };
+    return { channelPrepResult, userId, gcal };
   };
 
   refreshChannelWatch = async (
