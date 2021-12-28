@@ -79,7 +79,7 @@ class EventController {
     );
 
     const idUpdateResult = await updateResourceIdAndChannelId(userId, channelId, watchResult.resourceId)
-    const updateIdSummary = idUpdateResult.ok === 1 && idUpdateResult.lastErrorObject.updatedExisting ? "success" : "failed"
+    const updateIdSummary = idUpdateResult.idUpdates === 1 && idUpdateResult.lastErrorObject.updatedExisting ? "success" : "failed"
 
     const fullResults = {
       events: importEventsResult,

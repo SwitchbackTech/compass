@@ -260,7 +260,7 @@ class EventService {
           { returnDocument: "after" }
         );
 
-      if (response.value === null || response.ok === 0) {
+      if (response.value === null || response.idUpdates === 0) {
         logger.error("Update failed");
         return new BaseError(
           "Update Failed",

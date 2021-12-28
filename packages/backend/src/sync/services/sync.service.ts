@@ -203,7 +203,7 @@ class SyncService {
       .findOne({ "google.items.sync.resourceId": reqParams.resourceId });
 
     logger.debug(`calendar, need to get nextSyncToken`);
-    logger.debug(JSON.stringify(calendar));
+    logger.debug(calendar);
 
     const gcal = await getGcal(calendar.user);
 
