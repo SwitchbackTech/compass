@@ -119,7 +119,7 @@ class EventService {
       return response;
     } catch (e) {
       logger.error(e);
-      return new BaseError("Delete Failed", e, 500, true);
+      return new BaseError("Delete Failed!", e, 500, true);
     }
   }
 
@@ -285,12 +285,17 @@ class EventService {
       return new BaseError("Update Failed", e, 500, true);
     }
   }
+
   async updateMany(userId: string, events: Event[]) {
+    return "not done implementing this operation";
+
+    const testId = `events.$[_id]`;
     const updateResult = mongoService.db
       .collection(Collections.EVENT)
       .updateMany(
         // { user: userId, _id: mongoService.objectId("cEvents.$[_id]") },
-        { user: "testUser1", gEventId: "events.$[gEventId]" },
+        { user: userId, _id: mongoService.objectId(`events.${[_id]}`) },
+        // { user: "testUser1", gEventId: "events.$[gEventId]" },
         { $set: events },
         { upsert: true }
       );

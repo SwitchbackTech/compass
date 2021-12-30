@@ -62,7 +62,7 @@ class UserService {
       return summary;
     } catch (e) {
       logger.error(e);
-      return new BaseError("Delete Failed", e, 500, true);
+      return new BaseError("Delete User Data Failed", e, 500, true);
     }
   }
 }

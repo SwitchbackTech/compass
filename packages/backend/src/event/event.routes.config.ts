@@ -18,13 +18,6 @@ export class EventRoutes extends CommonRoutesConfig {
       .post(eventController.create);
 
     this.app
-      .route(`/event/:id`)
-      .all(jwtMiddleware.verifyTokenAndSaveUserId)
-      .get(eventController.readById)
-      .put(eventController.update)
-      .delete(eventController.delete);
-
-    this.app
       .route(`/event/updateMany`)
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
       .post(eventController.updateMany);
@@ -39,6 +32,12 @@ export class EventRoutes extends CommonRoutesConfig {
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
       .post(eventController.import);
 
+    this.app
+      .route(`/event/:id`)
+      .all(jwtMiddleware.verifyTokenAndSaveUserId)
+      .get(eventController.readById)
+      .put(eventController.update)
+      .delete(eventController.delete);
     return this.app;
   }
 }

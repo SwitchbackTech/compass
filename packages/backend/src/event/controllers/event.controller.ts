@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { ReqBody, Res } from "@compass/core/src/types/express.types";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
-import { Event_NoId, Params_DeleteMany } from "@core/types/event.types";
+import { Event, Event_NoId, Params_DeleteMany } from "@core/types/event.types";
 import { Collections } from "@common/constants/collections";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
@@ -12,7 +12,6 @@ import syncService from "@sync/services/sync.service";
 import {
   updateSyncData,
   updateNextSyncToken,
-  updateResourceId,
 } from "@sync/services/sync.helpers";
 import eventService from "@event/services/event.service";
 
@@ -129,10 +128,14 @@ class EventController {
   };
 
   updateMany = async (req: ReqBody<Event[]>, res: Res) => {
-    const userId = res.locals.user.id;
-    const events = req.body;
-    const response = await eventService.updateMany(userId, events);
-    res.promise(Promise.resolve(response));
+    try {
+      const userId = res.locals.user.id;
+      const events = req.body;
+      const response = await eventService.updateMany(userId, events);
+      res.promise(Promise.resolve(response));
+    } catch (e) {
+      res.promise(Promise.reject(e));
+    }
   };
 }
 

@@ -50,7 +50,6 @@ class GoogleOauthService {
   oauthClient: OAuth2Client;
 
   constructor() {
-    logger.debug("Creating new oauth service ");
     const redirectUri = isDev()
       ? process.env.REDIRECT_URI_DEV
       : process.env.REDIRECT_URI;
