@@ -66,7 +66,11 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   return categorized;
 };
 
-export const channelExpired = (
+/* 
+The channelId should also be found, but this is a sanity-check
+in case something unexpected happened
+*/
+export const channelNotFound = (
   calendar: Schema_CalendarList,
   channelId: string
 ) => {
@@ -98,15 +102,15 @@ export const channelRefreshNeeded = (
   calendar: Schema_CalendarList
 ) => {
   //todo test if any channelIds in items match
-  const _channelExpired = channelExpired(calendar, reqParams.channelId);
+  const _channelNotFound = channelNotFound(calendar, reqParams.channelId);
   const _channelExpiresSoon = channelExpiresSoon(reqParams.expiration);
 
-  const refreshNeeded = _channelExpired || _channelExpiresSoon;
+  const refreshNeeded = _channelNotFound || _channelExpiresSoon;
 
   if (refreshNeeded) {
     logger.debug(
       `Refresh needed because:
-        Channel expired? : ${_channelExpired.toString()}
+        Channel expired? : ${_channelNotFound.toString()}
         Channel expiring soon? : ${_channelExpiresSoon.toString()}`
     );
   }
