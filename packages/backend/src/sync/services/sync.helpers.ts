@@ -132,7 +132,7 @@ export const updateNextSyncToken = async (
     // updates the primary calendar's nextSyncToken
     // query will need to be updated once supporting non-primary calendars
     const result = await mongoService.db
-      .collection(Collections.CALENDAR)
+      .collection(Collections.CALENDARLIST)
       .findOneAndUpdate(
         { user: userId, "google.items.primary": true },
         {
@@ -188,7 +188,7 @@ export const updateResourceId = async (
 ) => {
   logger.debug(`Updating resourceId to: ${resourceId}`);
   const result = await mongoService.db
-    .collection(Collections.CALENDAR)
+    .collection(Collections.CALENDARLIST)
     .findOneAndUpdate(
       { "google.items.sync.channelId": channelId },
       {
@@ -208,7 +208,7 @@ export const updateResourceIdAndChannelId = async (
   resourceId: string
 ) => {
   const result = await mongoService.db
-    .collection(Collections.CALENDAR)
+    .collection(Collections.CALENDARLIST)
     .findOneAndUpdate(
       // TODO update after supporting more calendars
       { user: userId, "google.items.primary": true },
