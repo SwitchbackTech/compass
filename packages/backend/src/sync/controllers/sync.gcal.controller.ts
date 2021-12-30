@@ -34,31 +34,39 @@ class GcalSyncController {
   };
 
   startWatching = async (req: ReqBody<Body_Watch_Gcal_Start>, res: Res) => {
-    const userId = res.locals.user.id;
-    const calendarId = req.body.calendarId;
-    const channelId = req.body.channelId;
+    try {
+      const userId = res.locals.user.id;
+      const calendarId = req.body.calendarId;
+      const channelId = req.body.channelId;
 
-    const gcal = await getGcal(userId);
-    const watchResult = await syncService.startWatchingChannel(
-      gcal,
-      calendarId,
-      channelId
-    );
+      const gcal = await getGcal(userId);
+      const watchResult = await syncService.startWatchingChannel(
+        gcal,
+        calendarId,
+        channelId
+      );
 
-    res.promise(Promise.resolve(watchResult));
+      res.promise(Promise.resolve(watchResult));
+    } catch (e) {
+      res.promise(Promise.reject(e));
+    }
   };
 
   stopWatching = async (req: ReqBody<Body_Watch_Gcal_Stop>, res: Res) => {
-    const userId = res.locals.user.id;
-    const channelId = req.body.channelId;
-    const resourceId = req.body.resourceId;
+    try {
+      const userId = res.locals.user.id;
+      const channelId = req.body.channelId;
+      const resourceId = req.body.resourceId;
 
-    const stopResult = await syncService.stopWatchingChannel(
-      userId,
-      channelId,
-      resourceId
-    );
-    res.promise(Promise.resolve(stopResult));
+      const stopResult = await syncService.stopWatchingChannel(
+        userId,
+        channelId,
+        resourceId
+      );
+      res.promise(Promise.resolve(stopResult));
+    } catch (e) {
+      res.promise(Promise.reject(e));
+    }
   };
 }
 

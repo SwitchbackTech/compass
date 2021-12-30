@@ -250,7 +250,7 @@ class SyncService {
     const refreshResult = {
       stop: stopResult,
       start: startResult,
-      syncUpdate: syncUpdate.ok === 1,
+      syncUpdate: syncUpdate.ok === 1 ? "success" : "failed",
     };
     return refreshResult;
   };
