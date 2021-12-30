@@ -49,53 +49,58 @@ class EventController {
   };
 
   import = async (req: express.Request, res: Res) => {
-    const userId: string = res.locals.user.id;
+    try {
+      const userId: string = res.locals.user.id;
 
-    const userExists = await mongoService.recordExists(Collections.USER, {
-      _id: mongoService.objectId(userId),
-    });
-    if (userExists) {
-      logger.debug(`Deleting events for clean import for user: ${userId}`);
-      await eventService.deleteAllByUser(userId);
+      const userExists = await mongoService.recordExists(Collections.USER, {
+        _id: mongoService.objectId(userId),
+      });
+      if (userExists) {
+        logger.debug(`Deleting events for clean import for user: ${userId}`);
+        await eventService.deleteAllByUser(userId);
+      }
+
+      const gcal = await getGcal(userId);
+
+      const importEventsResult = await eventService.import(userId, gcal);
+
+      const syncTokenUpdateResult = await updateNextSyncToken(
+        userId,
+        importEventsResult.nextSyncToken
+      );
+
+      // TODO remove 'primary-' after supporting multiple channels/user
+      const channelId = `primary-${uuidv4()}`;
+
+      const watchResult = await syncService.startWatchingChannel(
+        gcal,
+        GCAL_PRIMARY,
+        channelId
+      );
+
+      const idUpdateResult = await updateResourceIdAndChannelId(
+        userId,
+        channelId,
+        watchResult.resourceId
+      );
+      const updateIdSummary =
+        idUpdateResult.ok === 1 &&
+        idUpdateResult.lastErrorObject.updatedExisting
+          ? "success"
+          : "failed";
+
+      const fullResults = {
+        events: importEventsResult,
+        sync: {
+          watch: watchResult,
+          nextSyncToken: syncTokenUpdateResult,
+          saveIds: updateIdSummary,
+        },
+      };
+      res.promise(Promise.resolve(fullResults));
+    } catch (e) {
+      res.promise(Promise.reject(e));
     }
-
-    const gcal = await getGcal(userId);
-
-    const importEventsResult = await eventService.import(userId, gcal);
-
-    const syncTokenUpdateResult = await updateNextSyncToken(
-      userId,
-      importEventsResult.nextSyncToken
-    );
-
-    // TODO remove 'primary-' after supporting multiple channels/user
-    const channelId = `primary-${uuidv4()}`;
-
-    const watchResult = await syncService.startWatchingChannel(
-      gcal,
-      GCAL_PRIMARY,
-      channelId
-    );
-
-    const idUpdateResult = await updateResourceIdAndChannelId(
-      userId,
-      channelId,
-      watchResult.resourceId
-    );
-    const updateIdSummary =
-      idUpdateResult.ok === 1 && idUpdateResult.lastErrorObject.updatedExisting
-        ? "success"
-        : "failed";
-
-    const fullResults = {
-      events: importEventsResult,
-      sync: {
-        watch: watchResult,
-        nextSyncToken: syncTokenUpdateResult,
-        saveIds: updateIdSummary,
-      },
-    };
-    res.promise(Promise.resolve(fullResults));
   };
 
   readById = async (req: express.Request, res: Res) => {
