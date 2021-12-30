@@ -201,10 +201,11 @@ export const updateResourceId = async (
   return result;
 };
 
-export const updateResourceIdAndChannelId = async (
+export const updateSyncData = async (
   userId: string,
   channelId: string,
-  resourceId: string
+  resourceId: string,
+  expiration: string
 ) => {
   const result = await mongoService.db
     .collection(Collections.CALENDARLIST)
@@ -215,6 +216,7 @@ export const updateResourceIdAndChannelId = async (
         $set: {
           "google.items.$.sync.channelId": channelId,
           "google.items.$.sync.resourceId": resourceId,
+          "google.items.$.sync.expiration": expiration,
         },
       }
     );

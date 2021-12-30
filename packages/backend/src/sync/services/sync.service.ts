@@ -30,6 +30,7 @@ import {
   updateNextSyncToken,
   updateResourceId,
   updateResourceIdAndChannelId,
+  updateSyncData,
 } from "./sync.helpers";
 
 const logger = Logger("app:sync.service");
@@ -239,16 +240,17 @@ class SyncService {
       newChannelId
     );
 
-    const idUpdates = await updateResourceIdAndChannelId(
+    const syncUpdate = await updateSyncData(
       userId,
       newChannelId,
-      reqParams.resourceId
+      reqParams.resourceId,
+      reqParams.expiration
     );
 
     const refreshResult = {
       stop: stopResult,
       start: startResult,
-      idUpdates: idUpdates.ok === 1,
+      syncUpdate: syncUpdate.ok === 1,
     };
     return refreshResult;
   };

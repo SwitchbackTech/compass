@@ -10,7 +10,7 @@ import { Logger } from "@common/logger/common.logger";
 import { getGcal } from "@auth/services/google.auth.service";
 import syncService from "@sync/services/sync.service";
 import {
-  updateResourceIdAndChannelId,
+  updateSyncData,
   updateNextSyncToken,
   updateResourceId,
 } from "@sync/services/sync.helpers";
@@ -78,14 +78,14 @@ class EventController {
         channelId
       );
 
-      const idUpdateResult = await updateResourceIdAndChannelId(
+      const syncUpdate = await updateSyncData(
         userId,
         channelId,
-        watchResult.resourceId
+        watchResult.resourceId,
+        watchResult.expiration
       );
-      const updateIdSummary =
-        idUpdateResult.ok === 1 &&
-        idUpdateResult.lastErrorObject.updatedExisting
+      const syncUpdateSummary =
+        syncUpdate.ok === 1 && syncUpdate.lastErrorObject.updatedExisting
           ? "success"
           : "failed";
 
@@ -94,7 +94,7 @@ class EventController {
         sync: {
           watch: watchResult,
           nextSyncToken: syncTokenUpdateResult,
-          saveIds: updateIdSummary,
+          syncDataUpdate: syncUpdateSummary,
         },
       };
       res.promise(Promise.resolve(fullResults));
