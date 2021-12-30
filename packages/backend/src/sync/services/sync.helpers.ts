@@ -122,15 +122,10 @@ export const updateNextSyncToken = async (
   userId: string,
   nextSyncToken: string
 ) => {
-  //TODO update the next sync token on the calendar list, not the user
   logger.debug(`Updating nextSyncToken to: ${nextSyncToken}`);
 
-  const err = new BaseError(
-    "Update Failed",
-    `Failed to update the nextSyncToken for calendar record of user: ${userId}`,
-    500,
-    true
-  );
+  const msg = `Failed to update the nextSyncToken for calendar record of user: ${userId}`;
+  const err = new BaseError("Update Failed", msg, 500, true);
 
   try {
     // updates the primary calendar's nextSyncToken
@@ -151,7 +146,7 @@ export const updateNextSyncToken = async (
     if (result.value !== null) {
       return { status: `updated to: ${nextSyncToken}` };
     } else {
-      logger.error("nextSyncToken not properly updated");
+      logger.error(msg);
       return { status: "Failed to update properly", debugResult: result };
     }
   } catch (e) {

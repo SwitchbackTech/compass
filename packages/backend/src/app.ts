@@ -53,8 +53,5 @@ app.use(catchSyncErrors);
 
 /* Express Start */
 server.listen(port, () => {
-  routes.forEach((route: CommonRoutesConfig) => {
-    logger.debug(`Routes configured for ${route.getName()}`);
-  });
   logger.info(`Server running at: http://localhost:${port}`);
 });
