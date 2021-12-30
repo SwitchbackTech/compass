@@ -82,6 +82,7 @@ module.exports = (env) => {
         '@common': resolvePath('./src/common'),
         '@components': resolvePath('./src/components'),
         '@containers': resolvePath('./src/containers'),
+        '@core': resolvePath('../core/src'),
         '@ducks': resolvePath('./src/ducks/'),
         '@public': resolvePath('./src/public'),
         '@routers': resolvePath('./src/routers'),

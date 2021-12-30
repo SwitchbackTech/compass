@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import express from "express";
 import { Credentials, OAuth2Client } from "google-auth-library";
 
-import { Schema_Oauth } from "@core/types/auth.types";
+import { Result_OauthStatus, Schema_Oauth } from "@core/types/auth.types";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
 import { Collections } from "@common/constants/collections";
@@ -62,7 +62,7 @@ class GoogleOauthService {
     this.tokens = {};
   }
 
-  async checkOauthStatus(req: express.Request) {
+  async checkOauthStatus(req: express.Request): Promise<Result_OauthStatus> {
     const state = req.query.state;
 
     const oauth: Schema_Oauth = await mongoService.db

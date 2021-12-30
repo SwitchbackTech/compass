@@ -1,6 +1,9 @@
 import { ObjectId } from "mongodb";
 
-import { PriorityReq, Priority } from "@compass/core/src/types/priority.types";
+import {
+  PriorityReq,
+  Schema_Priority,
+} from "@compass/core/src/types/priority.types";
 import { InsertedIds } from "@compass/core/src/types/mongo.types";
 
 import { mapPriorityData } from "./priority.service.helpers";
@@ -17,7 +20,7 @@ test("Priority ids mapped in correct order", () => {
     { name: "mooo", color: "koy" },
   ];
 
-  const priorities: Priority[] = mapPriorityData(
+  const priorities: Schema_Priority[] = mapPriorityData(
     insertedIds,
     priorityData,
     "user123"

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Redirect } from 'react-router-dom';
 
+import { Result_OauthStatus } from '@core/types/auth.types';
 // import { store } from '@store';
 // import { reducers } from '@store/reducers';
-import { Apis } from '@common/apis/api';
+import { PriorityApi } from '@common/apis/priority.api';
 import { AuthApi } from '@common/apis/auth.api';
 import { SURVEY_URL } from '@compass/core/src/core.constants';
 import { GOOGLE } from '@common/constants/common';
@@ -48,7 +49,7 @@ export const LoginView = () => {
     let isOauthComplete = false;
     while (!isOauthComplete) {
       await new Promise((resolve) => setTimeout(resolve, 4000));
-      const status = await AuthApi.checkOauthStatus(GOOGLE);
+      const status: Result_OauthStatus = await AuthApi.checkOauthStatus();
       isOauthComplete = status.isOauthComplete;
 
       if (isOauthComplete) {
@@ -63,22 +64,25 @@ export const LoginView = () => {
             - priorities created
             - primary calendar selected (not htis version) 
             - events fetched and imported
-        If existing:import { StyledLogin } from './styled';
-import { JustifyContent } from '@components/Flex/styled';
-import { btn_google_signin_light_focus } from '@public/png';
-
+        If existing:
           - Send to calendar page, where you'll
             - fetching most-recent GCal events and sync with Compass
         */
         console.log('auth complete. waiting and then syncing events ...');
         await new Promise((resolve) => setTimeout(resolve, 2000));
-        const prioritiesRes = await Apis.createPriorities(status.token);
+
+        // todo move this stuff to onboard flow
+        const prioritiesRes = await PriorityApi.createPriorities(status.token);
         console.log(prioritiesRes);
 
         setRedirect(true);
       }
     }
   };
+
+  // const onboard = async (token: string) => {
+
+  // }
 
   return (
     <>

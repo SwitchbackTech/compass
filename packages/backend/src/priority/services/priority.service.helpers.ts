@@ -1,5 +1,8 @@
 import { InsertedIds } from "@compass/core/src/types/mongo.types";
-import { Priority, PriorityReq } from "@compass/core/src/types/priority.types";
+import {
+  Schema_Priority,
+  PriorityReq,
+} from "@compass/core/src/types/priority.types";
 
 // documents inserted in order by default, so mapping by
 // key order is safe
@@ -7,8 +10,8 @@ export const mapPriorityData = (
   newIds: InsertedIds,
   data: PriorityReq[],
   userId: string
-): Priority[] => {
-  const priorities: Priority[] = [];
+): Schema_Priority[] => {
+  const priorities: Schema_Priority[] = [];
   for (const [key, id] of Object.entries(newIds)) {
     const i = parseInt(key);
     priorities.push({

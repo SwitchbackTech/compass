@@ -1,4 +1,7 @@
+import axios from 'axios';
+
 import { Priorities } from '@common/types/entities';
+import { BASEURL } from '@core/core.constants';
 
 // TODO replace with what's in styles.ts
 const COLORS = {
@@ -33,12 +36,11 @@ const PriorityApi = {
 
     console.log('creating priorities ... ');
     const [p1, p2, p3] = await Promise.all([
-      await axios.post(`${BASEURL}/priority/create`, priorities[0], _pHeaders),
-      await axios.post(`${BASEURL}/priority/create`, priorities[1], _pHeaders),
-      await axios.post(`${BASEURL}/priority/create`, priorities[2], _pHeaders),
+      await axios.post(`${BASEURL}/priority`, priorities[0], _pHeaders),
+      await axios.post(`${BASEURL}/priority`, priorities[1], _pHeaders),
+      await axios.post(`${BASEURL}/priority`, priorities[2], _pHeaders),
     ]);
-    const pData = p1.data;
-    const combined = pData.concat(p2.data, p3.data);
+    const combined = [p1, p2, p3];
     return combined;
   },
 

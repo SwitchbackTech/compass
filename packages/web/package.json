@@ -4,6 +4,14 @@
   "main": "src/App.ts",
   "typings": "declaration.d.ts",
   "license": "SEE LICENSE IN LICENSE",
+  "scripts": {
+    "dev": "export DEV=true DEBUG=app* && webpack serve --env development --mode=development",
+    "build": "yarn clean && webpack --env production --mode=production",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint-fix": "yarn lint --fix",
+    "test-types": "tsc --noEmit",
+    "precommit": "yarn lint && yarn test-types"
+  },
   "dependencies": {
     "@reduxjs/toolkit": "^1.6.1",
     "@svgr/webpack": "^5.5.0",
@@ -61,14 +69,6 @@
     "webpack": "^5.53.0",
     "webpack-cli": "^4.8.0",
     "webpack-dev-server": "^4.2.1"
-  },
-  "scripts": {
-    "dev": "webpack serve --env development --mode=development",
-    "build": "yarn clean && webpack --env production --mode=production",
-    "lint": "eslint . --ext .ts,.tsx",
-    "lint-fix": "yarn lint --fix",
-    "test-types": "tsc --noEmit",
-    "precommit": "yarn lint && yarn test-types"
   },
   "devDependencies": {
     "@babel/core": "^7.15.5",
