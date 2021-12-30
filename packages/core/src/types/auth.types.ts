@@ -1,20 +1,15 @@
 import { Credentials } from "google-auth-library";
 
-export interface OAuthDTO {
+export interface Schema_Oauth {
   _id?: string;
   user: string;
   state: string;
-  tokens: OAuthTokens$Gcal;
+  tokens: Credentials;
 }
 
-export interface Params$AfterOAuth {
+export interface Params_AfterOAuth {
   state: string;
   code: string;
-}
-
-export interface OAuthTokens$Gcal extends Credentials {
-  // from event service
-  nextSyncToken?: string;
 }
 
 export interface GoogleUser {
@@ -27,10 +22,10 @@ export interface GoogleUser {
   picture: string;
   locale: string;
 }
-export interface CombinedLogin$Google {
+export interface CombinedLogin_Google {
   user: GoogleUser;
   oauth: {
     state: string;
-    tokens: OAuthTokens$Gcal;
+    tokens: Credentials;
   };
 }

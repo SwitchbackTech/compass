@@ -81,8 +81,13 @@ module.exports = {
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   moduleNameMapper: {
-    "^@common/(.*)$": "<rootDir>/src/common/$1",
     "^@auth/(.*)$": "<rootDir>/src/auth/$1",
+    "^@calendar/(.*)$": "<rootDir>/src/calendar/$1",
+    "^@event/(.*)$": "<rootDir>/src/event/$1",
+    "^@common/(.*)$": "<rootDir>/src/common/$1",
+    "^@priority/(.*)$": "<rootDir>/src/priority/$1",
+    "^@sync/(.*)$": "<rootDir>/src/sync/$1",
+    "^@user/(.*)$": "<rootDir>/src/user/$1",
   },
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
   // modulePathIgnorePatterns: [],

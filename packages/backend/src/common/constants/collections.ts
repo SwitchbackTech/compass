@@ -4,8 +4,9 @@ import { isDev } from "../helpers/common.helpers";
 const useDevCollections = isDev();
 
 export const Collections = {
-  OAUTH: useDevCollections ? "dev_oauth" : "oauth_v2",
-  USER: useDevCollections ? "dev_user" : "user_v2",
-  EVENT: useDevCollections ? "dev_event" : "event_v2",
-  PRIORITY: useDevCollections ? "dev_priority" : "priority_v2",
+  CALENDARLIST: useDevCollections ? "dev.calendarlist" : "calendarlist.v2",
+  EVENT: useDevCollections ? "dev.event" : "event.v2",
+  OAUTH: useDevCollections ? "dev.oauth" : "oauth.v2",
+  PRIORITY: useDevCollections ? "dev.priority" : "priority.v2",
+  USER: useDevCollections ? "dev.user" : "user.v2",
 };

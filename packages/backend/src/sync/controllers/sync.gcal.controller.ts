@@ -1,16 +1,18 @@
 import express from "express";
 
-import { Logger } from "@common/logger/common.logger";
-import { Body$Watch$Start, Body$Watch$Stop } from "@core/types/sync.types";
+import {
+  Body_Watch_Gcal_Start,
+  Body_Watch_Gcal_Stop,
+} from "@core/types/sync.types";
 import { ReqBody, Res } from "@core/types/express.types";
 import { getGcal } from "@auth/services/google.auth.service";
 
 import syncService from "../services/sync.service";
 
-const logger = Logger("app:sync.gcal.controller");
-
 class GcalSyncController {
   handleNotification = async (req: express.Request, res: express.Response) => {
+    //TODO validate request
+
     // hacky way to appease typescript, since these headers can also be string[]
     if (
       typeof req.headers["x-goog-channel-id"] === "string" &&
@@ -31,32 +33,40 @@ class GcalSyncController {
     }
   };
 
-  startWatching = async (req: ReqBody<Body$Watch$Start>, res: Res) => {
-    const userId = res.locals.user.id;
-    const calendarId = req.body.calendarId;
-    const channelId = req.body.channelId;
+  startWatching = async (req: ReqBody<Body_Watch_Gcal_Start>, res: Res) => {
+    try {
+      const userId = res.locals.user.id;
+      const calendarId = req.body.calendarId;
+      const channelId = req.body.channelId;
 
-    const gcal = await getGcal(userId);
-    const watchResult = await syncService.startWatchingChannel(
-      gcal,
-      calendarId,
-      channelId
-    );
+      const gcal = await getGcal(userId);
+      const watchResult = await syncService.startWatchingChannel(
+        gcal,
+        calendarId,
+        channelId
+      );
 
-    res.promise(Promise.resolve(watchResult));
+      res.promise(Promise.resolve(watchResult));
+    } catch (e) {
+      res.promise(Promise.reject(e));
+    }
   };
 
-  stopWatching = async (req: ReqBody<Body$Watch$Stop>, res: Res) => {
-    const userId = res.locals.user.id;
-    const channelId = req.body.channelId;
-    const resourceId = req.body.resourceId;
+  stopWatching = async (req: ReqBody<Body_Watch_Gcal_Stop>, res: Res) => {
+    try {
+      const userId = res.locals.user.id;
+      const channelId = req.body.channelId;
+      const resourceId = req.body.resourceId;
 
-    const stopResult = await syncService.stopWatchingChannel(
-      userId,
-      channelId,
-      resourceId
-    );
-    res.promise(Promise.resolve(stopResult));
+      const stopResult = await syncService.stopWatchingChannel(
+        userId,
+        channelId,
+        resourceId
+      );
+      res.promise(Promise.resolve(stopResult));
+    } catch (e) {
+      res.promise(Promise.reject(e));
+    }
   };
 }
 

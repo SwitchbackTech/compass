@@ -1,5 +1,5 @@
-import { CombinedLogin$Google } from "@core/types/auth.types";
-import { OAuthDTO } from "@core/types/auth.types";
+import { CombinedLogin_Google } from "@core/types/auth.types";
+import { Schema_Oauth } from "@core/types/auth.types";
 import { Logger } from "@common/logger/common.logger";
 import { Collections } from "@common/constants/collections";
 import mongoService from "@common/services/mongo.service";
@@ -8,7 +8,7 @@ import userService from "@user/services/user.service";
 const logger = Logger("app:compass.auth.service");
 
 class CompassAuthService {
-  async loginToCompass(loginData: CombinedLogin$Google) {
+  async loginToCompass(loginData: CombinedLogin_Google) {
     // use googleId to check if user exists in Compass' DB
     const compassUser = await mongoService.db
       .collection(Collections.USER)
@@ -21,14 +21,14 @@ class CompassAuthService {
       compassUserId = await userService.createUser(loginData);
     }
 
-    const oauthResponse = await this.updateOauthId(compassUserId, loginData);
-    return oauthResponse;
+    const updateOauthRes = await this.updateOauthId(compassUserId, loginData);
+    return updateOauthRes;
   }
 
   async updateOauthId(
     userId: string,
-    userData: CombinedLogin$Google
-  ): Promise<OAuthDTO> {
+    userData: CombinedLogin_Google
+  ): Promise<Schema_Oauth> {
     logger.debug(`Setting oauth data for compass user: ${userId}`);
 
     const updatedOauthUser = Object.assign({}, userData.oauth, {
@@ -45,7 +45,7 @@ class CompassAuthService {
       );
     const updatedOAuth = response.value;
 
-    return updatedOAuth as OAuthDTO;
+    return updatedOAuth as Schema_Oauth;
   }
 }
 

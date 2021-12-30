@@ -89,7 +89,7 @@ class PriorityService {
         { returnDocument: "after" } // the new document
       );
 
-    if (response.value === null || response.ok === 0) {
+    if (response.value === null || response.idUpdates === 0) {
       return new BaseError("Update Failed", "Ensure id is correct", 400, true);
     }
 

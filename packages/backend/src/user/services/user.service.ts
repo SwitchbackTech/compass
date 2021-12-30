@@ -1,8 +1,8 @@
 import {
-  CompassUser,
-  DeleteUserDataResult,
+  Schema_User,
+  Result_Delete_User,
 } from "@compass/core/src/types/user.types";
-import { CombinedLogin$Google } from "@core/types/auth.types";
+import { CombinedLogin_Google } from "@core/types/auth.types";
 import { Logger } from "@common/logger/common.logger";
 import { BaseError } from "@common/errors/errors.base";
 import mongoService from "@common/services/mongo.service";
@@ -11,7 +11,7 @@ import { Collections } from "@common/constants/collections";
 const logger = Logger("app:user.service");
 
 // Map  user object given by google signin to our schema //
-const mapToCompassUser = (userData: CombinedLogin$Google): CompassUser => {
+const mapToCompassUser = (userData: CombinedLogin_Google): Schema_User => {
   return {
     email: userData.user.email,
     name: userData.user.name,
@@ -21,7 +21,7 @@ const mapToCompassUser = (userData: CombinedLogin$Google): CompassUser => {
 };
 
 class UserService {
-  createUser = async (userData: CombinedLogin$Google) => {
+  createUser = async (userData: CombinedLogin_Google) => {
     logger.debug("Creating new user");
     const compassUser = mapToCompassUser(userData);
     //TODO validate
@@ -36,7 +36,7 @@ class UserService {
   // TODO implement script to call this for easy DB cleaning
   async deleteUserData(
     userId: string
-  ): Promise<DeleteUserDataResult | BaseError> {
+  ): Promise<Result_Delete_User | BaseError> {
     logger.info(`Deleting all data for user: ${userId}`);
 
     try {
@@ -53,7 +53,7 @@ class UserService {
         .collection(Collections.USER)
         .deleteOne({ _id: mongoService.objectId(userId) });
 
-      const summary: DeleteUserDataResult = {
+      const summary: Result_Delete_User = {
         events: eventsResponse,
         oauth: oauthResponse,
         user: userResponse,
@@ -62,7 +62,7 @@ class UserService {
       return summary;
     } catch (e) {
       logger.error(e);
-      return new BaseError("Delete Failed", e, 500, true);
+      return new BaseError("Delete User Data Failed", e, 500, true);
     }
   }
 }

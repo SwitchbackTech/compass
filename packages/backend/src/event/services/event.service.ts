@@ -1,15 +1,15 @@
 import { InsertManyResult } from "mongodb";
 
-import { ImportResult$GCal } from "@compass/core/src/types/sync.types";
+import { Result_Import_Gcal } from "@compass/core/src/types/sync.types";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
 import {
-  Event$NoId,
+  Event_NoId,
   Event,
-  Query$Event,
-  Params$DeleteMany,
-  Result$DeleteMany,
+  Query_Event,
+  Params_DeleteMany,
+  Result_DeleteMany,
 } from "@core/types/event.types";
 import { BaseError } from "@common/errors/errors.base";
 import { Status } from "@common/errors/status.codes";
@@ -19,18 +19,13 @@ import { getGcal } from "@auth/services/google.auth.service";
 import { yearsAgo } from "@common/helpers/common.helpers";
 import { GcalMapper } from "@common/services/gcal/map.gcal";
 
-import {
-  gCalendar,
-  gParamsEventsList,
-  gSchema$Event,
-  gSchema$Events,
-} from "../../../declarations";
+import { gCalendar, gParamsEventsList } from "../../../declarations";
 import { getReadAllFilter } from "./event.service.helpers";
 
 const logger = Logger("app:event.service");
 
 class EventService {
-  async create(userId: string, event: Event$NoId): Promise<Event | BaseError> {
+  async create(userId: string, event: Event_NoId): Promise<Event | BaseError> {
     try {
       const _gEvent = GcalMapper.toGcal(userId, event);
       const gcal = await getGcal(userId);
@@ -60,7 +55,7 @@ class EventService {
 
   async createMany(
     userId: string,
-    data: Event$NoId[]
+    data: Event_NoId[]
   ): Promise<InsertManyResult | BaseError> {
     //TODO verify userId exists first (?)
 
@@ -89,7 +84,7 @@ class EventService {
       const filter = { _id: mongoService.objectId(id), user: userId };
 
       //get event so you can see the googleId
-      const event: Event$NoId = await mongoService.db
+      const event: Event_NoId = await mongoService.db
         .collection(Collections.EVENT)
         .findOne(filter);
 
@@ -124,14 +119,14 @@ class EventService {
       return response;
     } catch (e) {
       logger.error(e);
-      return new BaseError("Delete Failed", e, 500, true);
+      return new BaseError("Delete Failed!", e, 500, true);
     }
   }
 
   async deleteMany(
     userId: string,
-    params: Params$DeleteMany
-  ): Promise<Result$DeleteMany> {
+    params: Params_DeleteMany
+  ): Promise<Result_DeleteMany> {
     const errors = [];
     try {
       const response = await mongoService.db
@@ -151,7 +146,7 @@ class EventService {
     }
   }
 
-  async import(userId: string, gcal: gCalendar): Promise<ImportResult$GCal> {
+  async import(userId: string, gcal: gCalendar): Promise<Result_Import_Gcal> {
     try {
       let nextPageToken = undefined;
       let nextSyncToken = undefined;
@@ -231,7 +226,7 @@ class EventService {
 
   async readAll(
     userId: string,
-    query: Query$Event
+    query: Query_Event
   ): Promise<Event[] | BaseError> {
     try {
       const filter = getReadAllFilter(userId, query);
@@ -249,7 +244,7 @@ class EventService {
   async updateById(
     userId: string,
     eventId: string,
-    event: Event$NoId
+    event: Event_NoId
   ): Promise<Event | BaseError> {
     try {
       const response = await mongoService.db
@@ -260,7 +255,7 @@ class EventService {
           { returnDocument: "after" }
         );
 
-      if (response.value === null || response.ok === 0) {
+      if (response.value === null || response.idUpdates === 0) {
         logger.error("Update failed");
         return new BaseError(
           "Update Failed",
@@ -290,12 +285,17 @@ class EventService {
       return new BaseError("Update Failed", e, 500, true);
     }
   }
+
   async updateMany(userId: string, events: Event[]) {
+    return "not done implementing this operation";
+
+    const testId = `events.$[_id]`;
     const updateResult = mongoService.db
       .collection(Collections.EVENT)
       .updateMany(
         // { user: userId, _id: mongoService.objectId("cEvents.$[_id]") },
-        { user: "testUser1", gEventId: "events.$[gEventId]" },
+        { user: userId, _id: mongoService.objectId(`events.${[_id]}`) },
+        // { user: "testUser1", gEventId: "events.$[gEventId]" },
         { $set: events },
         { upsert: true }
       );

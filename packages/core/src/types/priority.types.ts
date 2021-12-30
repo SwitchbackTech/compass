@@ -1,5 +1,3 @@
-import { ObjectId } from "mongodb";
-
 export interface PriorityReq {
   name: string;
   color: string;

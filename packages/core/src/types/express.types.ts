@@ -7,6 +7,9 @@ export interface Res extends Express.Response {
       id: string;
     };
   };
+  // TODO figure out how to generalize this so it can take
+  // multiple types, but doesn't need every arg to be hard-coded
+  // promise: Promise<unknown> | (() => unknown)
 }
 
 export interface ResP<T> extends Express.Response {
@@ -14,7 +17,7 @@ export interface ResP<T> extends Express.Response {
 }
 
 
-export interface Res$Promise extends Express.Response {
+export interface Res_Promise extends Express.Response {
     promise: (
       p: Promise<unknown> | (() => unknown)
     ) => Express.Response

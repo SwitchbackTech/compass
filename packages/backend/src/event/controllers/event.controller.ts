@@ -1,24 +1,23 @@
 import express from "express";
+import { v4 as uuidv4 } from "uuid";
 
 import { ReqBody, Res } from "@compass/core/src/types/express.types";
-import { OAuthDTO } from "@compass/core/src/types/auth.types";
 import { GCAL_PRIMARY } from "@common/constants/backend.constants";
-import { Event$NoId, Params$DeleteMany } from "@core/types/event.types";
+import { Event, Event_NoId, Params_DeleteMany } from "@core/types/event.types";
 import { Collections } from "@common/constants/collections";
 import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
 import { getGcal } from "@auth/services/google.auth.service";
 import syncService from "@sync/services/sync.service";
 import {
+  updateSyncData,
   updateNextSyncToken,
-  updateResourceId,
 } from "@sync/services/sync.helpers";
+import eventService from "@event/services/event.service";
 
-import eventService from "../services/event.service";
-
-const logger = Logger("app:event.service");
+const logger = Logger("app:event.controller");
 class EventController {
-  create = async (req: ReqBody<Event$NoId>, res: Res) => {
+  create = async (req: ReqBody<Event_NoId>, res: Res) => {
     const userId = res.locals.user.id;
 
     if (req.body instanceof Array) {
@@ -39,7 +38,7 @@ class EventController {
 
   deleteMany = async (
     // req: ReqBody<{ key: string; ids: string[] }>,
-    req: ReqBody<Params$DeleteMany>,
+    req: ReqBody<Params_DeleteMany>,
     res: Res
   ) => {
     const userId = res.locals.user.id;
@@ -49,51 +48,58 @@ class EventController {
   };
 
   import = async (req: express.Request, res: Res) => {
-    const userId: string = res.locals.user.id;
+    try {
+      const userId: string = res.locals.user.id;
 
-    const userExists = await mongoService.recordExists(Collections.USER, {
-      _id: mongoService.objectId(userId),
-    });
-    if (userExists) {
-      logger.debug(`Deleting events for clean import for user: ${userId}`);
-      await eventService.deleteAllByUser(userId);
+      const userExists = await mongoService.recordExists(Collections.USER, {
+        _id: mongoService.objectId(userId),
+      });
+      if (userExists) {
+        logger.debug(`Deleting events for clean import for user: ${userId}`);
+        await eventService.deleteAllByUser(userId);
+      }
+
+      const gcal = await getGcal(userId);
+
+      const importEventsResult = await eventService.import(userId, gcal);
+
+      const syncTokenUpdateResult = await updateNextSyncToken(
+        userId,
+        importEventsResult.nextSyncToken
+      );
+
+      // TODO remove 'primary-' after supporting multiple channels/user
+      const channelId = `primary-${uuidv4()}`;
+
+      const watchResult = await syncService.startWatchingChannel(
+        gcal,
+        GCAL_PRIMARY,
+        channelId
+      );
+
+      const syncUpdate = await updateSyncData(
+        userId,
+        channelId,
+        watchResult.resourceId,
+        watchResult.expiration
+      );
+      const syncUpdateSummary =
+        syncUpdate.ok === 1 && syncUpdate.lastErrorObject.updatedExisting
+          ? "success"
+          : "failed";
+
+      const fullResults = {
+        events: importEventsResult,
+        sync: {
+          watch: watchResult,
+          nextSyncToken: syncTokenUpdateResult,
+          syncDataUpdate: syncUpdateSummary,
+        },
+      };
+      res.promise(Promise.resolve(fullResults));
+    } catch (e) {
+      res.promise(Promise.reject(e));
     }
-
-    const gcal = await getGcal(userId);
-
-    const importEventsResult = await eventService.import(userId, gcal);
-
-    const tokenUpdateResult = await updateNextSyncToken(
-      userId,
-      importEventsResult.nextSyncToken
-    );
-
-    const oauth: OAuthDTO = await mongoService.db
-      .collection(Collections.OAUTH)
-      .findOne({ user: userId });
-
-    // use this existing oauth.state as the channelId,
-    // so you can use it to identify
-    // this channel for future sync updates
-    const channelId = oauth.state;
-
-    const watchResult = await syncService.startWatchingChannel(
-      gcal,
-      GCAL_PRIMARY,
-      channelId
-    );
-    const resourceIdInit = await updateResourceId(
-      oauth.state,
-      watchResult.resourceId
-    );
-
-    const fullResults = {
-      events: importEventsResult,
-      tokenUpdate: tokenUpdateResult,
-      watch: watchResult,
-      resourceIdSave: resourceIdInit,
-    };
-    res.promise(Promise.resolve(fullResults));
   };
 
   readById = async (req: express.Request, res: Res) => {
@@ -109,7 +115,7 @@ class EventController {
     res.promise(Promise.resolve(usersEvents));
   };
 
-  update = async (req: ReqBody<Event$NoId>, res: Res) => {
+  update = async (req: ReqBody<Event_NoId>, res: Res) => {
     /* 
     TODO validate: 
      - that no id in body (cuz id is immutable and will cause mongo err)
@@ -122,10 +128,14 @@ class EventController {
   };
 
   updateMany = async (req: ReqBody<Event[]>, res: Res) => {
-    const userId = res.locals.user.id;
-    const events = req.body;
-    const response = await eventService.updateMany(userId, events);
-    res.promise(Promise.resolve(response));
+    try {
+      const userId = res.locals.user.id;
+      const events = req.body;
+      const response = await eventService.updateMany(userId, events);
+      res.promise(Promise.resolve(response));
+    } catch (e) {
+      res.promise(Promise.reject(e));
+    }
   };
 }
 

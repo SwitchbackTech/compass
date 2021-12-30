@@ -1,7 +1,11 @@
 import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
 
-import { gcalEventsExample } from "./sync.test.data";
-import { categorizeGcalEvents } from "./sync.helpers";
+import { gcalEventsExample, calendarListExample } from "./sync.test.data";
+import {
+  categorizeGcalEvents,
+  channelNotFound,
+  findCalendarByResourceId,
+} from "./sync.helpers";
 
 describe("Categorize GCal Updates", () => {
   const { eventsToDelete, eventsToUpdate } =
@@ -38,5 +42,23 @@ describe("Categorize GCal Updates", () => {
         throw new Error("a cancelled event was missed");
       }
     });
+  });
+});
+
+describe("Refreshes channel watch", () => {
+  test("Decides if channel is expired", () => {
+    const notFound1 = channelNotFound(calendarListExample, "channel1");
+    expect(notFound1).toBe(false);
+
+    const notFound2 = channelNotFound(calendarListExample, "oldChannelId");
+    expect(notFound2).toBe(true);
+  });
+});
+
+describe("Miscellaneous", () => {
+  test("finds resourceId", () => {
+    const cal = findCalendarByResourceId("resource2", calendarListExample);
+    const resourceId = cal.sync.resourceId;
+    expect(resourceId).toBe("resource2");
   });
 });

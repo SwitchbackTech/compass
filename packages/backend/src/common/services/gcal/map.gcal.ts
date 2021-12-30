@@ -2,7 +2,7 @@
 import { gSchema$Event } from "declarations";
 
 import { BaseError } from "@common/errors/errors.base";
-import { Event, Event$NoId } from "@compass/core/src/types/event.types";
+import { Event, Event_NoId } from "@compass/core/src/types/event.types";
 
 import { notCancelled } from "./gcal.helpers";
 
@@ -10,7 +10,7 @@ export namespace GcalMapper {
   export const toCompass = (
     userId: string,
     events: gSchema$Event[]
-  ): Event[] | Event$NoId[] => {
+  ): Event[] | Event_NoId[] => {
     const mapped = events
       .filter(notCancelled)
       .map((e: gSchema$Event) => _toCompass(userId, e));
@@ -18,7 +18,7 @@ export namespace GcalMapper {
     return mapped;
   };
 
-  export const toGcal = (userId: string, event: Event$NoId): gSchema$Event => {
+  export const toGcal = (userId: string, event: Event_NoId): gSchema$Event => {
     const gcalEvent = {
       summary: event.summary,
       description: event.description,
@@ -33,7 +33,7 @@ export namespace GcalMapper {
 const _toCompass = (
   userId: string,
   gEvent: gSchema$Event
-): Event | Event$NoId => {
+): Event | Event_NoId => {
   // TODO - move to validation service
   if (!gEvent.id) {
     throw new BaseError(
