@@ -99,7 +99,7 @@ class EventController {
       };
       res.promise(Promise.resolve(fullResults));
     } catch (e) {
-      res.promise(Promise.reject(e));
+      res.promise(Promise.resolve(e));
     }
   };
 
