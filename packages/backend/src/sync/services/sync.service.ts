@@ -29,7 +29,6 @@ import {
   findCalendarByResourceId,
   updateNextSyncToken,
   updateResourceId,
-  updateResourceIdAndChannelId,
   updateSyncData,
 } from "./sync.helpers";
 
@@ -99,12 +98,12 @@ class SyncService {
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
     try {
-      const numMin = 4;
+      const numMin = 120;
 
       // TODO uncomment
       // const expiration = daysFromNowTimestamp(14, "ms").toString();
       console.log(
-        `**REMINDER: channel is expiring in just ${numMin} mins. Change before deploying **`
+        `\n**REMINDER: channel is expiring in just ${numMin} mins. Change before deploying**\n`
       );
       const expiration = minutesFromNow(numMin, "ms").toString();
 

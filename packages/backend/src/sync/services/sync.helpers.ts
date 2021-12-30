@@ -10,7 +10,7 @@ import { Collections } from "@common/constants/collections";
 import { BaseError } from "@common/errors/errors.base";
 import { daysFromNowTimestamp } from "@core/util/date.utils";
 import { Request_Sync_Gcal } from "@core/types/sync.types";
-import { Schema_CalendarList, Schema_GCal } from "@core/types/calendar.types";
+import { Schema_CalendarList } from "@core/types/calendar.types";
 import { Status } from "@common/errors/status.codes";
 
 import { minutesFromNow } from "../../../../core/src/util/date.utils";
@@ -80,13 +80,14 @@ export const channelNotFound = (
   if (matchingChannelIds.length != 1) {
     return true;
   } else {
+    // if exactly 1 entry, then the correct channel was found
     return false;
   }
 };
 
 export const channelExpiresSoon = (expiry: string) => {
   // Temp: testing sync
-  const xMinFromNow = minutesFromNow(2, "ms");
+  const xMinFromNow = minutesFromNow(30, "ms");
   const expiration = new Date(expiry).getTime();
   const channelExpiresSoon = expiration < xMinFromNow;
 

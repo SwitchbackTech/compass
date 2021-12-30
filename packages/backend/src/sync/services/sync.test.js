@@ -3,7 +3,7 @@ import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
 import { gcalEventsExample, calendarListExample } from "./sync.test.data";
 import {
   categorizeGcalEvents,
-  channelExpired,
+  channelNotFound,
   findCalendarByResourceId,
 } from "./sync.helpers";
 
@@ -47,11 +47,11 @@ describe("Categorize GCal Updates", () => {
 
 describe("Refreshes channel watch", () => {
   test("Decides if channel is expired", () => {
-    const isExpired1 = channelExpired(calendarListExample, "channel1");
-    expect(isExpired1).toBe(true);
+    const notFound1 = channelNotFound(calendarListExample, "channel1");
+    expect(notFound1).toBe(false);
 
-    const isExpired2 = channelExpired(calendarListExample, "oldChannelId");
-    expect(isExpired2).toBe(false);
+    const notFound2 = channelNotFound(calendarListExample, "oldChannelId");
+    expect(notFound2).toBe(true);
   });
 });
 
