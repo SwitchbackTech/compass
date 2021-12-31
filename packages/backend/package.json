@@ -6,8 +6,8 @@
   "author": "Switchback Tech LLC <hello@switchback.tech>",
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
-    "dev": "export DEV=true DEBUG=app* && yarn dev-start",
-    "dev -verbose": "export DEV=true DEBUG=* && yarn dev-start",
+    "dev": "export DEBUG=app* && yarn dev-start",
+    "dev -verbose": "export DEBUG=* && yarn dev-start",
     "dev-start": "ts-node-dev --respawn --pretty --transpile-only -r tsconfig-paths/register src/app.ts",
     "dist": "rm -r dist/ && tsc",
     "start": "ts-node -r tsconfig-paths/register ./dist/backend/src/app.js",
