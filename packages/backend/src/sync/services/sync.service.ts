@@ -111,7 +111,8 @@ class SyncService {
         calendarId: calendarId,
         requestBody: {
           id: channelId,
-          address: `${BASEURL}${GCAL_NOTIFICATION_URL}`,
+          //address always needs to be HTTPS, so use prod url
+          address: `${process.env.BASEURL_PROD}${GCAL_NOTIFICATION_URL}`,
           type: "web_hook",
           expiration: expiration,
         },
