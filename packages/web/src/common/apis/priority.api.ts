@@ -1,15 +1,9 @@
 import axios from 'axios';
 
+import { colorNameByPriority } from '@common/styles/colors';
 import { Priorities } from '@common/types/entities';
 import { BASEURL } from '@common/constants/api';
 
-// TODO replace with what's in styles.ts
-const COLORS = {
-  ZERO: '#bfc8de',
-  ONE: '#2C4A62',
-  TWO: '#4F6A80',
-  THREE: '#2C5474',
-};
 const PriorityApi = {
   async createPriorities(token: string) {
     // custom header to allow for token arg
@@ -22,15 +16,15 @@ const PriorityApi = {
     const priorities = [
       {
         name: Priorities.SELF,
-        color: COLORS.ONE,
+        color: colorNameByPriority.self,
       },
       {
         name: Priorities.WORK,
-        color: COLORS.TWO,
+        color: colorNameByPriority.work,
       },
       {
         name: Priorities.RELATIONS,
-        color: COLORS.THREE,
+        color: colorNameByPriority.relations,
       },
     ];
 

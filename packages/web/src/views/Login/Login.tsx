@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Redirect } from 'react-router-dom';
 
 import { Result_OauthStatus } from '@core/types/auth.types';
+import { Schema_CalendarList } from '@core/types/calendar.types';
 // import { store } from '@store';
 // import { reducers } from '@store/reducers';
 import { PriorityApi } from '@common/apis/priority.api';
@@ -12,6 +13,7 @@ import { ROOT_ROUTES } from '@common/constants/routes';
 import { Text } from '@components/Text';
 import { ColorNames } from '@common/types/styles';
 import { Button, FeedbackButtonContainer } from '@components/Button';
+import { CalendarList } from '@common/apis/calendarlist.api';
 
 import { StyledLogin } from './styled';
 
@@ -64,22 +66,33 @@ export const LoginView = () => {
             - priorities created
             - primary calendar selected (not htis version) 
             - events fetched and imported
-        If existing:
+        If existing:import { Schema_Calendar } from '@core/types/calendar.types';
+
           - Send to calendar page, where you'll
             - fetching most-recent GCal events and sync with Compass
         */
-        console.log('auth complete. waiting and then syncing events ...');
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        console.log('auth complete. initing data ...');
+        // await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // todo move this stuff to onboard flow
-        const prioritiesRes = await PriorityApi.createPriorities(status.token);
-        console.log(prioritiesRes);
+        // const prioritiesRes = await PriorityApi.createPriorities(status.token);
+        // console.log(prioritiesRes);
 
-        setRedirect(true);
+        await createCalendarList();
+
+        // TODO re-enable this after testing
+        // setRedirect(true);
       }
     }
   };
 
+  const createCalendarList = async () => {
+    const calendarList = await CalendarList.list();
+    const primaryCal = calendarList.items.filter((c) => {
+      return c.primary === true;
+    })[0];
+    console.log(primaryCal);
+  };
   // const onboard = async (token: string) => {
 
   // }
@@ -100,6 +113,9 @@ export const LoginView = () => {
           </p>
           <button type="button" onClick={startGoogleOauth}>
             Connect My Google Calendar
+          </button>
+          <button type="button" onClick={createCalendarList}>
+            Test Cal List
           </button>
 
           <FeedbackButtonContainer>

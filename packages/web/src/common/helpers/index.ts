@@ -5,6 +5,15 @@ import {
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from '@common/constants/dates';
 
+export const headers = () => {
+  return {
+    headers: {
+      // Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
+    },
+  };
+};
+
 export const getTimes = () =>
   Array(24 * 4)
     .fill(0)

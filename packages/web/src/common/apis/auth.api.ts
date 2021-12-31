@@ -5,7 +5,7 @@ import { GOOGLE } from '@common/constants/common';
 import { Result_OauthStatus } from '@core/types/auth.types';
 
 const headers = {
-  // TODO dry
+  // TODO replace with method in helpers
   headers: {
     Authorization: `Bearer ${localStorage.getItem('token')}`,
   },
