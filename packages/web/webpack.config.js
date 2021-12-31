@@ -112,10 +112,10 @@ module.exports = (env) => {
     },
 
     plugins: [
-      new DefinePlugin({
-      'process.env.ENV': JSON.stringify(process.env.ENV),
+      // new DefinePlugin({
+      // 'process.env.ENV': JSON.stringify(process.env.ENV),
       // 'process.env.MY_ENV': JSON.stringify(process.env.MY_ENV),
-      }),
+      // }),
       new HtmlWebpackPlugin({
         template: './src/index.html',
       }),
