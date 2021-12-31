@@ -8,7 +8,6 @@ import * as http from "http";
 import cors from "cors";
 import helmet from "helmet";
 
-import { BASEURL } from "@core/core.constants";
 import { CommonRoutesConfig } from "@common/common.routes.config";
 import { AuthRoutes } from "@auth/auth.routes.config";
 import { EventRoutes } from "@event/event.routes.config";

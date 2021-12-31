@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 import { Priorities } from '@common/types/entities';
-import { BASEURL } from '@core/core.constants';
+import { BASEURL } from '@common/constants/api';
 
 // TODO replace with what's in styles.ts
 const COLORS = {

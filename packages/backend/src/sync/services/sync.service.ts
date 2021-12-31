@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { gCalendar, gSchema$Channel } from "declarations";
 
-import { BASEURL } from "@core/core.constants";
+import { BASEURL } from "@common/constants/backend.constants";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { minutesFromNow, daysFromNowTimestamp } from "@core/util/date.utils";
 import {
