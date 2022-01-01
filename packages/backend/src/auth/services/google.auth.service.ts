@@ -8,7 +8,7 @@ import mongoService from "@common/services/mongo.service";
 import { Logger } from "@common/logger/common.logger";
 import { Collections } from "@common/constants/collections";
 import { isDev } from "@common/helpers/common.helpers";
-import { BaseError } from "@common/errors/errors.base";
+import { BaseError } from "@core/errors/errors.base";
 
 import { gCalendar } from "../../../declarations";
 

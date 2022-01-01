@@ -1,6 +1,6 @@
 import { Collections } from "@common/constants/collections";
-import { BaseError } from "@common/errors/errors.base";
-import { Status } from "@common/errors/status.codes";
+import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
 import { Logger } from "@common/logger/common.logger";
 import mongoService from "@common/services/mongo.service";
 import { Schema_CalendarList } from "@core/types/calendar.types";

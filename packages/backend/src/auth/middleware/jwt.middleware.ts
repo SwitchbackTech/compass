@@ -3,7 +3,7 @@ import jwt, { JsonWebTokenError } from "jsonwebtoken";
 import crypto from "crypto";
 
 import { Jwt } from "@core/types/jwt.types";
-import { BaseError } from "@common/errors/errors.base";
+import { BaseError } from "@core/errors/errors.base";
 
 const jwtSecret: string = process.env.JWT_SECRET;
 

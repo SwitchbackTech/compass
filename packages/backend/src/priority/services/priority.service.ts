@@ -1,7 +1,7 @@
 import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
 import { Collections } from "@common/constants/collections";
 import mongoService from "@common/services/mongo.service";
-import { BaseError } from "@common/errors/errors.base";
+import { BaseError } from "@core/errors/errors.base";
 
 import { mapPriorityData } from "./priority.service.helpers";
 

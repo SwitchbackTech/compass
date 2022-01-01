@@ -11,8 +11,8 @@ import {
   Params_Sync_Gcal,
 } from "@core/types/sync.types";
 import { getGcal } from "@auth/services/google.auth.service";
-import { BaseError } from "@common/errors/errors.base";
-import { Status } from "@common/errors/status.codes";
+import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
 import { Logger } from "@common/logger/common.logger";
 import {
   GCAL_NOTIFICATION_URL,

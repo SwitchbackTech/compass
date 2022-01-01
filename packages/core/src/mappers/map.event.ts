@@ -2,7 +2,7 @@
 import { gSchema$Event } from "@compass/backend/declarations";
 import { notCancelled } from '@compass/backend/src/common/services/gcal/gcal.helpers';
 
-import { BaseError } from "../errors/errors.base";
+import { BaseError } from "@core/errors/errors.base";
 import { Event, Event_NoId } from "../types/event.types";
 
 export namespace MapEvent {

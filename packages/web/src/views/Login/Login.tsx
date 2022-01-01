@@ -3,6 +3,10 @@ import { Redirect } from 'react-router-dom';
 
 import { Result_OauthStatus } from '@core/types/auth.types';
 import { Schema_CalendarList } from '@core/types/calendar.types';
+import {
+  MapCalendarList,
+  mapCalListToCompass,
+} from '@core/mappers/map.calendarlist';
 // import { store } from '@store';
 // import { reducers } from '@store/reducers';
 import { PriorityApi } from '@common/apis/priority.api';
@@ -91,9 +95,12 @@ export const LoginView = () => {
       return c.primary === true;
     })[0];
     console.log(primaryGcal);
+    // const calList = MapCalendarList.toCompass(primaryGcal);
+    const calList = mapCalListToCompass(primaryGcal);
+    const res = CalendarList.create(calList);
+    console.log(res);
   };
   // const onboard = async (token: string) => {
-
   // }
 
   return (

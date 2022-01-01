@@ -4,7 +4,7 @@ import {
 } from "@compass/core/src/types/user.types";
 import { CombinedLogin_Google } from "@core/types/auth.types";
 import { Logger } from "@common/logger/common.logger";
-import { BaseError } from "@common/errors/errors.base";
+import { BaseError } from "@core/errors/errors.base";
 import mongoService from "@common/services/mongo.service";
 import { Collections } from "@common/constants/collections";
 
