@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { gSchema$Event } from "declarations";
+import { gSchema$Event } from "@compass/backend/declarations";
+import { notCancelled } from '@compass/backend/src/common/services/gcal/gcal.helpers';
 
-import { BaseError } from "@common/errors/errors.base";
-import { Event, Event_NoId } from "@compass/core/src/types/event.types";
+import { BaseError } from "../errors/errors.base";
+import { Event, Event_NoId } from "../types/event.types";
 
-import { notCancelled } from "./gcal.helpers";
-
-export namespace GcalMapper {
+export namespace MapEvent {
   export const toCompass = (
     userId: string,
     events: gSchema$Event[]

@@ -79,7 +79,6 @@ export const LoginView = () => {
         // console.log(prioritiesRes);
 
         await createCalendarList();
-
         // TODO re-enable this after testing
         // setRedirect(true);
       }
@@ -87,11 +86,11 @@ export const LoginView = () => {
   };
 
   const createCalendarList = async () => {
-    const calendarList = await CalendarList.list();
-    const primaryCal = calendarList.items.filter((c) => {
+    const gcalList = await CalendarList.list();
+    const primaryGcal = gcalList.items.filter((c) => {
       return c.primary === true;
     })[0];
-    console.log(primaryCal);
+    console.log(primaryGcal);
   };
   // const onboard = async (token: string) => {
 

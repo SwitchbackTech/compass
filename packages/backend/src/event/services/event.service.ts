@@ -1,9 +1,9 @@
 import { InsertManyResult } from "mongodb";
 
-import { Result_Import_Gcal } from "@compass/core/src/types/sync.types";
-import { GCAL_PRIMARY } from "@common/constants/backend.constants";
-import mongoService from "@common/services/mongo.service";
-import { Logger } from "@common/logger/common.logger";
+import { Result_Import_Gcal } from "@core/types/sync.types";
+import { MapEvent } from "@core/mappers/map.event";
+import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
 import {
   Event_NoId,
   Event,
@@ -11,13 +11,13 @@ import {
   Params_DeleteMany,
   Result_DeleteMany,
 } from "@core/types/event.types";
-import { BaseError } from "@common/errors/errors.base";
-import { Status } from "@common/errors/status.codes";
+import { GCAL_PRIMARY } from "@common/constants/backend.constants";
+import mongoService from "@common/services/mongo.service";
+import { Logger } from "@common/logger/common.logger";
 import { Collections } from "@common/constants/collections";
 import gcalService from "@common/services/gcal/gcal.service";
-import { getGcal } from "@auth/services/google.auth.service";
 import { yearsAgo } from "@common/helpers/common.helpers";
-import { GcalMapper } from "@common/services/gcal/map.gcal";
+import { getGcal } from "@auth/services/google.auth.service";
 
 import { gCalendar, gParamsEventsList } from "../../../declarations";
 import { getReadAllFilter } from "./event.service.helpers";
@@ -27,7 +27,7 @@ const logger = Logger("app:event.service");
 class EventService {
   async create(userId: string, event: Event_NoId): Promise<Event | BaseError> {
     try {
-      const _gEvent = GcalMapper.toGcal(userId, event);
+      const _gEvent = MapEvent.toGcal(userId, event);
       const gcal = await getGcal(userId);
       const gEvent = await gcalService.createEvent(gcal, _gEvent);
 
@@ -167,7 +167,7 @@ class EventService {
         if (gEvents.data.items) total += gEvents.data.items.length;
 
         if (gEvents.data.items) {
-          const cEvents = GcalMapper.toCompass(userId, gEvents.data.items);
+          const cEvents = MapEvent.toCompass(userId, gEvents.data.items);
           const response = await this.createMany(userId, cEvents);
           //confirm acknowledged and that insertedCount = gEvents.legnth
 
@@ -266,7 +266,7 @@ class EventService {
       }
       const updatedEvent = response.value;
 
-      const gEvent = GcalMapper.toGcal(userId, updatedEvent);
+      const gEvent = MapEvent.toGcal(userId, updatedEvent);
       const gcal = await getGcal(userId);
       const gEventId = updatedEvent.gEventId;
       if (gEventId === undefined) {

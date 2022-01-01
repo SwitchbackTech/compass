@@ -7,7 +7,11 @@ const _getBaseUrl = () => {
   } else if (process.env.ENV === "dev") {
     return process.env.BASEURL_DEV;
   } else {
-    throw new Error(`Invalid ENV value: ${process.env.ENV}. Change config.`);
+    if (process.env.NODE_ENV !== "test") {
+      // jests sets this env, so make sure its not running in a test
+      // before throwing this error
+      throw new Error(`Invalid ENV value: ${process.env.ENV}. Change config.`);
+    }
   }
 };
 

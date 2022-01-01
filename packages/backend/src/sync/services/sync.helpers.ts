@@ -2,18 +2,17 @@ import { AnyBulkWriteOperation } from "mongodb";
 import { gSchema$Event } from "declarations";
 
 import { Event } from "@core/types/event.types";
+import { MapEvent } from "@core/mappers/map.event";
+import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
+import { minutesFromNow } from "@core/util/date.utils";
 import { Logger } from "@common/logger/common.logger";
 import mongoService from "@common/services/mongo.service";
 import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
-import { GcalMapper } from "@common/services/gcal/map.gcal";
 import { Collections } from "@common/constants/collections";
-import { BaseError } from "@common/errors/errors.base";
 import { daysFromNowTimestamp } from "@core/util/date.utils";
 import { Request_Sync_Gcal } from "@core/types/sync.types";
 import { Schema_CalendarList } from "@core/types/calendar.types";
-import { Status } from "@common/errors/status.codes";
-
-import { minutesFromNow } from "../../../../core/src/util/date.utils";
 
 const logger = Logger("app:sync.helpers");
 
@@ -36,7 +35,7 @@ export const assembleBulkOperations = (
   }
 
   if (eventsToUpdate.length > 0) {
-    const cEvents = GcalMapper.toCompass(userId, eventsToUpdate);
+    const cEvents = MapEvent.toCompass(userId, eventsToUpdate);
 
     cEvents.forEach((e: Event) => {
       bulkOperations.push({

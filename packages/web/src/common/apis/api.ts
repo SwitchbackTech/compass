@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-import { BASEURL } from '@core/core.constants';
-// import { BASEURL } from '@common/constants/api';
+import { BASEURL } from '@common/constants/api';
 
 const headers = {
   headers: {
