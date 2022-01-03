@@ -1,0 +1,57 @@
+{
+  "name": "compass-desktop",
+  "description": "desktop client. Not working yet",
+  "author": "Switchback Tech LLC <hello@switchback.tech>",
+  "version": "2.0.0",
+  "license": "SEE LICENSE IN LICENSE",
+  "private": true,
+  "build": {
+    "productName": "Compass Calendar",
+    "appId": "app.compasscalendar",
+    "directories": {
+      "buildResources": "resources"
+    },
+    "files": [
+      "packages/electron/dist/**/*",
+      "packages/electron/**/*",
+      "packages/electron/localization/!(locales)",
+      "LICENSE"
+    ],
+    "extraFiles": [
+      "packaes/electron/localization/locales/**/*",
+      "license.data",
+      "public.key"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "msi"
+      ]
+    },
+    "linux": {
+      "target": [
+        "deb",
+        "rpm",
+        "snap",
+        "AppImage"
+      ]
+    }
+  },
+  "dependencies": {
+    "electron-devtools-installer": "^3.2.0",
+    "i18next": "^20.3.1",
+    "i18next-electron-fs-backend": "^1.3.6",
+    "i18next-fs-backend": "^1.1.1",
+    "secure-electron-context-menu": "^1.3.1",
+    "secure-electron-license-keys": "^1.1.1",
+    "secure-electron-store": "^3.0.1"
+  },
+  "devDependencies": {
+    "@doyensec/electronegativity": "^1.9.1",
+    "@google-cloud/translate": "^6.2.2",
+    "electron": "^13.1.2",
+    "electron-builder": "^22.11.3",
+    "electron-debug": "^3.2.0",
+    "spectron": "^15.0.0"
+  }
+}

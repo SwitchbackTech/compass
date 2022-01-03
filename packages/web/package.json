@@ -4,15 +4,8 @@
   "main": "src/App.ts",
   "typings": "declaration.d.ts",
   "license": "SEE LICENSE IN LICENSE",
-  "scripts": {
-    "dev": "export DEV=true DEBUG=app* && webpack serve --env development --mode=development",
-    "build": "yarn clean && webpack --env production --mode=production",
-    "lint": "eslint . --ext .ts,.tsx",
-    "lint-fix": "yarn lint --fix",
-    "test-types": "tsc --noEmit",
-    "precommit": "yarn lint && yarn test-types"
-  },
   "dependencies": {
+    "@compass/core": "2.0.0",
     "@reduxjs/toolkit": "^1.6.1",
     "@svgr/webpack": "^5.5.0",
     "@types/lodash.debounce": "^4.0.6",
@@ -63,6 +56,7 @@
     "sass-loader": "^12.1.0",
     "style-loader": "^3.2.1",
     "styled-components": "^5.3.1",
+    "styled-theming": "^2.2.0",
     "ts-keycode-enum": "^1.0.6",
     "typescript": "^4.4.3",
     "uuid": "^8.3.2",

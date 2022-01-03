@@ -1,25 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { Redirect } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Redirect } from "react-router-dom";
 
-import { Result_OauthStatus } from '@core/types/auth.types';
-import { Schema_CalendarList } from '@core/types/calendar.types';
+import { Result_OauthStatus } from "@core/types/auth.types";
+import { Schema_CalendarList } from "@core/types/calendar.types";
+import { gSchema$CalendarList } from "@backend/declarations";
 import {
   MapCalendarList,
   mapCalListToCompass,
-} from '@core/mappers/map.calendarlist';
+} from "@core/mappers/map.calendarlist";
 // import { store } from '@store';
 // import { reducers } from '@store/reducers';
-import { PriorityApi } from '@common/apis/priority.api';
-import { AuthApi } from '@common/apis/auth.api';
-import { SURVEY_URL } from '@compass/core/src/core.constants';
-import { GOOGLE } from '@common/constants/common';
-import { ROOT_ROUTES } from '@common/constants/routes';
-import { Text } from '@components/Text';
-import { ColorNames } from '@common/types/styles';
-import { Button, FeedbackButtonContainer } from '@components/Button';
-import { CalendarList } from '@common/apis/calendarlist.api';
+import { PriorityApi } from "@common/apis/priority.api";
+import { AuthApi } from "@common/apis/auth.api";
+import { SURVEY_URL } from "@compass/core/src/core.constants";
+import { GOOGLE } from "@common/constants/common";
+import { ROOT_ROUTES } from "@common/constants/routes";
+import { Text } from "@components/Text";
+import { ColorNames } from "@common/types/styles";
+import { Button, FeedbackButtonContainer } from "@components/Button";
+import { CalendarList } from "@common/apis/calendarlist.api";
 
-import { StyledLogin } from './styled';
+import { StyledLogin } from "./styled";
 
 export const LoginView = () => {
   const [redirect, setRedirect] = useState(false);
@@ -29,18 +30,18 @@ export const LoginView = () => {
 
     // Token has expired or invalid, user has to re-login //
     if (!refresh) {
-      localStorage.setItem('token', '');
-      localStorage.setItem('state', '');
+      localStorage.setItem("token", "");
+      localStorage.setItem("state", "");
 
       setRedirect(false);
     }
 
-    localStorage.setItem('token', refresh.token);
+    localStorage.setItem("token", refresh.token);
     setRedirect(true);
   }
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token && !redirect) {
       refreshToken();
     }
@@ -48,7 +49,7 @@ export const LoginView = () => {
 
   const startGoogleOauth = async () => {
     const googleOauthData = await AuthApi.getOauthData(GOOGLE);
-    localStorage.setItem('authState', googleOauthData.authState);
+    localStorage.setItem("authState", googleOauthData.authState);
     window.open(googleOauthData.authUrl);
 
     // poll while user grants permissions
@@ -59,7 +60,7 @@ export const LoginView = () => {
       isOauthComplete = status.isOauthComplete;
 
       if (isOauthComplete) {
-        localStorage.setItem('token', status.token);
+        localStorage.setItem("token", status.token);
         /*
         OR NOT, cuz user would only go through the oauth init flow 
         the first time, and their token would be refreshed after that.
@@ -75,7 +76,7 @@ export const LoginView = () => {
           - Send to calendar page, where you'll
             - fetching most-recent GCal events and sync with Compass
         */
-        console.log('auth complete. initing data ...');
+        console.log("auth complete. initing data ...");
         // await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // todo move this stuff to onboard flow
@@ -119,9 +120,6 @@ export const LoginView = () => {
           </p>
           <button type="button" onClick={startGoogleOauth}>
             Connect My Google Calendar
-          </button>
-          <button type="button" onClick={createCalendarList}>
-            Test Cal List
           </button>
 
           <FeedbackButtonContainer>
