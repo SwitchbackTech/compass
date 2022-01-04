@@ -1,8 +1,8 @@
-// based on: https://jestjs.io/docs/getting-started
+console.log("\n\n\nin babel config root");
 module.exports = {
   presets: [
-  ['@babel/preset-env', {targets: {node: 'current'}}],
-  '@babel/preset-typescript',
-  '@babel/preset-react'
-]
+    "@babel/preset-react",
+    ["@babel/preset-env", { targets: { node: "current" } }],
+    "@babel/preset-typescript",
+  ],
 };

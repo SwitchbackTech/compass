@@ -29,7 +29,13 @@ module.exports = (env) => {
         // ts/js:
         {
           test: /\.tsx?$/,
-          use: "babel-loader",
+          use: {
+            loader: "babel-loader",
+            options: {
+              presets: ["@babel/preset-env"],
+              rootMode: "upward",
+            },
+          },
           exclude: /node_modules/,
         },
         {

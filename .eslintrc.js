@@ -1,6 +1,6 @@
 const path = require("path");
 
-module.export = {
+module.exports = {
   settings: {
     "import/resolver": {
       "eslint-import-resolver-lerna": {
