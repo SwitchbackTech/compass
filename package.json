@@ -30,8 +30,9 @@
     "start:backend": "cd packages/backend && ts-node -r tsconfig-paths/register ./dist/backend/src/app.js",
     "start:desktop": "yarn prod:build && electron .",
     "start:web": "cross-env yarn workspace @compass/web start",
-    "test:backend": "cd packages/backend && jest",
-    "test:web": "echo *TODO update this after movin jest config to root* && yarn jest",
+    "test": "yarn jest",
+    "test:backend": "yarn jest backend",
+    "test:web": "yarn jest web",
     "translate:desktop": "node packages/electron/localization/translateMissing.js"
   },
   "dependencies": {

@@ -6,13 +6,13 @@ import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { minutesFromNow } from "@core/util/date.utils";
-import { Logger } from "@common/logger/common.logger";
-import mongoService from "@common/services/mongo.service";
-import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
-import { Collections } from "@common/constants/collections";
 import { daysFromNowTimestamp } from "@core/util/date.utils";
 import { Request_Sync_Gcal } from "@core/types/sync.types";
 import { Schema_CalendarList } from "@core/types/calendar.types";
+import { Logger } from "@backend/common/logger/common.logger";
+import mongoService from "@backend/common/services/mongo.service";
+import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
+import { Collections } from "@backend/common/constants/collections";
 
 const logger = Logger("app:sync.helpers");
 

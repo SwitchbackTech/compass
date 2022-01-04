@@ -1,11 +1,12 @@
-import dayjs from 'dayjs';
-import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import dayjs from "dayjs";
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 
-import { EventEntity } from '@common/types/entities';
+import { EventEntity } from "@web/common/types/entities";
+// import { EventEntity } from '../../common/types/entities'
 
-import { createEvent, editEvent, getEvents, GetEventsParams } from './fakeApi';
-import { hardCodedEvents } from './event.data';
+import { GetEventsParams, getEvents, createEvent, editEvent } from "./fakeApi";
+import { hardCodedEvents } from "./event.data";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -14,56 +15,56 @@ dayjs.extend(isSameOrBefore);
 /* Helpers */
 /** ********************** */
 const convertToBackendModel = (frontendEvent) => {
-  return 'TODO';
+  return "TODO";
 };
 
 export const getEventsLocalStorage = async (): Promise<EventEntity[]> =>
-  (JSON.parse(localStorage.getItem('events') || '[]') as EventEntity[]) || [];
+  (JSON.parse(localStorage.getItem("events") || "[]") as EventEntity[]) || [];
 
 const getEventsHelper = async () => {
   const basicEvents = [
     {
-      priority: 'work',
-      startDate: '2021-10-25 17:30',
-      endDate: '2021-10-25 18:45',
+      priority: "work",
+      startDate: "2021-10-25 17:30",
+      endDate: "2021-10-25 18:45",
       isTimeSelected: false,
       isOpen: false,
-      title: 'Presentation',
-      id: '456',
+      title: "Presentation",
+      id: "456",
     },
     {
-      priority: 'self',
-      startDate: '2021-10-25 15:30',
-      endDate: '2021-10-25 17:00',
+      priority: "self",
+      startDate: "2021-10-25 15:30",
+      endDate: "2021-10-25 17:00",
       isTimeSelected: true,
       showStartTimeLabel: true,
       isOpen: true,
-      title: 'Walk dog',
-      id: '123',
+      title: "Walk dog",
+      id: "123",
     },
     {
-      priority: 'relations',
-      startDate: '2021-10-26 15:30',
-      endDate: '2021-10-26 18:00',
+      priority: "relations",
+      startDate: "2021-10-26 15:30",
+      endDate: "2021-10-26 18:00",
       isTimeSelected: true,
       isOpen: true,
-      title: 'with desc',
+      title: "with desc",
       showStartTimeLabel: true,
-      description: 'an event with a description',
-      id: '789',
+      description: "an event with a description",
+      id: "789",
     },
   ];
   // return hardCodedEvents;
   return basicEvents;
 };
 
-export interface GetEventsParams {
-  startDate?: string;
-  endDate?: string;
-  page?: number;
-  pageSize?: number;
-  priorities?: Priorities[];
-}
+// export interface GetEventsParams {
+//   startDate?: string;
+//   endDate?: string;
+//   page?: number;
+//   pageSize?: number;
+//   priorities?: Priorities[];
+// }
 /*
   So page is needed for someday event lists
   (to not fetching all existing events and filter them on front end because of perfomance)

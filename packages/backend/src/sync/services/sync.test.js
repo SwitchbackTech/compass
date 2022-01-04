@@ -1,4 +1,4 @@
-import { cancelledEventsIds } from "@common/services/gcal/gcal.helpers";
+import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
 
 import { gcalEventsExample, calendarListExample } from "./sync.test.data";
 import {

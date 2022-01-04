@@ -20,10 +20,13 @@
     "strict": false,
     "esModuleInterop": true,
     "inlineSourceMap": true,
-    "baseUrl": ".", 
+    "baseUrl": ".",
     "paths": {
-      "@*": ["src/*"],
+      //todo remove in favor of more explicit backend
+      "@*": ["./src/*"],
+      "@backend/*": ["./src/*"],
       "@core/*": ["../core/src/*"]
-    },
+    }
   }
+  //TODO add include/exclude blocks here?
 }

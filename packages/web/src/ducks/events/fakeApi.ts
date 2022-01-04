@@ -1,9 +1,10 @@
-import dayjs from 'dayjs';
-import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { v4 as uuidv4 } from 'uuid';
+import dayjs from "dayjs";
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import { v4 as uuidv4 } from "uuid";
 
-import { EventEntity, Priorities } from '@common/types/entities';
+// import { Priorities, EventEntity } from '@web/common/types/entities';
+import { Priorities, EventEntity } from "../../common/types/entities";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -25,7 +26,7 @@ const doEventsIntercept = (event1: EventEntity, event2: EventEntity) => {
 };
 
 const getEventsFromStorage = (): EventEntity[] =>
-  (JSON.parse(localStorage.getItem('events') || '[]') as EventEntity[]) || [];
+  (JSON.parse(localStorage.getItem("events") || "[]") as EventEntity[]) || [];
 
 /*
 TODO: (needed to be done on API side) sorings corner cases:
@@ -161,7 +162,7 @@ export const createEvent = async (event: EventEntity) => {
   const events = await getEvents();
   const id = uuidv4();
   localStorage.setItem(
-    'events',
+    "events",
     JSON.stringify([
       ...events.data,
       { ...event, id, order: event.order || events.data.length },
@@ -181,5 +182,5 @@ export const editEvent = async (id: string, event: EventEntity) => {
     .sort((a, b) => (a.order || 0) - (b.order || 0))
     .map((storageEvent, order) => ({ ...storageEvent, order }));
 
-  localStorage.setItem('events', JSON.stringify(events));
+  localStorage.setItem("events", JSON.stringify(events));
 };

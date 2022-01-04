@@ -86,23 +86,23 @@ module.exports = {
     //core
     "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
     //backend
-    "^@auth/(.*)$": "<rootDir>/packages/backend/src/auth/$1",
-    "^@calendar/(.*)$": "<rootDir>/packages/backend/src/calendar/$1",
-    "^@event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
-    "^@common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
-    "^@priority/(.*)$": "<rootDir>/packages/backend/src/priority/$1",
-    "^@sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
-    "^@user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
+    // "^@backend/auth/(.*)$": "<rootDir>/packages/backend/src/auth/$1",
+    // "^@backend/calendar/(.*)$": "<rootDir>/packages/backend/src/calendar/$1",
+    // "^@backend/event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
+    // "^@backend/common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
+    // "^@backend/priority/(.*)$": "<rootDir>/packages/backend/src/priority/$1",
+    // "^@backend/sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
+    // "^@backend/user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
     //web
-    "^@assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
-    "^@common/(.*)$": "<rootDir>/packages/web/src/common/$1",
-    "^@components/(.*)$": "<rootDir>/packages/web/src/components/$1",
-    "^@containers/(.*)$": "<rootDir>/packages/web/src/containers/$1",
-    "^@ducks/(.*)$": "<rootDir>/packages/web/src/ducks/$1",
-    "^@public/(.*)$": "<rootDir>/packages/web/src/public/$1",
-    "^@routers/(.*)$": "<rootDir>/packages/web/src/routers/$1",
-    "^@store/(.*)$": "<rootDir>/packages/web/src/store/$1",
-    "^@views/(.*)$": "<rootDir>/packages/web/src/views/$1",
+    // "^@assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
+    // "^@web/common/(.*)$": "<rootDir>/packages/web/src/common/$1",
+    // "^@components/(.*)$": "<rootDir>/packages/web/src/components/$1",
+    // "^@containers/(.*)$": "<rootDir>/packages/web/src/containers/$1",
+    // "^@ducks/(.*)$": "<rootDir>/packages/web/src/ducks/$1",
+    // "^@public/(.*)$": "<rootDir>/packages/web/src/public/$1",
+    // "^@routers/(.*)$": "<rootDir>/packages/web/src/routers/$1",
+    // "^@store/(.*)$": "<rootDir>/packages/web/src/store/$1",
+    // "^@views/(.*)$": "<rootDir>/packages/web/src/views/$1",
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
@@ -121,8 +121,30 @@ module.exports = {
   // preset: 'ts-jest',
 
   // Run tests from one or more projects
-  // projects: undefined,
-
+  projects: [
+    {
+      displayName: "web",
+      testEnvironment: "jsdom",
+      testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
+    },
+    {
+      displayName: "backend",
+      testEnvironment: "node",
+      testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],
+      moduleNameMapper: {
+        "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
+        "^@backend/auth/(.*)$": "<rootDir>/packages/backend/src/auth/$1",
+        "^@backend/calendar/(.*)$":
+          "<rootDir>/packages/backend/src/calendar/$1",
+        "^@backend/event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
+        "^@backend/common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
+        "^@backend/priority/(.*)$":
+          "<rootDir>/packages/backend/src/priority/$1",
+        "^@backend/sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
+        "^@backend/user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
+      },
+    },
+  ],
   // Use this configuration option to add custom reporters to Jest
   // reporters: undefined,
 
