@@ -1,6 +1,6 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
-import { Flex } from '@components/Flex';
+import { Flex } from "@web/components/Flex";
 
 export const StyledDateTimeFlex = styled(Flex)`
   font-weight: 600;

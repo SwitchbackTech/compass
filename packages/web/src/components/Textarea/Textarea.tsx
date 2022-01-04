@@ -4,12 +4,12 @@ import React, {
   ForwardRefRenderFunction,
   RefObject,
   useRef,
-} from 'react';
+} from "react";
 
-import { FocusableUnderlineLayout } from '@components/FocusableUnderlinedComponent';
+import { FocusableUnderlineLayout } from "@web/components/FocusableUnderlinedComponent";
 
-import { Styled } from './styled';
-import { Props } from './types';
+import { Styled } from "./styled";
+import { Props } from "./types";
 
 const Component: ForwardRefRenderFunction<HTMLTextAreaElement, Props> = (
   { withUnderline = true, ...props }: Props,

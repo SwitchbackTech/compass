@@ -1,9 +1,9 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
-import { getColor, getInvertedColor } from '@common/helpers/colors';
-import { colorNameByPriority } from '@common/styles/colors';
-import { Priorities } from '@common/types/entities';
-import { InvertedColorNames } from '@common/types/styles';
+import { getColor, getInvertedColor } from "@web/common/helpers/colors";
+import { colorNameByPriority } from "@web/common/styles/colors";
+import { Priorities } from "@web/common/types/entities";
+import { InvertedColorNames } from "@web/common/types/styles";
 
 export interface Props {
   priority: Priorities;
@@ -11,7 +11,7 @@ export interface Props {
 }
 
 export const Styled = styled.div<Props>`
-  cursor: ${({ isDragging }) => (isDragging ? 'grabbing' : 'pointer')};
+  cursor: ${({ isDragging }) => (isDragging ? "grabbing" : "pointer")};
   background: ${({ priority }) => getColor(colorNameByPriority[priority])};
   border-radius: 2px;
   height: 32px;

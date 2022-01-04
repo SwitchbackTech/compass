@@ -1,8 +1,8 @@
-import React from 'react';
+import React from "react";
 
-import { ArrowDownFilledIcon } from '@assets/svg';
-import { getColor } from '@common/helpers/colors';
-import { ColorNames } from '@common/types/styles';
+import { ArrowDownFilledIcon } from "@web/assets/svg";
+import { getColor } from "@web/common/helpers/colors";
+import { ColorNames } from "@web/common/types/styles";
 
 export interface Props {
   isToggled?: boolean;
@@ -17,7 +17,7 @@ export const ToggleArrow: React.FC<Props> = ({
   <ArrowDownFilledIcon
     {...props}
     cursor="pointer"
-    transform={!isToggled ? 'rotate(-90)' : ''}
+    transform={!isToggled ? "rotate(-90)" : ""}
     onClick={onToggle}
     color={getColor(ColorNames.WHITE_1)}
   />

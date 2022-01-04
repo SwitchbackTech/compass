@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { Key } from 'ts-keycode-enum';
-import dayjs from 'dayjs';
+import React, { useEffect, useState } from "react";
+import { Key } from "ts-keycode-enum";
+import dayjs from "dayjs";
 
-import { Button } from '@components/Button';
-import { JustifyContent } from '@components/Flex/styled';
-import { SelectOption } from '@common/types/components';
-import { colorNameByPriority } from '@common/styles/colors';
-import { ColorNames } from '@common/types/styles';
-import { EventEntity, Priorities } from '@common/types/entities';
+import { Button } from "@web/components/Button";
+import { JustifyContent } from "@web/components/Flex/styled";
+import { SelectOption } from "@web/common/types/components";
+import { colorNameByPriority } from "@web/common/styles/colors";
+import { ColorNames } from "@web/common/types/styles";
+import { EventEntity, Priorities } from "@web/common/types/entities";
 import {
   HOURS_MINUTES_FORMAT,
   SHORT_HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
-} from '@common/constants/dates';
-import { getColor } from '@common/helpers/colors';
+} from "@web/common/constants/dates";
+import { getColor } from "@web/common/helpers/colors";
 
 import {
   Styled,
@@ -21,9 +21,9 @@ import {
   StyledPriorityFlex,
   StyledDescriptionField,
   StiledSubmitButton,
-} from './styled';
-import { ComponentProps } from './types';
-import { DateTimePickersSection } from './DateTimePickersSection';
+} from "./styled";
+import { ComponentProps } from "./types";
+import { DateTimePickersSection } from "./DateTimePickersSection";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
@@ -68,11 +68,11 @@ export const EventForm: React.FC<ComponentProps> = ({
 
   const defaultEventState: EventEntity = {
     priority: Priorities.WORK,
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     allDay: false,
-    startDate: '',
-    endDate: '',
+    startDate: "",
+    endDate: "",
     showStartTimeLabel: false,
   };
 
@@ -112,14 +112,14 @@ export const EventForm: React.FC<ComponentProps> = ({
       }
     };
 
-    document.addEventListener('keydown', keyDownHandler);
-    document.addEventListener('keyup', keyUpHandler);
+    document.addEventListener("keydown", keyDownHandler);
+    document.addEventListener("keyup", keyUpHandler);
 
     toggleForm(true);
 
     return () => {
-      document.removeEventListener('keydown', keyDownHandler);
-      document.removeEventListener('keyup', keyUpHandler);
+      document.removeEventListener("keydown", keyDownHandler);
+      document.removeEventListener("keyup", keyUpHandler);
     };
   }, []);
 
@@ -129,8 +129,8 @@ export const EventForm: React.FC<ComponentProps> = ({
     );
     const endDateStirng = dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT);
 
-    const startDate = `${startDateString} ${startTime?.value || ''}`;
-    const endDate = `${endDateStirng} ${endTime?.value || ''}`;
+    const startDate = `${startDateString} ${startTime?.value || ""}`;
+    const endDate = `${endDateStirng} ${endTime?.value || ""}`;
 
     const _event = { ...event };
 
@@ -156,19 +156,20 @@ export const EventForm: React.FC<ComponentProps> = ({
   };
 
   const onChangeEventTextField =
-    (fieldName: 'title' | 'description') =>
+    (fieldName: "title" | "description") =>
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       onSetEventField(fieldName, e.target.value);
     };
 
-  const submitFormWithKeyboard: React.KeyboardEventHandler<HTMLTextAreaElement> =
-    (e) => {
-      if (isShiftKeyPressed || e.which !== Key.Enter) return;
+  const submitFormWithKeyboard: React.KeyboardEventHandler<
+    HTMLTextAreaElement
+  > = (e) => {
+    if (isShiftKeyPressed || e.which !== Key.Enter) return;
 
-      e.preventDefault();
+    e.preventDefault();
 
-      onSubmitForm();
-    };
+    onSubmitForm();
+  };
 
   return (
     <Styled
@@ -183,7 +184,7 @@ export const EventForm: React.FC<ComponentProps> = ({
         autoFocus
         onKeyDown={submitFormWithKeyboard}
         value={title}
-        onChange={onChangeEventTextField('title')}
+        onChange={onChangeEventTextField("title")}
       />
 
       <DateTimePickersSection
@@ -195,7 +196,7 @@ export const EventForm: React.FC<ComponentProps> = ({
         selectedDate={selectedStartDate}
         showStartTimeLabel={!!showStartTimeLabel}
         setShowStartTimeLabel={(value) =>
-          onSetEventField('showStartTimeLabel', !!value)
+          onSetEventField("showStartTimeLabel", !!value)
         }
       />
 
@@ -203,8 +204,8 @@ export const EventForm: React.FC<ComponentProps> = ({
         <Button
           bordered={priority === Priorities.WORK}
           color={colorNameByPriority.work}
-          onClick={() => onSetEventField('priority', Priorities.WORK)}
-          onFocus={() => onSetEventField('priority', Priorities.WORK)}
+          onClick={() => onSetEventField("priority", Priorities.WORK)}
+          onFocus={() => onSetEventField("priority", Priorities.WORK)}
           role="tab"
           tabIndex={0}
         >
@@ -213,8 +214,8 @@ export const EventForm: React.FC<ComponentProps> = ({
 
         <Button
           bordered={priority === Priorities.SELF}
-          onClick={() => onSetEventField('priority', Priorities.SELF)}
-          onFocus={() => onSetEventField('priority', Priorities.SELF)}
+          onClick={() => onSetEventField("priority", Priorities.SELF)}
+          onFocus={() => onSetEventField("priority", Priorities.SELF)}
           role="tab"
           tabIndex={0}
         >
@@ -222,8 +223,8 @@ export const EventForm: React.FC<ComponentProps> = ({
         </Button>
 
         <Button
-          onClick={() => onSetEventField('priority', Priorities.RELATIONS)}
-          onFocus={() => onSetEventField('priority', Priorities.RELATIONS)}
+          onClick={() => onSetEventField("priority", Priorities.RELATIONS)}
+          onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
           border={
             priority === Priorities.RELATIONS
               ? `2px solid ${getColor(ColorNames.WHITE_3)}`
@@ -240,7 +241,7 @@ export const EventForm: React.FC<ComponentProps> = ({
       <StyledDescriptionField
         background={colorNameByPriority[priority]}
         placeholder="Add description"
-        onChange={onChangeEventTextField('description')}
+        onChange={onChangeEventTextField("description")}
       />
 
       <StiledSubmitButton onClick={onSubmitForm}>Submit</StiledSubmitButton>

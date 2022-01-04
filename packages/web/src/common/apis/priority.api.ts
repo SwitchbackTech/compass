@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axios from "axios";
 
-import { colorNameByPriority } from '@common/styles/colors';
-import { Priorities } from '@common/types/entities';
-import { BASEURL } from '@common/constants/api';
+import { colorNameByPriority } from "@web/common/styles/colors";
+import { Priorities } from "@web/common/types/entities";
+import { BASEURL } from "@web/common/constants/api";
 
 const PriorityApi = {
   async createPriorities(token: string) {
@@ -28,7 +28,7 @@ const PriorityApi = {
       },
     ];
 
-    console.log('creating priorities ... ');
+    console.log("creating priorities ... ");
     const [p1, p2, p3] = await Promise.all([
       await axios.post(`${BASEURL}/priority`, priorities[0], _pHeaders),
       await axios.post(`${BASEURL}/priority`, priorities[1], _pHeaders),

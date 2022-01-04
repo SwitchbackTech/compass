@@ -1,9 +1,9 @@
-import React from 'react';
-import { HashRouter, Route, Switch } from 'react-router-dom';
+import React from "react";
+import { HashRouter, Route, Switch } from "react-router-dom";
 
-import { ROOT_ROUTES } from '@common/constants/routes';
-import { CalendarView } from '@views/Calendar';
-import { LoginView } from '@views/Login';
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { CalendarView } from "@web/views/Calendar";
+import { LoginView } from "@web/views/Login";
 
 export const RootRouter = () => (
   <HashRouter>

@@ -1,15 +1,15 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
-import { colorNameByPriority } from '@common/styles/colors';
-import { Flex } from '@components/Flex';
-import { Textarea } from '@components/Textarea';
-import { ColorNames, InvertedColorNames } from '@common/types/styles';
-import { ANIMATION_TIME_3_MS } from '@common/constants/common';
-import { Priorities } from '@common/types/entities';
-import { getColor, getInvertedColor } from '@common/helpers/colors';
-import { Button } from '@components/Button';
+import { colorNameByPriority } from "@web/common/styles/colors";
+import { Flex } from "@web/components/Flex";
+import { Textarea } from "@web/components/Textarea";
+import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
+import { ANIMATION_TIME_3_MS } from "@web/common/constants/common";
+import { Priorities } from "@web/common/types/entities";
+import { getColor, getInvertedColor } from "@web/common/helpers/colors";
+import { Button } from "@web/components/Button";
 
-import { StyledProps } from './types';
+import { StyledProps } from "./types";
 
 export const Styled = styled.div<StyledProps>`
   ${({ isOpen }) =>

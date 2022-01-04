@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import React, { useEffect } from "react";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
-import { AbsoluteOverflowLoader } from '@components/AbsoluteOverflowLoader';
-import { SidebarEventContainer } from '@views/Calendar/containers/SidebarEventContainer';
+import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
+import { SidebarEventContainer } from "@web/views/Calendar/containers/SidebarEventContainer";
 import {
   NormalizedAsyncActionPayload,
   Priorities,
-} from '@common/types/entities';
+} from "@web/common/types/entities";
 
-import { Styled, StyledList } from './styled';
+import { Styled, StyledList } from "./styled";
 
 export interface Props {
   eventIds: NormalizedAsyncActionPayload;

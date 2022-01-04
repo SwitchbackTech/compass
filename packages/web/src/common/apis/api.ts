@@ -1,10 +1,10 @@
-import axios from 'axios';
+import axios from "axios";
 
-import { BASEURL } from '@common/constants/api';
+import { BASEURL } from "@web/common/constants/api";
 
 const headers = {
   headers: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`,
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
   },
 };
 

@@ -1,4 +1,4 @@
-// import { eventsSagas } from '@ducks/events/sagas';
+// import { eventsSagas } from '@web/ducks/events/sagas';
 
 import { eventsApi, getEventsLocalStorage } from "./api";
 

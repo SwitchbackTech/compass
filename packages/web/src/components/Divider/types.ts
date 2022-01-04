@@ -1,4 +1,4 @@
-import { ColorNames } from '@common/types/styles';
+import { ColorNames } from "@web/common/types/styles";
 
 export interface Props {
   toggled?: boolean;

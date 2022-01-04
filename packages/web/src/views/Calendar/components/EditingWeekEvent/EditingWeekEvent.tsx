@@ -1,14 +1,14 @@
-import React, { SetStateAction } from 'react';
-import { ArrowContainer, Popover } from 'react-tiny-popover';
+import React, { SetStateAction } from "react";
+import { ArrowContainer, Popover } from "react-tiny-popover";
 
-import { getColor } from '@common/helpers/colors';
-import { colorNameByPriority } from '@common/styles/colors';
-import { EventEntity, Priorities } from '@common/types/entities';
-import { EventForm } from '@views/EventForm';
+import { getColor } from "@web/common/helpers/colors";
+import { colorNameByPriority } from "@web/common/styles/colors";
+import { EventEntity, Priorities } from "@web/common/types/entities";
+import { EventForm } from "@web/views/EventForm";
 
-import { WeekEvent } from '../WeekEvent';
-import { GridEventEntity } from '../../weekViewHooks/types';
-import { WeekViewProps } from '../../weekViewHooks/useGetWeekViewProps';
+import { WeekEvent } from "../WeekEvent";
+import { GridEventEntity } from "../../weekViewHooks/types";
+import { WeekViewProps } from "../../weekViewHooks/useGetWeekViewProps";
 
 export interface Props {
   isOpen: boolean;
@@ -28,9 +28,9 @@ export const EditingWeekEvent: React.FC<Props> = ({
   weekViewProps,
 }) => (
   <Popover
-    containerStyle={{ zIndex: '2' }}
+    containerStyle={{ zIndex: "2" }}
     isOpen={isOpen}
-    positions={['right', 'left', 'bottom', 'top']}
+    positions={["right", "left", "bottom", "top"]}
     content={(props) => (
       <ArrowContainer
         {...props}

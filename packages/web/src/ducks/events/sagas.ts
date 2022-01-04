@@ -1,14 +1,14 @@
-import { call, put, takeLatest, select } from '@redux-saga/core/effects';
-import { normalize, schema } from 'normalizr';
-import dayjs from 'dayjs';
+import { call, put, takeLatest, select } from "@redux-saga/core/effects";
+import { normalize, schema } from "normalizr";
+import dayjs from "dayjs";
 
 import {
   EventEntity,
   NormalizedAsyncActionPayload,
-} from '@common/types/entities';
-import { YEAR_MONTH_DAY_FORMAT } from '@common/constants/dates';
+} from "@web/common/types/entities";
+import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 
-import { eventsApi } from './api';
+import { eventsApi } from "./api";
 import {
   createEventSlice,
   editEventSlice,
@@ -16,7 +16,7 @@ import {
   getCurrentMonthEventsSlice,
   getFutureEventsSlice,
   getWeekEventsSlice,
-} from './slice';
+} from "./slice";
 import {
   CreateEventAction,
   EditEventAction,
@@ -24,9 +24,9 @@ import {
   GetEventsSuccessResponse,
   GetPaginatedEventsAction,
   GetWeekEventsAction,
-} from './types';
-import { selectPaginatedEventsBySectionType } from './selectors';
-import { GetEventsParams } from './fakeApi';
+} from "./types";
+import { selectPaginatedEventsBySectionType } from "./selectors";
+import { GetEventsParams } from "./fakeApi";
 
 function* getEventsSaga(payload: GetEventsParams) {
   const res: GetEventsSuccessResponse = (yield call(
@@ -34,7 +34,7 @@ function* getEventsSaga(payload: GetEventsParams) {
     payload
   )) as GetEventsSuccessResponse;
 
-  const eventsSchema = new schema.Entity('events');
+  const eventsSchema = new schema.Entity("events");
   const normalizedEvents = normalize<EventEntity>(res.data, [eventsSchema]);
 
   yield put(
@@ -62,8 +62,8 @@ function* getWeekEventsSaga({ payload }: GetWeekEventsAction) {
 
 function* getCurrentMonthEventsSaga({ payload }: GetPaginatedEventsAction) {
   try {
-    const startDate = dayjs().startOf('month').format(YEAR_MONTH_DAY_FORMAT);
-    const endDate = dayjs().endOf('month').format(YEAR_MONTH_DAY_FORMAT);
+    const startDate = dayjs().startOf("month").format(YEAR_MONTH_DAY_FORMAT);
+    const endDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
     const data: GetEventsSagaResponse = (yield call(getEventsSaga, {
       ...payload,
       startDate,
@@ -78,7 +78,7 @@ function* getCurrentMonthEventsSaga({ payload }: GetPaginatedEventsAction) {
 
 function* getFutureEventsSaga({ payload }: GetPaginatedEventsAction) {
   try {
-    const startDate = dayjs().endOf('month').format(YEAR_MONTH_DAY_FORMAT);
+    const startDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
     const data: GetEventsSagaResponse = (yield call(getEventsSaga, {
       ...payload,
       startDate,
@@ -92,15 +92,15 @@ function* getFutureEventsSaga({ payload }: GetPaginatedEventsAction) {
 
 function* getEverySectionEvents() {
   const currentMonthEvents: GetEventsSagaResponse = (yield select((state) =>
-    selectPaginatedEventsBySectionType(state, 'currentMonth')
+    selectPaginatedEventsBySectionType(state, "currentMonth")
   )) as GetEventsSagaResponse;
 
   const futureEvents: GetEventsSagaResponse = (yield select((state) =>
-    selectPaginatedEventsBySectionType(state, 'future')
+    selectPaginatedEventsBySectionType(state, "future")
   )) as GetEventsSagaResponse;
 
   const weekEvents: GetEventsSagaResponse = (yield select((state) =>
-    selectPaginatedEventsBySectionType(state, 'week')
+    selectPaginatedEventsBySectionType(state, "week")
   )) as GetEventsSagaResponse;
 
   yield put(getCurrentMonthEventsSlice.actions.request(currentMonthEvents));

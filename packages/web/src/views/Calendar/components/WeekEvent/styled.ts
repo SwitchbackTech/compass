@@ -1,9 +1,9 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
-import { getColor } from '@common/helpers/colors';
-import { colorNameByPriority } from '@common/styles/colors';
-import { Priorities } from '@common/types/entities';
-import { ColorNames } from '@common/types/styles';
+import { getColor } from "@web/common/helpers/colors";
+import { colorNameByPriority } from "@web/common/styles/colors";
+import { Priorities } from "@web/common/types/entities";
+import { ColorNames } from "@web/common/types/styles";
 
 export interface StyledEventProps {
   left: number;
@@ -34,11 +34,11 @@ export const StyledEvent = styled.div<StyledEventProps>`
     getColor(colorNameByPriority[priority])};
   border-radius: 4px;
   padding: ${({ duration, allDay }) =>
-    !allDay && duration > 0.5 ? '4px' : '0 4px'};
+    !allDay && duration > 0.5 ? "4px" : "0 4px"};
   user-select: none;
   transition: background-color 0.2s, box-shadow 0.2s;
   box-shadow: 0 0 0 0 transparent;
-  cursor: ${({ isDragging }) => (isDragging ? 'grabbing' : 'pointer')};
+  cursor: ${({ isDragging }) => (isDragging ? "grabbing" : "pointer")};
   opacity: ${({ isPlaceholder }) => isPlaceholder && 0.5};
 
   &:hover,
@@ -50,7 +50,7 @@ export const StyledEvent = styled.div<StyledEventProps>`
   & span {
     &:first-child {
       width: ${({ width, isTimeShown }) =>
-        !isTimeShown || width < 125 ? '100%' : 'calc(100% - 65px)'};
+        !isTimeShown || width < 125 ? "100%" : "calc(100% - 65px)"};
       display: -webkit-box;
       -webkit-box-orient: vertical;
       overflow: hidden;

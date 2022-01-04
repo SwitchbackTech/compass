@@ -1,10 +1,10 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
-import { Flex } from '@components/Flex';
-import { getColor } from '@common/helpers/colors';
-import { ColorNames } from '@common/types/styles';
-import { Text } from '@components/Text';
-import { EventForm } from '@views/EventForm';
+import { Flex } from "@web/components/Flex";
+import { getColor } from "@web/common/helpers/colors";
+import { ColorNames } from "@web/common/types/styles";
+import { Text } from "@web/components/Text";
+import { EventForm } from "@web/views/EventForm";
 
 export interface Props {
   flex?: number;
@@ -45,7 +45,7 @@ export interface ArrowButtonProps {
 }
 
 export const StyledArrowButton = styled(Flex)<ArrowButtonProps>`
-  cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
   border-radius: 50%;
   width: 18px;
   height: 18px;

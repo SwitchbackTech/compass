@@ -1,8 +1,8 @@
-import { isProcessing, isSuccess } from '@common/store/helpers';
-import { EventEntity } from '@common/types/entities';
-import { RootState } from '@store';
+import { isProcessing, isSuccess } from "@web/common/store/helpers";
+import { EventEntity } from "@web/common/types/entities";
+import { RootState } from "@store";
 
-import { SectionType } from './types';
+import { SectionType } from "./types";
 
 export const selectAreEventsProcessingBySectionType = (
   state: RootState,
@@ -10,7 +10,7 @@ export const selectAreEventsProcessingBySectionType = (
 ) => {
   const statePieceName = type.charAt(0).toUpperCase() + type.slice(1);
   const statePiece =
-    state.events[`get${statePieceName}Events` as 'getWeekEvents'];
+    state.events[`get${statePieceName}Events` as "getWeekEvents"];
 
   return isProcessing(statePiece);
 };
@@ -21,7 +21,7 @@ export const selectPaginatedEventsBySectionType = (
 ) => {
   const statePieceName = type.charAt(0).toUpperCase() + type.slice(1);
   const statePiece =
-    state.events[`get${statePieceName}Events` as 'getWeekEvents'];
+    state.events[`get${statePieceName}Events` as "getWeekEvents"];
 
   return (isSuccess(statePiece) && statePiece.value) || null;
 };

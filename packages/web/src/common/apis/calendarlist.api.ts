@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axios from "axios";
 
-import { BASEURL } from '@common/constants/api';
-import { headers } from '@common/helpers';
-import { Schema_CalendarList } from '@core/types/calendar.types';
+import { BASEURL } from "@web/common/constants/api";
+import { headers } from "@web/common/helpers";
+import { Schema_CalendarList } from "@core/types/calendar.types";
 
 const CalendarList = {
   async list(): Promise<Schema_CalendarList> {

@@ -1,8 +1,8 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
-import { Text } from '@components/Text';
+import { Text } from "@web/components/Text";
 
-import { ToggleArrow } from '../ToggleArrow';
+import { ToggleArrow } from "../ToggleArrow";
 
 export const Styled = styled.div`
   position: relative;

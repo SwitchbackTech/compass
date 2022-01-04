@@ -1,4 +1,4 @@
-// import { gSchema$CalendarList } from "@compass/backend/declarations";
+import { gSchema$CalendarList } from "@compass/backend/declarations";
 // import { gSchema$CalendarList
 // import { Collections } from '@compass/backend/src/common/constants/collections';
 // import {GCAL_PRIMARY} from '@compass'
@@ -16,11 +16,11 @@ export const mapCalListToCompass = (gcalList) => {
   return mapped;
 };
 
-// const MapCalendarList = {
-//     toCompass(gcalList: gSchema$CalendarList) {
-//         const mapped = {}
-//         return mapped
-//     },
-// };
+const MapCalendarList = {
+  toCompass(gcalList: gSchema$CalendarList) {
+    const mapped = {};
+    return mapped;
+  },
+};
 
-// export { MapCalendarList };
+export { MapCalendarList };

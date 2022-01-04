@@ -1,21 +1,21 @@
-import React, { useEffect, useRef, useState } from 'react';
-import ReactDatePicker, { ReactDatePickerProps } from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import dayjs from 'dayjs';
-import classNames from 'classnames';
+import React, { useEffect, useRef, useState } from "react";
+import ReactDatePicker, { ReactDatePickerProps } from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import dayjs from "dayjs";
+import classNames from "classnames";
 
-import { Text } from '@components/Text';
-import { ColorNames } from '@common/types/styles';
-import { AlignItems, JustifyContent } from '@components/Flex/styled';
-import { Flex } from '@components/Flex';
-import { Input } from '@components/Input';
+import { Text } from "@web/components/Text";
+import { ColorNames } from "@web/common/types/styles";
+import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
+import { Flex } from "@web/components/Flex";
+import { Input } from "@web/components/Input";
 
 import {
   ChangeDayButtonsStyledFlex,
   Styled,
   StyledHeaderFlex,
   TodayStyledText,
-} from './styled';
+} from "./styled";
 
 export interface Props extends ReactDatePickerProps {
   defaultOpen?: boolean;
@@ -86,9 +86,9 @@ export const DatePicker: React.FC<Props> = ({
           toggleIsShown(false);
         }
       }}
-      calendarClassName={classNames('calendar', calendarClassName, {
-        'calendar--open': isShown,
-        'calendar--animation': animationOnToggle,
+      calendarClassName={classNames("calendar", calendarClassName, {
+        "calendar--open": isShown,
+        "calendar--animation": animationOnToggle,
       })}
       onCalendarOpen={() => {
         toggleDatePicker(true);
@@ -115,8 +115,8 @@ export const DatePicker: React.FC<Props> = ({
         changeYear,
         customHeaderCount,
       }) => {
-        const formattedSelectedMonth = dayjs(monthDate).format('MMM YYYY');
-        const formattedCurrentMonth = dayjs().format('MMM YYYY');
+        const formattedSelectedMonth = dayjs(monthDate).format("MMM YYYY");
+        const formattedCurrentMonth = dayjs().format("MMM YYYY");
 
         return (
           <StyledHeaderFlex
@@ -152,7 +152,7 @@ export const DatePicker: React.FC<Props> = ({
                     colorName={ColorNames.WHITE_1}
                     size={20}
                   >
-                    {'<'}
+                    {"<"}
                   </Text>
                   <Text
                     cursor="pointer"
@@ -161,7 +161,7 @@ export const DatePicker: React.FC<Props> = ({
                     colorName={ColorNames.WHITE_1}
                     size={20}
                   >
-                    {'>'}
+                    {">"}
                   </Text>
                 </ChangeDayButtonsStyledFlex>
               </Flex>

@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import dayjs from 'dayjs';
+import React, { useEffect, useState } from "react";
+import dayjs from "dayjs";
 
-import { DatePicker } from '@components/DatePicker';
-import { ColorNames } from '@common/types/styles';
+import { DatePicker } from "@web/components/DatePicker";
+import { ColorNames } from "@web/common/types/styles";
 
-import { Props as ToggleArrowProps } from '../ToggleArrow/ToggleArrow';
-import { Styled, StyledMonthName, StyledToggleArrow } from './styled';
+import { Props as ToggleArrowProps } from "../ToggleArrow/ToggleArrow";
+import { Styled, StyledMonthName, StyledToggleArrow } from "./styled";
 
-export interface Props extends Omit<ToggleArrowProps, 'onToggle'> {
+export interface Props extends Omit<ToggleArrowProps, "onToggle"> {
   monthsShown?: number;
   setIsToggled: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -23,7 +23,7 @@ export const ToggleableMonthWidget: React.FC<Props> = ({
     setIsToggled(!!monthsShown);
   }, [monthsShown]);
 
-  const selectedDateLabel = dayjs(selectedDate).format('MMM DD');
+  const selectedDateLabel = dayjs(selectedDate).format("MMM DD");
 
   return (
     <Styled>

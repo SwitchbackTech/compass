@@ -1,7 +1,7 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
-import { Divider } from '@components/Divider';
-import { ANIMATION_TIME_3_MS } from '@common/constants/common';
+import { Divider } from "@web/components/Divider";
+import { ANIMATION_TIME_3_MS } from "@web/common/constants/common";
 
 export interface Props {
   open?: boolean;
@@ -11,7 +11,7 @@ export const Styled = styled.div<Props>`
   min-width: 100px;
   position: relative;
 
-  & span[aria-live='polite'] {
+  & span[aria-live="polite"] {
     display: none;
   }
 
@@ -52,7 +52,7 @@ export const Styled = styled.div<Props>`
 
       &-list {
         padding: 0;
-        ${({ open }) => !open && 'max-height: 0;'}
+        ${({ open }) => !open && "max-height: 0;"}
         transition: ${ANIMATION_TIME_3_MS};
       }
     }

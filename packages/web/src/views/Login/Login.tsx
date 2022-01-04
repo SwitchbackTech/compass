@@ -3,22 +3,23 @@ import { Redirect } from "react-router-dom";
 
 import { Result_OauthStatus } from "@core/types/auth.types";
 import { Schema_CalendarList } from "@core/types/calendar.types";
-import { gSchema$CalendarList } from "@backend/declarations";
+// import { gSchema$CalendarList } from "@backend/declarations";
 import {
   MapCalendarList,
   mapCalListToCompass,
 } from "@core/mappers/map.calendarlist";
-// import { store } from '@store';
-// import { reducers } from '@store/reducers';
-import { PriorityApi } from "@common/apis/priority.api";
-import { AuthApi } from "@common/apis/auth.api";
+
+// import { store } from '@web/store';
+// import { reducers } from '@web/store/reducers';
+import { PriorityApi } from "@web/common/apis/priority.api";
+import { AuthApi } from "@web/common/apis/auth.api";
 import { SURVEY_URL } from "@compass/core/src/core.constants";
-import { GOOGLE } from "@common/constants/common";
-import { ROOT_ROUTES } from "@common/constants/routes";
-import { Text } from "@components/Text";
-import { ColorNames } from "@common/types/styles";
-import { Button, FeedbackButtonContainer } from "@components/Button";
-import { CalendarList } from "@common/apis/calendarlist.api";
+import { GOOGLE } from "@web/common/constants/common";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { Text } from "@web/components/Text";
+import { ColorNames } from "@web/common/types/styles";
+import { Button, FeedbackButtonContainer } from "@web/components/Button";
+import { CalendarList } from "@web/common/apis/calendarlist.api";
 
 import { StyledLogin } from "./styled";
 
@@ -72,6 +73,7 @@ export const LoginView = () => {
             - primary calendar selected (not htis version) 
             - events fetched and imported
         If existing:import { Schema_Calendar } from '@core/types/calendar.types';
+import { gSchema$CalendarList } from '@backend/declarations';
 
           - Send to calendar page, where you'll
             - fetching most-recent GCal events and sync with Compass
@@ -96,8 +98,8 @@ export const LoginView = () => {
       return c.primary === true;
     })[0];
     console.log(primaryGcal);
-    // const calList = MapCalendarList.toCompass(primaryGcal);
-    const calList = mapCalListToCompass(primaryGcal);
+    const calList = MapCalendarList.toCompass(primaryGcal);
+    // const calList = mapCalListToCompass(primaryGcal);
     const res = CalendarList.create(calList);
     console.log(res);
   };

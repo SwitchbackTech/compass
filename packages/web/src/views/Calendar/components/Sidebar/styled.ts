@@ -1,12 +1,12 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
-import { getColor } from '@common/helpers/colors';
-import { ColorNames } from '@common/types/styles';
-import { CheckBox } from '@components/CheckBox';
-import { Flex } from '@components/Flex';
-import { SIDEBAR_WIDTH } from '@views/Calendar/constants';
+import { getColor } from "@web/common/helpers/colors";
+import { ColorNames } from "@web/common/types/styles";
+import { CheckBox } from "@web/components/CheckBox";
+import { Flex } from "@web/components/Flex";
+import { SIDEBAR_WIDTH } from "@web/views/Calendar/constants";
 
-import { ToggleableEventsListSection } from './ToggleableEventsListSection';
+import { ToggleableEventsListSection } from "./ToggleableEventsListSection";
 
 export interface Props {
   isToggled: boolean;
@@ -24,7 +24,7 @@ export const Styled = styled.div<Props>`
 export const StyledSidebarOverflow = styled.div<Props>`
   position: absolute;
   background: ${getColor(ColorNames.DARK_3)};
-  width: ${({ isToggled }) => (isToggled ? 0 : '100%')};
+  width: ${({ isToggled }) => (isToggled ? 0 : "100%")};
   height: 100%;
   right: 0;
   transition: 0.4s;
@@ -101,5 +101,5 @@ export interface FutureEventsProps {
 export const StyledFutureEventsToggleableSection = styled(
   ToggleableEventsListSection
 )<FutureEventsProps>`
-  margin-top: ${({ shouldSetTopMargin }) => (shouldSetTopMargin ? 'auto' : 0)};
+  margin-top: ${({ shouldSetTopMargin }) => (shouldSetTopMargin ? "auto" : 0)};
 `;

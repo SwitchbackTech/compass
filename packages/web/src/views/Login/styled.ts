@@ -1,7 +1,7 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
-import { getColor } from '@common/helpers/colors';
-import { ColorNames } from '@common/types/styles';
+import { getColor } from "@web/common/helpers/colors";
+import { ColorNames } from "@web/common/types/styles";
 
 export const StyledLogin = styled.div`
   background: ${getColor(ColorNames.DARK_2)};

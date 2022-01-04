@@ -1,23 +1,23 @@
-import React, { useState } from 'react';
-import dayjs from 'dayjs';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
-import { Key } from 'ts-keycode-enum';
+import React, { useState } from "react";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import { Key } from "ts-keycode-enum";
 
-import { DatePicker } from '@components/DatePicker';
-import { Text } from '@components/Text';
-import { SelectOption } from '@common/types/components';
-import { getTimes, roundByNumber } from '@common/helpers';
-import { AlignItems } from '@components/Flex/styled';
-import { TimePicker } from '@components/TimePicker';
+import { DatePicker } from "@web/components/DatePicker";
+import { Text } from "@web/components/Text";
+import { SelectOption } from "@web/common/types/components";
+import { getTimes, roundByNumber } from "@web/common/helpers";
+import { AlignItems } from "@web/components/Flex/styled";
+import { TimePicker } from "@web/components/TimePicker";
 import {
   HOURS_MINUTES_FORMAT,
   SHORT_HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
-} from '@common/constants/dates';
-import { SpaceCharacter } from '@components/SpaceCharacter';
-import { GRID_TIME_STEP } from '@views/Calendar/constants';
+} from "@web/common/constants/dates";
+import { SpaceCharacter } from "@web/components/SpaceCharacter";
+import { GRID_TIME_STEP } from "@web/views/Calendar/constants";
 
-import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from './styled';
+import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
 
 export interface RelatedTargetElement extends EventTarget {
   id?: string;
@@ -27,7 +27,7 @@ dayjs.extend(customParseFormat);
 
 const getTimepickerFilteredOptions = (
   option: SelectOption<string> | undefined,
-  method: 'isAfter' | 'isBefore'
+  method: "isAfter" | "isBefore"
 ) => {
   const options = getTimes().map((value) => {
     const day = dayjs(
@@ -84,22 +84,22 @@ export const DateTimePickersSection: React.FC<Props> = ({
   const [isStartTimePickerShown, toggleStartTimePicker] = useState(false);
   const [isEndTimePickerShown, toggleEndTimePicker] = useState(false);
   const [isDatePickerShown, toggleDatePicker] = useState(false);
-  const [autoFocusedTimePicker, setAutoFocusedTimePicker] = useState('');
+  const [autoFocusedTimePicker, setAutoFocusedTimePicker] = useState("");
 
   const startTimePickerOptions = getTimepickerFilteredOptions(
     endTime,
-    'isBefore'
+    "isBefore"
   );
 
   const endTimePickerOptions = getTimepickerFilteredOptions(
     startTime,
-    'isAfter'
+    "isAfter"
   );
 
   const onSelectStartTime = (value: SelectOption<string> | null) => {
     if (!value) return;
 
-    const endTimeOption = getTimepickerFilteredOptions(value, 'isAfter').find(
+    const endTimeOption = getTimepickerFilteredOptions(value, "isAfter").find(
       (option) => {
         const optionMoment = dayjs(
           `2000-00-00 ${option.value}`,
@@ -109,7 +109,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
           `2000-00-00 ${value.value}`,
           YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
         );
-        const startTimeMomentAdded = startTimeMoment.add(30, 'minute');
+        const startTimeMomentAdded = startTimeMoment.add(30, "minute");
 
         return optionMoment.isSame(startTimeMomentAdded);
       }
@@ -117,7 +117,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
 
     setEndTime(endTime || endTimeOption || value);
     setStartTime(value);
-    setAutoFocusedTimePicker('end');
+    setAutoFocusedTimePicker("end");
     toggleEndTimePicker(true);
   };
 
@@ -148,8 +148,8 @@ export const DateTimePickersSection: React.FC<Props> = ({
     const relatedTarget = e.relatedTarget as RelatedTargetElement;
 
     if (
-      relatedTarget?.id === 'endTimePicker' ||
-      relatedTarget?.id === 'startTimePicker'
+      relatedTarget?.id === "endTimePicker" ||
+      relatedTarget?.id === "startTimePicker"
     )
       return;
     closeAllTimePickers();
@@ -157,7 +157,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
 
   const onStartTimePickerOpen = () => {
     toggleStartTimePicker(true);
-    setAutoFocusedTimePicker('start');
+    setAutoFocusedTimePicker("start");
     setShowStartTimeLabel(true);
 
     if (startTime) {
@@ -167,7 +167,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
 
     const roundedUpMinutes = roundByNumber(dayjs().minute(), GRID_TIME_STEP);
 
-    const startTimeDayjs = dayjs().set('minute', roundedUpMinutes);
+    const startTimeDayjs = dayjs().set("minute", roundedUpMinutes);
 
     const value = startTimeDayjs.format(HOURS_MINUTES_FORMAT);
     const label = startTimeDayjs.format(SHORT_HOURS_AM_FORMAT);
@@ -180,7 +180,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
   };
 
   const onEndTimePickerOpen = () => {
-    setAutoFocusedTimePicker('end');
+    setAutoFocusedTimePicker("end");
     toggleStartTimePicker(true);
     toggleEndTimePicker(true);
   };
@@ -211,7 +211,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
             onFocus={() => toggleDatePicker(true)}
             withUnderline
           >
-            {dayjs(selectedDate).format('MMM DD')}
+            {dayjs(selectedDate).format("MMM DD")}
           </Text>
         )}
       </StyledDateFlex>
@@ -225,7 +225,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
             withUnderline
             onClick={onStartTimePickerOpen}
           >
-            {showStartTimeLabel ? startTime?.label : 'Start'}
+            {showStartTimeLabel ? startTime?.label : "Start"}
           </Text>
         ) : (
           <TimePicker
@@ -233,7 +233,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
             inputId="startTimePicker"
             onBlur={onTimePickerBlur}
             options={startTimePickerOptions}
-            autoFocus={autoFocusedTimePicker === 'start'}
+            autoFocus={autoFocusedTimePicker === "start"}
             value={startTime}
             onChange={onSelectStartTime}
           />
@@ -246,7 +246,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
               inputId="endTimePicker"
               onBlur={onTimePickerBlur}
               options={endTimePickerOptions}
-              autoFocus={autoFocusedTimePicker === 'end'}
+              autoFocus={autoFocusedTimePicker === "end"}
               value={endTime}
               onChange={onSelectEndTime}
             />

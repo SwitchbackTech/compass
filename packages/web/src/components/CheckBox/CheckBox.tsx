@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
-import { CheckIcon } from '@assets/svg';
-import { AlignItems, JustifyContent } from '@components/Flex/styled';
+import { CheckIcon } from "@web/assets/svg";
+import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 
-import { Styled, StyledPlaceholder } from './styled';
+import { Styled, StyledPlaceholder } from "./styled";
 
 export interface Props {
   isChecked?: boolean;
@@ -14,7 +14,7 @@ export interface Props {
 export const CheckBox: React.FC<Props> = ({
   isChecked,
   onChange,
-  color = 'black',
+  color = "black",
   ...props
 }) => {
   const [isInternallyChecked, setIsChecked] = useState(isChecked);
