@@ -1,58 +1,47 @@
-   {
-      "version": "0.2.0",
-      "configurations": [
-        {
-          "type": "node-terminal",
-          "name": "Backend: dev",
-          "request": "launch",
-          "command": "yarn dev",
-          "cwd": "${workspaceFolder}/packages/backend/"
-        },
-        {
-          "type": "node",
-          "request": "launch",
-          "name": "Jest: Current",
-          "program": "${workspaceFolder}/node_modules/jest/bin/jest",
-          "args": [
-            "${fileBasename}",
-            "-c",
-            "./jest.config.js",
-            "--verbose",
-            "-i",
-            "--no-cache",
-            "--watchAll"
-          ],
-          "console": "integratedTerminal",
-          "internalConsoleOptions": "neverOpen"
-        },
-        {
-          "type": "node",
-          "request": "launch",
-          "name": "Jest: All",
-          "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
-          "args": [
-            "-c",
-            "./jest.config.js",
-            "--verbose",
-            "-i",
-            "--no-cache"
-          ],
-          "console": "integratedTerminal",
-          "internalConsoleOptions": "neverOpen"
-      },
-      {
-          "type": "node",
-          "request": "launch",
-          "name": "Jest: All-Watch",
-          "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
-          "args": [
-            "--verbose",
-            "-i",
-            "--no-cache",
-            "--watchAll"
-          ],
-          "console": "integratedTerminal",
-          "internalConsoleOptions": "neverOpen"
-      }
-    ]
-  }
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node-terminal",
+      "name": "dev:backend",
+      "request": "launch",
+      "command": "yarn dev:backend",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "jest:current",
+      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "args": [
+        "${fileBasename}",
+        "-c",
+        "./jest.config.js",
+        "--verbose",
+        "-i",
+        "--no-cache",
+        "--watchAll"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "jest:all",
+      "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
+      "args": ["-c", "./jest.config.js", "--verbose", "-i", "--no-cache"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "jest:all -w",
+      "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
+      "args": ["--verbose", "-i", "--no-cache", "--watchAll"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ]
+}

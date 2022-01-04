@@ -1,4 +1,3 @@
-console.log("\n\n\nin babel config root");
 module.exports = {
   presets: [
     "@babel/preset-react",

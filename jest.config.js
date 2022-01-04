@@ -82,17 +82,27 @@ module.exports = {
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   // Allows using import aliases
-  // Only got it to work by using <rootDir>, rather than full path 
-  "moduleNameMapper": {
-    "^@assets/(.*)$": "<rootDir>/src/assets/$1",
-    "^@common/(.*)$": "<rootDir>/src/common/$1",
-    "^@components/(.*)$": "<rootDir>/src/components/$1",
-    "^@containers/(.*)$": "<rootDir>/src/containers/$1",
-    "^@ducks/(.*)$": "<rootDir>/src/ducks/$1",
-    "^@public/(.*)$": "<rootDir>/src/public/$1",
-    "^@routers/(.*)$": "<rootDir>/src/routers/$1",
-    "^@store/(.*)$": "<rootDir>/src/store/$1",
-    "^@views/(.*)$": "<rootDir>/src/views/$1"
+  moduleNameMapper: {
+    //core
+    "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
+    //backend
+    "^@auth/(.*)$": "<rootDir>/packages/backend/src/auth/$1",
+    "^@calendar/(.*)$": "<rootDir>/packages/backend/src/calendar/$1",
+    "^@event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
+    "^@common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
+    "^@priority/(.*)$": "<rootDir>/packages/backend/src/priority/$1",
+    "^@sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
+    "^@user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
+    //web
+    "^@assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
+    "^@common/(.*)$": "<rootDir>/packages/web/src/common/$1",
+    "^@components/(.*)$": "<rootDir>/packages/web/src/components/$1",
+    "^@containers/(.*)$": "<rootDir>/packages/web/src/containers/$1",
+    "^@ducks/(.*)$": "<rootDir>/packages/web/src/ducks/$1",
+    "^@public/(.*)$": "<rootDir>/packages/web/src/public/$1",
+    "^@routers/(.*)$": "<rootDir>/packages/web/src/routers/$1",
+    "^@store/(.*)$": "<rootDir>/packages/web/src/store/$1",
+    "^@views/(.*)$": "<rootDir>/packages/web/src/views/$1",
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
@@ -106,6 +116,9 @@ module.exports = {
 
   // A preset that is used as a base for Jest's configuration
   // preset: undefined,
+  // ts-jest type-checks tests during runtime,
+  // which may be useful, but slows down tests, so omitted
+  // preset: 'ts-jest',
 
   // Run tests from one or more projects
   // projects: undefined,
@@ -126,11 +139,9 @@ module.exports = {
   // restoreMocks: false,
 
   // The root directory that Jest should scan for tests and modules within
-  // This means only web tests will run, and you
-  // have to run yarn test in the backend dir for backend tests
-  // TODO update so you can run 'yarn test' from root and run all tests
-  rootDir: 'packages/web/',
-  // rootDir: './',
+  // rootDir: 'packages/web/',
+  // rootDir: 'packages/backend/',
+  rootDir: "./",
 
   // A list of paths to directories that Jest should use to search for files in
   // roots: [
@@ -153,7 +164,8 @@ module.exports = {
   // snapshotSerializers: [],
 
   // The test environment that will be used for testing
-  testEnvironment: "jsdom",
+  // testEnvironment: "jsdom",
+  testEnvironment: "node",
 
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},

@@ -1,6 +1,7 @@
-import { MapEvent } from "@core/mappers/map.event";
+// import { MapEvent } from "@core/mappers/map.event";
 
 import { gcalEvents } from "./test.gcal.data";
+import { MapEvent } from "@core/mappers/map.event";
 
 describe("Map Event: GCal -> CCal", () => {
   test("skips cancelled events", () => {
