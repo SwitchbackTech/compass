@@ -1,7 +1,7 @@
 import express from "express";
 
-import { CommonRoutesConfig } from "@common/common.routes.config";
-import jwtMiddleware from "@auth/middleware/jwt.middleware";
+import { CommonRoutesConfig } from "@backend/common/common.routes.config";
+import jwtMiddleware from "@backend/auth/middleware/jwt.middleware";
 
 import eventController from "./controllers/event.controller";
 

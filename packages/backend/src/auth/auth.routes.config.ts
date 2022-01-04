@@ -1,7 +1,7 @@
 import express from "express";
 // import { body } from "express-validator";
 
-import { CommonRoutesConfig } from "@common/common.routes.config";
+import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 
 import authController from "./controllers/auth.controller";
 import jwtMiddleware from "./middleware/jwt.middleware";

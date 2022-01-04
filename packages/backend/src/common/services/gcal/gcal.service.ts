@@ -1,9 +1,10 @@
 import { gSchema$Event, gParamsEventsList, gCalendar } from "declarations";
 
-import { GCAL_PRIMARY } from "@common/constants/backend.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { Logger } from "@common/logger/common.logger";
+
+import { Logger } from "@backend/common/logger/common.logger";
+import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 
 const logger = Logger("app:compass.gcal.service");
 

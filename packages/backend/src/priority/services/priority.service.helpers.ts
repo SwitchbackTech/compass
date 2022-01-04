@@ -1,8 +1,5 @@
-import { InsertedIds } from "@compass/core/src/types/mongo.types";
-import {
-  Schema_Priority,
-  PriorityReq,
-} from "@compass/core/src/types/priority.types";
+import { InsertedIds } from "@core/src/types/mongo.types";
+import { Schema_Priority, PriorityReq } from "@core/src/types/priority.types";
 
 // documents inserted in order by default, so mapping by
 // key order is safe

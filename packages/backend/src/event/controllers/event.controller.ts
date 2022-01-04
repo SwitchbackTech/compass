@@ -1,19 +1,20 @@
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
 
-import { ReqBody, Res } from "@compass/core/src/types/express.types";
-import { GCAL_PRIMARY } from "@common/constants/backend.constants";
+import { ReqBody, Res } from "@core/src/types/express.types";
+
+import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { Event, Event_NoId, Params_DeleteMany } from "@core/types/event.types";
-import { Collections } from "@common/constants/collections";
-import mongoService from "@common/services/mongo.service";
-import { Logger } from "@common/logger/common.logger";
-import { getGcal } from "@auth/services/google.auth.service";
-import syncService from "@sync/services/sync.service";
+import { Collections } from "@backend/common/constants/collections";
+import mongoService from "@backend/common/services/mongo.service";
+import { Logger } from "@backend/common/logger/common.logger";
+import { getGcal } from "@backend/auth/services/google.auth.service";
+import syncService from "@backend/sync/services/sync.service";
 import {
   updateSyncData,
   updateNextSyncToken,
-} from "@sync/services/sync.helpers";
-import eventService from "@event/services/event.service";
+} from "@backend/sync/services/sync.helpers";
+import eventService from "@backend/event/services/event.service";
 
 const logger = Logger("app:event.controller");
 class EventController {

@@ -11,13 +11,14 @@ import {
   Params_DeleteMany,
   Result_DeleteMany,
 } from "@core/types/event.types";
-import { GCAL_PRIMARY } from "@common/constants/backend.constants";
-import mongoService from "@common/services/mongo.service";
-import { Logger } from "@common/logger/common.logger";
-import { Collections } from "@common/constants/collections";
-import gcalService from "@common/services/gcal/gcal.service";
-import { yearsAgo } from "@common/helpers/common.helpers";
-import { getGcal } from "@auth/services/google.auth.service";
+
+import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
+import mongoService from "@backend/common/services/mongo.service";
+import { Logger } from "@backend/common/logger/common.logger";
+import { Collections } from "@backend/common/constants/collections";
+import gcalService from "@backend/common/services/gcal/gcal.service";
+import { yearsAgo } from "@backend/common/helpers/common.helpers";
+import { getGcal } from "@backend/auth/services/google.auth.service";
 
 import { gCalendar, gParamsEventsList } from "../../../declarations";
 import { getReadAllFilter } from "./event.service.helpers";

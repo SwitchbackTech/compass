@@ -3,7 +3,6 @@ import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 
 import { EventEntity } from "@web/common/types/entities";
-// import { EventEntity } from '../../common/types/entities'
 
 import { GetEventsParams, getEvents, createEvent, editEvent } from "./fakeApi";
 import { hardCodedEvents } from "./event.data";

@@ -4,11 +4,12 @@ import express from "express";
 import { Credentials, OAuth2Client } from "google-auth-library";
 
 import { Result_OauthStatus, Schema_Oauth } from "@core/types/auth.types";
-import mongoService from "@common/services/mongo.service";
-import { Logger } from "@common/logger/common.logger";
-import { Collections } from "@common/constants/collections";
-import { isDev } from "@common/helpers/common.helpers";
 import { BaseError } from "@core/errors/errors.base";
+
+import mongoService from "@backend/common/services/mongo.service";
+import { Logger } from "@backend/common/logger/common.logger";
+import { Collections } from "@backend/common/constants/collections";
+import { isDev } from "@backend/common/helpers/common.helpers";
 
 import { gCalendar } from "../../../declarations";
 

@@ -22,8 +22,6 @@
     "inlineSourceMap": true,
     "baseUrl": ".",
     "paths": {
-      //todo remove in favor of more explicit backend
-      "@*": ["./src/*"],
       "@backend/*": ["./src/*"],
       "@core/*": ["../core/src/*"]
     }

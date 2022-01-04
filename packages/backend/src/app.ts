@@ -8,20 +8,20 @@ import * as http from "http";
 import cors from "cors";
 import helmet from "helmet";
 
-import { CommonRoutesConfig } from "@common/common.routes.config";
-import { AuthRoutes } from "@auth/auth.routes.config";
-import { EventRoutes } from "@event/event.routes.config";
-import { PriorityRoutes } from "@priority/priority.routes.config";
-import { SyncRoutes } from "@sync/sync.routes.config";
-import { CalendarRoutes } from "@calendar/calendar.routes.config";
-import mongoService from "@common/services/mongo.service";
-import expressLogger from "@common/logger/express.logger";
-import { Logger } from "@common/logger/common.logger";
+import { CommonRoutesConfig } from "@backend/common/common.routes.config";
+import { AuthRoutes } from "@backend/auth/auth.routes.config";
+import { EventRoutes } from "@backend/event/event.routes.config";
+import { PriorityRoutes } from "@backend/priority/priority.routes.config";
+import { SyncRoutes } from "@backend/sync/sync.routes.config";
+import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
+import mongoService from "@backend/common/services/mongo.service";
+import expressLogger from "@backend/common/logger/express.logger";
+import { Logger } from "@backend/common/logger/common.logger";
 import {
   catchUndefinedSyncErrors,
   catchSyncErrors,
   promiseMiddleware,
-} from "@common/middleware/promise.middleware";
+} from "@backend/common/middleware/promise.middleware";
 
 /* Misc Configuration */
 const logger = Logger("app:root");

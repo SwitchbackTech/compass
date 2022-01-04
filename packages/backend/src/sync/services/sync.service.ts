@@ -1,7 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { gCalendar, gSchema$Channel } from "declarations";
 
-import { BASEURL } from "@common/constants/backend.constants";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { minutesFromNow, daysFromNowTimestamp } from "@core/util/date.utils";
 import {
@@ -10,17 +9,18 @@ import {
   Result_Sync_Gcal,
   Params_Sync_Gcal,
 } from "@core/types/sync.types";
-import { getGcal } from "@auth/services/google.auth.service";
+import { getGcal } from "@backend/auth/services/google.auth.service";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { Logger } from "@common/logger/common.logger";
+
+import { Logger } from "@backend/common/logger/common.logger";
 import {
   GCAL_NOTIFICATION_URL,
   GCAL_PRIMARY,
-} from "@common/constants/backend.constants";
-import { Collections } from "@common/constants/collections";
-import gcalService from "@common/services/gcal/gcal.service";
-import mongoService from "@common/services/mongo.service";
+} from "@backend/common/constants/backend.constants";
+import { Collections } from "@backend/common/constants/collections";
+import gcalService from "@backend/common/services/gcal/gcal.service";
+import mongoService from "@backend/common/services/mongo.service";
 
 import {
   assembleBulkOperations,

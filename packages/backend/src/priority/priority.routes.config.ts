@@ -1,8 +1,8 @@
 import express from "express";
 
-import jwtMiddleware from "@auth/middleware/jwt.middleware";
-import { validateIds } from "@common/middleware/mongo.validation.middleware";
-import { CommonRoutesConfig } from "@common/common.routes.config";
+import jwtMiddleware from "@backend/auth/middleware/jwt.middleware";
+import { validateIds } from "@backend/common/middleware/mongo.validation.middleware";
+import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 
 import PriorityController from "./controllers/priority.controller";
 

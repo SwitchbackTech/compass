@@ -1,6 +1,6 @@
 import express from "express";
 
-import { Res$Promise } from "@core/types/express.types";
+import { Res_Promise } from "@core/types/express.types";
 import { BaseError } from "@core/errors/errors.base";
 
 import { handleExpressError } from "../errors/handlers/error.express.handler";

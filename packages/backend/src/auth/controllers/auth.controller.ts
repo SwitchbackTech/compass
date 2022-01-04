@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { GOOGLE } from "@core/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { Logger } from "@common/logger/common.logger";
+import { Logger } from "@backend/common/logger/common.logger";
 import {
   GoogleUser,
   CombinedLogin_Google,
