@@ -82,7 +82,8 @@ import { gSchema$CalendarList } from '@backend/declarations';
         // const prioritiesRes = await PriorityApi.createPriorities(status.token);
         // console.log(prioritiesRes);
         await createCalendarList();
-        setRedirect(true);
+        await importEvents();
+        // setRedirect(true);
       }
     }
   };
