@@ -98,15 +98,19 @@ class SyncService {
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
     try {
-      const numMin = 120;
+      // const numMin = 120;
+      // console.log(
+      // `\n**REMINDER: channel is expiring in just ${numMin} mins. Change before deploying**\n`
+      // );
+      // const expiration = minutesFromNow(numMin, "ms").toString();
 
-      // TODO uncomment
-      // const expiration = daysFromNowTimestamp(14, "ms").toString();
+      const expiration = daysFromNowTimestamp(1, "ms").toString();
+
       console.log(
-        `\n**REMINDER: channel is expiring in just ${numMin} mins. Change before deploying**\n`
+        `\n**REMINDER: channel is expiring in just 1 (?) day. Change before deploying to lots of ppl**\n`
       );
-      const expiration = minutesFromNow(numMin, "ms").toString();
 
+      // const expiration = daysFromNowTimestamp(21, "ms").toString();
       const response = await gcal.events.watch({
         calendarId: calendarId,
         requestBody: {
