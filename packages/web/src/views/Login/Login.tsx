@@ -8,12 +8,12 @@ import {
   MapCalendarList,
   mapCalListToCompass,
 } from "@core/mappers/map.calendarlist";
+import { SURVEY_URL } from "@core/core.constants";
 
 // import { store } from '@web/store';
 // import { reducers } from '@web/store/reducers';
 import { PriorityApi } from "@web/common/apis/priority.api";
 import { AuthApi } from "@web/common/apis/auth.api";
-import { SURVEY_URL } from "@compass/core/src/core.constants";
 import { GOOGLE } from "@web/common/constants/common";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Text } from "@web/components/Text";

@@ -1,7 +1,7 @@
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
 
-import { ReqBody, Res } from "@core/src/types/express.types";
+import { ReqBody, Res } from "@core/types/express.types";
 
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { Event, Event_NoId, Params_DeleteMany } from "@core/types/event.types";
