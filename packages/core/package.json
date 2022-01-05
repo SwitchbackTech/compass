@@ -1,13 +1,16 @@
 {
   "name": "@compass/core",
-  "description": "core module",
+  "description": "common core module shared across packages",
   "author": "Switchback Tech LLC <hello@switchback.tech>",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "license": "SEE LICENSE IN LICENSE",
   "private": true,
   "main": "",
   "scripts": {
     "precommit": "exit",
     "lint-fix": "exit"
+  },
+  "devDependencies": {
+    "typescript": "^4.5.4"
   }
 }

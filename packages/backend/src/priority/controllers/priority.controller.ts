@@ -1,6 +1,6 @@
 import express from "express";
 
-import { PriorityReq } from "@compass/core/src/types/priority.types";
+import { PriorityReq } from "@core/src/types/priority.types";
 import { Res } from "@core/types/express.types";
 
 import priorityService from "../services/priority.service";

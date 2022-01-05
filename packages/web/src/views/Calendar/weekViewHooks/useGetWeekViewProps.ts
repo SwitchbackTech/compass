@@ -1,32 +1,32 @@
-import React, { useEffect, useRef, useState } from 'react';
-import dayjs, { Dayjs } from 'dayjs';
-import weekPlugin from 'dayjs/plugin/weekOfYear';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useRef, useState } from "react";
+import dayjs, { Dayjs } from "dayjs";
+import weekPlugin from "dayjs/plugin/weekOfYear";
+import { useDispatch, useSelector } from "react-redux";
 
 import {
   SHORT_HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
-} from '@common/constants/dates';
-import { getAmPmTimes, roundByNumber } from '@common/helpers';
-import { EventEntity, Priorities } from '@common/types/entities';
+} from "@web/common/constants/dates";
+import { getAmPmTimes, roundByNumber } from "@web/common/helpers";
+import { EventEntity, Priorities } from "@web/common/types/entities";
 import {
   selectEventEntities,
   selectEventIdsBySectionType,
-} from '@ducks/events/selectors';
+} from "@web/ducks/events/selectors";
 import {
   createEventSlice,
   editEventSlice,
   getWeekEventsSlice,
-} from '@ducks/events/slice';
-import { RootState } from '@store';
+} from "@web/ducks/events/slice";
+import { RootState } from "@store";
 
 import {
   GRID_TIME_STEP,
   GRID_X_OFFSET,
   GRID_Y_OFFSET as _GRID_Y_OFFSET,
-} from '../constants';
-import { EventState, GridEventEntity } from './types';
+} from "../constants";
+import { EventState, GridEventEntity } from "./types";
 
 dayjs.extend(weekPlugin);
 
@@ -53,7 +53,7 @@ export const useGetWeekViewProps = () => {
   const today = dayjs();
   const eventEntities = useSelector(selectEventEntities);
   const weekEventIds = useSelector((state: RootState) =>
-    selectEventIdsBySectionType(state, 'week')
+    selectEventIdsBySectionType(state, "week")
   );
   const weekEvents = weekEventIds
     .map((id) => eventEntities[id])
@@ -65,7 +65,7 @@ export const useGetWeekViewProps = () => {
   );
   const [week, setWeek] = useState(today.week());
   const [modifiableDateField, setModifiableDateField] = useState<
-    'startDate' | 'endDate' | null
+    "startDate" | "endDate" | null
   >(null);
   const [eventState, setEventState] = useState<EventState | null>(null);
 
@@ -73,8 +73,8 @@ export const useGetWeekViewProps = () => {
   const eventsGridRef = useRef<HTMLDivElement>(null);
   const weekDaysRef = useRef<HTMLDivElement>(null);
   const allDayEventsGridRef = useRef<HTMLDivElement>(null);
-  const startOfSelectedWeekDay = today.week(week).startOf('week');
-  const endOfSelectedWeekDay = today.week(week).endOf('week');
+  const startOfSelectedWeekDay = today.week(week).startOf("week");
+  const endOfSelectedWeekDay = today.week(week).endOf("week");
   const [GRID_Y_OFFSET, setGridYOffset] = useState(
     allDayEventsGridRef.current?.clientHeight || 0
   );
@@ -86,14 +86,14 @@ export const useGetWeekViewProps = () => {
   const times = getAmPmTimes();
 
   const weekDays = [...(new Array(7) as number[])].map((_, index) => {
-    return startOfSelectedWeekDay.add(index, 'day');
+    return startOfSelectedWeekDay.add(index, "day");
   });
 
   const dayTimes = [...(new Array(23) as number[])].map((_, index) => {
     return today
-      .startOf('day')
-      .add(index + 1, 'hour')
-      .format('h:mm A');
+      .startOf("day")
+      .add(index + 1, "hour")
+      .format("h:mm A");
   });
 
   const getMultiDayEventWidth = (
@@ -131,7 +131,7 @@ export const useGetWeekViewProps = () => {
     ...[0, ...Object.values(daysToLastOrderIndexWithEditingEvent)]
   );
 
-  const todayDayWeekNumber = today.get('day') + 1;
+  const todayDayWeekNumber = today.get("day") + 1;
   const beforeDaysCount = todayDayWeekNumber - 1;
 
   useEffect(() => {
@@ -161,13 +161,13 @@ export const useGetWeekViewProps = () => {
     const isEventOverlappingCurrentDay =
       Math.abs(
         dayjs(eventToSave.startDate)
-          .startOf('day')
-          .diff(eventToSave.endDate, 'minute')
+          .startOf("day")
+          .diff(eventToSave.endDate, "minute")
       ) > maxDayMinutes;
 
     if (!eventToSave.allDay && isEventOverlappingCurrentDay) {
       eventToSave.endDate = dayjs(eventToSave.startDate)
-        .endOf('day')
+        .endOf("day")
         .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
     }
 
@@ -236,8 +236,8 @@ export const useGetWeekViewProps = () => {
     );
 
     const date = startOfSelectedWeekDay
-      .add(dayNumber, 'day')
-      .add(minute, 'minutes');
+      .add(dayNumber, "day")
+      .add(minute, "minutes");
 
     return date.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
   };
@@ -245,10 +245,10 @@ export const useGetWeekViewProps = () => {
   const onEventsGridMouseDown = (e: React.MouseEvent) => {
     const startDate = getDateByMousePosition(e.clientX, e.clientY);
     const endDate = dayjs(startDate)
-      .add(GRID_TIME_STEP, 'minute')
+      .add(GRID_TIME_STEP, "minute")
       .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
 
-    setModifiableDateField('endDate');
+    setModifiableDateField("endDate");
 
     setEditingEvent({
       priority: Priorities.WORK,
@@ -267,7 +267,7 @@ export const useGetWeekViewProps = () => {
       );
 
       const endDate = dayjs(startDate)
-        .add(eventState?.initialMinutesDifference || 0, 'minutes')
+        .add(eventState?.initialMinutesDifference || 0, "minutes")
         .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
 
       return {
@@ -280,14 +280,14 @@ export const useGetWeekViewProps = () => {
   };
 
   const onEventGridMouseMove = (e: React.MouseEvent) => {
-    if (eventState?.name === 'dragging') {
+    if (eventState?.name === "dragging") {
       if (
         !eventState.hasMoved &&
         editingEvent?.startDate !== getDateByMousePosition(e.clientX, e.clientY)
       ) {
         setEventState((actualEventState) => ({
           ...actualEventState,
-          name: 'dragging',
+          name: "dragging",
           hasMoved: true,
         }));
       }
@@ -306,7 +306,7 @@ export const useGetWeekViewProps = () => {
       if (!modifiableDateField) return actualEditingEvent;
 
       const reversedField =
-        modifiableDateField === 'startDate' ? 'endDate' : 'startDate';
+        modifiableDateField === "startDate" ? "endDate" : "startDate";
 
       let dateField = modifiableDateField;
       let endDate = actualEditingEvent?.endDate;
@@ -315,7 +315,7 @@ export const useGetWeekViewProps = () => {
       const modifyingDateDiff =
         (actualEditingEvent &&
           Math.abs(
-            dayjs(date).diff(actualEditingEvent[reversedField], 'minute')
+            dayjs(date).diff(actualEditingEvent[reversedField], "minute")
           )) ||
         0;
 
@@ -324,7 +324,7 @@ export const useGetWeekViewProps = () => {
       }
 
       if (
-        modifiableDateField === 'endDate' &&
+        modifiableDateField === "endDate" &&
         dayjs(date).isBefore(actualEditingEvent?.startDate)
       ) {
         dateField = reversedField;
@@ -333,7 +333,7 @@ export const useGetWeekViewProps = () => {
       }
 
       if (
-        modifiableDateField === 'startDate' &&
+        modifiableDateField === "startDate" &&
         dayjs(date).isAfter(actualEditingEvent?.endDate)
       ) {
         dateField = reversedField;
@@ -368,9 +368,9 @@ export const useGetWeekViewProps = () => {
         if (!actualEditingEvent) return actualEditingEvent;
 
         const shouldSubmitInDragState =
-          actualEventState?.name === 'dragging' && actualEventState.hasMoved;
+          actualEventState?.name === "dragging" && actualEventState.hasMoved;
         const shouldSubmit =
-          shouldSubmitInDragState || actualEventState?.name === 'rescaling';
+          shouldSubmitInDragState || actualEventState?.name === "rescaling";
 
         setEventState(null);
 
@@ -394,10 +394,10 @@ export const useGetWeekViewProps = () => {
   const onScalerMouseDown = (
     e: React.MouseEvent,
     eventToScale: EventEntity,
-    dateKey: 'startDate' | 'endDate'
+    dateKey: "startDate" | "endDate"
   ) => {
     e.stopPropagation();
-    setEventState({ name: 'rescaling' });
+    setEventState({ name: "rescaling" });
     setModifiableDateField(dateKey);
     setEditingEvent({ ...eventToScale, isOpen: false });
   };
@@ -408,17 +408,17 @@ export const useGetWeekViewProps = () => {
 
     const initialMinutesDifference = dayjs(eventToDrug.endDate).diff(
       eventToDrug.startDate,
-      'minutes'
+      "minutes"
     );
 
     const initialYOffset =
       e.clientY -
       GRID_Y_OFFSET +
       (eventsGridRef.current?.scrollTop || 0) -
-      getYByDate(eventToDrug.startDate || '');
+      getYByDate(eventToDrug.startDate || "");
 
     setEventState({
-      name: 'dragging',
+      name: "dragging",
       initialMinutesDifference,
       initialYOffset,
     });
@@ -429,14 +429,14 @@ export const useGetWeekViewProps = () => {
     if (editingEvent) return;
 
     const startDate = dayjs(getDateByMousePosition(e.clientX, e.clientY))
-      .startOf('day')
+      .startOf("day")
       .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
 
     const endDate = dayjs(startDate)
-      .endOf('day')
+      .endOf("day")
       .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
 
-    setModifiableDateField('endDate');
+    setModifiableDateField("endDate");
 
     setEditingEvent({
       priority: Priorities.WORK,
@@ -456,8 +456,8 @@ export const useGetWeekViewProps = () => {
   const getFlexBasisByDay = (day: Dayjs) => {
     if (week !== today.week()) return 100 / 7;
 
-    const dayWeekNumber = day.get('day') + 1;
-    const monthDayJs = dayjsBasedOnWeekDay.set('date', +day.format('DD'));
+    const dayWeekNumber = day.get("day") + 1;
+    const monthDayJs = dayjsBasedOnWeekDay.set("date", +day.format("DD"));
 
     const fixedFlexBasisesByDayNumber = {
       [todayDayWeekNumber]: 21.4,

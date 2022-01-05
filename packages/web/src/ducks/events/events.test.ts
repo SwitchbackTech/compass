@@ -1,8 +1,8 @@
-import { eventsSagas } from '@ducks/events/sagas';
+// import { eventsSagas } from '@web/ducks/events/sagas';
 
-import { eventsApi, getEventsLocalStorage } from './api';
+import { eventsApi, getEventsLocalStorage } from "./api";
 
-test('idk', async () => {
+test("idk", async () => {
   // const evts = eventsSagas();
   const evts = await eventsApi.getEvents({});
   const localEvts = await getEventsLocalStorage();

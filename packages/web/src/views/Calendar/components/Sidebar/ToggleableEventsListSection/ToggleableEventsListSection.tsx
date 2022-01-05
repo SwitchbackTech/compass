@@ -1,16 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Popover } from 'react-tiny-popover';
-import dayjs from 'dayjs';
+import React, { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Popover } from "react-tiny-popover";
+import dayjs from "dayjs";
 
-import { ArrowLeftIcon } from '@assets/svg';
-import { SideBarSectionType } from '@ducks/events/types';
-import { selectPaginatedEventsBySectionType } from '@ducks/events/selectors';
-import { RootState } from '@store';
-import { AlignItems, JustifyContent } from '@components/Flex/styled';
-import { EventEntity, Priorities } from '@common/types/entities';
-import { createEventSlice } from '@ducks/events/slice';
-import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from '@common/constants/dates';
+import { ArrowLeftIcon } from "@web/assets/svg";
+import { SideBarSectionType } from "@web/ducks/events/types";
+import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors";
+import { RootState } from "@store";
+import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
+import { EventEntity, Priorities } from "@web/common/types/entities";
+import { createEventSlice } from "@web/ducks/events/slice";
+import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates";
 
 import {
   Styled,
@@ -21,8 +21,8 @@ import {
   StyledHeader,
   StyledHeaderTitle,
   StyledPaginationFlex,
-} from './styled';
-import { ToggleArrow } from '../ToggleArrow';
+} from "./styled";
+import { ToggleArrow } from "../ToggleArrow";
 
 export interface EventsListProps {
   offset: number;
@@ -80,7 +80,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   const today = dayjs(eventStartDate);
   const startDate = today.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
   const endDate = today
-    .add(1, 'hour')
+    .add(1, "hour")
     .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
 
   const [event, setEvent] = useState<EventEntity>({
@@ -106,7 +106,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
 
         <Popover
           isOpen={isEventFormOpen}
-          containerStyle={{ zIndex: '10' }}
+          containerStyle={{ zIndex: "10" }}
           content={
             <StyledEventForm
               event={event}

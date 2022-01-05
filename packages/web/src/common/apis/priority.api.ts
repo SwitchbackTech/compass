@@ -1,12 +1,9 @@
-import { Priorities } from '@common/types/entities';
+import axios from "axios";
 
-// TODO replace with what's in styles.ts
-const COLORS = {
-  ZERO: '#bfc8de',
-  ONE: '#2C4A62',
-  TWO: '#4F6A80',
-  THREE: '#2C5474',
-};
+import { colorNameByPriority } from "@web/common/styles/colors";
+import { Priorities } from "@web/common/types/entities";
+import { BASEURL } from "@web/common/constants/api";
+
 const PriorityApi = {
   async createPriorities(token: string) {
     // custom header to allow for token arg
@@ -19,26 +16,25 @@ const PriorityApi = {
     const priorities = [
       {
         name: Priorities.SELF,
-        color: COLORS.ONE,
+        color: colorNameByPriority.self,
       },
       {
         name: Priorities.WORK,
-        color: COLORS.TWO,
+        color: colorNameByPriority.work,
       },
       {
         name: Priorities.RELATIONS,
-        color: COLORS.THREE,
+        color: colorNameByPriority.relations,
       },
     ];
 
-    console.log('creating priorities ... ');
+    console.log("creating priorities ... ");
     const [p1, p2, p3] = await Promise.all([
-      await axios.post(`${BASEURL}/priority/create`, priorities[0], _pHeaders),
-      await axios.post(`${BASEURL}/priority/create`, priorities[1], _pHeaders),
-      await axios.post(`${BASEURL}/priority/create`, priorities[2], _pHeaders),
+      await axios.post(`${BASEURL}/priority`, priorities[0], _pHeaders),
+      await axios.post(`${BASEURL}/priority`, priorities[1], _pHeaders),
+      await axios.post(`${BASEURL}/priority`, priorities[2], _pHeaders),
     ]);
-    const pData = p1.data;
-    const combined = pData.concat(p2.data, p3.data);
+    const combined = [p1, p2, p3];
     return combined;
   },
 

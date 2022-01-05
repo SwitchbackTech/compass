@@ -1,26 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { Popover } from 'react-tiny-popover';
-import dayjs from 'dayjs';
+import React, { useEffect, useState } from "react";
+import { Popover } from "react-tiny-popover";
+import dayjs from "dayjs";
 
-import { ColorNames } from '@common/types/styles';
-import { Text } from '@components/Text';
+import { ColorNames } from "@web/common/types/styles";
+import { Text } from "@web/components/Text";
 import {
   SidebarCollapseIcon,
   SidebarOpenIcon,
   StrawberryMenuIcon,
-} from '@assets/svg';
+} from "@web/assets/svg";
 import {
   AlignItems,
   FlexDirections,
   JustifyContent,
-} from '@components/Flex/styled';
-import { getAlphaColor, getColor } from '@common/helpers/colors';
-import { Priorities } from '@common/types/entities';
-import { colorNameByPriority } from '@common/styles/colors';
-import { Divider } from '@components/Divider';
-import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from '@common/constants/dates';
-import { SidebarFutureEventsContainer } from '@views/Calendar/containers/SidebarFutureEventsContainer';
-import { SidebarCurrentMonthEventsContainer } from '@views/Calendar/containers/SidebarCurrentMonthEventsContainer';
+} from "@web/components/Flex/styled";
+import { getAlphaColor, getColor } from "@web/common/helpers/colors";
+import { Priorities } from "@web/common/types/entities";
+import { colorNameByPriority } from "@web/common/styles/colors";
+import { Divider } from "@web/components/Divider";
+import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates";
+import { SidebarFutureEventsContainer } from "@web/views/Calendar/containers/SidebarFutureEventsContainer";
+import { SidebarCurrentMonthEventsContainer } from "@web/views/Calendar/containers/SidebarCurrentMonthEventsContainer";
 
 import {
   Styled,
@@ -35,9 +35,9 @@ import {
   StyledHeaderFlex,
   StyledSidebarOverflow,
   StyledFutureEventsToggleableSection,
-} from './styled';
-import { ToggleableEventsListSection } from './ToggleableEventsListSection';
-import { ToggleableMonthWidget } from './ToggleableMonthWidget';
+} from "./styled";
+import { ToggleableEventsListSection } from "./ToggleableEventsListSection";
+import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 
 const DATEPICKER_HEIGHT = 346;
 
@@ -48,9 +48,9 @@ export interface PriorityFilter {
 }
 
 const priorityNameByKey = {
-  [Priorities.WORK]: 'Work',
-  [Priorities.RELATIONS]: 'Relationships',
-  [Priorities.SELF]: 'Self',
+  [Priorities.WORK]: "Work",
+  [Priorities.RELATIONS]: "Relationships",
+  [Priorities.SELF]: "Self",
 };
 
 export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
@@ -95,7 +95,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
 
   const onFilterButtonBlur = (e: React.FocusEvent) => {
     const relatedTarget = e.relatedTarget as Element;
-    if (relatedTarget && relatedTarget.id === 'priority-sort-popover') {
+    if (relatedTarget && relatedTarget.id === "priority-sort-popover") {
       return;
     }
 
@@ -129,7 +129,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
     isToggled ? SidebarCollapseIcon : SidebarOpenIcon
   );
 
-  const getEventsSectionFlex = (sectionType: 'currentMonth' | 'future') => {
+  const getEventsSectionFlex = (sectionType: "currentMonth" | "future") => {
     const dividerIndexBySectionType = {
       currentMonth: isCurrentMonthToggled && 1,
       future: isFutureToggled && 1,
@@ -169,7 +169,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
 
           <Popover
             isOpen={isFilterPopoverOpen}
-            positions={['bottom']}
+            positions={["bottom"]}
             align="end"
             content={
               <div
@@ -198,7 +198,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
         </StyledHeaderFlex>
 
         <ToggleableEventsListSection
-          flex={getEventsSectionFlex('currentMonth')}
+          flex={getEventsSectionFlex("currentMonth")}
           isToggled={isCurrentMonthToggled}
           onToggle={() => setIsCurrentMonthToggled((toggle) => !toggle)}
           title="This Month"
@@ -213,9 +213,9 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
 
         <StyledFutureEventsToggleableSection
           shouldSetTopMargin={isCurrentMonthToggled}
-          flex={getEventsSectionFlex('future')}
+          flex={getEventsSectionFlex("future")}
           eventStartDate={dayjs()
-            .add(1, 'month')
+            .add(1, "month")
             .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT)}
           isToggled={isFutureToggled}
           onToggle={() => setIsFutureToggled((toggle) => !toggle)}

@@ -5,7 +5,8 @@ import {
   Body_Watch_Gcal_Stop,
 } from "@core/types/sync.types";
 import { ReqBody, Res } from "@core/types/express.types";
-import { getGcal } from "@auth/services/google.auth.service";
+
+import { getGcal } from "@backend/auth/services/google.auth.service";
 
 import syncService from "../services/sync.service";
 

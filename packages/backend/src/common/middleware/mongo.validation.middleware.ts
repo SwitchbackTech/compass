@@ -1,7 +1,7 @@
 import express from "express";
 import { ObjectId } from "mongodb";
 
-import { BaseError } from "../errors/errors.base";
+import { BaseError } from "@core/errors/errors.base";
 
 export const validateIds = (
   req: express.Request,

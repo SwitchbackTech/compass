@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import dayjs from 'dayjs';
-import { Key } from 'ts-keycode-enum';
-import { Popover } from 'react-tiny-popover';
+import React, { useEffect, useState } from "react";
+import dayjs from "dayjs";
+import { Key } from "ts-keycode-enum";
+import { Popover } from "react-tiny-popover";
 
-import { Text } from '@components/Text';
-import { ColorNames } from '@common/types/styles';
+import { Text } from "@web/components/Text";
+import { ColorNames } from "@web/common/types/styles";
 import {
   AlignItems,
   FlexDirections,
   JustifyContent,
-} from '@components/Flex/styled';
-import { SpaceCharacter } from '@components/SpaceCharacter';
-import { YEAR_MONTH_DAY_FORMAT } from '@common/constants/dates';
-import { getAlphaColor, getColor } from '@common/helpers/colors';
-import { EventEntity } from '@common/types/entities';
+} from "@web/components/Flex/styled";
+import { SpaceCharacter } from "@web/components/SpaceCharacter";
+import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
+import { getAlphaColor, getColor } from "@web/common/helpers/colors";
+import { EventEntity } from "@web/common/types/entities";
 
 import {
   Styled,
@@ -34,12 +34,12 @@ import {
   StyledTodayPopoverContainer,
   StyledAllDayEventsGrid,
   StyledPrevDaysOverflow,
-} from './styled';
-import { useGetWeekViewProps } from './weekViewHooks/useGetWeekViewProps';
-import { GridEventEntity } from './weekViewHooks/types';
-import { WeekEvent } from './components/WeekEvent';
-import { EditingWeekEvent } from './components/EditingWeekEvent';
-import { Sidebar } from './components/Sidebar';
+} from "./styled";
+import { useGetWeekViewProps } from "./weekViewHooks/useGetWeekViewProps";
+import { GridEventEntity } from "./weekViewHooks/types";
+import { WeekEvent } from "./components/WeekEvent";
+import { EditingWeekEvent } from "./components/EditingWeekEvent";
+import { Sidebar } from "./components/Sidebar";
 
 export const CalendarView = () => {
   const weekViewProps = useGetWeekViewProps();
@@ -82,16 +82,16 @@ export const CalendarView = () => {
       setResize({ width: window.innerWidth, height: window.innerHeight });
     };
 
-    document.addEventListener('keydown', keyDownHandler);
-    document.addEventListener('mouseup', mouseUpHandler);
-    document.addEventListener('contextmenu', contextMenuHandler);
-    window.addEventListener('resize', resizeHandler);
+    document.addEventListener("keydown", keyDownHandler);
+    document.addEventListener("mouseup", mouseUpHandler);
+    document.addEventListener("contextmenu", contextMenuHandler);
+    window.addEventListener("resize", resizeHandler);
 
     return () => {
-      document.addEventListener('contextmenu', contextMenuHandler);
-      document.removeEventListener('keydown', keyDownHandler);
-      document.removeEventListener('mouseup', mouseUpHandler);
-      window.removeEventListener('resize', resizeHandler);
+      document.addEventListener("contextmenu", contextMenuHandler);
+      document.removeEventListener("keydown", keyDownHandler);
+      document.removeEventListener("mouseup", mouseUpHandler);
+      window.removeEventListener("resize", resizeHandler);
     };
   }, []);
 
@@ -99,10 +99,10 @@ export const CalendarView = () => {
     if (!component.eventsGridRef.current) return;
 
     const minuteHeight = core.getEventCellHeight() / 60;
-    const minutes = dayjs().get('hours') * 60 + dayjs().get('minutes');
+    const minutes = dayjs().get("hours") * 60 + dayjs().get("minutes");
     const top = minutes * minuteHeight;
 
-    component.eventsGridRef.current.scroll({ top, behavior: 'smooth' });
+    component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
   }, [component.eventsGridRef]);
 
   return (
@@ -118,13 +118,13 @@ export const CalendarView = () => {
       >
         <StyledHeaderFlex alignItems={AlignItems.CENTER}>
           <Text colorName={ColorNames.TEAL_3} size={45}>
-            {component.dayjsBasedOnWeekDay.format('MMMM')}
+            {component.dayjsBasedOnWeekDay.format("MMMM")}
           </Text>
 
           <SpaceCharacter />
 
           <Text colorName={ColorNames.WHITE_2} size={45}>
-            {component.dayjsBasedOnWeekDay.format('YYYY')}
+            {component.dayjsBasedOnWeekDay.format("YYYY")}
           </Text>
 
           <StyledNavigationButtons>
@@ -134,7 +134,7 @@ export const CalendarView = () => {
               onClick={() => component.setWeek((actualWeek) => actualWeek - 1)}
               cursor="pointer"
             >
-              {'<'}
+              {"<"}
             </ArrowNavigationButton>
 
             <ArrowNavigationButton
@@ -143,18 +143,18 @@ export const CalendarView = () => {
               onClick={() => component.setWeek((actualWeek) => +actualWeek + 1)}
               cursor="pointer"
             >
-              {'>'}
+              {">"}
             </ArrowNavigationButton>
 
             {component.today.week() !== component.week && (
               <Popover
                 isOpen={isTodayPopoverOpen}
-                positions={['bottom']}
+                positions={["bottom"]}
                 padding={10}
                 content={
                   <StyledTodayPopoverContainer>
                     <Text colorName={ColorNames.WHITE_1} size={12}>
-                      {component.today.format('dddd, MMMM DD')}
+                      {component.today.format("dddd, MMMM DD")}
                     </Text>
                   </StyledTodayPopoverContainer>
                 }
@@ -183,24 +183,24 @@ export const CalendarView = () => {
               component.today.week() === component.week;
             const isToday =
               isDayInCurrentWeek &&
-              component.today.format('DD') === day.format('DD');
+              component.today.format("DD") === day.format("DD");
 
             let weekDayTextColor = isToday
               ? getColor(ColorNames.TEAL_3)
               : getColor(ColorNames.WHITE_2);
 
             const monthDayJs = component.dayjsBasedOnWeekDay.set(
-              'date',
-              +day.format('DD')
+              "date",
+              +day.format("DD")
             );
 
-            let dayNumberToDisplay = day.format('D');
+            let dayNumberToDisplay = day.format("D");
 
             dayNumberToDisplay =
-              day.format('MM') !==
-                component.startOfSelectedWeekDay.format('MM') &&
-              day.format('D') === '1'
-                ? day.format('MMM D')
+              day.format("MM") !==
+                component.startOfSelectedWeekDay.format("MM") &&
+              day.format("D") === "1"
+                ? day.format("MMM D")
                 : dayNumberToDisplay;
 
             if (component.today.isAfter(monthDayJs)) {
@@ -222,7 +222,7 @@ export const CalendarView = () => {
                   {dayNumberToDisplay}
                 </Text>
                 <SpaceCharacter />
-                <Text size={12}>{day.format('ddd')}</Text>
+                <Text size={12}>{day.format("ddd")}</Text>
               </StyledWeekDayFlex>
             );
           })}

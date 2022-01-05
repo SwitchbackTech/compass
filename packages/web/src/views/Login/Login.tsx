@@ -1,18 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Redirect } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Redirect } from "react-router-dom";
 
-// import { store } from '@store';
-// import { reducers } from '@store/reducers';
-import { Apis } from '@common/apis/api';
-import { AuthApi } from '@common/apis/auth.api';
-import { SURVEY_URL } from '@compass/core/src/core.constants';
-import { GOOGLE } from '@common/constants/common';
-import { ROOT_ROUTES } from '@common/constants/routes';
-import { Text } from '@components/Text';
-import { ColorNames } from '@common/types/styles';
-import { Button, FeedbackButtonContainer } from '@components/Button';
+import { Result_OauthStatus } from "@core/types/auth.types";
+import { MapCalendarList } from "@core/mappers/map.calendarlist";
+import { SURVEY_URL } from "@core/core.constants";
 
-import { StyledLogin } from './styled';
+// import { store } from '@web/store';
+// import { reducers } from '@web/store/reducers';
+import { PriorityApi } from "@web/common/apis/priority.api";
+import { AuthApi } from "@web/common/apis/auth.api";
+import { EventApi } from "@web/common/apis/event.api";
+import { CalendarListApi } from "@web/common/apis/calendarlist.api";
+import { GOOGLE } from "@web/common/constants/common";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ColorNames } from "@web/common/types/styles";
+import { Text } from "@web/components/Text";
+import { Button, FeedbackButtonContainer } from "@web/components/Button";
+
+import { StyledLogin } from "./styled";
 
 export const LoginView = () => {
   const [redirect, setRedirect] = useState(false);
@@ -22,18 +27,18 @@ export const LoginView = () => {
 
     // Token has expired or invalid, user has to re-login //
     if (!refresh) {
-      localStorage.setItem('token', '');
-      localStorage.setItem('state', '');
+      localStorage.setItem("token", "");
+      localStorage.setItem("state", "");
 
       setRedirect(false);
     }
 
-    localStorage.setItem('token', refresh.token);
+    localStorage.setItem("token", refresh.token);
     setRedirect(true);
   }
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token && !redirect) {
       refreshToken();
     }
@@ -41,18 +46,19 @@ export const LoginView = () => {
 
   const startGoogleOauth = async () => {
     const googleOauthData = await AuthApi.getOauthData(GOOGLE);
-    localStorage.setItem('authState', googleOauthData.authState);
+    localStorage.setItem("authState", googleOauthData.authState);
     window.open(googleOauthData.authUrl);
 
     // poll while user grants permissions
     let isOauthComplete = false;
     while (!isOauthComplete) {
       await new Promise((resolve) => setTimeout(resolve, 4000));
-      const status = await AuthApi.checkOauthStatus(GOOGLE);
+      const status: Result_OauthStatus = await AuthApi.checkOauthStatus();
       isOauthComplete = status.isOauthComplete;
 
       if (isOauthComplete) {
-        localStorage.setItem('token', status.token);
+        localStorage.setItem("token", status.token);
+        //throws error if token has expired or has a invalid signature
         /*
         OR NOT, cuz user would only go through the oauth init flow 
         the first time, and their token would be refreshed after that.
@@ -63,21 +69,37 @@ export const LoginView = () => {
             - priorities created
             - primary calendar selected (not htis version) 
             - events fetched and imported
-        If existing:import { StyledLogin } from './styled';
-import { JustifyContent } from '@components/Flex/styled';
-import { btn_google_signin_light_focus } from '@public/png';
+        If existing:import { Schema_Calendar } from '@core/types/calendar.types';
+import { gSchema$CalendarList } from '@backend/declarations';
 
           - Send to calendar page, where you'll
             - fetching most-recent GCal events and sync with Compass
         */
-        console.log('auth complete. waiting and then syncing events ...');
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        const prioritiesRes = await Apis.createPriorities(status.token);
-        console.log(prioritiesRes);
+        console.log("auth complete. initing data ...");
+        // await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        setRedirect(true);
+        // todo move this stuff to onboard flow
+        // const prioritiesRes = await PriorityApi.createPriorities(status.token);
+        // console.log(prioritiesRes);
+        await createCalendarList();
+        await importEvents();
+        // setRedirect(true);
       }
     }
+  };
+
+  const createCalendarList = async () => {
+    const gcalList = await CalendarListApi.list();
+    const ccalList = MapCalendarList.toCompass(gcalList);
+    const res = await CalendarListApi.create(ccalList);
+  };
+  // const onboard = async (token: string) => {
+  // }
+
+  const importEvents = async () => {
+    console.log("importing events ...");
+    const res = await EventApi.import();
+    console.log(res);
   };
 
   return (

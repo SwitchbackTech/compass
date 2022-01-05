@@ -3,7 +3,7 @@ export interface PriorityReq {
   color: string;
 }
 
-export interface Priority extends PriorityReq {
+export interface Schema_Priority extends PriorityReq {
   _id: string;
   user: string;
 }

@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-import { EventEntity, Priorities } from '@common/types/entities';
+import { EventEntity, Priorities } from "@web/common/types/entities";
 
 export interface BasicProps {
   priority?: Priorities;

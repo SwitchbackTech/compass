@@ -1,9 +1,9 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
-import { ColorNames } from '@common/types/styles';
-import { Flex } from '@components/Flex';
-import { getAlphaColor, getColor } from '@common/helpers/colors';
-import { Text } from '@components/Text';
+import { ColorNames } from "@web/common/types/styles";
+import { Flex } from "@web/components/Flex";
+import { getAlphaColor, getColor } from "@web/common/helpers/colors";
+import { Text } from "@web/components/Text";
 
 import {
   CALENDAR_GRID_MARGIN_LEFT,
@@ -11,7 +11,7 @@ import {
   CALENDAR_X_PADDING,
   GRID_Y_OFFSET,
   WEEK_DAYS_MARGIN_Y,
-} from './constants';
+} from "./constants";
 
 const gridDividerBorder = `1px solid ${getColor(ColorNames.WHITE_4)}80`;
 

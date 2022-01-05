@@ -1,14 +1,14 @@
-import { Action } from 'redux';
+import { Action } from "redux";
 
 import {
   EventEntity,
   NormalizedAsyncActionPayload,
   Priorities,
-} from '@common/types/entities';
+} from "@web/common/types/entities";
 import {
   HttpPaginatedSuccessResponse,
   PaginationFilters,
-} from '@common/types/apiTypes';
+} from "@web/common/types/apiTypes";
 
 export interface GetWeekEventsPayload {
   startDate: string;
@@ -47,6 +47,6 @@ export type GetEventsSagaResponse =
   GetEventsSuccessResponse<NormalizedAsyncActionPayload> &
     GetPaginatedEventsPayload;
 
-export type SideBarSectionType = 'future' | 'currentMonth';
+export type SideBarSectionType = "future" | "currentMonth";
 
-export type SectionType = SideBarSectionType | 'week';
+export type SectionType = SideBarSectionType | "week";

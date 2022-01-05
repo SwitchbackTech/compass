@@ -1,12 +1,10 @@
-import {
-  Schema_User,
-  Result_Delete_User,
-} from "@compass/core/src/types/user.types";
+import { Schema_User, Result_Delete_User } from "@core/types/user.types";
 import { CombinedLogin_Google } from "@core/types/auth.types";
-import { Logger } from "@common/logger/common.logger";
-import { BaseError } from "@common/errors/errors.base";
-import mongoService from "@common/services/mongo.service";
-import { Collections } from "@common/constants/collections";
+import { BaseError } from "@core/errors/errors.base";
+
+import { Logger } from "@backend/common/logger/common.logger";
+import mongoService from "@backend/common/services/mongo.service";
+import { Collections } from "@backend/common/constants/collections";
 
 const logger = Logger("app:user.service");
 

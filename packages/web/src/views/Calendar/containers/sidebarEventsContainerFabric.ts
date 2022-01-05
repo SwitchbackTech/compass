@@ -1,19 +1,19 @@
-import { connect } from 'react-redux';
-import { Dispatch } from 'redux';
+import { connect } from "react-redux";
+import { Dispatch } from "redux";
 
-import { selectEventIdsBySectionType } from '@ducks/events/selectors';
-import { RootState } from '@store';
+import { selectEventIdsBySectionType } from "@web/ducks/events/selectors";
+import { RootState } from "@store";
 import {
   getCurrentMonthEventsSlice,
   getFutureEventsSlice,
-} from '@ducks/events/slice';
+} from "@web/ducks/events/slice";
 import {
   GetPaginatedEventsPayload,
   SideBarSectionType,
-} from '@ducks/events/types';
-import { Priorities } from '@common/types/entities';
+} from "@web/ducks/events/types";
+import { Priorities } from "@web/common/types/entities";
 
-import { EventsList } from '../components/Sidebar/EventsList';
+import { EventsList } from "../components/Sidebar/EventsList";
 
 export const sidebarEventsContainerFabric = (
   sectionType: SideBarSectionType

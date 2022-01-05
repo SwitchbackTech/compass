@@ -1,11 +1,12 @@
 import express from "express";
 
-import { Logger } from "@common/logger/common.logger";
 import { Res, ReqBody } from "@core/types/express.types";
-import { Schema_CalendarList } from "@compass/core/src/types/calendar.types";
-import gcalService from "@common/services/gcal/gcal.service";
-import { getGcal } from "@auth/services/google.auth.service";
-import calendarService from "@calendar/services/calendar.service";
+import { Schema_CalendarList } from "@core/types/calendar.types";
+
+import { Logger } from "@backend/common/logger/common.logger";
+import gcalService from "@backend/common/services/gcal/gcal.service";
+import { getGcal } from "@backend/auth/services/google.auth.service";
+import calendarService from "@backend/calendar/services/calendar.service";
 
 const logger = Logger("app:calendar.controller");
 

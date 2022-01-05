@@ -1,7 +1,3 @@
-function sum(a, b) {
-  return a + b;
-}
-
 const events = [
   { gEventId: '123', otherProp: 123 },
   { gEventId: '123', otherProp: 129 },

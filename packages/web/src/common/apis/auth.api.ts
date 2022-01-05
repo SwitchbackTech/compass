@@ -1,24 +1,22 @@
-import axios from 'axios';
+import axios from "axios";
 
-import { BASEURL } from '@common/constants/api';
-import { GOOGLE } from '@common/constants/common';
+import { BASEURL } from "@web/common/constants/api";
+import { GOOGLE } from "@web/common/constants/common";
+import { Result_OauthStatus } from "@core/types/auth.types";
 
 const headers = {
-  // TODO dry
+  // TODO replace with method in helpers
   headers: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`,
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
   },
 };
 
 const AuthApi = {
-  async checkOauthStatus(integration: string) {
-    if (integration === GOOGLE) {
-      const authState = localStorage.getItem('authState');
-      const url = `${BASEURL}/auth/oauth-status?integration=${GOOGLE}&state=${authState}`;
-      const response = await axios.get(url);
-      return response.data;
-    }
-    console.log('sth is up');
+  async checkOauthStatus() {
+    const authState = localStorage.getItem("authState");
+    const url = `${BASEURL}/auth/oauth-status?integration=${GOOGLE}&state=${authState}`;
+    const response = await axios.get(url);
+    return response.data as Result_OauthStatus;
   },
 
   async getOauthData(integration: string) {
@@ -40,7 +38,7 @@ const AuthApi = {
       );
       return response.data;
     } catch (err) {
-      console.log('err while refreshing token:', err);
+      console.log("err while refreshing token:", err);
       return false;
     }
   },

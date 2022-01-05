@@ -1,7 +1,10 @@
-import { TextareaAutosizeProps } from 'react-textarea-autosize';
+import { TextareaAutosizeProps } from "react-textarea-autosize";
 
-import { ColorNames } from '@common/types/styles';
-import { ClassNamedComponent, UnderlinedInput } from '@common/types/components';
+import { ColorNames } from "@web/common/types/styles";
+import {
+  ClassNamedComponent,
+  UnderlinedInput,
+} from "@web/common/types/components";
 
 export interface Props
   extends UnderlinedInput,

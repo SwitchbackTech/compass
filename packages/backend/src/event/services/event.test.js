@@ -1,12 +1,12 @@
-import { GcalMapper } from "@common/services/gcal/map.gcal";
+import { MapEvent } from "@core/mappers/map.event";
 
 import { gcalEvents } from "./test.gcal.data";
 
-describe("Map: GCal -> CCal", () => {
+describe("Map Event: GCal -> CCal", () => {
   test("skips cancelled events", () => {
     // future: run schema validation
     const i = gcalEvents.items;
-    const events = GcalMapper.toCompass("someId", i);
+    const events = MapEvent.toCompass("someId", i);
 
     let hasCancelledEvent = false;
     events.forEach((e) => {

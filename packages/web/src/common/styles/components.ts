@@ -1,5 +1,5 @@
-import { ColorNames, InvertedColorNames } from '@common/types/styles';
-import { getColor, getInvertedColor } from '@common/helpers/colors';
+import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
+import { getColor, getInvertedColor } from "@web/common/helpers/colors";
 
 export interface BackgroundProps {
   background?: ColorNames;
@@ -27,6 +27,6 @@ export const getInputCommonStyles = ({
       ? `&::placeholder {
     color: ${getColor(ColorNames.GREY_5)}
   }`
-      : ''
+      : ""
   }
 `;

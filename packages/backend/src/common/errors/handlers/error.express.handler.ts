@@ -1,8 +1,9 @@
 import express from "express";
 
+import { BaseError } from "@core/errors/errors.base";
+
 import { errorHandler } from "./error.handler";
 import { isDev } from "../../helpers/common.helpers";
-import { BaseError } from "../errors.base";
 
 const invalidPathHandler = (
   req: express.Request,

@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import ReactSelect, { NamedProps as ReactSelectProps } from 'react-select';
+import React, { useState } from "react";
+import ReactSelect, { NamedProps as ReactSelectProps } from "react-select";
 
-import { getTimes } from '@common/helpers';
-import { SelectOption } from '@common/types/components';
+import { getTimes } from "@web/common/helpers";
+import { SelectOption } from "@web/common/types/components";
 
-import { Styled, StyledDivider } from './styled';
+import { Styled, StyledDivider } from "./styled";
 
-export interface Props extends Omit<ReactSelectProps, 'value'> {
+export interface Props extends Omit<ReactSelectProps, "value"> {
   calssName?: string;
   selectClassName?: string;
   value?: SelectOption<string>;

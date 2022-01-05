@@ -1,5 +1,5 @@
 export const isDev = () => {
-  return process.env.DEV;
+  return process.env.ENV === "dev";
 };
 
 export const yearsAgo = (numYears: number) => {

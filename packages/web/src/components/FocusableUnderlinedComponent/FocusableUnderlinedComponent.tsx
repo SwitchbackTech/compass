@@ -1,7 +1,10 @@
-import React, { forwardRef, ReactElement, Ref, useState } from 'react';
+import React, { forwardRef, ReactElement, Ref, useState } from "react";
 
-import { Divider } from '@components/Divider';
-import { ClassNamedComponent, UnderlinedInput } from '@common/types/components';
+import { Divider } from "@web/components/Divider";
+import {
+  ClassNamedComponent,
+  UnderlinedInput,
+} from "@web/common/types/components";
 
 export type Props<T extends ClassNamedComponent> = T &
   UnderlinedInput & {

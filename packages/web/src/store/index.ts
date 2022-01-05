@@ -1,8 +1,8 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore } from "@reduxjs/toolkit";
 
-import { sagaMiddleware } from '@common/store/middlewares';
+import { sagaMiddleware } from "@web/common/store/middlewares";
 
-import { reducers } from './reducers';
+import { reducers } from "./reducers";
 
 export const store = configureStore({
   reducer: reducers,

@@ -1,14 +1,14 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
 import {
   ColorNameAndBackgroundProps,
   getInputCommonStyles,
-} from '@common/styles/components';
+} from "@web/common/styles/components";
 
 export enum Scale {
-  SMALL = 'small',
-  MEDIUM = 'medium',
-  LARGE = 'large',
+  SMALL = "small",
+  MEDIUM = "medium",
+  LARGE = "large",
 }
 
 export interface Props extends ColorNameAndBackgroundProps {

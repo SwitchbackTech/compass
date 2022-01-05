@@ -1,19 +1,14 @@
-import axios from 'axios';
+import axios from "axios";
 
-import { BASEURL } from '@common/constants/api';
+import { headers } from "@web/common/helpers";
+import { BASEURL } from "@web/common/constants/api";
 
-const headers = {
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`,
-  },
-};
-
-const Apis = {
+const EventApi = {
   async createEvt(evtData) {
     const response = await axios.post(
       `${BASEURL}/event/create`,
       evtData,
-      headers
+      headers()
     );
     return response.data;
   },
@@ -21,20 +16,27 @@ const Apis = {
   async deleteEvt(gId) {
     const response = await axios.delete(
       `${BASEURL}/event/delete?eventId=${gId}`,
-      headers
+      headers()
     );
     return response.data;
   },
 
   async getEvts() {
-    const response = await axios.get(`${BASEURL}/event/find`, headers);
+    const response = await axios.get(`${BASEURL}/event/find`, headers());
     return response.data;
   },
 
   async getUser() {
-    const response = await axios.get(`${BASEURL}/user/find`, {
-      headers,
-    });
+    const response = await axios.get(`${BASEURL}/user/find`, headers());
+    return response.data;
+  },
+
+  async import() {
+    const response = await axios.post(
+      `${BASEURL}/event/import`,
+      null,
+      headers()
+    );
     return response.data;
   },
 
@@ -42,10 +44,10 @@ const Apis = {
     const response = await axios.put(
       `${BASEURL}/event/update?eventId=${gId}`,
       evt,
-      headers
+      headers()
     );
     return response.data;
   },
 };
 
-export { Apis };
+export { EventApi };

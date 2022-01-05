@@ -20,10 +20,10 @@
     "strict": false,
     "esModuleInterop": true,
     "inlineSourceMap": true,
-    "baseUrl": ".", 
+    "baseUrl": ".",
     "paths": {
-      "@*": ["src/*"],
+      "@backend/*": ["./src/*"],
       "@core/*": ["../core/src/*"]
-    },
+    }
   }
 }

@@ -2,17 +2,5 @@
   "workbench.editor.revealIfOpen": true,
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
-  "eslint.format.enable": true,
-  "[javascript]": {
-      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-    },
-  "[javascriptreact]": {
-      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-    },
-  "[typescript]": {
-      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-    },
-  "[typescriptreact]": {
-      "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-    }
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
 }

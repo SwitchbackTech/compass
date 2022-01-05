@@ -1,7 +1,8 @@
-import { Priority, PriorityReq } from "@core/types/priority.types";
-import { Collections } from "@common/constants/collections";
-import mongoService from "@common/services/mongo.service";
-import { BaseError } from "@common/errors/errors.base";
+import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
+import { BaseError } from "@core/errors/errors.base";
+
+import { Collections } from "@backend/common/constants/collections";
+import mongoService from "@backend/common/services/mongo.service";
 
 import { mapPriorityData } from "./priority.service.helpers";
 
@@ -16,7 +17,10 @@ class PriorityService {
 
     return allPriorities;
   }
-  async readById(userId: string, id: string): Promise<Priority | object> {
+  async readById(
+    userId: string,
+    id: string
+  ): Promise<Schema_Priority | object> {
     const filter = {
       _id: mongoService.objectId(id),
       user: userId,
@@ -36,7 +40,7 @@ class PriorityService {
   async create(
     userId: string,
     data: PriorityReq | PriorityReq[]
-  ): Promise<Priority | Priority[] | BaseError> {
+  ): Promise<Schema_Priority | Schema_Priority[] | BaseError> {
     if (data instanceof Array) {
       // TODO catch BulkWriteError
       // TODO confirm none exist with same name
@@ -67,7 +71,7 @@ class PriorityService {
         .collection(Collections.PRIORITY)
         .insertOne(doc);
 
-      const priority: Priority = {
+      const priority: Schema_Priority = {
         _id: response.insertedId.toString(),
         user: userId,
         name: data.name,
@@ -80,7 +84,7 @@ class PriorityService {
   async updateById(
     id: string,
     priority: PriorityReq
-  ): Promise<Priority | BaseError> {
+  ): Promise<Schema_Priority | BaseError> {
     const response = await mongoService.db
       .collection(Collections.PRIORITY)
       .findOneAndUpdate(

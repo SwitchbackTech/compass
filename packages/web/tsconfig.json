@@ -21,13 +21,15 @@
     "outDir": "./dist/tsc/",
     "jsx": "react-jsx",
     "paths": {
-      "@*": ["./src/*"],
+      "@web/*": ["./src/*"],
       "@core/*": ["../core/src/*"],
-      "@ducks/*": ["./src/ducks/*"]
+      //todo remove backend dependency,
+      // moving whats needed from @backend to @core
+      "@backend/*": ["../backend/src/*"]
     },
     "lib": ["ES6", "dom"],
     "plugins": [{ "name": "typescript-plugin-css-modules" }]
   },
   "include": ["./src/**/*.tsx", "./src/**/*.ts", "./declaration.d.ts"],
-  "exclude": ["./src/node_modules"]
+  "exclude": ["./src/node_modules", "**/*.test.ts"]
 }
