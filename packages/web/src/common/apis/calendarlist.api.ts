@@ -5,7 +5,7 @@ import { Schema_CalendarList } from "@core/types/calendar.types";
 import { BASEURL } from "@web/common/constants/api";
 import { headers } from "@web/common/helpers";
 
-const CalendarList = {
+const CalendarListApi = {
   async list(): Promise<Schema_CalendarList> {
     const response = await axios.get(`${BASEURL}/calendarlist`, headers());
     return response.data;
@@ -21,4 +21,4 @@ const CalendarList = {
   },
 };
 
-export { CalendarList };
+export { CalendarListApi };

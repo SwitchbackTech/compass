@@ -9,12 +9,13 @@ import { SURVEY_URL } from "@core/core.constants";
 // import { reducers } from '@web/store/reducers';
 import { PriorityApi } from "@web/common/apis/priority.api";
 import { AuthApi } from "@web/common/apis/auth.api";
+import { EventApi } from "@web/common/apis/event.api";
+import { CalendarListApi } from "@web/common/apis/calendarlist.api";
 import { GOOGLE } from "@web/common/constants/common";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { Text } from "@web/components/Text";
 import { ColorNames } from "@web/common/types/styles";
+import { Text } from "@web/components/Text";
 import { Button, FeedbackButtonContainer } from "@web/components/Button";
-import { CalendarList } from "@web/common/apis/calendarlist.api";
 
 import { StyledLogin } from "./styled";
 
@@ -80,22 +81,25 @@ import { gSchema$CalendarList } from '@backend/declarations';
         // todo move this stuff to onboard flow
         // const prioritiesRes = await PriorityApi.createPriorities(status.token);
         // console.log(prioritiesRes);
-
         await createCalendarList();
-        // TODO re-enable this after testing
-        // setRedirect(true);
+        setRedirect(true);
       }
     }
   };
 
   const createCalendarList = async () => {
-    const gcalList = await CalendarList.list();
+    const gcalList = await CalendarListApi.list();
     const ccalList = MapCalendarList.toCompass(gcalList);
-    const res = await CalendarList.create(ccalList);
-    console.log(res);
+    const res = await CalendarListApi.create(ccalList);
   };
   // const onboard = async (token: string) => {
   // }
+
+  const importEvents = async () => {
+    console.log("importing events ...");
+    const res = await EventApi.import();
+    console.log(res);
+  };
 
   return (
     <>
