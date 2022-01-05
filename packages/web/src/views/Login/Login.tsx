@@ -79,8 +79,7 @@ import { gSchema$CalendarList } from '@backend/declarations';
         // await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // todo move this stuff to onboard flow
-        // const prioritiesRes = await PriorityApi.createPriorities(status.token);
-        // console.log(prioritiesRes);
+        await createPriorities(status.token);
         await createCalendarList();
         await importEvents();
         // setRedirect(true);
@@ -88,13 +87,19 @@ import { gSchema$CalendarList } from '@backend/declarations';
     }
   };
 
+  // User initialization stuff
+  // TODO - add this to an onboarding flow
   const createCalendarList = async () => {
     const gcalList = await CalendarListApi.list();
     const ccalList = MapCalendarList.toCompass(gcalList);
     const res = await CalendarListApi.create(ccalList);
   };
-  // const onboard = async (token: string) => {
-  // }
+
+  const createPriorities = async (token: string) => {
+    console.log("creating priorities ...");
+    const res = await PriorityApi.createPriorities(token);
+    console.log(res);
+  };
 
   const importEvents = async () => {
     console.log("importing events ...");

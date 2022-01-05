@@ -3,16 +3,10 @@ import axios from "axios";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Priorities } from "@web/common/types/entities";
 import { BASEURL } from "@web/common/constants/api";
+import { headers } from "../helpers";
 
 const PriorityApi = {
   async createPriorities(token: string) {
-    // custom header to allow for token arg
-    const _pHeaders = {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-
     const priorities = [
       {
         name: Priorities.SELF,
@@ -27,19 +21,19 @@ const PriorityApi = {
         color: colorNameByPriority.relations,
       },
     ];
+    const _headers = headers(token);
 
-    console.log("creating priorities ... ");
     const [p1, p2, p3] = await Promise.all([
-      await axios.post(`${BASEURL}/priority`, priorities[0], _pHeaders),
-      await axios.post(`${BASEURL}/priority`, priorities[1], _pHeaders),
-      await axios.post(`${BASEURL}/priority`, priorities[2], _pHeaders),
+      await axios.post(`${BASEURL}/priority`, priorities[0], _headers),
+      await axios.post(`${BASEURL}/priority`, priorities[1], _headers),
+      await axios.post(`${BASEURL}/priority`, priorities[2], _headers),
     ]);
     const combined = [p1, p2, p3];
     return combined;
   },
 
   async getPriorities() {
-    const response = await axios.get(`${BASEURL}/priority/find`, headers);
+    const response = await axios.get(`${BASEURL}/priority/find`, headers());
     return response.data;
   },
 };
