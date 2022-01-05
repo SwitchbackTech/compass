@@ -32,7 +32,11 @@ const EventApi = {
   },
 
   async import() {
-    const response = await axios.post(`${BASEURL}/event/import`, headers());
+    const response = await axios.post(
+      `${BASEURL}/event/import`,
+      null,
+      headers()
+    );
     return response.data;
   },
 
