@@ -1,12 +1,22 @@
 import axios from "axios";
 
+import { Schema_CalendarList } from "@core/types/calendar.types";
+
 import { BASEURL } from "@web/common/constants/api";
 import { headers } from "@web/common/helpers";
-import { Schema_CalendarList } from "@core/types/calendar.types";
 
 const CalendarList = {
   async list(): Promise<Schema_CalendarList> {
-    const response = await axios.get(`${BASEURL}/calendar/list`, headers());
+    const response = await axios.get(`${BASEURL}/calendarlist`, headers());
+    return response.data;
+  },
+
+  async create(payload: Schema_CalendarList) {
+    const response = await axios.post(
+      `${BASEURL}/calendarlist`,
+      payload,
+      headers()
+    );
     return response.data;
   },
 };

@@ -10,11 +10,15 @@ const logger = Logger("app:calendar.service");
 
 class CalendarService {
   async create(userId: string, calendarList: Schema_CalendarList) {
+    const calListData = calendarList;
+    if (!calendarList.user) {
+      calListData.user = userId;
+    }
     // TODO validate
     try {
       const response = await mongoService.db
         .collection(Collections.CALENDARLIST)
-        .insertOne(calendarList);
+        .insertOne(calListData);
       return response;
     } catch (e) {
       return new BaseError("Create Failed", e, Status.INTERNAL_SERVER, true);

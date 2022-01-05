@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Redirect } from "react-router-dom";
 
 import { Result_OauthStatus } from "@core/types/auth.types";
-import { Schema_CalendarList } from "@core/types/calendar.types";
-// import { gSchema$CalendarList } from "@backend/declarations";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { SURVEY_URL } from "@core/core.constants";
 
@@ -59,6 +57,7 @@ export const LoginView = () => {
 
       if (isOauthComplete) {
         localStorage.setItem("token", status.token);
+        //throws error if token has expired or has a invalid signature
         /*
         OR NOT, cuz user would only go through the oauth init flow 
         the first time, and their token would be refreshed after that.
@@ -91,13 +90,8 @@ import { gSchema$CalendarList } from '@backend/declarations';
 
   const createCalendarList = async () => {
     const gcalList = await CalendarList.list();
-    const primaryGcal = gcalList.items.filter((c) => {
-      return c.primary === true;
-    })[0];
-    console.log(primaryGcal);
-    const calList = MapCalendarList.toCompass(primaryGcal);
-    // const calList = mapCalListToCompass(primaryGcal);
-    const res = CalendarList.create(calList);
+    const ccalList = MapCalendarList.toCompass(gcalList);
+    const res = await CalendarList.create(ccalList);
     console.log(res);
   };
   // const onboard = async (token: string) => {

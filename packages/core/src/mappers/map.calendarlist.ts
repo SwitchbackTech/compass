@@ -1,14 +1,23 @@
-// import { gSchema$CalendarList } from "@compass/backend/declarations";
-// import { Collections } from '@backend/src/common/constants/collections';
-// import { Collections } from '@common/constants/collections';
-// import { gSchema$CalendarList } from '@backend/declarations';
+import { Schema_CalendarList } from "@core/types/calendar.types";
 
-// import { Params_AfterOAuth } from "../types/auth.types";
+import { gSchema$CalendarList } from "../../../backend/declarations";
 
 const MapCalendarList = {
-  // toCompass(gcalList: gSchema$CalendarList) {
-  toCompass(gcalList: any) {
-    const mapped = {};
+  toCompass(gcalList: gSchema$CalendarList): Schema_CalendarList {
+    //TODO validate schema
+    console.log("Reminder: Only using primary calendarlist");
+
+    const primaryGcal = gcalList.items.filter((c) => {
+      return c.primary === true;
+    })[0];
+
+    const mapped = {
+      google: {
+        nextSyncToken: gcalList.nextSyncToken,
+        items: [primaryGcal],
+      },
+    };
+
     return mapped;
   },
 };
