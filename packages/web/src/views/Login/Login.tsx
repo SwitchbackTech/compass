@@ -4,10 +4,7 @@ import { Redirect } from "react-router-dom";
 import { Result_OauthStatus } from "@core/types/auth.types";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 // import { gSchema$CalendarList } from "@backend/declarations";
-import {
-  MapCalendarList,
-  mapCalListToCompass,
-} from "@core/mappers/map.calendarlist";
+import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { SURVEY_URL } from "@core/core.constants";
 
 // import { store } from '@web/store';
