@@ -26,5 +26,4 @@
       "@core/*": ["../core/src/*"]
     }
   }
-  //TODO add include/exclude blocks here?
 }

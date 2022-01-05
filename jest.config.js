@@ -120,8 +120,12 @@ module.exports = {
   // which may be useful, but slows down tests, so omitted
   // preset: 'ts-jest',
 
-  // Run tests from one or more projects
   projects: [
+    {
+      displayName: "core",
+      testEnvironment: "node",
+      testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
+    },
     {
       displayName: "web",
       testEnvironment: "jsdom",

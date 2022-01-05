@@ -1,5 +1,10 @@
-import { MapCalendarList } from "@core/mappers/map.calendarlist";
+import { MapCalendarList } from "./map.calendarlist";
+import { gcalListDemo } from "./map.demo";
 
-test("foo works", () => {
-  expect(1).toEqual(1);
+describe("Mappers", () => {
+  test("CalendarList mapper", () => {
+    const compassCalList = MapCalendarList.toCompass(gcalListDemo);
+    // const compassCalList = MapCalendarList.toCompass([]);
+    const f = 1;
+  });
 });

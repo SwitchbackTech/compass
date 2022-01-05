@@ -21,13 +21,11 @@
     "outDir": "./dist/tsc/",
     "jsx": "react-jsx",
     "paths": {
-      //todo delete once web works
-      // "@*": ["./src/*"],
       "@web/*": ["./src/*"],
       "@core/*": ["../core/src/*"],
-      //todo move all to core and remove backend?
+      //todo remove backend dependency,
+      // moving whats needed from @backend to @core
       "@backend/*": ["../backend/src/*"]
-      // "@ducks/*": ["./src/ducks/*"]
     },
     "lib": ["ES6", "dom"],
     "plugins": [{ "name": "typescript-plugin-css-modules" }]
