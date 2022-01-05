@@ -7,9 +7,9 @@ jobs:
     # runs-on: ${{ matrix.os }}
     runs-on: ubuntu-latest
 
-    strategy:
-      # matrix:
-      #   os: [macos-latest, windows-latest, ubuntu-latest]
+    # strategy:
+    # matrix:
+    #   os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - name: Check out Git repository
