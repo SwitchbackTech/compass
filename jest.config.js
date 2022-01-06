@@ -124,7 +124,8 @@ module.exports = {
     {
       displayName: "core",
       testEnvironment: "node",
-      testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
+      // testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
+      testMatch: ["<rootDir>/packages/core/(*.)+(spec|test).[tj]s?(x)"],
     },
     {
       displayName: "web",

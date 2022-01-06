@@ -1,6 +1,7 @@
 // import { eventsSagas } from '@web/ducks/events/sagas';
 
-import { eventsApi, getEventsLocalStorage } from "./api";
+import { eventsApi } from "./api";
+import { getEventsLocalStorage } from "./fakeApi";
 
 test("idk", async () => {
   // const evts = eventsSagas();

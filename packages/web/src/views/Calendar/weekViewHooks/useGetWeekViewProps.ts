@@ -3,13 +3,15 @@ import dayjs, { Dayjs } from "dayjs";
 import weekPlugin from "dayjs/plugin/weekOfYear";
 import { useDispatch, useSelector } from "react-redux";
 
+import { Priorities } from "@core/core.constants";
+import { Schema_Event_Wip } from "@core/types/event.types";
+
 import {
   SHORT_HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
 import { getAmPmTimes, roundByNumber } from "@web/common/helpers";
-import { EventEntity, Priorities } from "@web/common/types/entities";
 import {
   selectEventEntities,
   selectEventIdsBySectionType,
@@ -19,7 +21,7 @@ import {
   editEventSlice,
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
-import { RootState } from "@store";
+import { RootState } from "@web/store";
 
 import {
   GRID_TIME_STEP,
@@ -153,7 +155,7 @@ export const useGetWeekViewProps = () => {
     );
   }, [week]);
 
-  const onSubmitEvent = (event: EventEntity | GridEventEntity) => {
+  const onSubmitEvent = (event: Schema_Event_Wip | GridEventEntity) => {
     const eventToSave = { ...event };
 
     const maxDayMinutes = 1440;
@@ -393,7 +395,7 @@ export const useGetWeekViewProps = () => {
 
   const onScalerMouseDown = (
     e: React.MouseEvent,
-    eventToScale: EventEntity,
+    eventToScale: Schema_Event_Wip,
     dateKey: "startDate" | "endDate"
   ) => {
     e.stopPropagation();
@@ -402,7 +404,10 @@ export const useGetWeekViewProps = () => {
     setEditingEvent({ ...eventToScale, isOpen: false });
   };
 
-  const onEventMouseDown = (e: React.MouseEvent, eventToDrug: EventEntity) => {
+  const onEventMouseDown = (
+    e: React.MouseEvent,
+    eventToDrug: Schema_Event_Wip
+  ) => {
     e.stopPropagation();
     e.preventDefault();
 

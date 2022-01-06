@@ -1,4 +1,4 @@
-import { Priorities } from "@web/common/types/entities";
+import { Priorities } from "@core/core.constants";
 import { ColorNames } from "@web/common/types/styles";
 
 export const colors = {

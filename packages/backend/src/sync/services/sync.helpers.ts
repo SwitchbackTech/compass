@@ -11,6 +11,9 @@ import { Request_Sync_Gcal } from "@core/types/sync.types";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 
 import { Logger } from "@backend/common/logger/common.logger";
+
+//TODO decouple mongo from this helper file, cuz its causing
+// an open handle during jest runs
 import mongoService from "@backend/common/services/mongo.service";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
 import { Collections } from "@backend/common/constants/collections";

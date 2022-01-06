@@ -1,11 +1,12 @@
 import styled from "styled-components";
 
+import { Priorities } from "@core/core.constants";
+
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
 import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
 import { ANIMATION_TIME_3_MS } from "@web/common/constants/common";
-import { Priorities } from "@web/common/types/entities";
 import { getColor, getInvertedColor } from "@web/common/helpers/colors";
 import { Button } from "@web/components/Button";
 

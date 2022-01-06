@@ -1,8 +1,9 @@
 import styled from "styled-components";
 
+import { Priorities } from "@core/core.constants";
+
 import { getColor, getInvertedColor } from "@web/common/helpers/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
-import { Priorities } from "@web/common/types/entities";
 import { InvertedColorNames } from "@web/common/types/styles";
 
 export interface Props {

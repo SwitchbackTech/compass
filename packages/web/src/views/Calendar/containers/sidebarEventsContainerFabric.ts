@@ -2,7 +2,7 @@ import { connect } from "react-redux";
 import { Dispatch } from "redux";
 
 import { selectEventIdsBySectionType } from "@web/ducks/events/selectors";
-import { RootState } from "@store";
+import { RootState } from "@web/store";
 import {
   getCurrentMonthEventsSlice,
   getFutureEventsSlice,
@@ -11,7 +11,7 @@ import {
   GetPaginatedEventsPayload,
   SideBarSectionType,
 } from "@web/ducks/events/types";
-import { Priorities } from "@web/common/types/entities";
+import { Priorities } from "@core/core.constants";
 
 import { EventsList } from "../components/Sidebar/EventsList";
 

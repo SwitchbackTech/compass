@@ -2,9 +2,14 @@ import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 
-import { EventEntity } from "@web/common/types/entities";
+import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
 
-import { GetEventsParams, getEvents, createEvent, editEvent } from "./fakeApi";
+import {
+  getEventsLocalStorage,
+  createEvent,
+  editEvent,
+  _readEventsFromStorage,
+} from "./fakeApi";
 import { hardCodedEvents } from "./event.data";
 
 dayjs.extend(isSameOrAfter);
@@ -16,9 +21,6 @@ dayjs.extend(isSameOrBefore);
 const convertToBackendModel = (frontendEvent) => {
   return "TODO";
 };
-
-export const getEventsLocalStorage = async (): Promise<EventEntity[]> =>
-  (JSON.parse(localStorage.getItem("events") || "[]") as EventEntity[]) || [];
 
 const getEventsHelper = async () => {
   const basicEvents = [
@@ -53,19 +55,11 @@ const getEventsHelper = async () => {
       id: "789",
     },
   ];
-  // return hardCodedEvents;
   return basicEvents;
 };
 
-// export interface GetEventsParams {
-//   startDate?: string;
-//   endDate?: string;
-//   page?: number;
-//   pageSize?: number;
-//   priorities?: Priorities[];
-// }
 /*
-  So page is needed for someday event lists
+TODO: Add Pagination  for Someday event lists:
   (to not fetching all existing events and filter them on front end because of perfomance)
   When user clicks on "<" | ">" we fetch events with appropriate page and pagesize
   (for example with 20 events per page). So the api response will be faster
@@ -76,7 +70,7 @@ const getEventsHelper = async () => {
   - remove localStorage and replace the api methods
   in this module with axios.get(url, { params })
 
-  So ideally back end has to be able to response with page info so front end can receive not all events in one response
+  So ideally back end has to be able to respond with page info so front end can receive not all events in one response
   Because if we request all events once the next thing we'll need to do on front end side is filtering and sorting.
   So imagine we have more than 10000 events per user.
   We will have to fetch all 10k events which can take more time than user expects.
@@ -85,22 +79,22 @@ const getEventsHelper = async () => {
   That will cause perfomance isues especially on mobile devices when the amount of events is really big
 */
 
-/** ********************** */
+/*************************/
 /* API */
-/** ********************** */
+/*************************/
 
 export const eventsApi = {
-  getEvents: (params: GetEventsParams) => {
+  getEvents: (params: Params_Events_Wip) => {
     // replace this with axios.get('api/events', { params });
-    return getEvents(params);
+    return getEventsLocalStorage(params);
   },
 
-  createEvent: (event: EventEntity) => {
+  createEvent: (event: Schema_Event_Wip) => {
     // replace this with axios.post('api/events', event);
     return createEvent(event);
   },
 
-  editEvent: (id: string, event: EventEntity) => {
+  editEvent: (id: string, event: Schema_Event_Wip) => {
     // replace this with axios.put(`api/events/${id}`, event);
     return editEvent(id, event);
   },

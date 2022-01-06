@@ -3,14 +3,15 @@ import { Popover } from "react-tiny-popover";
 import { useDispatch } from "react-redux";
 import { useDrag, useDrop } from "react-dnd";
 
-import { EventEntity } from "@web/common/types/entities";
+import { Schema_Event_Wip } from "@core/types/event.types";
+
 import { editEventSlice } from "@web/ducks/events/slice";
 
 import { Styled } from "./styled";
 import { StyledEventForm } from "../../ToggleableEventsListSection/styled";
 
 export interface Props {
-  event: EventEntity;
+  event: Schema_Event_Wip;
 }
 
 export const Event = ({ event: _event }: Props) => {
@@ -19,7 +20,7 @@ export const Event = ({ event: _event }: Props) => {
 
   const dispatch = useDispatch();
 
-  const onSubmit = (eventData: EventEntity) => {
+  const onSubmit = (eventData: Schema_Event_Wip) => {
     dispatch(
       editEventSlice.actions.request({ id: event.id || "", event: eventData })
     );
@@ -36,7 +37,7 @@ export const Event = ({ event: _event }: Props) => {
     },
   }));
 
-  const onDrop = (draggedEvent: EventEntity) => {
+  const onDrop = (draggedEvent: Schema_Event_Wip) => {
     const order =
       (draggedEvent.order || 0) < (event.order || 0)
         ? (event.order || 0) + 1

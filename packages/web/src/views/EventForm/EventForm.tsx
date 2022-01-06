@@ -2,12 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
 import dayjs from "dayjs";
 
+import { Priorities } from "@core/core.constants";
+import { Schema_Event_Wip } from "@core/types/event.types";
+
 import { Button } from "@web/components/Button";
 import { JustifyContent } from "@web/components/Flex/styled";
 import { SelectOption } from "@web/common/types/components";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { ColorNames } from "@web/common/types/styles";
-import { EventEntity, Priorities } from "@web/common/types/entities";
 import {
   HOURS_MINUTES_FORMAT,
   SHORT_HOURS_AM_FORMAT,
@@ -66,7 +68,7 @@ export const EventForm: React.FC<ComponentProps> = ({
     Date | undefined
   >();
 
-  const defaultEventState: EventEntity = {
+  const defaultEventState: Schema_Event_Wip = {
     priority: Priorities.WORK,
     title: "",
     description: "",
@@ -145,9 +147,9 @@ export const EventForm: React.FC<ComponentProps> = ({
     onClose();
   };
 
-  const onSetEventField = <FieldName extends keyof EventEntity>(
+  const onSetEventField = <FieldName extends keyof Schema_Event_Wip>(
     fieldName: FieldName,
-    value: EventEntity[FieldName]
+    value: Schema_Event_Wip[FieldName]
   ) => {
     setEvent((_event) => ({
       ..._event,

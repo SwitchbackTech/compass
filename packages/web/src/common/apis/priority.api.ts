@@ -1,7 +1,8 @@
 import axios from "axios";
 
+import { Priorities } from "@core/core.constants";
+
 import { colorNameByPriority } from "@web/common/styles/colors";
-import { Priorities } from "@web/common/types/entities";
 import { BASEURL } from "@web/common/constants/api";
 import { headers } from "../helpers";
 
