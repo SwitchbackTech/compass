@@ -126,11 +126,6 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
     </StyledPriorityFilterItem>
   );
 
-  /*
-  const StyledSidebarToggleIcon = renderStyledSidebarToggleIcon(
-    isToggled ? SidebarCollapseIcon : SidebarOpenIcon
-  );
-  */
   const StyledSidebarToggleIcon = renderStyledSidebarToggleIcon(isToggled);
 
   const getEventsSectionFlex = (sectionType: "currentMonth" | "future") => {

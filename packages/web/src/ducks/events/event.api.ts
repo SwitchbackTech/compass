@@ -65,7 +65,7 @@ const EventApi = {
   },
 
   getEvtsLocalStorage: (params: Params_Events_Wip) => {
-    return getEventsLocalStorage();
+    return getEventsLocalStorage(params);
   },
 
   // TODO convert to saga
