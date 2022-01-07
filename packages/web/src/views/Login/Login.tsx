@@ -9,7 +9,7 @@ import { SURVEY_URL } from "@core/core.constants";
 // import { reducers } from '@web/store/reducers';
 import { PriorityApi } from "@web/common/apis/priority.api";
 import { AuthApi } from "@web/common/apis/auth.api";
-import { EventApi } from "@web/common/apis/event.api";
+import { EventApi } from "@web/ducks/events/api";
 import { CalendarListApi } from "@web/common/apis/calendarlist.api";
 import { GOOGLE } from "@web/common/constants/common";
 import { ROOT_ROUTES } from "@web/common/constants/routes";

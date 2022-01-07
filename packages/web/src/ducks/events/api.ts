@@ -1,7 +1,19 @@
+import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 
+import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
+import { headers } from "@web/common/helpers";
+import { BASEURL } from "@web/common/constants/api";
+import {
+  createEventLocalStorage,
+  editEventOld,
+  getEventsLocalStorage,
+} from "@web/ducks/events/event.helpers";
+
+//not sure what this does
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
@@ -25,3 +37,56 @@ TODO: Add Pagination  for Someday event lists:
   Front end will have to filter all events and than sort them all.
   That will cause perfomance isues especially on mobile devices when the amount of events is really big
 */
+
+const EventApi = {
+  createEvt(event: Schema_Event_Wip) {
+    return "TODO-implement";
+  },
+
+  createEvtOld(event: Schema_Event_Wip) {
+    return createEventLocalStorage(event);
+  },
+
+  async deleteEvt(gId) {
+    const response = await axios.delete(
+      `${BASEURL}/event/delete?eventId=${gId}`,
+      headers()
+    );
+    return response.data;
+  },
+
+  editEvent: (id: string, event: Schema_Event_Wip) => {
+    return editEventOld(id, event);
+  },
+
+  getEvts: (params: Params_Events_Wip) => {
+    // getEventsLocalStorage();
+    return axios.get(`${BASEURL}/event`, headers());
+  },
+
+  getEvtsLocalStorage: (params: Params_Events_Wip) => {
+    return getEventsLocalStorage();
+  },
+
+  // TODO convert to saga
+  async import() {
+    const response = await axios.post(
+      `${BASEURL}/event/import`,
+      null,
+
+      headers()
+    );
+    return response.data;
+  },
+
+  // async updateEvt(gId, evt) {
+  //   const response = await axios.put(
+  //     `${BASEURL}/event/update?eventId=${gId}`,
+  //     evt,
+  //     headers()
+  //   );
+  //   return response.data;
+  // },
+};
+
+export { EventApi };

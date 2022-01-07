@@ -7,7 +7,7 @@ import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
 // jest had trouble resolving with @core/..., so using long path for now
 import { Priorities } from "../../../../core/src/core.constants";
 
-import { EventApi } from "@web/common/apis/event.api";
+import { EventApi } from "@web/ducks/events/api";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);

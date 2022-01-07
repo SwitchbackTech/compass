@@ -7,7 +7,7 @@ import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
 import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 
-import { EventApi } from "@web/common/apis/event.api";
+import { EventApi } from "@web/ducks/events/api";
 import {
   createEventSlice,
   editEventSlice,
