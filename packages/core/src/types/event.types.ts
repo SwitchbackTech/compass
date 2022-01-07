@@ -5,6 +5,7 @@ import { Priorities } from "@core/core.constants";
 export interface Event_NoId {
   // note: no compass _id field here
   gEventId?: string;
+  // TODO make user optional (?)
   // this user field can cause issues if someone adds it and it doesnt match the one
   // created during JWT middleware
   // user: string;

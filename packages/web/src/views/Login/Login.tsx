@@ -9,7 +9,7 @@ import { SURVEY_URL } from "@core/core.constants";
 // import { reducers } from '@web/store/reducers';
 import { PriorityApi } from "@web/common/apis/priority.api";
 import { AuthApi } from "@web/common/apis/auth.api";
-import { EventApi } from "@web/ducks/events/api";
+import { EventApi } from "@web/ducks/events/event.api";
 import { CalendarListApi } from "@web/common/apis/calendarlist.api";
 import { GOOGLE } from "@web/common/constants/common";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -90,14 +90,19 @@ import { gSchema$CalendarList } from '@backend/declarations';
   // User initialization stuff
   // TODO - add this to an onboarding flow
   const createCalendarList = async () => {
+    console.log("creating calendarlist ...");
     const gcalList = await CalendarListApi.list();
     const ccalList = MapCalendarList.toCompass(gcalList);
     const res = await CalendarListApi.create(ccalList);
+    console.log(res);
   };
 
   const createPriorities = async (token: string) => {
     console.log("creating priorities ...");
     const res = await PriorityApi.createPriorities(token);
+
+    //TODO save to redux for future reference
+    // move to a priority ducks dir
     console.log(res);
   };
 
