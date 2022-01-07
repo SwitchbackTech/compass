@@ -1,5 +1,6 @@
-import { Priorities } from "@core/core.constants";
 import { Query } from "express-serve-static-core";
+
+import { Priorities } from "@core/core.constants";
 
 export interface Event_NoId {
   // note: no compass _id field here
@@ -53,7 +54,7 @@ export interface Params_Events_Wip {
   page?: number;
   pageSize?: number;
   offset?: number;
-  priorities?: Priorities[];
+  priorities?: Priorities[]; // use ids instead of words
 }
 
 export interface Result_DeleteMany {
@@ -61,6 +62,7 @@ export interface Result_DeleteMany {
   errors: any[];
 }
 
+//todo merge with Params_Events_Wip
 export interface Query_Event extends Query {
   start?: string;
   end?: string;

@@ -1,16 +1,23 @@
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 
+import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
 import { headers } from "@web/common/helpers";
 import { BASEURL } from "@web/common/constants/api";
+import {
+  createEventLocalStorage,
+  editEventOld,
+  getEventsLocalStorage,
+} from "@web/ducks/events/fakeApi";
 
+//TODO Move this to ducks/events (?)
 const EventApi = {
-  async createEvt(evtData) {
-    const response = await axios.post(
-      `${BASEURL}/event/create`,
-      evtData,
-      headers()
-    );
-    return response.data;
+  createEvt(event: Schema_Event_Wip) {
+    return "TODO-implement";
+  },
+
+  createEvtOld(event: Schema_Event_Wip) {
+    return createEventLocalStorage(event);
   },
 
   async deleteEvt(gId) {
@@ -21,33 +28,38 @@ const EventApi = {
     return response.data;
   },
 
-  async getEvts() {
-    const response = await axios.get(`${BASEURL}/event/find`, headers());
-    return response.data;
+  editEvent: (id: string, event: Schema_Event_Wip) => {
+    return editEventOld(id, event);
   },
 
-  async getUser() {
-    const response = await axios.get(`${BASEURL}/user/find`, headers());
-    return response.data;
+  getEvts: (params: Params_Events_Wip) => {
+    // getEventsLocalStorage();
+    return axios.get(`${BASEURL}/event`, headers());
   },
 
+  getEvtsLocalStorage: (params: Params_Events_Wip) => {
+    return getEventsLocalStorage();
+  },
+
+  // TODO convert to saga
   async import() {
     const response = await axios.post(
       `${BASEURL}/event/import`,
       null,
+
       headers()
     );
     return response.data;
   },
 
-  async updateEvt(gId, evt) {
-    const response = await axios.put(
-      `${BASEURL}/event/update?eventId=${gId}`,
-      evt,
-      headers()
-    );
-    return response.data;
-  },
+  // async updateEvt(gId, evt) {
+  //   const response = await axios.put(
+  //     `${BASEURL}/event/update?eventId=${gId}`,
+  //     evt,
+  //     headers()
+  //   );
+  //   return response.data;
+  // },
 };
 
 export { EventApi };

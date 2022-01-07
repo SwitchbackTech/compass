@@ -7,7 +7,7 @@ import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
 import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 
-import { eventsApi } from "./api";
+import { EventApi } from "@web/common/apis/event.api";
 import {
   createEventSlice,
   editEventSlice,
@@ -28,7 +28,9 @@ import { selectPaginatedEventsBySectionType } from "./selectors";
 
 function* getEventsSaga(payload: Params_Events_Wip) {
   const res: GetEventsSuccessResponse = (yield call(
-    eventsApi.getEvents,
+    // eventsApi.getEvents,
+    // EventApi.getEvts,
+    EventApi.getEvtsLocalStorage,
     payload
   )) as GetEventsSuccessResponse;
 
@@ -110,7 +112,9 @@ function* getEverySectionEvents() {
 
 function* createEventSaga({ payload }: CreateEventAction) {
   try {
-    yield call(eventsApi.createEvent, payload);
+    // yield call(EventApi.createEvt, payload);
+    //TODO swap for ^
+    yield call(EventApi.createEvtOld, payload);
     yield put(createEventSlice.actions.success());
 
     yield call(getEverySectionEvents);
@@ -121,7 +125,7 @@ function* createEventSaga({ payload }: CreateEventAction) {
 
 function* editEventSaga({ payload }: EditEventAction) {
   try {
-    yield call(eventsApi.editEvent, payload.id, payload.event);
+    yield call(EventApi.editEvent, payload.id, payload.event);
     yield put(editEventSlice.actions.success());
     yield call(getEverySectionEvents);
   } catch (error) {

@@ -2,61 +2,8 @@ import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 
-import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
-
-import {
-  getEventsLocalStorage,
-  createEvent,
-  editEvent,
-  _readEventsFromStorage,
-} from "./fakeApi";
-import { hardCodedEvents } from "./event.data";
-
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
-
-/** ********************** */
-/* Helpers */
-/** ********************** */
-const convertToBackendModel = (frontendEvent) => {
-  return "TODO";
-};
-
-const getEventsHelper = async () => {
-  const basicEvents = [
-    {
-      priority: "work",
-      startDate: "2021-10-25 17:30",
-      endDate: "2021-10-25 18:45",
-      isTimeSelected: false,
-      isOpen: false,
-      title: "Presentation",
-      id: "456",
-    },
-    {
-      priority: "self",
-      startDate: "2021-10-25 15:30",
-      endDate: "2021-10-25 17:00",
-      isTimeSelected: true,
-      showStartTimeLabel: true,
-      isOpen: true,
-      title: "Walk dog",
-      id: "123",
-    },
-    {
-      priority: "relations",
-      startDate: "2021-10-26 15:30",
-      endDate: "2021-10-26 18:00",
-      isTimeSelected: true,
-      isOpen: true,
-      title: "with desc",
-      showStartTimeLabel: true,
-      description: "an event with a description",
-      id: "789",
-    },
-  ];
-  return basicEvents;
-};
 
 /*
 TODO: Add Pagination  for Someday event lists:
@@ -78,24 +25,3 @@ TODO: Add Pagination  for Someday event lists:
   Front end will have to filter all events and than sort them all.
   That will cause perfomance isues especially on mobile devices when the amount of events is really big
 */
-
-/*************************/
-/* API */
-/*************************/
-
-export const eventsApi = {
-  getEvents: (params: Params_Events_Wip) => {
-    // replace this with axios.get('api/events', { params });
-    return getEventsLocalStorage(params);
-  },
-
-  createEvent: (event: Schema_Event_Wip) => {
-    // replace this with axios.post('api/events', event);
-    return createEvent(event);
-  },
-
-  editEvent: (id: string, event: Schema_Event_Wip) => {
-    // replace this with axios.put(`api/events/${id}`, event);
-    return editEvent(id, event);
-  },
-};
