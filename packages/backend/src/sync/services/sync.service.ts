@@ -9,10 +9,10 @@ import {
   Result_Sync_Gcal,
   Params_Sync_Gcal,
 } from "@core/types/sync.types";
-import { getGcal } from "@backend/auth/services/google.auth.service";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 
+import { getGcal } from "@backend/auth/services/google.auth.service";
 import { Logger } from "@backend/common/logger/common.logger";
 import {
   GCAL_NOTIFICATION_URL,
@@ -308,8 +308,7 @@ const _syncUpdates = async (
     }
 
     logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
-    // const eventNames = updatedEvents.data.items.map((e) => e.summary);
-    // logger.debug(JSON.stringify(eventNames));
+
     // Update Compass' DB
     const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
       updatedEvents.data.items

@@ -2,7 +2,7 @@ import { Query } from "express-serve-static-core";
 
 import { Priorities } from "@core/core.constants";
 
-export interface Event_NoId {
+export interface Old_Schema_Event_NoId {
   // note: no compass _id field here
   gEventId?: string;
   // TODO make user optional (?)
@@ -10,7 +10,7 @@ export interface Event_NoId {
   // created during JWT middleware
   // user: string;
   priorities: string[];
-  summary: string;
+  title: string;
   description?: string | null;
   start?: {
     dateTime?: string | null;
@@ -24,11 +24,37 @@ export interface Event_NoId {
   };
 }
 
-export interface Event extends Event_NoId {
+export interface Old_Schema_Event extends Old_Schema_Event_NoId {
   _id: string; // needs to always return events id
 }
 
-//rename to Schema_Event
+export interface New_Schema_Event {
+  title: string;
+  summary?: string;
+  description?: string;
+  // TODO rename to 'start'
+  startDate?: {
+    dateTime?: string | null;
+    date?: string | null;
+    timeZone?: string | null;
+  };
+  // TODO rename to 'end'
+  endDate?: {
+    dateTime?: string | null;
+    date?: string | null;
+    timeZone?: string | null;
+  };
+  priority: Priorities;
+  id?: string;
+  isTimeSelected?: boolean;
+  showStartTimeLabel?: boolean;
+  allDay?: boolean;
+  allDayOrder?: number;
+  groupOrder?: number;
+  groupCount?: number;
+  order?: number;
+}
+
 export interface Schema_Event_Wip {
   title?: string;
   description?: string;

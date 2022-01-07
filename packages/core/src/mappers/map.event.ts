@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { gSchema$Event } from "@compass/backend/declarations";
-import { notCancelled } from '@compass/backend/src/common/services/gcal/gcal.helpers';
+import { notCancelled } from "@compass/backend/src/common/services/gcal/gcal.helpers";
 
 import { BaseError } from "@core/errors/errors.base";
-import { Event, Event_NoId } from "../types/event.types";
+import { Old_Schema_Event, Old_Schema_Event_NoId } from "../types/event.types";
 
 export namespace MapEvent {
   export const toCompass = (
     userId: string,
     events: gSchema$Event[]
-  ): Event[] | Event_NoId[] => {
+  ): Old_Schema_Event[] | Old_Schema_Event_NoId[] => {
     const mapped = events
       .filter(notCancelled)
       .map((e: gSchema$Event) => _toCompass(userId, e));
@@ -17,9 +17,12 @@ export namespace MapEvent {
     return mapped;
   };
 
-  export const toGcal = (userId: string, event: Event_NoId): gSchema$Event => {
+  export const toGcal = (
+    userId: string,
+    event: Old_Schema_Event_NoId
+  ): gSchema$Event => {
     const gcalEvent = {
-      summary: event.summary,
+      summary: event.title,
       description: event.description,
       start: event.start,
       end: event.end,
@@ -32,7 +35,7 @@ export namespace MapEvent {
 const _toCompass = (
   userId: string,
   gEvent: gSchema$Event
-): Event | Event_NoId => {
+): Old_Schema_Event | Old_Schema_Event_NoId => {
   // TODO - move to validation service
   if (!gEvent.id) {
     throw new BaseError(
@@ -43,13 +46,14 @@ const _toCompass = (
     );
   }
   const gEventId = gEvent.id ? gEvent.id : "uh oh";
-  const summary = gEvent.summary ? gEvent.summary : "untitled";
+  const title = gEvent.summary ? gEvent.summary : "untitled";
+  // const summary = gEvent.summary ? gEvent.summary : "untitled";
 
   const compassEvent = {
     gEventId: gEventId,
     user: userId,
     priorities: [],
-    summary: summary,
+    title: title,
     description: gEvent.description,
     start: gEvent.start,
     end: gEvent.end,

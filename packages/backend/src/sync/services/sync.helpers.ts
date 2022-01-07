@@ -1,7 +1,7 @@
 import { AnyBulkWriteOperation } from "mongodb";
 import { gSchema$Event } from "declarations";
 
-import { Event } from "@core/types/event.types";
+import { Old_Schema_Event } from "@core/types/event.types";
 import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -41,7 +41,7 @@ export const assembleBulkOperations = (
   if (eventsToUpdate.length > 0) {
     const cEvents = MapEvent.toCompass(userId, eventsToUpdate);
 
-    cEvents.forEach((e: Event) => {
+    cEvents.forEach((e: Old_Schema_Event) => {
       bulkOperations.push({
         updateOne: {
           filter: { gEventId: e.gEventId, user: userId },
