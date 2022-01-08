@@ -235,11 +235,16 @@ class EventService {
     userId: string,
     query: Query_Event
   ): Promise<Old_Schema_Event[] | BaseError> {
-    const hardCodedSample = [
+    /*
+    return [
       {
         priority: "work",
-        startDate: "2022-01-05 14:00",
-        endDate: "2022-01-05 16:30",
+        // startDate: "2022-01-05 14:00",
+        // endDate: "2022-01-05 16:30",
+        // startDate: "2022-01-06T14:45:00-06:00", //works
+        // endDate: "2022-01-06T16:00:00-06:00",
+        startDate: "2022-01-06", //works, but fills up entire column
+        endDate: "2022-01-07",
         isTimeSelected: true,
         isOpen: false,
         title: "#code",
@@ -248,36 +253,8 @@ class EventService {
         groupOrder: 0,
         groupCount: 0,
       },
-      {
-        priority: "self",
-        startDate: "2022-01-06 16:45",
-        endDate: "2022-01-06 19:30",
-        isTimeSelected: true,
-        isOpen: false,
-        title: "massage",
-        showStartTimeLabel: true,
-        id: "4894363f-0882-48c3-8e6a-f1c61e8fede3",
-        order: 1,
-        groupOrder: 0,
-        groupCount: 0,
-      },
-      {
-        priority: "relations",
-        startDate: "2022-01-07 14:15",
-        endDate: "2022-01-07 23:59",
-        isTimeSelected: true,
-        isOpen: true,
-        title: "coffee",
-        showStartTimeLabel: true,
-        id: "23cef461-1508-47d3-b5f8-e4e37c4a5a40",
-        order: 2,
-        groupOrder: 0,
-        groupCount: 0,
-      },
     ];
-    return hardCodedSample;
-
-    //TODO re-enable actual logic below
+    */
     try {
       const filter = getReadAllFilter(userId, query);
       const response: Old_Schema_Event[] = await mongoService.db

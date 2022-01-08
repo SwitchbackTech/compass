@@ -29,7 +29,8 @@ import { selectPaginatedEventsBySectionType } from "./selectors";
 function* getEventsSaga(payload: Params_Events_Wip) {
   const res: GetEventsSuccessResponse = (yield call(
     //TODO update with actual data call
-    EventApi.getEvtsLocalStorage,
+    // EventApi.getEvtsLocalStorage,
+    EventApi.getEvts,
     payload
   )) as GetEventsSuccessResponse;
 

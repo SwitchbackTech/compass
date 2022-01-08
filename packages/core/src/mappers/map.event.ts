@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from "uuid";
+
 /* eslint-disable @typescript-eslint/no-namespace */
 import { gSchema$Event } from "@compass/backend/declarations";
 import { notCancelled } from "@compass/backend/src/common/services/gcal/gcal.helpers";
@@ -47,16 +49,29 @@ const _toCompass = (
   }
   const gEventId = gEvent.id ? gEvent.id : "uh oh";
   const title = gEvent.summary ? gEvent.summary : "untitled";
-  // const summary = gEvent.summary ? gEvent.summary : "untitled";
+
+  const isAllDay = "date" in gEvent.start;
 
   const compassEvent = {
     gEventId: gEventId,
     user: userId,
-    priorities: [],
     title: title,
     description: gEvent.description,
-    start: gEvent.start,
+    priorities: [],
+    startDate: isAllDay ? gEvent.start.date : gEvent.start?.dateTime,
+    endDate: isAllDay ? gEvent.end.date : gEvent.end?.dateTime,
+    // $$ Remove start and end after finishing conversion
     end: gEvent.end,
+    start: gEvent.start,
+    // temp stuff to update
+    id: `${title.substring(0, 4)}-${uuidv4()}`, // use compassId or figure sth else out
+    priority: "work", // $$ TODO update
+    // isTimeSelected: true,
+    // isOpen: false,
+    // order: 0,
+    // groupOrder: 0,
+    // groupCount: 0,
   };
+
   return compassEvent;
 };

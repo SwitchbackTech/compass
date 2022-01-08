@@ -60,7 +60,6 @@ const EventApi = {
   },
 
   getEvts: (params: Params_Events_Wip) => {
-    // getEventsLocalStorage();
     return axios.get(`${BASEURL}/event`, headers());
   },
 
