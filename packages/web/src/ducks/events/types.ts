@@ -31,7 +31,7 @@ export interface CreateEventAction extends Action {
 }
 
 export interface EditEventPayload {
-  id: string;
+  _id: string;
   event: Schema_Event_Wip;
 }
 

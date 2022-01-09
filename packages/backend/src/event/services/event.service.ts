@@ -274,6 +274,9 @@ class EventService {
     event: Old_Schema_Event_NoId
   ): Promise<Old_Schema_Event | BaseError> {
     try {
+      if ("_id" in event) {
+        delete event._id; // mongo doesn't allow changing this field directly
+      }
       const response = await mongoService.db
         .collection(Collections.EVENT)
         .findOneAndUpdate(

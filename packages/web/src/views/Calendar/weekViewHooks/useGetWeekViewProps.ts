@@ -176,6 +176,7 @@ export const useGetWeekViewProps = () => {
     if (eventToSave.id) {
       dispatch(
         editEventSlice.actions.request({
+          _id: eventToSave._id,
           id: eventToSave.id,
           event: eventToSave,
         })

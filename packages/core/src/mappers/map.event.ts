@@ -51,6 +51,7 @@ const _toCompass = (
   const title = gEvent.summary ? gEvent.summary : "untitled";
 
   const isAllDay = "date" in gEvent.start;
+  const tempId = `${title.substring(0, 4)}-${uuidv4()}`;
 
   const compassEvent = {
     gEventId: gEventId,
@@ -64,8 +65,8 @@ const _toCompass = (
     end: gEvent.end,
     start: gEvent.start,
     // temp stuff to update
-    id: `${title.substring(0, 4)}-${uuidv4()}`, // use compassId or figure sth else out
-    priority: "work", // $$ TODO update
+    id: tempId, // use compassId or figure sth else out
+    priority: "self", // $$ TODO update
     // isTimeSelected: true,
     // isOpen: false,
     // order: 0,

@@ -132,7 +132,7 @@ export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
 
       groups.find((group) => {
         groupOrder = group.findIndex(
-          (groupEvent) => groupEvent.id === event.id
+          (groupEvent) => groupEvent._id === event._id
         );
         if (groupOrder === -1) return false;
 
@@ -169,8 +169,10 @@ export const createEventLocalStorage = async (event: Schema_Event_Wip) => {
   );
 };
 
-export const editEvent = async (id: string, event: Schema_Event_Wip) => {
-  console.log("editing ...");
+// $$ del if not using
+export const editEvent = async (_id: string, event: Schema_Event_Wip) => {
+  console.log("editing this evt:", _id);
+  //TODO sort events like below (in case times changed)
 };
 
 // $$ del
@@ -180,7 +182,7 @@ export const editEventOld = async (id: string, event: Schema_Event_Wip) => {
 
   const events = eventsResponse.data
     .map((storageEvent) => {
-      if (storageEvent.id === id) return event;
+      if (storageEvent._id === id) return event;
 
       return { ...storageEvent, order: (storageEvent.order || 0) + 0.5 };
     })

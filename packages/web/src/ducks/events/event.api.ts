@@ -57,10 +57,8 @@ const EventApi = {
     return response.data;
   },
 
-  edit: (id: string, event: Schema_Event_Wip) => {
-    //$$ del
-    // return editEventOld(id, event);
-    return editEvent(id, event);
+  edit: (_id: string, event: Schema_Event_Wip) => {
+    return axios.put(`${BASEURL}/event/${_id}`, event, headers());
   },
 
   get: (params: Params_Events_Wip) => {

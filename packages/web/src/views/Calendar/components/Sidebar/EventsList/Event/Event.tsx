@@ -22,7 +22,7 @@ export const Event = ({ event: _event }: Props) => {
 
   const onSubmit = (eventData: Schema_Event_Wip) => {
     dispatch(
-      editEventSlice.actions.request({ id: event.id || "", event: eventData })
+      editEventSlice.actions.request({ _id: event._id || "", event: eventData })
     );
   };
 

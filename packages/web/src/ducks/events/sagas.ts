@@ -124,7 +124,7 @@ function* createEventSaga({ payload }: CreateEventAction) {
 
 function* editEventSaga({ payload }: EditEventAction) {
   try {
-    yield call(EventApi.edit, payload.id, payload.event);
+    yield call(EventApi.edit, payload._id, payload.event);
     yield put(editEventSlice.actions.success());
     yield call(getEverySectionEvents);
   } catch (error) {

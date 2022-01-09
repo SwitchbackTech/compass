@@ -28,40 +28,14 @@ export interface Old_Schema_Event extends Old_Schema_Event_NoId {
   _id: string; // needs to always return events id
 }
 
-export interface New_Schema_Event {
-  title: string;
-  summary?: string;
-  description?: string;
-  // TODO rename to 'start'
-  startDate?: {
-    dateTime?: string | null;
-    date?: string | null;
-    timeZone?: string | null;
-  };
-  // TODO rename to 'end'
-  endDate?: {
-    dateTime?: string | null;
-    date?: string | null;
-    timeZone?: string | null;
-  };
-  priority: Priorities;
-  id?: string;
-  isTimeSelected?: boolean;
-  showStartTimeLabel?: boolean;
-  allDay?: boolean;
-  allDayOrder?: number;
-  groupOrder?: number;
-  groupCount?: number;
-  order?: number;
-}
-
 export interface Schema_Event_Wip {
+  _id?: string; // $$ make required?
   title?: string;
   description?: string;
   startDate?: string;
   endDate?: string;
   priority: Priorities;
-  id?: string;
+  priorities?: string[]; // the eventual structure, with ids as strs
   isTimeSelected?: boolean;
   showStartTimeLabel?: boolean;
   allDay?: boolean;
