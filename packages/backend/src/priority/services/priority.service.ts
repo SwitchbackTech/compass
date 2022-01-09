@@ -62,7 +62,8 @@ class PriorityService {
         return new BaseError(
           "Priority Exists",
           `${data.name} already exists`,
-          400,
+          // 304, //todo status
+          200, //todo status
           true
         );
       }

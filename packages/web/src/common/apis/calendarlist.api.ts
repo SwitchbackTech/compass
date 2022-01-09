@@ -1,12 +1,13 @@
 import axios from "axios";
 
 import { Schema_CalendarList } from "@core/types/calendar.types";
+import { gSchema$CalendarList } from "../../../../backend/declarations";
 
 import { BASEURL } from "@web/common/constants/api";
 import { headers } from "@web/common/helpers";
 
 const CalendarListApi = {
-  async list(): Promise<Schema_CalendarList> {
+  async list(): Promise<gSchema$CalendarList> {
     const response = await axios.get(`${BASEURL}/calendarlist`, headers());
     return response.data;
   },

@@ -2,12 +2,11 @@ import React, { useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
+import { Priorities } from "@core/core.constants";
+
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { SidebarEventContainer } from "@web/views/Calendar/containers/SidebarEventContainer";
-import {
-  NormalizedAsyncActionPayload,
-  Priorities,
-} from "@web/common/types/entities";
+import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
 
 import { Styled, StyledList } from "./styled";
 

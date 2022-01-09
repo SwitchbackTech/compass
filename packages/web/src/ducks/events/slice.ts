@@ -1,11 +1,10 @@
 import { Action, combineReducers } from "redux";
 import { createSlice } from "@reduxjs/toolkit";
 
+import { Schema_Event_Wip } from "@core/types/event.types";
+
 import { createAsyncSlice } from "@web/common/store/helpers";
-import {
-  EventEntity,
-  NormalizedAsyncActionPayload,
-} from "@web/common/types/entities";
+import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
 import { HttpPaginatedSuccessResponse } from "@web/common/types/apiTypes";
 
 import {
@@ -35,7 +34,7 @@ export const getFutureEventsSlice = createAsyncSlice<
   name: "getFutureEvents",
 });
 
-export const createEventSlice = createAsyncSlice<EventEntity>({
+export const createEventSlice = createAsyncSlice<Schema_Event_Wip>({
   name: "createEvent",
 });
 
@@ -44,7 +43,7 @@ export const editEventSlice = createAsyncSlice<EditEventPayload>({
 });
 
 export interface EventEntities {
-  [key: string]: EventEntity;
+  [key: string]: Schema_Event_Wip;
 }
 
 export interface InsertEventsAction extends Action {

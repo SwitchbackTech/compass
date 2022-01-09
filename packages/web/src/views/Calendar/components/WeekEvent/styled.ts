@@ -1,8 +1,9 @@
 import styled from "styled-components";
 
+import { Priorities } from "@core/core.constants";
+
 import { getColor } from "@web/common/helpers/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
-import { Priorities } from "@web/common/types/entities";
 import { ColorNames } from "@web/common/types/styles";
 
 export interface StyledEventProps {

@@ -3,12 +3,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { Popover } from "react-tiny-popover";
 import dayjs from "dayjs";
 
+import { Priorities } from "@core/core.constants";
+import { Schema_Event_Wip } from "@core/types/event.types";
+
 import { ArrowLeftIcon } from "@web/assets/svg";
 import { SideBarSectionType } from "@web/ducks/events/types";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors";
-import { RootState } from "@store";
+import { RootState } from "@web/store";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
-import { EventEntity, Priorities } from "@web/common/types/entities";
 import { createEventSlice } from "@web/ducks/events/slice";
 import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates";
 
@@ -83,7 +85,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
     .add(1, "hour")
     .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
 
-  const [event, setEvent] = useState<EventEntity>({
+  const [event, setEvent] = useState<Schema_Event_Wip>({
     startDate,
     endDate,
     priority: Priorities.WORK,
@@ -94,7 +96,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
 
   const showNextPageButton = count > pageSize + offset;
 
-  const onSubmit = (eventToSubmit: EventEntity) => {
+  const onSubmit = (eventToSubmit: Schema_Event_Wip) => {
     dispatch(createEventSlice.actions.request(eventToSubmit));
   };
 

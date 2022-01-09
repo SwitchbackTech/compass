@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Popover } from "react-tiny-popover";
 import dayjs from "dayjs";
 
+import { Priorities } from "@core/core.constants";
+
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
 import {
@@ -15,7 +17,6 @@ import {
   JustifyContent,
 } from "@web/components/Flex/styled";
 import { getAlphaColor, getColor } from "@web/common/helpers/colors";
-import { Priorities } from "@web/common/types/entities";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Divider } from "@web/components/Divider";
 import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates";
@@ -125,9 +126,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
     </StyledPriorityFilterItem>
   );
 
-  const StyledSidebarToggleIcon = renderStyledSidebarToggleIcon(
-    isToggled ? SidebarCollapseIcon : SidebarOpenIcon
-  );
+  const StyledSidebarToggleIcon = renderStyledSidebarToggleIcon(isToggled);
 
   const getEventsSectionFlex = (sectionType: "currentMonth" | "future") => {
     const dividerIndexBySectionType = {

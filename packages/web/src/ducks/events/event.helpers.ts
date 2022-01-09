@@ -3,33 +3,31 @@ import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { v4 as uuidv4 } from "uuid";
 
-// import { Priorities, EventEntity } from '@web/common/types/entities';
-import { Priorities, EventEntity } from "../../common/types/entities";
+import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
+// jest had trouble resolving with @core/..., so using long path for now
+import { Priorities } from "../../../../core/src/core.constants";
+
+import { EventApi } from "@web/ducks/events/event.api";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-export interface GetEventsParams {
-  startDate?: string;
-  endDate?: string;
-  page?: number;
-  pageSize?: number;
-  offset?: number;
-  priorities?: Priorities[];
-}
-
-const doEventsIntercept = (event1: EventEntity, event2: EventEntity) => {
+const doEventsIntercept = (
+  event1: Schema_Event_Wip,
+  event2: Schema_Event_Wip
+) => {
   const firstDotIntercepts = dayjs(event1.startDate).isBefore(event2.endDate);
   const secondDotIntercepts = dayjs(event1.endDate).isAfter(event2.startDate);
 
   return firstDotIntercepts && secondDotIntercepts;
 };
 
-const getEventsFromStorage = (): EventEntity[] =>
-  (JSON.parse(localStorage.getItem("events") || "[]") as EventEntity[]) || [];
+export const _readEventsFromStorage = (): Schema_Event_Wip[] =>
+  (JSON.parse(localStorage.getItem("events") || "[]") as Schema_Event_Wip[]) ||
+  [];
 
 /*
-TODO: (needed to be done on API side) sorings corner cases:
+TODO: (needed to be done on API side) sortings corner cases:
 a) All day events sortings: just implement same logic
 as it is done for plain events sorting
 
@@ -42,7 +40,7 @@ group events (which is length of current group)
 TODO: when setting groupCount in event - check
 if event intercepts with any of events from other groups
 */
-export const getEvents = async (params: GetEventsParams = {}) => {
+export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
   const {
     startDate,
     endDate,
@@ -52,7 +50,10 @@ export const getEvents = async (params: GetEventsParams = {}) => {
     priorities = [Priorities.RELATIONS, Priorities.SELF, Priorities.WORK],
   } = params || {};
   const page = _page || 1;
-  const events = getEventsFromStorage();
+
+  const events = _readEventsFromStorage();
+  console.log("reminder: using local strg evts, not from server");
+  // const events = await EventApi.getEvts(params);
 
   const startIndex = offset !== undefined ? offset : (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
@@ -85,7 +86,7 @@ export const getEvents = async (params: GetEventsParams = {}) => {
       return dayjs(a.startDate).toDate() - dayjs(b.startDate).toDate();
     });
 
-  let groups: EventEntity[][] = [];
+  let groups: Schema_Event_Wip[][] = [];
   let groupIndex = 0;
 
   if (eventsData.length) {
@@ -158,8 +159,8 @@ export const getEvents = async (params: GetEventsParams = {}) => {
   };
 };
 
-export const createEvent = async (event: EventEntity) => {
-  const events = await getEvents();
+export const createEventLocalStorage = async (event: Schema_Event_Wip) => {
+  const events = await getEventsLocalStorage();
   const id = uuidv4();
   localStorage.setItem(
     "events",
@@ -170,8 +171,9 @@ export const createEvent = async (event: EventEntity) => {
   );
 };
 
-export const editEvent = async (id: string, event: EventEntity) => {
-  const eventsResponse = await getEvents();
+export const editEventOld = async (id: string, event: Schema_Event_Wip) => {
+  console.log("editing evt old version");
+  const eventsResponse = await getEventsLocalStorage();
 
   const events = eventsResponse.data
     .map((storageEvent) => {

@@ -1,5 +1,6 @@
+import { gcalListDemo, gcalItemsDemo } from "./map.demo";
 import { MapCalendarList } from "./map.calendarlist";
-import { gcalListDemo } from "./map.demo";
+import { MapEvent } from "./map.event";
 
 describe("CalendarList Mapper", () => {
   test("Only supports primary calendar", () => {
@@ -7,5 +8,9 @@ describe("CalendarList Mapper", () => {
     const ccallist = MapCalendarList.toCompass(gcalListDemo);
     expect(ccallist.google.items.length).toEqual(1);
     expect(ccallist.google.items[0].primary).toEqual(true);
+  });
+
+  test("Supports date and dateTime values", () => {
+    const cEvent = MapEvent.toCompass("user1", gcalItemsDemo);
   });
 });

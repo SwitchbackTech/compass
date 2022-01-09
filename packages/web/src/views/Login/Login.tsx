@@ -9,7 +9,7 @@ import { SURVEY_URL } from "@core/core.constants";
 // import { reducers } from '@web/store/reducers';
 import { PriorityApi } from "@web/common/apis/priority.api";
 import { AuthApi } from "@web/common/apis/auth.api";
-import { EventApi } from "@web/common/apis/event.api";
+import { EventApi } from "@web/ducks/events/event.api";
 import { CalendarListApi } from "@web/common/apis/calendarlist.api";
 import { GOOGLE } from "@web/common/constants/common";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -79,8 +79,7 @@ import { gSchema$CalendarList } from '@backend/declarations';
         // await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // todo move this stuff to onboard flow
-        // const prioritiesRes = await PriorityApi.createPriorities(status.token);
-        // console.log(prioritiesRes);
+        await createPriorities(status.token);
         await createCalendarList();
         await importEvents();
         // setRedirect(true);
@@ -88,13 +87,24 @@ import { gSchema$CalendarList } from '@backend/declarations';
     }
   };
 
+  // User initialization stuff
+  // TODO - add this to an onboarding flow
   const createCalendarList = async () => {
+    console.log("creating calendarlist ...");
     const gcalList = await CalendarListApi.list();
     const ccalList = MapCalendarList.toCompass(gcalList);
     const res = await CalendarListApi.create(ccalList);
+    console.log(res);
   };
-  // const onboard = async (token: string) => {
-  // }
+
+  const createPriorities = async (token: string) => {
+    console.log("creating priorities ...");
+    const res = await PriorityApi.createPriorities(token);
+
+    //TODO save to redux for future reference
+    // move to a priority ducks dir
+    console.log(res);
+  };
 
   const importEvents = async () => {
     console.log("importing events ...");

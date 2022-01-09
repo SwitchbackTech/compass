@@ -9,10 +9,10 @@ import {
   Result_Sync_Gcal,
   Params_Sync_Gcal,
 } from "@core/types/sync.types";
-import { getGcal } from "@backend/auth/services/google.auth.service";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 
+import { getGcal } from "@backend/auth/services/google.auth.service";
 import { Logger } from "@backend/common/logger/common.logger";
 import {
   GCAL_NOTIFICATION_URL,
@@ -98,15 +98,19 @@ class SyncService {
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
     try {
-      const numMin = 120;
+      // const numMin = 120;
+      // console.log(
+      // `\n**REMINDER: channel is expiring in just ${numMin} mins. Change before deploying**\n`
+      // );
+      // const expiration = minutesFromNow(numMin, "ms").toString();
 
-      // TODO uncomment
-      // const expiration = daysFromNowTimestamp(14, "ms").toString();
+      const expiration = daysFromNowTimestamp(1, "ms").toString();
+
       console.log(
-        `\n**REMINDER: channel is expiring in just ${numMin} mins. Change before deploying**\n`
+        `\n**REMINDER: channel is expiring in just 1 (?) day. Change before deploying to lots of ppl**\n`
       );
-      const expiration = minutesFromNow(numMin, "ms").toString();
 
+      // const expiration = daysFromNowTimestamp(21, "ms").toString();
       const response = await gcal.events.watch({
         calendarId: calendarId,
         requestBody: {
@@ -304,8 +308,7 @@ const _syncUpdates = async (
     }
 
     logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
-    // const eventNames = updatedEvents.data.items.map((e) => e.summary);
-    // logger.debug(JSON.stringify(eventNames));
+
     // Update Compass' DB
     const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
       updatedEvents.data.items

@@ -1,10 +1,9 @@
 import { Action } from "redux";
 
-import {
-  EventEntity,
-  NormalizedAsyncActionPayload,
-  Priorities,
-} from "@web/common/types/entities";
+import { Priorities } from "@core/core.constants";
+import { Schema_Event_Wip } from "@core/types/event.types";
+
+import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
 import {
   HttpPaginatedSuccessResponse,
   PaginationFilters,
@@ -28,19 +27,19 @@ export interface GetPaginatedEventsAction extends Action {
 }
 
 export interface CreateEventAction extends Action {
-  payload: EventEntity;
+  payload: Schema_Event_Wip;
 }
 
 export interface EditEventPayload {
   id: string;
-  event: EventEntity;
+  event: Schema_Event_Wip;
 }
 
 export interface EditEventAction extends Action {
   payload: EditEventPayload;
 }
 
-export type GetEventsSuccessResponse<T = EventEntity[]> =
+export type GetEventsSuccessResponse<T = Schema_Event_Wip[]> =
   HttpPaginatedSuccessResponse<T> & GetWeekEventsPayload;
 
 export type GetEventsSagaResponse =

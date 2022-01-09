@@ -124,12 +124,24 @@ module.exports = {
     {
       displayName: "core",
       testEnvironment: "node",
-      testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
+      // testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
+      testMatch: ["<rootDir>/packages/core/(*.)+(spec|test).[tj]s?(x)"],
     },
     {
       displayName: "web",
       testEnvironment: "jsdom",
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
+      moduleNameMapper: {
+        "^@web/common/(.*)$": "<rootDir>/packages/web/src/common/$1",
+        "^@web/assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
+        "^@web/components/(.*)$": "<rootDir>/packages/web/src/components/$1",
+        "^@web/containers/(.*)$": "<rootDir>/packages/web/src/containers/$1",
+        "^@web/ducks/(.*)$": "<rootDir>/packages/web/src/ducks/$1",
+        "^@web/public/(.*)$": "<rootDir>/packages/web/src/public/$1",
+        "^@web/routers/(.*)$": "<rootDir>/packages/web/src/routers/$1",
+        "^@web/store/(.*)$": "<rootDir>/packages/web/src/store/$1",
+        "^@web/views/(.*)$": "<rootDir>/packages/web/src/views/$1",
+      },
     },
     {
       displayName: "backend",

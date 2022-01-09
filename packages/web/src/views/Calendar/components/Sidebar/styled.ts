@@ -1,5 +1,6 @@
 import styled from "styled-components";
 
+import { SidebarCollapseIcon, SidebarOpenIcon } from "@web/assets/svg";
 import { getColor } from "@web/common/helpers/colors";
 import { ColorNames } from "@web/common/types/styles";
 import { CheckBox } from "@web/components/CheckBox";
@@ -31,9 +32,8 @@ export const StyledSidebarOverflow = styled.div<Props>`
   z-index: 3;
 `;
 
-export const renderStyledSidebarToggleIcon = (
-  Icon: React.FunctionComponent<React.SVGProps<SVGSVGElement>>
-) => styled(Icon)`
+// TODO make this dynamic so you don't have to duplicate styles
+const StyledOpenIcon = styled(SidebarOpenIcon)`
   cursor: pointer;
   color: #7a858d;
   position: absolute;
@@ -45,6 +45,28 @@ export const renderStyledSidebarToggleIcon = (
     color: ${getColor(ColorNames.WHITE_2)};
   }
 `;
+
+const StyledCollapseIcon = styled(SidebarCollapseIcon)`
+  cursor: pointer;
+  color: #7a858d;
+  position: absolute;
+  right: 20px;
+  top: 28px;
+  z-index: 4;
+
+  &:hover {
+    color: ${getColor(ColorNames.WHITE_2)};
+  }
+`;
+
+export const renderStyledSidebarToggleIcon = (isToggled: boolean) => {
+  if (isToggled) {
+    return StyledCollapseIcon;
+  } else {
+    return StyledOpenIcon;
+  }
+};
+
 export interface SectionProps {
   height?: string;
 }

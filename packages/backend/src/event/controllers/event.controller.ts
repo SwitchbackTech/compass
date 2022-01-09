@@ -4,7 +4,11 @@ import { v4 as uuidv4 } from "uuid";
 import { ReqBody, Res } from "@core/types/express.types";
 
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import { Event, Event_NoId, Params_DeleteMany } from "@core/types/event.types";
+import {
+  Old_Schema_Event,
+  Old_Schema_Event_NoId,
+  Params_DeleteMany,
+} from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import { Logger } from "@backend/common/logger/common.logger";
@@ -18,7 +22,7 @@ import eventService from "@backend/event/services/event.service";
 
 const logger = Logger("app:event.controller");
 class EventController {
-  create = async (req: ReqBody<Event_NoId>, res: Res) => {
+  create = async (req: ReqBody<Old_Schema_Event_NoId>, res: Res) => {
     const userId = res.locals.user.id;
 
     if (req.body instanceof Array) {
@@ -116,7 +120,7 @@ class EventController {
     res.promise(Promise.resolve(usersEvents));
   };
 
-  update = async (req: ReqBody<Event_NoId>, res: Res) => {
+  update = async (req: ReqBody<Old_Schema_Event_NoId>, res: Res) => {
     /* 
     TODO validate: 
      - that no id in body (cuz id is immutable and will cause mongo err)
@@ -128,7 +132,7 @@ class EventController {
     res.promise(Promise.resolve(response));
   };
 
-  updateMany = async (req: ReqBody<Event[]>, res: Res) => {
+  updateMany = async (req: ReqBody<Old_Schema_Event[]>, res: Res) => {
     try {
       const userId = res.locals.user.id;
       const events = req.body;

@@ -2,13 +2,12 @@ import { call, put, takeLatest, select } from "@redux-saga/core/effects";
 import { normalize, schema } from "normalizr";
 import dayjs from "dayjs";
 
-import {
-  EventEntity,
-  NormalizedAsyncActionPayload,
-} from "@web/common/types/entities";
+import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
+
+import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 
-import { eventsApi } from "./api";
+import { EventApi } from "@web/ducks/events/event.api";
 import {
   createEventSlice,
   editEventSlice,
@@ -26,16 +25,18 @@ import {
   GetWeekEventsAction,
 } from "./types";
 import { selectPaginatedEventsBySectionType } from "./selectors";
-import { GetEventsParams } from "./fakeApi";
 
-function* getEventsSaga(payload: GetEventsParams) {
+function* getEventsSaga(payload: Params_Events_Wip) {
   const res: GetEventsSuccessResponse = (yield call(
-    eventsApi.getEvents,
+    // EventApi.getEvtsLocalStorage,
+    EventApi.getEvts,
     payload
   )) as GetEventsSuccessResponse;
 
   const eventsSchema = new schema.Entity("events");
-  const normalizedEvents = normalize<EventEntity>(res.data, [eventsSchema]);
+  const normalizedEvents = normalize<Schema_Event_Wip>(res.data, [
+    eventsSchema,
+  ]);
 
   yield put(
     eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events)
@@ -110,7 +111,9 @@ function* getEverySectionEvents() {
 
 function* createEventSaga({ payload }: CreateEventAction) {
   try {
-    yield call(eventsApi.createEvent, payload);
+    // yield call(EventApi.createEvt, payload);
+    //TODO swap for ^
+    yield call(EventApi.createEvtOld, payload);
     yield put(createEventSlice.actions.success());
 
     yield call(getEverySectionEvents);
@@ -121,7 +124,7 @@ function* createEventSaga({ payload }: CreateEventAction) {
 
 function* editEventSaga({ payload }: EditEventAction) {
   try {
-    yield call(eventsApi.editEvent, payload.id, payload.event);
+    yield call(EventApi.editEvent, payload.id, payload.event);
     yield put(editEventSlice.actions.success());
     yield call(getEverySectionEvents);
   } catch (error) {
