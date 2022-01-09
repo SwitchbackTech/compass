@@ -7,8 +7,6 @@ import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
 // jest had trouble resolving with @core/..., so using long path for now
 import { Priorities } from "../../../../core/src/core.constants";
 
-import { EventApi } from "@web/ducks/events/event.api";
-
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
@@ -53,7 +51,6 @@ export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
 
   const events = _readEventsFromStorage();
   console.log("reminder: using local strg evts, not from server");
-  // const events = await EventApi.getEvts(params);
 
   const startIndex = offset !== undefined ? offset : (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
@@ -159,6 +156,7 @@ export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
   };
 };
 
+// $$ remove
 export const createEventLocalStorage = async (event: Schema_Event_Wip) => {
   const events = await getEventsLocalStorage();
   const id = uuidv4();
@@ -171,8 +169,13 @@ export const createEventLocalStorage = async (event: Schema_Event_Wip) => {
   );
 };
 
+export const editEvent = async (id: string, event: Schema_Event_Wip) => {
+  console.log("editing ...");
+};
+
+// $$ del
 export const editEventOld = async (id: string, event: Schema_Event_Wip) => {
-  console.log("editing evt old version");
+  console.log(`editing evt: ${id}`);
   const eventsResponse = await getEventsLocalStorage();
 
   const events = eventsResponse.data

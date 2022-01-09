@@ -9,6 +9,7 @@ import { headers } from "@web/common/helpers";
 import { BASEURL } from "@web/common/constants/api";
 import {
   createEventLocalStorage,
+  editEvent,
   editEventOld,
   getEventsLocalStorage,
 } from "@web/ducks/events/event.helpers";
@@ -39,15 +40,16 @@ TODO: Add Pagination  for Someday event lists:
 */
 
 const EventApi = {
-  createEvt(event: Schema_Event_Wip) {
+  create(event: Schema_Event_Wip) {
     return "TODO-implement";
   },
 
-  createEvtOld(event: Schema_Event_Wip) {
+  // $$
+  createOld(event: Schema_Event_Wip) {
     return createEventLocalStorage(event);
   },
 
-  async deleteEvt(gId) {
+  async delete(gId) {
     const response = await axios.delete(
       `${BASEURL}/event/delete?eventId=${gId}`,
       headers()
@@ -55,11 +57,13 @@ const EventApi = {
     return response.data;
   },
 
-  editEvent: (id: string, event: Schema_Event_Wip) => {
-    return editEventOld(id, event);
+  edit: (id: string, event: Schema_Event_Wip) => {
+    //$$ del
+    // return editEventOld(id, event);
+    return editEvent(id, event);
   },
 
-  getEvts: (params: Params_Events_Wip) => {
+  get: (params: Params_Events_Wip) => {
     // $$ remove after supporting sidebar items
     if (!params.endDate) {
       console.log("ignoring future events");
@@ -75,7 +79,7 @@ const EventApi = {
     );
   },
 
-  getEvtsLocalStorage: (params: Params_Events_Wip) => {
+  getLocalStorage: (params: Params_Events_Wip) => {
     return getEventsLocalStorage(params);
   },
 
