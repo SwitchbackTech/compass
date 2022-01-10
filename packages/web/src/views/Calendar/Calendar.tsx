@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
 
-import { Schema_Event_Wip } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
 import { Text } from "@web/components/Text";
 import { ColorNames } from "@web/common/types/styles";
@@ -256,7 +256,7 @@ export const CalendarView = () => {
             {component.editingEvent && component.editingEvent.allDay && (
               <EditingWeekEvent
                 setEvent={(event) =>
-                  component.setEditingEvent(event as Schema_Event_Wip)
+                  component.setEditingEvent(event as Schema_Event)
                 }
                 isOpen={!!component.editingEvent?.isOpen}
                 event={component.editingEvent}
@@ -311,7 +311,7 @@ export const CalendarView = () => {
             {component.editingEvent && !component.editingEvent.allDay && (
               <EditingWeekEvent
                 setEvent={(event) =>
-                  component.setEditingEvent(event as Schema_Event_Wip)
+                  component.setEditingEvent(event as Schema_Event)
                 }
                 isOpen={!!component.editingEvent?.isOpen}
                 event={component.editingEvent}

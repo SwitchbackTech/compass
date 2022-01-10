@@ -3,7 +3,7 @@ import { Key } from "ts-keycode-enum";
 import dayjs from "dayjs";
 
 import { Priorities } from "@core/core.constants";
-import { Schema_Event_Wip } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
 import { Button } from "@web/components/Button";
 import { JustifyContent } from "@web/components/Flex/styled";
@@ -68,7 +68,7 @@ export const EventForm: React.FC<ComponentProps> = ({
     Date | undefined
   >();
 
-  const defaultEventState: Schema_Event_Wip = {
+  const defaultEventState: Schema_Event = {
     priority: Priorities.WORK,
     title: "",
     description: "",
@@ -147,9 +147,9 @@ export const EventForm: React.FC<ComponentProps> = ({
     onClose();
   };
 
-  const onSetEventField = <FieldName extends keyof Schema_Event_Wip>(
+  const onSetEventField = <FieldName extends keyof Schema_Event>(
     fieldName: FieldName,
-    value: Schema_Event_Wip[FieldName]
+    value: Schema_Event[FieldName]
   ) => {
     setEvent((_event) => ({
       ..._event,

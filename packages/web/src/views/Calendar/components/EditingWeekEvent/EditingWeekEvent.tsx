@@ -2,7 +2,7 @@ import React, { SetStateAction } from "react";
 import { ArrowContainer, Popover } from "react-tiny-popover";
 
 import { Priorities } from "@core/core.constants";
-import { Schema_Event_Wip } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
 import { getColor } from "@web/common/helpers/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
@@ -14,11 +14,11 @@ import { WeekViewProps } from "../../weekViewHooks/useGetWeekViewProps";
 
 export interface Props {
   isOpen: boolean;
-  onSubmitEventForm: (event: Schema_Event_Wip) => void;
+  onSubmitEventForm: (event: Schema_Event) => void;
   event?: GridEventEntity;
   onCloseEventForm: () => void;
   weekViewProps: WeekViewProps;
-  setEvent: React.Dispatch<SetStateAction<Schema_Event_Wip>>;
+  setEvent: React.Dispatch<SetStateAction<Schema_Event>>;
 }
 
 export const EditingWeekEvent: React.FC<Props> = ({

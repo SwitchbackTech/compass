@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Schema_Event_Wip } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
 export interface WeekViewHelpersProps {
   eventsGridRef: React.RefObject<HTMLDivElement>;
@@ -12,7 +12,7 @@ export interface WeekViewHelpersProps {
   setModifiableDateField: React.Dispatch<
     React.SetStateAction<"startDate" | "endDate">
   >;
-  onSubmitEvent: (event: Schema_Event_Wip | GridEventEntity) => void;
+  onSubmitEvent: (event: Schema_Event | GridEventEntity) => void;
 }
 
 export interface EventState {
@@ -22,7 +22,7 @@ export interface EventState {
   hasMoved?: boolean;
 }
 
-export interface GridEventEntity extends Schema_Event_Wip {
+export interface GridEventEntity extends Schema_Event {
   isOpen?: boolean;
   isEditing?: boolean;
   importanceIndex?: number;

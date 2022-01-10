@@ -3,26 +3,22 @@ import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { v4 as uuidv4 } from "uuid";
 
-import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
+import { Params_Events_Wip, Schema_Event } from "@core/types/event.types";
 // jest had trouble resolving with @core/..., so using long path for now
 import { Priorities } from "../../../../core/src/core.constants";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-const doEventsIntercept = (
-  event1: Schema_Event_Wip,
-  event2: Schema_Event_Wip
-) => {
+const doEventsIntercept = (event1: Schema_Event, event2: Schema_Event) => {
   const firstDotIntercepts = dayjs(event1.startDate).isBefore(event2.endDate);
   const secondDotIntercepts = dayjs(event1.endDate).isAfter(event2.startDate);
 
   return firstDotIntercepts && secondDotIntercepts;
 };
 
-export const _readEventsFromStorage = (): Schema_Event_Wip[] =>
-  (JSON.parse(localStorage.getItem("events") || "[]") as Schema_Event_Wip[]) ||
-  [];
+export const _readEventsFromStorage = (): Schema_Event[] =>
+  (JSON.parse(localStorage.getItem("events") || "[]") as Schema_Event[]) || [];
 
 /*
 TODO: (needed to be done on API side) sortings corner cases:
@@ -83,7 +79,7 @@ export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
       return dayjs(a.startDate).toDate() - dayjs(b.startDate).toDate();
     });
 
-  let groups: Schema_Event_Wip[][] = [];
+  let groups: Schema_Event[][] = [];
   let groupIndex = 0;
 
   if (eventsData.length) {
@@ -157,7 +153,7 @@ export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
 };
 
 // $$ remove
-export const createEventLocalStorage = async (event: Schema_Event_Wip) => {
+export const createEventLocalStorage = async (event: Schema_Event) => {
   const events = await getEventsLocalStorage();
   const id = uuidv4();
   localStorage.setItem(
@@ -170,13 +166,13 @@ export const createEventLocalStorage = async (event: Schema_Event_Wip) => {
 };
 
 // $$ del if not using
-export const editEvent = async (_id: string, event: Schema_Event_Wip) => {
+export const editEvent = async (_id: string, event: Schema_Event) => {
   console.log("editing this evt:", _id);
   //TODO sort events like below (in case times changed)
 };
 
 // $$ del
-export const editEventOld = async (id: string, event: Schema_Event_Wip) => {
+export const editEventOld = async (id: string, event: Schema_Event) => {
   console.log(`editing evt: ${id}`);
   const eventsResponse = await getEventsLocalStorage();
 

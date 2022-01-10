@@ -2,7 +2,7 @@ import { call, put, takeLatest, select } from "@redux-saga/core/effects";
 import { normalize, schema } from "normalizr";
 import dayjs from "dayjs";
 
-import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
+import { Params_Events_Wip, Schema_Event } from "@core/types/event.types";
 
 import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
@@ -34,9 +34,7 @@ function* getEventsSaga(payload: Params_Events_Wip) {
   )) as GetEventsSuccessResponse;
 
   const eventsSchema = new schema.Entity("events");
-  const normalizedEvents = normalize<Schema_Event_Wip>(res.data, [
-    eventsSchema,
-  ]);
+  const normalizedEvents = normalize<Schema_Event>(res.data, [eventsSchema]);
 
   yield put(
     eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events)

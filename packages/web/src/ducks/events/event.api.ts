@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 
-import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
+import { Params_Events_Wip, Schema_Event } from "@core/types/event.types";
 import { headers } from "@web/common/helpers";
 import { BASEURL } from "@web/common/constants/api";
 import {
@@ -40,12 +40,12 @@ TODO: Add Pagination  for Someday event lists:
 */
 
 const EventApi = {
-  create(event: Schema_Event_Wip) {
+  create(event: Schema_Event) {
     return "TODO-implement";
   },
 
   // $$
-  createOld(event: Schema_Event_Wip) {
+  createOld(event: Schema_Event) {
     return createEventLocalStorage(event);
   },
 
@@ -57,7 +57,7 @@ const EventApi = {
     return response.data;
   },
 
-  edit: (_id: string, event: Schema_Event_Wip) => {
+  edit: (_id: string, event: Schema_Event) => {
     return axios.put(`${BASEURL}/event/${_id}`, event, headers());
   },
 

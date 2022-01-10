@@ -1,7 +1,7 @@
 import { Action, combineReducers } from "redux";
 import { createSlice } from "@reduxjs/toolkit";
 
-import { Schema_Event_Wip } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
 import { createAsyncSlice } from "@web/common/store/helpers";
 import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
@@ -34,7 +34,7 @@ export const getFutureEventsSlice = createAsyncSlice<
   name: "getFutureEvents",
 });
 
-export const createEventSlice = createAsyncSlice<Schema_Event_Wip>({
+export const createEventSlice = createAsyncSlice<Schema_Event>({
   name: "createEvent",
 });
 
@@ -43,7 +43,7 @@ export const editEventSlice = createAsyncSlice<EditEventPayload>({
 });
 
 export interface EventEntities {
-  [key: string]: Schema_Event_Wip;
+  [key: string]: Schema_Event;
 }
 
 export interface InsertEventsAction extends Action {

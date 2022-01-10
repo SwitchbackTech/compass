@@ -28,7 +28,7 @@ export interface Old_Schema_Event extends Old_Schema_Event_NoId {
   _id: string; // needs to always return events id
 }
 
-export interface Schema_Event_Wip {
+export interface Schema_Event {
   _id?: string; // $$ make required?
   title?: string;
   description?: string;

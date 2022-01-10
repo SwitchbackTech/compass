@@ -4,7 +4,7 @@ import weekPlugin from "dayjs/plugin/weekOfYear";
 import { useDispatch, useSelector } from "react-redux";
 
 import { Priorities } from "@core/core.constants";
-import { Schema_Event_Wip } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
 import {
   SHORT_HOURS_AM_FORMAT,
@@ -155,7 +155,7 @@ export const useGetWeekViewProps = () => {
     );
   }, [week]);
 
-  const onSubmitEvent = (event: Schema_Event_Wip | GridEventEntity) => {
+  const onSubmitEvent = (event: Schema_Event | GridEventEntity) => {
     const eventToSave = { ...event };
 
     const maxDayMinutes = 1440;
@@ -396,7 +396,7 @@ export const useGetWeekViewProps = () => {
 
   const onScalerMouseDown = (
     e: React.MouseEvent,
-    eventToScale: Schema_Event_Wip,
+    eventToScale: Schema_Event,
     dateKey: "startDate" | "endDate"
   ) => {
     e.stopPropagation();
@@ -405,10 +405,7 @@ export const useGetWeekViewProps = () => {
     setEditingEvent({ ...eventToScale, isOpen: false });
   };
 
-  const onEventMouseDown = (
-    e: React.MouseEvent,
-    eventToDrug: Schema_Event_Wip
-  ) => {
+  const onEventMouseDown = (e: React.MouseEvent, eventToDrug: Schema_Event) => {
     e.stopPropagation();
     e.preventDefault();
 
