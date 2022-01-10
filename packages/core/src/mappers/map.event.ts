@@ -1,17 +1,17 @@
+/* eslint-disable @typescript-eslint/no-namespace */
 import { v4 as uuidv4 } from "uuid";
 
-/* eslint-disable @typescript-eslint/no-namespace */
 import { gSchema$Event } from "@compass/backend/declarations";
 import { notCancelled } from "@compass/backend/src/common/services/gcal/gcal.helpers";
 
 import { BaseError } from "@core/errors/errors.base";
-import { Old_Schema_Event, Old_Schema_Event_NoId } from "../types/event.types";
+import { Schema_Event } from "../types/event.types";
 
 export namespace MapEvent {
   export const toCompass = (
     userId: string,
     events: gSchema$Event[]
-  ): Old_Schema_Event[] | Old_Schema_Event_NoId[] => {
+  ): Schema_Event => {
     const mapped = events
       .filter(notCancelled)
       .map((e: gSchema$Event) => _toCompass(userId, e));
@@ -21,7 +21,7 @@ export namespace MapEvent {
 
   export const toGcal = (
     userId: string,
-    event: Old_Schema_Event_NoId
+    event: Schema_Event
   ): gSchema$Event => {
     const gcalEvent = {
       summary: event.title,
@@ -34,10 +34,7 @@ export namespace MapEvent {
   };
 }
 
-const _toCompass = (
-  userId: string,
-  gEvent: gSchema$Event
-): Old_Schema_Event | Old_Schema_Event_NoId => {
+const _toCompass = (userId: string, gEvent: gSchema$Event): Schema_Event => {
   // TODO - move to validation service
   if (!gEvent.id) {
     throw new BaseError(

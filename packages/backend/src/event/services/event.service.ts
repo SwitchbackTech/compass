@@ -5,8 +5,7 @@ import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import {
-  Old_Schema_Event_NoId,
-  Old_Schema_Event,
+  Schema_Event,
   Query_Event,
   Params_DeleteMany,
   Result_DeleteMany,
@@ -28,8 +27,8 @@ const logger = Logger("app:event.service");
 class EventService {
   async create(
     userId: string,
-    event: Old_Schema_Event_NoId
-  ): Promise<Old_Schema_Event | BaseError> {
+    event: Schema_Event
+  ): Promise<Schema_Event | BaseError> {
     try {
       const _gEvent = MapEvent.toGcal(userId, event);
       const gcal = await getGcal(userId);
@@ -42,7 +41,7 @@ class EventService {
         .insertOne(eventWithGcalId);
 
       if ("acknowledged" in response) {
-        const dto: Old_Schema_Event = {
+        const dto: Schema_Event = {
           ...eventWithGcalId,
           _id: response.insertedId.toString(),
         };
@@ -59,7 +58,7 @@ class EventService {
 
   async createMany(
     userId: string,
-    data: Old_Schema_Event_NoId[]
+    data: Schema_Event[]
   ): Promise<InsertManyResult | BaseError> {
     //TODO verify userId exists first (?)
 
@@ -88,7 +87,7 @@ class EventService {
       const filter = { _id: mongoService.objectId(id), user: userId };
 
       //get event so you can see the googleId
-      const event: Old_Schema_Event_NoId = await mongoService.db
+      const event: Schema_Event = await mongoService.db
         .collection(Collections.EVENT)
         .findOne(filter);
 
@@ -205,13 +204,13 @@ class EventService {
   async readById(
     userId: string,
     eventId: string
-  ): Promise<Old_Schema_Event | BaseError> {
+  ): Promise<Schema_Event | BaseError> {
     try {
       const filter = {
         _id: mongoService.objectId(eventId),
         user: userId,
       };
-      const event: Old_Schema_Event = await mongoService.db
+      const event: Schema_Event = await mongoService.db
         .collection(Collections.EVENT)
         .findOne(filter);
 
@@ -234,30 +233,10 @@ class EventService {
   async readAll(
     userId: string,
     query: Query_Event
-  ): Promise<Old_Schema_Event[] | BaseError> {
-    /*
-    return [
-      {
-        priority: "work",
-        // startDate: "2022-01-05 14:00",
-        // endDate: "2022-01-05 16:30",
-        // startDate: "2022-01-06T14:45:00-06:00", //works
-        // endDate: "2022-01-06T16:00:00-06:00",
-        startDate: "2022-01-06", //works, but fills up entire column
-        endDate: "2022-01-07",
-        isTimeSelected: true,
-        isOpen: false,
-        title: "#code",
-        id: "02c217ec-11e6-4813-907a-5194f043fd5d",
-        order: 0,
-        groupOrder: 0,
-        groupCount: 0,
-      },
-    ];
-    */
+  ): Promise<Schema_Event[] | BaseError> {
     try {
       const filter = getReadAllFilter(userId, query);
-      const response: Old_Schema_Event[] = await mongoService.db
+      const response: Schema_Event[] = await mongoService.db
         .collection(Collections.EVENT)
         .find(filter)
         .toArray();
@@ -271,8 +250,8 @@ class EventService {
   async updateById(
     userId: string,
     eventId: string,
-    event: Old_Schema_Event_NoId
-  ): Promise<Old_Schema_Event | BaseError> {
+    event: Schema_Event
+  ): Promise<Schema_Event | BaseError> {
     try {
       if ("_id" in event) {
         delete event._id; // mongo doesn't allow changing this field directly
@@ -316,7 +295,7 @@ class EventService {
     }
   }
 
-  async updateMany(userId: string, events: Old_Schema_Event[]) {
+  async updateMany(userId: string, events: Schema_Event[]) {
     return "not done implementing this operation";
 
     const testId = `events.$[_id]`;

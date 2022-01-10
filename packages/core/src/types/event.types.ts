@@ -2,32 +2,6 @@ import { Query } from "express-serve-static-core";
 
 import { Priorities } from "@core/core.constants";
 
-export interface Old_Schema_Event_NoId {
-  // note: no compass _id field here
-  gEventId?: string;
-  // TODO make user optional (?)
-  // this user field can cause issues if someone adds it and it doesnt match the one
-  // created during JWT middleware
-  // user: string;
-  priorities: string[];
-  title: string;
-  description?: string | null;
-  start?: {
-    dateTime?: string | null;
-    date?: string | null;
-    timeZone?: string | null;
-  };
-  end?: {
-    dateTime?: string | null;
-    date?: string | null;
-    timeZone?: string | null;
-  };
-}
-
-export interface Old_Schema_Event extends Old_Schema_Event_NoId {
-  _id: string; // needs to always return events id
-}
-
 export interface Schema_Event {
   _id?: string; // $$ make required?
   title?: string;
