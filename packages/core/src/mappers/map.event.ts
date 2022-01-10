@@ -11,7 +11,7 @@ export namespace MapEvent {
   export const toCompass = (
     userId: string,
     events: gSchema$Event[]
-  ): Schema_Event => {
+  ): Schema_Event[] => {
     const mapped = events
       .filter(notCancelled)
       .map((e: gSchema$Event) => _toCompass(userId, e));
@@ -23,11 +23,16 @@ export namespace MapEvent {
     userId: string,
     event: Schema_Event
   ): gSchema$Event => {
+    console.log("reminder: full-day evts not supported [mapper]");
     const gcalEvent = {
       summary: event.title,
       description: event.description,
-      start: event.start,
-      end: event.end,
+      start: {
+        dateTime: event.startDate,
+      },
+      end: {
+        dateTime: event.endDate,
+      },
     };
 
     return gcalEvent;
@@ -44,6 +49,8 @@ const _toCompass = (userId: string, gEvent: gSchema$Event): Schema_Event => {
       false
     );
   }
+  //TODO validate that event has either date or dateTime values
+
   const gEventId = gEvent.id ? gEvent.id : "uh oh";
   const title = gEvent.summary ? gEvent.summary : "untitled";
 
@@ -56,11 +63,9 @@ const _toCompass = (userId: string, gEvent: gSchema$Event): Schema_Event => {
     title: title,
     description: gEvent.description,
     priorities: [],
-    startDate: isAllDay ? gEvent.start.date : gEvent.start?.dateTime,
-    endDate: isAllDay ? gEvent.end.date : gEvent.end?.dateTime,
-    // $$ Remove start and end after finishing conversion
-    end: gEvent.end,
-    start: gEvent.start,
+    startDate: isAllDay ? gEvent.start.date : gEvent.start.dateTime,
+    endDate: isAllDay ? gEvent.end.date : gEvent.end.dateTime,
+
     // temp stuff to update
     id: tempId, // use compassId or figure sth else out
     priority: "self", // $$ TODO update

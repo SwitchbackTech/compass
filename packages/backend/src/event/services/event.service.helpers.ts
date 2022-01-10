@@ -17,21 +17,21 @@ export const getReadAllFilter = (userId: string, query: Query_Event) => {
         {
           $or: [
             {
-              "start.dateTime": {
+              startDate: {
                 $gte: new Date(start).toISOString(),
               },
             },
             {
-              "start.date": { $gte: new Date(start).toISOString() },
+              startDate: { $gte: new Date(start).toISOString() },
             },
           ],
         },
         {
           $or: [
             {
-              "end.dateTime": { $lte: new Date(end).toISOString() },
+              endDate: { $lte: new Date(end).toISOString() },
             },
-            { "end.date": { $lte: new Date(end).toISOString() } },
+            { endDate: { $lte: new Date(end).toISOString() } },
           ],
         },
       ],

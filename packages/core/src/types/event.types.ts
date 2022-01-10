@@ -4,8 +4,9 @@ import { Priorities } from "@core/core.constants";
 
 export interface Schema_Event {
   _id?: string; // $$ make required?
+  gEventId?: string;
   title?: string;
-  description?: string;
+  description?: string | null | undefined;
   startDate?: string;
   endDate?: string;
   priority: Priorities;

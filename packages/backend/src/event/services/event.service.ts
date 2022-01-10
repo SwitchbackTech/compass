@@ -122,7 +122,7 @@ class EventService {
       return response;
     } catch (e) {
       logger.error(e);
-      return new BaseError("Delete Failed!", e, 500, true);
+      return new BaseError("Delete Failed!", e, Status.INTERNAL_SERVER, true);
     }
   }
 
@@ -200,7 +200,22 @@ class EventService {
       return errorSummary;
     }
   }
-
+  async readAll(
+    userId: string,
+    query: Query_Event
+  ): Promise<Schema_Event[] | BaseError> {
+    try {
+      const filter = getReadAllFilter(userId, query);
+      const response: Schema_Event[] = await mongoService.db
+        .collection(Collections.EVENT)
+        .find(filter)
+        .toArray();
+      return response;
+    } catch (e) {
+      logger.error(e);
+      return new BaseError("Read Failed", e, 500, true);
+    }
+  }
   async readById(
     userId: string,
     eventId: string
@@ -225,23 +240,6 @@ class EventService {
 
       return event;
     } catch (e: any) {
-      logger.error(e);
-      return new BaseError("Read Failed", e, 500, true);
-    }
-  }
-
-  async readAll(
-    userId: string,
-    query: Query_Event
-  ): Promise<Schema_Event[] | BaseError> {
-    try {
-      const filter = getReadAllFilter(userId, query);
-      const response: Schema_Event[] = await mongoService.db
-        .collection(Collections.EVENT)
-        .find(filter)
-        .toArray();
-      return response;
-    } catch (e) {
       logger.error(e);
       return new BaseError("Read Failed", e, 500, true);
     }
@@ -273,7 +271,7 @@ class EventService {
           true
         );
       }
-      const updatedEvent = response.value;
+      const updatedEvent = response.value as Schema_Event;
 
       const gEvent = MapEvent.toGcal(userId, updatedEvent);
       const gcal = await getGcal(userId);
