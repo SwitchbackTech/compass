@@ -32,7 +32,7 @@ function* getEventsSaga(payload: Params_Events_Wip) {
     payload
   )) as GetEventsSuccessResponse;
 
-  const eventsSchema = new schema.Entity("events");
+  const eventsSchema = new schema.Entity("events", {}, { idAttribute: "_id" });
   const normalizedEvents = normalize<Schema_Event>(res.data, [eventsSchema]);
 
   yield put(

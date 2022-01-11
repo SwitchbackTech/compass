@@ -57,7 +57,6 @@ const _toCompass = (userId: string, gEvent: gSchema$Event): Schema_Event => {
   const title = gEvent.summary ? gEvent.summary : "untitled";
 
   const isAllDay = "date" in gEvent.start;
-  const tempId = `${title.substring(0, 4)}-${uuidv4()}`;
 
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
@@ -69,7 +68,6 @@ const _toCompass = (userId: string, gEvent: gSchema$Event): Schema_Event => {
     endDate: isAllDay ? gEvent.end.date : gEvent.end.dateTime,
 
     // temp stuff to update
-    id: tempId, // use compassId or figure sth else out
     priority: "self", // $$ TODO update
     // isTimeSelected: true,
     // isOpen: false,
