@@ -35,13 +35,10 @@ class EventService {
       const _gEvent = MapEvent.toGcal(userId, event);
       const gEvent = await gcalService.createEvent(gcal, _gEvent);
 
-      const tempId = `${gEvent.summary.substring(0, 4)}-${uuidv4()}`;
-      // $$ remove id
       const eventWithGcalId = {
         ...event,
         user: userId,
         gEventId: gEvent.id,
-        id: tempId,
       };
 
       const response = await mongoService.db

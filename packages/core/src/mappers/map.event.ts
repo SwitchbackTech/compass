@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { v4 as uuidv4 } from "uuid";
-
 import { gSchema$Event } from "@compass/backend/declarations";
 import { notCancelled } from "@compass/backend/src/common/services/gcal/gcal.helpers";
 

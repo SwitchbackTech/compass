@@ -44,7 +44,7 @@ export const Event = ({ event: _event }: Props) => {
         : event.order;
     dispatch(
       editEventSlice.actions.request({
-        id: draggedEvent.id || "",
+        _id: draggedEvent._id || "",
         event: { ...draggedEvent, order },
       })
     );

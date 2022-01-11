@@ -118,8 +118,7 @@ export const useGetWeekViewProps = () => {
 
   const allDayEvents = weekEvents.filter((event) => event.allDay);
 
-  // $$ update .id to _id ??
-  const isAddingAllDayEvent = !!(editingEvent?.allDay && !editingEvent.id);
+  const isAddingAllDayEvent = !!(editingEvent?.allDay && !editingEvent._id);
 
   const daysToLastOrderIndex: { [key: string]: number } = {};
 
@@ -184,11 +183,10 @@ export const useGetWeekViewProps = () => {
         .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
     }
 
-    if (eventToSave.id) {
+    if (eventToSave._id) {
       dispatch(
         editEventSlice.actions.request({
           _id: eventToSave._id,
-          id: eventToSave.id,
           event: eventToSave,
         })
       );

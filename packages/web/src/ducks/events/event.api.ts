@@ -9,8 +9,6 @@ import { headers } from "@web/common/helpers";
 import { BASEURL } from "@web/common/constants/api";
 import {
   createEventLocalStorage,
-  editEvent,
-  editEventOld,
   getEventsLocalStorage,
 } from "@web/ducks/events/event.helpers";
 

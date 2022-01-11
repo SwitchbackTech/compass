@@ -165,12 +165,6 @@ export const createEventLocalStorage = async (event: Schema_Event) => {
   );
 };
 
-// $$ del if not using
-export const editEvent = async (_id: string, event: Schema_Event) => {
-  console.log("editing this evt:", _id);
-  //TODO sort events like below (in case times changed)
-};
-
 // $$ del
 export const editEventOld = async (id: string, event: Schema_Event) => {
   console.log(`editing evt: ${id}`);
