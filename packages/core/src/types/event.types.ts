@@ -9,7 +9,7 @@ export interface Schema_Event {
   description?: string | null | undefined;
   startDate?: string;
   endDate?: string;
-  // priority: Priorities;
+  // priority: Priorities; $$
   priority?: string;
   priorities?: string[]; // the eventual structure, with ids as strs
   user?: string;

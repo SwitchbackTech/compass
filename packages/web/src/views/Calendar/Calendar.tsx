@@ -247,7 +247,7 @@ export const CalendarView = () => {
           <StyledEvents>
             {component.allDayEvents.map((event) => (
               <WeekEvent
-                key={event.id}
+                key={event._id}
                 weekViewProps={weekViewProps}
                 event={event}
               />
@@ -302,7 +302,7 @@ export const CalendarView = () => {
           <StyledEvents>
             {component.weekEvents.map((event) => (
               <WeekEvent
-                key={event.id}
+                key={event._id}
                 weekViewProps={weekViewProps}
                 event={event}
               />

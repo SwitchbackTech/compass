@@ -38,9 +38,10 @@ const WeekEventComponent = (
 
   const eventEndShortAmTime = eventEndDay.format(SHORT_HOURS_AM_FORMAT);
 
-  const isActive = component.editingEvent?.id === event.id;
+  // $$ remove optional ?
+  const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
-    component.editingEvent?.id === event.id && !event.isEditing;
+    component.editingEvent?._id === event._id && !event.isEditing;
 
   let width =
     component.weekDaysRef.current?.children[startDay].clientWidth || 0;
