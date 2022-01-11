@@ -10,6 +10,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { EventApi } from "@web/ducks/events/event.api";
 import {
   createEventSlice,
+  deleteEventSlice,
   editEventSlice,
   eventsEntitiesSlice,
   getCurrentMonthEventsSlice,
@@ -18,6 +19,7 @@ import {
 } from "./slice";
 import {
   CreateEventAction,
+  Payload_DeleteEvent,
   EditEventAction,
   GetEventsSagaResponse,
   GetEventsSuccessResponse,
@@ -109,12 +111,22 @@ function* getEverySectionEvents() {
 function* createEventSaga({ payload }: CreateEventAction) {
   try {
     yield call(EventApi.create, payload);
-    // yield call(EventApi.createOld, payload); // $$
     yield put(createEventSlice.actions.success());
 
     yield call(getEverySectionEvents);
   } catch (error) {
     yield put(createEventSlice.actions.error());
+  }
+}
+
+function* deleteEventSaga({ payload }: Payload_DeleteEvent) {
+  try {
+    yield call(EventApi.delete, payload._id);
+    yield put(deleteEventSlice.actions.success());
+
+    yield call(getEverySectionEvents);
+  } catch (error) {
+    yield put(deleteEventSlice.actions.error());
   }
 }
 
@@ -137,4 +149,5 @@ export function* eventsSagas() {
   yield takeLatest(getFutureEventsSlice.actions.request, getFutureEventsSaga);
   yield takeLatest(createEventSlice.actions.request, createEventSaga);
   yield takeLatest(editEventSlice.actions.request, editEventSaga);
+  yield takeLatest(deleteEventSlice.actions.request, deleteEventSaga);
 }

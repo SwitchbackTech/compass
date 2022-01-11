@@ -30,6 +30,12 @@ export interface CreateEventAction extends Action {
   payload: Schema_Event;
 }
 
+export interface Payload_DeleteEvent {
+  payload: {
+    _id: string;
+  };
+}
+
 export interface EditEventPayload {
   _id: string;
   event: Schema_Event;

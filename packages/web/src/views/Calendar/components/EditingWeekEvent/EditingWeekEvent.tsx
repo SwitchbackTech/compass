@@ -45,8 +45,9 @@ export const EditingWeekEvent: React.FC<Props> = ({
           <EventForm
             setEvent={setEvent}
             event={event}
-            onSubmit={onSubmitEventForm}
+            onDelete={weekViewProps.eventHandlers.onDeleteEvent}
             onClose={onCloseEventForm}
+            onSubmit={onSubmitEventForm}
           />
         </div>
       </ArrowContainer>

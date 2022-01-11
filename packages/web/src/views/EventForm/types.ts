@@ -9,6 +9,7 @@ export interface BasicProps {
 
 export interface ComponentProps extends BasicProps {
   onClose: () => void;
+  onDelete: (eventId: string) => void;
   onSubmit: (event: Schema_Event) => void;
   event?: Schema_Event;
   setEvent: React.Dispatch<React.SetStateAction<Schema_Event>>;

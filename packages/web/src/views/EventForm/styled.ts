@@ -60,7 +60,18 @@ export const StyledDescriptionField = styled(Textarea)`
   position: relative;
 `;
 
-export const StiledSubmitButton = styled(Button)`
+export const StyledDeleteButton = styled(Button)`
+/* these colors being overridden by sth */
+  background: "#000000"
+  color: "#000000";
+  margin-top: 35px;
+
+  &:hover {
+      background: "red";
+  }
+`;
+
+export const StyledSubmitButton = styled(Button)`
   background: ${getColor(ColorNames.WHITE_5)};
   color: ${getColor(ColorNames.GREY_1)};
   margin-top: 35px;

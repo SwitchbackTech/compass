@@ -47,12 +47,8 @@ const EventApi = {
     return createEventLocalStorage(event);
   },
 
-  async delete(gId) {
-    const response = await axios.delete(
-      `${BASEURL}/event/delete?eventId=${gId}`,
-      headers()
-    );
-    return response.data;
+  delete(_id: string) {
+    return axios.delete(`${BASEURL}/event/${_id}`, headers());
   },
 
   edit: (_id: string, event: Schema_Event) => {

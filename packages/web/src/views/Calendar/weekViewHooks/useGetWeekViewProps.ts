@@ -29,6 +29,7 @@ import {
   GRID_Y_OFFSET as _GRID_Y_OFFSET,
 } from "../constants";
 import { EventState, GridEventEntity } from "./types";
+import { deleteEventSlice } from "../../../ducks/events/slice";
 
 dayjs.extend(weekPlugin);
 
@@ -165,6 +166,10 @@ export const useGetWeekViewProps = () => {
   /*********
    * Handlers
    **********/
+  const onDeleteEvent = (_id: string) => {
+    dispatch(deleteEventSlice.actions.request({ _id: _id }));
+    setEditingEvent(null);
+  };
   const onSubmitEvent = (event: Schema_Event | GridEventEntity) => {
     const eventToSave = { ...event };
 
@@ -510,6 +515,7 @@ export const useGetWeekViewProps = () => {
   return {
     eventHandlers: {
       setEditingEvent,
+      onDeleteEvent,
       onEventsGridRelease,
       onEventsGridMouseDown,
       onEventGridMouseMove,

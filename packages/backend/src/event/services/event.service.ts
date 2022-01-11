@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { InsertManyResult } from "mongodb";
 
 import { Result_Import_Gcal } from "@core/types/sync.types";

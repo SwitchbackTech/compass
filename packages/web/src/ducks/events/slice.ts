@@ -38,6 +38,10 @@ export const createEventSlice = createAsyncSlice<Schema_Event>({
   name: "createEvent",
 });
 
+export const deleteEventSlice = createAsyncSlice<{ _id: string }>({
+  name: "deleteEvent",
+});
+
 export const editEventSlice = createAsyncSlice<EditEventPayload>({
   name: "editEvent",
 });
@@ -65,6 +69,7 @@ export const eventsReducer = combineReducers({
   getCurrentMonthEvents: getCurrentMonthEventsSlice.reducer,
   getFutureEvents: getFutureEventsSlice.reducer,
   createEvent: createEventSlice.reducer,
+  deleteEvent: deleteEventSlice.reducer,
   editEvent: editEventSlice.reducer,
 
   entities: eventsEntitiesSlice.reducer,

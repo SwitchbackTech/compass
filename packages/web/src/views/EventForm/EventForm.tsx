@@ -22,13 +22,15 @@ import {
   StyledTitleField,
   StyledPriorityFlex,
   StyledDescriptionField,
-  StiledSubmitButton,
+  StyledDeleteButton,
+  StyledSubmitButton,
 } from "./styled";
 import { ComponentProps } from "./types";
 import { DateTimePickersSection } from "./DateTimePickersSection";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
+  onDelete,
   onSubmit,
   event,
   setEvent,
@@ -124,6 +126,11 @@ export const EventForm: React.FC<ComponentProps> = ({
       document.removeEventListener("keyup", keyUpHandler);
     };
   }, []);
+
+  const onDeleteForm = () => {
+    onDelete(event._id);
+    onClose();
+  };
 
   const onSubmitForm = () => {
     const startDateString = dayjs(selectedStartDate).format(
@@ -246,7 +253,8 @@ export const EventForm: React.FC<ComponentProps> = ({
         onChange={onChangeEventTextField("description")}
       />
 
-      <StiledSubmitButton onClick={onSubmitForm}>Submit</StiledSubmitButton>
+      <StyledSubmitButton onClick={onSubmitForm}>Submit</StyledSubmitButton>
+      <StyledDeleteButton onClick={onDeleteForm}>Delete</StyledDeleteButton>
     </Styled>
   );
 };

@@ -3,7 +3,7 @@ import { Query } from "express-serve-static-core";
 import { Priorities } from "@core/core.constants";
 
 export interface Schema_Event {
-  _id?: string; // $$ make required?
+  _id?: string;
   gEventId?: string;
   title?: string;
   description?: string | null | undefined;
