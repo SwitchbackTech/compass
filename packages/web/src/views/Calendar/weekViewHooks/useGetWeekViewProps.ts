@@ -52,6 +52,10 @@ eventsGroupedByDays[dayIndex].map(event => <WeekEvent />)
 */
 
 export const useGetWeekViewProps = () => {
+  /*************
+   * Initializing
+   ***************/
+
   const today = dayjs();
   const eventEntities = useSelector(selectEventEntities);
   const weekEventIds = useSelector((state: RootState) =>
@@ -114,6 +118,7 @@ export const useGetWeekViewProps = () => {
 
   const allDayEvents = weekEvents.filter((event) => event.allDay);
 
+  // $$ update .id to _id ??
   const isAddingAllDayEvent = !!(editingEvent?.allDay && !editingEvent.id);
 
   const daysToLastOrderIndex: { [key: string]: number } = {};
@@ -135,6 +140,9 @@ export const useGetWeekViewProps = () => {
 
   const todayDayWeekNumber = today.get("day") + 1;
   const beforeDaysCount = todayDayWeekNumber - 1;
+  /*************
+   * Hooks
+   ***************/
 
   useEffect(() => {
     setGridYOffset(
@@ -155,6 +163,9 @@ export const useGetWeekViewProps = () => {
     );
   }, [week]);
 
+  /*********
+   * Handlers
+   **********/
   const onSubmitEvent = (event: Schema_Event | GridEventEntity) => {
     const eventToSave = { ...event };
 
@@ -495,6 +506,9 @@ export const useGetWeekViewProps = () => {
     return getBeforeDayWidth() * _beforeDaysCount;
   };
 
+  /*********
+   * Assemble
+   **********/
   return {
     eventHandlers: {
       setEditingEvent,

@@ -23,15 +23,17 @@ export namespace MapEvent {
     userId: string,
     event: Schema_Event
   ): gSchema$Event => {
-    console.log("reminder: full-day evts not supported [mapper]");
+    console.log("reminder: full-day evts not supported yet [mapper]");
+    console.log("reminder: only works in server time (CST) [mapper]");
+
     const gcalEvent = {
-      summary: event.title,
-      description: event.description,
+      summary: event.title, // TODO only add this field if not undefined
+      description: event.description, // TODO only add this field if not undefined
       start: {
-        dateTime: event.startDate,
+        dateTime: new Date(event.startDate).toISOString(), // uses server's time, since no TZ info provided
       },
       end: {
-        dateTime: event.endDate,
+        dateTime: new Date(event.endDate).toISOString(),
       },
     };
 

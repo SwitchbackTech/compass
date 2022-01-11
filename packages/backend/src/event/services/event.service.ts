@@ -284,7 +284,9 @@ class EventService {
           true
         );
       }
-      gcalService.updateEvent(gcal, gEventId, gEvent);
+      //TODO error-handle this and/or extract from this and turn into its own saga,
+      // in order to remove extra work that delays response to user
+      const gcalRes = await gcalService.updateEvent(gcal, gEventId, gEvent);
 
       return updatedEvent;
     } catch (e) {

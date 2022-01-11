@@ -82,28 +82,7 @@ module.exports = {
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   // Allows using import aliases
-  moduleNameMapper: {
-    //core
-    "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
-    //backend
-    // "^@backend/auth/(.*)$": "<rootDir>/packages/backend/src/auth/$1",
-    // "^@backend/calendar/(.*)$": "<rootDir>/packages/backend/src/calendar/$1",
-    // "^@backend/event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
-    // "^@backend/common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
-    // "^@backend/priority/(.*)$": "<rootDir>/packages/backend/src/priority/$1",
-    // "^@backend/sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
-    // "^@backend/user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
-    //web
-    // "^@assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
-    // "^@web/common/(.*)$": "<rootDir>/packages/web/src/common/$1",
-    // "^@components/(.*)$": "<rootDir>/packages/web/src/components/$1",
-    // "^@containers/(.*)$": "<rootDir>/packages/web/src/containers/$1",
-    // "^@ducks/(.*)$": "<rootDir>/packages/web/src/ducks/$1",
-    // "^@public/(.*)$": "<rootDir>/packages/web/src/public/$1",
-    // "^@routers/(.*)$": "<rootDir>/packages/web/src/routers/$1",
-    // "^@store/(.*)$": "<rootDir>/packages/web/src/store/$1",
-    // "^@views/(.*)$": "<rootDir>/packages/web/src/views/$1",
-  },
+  // moduleNameMapper: {}
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
   // modulePathIgnorePatterns: [],
@@ -124,8 +103,10 @@ module.exports = {
     {
       displayName: "core",
       testEnvironment: "node",
-      // testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
-      testMatch: ["<rootDir>/packages/core/(*.)+(spec|test).[tj]s?(x)"],
+      testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
+      moduleNameMapper: {
+        "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
+      },
     },
     {
       displayName: "web",
@@ -203,7 +184,7 @@ module.exports = {
 
   // The test environment that will be used for testing
   // testEnvironment: "jsdom",
-  testEnvironment: "node",
+  // testEnvironment: "node",
 
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},
