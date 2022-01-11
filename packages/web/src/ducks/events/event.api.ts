@@ -41,7 +41,7 @@ TODO: Add Pagination  for Someday event lists:
 
 const EventApi = {
   create(event: Schema_Event) {
-    return "TODO-implement";
+    return axios.post(`${BASEURL}/event`, event, headers());
   },
 
   // $$

@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import { InsertManyResult } from "mongodb";
 
 import { Result_Import_Gcal } from "@core/types/sync.types";
@@ -30,22 +31,29 @@ class EventService {
     event: Schema_Event
   ): Promise<Schema_Event | BaseError> {
     try {
-      const _gEvent = MapEvent.toGcal(userId, event);
       const gcal = await getGcal(userId);
+      const _gEvent = MapEvent.toGcal(userId, event);
       const gEvent = await gcalService.createEvent(gcal, _gEvent);
 
-      const eventWithGcalId = { ...event, gEventId: gEvent.id };
+      const tempId = `${gEvent.summary.substring(0, 4)}-${uuidv4()}`;
+      // $$ remove id
+      const eventWithGcalId = {
+        ...event,
+        user: userId,
+        gEventId: gEvent.id,
+        id: tempId,
+      };
 
       const response = await mongoService.db
         .collection(Collections.EVENT)
         .insertOne(eventWithGcalId);
 
       if ("acknowledged" in response) {
-        const dto: Schema_Event = {
+        const eventWithId: Schema_Event = {
           ...eventWithGcalId,
           _id: response.insertedId.toString(),
         };
-        return dto;
+        return eventWithId;
       } else {
         return new BaseError("Create Failed", response.toString(), 500, true);
       }

@@ -28,7 +28,6 @@ import { selectPaginatedEventsBySectionType } from "./selectors";
 
 function* getEventsSaga(payload: Params_Events_Wip) {
   const res: GetEventsSuccessResponse = (yield call(
-    // EventApi.getEvtsLocalStorage,
     EventApi.get,
     payload
   )) as GetEventsSuccessResponse;
@@ -109,9 +108,8 @@ function* getEverySectionEvents() {
 
 function* createEventSaga({ payload }: CreateEventAction) {
   try {
-    // yield call(EventApi.createEvt, payload);
-    //TODO swap for ^
-    yield call(EventApi.createOld, payload);
+    yield call(EventApi.create, payload);
+    // yield call(EventApi.createOld, payload); // $$
     yield put(createEventSlice.actions.success());
 
     yield call(getEverySectionEvents);

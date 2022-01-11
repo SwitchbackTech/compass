@@ -59,7 +59,7 @@ const _toCompass = (userId: string, gEvent: gSchema$Event): Schema_Event => {
   const isAllDay = "date" in gEvent.start;
   const tempId = `${title.substring(0, 4)}-${uuidv4()}`;
 
-  const compassEvent = {
+  const compassEvent: Schema_Event = {
     gEventId: gEventId,
     user: userId,
     title: title,
