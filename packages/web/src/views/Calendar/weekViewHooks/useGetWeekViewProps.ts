@@ -28,7 +28,7 @@ import {
   GRID_X_OFFSET,
   GRID_Y_OFFSET as _GRID_Y_OFFSET,
 } from "../constants";
-import { EventState, GridEventEntity } from "./types";
+import { State_Event, Schema_GridEvent } from "./types";
 import { deleteEventSlice } from "../../../ducks/events/slice";
 
 dayjs.extend(weekPlugin);
@@ -67,14 +67,14 @@ export const useGetWeekViewProps = () => {
     .filter((event) => !event.allDay);
 
   const dispatch = useDispatch();
-  const [editingEvent, setEditingEvent] = useState<GridEventEntity | null>(
+  const [editingEvent, setEditingEvent] = useState<Schema_GridEvent | null>(
     null
   );
   const [week, setWeek] = useState(today.week());
   const [modifiableDateField, setModifiableDateField] = useState<
     "startDate" | "endDate" | null
   >(null);
-  const [eventState, setEventState] = useState<EventState | null>(null);
+  const [eventState, setEventState] = useState<State_Event | null>(null);
 
   const calendarRef = useRef<HTMLDivElement>(null);
   const eventsGridRef = useRef<HTMLDivElement>(null);
@@ -170,7 +170,7 @@ export const useGetWeekViewProps = () => {
     dispatch(deleteEventSlice.actions.request({ _id: _id }));
     setEditingEvent(null);
   };
-  const onSubmitEvent = (event: Schema_Event | GridEventEntity) => {
+  const onSubmitEvent = (event: Schema_Event | Schema_GridEvent) => {
     const eventToSave = { ...event };
 
     const maxDayMinutes = 1440;

@@ -7,7 +7,7 @@ import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 
 import { ArrowLeftIcon } from "@web/assets/svg";
-import { SideBarSectionType } from "@web/ducks/events/types";
+import { SectionType_Sidebar } from "@web/ducks/events/types";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors";
 import { RootState } from "@web/store";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
@@ -28,7 +28,7 @@ import { ToggleArrow } from "../ToggleArrow";
 
 export interface EventsListProps {
   offset: number;
-  sectionType: SideBarSectionType;
+  sectionType: SectionType_Sidebar;
   priorities: Priorities[];
   pageSize: number;
 }
@@ -36,7 +36,7 @@ export interface EventsListProps {
 export interface Props {
   title: string;
   EventsListContainer: React.ComponentType<EventsListProps>;
-  sectionType: SideBarSectionType;
+  sectionType: SectionType_Sidebar;
   priorities: Priorities[];
   isToggled?: boolean;
   onToggle?: () => void;

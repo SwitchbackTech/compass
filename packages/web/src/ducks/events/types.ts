@@ -3,31 +3,23 @@ import { Action } from "redux";
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 
-import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import {
-  HttpPaginatedSuccessResponse,
-  PaginationFilters,
+  Response_HttpPaginatedSuccess,
+  Filters_Pagination,
 } from "@web/common/types/apiTypes";
 
-export interface GetWeekEventsPayload {
-  startDate: string;
-  endDate: string;
-}
-
-export interface GetWeekEventsAction extends Action {
-  payload: GetWeekEventsPayload;
-}
-
-export interface GetPaginatedEventsPayload extends PaginationFilters {
-  priorities: Priorities[];
-}
-
-export interface GetPaginatedEventsAction extends Action {
-  payload: GetPaginatedEventsPayload;
-}
-
-export interface CreateEventAction extends Action {
+export interface Action_CreateEvent extends Action {
   payload: Schema_Event;
+}
+export interface Action_EditEvent extends Action {
+  payload: Payload_EditEvent;
+}
+export interface Action_GetWeekEvents extends Action {
+  payload: Payload_GetWeekEvents;
+}
+export interface Action_GetPaginatedEvents extends Action {
+  payload: Payload_GetPaginatedEvents;
 }
 
 export interface Payload_DeleteEvent {
@@ -36,22 +28,26 @@ export interface Payload_DeleteEvent {
   };
 }
 
-export interface EditEventPayload {
+export interface Payload_EditEvent {
   _id: string;
   event: Schema_Event;
 }
-
-export interface EditEventAction extends Action {
-  payload: EditEventPayload;
+export interface Payload_GetWeekEvents {
+  startDate: string;
+  endDate: string;
 }
 
-export type GetEventsSuccessResponse<T = Schema_Event[]> =
-  HttpPaginatedSuccessResponse<T> & GetWeekEventsPayload;
+export interface Payload_GetPaginatedEvents extends Filters_Pagination {
+  priorities: Priorities[];
+}
 
-export type GetEventsSagaResponse =
-  GetEventsSuccessResponse<NormalizedAsyncActionPayload> &
-    GetPaginatedEventsPayload;
+export type Response_GetEventsSuccess<T = Schema_Event[]> =
+  Response_HttpPaginatedSuccess<T> & Payload_GetWeekEvents;
 
-export type SideBarSectionType = "future" | "currentMonth";
+export type Response_GetEventsSaga =
+  Response_GetEventsSuccess<Payload_NormalizedAsyncAction> &
+    Payload_GetPaginatedEvents;
 
-export type SectionType = SideBarSectionType | "week";
+export type SectionType_Sidebar = "future" | "currentMonth";
+
+export type SectionType = SectionType_Sidebar | "week";

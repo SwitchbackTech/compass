@@ -37,7 +37,7 @@ import {
   StyledPrevDaysOverflow,
 } from "./styled";
 import { useGetWeekViewProps } from "./weekViewHooks/useGetWeekViewProps";
-import { GridEventEntity } from "./weekViewHooks/types";
+import { Schema_GridEvent } from "./weekViewHooks/types";
 import { WeekEvent } from "./components/WeekEvent";
 import { EditingWeekEvent } from "./components/EditingWeekEvent";
 import { Sidebar } from "./components/Sidebar";
@@ -57,7 +57,7 @@ export const CalendarView = () => {
         if (editingEvent) return editingEvent;
 
         const handlersByKey = {
-          [Key.C]: () => component.setEditingEvent({} as GridEventEntity),
+          [Key.C]: () => component.setEditingEvent({} as Schema_GridEvent),
           [Key.N]: () => component.setWeek((week) => week + 1),
           [Key.P]: () => component.setWeek((week) => week - 1),
         } as { [key: number]: () => void };

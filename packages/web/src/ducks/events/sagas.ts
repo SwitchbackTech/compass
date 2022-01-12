@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 
 import { Params_Events_Wip, Schema_Event } from "@core/types/event.types";
 
-import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 
 import { EventApi } from "@web/ducks/events/event.api";
@@ -18,21 +18,21 @@ import {
   getWeekEventsSlice,
 } from "./slice";
 import {
-  CreateEventAction,
+  Action_CreateEvent,
   Payload_DeleteEvent,
-  EditEventAction,
-  GetEventsSagaResponse,
-  GetEventsSuccessResponse,
-  GetPaginatedEventsAction,
-  GetWeekEventsAction,
+  Action_EditEvent,
+  Response_GetEventsSaga,
+  Response_GetEventsSuccess,
+  Action_GetPaginatedEvents,
+  Action_GetWeekEvents,
 } from "./types";
 import { selectPaginatedEventsBySectionType } from "./selectors";
 
 function* getEventsSaga(payload: Params_Events_Wip) {
-  const res: GetEventsSuccessResponse = (yield call(
+  const res: Response_GetEventsSuccess = (yield call(
     EventApi.get,
     payload
-  )) as GetEventsSuccessResponse;
+  )) as Response_GetEventsSuccess;
 
   const eventsSchema = new schema.Entity("events", {}, { idAttribute: "_id" });
   const normalizedEvents = normalize<Schema_Event>(res.data, [eventsSchema]);
@@ -43,16 +43,16 @@ function* getEventsSaga(payload: Params_Events_Wip) {
 
   return {
     ...res,
-    data: normalizedEvents.result as NormalizedAsyncActionPayload,
+    data: normalizedEvents.result as Payload_NormalizedAsyncAction,
   };
 }
 
-function* getWeekEventsSaga({ payload }: GetWeekEventsAction) {
+function* getWeekEventsSaga({ payload }: Action_GetWeekEvents) {
   try {
-    const data: GetEventsSagaResponse = (yield call(
+    const data: Response_GetEventsSaga = (yield call(
       getEventsSaga,
       payload
-    )) as GetEventsSagaResponse;
+    )) as Response_GetEventsSaga;
 
     yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
@@ -60,15 +60,15 @@ function* getWeekEventsSaga({ payload }: GetWeekEventsAction) {
   }
 }
 
-function* getCurrentMonthEventsSaga({ payload }: GetPaginatedEventsAction) {
+function* getCurrentMonthEventsSaga({ payload }: Action_GetPaginatedEvents) {
   try {
     const startDate = dayjs().startOf("month").format(YEAR_MONTH_DAY_FORMAT);
     const endDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
-    const data: GetEventsSagaResponse = (yield call(getEventsSaga, {
+    const data: Response_GetEventsSaga = (yield call(getEventsSaga, {
       ...payload,
       startDate,
       endDate,
-    })) as GetEventsSagaResponse;
+    })) as Response_GetEventsSaga;
 
     yield put(getCurrentMonthEventsSlice.actions.success(data));
   } catch (error) {
@@ -76,13 +76,13 @@ function* getCurrentMonthEventsSaga({ payload }: GetPaginatedEventsAction) {
   }
 }
 
-function* getFutureEventsSaga({ payload }: GetPaginatedEventsAction) {
+function* getFutureEventsSaga({ payload }: Action_GetPaginatedEvents) {
   try {
     const startDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
-    const data: GetEventsSagaResponse = (yield call(getEventsSaga, {
+    const data: Response_GetEventsSaga = (yield call(getEventsSaga, {
       ...payload,
       startDate,
-    })) as GetEventsSagaResponse;
+    })) as Response_GetEventsSaga;
 
     yield put(getFutureEventsSlice.actions.success(data));
   } catch (error) {
@@ -91,24 +91,24 @@ function* getFutureEventsSaga({ payload }: GetPaginatedEventsAction) {
 }
 
 function* getEverySectionEvents() {
-  const currentMonthEvents: GetEventsSagaResponse = (yield select((state) =>
+  const currentMonthEvents: Response_GetEventsSaga = (yield select((state) =>
     selectPaginatedEventsBySectionType(state, "currentMonth")
-  )) as GetEventsSagaResponse;
+  )) as Response_GetEventsSaga;
 
-  const futureEvents: GetEventsSagaResponse = (yield select((state) =>
+  const futureEvents: Response_GetEventsSaga = (yield select((state) =>
     selectPaginatedEventsBySectionType(state, "future")
-  )) as GetEventsSagaResponse;
+  )) as Response_GetEventsSaga;
 
-  const weekEvents: GetEventsSagaResponse = (yield select((state) =>
+  const weekEvents: Response_GetEventsSaga = (yield select((state) =>
     selectPaginatedEventsBySectionType(state, "week")
-  )) as GetEventsSagaResponse;
+  )) as Response_GetEventsSaga;
 
   yield put(getCurrentMonthEventsSlice.actions.request(currentMonthEvents));
   yield put(getFutureEventsSlice.actions.request(futureEvents));
   yield put(getWeekEventsSlice.actions.request(weekEvents));
 }
 
-function* createEventSaga({ payload }: CreateEventAction) {
+function* createEventSaga({ payload }: Action_CreateEvent) {
   try {
     yield call(EventApi.create, payload);
     yield put(createEventSlice.actions.success());
@@ -130,7 +130,7 @@ function* deleteEventSaga({ payload }: Payload_DeleteEvent) {
   }
 }
 
-function* editEventSaga({ payload }: EditEventAction) {
+function* editEventSaga({ payload }: Action_EditEvent) {
   try {
     yield call(EventApi.edit, payload._id, payload.event);
     yield put(editEventSlice.actions.success());

@@ -9,13 +9,13 @@ import { colorNameByPriority } from "@web/common/styles/colors";
 import { EventForm } from "@web/views/EventForm";
 
 import { WeekEvent } from "../WeekEvent";
-import { GridEventEntity } from "../../weekViewHooks/types";
+import { Schema_GridEvent } from "../../weekViewHooks/types";
 import { WeekViewProps } from "../../weekViewHooks/useGetWeekViewProps";
 
 export interface Props {
   isOpen: boolean;
   onSubmitEventForm: (event: Schema_Event) => void;
-  event?: GridEventEntity;
+  event?: Schema_GridEvent;
   onCloseEventForm: () => void;
   weekViewProps: WeekViewProps;
   setEvent: React.Dispatch<SetStateAction<Schema_Event>>;
