@@ -1,4 +1,4 @@
-import { Action, combineReducers } from "redux";
+import { combineReducers } from "redux";
 import { createSlice } from "@reduxjs/toolkit";
 
 import { Schema_Event } from "@core/types/event.types";
@@ -8,6 +8,8 @@ import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
 
 import {
+  Action_InsertEvents,
+  Entities_Event,
   Payload_EditEvent,
   Payload_GetPaginatedEvents,
   Payload_GetWeekEvents,
@@ -45,14 +47,6 @@ export const deleteEventSlice = createAsyncSlice<{ _id: string }>({
 export const editEventSlice = createAsyncSlice<Payload_EditEvent>({
   name: "editEvent",
 });
-
-export interface Entities_Event {
-  [key: string]: Schema_Event;
-}
-
-export interface Action_InsertEvents extends Action {
-  payload: Entities_Event | undefined;
-}
 
 export const eventsEntitiesSlice = createSlice({
   name: "eventEntities",

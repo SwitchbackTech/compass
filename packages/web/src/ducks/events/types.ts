@@ -22,6 +22,13 @@ export interface Action_GetPaginatedEvents extends Action {
   payload: Payload_GetPaginatedEvents;
 }
 
+export interface Action_InsertEvents extends Action {
+  payload: Entities_Event | undefined;
+}
+
+export interface Entities_Event {
+  [key: string]: Schema_Event;
+}
 export interface Payload_DeleteEvent {
   payload: {
     _id: string;

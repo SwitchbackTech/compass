@@ -53,9 +53,9 @@ eventsGroupedByDays[dayIndex].map(event => <WeekEvent />)
 */
 
 export const useGetWeekViewProps = () => {
-  /*************
-   * Initializing
-   ***************/
+  /**************************
+   * Selector + Variable Init
+   *************************/
 
   const today = dayjs();
   const eventEntities = useSelector(selectEventEntities);
@@ -67,6 +67,10 @@ export const useGetWeekViewProps = () => {
     .filter((event) => !event.allDay);
 
   const dispatch = useDispatch();
+
+  /************
+   * State Init
+   *************/
   const [editingEvent, setEditingEvent] = useState<Schema_GridEvent | null>(
     null
   );
@@ -140,10 +144,10 @@ export const useGetWeekViewProps = () => {
 
   const todayDayWeekNumber = today.get("day") + 1;
   const beforeDaysCount = todayDayWeekNumber - 1;
+
   /*************
    * Hooks
    ***************/
-
   useEffect(() => {
     setGridYOffset(
       _GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0)
@@ -161,7 +165,7 @@ export const useGetWeekViewProps = () => {
         endDate: endOfSelectedWeekDay.format(YEAR_MONTH_DAY_FORMAT),
       })
     );
-  }, [week]); // $$ add events var to prevent re-renders
+  }, [week]);
 
   /*********
    * Handlers
@@ -170,6 +174,7 @@ export const useGetWeekViewProps = () => {
     dispatch(deleteEventSlice.actions.request({ _id: _id }));
     setEditingEvent(null);
   };
+
   const onSubmitEvent = (event: Schema_Event | Schema_GridEvent) => {
     const eventToSave = { ...event };
 
