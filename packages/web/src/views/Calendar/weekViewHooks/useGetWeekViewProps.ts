@@ -159,8 +159,6 @@ export const useGetWeekViewProps = () => {
   }, [calendarRef.current?.offsetLeft]);
 
   useEffect(() => {
-    console.log(startOfSelectedWeekDay.format(YEAR_MONTH_DAY_FORMAT));
-    console.log(endOfSelectedWeekDay.format(YEAR_MONTH_DAY_FORMAT));
     dispatch(
       getWeekEventsSlice.actions.request({
         startDate: startOfSelectedWeekDay.format(YEAR_MONTH_DAY_FORMAT),

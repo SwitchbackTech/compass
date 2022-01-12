@@ -82,28 +82,13 @@ function* getEventsSaga(payload: Params_Events) {
 
 function* getWeekEventsSaga({ payload }: Action_GetWeekEvents) {
   try {
-    if (!payload.startDate && !payload.endDate) {
-      console.log("TODO make dates dynamic ??");
-      // yield put(getWeekEventsSlice.actions.success([]));
-
-      // console.log(`\tone missing: ${payload.startDate} | ${payload.endDate}`);
-      const data: Response_GetEventsSaga = yield call(getEventsSaga, {
-        ...payload,
-        startDate: "2022-01-09", //make dynamic
-        endDate: "2022-01-15",
-      });
-      yield put(getWeekEventsSlice.actions.success(data));
+    if (!payload.startDate && !payload.endDate && "data" in payload) {
+      // then you have all the data you need
+      yield put(getWeekEventsSlice.actions.success(payload));
     } else {
       const data: Response_GetEventsSaga = yield call(getEventsSaga, payload);
       yield put(getWeekEventsSlice.actions.success(data));
     }
-    // const data: Response_GetEventsSaga = (yield call(getEventsSaga, {
-    // ...payload,
-    // startDate: "2022-01-09",
-    // endDate: "2022-01-15",
-    // })) as Response_GetEventsSaga;
-
-    // yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error());
   }
@@ -159,9 +144,9 @@ function* getEverySectionEvents() {
   yield put(getWeekEventsSlice.actions.request(weekEvents));
 }
 
-/********
+/************
  * Assemble
- *********/
+ ***********/
 export function* eventsSagas() {
   yield takeLatest(getWeekEventsSlice.actions.request, getWeekEventsSaga);
   yield takeLatest(
