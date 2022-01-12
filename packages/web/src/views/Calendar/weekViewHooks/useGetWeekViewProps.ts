@@ -63,7 +63,7 @@ export const useGetWeekViewProps = () => {
     selectEventIdsBySectionType(state, "week")
   );
   const weekEvents = weekEventIds
-    .map((id) => eventEntities[id])
+    .map((_id) => eventEntities[_id])
     .filter((event) => !event.allDay);
 
   const dispatch = useDispatch();
@@ -161,7 +161,7 @@ export const useGetWeekViewProps = () => {
         endDate: endOfSelectedWeekDay.format(YEAR_MONTH_DAY_FORMAT),
       })
     );
-  }, [week]);
+  }, [week]); // $$ add events var to prevent re-renders
 
   /*********
    * Handlers

@@ -2,7 +2,7 @@ import { call, put, takeLatest, select } from "@redux-saga/core/effects";
 import { normalize, schema } from "normalizr";
 import dayjs from "dayjs";
 
-import { Params_Events_Wip, Schema_Event } from "@core/types/event.types";
+import { Params_Events, Schema_Event } from "@core/types/event.types";
 
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
@@ -28,7 +28,7 @@ import {
 } from "./types";
 import { selectPaginatedEventsBySectionType } from "./selectors";
 
-function* getEventsSaga(payload: Params_Events_Wip) {
+function* getEventsSaga(payload: Params_Events) {
   const res: Response_GetEventsSuccess = (yield call(
     EventApi.get,
     payload

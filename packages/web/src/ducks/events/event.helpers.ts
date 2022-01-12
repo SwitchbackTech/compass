@@ -3,7 +3,7 @@ import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { v4 as uuidv4 } from "uuid";
 
-import { Params_Events_Wip, Schema_Event } from "@core/types/event.types";
+import { Params_Events, Schema_Event } from "@core/types/event.types";
 // jest had trouble resolving with @core/..., so using long path for now
 import { Priorities } from "../../../../core/src/core.constants";
 
@@ -34,7 +34,7 @@ group events (which is length of current group)
 TODO: when setting groupCount in event - check
 if event intercepts with any of events from other groups
 */
-export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
+export const getEventsLocalStorage = async (params: Params_Events = {}) => {
   const {
     startDate,
     endDate,

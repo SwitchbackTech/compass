@@ -2,6 +2,24 @@ import { Query } from "express-serve-static-core";
 
 import { Priorities } from "@core/core.constants";
 
+export interface Params_DeleteMany {
+  key: string;
+  ids: string[];
+}
+export interface Params_Events {
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+  offset?: number;
+  priorities?: Priorities[]; // use ids instead of words
+}
+
+export interface Result_DeleteMany {
+  deletedCount: number;
+  errors: any[];
+}
+
 export interface Schema_Event {
   _id?: string;
   gEventId?: string;
@@ -22,24 +40,6 @@ export interface Schema_Event {
   groupOrder?: number;
   groupCount?: number;
   order?: number;
-}
-
-export interface Params_DeleteMany {
-  key: string;
-  ids: string[];
-}
-export interface Params_Events_Wip {
-  startDate?: string;
-  endDate?: string;
-  page?: number;
-  pageSize?: number;
-  offset?: number;
-  priorities?: Priorities[]; // use ids instead of words
-}
-
-export interface Result_DeleteMany {
-  deletedCount: number;
-  errors: any[];
 }
 
 //todo merge with Params_Events_Wip

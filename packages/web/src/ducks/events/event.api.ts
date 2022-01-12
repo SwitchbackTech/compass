@@ -1,16 +1,12 @@
 import axios from "axios";
-import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 
-import { Params_Events_Wip, Schema_Event } from "@core/types/event.types";
+import { Params_Events, Schema_Event } from "@core/types/event.types";
 import { headers } from "@web/common/helpers";
 import { BASEURL } from "@web/common/constants/api";
-import {
-  createEventLocalStorage,
-  getEventsLocalStorage,
-} from "@web/ducks/events/event.helpers";
+import { createEventLocalStorage } from "@web/ducks/events/event.helpers";
 
 //not sure what this does
 dayjs.extend(isSameOrAfter);
@@ -42,11 +38,6 @@ const EventApi = {
     return axios.post(`${BASEURL}/event`, event, headers());
   },
 
-  // $$
-  createOld(event: Schema_Event) {
-    return createEventLocalStorage(event);
-  },
-
   delete(_id: string) {
     return axios.delete(`${BASEURL}/event/${_id}`, headers());
   },
@@ -55,7 +46,7 @@ const EventApi = {
     return axios.put(`${BASEURL}/event/${_id}`, event, headers());
   },
 
-  get: (params: Params_Events_Wip) => {
+  get: (params: Params_Events) => {
     // $$ remove after supporting sidebar items
     if (!params.endDate) {
       console.log("ignoring future events");
@@ -71,10 +62,6 @@ const EventApi = {
     );
   },
 
-  getLocalStorage: (params: Params_Events_Wip) => {
-    return getEventsLocalStorage(params);
-  },
-
   // TODO convert to saga
   async import() {
     const response = await axios.post(
@@ -85,15 +72,6 @@ const EventApi = {
     );
     return response.data;
   },
-
-  // async updateEvt(gId, evt) {
-  //   const response = await axios.put(
-  //     `${BASEURL}/event/update?eventId=${gId}`,
-  //     evt,
-  //     headers()
-  //   );
-  //   return response.data;
-  // },
 };
 
 export { EventApi };
