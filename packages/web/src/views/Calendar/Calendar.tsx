@@ -108,11 +108,11 @@ export const CalendarView = () => {
 
   return (
     <Styled>
-      <Sidebar
+      {/* <Sidebar
         onTransitionEnd={() =>
           setResize({ height: window.innerHeight, width: window.innerWidth })
         }
-      />
+      /> */}
       <StyledCalendar
         ref={component.calendarRef}
         direction={FlexDirections.COLUMN}
