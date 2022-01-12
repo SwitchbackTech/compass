@@ -7,8 +7,8 @@ export interface Params_DeleteMany {
   ids: string[];
 }
 export interface Params_Events {
-  startDate?: string;
-  endDate?: string;
+  startDate: string;
+  endDate: string;
   page?: number;
   pageSize?: number;
   offset?: number;

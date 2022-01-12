@@ -47,15 +47,6 @@ const EventApi = {
   },
 
   get: (params: Params_Events) => {
-    // $$ remove after supporting sidebar items
-    if (!params.endDate) {
-      console.log("ignoring future events");
-      return [];
-    }
-    if (params.startDate === "2022-01-01") {
-      console.log("ignoring this month's events");
-      return [];
-    }
     return axios.get(
       `${BASEURL}/event?start=${params.startDate}&end=${params.endDate}`,
       headers()

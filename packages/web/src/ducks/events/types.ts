@@ -48,12 +48,12 @@ export interface Payload_GetPaginatedEvents extends Filters_Pagination {
   priorities: Priorities[];
 }
 
-export type Response_GetEventsSuccess<T = Schema_Event[]> =
-  Response_HttpPaginatedSuccess<T> & Payload_GetWeekEvents;
-
 export type Response_GetEventsSaga =
   Response_GetEventsSuccess<Payload_NormalizedAsyncAction> &
     Payload_GetPaginatedEvents;
+
+export type Response_GetEventsSuccess<T = Schema_Event[]> =
+  Response_HttpPaginatedSuccess<T> & Payload_GetWeekEvents;
 
 export type SectionType_Sidebar = "future" | "currentMonth";
 
