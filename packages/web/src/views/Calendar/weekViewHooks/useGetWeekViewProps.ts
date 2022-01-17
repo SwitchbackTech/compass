@@ -53,15 +53,19 @@ eventsGroupedByDays[dayIndex].map(event => <WeekEvent />)
 */
 
 export const useGetWeekViewProps = () => {
-  /**************************
-   * Selector + Variable Init
-   *************************/
+  /********************
+   * Events Init
+   *******************/
 
   const today = dayjs();
   const eventEntities = useSelector(selectEventEntities);
   const weekEventIds = useSelector((state: RootState) =>
     selectEventIdsBySectionType(state, "week")
   );
+  // console.log("eventEntities:", Object.keys(eventEntities).length);
+  // console.log("eventEntities:", eventEntities);
+  // console.log("weekEventIds:", Object.keys(weekEventIds).length);
+  // console.log("weekEventIds:", weekEventIds);
   const weekEvents = weekEventIds
     .map((_id) => eventEntities[_id])
     .filter((event) => !event.allDay);

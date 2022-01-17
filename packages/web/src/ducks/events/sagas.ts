@@ -25,34 +25,73 @@ import {
   Response_GetEventsSuccess,
   Action_GetPaginatedEvents,
   Action_GetWeekEvents,
+  Response_CreateEventSaga,
+  Action_DeleteEvent,
 } from "./types";
-import { selectPaginatedEventsBySectionType } from "./selectors";
+import {
+  selectPaginatedEventsBySectionType,
+  selectEventIdsBySectionType,
+} from "./selectors";
+import { useSelector } from "react-redux";
+import { RootState } from "@web/store";
 
 function* createEventSaga({ payload }: Action_CreateEvent) {
   try {
-    yield call(EventApi.create, payload);
-    yield put(createEventSlice.actions.success());
+    const res = (yield call(
+      EventApi.create,
+      payload
+    )) as Response_CreateEventSaga;
 
-    yield call(getEverySectionEvents);
+    const eventsSchema = new schema.Entity(
+      "events",
+      {},
+      { idAttribute: "_id" }
+    );
+    const normalizedEvent = normalize<Schema_Event>(res.data, eventsSchema);
+    console.log("!!normalizedEvent:", normalizedEvent);
+
+    yield put(
+      eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
+    );
+    yield put(createEventSlice.actions.success());
+    // const getSecEvts = yield call(getEverySectionEvents);
+    // console.log("\tgetEverySectionRes:", getSecEvts);
   } catch (error) {
     yield put(createEventSlice.actions.error());
   }
 }
-
-function* deleteEventSaga({ payload }: Payload_DeleteEvent) {
+function* deleteEventSaga({ payload }: Action_DeleteEvent) {
   try {
-    yield call(EventApi.delete, payload._id);
-    yield put(deleteEventSlice.actions.success());
+    // removing the ids from weekEvents, if applicable
+    const weekEventIds = useSelector((state: RootState) =>
+      selectEventIdsBySectionType(state, "week")
+    );
+    const newIds = weekEventIds.filter((i) => i !== "61df541f2df0ab4959240450");
+    console.log("newIds:", newIds);
+    // yield put(
+    //   getWeekEventsSlice.actions.success({ type: "foo", payload: newIds })
+    // );
 
-    yield call(getEverySectionEvents);
+    yield call(EventApi.delete, payload._id); // $$ move to end to speed up state
+    const afterDelState = yield put(
+      eventsEntitiesSlice.actions.delete(payload)
+    );
+    console.log("afterDelState:", afterDelState);
+
+    // $$ create new saga/reducer that calls getWeekEvents.actions.request(new state)
+
+    yield takeLatest(getWeekEventsSlice.actions.request, getWeekEventsSaga);
+    // yield call(getEverySectionEvents);
   } catch (error) {
+    console.log(error);
     yield put(deleteEventSlice.actions.error());
   }
 }
 
 function* editEventSaga({ payload }: Action_EditEvent) {
   try {
-    yield call(EventApi.edit, payload._id, payload.event);
+    yield put(eventsEntitiesSlice.actions.edit(payload));
+    yield call(EventApi.edit, payload._id, payload.event); // $$ move lower?
     yield put(editEventSlice.actions.success());
     yield call(getEverySectionEvents);
   } catch (error) {
@@ -61,7 +100,26 @@ function* editEventSaga({ payload }: Action_EditEvent) {
 }
 
 function* getEventsSaga(payload: Params_Events) {
-  console.log("[getEventsSaga] passing this payload to EventApi.get:", payload);
+  if (!payload.startDate && !payload.endDate && "data" in payload) {
+    console.log("[getEventsSaga] (normalized?) data passed:", payload);
+    /* testing if you dont need to normalize
+    const eventsSchema = new schema.Entity(
+      "events",
+      {},
+      { idAttribute: "_id" }
+    );
+    const normalizedEvents = normalize<Schema_Event>(
+      payload.data,
+      eventsSchema
+    );
+
+    yield put(eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events));
+    */
+    yield put(eventsEntitiesSlice.actions.insert(payload.data));
+
+    // $$ this below works
+    return { data: payload.data };
+  }
   const res: Response_GetEventsSuccess = (yield call(
     EventApi.get,
     payload
@@ -82,13 +140,8 @@ function* getEventsSaga(payload: Params_Events) {
 
 function* getWeekEventsSaga({ payload }: Action_GetWeekEvents) {
   try {
-    if (!payload.startDate && !payload.endDate && "data" in payload) {
-      // then you have all the data you need
-      yield put(getWeekEventsSlice.actions.success(payload));
-    } else {
-      const data: Response_GetEventsSaga = yield call(getEventsSaga, payload);
-      yield put(getWeekEventsSlice.actions.success(data));
-    }
+    const data: Response_GetEventsSaga = yield call(getEventsSaga, payload);
+    yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error());
   }
@@ -127,6 +180,8 @@ function* getFutureEventsSaga({ payload }: Action_GetPaginatedEvents) {
 }
 
 function* getEverySectionEvents() {
+  // gets data from state, categorized by time frame (week, month, future)
+  /*
   const currentMonthEvents: Response_GetEventsSaga = (yield select((state) =>
     selectPaginatedEventsBySectionType(state, "currentMonth")
   )) as Response_GetEventsSaga;
@@ -135,12 +190,14 @@ function* getEverySectionEvents() {
     selectPaginatedEventsBySectionType(state, "future")
   )) as Response_GetEventsSaga;
 
+  */
   const weekEvents: Response_GetEventsSaga = (yield select((state) =>
     selectPaginatedEventsBySectionType(state, "week")
   )) as Response_GetEventsSaga;
 
-  yield put(getCurrentMonthEventsSlice.actions.request(currentMonthEvents));
-  yield put(getFutureEventsSlice.actions.request(futureEvents));
+  // tells the store to do these things, given this state data
+  // yield put(getCurrentMonthEventsSlice.actions.request(currentMonthEvents));
+  // yield put(getFutureEventsSlice.actions.request(futureEvents));
   yield put(getWeekEventsSlice.actions.request(weekEvents));
 }
 

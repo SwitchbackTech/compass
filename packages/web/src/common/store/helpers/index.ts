@@ -3,8 +3,9 @@ import {
   PayloadAction,
   SliceCaseReducers,
   ValidateSliceCaseReducers,
-} from '@reduxjs/toolkit';
-import { Draft } from 'immer';
+} from "@reduxjs/toolkit";
+import { Action_EditEvent } from "@web/ducks/events/types";
+import { Draft } from "immer";
 
 export interface AsyncState<SuccessPayload, ErrorPayload> {
   isProcessing?: boolean;
@@ -52,6 +53,9 @@ export const createAsyncSlice = <
       name: `async/${options.name}`,
       reducers: {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // edit: (state, action: Action_EditEvent) => {
+        //   state.value[action.payload._id] = action.payload.event;
+        // },
         request: (state, _action: PayloadAction<Draft<RequestPayload>>) => {
           state.isProcessing = true;
           state.isSuccess = false;

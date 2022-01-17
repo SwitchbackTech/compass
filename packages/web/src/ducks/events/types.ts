@@ -12,6 +12,11 @@ import {
 export interface Action_CreateEvent extends Action {
   payload: Schema_Event;
 }
+
+export interface Action_DeleteEvent extends Action {
+  payload: Payload_DeleteEvent;
+}
+
 export interface Action_EditEvent extends Action {
   payload: Payload_EditEvent;
 }
@@ -30,9 +35,7 @@ export interface Entities_Event {
   [key: string]: Schema_Event;
 }
 export interface Payload_DeleteEvent {
-  payload: {
-    _id: string;
-  };
+  _id: string;
 }
 
 export interface Payload_EditEvent {
@@ -47,6 +50,10 @@ export interface Payload_GetWeekEvents {
 export interface Payload_GetPaginatedEvents extends Filters_Pagination {
   priorities: Priorities[];
 }
+
+export type Response_CreateEventSaga =
+  // Response_CreateEventSuccess<Payload_NormalizedAsyncAction> & Schema_Event[];
+  Response_GetEventsSuccess<Payload_NormalizedAsyncAction> & Schema_Event[];
 
 export type Response_GetEventsSaga =
   Response_GetEventsSuccess<Payload_NormalizedAsyncAction> &
