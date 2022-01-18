@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 import { Schema_Event } from "@core/types/event.types";
 
+import { RootState } from "@web/store";
 import { createAsyncSlice } from "@web/common/store/helpers";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
@@ -12,6 +13,7 @@ import {
   Action_EditEvent,
   Action_InsertEvents,
   Entities_Event,
+  Payload_DeleteEvent,
   Payload_EditEvent,
   Payload_GetPaginatedEvents,
   Payload_GetWeekEvents,
@@ -50,7 +52,15 @@ export const getWeekEventsSlice = createAsyncSlice<
   Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
 >({
   name: "getWeekEvents",
+  reducers: {
+    delete: (state: RootState, action: Action_DeleteEvent) => {
+      state.value.data = state.value.data.filter(
+        (i: string) => i !== action.payload._id
+      );
+    },
+  },
 });
+console.log("getWeekSlice:", getWeekEventsSlice);
 
 export const getCurrentMonthEventsSlice = createAsyncSlice<
   Payload_GetPaginatedEvents,

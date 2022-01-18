@@ -68,7 +68,7 @@ export const useGetWeekViewProps = () => {
   // console.log("weekEventIds:", weekEventIds);
   const weekEvents = weekEventIds
     .map((_id) => eventEntities[_id])
-    .filter((event) => !event.allDay);
+    .filter((event) => event !== undefined && !event.allDay);
 
   const dispatch = useDispatch();
 

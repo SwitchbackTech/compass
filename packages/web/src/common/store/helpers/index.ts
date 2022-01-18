@@ -4,7 +4,6 @@ import {
   SliceCaseReducers,
   ValidateSliceCaseReducers,
 } from "@reduxjs/toolkit";
-import { Action_EditEvent } from "@web/ducks/events/types";
 import { Draft } from "immer";
 
 export interface AsyncState<SuccessPayload, ErrorPayload> {
@@ -43,6 +42,26 @@ export const createAsyncSlice = <
     value: null,
   };
 
+  const initialReducers = {
+    request: (state, _action: PayloadAction<Draft<RequestPayload>>) => {
+      state.isProcessing = true;
+      state.isSuccess = false;
+      state.error = null;
+    },
+    success: (state, action: PayloadAction<Draft<SuccessPayload>>) => {
+      state.isProcessing = false;
+      state.isSuccess = true;
+      state.value = action.payload;
+      state.error = null;
+    },
+    error: (state, action: PayloadAction<Draft<ErrorPayload>>) => {
+      state.isProcessing = false;
+      state.isSuccess = false;
+      state.error = action.payload;
+    },
+    ...options.reducers,
+  };
+
   return {
     ...createSlice({
       ...options,
@@ -52,26 +71,7 @@ export const createAsyncSlice = <
       },
       name: `async/${options.name}`,
       reducers: {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        // edit: (state, action: Action_EditEvent) => {
-        //   state.value[action.payload._id] = action.payload.event;
-        // },
-        request: (state, _action: PayloadAction<Draft<RequestPayload>>) => {
-          state.isProcessing = true;
-          state.isSuccess = false;
-          state.error = null;
-        },
-        success: (state, action: PayloadAction<Draft<SuccessPayload>>) => {
-          state.isProcessing = false;
-          state.isSuccess = true;
-          state.value = action.payload;
-          state.error = null;
-        },
-        error: (state, action: PayloadAction<Draft<ErrorPayload>>) => {
-          state.isProcessing = false;
-          state.isSuccess = false;
-          state.error = action.payload;
-        },
+        ...initialReducers,
         ...options.reducers,
       },
     }),
@@ -79,6 +79,7 @@ export const createAsyncSlice = <
       request: `async/${options.name}/request`,
       success: `async/${options.name}/success`,
       error: `async/${options.name}/error`,
+      delete: `async/${options.name}/delete`, //$$
     },
   };
 };

@@ -60,28 +60,14 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
     yield put(createEventSlice.actions.error());
   }
 }
+
 function* deleteEventSaga({ payload }: Action_DeleteEvent) {
   try {
-    // removing the ids from weekEvents, if applicable
-    const weekEventIds = useSelector((state: RootState) =>
-      selectEventIdsBySectionType(state, "week")
-    );
-    const newIds = weekEventIds.filter((i) => i !== "61df541f2df0ab4959240450");
-    console.log("newIds:", newIds);
-    // yield put(
-    //   getWeekEventsSlice.actions.success({ type: "foo", payload: newIds })
-    // );
-
-    yield call(EventApi.delete, payload._id); // $$ move to end to speed up state
-    const afterDelState = yield put(
-      eventsEntitiesSlice.actions.delete(payload)
-    );
-    console.log("afterDelState:", afterDelState);
-
-    // $$ create new saga/reducer that calls getWeekEvents.actions.request(new state)
-
-    yield takeLatest(getWeekEventsSlice.actions.request, getWeekEventsSaga);
-    // yield call(getEverySectionEvents);
+    // TODO remove the ids from get{Month|Future}Events
+    yield put(getWeekEventsSlice.actions.delete(payload));
+    yield put(eventsEntitiesSlice.actions.delete(payload));
+    yield call(EventApi.delete, payload._id);
+    yield put(deleteEventSlice.actions.success());
   } catch (error) {
     console.log(error);
     yield put(deleteEventSlice.actions.error());
@@ -91,9 +77,9 @@ function* deleteEventSaga({ payload }: Action_DeleteEvent) {
 function* editEventSaga({ payload }: Action_EditEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.edit(payload));
-    yield call(EventApi.edit, payload._id, payload.event); // $$ move lower?
-    yield put(editEventSlice.actions.success());
+    yield call(EventApi.edit, payload._id, payload.event);
     yield call(getEverySectionEvents);
+    yield put(editEventSlice.actions.success());
   } catch (error) {
     yield put(editEventSlice.actions.error());
   }
@@ -195,7 +181,6 @@ function* getEverySectionEvents() {
     selectPaginatedEventsBySectionType(state, "week")
   )) as Response_GetEventsSaga;
 
-  // tells the store to do these things, given this state data
   // yield put(getCurrentMonthEventsSlice.actions.request(currentMonthEvents));
   // yield put(getFutureEventsSlice.actions.request(futureEvents));
   yield put(getWeekEventsSlice.actions.request(weekEvents));
