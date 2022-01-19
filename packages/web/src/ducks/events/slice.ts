@@ -58,6 +58,10 @@ export const getWeekEventsSlice = createAsyncSlice<
         (i: string) => i !== action.payload._id
       );
     },
+    insert: (state, action: Action_InsertEvents) => {
+      // state.value.data = { ...state.value.data, ...action.payload };
+      state.value.data.push(action.payload);
+    },
   },
 });
 console.log("getWeekSlice:", getWeekEventsSlice);

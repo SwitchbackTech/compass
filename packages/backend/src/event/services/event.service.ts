@@ -87,6 +87,7 @@ class EventService {
 
   async deleteById(userId: string, id: string) {
     // TODO refactor this so it doesn't require so many calls
+
     try {
       const filter = { _id: mongoService.objectId(id), user: userId };
 

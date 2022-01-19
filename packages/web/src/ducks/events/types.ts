@@ -27,6 +27,10 @@ export interface Action_GetPaginatedEvents extends Action {
   payload: Payload_GetPaginatedEvents;
 }
 
+export interface Action_InsertEventId extends Action {
+  payload: { _id: string };
+}
+
 export interface Action_InsertEvents extends Action {
   payload: Entities_Event | undefined;
 }

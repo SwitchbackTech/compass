@@ -50,12 +50,11 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
     const normalizedEvent = normalize<Schema_Event>(res.data, eventsSchema);
     console.log("!!normalizedEvent:", normalizedEvent);
 
+    yield put(getWeekEventsSlice.actions.insert(res.data._id));
     yield put(
       eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
     );
     yield put(createEventSlice.actions.success());
-    // const getSecEvts = yield call(getEverySectionEvents);
-    // console.log("\tgetEverySectionRes:", getSecEvts);
   } catch (error) {
     yield put(createEventSlice.actions.error());
   }
