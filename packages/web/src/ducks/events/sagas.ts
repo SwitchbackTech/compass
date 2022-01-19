@@ -107,6 +107,7 @@ function* getEventsSaga(
     };
   } catch (error) {
     handleErrorTemp(error);
+    return error;
   }
 }
 
