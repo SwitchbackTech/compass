@@ -11,6 +11,13 @@ import { Priorities } from "../../../../core/src/core.constants";
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
+// rudimentary handling of errors
+// meant for temporary testing, will be replaced
+export const handleErrorTemp = (error: Error) => {
+  console.log(error);
+  alert(error);
+};
+
 export const _readEventsFromStorage = (): Schema_Event[] =>
   (JSON.parse(localStorage.getItem("events") || "[]") as Schema_Event[]) || [];
 

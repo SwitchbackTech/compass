@@ -29,7 +29,7 @@ import {
   Entities_Event,
 } from "./types";
 import { selectPaginatedEventsBySectionType } from "./selectors";
-import { normalizedEventsSchema } from "./event.helpers";
+import { handleErrorTemp, normalizedEventsSchema } from "./event.helpers";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
 
 function* createEventSaga({ payload }: Action_CreateEvent) {
@@ -50,6 +50,7 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
     );
     yield put(createEventSlice.actions.success());
   } catch (error) {
+    handleErrorTemp(error);
     yield put(createEventSlice.actions.error());
   }
 }
@@ -62,7 +63,7 @@ export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
     yield call(EventApi.delete, payload._id);
     yield put(deleteEventSlice.actions.success());
   } catch (error) {
-    console.log(error);
+    handleErrorTemp(error);
     yield put(deleteEventSlice.actions.error());
   }
 }
@@ -74,6 +75,7 @@ export function* editEventSaga({ payload }: Action_EditEvent) {
     yield call(getEverySectionEvents);
     yield put(editEventSlice.actions.success());
   } catch (error) {
+    handleErrorTemp(error);
     yield put(editEventSlice.actions.error());
   }
 }
@@ -81,27 +83,31 @@ export function* editEventSaga({ payload }: Action_EditEvent) {
 function* getEventsSaga(
   payload: Params_Events | Response_HttpPaginatedSuccess<Entities_Event>
 ) {
-  if (!payload.startDate && !payload.endDate && "data" in payload) {
-    yield put(eventsEntitiesSlice.actions.insert(payload.data));
-    return { data: payload.data };
+  try {
+    if (!payload.startDate && !payload.endDate && "data" in payload) {
+      yield put(eventsEntitiesSlice.actions.insert(payload.data));
+      return { data: payload.data };
+    }
+    const res: Response_GetEventsSuccess = (yield call(
+      EventApi.get,
+      payload
+    )) as Response_GetEventsSuccess;
+
+    const normalizedEvents = normalize<Schema_Event>(res.data, [
+      normalizedEventsSchema(),
+    ]);
+
+    yield put(
+      eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events)
+    );
+
+    return {
+      ...res,
+      data: normalizedEvents.result as Payload_NormalizedAsyncAction,
+    };
+  } catch (error) {
+    handleErrorTemp(error);
   }
-  const res: Response_GetEventsSuccess = (yield call(
-    EventApi.get,
-    payload
-  )) as Response_GetEventsSuccess;
-
-  const normalizedEvents = normalize<Schema_Event>(res.data, [
-    normalizedEventsSchema(),
-  ]);
-
-  yield put(
-    eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events)
-  );
-
-  return {
-    ...res,
-    data: normalizedEvents.result as Payload_NormalizedAsyncAction,
-  };
 }
 
 function* getWeekEventsSaga({ payload }: Action_GetWeekEvents) {
@@ -110,6 +116,7 @@ function* getWeekEventsSaga({ payload }: Action_GetWeekEvents) {
     yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error());
+    handleErrorTemp(error);
   }
 }
 
@@ -125,6 +132,7 @@ function* getCurrentMonthEventsSaga({ payload }: Action_GetPaginatedEvents) {
 
     yield put(getCurrentMonthEventsSlice.actions.success(data));
   } catch (error) {
+    handleErrorTemp(error);
     yield put(getCurrentMonthEventsSlice.actions.error());
   }
 }
@@ -163,7 +171,7 @@ function* getEverySectionEvents() {
 
   // yield put(getCurrentMonthEventsSlice.actions.request(currentMonthEvents));
   // yield put(getFutureEventsSlice.actions.request(futureEvents));
-  console.log("weekEvents [getEvSec]:", weekEvents);
+  // console.log("weekEvents [getEvSec]:", weekEvents);
   yield put(getWeekEventsSlice.actions.request(weekEvents));
 }
 
