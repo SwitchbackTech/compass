@@ -79,7 +79,6 @@ export const createAsyncSlice = <
       request: `async/${options.name}/request`,
       success: `async/${options.name}/success`,
       error: `async/${options.name}/error`,
-      delete: `async/${options.name}/delete`, //$$
     },
   };
 };

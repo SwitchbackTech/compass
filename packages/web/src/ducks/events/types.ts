@@ -46,18 +46,20 @@ export interface Payload_EditEvent {
   _id: string;
   event: Schema_Event;
 }
-export interface Payload_GetWeekEvents {
-  startDate: string;
-  endDate: string;
-}
 
 export interface Payload_GetPaginatedEvents extends Filters_Pagination {
   priorities: Priorities[];
 }
 
+export interface Payload_GetWeekEvents {
+  startDate: string;
+  endDate: string;
+}
+
 export type Response_CreateEventSaga =
-  // Response_CreateEventSuccess<Payload_NormalizedAsyncAction> & Schema_Event[];
-  Response_GetEventsSuccess<Payload_NormalizedAsyncAction> & Schema_Event[];
+  // $$ either break out into separate `Response_CreateEventSuccess` type,
+  // like is done for `GetEventsSuccess` or ignore and delete this comment
+  Response_HttpPaginatedSuccess<Schema_Event> & Schema_Event;
 
 export type Response_GetEventsSaga =
   Response_GetEventsSuccess<Payload_NormalizedAsyncAction> &

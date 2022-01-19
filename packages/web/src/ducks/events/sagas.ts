@@ -1,13 +1,13 @@
 import { call, put, takeLatest, select } from "@redux-saga/core/effects";
-import { normalize, schema } from "normalizr";
+import { normalize } from "normalizr";
 import dayjs from "dayjs";
 
 import { Params_Events, Schema_Event } from "@core/types/event.types";
 
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
-
 import { EventApi } from "@web/ducks/events/event.api";
+
 import {
   createEventSlice,
   deleteEventSlice,
@@ -19,7 +19,6 @@ import {
 } from "./slice";
 import {
   Action_CreateEvent,
-  Payload_DeleteEvent,
   Action_EditEvent,
   Response_GetEventsSaga,
   Response_GetEventsSuccess,
@@ -28,12 +27,8 @@ import {
   Response_CreateEventSaga,
   Action_DeleteEvent,
 } from "./types";
-import {
-  selectPaginatedEventsBySectionType,
-  selectEventIdsBySectionType,
-} from "./selectors";
-import { useSelector } from "react-redux";
-import { RootState } from "@web/store";
+import { selectPaginatedEventsBySectionType } from "./selectors";
+import { normalizedEventsSchema } from "./event.helpers";
 
 function* createEventSaga({ payload }: Action_CreateEvent) {
   try {
@@ -42,13 +37,10 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
       payload
     )) as Response_CreateEventSaga;
 
-    const eventsSchema = new schema.Entity(
-      "events",
-      {},
-      { idAttribute: "_id" }
+    const normalizedEvent = normalize<Schema_Event>(
+      res.data,
+      normalizedEventsSchema()
     );
-    const normalizedEvent = normalize<Schema_Event>(res.data, eventsSchema);
-    console.log("!!normalizedEvent:", normalizedEvent);
 
     yield put(getWeekEventsSlice.actions.insert(res.data._id));
     yield put(
@@ -110,8 +102,9 @@ function* getEventsSaga(payload: Params_Events) {
     payload
   )) as Response_GetEventsSuccess;
 
-  const eventsSchema = new schema.Entity("events", {}, { idAttribute: "_id" });
-  const normalizedEvents = normalize<Schema_Event>(res.data, [eventsSchema]);
+  const normalizedEvents = normalize<Schema_Event>(res.data, [
+    normalizedEventsSchema(),
+  ]);
 
   yield put(
     eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events)

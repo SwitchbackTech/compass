@@ -11,6 +11,7 @@ import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
 import {
   Action_DeleteEvent,
   Action_EditEvent,
+  Action_InsertEventId,
   Action_InsertEvents,
   Entities_Event,
   Payload_DeleteEvent,
@@ -58,13 +59,16 @@ export const getWeekEventsSlice = createAsyncSlice<
         (i: string) => i !== action.payload._id
       );
     },
-    insert: (state, action: Action_InsertEvents) => {
-      // state.value.data = { ...state.value.data, ...action.payload };
-      state.value.data.push(action.payload);
+    insert: (state, action: { payload: string }) => {
+      // payload is the event id
+      if (state.value === null || state.value === undefined) {
+        console.log("error: state.value needs to be initialized");
+      } else {
+        state.value.data.push(action.payload);
+      }
     },
   },
 });
-console.log("getWeekSlice:", getWeekEventsSlice);
 
 export const getCurrentMonthEventsSlice = createAsyncSlice<
   Payload_GetPaginatedEvents,

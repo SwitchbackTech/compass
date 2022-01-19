@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { schema } from "normalizr";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { v4 as uuidv4 } from "uuid";
@@ -10,6 +11,9 @@ import { Priorities } from "../../../../core/src/core.constants";
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
+export const _readEventsFromStorage = (): Schema_Event[] =>
+  (JSON.parse(localStorage.getItem("events") || "[]") as Schema_Event[]) || [];
+
 const doEventsIntercept = (event1: Schema_Event, event2: Schema_Event) => {
   const firstDotIntercepts = dayjs(event1.startDate).isBefore(event2.endDate);
   const secondDotIntercepts = dayjs(event1.endDate).isAfter(event2.startDate);
@@ -17,8 +21,8 @@ const doEventsIntercept = (event1: Schema_Event, event2: Schema_Event) => {
   return firstDotIntercepts && secondDotIntercepts;
 };
 
-export const _readEventsFromStorage = (): Schema_Event[] =>
-  (JSON.parse(localStorage.getItem("events") || "[]") as Schema_Event[]) || [];
+export const normalizedEventsSchema = () =>
+  new schema.Entity("events", {}, { idAttribute: "_id" });
 
 /*
 TODO: (needed to be done on API side) sortings corner cases:
