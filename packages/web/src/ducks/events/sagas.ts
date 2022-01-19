@@ -26,9 +26,11 @@ import {
   Action_GetWeekEvents,
   Response_CreateEventSaga,
   Action_DeleteEvent,
+  Entities_Event,
 } from "./types";
 import { selectPaginatedEventsBySectionType } from "./selectors";
 import { normalizedEventsSchema } from "./event.helpers";
+import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
 
 function* createEventSaga({ payload }: Action_CreateEvent) {
   try {
@@ -76,25 +78,11 @@ function* editEventSaga({ payload }: Action_EditEvent) {
   }
 }
 
-function* getEventsSaga(payload: Params_Events) {
+function* getEventsSaga(
+  payload: Params_Events | Response_HttpPaginatedSuccess<Entities_Event>
+) {
   if (!payload.startDate && !payload.endDate && "data" in payload) {
-    console.log("[getEventsSaga] (normalized?) data passed:", payload);
-    /* testing if you dont need to normalize
-    const eventsSchema = new schema.Entity(
-      "events",
-      {},
-      { idAttribute: "_id" }
-    );
-    const normalizedEvents = normalize<Schema_Event>(
-      payload.data,
-      eventsSchema
-    );
-
-    yield put(eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events));
-    */
     yield put(eventsEntitiesSlice.actions.insert(payload.data));
-
-    // $$ this below works
     return { data: payload.data };
   }
   const res: Response_GetEventsSuccess = (yield call(
@@ -175,6 +163,7 @@ function* getEverySectionEvents() {
 
   // yield put(getCurrentMonthEventsSlice.actions.request(currentMonthEvents));
   // yield put(getFutureEventsSlice.actions.request(futureEvents));
+  console.log("weekEvents [getEvSec]:", weekEvents);
   yield put(getWeekEventsSlice.actions.request(weekEvents));
 }
 
