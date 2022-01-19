@@ -38,7 +38,6 @@ const WeekEventComponent = (
 
   const eventEndShortAmTime = eventEndDay.format(SHORT_HOURS_AM_FORMAT);
 
-  // $$ remove optional ?
   const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
     component.editingEvent?._id === event._id && !event.isEditing;

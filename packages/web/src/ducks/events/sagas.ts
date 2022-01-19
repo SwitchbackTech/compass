@@ -54,7 +54,7 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
   }
 }
 
-function* deleteEventSaga({ payload }: Action_DeleteEvent) {
+export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
   try {
     // TODO remove the ids from get{Month|Future}Events
     yield put(getWeekEventsSlice.actions.delete(payload));
@@ -67,7 +67,7 @@ function* deleteEventSaga({ payload }: Action_DeleteEvent) {
   }
 }
 
-function* editEventSaga({ payload }: Action_EditEvent) {
+export function* editEventSaga({ payload }: Action_EditEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.edit(payload));
     yield call(EventApi.edit, payload._id, payload.event);
@@ -171,6 +171,8 @@ function* getEverySectionEvents() {
  * Assemble
  ***********/
 export function* eventsSagas() {
+  // TODO consider replacing some takeLatests with takeEverys so you can
+  // run some sagas concurrently
   yield takeLatest(getWeekEventsSlice.actions.request, getWeekEventsSaga);
   yield takeLatest(
     getCurrentMonthEventsSlice.actions.request,
