@@ -1,17 +1,15 @@
-import { v4 as uuidv4 } from "uuid";
-
 /* eslint-disable @typescript-eslint/no-namespace */
 import { gSchema$Event } from "@compass/backend/declarations";
 import { notCancelled } from "@compass/backend/src/common/services/gcal/gcal.helpers";
 
 import { BaseError } from "@core/errors/errors.base";
-import { Old_Schema_Event, Old_Schema_Event_NoId } from "../types/event.types";
+import { Schema_Event } from "../types/event.types";
 
 export namespace MapEvent {
   export const toCompass = (
     userId: string,
     events: gSchema$Event[]
-  ): Old_Schema_Event[] | Old_Schema_Event_NoId[] => {
+  ): Schema_Event[] => {
     const mapped = events
       .filter(notCancelled)
       .map((e: gSchema$Event) => _toCompass(userId, e));
@@ -21,23 +19,27 @@ export namespace MapEvent {
 
   export const toGcal = (
     userId: string,
-    event: Old_Schema_Event_NoId
+    event: Schema_Event
   ): gSchema$Event => {
+    console.log("reminder: full-day evts not supported yet [mapper]");
+    console.log("reminder: only works in server time (CST) [mapper]");
+
     const gcalEvent = {
-      summary: event.title,
-      description: event.description,
-      start: event.start,
-      end: event.end,
+      summary: event.title, // TODO only add this field if not undefined
+      description: event.description, // TODO only add this field if not undefined
+      start: {
+        dateTime: new Date(event.startDate).toISOString(), // uses server's time, since no TZ info provided
+      },
+      end: {
+        dateTime: new Date(event.endDate).toISOString(),
+      },
     };
 
     return gcalEvent;
   };
 }
 
-const _toCompass = (
-  userId: string,
-  gEvent: gSchema$Event
-): Old_Schema_Event | Old_Schema_Event_NoId => {
+const _toCompass = (userId: string, gEvent: gSchema$Event): Schema_Event => {
   // TODO - move to validation service
   if (!gEvent.id) {
     throw new BaseError(
@@ -47,25 +49,24 @@ const _toCompass = (
       false
     );
   }
+  //TODO validate that event has either date or dateTime values
+
   const gEventId = gEvent.id ? gEvent.id : "uh oh";
   const title = gEvent.summary ? gEvent.summary : "untitled";
 
   const isAllDay = "date" in gEvent.start;
 
-  const compassEvent = {
+  const compassEvent: Schema_Event = {
     gEventId: gEventId,
     user: userId,
     title: title,
     description: gEvent.description,
     priorities: [],
-    startDate: isAllDay ? gEvent.start.date : gEvent.start?.dateTime,
-    endDate: isAllDay ? gEvent.end.date : gEvent.end?.dateTime,
-    // $$ Remove start and end after finishing conversion
-    end: gEvent.end,
-    start: gEvent.start,
+    startDate: isAllDay ? gEvent.start.date : gEvent.start.dateTime,
+    endDate: isAllDay ? gEvent.end.date : gEvent.end.dateTime,
+
     // temp stuff to update
-    id: `${title.substring(0, 4)}-${uuidv4()}`, // use compassId or figure sth else out
-    priority: "work", // $$ TODO update
+    priority: "self", // $$ TODO update
     // isTimeSelected: true,
     // isOpen: false,
     // order: 0,

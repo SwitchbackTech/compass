@@ -14,6 +14,11 @@ class GCalService {
       calendarId: "primary",
       requestBody: event,
     });
+
+    if (response.data.status !== "confirmed") {
+      logger.warning("The gcal event might be invalid");
+    }
+
     return response.data;
   }
 

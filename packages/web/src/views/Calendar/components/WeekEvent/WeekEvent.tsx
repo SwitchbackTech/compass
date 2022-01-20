@@ -7,12 +7,12 @@ import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
-import { GridEventEntity } from "@web/views/Calendar/weekViewHooks/types";
+import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 
 export interface Props {
-  event: GridEventEntity;
+  event: Schema_GridEvent;
   weekViewProps: WeekViewProps;
 }
 
@@ -38,9 +38,9 @@ const WeekEventComponent = (
 
   const eventEndShortAmTime = eventEndDay.format(SHORT_HOURS_AM_FORMAT);
 
-  const isActive = component.editingEvent?.id === event.id;
+  const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
-    component.editingEvent?.id === event.id && !event.isEditing;
+    component.editingEvent?._id === event._id && !event.isEditing;
 
   let width =
     component.weekDaysRef.current?.children[startDay].clientWidth || 0;

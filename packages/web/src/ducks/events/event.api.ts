@@ -1,17 +1,12 @@
 import axios from "axios";
-import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 
-import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
+import { Params_Events, Schema_Event } from "@core/types/event.types";
 import { headers } from "@web/common/helpers";
 import { BASEURL } from "@web/common/constants/api";
-import {
-  createEventLocalStorage,
-  editEventOld,
-  getEventsLocalStorage,
-} from "@web/ducks/events/event.helpers";
+import { createEventLocalStorage } from "@web/ducks/events/event.helpers";
 
 //not sure what this does
 dayjs.extend(isSameOrAfter);
@@ -39,44 +34,23 @@ TODO: Add Pagination  for Someday event lists:
 */
 
 const EventApi = {
-  createEvt(event: Schema_Event_Wip) {
-    return "TODO-implement";
+  create(event: Schema_Event) {
+    return axios.post(`${BASEURL}/event`, event, headers());
   },
 
-  createEvtOld(event: Schema_Event_Wip) {
-    return createEventLocalStorage(event);
+  delete(_id: string) {
+    return axios.delete(`${BASEURL}/event/${_id}`, headers());
   },
 
-  async deleteEvt(gId) {
-    const response = await axios.delete(
-      `${BASEURL}/event/delete?eventId=${gId}`,
-      headers()
-    );
-    return response.data;
+  edit: (_id: string, event: Schema_Event) => {
+    return axios.put(`${BASEURL}/event/${_id}`, event, headers());
   },
 
-  editEvent: (id: string, event: Schema_Event_Wip) => {
-    return editEventOld(id, event);
-  },
-
-  getEvts: (params: Params_Events_Wip) => {
-    // $$ remove after supporting sidebar items
-    if (!params.endDate) {
-      console.log("ignoring future events");
-      return [];
-    }
-    if (params.startDate === "2022-01-01") {
-      console.log("ignoring this month's events");
-      return [];
-    }
+  get: (params: Params_Events) => {
     return axios.get(
       `${BASEURL}/event?start=${params.startDate}&end=${params.endDate}`,
       headers()
     );
-  },
-
-  getEvtsLocalStorage: (params: Params_Events_Wip) => {
-    return getEventsLocalStorage(params);
   },
 
   // TODO convert to saga
@@ -89,15 +63,6 @@ const EventApi = {
     );
     return response.data;
   },
-
-  // async updateEvt(gId, evt) {
-  //   const response = await axios.put(
-  //     `${BASEURL}/event/update?eventId=${gId}`,
-  //     evt,
-  //     headers()
-  //   );
-  //   return response.data;
-  // },
 };
 
 export { EventApi };

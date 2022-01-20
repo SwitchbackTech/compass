@@ -4,7 +4,7 @@ import weekPlugin from "dayjs/plugin/weekOfYear";
 import { useDispatch, useSelector } from "react-redux";
 
 import { Priorities } from "@core/core.constants";
-import { Schema_Event_Wip } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
 import {
   SHORT_HOURS_AM_FORMAT,
@@ -28,7 +28,8 @@ import {
   GRID_X_OFFSET,
   GRID_Y_OFFSET as _GRID_Y_OFFSET,
 } from "../constants";
-import { EventState, GridEventEntity } from "./types";
+import { State_Event, Schema_GridEvent } from "./types";
+import { deleteEventSlice } from "../../../ducks/events/slice";
 
 dayjs.extend(weekPlugin);
 
@@ -52,24 +53,36 @@ eventsGroupedByDays[dayIndex].map(event => <WeekEvent />)
 */
 
 export const useGetWeekViewProps = () => {
+  /********************
+   * Events Init
+   *******************/
+
   const today = dayjs();
   const eventEntities = useSelector(selectEventEntities);
   const weekEventIds = useSelector((state: RootState) =>
     selectEventIdsBySectionType(state, "week")
   );
+  // console.log("eventEntities:", Object.keys(eventEntities).length);
+  // console.log("eventEntities:", eventEntities);
+  // console.log("weekEventIds:", Object.keys(weekEventIds).length);
+  // console.log("weekEventIds:", weekEventIds);
   const weekEvents = weekEventIds
-    .map((id) => eventEntities[id])
-    .filter((event) => !event.allDay);
+    .map((_id) => eventEntities[_id])
+    .filter((event) => event !== undefined && !event.allDay);
 
   const dispatch = useDispatch();
-  const [editingEvent, setEditingEvent] = useState<GridEventEntity | null>(
+
+  /************
+   * State Init
+   *************/
+  const [editingEvent, setEditingEvent] = useState<Schema_GridEvent | null>(
     null
   );
   const [week, setWeek] = useState(today.week());
   const [modifiableDateField, setModifiableDateField] = useState<
     "startDate" | "endDate" | null
   >(null);
-  const [eventState, setEventState] = useState<EventState | null>(null);
+  const [eventState, setEventState] = useState<State_Event | null>(null);
 
   const calendarRef = useRef<HTMLDivElement>(null);
   const eventsGridRef = useRef<HTMLDivElement>(null);
@@ -114,7 +127,7 @@ export const useGetWeekViewProps = () => {
 
   const allDayEvents = weekEvents.filter((event) => event.allDay);
 
-  const isAddingAllDayEvent = !!(editingEvent?.allDay && !editingEvent.id);
+  const isAddingAllDayEvent = !!(editingEvent?.allDay && !editingEvent._id);
 
   const daysToLastOrderIndex: { [key: string]: number } = {};
 
@@ -136,6 +149,9 @@ export const useGetWeekViewProps = () => {
   const todayDayWeekNumber = today.get("day") + 1;
   const beforeDaysCount = todayDayWeekNumber - 1;
 
+  /*************
+   * Hooks
+   ***************/
   useEffect(() => {
     setGridYOffset(
       _GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0)
@@ -155,7 +171,15 @@ export const useGetWeekViewProps = () => {
     );
   }, [week]);
 
-  const onSubmitEvent = (event: Schema_Event_Wip | GridEventEntity) => {
+  /*********
+   * Handlers
+   **********/
+  const onDeleteEvent = (_id: string) => {
+    dispatch(deleteEventSlice.actions.request({ _id: _id }));
+    setEditingEvent(null);
+  };
+
+  const onSubmitEvent = (event: Schema_Event | Schema_GridEvent) => {
     const eventToSave = { ...event };
 
     const maxDayMinutes = 1440;
@@ -173,10 +197,10 @@ export const useGetWeekViewProps = () => {
         .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
     }
 
-    if (eventToSave.id) {
+    if (eventToSave._id) {
       dispatch(
         editEventSlice.actions.request({
-          id: eventToSave.id,
+          _id: eventToSave._id,
           event: eventToSave,
         })
       );
@@ -395,7 +419,7 @@ export const useGetWeekViewProps = () => {
 
   const onScalerMouseDown = (
     e: React.MouseEvent,
-    eventToScale: Schema_Event_Wip,
+    eventToScale: Schema_Event,
     dateKey: "startDate" | "endDate"
   ) => {
     e.stopPropagation();
@@ -404,10 +428,7 @@ export const useGetWeekViewProps = () => {
     setEditingEvent({ ...eventToScale, isOpen: false });
   };
 
-  const onEventMouseDown = (
-    e: React.MouseEvent,
-    eventToDrug: Schema_Event_Wip
-  ) => {
+  const onEventMouseDown = (e: React.MouseEvent, eventToDrug: Schema_Event) => {
     e.stopPropagation();
     e.preventDefault();
 
@@ -497,9 +518,13 @@ export const useGetWeekViewProps = () => {
     return getBeforeDayWidth() * _beforeDaysCount;
   };
 
+  /*********
+   * Assemble
+   **********/
   return {
     eventHandlers: {
       setEditingEvent,
+      onDeleteEvent,
       onEventsGridRelease,
       onEventsGridMouseDown,
       onEventGridMouseMove,

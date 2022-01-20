@@ -6,12 +6,12 @@ import { Priorities } from "@core/core.constants";
 
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { SidebarEventContainer } from "@web/views/Calendar/containers/SidebarEventContainer";
-import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 
 import { Styled, StyledList } from "./styled";
 
 export interface Props {
-  eventIds: NormalizedAsyncActionPayload;
+  eventIds: Payload_NormalizedAsyncAction;
   isProcessing?: boolean;
   getEvents: () => void;
   offset: number;
@@ -40,7 +40,7 @@ export const EventsList: React.FC<Props> = ({
       <StyledList>
         <DndProvider backend={HTML5Backend}>
           {eventIds.map((id) => (
-            <SidebarEventContainer key={id} id={id} />
+            <SidebarEventContainer key={id} _id={id} />
           ))}
         </DndProvider>
       </StyledList>

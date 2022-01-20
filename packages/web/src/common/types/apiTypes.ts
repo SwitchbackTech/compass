@@ -2,20 +2,21 @@ export interface ApiError {
   code: string;
 }
 
-export interface SortOptions {
+export interface Options_Sort {
   sortBy: string;
-  order: 'asc' | 'desc';
+  order: "asc" | "desc";
 }
 
-export interface PaginationFilters {
+export interface Filters_Pagination {
   offset?: number;
   page?: number;
   pageSize: number;
 }
 
-export type FilterSortOptions = PaginationFilters & SortOptions;
+export type Options_FilterSort = Filters_Pagination & Options_Sort;
 
-export interface HttpPaginatedSuccessResponse<Data> extends PaginationFilters {
+export interface Response_HttpPaginatedSuccess<Data>
+  extends Filters_Pagination {
   data: Data;
   count: number;
   [key: string]: unknown | undefined;

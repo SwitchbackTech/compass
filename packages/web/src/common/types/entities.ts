@@ -1,1 +1,1 @@
-export type NormalizedAsyncActionPayload<T = string> = T[];
+export type Payload_NormalizedAsyncAction<T = string> = T[];

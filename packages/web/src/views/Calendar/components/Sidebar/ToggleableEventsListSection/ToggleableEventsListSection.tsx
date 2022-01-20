@@ -4,10 +4,10 @@ import { Popover } from "react-tiny-popover";
 import dayjs from "dayjs";
 
 import { Priorities } from "@core/core.constants";
-import { Schema_Event_Wip } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
 import { ArrowLeftIcon } from "@web/assets/svg";
-import { SideBarSectionType } from "@web/ducks/events/types";
+import { SectionType_Sidebar } from "@web/ducks/events/types";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors";
 import { RootState } from "@web/store";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
@@ -28,7 +28,7 @@ import { ToggleArrow } from "../ToggleArrow";
 
 export interface EventsListProps {
   offset: number;
-  sectionType: SideBarSectionType;
+  sectionType: SectionType_Sidebar;
   priorities: Priorities[];
   pageSize: number;
 }
@@ -36,7 +36,7 @@ export interface EventsListProps {
 export interface Props {
   title: string;
   EventsListContainer: React.ComponentType<EventsListProps>;
-  sectionType: SideBarSectionType;
+  sectionType: SectionType_Sidebar;
   priorities: Priorities[];
   isToggled?: boolean;
   onToggle?: () => void;
@@ -85,7 +85,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
     .add(1, "hour")
     .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
 
-  const [event, setEvent] = useState<Schema_Event_Wip>({
+  const [event, setEvent] = useState<Schema_Event>({
     startDate,
     endDate,
     priority: Priorities.WORK,
@@ -96,7 +96,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
 
   const showNextPageButton = count > pageSize + offset;
 
-  const onSubmit = (eventToSubmit: Schema_Event_Wip) => {
+  const onSubmit = (eventToSubmit: Schema_Event) => {
     dispatch(createEventSlice.actions.request(eventToSubmit));
   };
 

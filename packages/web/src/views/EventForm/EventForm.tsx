@@ -3,7 +3,7 @@ import { Key } from "ts-keycode-enum";
 import dayjs from "dayjs";
 
 import { Priorities } from "@core/core.constants";
-import { Schema_Event_Wip } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
 import { Button } from "@web/components/Button";
 import { JustifyContent } from "@web/components/Flex/styled";
@@ -22,13 +22,15 @@ import {
   StyledTitleField,
   StyledPriorityFlex,
   StyledDescriptionField,
-  StiledSubmitButton,
+  StyledDeleteButton,
+  StyledSubmitButton,
 } from "./styled";
 import { ComponentProps } from "./types";
 import { DateTimePickersSection } from "./DateTimePickersSection";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
+  onDelete,
   onSubmit,
   event,
   setEvent,
@@ -68,7 +70,7 @@ export const EventForm: React.FC<ComponentProps> = ({
     Date | undefined
   >();
 
-  const defaultEventState: Schema_Event_Wip = {
+  const defaultEventState: Schema_Event = {
     priority: Priorities.WORK,
     title: "",
     description: "",
@@ -125,6 +127,11 @@ export const EventForm: React.FC<ComponentProps> = ({
     };
   }, []);
 
+  const onDeleteForm = () => {
+    onDelete(event._id);
+    onClose();
+  };
+
   const onSubmitForm = () => {
     const startDateString = dayjs(selectedStartDate).format(
       YEAR_MONTH_DAY_FORMAT
@@ -147,9 +154,9 @@ export const EventForm: React.FC<ComponentProps> = ({
     onClose();
   };
 
-  const onSetEventField = <FieldName extends keyof Schema_Event_Wip>(
+  const onSetEventField = <FieldName extends keyof Schema_Event>(
     fieldName: FieldName,
-    value: Schema_Event_Wip[FieldName]
+    value: Schema_Event[FieldName]
   ) => {
     setEvent((_event) => ({
       ..._event,
@@ -246,7 +253,8 @@ export const EventForm: React.FC<ComponentProps> = ({
         onChange={onChangeEventTextField("description")}
       />
 
-      <StiledSubmitButton onClick={onSubmitForm}>Submit</StiledSubmitButton>
+      <StyledSubmitButton onClick={onSubmitForm}>Submit</StyledSubmitButton>
+      <StyledDeleteButton onClick={onDeleteForm}>Delete</StyledDeleteButton>
     </Styled>
   );
 };

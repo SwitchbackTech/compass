@@ -1,7 +1,6 @@
 import { AnyBulkWriteOperation } from "mongodb";
 import { gSchema$Event } from "declarations";
 
-import { Old_Schema_Event } from "@core/types/event.types";
 import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -9,6 +8,7 @@ import { minutesFromNow } from "@core/util/date.utils";
 import { daysFromNowTimestamp } from "@core/util/date.utils";
 import { Request_Sync_Gcal } from "@core/types/sync.types";
 import { Schema_CalendarList } from "@core/types/calendar.types";
+import { Schema_Event } from "@core/types/event.types";
 
 import { Logger } from "@backend/common/logger/common.logger";
 
@@ -41,7 +41,7 @@ export const assembleBulkOperations = (
   if (eventsToUpdate.length > 0) {
     const cEvents = MapEvent.toCompass(userId, eventsToUpdate);
 
-    cEvents.forEach((e: Old_Schema_Event) => {
+    cEvents.forEach((e: Schema_Event) => {
       bulkOperations.push({
         updateOne: {
           filter: { gEventId: e.gEventId, user: userId },

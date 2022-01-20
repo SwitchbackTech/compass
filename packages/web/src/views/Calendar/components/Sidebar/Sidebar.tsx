@@ -6,11 +6,7 @@ import { Priorities } from "@core/core.constants";
 
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
-import {
-  SidebarCollapseIcon,
-  SidebarOpenIcon,
-  StrawberryMenuIcon,
-} from "@web/assets/svg";
+import { StrawberryMenuIcon } from "@web/assets/svg";
 import {
   AlignItems,
   FlexDirections,

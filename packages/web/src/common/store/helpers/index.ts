@@ -3,8 +3,8 @@ import {
   PayloadAction,
   SliceCaseReducers,
   ValidateSliceCaseReducers,
-} from '@reduxjs/toolkit';
-import { Draft } from 'immer';
+} from "@reduxjs/toolkit";
+import { Draft } from "immer";
 
 export interface AsyncState<SuccessPayload, ErrorPayload> {
   isProcessing?: boolean;
@@ -42,6 +42,26 @@ export const createAsyncSlice = <
     value: null,
   };
 
+  const initialReducers = {
+    request: (state, _action: PayloadAction<Draft<RequestPayload>>) => {
+      state.isProcessing = true;
+      state.isSuccess = false;
+      state.error = null;
+    },
+    success: (state, action: PayloadAction<Draft<SuccessPayload>>) => {
+      state.isProcessing = false;
+      state.isSuccess = true;
+      state.value = action.payload;
+      state.error = null;
+    },
+    error: (state, action: PayloadAction<Draft<ErrorPayload>>) => {
+      state.isProcessing = false;
+      state.isSuccess = false;
+      state.error = action.payload;
+    },
+    ...options.reducers,
+  };
+
   return {
     ...createSlice({
       ...options,
@@ -51,23 +71,7 @@ export const createAsyncSlice = <
       },
       name: `async/${options.name}`,
       reducers: {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        request: (state, _action: PayloadAction<Draft<RequestPayload>>) => {
-          state.isProcessing = true;
-          state.isSuccess = false;
-          state.error = null;
-        },
-        success: (state, action: PayloadAction<Draft<SuccessPayload>>) => {
-          state.isProcessing = false;
-          state.isSuccess = true;
-          state.value = action.payload;
-          state.error = null;
-        },
-        error: (state, action: PayloadAction<Draft<ErrorPayload>>) => {
-          state.isProcessing = false;
-          state.isSuccess = false;
-          state.error = action.payload;
-        },
+        ...initialReducers,
         ...options.reducers,
       },
     }),

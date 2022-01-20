@@ -1,51 +1,73 @@
 import { Action } from "redux";
 
 import { Priorities } from "@core/core.constants";
-import { Schema_Event_Wip } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
-import { NormalizedAsyncActionPayload } from "@web/common/types/entities";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import {
-  HttpPaginatedSuccessResponse,
-  PaginationFilters,
+  Response_HttpPaginatedSuccess,
+  Filters_Pagination,
 } from "@web/common/types/apiTypes";
 
-export interface GetWeekEventsPayload {
+export interface Action_CreateEvent extends Action {
+  payload: Schema_Event;
+}
+
+export interface Action_DeleteEvent extends Action {
+  payload: Payload_DeleteEvent;
+}
+
+export interface Action_EditEvent extends Action {
+  payload: Payload_EditEvent;
+}
+export interface Action_GetWeekEvents extends Action {
+  payload: Payload_GetWeekEvents;
+}
+export interface Action_GetPaginatedEvents extends Action {
+  payload: Payload_GetPaginatedEvents;
+}
+
+export interface Action_InsertEventId extends Action {
+  payload: { _id: string };
+}
+
+export interface Action_InsertEvents extends Action {
+  payload: Entities_Event | undefined;
+}
+
+export interface Entities_Event {
+  [key: string]: Schema_Event;
+}
+export interface Payload_DeleteEvent {
+  _id: string;
+}
+
+export interface Payload_EditEvent {
+  _id: string;
+  event: Schema_Event;
+}
+
+export interface Payload_GetPaginatedEvents extends Filters_Pagination {
+  priorities: Priorities[];
+}
+
+export interface Payload_GetWeekEvents {
   startDate: string;
   endDate: string;
 }
 
-export interface GetWeekEventsAction extends Action {
-  payload: GetWeekEventsPayload;
-}
+export type Response_CreateEventSaga =
+  // $$ either break out into separate `Response_CreateEventSuccess` type,
+  // like is done for `GetEventsSuccess` or ignore and delete this comment
+  Response_HttpPaginatedSuccess<Schema_Event> & Schema_Event;
 
-export interface GetPaginatedEventsPayload extends PaginationFilters {
-  priorities: Priorities[];
-}
+export type Response_GetEventsSaga =
+  Response_GetEventsSuccess<Payload_NormalizedAsyncAction> &
+    Payload_GetPaginatedEvents;
 
-export interface GetPaginatedEventsAction extends Action {
-  payload: GetPaginatedEventsPayload;
-}
+export type Response_GetEventsSuccess<T = Schema_Event[]> =
+  Response_HttpPaginatedSuccess<T> & Payload_GetWeekEvents;
 
-export interface CreateEventAction extends Action {
-  payload: Schema_Event_Wip;
-}
+export type SectionType_Sidebar = "future" | "currentMonth";
 
-export interface EditEventPayload {
-  id: string;
-  event: Schema_Event_Wip;
-}
-
-export interface EditEventAction extends Action {
-  payload: EditEventPayload;
-}
-
-export type GetEventsSuccessResponse<T = Schema_Event_Wip[]> =
-  HttpPaginatedSuccessResponse<T> & GetWeekEventsPayload;
-
-export type GetEventsSagaResponse =
-  GetEventsSuccessResponse<NormalizedAsyncActionPayload> &
-    GetPaginatedEventsPayload;
-
-export type SideBarSectionType = "future" | "currentMonth";
-
-export type SectionType = SideBarSectionType | "week";
+export type SectionType = SectionType_Sidebar | "week";

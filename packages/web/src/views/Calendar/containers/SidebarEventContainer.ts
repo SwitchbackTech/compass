@@ -5,8 +5,8 @@ import { RootState } from "@web/store";
 
 import { Event } from "../components/Sidebar/EventsList/Event";
 
-const mapStateToProps = (state: RootState, { id }: { id: string }) => ({
-  event: selectEventById(state, id),
+const mapStateToProps = (state: RootState, { _id }: { _id: string }) => ({
+  event: selectEventById(state, _id),
 });
 
 export const SidebarEventContainer = connect(mapStateToProps)(Event);

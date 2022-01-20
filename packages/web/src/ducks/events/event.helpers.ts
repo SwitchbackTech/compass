@@ -1,30 +1,35 @@
 import dayjs from "dayjs";
+import { schema } from "normalizr";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { v4 as uuidv4 } from "uuid";
 
-import { Params_Events_Wip, Schema_Event_Wip } from "@core/types/event.types";
+import { Params_Events, Schema_Event } from "@core/types/event.types";
 // jest had trouble resolving with @core/..., so using long path for now
 import { Priorities } from "../../../../core/src/core.constants";
-
-import { EventApi } from "@web/ducks/events/event.api";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-const doEventsIntercept = (
-  event1: Schema_Event_Wip,
-  event2: Schema_Event_Wip
-) => {
+// rudimentary handling of errors
+// meant for temporary testing, will be replaced
+export const handleErrorTemp = (error: Error) => {
+  console.log(error);
+  alert(error);
+};
+
+export const _readEventsFromStorage = (): Schema_Event[] =>
+  (JSON.parse(localStorage.getItem("events") || "[]") as Schema_Event[]) || [];
+
+const doEventsIntercept = (event1: Schema_Event, event2: Schema_Event) => {
   const firstDotIntercepts = dayjs(event1.startDate).isBefore(event2.endDate);
   const secondDotIntercepts = dayjs(event1.endDate).isAfter(event2.startDate);
 
   return firstDotIntercepts && secondDotIntercepts;
 };
 
-export const _readEventsFromStorage = (): Schema_Event_Wip[] =>
-  (JSON.parse(localStorage.getItem("events") || "[]") as Schema_Event_Wip[]) ||
-  [];
+export const normalizedEventsSchema = () =>
+  new schema.Entity("events", {}, { idAttribute: "_id" });
 
 /*
 TODO: (needed to be done on API side) sortings corner cases:
@@ -40,7 +45,7 @@ group events (which is length of current group)
 TODO: when setting groupCount in event - check
 if event intercepts with any of events from other groups
 */
-export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
+export const getEventsLocalStorage = async (params: Params_Events = {}) => {
   const {
     startDate,
     endDate,
@@ -53,7 +58,6 @@ export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
 
   const events = _readEventsFromStorage();
   console.log("reminder: using local strg evts, not from server");
-  // const events = await EventApi.getEvts(params);
 
   const startIndex = offset !== undefined ? offset : (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
@@ -86,7 +90,7 @@ export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
       return dayjs(a.startDate).toDate() - dayjs(b.startDate).toDate();
     });
 
-  let groups: Schema_Event_Wip[][] = [];
+  let groups: Schema_Event[][] = [];
   let groupIndex = 0;
 
   if (eventsData.length) {
@@ -135,7 +139,7 @@ export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
 
       groups.find((group) => {
         groupOrder = group.findIndex(
-          (groupEvent) => groupEvent.id === event.id
+          (groupEvent) => groupEvent._id === event._id
         );
         if (groupOrder === -1) return false;
 
@@ -159,7 +163,8 @@ export const getEventsLocalStorage = async (params: Params_Events_Wip = {}) => {
   };
 };
 
-export const createEventLocalStorage = async (event: Schema_Event_Wip) => {
+// $$ remove
+export const createEventLocalStorage = async (event: Schema_Event) => {
   const events = await getEventsLocalStorage();
   const id = uuidv4();
   localStorage.setItem(
@@ -171,13 +176,14 @@ export const createEventLocalStorage = async (event: Schema_Event_Wip) => {
   );
 };
 
-export const editEventOld = async (id: string, event: Schema_Event_Wip) => {
-  console.log("editing evt old version");
+// $$ del
+export const editEventOld = async (id: string, event: Schema_Event) => {
+  console.log(`editing evt: ${id}`);
   const eventsResponse = await getEventsLocalStorage();
 
   const events = eventsResponse.data
     .map((storageEvent) => {
-      if (storageEvent.id === id) return event;
+      if (storageEvent._id === id) return event;
 
       return { ...storageEvent, order: (storageEvent.order || 0) + 0.5 };
     })

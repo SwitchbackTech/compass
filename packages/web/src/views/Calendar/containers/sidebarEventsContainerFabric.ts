@@ -8,17 +8,20 @@ import {
   getFutureEventsSlice,
 } from "@web/ducks/events/slice";
 import {
-  GetPaginatedEventsPayload,
-  SideBarSectionType,
+  Payload_GetPaginatedEvents,
+  SectionType_Sidebar,
 } from "@web/ducks/events/types";
 import { Priorities } from "@core/core.constants";
 
 import { EventsList } from "../components/Sidebar/EventsList";
 
 export const sidebarEventsContainerFabric = (
-  sectionType: SideBarSectionType
+  sectionType: SectionType_Sidebar
 ) => {
-  const getEvents = (dispatch: Dispatch, params: GetPaginatedEventsPayload) => {
+  const getEvents = (
+    dispatch: Dispatch,
+    params: Payload_GetPaginatedEvents
+  ) => {
     const actionBySectionType = {
       currentMonth: getCurrentMonthEventsSlice.actions.request,
       future: getFutureEventsSlice.actions.request,
@@ -41,7 +44,7 @@ export const sidebarEventsContainerFabric = (
       offset: number;
       pageSize: number;
       priorities: Priorities[];
-      sectionType: SideBarSectionType;
+      sectionType: SectionType_Sidebar;
     }
   ) => ({
     getEvents: () => getEvents(dispatch, { offset, pageSize, priorities }),

@@ -29,7 +29,8 @@ module.exports = {
     "plugin:prettier/recommended",
   ],
   parserOptions: {
-    project: path.resolve(__dirname, "tsconfig.json"),
+    // TODO enable once using a root tsconfig that packages extend
+    // project: path.resolve(__dirname, "tsconfig.json"),
     sourceType: "module",
   },
   rules: {

@@ -1,4 +1,4 @@
-import { Schema_Event_Wip } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
@@ -35,10 +35,8 @@ export const selectEventIdsBySectionType = (
 export const selectEventEntities = (state: RootState) =>
   state.events.entities.value || {};
 
-export const selectEventById = (
-  state: RootState,
-  id: string
-): Schema_Event_Wip => selectEventEntities(state)[id] || {};
+export const selectEventById = (state: RootState, id: string): Schema_Event =>
+  selectEventEntities(state)[id] || {};
 
 export const selectIsCreateEventProcessing = (state: RootState) =>
   isProcessing(state.events.createEvent);

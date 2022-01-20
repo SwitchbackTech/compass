@@ -1,8 +1,4 @@
-import {
-  Old_Schema_Event_NoId,
-  Old_Schema_Event,
-  Query_Event,
-} from "@core/types/event.types";
+import { Schema_Event, Query_Event } from "@core/types/event.types";
 import { InsertedIds } from "@core/types/mongo.types";
 
 export const getReadAllFilter = (userId: string, query: Query_Event) => {
@@ -21,21 +17,21 @@ export const getReadAllFilter = (userId: string, query: Query_Event) => {
         {
           $or: [
             {
-              "start.dateTime": {
+              startDate: {
                 $gte: new Date(start).toISOString(),
               },
             },
             {
-              "start.date": { $gte: new Date(start).toISOString() },
+              startDate: { $gte: new Date(start).toISOString() },
             },
           ],
         },
         {
           $or: [
             {
-              "end.dateTime": { $lte: new Date(end).toISOString() },
+              endDate: { $lte: new Date(end).toISOString() },
             },
-            { "end.date": { $lte: new Date(end).toISOString() } },
+            { endDate: { $lte: new Date(end).toISOString() } },
           ],
         },
       ],
@@ -48,12 +44,9 @@ export const getReadAllFilter = (userId: string, query: Query_Event) => {
 
 //TODO abstract for any DTO type
 //TODO delete if unneeded
-export const mapManyToDTO = (
-  data: Old_Schema_Event_NoId[],
-  newIds: InsertedIds
-) => {
+export const mapManyToDTO = (data: Schema_Event[], newIds: InsertedIds) => {
   //TODO change to just include a summary of events imported
-  const events: Old_Schema_Event[] = [];
+  const events: Schema_Event[] = [];
 
   for (const [key, id] of Object.entries(newIds)) {
     const i = parseInt(key);
