@@ -3,7 +3,7 @@ dist/
 node_modules/
 .idea/
 .env
-app/dist
+web/dist
 package-lock.json
 *.log
-app/localization/locales/en/translation.missing.json
+electron/localization/locales/en/translation.missing.json
