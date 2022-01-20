@@ -2,13 +2,18 @@ const path = require("path");
 const { DefinePlugin } = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const BundleAnalyzerPlugin =
+  require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 
+// $$ change this for dirs like /Components, which have diff conventions (?)
+// $$ only if having same import issues on bundle
 const resolvePath = (p) => path.resolve(__dirname, p);
 
 module.exports = (env) => {
   const GLOBAL_SCSS = resolvePath("src/common/styles/index.scss");
 
   const isDevelopment = env.development;
+  const isProduction = env.production;
 
   const sassLoader = {
     loader: "sass-loader",
@@ -21,12 +26,31 @@ module.exports = (env) => {
     ? "style-loader"
     : MiniCssExtractPlugin.loader;
 
+  const _plugins = [
+    new DefinePlugin({
+      // $$ base it off the prod/dev variables you're passing in above?
+      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+      // 'process.env.ENV': JSON.stringify(process.env.ENV),
+      // 'process.env.MY_ENV': JSON.stringify(process.env.MY_ENV),
+    }),
+    new HtmlWebpackPlugin({
+      template: "./src/index.html",
+      // TODO add favicon here
+    }),
+    // minify css
+    new MiniCssExtractPlugin({
+      filename: isDevelopment ? "[name].css" : "[name].[contenthash].css",
+      chunkFilename: isDevelopment ? "[id].css" : "[id].[contenthash].css",
+    }),
+  ];
+
+  isProduction && _plugins.push(new BundleAnalyzerPlugin());
+
   return {
     entry: "./src/index.tsx",
-    devtool: "inline-source-map",
+    devtool: isDevelopment ? "eval" : "source-map",
     module: {
       rules: [
-        // ts/js:
         {
           test: /\.tsx?$/,
           use: {
@@ -38,12 +62,12 @@ module.exports = (env) => {
           },
           exclude: /node_modules/,
         },
+        // css/scss
         {
           test: /\.css/,
           use: [styleLoader, "css-loader"],
         },
 
-        // css/scss
         {
           test: /\.scss$/,
           exclude: /\.module.(s(a|c)ss)$/,
@@ -59,8 +83,8 @@ module.exports = (env) => {
                 modules: {
                   auto: true,
                   localIdentName: isDevelopment
-                    ? "[path]:[local]--[hash:base64:5]"
-                    : "[hash:base64:5]",
+                    ? "[path]:[local]--[contenthash:base64:5]"
+                    : "[contenthash:base64:5]",
                 },
               },
             },
@@ -101,7 +125,7 @@ module.exports = (env) => {
 
     output: {
       filename: "bundle.js",
-      path: resolvePath("dist"),
+      path: resolvePath("build"),
     },
 
     devServer: {
@@ -118,18 +142,6 @@ module.exports = (env) => {
       port: 9080,
     },
 
-    plugins: [
-      // new DefinePlugin({
-      // 'process.env.ENV': JSON.stringify(process.env.ENV),
-      // 'process.env.MY_ENV': JSON.stringify(process.env.MY_ENV),
-      // }),
-      new HtmlWebpackPlugin({
-        template: "./src/index.html",
-      }),
-      new MiniCssExtractPlugin({
-        filename: isDevelopment ? "[name].css" : "[name].[hash].css",
-        chunkFilename: isDevelopment ? "[id].css" : "[id].[hash].css",
-      }),
-    ],
+    plugins: _plugins,
   };
 };
