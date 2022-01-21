@@ -39,11 +39,6 @@ app.use(helmet());
 app.use(expressLogger);
 app.use(express.json());
 
-// app.use("/static", express.static(path.join(__dirname, "public")));
-const webCode = path.join(__dirname, "../webDist"); //TODO move
-console.log(webCode); //TODO move
-app.use(express.static(webCode));
-
 // initialize this middleware before routes, because
 // the routes depend on its custome promise handling
 app.use(promiseMiddleware());

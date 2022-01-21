@@ -1,9 +1,29 @@
+# files
 .DS_Store
-dist/
-node_modules/
+.vscode/
 .idea/
-.env
-web/dist
-package-lock.json
+.env*
+.eslintcache
+
+# wildcard files
 *.log
+*.tsbuildinfo
+
+# root dirs
+node_modules/
+
+# web
+packages/web/node_modules/
+packages/web/build/
+
+# backend
+packages/backend/logs
+packages/backend/build
+packages/backend/node_modules
+packages/backend/
+packages/backend/
+packages/backend/
+packages/backend/
+
+# electron
 electron/localization/locales/en/translation.missing.json

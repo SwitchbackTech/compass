@@ -16,7 +16,7 @@
   "compilerOptions": {
     "target": "es2016",
     "module": "commonjs",
-    "outDir": "./dist",
+    "outDir": "./build",
     "strict": false,
     "esModuleInterop": true,
     "inlineSourceMap": true,

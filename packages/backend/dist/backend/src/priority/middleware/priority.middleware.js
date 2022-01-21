@@ -1,6 +1,0 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-class PriorityMiddleware {
-}
-exports.default = new PriorityMiddleware();
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicHJpb3JpdHkubWlkZGxld2FyZS5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uLy4uL3NyYy9wcmlvcml0eS9taWRkbGV3YXJlL3ByaW9yaXR5Lm1pZGRsZXdhcmUudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7QUFFQSxNQUFNLGtCQUFrQjtDQUFHO0FBQzNCLGtCQUFlLElBQUksa0JBQWtCLEVBQUUsQ0FBQyJ9

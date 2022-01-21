@@ -15,6 +15,11 @@ module.exports = (env) => {
   const isDevelopment = env.development;
   const isProduction = env.production;
 
+  if (!isDevelopment && !isProduction) {
+    console.log("oopsies, looks like you didn't include an env variable");
+    return;
+  }
+
   const sassLoader = {
     loader: "sass-loader",
     options: {
@@ -28,14 +33,13 @@ module.exports = (env) => {
 
   const _plugins = [
     new DefinePlugin({
-      // $$ base it off the prod/dev variables you're passing in above?
-      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
-      // 'process.env.ENV': JSON.stringify(process.env.ENV),
-      // 'process.env.MY_ENV': JSON.stringify(process.env.MY_ENV),
+      "process.env.NODE_ENV": isProduction
+        ? JSON.stringify("production")
+        : JSON.stringify("development"),
     }),
     new HtmlWebpackPlugin({
       template: "./src/index.html",
-      // TODO add favicon here
+      favicon: "./src/favicon.ico",
     }),
     // minify css
     new MiniCssExtractPlugin({
