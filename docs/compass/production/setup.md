@@ -13,6 +13,7 @@ Set up certbot/SSL (more below)
 **Reverse proxy**: set for `localhost:3000` <-> `***REMOVED***`
 
 - configured in `/etc/nginx/sites-enabled/default`
+  - don't get confused with the `sites-available` dir
 
 **HTTP -> HHTPS 301 redirect**: managed by certbot
 

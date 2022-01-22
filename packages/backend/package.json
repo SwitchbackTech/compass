@@ -5,6 +5,10 @@
   "main": "dist/app.js",
   "author": "Switchback Tech LLC <hello@switchback.tech>",
   "license": "SEE LICENSE IN LICENSE",
+  "scripts": {
+    "build": "rm -rf build/ && tsc && cp .env build/backend/",
+    "start": "node build/backend/src/app.js"
+  },
   "dependencies": {
     "argon2": "^0.28.2",
     "cors": "^2.8.5",
@@ -29,6 +33,7 @@
     "@types/jsonwebtoken": "^8.5.5",
     "@types/shortid": "0.0.29",
     "@types/uuid": "^8.3.1",
+    "alias-hq": "^5.3.2",
     "ts-node": "^10.4.0",
     "ts-node-dev": "^1.1.8",
     "tsconfig-paths": "^3.12.0",

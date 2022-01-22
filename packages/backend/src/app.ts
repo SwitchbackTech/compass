@@ -4,7 +4,6 @@ if (dotenvResult.error) {
   throw dotenvResult.error;
 }
 import express from "express";
-import path from "path";
 import * as http from "http";
 import cors from "cors";
 import helmet from "helmet";
