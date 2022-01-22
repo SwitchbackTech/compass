@@ -18,22 +18,22 @@ export class EventRoutes extends CommonRoutesConfig {
       .post(eventController.create);
 
     this.app
-      .route(`/event/updateMany`)
+      .route(`/api/event/updateMany`)
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
       .post(eventController.updateMany);
 
     this.app
-      .route(`/event/deleteMany`)
+      .route(`/api/event/deleteMany`)
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
       .delete(eventController.deleteMany);
 
     this.app
-      .route(`/event/import`)
+      .route(`/api/event/import`)
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
       .post(eventController.import);
 
     this.app
-      .route(`/event/:id`)
+      .route(`/api/event/:id`)
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
       .get(eventController.readById)
       .put(eventController.update)

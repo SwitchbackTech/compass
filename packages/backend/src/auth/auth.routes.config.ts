@@ -34,17 +34,17 @@ export class AuthRoutes extends CommonRoutesConfig {
       authController.demoCreateJWT,
     ]);
 
-    this.app.get(`/auth/oauth-url`, [authController.getOauthUrl]);
-    this.app.get(`/auth/oauth-status`, [
+    this.app.get(`/api/auth/oauth-url`, [authController.getOauthUrl]);
+    this.app.get(`/api/auth/oauth-status`, [
       // TODO validate that required integration query is present first
       // or replace query with params (oauth/google)
       authController.checkOauthStatus,
     ]);
     // Called by Google after successful oauth
-    this.app.get(`/auth/oauth-complete`, [
+    this.app.get(`/api/auth/oauth-complete`, [
       authController.loginAfterOauthSucceeded,
     ]);
-    this.app.post(`/auth/refresh-token`, [
+    this.app.post(`/api/auth/refresh-token`, [
       jwtMiddleware.verifyTokenAndSaveUserId,
       authController.createJwt,
     ]);
