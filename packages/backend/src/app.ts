@@ -33,6 +33,7 @@ const server: http.Server = http.createServer(app);
 const port = process.env.PORT || 3000;
 const routes: Array<CommonRoutesConfig> = [];
 
+console.log("reminder: all origins allowed - yikes");
 app.use(cors());
 app.use(helmet());
 app.use(expressLogger);
