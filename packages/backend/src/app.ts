@@ -5,8 +5,10 @@ if (dotenvResult.error) {
 }
 import express from "express";
 import * as http from "http";
-import cors from "cors";
-// const cors = require("cors");
+// import cors from "cors";
+// const cors = require("cors"); // works
+// const cors = require("@backend/common/middleware/cors.middleware"); //works
+import corsWhitelist from "./common/middleware/cors.middleware";
 import helmet from "helmet";
 
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
@@ -34,8 +36,11 @@ const server: http.Server = http.createServer(app);
 const port = process.env.PORT || 3000;
 const routes: Array<CommonRoutesConfig> = [];
 
-console.log("reminder: all origins allowed - yikes");
-app.use(cors());
+// $$ cleanup
+// console.log("reminder: all origins allowed - yikes");
+// app.use(cors()); // orig - works
+// app.use(cors); //works
+app.use(corsWhitelist);
 app.use(helmet());
 app.use(expressLogger);
 app.use(express.json());
