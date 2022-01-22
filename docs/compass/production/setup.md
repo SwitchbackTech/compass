@@ -4,9 +4,15 @@ Install http server to server static (bundled frontend) files:
 
 - `npm install http-server`
 
+Set up pm2 processes
+
+Populate `.env` file on server
+
 Set up certbot/SSL (more below)
 
-## Oauth, SSL, HTTPS
+# Web Server
+
+Oauth, HTTPS, etc
 
 **Stack:** nginx, Google Cloud Compute Engine, backend code, certbot+letsencrypt
 
