@@ -1,6 +1,7 @@
 import cors from "cors";
 // var cors = require("cors");
 const allowedOrigins = process.env.CORS ? process.env.CORS.split(",") : [];
+console.log("$$ allowed origins:", allowedOrigins);
 
 module.exports = cors({
   origin: function (origin, callback) {

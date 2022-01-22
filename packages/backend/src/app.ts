@@ -5,7 +5,8 @@ if (dotenvResult.error) {
 }
 import express from "express";
 import * as http from "http";
-import cors from "cors";
+// import cors from "cors";
+const cors = require("cors");
 import helmet from "helmet";
 
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
