@@ -12,7 +12,7 @@ export class EventRoutes extends CommonRoutesConfig {
 
   configureRoutes(): express.Application {
     this.app
-      .route(`/event`)
+      .route(`/api/event`)
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
       .get(eventController.readAll)
       .post(eventController.create);
