@@ -1,11 +1,12 @@
 # files
+build.zip
 .DS_Store
 .vscode/
 .idea/
-.env*
 .eslintcache
 
 # wildcard files
+.env*
 *.log
 *.tsbuildinfo
 
