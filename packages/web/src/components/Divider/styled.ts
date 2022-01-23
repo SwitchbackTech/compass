@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 import { linearGradient } from "@web/common/styles/colors";
-import { ANIMATION_TIME_3_MS } from "@web/common/constants/common";
+import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
 import { getColor } from "@web/common/helpers/colors";
 
 import { Props } from "./types";

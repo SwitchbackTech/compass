@@ -5,7 +5,7 @@ import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 
 import { Params_Events, Schema_Event } from "@core/types/event.types";
 import { headers } from "@web/common/helpers";
-import { BASEURL } from "@web/common/constants/api";
+import { API_BASEURL } from "@web/common/constants/web.constants";
 import { createEventLocalStorage } from "@web/ducks/events/event.helpers";
 
 //not sure what this does
@@ -35,20 +35,20 @@ TODO: Add Pagination  for Someday event lists:
 
 const EventApi = {
   create(event: Schema_Event) {
-    return axios.post(`${BASEURL}/event`, event, headers());
+    return axios.post(`${API_BASEURL}/event`, event, headers());
   },
 
   delete(_id: string) {
-    return axios.delete(`${BASEURL}/event/${_id}`, headers());
+    return axios.delete(`${API_BASEURL}/event/${_id}`, headers());
   },
 
   edit: (_id: string, event: Schema_Event) => {
-    return axios.put(`${BASEURL}/event/${_id}`, event, headers());
+    return axios.put(`${API_BASEURL}/event/${_id}`, event, headers());
   },
 
   get: (params: Params_Events) => {
     return axios.get(
-      `${BASEURL}/event?start=${params.startDate}&end=${params.endDate}`,
+      `${API_BASEURL}/event?start=${params.startDate}&end=${params.endDate}`,
       headers()
     );
   },
@@ -56,7 +56,7 @@ const EventApi = {
   // TODO convert to saga
   async import() {
     const response = await axios.post(
-      `${BASEURL}/event/import`,
+      `${API_BASEURL}/event/import`,
       null,
 
       headers()
