@@ -12,6 +12,8 @@ build.zip
 
 # root dirs
 node_modules/
+# where build files are currently located on production
+prod/
 
 # web
 packages/web/node_modules/
