@@ -1,4 +1,4 @@
-import { getBaseUrl } from "./common";
+import { getBaseUrl } from "./web.constants";
 
 describe("parses env variables", () => {
   const env = process.env;
