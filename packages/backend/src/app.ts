@@ -5,7 +5,7 @@ if (dotenvResult.error) {
 }
 import express from "express";
 import * as http from "http";
-import cors from "cors";
+import corsWhitelist from "./common/middleware/cors.middleware";
 import helmet from "helmet";
 
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
@@ -33,7 +33,7 @@ const server: http.Server = http.createServer(app);
 const port = process.env.PORT || 3000;
 const routes: Array<CommonRoutesConfig> = [];
 
-app.use(cors());
+app.use(corsWhitelist);
 app.use(helmet());
 app.use(expressLogger);
 app.use(express.json());

@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios from "axios";
 
 //TODO just import Api calls from the files instead of duplicating them here
 
@@ -6,7 +6,7 @@ const token = // manually update this for your user as needed
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MTJkMmUyNDczOTg4ODRlNzE3Y2ZjYjAiLCJpYXQiOjE2MzAzNTc2NzIsImV4cCI6MTYzMTY1MzY3Mn0.Ds_E6lBUVAoZCs-biObBAEoZDiny0Eu0IFaS1yvZ_ao";
 
 // TODO move API calls to utils file, adding support for token param
-const BASEURL = 'https://***REMOVED***'
+const BASEURL = "https://***REMOVED***";
 // const BASEURL = "http://localhost:3000";
 const headers = {
   headers: {

@@ -1,7 +1,6 @@
 import axios from "axios";
 
-import { BASEURL } from "@web/common/constants/api";
-import { GOOGLE } from "@web/common/constants/common";
+import { API_BASEURL, GOOGLE } from "@web/common/constants/web.constants";
 import { Result_OauthStatus } from "@core/types/auth.types";
 
 const headers = {
@@ -14,7 +13,7 @@ const headers = {
 const AuthApi = {
   async checkOauthStatus() {
     const authState = localStorage.getItem("authState");
-    const url = `${BASEURL}/auth/oauth-status?integration=${GOOGLE}&state=${authState}`;
+    const url = `${API_BASEURL}/auth/oauth-status?integration=${GOOGLE}&state=${authState}`;
     const response = await axios.get(url);
     return response.data as Result_OauthStatus;
   },
@@ -22,7 +21,7 @@ const AuthApi = {
   async getOauthData(integration: string) {
     if (integration === GOOGLE) {
       const response = await axios.get(
-        `${BASEURL}/auth/oauth-url?integration=${GOOGLE}`
+        `${API_BASEURL}/auth/oauth-url?integration=${GOOGLE}`
       );
       return response.data;
     }
@@ -32,7 +31,7 @@ const AuthApi = {
   async refresh() {
     try {
       const response = await axios.post(
-        `${BASEURL}/auth/refresh-token`,
+        `${API_BASEURL}/auth/refresh-token`,
         {},
         headers
       );

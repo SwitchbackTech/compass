@@ -13,13 +13,13 @@ export class PriorityRoutes extends CommonRoutesConfig {
 
   configureRoutes() {
     this.app
-      .route(`/priority`)
+      .route(`/api/priority`)
       .all([jwtMiddleware.verifyTokenAndSaveUserId])
       .get(PriorityController.readAll)
       .post(PriorityController.create);
 
     this.app
-      .route(`/priority/:id`)
+      .route(`/api/priority/:id`)
       .all([jwtMiddleware.verifyTokenAndSaveUserId, validateIds])
       .get(PriorityController.readById)
       .put(PriorityController.update)

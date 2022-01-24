@@ -3,7 +3,7 @@ import axios from "axios";
 import { Priorities } from "@core/core.constants";
 
 import { colorNameByPriority } from "@web/common/styles/colors";
-import { BASEURL } from "@web/common/constants/api";
+import { API_BASEURL } from "@web/common/constants/web.constants";
 import { headers } from "../helpers";
 
 const PriorityApi = {
@@ -25,16 +25,16 @@ const PriorityApi = {
     const _headers = headers(token);
 
     const [p1, p2, p3] = await Promise.all([
-      await axios.post(`${BASEURL}/priority`, priorities[0], _headers),
-      await axios.post(`${BASEURL}/priority`, priorities[1], _headers),
-      await axios.post(`${BASEURL}/priority`, priorities[2], _headers),
+      await axios.post(`${API_BASEURL}/priority`, priorities[0], _headers),
+      await axios.post(`${API_BASEURL}/priority`, priorities[1], _headers),
+      await axios.post(`${API_BASEURL}/priority`, priorities[2], _headers),
     ]);
     const combined = [p1, p2, p3];
     return combined;
   },
 
   async getPriorities() {
-    const response = await axios.get(`${BASEURL}/priority/find`, headers());
+    const response = await axios.get(`${API_BASEURL}/priority/find`, headers());
     return response.data;
   },
 };

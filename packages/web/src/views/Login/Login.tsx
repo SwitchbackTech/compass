@@ -11,7 +11,7 @@ import { PriorityApi } from "@web/common/apis/priority.api";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { EventApi } from "@web/ducks/events/event.api";
 import { CalendarListApi } from "@web/common/apis/calendarlist.api";
-import { GOOGLE } from "@web/common/constants/common";
+import { GOOGLE } from "@web/common/constants/web.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";

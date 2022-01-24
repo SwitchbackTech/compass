@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 import { Divider } from "@web/components/Divider";
-import { ANIMATION_TIME_3_MS } from "@web/common/constants/common";
+import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
 
 export interface Props {
   open?: boolean;

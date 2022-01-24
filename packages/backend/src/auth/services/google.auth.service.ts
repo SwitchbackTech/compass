@@ -52,8 +52,8 @@ class GoogleOauthService {
 
   constructor() {
     const redirectUri = isDev()
-      ? process.env.REDIRECT_URI_DEV
-      : process.env.REDIRECT_URI;
+      ? `http://localhost:${process.env.PORT}/api/auth/oauth-complete`
+      : `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
 
     this.oauthClient = new google.auth.OAuth2(
       process.env.CLIENT_ID,

@@ -12,7 +12,7 @@ export class CalendarRoutes extends CommonRoutesConfig {
 
   configureRoutes(): express.Application {
     this.app
-      .route(`/calendarlist`)
+      .route(`/api/calendarlist`)
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
       .get(calendarController.list)
       .post(calendarController.create);
