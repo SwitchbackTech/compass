@@ -14,6 +14,7 @@ module.exports = (env) => {
 
   const isDevelopment = env.development;
   const isProduction = env.production;
+  const analyzeBundle = env.analyze;
 
   if (!isDevelopment && !isProduction) {
     console.log("oopsies, looks like you didn't include an env variable");
@@ -48,7 +49,9 @@ module.exports = (env) => {
     }),
   ];
 
-  isProduction && _plugins.push(new BundleAnalyzerPlugin());
+  if (isProduction && analyzeBundle) {
+    _plugins.push(new BundleAnalyzerPlugin());
+  }
 
   return {
     entry: "./src/index.tsx",
