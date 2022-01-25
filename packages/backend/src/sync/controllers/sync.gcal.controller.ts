@@ -31,7 +31,7 @@ class GcalSyncController {
       res.promise(Promise.resolve(notifResponse));
     }
 
-    const msg = "Notification request has invalid headers";
+    const msg = `Notification request has invalid headers:\n${req.headers}`;
     logger.error(msg);
     const err = new BaseError("Bad Headers", msg, Status.BAD_REQUEST, true);
     res.promise(Promise.resolve(err));

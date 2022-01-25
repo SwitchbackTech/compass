@@ -80,15 +80,21 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
 };
 
 export const channelExpiresSoon = (expiry: string) => {
-  // Temp: testing sync
-  const xMinFromNow = minutesFromNow(30, "ms");
-  const expiration = new Date(expiry).getTime();
-  const channelExpiresSoon = expiration < xMinFromNow;
+  if (isDev()) {
+    const numMin = 10;
+    logger.warn(
+      `** REMINDER: In dev mode, so only checking if channel expires in next ${numMin} min`
+    );
 
-  // TODO re-enable
-  // const xDaysFromNow = daysFromNowTimestamp(3, "ms");
-  // const expiration = new Date(expiry).getTime();
-  // const channelExpiresSoon = expiration < xDaysFromNow;
+    const xMinFromNow = minutesFromNow(numMin, "ms");
+    const expiration = new Date(expiry).getTime();
+    const channelExpiresSoon = expiration < xMinFromNow;
+
+    return channelExpiresSoon;
+  }
+  const xDaysFromNow = daysFromNowTimestamp(3, "ms");
+  const expiration = new Date(expiry).getTime();
+  const channelExpiresSoon = expiration < xDaysFromNow;
   return channelExpiresSoon;
 };
 /* 
