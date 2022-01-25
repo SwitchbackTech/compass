@@ -72,7 +72,8 @@ class SyncService {
           ...reqParams,
           userId: userId,
           nextSyncToken: nextSyncToken,
-          calendarId: `${GCAL_NOTIFICATION_URL} <- hard-coded for now`,
+          // TODO use non-hard-coded calendarId once supporting non-'primary' calendars
+          calendarId: GCAL_PRIMARY,
         };
         result.params = params;
 
@@ -105,6 +106,7 @@ class SyncService {
     logger.info(
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
+
     try {
       // const numMin = 120;
       // console.log(
@@ -112,23 +114,24 @@ class SyncService {
       // );
       // const expiration = minutesFromNow(numMin, "ms").toString();
 
-      const expiration = daysFromNowTimestamp(1, "ms").toString();
-
+      const numDays = 1;
+      const expiration = daysFromNowTimestamp(numDays, "ms").toString();
       console.log(
-        `\n**REMINDER: channel is expiring in just 1 (?) day. Change before deploying to lots of ppl**\n`
+        `\n**REMINDER: channel is expiring in just ${numDays} day. Change before deploying to lots of ppl**\n`
       );
-
       // const expiration = daysFromNowTimestamp(21, "ms").toString();
+
       const response = await gcal.events.watch({
         calendarId: calendarId,
         requestBody: {
           id: channelId,
-          //address always needs to be HTTPS, so use prod url
+          // address always needs to be HTTPS, so use prod url
           address: `${process.env.BASEURL_PROD}${GCAL_NOTIFICATION_URL}`,
           type: "web_hook",
           expiration: expiration,
         },
       });
+
       return response.data;
     } catch (e) {
       if (e.code && e.code === 400) {
@@ -248,9 +251,7 @@ class SyncService {
 
       logger.debug("Fetching updated gcal events");
       const updatedEvents = await gcalService.getEvents(gcal, {
-        // TODO use calendarId once supporting non-'primary' calendars
-        // calendarId: params.calendarId,
-        calendarId: GCAL_PRIMARY,
+        calendarId: params.calendarId,
         syncToken: params.nextSyncToken,
       });
 

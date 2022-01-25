@@ -26,7 +26,7 @@
     "deploy:web": "gcloud compute scp packages/web/build/build.zip ***REMOVED***@compass-backend1:/home/***REMOVED***/",
     "lint -f": "cross-env yarn workspaces run lint-fix",
     "lint:css": "stylelint 'packages/web/src/**/*.ts'",
-    "start:backendWip": "node packages/backend/build/backend/src/app.js",
+    "start:backend": "export DEBUG=app* && export NODE_ENV=production && yarn dev:backend-start",
     "start:desktop": "yarn prod:build && electron .",
     "start:web": "http-server packages/web/build",
     "test": "yarn jest",

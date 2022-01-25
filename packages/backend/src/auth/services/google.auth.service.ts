@@ -10,6 +10,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import { Logger } from "@backend/common/logger/common.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { isDev } from "@backend/common/helpers/common.helpers";
+import { BASE_URL_DEV } from "@backend/common/constants/backend.constants";
 
 import { gCalendar } from "../../../declarations";
 
@@ -52,7 +53,7 @@ class GoogleOauthService {
 
   constructor() {
     const redirectUri = isDev()
-      ? `http://localhost:${process.env.PORT}/api/auth/oauth-complete`
+      ? `${BASE_URL_DEV}/api/auth/oauth-complete`
       : `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
 
     this.oauthClient = new google.auth.OAuth2(

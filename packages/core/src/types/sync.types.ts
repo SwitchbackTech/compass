@@ -1,5 +1,22 @@
 import { BaseError } from "@core/errors/errors.base";
 import { BulkWriteResult, AnyBulkWriteOperation } from "mongodb";
+
+export interface Body_Watch_Gcal_Stop {
+  channelId: string;
+  resourceId: string;
+}
+
+export interface Body_Watch_Gcal_Start {
+  calendarId: string;
+  channelId: string;
+}
+
+export interface Params_Sync_Gcal extends Request_Sync_Gcal {
+  nextSyncToken: string;
+  userId: string;
+  calendarId?: string;
+}
+
 export interface Result_Import_Gcal {
   total: number;
   nextSyncToken: string | null | undefined;
@@ -29,20 +46,4 @@ export interface Request_Sync_Gcal {
   resourceId: string;
   resourceState: string;
   expiration: string;
-}
-
-export interface Params_Sync_Gcal extends Request_Sync_Gcal {
-  nextSyncToken: string;
-  userId: string;
-  calendarId?: string;
-}
-
-export interface Body_Watch_Gcal_Stop {
-  channelId: string;
-  resourceId: string;
-}
-
-export interface Body_Watch_Gcal_Start {
-  calendarId: string;
-  channelId: string;
 }
