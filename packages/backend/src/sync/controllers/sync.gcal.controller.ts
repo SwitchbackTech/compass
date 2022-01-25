@@ -29,14 +29,14 @@ class GcalSyncController {
       const notifResponse = await syncService.handleGcalNotification(params);
 
       res.promise(Promise.resolve(notifResponse));
+    } else {
+      const msg = `Notification request has invalid headers:\n${JSON.stringify(
+        req.headers
+      )}`;
+      logger.error(msg);
+      const err = new BaseError("Bad Headers", msg, Status.BAD_REQUEST, true);
+      res.promise(Promise.resolve(err));
     }
-
-    const msg = `Notification request has invalid headers:\n${JSON.stringify(
-      req.headers
-    )}`;
-    logger.error(msg);
-    const err = new BaseError("Bad Headers", msg, Status.BAD_REQUEST, true);
-    res.promise(Promise.resolve(err));
   };
 
   startWatching = async (req: ReqBody<Body_Watch_Gcal_Start>, res: Res) => {
