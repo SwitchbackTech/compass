@@ -119,7 +119,7 @@ class EventController {
   update = async (req: ReqBody<Schema_Event>, res: Res) => {
     /* 
     TODO validate: 
-     - that no id in body (cuz id is immutable and will cause mongo err)
+     - that no id in body (cuz id is immutable and will cause mongo err if not removed)
     */
     const userId = res.locals.user.id;
     const event = req.body;

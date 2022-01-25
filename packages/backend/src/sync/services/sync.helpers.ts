@@ -9,6 +9,7 @@ import { daysFromNowTimestamp } from "@core/util/date.utils";
 import { Request_Sync_Gcal } from "@core/types/sync.types";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { Schema_Event } from "@core/types/event.types";
+import { Origin } from "@core/core.constants";
 
 import { Logger } from "@backend/common/logger/common.logger";
 
@@ -58,9 +59,17 @@ export const assembleBulkOperations = (
 export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   const toDelete = cancelledEventsIds(events);
 
-  // assume that everything that shouldnt be deleted
-  // should be updated
-  const toUpdate = events.filter((e) => !toDelete.includes(e.id));
+  // if its going to be deleted anyway, then dont bother updating
+  const _isntBeingDeleted = (e: gSchema$Event) => !toDelete.includes(e.id);
+
+  // if user initiated change via compass
+  // then the compass database already has the change
+  const _isntFromCompass = (e: gSchema$Event) =>
+    e?.extendedProperties?.private?.origin !== Origin.Compass;
+
+  const toUpdate = events.filter(
+    (e) => _isntBeingDeleted(e) && _isntFromCompass(e)
+  );
 
   const categorized = {
     eventsToDelete: toDelete,
@@ -122,6 +131,17 @@ export const channelRefreshNeeded = (
   return refreshNeeded;
 };
 
+export const hasExpectedHeaders = (headers: object) => {
+  const hasExpected =
+    typeof headers["x-goog-channel-id"] === "string" &&
+    typeof headers["x-goog-resource-id"] === "string" &&
+    typeof headers["x-goog-resource-state"] === "string" &&
+    typeof headers["x-goog-channel-expiration"] === "string";
+  return hasExpected;
+};
+
+// TODO move elsewhere (in common service?) so it can still be imported
+// but doesn't tie this helper file to the mongoService
 export const updateNextSyncToken = async (
   userId: string,
   nextSyncToken: string

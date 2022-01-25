@@ -4,10 +4,10 @@ import { gCalendar, gSchema$Channel } from "declarations";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { minutesFromNow, daysFromNowTimestamp } from "@core/util/date.utils";
 import {
+  Params_Sync_Gcal,
   Request_Sync_Gcal,
   Result_Notif_Gcal,
-  Result_Sync_Gcal,
-  Params_Sync_Gcal,
+  Result_Sync_Prep_Gcal,
 } from "@core/types/sync.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -43,6 +43,7 @@ class SyncService {
         params: undefined,
         init: undefined,
         watch: undefined,
+        prep: undefined,
         events: undefined,
       };
 
@@ -74,7 +75,14 @@ class SyncService {
           calendarId: `${GCAL_NOTIFICATION_URL} <- hard-coded for now`,
         };
         result.params = params;
-        result.events = await _syncUpdates(gcal, params);
+
+        const prepResult = await this.prepareUpdate(gcal, params);
+        result.prep = prepResult;
+
+        if (prepResult.operations.length > 0)
+          result.events = await mongoService.db
+            .collection(Collections.EVENT)
+            .bulkWrite(prepResult.operations);
       }
 
       logger.debug(JSON.stringify(result, null, 2));
@@ -225,6 +233,64 @@ class SyncService {
     return { channelPrepResult, userId, gcal, nextSyncToken };
   };
 
+  prepareUpdate = async (
+    gcal: gCalendar,
+    params: Params_Sync_Gcal
+  ): Promise<Result_Sync_Prep_Gcal> => {
+    const prepResult = {
+      syncToken: undefined,
+      operations: undefined,
+      errors: [],
+    };
+
+    try {
+      // TODO: handle pageToken in case a lot of new events changed
+
+      logger.debug("Fetching updated gcal events");
+      const updatedEvents = await gcalService.getEvents(gcal, {
+        // TODO use calendarId once supporting non-'primary' calendars
+        // calendarId: params.calendarId,
+        calendarId: GCAL_PRIMARY,
+        syncToken: params.nextSyncToken,
+      });
+
+      // Save the updated sync token for next time
+      // (Should you do this even if no update found?)
+      // PS could potentially do this without awaiting to speed up
+      const syncTokenUpdateResult = await updateNextSyncToken(
+        params.userId,
+        updatedEvents.data.nextSyncToken
+      );
+      prepResult.syncToken = syncTokenUpdateResult;
+
+      logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
+
+      // Update Compass' DB
+      const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
+        updatedEvents.data.items
+      );
+
+      prepResult.operations = assembleBulkOperations(
+        params.userId,
+        eventsToDelete,
+        eventsToUpdate
+      );
+
+      return prepResult;
+    } catch (e) {
+      logger.error(`Errow while sycning\n`, e);
+      const err = new BaseError(
+        "Sync Update Failed",
+        e,
+        Status.INTERNAL_SERVER,
+        true
+      );
+
+      prepResult.errors.push(err);
+      return prepResult;
+    }
+  };
+
   refreshChannelWatch = async (
     userId: string,
     gcal: gCalendar,
@@ -261,72 +327,3 @@ class SyncService {
 }
 
 export default new SyncService();
-
-/*************************************************************/
-/*  Internal Helpers
-      These have too many dependencies to go in sync.helpers, 
-      which makes testing harder. So, keep here for now */
-/*************************************************************/
-
-const _syncUpdates = async (
-  gcal: gCalendar,
-  params: Params_Sync_Gcal
-): Promise<Result_Sync_Gcal | BaseError> => {
-  const syncResult = {
-    syncToken: undefined,
-    result: undefined,
-  };
-
-  try {
-    // Fetch the changes to events //
-    // TODO: handle pageToken in case a lot of new events changed
-
-    logger.debug("Fetching updated gcal events");
-    const updatedEvents = await gcalService.getEvents(gcal, {
-      // TODO use calendarId once supporting non-'primary' calendars
-      // calendarId: params.calendarId,
-      calendarId: GCAL_PRIMARY,
-      syncToken: params.nextSyncToken,
-    });
-
-    // Save the updated sync token for next time
-    // Should you do this even if no update found;?
-    // could potentially do this without awaiting to speed up
-    const syncTokenUpdateResult = await updateNextSyncToken(
-      params.userId,
-      updatedEvents.data.nextSyncToken
-    );
-    syncResult.syncToken = syncTokenUpdateResult;
-
-    if (updatedEvents.data.items.length === 0) {
-      return new BaseError(
-        "No updates found",
-        "Not sure if this is normal or not",
-        Status.NOT_FOUND,
-        true
-      );
-    }
-
-    logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
-
-    // Update Compass' DB
-    const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
-      updatedEvents.data.items
-    );
-
-    const bulkOperations = assembleBulkOperations(
-      params.userId,
-      eventsToDelete,
-      eventsToUpdate
-    );
-
-    syncResult.result = await mongoService.db
-      .collection(Collections.EVENT)
-      .bulkWrite(bulkOperations);
-
-    return syncResult;
-  } catch (e) {
-    logger.error(`Errow while sycning\n`, e);
-    return new BaseError("Sync Update Failed", e, Status.INTERNAL_SERVER, true);
-  }
-};

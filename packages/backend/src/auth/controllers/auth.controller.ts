@@ -3,9 +3,9 @@ import jwt, { Jwt } from "jsonwebtoken";
 import crypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
 
-import { GOOGLE } from "@core/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
+import { Origin } from "@core/core.constants";
 import { Logger } from "@backend/common/logger/common.logger";
 import {
   GoogleUser,
@@ -66,7 +66,7 @@ class AuthController {
 
   checkOauthStatus = async (req: express.Request, res: express.Response) => {
     const integration: string = req.query.integration;
-    if (integration === GOOGLE) {
+    if (integration === Origin.Google) {
       const status = await new googleOauthService().checkOauthStatus(req);
       res.promise(Promise.resolve(status));
     } else {
@@ -82,7 +82,7 @@ class AuthController {
   };
 
   getOauthUrl = (req: express.Request, res: express.Response) => {
-    if (req.query.integration === GOOGLE) {
+    if (req.query.integration === Origin.Google) {
       const authState = uuidv4();
       const authUrl = new googleOauthService().generateAuthUrl(authState);
       res.promise(Promise.resolve({ authUrl, authState }));
@@ -104,8 +104,8 @@ class AuthController {
     req: express.Request,
     res: express.Response
   ) => {
-    const _integration = GOOGLE;
-    if (_integration === GOOGLE) {
+    const _integration = Origin.Google;
+    if (_integration === Origin.Google) {
       const query: Params_AfterOAuth = req.query;
 
       const gAuthService = new googleOauthService();

@@ -3,6 +3,8 @@ import { gSchema$Event } from "@compass/backend/declarations";
 import { notCancelled } from "@compass/backend/src/common/services/gcal/gcal.helpers";
 
 import { BaseError } from "@core/errors/errors.base";
+import { Origin } from "@core/core.constants";
+
 import { Schema_Event } from "../types/event.types";
 
 export namespace MapEvent {
@@ -24,7 +26,7 @@ export namespace MapEvent {
     console.log("reminder: full-day evts not supported yet [mapper]");
     console.log("reminder: only works in server time (CST) [mapper]");
 
-    const gcalEvent = {
+    const gcalEvent: gSchema$Event = {
       summary: event.title, // TODO only add this field if not undefined
       description: event.description, // TODO only add this field if not undefined
       start: {
@@ -32,6 +34,13 @@ export namespace MapEvent {
       },
       end: {
         dateTime: new Date(event.endDate).toISOString(),
+      },
+      extendedProperties: {
+        private: {
+          // capture where event came from to later decide how to
+          // sync changes between compass and integrations
+          origin: event.origin,
+        },
       },
     };
 
@@ -59,6 +68,9 @@ const _toCompass = (userId: string, gEvent: gSchema$Event): Schema_Event => {
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
     user: userId,
+    // assumes that if you need to map an event to compass,
+    // then the event must've come from gcal
+    origin: Origin.Google,
     title: title,
     description: gEvent.description,
     priorities: [],
