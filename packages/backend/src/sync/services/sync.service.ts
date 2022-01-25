@@ -27,6 +27,7 @@ import {
   categorizeGcalEvents,
   channelRefreshNeeded,
   findCalendarByResourceId,
+  getChannelExpiration,
   updateNextSyncToken,
   updateResourceId,
   updateSyncData,
@@ -108,19 +109,7 @@ class SyncService {
     );
 
     try {
-      // const numMin = 120;
-      // console.log(
-      // `\n**REMINDER: channel is expiring in just ${numMin} mins. Change before deploying**\n`
-      // );
-      // const expiration = minutesFromNow(numMin, "ms").toString();
-
-      const numDays = 1;
-      const expiration = daysFromNowTimestamp(numDays, "ms").toString();
-      console.log(
-        `\n**REMINDER: channel is expiring in just ${numDays} day. Change before deploying to lots of ppl**\n`
-      );
-      // const expiration = daysFromNowTimestamp(21, "ms").toString();
-
+      const _expiration = getChannelExpiration();
       const response = await gcal.events.watch({
         calendarId: calendarId,
         requestBody: {
@@ -128,7 +117,7 @@ class SyncService {
           // address always needs to be HTTPS, so use prod url
           address: `${process.env.BASEURL_PROD}${GCAL_NOTIFICATION_URL}`,
           type: "web_hook",
-          expiration: expiration,
+          expiration: _expiration,
         },
       });
 

@@ -18,6 +18,7 @@ import { Logger } from "@backend/common/logger/common.logger";
 import mongoService from "@backend/common/services/mongo.service";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
 import { Collections } from "@backend/common/constants/collections";
+import { isDev } from "@backend/common/helpers/common.helpers";
 
 const logger = Logger("app:sync.helpers");
 
@@ -78,6 +79,18 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   return categorized;
 };
 
+export const channelExpiresSoon = (expiry: string) => {
+  // Temp: testing sync
+  const xMinFromNow = minutesFromNow(30, "ms");
+  const expiration = new Date(expiry).getTime();
+  const channelExpiresSoon = expiration < xMinFromNow;
+
+  // TODO re-enable
+  // const xDaysFromNow = daysFromNowTimestamp(3, "ms");
+  // const expiration = new Date(expiry).getTime();
+  // const channelExpiresSoon = expiration < xDaysFromNow;
+  return channelExpiresSoon;
+};
 /* 
 The channelId should also be found, but this is a sanity-check
 in case something unexpected happened
@@ -96,20 +109,6 @@ export const channelNotFound = (
     return false;
   }
 };
-
-export const channelExpiresSoon = (expiry: string) => {
-  // Temp: testing sync
-  const xMinFromNow = minutesFromNow(30, "ms");
-  const expiration = new Date(expiry).getTime();
-  const channelExpiresSoon = expiration < xMinFromNow;
-
-  // TODO re-enable
-  // const xDaysFromNow = daysFromNowTimestamp(3, "ms");
-  // const expiration = new Date(expiry).getTime();
-  // const channelExpiresSoon = expiration < xDaysFromNow;
-  return channelExpiresSoon;
-};
-
 export const channelRefreshNeeded = (
   reqParams: Request_Sync_Gcal,
   calendar: Schema_CalendarList
@@ -129,6 +128,46 @@ export const channelRefreshNeeded = (
   }
 
   return refreshNeeded;
+};
+export const findCalendarByResourceId = (
+  //todo loop through items.sync for the one that matches the resourceId,
+  // then grab that one's nextSyncToken
+  resourceId: string,
+  calendarList: Schema_CalendarList
+) => {
+  const matches = calendarList.google.items.filter((g) => {
+    return g.sync.resourceId === resourceId;
+  });
+
+  if (matches.length !== 1) {
+    logger.error(`No calendar has resourceId: ${resourceId}`);
+  }
+
+  if (matches.length > 1) {
+    throw new BaseError(
+      "Duplicate resourceIds",
+      `Multiple calendars share resourceId: ${resourceId}`,
+      Status.BAD_REQUEST,
+      false
+    );
+  }
+
+  return matches[0];
+};
+
+export const getChannelExpiration = () => {
+  if (isDev()) {
+    const numMin = parseInt(process.env.CHANNEL_EXPIRATION_DEV_MIN);
+    logger.warn(
+      `\n** REMINDER: In dev mode, so channel is expiring in just ${numMin} mins **\n`
+    );
+    const devExpiration = minutesFromNow(numMin, "ms").toString();
+    return devExpiration;
+  }
+
+  const numDays = parseInt(process.env.CHANNEL_EXPIRATION_PROD_DAYS);
+  const prodExpiration = daysFromNowTimestamp(numDays, "ms").toString();
+  return prodExpiration;
 };
 
 export const hasExpectedHeaders = (headers: object) => {
@@ -177,32 +216,6 @@ export const updateNextSyncToken = async (
     logger.error(e);
     throw err;
   }
-};
-
-export const findCalendarByResourceId = (
-  //todo loop through items.sync for the one that matches the resourceId,
-  // then grab that one's nextSyncToken
-  resourceId: string,
-  calendarList: Schema_CalendarList
-) => {
-  const matches = calendarList.google.items.filter((g) => {
-    return g.sync.resourceId === resourceId;
-  });
-
-  if (matches.length !== 1) {
-    logger.error(`No calendar has resourceId: ${resourceId}`);
-  }
-
-  if (matches.length > 1) {
-    throw new BaseError(
-      "Duplicate resourceIds",
-      `Multiple calendars share resourceId: ${resourceId}`,
-      Status.BAD_REQUEST,
-      false
-    );
-  }
-
-  return matches[0];
 };
 
 export const updateResourceId = async (
