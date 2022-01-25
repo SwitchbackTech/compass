@@ -57,7 +57,7 @@ describe("categorizeGcalEvents", () => {
   });
 });
 
-describe("refreshes channel watch", () => {
+describe("channelNotFound", () => {
   it("can identify if a channel is expired/no found", () => {
     const notFound1 = channelNotFound(calendarListExample, "channel1");
     expect(notFound1).toBe(false);
@@ -85,5 +85,26 @@ describe("Miscellaneous", () => {
     expect(hasExpectedHeaders(headers)).toBe(true);
     delete headers["x-goog-channel-id"];
     expect(hasExpectedHeaders(headers)).toBe(false);
+  });
+
+  it("idk headers", () => {
+    const headers = {
+      host: "localhost:3000",
+      connection: "close",
+      "content-length": "0",
+      accept: "*/*",
+      "ffx-goog-channel-id": "primary-c338bd69-12d5-4cf2-99b5-10d568d152b8",
+      "x-goog-channel-expiration": "Tue, 25 Jan 2022 19:22:58 GMT",
+      "x-goog-resource-state": "sync",
+      "x-goog-message-number": "1",
+      "x-goog-resource-id": "vLDjaX7kI9LbiqW3M-Op50Mf_kA",
+      "x-goog-resource-uri":
+        "https://www.googleapis.com/calendar/v3/calendars/primary/events?alt=json",
+      "user-agent":
+        "APIs-Google; (+https://developers.google.com/webmasters/APIs-Google.html)",
+      "accept-encoding": "gzip, deflate, br",
+    };
+
+    expect(hasExpectedHeaders(headers)).toBe(true);
   });
 });

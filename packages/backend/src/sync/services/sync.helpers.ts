@@ -182,6 +182,15 @@ export const hasExpectedHeaders = (headers: object) => {
     typeof headers["x-goog-resource-id"] === "string" &&
     typeof headers["x-goog-resource-state"] === "string" &&
     typeof headers["x-goog-channel-expiration"] === "string";
+
+  if (!hasExpected) {
+    console.log(`x-goog-channel-id:${headers["x-goog-channel-id"]}`);
+    console.log(`x-goog-resource-id:${headers["x-goog-resource-id"]}`);
+    console.log(`x-goog-resource-state:${headers["x-goog-resource-state"]}`);
+    console.log(
+      `x-goog-channel-expiration:${headers["x-goog-channel-expiration"]}`
+    );
+  }
   return hasExpected;
 };
 
