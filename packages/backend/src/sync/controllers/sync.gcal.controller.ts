@@ -48,6 +48,7 @@ class GcalSyncController {
       const gcal = await getGcal(userId);
       const watchResult = await syncService.startWatchingChannel(
         gcal,
+        userId,
         calendarId,
         channelId
       );

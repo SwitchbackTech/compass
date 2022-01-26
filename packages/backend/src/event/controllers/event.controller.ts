@@ -74,6 +74,7 @@ class EventController {
 
       const watchResult = await syncService.startWatchingChannel(
         gcal,
+        userId,
         GCAL_PRIMARY,
         channelId
       );

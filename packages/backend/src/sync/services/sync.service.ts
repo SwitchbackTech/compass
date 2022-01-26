@@ -1,12 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
-import { gCalendar, gSchema$Channel } from "declarations";
+import { gCalendar } from "declarations";
 
 import { Schema_CalendarList } from "@core/types/calendar.types";
-import { minutesFromNow, daysFromNowTimestamp } from "@core/util/date.utils";
 import {
   Params_Sync_Gcal,
   Request_Sync_Gcal,
   Result_Notif_Gcal,
+  Result_Start_Watch,
+  Result_Stop_Watch,
   Result_Sync_Prep_Gcal,
 } from "@core/types/sync.types";
 import { BaseError } from "@core/errors/errors.base";
@@ -21,6 +22,8 @@ import {
 import { Collections } from "@backend/common/constants/collections";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { isDev } from "@backend/common/helpers/common.helpers";
+import devService from "@backend/dev/services/dev.service";
 
 import {
   assembleBulkOperations,
@@ -101,9 +104,10 @@ class SyncService {
   */
   async startWatchingChannel(
     gcal: gCalendar,
+    userId: string,
     calendarId: string,
     channelId: string
-  ): Promise<gSchema$Channel> {
+  ): Promise<Result_Start_Watch> {
     logger.info(
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
@@ -121,7 +125,17 @@ class SyncService {
         },
       });
 
-      return response.data;
+      if (response.data && isDev()) {
+        const saveWatchInfoRes = await devService.saveWatchInfo(
+          userId,
+          calendarId,
+          channelId,
+          response.data.resourceId
+        );
+        return { channel: response.data, saveForDev: saveWatchInfoRes };
+      }
+
+      return { channel: response.data };
     } catch (e) {
       if (e.code && e.code === 400) {
         throw new BaseError(
@@ -146,7 +160,7 @@ class SyncService {
     userId: string,
     channelId: string,
     resourceId: string
-  ) {
+  ): Promise<Result_Stop_Watch | BaseError> {
     logger.debug(
       `Stopping watch for channelId: ${channelId} and resourceId: ${resourceId}`
     );
@@ -162,16 +176,26 @@ class SyncService {
       const stopResult = await gcal.channels.stop(params);
 
       if (stopResult.status === 204) {
-        return {
-          stopWatching: {
-            result: "success",
-            channelId: channelId,
-            resourceId: resourceId,
-          },
+        const stopWatchSummary = {
+          result: "success",
+          channelId: channelId,
+          resourceId: resourceId,
         };
+
+        if (isDev()) {
+          const deleteForDev = await devService.deleteWatchInfo(
+            userId,
+            channelId,
+            resourceId
+          );
+          return { stopWatching: stopWatchSummary, deleteForDev };
+        } else {
+          return { stopWatching: stopWatchSummary };
+        }
       }
 
-      return { stopWatching: stopResult };
+      logger.warn("Stop Watch failed for unexpected reason");
+      return { stopWatching: { result: "failed", debug: stopResult } };
     } catch (e) {
       if (e.code && e.code === 404) {
         return new BaseError(
@@ -296,6 +320,7 @@ class SyncService {
     const newChannelId = `pri-rfrshd${uuidv4()}`;
     const startResult = await this.startWatchingChannel(
       gcal,
+      userId,
       GCAL_PRIMARY,
       newChannelId
     );

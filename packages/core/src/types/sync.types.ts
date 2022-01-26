@@ -1,5 +1,6 @@
 import { BaseError } from "@core/errors/errors.base";
 import { BulkWriteResult, AnyBulkWriteOperation } from "mongodb";
+import { gSchema$Channel } from "declarations";
 
 export interface Body_Watch_Gcal_Stop {
   channelId: string;
@@ -28,6 +29,21 @@ export interface Result_Notif_Gcal {
   init?: object;
   prep?: Result_Sync_Prep_Gcal;
   sync?: Result_Sync_Gcal;
+}
+
+export interface Result_Start_Watch {
+  channel: gSchema$Channel;
+  saveForDev?: string;
+}
+
+export interface Result_Stop_Watch {
+  stopWatching: {
+    result: string;
+    channelId?: string;
+    resourceId?: string;
+    debug?: object;
+  };
+  deleteForDev?: string;
 }
 
 export interface Result_Sync_Gcal {

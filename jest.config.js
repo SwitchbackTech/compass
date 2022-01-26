@@ -133,6 +133,7 @@ module.exports = {
         "^@backend/auth/(.*)$": "<rootDir>/packages/backend/src/auth/$1",
         "^@backend/calendar/(.*)$":
           "<rootDir>/packages/backend/src/calendar/$1",
+        "^@backend/dev/(.*)$": "<rootDir>/packages/backend/src/dev/$1",
         "^@backend/event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
         "^@backend/common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
         "^@backend/priority/(.*)$":

@@ -68,32 +68,19 @@ describe("channelNotFound", () => {
 });
 
 describe("Miscellaneous", () => {
-  it("finds resourceId", () => {
+  it("findCalendarByResourceId: finds resourceId", () => {
     const cal = findCalendarByResourceId("resource2", calendarListExample);
     const resourceId = cal.sync.resourceId;
     expect(resourceId).toBe("resource2");
   });
 
-  it("validates Gcal sync headers", () => {
-    const headers = {
-      "x-goog-channel-id": "123abc",
-      "x-goog-resource-id": "123abc",
-      "x-goog-resource-state": "123abc",
-      "x-goog-channel-expiration": "123abc",
-    };
-
-    expect(hasExpectedHeaders(headers)).toBe(true);
-    delete headers["x-goog-channel-id"];
-    expect(hasExpectedHeaders(headers)).toBe(false);
-  });
-
-  it("idk headers", () => {
+  it("hasExpectedHeaders: validates Gcal sync headers", () => {
     const headers = {
       host: "localhost:3000",
       connection: "close",
       "content-length": "0",
       accept: "*/*",
-      "ffx-goog-channel-id": "primary-c338bd69-12d5-4cf2-99b5-10d568d152b8",
+      "x-goog-channel-id": "primary-c338bd69-12d5-4cf2-99b5-10d568d152b8",
       "x-goog-channel-expiration": "Tue, 25 Jan 2022 19:22:58 GMT",
       "x-goog-resource-state": "sync",
       "x-goog-message-number": "1",
@@ -106,5 +93,7 @@ describe("Miscellaneous", () => {
     };
 
     expect(hasExpectedHeaders(headers)).toBe(true);
+    delete headers["x-goog-channel-id"];
+    expect(hasExpectedHeaders(headers)).toBe(false);
   });
 });
