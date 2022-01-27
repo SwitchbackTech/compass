@@ -206,7 +206,11 @@ class EventService {
         if (gEvents.data.items) total += gEvents.data.items.length;
 
         if (gEvents.data.items) {
-          const cEvents = MapEvent.toCompass(userId, gEvents.data.items);
+          const cEvents = MapEvent.toCompass(
+            userId,
+            gEvents.data.items,
+            Origin.GoogleImport
+          );
           const response: InsertManyResult = await this.createMany(
             userId,
             cEvents

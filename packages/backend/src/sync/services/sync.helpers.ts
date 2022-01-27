@@ -65,8 +65,10 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
 
   // if user initiated change via compass
   // then the compass database already has the change
+  // and if the event originated from an import, then its also already in compass
   const _isntFromCompass = (e: gSchema$Event) =>
-    e?.extendedProperties?.private?.origin !== Origin.Compass;
+    e?.extendedProperties?.private?.origin !== Origin.Compass &&
+    e?.extendedProperties?.private?.origin !== Origin.GoogleImport;
 
   const toUpdate = events.filter(
     (e) => _isntBeingDeleted(e) && _isntFromCompass(e)

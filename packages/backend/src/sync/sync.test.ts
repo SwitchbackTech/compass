@@ -1,23 +1,30 @@
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
 import { Origin } from "@core/core.constants";
 
-import { gcalEventsExample, calendarListExample } from "./sync.test.data";
+import { gcalEvents } from "@core/demo-data/data.gcal.event";
+import { compassCalendarList } from "@core/demo-data/data.calendarlist";
 import {
   categorizeGcalEvents,
   channelNotFound,
   findCalendarByResourceId,
   hasExpectedHeaders,
-} from "../services/sync.helpers";
+} from "./services/sync.helpers";
 
 describe("categorizeGcalEvents", () => {
-  const { eventsToDelete, eventsToUpdate } =
-    categorizeGcalEvents(gcalEventsExample);
+  const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
+    gcalEvents.items
+  );
 
   describe("eventsToUpdate", () => {
-    it("excludes events with compass origin", () => {
+    it("excludes events with compass and import origins", () => {
       eventsToUpdate.forEach((e) => {
         if (e.extendedProperties?.private?.origin === Origin.Compass) {
-          throw new Error("an event with the compass orign wasnt excluded");
+          const msg = `an event with the ${Origin.Compass} orign wasnt excluded`;
+          throw new Error(msg);
+        }
+        if (e.extendedProperties?.private?.origin === Origin.GoogleImport) {
+          const msg = `an event with the ${Origin.GoogleImport} orign wasnt excluded`;
+          throw new Error(msg);
         }
       });
     });
@@ -33,8 +40,8 @@ describe("categorizeGcalEvents", () => {
       expect(typeof parsedToInt).toBe("number");
     });
     it("finds deleted/cancelled events", () => {
-      const cancelledIds = cancelledEventsIds(gcalEventsExample);
-      gcalEventsExample.forEach((e) => {
+      const cancelledIds = cancelledEventsIds(gcalEvents.items);
+      gcalEvents.items.forEach((e) => {
         if (e.status === "cancelled") {
           cancelledIds.push(e.id);
         }
@@ -59,17 +66,17 @@ describe("categorizeGcalEvents", () => {
 
 describe("channelNotFound", () => {
   it("can identify if a channel is expired/no found", () => {
-    const notFound1 = channelNotFound(calendarListExample, "channel1");
+    const notFound1 = channelNotFound(compassCalendarList, "channel1");
     expect(notFound1).toBe(false);
 
-    const notFound2 = channelNotFound(calendarListExample, "oldChannelId");
+    const notFound2 = channelNotFound(compassCalendarList, "oldChannelId");
     expect(notFound2).toBe(true);
   });
 });
 
 describe("Miscellaneous", () => {
   it("findCalendarByResourceId: finds resourceId", () => {
-    const cal = findCalendarByResourceId("resource2", calendarListExample);
+    const cal = findCalendarByResourceId("resource2", compassCalendarList);
     const resourceId = cal.sync.resourceId;
     expect(resourceId).toBe("resource2");
   });

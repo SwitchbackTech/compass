@@ -18,7 +18,7 @@ export const gcalEvents = {
   nextPageToken:
     "CigKGnJqMDBhZ2owNHQ0M2hyZm1kcjFhM3VkcTE4GAEggIDAjP_KsfQTGg8IABIAGIDJgcCxovQCIAEiBwgCEOvBsRw=",
   items: [
-    // ~~ cancelled event
+    // ~~ cancelled events
     {
       kind: "calendar#event",
       etag: '"2734519593376000"',
@@ -29,6 +29,13 @@ export const gcalEvents = {
         dateTime: "2013-05-08T16:00:00-06:00",
       },
     },
+    {
+      kind: "calendar#event",
+      etag: '"3279003328426000"',
+      id: "0cu25g99pfkhlfarupevcjc297_20211123T170000Z",
+      status: "cancelled",
+    },
+    // ~~ regular events
     {
       kind: "calendar#event",
       etag: '"2702446420000000"',
@@ -61,6 +68,12 @@ export const gcalEvents = {
       },
       iCalUID: "kjatossbl8ctt7ub64363pibek@google.com",
       sequence: 0,
+
+      extendedProperties: {
+        private: {
+          origin: "compass",
+        },
+      },
       reminders: {
         useDefault: true,
       },
@@ -98,6 +111,11 @@ export const gcalEvents = {
       },
       iCalUID: "m24m3crstgci7o468k9hqrr2gk@google.com",
       sequence: 1,
+      extendedProperties: {
+        private: {
+          origin: "googleimport",
+        },
+      },
       reminders: {
         useDefault: true,
       },

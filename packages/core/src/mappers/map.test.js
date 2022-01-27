@@ -1,11 +1,13 @@
-import { calendarList, events } from "./test.data.gcal/demo.calendarlist";
+import { Origin } from "../core.constants";
+import { gcalEvents } from "../demo-data/data.gcal.event";
+import { gcalCalendarList } from "../demo-data/gcal/data.gcal.calendarlist";
 import { MapCalendarList } from "./map.calendarlist";
 import { MapEvent } from "./map.event";
 
 describe("CalendarList Mapper", () => {
-  test("Only supports primary calendar", () => {
+  it("only supports primary calendar [for now]", () => {
     // update this once accepting multiple calendarlists
-    const ccallist = MapCalendarList.toCompass(calendarList);
+    const ccallist = MapCalendarList.toCompass(gcalCalendarList);
     expect(ccallist.google.items.length).toEqual(1);
     expect(ccallist.google.items[0].primary).toEqual(true);
   });
@@ -31,17 +33,40 @@ describe("Event Mapper", () => {
     return isRFC3339 && noTzOffset;
   };
 
-  test("toGcal: returns dates in expected format", () => {
-    validDates.forEach((dateStr) => {
-      const gcalEvt = MapEvent.toGcal("someuser", {
-        startDate: dateStr,
-        endDate: dateStr,
-      });
+  describe("toGcal", () => {
+    it("returns dates in expected format [toGcal]", () => {
+      validDates.forEach((dateStr) => {
+        const gcalEvt = MapEvent.toGcal("someuser", {
+          startDate: dateStr,
+          endDate: dateStr,
+        });
 
-      const bothTimesValid =
-        isValidGcalDateFormat(gcalEvt.start.dateTime) &&
-        isValidGcalDateFormat(gcalEvt.end.dateTime);
-      expect(bothTimesValid).toBe(true);
+        const bothTimesValid =
+          isValidGcalDateFormat(gcalEvt.start.dateTime) &&
+          isValidGcalDateFormat(gcalEvt.end.dateTime);
+        expect(bothTimesValid).toBe(true);
+      });
+    });
+  });
+
+  describe("toCompass", () => {
+    it("uses an expected origin", () => {
+      const eventsFromCompass = MapEvent.toCompass(
+        "user1",
+        gcalEvents.items,
+        Origin.Compass
+      );
+
+      const eventsFromGcalImport = MapEvent.toCompass(
+        "user1",
+        gcalEvents.items,
+        Origin.GoogleImport
+      );
+
+      const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
+      allEvents.forEach((ce) => {
+        expect(Object.values(Origin).includes(ce.origin)).toBe(true);
+      });
     });
   });
 });

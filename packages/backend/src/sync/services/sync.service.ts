@@ -277,11 +277,13 @@ class SyncService {
       );
       prepResult.syncToken = syncTokenUpdateResult;
 
-      logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
-
       // Update Compass' DB
       const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
         updatedEvents.data.items
+      );
+
+      logger.debug(
+        `Events to update: ${eventsToUpdate.length}\nEvents to delete: ${eventsToDelete.length}`
       );
 
       prepResult.operations = assembleBulkOperations(

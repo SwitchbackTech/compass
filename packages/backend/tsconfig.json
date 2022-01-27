@@ -18,6 +18,8 @@
     "module": "commonjs",
     "outDir": "./build",
     "strict": false,
+    "allowJs": true,
+    "checkJs": true,
     "esModuleInterop": true,
     "inlineSourceMap": true,
     // "baseUrl": "src",

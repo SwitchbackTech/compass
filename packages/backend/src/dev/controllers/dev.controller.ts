@@ -8,7 +8,6 @@ class DevController {
     res: express.Response
   ) => {
     const userId: string = req.params.userId;
-    console.log("reminder: not requiring token for this");
     const stopResult = devService.stopAllChannelWatches(userId);
     res.promise(Promise.resolve(stopResult));
   };

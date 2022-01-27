@@ -10,11 +10,12 @@ import { Schema_Event } from "../types/event.types";
 export namespace MapEvent {
   export const toCompass = (
     userId: string,
-    events: gSchema$Event[]
+    events: gSchema$Event[],
+    origin: Origin
   ): Schema_Event[] => {
     const mapped = events
       .filter(notCancelled)
-      .map((e: gSchema$Event) => _toCompass(userId, e));
+      .map((e: gSchema$Event) => _toCompass(userId, e, origin));
 
     return mapped;
   };
@@ -48,7 +49,11 @@ export namespace MapEvent {
   };
 }
 
-const _toCompass = (userId: string, gEvent: gSchema$Event): Schema_Event => {
+const _toCompass = (
+  userId: string,
+  gEvent: gSchema$Event,
+  origin: Origin
+): Schema_Event => {
   // TODO - move to validation service
   if (!gEvent.id) {
     throw new BaseError(
@@ -68,9 +73,7 @@ const _toCompass = (userId: string, gEvent: gSchema$Event): Schema_Event => {
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
     user: userId,
-    // assumes that if you need to map an event to compass,
-    // then the event must've come from gcal
-    origin: Origin.Google,
+    origin: origin,
     title: title,
     description: gEvent.description,
     priorities: [],
