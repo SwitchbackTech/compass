@@ -1,6 +1,6 @@
 import { gSchema$Event } from "declarations";
 
-export const cancelled = (e: gSchema$Event) => {
+const cancelled = (e: gSchema$Event) => {
   /* 
   'cancelled' is the same as deleted according to Gcal API
       - however, there's an exception for 'uncancelled recurring events',

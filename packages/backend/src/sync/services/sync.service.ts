@@ -260,20 +260,14 @@ class SyncService {
     };
 
     try {
-      // TODO: handle pageToken in case a lot of new events changed
+      // TODO: support pageToken in case a lot of new events changed since last sync
 
-      logger.debug("Fetching updated gcal events");
       const updatedEvents = await gcalService.getEvents(gcal, {
         calendarId: params.calendarId,
         syncToken: params.nextSyncToken,
       });
 
-      console.log("$$ updatedEvents:", updatedEvents);
-      console.log("$$ updatedEvents:", JSON.stringify(updatedEvents));
-
       // Save the updated sync token for next time
-      // (Should you do this even if no update found?)
-      // PS could potentially do this without awaiting to speed up
       const syncTokenUpdateResult = await updateNextSyncToken(
         params.userId,
         updatedEvents.data.nextSyncToken
