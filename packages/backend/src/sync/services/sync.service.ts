@@ -1,13 +1,14 @@
 import { v4 as uuidv4 } from "uuid";
-import { gCalendar, gSchema$Channel } from "declarations";
+import { gCalendar } from "declarations";
 
 import { Schema_CalendarList } from "@core/types/calendar.types";
-import { minutesFromNow, daysFromNowTimestamp } from "@core/util/date.utils";
 import {
+  Params_Sync_Gcal,
   Request_Sync_Gcal,
   Result_Notif_Gcal,
-  Result_Sync_Gcal,
-  Params_Sync_Gcal,
+  Result_Start_Watch,
+  Result_Stop_Watch,
+  Result_Sync_Prep_Gcal,
 } from "@core/types/sync.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -21,12 +22,15 @@ import {
 import { Collections } from "@backend/common/constants/collections";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { isDev } from "@backend/common/helpers/common.helpers";
+import devService from "@backend/dev/services/dev.service";
 
 import {
   assembleBulkOperations,
   categorizeGcalEvents,
   channelRefreshNeeded,
   findCalendarByResourceId,
+  getChannelExpiration,
   updateNextSyncToken,
   updateResourceId,
   updateSyncData,
@@ -43,6 +47,7 @@ class SyncService {
         params: undefined,
         init: undefined,
         watch: undefined,
+        prep: undefined,
         events: undefined,
       };
 
@@ -71,10 +76,18 @@ class SyncService {
           ...reqParams,
           userId: userId,
           nextSyncToken: nextSyncToken,
-          calendarId: `${GCAL_NOTIFICATION_URL} <- hard-coded for now`,
+          // TODO use non-hard-coded calendarId once supporting non-'primary' calendars
+          calendarId: GCAL_PRIMARY,
         };
         result.params = params;
-        result.events = await _syncUpdates(gcal, params);
+
+        const prepResult = await this.prepareUpdate(gcal, params);
+        result.prep = prepResult;
+
+        if (prepResult.operations.length > 0)
+          result.events = await mongoService.db
+            .collection(Collections.EVENT)
+            .bulkWrite(prepResult.operations);
       }
 
       logger.debug(JSON.stringify(result, null, 2));
@@ -91,37 +104,38 @@ class SyncService {
   */
   async startWatchingChannel(
     gcal: gCalendar,
+    userId: string,
     calendarId: string,
     channelId: string
-  ): Promise<gSchema$Channel> {
+  ): Promise<Result_Start_Watch> {
     logger.info(
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
+
     try {
-      // const numMin = 120;
-      // console.log(
-      // `\n**REMINDER: channel is expiring in just ${numMin} mins. Change before deploying**\n`
-      // );
-      // const expiration = minutesFromNow(numMin, "ms").toString();
-
-      const expiration = daysFromNowTimestamp(1, "ms").toString();
-
-      console.log(
-        `\n**REMINDER: channel is expiring in just 1 (?) day. Change before deploying to lots of ppl**\n`
-      );
-
-      // const expiration = daysFromNowTimestamp(21, "ms").toString();
+      const _expiration = getChannelExpiration();
       const response = await gcal.events.watch({
         calendarId: calendarId,
         requestBody: {
           id: channelId,
-          //address always needs to be HTTPS, so use prod url
+          // address always needs to be HTTPS, so use prod url
           address: `${process.env.BASEURL_PROD}${GCAL_NOTIFICATION_URL}`,
           type: "web_hook",
-          expiration: expiration,
+          expiration: _expiration,
         },
       });
-      return response.data;
+
+      if (response.data && isDev()) {
+        const saveWatchInfoRes = await devService.saveWatchInfo(
+          userId,
+          calendarId,
+          channelId,
+          response.data.resourceId
+        );
+        return { channel: response.data, saveForDev: saveWatchInfoRes };
+      }
+
+      return { channel: response.data };
     } catch (e) {
       if (e.code && e.code === 400) {
         throw new BaseError(
@@ -146,7 +160,7 @@ class SyncService {
     userId: string,
     channelId: string,
     resourceId: string
-  ) {
+  ): Promise<Result_Stop_Watch | BaseError> {
     logger.debug(
       `Stopping watch for channelId: ${channelId} and resourceId: ${resourceId}`
     );
@@ -162,16 +176,26 @@ class SyncService {
       const stopResult = await gcal.channels.stop(params);
 
       if (stopResult.status === 204) {
-        return {
-          stopWatching: {
-            result: "success",
-            channelId: channelId,
-            resourceId: resourceId,
-          },
+        const stopWatchSummary = {
+          result: "success",
+          channelId: channelId,
+          resourceId: resourceId,
         };
+
+        if (isDev()) {
+          const deleteForDev = await devService.deleteWatchInfo(
+            userId,
+            channelId,
+            resourceId
+          );
+          return { stopWatching: stopWatchSummary, deleteForDev };
+        } else {
+          return { stopWatching: stopWatchSummary };
+        }
       }
 
-      return { stopWatching: stopResult };
+      logger.warn("Stop Watch failed for unexpected reason");
+      return { stopWatching: { result: "failed", debug: stopResult } };
     } catch (e) {
       if (e.code && e.code === 404) {
         return new BaseError(
@@ -225,6 +249,62 @@ class SyncService {
     return { channelPrepResult, userId, gcal, nextSyncToken };
   };
 
+  prepareUpdate = async (
+    gcal: gCalendar,
+    params: Params_Sync_Gcal
+  ): Promise<Result_Sync_Prep_Gcal> => {
+    const prepResult = {
+      syncToken: undefined,
+      operations: undefined,
+      errors: [],
+    };
+
+    try {
+      // TODO: handle pageToken in case a lot of new events changed
+
+      logger.debug("Fetching updated gcal events");
+      const updatedEvents = await gcalService.getEvents(gcal, {
+        calendarId: params.calendarId,
+        syncToken: params.nextSyncToken,
+      });
+
+      // Save the updated sync token for next time
+      // (Should you do this even if no update found?)
+      // PS could potentially do this without awaiting to speed up
+      const syncTokenUpdateResult = await updateNextSyncToken(
+        params.userId,
+        updatedEvents.data.nextSyncToken
+      );
+      prepResult.syncToken = syncTokenUpdateResult;
+
+      logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
+
+      // Update Compass' DB
+      const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
+        updatedEvents.data.items
+      );
+
+      prepResult.operations = assembleBulkOperations(
+        params.userId,
+        eventsToDelete,
+        eventsToUpdate
+      );
+
+      return prepResult;
+    } catch (e) {
+      logger.error(`Errow while sycning\n`, e);
+      const err = new BaseError(
+        "Sync Update Failed",
+        e,
+        Status.INTERNAL_SERVER,
+        true
+      );
+
+      prepResult.errors.push(err);
+      return prepResult;
+    }
+  };
+
   refreshChannelWatch = async (
     userId: string,
     gcal: gCalendar,
@@ -240,6 +320,7 @@ class SyncService {
     const newChannelId = `pri-rfrshd${uuidv4()}`;
     const startResult = await this.startWatchingChannel(
       gcal,
+      userId,
       GCAL_PRIMARY,
       newChannelId
     );
@@ -261,72 +342,3 @@ class SyncService {
 }
 
 export default new SyncService();
-
-/*************************************************************/
-/*  Internal Helpers
-      These have too many dependencies to go in sync.helpers, 
-      which makes testing harder. So, keep here for now */
-/*************************************************************/
-
-const _syncUpdates = async (
-  gcal: gCalendar,
-  params: Params_Sync_Gcal
-): Promise<Result_Sync_Gcal | BaseError> => {
-  const syncResult = {
-    syncToken: undefined,
-    result: undefined,
-  };
-
-  try {
-    // Fetch the changes to events //
-    // TODO: handle pageToken in case a lot of new events changed
-
-    logger.debug("Fetching updated gcal events");
-    const updatedEvents = await gcalService.getEvents(gcal, {
-      // TODO use calendarId once supporting non-'primary' calendars
-      // calendarId: params.calendarId,
-      calendarId: GCAL_PRIMARY,
-      syncToken: params.nextSyncToken,
-    });
-
-    // Save the updated sync token for next time
-    // Should you do this even if no update found;?
-    // could potentially do this without awaiting to speed up
-    const syncTokenUpdateResult = await updateNextSyncToken(
-      params.userId,
-      updatedEvents.data.nextSyncToken
-    );
-    syncResult.syncToken = syncTokenUpdateResult;
-
-    if (updatedEvents.data.items.length === 0) {
-      return new BaseError(
-        "No updates found",
-        "Not sure if this is normal or not",
-        Status.NOT_FOUND,
-        true
-      );
-    }
-
-    logger.debug(`Found ${updatedEvents.data.items.length} events to update`);
-
-    // Update Compass' DB
-    const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
-      updatedEvents.data.items
-    );
-
-    const bulkOperations = assembleBulkOperations(
-      params.userId,
-      eventsToDelete,
-      eventsToUpdate
-    );
-
-    syncResult.result = await mongoService.db
-      .collection(Collections.EVENT)
-      .bulkWrite(bulkOperations);
-
-    return syncResult;
-  } catch (e) {
-    logger.error(`Errow while sycning\n`, e);
-    return new BaseError("Sync Update Failed", e, Status.INTERNAL_SERVER, true);
-  }
-};

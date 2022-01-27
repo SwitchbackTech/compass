@@ -1,6 +1,6 @@
 import { Query } from "express-serve-static-core";
 
-import { Priorities } from "@core/core.constants";
+import { Origin, Priorities } from "@core/core.constants";
 
 export interface Params_DeleteMany {
   key: string;
@@ -12,7 +12,7 @@ export interface Params_Events {
   page?: number;
   pageSize?: number;
   offset?: number;
-  priorities?: Priorities[]; // use ids instead of words
+  priorities?: Priorities[]; // TODO use ids instead of words
 }
 
 export interface Result_DeleteMany {
@@ -22,13 +22,13 @@ export interface Result_DeleteMany {
 
 export interface Schema_Event {
   _id?: string;
+  origin: Origin;
   gEventId?: string;
   title?: string;
   description?: string | null | undefined;
   startDate?: string;
   endDate?: string;
-  // priority: Priorities; $$
-  priority?: string;
+  priority?: string; // $$ temporary structure for v1
   priorities?: string[]; // the eventual structure, with ids as strs
   user?: string;
 

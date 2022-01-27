@@ -55,6 +55,11 @@ export const gcalEventsExample = [
     },
     iCalUID: "0cu25g99pfkhlfarupevcjc297@google.com",
     sequence: 2,
+    extendedProperties: {
+      private: {
+        origin: "compass",
+      },
+    },
     reminders: { useDefault: true },
     eventType: "default",
   },
@@ -125,6 +130,11 @@ export const gcalEventsExample = [
     transparency: "transparent",
     iCalUID: "2j96gmk1tgebtfpm9nvdl1o9tp@google.com",
     sequence: 0,
+    extendedProperties: {
+      private: {
+        origin: "compass",
+      },
+    },
     reminders: { useDefault: false },
     eventType: "default",
   },
