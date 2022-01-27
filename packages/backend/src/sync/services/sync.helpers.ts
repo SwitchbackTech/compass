@@ -59,6 +59,7 @@ export const assembleBulkOperations = (
 
 export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   const toDelete = cancelledEventsIds(events);
+  // const toDelete = cancelledEventsIds(events);
 
   // if its going to be deleted anyway, then dont bother updating
   const _isntBeingDeleted = (e: gSchema$Event) => !toDelete.includes(e.id);

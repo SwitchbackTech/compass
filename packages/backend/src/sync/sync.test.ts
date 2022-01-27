@@ -53,6 +53,28 @@ describe("categorizeGcalEvents", () => {
         }
       });
     });
+
+    it("excludes events from compass and import origins", () => {
+      // because if from compass or import, then it's already been deleted from
+      // compass' DB
+      const validOriginForDelete = [Origin.Google];
+      const invalidOriginsForDelete = [Origin.Compass, Origin.GoogleImport];
+
+      eventsToDelete.forEach((id) => {
+        const eventToDelete = gcalEvents.items.find((e) => e.id === id);
+
+        if (eventToDelete.extendedProperties !== undefined) {
+          const originIsValid = validOriginForDelete.includes(
+            eventToDelete.extendedProperties.private.origin
+          );
+          expect(originIsValid).toBe(true);
+          expect(eventToDelete?.extendedProperties?.private.origin).toBe(
+            !Origin.GoogleImport
+          );
+        }
+        // assert(eventToDelete?.extendedProperties?.private.origin !== Origin.Compass)
+      });
+    });
   });
 
   it("doesn't put the same id in both the delete and update list", () => {

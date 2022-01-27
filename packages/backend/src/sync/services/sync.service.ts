@@ -268,6 +268,9 @@ class SyncService {
         syncToken: params.nextSyncToken,
       });
 
+      console.log("$$ updatedEvents:", updatedEvents);
+      console.log("$$ updatedEvents:", JSON.stringify(updatedEvents));
+
       // Save the updated sync token for next time
       // (Should you do this even if no update found?)
       // PS could potentially do this without awaiting to speed up
@@ -283,7 +286,7 @@ class SyncService {
       );
 
       logger.debug(
-        `Events to update: ${eventsToUpdate.length}\nEvents to delete: ${eventsToDelete.length}`
+        `Events to update: ${eventsToUpdate.length}  |  Events to delete: ${eventsToDelete.length}`
       );
 
       prepResult.operations = assembleBulkOperations(
