@@ -1,6 +1,6 @@
 import { MapEvent } from "@core/mappers/map.event";
 
-import { gcalEvents } from "@core/demo-data/data.gcal.event";
+import { gcalEvents } from "@core/test-data/gcal/data.gcal.event";
 import { Origin } from "@core/core.constants";
 
 describe("Map Event: GCal -> CCal", () => {

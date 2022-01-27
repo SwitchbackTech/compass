@@ -1,6 +1,6 @@
 import { Origin } from "../core.constants";
-import { gcalEvents } from "../demo-data/data.gcal.event";
-import { gcalCalendarList } from "../demo-data/gcal/data.gcal.calendarlist";
+import { gcalEvents } from "../test-data/gcal/data.gcal.event";
+import { gcalCalendarList } from "../test-data/gcal/data.gcal.calendarlist";
 import { MapCalendarList } from "./map.calendarlist";
 import { MapEvent } from "./map.event";
 

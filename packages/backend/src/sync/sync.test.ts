@@ -1,8 +1,8 @@
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
 import { Origin } from "@core/core.constants";
 
-import { gcalEvents } from "@core/demo-data/data.gcal.event";
-import { compassCalendarList } from "@core/demo-data/data.calendarlist";
+import { gcalEvents } from "@core/test-data/gcal/data.gcal.event";
+import { compassCalendarList } from "@core/test-data/data.calendarlist";
 import {
   categorizeGcalEvents,
   channelNotFound,
