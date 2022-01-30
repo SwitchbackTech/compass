@@ -321,7 +321,7 @@ class SyncService {
       newChannelId
     );
 
-    const syncUpdate = await updateSyncData(
+    const syncUpdate = await this.updateSyncData(
       userId,
       newChannelId,
       reqParams.resourceId,

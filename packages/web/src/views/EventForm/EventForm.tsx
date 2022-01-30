@@ -73,10 +73,11 @@ export const EventForm: React.FC<ComponentProps> = ({
   const defaultEventState: Schema_Event = {
     priority: Priorities.WORK,
     title: "",
-    description: "",
+    description: event?.description,
     allDay: false,
     startDate: "",
     endDate: "",
+    origin: event.origin,
     showStartTimeLabel: false,
   };
 
@@ -249,8 +250,10 @@ export const EventForm: React.FC<ComponentProps> = ({
 
       <StyledDescriptionField
         background={colorNameByPriority[priority]}
+        // placeholder="Add description"
         placeholder="Add description"
         onChange={onChangeEventTextField("description")}
+        value={event.description}
       />
 
       <StyledSubmitButton onClick={onSubmitForm}>Submit</StyledSubmitButton>
