@@ -4,12 +4,27 @@ import { Origin } from "@core/core.constants";
 import { gcalEvents } from "@core/test-data/gcal/data.gcal.event";
 import { compassCalendarList } from "@core/test-data/data.calendarlist";
 import {
+  assembleBulkOperations,
   categorizeGcalEvents,
   channelNotFound,
   findCalendarByResourceId,
   hasExpectedHeaders,
 } from "./services/sync.helpers";
 
+describe("assembleBulkOperations", () => {
+  const bulkOps = assembleBulkOperations(
+    "user2",
+    ["id1", "id2"],
+    gcalEvents.items
+  );
+  it("sets origin to google for updated events", () => {
+    const updateOps = bulkOps.filter((o) => o.updateOne !== undefined);
+    updateOps.forEach((o) => {
+      const origin = o.updateOne.update.$set.origin;
+      expect(origin).toEqual(Origin.Google);
+    });
+  });
+});
 describe("categorizeGcalEvents", () => {
   const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
     gcalEvents.items

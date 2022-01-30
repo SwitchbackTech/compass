@@ -40,8 +40,50 @@ How:
 - `sync`, `exists`, `not_exists`
   Compass initiates an incremental sync on the user's calendar (using your persisted `nextSyncToken`)
 
+## Handling Notifications
+
 Keep the channel active
 
 - Keep track of when it expires
 - Before it does, `POST` another `/watch`
   - Use a new uuid
+
+### Sync Scenarios:
+
+User **imports** their Gcal events:
+
+1. Compass maps gcal to compass event structure, adding an `origin` property
+   that indicates the event originally came via import
+
+User **creates/edits** event in **Gcal:**
+
+1. Gcal notifies Compass
+2. Compass does incremental
+
+User **creates/edits** event in **Compass**:
+
+1. Compass immediately updates its own DB and edits GCal event
+
+- For new events:
+  - compass updates the event's `origin` to indicate that it came from compass
+  - compass saves the origin in the Gcal event's `extendedProperties`
+
+2. some time passes
+
+3. Gcal notifies Compass about event changes
+
+4. Compass calls GCal's API to get the updated events
+
+5. Compass filters out the events that it has already accounted for in its DB
+
+- does this by excluding the events that have `extendedProperty.origin` === `compass`
+
+6. Compass updates its DB with any remaining changes
+
+User **deletes** event in **Compass**:
+
+1.-4.: same as above
+
+5. Compass attempts to remove the event from its DB (for a second time)
+
+- This duplication is because the payload from Gcal's notification doesn't contain enough info to allow Compass to know if it already deleted the event in its DB or not (ie it doesn't contain `extendedProperties.origin` data). So to be safe, Compass tries to delete it again.

@@ -41,7 +41,7 @@ export const assembleBulkOperations = (
   }
 
   if (eventsToUpdate.length > 0) {
-    const cEvents = MapEvent.toCompass(userId, eventsToUpdate);
+    const cEvents = MapEvent.toCompass(userId, eventsToUpdate, Origin.Google);
 
     cEvents.forEach((e: Schema_Event) => {
       bulkOperations.push({
