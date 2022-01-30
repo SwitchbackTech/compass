@@ -1,23 +1,30 @@
+export enum NodeEnv {
+  Development = "development",
+  Production = "production",
+  Test = "test",
+}
+
 /* 
 Infers the API URL based on the environment
 */
 const _getBaseUrl = () => {
-  if (process.env.BACKEND_ENV === "prod") {
+  if (process.env.NODE_ENV === NodeEnv.Production) {
     return process.env.BASEURL_PROD;
-  } else if (process.env.BACKEND_ENV === "dev") {
-    return `http://localhost:${process.env.PORT}`;
+  } else if (process.env.NODE_ENV === NodeEnv.Development) {
+    return BASE_URL_DEV;
   } else {
-    if (process.env.NODE_ENV !== "test") {
+    if (process.env.NODE_ENV !== NodeEnv.Test) {
       // jests sets this env, so make sure its not running in a test
       // before throwing this error
       throw new Error(
-        `Invalid BACKEND_ENV value: '${process.env.BACKEND_ENV}' Change config.`
+        `Invalid NODE_ENV value: '${process.env.NODE_ENV}' Change env config/params`
       );
     }
   }
 };
 
 export const BACKEND_URL = _getBaseUrl();
+export const BASE_URL_DEV = `http://localhost:${process.env.PORT}`;
 export const GCAL_NOTIFICATION_URL = "/api/sync/gcal/notifications";
 export const GCAL_PRIMARY = "primary";
 export const MB_50 = 50000000; // in bytes

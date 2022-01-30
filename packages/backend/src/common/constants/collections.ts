@@ -4,9 +4,10 @@ import { isDev } from "../helpers/common.helpers";
 const useDevCollections = isDev();
 
 export const Collections = {
-  CALENDARLIST: useDevCollections ? "dev.calendarlist" : "calendarlist.v2",
-  EVENT: useDevCollections ? "dev.event" : "event.v2",
-  OAUTH: useDevCollections ? "dev.oauth" : "oauth.v2",
-  PRIORITY: useDevCollections ? "dev.priority" : "priority.v2",
-  USER: useDevCollections ? "dev.user" : "user.v2",
+  CALENDARLIST: useDevCollections ? "dev.calendarlist" : "calendarlist",
+  DEV_WATCHLOG_GCAL: "dev.watch.gcal", // only for dev, so no conditional
+  EVENT: useDevCollections ? "dev.event" : "event",
+  OAUTH: useDevCollections ? "dev.oauth" : "oauth",
+  PRIORITY: useDevCollections ? "dev.priority" : "priority",
+  USER: useDevCollections ? "dev.user" : "user",
 };

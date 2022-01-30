@@ -13,6 +13,7 @@ import { AuthRoutes } from "@backend/auth/auth.routes.config";
 import { EventRoutes } from "@backend/event/event.routes.config";
 import { PriorityRoutes } from "@backend/priority/priority.routes.config";
 import { SyncRoutes } from "@backend/sync/sync.routes.config";
+import { DevRoutes } from "@backend/dev/dev.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import mongoService from "@backend/common/services/mongo.service";
 import expressLogger from "@backend/common/logger/express.logger";
@@ -22,6 +23,7 @@ import {
   catchSyncErrors,
   promiseMiddleware,
 } from "@backend/common/middleware/promise.middleware";
+import { isDev } from "./common/helpers/common.helpers";
 
 /* Misc Configuration */
 const logger = Logger("app:root");
@@ -47,6 +49,10 @@ routes.push(new PriorityRoutes(app));
 routes.push(new EventRoutes(app));
 routes.push(new SyncRoutes(app));
 routes.push(new CalendarRoutes(app));
+
+if (isDev()) {
+  routes.push(new DevRoutes(app));
+}
 
 // app.use(catchUndefinedSyncErrors);
 app.use(catchSyncErrors);

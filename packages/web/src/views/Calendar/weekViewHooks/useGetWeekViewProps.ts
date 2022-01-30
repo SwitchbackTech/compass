@@ -3,7 +3,7 @@ import dayjs, { Dayjs } from "dayjs";
 import weekPlugin from "dayjs/plugin/weekOfYear";
 import { useDispatch, useSelector } from "react-redux";
 
-import { Priorities } from "@core/core.constants";
+import { Origin, Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 
 import {
@@ -209,6 +209,8 @@ export const useGetWeekViewProps = () => {
       return;
     }
 
+    eventToSave.origin = Origin.Compass;
+    console.log("eventToSave:", eventToSave);
     dispatch(createEventSlice.actions.request(eventToSave));
 
     setEditingEvent(null);

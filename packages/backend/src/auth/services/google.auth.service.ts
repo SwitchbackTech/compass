@@ -10,6 +10,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import { Logger } from "@backend/common/logger/common.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { isDev } from "@backend/common/helpers/common.helpers";
+import { BASE_URL_DEV } from "@backend/common/constants/backend.constants";
 
 import { gCalendar } from "../../../declarations";
 
@@ -51,9 +52,9 @@ class GoogleOauthService {
   oauthClient: OAuth2Client;
 
   constructor() {
-    const redirectUri = isDev()
-      ? `http://localhost:${process.env.PORT}/api/auth/oauth-complete`
-      : `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
+    // always using PROD, even if in dev, so that you can still debug prod builds without needing
+    // to use localhost
+    const redirectUri = `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
 
     this.oauthClient = new google.auth.OAuth2(
       process.env.CLIENT_ID,

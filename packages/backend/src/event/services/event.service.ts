@@ -11,6 +11,12 @@ import {
   Result_DeleteMany,
 } from "@core/types/event.types";
 
+import {
+  gCalendar,
+  gParamsEventsList,
+  gSchema$Event,
+} from "../../../declarations";
+
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { Logger } from "@backend/common/logger/common.logger";
@@ -19,8 +25,8 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
 import { getGcal } from "@backend/auth/services/google.auth.service";
 
-import { gCalendar, gParamsEventsList } from "../../../declarations";
 import { getReadAllFilter } from "./event.service.helpers";
+import { Origin } from "@core/core.constants";
 
 const logger = Logger("app:event.service");
 
@@ -30,10 +36,22 @@ class EventService {
     event: Schema_Event
   ): Promise<Schema_Event | BaseError> {
     try {
-      const gcal = await getGcal(userId);
+      /* Save to Gcal */
       const _gEvent = MapEvent.toGcal(userId, event);
-      const gEvent = await gcalService.createEvent(gcal, _gEvent);
+      const gEventWithOrigin: gSchema$Event = {
+        ..._gEvent,
+        // capture the fact that this event originated from Compass,
+        // so we dont attempt to re-add it during the next gcal sync
+        extendedProperties: {
+          private: {
+            origin: Origin.Compass,
+          },
+        },
+      };
+      const gcal = await getGcal(userId);
+      const gEvent = await gcalService.createEvent(gcal, gEventWithOrigin);
 
+      /* Save to Compass */
       const eventWithGcalId = {
         ...event,
         user: userId,
@@ -51,12 +69,21 @@ class EventService {
         };
         return eventWithId;
       } else {
-        return new BaseError("Create Failed", response.toString(), 500, true);
+        return new BaseError(
+          "Create Failed",
+          response.toString(),
+          Status.INTERNAL_SERVER,
+          true
+        );
       }
     } catch (e) {
-      // TODO catch BulkWriteError
       logger.error(e);
-      return new BaseError("Create Failed", e.message, 500, true);
+      return new BaseError(
+        "Create Failed",
+        e.message,
+        Status.INTERNAL_SERVER,
+        true
+      );
     }
   }
 
@@ -65,6 +92,7 @@ class EventService {
     data: Schema_Event[]
   ): Promise<InsertManyResult | BaseError> {
     //TODO verify userId exists first (?)
+    // TODO catch BulkWriteError
 
     const response = await mongoService.db
       .collection(Collections.EVENT)
@@ -99,7 +127,7 @@ class EventService {
       if (!event) {
         return new BaseError(
           "Delete Failed",
-          `Could not find eventt with id: ${id}`,
+          `Could not find event with id: ${id}`,
           Status.BAD_REQUEST,
           true
         );
@@ -159,25 +187,42 @@ class EventService {
       let nextPageToken = undefined;
       let nextSyncToken = undefined;
       let total = 0;
+      const errors = [];
 
+      const numYears = 2;
+      logger.info(
+        `Importing past ${numYears} years of GCal events for user: ${userId}`
+      );
+      const xYearsAgo = yearsAgo(numYears);
       // always fetches once, then continues until
       // there are no more events
-      logger.info(`Importing Google events for user: ${userId}`);
-
-      const twoYearsAgo = yearsAgo(2);
       do {
         const params: gParamsEventsList = {
           calendarId: GCAL_PRIMARY,
-          timeMin: twoYearsAgo,
+          timeMin: xYearsAgo,
           pageToken: nextPageToken,
         };
         const gEvents = await gcalService.getEvents(gcal, params);
         if (gEvents.data.items) total += gEvents.data.items.length;
 
         if (gEvents.data.items) {
-          const cEvents = MapEvent.toCompass(userId, gEvents.data.items);
-          const response = await this.createMany(userId, cEvents);
-          //confirm acknowledged and that insertedCount = gEvents.legnth
+          const cEvents = MapEvent.toCompass(
+            userId,
+            gEvents.data.items,
+            Origin.GoogleImport
+          );
+          const response: InsertManyResult = await this.createMany(
+            userId,
+            cEvents
+          );
+          if (
+            response.acknowledged &&
+            response.insertedCount !== cEvents.length
+          ) {
+            errors.push(
+              `Only ${response.insertedCount}/${cEvents.length} imported`
+            );
+          }
 
           nextPageToken = gEvents.data.nextPageToken;
           nextSyncToken = gEvents.data.nextSyncToken;
@@ -189,7 +234,7 @@ class EventService {
       const summary = {
         total: total,
         nextSyncToken: nextSyncToken,
-        errors: [],
+        errors: errors,
       };
       return summary;
     } catch (e) {
