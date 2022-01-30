@@ -20,9 +20,9 @@ import {
   GCAL_PRIMARY,
 } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
+import { isDev } from "@backend/common/helpers/common.helpers";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { isDev } from "@backend/common/helpers/common.helpers";
 import devService from "@backend/dev/services/dev.service";
 
 import {
@@ -31,9 +31,6 @@ import {
   channelRefreshNeeded,
   findCalendarByResourceId,
   getChannelExpiration,
-  updateNextSyncToken,
-  updateResourceId,
-  updateSyncData,
 } from "./sync.helpers";
 
 const logger = Logger("app:sync.service");
@@ -52,7 +49,7 @@ class SyncService {
       };
 
       if (reqParams.resourceState === "sync") {
-        const resourceIdResult = await updateResourceId(
+        const resourceIdResult = await this.updateResourceId(
           reqParams.channelId,
           reqParams.resourceId
         );
@@ -268,7 +265,7 @@ class SyncService {
       });
 
       // Save the updated sync token for next time
-      const syncTokenUpdateResult = await updateNextSyncToken(
+      const syncTokenUpdateResult = await this.updateNextSyncToken(
         params.userId,
         updatedEvents.data.nextSyncToken
       );
@@ -337,6 +334,80 @@ class SyncService {
       syncUpdate: syncUpdate.ok === 1 ? "success" : "failed",
     };
     return refreshResult;
+  };
+
+  updateNextSyncToken = async (userId: string, nextSyncToken: string) => {
+    logger.debug(`Updating nextSyncToken to: ${nextSyncToken}`);
+
+    const msg = `Failed to update the nextSyncToken for calendar record of user: ${userId}`;
+    const err = new BaseError("Update Failed", msg, 500, true);
+
+    try {
+      // updates the primary calendar's nextSyncToken
+      // query will need to be updated once supporting non-primary calendars
+      const result = await mongoService.db
+        .collection(Collections.CALENDARLIST)
+        .findOneAndUpdate(
+          { user: userId, "google.items.primary": true },
+          {
+            $set: {
+              "google.items.$.sync.nextSyncToken": nextSyncToken,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+          { returnDocument: "after" }
+        );
+
+      if (result.value !== null) {
+        return { status: `updated to: ${nextSyncToken}` };
+      } else {
+        logger.error(msg);
+        return { status: "Failed to update properly", debugResult: result };
+      }
+    } catch (e) {
+      logger.error(e);
+      throw err;
+    }
+  };
+
+  updateResourceId = async (channelId: string, resourceId: string) => {
+    logger.debug(`Updating resourceId to: ${resourceId}`);
+    const result = await mongoService.db
+      .collection(Collections.CALENDARLIST)
+      .findOneAndUpdate(
+        { "google.items.sync.channelId": channelId },
+        {
+          $set: {
+            "google.items.$.sync.resourceId": resourceId,
+            updatedAt: new Date().toISOString(),
+          },
+        }
+      );
+
+    return result;
+  };
+
+  updateSyncData = async (
+    userId: string,
+    channelId: string,
+    resourceId: string,
+    expiration: string
+  ) => {
+    const result = await mongoService.db
+      .collection(Collections.CALENDARLIST)
+      .findOneAndUpdate(
+        // TODO update after supporting more calendars
+        { user: userId, "google.items.primary": true },
+        {
+          $set: {
+            "google.items.$.sync.channelId": channelId,
+            "google.items.$.sync.resourceId": resourceId,
+            "google.items.$.sync.expiration": expiration,
+          },
+        }
+      );
+
+    return result;
   };
 }
 

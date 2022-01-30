@@ -12,12 +12,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { Origin } from "@core/core.constants";
 
 import { Logger } from "@backend/common/logger/common.logger";
-
-//TODO decouple mongo from this helper file, cuz its causing
-// an open handle during jest runs
-import mongoService from "@backend/common/services/mongo.service";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
-import { Collections } from "@backend/common/constants/collections";
 import { isDev } from "@backend/common/helpers/common.helpers";
 
 const logger = Logger("app:sync.helpers");
@@ -177,86 +172,4 @@ export const hasExpectedHeaders = (headers: object) => {
     typeof headers["x-goog-channel-expiration"] === "string";
 
   return hasExpected;
-};
-
-// TODO move elsewhere (in common service?) so it can still be imported
-// but doesn't tie this helper file to the mongoService
-export const updateNextSyncToken = async (
-  userId: string,
-  nextSyncToken: string
-) => {
-  logger.debug(`Updating nextSyncToken to: ${nextSyncToken}`);
-
-  const msg = `Failed to update the nextSyncToken for calendar record of user: ${userId}`;
-  const err = new BaseError("Update Failed", msg, 500, true);
-
-  try {
-    // updates the primary calendar's nextSyncToken
-    // query will need to be updated once supporting non-primary calendars
-    const result = await mongoService.db
-      .collection(Collections.CALENDARLIST)
-      .findOneAndUpdate(
-        { user: userId, "google.items.primary": true },
-        {
-          $set: {
-            "google.items.$.sync.nextSyncToken": nextSyncToken,
-            updatedAt: new Date().toISOString(),
-          },
-        },
-        { returnDocument: "after" }
-      );
-
-    if (result.value !== null) {
-      return { status: `updated to: ${nextSyncToken}` };
-    } else {
-      logger.error(msg);
-      return { status: "Failed to update properly", debugResult: result };
-    }
-  } catch (e) {
-    logger.error(e);
-    throw err;
-  }
-};
-
-export const updateResourceId = async (
-  channelId: string,
-  resourceId: string
-) => {
-  logger.debug(`Updating resourceId to: ${resourceId}`);
-  const result = await mongoService.db
-    .collection(Collections.CALENDARLIST)
-    .findOneAndUpdate(
-      { "google.items.sync.channelId": channelId },
-      {
-        $set: {
-          "google.items.$.sync.resourceId": resourceId,
-          updatedAt: new Date().toISOString(),
-        },
-      }
-    );
-
-  return result;
-};
-
-export const updateSyncData = async (
-  userId: string,
-  channelId: string,
-  resourceId: string,
-  expiration: string
-) => {
-  const result = await mongoService.db
-    .collection(Collections.CALENDARLIST)
-    .findOneAndUpdate(
-      // TODO update after supporting more calendars
-      { user: userId, "google.items.primary": true },
-      {
-        $set: {
-          "google.items.$.sync.channelId": channelId,
-          "google.items.$.sync.resourceId": resourceId,
-          "google.items.$.sync.expiration": expiration,
-        },
-      }
-    );
-
-  return result;
 };
