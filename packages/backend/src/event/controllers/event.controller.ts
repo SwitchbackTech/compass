@@ -10,10 +10,6 @@ import mongoService from "@backend/common/services/mongo.service";
 import { Logger } from "@backend/common/logger/common.logger";
 import { getGcal } from "@backend/auth/services/google.auth.service";
 import syncService from "@backend/sync/services/sync.service";
-import {
-  updateSyncData,
-  updateNextSyncToken,
-} from "@backend/sync/services/sync.helpers";
 import eventService from "@backend/event/services/event.service";
 
 const logger = Logger("app:event.controller");
@@ -64,7 +60,7 @@ class EventController {
 
       const importEventsResult = await eventService.import(userId, gcal);
 
-      const syncTokenUpdateResult = await updateNextSyncToken(
+      const syncTokenUpdateResult = await syncService.updateNextSyncToken(
         userId,
         importEventsResult.nextSyncToken
       );
@@ -79,7 +75,7 @@ class EventController {
         channelId
       );
 
-      const syncUpdate = await updateSyncData(
+      const syncUpdate = await syncService.updateSyncData(
         userId,
         channelId,
         watchResult.resourceId,
