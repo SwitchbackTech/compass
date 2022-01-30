@@ -58,7 +58,7 @@ User **imports** their Gcal events:
 User **creates/edits** event in **Gcal:**
 
 1. Gcal notifies Compass
-2. Compass does incremental
+2. Compass does incremental sync
 
 User **creates/edits** event in **Compass**:
 
@@ -74,11 +74,10 @@ User **creates/edits** event in **Compass**:
 
 4. Compass calls GCal's API to get the updated events
 
-5. Compass filters out the events that it has already accounted for in its DB
+5. Compass updates its DB with the response from GCal API
 
-- does this by excluding the events that have `extendedProperty.origin` === `compass`
-
-6. Compass updates its DB with any remaining changes
+- It does not attempt to filter out the events that it already updated based on `origin`, because doing so breaks when the user updates an event that was created in Compass and updated in GCal
+  - Since the event will have `origin` of `compass`, but be changed in GCal, and thus should be synced. So, not as simple as just excluding
 
 User **deletes** event in **Compass**:
 

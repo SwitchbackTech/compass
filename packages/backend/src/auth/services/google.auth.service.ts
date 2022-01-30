@@ -52,11 +52,7 @@ class GoogleOauthService {
   oauthClient: OAuth2Client;
 
   constructor() {
-    // $$ cleanup
-    // const redirectUri = isDev()
-    //   ? `${BASE_URL_DEV}/api/auth/oauth-complete`
-    //   : `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
-    // WIP: always using PROD, even if in dev, so that you can still debug prod builds without needing
+    // always using PROD, even if in dev, so that you can still debug prod builds without needing
     // to use localhost
     const redirectUri = `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
 

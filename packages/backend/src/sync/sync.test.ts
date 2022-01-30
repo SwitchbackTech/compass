@@ -30,21 +30,6 @@ describe("categorizeGcalEvents", () => {
     gcalEvents.items
   );
 
-  describe("eventsToUpdate", () => {
-    it("excludes events with compass and import origins", () => {
-      eventsToUpdate.forEach((e) => {
-        if (e.extendedProperties?.private?.origin === Origin.Compass) {
-          const msg = `an event with the ${Origin.Compass} orign wasnt excluded`;
-          throw new Error(msg);
-        }
-        if (e.extendedProperties?.private?.origin === Origin.GoogleImport) {
-          const msg = `an event with the ${Origin.GoogleImport} orign wasnt excluded`;
-          throw new Error(msg);
-        }
-      });
-    });
-  });
-
   describe("eventsToDelete", () => {
     it("returns array of cancelled gEventIds", () => {
       expect(eventsToDelete.length).toBeGreaterThan(0);

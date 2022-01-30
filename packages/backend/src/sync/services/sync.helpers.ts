@@ -63,19 +63,7 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   // if its going to be deleted anyway, then dont bother updating
   const _isntBeingDeleted = (e: gSchema$Event) => !toDelete.includes(e.id);
 
-  // if user initiated change via compass
-  // then the compass database already has the change
-  // and if the event originated from an import, then its also already in compass
-  // $$ delete or cleanup
-  const _isntFromCompass = (e: gSchema$Event) =>
-    e?.extendedProperties?.private?.origin !== Origin.Compass &&
-    e?.extendedProperties?.private?.origin !== Origin.GoogleImport;
-
-  const toUpdate = events.filter(
-    (e) => _isntBeingDeleted(e)
-    // $$ todo delete if unused
-    // (e) => _isntBeingDeleted(e) && _isntFromCompass(e)
-  );
+  const toUpdate = events.filter((e) => _isntBeingDeleted(e));
 
   const categorized = {
     eventsToDelete: toDelete,
