@@ -3,6 +3,7 @@ import { Logger } from "@backend/common/logger/common.logger";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
+import { BaseError } from "@core/errors/errors.base";
 
 const logger = Logger("app:sync.service");
 
@@ -47,25 +48,41 @@ class DevService {
   }
 
   async stopAllChannelWatches(userId: string) {
-    logger.info(`Stopping all watches for user: ${userId}`);
-    const allWatches = await mongoService.db
-      .collection(Collections.DEV_WATCHLOG_GCAL)
-      .find({ userId: userId })
-      .toArray();
+    try {
+      logger.info(`Stopping all watches for user: ${userId}`);
+      const allWatches = await mongoService.db
+        .collection(Collections.DEV_WATCHLOG_GCAL)
+        .find({ userId: userId })
+        .toArray();
 
-    let summary = [];
-    for (let w of allWatches) {
-      const stopResult: Result_Stop_Watch =
-        await syncService.stopWatchingChannel(
-          userId,
-          w.channelId,
-          w.resourceId
-        );
-      summary.push(
-        `${stopResult.stopWatching.channelId}: ${stopResult.deleteForDev}`
-      );
+      let summary = [];
+      for (let w of allWatches) {
+        const stopResult: Result_Stop_Watch =
+          await syncService.stopWatchingChannel(
+            userId,
+            w.channelId,
+            w.resourceId
+          );
+        if ("statusCode" in stopResult) {
+          // then it failed
+          // TODO this assumes it failed cuz of 404 not found,
+          // make more dynamic
+          const filter = { userId, channelId: w.channelId };
+          const delRes = await mongoService.db
+            .collection(Collections.DEV_WATCHLOG_GCAL)
+            .deleteOne(filter);
+          const dr = delRes.acknowledged ? "pruned" : "prune failed";
+          summary.push(`${w.channelId}: ${dr}`);
+        } else {
+          summary.push(
+            `${stopResult.stopWatching.channelId}: ${stopResult.deleteForDev}`
+          );
+        }
+      }
+      return summary;
+    } catch (e) {
+      console.log(e);
     }
-    return summary;
   }
 }
 

@@ -7,9 +7,13 @@ class DevController {
     req: express.Request,
     res: express.Response
   ) => {
-    const userId: string = req.params.userId;
-    const stopResult = devService.stopAllChannelWatches(userId);
-    res.promise(Promise.resolve(stopResult));
+    try {
+      const userId: string = req.params.userId;
+      const stopResult = devService.stopAllChannelWatches(userId);
+      res.promise(Promise.resolve(stopResult));
+    } catch (e) {
+      res.promise(Promise.reject(e));
+    }
   };
 }
 
