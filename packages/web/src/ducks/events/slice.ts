@@ -19,6 +19,7 @@ import {
   Payload_GetPaginatedEvents,
   Payload_GetWeekEvents,
 } from "./types";
+import produce from "immer";
 
 export const createEventSlice = createAsyncSlice<Schema_Event>({
   name: "createEvent",
@@ -32,18 +33,33 @@ export const editEventSlice = createAsyncSlice<Payload_EditEvent>({
   name: "editEvent",
 });
 
+//$$
+const changeTimezones = produce((draft, id) => {
+  //start: 2022-01-31T14:15:00-06:00
+  //end: 2022-01-31T16:15:00-06:00
+  console.log("currying orfeild");
+  draft.value["61fac593fb23b9ef6e520794"].origin = "foo";
+  // const todo = draft.find((todo) => todo.id === id);
+  // todo.done = !todo.done;
+});
+
 export const eventsEntitiesSlice = createSlice({
   name: "eventEntities",
   initialState: {} as { value: Entities_Event },
   reducers: {
+    delete: (state, action: Action_DeleteEvent) => {
+      delete state.value[action.payload._id];
+    },
     edit: (state, action: Action_EditEvent) => {
       state.value[action.payload._id] = action.payload.event;
     },
     insert: (state, action: Action_InsertEvents) => {
       state.value = { ...state.value, ...action.payload };
     },
-    delete: (state, action: Action_DeleteEvent) => {
-      delete state.value[action.payload._id];
+    wipTimezonechange: (state, action) => {
+      // state.value = changeTimezones(state, "foo");
+      state = changeTimezones(state, "foo");
+      // state.value = {...state, changeTimezones(state, "foo")};
     },
   },
 });

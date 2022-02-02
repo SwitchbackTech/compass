@@ -19,6 +19,7 @@ import {
 import {
   createEventSlice,
   editEventSlice,
+  eventsEntitiesSlice,
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
 import { RootState } from "@web/store";
@@ -62,13 +63,9 @@ export const useGetWeekViewProps = () => {
   const weekEventIds = useSelector((state: RootState) =>
     selectEventIdsBySectionType(state, "week")
   );
-  // console.log("eventEntities:", Object.keys(eventEntities).length);
-  // console.log("eventEntities:", eventEntities);
-  // console.log("weekEventIds:", Object.keys(weekEventIds).length);
-  // console.log("weekEventIds:", weekEventIds);
   const weekEvents = weekEventIds
-    .map((_id) => eventEntities[_id])
-    .filter((event) => event !== undefined && !event.allDay);
+    .map((_id: string) => eventEntities[_id])
+    .filter((event: Schema_GridEvent) => event !== undefined && !event.allDay);
 
   const dispatch = useDispatch();
 
@@ -131,7 +128,7 @@ export const useGetWeekViewProps = () => {
 
   const daysToLastOrderIndex: { [key: string]: number } = {};
 
-  allDayEvents.forEach((event) => {
+  allDayEvents.forEach((event: Schema_Event) => {
     if (!event.startDate) return;
     daysToLastOrderIndex[event.startDate] = event.allDayOrder || 1;
   });
@@ -174,6 +171,12 @@ export const useGetWeekViewProps = () => {
   /*********
    * Handlers
    **********/
+  const onTimezoneChange = () => {
+    //$$ TODO constrain tz string to only the accepted ones
+    // dispatch(eventsEntitiesSlice.actions.wipTimezonechange);
+    dispatch(eventsEntitiesSlice.actions.wipTimezonechange({}));
+  };
+
   const onDeleteEvent = (_id: string) => {
     dispatch(deleteEventSlice.actions.request({ _id: _id }));
     setEditingEvent(null);
@@ -210,7 +213,6 @@ export const useGetWeekViewProps = () => {
     }
 
     eventToSave.origin = Origin.Compass;
-    console.log("eventToSave:", eventToSave);
     dispatch(createEventSlice.actions.request(eventToSave));
 
     setEditingEvent(null);
@@ -526,6 +528,7 @@ export const useGetWeekViewProps = () => {
   return {
     eventHandlers: {
       setEditingEvent,
+      onAllDayEventsGridMouseDown,
       onDeleteEvent,
       onEventsGridRelease,
       onEventsGridMouseDown,
@@ -533,7 +536,7 @@ export const useGetWeekViewProps = () => {
       onEventMouseDown,
       onScalerMouseDown,
       onSubmitEvent,
-      onAllDayEventsGridMouseDown,
+      onTimezoneChange,
     },
     component: {
       dayjsBasedOnWeekDay,

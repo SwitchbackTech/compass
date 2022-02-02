@@ -117,6 +117,7 @@ export const CalendarView = () => {
         ref={component.calendarRef}
         direction={FlexDirections.COLUMN}
       >
+        <button onClick={eventHandlers.onTimezoneChange}>Change TZ</button>
         <StyledHeaderFlex alignItems={AlignItems.CENTER}>
           <Text colorName={ColorNames.TEAL_3} size={45}>
             {component.dayjsBasedOnWeekDay.format("MMMM")}
