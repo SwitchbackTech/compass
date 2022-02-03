@@ -11,7 +11,7 @@ import { PriorityApi } from "@web/common/apis/priority.api";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { EventApi } from "@web/ducks/events/event.api";
 import { CalendarListApi } from "@web/common/apis/calendarlist.api";
-import { GOOGLE } from "@web/common/constants/web.constants";
+import { GOOGLE, LocalStorage } from "@web/common/constants/web.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
@@ -79,6 +79,10 @@ import { gSchema$CalendarList } from '@backend/declarations';
         // await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // todo move this stuff to onboard flow
+        const devTz = "America/Los_Angeles";
+        console.log(`\tsetting default TZ to: ${devTz}`);
+        localStorage.setItem(LocalStorage.TIMEZONE, devTz);
+
         await createPriorities(status.token);
         await createCalendarList();
         await importEvents();

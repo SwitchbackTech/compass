@@ -173,10 +173,11 @@ export const useGetWeekViewProps = () => {
    * Handlers
    **********/
   const onTimezoneChange = () => {
-    //$$ TODO constrain tz string to only the accepted ones
-    console.log("\tREMINDER: tz is hardcoded every time. move to init ");
-    localStorage.setItem(LocalStorage.TIMEZONE, "America/Los_Angeles");
-    dispatch(eventsEntitiesSlice.actions.updateAfterTzChange({}));
+    // $$ either use dayjs to guess tz as backup, or implement better
+    // way to get and pass along the tz
+    const timezone =
+      localStorage.getItem(LocalStorage.TIMEZONE) || "Asia/Dubai";
+    dispatch(eventsEntitiesSlice.actions.updateAfterTzChange({ timezone }));
   };
 
   const onDeleteEvent = (_id: string) => {
