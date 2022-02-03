@@ -1,4 +1,8 @@
 import { combineReducers } from "redux";
+import dayjs from "dayjs";
+import produce, { current } from "immer";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import { createSlice } from "@reduxjs/toolkit";
 
 import { Schema_Event } from "@core/types/event.types";
@@ -7,6 +11,7 @@ import { RootState } from "@web/store";
 import { createAsyncSlice } from "@web/common/store/helpers";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
+import { LocalStorage } from "@web/common/constants/web.constants";
 
 import {
   Action_DeleteEvent,
@@ -19,7 +24,9 @@ import {
   Payload_GetPaginatedEvents,
   Payload_GetWeekEvents,
 } from "./types";
-import produce from "immer";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export const createEventSlice = createAsyncSlice<Schema_Event>({
   name: "createEvent",
@@ -33,14 +40,16 @@ export const editEventSlice = createAsyncSlice<Payload_EditEvent>({
   name: "editEvent",
 });
 
-//$$
-const changeTimezones = produce((draft, id) => {
-  //start: 2022-01-31T14:15:00-06:00
-  //end: 2022-01-31T16:15:00-06:00
-  console.log("currying orfeild");
-  draft.value["61fac593fb23b9ef6e520794"].origin = "foo";
-  // const todo = draft.find((todo) => todo.id === id);
-  // todo.done = !todo.done;
+const changeTimezones = produce((draft, newTimeZone) => {
+  Object.keys(draft.value).map((k) => {
+    const newStart = dayjs(draft.value[k].startDate).tz(newTimeZone);
+    const newEnd = dayjs(draft.value[k].endDate).tz(newTimeZone);
+    draft.value[k].startDate = newStart;
+    draft.value[k].endDate = newEnd;
+  });
+  // $$ works
+  // draft.value["61fac593fb23b9ef6e520794"].startDate =
+  // "2022-02-01T11:15:00-06:00";
 });
 
 export const eventsEntitiesSlice = createSlice({
@@ -56,10 +65,12 @@ export const eventsEntitiesSlice = createSlice({
     insert: (state, action: Action_InsertEvents) => {
       state.value = { ...state.value, ...action.payload };
     },
-    wipTimezonechange: (state, action) => {
-      // state.value = changeTimezones(state, "foo");
-      state = changeTimezones(state, "foo");
-      // state.value = {...state, changeTimezones(state, "foo")};
+    updateAfterTzChange: (state, action) => {
+      // $$ put this in the action/payload
+      const newTimeZone = localStorage.getItem(LocalStorage.TIMEZONE);
+
+      const nextState = changeTimezones(state, newTimeZone);
+      state.value = nextState.value;
     },
   },
 });

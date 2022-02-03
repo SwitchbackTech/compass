@@ -31,6 +31,7 @@ import {
 } from "../constants";
 import { State_Event, Schema_GridEvent } from "./types";
 import { deleteEventSlice } from "../../../ducks/events/slice";
+import { LocalStorage } from "@web/common/constants/web.constants";
 
 dayjs.extend(weekPlugin);
 
@@ -173,8 +174,9 @@ export const useGetWeekViewProps = () => {
    **********/
   const onTimezoneChange = () => {
     //$$ TODO constrain tz string to only the accepted ones
-    // dispatch(eventsEntitiesSlice.actions.wipTimezonechange);
-    dispatch(eventsEntitiesSlice.actions.wipTimezonechange({}));
+    console.log("\tREMINDER: tz is hardcoded every time. move to init ");
+    localStorage.setItem(LocalStorage.TIMEZONE, "America/Los_Angeles");
+    dispatch(eventsEntitiesSlice.actions.updateAfterTzChange({}));
   };
 
   const onDeleteEvent = (_id: string) => {
