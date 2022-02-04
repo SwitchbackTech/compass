@@ -37,6 +37,7 @@ class EventService {
   ): Promise<Schema_Event | BaseError> {
     try {
       /* Save to Gcal */
+      const e = event;
       const _gEvent = MapEvent.toGcal(userId, event);
       const gEventWithOrigin: gSchema$Event = {
         ..._gEvent,

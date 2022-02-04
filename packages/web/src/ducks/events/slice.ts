@@ -1,8 +1,6 @@
 import { combineReducers } from "redux";
 import dayjs from "dayjs";
 import produce from "immer";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 import { createSlice } from "@reduxjs/toolkit";
 
 import { Schema_Event } from "@core/types/event.types";
@@ -22,9 +20,6 @@ import {
   Payload_GetPaginatedEvents,
   Payload_GetWeekEvents,
 } from "./types";
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 const changeTimezones = produce((draft, newTimeZone) => {
   Object.keys(draft.value).map((k) => {

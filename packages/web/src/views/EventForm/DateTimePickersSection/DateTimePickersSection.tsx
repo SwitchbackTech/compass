@@ -6,7 +6,8 @@ import { Key } from "ts-keycode-enum";
 import { Text } from "@web/components/Text";
 import { DatePicker } from "@web/components/DatePicker";
 import { SelectOption } from "@web/common/types/components";
-import { getTimes, roundByNumber } from "@web/common/helpers";
+import { roundByNumber } from "@web/common/helpers";
+import { getTimes } from "@web/common/helpers/date.helpers";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
 import {

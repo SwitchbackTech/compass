@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import weekPlugin from "dayjs/plugin/weekOfYear";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -11,7 +13,8 @@ import {
   YEAR_MONTH_DAY_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
-import { getAmPmTimes, roundByNumber } from "@web/common/helpers";
+import { roundByNumber } from "@web/common/helpers";
+import { getAmPmTimes, toUTCOffset } from "@web/common/helpers/date.helpers";
 import {
   selectEventEntities,
   selectEventIdsBySectionType,
@@ -34,6 +37,8 @@ import { deleteEventSlice } from "../../../ducks/events/slice";
 import { LocalStorage } from "@web/common/constants/web.constants";
 
 dayjs.extend(weekPlugin);
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 /*
 TODO: for events being snapped to each day cell:
@@ -172,14 +177,6 @@ export const useGetWeekViewProps = () => {
   /*********
    * Handlers
    **********/
-  const onTimezoneChange = () => {
-    // $$ either use dayjs to guess tz as backup, or implement better
-    // way to get and pass along the tz
-    const timezone =
-      localStorage.getItem(LocalStorage.TIMEZONE) || "Asia/Dubai";
-    dispatch(eventsEntitiesSlice.actions.updateAfterTzChange({ timezone }));
-  };
-
   const onDeleteEvent = (_id: string) => {
     dispatch(deleteEventSlice.actions.request({ _id: _id }));
     setEditingEvent(null);
@@ -203,6 +200,11 @@ export const useGetWeekViewProps = () => {
         .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
     }
 
+    /* make times compatible with backend/gcal/mongo */
+    // $$ remove/adjust once standardizing frontend around better time string
+    eventToSave.startDate = toUTCOffset(eventToSave.startDate);
+    eventToSave.endDate = toUTCOffset(eventToSave.endDate);
+
     if (eventToSave._id) {
       dispatch(
         editEventSlice.actions.request({
@@ -219,6 +221,18 @@ export const useGetWeekViewProps = () => {
     dispatch(createEventSlice.actions.request(eventToSave));
 
     setEditingEvent(null);
+  };
+
+  /* 
+  WIP. currently only adjust the week's events, and doesn't persist 
+  Will need to be finished when adding a user setting that let's them
+  manually change their timezone. Currently, the TZ is inferred by the 
+  browser
+  */
+  const onTimezoneChange = () => {
+    const timezone =
+      localStorage.getItem(LocalStorage.TIMEZONE) || dayjs.tz.guess();
+    dispatch(eventsEntitiesSlice.actions.updateAfterTzChange({ timezone }));
   };
 
   const getLeftPositionByDayIndex = (dayIndex: number) => {
