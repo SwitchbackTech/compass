@@ -15,7 +15,11 @@ describe("headers", () => {
 describe("toUTCOffset", () => {
   it("includes a TZ offset", () => {
     const dateStr = toUTCOffset("2022-01-01 10:00");
+
     const hasDashAtEnd = dateStr.slice(-6, -5) === "-";
     expect(hasDashAtEnd).toBe(true);
+
+    // Z is used for pure UTC timestamps (which don't use an offset)
+    expect(dateStr.slice(-1)).not.toEqual("Z");
   });
 });

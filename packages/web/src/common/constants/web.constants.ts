@@ -11,7 +11,9 @@ export const ANIMATION_TIME_3_MS = "0.3s";
 export const API_BASEURL = getBaseUrl();
 export const GOOGLE = "google";
 
-// $$ add other LS keys
 export enum LocalStorage {
+  AUTHSTATE = "authState",
   TIMEZONE = "timezone",
+  TOKEN = "token",
+  STATE = "state",
 }

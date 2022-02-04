@@ -27,18 +27,18 @@ export const LoginView = () => {
 
     // Token has expired or invalid, user has to re-login //
     if (!refresh) {
-      localStorage.setItem("token", "");
-      localStorage.setItem("state", "");
+      localStorage.setItem(LocalStorage.TOKEN, "");
+      localStorage.setItem(LocalStorage.STATE, "");
 
       setRedirect(false);
     }
 
-    localStorage.setItem("token", refresh.token);
+    localStorage.setItem(LocalStorage.TOKEN, refresh.token);
     setRedirect(true);
   }
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem(LocalStorage.TOKEN);
     if (token && !redirect) {
       refreshToken();
     }
@@ -46,7 +46,7 @@ export const LoginView = () => {
 
   const startGoogleOauth = async () => {
     const googleOauthData = await AuthApi.getOauthData(GOOGLE);
-    localStorage.setItem("authState", googleOauthData.authState);
+    localStorage.setItem(LocalStorage.AUTHSTATE, googleOauthData.authState);
     window.open(googleOauthData.authUrl);
 
     // poll while user grants permissions
@@ -57,7 +57,7 @@ export const LoginView = () => {
       isOauthComplete = status.isOauthComplete;
 
       if (isOauthComplete) {
-        localStorage.setItem("token", status.token);
+        localStorage.setItem(LocalStorage.TOKEN, status.token);
         //throws error if token has expired or has a invalid signature
         /*
         OR NOT, cuz user would only go through the oauth init flow 
@@ -78,10 +78,10 @@ import { gSchema$CalendarList } from '@backend/declarations';
         console.log("auth complete. initing data ...");
         // await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        // todo move this stuff to onboard flow
-        const devTz = "America/Los_Angeles";
-        console.log(`\tsetting default TZ to: ${devTz}`);
-        localStorage.setItem(LocalStorage.TIMEZONE, devTz);
+        // TODO move this stuff to onboard flow screen
+        // const devTz = "America/Los_Angeles";
+        // console.log(`\tsetting default TZ to: ${devTz}`);
+        // localStorage.setItem(LocalStorage.TIMEZONE, devTz);
 
         await createPriorities(status.token);
         await createCalendarList();

@@ -200,8 +200,7 @@ export const useGetWeekViewProps = () => {
         .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
     }
 
-    /* make times compatible with backend/gcal/mongo */
-    // $$ remove/adjust once standardizing frontend around better time string
+    // makes times compatible with backend/gcal/mongo
     eventToSave.startDate = toUTCOffset(eventToSave.startDate);
     eventToSave.endDate = toUTCOffset(eventToSave.endDate);
 
@@ -212,13 +211,10 @@ export const useGetWeekViewProps = () => {
           event: eventToSave,
         })
       );
-
-      setEditingEvent(null);
-      return;
+    } else {
+      eventToSave.origin = Origin.Compass;
+      dispatch(createEventSlice.actions.request(eventToSave));
     }
-
-    eventToSave.origin = Origin.Compass;
-    dispatch(createEventSlice.actions.request(eventToSave));
 
     setEditingEvent(null);
   };

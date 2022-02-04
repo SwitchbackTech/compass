@@ -1,18 +1,22 @@
 import axios from "axios";
 
-import { API_BASEURL, GOOGLE } from "@web/common/constants/web.constants";
+import {
+  API_BASEURL,
+  GOOGLE,
+  LocalStorage,
+} from "@web/common/constants/web.constants";
 import { Result_OauthStatus } from "@core/types/auth.types";
 
 const headers = {
   // TODO replace with method in helpers
   headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
+    Authorization: `Bearer ${localStorage.getItem(LocalStorage.TOKEN)}`,
   },
 };
 
 const AuthApi = {
   async checkOauthStatus() {
-    const authState = localStorage.getItem("authState");
+    const authState = localStorage.getItem(LocalStorage.AUTHSTATE);
     const url = `${API_BASEURL}/auth/oauth-status?integration=${GOOGLE}&state=${authState}`;
     const response = await axios.get(url);
     return response.data as Result_OauthStatus;

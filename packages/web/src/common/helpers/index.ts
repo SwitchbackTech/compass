@@ -1,3 +1,5 @@
+import { LocalStorage } from "@web/common/constants/web.constants";
+
 export const headers = (token?: string) => {
   if (token) {
     return {
@@ -8,7 +10,7 @@ export const headers = (token?: string) => {
   } else {
     return {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${localStorage.getItem(LocalStorage.TOKEN)}`,
       },
     };
   }
