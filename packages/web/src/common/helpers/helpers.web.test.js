@@ -15,6 +15,7 @@ describe("headers", () => {
 describe("toUTCOffset", () => {
   it("includes a TZ offset", () => {
     const dateStr = toUTCOffset("2022-01-01 10:00");
+    console.log(`dateStr: ${dateStr}`);
 
     const hasDashAtEnd = dateStr.slice(-6, -5) === "-";
     expect(hasDashAtEnd).toBe(true);
