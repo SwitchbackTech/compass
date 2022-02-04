@@ -17,8 +17,9 @@ describe("toUTCOffset", () => {
     const dateStr = toUTCOffset("2022-01-01 10:00");
     console.log(`dateStr: ${dateStr}`);
 
-    const hasDashAtEnd = dateStr.slice(-6, -5) === "-";
-    expect(hasDashAtEnd).toBe(true);
+    const offsetChar = dateStr.slice(-6, -5);
+    const hasOffsetChar = offsetChar === "+" || offsetChar === "-";
+    expect(hasOffsetChar).toBe(true);
 
     // Z is used for pure UTC timestamps (which don't use an offset)
     expect(dateStr.slice(-1)).not.toEqual("Z");
