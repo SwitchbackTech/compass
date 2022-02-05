@@ -12,7 +12,7 @@ import { colorNameByPriority } from "@web/common/styles/colors";
 import { ColorNames } from "@web/common/types/styles";
 import {
   HOURS_MINUTES_FORMAT,
-  SHORT_HOURS_AM_FORMAT,
+  HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
 } from "@web/common/constants/dates";
 import { getColor } from "@web/common/helpers/colors";
@@ -45,12 +45,12 @@ export const EventForm: React.FC<ComponentProps> = ({
 
   const initialStartTime = calculatedInitialStartTimeDayJs && {
     value: calculatedInitialStartTimeDayJs.format(HOURS_MINUTES_FORMAT),
-    label: calculatedInitialStartTimeDayJs.format(SHORT_HOURS_AM_FORMAT),
+    label: calculatedInitialStartTimeDayJs.format(HOURS_AM_FORMAT),
   };
 
   const initialEndTime = calculatedInitialEndTimeDayJs && {
     value: calculatedInitialEndTimeDayJs.format(HOURS_MINUTES_FORMAT),
-    label: calculatedInitialEndTimeDayJs.format(SHORT_HOURS_AM_FORMAT),
+    label: calculatedInitialEndTimeDayJs.format(HOURS_AM_FORMAT),
   };
 
   const [startTime, setStartTime] = useState<

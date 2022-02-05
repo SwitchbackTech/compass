@@ -1,7 +1,7 @@
 import dayjs, { Dayjs } from "dayjs";
 
 import {
-  SHORT_HOURS_AM_FORMAT,
+  HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
 
@@ -17,7 +17,7 @@ export const toUTCOffset = (date: string | Dayjs) => {
 export const getAmPmTimes = () =>
   getTimes().map((time) =>
     dayjs(`2000-00-00 ${time}`, YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT)
-      .format(SHORT_HOURS_AM_FORMAT)
+      .format(HOURS_AM_FORMAT)
       .toLowerCase()
   );
 

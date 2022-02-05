@@ -12,7 +12,7 @@ import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
 import {
   HOURS_MINUTES_FORMAT,
-  SHORT_HOURS_AM_FORMAT,
+  HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
@@ -38,7 +38,7 @@ const getTimepickerFilteredOptions = (
 
     return {
       value,
-      label: day.format(SHORT_HOURS_AM_FORMAT),
+      label: day.format(HOURS_AM_FORMAT),
     };
   });
 
@@ -171,7 +171,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
     const startTimeDayjs = dayjs().set("minute", roundedUpMinutes);
 
     const value = startTimeDayjs.format(HOURS_MINUTES_FORMAT);
-    const label = startTimeDayjs.format(SHORT_HOURS_AM_FORMAT);
+    const label = startTimeDayjs.format(HOURS_AM_FORMAT);
 
     setStartTime({ value, label });
 

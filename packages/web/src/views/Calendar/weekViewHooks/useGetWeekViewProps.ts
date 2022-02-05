@@ -9,7 +9,8 @@ import { Origin, Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 
 import {
-  SHORT_HOURS_AM_FORMAT,
+  HOURS_AM_FORMAT,
+  HOURS_AM_SHORT_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
 import { roundByNumber } from "@web/common/helpers";
@@ -111,7 +112,7 @@ export const useGetWeekViewProps = () => {
     return today
       .startOf("day")
       .add(index + 1, "hour")
-      .format("h A");
+      .format(HOURS_AM_SHORT_FORMAT);
   });
 
   const getMultiDayEventWidth = (
@@ -397,7 +398,7 @@ export const useGetWeekViewProps = () => {
   const getYByDate = (date: string) => {
     const day = dayjs(date);
     const eventCellHeight = getEventCellHeight();
-    const startTime = times.indexOf(day.format(SHORT_HOURS_AM_FORMAT)) / 4;
+    const startTime = times.indexOf(day.format(HOURS_AM_FORMAT)) / 4;
 
     return eventCellHeight * startTime;
   };

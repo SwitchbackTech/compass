@@ -276,7 +276,7 @@ export const CalendarView = () => {
           <StyledDayTimes>
             {component.dayTimes.map((time, index) => (
               <div key={`${time}-${index}`}>
-                <Text size={8}>{time}</Text>
+                <Text size={9}>{time}</Text>
               </div>
             ))}
           </StyledDayTimes>
