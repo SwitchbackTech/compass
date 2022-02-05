@@ -10,7 +10,6 @@ import { Schema_Event } from "@core/types/event.types";
 
 import {
   SHORT_HOURS_AM_FORMAT,
-  YEAR_MONTH_DAY_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
 import { roundByNumber } from "@web/common/helpers";
@@ -93,6 +92,7 @@ export const useGetWeekViewProps = () => {
   const allDayEventsGridRef = useRef<HTMLDivElement>(null);
   const startOfSelectedWeekDay = today.week(week).startOf("week");
   const endOfSelectedWeekDay = today.week(week).endOf("week");
+
   const [GRID_Y_OFFSET, setGridYOffset] = useState(
     allDayEventsGridRef.current?.clientHeight || 0
   );
@@ -168,8 +168,8 @@ export const useGetWeekViewProps = () => {
   useEffect(() => {
     dispatch(
       getWeekEventsSlice.actions.request({
-        startDate: startOfSelectedWeekDay.format(YEAR_MONTH_DAY_FORMAT),
-        endDate: endOfSelectedWeekDay.format(YEAR_MONTH_DAY_FORMAT),
+        startDate: toUTCOffset(startOfSelectedWeekDay),
+        endDate: toUTCOffset(endOfSelectedWeekDay),
       })
     );
   }, [week]);

@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 import {
   SHORT_HOURS_AM_FORMAT,
@@ -8,7 +8,11 @@ import {
 // uses inferred timezone and shortened string to
 // convert to a format that the backend/gcal/mongo accepts:
 // '2022-02-04 12:15' -> '2022-02-04T12:15:00-06:00'
-export const toUTCOffset = (shortDate: string) => dayjs(shortDate).format();
+export const toUTCOffset = (date: string | Dayjs) => {
+  if (typeof date === "string") {
+    return dayjs(date).format();
+  } else return date.format(); // then already a DayJs object
+};
 
 export const getAmPmTimes = () =>
   getTimes().map((time) =>
