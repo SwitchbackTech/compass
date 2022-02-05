@@ -111,7 +111,7 @@ export const useGetWeekViewProps = () => {
     return today
       .startOf("day")
       .add(index + 1, "hour")
-      .format("h:mm A");
+      .format("h A");
   });
 
   const getMultiDayEventWidth = (
