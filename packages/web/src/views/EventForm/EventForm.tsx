@@ -27,6 +27,7 @@ import {
 } from "./styled";
 import { ComponentProps } from "./types";
 import { DateTimePickersSection } from "./DateTimePickersSection";
+import { isAllDay } from "@web/common/helpers";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
@@ -137,10 +138,16 @@ export const EventForm: React.FC<ComponentProps> = ({
     const startDateString = dayjs(selectedStartDate).format(
       YEAR_MONTH_DAY_FORMAT
     );
-    const endDateStirng = dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT);
+    const endDateString = dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT);
 
-    const startDate = `${startDateString} ${startTime?.value || ""}`;
-    const endDate = `${endDateStirng} ${endTime?.value || ""}`;
+    const startDate = isAllDay(event)
+      ? startDateString
+      : `${startDateString} ${startTime?.value || ""}`;
+    const endDate = isAllDay(event)
+      ? endDateString
+      : `${endDateString} ${endTime?.value || ""}`;
+    console.log(`startDateString: ${startDateString}`);
+    console.log(`startDate: ${startDate}`);
 
     const _event = { ...event };
 
@@ -190,7 +197,7 @@ export const EventForm: React.FC<ComponentProps> = ({
     >
       <StyledTitleField
         background={colorNameByPriority[priority]}
-        placeholder="Add title"
+        placeholder="Title"
         autoFocus
         onKeyDown={submitFormWithKeyboard}
         value={title}
@@ -250,8 +257,7 @@ export const EventForm: React.FC<ComponentProps> = ({
 
       <StyledDescriptionField
         background={colorNameByPriority[priority]}
-        // placeholder="Add description"
-        placeholder="Add description"
+        placeholder="Description"
         onChange={onChangeEventTextField("description")}
         value={event.description}
       />

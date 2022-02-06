@@ -67,6 +67,7 @@ const _toCompass = (
 
   const gEventId = gEvent.id ? gEvent.id : "uh oh";
   const title = gEvent.summary ? gEvent.summary : "untitled";
+  const description = gEvent.description ? gEvent.description : "";
 
   const isAllDay = "date" in gEvent.start;
 
@@ -75,7 +76,7 @@ const _toCompass = (
     user: userId,
     origin: origin,
     title: title,
-    description: gEvent.description,
+    description: description,
     priorities: [],
     startDate: isAllDay ? gEvent.start.date : gEvent.start.dateTime,
     endDate: isAllDay ? gEvent.end.date : gEvent.end.dateTime,

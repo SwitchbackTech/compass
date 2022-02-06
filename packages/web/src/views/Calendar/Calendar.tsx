@@ -155,7 +155,7 @@ export const CalendarView = () => {
                 content={
                   <StyledTodayPopoverContainer>
                     <Text colorName={ColorNames.WHITE_1} size={12}>
-                      {component.today.format("dddd, MMMM DD")}
+                      {component.today.format("dddd, MMMM D")}
                     </Text>
                   </StyledTodayPopoverContainer>
                 }
@@ -245,7 +245,7 @@ export const CalendarView = () => {
           </StyledGridColumns>
 
           <StyledEvents>
-            {component.allDayEvents.map((event) => (
+            {component.allDayEvents.map((event: Schema_GridEvent) => (
               <WeekEvent
                 key={event._id}
                 weekViewProps={weekViewProps}
@@ -255,14 +255,14 @@ export const CalendarView = () => {
 
             {component.editingEvent && component.editingEvent.allDay && (
               <EditingWeekEvent
-                setEvent={(event) =>
-                  component.setEditingEvent(event as Schema_Event)
-                }
-                isOpen={!!component.editingEvent?.isOpen}
                 event={component.editingEvent}
-                weekViewProps={weekViewProps}
+                isOpen={!!component.editingEvent?.isOpen}
                 onCloseEventForm={() => component.setEditingEvent(null)}
                 onSubmitEventForm={eventHandlers.onSubmitEvent}
+                setEvent={(event: Schema_GridEvent) =>
+                  component.setEditingEvent(event)
+                }
+                weekViewProps={weekViewProps}
               />
             )}
           </StyledEvents>
@@ -300,7 +300,7 @@ export const CalendarView = () => {
           </StyledGridRows>
 
           <StyledEvents>
-            {component.weekEvents.map((event) => (
+            {component.weekEvents.map((event: Schema_GridEvent) => (
               <WeekEvent
                 key={event._id}
                 weekViewProps={weekViewProps}
@@ -311,7 +311,7 @@ export const CalendarView = () => {
             {component.editingEvent && !component.editingEvent.allDay && (
               <EditingWeekEvent
                 setEvent={(event) =>
-                  component.setEditingEvent(event as Schema_Event)
+                  component.setEditingEvent(event as Schema_GridEvent)
                 }
                 isOpen={!!component.editingEvent?.isOpen}
                 event={component.editingEvent}

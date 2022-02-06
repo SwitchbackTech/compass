@@ -11,9 +11,10 @@ import { Schema_Event } from "@core/types/event.types";
 import {
   HOURS_AM_FORMAT,
   HOURS_AM_SHORT_FORMAT,
+  YEAR_MONTH_DAY_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
-import { roundByNumber } from "@web/common/helpers";
+import { isAllDay, roundByNumber } from "@web/common/helpers";
 import { getAmPmTimes, toUTCOffset } from "@web/common/helpers/date.helpers";
 import {
   selectEventEntities,
@@ -42,36 +43,27 @@ dayjs.extend(timezone);
 
 /*
 TODO: for events being snapped to each day cell:
-1) we need to group events by days:
+1) group events by days:
 const eventsGroupedByDays = weekDays.map(day => weekEvents.filter(event => dayjs(event.startDate).format(YYYY-DD-MM) === dayjs(day).format('YYYY-MM-DD)))
 
-2) we need to render every group in appropriate date:
+2) render every group in appropriate date:
 eventsGroupedByDays[dayIndex].map(event => <WeekEvent />)
 
-3) we need to rewrite styles for WeekEvent component to position it in day cell by percents
+3) rewrite styles for WeekEvent component to position it in day cell by percents
 
-4) We need to rewrite the dragging logic so week event is able to be dragged in another cell
+4) rewrite the dragging logic so week event is able to be dragged in another cell
 
-5) We need to calculate position for multidays allday events
-- so it will be 100% of current day cell,
-100% of next cell (so we need to calculate how many is next day cell
-  in % relative to current day cell)
-
+5) calculate position for multidays allday events
+  - so it will be 100% of current day cell, 100% of next cell 
+    - so we need to calculate how many is next day cell in % relative to current day cell
 */
 
 export const useGetWeekViewProps = () => {
-  /********************
-   * Events: Part I
-   *******************/
+  /**************
+   * General
+   *************/
   const today = dayjs();
   const dispatch = useDispatch();
-  const eventEntities = useSelector(selectEventEntities);
-  const weekEventIds = useSelector((state: RootState) =>
-    selectEventIdsBySectionType(state, "week")
-  );
-  const weekEvents = weekEventIds
-    .map((_id: string) => eventEntities[_id])
-    .filter((event: Schema_GridEvent) => event !== undefined && !event.allDay);
 
   /**************
    * Refs Init
@@ -93,9 +85,26 @@ export const useGetWeekViewProps = () => {
   >(null);
   const [eventState, setEventState] = useState<State_Event | null>(null);
 
-  /******************
-   * Events: Part II
-   ******************/
+  /***********
+   * Events
+   ***********/
+  const eventEntities = useSelector(selectEventEntities);
+  const weekEventIds = useSelector((state: RootState) =>
+    selectEventIdsBySectionType(state, "week")
+  );
+
+  const _mappedEvents = weekEventIds.map((_id: string) => eventEntities[_id]);
+  const weekEvents = _mappedEvents.filter(
+    (event: Schema_Event) => event !== undefined && !isAllDay(event)
+  );
+
+  const allDayEvents = _mappedEvents.filter((event: Schema_Event) =>
+    isAllDay(event)
+  );
+
+  /*****************
+   * Relative Times
+   ***************/
   const startOfSelectedWeekDay = today.week(week).startOf("week");
   const endOfSelectedWeekDay = today.week(week).endOf("week");
 
@@ -123,8 +132,6 @@ export const useGetWeekViewProps = () => {
     (calendarRef.current?.offsetLeft || 0) + GRID_X_OFFSET
   );
 
-  const allDayEvents = weekEvents.filter((event) => event.allDay);
-
   const isAddingAllDayEvent = !!(editingEvent?.allDay && !editingEvent._id);
 
   const daysToLastOrderIndex: { [key: string]: number } = {};
@@ -140,6 +147,7 @@ export const useGetWeekViewProps = () => {
     daysToLastOrderIndexWithEditingEvent[editingEvent.startDate] =
       editingEvent.allDayOrder || 1;
   }
+
   const allDayEventsMaxCount = Math.max(
     ...[0, ...Object.values(daysToLastOrderIndexWithEditingEvent)]
   );
@@ -169,18 +177,9 @@ export const useGetWeekViewProps = () => {
     );
   }, [week]);
 
-  /* 
-  WIP. currently only adjust the week's events, and doesn't persist 
-  Will need to be finished when adding a user setting that let's them
-  manually change their timezone. Currently, the TZ is inferred by the 
-  browser
-  */
-  const onTimezoneChange = () => {
-    const timezone =
-      localStorage.getItem(LocalStorage.TIMEZONE) || dayjs.tz.guess();
-    dispatch(eventsEntitiesSlice.actions.updateAfterTzChange({ timezone }));
-  };
-
+  /*************
+   * Getters
+   *************/
   const getAllDayEventCellHeight = () =>
     allDayEventsGridRef.current?.clientHeight || 0;
 
@@ -244,6 +243,7 @@ export const useGetWeekViewProps = () => {
 
   const getEventCellHeight = () =>
     (eventsGridRef.current?.clientHeight || 0) / 11;
+
   const getFlexBasisByDay = (day: Dayjs) => {
     if (week !== today.week()) return 100 / 7;
 
@@ -305,11 +305,11 @@ export const useGetWeekViewProps = () => {
 
     const startDate = dayjs(getDateByMousePosition(e.clientX, e.clientY))
       .startOf("day")
-      .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
+      .format(YEAR_MONTH_DAY_FORMAT);
+    //## .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
 
-    const endDate = dayjs(startDate)
-      .endOf("day")
-      .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
+    const endDate = dayjs(startDate).endOf("day").format(YEAR_MONTH_DAY_FORMAT);
+    // const endDate = dayjs(startDate).endOf("day").format(YEAR_MONTH_DAY_HOURS_MINUTE_FORMAT);
 
     setModifiableDateField("endDate");
 
@@ -346,6 +346,7 @@ export const useGetWeekViewProps = () => {
       };
     });
   };
+
   const onEventsGridMouseDown = (e: React.MouseEvent) => {
     const startDate = getDateByMousePosition(e.clientX, e.clientY);
     const endDate = dayjs(startDate)
@@ -361,6 +362,7 @@ export const useGetWeekViewProps = () => {
       isTimeSelected: false,
     });
   };
+
   const onEventGridMouseMove = (e: React.MouseEvent) => {
     if (eventState?.name === "dragging") {
       if (
@@ -391,8 +393,8 @@ export const useGetWeekViewProps = () => {
         modifiableDateField === "startDate" ? "endDate" : "startDate";
 
       let dateField = modifiableDateField;
-      let endDate = actualEditingEvent?.endDate;
       let startDate = actualEditingEvent?.startDate;
+      let endDate = actualEditingEvent?.endate;
 
       const modifyingDateDiff =
         (actualEditingEvent &&
@@ -501,6 +503,8 @@ export const useGetWeekViewProps = () => {
 
   const onSubmitEvent = (event: Schema_Event | Schema_GridEvent) => {
     const eventToSave = { ...event };
+    console.log("$$ onSubmitEvent received:");
+    console.log(eventToSave);
 
     const maxDayMinutes = 1440;
 
@@ -517,9 +521,14 @@ export const useGetWeekViewProps = () => {
         .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
     }
 
+    // $$ only do this if its not an allday event
     // makes times compatible with backend/gcal/mongo
-    eventToSave.startDate = toUTCOffset(eventToSave.startDate);
-    eventToSave.endDate = toUTCOffset(eventToSave.endDate);
+    eventToSave.startDate = isAllDay(eventToSave)
+      ? eventToSave.startDate
+      : toUTCOffset(eventToSave.startDate);
+    eventToSave.endDate = isAllDay(eventToSave)
+      ? eventToSave.endDate
+      : toUTCOffset(eventToSave.endDate);
 
     if (eventToSave._id) {
       dispatch(
@@ -536,12 +545,23 @@ export const useGetWeekViewProps = () => {
     setEditingEvent(null);
   };
 
+  /* 
+  WIP. currently only adjust the week's events, and doesn't persist 
+  Will need to be finished when adding a user setting that let's them
+  manually change their timezone. Currently, the TZ is inferred by the 
+  browser
+  */
+  const onTimezoneChange = () => {
+    const timezone =
+      localStorage.getItem(LocalStorage.TIMEZONE) || dayjs.tz.guess();
+    dispatch(eventsEntitiesSlice.actions.updateAfterTzChange({ timezone }));
+  };
+
   /*********
    * Assemble
    **********/
   return {
     eventHandlers: {
-      setEditingEvent,
       onAllDayEventsGridMouseDown,
       onDeleteEvent,
       onEventsGridRelease,
@@ -551,36 +571,35 @@ export const useGetWeekViewProps = () => {
       onScalerMouseDown,
       onSubmitEvent,
       onTimezoneChange,
+      setEditingEvent,
     },
     component: {
+      allDayEvents,
+      allDayEventsGridRef,
+      allDayEventsMaxCount,
+      calendarRef,
       dayjsBasedOnWeekDay,
       dayTimes,
+      editingEvent,
+      eventsGridRef,
+      eventState,
+      setEditingEvent,
+      setWeek,
+      startOfSelectedWeekDay,
+      times,
       today,
       weekDays,
-      weekEvents,
-      allDayEvents,
-      times,
-      startOfSelectedWeekDay,
-      eventState,
-      allDayEventsMaxCount,
-
-      setWeek,
-      week,
-      setEditingEvent,
-      editingEvent,
-
-      calendarRef,
-      eventsGridRef,
       weekDaysRef,
-      allDayEventsGridRef,
+      weekEvents,
+      week,
     },
     core: {
-      getEventCellHeight,
       getAllDayEventCellHeight,
-      getFlexBasisByDay,
       getBeforeDayWidth,
-      getLeftPositionByDayIndex,
       getBeforeDaysOverflowWidth,
+      getEventCellHeight,
+      getFlexBasisByDay,
+      getLeftPositionByDayIndex,
       getMultiDayEventWidth,
     },
   };
