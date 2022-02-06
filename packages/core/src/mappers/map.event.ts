@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { gSchema$Event } from "@compass/backend/declarations";
 import { notCancelled } from "@compass/backend/src/common/services/gcal/gcal.helpers";
+import { Logger } from "@compass/backend/src/common/logger/common.logger";
 
 import { BaseError } from "@core/errors/errors.base";
 import { Origin } from "@core/core.constants";
 
 import { Schema_Event } from "../types/event.types";
+import { isAllDay } from "@core/util/event.util";
+
+const logger = Logger("app:map.event");
 
 export namespace MapEvent {
   export const toCompass = (
@@ -24,18 +28,13 @@ export namespace MapEvent {
     userId: string,
     event: Schema_Event
   ): gSchema$Event => {
-    console.log("reminder: full-day evts not supported yet [mapper]");
-    console.log("reminder: only works in server time (CST) [mapper]");
+    const dateKey = isAllDay(event) ? "date" : "datetime";
 
     const gcalEvent: gSchema$Event = {
       summary: event.title, // TODO only add this field if not undefined
       description: event.description, // TODO only add this field if not undefined
-      start: {
-        dateTime: new Date(event.startDate).toISOString(), // uses server's time, since no TZ info provided
-      },
-      end: {
-        dateTime: new Date(event.endDate).toISOString(),
-      },
+      start: { [dateKey]: event.startDate },
+      end: { [dateKey]: event.endDate },
       extendedProperties: {
         private: {
           // capture where event came from to later decide how to

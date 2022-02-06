@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
+import { isAllDay } from "@core/util/event.util";
 
 import { Button } from "@web/components/Button";
 import { JustifyContent } from "@web/components/Flex/styled";
@@ -27,7 +28,6 @@ import {
 } from "./styled";
 import { ComponentProps } from "./types";
 import { DateTimePickersSection } from "./DateTimePickersSection";
-import { isAllDay } from "@web/common/helpers";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
@@ -146,8 +146,6 @@ export const EventForm: React.FC<ComponentProps> = ({
     const endDate = isAllDay(event)
       ? endDateString
       : `${endDateString} ${endTime?.value || ""}`;
-    console.log(`startDateString: ${startDateString}`);
-    console.log(`startDate: ${startDate}`);
 
     const _event = { ...event };
 

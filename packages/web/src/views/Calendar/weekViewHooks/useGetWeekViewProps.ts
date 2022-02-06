@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import weekPlugin from "dayjs/plugin/weekOfYear";
-import { useDispatch, useSelector } from "react-redux";
 
 import { Origin, Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
+import { isAllDay } from "@core/util/event.util";
 
 import {
   HOURS_AM_FORMAT,
@@ -14,7 +15,7 @@ import {
   YEAR_MONTH_DAY_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
-import { isAllDay, roundByNumber } from "@web/common/helpers";
+import { roundByNumber } from "@web/common/helpers";
 import { getAmPmTimes, toUTCOffset } from "@web/common/helpers/date.helpers";
 import {
   selectEventEntities,
@@ -503,8 +504,6 @@ export const useGetWeekViewProps = () => {
 
   const onSubmitEvent = (event: Schema_Event | Schema_GridEvent) => {
     const eventToSave = { ...event };
-    console.log("$$ onSubmitEvent received:");
-    console.log(eventToSave);
 
     const maxDayMinutes = 1440;
 
@@ -521,8 +520,7 @@ export const useGetWeekViewProps = () => {
         .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
     }
 
-    // $$ only do this if its not an allday event
-    // makes times compatible with backend/gcal/mongo
+    // make times compatible with backend/gcal/mongo
     eventToSave.startDate = isAllDay(eventToSave)
       ? eventToSave.startDate
       : toUTCOffset(eventToSave.startDate);
