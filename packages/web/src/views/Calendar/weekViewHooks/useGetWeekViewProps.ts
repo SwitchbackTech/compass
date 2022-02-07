@@ -183,6 +183,30 @@ export const useGetWeekViewProps = () => {
   const getAllDayEventCellHeight = () =>
     allDayEventsGridRef.current?.clientHeight || 0;
 
+  const getAllDayEventWidth = (
+    startDayIndex: number, // 0-6
+    eventDuration: number // number of days
+  ) => {
+    if (eventDuration === 1) {
+      // use original width
+      return weekDaysRef.current?.children[startDayIndex]?.clientWidth || 0;
+    }
+
+    // add up widths
+    // create array of numbers, one for each day, setting each to 0 by default,
+    // then set values based on the widths of the selected days
+    const daysWidths: number[] = Array(eventDuration + 1)
+      .fill(0)
+      .map(
+        (_, index) =>
+          weekDaysRef.current?.children[index + startDayIndex]?.clientWidth || 0
+      );
+
+    const combinedWidth = daysWidths.reduce((accum, value) => accum + value, 0);
+
+    return combinedWidth;
+  };
+
   const getBeforeDayWidth = () => {
     const afterDaysCount = 5 - beforeDaysCount;
 
@@ -275,25 +299,6 @@ export const useGetWeekViewProps = () => {
       },
       0
     );
-  };
-
-  const getMultiDayEventWidth = (
-    startDayIndex: number, // 0-6
-    eventDuration: number // number of full days; 0-6
-  ) => {
-    const daysWidths: number[] = Array(eventDuration + 1) // adjust for 0 index (?)
-      .fill(0) // set to 0 by default
-      .map(
-        (_, index) =>
-          weekDaysRef.current?.children[index + startDayIndex]?.clientWidth || 0
-      );
-
-    const _return = daysWidths.reduce((accum, value) => accum + value, 0);
-
-    console.log(
-      `\tstartDayIndex: ${startDayIndex}\n\tduration: ${eventDuration}\n\tdayWidths: ${daysWidths}\n\tresult:${_return}`
-    );
-    return daysWidths.reduce((accum, value) => accum + value, 0);
   };
 
   const getYByDate = (date: string) => {
@@ -604,7 +609,7 @@ export const useGetWeekViewProps = () => {
       getEventCellHeight,
       getFlexBasisByDay,
       getLeftPositionByDayIndex,
-      getMultiDayEventWidth,
+      getMultiDayEventWidth: getAllDayEventWidth,
     },
   };
 };

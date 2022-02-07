@@ -48,7 +48,7 @@ const WeekEventComponent = (
   let height = core.getEventCellHeight() * duration;
   let width =
     component.weekDaysRef.current?.children[startDay].clientWidth || 0;
-  width -= 15;
+  width -= 15; // where is this number coming from ?
   let left = core.getLeftPositionByDayIndex(startDay);
 
   if (event.isAllDay) {
@@ -56,8 +56,6 @@ const WeekEventComponent = (
     const eventOrder = event.allDayOrder || 1;
     top = core.getAllDayEventCellHeight() - height * eventOrder;
 
-    //$$
-    console.log(`${event.title}:`);
     width = core.getMultiDayEventWidth(
       startDay,
       eventEndDay.diff(eventStartDay, "days")
