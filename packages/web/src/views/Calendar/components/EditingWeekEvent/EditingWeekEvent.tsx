@@ -15,7 +15,7 @@ import { WeekViewProps } from "../../weekViewHooks/useGetWeekViewProps";
 export interface Props {
   isOpen: boolean;
   onSubmitEventForm: (event: Schema_Event) => void;
-  event?: Schema_GridEvent;
+  event: Schema_GridEvent;
   onCloseEventForm: () => void;
   weekViewProps: WeekViewProps;
   setEvent: React.Dispatch<SetStateAction<Schema_Event>>;

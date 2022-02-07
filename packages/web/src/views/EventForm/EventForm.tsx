@@ -4,7 +4,6 @@ import dayjs from "dayjs";
 
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { isAllDay } from "@core/util/event.util";
 
 import { Button } from "@web/components/Button";
 import { JustifyContent } from "@web/components/Flex/styled";
@@ -74,7 +73,7 @@ export const EventForm: React.FC<ComponentProps> = ({
   const defaultEventState: Schema_Event = {
     priority: Priorities.WORK,
     title: "",
-    description: event?.description,
+    description: "",
     allDay: false,
     startDate: "",
     endDate: "",
@@ -140,10 +139,10 @@ export const EventForm: React.FC<ComponentProps> = ({
     );
     const endDateString = dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT);
 
-    const startDate = isAllDay(event)
+    const startDate = event?.isAllDay
       ? startDateString
       : `${startDateString} ${startTime?.value || ""}`;
-    const endDate = isAllDay(event)
+    const endDate = event?.isAllDay
       ? endDateString
       : `${endDateString} ${endTime?.value || ""}`;
 

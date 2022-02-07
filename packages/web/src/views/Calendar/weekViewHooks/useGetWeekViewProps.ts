@@ -133,8 +133,7 @@ export const useGetWeekViewProps = () => {
     (calendarRef.current?.offsetLeft || 0) + GRID_X_OFFSET
   );
 
-  const _isAllDay = editingEvent !== null && isAllDay(editingEvent);
-  const isAddingAllDayEvent = !!(_isAllDay && !editingEvent._id);
+  const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
   const daysToLastOrderIndex: { [key: string]: number } = {};
 
   allDayEvents.forEach((event: Schema_Event) => {
@@ -307,21 +306,20 @@ export const useGetWeekViewProps = () => {
     const startDate = dayjs(getDateByMousePosition(e.clientX, e.clientY))
       .startOf("day")
       .format(YEAR_MONTH_DAY_FORMAT);
-    //## .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
 
     const endDate = dayjs(startDate).endOf("day").format(YEAR_MONTH_DAY_FORMAT);
-    // const endDate = dayjs(startDate).endOf("day").format(YEAR_MONTH_DAY_HOURS_MINUTE_FORMAT);
 
     setModifiableDateField("endDate");
 
     setEditingEvent({
       priority: Priorities.WORK,
-      allDay: true,
+      isAllDay: true,
       startDate,
       endDate,
       allDayOrder: (daysToLastOrderIndex[startDate] || 0) + 1,
     });
   };
+
   const onDeleteEvent = (_id: string) => {
     dispatch(deleteEventSlice.actions.request({ _id: _id }));
     setEditingEvent(null);
@@ -514,17 +512,18 @@ export const useGetWeekViewProps = () => {
           .diff(eventToSave.endDate, "minute")
       ) > maxDayMinutes;
 
-    if (!isAllDay(eventToSave) && isEventOverlappingCurrentDay) {
+    if (!eventToSave.isAllDay && isEventOverlappingCurrentDay) {
       eventToSave.endDate = dayjs(eventToSave.startDate)
         .endOf("day")
         .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
     }
 
     // make times compatible with backend/gcal/mongo
-    eventToSave.startDate = isAllDay(eventToSave)
+    eventToSave.startDate = eventToSave.isAllDay
       ? eventToSave.startDate
       : toUTCOffset(eventToSave.startDate);
-    eventToSave.endDate = isAllDay(eventToSave)
+
+    eventToSave.endDate = eventToSave.isAllDay
       ? eventToSave.endDate
       : toUTCOffset(eventToSave.endDate);
 

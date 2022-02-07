@@ -10,7 +10,6 @@ import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewP
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
-import { isAllDay } from "@core/util/event.util";
 
 export interface Props {
   event: Schema_GridEvent;
@@ -48,12 +47,11 @@ const WeekEventComponent = (
   width -= 15;
   let left = core.getLeftPositionByDayIndex(startDay);
 
-  const allDay = isAllDay(event);
   const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
     component.editingEvent?._id === event._id && !event.isEditing;
 
-  if (allDay) {
+  if (event.isAllDay) {
     height = core.getEventCellHeight() / 4;
     const eventOrder = event.allDayOrder || 1;
     top = core.getAllDayEventCellHeight() - height * eventOrder;
@@ -82,7 +80,7 @@ const WeekEventComponent = (
       top={top}
       isTimeShown={!!event.isTimeSelected}
       duration={+duration.toFixed(2) || 0.25}
-      allDay={allDay || false}
+      allDay={event.isAllDay || false}
     >
       <Flex flexWrap={FlexWrap.WRAP} alignItems={AlignItems.CENTER}>
         <Text size={10}>

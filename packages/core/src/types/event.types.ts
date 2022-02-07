@@ -26,6 +26,7 @@ export interface Schema_Event {
   gEventId?: string;
   title?: string;
   description?: string | null | undefined;
+  isAllDay: boolean;
   startDate?: string;
   endDate?: string;
   priority?: string; // $$ temporary structure for v1
