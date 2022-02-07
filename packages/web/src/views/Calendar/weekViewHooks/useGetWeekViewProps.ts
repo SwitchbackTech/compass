@@ -15,6 +15,7 @@ import {
   YEAR_MONTH_DAY_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
+import { LocalStorage } from "@web/common/constants/web.constants";
 import { roundByNumber } from "@web/common/helpers";
 import { getAmPmTimes, toUTCOffset } from "@web/common/helpers/date.helpers";
 import {
@@ -36,7 +37,6 @@ import {
 } from "../constants";
 import { State_Event, Schema_GridEvent } from "./types";
 import { deleteEventSlice } from "../../../ducks/events/slice";
-import { LocalStorage } from "@web/common/constants/web.constants";
 
 dayjs.extend(weekPlugin);
 dayjs.extend(utc);
@@ -276,19 +276,26 @@ export const useGetWeekViewProps = () => {
       0
     );
   };
+
   const getMultiDayEventWidth = (
-    startDayIndex: number,
-    eventDuration: number
+    startDayIndex: number, // 0-6
+    eventDuration: number // number of full days; 0-6
   ) => {
-    const daysWidths: number[] = Array(eventDuration + 1)
-      .fill(0)
+    const daysWidths: number[] = Array(eventDuration + 1) // adjust for 0 index (?)
+      .fill(0) // set to 0 by default
       .map(
         (_, index) =>
           weekDaysRef.current?.children[index + startDayIndex]?.clientWidth || 0
       );
 
+    const _return = daysWidths.reduce((accum, value) => accum + value, 0);
+
+    console.log(
+      `\tstartDayIndex: ${startDayIndex}\n\tduration: ${eventDuration}\n\tdayWidths: ${daysWidths}\n\tresult:${_return}`
+    );
     return daysWidths.reduce((accum, value) => accum + value, 0);
   };
+
   const getYByDate = (date: string) => {
     const day = dayjs(date);
     const eventCellHeight = getEventCellHeight();

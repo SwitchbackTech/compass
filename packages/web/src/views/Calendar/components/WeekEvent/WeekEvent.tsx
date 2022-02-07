@@ -24,6 +24,10 @@ const WeekEventComponent = (
 
   const { component, core, eventHandlers } = weekViewProps;
 
+  const isActive = component.editingEvent?._id === event._id;
+  const isPlaceholder =
+    component.editingEvent?._id === event._id && !event.isEditing;
+
   /****
   Times
   *****/
@@ -38,8 +42,8 @@ const WeekEventComponent = (
   const eventEndShortAmTime = eventEndDay.format(HOURS_AM_FORMAT);
 
   /**************
-  Size + Position
-  **************/
+   Size + Position
+   **************/
   let top = core.getEventCellHeight() * startTime;
   let height = core.getEventCellHeight() * duration;
   let width =
@@ -47,14 +51,13 @@ const WeekEventComponent = (
   width -= 15;
   let left = core.getLeftPositionByDayIndex(startDay);
 
-  const isActive = component.editingEvent?._id === event._id;
-  const isPlaceholder =
-    component.editingEvent?._id === event._id && !event.isEditing;
-
   if (event.isAllDay) {
     height = core.getEventCellHeight() / 4;
     const eventOrder = event.allDayOrder || 1;
     top = core.getAllDayEventCellHeight() - height * eventOrder;
+
+    //$$
+    console.log(`${event.title}:`);
     width = core.getMultiDayEventWidth(
       startDay,
       eventEndDay.diff(eventStartDay, "days")
