@@ -41,6 +41,7 @@ import { Schema_GridEvent } from "./weekViewHooks/types";
 import { WeekEvent } from "./components/WeekEvent";
 import { EditingWeekEvent } from "./components/EditingWeekEvent";
 import { Sidebar } from "./components/Sidebar";
+import { isAllDay } from "@core/util/event.util";
 
 export const CalendarView = () => {
   const weekViewProps = useGetWeekViewProps();
@@ -253,7 +254,7 @@ export const CalendarView = () => {
               />
             ))}
 
-            {component.editingEvent && component.editingEvent.allDay && (
+            {component.editingEvent && isAllDay(component.editingEvent) && (
               <EditingWeekEvent
                 event={component.editingEvent}
                 isOpen={!!component.editingEvent?.isOpen}

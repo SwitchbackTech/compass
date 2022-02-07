@@ -10,6 +10,7 @@ import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewP
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
+import { isAllDay } from "@core/util/event.util";
 
 export interface Props {
   event: Schema_GridEvent;
@@ -24,6 +25,9 @@ const WeekEventComponent = (
 
   const { component, core, eventHandlers } = weekViewProps;
 
+  /****
+  Times
+  *****/
   const eventStartDay = dayjs(event.startDate);
   const eventEndDay = dayjs(event.endDate);
   const startDay = eventStartDay.get("day");
@@ -32,24 +36,24 @@ const WeekEventComponent = (
 
   // ms to hours
   const duration = eventEndDay.diff(eventStartDay) * 2.7777777777778e-7;
-
-  let top = core.getEventCellHeight() * startTime;
-  let height = core.getEventCellHeight() * duration;
-
   const eventEndShortAmTime = eventEndDay.format(HOURS_AM_FORMAT);
 
+  /**************
+  Size + Position
+  **************/
+  let top = core.getEventCellHeight() * startTime;
+  let height = core.getEventCellHeight() * duration;
+  let width =
+    component.weekDaysRef.current?.children[startDay].clientWidth || 0;
+  width -= 15;
+  let left = core.getLeftPositionByDayIndex(startDay);
+
+  const allDay = isAllDay(event);
   const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
     component.editingEvent?._id === event._id && !event.isEditing;
 
-  let width =
-    component.weekDaysRef.current?.children[startDay].clientWidth || 0;
-
-  width -= 15;
-
-  let left = core.getLeftPositionByDayIndex(startDay);
-
-  if (event.allDay) {
+  if (allDay) {
     height = core.getEventCellHeight() / 4;
     const eventOrder = event.allDayOrder || 1;
     top = core.getAllDayEventCellHeight() - height * eventOrder;
@@ -78,7 +82,7 @@ const WeekEventComponent = (
       top={top}
       isTimeShown={!!event.isTimeSelected}
       duration={+duration.toFixed(2) || 0.25}
-      allDay={event.allDay || false}
+      allDay={allDay || false}
     >
       <Flex flexWrap={FlexWrap.WRAP} alignItems={AlignItems.CENTER}>
         <Text size={10}>

@@ -28,7 +28,7 @@ export namespace MapEvent {
     userId: string,
     event: Schema_Event
   ): gSchema$Event => {
-    const dateKey = isAllDay(event) ? "date" : "datetime";
+    const dateKey = isAllDay(event) ? "date" : "dateTime";
 
     const gcalEvent: gSchema$Event = {
       summary: event.title, // TODO only add this field if not undefined
@@ -67,7 +67,6 @@ const _toCompass = (
   const gEventId = gEvent.id ? gEvent.id : "uh oh";
   const title = gEvent.summary ? gEvent.summary : "untitled";
   const description = gEvent.description ? gEvent.description : "";
-
   const isAllDay = "date" in gEvent.start;
 
   const compassEvent: Schema_Event = {
@@ -81,7 +80,7 @@ const _toCompass = (
     endDate: isAllDay ? gEvent.end.date : gEvent.end.dateTime,
 
     // temp stuff to update
-    priority: "self", // $$ TODO update
+    priority: "relations", // $$ TODO update
     // isTimeSelected: true,
     // isOpen: false,
     // order: 0,

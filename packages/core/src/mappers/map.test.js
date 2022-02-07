@@ -31,8 +31,8 @@ describe("toGcal", () => {
       _usesDashesCorrectly(gEvent.start.date);
       _usesDashesCorrectly(gEvent.end.date);
     } else {
-      const yyyymmddStart = gEvent.start.datetime.slice(0, 10);
-      const yyyymmddEnd = gEvent.end.datetime.slice(0, 10);
+      const yyyymmddStart = gEvent.start.dateTime.slice(0, 10);
+      const yyyymmddEnd = gEvent.end.dateTime.slice(0, 10);
       _usesDashesCorrectly(yyyymmddStart);
       _usesDashesCorrectly(yyyymmddEnd);
 
@@ -40,8 +40,8 @@ describe("toGcal", () => {
       // for example, these both match: 2022-01-01T03:00:00-5:00, 2022-01-01T03:00:00+10:00
       // the + or - is the 19th char in the str
       const _hasTzOffset = (dateStr) => ["-", "+"].includes(dateStr[19]);
-      _hasTzOffset(gEvent.start.datetime);
-      _hasTzOffset(gEvent.end.datetime);
+      _hasTzOffset(gEvent.start.dateTime);
+      _hasTzOffset(gEvent.end.dateTime);
     }
   };
 

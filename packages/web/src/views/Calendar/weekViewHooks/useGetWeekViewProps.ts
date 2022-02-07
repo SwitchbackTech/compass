@@ -133,8 +133,8 @@ export const useGetWeekViewProps = () => {
     (calendarRef.current?.offsetLeft || 0) + GRID_X_OFFSET
   );
 
-  const isAddingAllDayEvent = !!(editingEvent?.allDay && !editingEvent._id);
-
+  const _isAllDay = editingEvent !== null && isAllDay(editingEvent);
+  const isAddingAllDayEvent = !!(_isAllDay && !editingEvent._id);
   const daysToLastOrderIndex: { [key: string]: number } = {};
 
   allDayEvents.forEach((event: Schema_Event) => {
@@ -514,7 +514,7 @@ export const useGetWeekViewProps = () => {
           .diff(eventToSave.endDate, "minute")
       ) > maxDayMinutes;
 
-    if (!eventToSave.allDay && isEventOverlappingCurrentDay) {
+    if (!isAllDay(eventToSave) && isEventOverlappingCurrentDay) {
       eventToSave.endDate = dayjs(eventToSave.startDate)
         .endOf("day")
         .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
