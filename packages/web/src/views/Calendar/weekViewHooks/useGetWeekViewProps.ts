@@ -226,6 +226,7 @@ export const useGetWeekViewProps = () => {
 
     return getBeforeDayWidth() * _beforeDaysCount;
   };
+
   const getDateByMousePosition = (x: number, y: number) => {
     const clickX = x - CALCULATED_GRID_X_OFFSET;
     const clickY = y - GRID_Y_OFFSET;
@@ -292,6 +293,7 @@ export const useGetWeekViewProps = () => {
 
     return flexBasis || 0;
   };
+
   const getLeftPositionByDayIndex = (dayIndex: number) => {
     return Array.from(weekDaysRef.current?.children || []).reduce(
       (accum, child, index) => {
@@ -530,7 +532,7 @@ export const useGetWeekViewProps = () => {
         .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
     }
 
-    // make times compatible with backend/gcal/mongo
+    // makes times compatible with backend/gcal/mongo
     eventToSave.startDate = eventToSave.isAllDay
       ? eventToSave.startDate
       : toUTCOffset(eventToSave.startDate);
@@ -604,12 +606,12 @@ export const useGetWeekViewProps = () => {
     },
     core: {
       getAllDayEventCellHeight,
+      getAllDayEventWidth,
       getBeforeDayWidth,
       getBeforeDaysOverflowWidth,
       getEventCellHeight,
       getFlexBasisByDay,
       getLeftPositionByDayIndex,
-      getMultiDayEventWidth: getAllDayEventWidth,
     },
   };
 };
