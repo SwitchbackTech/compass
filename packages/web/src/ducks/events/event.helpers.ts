@@ -5,8 +5,7 @@ import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { v4 as uuidv4 } from "uuid";
 
 import { Params_Events, Schema_Event } from "@core/types/event.types";
-// jest had trouble resolving with @core/..., so using long path for now
-import { Priorities } from "../../../../core/src/core.constants";
+import { Priorities } from "@core/core.constants";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -18,6 +17,11 @@ export const handleErrorTemp = (error: Error) => {
   alert(error);
 };
 
+/*
+Demo of using pagination and group ordering. 
+Keep until implementing for the Someday List and 
+ordering group events
+*/
 export const _readEventsFromStorage = (): Schema_Event[] =>
   (JSON.parse(localStorage.getItem("events") || "[]") as Schema_Event[]) || [];
 
@@ -31,20 +35,6 @@ const doEventsIntercept = (event1: Schema_Event, event2: Schema_Event) => {
 export const normalizedEventsSchema = () =>
   new schema.Entity("events", {}, { idAttribute: "_id" });
 
-/*
-TODO: (needed to be done on API side) sortings corner cases:
-a) All day events sortings: just implement same logic
-as it is done for plain events sorting
-
-b) Plain events:
-1) We create groups of events which intersects with each other
-2) We check every event if it is in group of intersecting events
-3) if yes - add order which is index in group array and count of
-group events (which is length of current group)
-
-TODO: when setting groupCount in event - check
-if event intercepts with any of events from other groups
-*/
 export const getEventsLocalStorage = async (params: Params_Events = {}) => {
   const {
     startDate,
@@ -57,7 +47,6 @@ export const getEventsLocalStorage = async (params: Params_Events = {}) => {
   const page = _page || 1;
 
   const events = _readEventsFromStorage();
-  console.log("reminder: using local strg evts, not from server");
 
   const startIndex = offset !== undefined ? offset : (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
@@ -163,7 +152,6 @@ export const getEventsLocalStorage = async (params: Params_Events = {}) => {
   };
 };
 
-// $$ remove
 export const createEventLocalStorage = async (event: Schema_Event) => {
   const events = await getEventsLocalStorage();
   const id = uuidv4();
@@ -176,8 +164,10 @@ export const createEventLocalStorage = async (event: Schema_Event) => {
   );
 };
 
-// $$ del
-export const editEventOld = async (id: string, event: Schema_Event) => {
+export const editEventLocalStorage = async (
+  id: string,
+  event: Schema_Event
+) => {
   console.log(`editing evt: ${id}`);
   const eventsResponse = await getEventsLocalStorage();
 

@@ -11,17 +11,18 @@ const ReduxProvider = ({ children, reduxStore }) => (
 );
 
 describe("component", () => {
-  describe("dayTimes", () => {
-    it("has 24 intervals (1 per hour)", () => {
-      const store = configureStore({
-        reducer: reducers,
-      });
-      const wrapper = ({ children }) => (
-        <ReduxProvider reduxStore={store}>{children}</ReduxProvider>
-      );
-      const { result } = renderHook(() => useGetWeekViewProps(), { wrapper });
-      const dayTimes = result.current.component.dayTimes;
-      expect(dayTimes.length).toBe(23); // 23 cuz 0 index
+  const store = configureStore({
+    reducer: reducers,
+  });
+  const wrapper = ({ children }) => (
+    <ReduxProvider reduxStore={store}>{children}</ReduxProvider>
+  );
+
+  const { result } = renderHook(() => useGetWeekViewProps(), { wrapper });
+  const component = result.current.component;
+  describe("allDayEventsMaxCount", () => {
+    it("is never less than 0", () => {
+      expect(component.allDayEventsMaxCount).toBeGreaterThanOrEqual(0);
     });
   });
 });

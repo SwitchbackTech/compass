@@ -17,13 +17,18 @@ import {
 } from "@web/common/constants/dates";
 import { LocalStorage } from "@web/common/constants/web.constants";
 import { roundByNumber } from "@web/common/helpers";
-import { getAmPmTimes, toUTCOffset } from "@web/common/helpers/date.helpers";
+import {
+  getAmPmTimes,
+  getHourlyTimes,
+  toUTCOffset,
+} from "@web/common/helpers/date.helpers";
 import {
   selectEventEntities,
   selectEventIdsBySectionType,
 } from "@web/ducks/events/selectors";
 import {
   createEventSlice,
+  deleteEventSlice,
   editEventSlice,
   eventsEntitiesSlice,
   getWeekEventsSlice,
@@ -36,28 +41,10 @@ import {
   GRID_Y_OFFSET as _GRID_Y_OFFSET,
 } from "../constants";
 import { State_Event, Schema_GridEvent } from "./types";
-import { deleteEventSlice } from "../../../ducks/events/slice";
 
 dayjs.extend(weekPlugin);
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-/*
-TODO: for events being snapped to each day cell:
-1) group events by days:
-const eventsGroupedByDays = weekDays.map(day => weekEvents.filter(event => dayjs(event.startDate).format(YYYY-DD-MM) === dayjs(day).format('YYYY-MM-DD)))
-
-2) render every group in appropriate date:
-eventsGroupedByDays[dayIndex].map(event => <WeekEvent />)
-
-3) rewrite styles for WeekEvent component to position it in day cell by percents
-
-4) rewrite the dragging logic so week event is able to be dragged in another cell
-
-5) calculate position for multidays allday events
-  - so it will be 100% of current day cell, 100% of next cell 
-    - so we need to calculate how many is next day cell in % relative to current day cell
-*/
 
 export const useGetWeekViewProps = () => {
   /**************
@@ -103,6 +90,12 @@ export const useGetWeekViewProps = () => {
     isAllDay(event)
   );
 
+  // TODO add the `allDayOrder` to any on same day
+  // get days with multiple all day events
+  // datesWithAllDayEvent
+  // order them alphabetically
+  console.log(allDayEvents);
+
   /*****************
    * Relative Times
    ***************/
@@ -115,14 +108,7 @@ export const useGetWeekViewProps = () => {
 
   const dayjsBasedOnWeekDay = today.week(week);
   const times = getAmPmTimes();
-
-  const dayTimes = [...(new Array(23) as number[])].map((_, index) => {
-    return today
-      .startOf("day")
-      .add(index + 1, "hour")
-      .format(HOURS_AM_SHORT_FORMAT);
-  });
-
+  const dayTimes = getHourlyTimes(today);
   /*********
    * Grid
    *********/
@@ -134,22 +120,22 @@ export const useGetWeekViewProps = () => {
   );
 
   const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
-  const daysToLastOrderIndex: { [key: string]: number } = {};
+  const allDayCountByDate: { [key: string]: number } = {};
 
   allDayEvents.forEach((event: Schema_Event) => {
     if (!event.startDate) return;
-    daysToLastOrderIndex[event.startDate] = event.allDayOrder || 1;
+    allDayCountByDate[event.startDate] = event.allDayOrder || 1;
   });
 
-  const daysToLastOrderIndexWithEditingEvent = { ...daysToLastOrderIndex };
+  const allDayCountByDateEditingEvent = { ...allDayCountByDate };
 
   if (isAddingAllDayEvent && editingEvent.startDate) {
-    daysToLastOrderIndexWithEditingEvent[editingEvent.startDate] =
+    allDayCountByDateEditingEvent[editingEvent.startDate] =
       editingEvent.allDayOrder || 1;
   }
 
   const allDayEventsMaxCount = Math.max(
-    ...[0, ...Object.values(daysToLastOrderIndexWithEditingEvent)]
+    ...[0, ...Object.values(allDayCountByDateEditingEvent)]
   );
 
   const todayDayWeekNumber = today.get("day") + 1;
@@ -330,7 +316,7 @@ export const useGetWeekViewProps = () => {
       isAllDay: true,
       startDate,
       endDate,
-      allDayOrder: (daysToLastOrderIndex[startDate] || 0) + 1,
+      allDayOrder: (allDayCountByDate[startDate] || 0) + 1,
     });
   };
 
@@ -590,7 +576,7 @@ export const useGetWeekViewProps = () => {
       allDayEventsMaxCount,
       calendarRef,
       dayjsBasedOnWeekDay,
-      dayTimes,
+      dayTimes, // move this into a constant to speed up?
       editingEvent,
       eventsGridRef,
       eventState,
