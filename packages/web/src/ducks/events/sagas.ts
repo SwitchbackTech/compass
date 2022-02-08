@@ -57,7 +57,6 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
 
 export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
   try {
-    // TODO remove the ids from get{Month|Future}Events
     yield put(getWeekEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
     yield call(EventApi.delete, payload._id);
@@ -100,9 +99,9 @@ function* getEventsSaga(
     yield put(
       eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events)
     );
-
     return {
-      ...res,
+      // ...res, <--$$ delete dont need to save metadata from axios call
+      // result is only an array of ids
       data: normalizedEvents.result as Payload_NormalizedAsyncAction,
     };
   } catch (error) {

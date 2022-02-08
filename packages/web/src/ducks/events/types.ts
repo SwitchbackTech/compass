@@ -35,6 +35,10 @@ export interface Action_InsertEvents extends Action {
   payload: Entities_Event | undefined;
 }
 
+export interface Action_TimezoneChange extends Action {
+  payload: { timezone: string };
+}
+
 export interface Entities_Event {
   [key: string]: Schema_Event;
 }

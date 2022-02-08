@@ -45,7 +45,6 @@ export const StyledEvent = styled.div<StyledEventProps>`
   &:hover,
   &.active {
     background-color: ${({ priority }) => hoverColorsByPriority[priority]};
-    box-shadow: 0 4px 4px ${({ priority }) => hoverColorsByPriority[priority]};
   }
 
   & span {

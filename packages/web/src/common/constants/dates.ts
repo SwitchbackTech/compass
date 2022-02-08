@@ -1,11 +1,13 @@
-export const SHORT_HOURS_AM_FORMAT = 'h:mma';
+export const HOURS_AM_SHORT_FORMAT = "h A";
 
-export const HOURS_MINUTES_FORMAT = 'HH:mm';
+export const HOURS_AM_FORMAT = "h:mma";
 
-export const YEAR_MONTH_FORMAT = 'YYYY-MM';
+export const HOURS_MINUTES_FORMAT = "HH:mm";
 
-export const YEAR_MONTH_DAY_FORMAT = 'YYYY-MM-DD';
+export const YEAR_MONTH_FORMAT = "YYYY-MM";
 
-export const YEAR_MONTH_DAY_AM_FORMAT = `${YEAR_MONTH_DAY_FORMAT} ${SHORT_HOURS_AM_FORMAT}`;
+export const YEAR_MONTH_DAY_FORMAT = "YYYY-MM-DD";
+
+export const YEAR_MONTH_DAY_AM_FORMAT = `${YEAR_MONTH_DAY_FORMAT} ${HOURS_AM_FORMAT}`;
 
 export const YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT = `${YEAR_MONTH_DAY_FORMAT} ${HOURS_MINUTES_FORMAT}`;

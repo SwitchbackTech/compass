@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import React from "react";
 
-import { SHORT_HOURS_AM_FORMAT } from "@web/common/constants/dates";
+import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
@@ -24,35 +24,38 @@ const WeekEventComponent = (
 
   const { component, core, eventHandlers } = weekViewProps;
 
-  const eventStartDay = dayjs(event.startDate);
-  const eventEndDay = dayjs(event.endDate);
-  const startDay = eventStartDay.get("day");
-  const startTime =
-    component.times.indexOf(eventStartDay.format(SHORT_HOURS_AM_FORMAT)) / 4;
-
-  // ms to hours
-  const duration = eventEndDay.diff(eventStartDay) * 2.7777777777778e-7;
-
-  let top = core.getEventCellHeight() * startTime;
-  let height = core.getEventCellHeight() * duration;
-
-  const eventEndShortAmTime = eventEndDay.format(SHORT_HOURS_AM_FORMAT);
-
   const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
     component.editingEvent?._id === event._id && !event.isEditing;
 
+  /****
+  Times
+  *****/
+  const eventStartDay = dayjs(event.startDate);
+  const eventEndDay = dayjs(event.endDate);
+  const startDay = eventStartDay.get("day");
+  const startTime =
+    component.times.indexOf(eventStartDay.format(HOURS_AM_FORMAT)) / 4;
+
+  // ms to hours
+  const duration = eventEndDay.diff(eventStartDay) * 2.7777777777778e-7;
+  const eventEndShortAmTime = eventEndDay.format(HOURS_AM_FORMAT);
+
+  /**************
+   Size + Position
+   **************/
+  let top = core.getEventCellHeight() * startTime;
+  let height = core.getEventCellHeight() * duration;
   let width =
     component.weekDaysRef.current?.children[startDay].clientWidth || 0;
-
-  width -= 15;
-
+  width -= 15; // where is this number coming from ?
   let left = core.getLeftPositionByDayIndex(startDay);
 
-  if (event.allDay) {
+  if (event.isAllDay) {
     height = core.getEventCellHeight() / 4;
     const eventOrder = event.allDayOrder || 1;
     top = core.getAllDayEventCellHeight() - height * eventOrder;
+
     width = core.getMultiDayEventWidth(
       startDay,
       eventEndDay.diff(eventStartDay, "days")
@@ -78,7 +81,7 @@ const WeekEventComponent = (
       top={top}
       isTimeShown={!!event.isTimeSelected}
       duration={+duration.toFixed(2) || 0.25}
-      allDay={event.allDay || false}
+      allDay={event.isAllDay || false}
     >
       <Flex flexWrap={FlexWrap.WRAP} alignItems={AlignItems.CENTER}>
         <Text size={10}>
@@ -88,7 +91,7 @@ const WeekEventComponent = (
 
         {event.isTimeSelected && event.showStartTimeLabel && (
           <Text lineHeight={7} size={7}>
-            {eventStartDay.format(SHORT_HOURS_AM_FORMAT)}
+            {eventStartDay.format(HOURS_AM_FORMAT)}
             {eventEndShortAmTime && ` - ${eventEndShortAmTime}`}
           </Text>
         )}

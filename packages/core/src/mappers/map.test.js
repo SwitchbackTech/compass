@@ -13,60 +13,66 @@ describe("CalendarList Mapper", () => {
   });
 });
 
-describe("Event Mapper", () => {
-  const validDates = ["2022-01-01 10:00", "2022-01-01 10:00:00"];
+describe("toGcal", () => {
+  const validGcalDates = [
+    { start: "2022-01-01", end: "2022-01-02" },
+    { start: "2022-01-01T07:07:00-05:00", end: "2022-01-01T12:27:23+10:00" },
+  ];
 
-  // the map functionality will need to improve once supporting timezones for recurring events and other use-cases
-  // so, these are kept here to make updating the tests for those cases easier
-  // const _futureLegitStartDate = "2022-01-01T03:00:00-5:00";
-  // const _futureValidDates = ["2022-01-01T05:00:00-5:00", "2022-01-09T00:00:00Z"];
+  const validateGcalDateFormat = (gEvent) => {
+    // ensures YYYY-MM-DD format
+    const _usesDashesCorrectly = (dateStr) => {
+      expect(dateStr[4]).toBe("-");
+      expect(dateStr[7]).toBe("-");
+    };
+    const _isAllDay = "date" in gEvent.start && "date" in gEvent.end;
 
-  const isValidGcalDateFormat = (dateStr) => {
-    const isRFC3339 = new Date(dateStr).toISOString();
+    if (_isAllDay) {
+      _usesDashesCorrectly(gEvent.start.date);
+      _usesDashesCorrectly(gEvent.end.date);
+    } else {
+      const yyyymmddStart = gEvent.start.dateTime.slice(0, 10);
+      const yyyymmddEnd = gEvent.end.dateTime.slice(0, 10);
+      _usesDashesCorrectly(yyyymmddStart);
+      _usesDashesCorrectly(yyyymmddEnd);
 
-    // compass doesn't support timezone offsets currently,
-    // so make sure we're not passing them around by checking for a slash at the end.
-    // for example, these both match: 2022-01-01T03:00:00-5:00, 2022-01-01T03:00:00-10:00
-    const noTzOffset =
-      dateStr.slice(-6, -5) !== "-" && dateStr.slice(-5, -4) !== "-";
-
-    return isRFC3339 && noTzOffset;
+      // confirms the expected offset/timezone indicator char is in the string
+      // for example, these both match: 2022-01-01T03:00:00-5:00, 2022-01-01T03:00:00+10:00
+      // the + or - is the 19th char in the str
+      const _hasTzOffset = (dateStr) => ["-", "+"].includes(dateStr[19]);
+      _hasTzOffset(gEvent.start.dateTime);
+      _hasTzOffset(gEvent.end.dateTime);
+    }
   };
 
-  describe("toGcal", () => {
-    it("returns dates in expected format [toGcal]", () => {
-      validDates.forEach((dateStr) => {
-        const gcalEvt = MapEvent.toGcal("someuser", {
-          startDate: dateStr,
-          endDate: dateStr,
-        });
-
-        const bothTimesValid =
-          isValidGcalDateFormat(gcalEvt.start.dateTime) &&
-          isValidGcalDateFormat(gcalEvt.end.dateTime);
-        expect(bothTimesValid).toBe(true);
+  it("returns dates in expected format", () => {
+    validGcalDates.forEach((dates) => {
+      const gcalEvt = MapEvent.toGcal("someuser", {
+        startDate: dates.start,
+        endDate: dates.end,
       });
+      validateGcalDateFormat(gcalEvt);
     });
   });
+});
 
-  describe("toCompass", () => {
-    it("uses an expected origin", () => {
-      const eventsFromCompass = MapEvent.toCompass(
-        "user1",
-        gcalEvents.items,
-        Origin.Compass
-      );
+describe("toCompass", () => {
+  it("uses an expected origin", () => {
+    const eventsFromCompass = MapEvent.toCompass(
+      "user1",
+      gcalEvents.items,
+      Origin.Compass
+    );
 
-      const eventsFromGcalImport = MapEvent.toCompass(
-        "user1",
-        gcalEvents.items,
-        Origin.GoogleImport
-      );
+    const eventsFromGcalImport = MapEvent.toCompass(
+      "user1",
+      gcalEvents.items,
+      Origin.GoogleImport
+    );
 
-      const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
-      allEvents.forEach((ce) => {
-        expect(Object.values(Origin).includes(ce.origin)).toBe(true);
-      });
+    const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
+    allEvents.forEach((ce) => {
+      expect(Object.values(Origin).includes(ce.origin)).toBe(true);
     });
   });
 });

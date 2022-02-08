@@ -12,7 +12,7 @@ import { colorNameByPriority } from "@web/common/styles/colors";
 import { ColorNames } from "@web/common/types/styles";
 import {
   HOURS_MINUTES_FORMAT,
-  SHORT_HOURS_AM_FORMAT,
+  HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
 } from "@web/common/constants/dates";
 import { getColor } from "@web/common/helpers/colors";
@@ -45,12 +45,12 @@ export const EventForm: React.FC<ComponentProps> = ({
 
   const initialStartTime = calculatedInitialStartTimeDayJs && {
     value: calculatedInitialStartTimeDayJs.format(HOURS_MINUTES_FORMAT),
-    label: calculatedInitialStartTimeDayJs.format(SHORT_HOURS_AM_FORMAT),
+    label: calculatedInitialStartTimeDayJs.format(HOURS_AM_FORMAT),
   };
 
   const initialEndTime = calculatedInitialEndTimeDayJs && {
     value: calculatedInitialEndTimeDayJs.format(HOURS_MINUTES_FORMAT),
-    label: calculatedInitialEndTimeDayJs.format(SHORT_HOURS_AM_FORMAT),
+    label: calculatedInitialEndTimeDayJs.format(HOURS_AM_FORMAT),
   };
 
   const [startTime, setStartTime] = useState<
@@ -73,7 +73,7 @@ export const EventForm: React.FC<ComponentProps> = ({
   const defaultEventState: Schema_Event = {
     priority: Priorities.WORK,
     title: "",
-    description: event?.description,
+    description: "",
     allDay: false,
     startDate: "",
     endDate: "",
@@ -137,10 +137,14 @@ export const EventForm: React.FC<ComponentProps> = ({
     const startDateString = dayjs(selectedStartDate).format(
       YEAR_MONTH_DAY_FORMAT
     );
-    const endDateStirng = dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT);
+    const endDateString = dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT);
 
-    const startDate = `${startDateString} ${startTime?.value || ""}`;
-    const endDate = `${endDateStirng} ${endTime?.value || ""}`;
+    const startDate = event?.isAllDay
+      ? startDateString
+      : `${startDateString} ${startTime?.value || ""}`;
+    const endDate = event?.isAllDay
+      ? endDateString
+      : `${endDateString} ${endTime?.value || ""}`;
 
     const _event = { ...event };
 
@@ -190,7 +194,7 @@ export const EventForm: React.FC<ComponentProps> = ({
     >
       <StyledTitleField
         background={colorNameByPriority[priority]}
-        placeholder="Add title"
+        placeholder="Title"
         autoFocus
         onKeyDown={submitFormWithKeyboard}
         value={title}
@@ -250,8 +254,7 @@ export const EventForm: React.FC<ComponentProps> = ({
 
       <StyledDescriptionField
         background={colorNameByPriority[priority]}
-        // placeholder="Add description"
-        placeholder="Add description"
+        placeholder="Description"
         onChange={onChangeEventTextField("description")}
         value={event.description}
       />
