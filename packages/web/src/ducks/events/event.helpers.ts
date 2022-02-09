@@ -21,33 +21,39 @@ export const handleErrorTemp = (error: Error) => {
 // $$ TODO replace events with the copy ?
 export const orderAllDayEvents = (events: Schema_Event[]) => {
   // set default for days that dont have overlapping events
-  const orderedEvents = [...events];
-  orderedEvents.forEach((e) => (e.allDayOrder = 1));
+  const orderedEvents = events.map((e) => ({ ...e, allDayOrder: 1 }));
+
+  // const orderedEvents = [...events];
+  // orderedEvents.forEach((e) => (...e, allDayOrder = 1));
   // events.forEach((e) => (e.allDayOrder = 1));
 
   let uniqueDates: string[] = [];
-  events.forEach((e) => uniqueDates.push(e.startDate));
+  orderedEvents.forEach((e) => uniqueDates.push(e.startDate));
   uniqueDates = [...new Set(uniqueDates)];
 
   uniqueDates.forEach((date) => {
-    const eventsOnDay = events.filter((e) => e.startDate === date);
+    const eventsOnDay = orderedEvents.filter((e) => e.startDate === date);
     if (eventsOnDay.length > 1) {
       eventsOnDay.sort((a, b) =>
+        // $$ a.title.toLowerCase().localeCompare(b.title.toLowerCase())
         a.title.toLowerCase().localeCompare(b.title.toLowerCase())
       );
 
       eventsOnDay.map((orderedEvent, index) => {
         orderedEvent.allDayOrder += index;
 
+        // const i = orderedEvents.findIndex(
         const i = orderedEvents.findIndex(
           (event) => event._id === orderedEvent._id
         );
         // replace with element that has correct allDayOrder
+        // orderedEvents[i] = orderedEvent;
         orderedEvents[i] = orderedEvent;
       });
     }
   });
 
+  // return events;
   return orderedEvents;
 };
 

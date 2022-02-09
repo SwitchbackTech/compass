@@ -4,6 +4,7 @@ import { allDayEventsMinimal } from "@core/test-data/data.allDayEvents";
 
 describe("orderAllDayEvents", () => {
   const events = orderAllDayEvents(allDayEventsMinimal);
+  //$$ test that its alph a-descender (a first)
   it("doesnt add or remove any events", () => {
     expect(events.length).toEqual(allDayEventsMinimal.length);
   });

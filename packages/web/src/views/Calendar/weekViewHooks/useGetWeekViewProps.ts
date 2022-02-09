@@ -93,9 +93,10 @@ export const useGetWeekViewProps = () => {
   const _allDayEvents = _mappedEvents.filter((event: Schema_Event) =>
     isAllDay(event)
   );
-  // $$ move this to a reducer, cuz updating state?
-  const copy = [..._allDayEvents];
-  const allDayEvents = orderAllDayEvents(copy);
+  const allDayEvents = orderAllDayEvents(_allDayEvents);
+  //$$
+  const debugOrder = allDayEvents.map((e) => `${e.title}: ${e.allDayOrder}`);
+  console.log(debugOrder);
 
   const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
   const allDayCountByDate: { [key: string]: number } = {};
