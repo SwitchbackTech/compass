@@ -41,6 +41,7 @@ import {
   GRID_Y_OFFSET as _GRID_Y_OFFSET,
 } from "../constants";
 import { State_Event, Schema_GridEvent } from "./types";
+import { orderAllDayEvents } from "@web/ducks/events/event.helpers";
 
 dayjs.extend(weekPlugin);
 dayjs.extend(utc);
@@ -73,9 +74,9 @@ export const useGetWeekViewProps = () => {
   >(null);
   const [eventState, setEventState] = useState<State_Event | null>(null);
 
-  /***********
-   * Events
-   ***********/
+  /***************
+   * Events: Times
+   ***************/
   const eventEntities = useSelector(selectEventEntities);
   const weekEventIds = useSelector((state: RootState) =>
     selectEventIdsBySectionType(state, "week")
@@ -86,38 +87,15 @@ export const useGetWeekViewProps = () => {
     (event: Schema_Event) => event !== undefined && !isAllDay(event)
   );
 
-  const allDayEvents = _mappedEvents.filter((event: Schema_Event) =>
+  /*****************
+   * Events: All-Day
+   ****************/
+  const _allDayEvents = _mappedEvents.filter((event: Schema_Event) =>
     isAllDay(event)
   );
-
-  // TODO add the `allDayOrder` to any on same day
-  // get days with multiple all day events
-  // datesWithAllDayEvent
-  // order them alphabetically
-  console.log(allDayEvents);
-
-  /*****************
-   * Relative Times
-   ***************/
-  const startOfSelectedWeekDay = today.week(week).startOf("week");
-  const endOfSelectedWeekDay = today.week(week).endOf("week");
-
-  const weekDays = [...(new Array(7) as number[])].map((_, index) => {
-    return startOfSelectedWeekDay.add(index, "day");
-  });
-
-  const dayjsBasedOnWeekDay = today.week(week);
-  const times = getAmPmTimes();
-  const dayTimes = getHourlyTimes(today);
-  /*********
-   * Grid
-   *********/
-  const [GRID_Y_OFFSET, setGridYOffset] = useState(
-    allDayEventsGridRef.current?.clientHeight || 0
-  );
-  const [CALCULATED_GRID_X_OFFSET, setGridXOffset] = useState(
-    (calendarRef.current?.offsetLeft || 0) + GRID_X_OFFSET
-  );
+  // $$ move this to a reducer, cuz updating state?
+  const copy = [..._allDayEvents];
+  const allDayEvents = orderAllDayEvents(copy);
 
   const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
   const allDayCountByDate: { [key: string]: number } = {};
@@ -138,8 +116,31 @@ export const useGetWeekViewProps = () => {
     ...[0, ...Object.values(allDayCountByDateEditingEvent)]
   );
 
+  /****************
+   * Relative Times
+   ***************/
+  const startOfSelectedWeekDay = today.week(week).startOf("week");
+  const endOfSelectedWeekDay = today.week(week).endOf("week");
+
+  const weekDays = [...(new Array(7) as number[])].map((_, index) => {
+    return startOfSelectedWeekDay.add(index, "day");
+  });
+
+  const dayjsBasedOnWeekDay = today.week(week);
+  const times = getAmPmTimes();
+  const dayTimes = getHourlyTimes(today);
   const todayDayWeekNumber = today.get("day") + 1;
   const beforeDaysCount = todayDayWeekNumber - 1;
+
+  /*********
+   * Grid
+   *********/
+  const [GRID_Y_OFFSET, setGridYOffset] = useState(
+    allDayEventsGridRef.current?.clientHeight || 0
+  );
+  const [CALCULATED_GRID_X_OFFSET, setGridXOffset] = useState(
+    (calendarRef.current?.offsetLeft || 0) + GRID_X_OFFSET
+  );
 
   /*************
    * Effects
@@ -297,7 +298,7 @@ export const useGetWeekViewProps = () => {
     return eventCellHeight * startTime;
   };
 
-  /*********
+  /**********
    * Handlers
    **********/
   const onAllDayEventsGridMouseDown = (e: React.MouseEvent) => {

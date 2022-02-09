@@ -17,6 +17,40 @@ export const handleErrorTemp = (error: Error) => {
   alert(error);
 };
 
+/* Yikes, this can be refactored to be more efficient */
+// $$ TODO replace events with the copy ?
+export const orderAllDayEvents = (events: Schema_Event[]) => {
+  // set default for days that dont have overlapping events
+  const orderedEvents = [...events];
+  orderedEvents.forEach((e) => (e.allDayOrder = 1));
+  // events.forEach((e) => (e.allDayOrder = 1));
+
+  let uniqueDates: string[] = [];
+  events.forEach((e) => uniqueDates.push(e.startDate));
+  uniqueDates = [...new Set(uniqueDates)];
+
+  uniqueDates.forEach((date) => {
+    const eventsOnDay = events.filter((e) => e.startDate === date);
+    if (eventsOnDay.length > 1) {
+      eventsOnDay.sort((a, b) =>
+        a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+      );
+
+      eventsOnDay.map((orderedEvent, index) => {
+        orderedEvent.allDayOrder += index;
+
+        const i = orderedEvents.findIndex(
+          (event) => event._id === orderedEvent._id
+        );
+        // replace with element that has correct allDayOrder
+        orderedEvents[i] = orderedEvent;
+      });
+    }
+  });
+
+  return orderedEvents;
+};
+
 /*
 Demo of using pagination and group ordering. 
 Keep until implementing for the Someday List and 

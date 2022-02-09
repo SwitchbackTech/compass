@@ -22,6 +22,7 @@ export interface Result_DeleteMany {
 
 export interface Schema_Event {
   _id?: string;
+  allDayOrder?: number;
   endDate?: string;
   description?: string | null | undefined;
   isAllDay: boolean;
@@ -36,7 +37,6 @@ export interface Schema_Event {
   //$$ WIP.these to either be refactored or kept
   isTimeSelected?: boolean;
   showStartTimeLabel?: boolean;
-  allDayOrder?: number;
   groupOrder?: number;
   groupCount?: number;
   order?: number;
