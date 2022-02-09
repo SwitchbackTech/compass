@@ -55,7 +55,6 @@ const WeekEventComponent = (
     height = core.getEventCellHeight() / 4;
     const eventOrder = event.allDayOrder || 1;
     top = core.getAllDayEventCellHeight() - height * eventOrder;
-
     width = core.getAllDayEventWidth(
       startDay,
       eventEndDay.diff(eventStartDay, "days")

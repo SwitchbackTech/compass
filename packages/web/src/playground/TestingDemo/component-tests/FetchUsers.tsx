@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { formatUserName } from "../function-tests/utils";
+
+const formatUserName = (username: string) => {
+  username.startsWith("@") ? username : "@" + username;
+};
 
 function FetchUsers() {
   const [users, setUsers] = useState([]);

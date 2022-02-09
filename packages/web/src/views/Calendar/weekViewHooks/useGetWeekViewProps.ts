@@ -94,10 +94,6 @@ export const useGetWeekViewProps = () => {
     isAllDay(event)
   );
   const allDayEvents = orderAllDayEvents(_allDayEvents);
-  //$$
-  const debugOrder = allDayEvents.map((e) => `${e.title}: ${e.allDayOrder}`);
-  console.log(debugOrder);
-
   const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
   const allDayCountByDate: { [key: string]: number } = {};
 

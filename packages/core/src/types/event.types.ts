@@ -31,7 +31,7 @@ export interface Schema_Event {
   priority?: string; // $$ temporary structure for v1
   priorities?: string[]; // the eventual structure, with ids as strs
   startDate?: string;
-  title?: string;
+  title: string;
   user?: string;
 
   //$$ WIP.these to either be refactored or kept

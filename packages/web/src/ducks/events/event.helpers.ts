@@ -17,44 +17,35 @@ export const handleErrorTemp = (error: Error) => {
   alert(error);
 };
 
-/* Yikes, this can be refactored to be more efficient */
-// $$ TODO replace events with the copy ?
 export const orderAllDayEvents = (events: Schema_Event[]) => {
   // set default for days that dont have overlapping events
-  const orderedEvents = events.map((e) => ({ ...e, allDayOrder: 1 }));
+  const updatedEvents = events.map((e) => ({ ...e, allDayOrder: 1 }));
 
-  // const orderedEvents = [...events];
-  // orderedEvents.forEach((e) => (...e, allDayOrder = 1));
-  // events.forEach((e) => (e.allDayOrder = 1));
+  const uniqueStartDates = Array.from(
+    new Set(updatedEvents.map((e) => e.startDate))
+  );
 
-  let uniqueDates: string[] = [];
-  orderedEvents.forEach((e) => uniqueDates.push(e.startDate));
-  uniqueDates = [...new Set(uniqueDates)];
-
-  uniqueDates.forEach((date) => {
-    const eventsOnDay = orderedEvents.filter((e) => e.startDate === date);
+  uniqueStartDates.forEach((startDate) => {
+    const eventsOnDay = updatedEvents.filter((e) => e.startDate === startDate);
     if (eventsOnDay.length > 1) {
-      eventsOnDay.sort((a, b) =>
-        // $$ a.title.toLowerCase().localeCompare(b.title.toLowerCase())
-        a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+      // sort in descending order (c, b, a)
+      const sortedEventsOnDay = eventsOnDay.sort(
+        (a: Schema_Event, b: Schema_Event) =>
+          b.title.toLowerCase().localeCompare(a.title.toLowerCase())
       );
 
-      eventsOnDay.map((orderedEvent, index) => {
-        orderedEvent.allDayOrder += index;
+      sortedEventsOnDay.map((e, index) => {
+        // calculate the order
+        e.allDayOrder += index;
 
-        // const i = orderedEvents.findIndex(
-        const i = orderedEvents.findIndex(
-          (event) => event._id === orderedEvent._id
-        );
-        // replace with element that has correct allDayOrder
-        // orderedEvents[i] = orderedEvent;
-        orderedEvents[i] = orderedEvent;
+        // find & replace matching element so it has the updated allDayOrder
+        const i = updatedEvents.findIndex((event) => event._id === e._id);
+        updatedEvents[i] = e;
       });
     }
   });
 
-  // return events;
-  return orderedEvents;
+  return updatedEvents;
 };
 
 /*

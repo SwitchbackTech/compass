@@ -4,7 +4,6 @@ import { allDayEventsMinimal } from "@core/test-data/data.allDayEvents";
 
 describe("orderAllDayEvents", () => {
   const events = orderAllDayEvents(allDayEventsMinimal);
-  //$$ test that its alph a-descender (a first)
   it("doesnt add or remove any events", () => {
     expect(events.length).toEqual(allDayEventsMinimal.length);
   });
@@ -13,12 +12,12 @@ describe("orderAllDayEvents", () => {
       if (e.allDayOrder === undefined) throw Error("missing order");
     });
   });
-  it("orders by title", () => {
+  it("orders title descending (c, b, a)", () => {
     const first = events.filter((e) => e.title === "test1")[0];
-    expect(first.allDayOrder).toBe(1);
+    expect(first.allDayOrder).toBe(5);
 
     const fifth = events.filter((e) => e.title === "test5")[0];
-    expect(fifth.allDayOrder).toBe(5);
+    expect(fifth.allDayOrder).toBe(1);
   });
 
   it("sets unique order for two events with same title", () => {
