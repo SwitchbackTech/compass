@@ -11,7 +11,6 @@ import { isAllDay } from "@core/util/event.util";
 
 import {
   HOURS_AM_FORMAT,
-  HOURS_AM_SHORT_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
@@ -22,6 +21,7 @@ import {
   getHourlyTimes,
   toUTCOffset,
 } from "@web/common/helpers/date.helpers";
+import { RootState } from "@web/store";
 import {
   selectEventEntities,
   selectEventIdsBySectionType,
@@ -33,7 +33,7 @@ import {
   eventsEntitiesSlice,
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
-import { RootState } from "@web/store";
+import { orderAllDayEvents } from "@web/ducks/events/event.helpers";
 
 import {
   GRID_TIME_STEP,
@@ -41,7 +41,6 @@ import {
   GRID_Y_OFFSET as _GRID_Y_OFFSET,
 } from "../constants";
 import { State_Event, Schema_GridEvent } from "./types";
-import { orderAllDayEvents } from "@web/ducks/events/event.helpers";
 
 dayjs.extend(weekPlugin);
 dayjs.extend(utc);
@@ -356,6 +355,7 @@ export const useGetWeekViewProps = () => {
       priority: Priorities.WORK,
       startDate,
       endDate,
+      isAllDay: false,
       isTimeSelected: false,
     });
   };
@@ -391,7 +391,7 @@ export const useGetWeekViewProps = () => {
 
       let dateField = modifiableDateField;
       let startDate = actualEditingEvent?.startDate;
-      let endDate = actualEditingEvent?.endate;
+      let endDate = actualEditingEvent?.endDate;
 
       const modifyingDateDiff =
         (actualEditingEvent &&
@@ -511,19 +511,18 @@ export const useGetWeekViewProps = () => {
       ) > maxDayMinutes;
 
     if (!eventToSave.isAllDay && isEventOverlappingCurrentDay) {
-      eventToSave.endDate = dayjs(eventToSave.startDate)
-        .endOf("day")
-        .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
+      // swaps end and start dates
+      eventToSave.endDate = dayjs(eventToSave.startDate).endOf("day").format();
     }
 
     // makes times compatible with backend/gcal/mongo
     eventToSave.startDate = eventToSave.isAllDay
       ? eventToSave.startDate
-      : toUTCOffset(eventToSave.startDate);
+      : toUTCOffset(eventToSave.startDate); // startDate needs to be set before getting here
 
     eventToSave.endDate = eventToSave.isAllDay
       ? eventToSave.endDate
-      : toUTCOffset(eventToSave.endDate);
+      : toUTCOffset(eventToSave.endDate); //endDate needs to be set before getting here
 
     if (eventToSave._id) {
       dispatch(
