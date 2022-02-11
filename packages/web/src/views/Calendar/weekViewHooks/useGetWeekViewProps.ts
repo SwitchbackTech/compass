@@ -230,6 +230,7 @@ export const useGetWeekViewProps = () => {
       .add(dayNumber, "day")
       .add(minute, "minutes");
 
+    //$$ change format -- should never use that format anymore
     return date.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
   };
 
@@ -324,15 +325,24 @@ export const useGetWeekViewProps = () => {
 
   const onEventDrag = (e: React.MouseEvent) => {
     setEditingEvent((actualEditingEvent) => {
-      const startDate = getDateByMousePosition(
+      const _initialStart = getDateByMousePosition(
         e.clientX,
-        // TODO: get rid of mystery 2 - fixed the move bug...
+        // $$ get rid of mystery 2 - fixed the move bug...
         e.clientY - (eventState?.initialYOffset || 0) + 2
       );
 
-      const endDate = dayjs(startDate)
+      // $$ refactor getDateByMousePos to not return in the wrong format,
+      // then refactor this to avoid re-parsing and formatting
+      const startDate = actualEditingEvent?.isAllDay
+        ? dayjs(_initialStart).format(YEAR_MONTH_DAY_FORMAT)
+        : _initialStart;
+
+      const _format = actualEditingEvent?.isAllDay
+        ? YEAR_MONTH_DAY_FORMAT
+        : YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT;
+      const endDate = dayjs(_initialStart)
         .add(eventState?.initialMinutesDifference || 0, "minutes")
-        .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
+        .format(_format);
 
       return {
         ...actualEditingEvent,
@@ -525,6 +535,8 @@ export const useGetWeekViewProps = () => {
       : toUTCOffset(eventToSave.endDate); //endDate needs to be set before getting here
 
     if (eventToSave._id) {
+      //$$
+      console.log(eventToSave);
       dispatch(
         editEventSlice.actions.request({
           _id: eventToSave._id,
@@ -532,6 +544,9 @@ export const useGetWeekViewProps = () => {
         })
       );
     } else {
+      //$$
+      console.log(eventToSave);
+
       eventToSave.origin = Origin.Compass;
       dispatch(createEventSlice.actions.request(eventToSave));
     }
