@@ -1,9 +1,9 @@
 import * as matchers from "redux-saga-test-plan/matchers";
 import { expectSaga } from "redux-saga-test-plan";
 
-import { deleteEventSlice } from "./slice";
-import { EventApi } from "./event.api";
-import { deleteEventSaga } from "./sagas";
+import { EventApi } from "../event.api";
+import { deleteEventSaga } from "../sagas";
+import { deleteEventSlice } from "../slice";
 
 /**
  * Shows an example of how to use redux-saga-test-plan

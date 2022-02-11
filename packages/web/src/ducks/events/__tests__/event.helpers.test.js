@@ -1,6 +1,6 @@
-import { orderAllDayEvents } from "./event.helpers";
-
 import { allDayEventsMinimal } from "@core/test-data/data.allDayEvents";
+
+import { orderAllDayEvents } from "../event.helpers";
 
 describe("orderAllDayEvents", () => {
   const events = orderAllDayEvents(allDayEventsMinimal);
