@@ -60,26 +60,39 @@ export const selectCategorizedEvents = (
   const _allDayEvents = weekEventsMapped.filter(
     (e: Schema_Event) => e.isAllDay
   );
+  // $$ re-enable one sure its not causing issues
   const allDayEvents = orderAllDayEvents(_allDayEvents);
+  // const allDayEvents = _allDayEvents;
 
   // $$ testing
-  const allDayCountByDate: { [key: string]: number } = {};
-  // console.log(allDayEvents);
-  allDayEvents.forEach((event: Schema_Event) => {
-    if (!event.startDate) return;
-    allDayCountByDate[event.startDate] = event.allDayOrder || 1;
-  });
+  // shouldnt be in the selector, cuz its modifying state
+  // (even if state isnt clearly defined via slice like the other stuff)
+  // const allDayCountByDate: { [key: string]: number } = {};
+  // allDayEvents.forEach((event: Schema_Event) => {
+  // if (!event.startDate) return;
+  // allDayCountByDate[event.startDate] = event.allDayOrder || 1;
+  // });
 
-  return { weekEvents, allDayEvents, allDayCountByDate };
+  return { weekEvents, allDayEvents };
+};
+
+export const selectWipWeekEvents = (state: RootState) => {
+  const eventEntities = selectEventEntities(state);
+  const weekEventIds = selectEventIdsBySectionType(state, "week");
+  const weekEventsMapped = weekEventIds.map(
+    (_id: string) => eventEntities[_id]
+  );
+  const weekEvents = weekEventsMapped.filter((e: Schema_Event) => !e.isAllDay);
+  return weekEvents;
 };
 
 export const selectWip = (state: RootState) => {
   const { allDayEvents } = selectCategorizedEvents(state, "week");
   const allDayCountByDate: { [key: string]: number } = {};
   // console.log(allDayEvents);
-  allDayEvents.forEach((event: Schema_Event) => {
-    if (!event.startDate) return;
-    allDayCountByDate[event.startDate] = event.allDayOrder || 1;
-  });
+  // allDayEvents.forEach((event: Schema_Event) => {
+  // if (!event.startDate) return;
+  // allDayCountByDate[event.startDate] = event.allDayOrder || 1;
+  // });
   return allDayCountByDate;
 };

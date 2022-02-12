@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -26,6 +26,7 @@ import {
   selectEventEntities,
   selectEventIdsBySectionType,
   selectWip,
+  selectWipWeekEvents,
 } from "@web/ducks/events/selectors";
 import {
   createEventSlice,
@@ -76,11 +77,29 @@ export const useGetWeekViewProps = () => {
   /*********
    * Events
    *********/
-  const { weekEvents, allDayEvents, allDayCountByDate } = useSelector(
-    (state: RootState) => selectCategorizedEvents(state, "week")
+  const { weekEvents, allDayEvents } = useSelector((state: RootState) =>
+    selectCategorizedEvents(state, "week")
   );
-  // const allDayCountByDate = useSelector(selectWip);
+  // const weekEvents = useSelector((state: RootState) =>
+  // selectWipWeekEvents(state)
+  // );
+  // const allDayCountByDate = useSelector((state: RootState) => selectWip(state));
   // const allDayCountByDate: { [key: string]: number } = {};
+  // allDayEvents.forEach((event: Schema_Event) => {
+  // if (!event.startDate) return;
+  // $$ this be causin the re-render
+  // allDayCountByDate[event.startDate] = event.allDayOrder || 1;
+  // });
+  const getAllDayCounts = () => {
+    const allDayCountByDate: { [key: string]: number } = {};
+    allDayEvents.forEach((event: Schema_Event) => {
+      if (!event.startDate) return;
+      allDayCountByDate[event.startDate] = event.allDayOrder || 1;
+    });
+    return allDayCountByDate;
+  };
+
+  const allDayCountByDate = useMemo(() => getAllDayCounts(), []);
   const allDayCountByDateEditingEvent = { ...allDayCountByDate };
 
   const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
@@ -516,8 +535,6 @@ export const useGetWeekViewProps = () => {
       : toUTCOffset(eventToSave.endDate); //endDate needs to be set before getting here
 
     if (eventToSave._id) {
-      //$$
-      console.log(eventToSave);
       dispatch(
         editEventSlice.actions.request({
           _id: eventToSave._id,
@@ -525,10 +542,8 @@ export const useGetWeekViewProps = () => {
         })
       );
     } else {
-      //$$
-      console.log(eventToSave);
-
       eventToSave.origin = Origin.Compass;
+      console.log("$$ creating event:", eventToSave);
       dispatch(createEventSlice.actions.request(eventToSave));
     }
 
