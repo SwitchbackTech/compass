@@ -36,7 +36,7 @@ export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
   return allDayCountByDate;
 };
 
-export const orderAllDayEvents = (events: Schema_Event[]) => {
+export const orderEvents = (events: Schema_Event[]) => {
   // set default for days that dont have overlapping events
   const updatedEvents = events.map((e) => ({ ...e, allDayOrder: 1 }));
 

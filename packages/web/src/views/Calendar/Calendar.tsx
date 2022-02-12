@@ -3,8 +3,6 @@ import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
 
-import { Schema_Event } from "@core/types/event.types";
-
 import { Text } from "@web/components/Text";
 import { ColorNames } from "@web/common/types/styles";
 import {
@@ -259,9 +257,7 @@ export const CalendarView = () => {
                 isOpen={!!component.editingEvent.isOpen}
                 onCloseEventForm={() => component.setEditingEvent(null)}
                 onSubmitEventForm={eventHandlers.onSubmitEvent}
-                setEvent={(event: Schema_GridEvent) =>
-                  component.setEditingEvent(event)
-                }
+                setEvent={(event) => component.setEditingEvent(event)}
                 weekViewProps={weekViewProps}
               />
             )}

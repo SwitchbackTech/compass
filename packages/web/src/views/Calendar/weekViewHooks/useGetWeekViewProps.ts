@@ -77,19 +77,39 @@ export const useGetWeekViewProps = () => {
   /*********
    * Events
    *********/
-  const { weekEvents, allDayEvents } = useSelector((state: RootState) =>
-    selectCategorizedEvents(state, "week")
-  );
-  // const weekEvents = useSelector((state: RootState) =>
-  // selectWipWeekEvents(state)
+  // const { weekEvents, allDayEvents } = useSelector((state: RootState) =>
+  //   selectCategorizedEvents(state, "week")
   // );
-  // const allDayCountByDate = useSelector((state: RootState) => selectWip(state));
-  // const allDayCountByDate: { [key: string]: number } = {};
-  // allDayEvents.forEach((event: Schema_Event) => {
-  // if (!event.startDate) return;
-  // $$ this be causin the re-render
-  // allDayCountByDate[event.startDate] = event.allDayOrder || 1;
-  // });
+  const weekEntities = useSelector(
+    (state: RootState) => state.events.entities.value || {}
+  );
+  const weekIds = useSelector(
+    (state: RootState) => state.events.getWeekEvents.value || []
+  );
+  const mapEvents = () => {
+    if (weekIds.data && weekIds.data.length > 0) {
+      return weekIds.data.map((_id: string) => weekEntities[_id]);
+    } else {
+      return [];
+    }
+  };
+  const weekEventsMapped = mapEvents();
+  const allDayEvents = weekEventsMapped.filter((e: Schema_Event) => {
+    if (e !== undefined) {
+      return e.isAllDay;
+    } else {
+      return false;
+    }
+  });
+  console.log(allDayEvents);
+  const weekEvents = weekEventsMapped.filter((e: Schema_Event) => {
+    if (e !== undefined) {
+      return !e.isAllDay;
+    } else {
+      return false;
+    }
+  });
+
   const getAllDayCounts = () => {
     const allDayCountByDate: { [key: string]: number } = {};
     allDayEvents.forEach((event: Schema_Event) => {
@@ -99,6 +119,7 @@ export const useGetWeekViewProps = () => {
     return allDayCountByDate;
   };
 
+  // const allDayCountByDate: { [key: string]: number } = {};
   const allDayCountByDate = useMemo(() => getAllDayCounts(), []);
   const allDayCountByDateEditingEvent = { ...allDayCountByDate };
 
@@ -543,7 +564,6 @@ export const useGetWeekViewProps = () => {
       );
     } else {
       eventToSave.origin = Origin.Compass;
-      console.log("$$ creating event:", eventToSave);
       dispatch(createEventSlice.actions.request(eventToSave));
     }
 

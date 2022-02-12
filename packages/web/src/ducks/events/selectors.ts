@@ -3,7 +3,7 @@ import { isAllDay } from "@core/util/event.util";
 
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
-import { orderAllDayEvents } from "./event.helpers";
+import { orderEvents } from "./event.helpers";
 
 import { SectionType } from "./types";
 
@@ -55,14 +55,18 @@ export const selectCategorizedEvents = (
   const weekEventsMapped = weekEventIds.map(
     (_id: string) => eventEntities[_id]
   );
-  const weekEvents = weekEventsMapped.filter((e: Schema_Event) => !e.isAllDay);
+  const weekEvents = weekEventsMapped.filter((e: Schema_Event) => {
+    return !e.isAllDay;
+  });
+  // console.log("weekEventsMapped:", weekEventsMapped);
 
   const _allDayEvents = weekEventsMapped.filter(
     (e: Schema_Event) => e.isAllDay
   );
+  // console.log("alldayev:", _allDayEvents);
   // $$ re-enable one sure its not causing issues
-  const allDayEvents = orderAllDayEvents(_allDayEvents);
-  // const allDayEvents = _allDayEvents;
+  // const allDayEvents = orderEvents(_allDayEvents);
+  const allDayEvents = _allDayEvents;
 
   // $$ testing
   // shouldnt be in the selector, cuz its modifying state
