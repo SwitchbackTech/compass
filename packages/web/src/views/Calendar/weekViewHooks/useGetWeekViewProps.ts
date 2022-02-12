@@ -7,7 +7,6 @@ import weekPlugin from "dayjs/plugin/weekOfYear";
 
 import { Origin, Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { isAllDay } from "@core/util/event.util";
 
 import {
   HOURS_AM_FORMAT,
@@ -23,8 +22,10 @@ import {
 } from "@web/common/helpers/date.helpers";
 import { RootState } from "@web/store";
 import {
+  selectCategorizedEvents,
   selectEventEntities,
   selectEventIdsBySectionType,
+  selectWip,
 } from "@web/ducks/events/selectors";
 import {
   createEventSlice,
@@ -33,7 +34,6 @@ import {
   eventsEntitiesSlice,
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
-import { orderAllDayEvents } from "@web/ducks/events/event.helpers";
 
 import {
   GRID_TIME_STEP,
@@ -61,7 +61,7 @@ export const useGetWeekViewProps = () => {
   const weekDaysRef = useRef<HTMLDivElement>(null);
   const allDayEventsGridRef = useRef<HTMLDivElement>(null);
 
-  /************
+  /*************
    * State Init
    *************/
   const [editingEvent, setEditingEvent] = useState<Schema_GridEvent | null>(
@@ -73,36 +73,17 @@ export const useGetWeekViewProps = () => {
   >(null);
   const [eventState, setEventState] = useState<State_Event | null>(null);
 
-  /***************
-   * Events: Times
-   ***************/
-  const eventEntities = useSelector(selectEventEntities);
-  const weekEventIds = useSelector((state: RootState) =>
-    selectEventIdsBySectionType(state, "week")
+  /*********
+   * Events
+   *********/
+  const { weekEvents, allDayEvents, allDayCountByDate } = useSelector(
+    (state: RootState) => selectCategorizedEvents(state, "week")
   );
-
-  const _mappedEvents = weekEventIds.map((_id: string) => eventEntities[_id]);
-  const weekEvents = _mappedEvents.filter(
-    (event: Schema_Event) => event !== undefined && !isAllDay(event)
-  );
-
-  /*****************
-   * Events: All-Day
-   ****************/
-  const _allDayEvents = _mappedEvents.filter((event: Schema_Event) =>
-    isAllDay(event)
-  );
-  const allDayEvents = orderAllDayEvents(_allDayEvents);
-  const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
-  const allDayCountByDate: { [key: string]: number } = {};
-
-  allDayEvents.forEach((event: Schema_Event) => {
-    if (!event.startDate) return;
-    allDayCountByDate[event.startDate] = event.allDayOrder || 1;
-  });
-
+  // const allDayCountByDate = useSelector(selectWip);
+  // const allDayCountByDate: { [key: string]: number } = {};
   const allDayCountByDateEditingEvent = { ...allDayCountByDate };
 
+  const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
   if (isAddingAllDayEvent && editingEvent.startDate) {
     allDayCountByDateEditingEvent[editingEvent.startDate] =
       editingEvent.allDayOrder || 1;

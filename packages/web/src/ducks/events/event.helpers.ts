@@ -17,6 +17,25 @@ export const handleErrorTemp = (error: Error) => {
   alert(error);
 };
 
+export const getAllDayCountsMap = (allDayEvents: Schema_Event[]) => {
+  const allDayCountByDate: { [key: string]: number } = {};
+  const foo = allDayEvents.map((e) => {
+    if (!e.startDate) return;
+    allDayCountByDate[e.startDate] = e.allDayOrder || 1;
+  });
+  return foo;
+};
+
+export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
+  const allDayCountByDate: { [key: string]: number } = {};
+  allDayEvents.forEach((event: Schema_Event) => {
+    if (!event.startDate) return;
+    allDayCountByDate[event.startDate] = event.allDayOrder || 1;
+  });
+
+  return allDayCountByDate;
+};
+
 export const orderAllDayEvents = (events: Schema_Event[]) => {
   // set default for days that dont have overlapping events
   const updatedEvents = events.map((e) => ({ ...e, allDayOrder: 1 }));
