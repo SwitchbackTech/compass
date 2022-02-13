@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs, { Dayjs } from "dayjs";
-import { createSelector } from "@reduxjs/toolkit";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import weekPlugin from "dayjs/plugin/weekOfYear";
@@ -21,13 +20,10 @@ import {
   getHourlyTimes,
   toUTCOffset,
 } from "@web/common/helpers/date.helpers";
-import { RootState } from "@web/store";
+import { RootState, store } from "@web/store";
 import {
-  selectWipCategorizedEvents,
-  selectEventEntities,
-  selectEventIdsBySectionType,
-  selectWip,
-  selectWipWeekEvents,
+  selectAllDayEvents,
+  selectWeekEvents,
 } from "@web/ducks/events/selectors";
 import {
   createEventSlice,
@@ -79,52 +75,10 @@ export const useGetWeekViewProps = () => {
   /*********
    * Events
    *********/
-  /*
-  // Memoizing with createSelector
-  // $$ convert to selectPaginated ...
-  const _selectWeekEntities = (state: RootState) =>
-    state.events.entities.value || {};
-  const _selectWeekIds = (state: RootState) =>
-    state.events.getWeekEvents.value || [];
-
-  const selectMappedWeekEvents = createSelector(
-    _selectWeekIds,
-    _selectWeekEntities,
-    (weekIds, weekEntities) => weekIds.map((_id: string) => weekEntities[_id])
-  );
-  // const idk = useSelector(selectMappedWeekEvents);
-  */
-
-  const allDayEvents = useSelector((state: RootState) => {
-    console.log("getting allDayEvents..");
-    const entities = state.events.entities.value || {};
-    const weekIds = state.events.getWeekEvents.value || [];
-    if (!weekIds.data || weekIds.data.length === 0) return [];
-    const weekEventsMapped = weekIds.data.map((_id: string) => entities[_id]);
-
-    const _allDayEvents = weekEventsMapped.filter(
-      (e: Schema_Event) => e !== undefined && !e.isAllDay
-    );
-
-    const allDayEvents = orderEvents(_allDayEvents);
-    return allDayEvents;
-  });
-
-  const weekEvents = useSelector((state: RootState) => {
-    console.log("getting weekEvents..");
-    const entities = state.events.entities.value || {};
-    const weekIds = state.events.getWeekEvents.value || [];
-    if (!weekIds.data || weekIds.data.length === 0) return [];
-    const weekEventsMapped = weekIds.data.map((_id: string) => entities[_id]);
-
-    const weekEvents = weekEventsMapped.filter(
-      (e: Schema_Event) => e !== undefined && !e.isAllDay
-    );
-    return weekEvents;
-  });
+  const allDayEvents = useSelector(selectAllDayEvents);
+  const weekEvents = useSelector(selectWeekEvents);
 
   const getAllDayCounts = () => {
-    // console.log("getting all day counts ..."); //$$
     const allDayCountByDate: { [key: string]: number } = {};
     allDayEvents.forEach((event: Schema_Event) => {
       if (!event.startDate) return;
@@ -133,8 +87,7 @@ export const useGetWeekViewProps = () => {
     return allDayCountByDate;
   };
 
-  // this causes height to be too slow
-  // const allDayCountByDate = useMemo(() => getAllDayCounts(), []);
+  // const allDayCounts = useMemo(() => getAllDayCounts(), []); // this has been slow, inaccurate
   const allDayCounts = getAllDayCounts();
   const allDayCountsEditing = { ...allDayCounts };
 
@@ -143,13 +96,9 @@ export const useGetWeekViewProps = () => {
     allDayCountsEditing[editingEvent.startDate] = editingEvent.allDayOrder || 1;
   }
 
-  // $$ write selector to get all the allDayEvents and computer the maxheight there?
-  // memoize this -- runing only if allDayEvents changed
-  const allDayEventsMaxCount = Math.max(
-    ...[0, ...Object.values(allDayCountsEditing)]
-  );
-  // console.log(allDayEventsMaxCount); // $$
-  // const allDayEventsMaxCount = 5
+  const allDayEventsMaxCount =
+    // 1 to allow space for user to add another
+    Math.max(...[1, ...Object.values(allDayCountsEditing)]);
 
   /****************
    * Relative Times

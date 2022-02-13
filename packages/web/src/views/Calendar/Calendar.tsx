@@ -44,10 +44,22 @@ export const CalendarView = () => {
   const weekViewProps = useGetWeekViewProps();
   const { component, core, eventHandlers } = weekViewProps;
 
+  // const [isLoading, setIsLoading] = useState(true);
   const [, setResize] = useState<
     { width: number; height: number } | undefined
   >();
   const [isTodayPopoverOpen, setIsTodayPopoverOpen] = useState(false);
+
+  useEffect(() => {
+    // let timer1 = setTimeout(() => setIsLoading(false), 500);
+
+    // this will clear Timeout
+    // when component unmount like in willComponentUnmount
+    // and show will not change to true
+    return () => {
+      clearTimeout(timer1);
+    };
+  }, []);
 
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
@@ -104,6 +116,9 @@ export const CalendarView = () => {
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
   }, [component.eventsGridRef]);
 
+  // if (isLoading) {
+  //   return <p>loading </p>;
+  // } else {
   return (
     <Styled>
       {/* <Sidebar
@@ -321,4 +336,5 @@ export const CalendarView = () => {
       </StyledCalendar>
     </Styled>
   );
+  // }
 };

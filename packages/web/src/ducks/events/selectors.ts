@@ -1,5 +1,6 @@
+import { createSelector } from "@reduxjs/toolkit";
+
 import { Schema_Event } from "@core/types/event.types";
-import { isAllDay } from "@core/util/event.util";
 
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
@@ -46,63 +47,85 @@ export const selectPaginatedEventsBySectionType = (
   return (isSuccess(statePiece) && statePiece.value) || null;
 };
 
-/******
- * Wip
- *******/
-export const selectWipWeekEvents = (state: RootState) => {
-  const eventEntities = selectEventEntities(state);
-  const weekEventIds = selectEventIdsBySectionType(state, "week");
-  const weekEventsMapped = weekEventIds.map(
-    (_id: string) => eventEntities[_id]
+export const selectAllDayEvents = (state: RootState) => {
+  const entities = state.events.entities.value || {};
+  const weekIds = state.events.getWeekEvents.value || [];
+  if (!weekIds.data || weekIds.data.length === 0) return [];
+  const weekEventsMapped = weekIds.data.map((_id: string) => entities[_id]);
+
+  const _allDayEvents = weekEventsMapped.filter(
+    (e: Schema_Event) => e !== undefined && e.isAllDay
   );
-  const weekEvents = weekEventsMapped.filter((e: Schema_Event) => !e.isAllDay);
+
+  const allDayEvents = orderEvents(_allDayEvents);
+  return allDayEvents;
+};
+
+export const selectWeekEvents = (state: RootState) => {
+  const entities = state.events.entities.value || {};
+  const weekIds = state.events.getWeekEvents.value || [];
+  if (!weekIds.data || weekIds.data.length === 0) return [];
+  const weekEventsMapped = weekIds.data.map((_id: string) => entities[_id]);
+
+  const weekEvents = weekEventsMapped.filter(
+    (e: Schema_Event) => e !== undefined && !e.isAllDay
+  );
   return weekEvents;
 };
 
-export const selectWip = (state: RootState) => {
-  const { allDayEvents } = selectWipCategorizedEvents(state, "week");
-  const allDayCountByDate: { [key: string]: number } = {};
-  // console.log(allDayEvents);
-  // allDayEvents.forEach((event: Schema_Event) => {
-  // if (!event.startDate) return;
-  // allDayCountByDate[event.startDate] = event.allDayOrder || 1;
-  // });
-  return allDayCountByDate;
+/*********************
+ * Memoized Selectors
+ *    ... that aren't being allowed to
+ *        memoized correctly
+ *        due to how many dependencies
+ *        are currently in useGetWeekViewProps
+ * 
+ * How to use:
+    const s = store.getState();
+    const allDayEvents = selectAllDayEventsMemo(s);
+    const weekEvents = selectWeekEventsMemo(s);
+ * ^ Using this way is really slow for some reason
+ *********************/
+const _selectWeekEntities = (state: RootState) => {
+  if (state.events === undefined) return {};
+  return state.events.entities.value;
+};
+const _selectWeekIds = (state: RootState) => {
+  if (state.events === undefined) return [];
+  return state.events.getWeekEvents.value;
 };
 
-export const selectWipCategorizedEvents = (
-  state: RootState,
-  sectionType: SectionType
-) => {
-  const eventEntities = selectEventEntities(state);
-  const weekEventIds = selectEventIdsBySectionType(state, sectionType);
-  const weekEventsMapped = weekEventIds.map(
-    (_id: string) => eventEntities[_id]
-  );
-  const weekEvents = weekEventsMapped.filter((e: Schema_Event) => {
-    if (e !== undefined) {
-      return !e.isAllDay;
-    } else {
-      return false;
-    }
-  });
+export const selectAllDayEventsMemo = createSelector(
+  _selectWeekIds,
+  _selectWeekEntities,
+  (weekIds, weekEntities) => {
+    console.log("getting all day events");
+    if (weekIds === null) return [];
+    const weekEventsMapped = weekIds.data.map(
+      (_id: string) => weekEntities[_id]
+    );
 
-  const _allDayEvents = weekEventsMapped.filter(
-    (e: Schema_Event) => e.isAllDay
-  );
-  // console.log("alldayev:", _allDayEvents);
-  // $$ re-enable one sure its not causing issues
-  // const allDayEvents = orderEvents(_allDayEvents);
-  const allDayEvents = _allDayEvents;
+    const _allDayEvents = weekEventsMapped.filter(
+      (e: Schema_Event) => e !== undefined && e.isAllDay
+    );
 
-  // $$ testing
-  // shouldnt be in the selector, cuz its modifying state
-  // (even if state isnt clearly defined via slice like the other stuff)
-  // const allDayCountByDate: { [key: string]: number } = {};
-  // allDayEvents.forEach((event: Schema_Event) => {
-  // if (!event.startDate) return;
-  // allDayCountByDate[event.startDate] = event.allDayOrder || 1;
-  // });
+    const allDayEvents = orderEvents(_allDayEvents);
+    return allDayEvents;
+  }
+);
 
-  return { weekEvents, allDayEvents };
-};
+export const selectWeekEventsMemo = createSelector(
+  _selectWeekIds,
+  _selectWeekEntities,
+  (weekIds, weekEntities) => {
+    console.log("getting week events");
+    if (weekIds === null) return [];
+    const weekEventsMapped = weekIds.data.map(
+      (_id: string) => weekEntities[_id]
+    );
+    const weekEvents = weekEventsMapped.filter(
+      (e: Schema_Event) => e !== undefined && !e.isAllDay
+    );
+    return weekEvents;
+  }
+);
