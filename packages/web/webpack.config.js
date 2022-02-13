@@ -55,8 +55,8 @@ module.exports = (env) => {
 
   return {
     entry: "./src/index.tsx",
-    // got devtool sourcemap errors when using eval
-    devtool: isDevelopment ? "eval-cheap-source-map" : "source-map",
+    // got devtool sourcemap errors when using eval, eval-cheap-source-map
+    devtool: isDevelopment ? "cheap-module-source-map" : "source-map",
     module: {
       rules: [
         {

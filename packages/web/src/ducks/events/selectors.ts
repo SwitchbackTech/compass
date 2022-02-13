@@ -80,7 +80,11 @@ export const selectWipCategorizedEvents = (
     (_id: string) => eventEntities[_id]
   );
   const weekEvents = weekEventsMapped.filter((e: Schema_Event) => {
-    return !e.isAllDay;
+    if (e !== undefined) {
+      return !e.isAllDay;
+    } else {
+      return false;
+    }
   });
 
   const _allDayEvents = weekEventsMapped.filter(

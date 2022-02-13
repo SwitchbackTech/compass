@@ -112,6 +112,7 @@ export const useGetWeekViewProps = () => {
       return false;
     }
   });
+
   const allDayEvents = orderEvents(unorderedAllDayEvents);
   const weekEvents = weekEventsMapped.filter(
     (e: Schema_Event) => e !== undefined && !e.isAllDay
@@ -137,6 +138,7 @@ export const useGetWeekViewProps = () => {
   }
 
   // $$ write selector to get all the allDayEvents and computer the maxheight there?
+  // memoize this -- runing only if allDayEvents changed
   const allDayEventsMaxCount = Math.max(
     ...[0, ...Object.values(allDayCountsEditing)]
   );
