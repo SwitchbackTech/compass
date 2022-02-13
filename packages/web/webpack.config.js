@@ -144,6 +144,7 @@ module.exports = (env) => {
         paths: ["src/**/*"],
         options: {
           usePolling: false,
+          ignored: ["**/*.test.*"],
         },
       },
       compress: true,
