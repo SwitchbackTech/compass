@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs, { Dayjs } from "dayjs";
+import { createSelector } from "@reduxjs/toolkit";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import weekPlugin from "dayjs/plugin/weekOfYear";
@@ -22,7 +23,7 @@ import {
 } from "@web/common/helpers/date.helpers";
 import { RootState } from "@web/store";
 import {
-  selectCategorizedEvents,
+  selectWipCategorizedEvents,
   selectEventEntities,
   selectEventIdsBySectionType,
   selectWip,
@@ -42,6 +43,7 @@ import {
   GRID_Y_OFFSET as _GRID_Y_OFFSET,
 } from "../constants";
 import { State_Event, Schema_GridEvent } from "./types";
+import { orderEvents } from "@web/ducks/events/event.helpers";
 
 dayjs.extend(weekPlugin);
 dayjs.extend(utc);
@@ -77,9 +79,22 @@ export const useGetWeekViewProps = () => {
   /*********
    * Events
    *********/
-  // const { weekEvents, allDayEvents } = useSelector((state: RootState) =>
-  //   selectCategorizedEvents(state, "week")
-  // );
+  /*
+  // Memoizing with createSelector
+  // $$ convert to selectPaginated ...
+  const _selectWeekEntities = (state: RootState) =>
+    state.events.entities.value || {};
+  const _selectWeekIds = (state: RootState) =>
+    state.events.getWeekEvents.value || [];
+
+  const selectMappedWeekEvents = createSelector(
+    _selectWeekIds,
+    _selectWeekEntities,
+    (weekIds, weekEntities) => weekIds.map((_id: string) => weekEntities[_id])
+  );
+  // const idk = useSelector(selectMappedWeekEvents);
+  */
+
   const weekEntities = useSelector(
     (state: RootState) => state.events.entities.value || {}
   );
@@ -94,14 +109,14 @@ export const useGetWeekViewProps = () => {
     }
   };
   const weekEventsMapped = mapEvents();
-  const allDayEvents = weekEventsMapped.filter((e: Schema_Event) => {
+  const unorderedAllDayEvents = weekEventsMapped.filter((e: Schema_Event) => {
     if (e !== undefined) {
       return e.isAllDay;
     } else {
       return false;
     }
   });
-  console.log(allDayEvents);
+  const allDayEvents = orderEvents(unorderedAllDayEvents);
   const weekEvents = weekEventsMapped.filter((e: Schema_Event) => {
     if (e !== undefined) {
       return !e.isAllDay;
@@ -119,8 +134,16 @@ export const useGetWeekViewProps = () => {
     return allDayCountByDate;
   };
 
-  // const allDayCountByDate: { [key: string]: number } = {};
-  const allDayCountByDate = useMemo(() => getAllDayCounts(), []);
+  // const allDayCountByDate = useMemo(() => getAllDayCounts(), []);
+  // const allDayCountByDate = getAllDayCounts();
+  // console.log(allDayCountByDate);
+  // return allDayCountByDate;
+  const allDayCountByDate: { [key: string]: number } = {};
+  allDayEvents.forEach((event: Schema_Event) => {
+    if (!event.startDate) return;
+    allDayCountByDate[event.startDate] = event.allDayOrder || 1;
+  });
+
   const allDayCountByDateEditingEvent = { ...allDayCountByDate };
 
   const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
@@ -132,6 +155,8 @@ export const useGetWeekViewProps = () => {
   const allDayEventsMaxCount = Math.max(
     ...[0, ...Object.values(allDayCountByDateEditingEvent)]
   );
+  // console.log(allDayEventsMaxCount);
+  // const allDayEventsMaxCount = 5
 
   /****************
    * Relative Times

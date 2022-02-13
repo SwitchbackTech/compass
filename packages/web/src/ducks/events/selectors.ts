@@ -18,6 +18,23 @@ export const selectAreEventsProcessingBySectionType = (
   return isProcessing(statePiece);
 };
 
+export const selectEventEntities = (state: RootState) =>
+  state.events.entities.value || {};
+
+export const selectEventIdsBySectionType = (
+  state: RootState,
+  type: SectionType
+) => (selectPaginatedEventsBySectionType(state, type) || {}).data || [];
+
+export const selectEventById = (state: RootState, id: string): Schema_Event =>
+  selectEventEntities(state)[id] || {};
+
+export const selectIsCreateEventProcessing = (state: RootState) =>
+  isProcessing(state.events.createEvent);
+
+export const selectIsEditEventProcessing = (state: RootState) =>
+  isProcessing(state.events.editEvent);
+
 export const selectPaginatedEventsBySectionType = (
   state: RootState,
   type: SectionType
@@ -29,24 +46,31 @@ export const selectPaginatedEventsBySectionType = (
   return (isSuccess(statePiece) && statePiece.value) || null;
 };
 
-export const selectEventIdsBySectionType = (
-  state: RootState,
-  type: SectionType
-) => (selectPaginatedEventsBySectionType(state, type) || {}).data || [];
+/******
+ * Wip
+ *******/
+export const selectWipWeekEvents = (state: RootState) => {
+  const eventEntities = selectEventEntities(state);
+  const weekEventIds = selectEventIdsBySectionType(state, "week");
+  const weekEventsMapped = weekEventIds.map(
+    (_id: string) => eventEntities[_id]
+  );
+  const weekEvents = weekEventsMapped.filter((e: Schema_Event) => !e.isAllDay);
+  return weekEvents;
+};
 
-export const selectEventEntities = (state: RootState) =>
-  state.events.entities.value || {};
+export const selectWip = (state: RootState) => {
+  const { allDayEvents } = selectWipCategorizedEvents(state, "week");
+  const allDayCountByDate: { [key: string]: number } = {};
+  // console.log(allDayEvents);
+  // allDayEvents.forEach((event: Schema_Event) => {
+  // if (!event.startDate) return;
+  // allDayCountByDate[event.startDate] = event.allDayOrder || 1;
+  // });
+  return allDayCountByDate;
+};
 
-export const selectEventById = (state: RootState, id: string): Schema_Event =>
-  selectEventEntities(state)[id] || {};
-
-export const selectIsCreateEventProcessing = (state: RootState) =>
-  isProcessing(state.events.createEvent);
-
-export const selectIsEditEventProcessing = (state: RootState) =>
-  isProcessing(state.events.editEvent);
-
-export const selectCategorizedEvents = (
+export const selectWipCategorizedEvents = (
   state: RootState,
   sectionType: SectionType
 ) => {
@@ -78,25 +102,4 @@ export const selectCategorizedEvents = (
   // });
 
   return { weekEvents, allDayEvents };
-};
-
-export const selectWipWeekEvents = (state: RootState) => {
-  const eventEntities = selectEventEntities(state);
-  const weekEventIds = selectEventIdsBySectionType(state, "week");
-  const weekEventsMapped = weekEventIds.map(
-    (_id: string) => eventEntities[_id]
-  );
-  const weekEvents = weekEventsMapped.filter((e: Schema_Event) => !e.isAllDay);
-  return weekEvents;
-};
-
-export const selectWip = (state: RootState) => {
-  const { allDayEvents } = selectCategorizedEvents(state, "week");
-  const allDayCountByDate: { [key: string]: number } = {};
-  // console.log(allDayEvents);
-  // allDayEvents.forEach((event: Schema_Event) => {
-  // if (!event.startDate) return;
-  // allDayCountByDate[event.startDate] = event.allDayOrder || 1;
-  // });
-  return allDayCountByDate;
 };
