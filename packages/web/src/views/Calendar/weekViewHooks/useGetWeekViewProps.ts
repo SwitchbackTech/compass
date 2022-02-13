@@ -95,30 +95,36 @@ export const useGetWeekViewProps = () => {
   // const idk = useSelector(selectMappedWeekEvents);
   */
 
-  const weekEventsMapped = useSelector((state: RootState) => {
+  const allDayEvents = useSelector((state: RootState) => {
+    console.log("getting allDayEvents..");
     const entities = state.events.entities.value || {};
     const weekIds = state.events.getWeekEvents.value || [];
-    if (weekIds.data && weekIds.data.length > 0) {
-      return weekIds.data.map((_id: string) => entities[_id]);
-    } else {
-      return [];
-    }
+    if (!weekIds.data || weekIds.data.length === 0) return [];
+    const weekEventsMapped = weekIds.data.map((_id: string) => entities[_id]);
+
+    const _allDayEvents = weekEventsMapped.filter(
+      (e: Schema_Event) => e !== undefined && !e.isAllDay
+    );
+
+    const allDayEvents = orderEvents(_allDayEvents);
+    return allDayEvents;
   });
 
-  const unorderedAllDayEvents = weekEventsMapped.filter((e: Schema_Event) => {
-    if (e !== undefined) {
-      return e.isAllDay;
-    } else {
-      return false;
-    }
-  });
+  const weekEvents = useSelector((state: RootState) => {
+    console.log("getting weekEvents..");
+    const entities = state.events.entities.value || {};
+    const weekIds = state.events.getWeekEvents.value || [];
+    if (!weekIds.data || weekIds.data.length === 0) return [];
+    const weekEventsMapped = weekIds.data.map((_id: string) => entities[_id]);
 
-  const allDayEvents = orderEvents(unorderedAllDayEvents);
-  const weekEvents = weekEventsMapped.filter(
-    (e: Schema_Event) => e !== undefined && !e.isAllDay
-  );
+    const weekEvents = weekEventsMapped.filter(
+      (e: Schema_Event) => e !== undefined && !e.isAllDay
+    );
+    return weekEvents;
+  });
 
   const getAllDayCounts = () => {
+    // console.log("getting all day counts ..."); //$$
     const allDayCountByDate: { [key: string]: number } = {};
     allDayEvents.forEach((event: Schema_Event) => {
       if (!event.startDate) return;
