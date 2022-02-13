@@ -95,20 +95,16 @@ export const useGetWeekViewProps = () => {
   // const idk = useSelector(selectMappedWeekEvents);
   */
 
-  const weekEntities = useSelector(
-    (state: RootState) => state.events.entities.value || {}
-  );
-  const weekIds = useSelector(
-    (state: RootState) => state.events.getWeekEvents.value || []
-  );
-  const mapEvents = () => {
+  const weekEventsMapped = useSelector((state: RootState) => {
+    const entities = state.events.entities.value || {};
+    const weekIds = state.events.getWeekEvents.value || [];
     if (weekIds.data && weekIds.data.length > 0) {
-      return weekIds.data.map((_id: string) => weekEntities[_id]);
+      return weekIds.data.map((_id: string) => entities[_id]);
     } else {
       return [];
     }
-  };
-  const weekEventsMapped = mapEvents();
+  });
+
   const unorderedAllDayEvents = weekEventsMapped.filter((e: Schema_Event) => {
     if (e !== undefined) {
       return e.isAllDay;
@@ -117,13 +113,9 @@ export const useGetWeekViewProps = () => {
     }
   });
   const allDayEvents = orderEvents(unorderedAllDayEvents);
-  const weekEvents = weekEventsMapped.filter((e: Schema_Event) => {
-    if (e !== undefined) {
-      return !e.isAllDay;
-    } else {
-      return false;
-    }
-  });
+  const weekEvents = weekEventsMapped.filter(
+    (e: Schema_Event) => e !== undefined && !e.isAllDay
+  );
 
   const getAllDayCounts = () => {
     const allDayCountByDate: { [key: string]: number } = {};
@@ -134,28 +126,21 @@ export const useGetWeekViewProps = () => {
     return allDayCountByDate;
   };
 
+  // this causes height to be too slow
   // const allDayCountByDate = useMemo(() => getAllDayCounts(), []);
-  // const allDayCountByDate = getAllDayCounts();
-  // console.log(allDayCountByDate);
-  // return allDayCountByDate;
-  const allDayCountByDate: { [key: string]: number } = {};
-  allDayEvents.forEach((event: Schema_Event) => {
-    if (!event.startDate) return;
-    allDayCountByDate[event.startDate] = event.allDayOrder || 1;
-  });
-
-  const allDayCountByDateEditingEvent = { ...allDayCountByDate };
+  const allDayCounts = getAllDayCounts();
+  const allDayCountsEditing = { ...allDayCounts };
 
   const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
   if (isAddingAllDayEvent && editingEvent.startDate) {
-    allDayCountByDateEditingEvent[editingEvent.startDate] =
-      editingEvent.allDayOrder || 1;
+    allDayCountsEditing[editingEvent.startDate] = editingEvent.allDayOrder || 1;
   }
 
+  // $$ write selector to get all the allDayEvents and computer the maxheight there?
   const allDayEventsMaxCount = Math.max(
-    ...[0, ...Object.values(allDayCountByDateEditingEvent)]
+    ...[0, ...Object.values(allDayCountsEditing)]
   );
-  // console.log(allDayEventsMaxCount);
+  // console.log(allDayEventsMaxCount); // $$
   // const allDayEventsMaxCount = 5
 
   /****************
@@ -360,7 +345,7 @@ export const useGetWeekViewProps = () => {
       isAllDay: true,
       startDate,
       endDate,
-      allDayOrder: (allDayCountByDate[startDate] || 0) + 1,
+      allDayOrder: (allDayCounts[startDate] || 0) + 1,
     });
   };
 

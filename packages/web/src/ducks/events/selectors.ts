@@ -82,7 +82,6 @@ export const selectWipCategorizedEvents = (
   const weekEvents = weekEventsMapped.filter((e: Schema_Event) => {
     return !e.isAllDay;
   });
-  // console.log("weekEventsMapped:", weekEventsMapped);
 
   const _allDayEvents = weekEventsMapped.filter(
     (e: Schema_Event) => e.isAllDay
