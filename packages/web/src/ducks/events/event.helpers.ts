@@ -17,15 +17,6 @@ export const handleErrorTemp = (error: Error) => {
   alert(error);
 };
 
-export const getAllDayCountsMap = (allDayEvents: Schema_Event[]) => {
-  const allDayCountByDate: { [key: string]: number } = {};
-  const foo = allDayEvents.map((e) => {
-    if (!e.startDate) return;
-    allDayCountByDate[e.startDate] = e.allDayOrder || 1;
-  });
-  return foo;
-};
-
 export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
   const allDayCountByDate: { [key: string]: number } = {};
   allDayEvents.forEach((event: Schema_Event) => {

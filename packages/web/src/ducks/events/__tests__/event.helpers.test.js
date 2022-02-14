@@ -1,13 +1,8 @@
 import { allDayEventsMinimal } from "@core/test-data/data.allDayEvents";
 
-import {
-  getAllDayCounts,
-  getAllDayCountsMap,
-  orderAllDayEvents,
-} from "../event.helpers";
+import { getAllDayCounts, orderEvents } from "../event.helpers";
 
-describe("wip", () => {
-  // TODO use hard-coded data
+describe("getAllDayCounts", () => {
   const allDayEvents = [
     {
       _id: "620684a62ca742378271b7c2",
@@ -131,15 +126,23 @@ describe("wip", () => {
     },
     ,
   ];
-  it("wipIt", () => {
-    const res = getAllDayCounts(allDayEvents);
-    const mapRes = getAllDayCountsMap(allDayEvents);
-    const f = 1;
+
+  const allDayCounts = getAllDayCounts(allDayEvents);
+  it("adds dates up correctly", () => {
+    expect(allDayCounts["2022-02-07"]).toBe(3);
+    expect(allDayCounts["2022-02-08"]).toBe(1);
+    expect(allDayCounts["2022-02-09"]).toBe(1);
+    expect(allDayCounts["2022-02-11"]).toBe(1);
+  });
+
+  it("returns one key for unique date", () => {
+    const numDates = Object.keys(allDayCounts).length;
+    expect(numDates).toBe(4); //07, 08, 09, 11
   });
 });
 
 describe("orderAllDayEvents", () => {
-  const events = orderAllDayEvents(allDayEventsMinimal);
+  const events = orderEvents(allDayEventsMinimal);
   it("doesnt add or remove any events", () => {
     expect(events.length).toEqual(allDayEventsMinimal.length);
   });

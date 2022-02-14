@@ -20,7 +20,6 @@ import {
   getHourlyTimes,
   toUTCOffset,
 } from "@web/common/helpers/date.helpers";
-import { RootState, store } from "@web/store";
 import {
   selectAllDayEvents,
   selectWeekEvents,
@@ -32,6 +31,7 @@ import {
   eventsEntitiesSlice,
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
+import { getAllDayCounts } from "@web/ducks/events/event.helpers";
 
 import {
   GRID_TIME_STEP,
@@ -39,7 +39,6 @@ import {
   GRID_Y_OFFSET as _GRID_Y_OFFSET,
 } from "../constants";
 import { State_Event, Schema_GridEvent } from "./types";
-import { orderEvents } from "@web/ducks/events/event.helpers";
 
 dayjs.extend(weekPlugin);
 dayjs.extend(utc);
@@ -78,17 +77,8 @@ export const useGetWeekViewProps = () => {
   const allDayEvents = useSelector(selectAllDayEvents);
   const weekEvents = useSelector(selectWeekEvents);
 
-  const getAllDayCounts = () => {
-    const allDayCountByDate: { [key: string]: number } = {};
-    allDayEvents.forEach((event: Schema_Event) => {
-      if (!event.startDate) return;
-      allDayCountByDate[event.startDate] = event.allDayOrder || 1;
-    });
-    return allDayCountByDate;
-  };
-
   // const allDayCounts = useMemo(() => getAllDayCounts(), []); // this has been slow, inaccurate
-  const allDayCounts = getAllDayCounts();
+  const allDayCounts = getAllDayCounts(allDayEvents);
   const allDayCountsEditing = { ...allDayCounts };
 
   const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
