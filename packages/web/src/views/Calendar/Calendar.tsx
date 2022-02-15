@@ -3,8 +3,6 @@ import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
 
-import { Schema_Event } from "@core/types/event.types";
-
 import { Text } from "@web/components/Text";
 import { ColorNames } from "@web/common/types/styles";
 import {
@@ -46,10 +44,22 @@ export const CalendarView = () => {
   const weekViewProps = useGetWeekViewProps();
   const { component, core, eventHandlers } = weekViewProps;
 
+  // const [isLoading, setIsLoading] = useState(true);
   const [, setResize] = useState<
     { width: number; height: number } | undefined
   >();
   const [isTodayPopoverOpen, setIsTodayPopoverOpen] = useState(false);
+
+  useEffect(() => {
+    // let timer1 = setTimeout(() => setIsLoading(false), 500);
+
+    // this will clear Timeout
+    // when component unmount like in willComponentUnmount
+    // and show will not change to true
+    return () => {
+      clearTimeout(timer1);
+    };
+  }, []);
 
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
@@ -106,6 +116,9 @@ export const CalendarView = () => {
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
   }, [component.eventsGridRef]);
 
+  // if (isLoading) {
+  //   return <p>loading </p>;
+  // } else {
   return (
     <Styled>
       {/* <Sidebar
@@ -259,9 +272,7 @@ export const CalendarView = () => {
                 isOpen={!!component.editingEvent.isOpen}
                 onCloseEventForm={() => component.setEditingEvent(null)}
                 onSubmitEventForm={eventHandlers.onSubmitEvent}
-                setEvent={(event: Schema_GridEvent) =>
-                  component.setEditingEvent(event)
-                }
+                setEvent={(event) => component.setEditingEvent(event)}
                 weekViewProps={weekViewProps}
               />
             )}
@@ -325,4 +336,5 @@ export const CalendarView = () => {
       </StyledCalendar>
     </Styled>
   );
+  // }
 };

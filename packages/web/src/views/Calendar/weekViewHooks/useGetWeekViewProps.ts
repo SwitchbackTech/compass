@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -7,28 +7,31 @@ import weekPlugin from "dayjs/plugin/weekOfYear";
 
 import { Origin, Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { isAllDay } from "@core/util/event.util";
 
 import {
   HOURS_AM_FORMAT,
-  HOURS_AM_SHORT_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
 import { LocalStorage } from "@web/common/constants/web.constants";
 import { roundByNumber } from "@web/common/helpers";
-import { getAmPmTimes, toUTCOffset } from "@web/common/helpers/date.helpers";
 import {
-  selectEventEntities,
-  selectEventIdsBySectionType,
+  getAmPmTimes,
+  getHourlyTimes,
+  toUTCOffset,
+} from "@web/common/helpers/date.helpers";
+import {
+  selectAllDayEvents,
+  selectWeekEvents,
 } from "@web/ducks/events/selectors";
 import {
   createEventSlice,
+  deleteEventSlice,
   editEventSlice,
   eventsEntitiesSlice,
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
-import { RootState } from "@web/store";
+import { getAllDayCounts } from "@web/ducks/events/event.helpers";
 
 import {
   GRID_TIME_STEP,
@@ -36,28 +39,10 @@ import {
   GRID_Y_OFFSET as _GRID_Y_OFFSET,
 } from "../constants";
 import { State_Event, Schema_GridEvent } from "./types";
-import { deleteEventSlice } from "../../../ducks/events/slice";
 
 dayjs.extend(weekPlugin);
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-/*
-TODO: for events being snapped to each day cell:
-1) group events by days:
-const eventsGroupedByDays = weekDays.map(day => weekEvents.filter(event => dayjs(event.startDate).format(YYYY-DD-MM) === dayjs(day).format('YYYY-MM-DD)))
-
-2) render every group in appropriate date:
-eventsGroupedByDays[dayIndex].map(event => <WeekEvent />)
-
-3) rewrite styles for WeekEvent component to position it in day cell by percents
-
-4) rewrite the dragging logic so week event is able to be dragged in another cell
-
-5) calculate position for multidays allday events
-  - so it will be 100% of current day cell, 100% of next cell 
-    - so we need to calculate how many is next day cell in % relative to current day cell
-*/
 
 export const useGetWeekViewProps = () => {
   /**************
@@ -74,7 +59,7 @@ export const useGetWeekViewProps = () => {
   const weekDaysRef = useRef<HTMLDivElement>(null);
   const allDayEventsGridRef = useRef<HTMLDivElement>(null);
 
-  /************
+  /*************
    * State Init
    *************/
   const [editingEvent, setEditingEvent] = useState<Schema_GridEvent | null>(
@@ -86,24 +71,26 @@ export const useGetWeekViewProps = () => {
   >(null);
   const [eventState, setEventState] = useState<State_Event | null>(null);
 
-  /***********
+  /*********
    * Events
-   ***********/
-  const eventEntities = useSelector(selectEventEntities);
-  const weekEventIds = useSelector((state: RootState) =>
-    selectEventIdsBySectionType(state, "week")
-  );
+   *********/
+  const allDayEvents = useSelector(selectAllDayEvents);
+  const weekEvents = useSelector(selectWeekEvents);
 
-  const _mappedEvents = weekEventIds.map((_id: string) => eventEntities[_id]);
-  const weekEvents = _mappedEvents.filter(
-    (event: Schema_Event) => event !== undefined && !isAllDay(event)
-  );
+  // const allDayCounts = useMemo(() => getAllDayCounts(), []); // this has been slow, inaccurate
+  const allDayCounts = getAllDayCounts(allDayEvents);
+  const allDayCountsEditing = { ...allDayCounts };
 
-  const allDayEvents = _mappedEvents.filter((event: Schema_Event) =>
-    isAllDay(event)
-  );
+  const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
+  if (isAddingAllDayEvent && editingEvent.startDate) {
+    allDayCountsEditing[editingEvent.startDate] = editingEvent.allDayOrder || 1;
+  }
 
-  /*****************
+  const allDayEventsMaxCount =
+    // 1 to allow space for user to add another
+    Math.max(...[1, ...Object.values(allDayCountsEditing)]);
+
+  /****************
    * Relative Times
    ***************/
   const startOfSelectedWeekDay = today.week(week).startOf("week");
@@ -115,13 +102,9 @@ export const useGetWeekViewProps = () => {
 
   const dayjsBasedOnWeekDay = today.week(week);
   const times = getAmPmTimes();
-
-  const dayTimes = [...(new Array(23) as number[])].map((_, index) => {
-    return today
-      .startOf("day")
-      .add(index + 1, "hour")
-      .format(HOURS_AM_SHORT_FORMAT);
-  });
+  const dayTimes = getHourlyTimes(today);
+  const todayDayWeekNumber = today.get("day") + 1;
+  const beforeDaysCount = todayDayWeekNumber - 1;
 
   /*********
    * Grid
@@ -132,28 +115,6 @@ export const useGetWeekViewProps = () => {
   const [CALCULATED_GRID_X_OFFSET, setGridXOffset] = useState(
     (calendarRef.current?.offsetLeft || 0) + GRID_X_OFFSET
   );
-
-  const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
-  const daysToLastOrderIndex: { [key: string]: number } = {};
-
-  allDayEvents.forEach((event: Schema_Event) => {
-    if (!event.startDate) return;
-    daysToLastOrderIndex[event.startDate] = event.allDayOrder || 1;
-  });
-
-  const daysToLastOrderIndexWithEditingEvent = { ...daysToLastOrderIndex };
-
-  if (isAddingAllDayEvent && editingEvent.startDate) {
-    daysToLastOrderIndexWithEditingEvent[editingEvent.startDate] =
-      editingEvent.allDayOrder || 1;
-  }
-
-  const allDayEventsMaxCount = Math.max(
-    ...[0, ...Object.values(daysToLastOrderIndexWithEditingEvent)]
-  );
-
-  const todayDayWeekNumber = today.get("day") + 1;
-  const beforeDaysCount = todayDayWeekNumber - 1;
 
   /*************
    * Effects
@@ -226,6 +187,7 @@ export const useGetWeekViewProps = () => {
 
     return getBeforeDayWidth() * _beforeDaysCount;
   };
+
   const getDateByMousePosition = (x: number, y: number) => {
     const clickX = x - CALCULATED_GRID_X_OFFSET;
     const clickY = y - GRID_Y_OFFSET;
@@ -246,6 +208,7 @@ export const useGetWeekViewProps = () => {
       .add(dayNumber, "day")
       .add(minute, "minutes");
 
+    //$$ change format -- should never use that format anymore
     return date.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
   };
 
@@ -292,6 +255,7 @@ export const useGetWeekViewProps = () => {
 
     return flexBasis || 0;
   };
+
   const getLeftPositionByDayIndex = (dayIndex: number) => {
     return Array.from(weekDaysRef.current?.children || []).reduce(
       (accum, child, index) => {
@@ -309,7 +273,7 @@ export const useGetWeekViewProps = () => {
     return eventCellHeight * startTime;
   };
 
-  /*********
+  /**********
    * Handlers
    **********/
   const onAllDayEventsGridMouseDown = (e: React.MouseEvent) => {
@@ -328,7 +292,7 @@ export const useGetWeekViewProps = () => {
       isAllDay: true,
       startDate,
       endDate,
-      allDayOrder: (daysToLastOrderIndex[startDate] || 0) + 1,
+      allDayOrder: (allDayCounts[startDate] || 0) + 1,
     });
   };
 
@@ -339,15 +303,24 @@ export const useGetWeekViewProps = () => {
 
   const onEventDrag = (e: React.MouseEvent) => {
     setEditingEvent((actualEditingEvent) => {
-      const startDate = getDateByMousePosition(
+      const _initialStart = getDateByMousePosition(
         e.clientX,
-        // TODO: get rid of mystery 2 - fixed the move bug...
+        // $$ get rid of mystery 2 - fixed the move bug...
         e.clientY - (eventState?.initialYOffset || 0) + 2
       );
 
-      const endDate = dayjs(startDate)
+      // $$ refactor getDateByMousePos to not return in the wrong format,
+      // then refactor this to avoid re-parsing and formatting
+      const startDate = actualEditingEvent?.isAllDay
+        ? dayjs(_initialStart).format(YEAR_MONTH_DAY_FORMAT)
+        : _initialStart;
+
+      const _format = actualEditingEvent?.isAllDay
+        ? YEAR_MONTH_DAY_FORMAT
+        : YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT;
+      const endDate = dayjs(_initialStart)
         .add(eventState?.initialMinutesDifference || 0, "minutes")
-        .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
+        .format(_format);
 
       return {
         ...actualEditingEvent,
@@ -370,6 +343,7 @@ export const useGetWeekViewProps = () => {
       priority: Priorities.WORK,
       startDate,
       endDate,
+      isAllDay: false,
       isTimeSelected: false,
     });
   };
@@ -405,7 +379,7 @@ export const useGetWeekViewProps = () => {
 
       let dateField = modifiableDateField;
       let startDate = actualEditingEvent?.startDate;
-      let endDate = actualEditingEvent?.endate;
+      let endDate = actualEditingEvent?.endDate;
 
       const modifyingDateDiff =
         (actualEditingEvent &&
@@ -525,19 +499,18 @@ export const useGetWeekViewProps = () => {
       ) > maxDayMinutes;
 
     if (!eventToSave.isAllDay && isEventOverlappingCurrentDay) {
-      eventToSave.endDate = dayjs(eventToSave.startDate)
-        .endOf("day")
-        .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
+      // swaps end and start dates
+      eventToSave.endDate = dayjs(eventToSave.startDate).endOf("day").format();
     }
 
-    // make times compatible with backend/gcal/mongo
+    // makes times compatible with backend/gcal/mongo
     eventToSave.startDate = eventToSave.isAllDay
       ? eventToSave.startDate
-      : toUTCOffset(eventToSave.startDate);
+      : toUTCOffset(eventToSave.startDate); // startDate needs to be set before getting here
 
     eventToSave.endDate = eventToSave.isAllDay
       ? eventToSave.endDate
-      : toUTCOffset(eventToSave.endDate);
+      : toUTCOffset(eventToSave.endDate); //endDate needs to be set before getting here
 
     if (eventToSave._id) {
       dispatch(
@@ -588,7 +561,7 @@ export const useGetWeekViewProps = () => {
       allDayEventsMaxCount,
       calendarRef,
       dayjsBasedOnWeekDay,
-      dayTimes,
+      dayTimes, // move this into a constant to speed up?
       editingEvent,
       eventsGridRef,
       eventState,
@@ -604,12 +577,12 @@ export const useGetWeekViewProps = () => {
     },
     core: {
       getAllDayEventCellHeight,
+      getAllDayEventWidth,
       getBeforeDayWidth,
       getBeforeDaysOverflowWidth,
       getEventCellHeight,
       getFlexBasisByDay,
       getLeftPositionByDayIndex,
-      getMultiDayEventWidth: getAllDayEventWidth,
     },
   };
 };

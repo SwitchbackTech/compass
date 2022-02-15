@@ -22,28 +22,26 @@ export interface Result_DeleteMany {
 
 export interface Schema_Event {
   _id?: string;
-  origin: Origin;
-  gEventId?: string;
-  title?: string;
-  description?: string | null | undefined;
-  isAllDay: boolean;
-  startDate?: string;
+  allDayOrder?: number;
   endDate?: string;
+  description?: string | null | undefined;
+  isAllDay?: boolean;
+  gEventId?: string;
+  origin?: Origin;
   priority?: string; // $$ temporary structure for v1
   priorities?: string[]; // the eventual structure, with ids as strs
+  startDate?: string;
+  title?: string;
   user?: string;
 
-  //$$
+  //$$ WIP.these to either be refactored or kept
   isTimeSelected?: boolean;
   showStartTimeLabel?: boolean;
-  allDay?: boolean;
-  allDayOrder?: number;
   groupOrder?: number;
   groupCount?: number;
   order?: number;
 }
 
-//todo merge with Params_Events_Wip
 export interface Query_Event extends Query {
   start?: string;
   end?: string;
