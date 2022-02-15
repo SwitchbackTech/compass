@@ -51,6 +51,7 @@ export const eventsEntitiesSlice = createSlice({
       state.value[action.payload._id] = action.payload.event;
     },
     insert: (state, action: Action_InsertEvents) => {
+      // appends new events to existing entities
       state.value = { ...state.value, ...action.payload };
     },
     updateAfterTzChange: (state, action: Action_TimezoneChange) => {

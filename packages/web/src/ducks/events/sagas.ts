@@ -96,12 +96,11 @@ function* getEventsSaga(
       normalizedEventsSchema(),
     ]);
 
+    console.log("inserting normalized events");
     yield put(
       eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events)
     );
     return {
-      // ...res, <--$$ delete dont need to save metadata from axios call
-      // result is only an array of ids
       data: normalizedEvents.result as Payload_NormalizedAsyncAction,
     };
   } catch (error) {

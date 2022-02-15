@@ -143,7 +143,7 @@ describe("getAllDayCounts", () => {
 
 describe("orderAllDayEvents", () => {
   const events = orderEvents(allDayEventsMinimal);
-  it("doesnt add or remove any events", () => {
+  it("doesn't add or remove any events", () => {
     expect(events.length).toEqual(allDayEventsMinimal.length);
   });
   it("sets the order for each event", () => {

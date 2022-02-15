@@ -50,6 +50,7 @@ export const CalendarView = () => {
   >();
   const [isTodayPopoverOpen, setIsTodayPopoverOpen] = useState(false);
 
+  /*
   useEffect(() => {
     // let timer1 = setTimeout(() => setIsLoading(false), 500);
 
@@ -60,6 +61,7 @@ export const CalendarView = () => {
       clearTimeout(timer1);
     };
   }, []);
+  */
 
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
