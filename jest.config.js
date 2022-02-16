@@ -113,6 +113,8 @@ module.exports = {
       testEnvironment: "jsdom",
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
       moduleNameMapper: {
+        "^.+\\.(css|less)$":
+          "<rootDir>/packages/web/src/common/__mocks__/css.stub.js",
         "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
         "^@web/assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
         "^@web/common/(.*)$": "<rootDir>/packages/web/src/common/$1",
