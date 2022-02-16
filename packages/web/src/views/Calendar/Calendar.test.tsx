@@ -25,7 +25,6 @@ describe("CalendarView: Renders", () => {
 
   it("navigation arrows", async () => {
     expect(screen.getByText(/</i)).toBeInTheDocument;
-    const res = await screen.getByLabelText("foo");
     expect(screen.getByText(/>/i)).toBeInTheDocument;
   });
   it("current week", () => {
