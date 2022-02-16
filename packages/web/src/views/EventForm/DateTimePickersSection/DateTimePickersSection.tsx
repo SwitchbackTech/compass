@@ -4,10 +4,11 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import { Key } from "ts-keycode-enum";
 
 import { Text } from "@web/components/Text";
-import { DatePicker } from "@web/components/DatePicker";
 import { SelectOption } from "@web/common/types/components";
 import { roundByNumber } from "@web/common/helpers";
 import { getTimes } from "@web/common/helpers/date.helpers";
+// import { DatePicker } from "@web/components/DatePicker";
+import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
 import {
