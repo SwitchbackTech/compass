@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
 
-import { Text } from "@web/components/Text";
+import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
 import { ColorNames } from "@web/common/types/styles";
 import {
   AlignItems,
@@ -13,6 +13,10 @@ import {
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { getAlphaColor, getColor } from "@web/common/helpers/colors";
+import { Text } from "@web/components/Text";
+import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
+import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
+import { Sidebar } from "@web/views/Calendar/components/Sidebar";
 
 import {
   Styled,
@@ -36,10 +40,6 @@ import {
 } from "./styled";
 import { useGetWeekViewProps } from "./weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "./weekViewHooks/types";
-import { WeekEvent } from "./components/WeekEvent";
-import { EditingWeekEvent } from "./components/EditingWeekEvent";
-import { Sidebar } from "./components/Sidebar";
-import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
 
 export const CalendarView = () => {
   const weekViewProps = useGetWeekViewProps();
