@@ -63,9 +63,9 @@ module.exports = {
     "testing-library/no-debugging-utils": "error",
     "testing-library/no-dom-import": "off",
     "testing-library/no-render-in-setup": "warn",
-    "testing-library/prefer-query-by-disappearance": "on",
-    "testing-library/prefer-screen-queries": "on",
-    "testing-library/prefer-user-event": "on",
+    "testing-library/prefer-query-by-disappearance": "error",
+    "testing-library/prefer-screen-queries": "error",
+    "testing-library/prefer-user-event": "error",
     "import/order": [
       "error",
       {
