@@ -29,7 +29,7 @@ export interface CalendarRef extends HTMLDivElement {
   input: HTMLInputElement;
 }
 
-export const DatePicker: React.FC<Props> = ({
+export const DatePickerTemp: React.FC<Props> = ({
   defaultOpen = false,
   onSelect = () => {},
   onInputBlur,
