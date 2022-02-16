@@ -9,7 +9,7 @@ import { roundByNumber } from "@web/common/helpers";
 import { getTimes } from "@web/common/helpers/date.helpers";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
-// import { DatePicker } from "@web/components/DatePicker";
+import { DatePicker } from "@web/components/DatePicker";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import {
   HOURS_MINUTES_FORMAT,
@@ -17,9 +17,7 @@ import {
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
 import { GRID_TIME_STEP } from "@web/views/Calendar/constants";
-
 import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
-import { DatePicker } from "@web/components/DatePicker";
 
 export interface RelatedTargetElement extends EventTarget {
   id?: string;
