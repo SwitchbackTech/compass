@@ -26,7 +26,7 @@ import {
   StyledSubmitButton,
 } from "./styled";
 import { ComponentProps } from "./types";
-import { DateTimePickersSection } from "./DateTimePickersSection/DateTimePickersSection";
+import { DateTimePickersSection } from "@web/views/EventForm/DateTimePickersSection";
 // import { DateTimePickersSection } from "./DateTimePickersSection";
 
 export const EventForm: React.FC<ComponentProps> = ({
