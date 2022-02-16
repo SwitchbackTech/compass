@@ -7,9 +7,8 @@ import { Text } from "@web/components/Text";
 import { SelectOption } from "@web/common/types/components";
 import { roundByNumber } from "@web/common/helpers";
 import { getTimes } from "@web/common/helpers/date.helpers";
-// import { DatePicker } from "@web/components/DatePicker";
-import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
+import { DatePicker } from "@web/components/DatePicker";
 import { TimePicker } from "@web/components/TimePicker";
 import {
   HOURS_MINUTES_FORMAT,
