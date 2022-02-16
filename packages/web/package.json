@@ -60,6 +60,7 @@
     "eslint-plugin-jest-dom": "^4.0.1",
     "jest": "^27.3.0",
     "jest-styled-components": "^7.0.5",
+    "msw": "^0.36.8",
     "redux-saga-test-plan": "^4.0.4",
     "typescript-plugin-css-modules": "^3.4.0",
     "webpack-bundle-analyzer": "^4.5.0"
