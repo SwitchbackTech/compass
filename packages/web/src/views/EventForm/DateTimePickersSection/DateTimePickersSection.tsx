@@ -9,7 +9,7 @@ import { roundByNumber } from "@web/common/helpers";
 import { getTimes } from "@web/common/helpers/date.helpers";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
-import { DatePickerTemp } from "@web/components/DatePickerTemp";
+import { DatePicker } from "@web/components/DatePicker";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import {
   HOURS_MINUTES_FORMAT,
