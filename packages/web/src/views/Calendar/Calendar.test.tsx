@@ -23,8 +23,9 @@ describe("CalendarView: Renders", () => {
     expect(screen.getByText(currentYear)).toBeInTheDocument;
   });
 
-  it("navigation arrows", () => {
+  it("navigation arrows", async () => {
     expect(screen.getByText(/</i)).toBeInTheDocument;
+    const res = await screen.getByLabelText("foo");
     expect(screen.getByText(/>/i)).toBeInTheDocument;
   });
   it("current week", () => {

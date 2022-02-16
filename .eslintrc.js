@@ -57,12 +57,15 @@ module.exports = {
     "react/no-array-index-key": "off",
     "prettier/prettier": ["error", { singleQuote: true }],
     quotes: [2, "single"],
-    // not sure if declaring specific rules for testing-library
-    // is needed (or if defaults are supplied)
     "testing-library/await-async-query": "error",
+    "testing-library/await-async-utils": "error",
     "testing-library/no-await-sync-query": "error",
-    "testing-library/no-debugging-utils": "warn",
+    "testing-library/no-debugging-utils": "error",
     "testing-library/no-dom-import": "off",
+    "testing-library/no-render-in-setup": "warn",
+    "testing-library/prefer-query-by-disappearance": "on",
+    "testing-library/prefer-screen-queries": "on",
+    "testing-library/prefer-user-event": "on",
     "import/order": [
       "error",
       {

@@ -96,7 +96,6 @@ function* getEventsSaga(
       normalizedEventsSchema(),
     ]);
 
-    console.log("inserting normalized events");
     yield put(
       eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events)
     );
