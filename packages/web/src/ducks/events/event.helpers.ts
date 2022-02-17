@@ -1,9 +1,10 @@
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { schema } from "normalizr";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { v4 as uuidv4 } from "uuid";
 
+import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
 import { Priorities } from "@core/core.constants";
 
@@ -26,6 +27,9 @@ export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
 
   return allDayCountByDate;
 };
+
+export const getWeekDayLabel = (day: Dayjs) =>
+  `day-${day.format(YEAR_MONTH_DAY_FORMAT)}`;
 
 export const orderEvents = (events: Schema_Event[]) => {
   // set default for days that dont have overlapping events

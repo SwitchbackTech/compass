@@ -114,8 +114,8 @@ module.exports = {
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
       moduleNameMapper: {
         "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
-        "^@web/common/(.*)$": "<rootDir>/packages/web/src/common/$1",
         "^@web/assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
+        "^@web/common/(.*)$": "<rootDir>/packages/web/src/common/$1",
         "^@web/components/(.*)$": "<rootDir>/packages/web/src/components/$1",
         "^@web/containers/(.*)$": "<rootDir>/packages/web/src/containers/$1",
         "^@web/ducks/(.*)$": "<rootDir>/packages/web/src/ducks/$1",
@@ -123,6 +123,8 @@ module.exports = {
         "^@web/routers/(.*)$": "<rootDir>/packages/web/src/routers/$1",
         "^@web/store/(.*)$": "<rootDir>/packages/web/src/store/$1",
         "^@web/views/(.*)$": "<rootDir>/packages/web/src/views/$1",
+        "^.+\\.(css|less)$":
+          "<rootDir>/packages/web/src/common/__mocks__/css.stub.js",
       },
     },
     {

@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
 
-import { Text } from "@web/components/Text";
+import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
 import { ColorNames } from "@web/common/types/styles";
 import {
   AlignItems,
@@ -13,6 +13,10 @@ import {
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { getAlphaColor, getColor } from "@web/common/helpers/colors";
+import { Text } from "@web/components/Text";
+import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
+import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
+import { Sidebar } from "@web/views/Calendar/components/Sidebar";
 
 import {
   Styled,
@@ -36,9 +40,6 @@ import {
 } from "./styled";
 import { useGetWeekViewProps } from "./weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "./weekViewHooks/types";
-import { WeekEvent } from "./components/WeekEvent";
-import { EditingWeekEvent } from "./components/EditingWeekEvent";
-import { Sidebar } from "./components/Sidebar";
 
 export const CalendarView = () => {
   const weekViewProps = useGetWeekViewProps();
@@ -50,6 +51,7 @@ export const CalendarView = () => {
   >();
   const [isTodayPopoverOpen, setIsTodayPopoverOpen] = useState(false);
 
+  /*
   useEffect(() => {
     // let timer1 = setTimeout(() => setIsLoading(false), 500);
 
@@ -60,6 +62,7 @@ export const CalendarView = () => {
       clearTimeout(timer1);
     };
   }, []);
+  */
 
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
@@ -109,6 +112,7 @@ export const CalendarView = () => {
   useEffect(() => {
     if (!component.eventsGridRef.current) return;
 
+    // scroll down to the current time in grid
     const minuteHeight = core.getEventCellHeight() / 60;
     const minutes = dayjs().get("hours") * 60 + dayjs().get("minutes");
     const top = minutes * minuteHeight;
@@ -226,9 +230,9 @@ export const CalendarView = () => {
             return (
               <StyledWeekDayFlex
                 justifyContent={JustifyContent.CENTER}
-                key={day.format(YEAR_MONTH_DAY_FORMAT)}
+                key={getWeekDayLabel(day)}
                 alignItems={AlignItems.FLEX_END}
-                id={`day-${day.format(YEAR_MONTH_DAY_FORMAT)}`}
+                id={`id-${getWeekDayLabel(day)}`}
                 color={weekDayTextColor}
                 flexBasis={flexBasis}
               >

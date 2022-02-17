@@ -4,11 +4,13 @@ module.exports = {
   parser: "@typescript-eslint/parser",
   plugins: [
     "@typescript-eslint",
-    "prettier",
     "import",
+    "jest",
+    "jest-dom", // eventually move this to web-only eslint config
+    "prettier",
     "react",
     "react-hooks",
-    "jest",
+    "testing-library",
   ],
   env: {
     "jest/globals": true,
@@ -22,8 +24,10 @@ module.exports = {
   },
   extends: [
     "eslint:recommended",
+    "plugin:jest-dom/recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:testing-library/react",
     // this prettier plugin adjusts other parts of this config,
     // so keep it as the last extends item
     "plugin:prettier/recommended",
@@ -53,6 +57,15 @@ module.exports = {
     "react/no-array-index-key": "off",
     "prettier/prettier": ["error", { singleQuote: true }],
     quotes: [2, "single"],
+    "testing-library/await-async-query": "error",
+    "testing-library/await-async-utils": "error",
+    "testing-library/no-await-sync-query": "error",
+    "testing-library/no-debugging-utils": "error",
+    "testing-library/no-dom-import": "off",
+    "testing-library/no-render-in-setup": "warn",
+    "testing-library/prefer-query-by-disappearance": "error",
+    "testing-library/prefer-screen-queries": "error",
+    "testing-library/prefer-user-event": "error",
     "import/order": [
       "error",
       {

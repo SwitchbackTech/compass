@@ -5,7 +5,6 @@ import { gSchema$CalendarList } from "../../../backend/declarations";
 const MapCalendarList = {
   toCompass(gcalList: gSchema$CalendarList): Schema_CalendarList {
     //TODO validate schema
-    console.log("Reminder: Only using primary calendarlist");
 
     const primaryGcal = gcalList.items.filter((c) => {
       return c.primary === true;

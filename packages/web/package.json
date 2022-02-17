@@ -45,6 +45,7 @@
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^12.1.2",
     "@testing-library/react-hooks": "^7.0.2",
+    "@testing-library/user-event": "^14.0.0-beta",
     "@types/jest": "^27.0.2",
     "@types/lodash.debounce": "^4.0.6",
     "@types/lodash.throttle": "^4.1.6",
@@ -56,8 +57,10 @@
     "@types/react-select": "^4.0.17",
     "@types/styled-components": "^5.1.14",
     "babel-jest": "^27.3.0",
+    "eslint-plugin-jest-dom": "^4.0.1",
     "jest": "^27.3.0",
     "jest-styled-components": "^7.0.5",
+    "msw": "^0.36.8",
     "redux-saga-test-plan": "^4.0.4",
     "typescript-plugin-css-modules": "^3.4.0",
     "webpack-bundle-analyzer": "^4.5.0"
