@@ -79,5 +79,5 @@ export const StyledEventScaler = styled.div<ScalerProps>`
   left: 0;
   top: ${({ top }) => top};
   bottom: ${({ bottom }) => bottom};
-  cursor: row-resize;
+  cursor: ns-resize;
 `;
