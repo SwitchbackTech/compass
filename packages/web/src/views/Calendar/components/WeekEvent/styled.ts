@@ -6,17 +6,22 @@ import { getColor } from "@web/common/helpers/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { ColorNames } from "@web/common/types/styles";
 
-export interface StyledEventProps {
-  left: number;
-  top: number;
-  priority: Priorities;
+interface StyledEventProps {
+  allDay: boolean;
+  backgroundColor: string;
   duration: number;
   height: number;
-  isTimeShown: boolean;
-  width: number;
+  hoverColor: string;
   isDragging: boolean;
   isPlaceholder: boolean;
-  allDay: boolean;
+  isTimeShown: boolean;
+  left: number;
+  lineClamp: string;
+  opacity: number;
+  padding: string;
+  priority: Priorities;
+  width: number;
+  top: number;
 }
 
 const hoverColorsByPriority = {
@@ -25,43 +30,56 @@ const hoverColorsByPriority = {
   [Priorities.SELF]: getColor(ColorNames.BLUE_3_BRIGHT),
 };
 
-export const StyledEvent = styled.div<StyledEventProps>`
-  position: absolute;
-  top: ${({ top }) => top}px;
-  left: ${({ left }) => left}px;
-  width: ${({ width }) => width}px;
-  height: ${({ height }) => height}px;
-  background-color: ${({ priority }) =>
-    getColor(colorNameByPriority[priority])};
+export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
+  const bgColor = getColor(colorNameByPriority[props.priority]);
+
+  const lineClamp = () => {
+    // how where these magic numbers determined?
+    const heightOfEvent = 54 * props.duration;
+    return `${Math.round((heightOfEvent - 7) / 16) || 1}`;
+  };
+  return {
+    backgroundColor: bgColor,
+    left: props.left,
+    lineClamp: lineClamp,
+    height: props.height,
+    hoverColor: hoverColorsByPriority[props.priority],
+    opacity: props.isPlaceholder ? 0.5 : 1,
+    padding: !props.allDay && props.duration > 0.5 ? "4px" : "0 4px",
+    // caused bugs with title + width; $$ delete if not needed after a while
+    // titleWidth: !props.isTimeShown || props.width < 125 ? "100%" : "calc(100% - 65px)",
+    top: props.top,
+    width: props.width,
+  };
+})<StyledEventProps>`
   border-radius: 4px;
-  padding: ${({ duration, allDay }) =>
-    !allDay && duration > 0.5 ? "4px" : "0 4px"};
+  position: absolute;
+  top: ${(props) => props.top}px;
+  left: ${(props) => props.left}px;
+  width: ${(props) => props.width}px;
+  height: ${({ height }) => height}px;
+  background-color: ${(props) => props.backgroundColor};
+  padding: ${(props) => props.padding};
   user-select: none;
   transition: background-color 0.2s, box-shadow 0.2s;
   box-shadow: 0 0 0 0 transparent;
   cursor: ${({ isDragging }) => (isDragging ? "grabbing" : "pointer")};
-  opacity: ${({ isPlaceholder }) => isPlaceholder && 0.5};
+  opacity: ${(props) => props.opacity};
 
   &:hover,
   &.active {
-    background-color: ${({ priority }) => hoverColorsByPriority[priority]};
+    background-color: ${(props) => props.hoverColor};
   }
 
   & span {
     &:first-child {
-      width: ${({ width, isTimeShown }) =>
-        !isTimeShown || width < 125 ? "100%" : "calc(100% - 65px)"};
       display: -webkit-box;
-      -webkit-box-orient: vertical;
       overflow: hidden;
       text-overflow: ellipsis;
+      /* width: "100%";  / titleWidth props logic <-- $$ deleted if not needed*/
       word-break: break-all;
-
-      -webkit-line-clamp: ${({ duration }) => {
-        const heightOfEvent = 54 * duration;
-
-        return `${Math.round((heightOfEvent - 7) / 16) || 1}`;
-      }};
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: ${(props) => props.lineClamp};
     }
   }
 `;
@@ -71,13 +89,18 @@ export interface ScalerProps {
   bottom?: string;
 }
 
-export const StyledEventScaler = styled.div<ScalerProps>`
+export const StyledEventScaler = styled.div.attrs<ScalerProps>((props) => {
+  return {
+    top: props.top,
+    bottom: props.bottom,
+  };
+})<ScalerProps>`
   position: absolute;
   width: 100%;
   height: 9px;
   opacity: 0;
   left: 0;
-  top: ${({ top }) => top};
-  bottom: ${({ bottom }) => bottom};
+  top: ${(props) => props.top};
+  bottom: ${(props) => props.bottom};
   cursor: ns-resize;
 `;
