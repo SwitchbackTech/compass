@@ -57,20 +57,23 @@ describe("toGcal", () => {
 });
 
 describe("toCompass", () => {
+  const eventsFromCompass = MapEvent.toCompass(
+    "user1",
+    gcalEvents.items,
+    Origin.Compass
+  );
+
+  const eventsFromGcalImport = MapEvent.toCompass(
+    "user1",
+    gcalEvents.items,
+    Origin.GoogleImport
+  );
+
+  const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
+  it("sets priority to empty string", () => {
+    allEvents.forEach((ce) => expect(ce.priority).toBe(""));
+  });
   it("uses an expected origin", () => {
-    const eventsFromCompass = MapEvent.toCompass(
-      "user1",
-      gcalEvents.items,
-      Origin.Compass
-    );
-
-    const eventsFromGcalImport = MapEvent.toCompass(
-      "user1",
-      gcalEvents.items,
-      Origin.GoogleImport
-    );
-
-    const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
     allEvents.forEach((ce) => {
       expect(Object.values(Origin).includes(ce.origin)).toBe(true);
     });

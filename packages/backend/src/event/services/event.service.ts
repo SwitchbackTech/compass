@@ -250,6 +250,7 @@ class EventService {
       return errorSummary;
     }
   }
+
   async readAll(
     userId: string,
     query: Query_Event

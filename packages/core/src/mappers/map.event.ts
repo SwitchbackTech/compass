@@ -53,7 +53,6 @@ const _toCompass = (
   gEvent: gSchema$Event,
   origin: Origin
 ): Schema_Event => {
-  // TODO - move to validation service
   if (!gEvent.id) {
     throw new BaseError(
       "Bad Google Event Id",
@@ -81,7 +80,9 @@ const _toCompass = (
     endDate: _isAllDay ? gEvent.end.date : gEvent.end.dateTime,
 
     // temp stuff to update
-    priority: "relations", // $$ TODO update
+    //$$ try setting to null/undefined and see if it works on frontend fine
+    // null/undefined more expressive than empty str
+    priority: "",
     // isTimeSelected: true,
     // isOpen: false,
     // order: 0,
