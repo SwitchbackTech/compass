@@ -10,6 +10,7 @@ export enum Origin {
 }
 
 export enum Priorities {
+  UNASSIGNED = "unassigned",
   WORK = "work",
   SELF = "self",
   RELATIONS = "relations",

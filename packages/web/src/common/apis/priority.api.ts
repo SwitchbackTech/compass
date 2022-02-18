@@ -10,6 +10,10 @@ const PriorityApi = {
   async createPriorities(token: string) {
     const priorities = [
       {
+        name: Priorities.UNASSIGNED,
+        color: colorNameByPriority.unassigned,
+      },
+      {
         name: Priorities.SELF,
         color: colorNameByPriority.self,
       },

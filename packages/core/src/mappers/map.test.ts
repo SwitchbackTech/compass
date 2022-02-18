@@ -1,4 +1,4 @@
-import { Origin } from "../core.constants";
+import { Origin, Priorities } from "../core.constants";
 import { gcalEvents } from "../test-data/gcal/data.gcal.event";
 import { gcalCalendarList } from "../test-data/gcal/data.gcal.calendarlist";
 import { MapCalendarList } from "./map.calendarlist";
@@ -70,8 +70,8 @@ describe("toCompass", () => {
   );
 
   const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
-  it("sets priority to empty string", () => {
-    allEvents.forEach((ce) => expect(ce.priority).toBe(""));
+  it("sets priority to unassigned", () => {
+    allEvents.forEach((ce) => expect(ce.priority).toBe(Priorities.UNASSIGNED));
   });
   it("uses an expected origin", () => {
     allEvents.forEach((ce) => {

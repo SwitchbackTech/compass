@@ -4,7 +4,7 @@ import { notCancelled } from "@compass/backend/src/common/services/gcal/gcal.hel
 import { Logger } from "@compass/backend/src/common/logger/common.logger";
 
 import { BaseError } from "@core/errors/errors.base";
-import { Origin } from "@core/core.constants";
+import { Origin, Priorities } from "@core/core.constants";
 
 import { Schema_Event } from "../types/event.types";
 import { isAllDay } from "@core/util/event.util";
@@ -80,9 +80,7 @@ const _toCompass = (
     endDate: _isAllDay ? gEvent.end.date : gEvent.end.dateTime,
 
     // temp stuff to update
-    //$$ try setting to null/undefined and see if it works on frontend fine
-    // null/undefined more expressive than empty str
-    priority: "",
+    priority: Priorities.UNASSIGNED,
     // isTimeSelected: true,
     // isOpen: false,
     // order: 0,
