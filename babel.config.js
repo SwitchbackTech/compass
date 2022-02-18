@@ -5,10 +5,12 @@ module.exports = {
     "@babel/preset-typescript",
   ],
   plugins: [
-    "babel-plugin-styled-components",
-    {
-      meaninglessFileNames: ["index", "styled"],
-      pure: true,
-    },
+    [
+      "babel-plugin-styled-components",
+      {
+        meaninglessFileNames: ["index", "styled"],
+        pure: true,
+      },
+    ],
   ],
 };
