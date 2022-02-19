@@ -68,9 +68,7 @@ export const LoginView = () => {
             - priorities created
             - primary calendar selected (not htis version) 
             - events fetched and imported
-        If existing:import { Schema_Calendar } from '@core/types/calendar.types';
-import { gSchema$CalendarList } from '@backend/declarations';
-
+        If existing:
           - Send to calendar page, where you'll
             - fetching most-recent GCal events and sync with Compass
         */
