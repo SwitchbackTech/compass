@@ -12,9 +12,11 @@ sagaMiddleware.run(sagas);
 
 export const App = () => {
   return (
-    <Provider store={store}>
-      <GlobalStyle />
-      <RootRouter />
-    </Provider>
+    <React.StrictMode>
+      <Provider store={store}>
+        <GlobalStyle />
+        <RootRouter />
+      </Provider>
+    </React.StrictMode>
   );
 };
