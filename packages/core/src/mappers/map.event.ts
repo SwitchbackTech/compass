@@ -4,7 +4,7 @@ import { notCancelled } from "@compass/backend/src/common/services/gcal/gcal.hel
 import { Logger } from "@compass/backend/src/common/logger/common.logger";
 
 import { BaseError } from "@core/errors/errors.base";
-import { Origin } from "@core/core.constants";
+import { Origin, Priorities } from "@core/core.constants";
 
 import { Schema_Event } from "../types/event.types";
 import { isAllDay } from "@core/util/event.util";
@@ -53,7 +53,6 @@ const _toCompass = (
   gEvent: gSchema$Event,
   origin: Origin
 ): Schema_Event => {
-  // TODO - move to validation service
   if (!gEvent.id) {
     throw new BaseError(
       "Bad Google Event Id",
@@ -81,7 +80,7 @@ const _toCompass = (
     endDate: _isAllDay ? gEvent.end.date : gEvent.end.dateTime,
 
     // temp stuff to update
-    priority: "relations", // $$ TODO update
+    priority: Priorities.UNASSIGNED,
     // isTimeSelected: true,
     // isOpen: false,
     // order: 0,

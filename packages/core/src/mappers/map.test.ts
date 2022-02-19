@@ -1,4 +1,4 @@
-import { Origin } from "../core.constants";
+import { Origin, Priorities } from "../core.constants";
 import { gcalEvents } from "../test-data/gcal/data.gcal.event";
 import { gcalCalendarList } from "../test-data/gcal/data.gcal.calendarlist";
 import { MapCalendarList } from "./map.calendarlist";
@@ -57,20 +57,23 @@ describe("toGcal", () => {
 });
 
 describe("toCompass", () => {
+  const eventsFromCompass = MapEvent.toCompass(
+    "user1",
+    gcalEvents.items,
+    Origin.Compass
+  );
+
+  const eventsFromGcalImport = MapEvent.toCompass(
+    "user1",
+    gcalEvents.items,
+    Origin.GoogleImport
+  );
+
+  const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
+  it("sets priority to unassigned", () => {
+    allEvents.forEach((ce) => expect(ce.priority).toBe(Priorities.UNASSIGNED));
+  });
   it("uses an expected origin", () => {
-    const eventsFromCompass = MapEvent.toCompass(
-      "user1",
-      gcalEvents.items,
-      Origin.Compass
-    );
-
-    const eventsFromGcalImport = MapEvent.toCompass(
-      "user1",
-      gcalEvents.items,
-      Origin.GoogleImport
-    );
-
-    const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
     allEvents.forEach((ce) => {
       expect(Object.values(Origin).includes(ce.origin)).toBe(true);
     });

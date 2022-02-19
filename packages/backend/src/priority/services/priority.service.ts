@@ -17,6 +17,7 @@ class PriorityService {
 
     return allPriorities;
   }
+
   async readById(
     userId: string,
     id: string
@@ -98,7 +99,7 @@ class PriorityService {
       return new BaseError("Update Failed", "Ensure id is correct", 400, true);
     }
 
-    const updatedPriority = response.value;
+    const updatedPriority = response.value as Schema_Priority;
     return updatedPriority;
   }
 

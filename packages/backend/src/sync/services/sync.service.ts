@@ -221,9 +221,11 @@ class SyncService {
     };
 
     // initialize what you'll need later
-    const calendarList: Schema_CalendarList = await mongoService.db
+    const calendarList = (await mongoService.db
       .collection(Collections.CALENDARLIST)
-      .findOne({ "google.items.sync.resourceId": reqParams.resourceId });
+      .findOne({
+        "google.items.sync.resourceId": reqParams.resourceId,
+      })) as Schema_CalendarList;
 
     const userId = calendarList.user;
 

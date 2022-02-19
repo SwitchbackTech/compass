@@ -85,6 +85,7 @@ export const channelExpiresSoon = (expiry: string) => {
   const channelExpiresSoon = expiration < xDaysFromNow;
   return channelExpiresSoon;
 };
+
 /* 
 The channelId should also be found, but this is a sanity-check
 in case something unexpected happened
@@ -103,6 +104,7 @@ export const channelNotFound = (
     return false;
   }
 };
+
 export const channelRefreshNeeded = (
   reqParams: Request_Sync_Gcal,
   calendar: Schema_CalendarList
@@ -123,6 +125,7 @@ export const channelRefreshNeeded = (
 
   return refreshNeeded;
 };
+
 export const findCalendarByResourceId = (
   //todo loop through items.sync for the one that matches the resourceId,
   // then grab that one's nextSyncToken

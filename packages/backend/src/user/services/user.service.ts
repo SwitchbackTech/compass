@@ -1,4 +1,5 @@
-import { Schema_User, Result_Delete_User } from "@core/types/user.types";
+import { MapUser } from "@core/mappers/map.user";
+import { Result_Delete_User } from "@core/types/user.types";
 import { CombinedLogin_Google } from "@core/types/auth.types";
 import { BaseError } from "@core/errors/errors.base";
 
@@ -8,20 +9,10 @@ import { Collections } from "@backend/common/constants/collections";
 
 const logger = Logger("app:user.service");
 
-// Map  user object given by google signin to our schema //
-const mapToCompassUser = (userData: CombinedLogin_Google): Schema_User => {
-  return {
-    email: userData.user.email,
-    name: userData.user.name,
-    picture: userData.user.picture,
-    googleId: userData.user.id,
-  };
-};
-
 class UserService {
   createUser = async (userData: CombinedLogin_Google) => {
     logger.debug("Creating new user");
-    const compassUser = mapToCompassUser(userData);
+    const compassUser = MapUser.toCompass(userData);
     //TODO validate
     const createUserRes = await mongoService.db
       .collection(Collections.USER)

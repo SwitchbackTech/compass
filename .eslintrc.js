@@ -55,6 +55,8 @@ module.exports = {
     "no-param-reassign": "off",
     "react/jsx-props-no-spreading": "off",
     "react/no-array-index-key": "off",
+    "react-hooks/rules-of-hooks": "error", // Checks rules of Hooks
+    "react-hooks/exhaustive-deps": "warn", // Checks effect dependencies
     "prettier/prettier": ["error", { singleQuote: true }],
     quotes: [2, "single"],
     "testing-library/await-async-query": "error",
