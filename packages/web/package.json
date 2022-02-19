@@ -7,7 +7,7 @@
   "dependencies": {
     "@compass/core": "2.0.0",
     "@reduxjs/toolkit": "^1.6.1",
-    "@svgr/webpack": "^5.5.0",
+    "@svgr/webpack": "^6.2.1",
     "axios": "^0.23.0",
     "classnames": "^2.3.1",
     "css-loader": "^6.3.0",
