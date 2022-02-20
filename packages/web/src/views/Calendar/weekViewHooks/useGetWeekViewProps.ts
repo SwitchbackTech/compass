@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -15,14 +15,12 @@ import {
 } from "@web/common/constants/dates";
 import { LocalStorage } from "@web/common/constants/web.constants";
 import { roundByNumber } from "@web/common/helpers";
-import {
-  getAmPmTimes,
-  getHourlyTimes,
-  toUTCOffset,
-} from "@web/common/helpers/date.helpers";
+import { getAmPmTimes, toUTCOffset } from "@web/common/helpers/date.helpers";
 import {
   selectAllDayEvents,
+  selectAllDayEventsMemo,
   selectWeekEvents,
+  selectWeekEventsMemo,
 } from "@web/ducks/events/selectors";
 import {
   createEventSlice,
@@ -75,8 +73,12 @@ export const useGetWeekViewProps = () => {
   /*********
    * Events
    *********/
+  // move these to memo-ized once fixing issue of
+  // entire calendarview re-rendering
   const allDayEvents = useSelector(selectAllDayEvents);
   const weekEvents = useSelector(selectWeekEvents);
+  // const allDayEvents = useSelector(selectAllDayEventsMemo);
+  // const weekEvents = useSelector(selectWeekEventsMemo);
 
   // const allDayCounts = useMemo(() => getAllDayCounts(), []); // this has been slow, inaccurate
   const allDayCounts = getAllDayCounts(allDayEvents);
