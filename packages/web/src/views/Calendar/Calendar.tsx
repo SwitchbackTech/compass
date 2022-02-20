@@ -44,7 +44,7 @@ import {
 const dayTimes = getHourlyTimes(dayjs());
 
 export const CalendarView = () => {
-  console.log("rendering CalendarView");
+  // console.log("rendering CalendarView");
   const weekViewProps = useGetWeekViewProps();
   const { component, core, eventHandlers } = weekViewProps;
 

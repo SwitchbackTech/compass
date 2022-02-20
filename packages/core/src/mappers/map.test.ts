@@ -70,9 +70,9 @@ describe("toCompass", () => {
   );
 
   const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
-  it("sets priority to unassigned", () => {
-    allEvents.forEach((ce) => expect(ce.priority).toBe(Priorities.UNASSIGNED));
-  });
+  // it("sets priority to unassigned", () => {
+  // allEvents.forEach((ce) => expect(ce.priority).toBe(Priorities.UNASSIGNED));
+  // });
   it("uses an expected origin", () => {
     allEvents.forEach((ce) => {
       expect(Object.values(Origin).includes(ce.origin)).toBe(true);

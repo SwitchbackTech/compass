@@ -80,7 +80,8 @@ const _toCompass = (
     endDate: _isAllDay ? gEvent.end.date : gEvent.end.dateTime,
 
     // temp stuff to update
-    priority: Priorities.UNASSIGNED,
+    // priority: Priorities.UNASSIGNED,
+    priority: Priorities.WORK,
     // isTimeSelected: true,
     // isOpen: false,
     // order: 0,
