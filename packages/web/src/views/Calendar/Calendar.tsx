@@ -4,6 +4,7 @@ import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
 
 import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
+import { getHourlyTimes } from "@web/common/helpers/date.helpers";
 import { ColorNames } from "@web/common/types/styles";
 import {
   AlignItems,
@@ -17,7 +18,8 @@ import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
 import { Sidebar } from "@web/views/Calendar/components/Sidebar";
-
+import { useGetWeekViewProps } from "./weekViewHooks/useGetWeekViewProps";
+import { Schema_GridEvent } from "./weekViewHooks/types";
 import {
   Styled,
   StyledCalendar,
@@ -38,10 +40,11 @@ import {
   StyledAllDayEventsGrid,
   StyledPrevDaysOverflow,
 } from "./styled";
-import { useGetWeekViewProps } from "./weekViewHooks/useGetWeekViewProps";
-import { Schema_GridEvent } from "./weekViewHooks/types";
+
+const dayTimes = getHourlyTimes(dayjs());
 
 export const CalendarView = () => {
+  console.log("rendering CalendarView");
   const weekViewProps = useGetWeekViewProps();
   const { component, core, eventHandlers } = weekViewProps;
 
@@ -289,7 +292,7 @@ export const CalendarView = () => {
           onMouseMove={eventHandlers.onEventGridMouseMove}
         >
           <StyledDayTimes>
-            {component.dayTimes.map((time, index) => (
+            {dayTimes.map((time, index) => (
               <div key={`${time}-${index}`}>
                 <Text size={9}>{time}</Text>
               </div>
@@ -309,8 +312,8 @@ export const CalendarView = () => {
           </StyledGridColumns>
 
           <StyledGridRows>
-            {component.dayTimes.map((dayTime, index) => (
-              <StyledGridRow key={`${dayTime}-${index}:component.dayTimes`} />
+            {dayTimes.map((dayTime, index) => (
+              <StyledGridRow key={`${dayTime}-${index}:dayTimes`} />
             ))}
           </StyledGridRows>
 
