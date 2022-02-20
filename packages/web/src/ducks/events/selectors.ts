@@ -99,7 +99,6 @@ export const selectAllDayEventsMemo = createSelector(
   _selectWeekIds,
   _selectWeekEntities,
   (weekIds, weekEntities) => {
-    console.log("getting all day events");
     if (weekIds === null) return [];
     const weekEventsMapped = weekIds.data.map(
       (_id: string) => weekEntities[_id]

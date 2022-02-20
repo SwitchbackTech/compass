@@ -13,7 +13,7 @@ import {
   WEEK_DAYS_MARGIN_Y,
 } from "./constants";
 
-const gridDividerBorder = `1px solid ${getColor(ColorNames.WHITE_4)}80`;
+const gridDividerBorder = `1px solid ${getColor(ColorNames.GREY_4)}70`;
 
 export const Styled = styled(Flex)`
   width: 100vw;

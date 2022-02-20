@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -15,14 +15,12 @@ import {
 } from "@web/common/constants/dates";
 import { LocalStorage } from "@web/common/constants/web.constants";
 import { roundByNumber } from "@web/common/helpers";
-import {
-  getAmPmTimes,
-  getHourlyTimes,
-  toUTCOffset,
-} from "@web/common/helpers/date.helpers";
+import { getAmPmTimes, toUTCOffset } from "@web/common/helpers/date.helpers";
 import {
   selectAllDayEvents,
+  selectAllDayEventsMemo,
   selectWeekEvents,
+  selectWeekEventsMemo,
 } from "@web/ducks/events/selectors";
 import {
   createEventSlice,
@@ -66,6 +64,7 @@ export const useGetWeekViewProps = () => {
     null
   );
   const [week, setWeek] = useState(today.week());
+  //$$ change to useRef to avoid re-rendering?
   const [modifiableDateField, setModifiableDateField] = useState<
     "startDate" | "endDate" | null
   >(null);
@@ -74,8 +73,12 @@ export const useGetWeekViewProps = () => {
   /*********
    * Events
    *********/
+  // move these to memo-ized once fixing issue of
+  // entire calendarview re-rendering
   const allDayEvents = useSelector(selectAllDayEvents);
   const weekEvents = useSelector(selectWeekEvents);
+  // const allDayEvents = useSelector(selectAllDayEventsMemo);
+  // const weekEvents = useSelector(selectWeekEventsMemo);
 
   // const allDayCounts = useMemo(() => getAllDayCounts(), []); // this has been slow, inaccurate
   const allDayCounts = getAllDayCounts(allDayEvents);
@@ -102,7 +105,6 @@ export const useGetWeekViewProps = () => {
 
   const dayjsBasedOnWeekDay = today.week(week);
   const times = getAmPmTimes();
-  const dayTimes = getHourlyTimes(today);
   const todayDayWeekNumber = today.get("day") + 1;
   const beforeDaysCount = todayDayWeekNumber - 1;
 
@@ -452,12 +454,12 @@ export const useGetWeekViewProps = () => {
     });
   };
 
-  const onEventMouseDown = (e: React.MouseEvent, eventToDrug: Schema_Event) => {
+  const onEventMouseDown = (e: React.MouseEvent, eventToDrag: Schema_Event) => {
     e.stopPropagation();
     e.preventDefault();
 
-    const initialMinutesDifference = dayjs(eventToDrug.endDate).diff(
-      eventToDrug.startDate,
+    const initialMinutesDifference = dayjs(eventToDrag.endDate).diff(
+      eventToDrag.startDate,
       "minutes"
     );
 
@@ -465,14 +467,14 @@ export const useGetWeekViewProps = () => {
       e.clientY -
       GRID_Y_OFFSET +
       (eventsGridRef.current?.scrollTop || 0) -
-      getYByDate(eventToDrug.startDate || "");
+      getYByDate(eventToDrag.startDate || "");
 
     setEventState({
       name: "dragging",
       initialMinutesDifference,
       initialYOffset,
     });
-    setEditingEvent({ ...eventToDrug, isOpen: false });
+    setEditingEvent({ ...eventToDrag, isOpen: false });
   };
 
   const onScalerMouseDown = (
@@ -561,7 +563,6 @@ export const useGetWeekViewProps = () => {
       allDayEventsMaxCount,
       calendarRef,
       dayjsBasedOnWeekDay,
-      dayTimes, // move this into a constant to speed up?
       editingEvent,
       eventsGridRef,
       eventState,
