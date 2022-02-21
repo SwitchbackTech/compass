@@ -18,7 +18,7 @@ export interface Props {
 
 const WeekEventComponent = (
   { event, weekViewProps }: Props,
-  ref: React.ForwardedRef<HTMLDivElement>
+  ref: React.ForwardedRef<HTMLButtonElement>
 ) => {
   if (!event) return null;
 
@@ -58,6 +58,9 @@ const WeekEventComponent = (
     width = core.getAllDayEventWidth(
       startDay,
       eventEndDay.diff(eventStartDay, "days")
+    );
+    console.log(
+      `height: ${height} | order: ${eventOrder} | top: ${top} | width: ${width}`
     );
   }
 
