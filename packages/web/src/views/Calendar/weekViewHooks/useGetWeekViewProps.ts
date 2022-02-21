@@ -171,6 +171,8 @@ export const useGetWeekViewProps = () => {
     // console.log(
     // `\tgetting alldayEvent width using: ${startDayIndex}, ${eventDuration}`
     // );
+    console.log("current:");
+    console.log(weekDaysRef.current);
     if (eventDuration === 1) {
       // if only one day, then use original width
       return weekDaysRef.current?.children[startDayIndex]?.clientWidth || 0;
