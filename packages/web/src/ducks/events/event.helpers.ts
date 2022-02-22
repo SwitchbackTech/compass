@@ -33,7 +33,7 @@ export const getAllDayEventWidth = (
   eventDuration: number, // number of days
   widths: number[] // current width for each week day
 ) => {
-  // console.log(`${startDayIndex} | ${eventDuration} | ${widths}`);
+  console.log(`${startDayIndex} | ${eventDuration} | ${widths}`);
   /* scenario causing bug: 
     02/20 - 01/30 [start before end]
       - which makes the duration -21

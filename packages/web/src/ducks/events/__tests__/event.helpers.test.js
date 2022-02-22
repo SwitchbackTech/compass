@@ -23,8 +23,22 @@ describe("getAllDayCounts", () => {
 });
 
 describe("getAllDayEventWidth", () => {
-  it("foo", () => {
-    expect(1).toBe(1);
+  it("returns 1-day width when all are the same", () => {
+    const currWidths = [88, 88, 88, 88, 88, 88, 88];
+    const width = getAllDayEventWidth(4, 1, currWidths);
+    expect(width).toBe(88);
+  });
+  it("sums widths when event is multiple days: past/future week", () => {
+    const widths = [88, 88, 88, 88, 88, 88, 88];
+    const duration = 3;
+    const width = getAllDayEventWidth(2, duration, widths);
+    expect(width).toBe(88 * (duration + 1));
+  });
+  it("sums widths when event is multiple days: current week", () => {
+    const widths = [80, 116, 101, 80, 80, 80, 80];
+    const duration = 3;
+    const width = getAllDayEventWidth(2, duration, widths);
+    expect(width).toBe(101 + 80 + 80 + 80);
   });
 });
 

@@ -33,33 +33,34 @@ const WeekEventComponent = (
   Times
   *****/
   const eventStartDay = dayjs(event.startDate);
-  const eventEndDay = dayjs(event.endDate);
   const startIndex = eventStartDay.get("day");
   const startTime =
     component.times.indexOf(eventStartDay.format(HOURS_AM_FORMAT)) / 4;
 
+  const eventEndDay = dayjs(event.endDate);
+  const eventEndShortAmTime = eventEndDay.format(HOURS_AM_FORMAT);
+
   // ms to hours
   const duration = eventEndDay.diff(eventStartDay) * 2.7777777777778e-7;
-  const eventEndShortAmTime = eventEndDay.format(HOURS_AM_FORMAT);
 
   /**************
    Size + Position
    **************/
   let top = core.getEventCellHeight() * startTime;
+  let left = core.getLeftPositionByDayIndex(startIndex);
   let height = core.getEventCellHeight() * duration;
   let width =
     component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
-  width -= 15; // where is this number coming from ?
-  let left = core.getLeftPositionByDayIndex(startIndex);
+  // where is this number coming from?
+  //  maybe has to do with 60 min / 4 = 15?
+  width -= 15;
 
   if (event.isAllDay) {
     height = core.getEventCellHeight() / 4;
-    console.log(height.toString());
     const eventOrder = event.allDayOrder || 1;
     top = core.getAllDayEventCellHeight() - height * eventOrder;
 
     const allDayElements = component.weekDaysRef.current?.children;
-    let width = 0;
     if (allDayElements) {
       const allDayWidths = Array.from(allDayElements).map((e) => e.clientWidth);
 
@@ -68,7 +69,7 @@ const WeekEventComponent = (
         eventEndDay.diff(eventStartDay, "days"),
         allDayWidths
       );
-      // console.log(`width: ${width}`);
+      console.log(`width: ${width}`);
     }
   }
 
