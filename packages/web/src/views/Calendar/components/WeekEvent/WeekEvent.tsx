@@ -8,6 +8,7 @@ import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
+import { getAllDayEventWidth } from "@web/ducks/events/event.helpers";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 
@@ -33,7 +34,7 @@ const WeekEventComponent = (
   *****/
   const eventStartDay = dayjs(event.startDate);
   const eventEndDay = dayjs(event.endDate);
-  const startDay = eventStartDay.get("day");
+  const startIndex = eventStartDay.get("day");
   const startTime =
     component.times.indexOf(eventStartDay.format(HOURS_AM_FORMAT)) / 4;
 
@@ -47,21 +48,28 @@ const WeekEventComponent = (
   let top = core.getEventCellHeight() * startTime;
   let height = core.getEventCellHeight() * duration;
   let width =
-    component.weekDaysRef.current?.children[startDay].clientWidth || 0;
+    component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
   width -= 15; // where is this number coming from ?
-  let left = core.getLeftPositionByDayIndex(startDay);
+  let left = core.getLeftPositionByDayIndex(startIndex);
 
   if (event.isAllDay) {
     height = core.getEventCellHeight() / 4;
+    console.log(height.toString());
     const eventOrder = event.allDayOrder || 1;
     top = core.getAllDayEventCellHeight() - height * eventOrder;
-    width = core.getAllDayEventWidth(
-      startDay,
-      eventEndDay.diff(eventStartDay, "days")
-    );
-    console.log(
-      `height: ${height} | order: ${eventOrder} | top: ${top} | width: ${width}`
-    );
+
+    const allDayElements = component.weekDaysRef.current?.children;
+    let width = 0;
+    if (allDayElements) {
+      const allDayWidths = Array.from(allDayElements).map((e) => e.clientWidth);
+
+      width = getAllDayEventWidth(
+        startIndex,
+        eventEndDay.diff(eventStartDay, "days"),
+        allDayWidths
+      );
+      // console.log(`width: ${width}`);
+    }
   }
 
   if (event.groupCount && event.groupOrder) {

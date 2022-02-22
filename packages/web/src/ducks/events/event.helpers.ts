@@ -28,6 +28,49 @@ export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
   return allDayCountByDate;
 };
 
+export const getAllDayEventWidth = (
+  startDayIndex: number, // 0-6
+  eventDuration: number, // number of days
+  widths: number[] // current width for each week day
+) => {
+  // console.log(`${startDayIndex} | ${eventDuration} | ${widths}`);
+  /* scenario causing bug: 
+    02/20 - 01/30 [start before end]
+      - which makes the duration -21
+  */
+
+  /*
+    const overlapsWeek = ...
+    if (overlapsWeek) {
+      calculate cut off until this week
+      render until this week (with right arrow at end)
+    }
+    const extendsFromPrevWeek = ...
+    if (extendsFromPrev) {
+      numDaysThisWeek = ...
+      length = numDaysThisWeek  // how long it went last week doesnt really matter
+      // render with left arrow at beginning
+    }
+    }
+    */
+  if (eventDuration === 1) {
+    // if only one day, then use original width
+    return widths[startDayIndex];
+  }
+
+  // add up widths
+  //  create array of numbers, one for each day, setting each to 0 by default,
+  //  then set values based on the widths of the selected days
+  const daysWidths: number[] = Array(eventDuration + 1)
+    .fill(0)
+    .map((_, index) => widths[index + startDayIndex] || 0);
+
+  // add up all widths
+  const combinedWidth = daysWidths.reduce((accum, value) => accum + value, 0);
+
+  return combinedWidth;
+};
+
 export const getWeekDayLabel = (day: Dayjs) =>
   `day-${day.format(YEAR_MONTH_DAY_FORMAT)}`;
 
