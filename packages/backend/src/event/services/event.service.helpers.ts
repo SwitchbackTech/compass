@@ -12,30 +12,42 @@ export const getReadAllFilter = (userId: string, query: Query_Event) => {
   }
 
   if (start && end) {
+    const startIso = new Date(start).toISOString();
+    const endIso = new Date(end).toISOString();
+    // finds events whose start OR end date falls between the date range in query
     const dateFilter = {
-      $and: [
+      $or: [
         {
-          $or: [
+          $and: [
             {
               startDate: {
-                $gte: new Date(start).toISOString(),
+                $gte: startIso,
               },
             },
             {
-              startDate: { $gte: new Date(start).toISOString() },
+              startDate: {
+                $lte: endIso,
+              },
             },
           ],
         },
         {
-          $or: [
+          $and: [
             {
-              endDate: { $lte: new Date(end).toISOString() },
+              endDate: {
+                $gte: startIso,
+              },
             },
-            { endDate: { $lte: new Date(end).toISOString() } },
+            {
+              endDate: {
+                $lte: endIso,
+              },
+            },
           ],
         },
       ],
     };
+
     filter = { ...filter, ...dateFilter };
   }
 

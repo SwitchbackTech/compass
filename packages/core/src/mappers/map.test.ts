@@ -70,9 +70,26 @@ describe("toCompass", () => {
   );
 
   const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
+  // $$ uncomment once re-enabling unassigned priorities
   // it("sets priority to unassigned", () => {
   // allEvents.forEach((ce) => expect(ce.priority).toBe(Priorities.UNASSIGNED));
   // });
+  it("skips cancelled events", () => {
+    // future: run schema validation
+    const i = gcalEvents.items;
+    const events = MapEvent.toCompass("someId", i, Origin.Google);
+
+    let hasCancelledEvent = false;
+    events.forEach((e) => {
+      if (e.status === "cancelled") {
+        hasCancelledEvent = true;
+        return;
+      }
+    });
+
+    expect(hasCancelledEvent).toBe(false);
+  });
+
   it("uses an expected origin", () => {
     allEvents.forEach((ce) => {
       expect(Object.values(Origin).includes(ce.origin)).toBe(true);

@@ -23,23 +23,36 @@ describe("getAllDayCounts", () => {
 });
 
 describe("getAllDayEventWidth", () => {
-  it("returns 1-day width when all are the same", () => {
+  it("returns correct width when all are the same", () => {
     const currWidths = [88, 88, 88, 88, 88, 88, 88];
     const width = getAllDayEventWidth(4, 1, currWidths);
     expect(width).toBe(88);
   });
-  it("sums widths when event is multiple days: past/future week", () => {
-    const widths = [88, 88, 88, 88, 88, 88, 88];
-    const duration = 3;
-    const width = getAllDayEventWidth(2, duration, widths);
-    expect(width).toBe(88 * (duration + 1));
+  describe("multi-day events", () => {
+    it("sums widths: past/future week", () => {
+      const widths = [88, 88, 88, 88, 88, 88, 88];
+      const duration = 3;
+      const width = getAllDayEventWidth(2, duration, widths);
+      expect(width).toBe(88 * (duration + 1));
+    });
+    it("sums widths: current week", () => {
+      const widths = [80, 116, 101, 80, 80, 80, 80];
+      const width = getAllDayEventWidth(2, 3, widths);
+      expect(width).toBe(101 + 80 + 80 + 80);
+    });
   });
-  it("sums widths when event is multiple days: current week", () => {
-    const widths = [80, 116, 101, 80, 80, 80, 80];
-    const duration = 3;
-    const width = getAllDayEventWidth(2, duration, widths);
-    expect(width).toBe(101 + 80 + 80 + 80);
+  describe("multi-week events", () => {
+    it("is never wider than 1 week", () => {
+      const widths = [88, 89, 205, 178, 133, 132, 133];
+      const maxWidth = widths.reduce((a, b) => a + b, 0);
+      const width = getAllDayEventWidth(0, 10, widths);
+      expect(width).toBeLessThanOrEqual(maxWidth);
+    });
   });
+  it("handles carry-over event from last week", () => {
+    const widths = [168, 168, 389, 339, 252, 252, 252];
+  });
+  // scenario causing error: 2 | -5 | 140,140,140,140,140,140,140
 });
 
 describe("orderAllDayEvents", () => {

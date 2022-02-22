@@ -34,9 +34,14 @@ export const getAllDayEventWidth = (
   widths: number[] // current width for each week day
 ) => {
   console.log(`${startDayIndex} | ${eventDuration} | ${widths}`);
-  /* scenario causing bug: 
-    02/20 - 01/30 [start before end]
-      - which makes the duration -21
+  /* 
+  PROBLEM:
+    this function has no way of knowing if event spans multiple weeks,
+    cuz it doesnt have the actual start and end date
+  
+  SOLUTION:
+    dont worry about the total event length; just how it looks this week
+    use the index and duration to decide if event comes from prev week or goes into next week
   */
 
   /*
@@ -61,14 +66,14 @@ export const getAllDayEventWidth = (
   // add up widths
   //  create array of numbers, one for each day, setting each to 0 by default,
   //  then set values based on the widths of the selected days
-  const daysWidths: number[] = Array(eventDuration + 1)
+  const eventWidths: number[] = Array(eventDuration + 1)
     .fill(0)
     .map((_, index) => widths[index + startDayIndex] || 0);
 
   // add up all widths
-  const combinedWidth = daysWidths.reduce((accum, value) => accum + value, 0);
+  const eventWidth = eventWidths.reduce((accum, value) => accum + value, 0);
 
-  return combinedWidth;
+  return eventWidth;
 };
 
 export const getWeekDayLabel = (day: Dayjs) =>
