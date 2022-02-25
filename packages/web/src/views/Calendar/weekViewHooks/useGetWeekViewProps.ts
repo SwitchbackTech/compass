@@ -545,6 +545,7 @@ export const useGetWeekViewProps = () => {
       setEditingEvent,
       setWeek,
       startOfSelectedWeekDay,
+      endOfSelectedWeekDay,
       times,
       today,
       weekDays,

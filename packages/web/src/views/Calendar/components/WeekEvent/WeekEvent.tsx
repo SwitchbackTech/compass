@@ -32,33 +32,31 @@ const WeekEventComponent = (
   /****
   Times
   *****/
-  const eventStartDay = dayjs(event.startDate);
-  const startIndex = eventStartDay.get("day");
+  const startDate = dayjs(event.startDate);
+  const startIndex = startDate.get("day");
   const startTime =
-    component.times.indexOf(eventStartDay.format(HOURS_AM_FORMAT)) / 4;
-
-  const eventEndDay = dayjs(event.endDate);
-  const eventEndShortAmTime = eventEndDay.format(HOURS_AM_FORMAT);
-
-  // ms to hours
-  const duration = eventEndDay.diff(eventStartDay) * 2.7777777777778e-7;
+    component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
+  const endDate = dayjs(event.endDate);
+  const endTimeShortAm = endDate.format(HOURS_AM_FORMAT);
 
   /**************
    Size + Position
    **************/
   let top = core.getEventCellHeight() * startTime;
   let left = core.getLeftPositionByDayIndex(startIndex);
-  let height = core.getEventCellHeight() * duration;
+  const durationHours = endDate.diff(startDate) * 2.7777777777778e-7; // ms to hours
+  let height = core.getEventCellHeight() * durationHours;
   let width =
     component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
-  // where is this number coming from?
-  //  maybe has to do with 60 min / 4 = 15?
-  width -= 15;
+  // auto-deduct width for padding
+  // TODO: handle width in CSS and without using hard-coded numbers, but rather %
+  width -= 13;
 
   if (event.isAllDay) {
+    console.log(event.title);
     height = core.getEventCellHeight() / 4;
-    const eventOrder = event.allDayOrder || 1;
-    top = core.getAllDayEventCellHeight() - height * eventOrder;
+    const order = event.allDayOrder || 1;
+    top = core.getAllDayEventCellHeight() - height * order;
 
     const allDayElements = component.weekDaysRef.current?.children;
     if (allDayElements) {
@@ -66,10 +64,12 @@ const WeekEventComponent = (
 
       width = getAllDayEventWidth(
         startIndex,
-        eventEndDay.diff(eventStartDay, "days"),
+        startDate,
+        endDate,
+        component.startOfSelectedWeekDay,
+        component.endOfSelectedWeekDay,
         allDayWidths
       );
-      console.log(`width: ${width}`);
     }
   }
 
@@ -91,7 +91,7 @@ const WeekEventComponent = (
       width={width}
       top={top}
       isTimeShown={!!event.isTimeSelected}
-      duration={+duration.toFixed(2) || 0.25}
+      duration={+durationHours.toFixed(2) || 0.25}
       allDay={event.isAllDay || false}
     >
       <Flex flexWrap={FlexWrap.WRAP} alignItems={AlignItems.CENTER}>
@@ -102,8 +102,8 @@ const WeekEventComponent = (
 
         {event.isTimeSelected && event.showStartTimeLabel && (
           <Text lineHeight={7} size={7}>
-            {eventStartDay.format(HOURS_AM_FORMAT)}
-            {eventEndShortAmTime && ` - ${eventEndShortAmTime}`}
+            {startDate.format(HOURS_AM_FORMAT)}
+            {endTimeShortAm && ` - ${endTimeShortAm}`}
           </Text>
         )}
       </Flex>

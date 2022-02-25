@@ -1,8 +1,9 @@
 import dayjs, { Dayjs } from "dayjs";
 import { schema } from "normalizr";
+import { v4 as uuidv4 } from "uuid";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import { v4 as uuidv4 } from "uuid";
+import isBetween from "dayjs/plugin/isBetween";
 
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
@@ -10,6 +11,7 @@ import { Priorities } from "@core/core.constants";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
+dayjs.extend(isBetween);
 
 // rudimentary handling of errors
 // meant for temporary testing, will be replaced
@@ -29,51 +31,71 @@ export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
 };
 
 export const getAllDayEventWidth = (
-  startDayIndex: number, // 0-6
-  eventDuration: number, // number of days
-  widths: number[] // current width for each week day
+  startIndex: number,
+  start: Dayjs,
+  end: Dayjs,
+  startOfWeek: Dayjs,
+  endOfWeek: Dayjs,
+  widths: number[]
 ) => {
-  console.log(`${startDayIndex} | ${eventDuration} | ${widths}`);
-  /* 
-  PROBLEM:
-    this function has no way of knowing if event spans multiple weeks,
-    cuz it doesnt have the actual start and end date
-  
-  SOLUTION:
-    dont worry about the total event length; just how it looks this week
-    use the index and duration to decide if event comes from prev week or goes into next week
-  */
+  // $$ test the inclusive/exclusive/ISO scenarios to avoid bugs
+  const startsThisWeek = start.isBetween(startOfWeek, endOfWeek);
+  const endsThisWeek = end.isBetween(startOfWeek, endOfWeek);
 
-  /*
-    const overlapsWeek = ...
-    if (overlapsWeek) {
-      calculate cut off until this week
-      render until this week (with right arrow at end)
+  const thisWeekOnly = startsThisWeek && endsThisWeek;
+  const thisToFutureWeek = startsThisWeek && !endsThisWeek;
+  const pastToThisWeek = !startsThisWeek && endsThisWeek;
+  const pastToFutureWeek = !startsThisWeek && !endsThisWeek;
+  const summary = `
+  \tstartIndex: ${startIndex}
+  \tstart: ${start.toString()}
+  \tend: ${end.toString()}
+  -----
+  \t${startOfWeek}  - \t${endOfWeek}
+  \twidths: ${widths}
+  ----
+  \tthisWeekOnly: ${thisWeekOnly}  
+  \tthisToFutureWeek: ${thisToFutureWeek}
+  \tpastToThisWeek: ${pastToThisWeek}
+  \tpastToFutureWeek: ${pastToFutureWeek}
+  ----
+  \tstartsThisWeek: ${startsThisWeek}
+  \tendsThisWeek: ${endsThisWeek}
+  `;
+  if (thisWeekOnly) {
+    const days = end.diff(start, "days");
+    if (days === 0) {
+      // if only one day, then use original width
+      return widths[startIndex];
     }
-    const extendsFromPrevWeek = ...
-    if (extendsFromPrev) {
-      numDaysThisWeek = ...
-      length = numDaysThisWeek  // how long it went last week doesnt really matter
-      // render with left arrow at beginning
-    }
-    }
-    */
-  if (eventDuration === 1) {
-    // if only one day, then use original width
-    return widths[startDayIndex];
+    const width = _sumEventWidths(days, startIndex, widths);
+    return width;
   }
 
-  // add up widths
-  //  create array of numbers, one for each day, setting each to 0 by default,
-  //  then set values based on the widths of the selected days
-  const eventWidths: number[] = Array(eventDuration + 1)
-    .fill(0)
-    .map((_, index) => widths[index + startDayIndex] || 0);
+  if (thisToFutureWeek) {
+    const multiWeekEventWidth = _sumEventWidths(
+      7 - startIndex,
+      startIndex,
+      widths
+    );
+    return multiWeekEventWidth;
+  }
 
-  // add up all widths
-  const eventWidth = eventWidths.reduce((accum, value) => accum + value, 0);
+  if (pastToThisWeek) {
+    const daysThisWeek = end.diff(startOfWeek, "days") + 1;
+    // start at 0 because event carries over from last week
+    const multiWeekEventWidth = _sumEventWidths(daysThisWeek, 0, widths);
 
-  return eventWidth;
+    return multiWeekEventWidth;
+  }
+
+  if (pastToFutureWeek) {
+    const fullWeek = _sumEventWidths(7, 0, widths);
+    return fullWeek;
+  }
+
+  console.log("Logic error while parsing dates");
+  return -666;
 };
 
 export const getWeekDayLabel = (day: Dayjs) =>
@@ -108,6 +130,22 @@ export const orderEvents = (events: Schema_Event[]) => {
   });
 
   return updatedEvents;
+};
+
+const _sumEventWidths = (
+  duration: number,
+  startIndex: number,
+  widths: number[]
+) => {
+  // create array of numbers, one for each day, setting each to 0 by default,
+  // then set values based on the widths of the days of the event
+  const eventWidths: number[] = Array(duration)
+    .fill(0)
+    .map((_, index) => widths[index + startIndex] || 0);
+
+  // add up width of each day of the event
+  const eventWidth = eventWidths.reduce((accum, value) => accum + value, 0);
+  return eventWidth;
 };
 
 /*

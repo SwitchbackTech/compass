@@ -13,13 +13,14 @@ const flatten = (obj, out) => {
 };
 describe("getReadAllFilter", () => {
   it("uses ISO date values", () => {
-    const start = "2011-10-20T00:00:00-06:00";
-    const end = "2011-11-26T00:00:00-06:00";
+    const start = "2011-10-20T00:00:00-10:00";
+    const end = "2011-11-26T00:00:00-10:00";
     const filter = getReadAllFilter("123user", {
       start,
       end,
     });
     const flatFilter = flatten(filter, {});
+    // finds date by using the greater than and less than operator as a search key
     const startIsIso = flatFilter["$gte"] === new Date(start).toISOString();
     const endIsIso = flatFilter["$lte"] === new Date(end).toISOString();
     expect(startIsIso).toBe(true);
