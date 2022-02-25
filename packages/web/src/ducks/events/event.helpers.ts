@@ -38,9 +38,8 @@ export const getAllDayEventWidth = (
   endOfWeek: Dayjs,
   widths: number[]
 ) => {
-  // $$ test the inclusive/exclusive/ISO scenarios to avoid bugs
-  const startsThisWeek = start.isBetween(startOfWeek, endOfWeek);
-  const endsThisWeek = end.isBetween(startOfWeek, endOfWeek);
+  const startsThisWeek = start.isBetween(startOfWeek, endOfWeek, "day", "[]");
+  const endsThisWeek = end.isBetween(startOfWeek, endOfWeek, "day", "[]");
 
   const thisWeekOnly = startsThisWeek && endsThisWeek;
   const thisToFutureWeek = startsThisWeek && !endsThisWeek;
@@ -82,7 +81,7 @@ export const getAllDayEventWidth = (
   }
 
   if (pastToThisWeek) {
-    const daysThisWeek = end.diff(startOfWeek, "days") + 1;
+    const daysThisWeek = end.diff(startOfWeek, "days");
     // start at 0 because event carries over from last week
     const multiWeekEventWidth = _sumEventWidths(daysThisWeek, 0, widths);
 
@@ -94,7 +93,36 @@ export const getAllDayEventWidth = (
     return fullWeek;
   }
 
-  console.log("Logic error while parsing dates");
+  console.log("Logic error while parsing date width");
+  return -666;
+};
+
+export const getLeftPosition = (
+  startIndex: number,
+  start: Dayjs,
+  end: Dayjs,
+  startOfWeek: Dayjs,
+  endOfWeek: Dayjs,
+  widths: number[]
+) => {
+  const startsThisWeek = start.isBetween(startOfWeek, endOfWeek, "day", "[]");
+  const endsThisWeek = end.isBetween(startOfWeek, endOfWeek, "day", "[]");
+
+  const thisWeekOnly = startsThisWeek && endsThisWeek;
+  const thisToFutureWeek = startsThisWeek && !endsThisWeek;
+  const pastToThisWeek = !startsThisWeek && endsThisWeek;
+  const pastToFutureWeek = !startsThisWeek && !endsThisWeek;
+
+  if (pastToThisWeek || pastToFutureWeek) {
+    return 0;
+  }
+  if (thisWeekOnly || thisToFutureWeek) {
+    // add up from 0 index to startIndex
+    return widths.reduce((accum, width, index) => {
+      return index < startIndex ? accum + width : accum;
+    }, 0);
+  }
+  console.log("Logic error while parsing left position of date");
   return -666;
 };
 
@@ -299,7 +327,6 @@ export const editEventLocalStorage = async (
   id: string,
   event: Schema_Event
 ) => {
-  console.log(`editing evt: ${id}`);
   const eventsResponse = await getEventsLocalStorage();
 
   const events = eventsResponse.data

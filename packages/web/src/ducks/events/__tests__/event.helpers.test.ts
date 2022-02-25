@@ -6,6 +6,7 @@ import { allDayEvents } from "@core/test-data/data.allDayEvents2";
 import {
   getAllDayCounts,
   getAllDayEventWidth,
+  getLeftPosition,
   orderEvents,
 } from "../event.helpers";
 
@@ -37,7 +38,7 @@ describe("getAllDayEventWidth!", () => {
     expect(sameDayEventWidth).toBe(1);
   });
 
-  it("thisToFutureWeek", () => {
+  test("thisToFutureWeek", () => {
     expect(
       getAllDayEventWidth(
         6,
@@ -50,7 +51,7 @@ describe("getAllDayEventWidth!", () => {
     ).toBe(1);
   });
 
-  it("pastToThisWeek", () => {
+  test("pastToThisWeek", () => {
     expect(
       getAllDayEventWidth(
         -89, //this index shouldnt matter in this scenario
@@ -58,17 +59,29 @@ describe("getAllDayEventWidth!", () => {
         dayjs("2022-03-16"),
         dayjs("2022-03-13"),
         dayjs("2022-03-19"),
+        [1, 1, 1, 0, 0, 0, 0]
+      )
+    ).toBe(3); // 13, 14, 15
+
+    expect(
+      getAllDayEventWidth(
+        4,
+        dayjs("2022-02-17"),
+        dayjs("2022-02-24"),
+        dayjs("2022-02-20"),
+        dayjs("2022-02-27"),
         [1, 1, 1, 1, 0, 0, 0]
       )
+      //20, 21, 23, 23
     ).toBe(4);
   });
 
-  it("pastToThisWeek: month change", () => {
+  test("pastToThisWeek: month change", () => {
     expect(
       getAllDayEventWidth(
         1000, //this index shouldnt matter in this scenario
         dayjs("2022-02-28"),
-        dayjs("2022-03-07"),
+        dayjs("2022-03-08"),
         dayjs("2022-03-06"),
         dayjs("2022-03-12"),
         [1, 1, 0, 0, 0, 0, 0]
@@ -76,7 +89,7 @@ describe("getAllDayEventWidth!", () => {
     ).toBe(2);
   });
 
-  it("pastToFutureWeek", () => {
+  test("pastToFutureWeek", () => {
     expect(
       getAllDayEventWidth(
         0,
@@ -102,6 +115,108 @@ describe("getAllDayEventWidth!", () => {
         widths
       )
     ).toBeLessThanOrEqual(maxWidth);
+  });
+});
+
+describe("getLeftPosition", () => {
+  it("is not more than sum of 6 day widths", () => {
+    const lastDayOfWeek = getLeftPosition(
+      6,
+      dayjs("2022-02-26"),
+      dayjs("2022-02-26"),
+      dayjs("2022-02-20"),
+      dayjs("2022-02-26"),
+      [1, 1, 1, 1, 1, 1, 900]
+    );
+
+    expect(lastDayOfWeek).toBe(6);
+  });
+  test("pastToThisWeek", () => {
+    expect(
+      getLeftPosition(
+        9,
+        dayjs("2022-02-02"),
+        dayjs("2022-02-23"),
+        dayjs("2022-02-20"),
+        dayjs("2022-02-26"),
+        [1, 1, 1, 1, 1, 1, 1]
+      )
+    ).toBe(0);
+  });
+  test("pastToFutureWeek", () => {
+    expect(
+      getLeftPosition(
+        6,
+        dayjs("2019-11-11"),
+        dayjs("2030-11-11"),
+        dayjs("2022-02-20"),
+        dayjs("2022-02-26"),
+        [1, 1, 1, 1, 1, 1, 1]
+      )
+    ).toBe(0);
+  });
+  test("thisWeekOnly", () => {
+    const beginningOfWeek = getLeftPosition(
+      0,
+      dayjs("2022-02-20"),
+      dayjs("2022-02-23"),
+      dayjs("2022-02-20"),
+      dayjs("2022-02-26"),
+      [0, 0, 0, 0, 0, 0, 0]
+    );
+    expect(beginningOfWeek).toBe(0);
+
+    const midWeek = getLeftPosition(
+      4,
+      dayjs("2022-02-24"),
+      dayjs("2022-02-26"),
+      dayjs("2022-02-20"),
+      dayjs("2022-02-26"),
+      [1, 1, 1, 1, 0, 0, 0]
+    );
+    expect(midWeek).toBe(4);
+
+    const endOfWeek = getLeftPosition(
+      6,
+      dayjs("2022-02-26"),
+      dayjs("2022-02-26"),
+      dayjs("2022-02-20"),
+      dayjs("2022-02-26"),
+      [1, 1, 1, 1, 1, 1, 900]
+    );
+    expect(endOfWeek).toBe(6);
+  });
+
+  test("thisToFutureWeek", () => {
+    const beginningOfWeek = getLeftPosition(
+      1,
+      dayjs("2022-02-21"),
+      dayjs("3000-03-03"),
+      dayjs("2022-02-20"),
+      dayjs("2022-02-26"),
+      [1, 0, 0, 0, 0, 0, 0]
+    );
+    expect(beginningOfWeek).toBe(1);
+
+    const midWeek = getLeftPosition(
+      4,
+      dayjs("2022-02-23"),
+      dayjs("3000-03-03"),
+      dayjs("2022-02-20"),
+      dayjs("2022-02-26"),
+      [1, 1, 1, 1, 0, 0, 0]
+    );
+    expect(midWeek).toBe(4);
+
+    const endOfWeek = getLeftPosition(
+      6,
+      dayjs("2022-02-25"),
+      dayjs("3000-03-03"),
+      dayjs("2022-02-20"),
+      dayjs("2022-02-26"),
+      [1, 1, 1, 1, 1, 1, 0]
+    );
+    expect(endOfWeek).toBe(6);
   });
 });
 

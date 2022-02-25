@@ -225,7 +225,7 @@ export const CalendarView = () => {
                 : dayNumberToDisplay;
 
             if (component.today.isAfter(monthDayJs)) {
-              weekDayTextColor = getAlphaColor(ColorNames.WHITE_1, 0.6);
+              weekDayTextColor = getAlphaColor(ColorNames.WHITE_1, 0.55);
             }
 
             const flexBasis = core.getFlexBasisByDay(day);

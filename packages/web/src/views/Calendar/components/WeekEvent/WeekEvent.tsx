@@ -8,7 +8,10 @@ import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
-import { getAllDayEventWidth } from "@web/ducks/events/event.helpers";
+import {
+  getAllDayEventWidth,
+  getLeftPosition,
+} from "@web/ducks/events/event.helpers";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 
@@ -25,6 +28,9 @@ const WeekEventComponent = (
 
   const { component, core, eventHandlers } = weekViewProps;
 
+  /*****
+  State
+  *****/
   const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
     component.editingEvent?._id === event._id && !event.isEditing;
@@ -42,8 +48,19 @@ const WeekEventComponent = (
   /**************
    Size + Position
    **************/
+  const widths = Array.from(component.weekDaysRef.current?.children || []).map(
+    (e) => e.clientWidth
+  );
   let top = core.getEventCellHeight() * startTime;
-  let left = core.getLeftPositionByDayIndex(startIndex);
+  // let left = core.getLeftPositionByDayIndex(startIndex, widths);
+  let left = getLeftPosition(
+    startIndex,
+    startDate,
+    endDate,
+    component.startOfSelectedWeekDay,
+    component.endOfSelectedWeekDay,
+    widths
+  );
   const durationHours = endDate.diff(startDate) * 2.7777777777778e-7; // ms to hours
   let height = core.getEventCellHeight() * durationHours;
   let width =
@@ -53,24 +70,18 @@ const WeekEventComponent = (
   width -= 13;
 
   if (event.isAllDay) {
-    console.log(event.title);
     height = core.getEventCellHeight() / 4;
     const order = event.allDayOrder || 1;
     top = core.getAllDayEventCellHeight() - height * order;
 
-    const allDayElements = component.weekDaysRef.current?.children;
-    if (allDayElements) {
-      const allDayWidths = Array.from(allDayElements).map((e) => e.clientWidth);
-
-      width = getAllDayEventWidth(
-        startIndex,
-        startDate,
-        endDate,
-        component.startOfSelectedWeekDay,
-        component.endOfSelectedWeekDay,
-        allDayWidths
-      );
-    }
+    width = getAllDayEventWidth(
+      startIndex,
+      startDate,
+      endDate,
+      component.startOfSelectedWeekDay,
+      component.endOfSelectedWeekDay,
+      widths
+    );
   }
 
   if (event.groupCount && event.groupOrder) {
