@@ -3,8 +3,8 @@ import dayjs from "dayjs";
 import {
   allDayEventsMinimal,
   staggeredAllDayEvents,
-} from "@core/test-data/data.allDayEvents";
-import { allDayEvents } from "@core/test-data/data.allDayEvents2";
+} from "@core/__mocks__/events.allday.1.js";
+import { allDayEvents } from "@core/__mocks__/events.allday.2.js";
 
 import {
   getAllDayCounts,

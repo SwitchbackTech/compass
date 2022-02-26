@@ -1,6 +1,6 @@
 import { MongoClient } from "mongodb";
 
-import { mockEventSetJan22 } from "@core/__mocks__/events.1";
+import { mockEventSetJan22 } from "@core/__mocks__/events.jan22";
 
 import { getReadAllFilter } from "../services/event.service.helpers";
 

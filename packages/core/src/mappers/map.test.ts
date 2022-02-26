@@ -1,6 +1,6 @@
 import { Origin, Priorities } from "../core.constants";
-import { gcalEvents } from "../test-data/gcal/data.gcal.event";
-import { gcalCalendarList } from "../test-data/gcal/data.gcal.calendarlist";
+import { gcalEvents } from "../__mocks__/gcal/gcal.event";
+import { gcalCalendarList } from "../__mocks__/gcal/gcal.calendarlist";
 import { MapCalendarList } from "./map.calendarlist";
 import { MapEvent } from "./map.event";
 
