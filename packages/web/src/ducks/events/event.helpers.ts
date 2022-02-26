@@ -13,6 +13,12 @@ dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isBetween);
 
+enum Category {
+  ThisWeekOnly = "thisWeekOnly",
+  ThisToFutureWeek = "thisToFutureWeek",
+  PastToThisWeek = "pastToThisWeek",
+  PastToFutureWeek = "pastToFutureWeek",
+}
 // rudimentary handling of errors
 // meant for temporary testing, will be replaced
 export const handleErrorTemp = (error: Error) => {
@@ -29,101 +35,102 @@ export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
 
   return allDayCountByDate;
 };
-
+``;
 export const getAllDayEventWidth = (
+  category: Category,
   startIndex: number,
   start: Dayjs,
   end: Dayjs,
   startOfWeek: Dayjs,
-  endOfWeek: Dayjs,
   widths: number[]
 ) => {
+  let width: number;
+  switch (category) {
+    case Category.ThisWeekOnly: {
+      const days = end.diff(start, "days");
+      if (days === 0) {
+        // if only one day, then use original width
+        width = widths[startIndex];
+      }
+      width = _sumEventWidths(days, startIndex, widths);
+      break;
+    }
+    case Category.ThisToFutureWeek: {
+      width = _sumEventWidths(7 - startIndex, startIndex, widths);
+      break;
+    }
+    case Category.PastToThisWeek: {
+      const daysThisWeek = end.diff(startOfWeek, "days");
+      // start at 0 because event carries over from last week
+      width = _sumEventWidths(daysThisWeek, 0, widths);
+      break;
+    }
+    case Category.PastToFutureWeek: {
+      width = _sumEventWidths(7, 0, widths);
+      break;
+    }
+    default: {
+      console.log("Logic error while parsing date width");
+      width = -666;
+    }
+  }
+  return width;
+};
+
+export const getEventCategory = (
+  start: Dayjs,
+  end: Dayjs,
+  startOfWeek: Dayjs,
+  endOfWeek: Dayjs
+): Category => {
   const startsThisWeek = start.isBetween(startOfWeek, endOfWeek, "day", "[]");
   const endsThisWeek = end.isBetween(startOfWeek, endOfWeek, "day", "[]");
 
-  const thisWeekOnly = startsThisWeek && endsThisWeek;
-  const thisToFutureWeek = startsThisWeek && !endsThisWeek;
-  const pastToThisWeek = !startsThisWeek && endsThisWeek;
-  const pastToFutureWeek = !startsThisWeek && !endsThisWeek;
-  const summary = `
-  \tstartIndex: ${startIndex}
-  \tstart: ${start.toString()}
-  \tend: ${end.toString()}
-  -----
-  \t${startOfWeek}  - \t${endOfWeek}
-  \twidths: ${widths}
-  ----
-  \tthisWeekOnly: ${thisWeekOnly}  
-  \tthisToFutureWeek: ${thisToFutureWeek}
-  \tpastToThisWeek: ${pastToThisWeek}
-  \tpastToFutureWeek: ${pastToFutureWeek}
-  ----
-  \tstartsThisWeek: ${startsThisWeek}
-  \tendsThisWeek: ${endsThisWeek}
-  `;
-  if (thisWeekOnly) {
-    const days = end.diff(start, "days");
-    if (days === 0) {
-      // if only one day, then use original width
-      return widths[startIndex];
-    }
-    const width = _sumEventWidths(days, startIndex, widths);
-    return width;
+  if (startsThisWeek && endsThisWeek) {
+    return Category.ThisWeekOnly;
+  }
+  if (startsThisWeek && !endsThisWeek) {
+    return Category.ThisToFutureWeek;
+  }
+  if (!startsThisWeek && endsThisWeek) {
+    return Category.PastToThisWeek;
+  }
+  if (!startsThisWeek && !endsThisWeek) {
+    return Category.PastToFutureWeek;
   }
 
-  if (thisToFutureWeek) {
-    const multiWeekEventWidth = _sumEventWidths(
-      7 - startIndex,
-      startIndex,
-      widths
-    );
-    return multiWeekEventWidth;
-  }
+  console.log("Logic error while getting event category");
 
-  if (pastToThisWeek) {
-    const daysThisWeek = end.diff(startOfWeek, "days");
-    // start at 0 because event carries over from last week
-    const multiWeekEventWidth = _sumEventWidths(daysThisWeek, 0, widths);
-
-    return multiWeekEventWidth;
-  }
-
-  if (pastToFutureWeek) {
-    const fullWeek = _sumEventWidths(7, 0, widths);
-    return fullWeek;
-  }
-
-  console.log("Logic error while parsing date width");
-  return -666;
+  return Category.ThisWeekOnly;
 };
 
 export const getLeftPosition = (
+  category: Category,
   startIndex: number,
-  start: Dayjs,
-  end: Dayjs,
-  startOfWeek: Dayjs,
-  endOfWeek: Dayjs,
   widths: number[]
 ) => {
-  const startsThisWeek = start.isBetween(startOfWeek, endOfWeek, "day", "[]");
-  const endsThisWeek = end.isBetween(startOfWeek, endOfWeek, "day", "[]");
-
-  const thisWeekOnly = startsThisWeek && endsThisWeek;
-  const thisToFutureWeek = startsThisWeek && !endsThisWeek;
-  const pastToThisWeek = !startsThisWeek && endsThisWeek;
-  const pastToFutureWeek = !startsThisWeek && !endsThisWeek;
-
-  if (pastToThisWeek || pastToFutureWeek) {
-    return 0;
+  let positionStart: number;
+  switch (category) {
+    case Category.PastToThisWeek:
+    case Category.PastToFutureWeek: {
+      positionStart = 0;
+      break;
+    }
+    case Category.ThisWeekOnly:
+    case Category.ThisToFutureWeek:
+      {
+        // add up from 0 index to startIndex
+        positionStart = widths.reduce((accum, width, index) => {
+          return index < startIndex ? accum + width : accum;
+        }, 0);
+      }
+      break;
+    default: {
+      console.log("Logic error while parsing left position of date");
+      positionStart = -666;
+    }
   }
-  if (thisWeekOnly || thisToFutureWeek) {
-    // add up from 0 index to startIndex
-    return widths.reduce((accum, width, index) => {
-      return index < startIndex ? accum + width : accum;
-    }, 0);
-  }
-  console.log("Logic error while parsing left position of date");
-  return -666;
+  return positionStart;
 };
 
 export const getWeekDayLabel = (day: Dayjs) =>

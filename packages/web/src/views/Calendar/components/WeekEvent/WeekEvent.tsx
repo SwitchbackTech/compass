@@ -10,6 +10,7 @@ import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewP
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 import {
   getAllDayEventWidth,
+  getEventCategory,
   getLeftPosition,
 } from "@web/ducks/events/event.helpers";
 
@@ -52,15 +53,13 @@ const WeekEventComponent = (
     (e) => e.clientWidth
   );
   let top = core.getEventCellHeight() * startTime;
-  // let left = core.getLeftPositionByDayIndex(startIndex, widths);
-  let left = getLeftPosition(
-    startIndex,
+  const category = getEventCategory(
     startDate,
     endDate,
     component.startOfSelectedWeekDay,
-    component.endOfSelectedWeekDay,
-    widths
+    component.endOfSelectedWeekDay
   );
+  let left = getLeftPosition(category, startIndex, widths);
   const durationHours = endDate.diff(startDate) * 2.7777777777778e-7; // ms to hours
   let height = core.getEventCellHeight() * durationHours;
   let width =
@@ -75,11 +74,11 @@ const WeekEventComponent = (
     top = core.getAllDayEventCellHeight() - height * order;
 
     width = getAllDayEventWidth(
+      category,
       startIndex,
       startDate,
       endDate,
       component.startOfSelectedWeekDay,
-      component.endOfSelectedWeekDay,
       widths
     );
   }

@@ -1,7 +1,11 @@
 import { Schema_Event, Query_Event } from "@core/types/event.types";
 import { InsertedIds } from "@core/types/mongo.types";
+import { Filter } from "mongodb";
 
-export const getReadAllFilter = (userId: string, query: Query_Event) => {
+export const getReadAllFilter = (
+  userId: string,
+  query: Query_Event
+): Filter<object> => {
   const { start, end, priorities } = query;
 
   let filter = { user: userId };
@@ -15,7 +19,7 @@ export const getReadAllFilter = (userId: string, query: Query_Event) => {
     const startIso = new Date(start).toISOString();
     const endIso = new Date(end).toISOString();
     // finds events whose start OR end date falls between the date range in query
-    const dateFilter = {
+    const inBetweenStartAndEnd = {
       $or: [
         {
           $and: [
@@ -48,7 +52,7 @@ export const getReadAllFilter = (userId: string, query: Query_Event) => {
       ],
     };
 
-    filter = { ...filter, ...dateFilter };
+    filter = { ...filter, ...inBetweenStartAndEnd };
   }
 
   return filter;

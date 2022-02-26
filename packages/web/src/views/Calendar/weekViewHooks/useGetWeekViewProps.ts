@@ -234,12 +234,6 @@ export const useGetWeekViewProps = () => {
     return flexBasis || 0;
   };
 
-  const getLeftPositionByDayIndex = (dayIndex: number, widths: number[]) => {
-    return widths.reduce((accum, width, index) => {
-      return index < dayIndex ? accum + width : accum;
-    }, 0);
-  };
-
   const getYByDate = (date: string) => {
     const day = dayjs(date);
     const eventCellHeight = getEventCellHeight();
@@ -556,7 +550,6 @@ export const useGetWeekViewProps = () => {
       getBeforeDaysOverflowWidth,
       getEventCellHeight,
       getFlexBasisByDay,
-      getLeftPositionByDayIndex,
     },
   };
 };
