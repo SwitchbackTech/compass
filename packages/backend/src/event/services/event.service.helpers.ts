@@ -1,6 +1,6 @@
-import { Schema_Event, Query_Event } from "@core/types/event.types";
-import { InsertedIds } from "@core/types/mongo.types";
 import { Filter } from "mongodb";
+
+import { Query_Event } from "@core/types/event.types";
 
 export const getReadAllFilter = (
   userId: string,
@@ -18,8 +18,9 @@ export const getReadAllFilter = (
   if (start && end) {
     const startIso = new Date(start).toISOString();
     const endIso = new Date(end).toISOString();
-    // finds events whose start OR end date falls between the date range in query
-    const inBetweenStartAndEnd = {
+    // include inbetween events:
+    //  start OR end date are between the date range in query
+    const inBetweenOrOverlappingEvents = {
       $or: [
         {
           $and: [
@@ -49,24 +50,21 @@ export const getReadAllFilter = (
             },
           ],
         },
+        // include overlaps:
+        //   starts before AND ends after dates
+        {
+          startDate: {
+            $lte: startIso,
+          },
+          endDate: {
+            $gte: endIso,
+          },
+        },
       ],
     };
 
-    filter = { ...filter, ...inBetweenStartAndEnd };
+    filter = { ...filter, ...inBetweenOrOverlappingEvents };
   }
 
   return filter;
-};
-
-//TODO abstract for any DTO type
-//TODO delete if unneeded
-export const mapManyToDTO = (data: Schema_Event[], newIds: InsertedIds) => {
-  //TODO change to just include a summary of events imported
-  const events: Schema_Event[] = [];
-
-  for (const [key, id] of Object.entries(newIds)) {
-    const i = parseInt(key);
-    events.push({ ...data[i], _id: id.toString() });
-  }
-  return events;
 };

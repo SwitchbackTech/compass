@@ -35,7 +35,7 @@ export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
 
   return allDayCountByDate;
 };
-``;
+
 export const getAllDayEventWidth = (
   category: Category,
   startIndex: number,
@@ -100,7 +100,6 @@ export const getEventCategory = (
   }
 
   console.log("Logic error while getting event category");
-
   return Category.ThisWeekOnly;
 };
 
@@ -164,6 +163,8 @@ export const orderEvents = (events: Schema_Event[]) => {
     }
   });
 
+  console.log("orig:", events);
+  console.log("ordered:", updatedEvents);
   return updatedEvents;
 };
 

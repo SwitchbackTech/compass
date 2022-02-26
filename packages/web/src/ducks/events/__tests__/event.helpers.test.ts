@@ -1,6 +1,9 @@
 import dayjs from "dayjs";
 
-import { allDayEventsMinimal } from "@core/test-data/data.allDayEvents";
+import {
+  allDayEventsMinimal,
+  staggeredAllDayEvents,
+} from "@core/test-data/data.allDayEvents";
 import { allDayEvents } from "@core/test-data/data.allDayEvents2";
 
 import {
@@ -252,15 +255,23 @@ describe("getLeftPosition", () => {
   });
 });
 
-describe("orderAllDayEvents", () => {
+describe("orderAllDayEvents: regular", () => {
   const events = orderEvents(allDayEventsMinimal);
   it("doesn't add or remove any events", () => {
     expect(events.length).toEqual(allDayEventsMinimal.length);
   });
-  it("sets the order for each event", () => {
+  it("sets order for each event", () => {
     events.forEach((e) => {
       if (e.allDayOrder === undefined) throw Error("missing order");
     });
+  });
+  it("sets order for each event: multi-day + overlapping", () => {
+    const e = orderEvents(staggeredAllDayEvents);
+    // assert that there arent duplicate '1's for each day
+    const f = "";
+    // events.forEach((e) => {
+    // if (e.allDayOrder === undefined) throw Error("missing order");
+    // });
   });
   it("orders title descending (c, b, a)", () => {
     const first = events.filter((e) => e.title === "test1")[0];

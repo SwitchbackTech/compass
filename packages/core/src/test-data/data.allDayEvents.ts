@@ -60,7 +60,6 @@ export const allDayEventsMinimal = [
     startDate: "2022-02-09",
     endDate: "2022-02-10",
   },
-
   {
     _id: "6202d0970380e5a68fde0a0c",
     isAllDay: true,
@@ -68,12 +67,35 @@ export const allDayEventsMinimal = [
     endDate: "2022-02-09",
     title: "0 ride",
   },
-
   {
     _id: "6202e51d0380e5a68fde0a10",
     isAllDay: true,
     startDate: "2022-02-09",
     endDate: "2022-02-09",
     title: "xyz",
+  },
+];
+
+export const staggeredAllDayEvents = [
+  {
+    _id: "621928f4b6d2f2affe5a4942",
+    title: "foo",
+    isAllDay: true,
+    startDate: "2022-02-26",
+    endDate: "2022-02-28",
+  },
+  {
+    _id: "621928f4b6d2f2affe5a4943",
+    title: "foo2",
+    isAllDay: true,
+    startDate: "2022-02-25",
+    endDate: "2022-02-26",
+  },
+  {
+    _id: "621928f4b6d2f2affe5a4945",
+    title: "foo3",
+    isAllDay: true,
+    startDate: "2022-02-02",
+    endDate: "2022-02-24",
   },
 ];
