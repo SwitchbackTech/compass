@@ -78,8 +78,22 @@ export const allDayEventsMinimal = [
 
 export const staggeredAllDayEvents = [
   {
+    _id: "abmbm",
+    title: "Feb 24 - Feb 28",
+    isAllDay: true,
+    startDate: "2022-02-24",
+    endDate: "2022-03-01",
+  },
+  {
+    _id: "kkdbm",
+    title: "Feb 26 ",
+    isAllDay: true,
+    startDate: "2022-02-26",
+    endDate: "2022-02-27",
+  },
+  {
     _id: "621928f4b6d2f2affe5a4942",
-    title: "foo",
+    title: "Feb 26 - Feb 28",
     isAllDay: true,
     startDate: "2022-02-26",
     endDate: "2022-02-28",

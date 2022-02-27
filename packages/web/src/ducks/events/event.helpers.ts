@@ -163,8 +163,6 @@ export const orderEvents = (events: Schema_Event[]) => {
     }
   });
 
-  console.log("orig:", events);
-  console.log("ordered:", updatedEvents);
   return updatedEvents;
 };
 

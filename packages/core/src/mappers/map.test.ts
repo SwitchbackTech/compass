@@ -74,6 +74,14 @@ describe("toCompass", () => {
   // it("sets priority to unassigned", () => {
   // allEvents.forEach((ce) => expect(ce.priority).toBe(Priorities.UNASSIGNED));
   // });
+  it("sets isAllDay correctly", () => {
+    allEvents.forEach((e) => {
+      if (e.startDate.length === "YYYY-MM-DD".length) {
+        expect(e.isAllDay).toBe(true);
+      }
+    });
+  });
+
   it("skips cancelled events", () => {
     // future: run schema validation
     const i = gcalEvents.items;

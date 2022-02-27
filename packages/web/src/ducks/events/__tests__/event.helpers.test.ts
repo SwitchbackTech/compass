@@ -28,7 +28,7 @@ describe("getAllDayCounts", () => {
     expect(numDates).toBe(4); //07, 08, 09, 11
   });
 });
-describe("getAllDayEventWidth!", () => {
+describe("getAllDayEventWidth", () => {
   test("thisWeekOnly: 1 day", () => {
     const start = dayjs("2040-10-28");
     const end = dayjs("2040-10-29");
@@ -255,35 +255,47 @@ describe("getLeftPosition", () => {
   });
 });
 
-describe("orderAllDayEvents: regular", () => {
-  const events = orderEvents(allDayEventsMinimal);
+describe("orderAllDayEvents", () => {
+  // const combinedEvents = [...allDayEventsMinimal, ...staggeredAllDayEvents];
+  const combinedEvents = [...allDayEventsMinimal];
+  const orderedEvents = orderEvents(combinedEvents);
   it("doesn't add or remove any events", () => {
-    expect(events.length).toEqual(allDayEventsMinimal.length);
+    expect(orderedEvents.length).toEqual(allDayEventsMinimal.length);
   });
   it("sets order for each event", () => {
-    events.forEach((e) => {
+    orderedEvents.forEach((e) => {
       if (e.allDayOrder === undefined) throw Error("missing order");
     });
   });
-  it("sets order for each event: multi-day + overlapping", () => {
-    const e = orderEvents(staggeredAllDayEvents);
+  it("sets unique order for each event", () => {
+    // const _events = orderEvents(events);
     // assert that there arent duplicate '1's for each day
-    const f = "";
-    // events.forEach((e) => {
-    // if (e.allDayOrder === undefined) throw Error("missing order");
-    // });
+    const uniqueStartDates = Array.from(
+      new Set(orderedEvents.map((e) => e.startDate))
+    );
+
+    uniqueStartDates.forEach((startDate) => {
+      const eventsOnDay = orderedEvents.filter(
+        (e) => e.startDate === startDate
+      );
+      if (eventsOnDay.length > 1) {
+        const orderValues = eventsOnDay.map((e) => e.allDayOrder);
+        const noDuplicates = new Set(orderValues).size === orderValues.length;
+        expect(noDuplicates).toBe(true);
+      }
+    });
   });
   it("orders title descending (c, b, a)", () => {
-    const first = events.filter((e) => e.title === "test1")[0];
+    const first = orderedEvents.filter((e) => e.title === "test1")[0];
     expect(first.allDayOrder).toBe(5);
 
-    const fifth = events.filter((e) => e.title === "test5")[0];
+    const fifth = orderedEvents.filter((e) => e.title === "test5")[0];
     expect(fifth.allDayOrder).toBe(1);
   });
 
   it("sets unique order for two events with same title", () => {
-    const dup1 = events.filter((e) => e.title === "test3duplicate")[0];
-    const dup2 = events.filter((e) => e.title === "test3duplicate")[1];
+    const dup1 = orderedEvents.filter((e) => e.title === "test3duplicate")[0];
+    const dup2 = orderedEvents.filter((e) => e.title === "test3duplicate")[1];
     expect(dup1.allDayOrder).not.toEqual(dup2.allDayOrder);
   });
 });
