@@ -2,9 +2,7 @@ import { combineReducers } from "redux";
 import dayjs from "dayjs";
 import produce from "immer";
 import { createSlice } from "@reduxjs/toolkit";
-
 import { Schema_Event } from "@core/types/event.types";
-
 import { RootState } from "@web/store";
 import { createAsyncSlice } from "@web/common/store/helpers";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";

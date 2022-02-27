@@ -1,5 +1,4 @@
 import { InsertManyResult } from "mongodb";
-
 import { Result_Import_Gcal } from "@core/types/sync.types";
 import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
@@ -10,13 +9,6 @@ import {
   Params_DeleteMany,
   Result_DeleteMany,
 } from "@core/types/event.types";
-
-import {
-  gCalendar,
-  gParamsEventsList,
-  gSchema$Event,
-} from "../../../declarations";
-
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
@@ -24,9 +16,14 @@ import { Logger } from "@backend/common/logger/common.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
 import { getGcal } from "@backend/auth/services/google.auth.service";
+import { Origin } from "@core/core.constants";
 
 import { getReadAllFilter } from "./event.service.helpers";
-import { Origin } from "@core/core.constants";
+import {
+  gCalendar,
+  gParamsEventsList,
+  gSchema$Event,
+} from "../../../declarations";
 
 const logger = Logger("app:event.service");
 
@@ -349,18 +346,6 @@ class EventService {
 
   async updateMany(userId: string, events: Schema_Event[]) {
     return "not done implementing this operation";
-
-    const testId = `events.$[_id]`;
-    const updateResult = mongoService.db
-      .collection(Collections.EVENT)
-      .updateMany(
-        // { user: userId, _id: mongoService.objectId("cEvents.$[_id]") },
-        { user: userId, _id: mongoService.objectId(`events.${[_id]}`) },
-        // { user: "testUser1", gEventId: "events.$[gEventId]" },
-        { $set: events },
-        { upsert: true }
-      );
-    return updateResult;
   }
 }
 

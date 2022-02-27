@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.json",
   // Most ts-node options can be specified here using their programmatic names.
   "ts-node": {
     // It is faster to skip typechecking.
@@ -19,15 +20,15 @@
     "outDir": "./build",
     "strict": false,
     "allowJs": true,
-    "checkJs": true,
-    "esModuleInterop": true,
-    "inlineSourceMap": true,
-    // "baseUrl": "src",
-    "baseUrl": ".",
-    "paths": {
-      // "@backend/*": ["./*"],
-      "@backend/*": ["src/*"],
-      "@core/*": ["../core/src/*"]
-    }
+    "checkJs": true
+    // "esModuleInterop": true,
+    // "sourceMap": false,
+    // "inlineSourceMap": true
+    // "baseUrl": ".",
+    // "paths": {
+    // "@backend/*": ["./*"],
+    // "@backend/*": ["src/*"],
+    // "@core/*": ["../core/src/*"]
+    // }
   }
 }
