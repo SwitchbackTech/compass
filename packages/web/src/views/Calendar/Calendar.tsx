@@ -44,7 +44,7 @@ import {
 const dayTimes = getHourlyTimes(dayjs());
 
 export const CalendarView = () => {
-  console.log("rendering CalendarView");
+  // console.log("rendering CalendarView");
   const weekViewProps = useGetWeekViewProps();
   const { component, core, eventHandlers } = weekViewProps;
 
@@ -225,7 +225,7 @@ export const CalendarView = () => {
                 : dayNumberToDisplay;
 
             if (component.today.isAfter(monthDayJs)) {
-              weekDayTextColor = getAlphaColor(ColorNames.WHITE_1, 0.6);
+              weekDayTextColor = getAlphaColor(ColorNames.WHITE_1, 0.55);
             }
 
             const flexBasis = core.getFlexBasisByDay(day);

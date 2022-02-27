@@ -8,6 +8,11 @@ import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
+import {
+  getAllDayEventWidth,
+  getEventCategory,
+  getLeftPosition,
+} from "@web/ducks/events/event.helpers";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 
@@ -18,12 +23,15 @@ export interface Props {
 
 const WeekEventComponent = (
   { event, weekViewProps }: Props,
-  ref: React.ForwardedRef<HTMLDivElement>
+  ref: React.ForwardedRef<HTMLButtonElement>
 ) => {
   if (!event) return null;
 
   const { component, core, eventHandlers } = weekViewProps;
 
+  /*****
+  State
+  *****/
   const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
     component.editingEvent?._id === event._id && !event.isEditing;
@@ -31,33 +39,46 @@ const WeekEventComponent = (
   /****
   Times
   *****/
-  const eventStartDay = dayjs(event.startDate);
-  const eventEndDay = dayjs(event.endDate);
-  const startDay = eventStartDay.get("day");
+  const startDate = dayjs(event.startDate);
+  const startIndex = startDate.get("day");
   const startTime =
-    component.times.indexOf(eventStartDay.format(HOURS_AM_FORMAT)) / 4;
-
-  // ms to hours
-  const duration = eventEndDay.diff(eventStartDay) * 2.7777777777778e-7;
-  const eventEndShortAmTime = eventEndDay.format(HOURS_AM_FORMAT);
+    component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
+  const endDate = dayjs(event.endDate);
+  const endTimeShortAm = endDate.format(HOURS_AM_FORMAT);
 
   /**************
    Size + Position
    **************/
+  const widths = Array.from(component.weekDaysRef.current?.children || []).map(
+    (e) => e.clientWidth
+  );
   let top = core.getEventCellHeight() * startTime;
-  let height = core.getEventCellHeight() * duration;
+  const category = getEventCategory(
+    startDate,
+    endDate,
+    component.startOfSelectedWeekDay,
+    component.endOfSelectedWeekDay
+  );
+  let left = getLeftPosition(category, startIndex, widths);
+  const durationHours = endDate.diff(startDate) * 2.7777777777778e-7; // ms to hours
+  let height = core.getEventCellHeight() * durationHours;
   let width =
-    component.weekDaysRef.current?.children[startDay].clientWidth || 0;
-  width -= 15; // where is this number coming from ?
-  let left = core.getLeftPositionByDayIndex(startDay);
+    component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
+  // auto-deduct width for padding
+  // TODO: handle width in CSS and without using hard-coded numbers, but rather %
+  width -= 13;
 
   if (event.isAllDay) {
     height = core.getEventCellHeight() / 4;
-    const eventOrder = event.allDayOrder || 1;
-    top = core.getAllDayEventCellHeight() - height * eventOrder;
-    width = core.getAllDayEventWidth(
-      startDay,
-      eventEndDay.diff(eventStartDay, "days")
+    const order = event.allDayOrder || 1;
+    top = core.getAllDayEventCellHeight() - height * order;
+    width = getAllDayEventWidth(
+      category,
+      startIndex,
+      startDate,
+      endDate,
+      component.startOfSelectedWeekDay,
+      widths
     );
   }
 
@@ -79,7 +100,7 @@ const WeekEventComponent = (
       width={width}
       top={top}
       isTimeShown={!!event.isTimeSelected}
-      duration={+duration.toFixed(2) || 0.25}
+      duration={+durationHours.toFixed(2) || 0.25}
       allDay={event.isAllDay || false}
     >
       <Flex flexWrap={FlexWrap.WRAP} alignItems={AlignItems.CENTER}>
@@ -90,8 +111,8 @@ const WeekEventComponent = (
 
         {event.isTimeSelected && event.showStartTimeLabel && (
           <Text lineHeight={7} size={7}>
-            {eventStartDay.format(HOURS_AM_FORMAT)}
-            {eventEndShortAmTime && ` - ${eventEndShortAmTime}`}
+            {startDate.format(HOURS_AM_FORMAT)}
+            {endTimeShortAm && ` - ${endTimeShortAm}`}
           </Text>
         )}
       </Flex>

@@ -30,7 +30,7 @@ const hoverColorsByPriority = {
   [Priorities.SELF]: getColor(ColorNames.BLUE_3_BRIGHT),
 };
 
-export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
+export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
   const bgColor = getColor(colorNameByPriority[props.priority]);
 
   const lineClamp = () => {

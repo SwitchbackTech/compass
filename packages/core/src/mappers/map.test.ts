@@ -1,6 +1,6 @@
 import { Origin, Priorities } from "../core.constants";
-import { gcalEvents } from "../test-data/gcal/data.gcal.event";
-import { gcalCalendarList } from "../test-data/gcal/data.gcal.calendarlist";
+import { gcalEvents } from "../__mocks__/gcal/gcal.event";
+import { gcalCalendarList } from "../__mocks__/gcal/gcal.calendarlist";
 import { MapCalendarList } from "./map.calendarlist";
 import { MapEvent } from "./map.event";
 
@@ -70,9 +70,34 @@ describe("toCompass", () => {
   );
 
   const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
-  it("sets priority to unassigned", () => {
-    allEvents.forEach((ce) => expect(ce.priority).toBe(Priorities.UNASSIGNED));
+  // $$ uncomment once re-enabling unassigned priorities
+  // it("sets priority to unassigned", () => {
+  // allEvents.forEach((ce) => expect(ce.priority).toBe(Priorities.UNASSIGNED));
+  // });
+  it("sets isAllDay correctly", () => {
+    allEvents.forEach((e) => {
+      if (e.startDate.length === "YYYY-MM-DD".length) {
+        expect(e.isAllDay).toBe(true);
+      }
+    });
   });
+
+  it("skips cancelled events", () => {
+    // future: run schema validation
+    const i = gcalEvents.items;
+    const events = MapEvent.toCompass("someId", i, Origin.Google);
+
+    let hasCancelledEvent = false;
+    events.forEach((e) => {
+      if (e.status === "cancelled") {
+        hasCancelledEvent = true;
+        return;
+      }
+    });
+
+    expect(hasCancelledEvent).toBe(false);
+  });
+
   it("uses an expected origin", () => {
     allEvents.forEach((ce) => {
       expect(Object.values(Origin).includes(ce.origin)).toBe(true);

@@ -1,7 +1,11 @@
-import { Schema_Event, Query_Event } from "@core/types/event.types";
-import { InsertedIds } from "@core/types/mongo.types";
+import { Filter } from "mongodb";
 
-export const getReadAllFilter = (userId: string, query: Query_Event) => {
+import { Query_Event } from "@core/types/event.types";
+
+export const getReadAllFilter = (
+  userId: string,
+  query: Query_Event
+): Filter<object> => {
   const { start, end, priorities } = query;
 
   let filter = { user: userId };
@@ -12,45 +16,55 @@ export const getReadAllFilter = (userId: string, query: Query_Event) => {
   }
 
   if (start && end) {
-    const dateFilter = {
-      $and: [
+    const startIso = new Date(start).toISOString();
+    const endIso = new Date(end).toISOString();
+    // include inbetween events:
+    //  start OR end date are between the date range in query
+    const inBetweenOrOverlappingEvents = {
+      $or: [
         {
-          $or: [
+          $and: [
             {
               startDate: {
-                $gte: new Date(start).toISOString(),
+                $gte: startIso,
               },
             },
             {
-              startDate: { $gte: new Date(start).toISOString() },
+              startDate: {
+                $lte: endIso,
+              },
             },
           ],
         },
         {
-          $or: [
+          $and: [
             {
-              endDate: { $lte: new Date(end).toISOString() },
+              endDate: {
+                $gte: startIso,
+              },
             },
-            { endDate: { $lte: new Date(end).toISOString() } },
+            {
+              endDate: {
+                $lte: endIso,
+              },
+            },
           ],
+        },
+        // include overlaps:
+        //   starts before AND ends after dates
+        {
+          startDate: {
+            $lte: startIso,
+          },
+          endDate: {
+            $gte: endIso,
+          },
         },
       ],
     };
-    filter = { ...filter, ...dateFilter };
+
+    filter = { ...filter, ...inBetweenOrOverlappingEvents };
   }
 
   return filter;
-};
-
-//TODO abstract for any DTO type
-//TODO delete if unneeded
-export const mapManyToDTO = (data: Schema_Event[], newIds: InsertedIds) => {
-  //TODO change to just include a summary of events imported
-  const events: Schema_Event[] = [];
-
-  for (const [key, id] of Object.entries(newIds)) {
-    const i = parseInt(key);
-    events.push({ ...data[i], _id: id.toString() });
-  }
-  return events;
 };

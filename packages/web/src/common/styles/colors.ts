@@ -60,7 +60,7 @@ export const invertedColors = {
 export const linearGradient = `linear-gradient(90deg, ${colors.teal_3}, #4764CA)`;
 
 export const colorNameByPriority = {
-  [Priorities.UNASSIGNED]: ColorNames.BLUE_1,
+  [Priorities.UNASSIGNED]: ColorNames.GREY_4,
   [Priorities.WORK]: ColorNames.DARK_5,
   [Priorities.SELF]: ColorNames.BLUE_3,
   [Priorities.RELATIONS]: ColorNames.GREY_7,

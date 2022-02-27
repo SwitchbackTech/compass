@@ -1,8 +1,9 @@
 import dayjs, { Dayjs } from "dayjs";
 import { schema } from "normalizr";
+import { v4 as uuidv4 } from "uuid";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import { v4 as uuidv4 } from "uuid";
+import isBetween from "dayjs/plugin/isBetween";
 
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
@@ -10,7 +11,14 @@ import { Priorities } from "@core/core.constants";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
+dayjs.extend(isBetween);
 
+enum Category {
+  ThisWeekOnly = "thisWeekOnly",
+  ThisToFutureWeek = "thisToFutureWeek",
+  PastToThisWeek = "pastToThisWeek",
+  PastToFutureWeek = "pastToFutureWeek",
+}
 // rudimentary handling of errors
 // meant for temporary testing, will be replaced
 export const handleErrorTemp = (error: Error) => {
@@ -26,6 +34,102 @@ export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
   });
 
   return allDayCountByDate;
+};
+
+export const getAllDayEventWidth = (
+  category: Category,
+  startIndex: number,
+  start: Dayjs,
+  end: Dayjs,
+  startOfWeek: Dayjs,
+  widths: number[]
+) => {
+  let width: number;
+  switch (category) {
+    case Category.ThisWeekOnly: {
+      const days = end.diff(start, "days");
+      if (days === 0) {
+        // if only one day, then use original width
+        width = widths[startIndex];
+      }
+      width = _sumEventWidths(days, startIndex, widths);
+      break;
+    }
+    case Category.ThisToFutureWeek: {
+      width = _sumEventWidths(7 - startIndex, startIndex, widths);
+      break;
+    }
+    case Category.PastToThisWeek: {
+      const daysThisWeek = end.diff(startOfWeek, "days");
+      // start at 0 because event carries over from last week
+      width = _sumEventWidths(daysThisWeek, 0, widths);
+      break;
+    }
+    case Category.PastToFutureWeek: {
+      width = _sumEventWidths(7, 0, widths);
+      break;
+    }
+    default: {
+      console.log("Logic error while parsing date width");
+      width = -666;
+    }
+  }
+  return width;
+};
+
+export const getEventCategory = (
+  start: Dayjs,
+  end: Dayjs,
+  startOfWeek: Dayjs,
+  endOfWeek: Dayjs
+): Category => {
+  const startsThisWeek = start.isBetween(startOfWeek, endOfWeek, "day", "[]");
+  const endsThisWeek = end.isBetween(startOfWeek, endOfWeek, "day", "[]");
+
+  if (startsThisWeek && endsThisWeek) {
+    return Category.ThisWeekOnly;
+  }
+  if (startsThisWeek && !endsThisWeek) {
+    return Category.ThisToFutureWeek;
+  }
+  if (!startsThisWeek && endsThisWeek) {
+    return Category.PastToThisWeek;
+  }
+  if (!startsThisWeek && !endsThisWeek) {
+    return Category.PastToFutureWeek;
+  }
+
+  console.log("Logic error while getting event category");
+  return Category.ThisWeekOnly;
+};
+
+export const getLeftPosition = (
+  category: Category,
+  startIndex: number,
+  widths: number[]
+) => {
+  let positionStart: number;
+  switch (category) {
+    case Category.PastToThisWeek:
+    case Category.PastToFutureWeek: {
+      positionStart = 0;
+      break;
+    }
+    case Category.ThisWeekOnly:
+    case Category.ThisToFutureWeek:
+      {
+        // add up from 0 index to startIndex
+        positionStart = widths.reduce((accum, width, index) => {
+          return index < startIndex ? accum + width : accum;
+        }, 0);
+      }
+      break;
+    default: {
+      console.log("Logic error while parsing left position of date");
+      positionStart = -666;
+    }
+  }
+  return positionStart;
 };
 
 export const getWeekDayLabel = (day: Dayjs) =>
@@ -60,6 +164,22 @@ export const orderEvents = (events: Schema_Event[]) => {
   });
 
   return updatedEvents;
+};
+
+const _sumEventWidths = (
+  duration: number,
+  startIndex: number,
+  widths: number[]
+) => {
+  // create array of numbers, one for each day, setting each to 0 by default,
+  // then set values based on the widths of the days of the event
+  const eventWidths: number[] = Array(duration)
+    .fill(0)
+    .map((_, index) => widths[index + startIndex] || 0);
+
+  // add up width of each day of the event
+  const eventWidth = eventWidths.reduce((accum, value) => accum + value, 0);
+  return eventWidth;
 };
 
 /*
@@ -213,7 +333,6 @@ export const editEventLocalStorage = async (
   id: string,
   event: Schema_Event
 ) => {
-  console.log(`editing evt: ${id}`);
   const eventsResponse = await getEventsLocalStorage();
 
   const events = eventsResponse.data

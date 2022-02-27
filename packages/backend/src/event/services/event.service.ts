@@ -17,11 +17,11 @@ import {
   gSchema$Event,
 } from "../../../declarations";
 
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { Logger } from "@backend/common/logger/common.logger";
 import { Collections } from "@backend/common/constants/collections";
-import gcalService from "@backend/common/services/gcal/gcal.service";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
 import { getGcal } from "@backend/auth/services/google.auth.service";
 
@@ -267,6 +267,7 @@ class EventService {
       return new BaseError("Read Failed", e, 500, true);
     }
   }
+
   async readById(
     userId: string,
     eventId: string
