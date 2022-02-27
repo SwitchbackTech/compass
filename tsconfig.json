@@ -1,5 +1,6 @@
 {
-  "exclude": ["./packages/core/src/__mocks__"],
+  // "include": ["./src/**/*.tsx", "./src/**/*.ts", "./declaration.d.ts"],
+  "exclude": ["**/__mocks__", "**/*.test.ts", "**/*.test.js"],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
 

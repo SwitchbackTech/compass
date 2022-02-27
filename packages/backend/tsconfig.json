@@ -1,5 +1,6 @@
 {
   "extends": "../../tsconfig.json",
+  "include": ["./src/**/*.ts", "./declaration.d.ts"],
   // Most ts-node options can be specified here using their programmatic names.
   "ts-node": {
     // It is faster to skip typechecking.
@@ -15,20 +16,15 @@
     }
   },
   "compilerOptions": {
-    "target": "es2016",
-    "module": "commonjs",
-    "outDir": "./build"
-    // "strict": false,
-    // "allowJs": true,
-    // "checkJs": true
-    // "esModuleInterop": true,
-    // "sourceMap": false,
-    // "inlineSourceMap": true
-    // "baseUrl": ".",
-    // "paths": {
-    // "@backend/*": ["./*"],
-    // "@backend/*": ["src/*"],
-    // "@core/*": ["../core/src/*"]
-    // }
+    "target": "ES2016",
+    "outDir": "./build",
+    "sourceMap": false,
+    "inlineSourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["../core/build/src/*"],
+      // "@backend/*": ["src/*"]
+      "@backend/*": ["./build/src/*"]
+    }
   }
 }

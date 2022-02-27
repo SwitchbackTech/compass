@@ -5,9 +5,8 @@ if (dotenvResult.error) {
 }
 import express from "express";
 import * as http from "http";
-import corsWhitelist from "./common/middleware/cors.middleware";
 import helmet from "helmet";
-
+import corsWhitelist from "@backend/common/middleware/cors.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import { AuthRoutes } from "@backend/auth/auth.routes.config";
 import { EventRoutes } from "@backend/event/event.routes.config";
@@ -23,6 +22,7 @@ import {
   catchSyncErrors,
   promiseMiddleware,
 } from "@backend/common/middleware/promise.middleware";
+
 import { isDev } from "./common/helpers/common.helpers";
 
 /* Misc Configuration */
@@ -32,7 +32,7 @@ mongoService;
 /* Express Configuration */
 const app: express.Application = express();
 const server: http.Server = http.createServer(app);
-const port = process.env.PORT || 3000;
+const port = process.env["PORT"] || 3000;
 const routes: Array<CommonRoutesConfig> = [];
 
 app.use(corsWhitelist);

@@ -1,6 +1,9 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "./build"
+    "target": "ES2016",
+    "outDir": "./build",
+    "sourceMap": false,
+    "inlineSourceMap": true
   }
 }
