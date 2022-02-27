@@ -24,7 +24,8 @@
     "paths": {
       "@core/*": ["../core/build/src/*"],
       // "@backend/*": ["src/*"]
-      "@backend/*": ["./build/src/*"]
+      "@backend/*": ["./build/src/*"],
+      "@backendroot/*": ["./build/*"]
     }
   }
 }

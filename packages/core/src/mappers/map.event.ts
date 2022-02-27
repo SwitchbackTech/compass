@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { gSchema$Event } from "@compass/backend/declarations";
-import { notCancelled } from "@compass/backend/src/common/services/gcal/gcal.helpers";
-import { Logger } from "@compass/backend/src/common/logger/common.logger";
+import { gSchema$Event } from "@backendroot/declarations";
+import { notCancelled } from "@backend/common/services/gcal/gcal.helpers";
+import { Logger } from "@backend/common/logger/common.logger";
 import { BaseError } from "@core/errors/errors.base";
 import { Origin, Priorities } from "@core/core.constants";
 import { isAllDay } from "@core/util/event.util";
