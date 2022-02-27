@@ -1,3 +1,4 @@
+require("module-alias/register");
 import dotenv from "dotenv";
 const dotenvResult = dotenv.config();
 if (dotenvResult.error) {

@@ -11,7 +11,7 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "scripts": {
-    "build:backend": "cd packages/backend && rm -rf build/ && tsc && cp .env build/backend/",
+    "build:backend": "cd packages/backend && rm -rf build/ && tsc && cp .env build/src/",
     "build:web": "cd packages/web && rm -rf ./build && webpack --mode=production --env production analyze",
     "dev:desktop": "cross-env NODE_ENV=development electron .",
     "dev:backend": "export DEBUG=app* && export NODE_ENV=development && yarn dev:backend-start",
@@ -34,6 +34,10 @@
     "_build:desktop -a": "cd packages/electron && electron-builder --mac --linux --windows",
     "_translate:desktop": "node packages/electron/localization/translateMissing.js"
   },
+  "_moduleAliases": {
+    "@backend": "./packages/backend/build/src",
+    "@core": "./packages/core/build/src"
+  },
   "dependencies": {
     "@compass/backend": "*",
     "@compass/core": "*",
@@ -45,6 +49,7 @@
     "lerna": "^4.0.0",
     "lodash": "4.17.21",
     "lodash.merge": "^4.6.2",
+    "module-alias": "^2.2.2",
     "process": "^0.11.10",
     "source-map-support": "^0.5.20",
     "uuid": "^8.3.2"
