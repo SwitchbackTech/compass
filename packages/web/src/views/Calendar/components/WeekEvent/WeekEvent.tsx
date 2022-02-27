@@ -72,15 +72,6 @@ const WeekEventComponent = (
     height = core.getEventCellHeight() / 4;
     const order = event.allDayOrder || 1;
     top = core.getAllDayEventCellHeight() - height * order;
-    console.log(event);
-    // $$
-    // console.log(`
-    // ${event.title}:
-    //   \tgetEventCellHeight: ${core.getEventCellHeight()}
-    //   \theight: ${height}
-    //   \tallDayOrder: ${event.allDayOrder}
-    // `);
-
     width = getAllDayEventWidth(
       category,
       startIndex,
