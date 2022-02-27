@@ -1,19 +1,17 @@
 import express from "express";
-
 import {
   Body_Watch_Gcal_Start,
   Body_Watch_Gcal_Stop,
   Request_Sync_Gcal,
 } from "@core/types/sync.types";
 import { ReqBody, Res } from "@core/types/express.types";
-
-import { Logger } from "@backend/common/logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 import { getGcal } from "@backend/auth/services/google.auth.service";
+import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
 
 import syncService from "../services/sync.service";
 import { hasExpectedHeaders } from "../services/sync.helpers";
-import { BaseError } from "@core/errors/errors.base";
-import { Status } from "@core/errors/status.codes";
 
 const logger = Logger("app:sync.gcal");
 class GcalSyncController {

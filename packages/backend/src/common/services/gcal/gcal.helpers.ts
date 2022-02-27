@@ -18,6 +18,7 @@ export const cancelledEventsIds = (events: gSchema$Event[]) => {
   return cancelledIds;
 };
 
+//$$ swap in favor of the one in core
 export const notCancelled = (e: gSchema$Event) => {
   return e.status && e.status !== "cancelled";
 };

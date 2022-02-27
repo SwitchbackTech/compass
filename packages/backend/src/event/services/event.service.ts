@@ -12,7 +12,7 @@ import {
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import { Logger } from "@backend/common/logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
 import { getGcal } from "@backend/auth/services/google.auth.service";

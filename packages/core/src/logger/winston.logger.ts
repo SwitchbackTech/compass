@@ -1,6 +1,5 @@
+import { MB_50 } from "@core/core.constants";
 import * as winston from "winston";
-
-import { MB_50 } from "../constants/backend.constants";
 
 const consoleFormat = winston.format.combine(
   winston.format.splat(),

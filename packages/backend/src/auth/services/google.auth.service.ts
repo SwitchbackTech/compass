@@ -2,12 +2,10 @@ import { google } from "googleapis";
 import jwt from "jsonwebtoken";
 import express from "express";
 import { Credentials, OAuth2Client } from "google-auth-library";
-
 import { Result_OauthStatus, Schema_Oauth } from "@core/types/auth.types";
 import { BaseError } from "@core/errors/errors.base";
-
 import mongoService from "@backend/common/services/mongo.service";
-import { Logger } from "@backend/common/logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { isDev } from "@backend/common/helpers/common.helpers";
 import { BASE_URL_DEV } from "@backend/common/constants/backend.constants";

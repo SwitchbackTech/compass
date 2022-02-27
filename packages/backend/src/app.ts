@@ -17,7 +17,7 @@ import { DevRoutes } from "@backend/dev/dev.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import mongoService from "@backend/common/services/mongo.service";
 import expressLogger from "@backend/common/logger/express.logger";
-import { Logger } from "@backend/common/logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 import {
   catchUndefinedSyncErrors,
   catchSyncErrors,

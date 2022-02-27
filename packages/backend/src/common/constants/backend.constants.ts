@@ -27,4 +27,3 @@ export const BACKEND_URL = _getBaseUrl();
 export const BASE_URL_DEV = `http://localhost:${process.env["PORT"]}`;
 export const GCAL_NOTIFICATION_URL = "/api/sync/gcal/notifications";
 export const GCAL_PRIMARY = "primary";
-export const MB_50 = 50000000; // in bytes

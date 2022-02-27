@@ -1,6 +1,5 @@
 import { BaseError } from "@core/errors/errors.base";
-
-import { Logger } from "../../logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 
 const logger = Logger("app:error.handler");
 

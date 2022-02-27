@@ -2,8 +2,7 @@ import { MapUser } from "@core/mappers/map.user";
 import { Result_Delete_User } from "@core/types/user.types";
 import { CombinedLogin_Google } from "@core/types/auth.types";
 import { BaseError } from "@core/errors/errors.base";
-
-import { Logger } from "@backend/common/logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";
 import { Collections } from "@backend/common/constants/collections";
 

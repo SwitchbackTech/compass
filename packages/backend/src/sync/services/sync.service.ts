@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
 import { gCalendar } from "declarations";
-
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import {
   Params_Sync_Gcal,
@@ -12,9 +11,8 @@ import {
 } from "@core/types/sync.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-
 import { getGcal } from "@backend/auth/services/google.auth.service";
-import { Logger } from "@backend/common/logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 import {
   GCAL_NOTIFICATION_URL,
   GCAL_PRIMARY,

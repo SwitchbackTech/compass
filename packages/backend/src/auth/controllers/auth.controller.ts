@@ -2,11 +2,10 @@ import express from "express";
 import jwt, { Jwt } from "jsonwebtoken";
 import crypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
-
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Origin } from "@core/core.constants";
-import { Logger } from "@backend/common/logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 import {
   GoogleUser,
   CombinedLogin_Google,

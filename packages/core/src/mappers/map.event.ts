@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { gSchema$Event } from "@backendroot/declarations";
-import { notCancelled } from "@backend/common/services/gcal/gcal.helpers";
-import { Logger } from "@backend/common/logger/common.logger";
+// import { gSchema$Event } from "@backendroot/declarations";
 import { BaseError } from "@core/errors/errors.base";
 import { Origin, Priorities } from "@core/core.constants";
 import { isAllDay } from "@core/util/event.util";
 
 import { Schema_Event } from "../types/event.types";
 
-const logger = Logger("app:map.event");
-
+//$$ add gSchema declaration
+export const notCancelled = (e: any) => {
+  return e.status && e.status !== "cancelled";
+};
 export namespace MapEvent {
   export const toCompass = (
     userId: string,
@@ -18,7 +18,8 @@ export namespace MapEvent {
   ): Schema_Event[] => {
     const mapped = events
       .filter(notCancelled)
-      .map((e: gSchema$Event) => _toCompass(userId, e, origin));
+      // .map((e: gSchema$Event) => _toCompass(userId, e, origin));
+      .map((e: any) => _toCompass(userId, e, origin));
 
     return mapped;
   };

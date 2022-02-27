@@ -1,6 +1,6 @@
 import { CombinedLogin_Google } from "@core/types/auth.types";
 import { Schema_Oauth } from "@core/types/auth.types";
-import { Logger } from "@backend/common/logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import userService from "@backend/user/services/user.service";
