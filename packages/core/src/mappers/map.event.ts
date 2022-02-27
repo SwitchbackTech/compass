@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-// import { gSchema$Event } from "@backendroot/declarations";
 import { BaseError } from "@core/errors/errors.base";
 import { Origin, Priorities } from "@core/core.constants";
 import { isAllDay } from "@core/util/event.util";
+import { Schema_Event } from "@core/types/event.types";
+import { gSchema$Event } from "@core/types/gcal";
 
-import { Schema_Event } from "../types/event.types";
-
-//$$ add gSchema declaration
-export const notCancelled = (e: any) => {
+export const notCancelled = (e: gSchema$Event) => {
   return e.status && e.status !== "cancelled";
 };
 export namespace MapEvent {
@@ -18,8 +16,7 @@ export namespace MapEvent {
   ): Schema_Event[] => {
     const mapped = events
       .filter(notCancelled)
-      // .map((e: gSchema$Event) => _toCompass(userId, e, origin));
-      .map((e: any) => _toCompass(userId, e, origin));
+      .map((e: gSchema$Event) => _toCompass(userId, e, origin));
 
     return mapped;
   };

@@ -1,6 +1,6 @@
 import { BaseError } from "@core/errors/errors.base";
+import { gSchema$Channel } from "@core/types/gcal";
 import { BulkWriteResult, AnyBulkWriteOperation } from "mongodb";
-import { gSchema$Channel } from "declarations";
 
 export interface Body_Watch_Gcal_Stop {
   channelId: string;

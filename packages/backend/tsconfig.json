@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["./src/**/*.ts", "./declaration.d.ts"],
+  "include": ["./src/**/*.ts"],
   // Most ts-node options can be specified here using their programmatic names.
   "ts-node": {
     // It is faster to skip typechecking.
@@ -13,6 +13,12 @@
       // compilerOptions specified here will override those declared below,
       // but *only* in ts-node.  Useful if you want ts-node and tsc to use
       // different options with a single tsconfig.json.
+      "baseUrl": ".",
+      "paths": {
+        // use project files to avoid waiting for tsc compiling
+        "@core/*": ["../core/src/*"],
+        "@backend/*": ["./src/*"]
+      }
     }
   },
   "compilerOptions": {
@@ -23,9 +29,7 @@
     "baseUrl": ".",
     "paths": {
       "@core/*": ["../core/build/src/*"],
-      // "@backend/*": ["src/*"]
-      "@backend/*": ["./build/src/*"],
-      "@backendroot/*": ["./build/*"]
+      "@backend/*": ["./build/src/*"]
     }
   }
 }

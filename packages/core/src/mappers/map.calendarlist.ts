@@ -1,6 +1,5 @@
+import { gSchema$CalendarList } from "@core/types/gcal";
 import { Schema_CalendarList } from "@core/types/calendar.types";
-
-import { gSchema$CalendarList } from "../../../backend/declarations";
 
 const MapCalendarList = {
   toCompass(gcalList: gSchema$CalendarList): Schema_CalendarList {
