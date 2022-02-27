@@ -1,5 +1,4 @@
 import dayjs from "dayjs";
-
 import {
   allDayEventsMinimal,
   staggeredAllDayEvents,
@@ -260,7 +259,7 @@ describe("orderAllDayEvents", () => {
   const combinedEvents = [...allDayEventsMinimal];
   const orderedEvents = orderEvents(combinedEvents);
   it("doesn't add or remove any events", () => {
-    expect(orderedEvents.length).toEqual(allDayEventsMinimal.length);
+    expect(orderedEvents).toHaveLength(allDayEventsMinimal.length);
   });
   it("sets order for each event", () => {
     orderedEvents.forEach((e) => {
