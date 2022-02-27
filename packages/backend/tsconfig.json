@@ -17,10 +17,10 @@
   "compilerOptions": {
     "target": "es2016",
     "module": "commonjs",
-    "outDir": "./build",
-    "strict": false,
-    "allowJs": true,
-    "checkJs": true
+    "outDir": "./build"
+    // "strict": false,
+    // "allowJs": true,
+    // "checkJs": true
     // "esModuleInterop": true,
     // "sourceMap": false,
     // "inlineSourceMap": true
