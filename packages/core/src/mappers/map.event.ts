@@ -1,13 +1,10 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { BaseError } from "@core/errors/errors.base";
 import { Origin, Priorities } from "@core/core.constants";
-import { isAllDay } from "@core/util/event.util";
+import { isAllDay, notCancelled } from "@core/util/event.util";
 import { Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 
-export const notCancelled = (e: gSchema$Event) => {
-  return e.status && e.status !== "cancelled";
-};
 export namespace MapEvent {
   export const toCompass = (
     userId: string,
