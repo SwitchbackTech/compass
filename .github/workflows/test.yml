@@ -28,7 +28,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd compass-calendar/compass-calendar
+          cd /home/runner/work/compass-calendar/compass-calendar
           yarn test
 
   compile-core:
@@ -39,5 +39,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd compass-calendar/compass-calendar
+          cd /home/runner/work/compass-calendar/compass-calendar
           yarn tsc:core
