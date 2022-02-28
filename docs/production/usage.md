@@ -16,13 +16,13 @@ If updating the web bundle:
 ```
 sudo su
 
-bash /compass-calendar/scripts/deploy-web.sh
+bash /compass-calendar/scripts/deploy.web.sh
 ```
 
 If updating backend:
 
 ```
-bash /compass-calendar/scripts/deploy-backend.sh
+bash /compass-calendar/scripts/deploy.backend.sh
 ```
 
 ### Making changes - opt 2:

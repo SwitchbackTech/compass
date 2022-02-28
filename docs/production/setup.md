@@ -11,6 +11,10 @@ installs dependencies: `yarn dev`
 
 Set up `pm2` processes for backend and/or web ([quickstart](https://pm2.keymetrics.io/docs/usage/quick-start/))
 
+```
+pm2 start yarn --name start:backend -- start:backend
+```
+
 - run it on boot: `pm2 startup && pm2 save`
 
 Populate `.env` file on server
