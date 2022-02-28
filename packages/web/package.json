@@ -5,7 +5,7 @@
   "typings": "declaration.d.ts",
   "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
-    "@compass/core": "2.0.0",
+    "@compass/core": "1.0.0",
     "@reduxjs/toolkit": "^1.6.1",
     "@svgr/webpack": "^6.2.1",
     "axios": "^0.23.0",
