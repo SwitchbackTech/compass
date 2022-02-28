@@ -29,3 +29,7 @@ jobs:
       - name: Compile @core
         run: |
           yarn tsc:core
+
+      - name: Compile @web
+        run: |
+          yarn build:web
