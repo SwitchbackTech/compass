@@ -31,6 +31,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           yarn test
+        working-directory: ${{env.working-directory}}
 
   compile-core:
     needs: setup
