@@ -1,6 +1,6 @@
 {
   "name": "@compass/backend",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "description": "REST API backend",
   "main": "build/src/app.js",
   "author": "Switchback Tech LLC <hello@switchback.tech>",

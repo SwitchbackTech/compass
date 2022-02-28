@@ -1,6 +1,6 @@
 {
   "name": "@compass/web",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "main": "src/App.ts",
   "typings": "declaration.d.ts",
   "license": "SEE LICENSE IN LICENSE",
