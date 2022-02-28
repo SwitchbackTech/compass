@@ -3,7 +3,7 @@ name: Test
 on: [push]
 
 jobs:
-  setup:
+  install-test-compile:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,28 +20,14 @@ jobs:
         run: |
           yarn install --frozen-lockfile --network-timeout 300000
 
-  test:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Tests
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run tests
         run: |
-          pwd
-          ls -la
-          cd compass-calendar
-          ls -la
-          pwd
           yarn test
 
-  compile-core:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Compile @core
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Compile core
         run: |
-          cd compass-calendar/compass-calendar
           yarn tsc:core
+
+      - name: Compile web
+        run: |
+          yarn build:web
