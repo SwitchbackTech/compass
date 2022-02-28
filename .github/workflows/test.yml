@@ -30,6 +30,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          pwd
+          ls
+          cd ..
+          ls
+          pwd
           yarn test
         working-directory: ${{env.working-directory}}
 
