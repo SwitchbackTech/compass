@@ -23,9 +23,9 @@ jobs:
   test:
     needs: setup
     runs-on: ubuntu-latest
+    uses: ./
     steps:
       - name: Run Tests
-        uses: ./
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
