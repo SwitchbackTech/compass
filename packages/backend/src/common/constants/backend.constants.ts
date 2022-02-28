@@ -12,18 +12,18 @@ const _getBaseUrl = () => {
     return process.env["BASEURL_PROD"];
   } else if (process.env["NODE_ENV"] === NodeEnv.Development) {
     return BASE_URL_DEV;
-  } else {
-    if (process.env["NODE_ENV"] !== NodeEnv.Test) {
-      // jests sets this env, so make sure its not running in a test
-      // before throwing this error
-      throw new Error(
-        `Invalid NODE_ENV value: '${process.env["NODE_ENV"]}' Change env config/params`
-      );
-    }
   }
+
+  const msg = `Invalid NODE_ENV value: '${process.env["NODE_ENV"]}' Change env config/params`;
+  // jests sets this env, so make sure its not running in a test
+  // before throwing this error
+  if (process.env["NODE_ENV"] !== NodeEnv.Test) {
+    throw new Error(msg);
+  }
+  return new Error(msg);
 };
 
 export const BACKEND_URL = _getBaseUrl();
-export const BASE_URL_DEV = `http://localhost:${process.env["PORT"]}`;
+export const BASE_URL_DEV = `http://localhost:${process.env["PORT"] || 3000}`;
 export const GCAL_NOTIFICATION_URL = "/api/sync/gcal/notifications";
 export const GCAL_PRIMARY = "primary";
