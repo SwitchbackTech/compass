@@ -7,7 +7,17 @@ _Things to do during a production VM setup_
 - Install GitHub CLI for easier authentication | [Linux docs](https://github.com/cli/cli/blob/trunk/docs/install_linux.md)
 - Use the GH CLI to cache credentials | [doc](https://docs.github.com/en/get-started/getting-started-with-git/caching-your-github-credentials-in-git)
 
+## Backend
+
+### Setup
+
+Populate `.env` file on server
+
+- needed for the backend variables
+
 installs dependencies: `yarn dev`
+
+### Run
 
 Set up `pm2` processes for backend and/or web ([quickstart](https://pm2.keymetrics.io/docs/usage/quick-start/))
 
@@ -15,9 +25,14 @@ Set up `pm2` processes for backend and/or web ([quickstart](https://pm2.keymetri
 pm2 start yarn --name start:backend -- start:backend
 ```
 
-- run it on boot: `pm2 startup && pm2 save`
+- creates pm2 process that's based on whatever
+  `yarn start:backend` does (eg. compile and running)
+- compiling on VM for convenience for now
+- may need to be updated if installed on something other | [reference](https://stackoverflow.com/questions/59046837/what-is-the-pm2-for-command-yarn-run-start)
 
-Populate `.env` file on server
+# than Ubuntu
+
+- run it on boot: `pm2 startup && pm2 save`
 
 Set up certbot/SSL (more below)
 
