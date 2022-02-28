@@ -35,5 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Compile @core
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           yarn tsc:core
