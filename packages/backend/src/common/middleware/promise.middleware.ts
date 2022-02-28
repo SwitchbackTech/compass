@@ -1,10 +1,9 @@
 import express from "express";
-
 import { Res_Promise } from "@core/types/express.types";
 import { BaseError } from "@core/errors/errors.base";
+import { Logger } from "@core/logger/winston.logger";
 
 import { handleExpressError } from "../errors/handlers/error.express.handler";
-import { Logger } from "../logger/common.logger";
 
 const logger = Logger("app:promise.middleware");
 

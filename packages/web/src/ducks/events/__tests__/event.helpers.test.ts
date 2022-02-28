@@ -1,10 +1,9 @@
 import dayjs from "dayjs";
-
 import {
   allDayEventsMinimal,
   staggeredAllDayEvents,
-} from "@core/__mocks__/events.allday.1.js";
-import { allDayEvents } from "@core/__mocks__/events.allday.2.js";
+} from "@core/__mocks__/events.allday.1";
+import { allDayEvents } from "@core/__mocks__/events.allday.2";
 
 import {
   getAllDayCounts,
@@ -260,7 +259,7 @@ describe("orderAllDayEvents", () => {
   const combinedEvents = [...allDayEventsMinimal];
   const orderedEvents = orderEvents(combinedEvents);
   it("doesn't add or remove any events", () => {
-    expect(orderedEvents.length).toEqual(allDayEventsMinimal.length);
+    expect(orderedEvents).toHaveLength(allDayEventsMinimal.length);
   });
   it("sets order for each event", () => {
     orderedEvents.forEach((e) => {

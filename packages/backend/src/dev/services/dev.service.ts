@@ -1,5 +1,5 @@
 import { Result_Stop_Watch } from "@core/types/sync.types";
-import { Logger } from "@backend/common/logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
@@ -55,8 +55,8 @@ class DevService {
         .find({ userId: userId })
         .toArray();
 
-      let summary = [];
-      for (let w of allWatches) {
+      const summary = [];
+      for (const w of allWatches) {
         const stopResult: Result_Stop_Watch =
           await syncService.stopWatchingChannel(
             userId,

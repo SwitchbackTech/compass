@@ -32,12 +32,14 @@ Note: Check-in with Ty to determine how much testing is needed for the project i
 - [Jest](https://jestjs.io/): test runner & unit tests
 - [React-Testing-Library](https://testing-library.com/docs/react-testing-library/intro): DOM testing
 - [jest-styled-components:](https://github.com/styled-components/jest-styled-components#react-testing-library) `styled-components` testing
+
+Once electron is supported, these will (probably) be added:
+
 - [Spectron](https://www.electronjs.org/spectron): Integration & accessibility tests for Electron apps, using Chrome's accessibility tools
 - [electronegativity](https://github.com/doyensec/electronegativity#electronegativity): security audits for electron
-
-Testing examples provided in the `Playground` directory
 
 See `package.json` for testing commands
 
 ## References
+
 Refer to the `/docs` folder for more technical context

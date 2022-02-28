@@ -1,5 +1,5 @@
 export const getBaseUrl = () => {
-  if (process.env.NODE_ENV === "production") {
+  if (process.env["NODE_ENV"] === "production") {
     return "https://***REMOVED***/api";
   } else {
     return `http://localhost:${_BACKEND_PORT}/api`;

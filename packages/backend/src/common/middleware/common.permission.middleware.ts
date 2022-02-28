@@ -1,6 +1,6 @@
 import express from "express";
+import { Logger } from "@core/logger/winston.logger";
 
-import { Logger } from "../logger/common.logger";
 import { PermissionFlag } from "./common.permissionflag.enum";
 
 const logger = Logger("app:common.permission.middleware");

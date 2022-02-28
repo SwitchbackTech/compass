@@ -47,7 +47,7 @@ describe("toGcal", () => {
 
   it("returns dates in expected format", () => {
     validGcalDates.forEach((dates) => {
-      const gcalEvt = MapEvent.toGcal("someuser", {
+      const gcalEvt = MapEvent.toGcal({
         startDate: dates.start,
         endDate: dates.end,
       });

@@ -1,15 +1,16 @@
+import { MB_50 } from "@core/core.constants";
+import { TransformableInfo } from "logform";
 import * as winston from "winston";
-
-import { MB_50 } from "../constants/backend.constants";
 
 const consoleFormat = winston.format.combine(
   winston.format.splat(),
   winston.format.colorize(),
   winston.format.timestamp({ format: "YY-MM-DD HH:mm:ss" }),
-  winston.format.printf((info) => {
+  winston.format.printf((info: TransformableInfo) => {
     const { timestamp, namespace, level, message, ...meta } = info;
-    const _namespace = namespace ? `${namespace}` : "";
-    return `${timestamp} [${level}] ${_namespace}: ${message} ${
+    const _namespace = namespace !== undefined ? JSON.stringify(namespace) : "";
+    const _timestamp = timestamp !== undefined ? JSON.stringify(timestamp) : "";
+    return `${_timestamp} [${level}] ${_namespace}: ${message} ${
       Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ""
     }`;
   })
@@ -18,7 +19,7 @@ const consoleFormat = winston.format.combine(
 const transports = () => {
   const fileTransport = new winston.transports.File({
     filename: "logs/app.log",
-    level: process.env.LOG_LEVEL,
+    level: process.env["LOG_LEVEL"],
     maxsize: MB_50,
     maxFiles: 1,
   });
@@ -30,7 +31,7 @@ const transports = () => {
 };
 
 const parentLogger = winston.createLogger({
-  level: process.env.LOG_LEVEL,
+  level: process.env["LOG_LEVEL"],
   transports: transports(),
 });
 

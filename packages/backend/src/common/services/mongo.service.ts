@@ -1,6 +1,5 @@
 import { Db, MongoClient, ObjectId } from "mongodb";
-
-import { Logger } from "../logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 
 const logger = Logger("app:mongo.service");
 

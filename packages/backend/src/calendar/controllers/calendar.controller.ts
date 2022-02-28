@@ -1,9 +1,7 @@
 import express from "express";
-
 import { Res, ReqBody } from "@core/types/express.types";
 import { Schema_CalendarList } from "@core/types/calendar.types";
-
-import { Logger } from "@backend/common/logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { getGcal } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";

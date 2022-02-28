@@ -2,6 +2,7 @@ const path = require("path");
 
 module.exports = {
   parser: "@typescript-eslint/parser",
+  ignorePatterns: [],
   plugins: [
     "@typescript-eslint",
     "import",
@@ -12,29 +13,43 @@ module.exports = {
     "react-hooks",
     "testing-library",
   ],
+  overrides: [
+    // TypeScript-specific configuration
+    {
+      files: ["*.ts", "*.tsx"],
+
+      // extend TypeScript plugins here,
+      // instead of extending them outside the `overrides`.
+      // If you don't want to extend any rules, you don't need an `extends` attribute.
+      extends: [
+        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/recommended-requiring-type-checking",
+      ],
+
+      parserOptions: {
+        project: ["./tsconfig.json"], // Specify it only for TypeScript files
+      },
+    },
+  ],
   env: {
     "jest/globals": true,
   },
   settings: {
     "import/resolver": {
       "eslint-import-resolver-lerna": {
-        packages: path.resolve(__dirname, "src/packages"),
+        packages: path.resolve(__dirname, "packages"),
       },
     },
   },
   extends: [
     "eslint:recommended",
     "plugin:jest-dom/recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "plugin:testing-library/react",
     // this prettier plugin adjusts other parts of this config,
     // so keep it as the last extends item
     "plugin:prettier/recommended",
   ],
   parserOptions: {
-    // TODO enable once using a root tsconfig that packages extend
-    // project: path.resolve(__dirname, "tsconfig.json"),
     sourceType: "module",
   },
   rules: {
@@ -55,10 +70,8 @@ module.exports = {
     "no-param-reassign": "off",
     "react/jsx-props-no-spreading": "off",
     "react/no-array-index-key": "off",
-    "react-hooks/rules-of-hooks": "error", // Checks rules of Hooks
+    "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn", // Checks effect dependencies
-    "prettier/prettier": ["error", { singleQuote: true }],
-    quotes: [2, "single"],
     "testing-library/await-async-query": "error",
     "testing-library/await-async-utils": "error",
     "testing-library/no-await-sync-query": "error",

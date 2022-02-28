@@ -1,8 +1,8 @@
 {
   "name": "@compass/backend",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "description": "REST API backend",
-  "main": "dist/app.js",
+  "main": "build/src/app.js",
   "author": "Switchback Tech LLC <hello@switchback.tech>",
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
@@ -10,6 +10,7 @@
     "start": "node build/backend/src/app.js"
   },
   "dependencies": {
+    "@compass/core": "1.0.0",
     "argon2": "^0.28.2",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",

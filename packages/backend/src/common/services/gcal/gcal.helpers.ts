@@ -1,4 +1,4 @@
-import { gSchema$Event } from "declarations";
+import { gSchema$Event } from "@core/types/gcal";
 
 const cancelled = (e: gSchema$Event) => {
   /* 
@@ -16,8 +16,4 @@ export const cancelledEventsIds = (events: gSchema$Event[]) => {
     cancelledIds.push(e.id);
   });
   return cancelledIds;
-};
-
-export const notCancelled = (e: gSchema$Event) => {
-  return e.status && e.status !== "cancelled";
 };

@@ -1,3 +1,4 @@
+require("module-alias/register");
 import dotenv from "dotenv";
 const dotenvResult = dotenv.config();
 if (dotenvResult.error) {
@@ -5,9 +6,8 @@ if (dotenvResult.error) {
 }
 import express from "express";
 import * as http from "http";
-import corsWhitelist from "./common/middleware/cors.middleware";
 import helmet from "helmet";
-
+import corsWhitelist from "@backend/common/middleware/cors.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import { AuthRoutes } from "@backend/auth/auth.routes.config";
 import { EventRoutes } from "@backend/event/event.routes.config";
@@ -17,12 +17,13 @@ import { DevRoutes } from "@backend/dev/dev.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import mongoService from "@backend/common/services/mongo.service";
 import expressLogger from "@backend/common/logger/express.logger";
-import { Logger } from "@backend/common/logger/common.logger";
+import { Logger } from "@core/logger/winston.logger";
 import {
   catchUndefinedSyncErrors,
   catchSyncErrors,
   promiseMiddleware,
 } from "@backend/common/middleware/promise.middleware";
+
 import { isDev } from "./common/helpers/common.helpers";
 
 /* Misc Configuration */
@@ -32,7 +33,7 @@ mongoService;
 /* Express Configuration */
 const app: express.Application = express();
 const server: http.Server = http.createServer(app);
-const port = process.env.PORT || 3000;
+const port = process.env["PORT"] || 3000;
 const routes: Array<CommonRoutesConfig> = [];
 
 app.use(corsWhitelist);

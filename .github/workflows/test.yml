@@ -3,29 +3,31 @@ name: Test
 on: [push]
 
 jobs:
-  release:
-    # runs-on: ${{ matrix.os }}
+  install-test-compile:
     runs-on: ubuntu-latest
-
-    # strategy:
-    # matrix:
-    #   os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
           node-version: 16
+          cache: "yarn"
 
-      - name: yarn install
+      - name: Install Dependencies
         run: |
           yarn install --frozen-lockfile --network-timeout 300000
 
-      - name: unit test
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run tests
         run: |
           yarn test
+
+      - name: Compile core
+        run: |
+          yarn tsc:core
+
+      - name: Compile web
+        run: |
+          yarn build:web

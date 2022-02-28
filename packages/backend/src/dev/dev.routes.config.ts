@@ -1,7 +1,7 @@
 import express from "express";
-
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import jwtMiddleware from "@backend/auth/middleware/jwt.middleware";
+
 import devController from "./controllers/dev.controller";
 
 export class DevRoutes extends CommonRoutesConfig {

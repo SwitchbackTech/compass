@@ -3,15 +3,29 @@
 Info on how to maintain the production environment
 Do everything in `setup.md` before trying these things.
 
-### SSH into VM and run:
+### Making Changes - opt 1:
+
+Run build scripts (locally, for now)
+
+Run script to scp build artifact to VM
+
+SSH into VM
+
+If updating the web bundle:
 
 ```
 sudo su
-pm2 start $version --watch
-pm2 logs $version
+
+bash /compass-calendar/scripts/deploy.web.sh
 ```
 
-### Making changes:
+If updating backend:
+
+```
+bash /compass-calendar/scripts/deploy.backend.sh
+```
+
+### Making changes - opt 2:
 
 push local changes to `compass-calendar` repo
 
@@ -27,10 +41,18 @@ git checkout <branch>
 cd package/<package>
 ```
 
-`pm2 start ...` | WIP
+Manage processes
 
 ```
-pm2 restart $version #if pm2 not in watch mode already
+pm2 restart $name #if pm2 not in watch mode already
+```
+
+### Check logs
+
+```
+sudo su
+pm2 start $name--watch
+pm2 logs $name
 ```
 
 ## Other
