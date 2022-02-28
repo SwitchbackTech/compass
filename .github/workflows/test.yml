@@ -3,7 +3,7 @@ name: Test
 on: [push]
 
 jobs:
-  release:
+  setup:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,16 +20,20 @@ jobs:
         run: |
           yarn install --frozen-lockfile --network-timeout 300000
 
+  test:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
       - name: Run Tests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           yarn test
 
+  compile-core:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
       - name: Compile @core
         run: |
           yarn tsc:core
-
-      - name: Compile @web
-        run: |
-          yarn build:web
