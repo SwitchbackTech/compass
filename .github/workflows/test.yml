@@ -23,7 +23,6 @@ jobs:
   test:
     needs: setup
     runs-on: ubuntu-latest
-    uses: ./
     steps:
       - name: Run Tests
         env:
