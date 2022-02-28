@@ -4,21 +4,17 @@ on: [push]
 
 jobs:
   release:
-    # runs-on: ${{ matrix.os }}
     runs-on: ubuntu-latest
-
-    # strategy:
-    # matrix:
-    #   os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
           node-version: 16
+          cache: "yarn"
 
       - name: Install Dependencies
         run: |
@@ -30,6 +26,6 @@ jobs:
         run: |
           yarn test
 
-      - name: WIP:compile core
+      - name: Compile @core
         run: |
           yarn tsc:core
