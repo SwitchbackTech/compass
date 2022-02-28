@@ -20,16 +20,16 @@ jobs:
         with:
           node-version: 16
 
-      - name: yarn install
+      - name: Install Dependencies
         run: |
           yarn install --frozen-lockfile --network-timeout 300000
 
-      - name: run tests
+      - name: Run Tests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           yarn test
 
-      - name: wip:compile core
+      - name: WIP:compile core
         run: |
           yarn tsc:core

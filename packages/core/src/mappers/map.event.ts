@@ -18,10 +18,7 @@ export namespace MapEvent {
     return mapped;
   };
 
-  export const toGcal = (
-    userId: string,
-    event: Schema_Event
-  ): gSchema$Event => {
+  export const toGcal = (event: Schema_Event): gSchema$Event => {
     const dateKey = isAllDay(event) ? "date" : "dateTime";
 
     const gcalEvent: gSchema$Event = {
@@ -33,7 +30,7 @@ export namespace MapEvent {
         private: {
           // capture where event came from to later decide how to
           // sync changes between compass and integrations
-          origin: event.origin,
+          origin: event.origin || "undefined",
         },
       },
     };
@@ -60,7 +57,21 @@ const _toCompass = (
   const gEventId = gEvent.id ? gEvent.id : "uh oh";
   const title = gEvent.summary ? gEvent.summary : "untitled";
   const description = gEvent.description ? gEvent.description : "";
-  const _isAllDay = "date" in gEvent.start;
+
+  const placeHolder = {
+    start: {
+      date: "1990-01-01",
+      dateTime: "1990-01-01T00:00:00-10:00",
+    },
+    end: {
+      date: "1990-01-01",
+      dateTime: "1990-01-01T00:00:00-10:00",
+    },
+  };
+
+  const _start = gEvent.start == undefined ? placeHolder.start : gEvent.start;
+  const _end = gEvent.end === undefined ? placeHolder.end : gEvent.end;
+  const _isAllDay = gEvent.start !== undefined && "date" in gEvent.start;
 
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
@@ -70,8 +81,10 @@ const _toCompass = (
     description: description,
     priorities: [],
     isAllDay: _isAllDay,
-    startDate: _isAllDay ? gEvent.start.date : gEvent.start.dateTime,
-    endDate: _isAllDay ? gEvent.end.date : gEvent.end.dateTime,
+    // @ts-ignore
+    startDate: _isAllDay ? _start.date : _start.dateTime,
+    // @ts-ignore
+    endDate: _isAllDay ? _end.date : _end.dateTime,
 
     // temp stuff to update
     // priority: Priorities.UNASSIGNED,

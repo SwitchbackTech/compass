@@ -34,7 +34,7 @@ class EventService {
   ): Promise<Schema_Event | BaseError> {
     try {
       /* Save to Gcal */
-      const _gEvent = MapEvent.toGcal(userId, event);
+      const _gEvent = MapEvent.toGcal(event);
       const gEventWithOrigin: gSchema$Event = {
         ..._gEvent,
         // capture the fact that this event originated from Compass,
@@ -322,7 +322,7 @@ class EventService {
       }
       const updatedEvent = response.value as Schema_Event;
 
-      const gEvent = MapEvent.toGcal(userId, updatedEvent);
+      const gEvent = MapEvent.toGcal(updatedEvent);
       const gcal = await getGcal(userId);
       const gEventId = updatedEvent.gEventId;
       if (gEventId === undefined) {
