@@ -1,5 +1,4 @@
 import express from "express";
-
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import { GCAL_NOTIFICATION_URL } from "@backend/common/constants/backend.constants";
 import jwtMiddleware from "@backend/auth/middleware/jwt.middleware";

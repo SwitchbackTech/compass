@@ -30,6 +30,6 @@ jobs:
         run: |
           yarn test
 
-      - name: compile backend & core
+      - name: wip:compile core
         run: |
-          yarn build:backend
+          yarn tsc:core
