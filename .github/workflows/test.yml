@@ -39,5 +39,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          compass-calendar/compass-calendar
+          cd compass-calendar/compass-calendar
           yarn tsc:core
