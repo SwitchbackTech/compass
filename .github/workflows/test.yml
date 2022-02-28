@@ -23,12 +23,13 @@ jobs:
   test:
     needs: setup
     runs-on: ubuntu-latest
+    env:
+      working-directory: ./
     steps:
       - name: Run Tests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd /home/runner/work/compass-calendar/compass-calendar
           yarn test
 
   compile-core:
@@ -39,5 +40,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd /home/runner/work/compass-calendar/compass-calendar
+          cd compass-calendar/compass-calendar
           yarn tsc:core
