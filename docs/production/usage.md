@@ -22,7 +22,7 @@ bash /compass-calendar/scripts/deploy-web.sh
 If updating backend:
 
 ```
-
+bash /compass-calendar/scripts/deploy-backend.sh
 ```
 
 ### Making changes - opt 2:
@@ -41,18 +41,18 @@ git checkout <branch>
 cd package/<package>
 ```
 
-`pm2 start ...` | WIP
+Manage processes
 
 ```
-pm2 restart $version #if pm2 not in watch mode already
+pm2 restart $name #if pm2 not in watch mode already
 ```
 
 ### Check logs
 
 ```
 sudo su
-pm2 start $version --watch
-pm2 logs $version
+pm2 start $name--watch
+pm2 logs $name
 ```
 
 ## Other

@@ -2,20 +2,14 @@
 
 _Things to do during a production VM setup_
 
-## Code & git (WIP)
+## Code & git
 
 - Install GitHub CLI for easier authentication | [Linux docs](https://github.com/cli/cli/blob/trunk/docs/install_linux.md)
 - Use the GH CLI to cache credentials | [doc](https://docs.github.com/en/get-started/getting-started-with-git/caching-your-github-credentials-in-git)
 
-If still running backend from `ts-node`: `sudo yarn dev`
+installs dependencies: `yarn dev`
 
-- installs all dependencies required
-
-Install http server to server static (bundled frontend) files:
-
-- `npm install http-server`
-
-Set up `pm2` processes ([quickstart](https://pm2.keymetrics.io/docs/usage/quick-start/))
+Set up `pm2` processes for backend and/or web ([quickstart](https://pm2.keymetrics.io/docs/usage/quick-start/))
 
 - run it on boot: `pm2 startup && pm2 save`
 
