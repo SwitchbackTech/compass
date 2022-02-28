@@ -23,8 +23,6 @@ jobs:
   test:
     needs: setup
     runs-on: ubuntu-latest
-    env:
-      working-directory: ./compass-calendar/compass-calendar
     steps:
       - name: Run Tests
         env:
