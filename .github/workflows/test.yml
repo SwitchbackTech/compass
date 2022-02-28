@@ -34,7 +34,6 @@ jobs:
           ls -la
           pwd
           yarn test
-        working-directory: ${{env.working-directory}}
 
   compile-core:
     needs: setup
