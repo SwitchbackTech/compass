@@ -1,5 +1,6 @@
+//@ts-nocheck
 import { v4 as uuidv4 } from "uuid";
-import { gCalendar } from "declarations";
+import { gCalendar } from "@core/types/gcal";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import {
   Params_Sync_Gcal,

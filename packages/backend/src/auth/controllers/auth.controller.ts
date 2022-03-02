@@ -1,3 +1,4 @@
+// @ts-nocheck
 import express from "express";
 import jwt, { Jwt } from "jsonwebtoken";
 import crypto from "crypto";
@@ -18,7 +19,7 @@ import { loginCompleteHtml } from "../services/login.complete";
 
 const logger = Logger("app:auth.controller");
 
-const jwtSecret: string | undefined = process.env.JWT_SECRET;
+const jwtSecret: string | undefined = process.env["JWT_SECRET"];
 const tokenExpirationInSeconds = 36000;
 
 // eventually split up for each provider (google, outlook, email+pw)
@@ -49,14 +50,14 @@ class AuthController {
       .join("")
       .trim();
 
-    const payload = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+    const payload = jwt.verify(accessToken, process.env["ACCESS_TOKEN_SECRET"]);
 
     const newToken = jwt.sign(
-      { _id: payload._id },
-      process.env.ACCESS_TOKEN_SECRET,
+      { _id: payload["_id"] },
+      process.env["ACCESS_TOKEN_SECRET"],
       {
         algorithm: "HS256",
-        expiresIn: process.env.ACCESS_TOKEN_LIFE,
+        expiresIn: process.env["ACCESS_TOKEN_LIFE"],
       }
     );
 
@@ -64,7 +65,7 @@ class AuthController {
   }
 
   checkOauthStatus = async (req: express.Request, res: express.Response) => {
-    const integration: string = req.query.integration;
+    const integration: string = req.query["integration"];
     if (integration === Origin.Google) {
       const status = await new googleOauthService().checkOauthStatus(req);
       res.promise(Promise.resolve(status));
@@ -81,7 +82,7 @@ class AuthController {
   };
 
   getOauthUrl = (req: express.Request, res: express.Response) => {
-    if (req.query.integration === Origin.Google) {
+    if (req.query["integration"] === Origin.Google) {
       const authState = uuidv4();
       const authUrl = new googleOauthService().generateAuthUrl(authState);
       res.promise(Promise.resolve({ authUrl, authState }));

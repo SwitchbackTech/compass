@@ -26,6 +26,7 @@ class GcalSyncController {
 
       const notifResponse = await syncService.handleGcalNotification(params);
 
+      // @ts-ignore
       res.promise(Promise.resolve(notifResponse));
     } else {
       const msg = `Notification request has invalid headers:\n${JSON.stringify(
@@ -33,6 +34,7 @@ class GcalSyncController {
       )}`;
       logger.error(msg);
       const err = new BaseError("Bad Headers", msg, Status.BAD_REQUEST, true);
+      // @ts-ignore
       res.promise(Promise.resolve(err));
     }
   };
@@ -51,8 +53,10 @@ class GcalSyncController {
         channelId
       );
 
+      // @ts-ignore
       res.promise(Promise.resolve(watchResult));
     } catch (e) {
+      // @ts-ignore
       res.promise(Promise.reject(e));
     }
   };
@@ -68,8 +72,10 @@ class GcalSyncController {
         channelId,
         resourceId
       );
+      // @ts-ignore
       res.promise(Promise.resolve(stopResult));
     } catch (e) {
+      // @ts-ignore
       res.promise(Promise.reject(e));
     }
   };

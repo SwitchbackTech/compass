@@ -1,10 +1,11 @@
+//@ts-nocheck
 import { Db, MongoClient, ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 
 const logger = Logger("app:mongo.service");
 
-const uri = process.env.MONGO_URI || "mongodb://localhost:27017/";
-const dbName = process.env.DB_NAME || "test";
+const uri = process.env["MONGO_URI"] || "mongodb://localhost:27017/";
+const dbName = process.env["DB_NAME"] || "test";
 
 class MongoService {
   private count = 0;

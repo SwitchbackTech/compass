@@ -1,5 +1,6 @@
+//@ts-nocheck
 import { AnyBulkWriteOperation } from "mongodb";
-import { gSchema$Event } from "declarations";
+import { gSchema$Event } from "@core/types/gcal";
 import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";

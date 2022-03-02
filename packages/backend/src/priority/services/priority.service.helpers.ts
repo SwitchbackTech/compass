@@ -1,5 +1,5 @@
-import { InsertedIds } from "@core/src/types/mongo.types";
-import { Schema_Priority, PriorityReq } from "@core/src/types/priority.types";
+import { InsertedIds } from "@core/types/mongo.types";
+import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
 
 // documents inserted in order by default, so mapping by
 // key order is safe
@@ -14,7 +14,9 @@ export const mapPriorityData = (
     priorities.push({
       _id: id.toString(),
       user: userId,
+      //@ts-ignore
       name: data[i].name,
+      //@ts-ignore
       color: data[i].color,
     });
   }

@@ -1,4 +1,5 @@
-import { gSchema$Event, gParamsEventsList, gCalendar } from "declarations";
+//@ts-nocheck
+import { gSchema$Event, gParamsEventsList, gCalendar } from "@core/types/gcal";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";

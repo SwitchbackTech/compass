@@ -29,12 +29,12 @@ class CompassAuthService {
     userId: string,
     userData: CombinedLogin_Google
   ): Promise<Schema_Oauth> {
+    // eslint-disable-next-line testing-library/no-debugging-utils
     logger.debug(`Setting oauth data for compass user: ${userId}`);
 
     const updatedOauthUser = Object.assign({}, userData.oauth, {
       user: userId,
     });
-    // await validate(OAUTH, updatedOauth); //TODO
 
     const response = await mongoService.db
       .collection(Collections.OAUTH)

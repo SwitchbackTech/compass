@@ -11,7 +11,7 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "scripts": {
-    "build:backend": "yarn tsc:core & yarn tsc:backend",
+    "build:backend": "yarn tsc:core && yarn tsc:backend",
     "build:web": "cd packages/web && rm -rf ./build && webpack --mode=production --env production",
     "build:web -analyze": "cd packages/web && rm -rf ./build && webpack --mode=production --env production analyze",
     "dev:desktop": "cross-env NODE_ENV=development electron .",

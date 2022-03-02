@@ -1,24 +1,24 @@
+//@ts-nocheck
 import { google } from "googleapis";
 import jwt from "jsonwebtoken";
 import express from "express";
 import { Credentials, OAuth2Client } from "google-auth-library";
 import { Result_OauthStatus, Schema_Oauth } from "@core/types/auth.types";
 import { BaseError } from "@core/errors/errors.base";
-import mongoService from "@backend/common/services/mongo.service";
+import { gCalendar } from "@core/types/gcal";
 import { Logger } from "@core/logger/winston.logger";
+import mongoService from "@backend/common/services/mongo.service";
 import { Collections } from "@backend/common/constants/collections";
-import { isDev } from "@backend/common/helpers/common.helpers";
-import { BASE_URL_DEV } from "@backend/common/constants/backend.constants";
-
-import { gCalendar } from "../../../declarations";
 
 const logger = Logger("app:google.auth.service");
-const SCOPES = process.env.SCOPES.split(",");
+//@ts-ignore
+const SCOPES = process.env["SCOPES"].split(",");
 
 /********
 Helpers 
 ********/
 export const getGcal = async (userId: string): Promise<gCalendar> => {
+  //@ts-ignore
   const oauth: Schema_Oauth = await mongoService.db
     .collection(Collections.OAUTH)
     .findOne({ user: userId });
@@ -35,6 +35,7 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
   }
 
   const googleClient = new GoogleOauthService();
+  //@ts-ignore
   await googleClient.setTokens(null, oauth.tokens);
 
   const calendar = google.calendar({
@@ -46,40 +47,49 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
 };
 
 class GoogleOauthService {
+  //@ts-ignore
   tokens: {};
   oauthClient: OAuth2Client;
 
   constructor() {
     // always using PROD, even if in dev, so that you can still debug prod builds without needing
     // to use localhost
+    //@ts-ignore
     const redirectUri = `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
 
     this.oauthClient = new google.auth.OAuth2(
-      process.env.CLIENT_ID,
-      process.env.CLIENT_SECRET,
+      process.env["CLIENT_ID"],
+      process.env["CLIENT_SECRET"],
       redirectUri
     );
     this.tokens = {};
   }
 
   async checkOauthStatus(req: express.Request): Promise<Result_OauthStatus> {
-    const state = req.query.state;
+    const state = req.query["state"];
 
+    //@ts-ignore
     const oauth: Schema_Oauth = await mongoService.db
       .collection(Collections.OAUTH)
       .findOne({ state: state });
+
+    const pro = process.env;
+    console.log(proc);
+    const _oauth = oauth;
+    console.log(oauth);
 
     const isComplete = oauth && oauth.user ? true : false;
 
     if (isComplete) {
       //TODO use other token creation method above
       // Create an access token //
+      //@ts-ignore
       const accessToken = jwt.sign(
         { _id: oauth.user },
-        process.env.ACCESS_TOKEN_SECRET,
+        process.env["ACCESS_TOKEN_SECRET"],
         {
           algorithm: "HS256",
-          expiresIn: process.env.ACCESS_TOKEN_LIFE,
+          expiresIn: process.env["ACCESS_TOKEN_LIFE"],
         }
       );
 

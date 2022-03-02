@@ -29,7 +29,6 @@ import mongoService from "@backend/common/services/mongo.service";
 import expressLogger from "@backend/common/logger/express.logger";
 import { Logger } from "@core/logger/winston.logger";
 import {
-  catchUndefinedSyncErrors,
   catchSyncErrors,
   promiseMiddleware,
 } from "@backend/common/middleware/promise.middleware";
@@ -53,6 +52,7 @@ app.use(express.json());
 
 // initialize this middleware before routes, because
 // the routes depend on its custome promise handling
+//@ts-ignore
 app.use(promiseMiddleware());
 
 routes.push(new AuthRoutes(app));

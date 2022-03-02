@@ -1,6 +1,5 @@
 import express from "express";
 import { ObjectId } from "mongodb";
-
 import { BaseError } from "@core/errors/errors.base";
 
 export const validateIds = (
@@ -8,7 +7,8 @@ export const validateIds = (
   res: express.Response,
   next: express.NextFunction
 ) => {
-  const idsToCheck = [res.locals.user.id];
+  const idsToCheck = [res.locals["user"]["id"]];
+  //@ts-ignore
   if (req.params.id !== undefined) idsToCheck.push(req.params.id);
 
   idsToCheck.forEach((i: string | ObjectId) => {

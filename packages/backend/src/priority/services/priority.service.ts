@@ -1,6 +1,5 @@
 import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
 import { BaseError } from "@core/errors/errors.base";
-
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 
@@ -95,6 +94,7 @@ class PriorityService {
         { returnDocument: "after" } // the new document
       );
 
+    //@ts-ignore
     if (response.value === null || response.idUpdates === 0) {
       return new BaseError("Update Failed", "Ensure id is correct", 400, true);
     }
