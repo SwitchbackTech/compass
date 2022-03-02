@@ -8,8 +8,8 @@ const consoleFormat = winston.format.combine(
   winston.format.timestamp({ format: "YY-MM-DD HH:mm:ss" }),
   winston.format.printf((info: TransformableInfo) => {
     const { timestamp, namespace, level, message, ...meta } = info;
-    const _namespace = namespace !== undefined ? JSON.stringify(namespace) : "";
-    const _timestamp = timestamp !== undefined ? JSON.stringify(timestamp) : "";
+    const _namespace = (namespace || "") as string;
+    const _timestamp = (timestamp || "") as string;
     return `${_timestamp} [${level}] ${_namespace}: ${message} ${
       Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ""
     }`;

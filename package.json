@@ -37,10 +37,6 @@
     "_build:desktop -a": "cd packages/electron && electron-builder --mac --linux --windows",
     "_translate:desktop": "node packages/electron/localization/translateMissing.js"
   },
-  "_moduleAliases": {
-    "@backend": "./packages/backend/build/src",
-    "@core": "./packages/core/build/src"
-  },
   "dependencies": {
     "@compass/backend": "*",
     "@compass/core": "*",

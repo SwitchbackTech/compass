@@ -1,4 +1,22 @@
-require("module-alias/register");
+const moduleAlias = require("module-alias");
+
+if (process.env["NODE_ENV"] === "production") {
+  const coreProdPath = require("path").resolve(
+    __dirname,
+    "../../core/build/src"
+  );
+  moduleAlias.addAliases({
+    "@backend": `${__dirname}/build/src`,
+    "@core": `${coreProdPath}`,
+  });
+} else if (process.env["NODE_ENV"] === "development") {
+  const coreDevPath = require("path").resolve(__dirname, "../../core/src");
+  moduleAlias.addAliases({
+    "@backend": `${__dirname}`,
+    "@core": `${coreDevPath}`,
+  });
+}
+
 import dotenv from "dotenv";
 const dotenvResult = dotenv.config();
 if (dotenvResult.error) {
