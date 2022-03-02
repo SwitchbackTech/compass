@@ -3,10 +3,10 @@ const moduleAlias = require("module-alias");
 if (process.env["NODE_ENV"] === "production") {
   const coreProdPath = require("path").resolve(
     __dirname,
-    "../../core/build/src"
+    "../../../core/build/src"
   );
   moduleAlias.addAliases({
-    "@backend": `${__dirname}/build/src`,
+    "@backend": `${__dirname}`,
     "@core": `${coreProdPath}`,
   });
 } else if (process.env["NODE_ENV"] === "development") {

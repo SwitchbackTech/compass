@@ -6,10 +6,7 @@
     // It is faster to skip typechecking.
     // Remove if you want ts-node to do typechecking.
     "transpileOnly": true,
-
-    "files": true
-
-    /*
+    "files": true,
     "compilerOptions": {
       // compilerOptions specified here will override those declared below,
       // but *only* in ts-node.  Useful if you want ts-node and tsc to use
@@ -21,7 +18,6 @@
         "@backend/*": ["./src/*"]
       }
     }
-    */
   },
   "compilerOptions": {
     "target": "ES2016",
@@ -30,10 +26,10 @@
     "inlineSourceMap": true,
     "baseUrl": ".",
     "paths": {
-      // "@core/*": ["../core/build/src/*"],
-      "@core/*": ["../core/src/*"],
-      // "@backend/*": ["./build/src/*"]
-      "@backend/*": ["./src/*"]
+      "@core/*": ["../core/build/src/*"],
+      // "@core/*": ["../core/src/*"],
+      "@backend/*": ["./build/src/*"]
+      // "@backend/*": ["./src/*"]
     }
   }
 }
