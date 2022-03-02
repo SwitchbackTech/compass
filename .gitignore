@@ -4,6 +4,7 @@ build.zip
 .vscode/
 .idea/
 .eslintcache
+globalConfig.json
 
 # wildcard files
 .env*
