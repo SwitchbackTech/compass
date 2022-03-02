@@ -1,22 +1,14 @@
-const moduleAlias = require("module-alias");
-
-if (process.env["NODE_ENV"] === "production") {
-  const coreProdPath = require("path").resolve(
-    __dirname,
-    "../../../core/build/src"
-  );
-  moduleAlias.addAliases({
-    "@backend": `${__dirname}`,
-    "@core": `${coreProdPath}`,
-  });
-} else if (process.env["NODE_ENV"] === "development") {
-  const coreDevPath = require("path").resolve(__dirname, "../../core/src");
-  moduleAlias.addAliases({
-    "@backend": `${__dirname}`,
-    "@core": `${coreDevPath}`,
-  });
-}
-
+const corePath =
+  process.env["NODE_ENV"] === "production"
+    ? path.resolve(__dirname, "../../../core/build/src")
+    : path.resolve(__dirname, "../../core/src");
+import path from "path";
+import moduleAlias from "module-alias";
+// eslint-disable-next-line
+moduleAlias.addAliases({
+  "@backend": `${__dirname}`,
+  "@core": `${corePath}`,
+});
 import dotenv from "dotenv";
 const dotenvResult = dotenv.config();
 if (dotenvResult.error) {
