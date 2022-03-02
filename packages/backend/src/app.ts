@@ -1,8 +1,8 @@
+import path from "path";
 const corePath =
   process.env["NODE_ENV"] === "production"
     ? path.resolve(__dirname, "../../../core/build/src")
     : path.resolve(__dirname, "../../core/src");
-import path from "path";
 import moduleAlias from "module-alias";
 // eslint-disable-next-line
 moduleAlias.addAliases({
