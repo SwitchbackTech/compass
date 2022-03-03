@@ -2870,9 +2870,9 @@
     "@testing-library/dom" "^8.0.0"
 
 "@testing-library/user-event@^14.0.0-beta":
-  version "14.0.0-beta.11"
-  resolved "https://registry.yarnpkg.com/@testing-library/user-event/-/user-event-14.0.0-beta.11.tgz#213267cf871170df191d81a7af6c9832a6597c89"
-  integrity sha512-GR8Vy7+xQpAQrRGRDtVsFO8JtTIJaF1wKrMYv+dpECw7INMeP+P954COGQRssaEDMRl6qA03o84FeiimOXM8ag==
+  version "14.0.0-beta.12"
+  resolved "https://registry.yarnpkg.com/@testing-library/user-event/-/user-event-14.0.0-beta.12.tgz#8df662578e49371fd80d5923d92f3c378f7dd927"
+  integrity sha512-vFZQBBzO14bJseKAS78Ae/coSuJbgrs7ywRZw88Hc52Le8RJGehdxR4w25Oj7QVNpZZpz0R6q1zMVdYGtPbd2A==
   dependencies:
     "@babel/runtime" "^7.12.5"
 
