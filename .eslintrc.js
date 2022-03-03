@@ -29,8 +29,8 @@ module.exports = {
       parserOptions: {
         project: [
           "./tsconfig.json",
-          // "./packages/backend/tsconfig.json",
-          // "./packages/web/tsconfig.json",
+          // "./packages/backend/tsconfig.json", //$$
+          "./packages/web/tsconfig.json",
         ],
       },
     },

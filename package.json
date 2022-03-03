@@ -11,9 +11,10 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "scripts": {
-    "build:backend": "yarn tsc:core && yarn tsc:backend",
-    "build:web": "cd packages/web && rm -rf ./build && webpack --mode=production --env production",
-    "build:web -analyze": "cd packages/web && rm -rf ./build && webpack --mode=production --env production analyze",
+    "build": "rm -rf build/ && yarn build:backend && yarn build:web",
+    "build:backend": "yarn tsc --build --verbose",
+    "build:web": "cd packages/web && webpack --mode=production --env production",
+    "build:web -analyze": "cd packages/web && webpack --mode=production --env production analyze",
     "dev:desktop": "cross-env NODE_ENV=development electron .",
     "dev:backend": "export DEBUG=app* && export NODE_ENV=development && yarn dev:backend-start",
     "dev:backend -verbose": "export DEBUG=* && yarn dev:backend-start",
@@ -22,7 +23,7 @@
     "deploy:web": "cd packages/web && zip -r build/build.zip build/ && gcloud compute scp build/build.zip ***REMOVED***@compass-backend1:/home/***REMOVED***/",
     "lint -f": "cross-env yarn workspaces run lint-fix",
     "lint:css": "stylelint 'packages/web/src/**/*.ts'",
-    "start:backend": "cp packages/backend/.env packages/backend/build/src && export DEBUG=app* && export NODE_ENV=production && cd packages/backend && node build/src/app.js",
+    "start:backend": "cp packages/backend/.env build/backend && export DEBUG=app* && export NODE_ENV=production && cd build/backend && node src/app.js",
     "start:desktop": "yarn prod:build && electron .",
     "start:web": "http-server packages/web/build",
     "tsc:backend": "rm -rf packages/backend/build && yarn tsc --project packages/backend/tsconfig.json",
