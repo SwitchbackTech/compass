@@ -16,6 +16,7 @@ node_modules/
 # where build files are currently located on production
 prod/
 build/
+buildcache/
 
 #core
 packages/core/build/

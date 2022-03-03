@@ -34,8 +34,6 @@ import { isDev } from "./common/helpers/common.helpers";
 const logger = Logger("app:root");
 mongoService;
 
-logger.info("using updated code [no watch]");
-
 /* Express Configuration */
 const app: express.Application = express();
 const server: http.Server = http.createServer(app);
