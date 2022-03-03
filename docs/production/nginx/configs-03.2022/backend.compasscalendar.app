@@ -1,6 +1,6 @@
 server {
         server_name ***REMOVED***;
-	root /compass-calendar/prod/build;
+	root /compass-calendar/build/web;
         location / {
 		index index.html;
 		try_files $uri $uri/ =404;
