@@ -27,4 +27,7 @@ jobs:
       - name: Build each package
         run: |
           yarn build
-          yarn zip:build
+
+      - name: Create distributable ZIP
+        run: |
+          yarn zip
