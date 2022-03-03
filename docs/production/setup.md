@@ -19,18 +19,19 @@ installs dependencies: `yarn dev`
 
 ### Run
 
-Set up `pm2` processes for backend and/or web ([quickstart](https://pm2.keymetrics.io/docs/usage/quick-start/))
+Set up `pm2` processes for backend ([quickstart](https://pm2.keymetrics.io/docs/usage/quick-start/))
+
+- (the web version process is managed by nginx) (?)
 
 ```
 pm2 start yarn --name start:backend -- start:backend
+
+pm2 logs
 ```
 
 - creates pm2 process that's based on whatever
   `yarn start:backend` does (eg. compile and running)
-- compiling on VM for convenience for now
-- may need to be updated if installed on something other | [reference](https://stackoverflow.com/questions/59046837/what-is-the-pm2-for-command-yarn-run-start)
-
-# than Ubuntu
+- may need to be updated if installed on something other than Ubuntu | [reference](https://stackoverflow.com/questions/59046837/what-is-the-pm2-for-command-yarn-run-start)
 
 - run it on boot: `pm2 startup && pm2 save`
 
@@ -50,6 +51,7 @@ Oauth, HTTPS, etc
 
 - configured in `/etc/nginx/sites-enabled/default`
   - don't get confused with the `sites-available` dir
+- reference the `nginx` files in this `/docs` directory for working examples
 
 **HTTP -> HHTPS 301 redirect**: managed by certbot
 

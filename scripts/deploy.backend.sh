@@ -4,5 +4,7 @@
 rm -rf /compass-calendar/build/backend.bak # remove old backup build
 mv /compass-calendar/build/backend /compass-calendar/build/backend.bak # create new backup
 mkdir -p /compass-calendar/build/backend
-unzip -n -d /compass-calendar /home/***REMOVED***/backend.zip # creates compass-calendar/build/web
+
+# creates compass-calendar/build/backend and ../build/core
+unzip -n -d /compass-calendar /home/***REMOVED***/backend.zip 
 rm /home/***REMOVED***/backend.zip # already have a backup now, so delete this one

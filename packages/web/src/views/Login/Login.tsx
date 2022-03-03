@@ -15,6 +15,8 @@ import { Button, FeedbackButtonContainer } from "@web/components/Button";
 
 import { StyledLogin } from "./styled";
 
+console.log("v1.0.0");
+
 export const LoginView = () => {
   const [redirect, setRedirect] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);

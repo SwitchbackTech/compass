@@ -11,3 +11,5 @@ rm /home/***REMOVED***/web.zip # already have a backup now, so delete this one
 # this should work without additional steps,
 # because nginx should auto-updating whenever there is
 # a change on that dir/folder
+
+systemctl restart nginx
