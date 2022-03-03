@@ -15,7 +15,7 @@ import { Button, FeedbackButtonContainer } from "@web/components/Button";
 
 import { StyledLogin } from "./styled";
 
-console.log("v1.0.0");
+console.log("v1.0.1");
 
 export const LoginView = () => {
   const [redirect, setRedirect] = useState(false);

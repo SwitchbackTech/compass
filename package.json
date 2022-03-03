@@ -13,7 +13,7 @@
   "scripts": {
     "build": "rm -rf build/ && yarn tsc --build --clean && yarn build:backend && yarn build:web",
     "build:backend": "yarn tsc --build --verbose && yarn zip:backend",
-    "build:web": "cd packages/web && webpack --mode=production --env production && yarn zip:web",
+    "build:web": "cd packages/web && webpack --mode=production --env production && cd ../.. && yarn zip:web",
     "build:web -analyze": "cd packages/web && webpack --mode=production --env production analyze",
     "dev:desktop": "cross-env NODE_ENV=development electron .",
     "dev:backend": "export DEBUG=app* && export NODE_ENV=development && yarn dev:backend-start",
@@ -22,7 +22,7 @@
     "dev:web": "cd packages/web && webpack serve --env development --mode=development",
     "deploy:backend": "gcloud compute scp build/backend.zip ***REMOVED***@compass-backend1:/home/***REMOVED***/",
     "deploy:web": "gcloud compute scp build/web.zip ***REMOVED***@compass-backend1:/home/***REMOVED***/",
-    "deploy": "yarn deploy:web & yarn deploy:backend",
+    "deploy": "yarn deploy:web && yarn deploy:backend",
     "lint -f": "cross-env yarn workspaces run lint-fix",
     "lint:css": "stylelint 'packages/web/src/**/*.ts'",
     "start:backend": "cp packages/backend/.env build/backend && export DEBUG=app* && export NODE_ENV=production && cd build/backend && node src/app.js",

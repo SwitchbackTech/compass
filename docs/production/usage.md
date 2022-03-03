@@ -5,9 +5,12 @@ Do everything in `setup.md` before trying these things.
 
 ### Making Changes:
 
-Run build scripts locally
+Run build scripts locally:
 
-Run script to scp build artifact to VM
+```
+yarn build    # builds core and web
+yarn deploy   # copies to VM
+```
 
 SSH into VM
 
@@ -25,10 +28,12 @@ If updating backend:
 bash /compass-calendar/scripts/deploy.backend.sh
 ```
 
+---
+
 Manage processes
 
 ```
-pm2 restart $name #if pm2 not in watch mode already
+pm2 restart $name   # if pm2 not in watch mode already
 ```
 
 ### Check logs
