@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Redirect } from "react-router-dom";
-
 import { Result_OauthStatus } from "@core/types/auth.types";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { SURVEY_URL } from "@core/core.constants";
-
 import { PriorityApi } from "@web/common/apis/priority.api";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { EventApi } from "@web/ducks/events/event.api";
@@ -16,6 +14,8 @@ import { Text } from "@web/components/Text";
 import { Button, FeedbackButtonContainer } from "@web/components/Button";
 
 import { StyledLogin } from "./styled";
+
+console.log("v1.0.2");
 
 export const LoginView = () => {
   const [redirect, setRedirect] = useState(false);
@@ -55,6 +55,7 @@ export const LoginView = () => {
       await new Promise((resolve) => setTimeout(resolve, 4000));
       const status: Result_OauthStatus = await AuthApi.checkOauthStatus();
 
+      console.log(status);
       if (status.isOauthComplete) {
         localStorage.setItem(LocalStorage.TOKEN, status.token);
         //throws error if token has expired or has a invalid signature

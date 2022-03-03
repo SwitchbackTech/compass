@@ -15,11 +15,11 @@ const configExpressLogger = () => {
       }),
       new winston.transports.File({
         filename: "logs/http-combined.log",
-        level: process.env.LOG_LEVEL,
+        level: process.env["LOG_LEVEL"],
         maxsize: MB_50,
         maxFiles: 2,
       }),
-      new winston.transports.Console({ level: process.env.LOG_LEVEL }),
+      new winston.transports.Console({ level: process.env["LOG_LEVEL"] }),
     ],
     format: winston.format.combine(
       winston.format.json(),

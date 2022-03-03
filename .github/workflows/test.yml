@@ -24,10 +24,6 @@ jobs:
         run: |
           yarn test
 
-      - name: Compile core
+      - name: Build each package and distributable
         run: |
-          yarn tsc:core
-
-      - name: Compile web
-        run: |
-          yarn build:web
+          yarn build

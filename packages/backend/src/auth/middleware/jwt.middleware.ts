@@ -1,7 +1,7 @@
+// @ts-nocheck
 import express from "express";
 import jwt, { JsonWebTokenError } from "jsonwebtoken";
 import crypto from "crypto";
-
 import { Jwt } from "@core/types/jwt.types";
 import { BaseError } from "@core/errors/errors.base";
 

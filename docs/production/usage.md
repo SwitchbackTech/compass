@@ -3,11 +3,14 @@
 Info on how to maintain the production environment
 Do everything in `setup.md` before trying these things.
 
-### Making Changes - opt 1:
+### Making Changes:
 
-Run build scripts (locally, for now)
+Run build scripts locally:
 
-Run script to scp build artifact to VM
+```
+yarn build    # builds core and web
+yarn deploy   # copies to VM
+```
 
 SSH into VM
 
@@ -25,26 +28,12 @@ If updating backend:
 bash /compass-calendar/scripts/deploy.backend.sh
 ```
 
-### Making changes - opt 2:
-
-push local changes to `compass-calendar` repo
-
-SSH into cloud VM
-
-```
-cd /$version
-git fetch
-
-# if using a branch other than main:
-git checkout <branch>
-
-cd package/<package>
-```
+---
 
 Manage processes
 
 ```
-pm2 restart $name #if pm2 not in watch mode already
+pm2 restart $name   # if pm2 not in watch mode already
 ```
 
 ### Check logs
@@ -64,6 +53,8 @@ Google's Oauth servers call a redirect URI after auth has completed
 - Those URIs are specified in GCP > APIs & Services > Credentials > Compass Calendar Backend
 - More info in `flow.gcal.sync.md`
 
+---
+
 # Troubleshooting
 
 Commands:
@@ -76,13 +67,24 @@ Commands:
 
 Files to check
 
-- nginx location: `/etc/nginx`
-  - server block: `/etc/nginx/sites-enabled/...`
-    - sets port
-- nginx logs: `/var/log/nginx/{error|access}.log`
-- certbot config: `/etc/letsencrypt/renewal/backend[...].conf`
-- env: `/compass-calendar/packages/backend/.env`
-  - check for discrepancies against the `.env` you're using in dev
+nginx configs: `/etc/nginx/...`
+
+- server block: `/etc/nginx/sites-enabled/...`
+  - sets port
+
+nginx logs:
+
+```
+tail -f /var/log/nginx/{error|access}.log
+```
+
+certbot config: `/etc/letsencrypt/renewal/backend[...].conf`
+
+env: `/compass-calendar/build/../.env`
+
+- check for discrepancies against the `.env` you're using in dev
+
+---
 
 ## Specific Issues
 

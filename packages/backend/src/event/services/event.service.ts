@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { InsertManyResult } from "mongodb";
 import { Result_Import_Gcal } from "@core/types/sync.types";
 import { MapEvent } from "@core/mappers/map.event";
@@ -17,13 +18,9 @@ import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
 import { getGcal } from "@backend/auth/services/google.auth.service";
 import { Origin } from "@core/core.constants";
+import { gCalendar, gParamsEventsList, gSchema$Event } from "@core/types/gcal";
 
 import { getReadAllFilter } from "./event.service.helpers";
-import {
-  gCalendar,
-  gParamsEventsList,
-  gSchema$Event,
-} from "../../../declarations";
 
 const logger = Logger("app:event.service");
 

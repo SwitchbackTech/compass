@@ -4,6 +4,7 @@ build.zip
 .vscode/
 .idea/
 .eslintcache
+globalConfig.json
 
 # wildcard files
 .env*
@@ -14,6 +15,8 @@ build.zip
 node_modules/
 # where build files are currently located on production
 prod/
+build/
+buildcache/
 
 #core
 packages/core/build/

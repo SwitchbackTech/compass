@@ -1,11 +1,15 @@
 {
-  "extends": "../../tsconfig.json",
-  "include": ["./src/**/*.tsx", "./src/**/*.ts", "./declaration.d.ts"],
-  "exclude": ["./src/node_modules", "**/*.test.ts"],
+  /* 
+  - does not extend root tsconfig, because it'd causing an unnecessary
+  dependency with the backend code
+  - webpack handles most TSC compilation details for web
+  */
+  // "include": ["./src/**/*.tsx", "./src/**/*.ts", "./declaration.d.ts"],
+  // "exclude": ["./src/node_modules", "**/*.test.ts"],
   "compilerOptions": {
     // "target": "es5",
     // "module": "es6",
-    "moduleResolution": "node",
+    // "moduleResolution": "node",
     // "declaration": true, // originally set to true, commented during refactor
     // "strict": true,
     // "noImplicitAny": true /* Raise error on expressions and declarations with an implied 'any' type. */,
@@ -17,19 +21,17 @@
     // "noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */,
     // "importHelpers": true,
     // "skipLibCheck": true,
-    // "esModuleInterop": true,
+    "esModuleInterop": true,
     // "allowSyntheticDefaultImports": true,
     // "experimentalDecorators": true,
     // "sourceMap": true,
-    "outDir": "./dist/tsc/",
-    "jsx": "react-jsx",
-    // "paths": {
-    // "@web/*": ["./src/*"],
-    // "@core/*": ["../core/src/*"],
-    //todo remove backend dependency,
-    // moving whats needed from @backend to @core
-    // "@backend/*": ["../backend/src/*"]
-    // },
+    // "outDir": "./dist/tsc/",
+    // "jsx": "react-jsx",
+    "jsx": "react",
+    "paths": {
+      "@web/*": ["./src/*"],
+      "@core/*": ["../core/src/*"]
+    },
     "lib": ["ES6", "dom"],
     "plugins": [{ "name": "typescript-plugin-css-modules" }]
   }

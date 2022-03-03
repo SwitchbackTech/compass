@@ -34,7 +34,6 @@ class CompassAuthService {
     const updatedOauthUser = Object.assign({}, userData.oauth, {
       user: userId,
     });
-    // await validate(OAUTH, updatedOauth); //TODO
 
     const response = await mongoService.db
       .collection(Collections.OAUTH)

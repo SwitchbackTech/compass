@@ -2,6 +2,10 @@
 
 _Things to do during a production VM setup_
 
+## SSH (optional)
+
+Setup SSH keys with the VM, which makes logging in and copying build files easier
+
 ## Code & git
 
 - Install GitHub CLI for easier authentication | [Linux docs](https://github.com/cli/cli/blob/trunk/docs/install_linux.md)
@@ -19,20 +23,23 @@ installs dependencies: `yarn dev`
 
 ### Run
 
-Set up `pm2` processes for backend and/or web ([quickstart](https://pm2.keymetrics.io/docs/usage/quick-start/))
+Set up `pm2` processes for backend ([quickstart](https://pm2.keymetrics.io/docs/usage/quick-start/))
 
 ```
-pm2 start yarn --name start:backend -- start:backend
+
+# init pm2 process called `backend`, which runs the `yarn start:backend` script
+pm2 start yarn --name backend -- start:backend
+
+pm2 save    # save to synchronize
+pm2 startup # run it on boot
+pm2 logs    # confirm it's working
 ```
 
-- creates pm2 process that's based on whatever
-  `yarn start:backend` does (eg. compile and running)
-- compiling on VM for convenience for now
-- may need to be updated if installed on something other | [reference](https://stackoverflow.com/questions/59046837/what-is-the-pm2-for-command-yarn-run-start)
+- may need to be updated if installed on something other than Ubuntu | [reference](https://stackoverflow.com/questions/59046837/what-is-the-pm2-for-command-yarn-run-start)
 
-# than Ubuntu
+- reminder: the frontend code/bundle is served statically by nginx, so you don't need to create a `pm2` process for it
 
-- run it on boot: `pm2 startup && pm2 save`
+  - I think (?). The `http-server` is also relevant, but I can't remember why. Might just be a separate way of serving the bundle
 
 Set up certbot/SSL (more below)
 
@@ -50,6 +57,7 @@ Oauth, HTTPS, etc
 
 - configured in `/etc/nginx/sites-enabled/default`
   - don't get confused with the `sites-available` dir
+- reference the `nginx` files in this `/docs` directory for working examples
 
 **HTTP -> HHTPS 301 redirect**: managed by certbot
 
@@ -62,6 +70,15 @@ Oauth, HTTPS, etc
 - certbot should auto-renew. To confirm it'll work, run:
   `certbot renew --dry-run`
 - `systemctl list-timers` <-- see when certbot runs
+
+# Scripts
+
+Make deploy scripts executable for quicker future updates:
+
+```
+chmod +x path/to/web.deploy.sh
+chmod +x path/to/backend.deploy.sh
+```
 
 # References
 

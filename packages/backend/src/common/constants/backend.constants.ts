@@ -23,6 +23,7 @@ const _getBaseUrl = () => {
   return new Error(msg);
 };
 
+// TOOD convert baseurl code to env.constants
 export const BACKEND_URL = _getBaseUrl();
 export const BASE_URL_DEV = `http://localhost:${process.env["PORT"] || 3000}`;
 export const GCAL_NOTIFICATION_URL = "/api/sync/gcal/notifications";

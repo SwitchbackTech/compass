@@ -1,9 +1,9 @@
+//@ts-nocheck
 import { Result_Stop_Watch } from "@core/types/sync.types";
 import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
-import { BaseError } from "@core/errors/errors.base";
 
 const logger = Logger("app:sync.service");
 

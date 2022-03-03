@@ -8,11 +8,13 @@ const logger = Logger("app:common.permission.middleware");
 class CommonPermissionMiddleware {
   permissionFlagRequired(requiredPermissionFlag: PermissionFlag) {
     return (
+      //@ts-ignore
       req: express.Request,
       res: express.Response,
       next: express.NextFunction
     ) => {
       try {
+        //@ts-ignore
         const userPermissionFlags = parseInt(res.locals.jwt.permissionFlags);
         if (userPermissionFlags & requiredPermissionFlag) {
           next();
@@ -25,6 +27,7 @@ class CommonPermissionMiddleware {
     };
   }
 
+  /*
   async onlySameUserOrAdminCanDoThisAction(
     req: express.Request,
     res: express.Response,
@@ -45,6 +48,7 @@ class CommonPermissionMiddleware {
       }
     }
   }
+  */
 }
 
 export default new CommonPermissionMiddleware();

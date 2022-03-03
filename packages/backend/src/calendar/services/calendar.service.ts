@@ -2,10 +2,7 @@ import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { Collections } from "@backend/common/constants/collections";
-import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";
-
-const logger = Logger("app:calendar.service");
 
 class CalendarService {
   async create(userId: string, calendarList: Schema_CalendarList) {
@@ -20,7 +17,12 @@ class CalendarService {
         .insertOne(calListData);
       return response;
     } catch (e) {
-      return new BaseError("Create Failed", e, Status.INTERNAL_SERVER, true);
+      return new BaseError(
+        "Create Failed",
+        JSON.stringify(e),
+        Status.INTERNAL_SERVER,
+        true
+      );
     }
   }
 }

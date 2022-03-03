@@ -1,25 +1,22 @@
+/* Visit https://aka.ms/tsconfig.json to read more about this file */
 {
-  // "include": ["./src/**/*.tsx", "./src/**/*.ts", "./declaration.d.ts"],
-  "exclude": ["**/__mocks__", "**/*.test.ts", "**/*.test.js"],
+  /* the web files not included because webpack handles that */
+  "include": ["packages/core/src/**/*.ts", "packages/backend/src/**/*.ts"],
+  "exclude": ["**/__mocks__/*", "**/*.test.ts*", "**/*.test.js*"],
   "compilerOptions": {
-    /* Visit https://aka.ms/tsconfig.json to read more about this file */
-
-    /* Basic Options */
-    // "incremental": true,                         /* Enable incremental compilation */
-    "target": "es5" /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017', 'ES2018', 'ES2019', 'ES2020', or 'ESNEXT'. */,
+    "target": "ES2016" /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017', 'ES2018', 'ES2019', 'ES2020', or 'ESNEXT'. */,
     "module": "commonjs" /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', 'es2020', or 'ESNext'. */,
     // "lib": [],                                   /* Specify library files to be included in the compilation. */
     "allowJs": true /* Allow javascript files to be compiled. */,
     "checkJs": true /* Report errors in .js files. */,
-    // "jsx": "preserve",                           /* Specify JSX code generation: 'preserve', 'react-native', 'react', 'react-jsx' or 'react-jsxdev'. */
     // "declaration": true,                         /* Generates corresponding '.d.ts' file. */
-    // "declarationMap": true,                      /* Generates a sourcemap for each corresponding '.d.ts' file. */
+    "declarationMap": true /* Generates a sourcemap for each corresponding '.d.ts' file. */,
     "sourceMap": true /* Generates corresponding '.map' file. */,
     // "outFile": "./",                             /* Concatenate and emit output to single file. */
-    // "outDir": "./",                              /* Redirect output structure to the directory. */
-    // "rootDir": "./",                             /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
+    "outDir": "./build" /* Redirect output structure to the directory. */,
+    "rootDir": "packages/" /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */,
     "composite": true /* Enable project compilation */,
-    // "tsBuildInfoFile": "./",                     /* Specify file to store incremental compilation information */
+    // "tsBuildInfoFile": "./buildca/che" /* Specify file to store incremental compilation information */,
     // "removeComments": true,                      /* Do not emit comments to output. */
     // "noEmit": true,                              /* Do not emit outputs. */
     "importHelpers": true /* Import emit helpers from 'tslib'. */,
@@ -45,14 +42,14 @@
     "noPropertyAccessFromIndexSignature": true /* Require undeclared properties from index signatures to use element accesses. */,
 
     /* Module Resolution Options */
-    // "moduleResolution": "node",                  /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */
+    // "moduleResolution": "node" /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */,
     // "baseUrl": "./packages" /* Base directory to resolve non-absolute module names. */,
     "paths": {
       /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
+      /* include all packages so cross-imports work */
       "@core/*": ["./packages/core/src/*"],
       "@web/*": ["./packages/web/src/*"],
-      "@backend/*": ["./packages/backend/src/*"],
-      "@backendroot/*": ["./packages/backend/*"]
+      "@backend/*": ["./packages/backend/src/*"]
     },
     // "rootDirs": [],                              /* List of root folders whose combined content represents the structure of the project at runtime. */
     // "typeRoots": [],                             /* List of folders to include type definitions from. */

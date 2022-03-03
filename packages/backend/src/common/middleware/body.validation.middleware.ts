@@ -1,3 +1,4 @@
+/*
 import express from "express";
 import { validationResult } from "express-validator";
 
@@ -8,7 +9,7 @@ class BodyValidationMiddleware {
     next: express.NextFunction
   ) {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    if (!errors || !errors.isEmpty()) {
       return res.status(400).send({ errors: errors.array() });
     }
     next();
@@ -16,3 +17,4 @@ class BodyValidationMiddleware {
 }
 
 export default new BodyValidationMiddleware();
+*/

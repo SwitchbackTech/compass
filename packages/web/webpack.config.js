@@ -5,9 +5,8 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const BundleAnalyzerPlugin =
   require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 
-// $$ change this for dirs like /Components, which have diff conventions (?)
-// $$ only if having same import issues on bundle
-const resolvePath = (p) => path.resolve(__dirname, p);
+const _dirname = path.resolve();
+const resolvePath = (p) => path.resolve(_dirname, p);
 
 module.exports = (env) => {
   const GLOBAL_SCSS = resolvePath("src/common/styles/index.scss");
@@ -133,12 +132,12 @@ module.exports = (env) => {
 
     output: {
       filename: "bundle.js",
-      path: resolvePath("build"),
+      path: `${path.resolve(_dirname, "../../build/web")}`,
     },
 
     devServer: {
       static: {
-        directory: path.join(__dirname, "public"),
+        directory: path.join(_dirname, "public"),
       },
       watchFiles: {
         paths: ["src/**/*"],

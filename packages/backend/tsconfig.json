@@ -1,35 +1,17 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["./src/**/*.ts"],
-  // Most ts-node options can be specified here using their programmatic names.
   "ts-node": {
-    // It is faster to skip typechecking.
-    // Remove if you want ts-node to do typechecking.
+    // Skip typechecking for faster development
     "transpileOnly": true,
-
     "files": true,
-
     "compilerOptions": {
       // compilerOptions specified here will override those declared below,
       // but *only* in ts-node.  Useful if you want ts-node and tsc to use
       // different options with a single tsconfig.json.
-      "baseUrl": ".",
-      "paths": {
-        // use project files to avoid waiting for tsc compiling
-        "@core/*": ["../core/src/*"],
-        "@backend/*": ["./src/*"]
-      }
     }
   },
   "compilerOptions": {
-    "target": "ES2016",
-    "outDir": "./build",
     "sourceMap": false,
-    "inlineSourceMap": true,
-    "baseUrl": ".",
-    "paths": {
-      "@core/*": ["../core/build/src/*"],
-      "@backend/*": ["./build/src/*"]
-    }
+    "inlineSourceMap": true
   }
 }
