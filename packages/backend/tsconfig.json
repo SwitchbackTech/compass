@@ -9,19 +9,19 @@
       // compilerOptions specified here will override those declared below,
       // but *only* in ts-node.  Useful if you want ts-node and tsc to use
       // different options with a single tsconfig.json.
-      "baseUrl": ".",
-      "paths": {
-        // use project files to avoid waiting for tsc compiling
-        "@core/*": ["../core/src/*"],
-        "@backend/*": ["./src/*"]
-      }
+      // "baseUrl": "."
+      // "paths": {
+      // use project files to avoid waiting for tsc compiling
+      // "@core/*": ["../core/src/*"],
+      // "@backend/*": ["./src/*"]
+      // }
     }
   },
   "compilerOptions": {
-    "target": "ES2016",
+    // "target": "ES2016",
     "outDir": "./build",
     "sourceMap": false,
-    "inlineSourceMap": true,
-    "baseUrl": "."
+    "inlineSourceMap": true
+    // "baseUrl": "."
   }
 }

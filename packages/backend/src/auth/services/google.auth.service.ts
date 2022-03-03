@@ -1,4 +1,3 @@
-//@ts-nocheck
 import { google } from "googleapis";
 import jwt from "jsonwebtoken";
 import express from "express";
@@ -9,6 +8,7 @@ import { gCalendar } from "@core/types/gcal";
 import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";
 import { Collections } from "@backend/common/constants/collections";
+import { isDev } from "@backend/common/helpers/common.helpers";
 
 const logger = Logger("app:google.auth.service");
 //@ts-ignore
@@ -54,8 +54,10 @@ class GoogleOauthService {
   constructor() {
     // always using PROD, even if in dev, so that you can still debug prod builds without needing
     // to use localhost
-    //@ts-ignore
-    const redirectUri = `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
+    // const redirectUri = `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
+    const redirectUri = isDev()
+      ? `http://localhost:3000/api/auth/oauth-complete`
+      : `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
 
     this.oauthClient = new google.auth.OAuth2(
       process.env["CLIENT_ID"],
@@ -73,11 +75,9 @@ class GoogleOauthService {
       .collection(Collections.OAUTH)
       .findOne({ state: state });
 
-    const pro = process.env;
-    console.log(proc);
-    const _oauth = oauth;
-    console.log(oauth);
-
+    console.log(
+      `looking for oauth via state: ${state} at ${Collections.OAUTH}`
+    );
     const isComplete = oauth && oauth.user ? true : false;
 
     if (isComplete) {
@@ -92,6 +92,7 @@ class GoogleOauthService {
           expiresIn: process.env["ACCESS_TOKEN_LIFE"],
         }
       );
+      console.log(`${process.env["ACCESS_TOKEN_SECRET"]} | ${accessToken}`);
 
       return { token: accessToken, isOauthComplete: isComplete };
     }

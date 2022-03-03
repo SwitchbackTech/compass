@@ -1,10 +1,15 @@
 {
-  "include": ["./packages/backend/**/*.ts", "./packages/core/**/*"],
+  "include": [
+    "./packages/backend/**/*.ts",
+    "./packages/core/**/*.ts",
+    "./packages/web/**/*.ts*"
+  ],
   "exclude": ["**/__mocks__/*", "**/*.test.ts", "**/*.test.js"],
   "files": [],
   "references": [
-    { "path": "packages/backend/tsconfig.json" }
-    // { "path": "packages/core/tsconfig.json" },
+    { "path": "packages/backend/tsconfig.json" },
+    { "path": "packages/core/tsconfig.json" },
+    { "path": "packages/web/tsconfig.json" }
   ],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
@@ -50,14 +55,13 @@
     "noPropertyAccessFromIndexSignature": true /* Require undeclared properties from index signatures to use element accesses. */,
 
     /* Module Resolution Options */
-    // "moduleResolution": "node",                  /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */
+    // "moduleResolution": "node" /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */,
     // "baseUrl": "./packages" /* Base directory to resolve non-absolute module names. */,
     "paths": {
       /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
       "@core/*": ["./packages/core/src/*"],
       "@web/*": ["./packages/web/src/*"],
-      "@backend/*": ["./packages/backend/src/*"],
-      "@backendroot/*": ["./packages/backend/*"]
+      "@backend/*": ["./packages/backend/src/*"]
     },
     // "rootDirs": [],                              /* List of root folders whose combined content represents the structure of the project at runtime. */
     // "typeRoots": [],                             /* List of folders to include type definitions from. */

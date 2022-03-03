@@ -29,7 +29,6 @@ class CompassAuthService {
     userId: string,
     userData: CombinedLogin_Google
   ): Promise<Schema_Oauth> {
-    // eslint-disable-next-line testing-library/no-debugging-utils
     logger.debug(`Setting oauth data for compass user: ${userId}`);
 
     const updatedOauthUser = Object.assign({}, userData.oauth, {

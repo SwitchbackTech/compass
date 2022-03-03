@@ -1,6 +1,6 @@
 // @ts-nocheck
 import express from "express";
-import jwt, { Jwt } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
 import { BaseError } from "@core/errors/errors.base";
