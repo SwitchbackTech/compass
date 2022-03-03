@@ -9,10 +9,9 @@ import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";
 import { Collections } from "@backend/common/constants/collections";
 import { isDev } from "@backend/common/helpers/common.helpers";
+import { ENV } from "@backend/common/constants/env.constants";
 
 const logger = Logger("app:google.auth.service");
-//@ts-ignore
-const SCOPES = process.env["SCOPES"].split(",");
 
 /********
 Helpers 
@@ -52,16 +51,13 @@ class GoogleOauthService {
   oauthClient: OAuth2Client;
 
   constructor() {
-    // always using PROD, even if in dev, so that you can still debug prod builds without needing
-    // to use localhost
-    // const redirectUri = `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
     const redirectUri = isDev()
-      ? `http://localhost:3000/api/auth/oauth-complete`
-      : `${process.env.BASEURL_PROD}/api/auth/oauth-complete`;
+      ? `http://localhost:${ENV.PORT}/api/auth/oauth-complete`
+      : `${ENV.BASEURL_PROD}/api/auth/oauth-complete`;
 
     this.oauthClient = new google.auth.OAuth2(
-      process.env["CLIENT_ID"],
-      process.env["CLIENT_SECRET"],
+      ENV.CLIENT_ID,
+      ENV.CLIENT_SECRET,
       redirectUri
     );
     this.tokens = {};
@@ -75,24 +71,19 @@ class GoogleOauthService {
       .collection(Collections.OAUTH)
       .findOne({ state: state });
 
-    console.log(
-      `looking for oauth via state: ${state} at ${Collections.OAUTH}`
-    );
     const isComplete = oauth && oauth.user ? true : false;
 
     if (isComplete) {
       //TODO use other token creation method above
       // Create an access token //
-      //@ts-ignore
       const accessToken = jwt.sign(
         { _id: oauth.user },
-        process.env["ACCESS_TOKEN_SECRET"],
+        ENV.ACCESS_TOKEN_SECRET,
         {
           algorithm: "HS256",
-          expiresIn: process.env["ACCESS_TOKEN_LIFE"],
+          expiresIn: ENV.ACCESS_TOKEN_LIFE,
         }
       );
-      console.log(`${process.env["ACCESS_TOKEN_SECRET"]} | ${accessToken}`);
 
       return { token: accessToken, isOauthComplete: isComplete };
     }
@@ -103,7 +94,7 @@ class GoogleOauthService {
     const authUrl = this.oauthClient.generateAuthUrl({
       access_type: "offline",
       prompt: "consent",
-      scope: SCOPES,
+      scope: ENV.SCOPES,
       state: state,
     });
     return authUrl;
