@@ -11,7 +11,7 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "scripts": {
-    "build": "rm -rf build/ && yarn build:backend && yarn build:web",
+    "build": "rm -rf build/ && yarn tsc --build --clean && yarn build:backend && yarn build:web",
     "build:backend": "yarn tsc --build --verbose",
     "build:web": "cd packages/web && webpack --mode=production --env production",
     "build:web -analyze": "cd packages/web && webpack --mode=production --env production analyze",
@@ -21,6 +21,7 @@
     "dev:backend-start": "cd packages/backend && ts-node-dev --respawn --pretty --transpile-only -r tsconfig-paths/register src/app.ts",
     "dev:web": "cd packages/web && webpack serve --env development --mode=development",
     "deploy:web": "cd packages/web && zip -r build/build.zip build/ && gcloud compute scp build/build.zip ***REMOVED***@compass-backend1:/home/***REMOVED***/",
+    "deploy": "yarn zip:build && gcloud compute scp build/build.zip ***REMOVED***@compass-backend1:/home/***REMOVED***/",
     "lint -f": "cross-env yarn workspaces run lint-fix",
     "lint:css": "stylelint 'packages/web/src/**/*.ts'",
     "start:backend": "cp packages/backend/.env build/backend && export DEBUG=app* && export NODE_ENV=production && cd build/backend && node src/app.js",
@@ -32,6 +33,7 @@
     "test:backend": "yarn jest backend",
     "test:core": "yarn test core",
     "test:web": "yarn test web",
+    "zip:build": "zip -r build/build.zip build/",
     "_audit:desktop": "cd packages/electron && yarn electronegativity -i ./ -x LimitNavigationGlobalCheck,PermissionRequestHandlerGlobalCheck",
     "_db:clean": "node scripts/cli.js --delete",
     "_build:desktop": " cd packages/electron && electron-builder --dir",
