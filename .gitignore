@@ -15,6 +15,7 @@ globalConfig.json
 node_modules/
 # where build files are currently located on production
 prod/
+build/
 
 #core
 packages/core/build/

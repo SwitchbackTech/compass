@@ -1,1 +1,0 @@
-{"version":3,"file":"sync.routes.config.d.ts","sourceRoot":"","sources":["../../../../packages/backend/src/sync/sync.routes.config.ts"],"names":[],"mappings":"AAAA,OAAO,OAAO,MAAM,SAAS,CAAC;AAC9B,OAAO,EAAE,kBAAkB,EAAE,MAAM,sCAAsC,CAAC;AAM1E,qBAAa,UAAW,SAAQ,kBAAkB;gBACpC,GAAG,EAAE,OAAO,CAAC,WAAW;IAIpC,eAAe;CAiBhB"}

@@ -1,1 +1,0 @@
-{"version":3,"file":"priority.routes.config.d.ts","sourceRoot":"","sources":["../../../../packages/backend/src/priority/priority.routes.config.ts"],"names":[],"mappings":"AAAA,OAAO,OAAO,MAAM,SAAS,CAAC;AAI9B,OAAO,EAAE,kBAAkB,EAAE,MAAM,sCAAsC,CAAC;AAI1E,qBAAa,cAAe,SAAQ,kBAAkB;gBACxC,GAAG,EAAE,OAAO,CAAC,WAAW;IAIpC,eAAe;CAgBhB"}

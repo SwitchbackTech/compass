@@ -1,1 +1,0 @@
-{"version":3,"file":"event.routes.config.d.ts","sourceRoot":"","sources":["../../../../packages/backend/src/event/event.routes.config.ts"],"names":[],"mappings":"AAAA,OAAO,OAAO,MAAM,SAAS,CAAC;AAE9B,OAAO,EAAE,kBAAkB,EAAE,MAAM,sCAAsC,CAAC;AAK1E,qBAAa,WAAY,SAAQ,kBAAkB;gBACrC,GAAG,EAAE,OAAO,CAAC,WAAW;IAIpC,eAAe,IAAI,OAAO,CAAC,WAAW;CA8BvC"}

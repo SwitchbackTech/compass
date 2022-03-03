@@ -1,1 +1,0 @@
-{"version":3,"file":"core.constants.d.ts","sourceRoot":"","sources":["../../../packages/core/src/core.constants.ts"],"names":[],"mappings":"AAAA,eAAO,MAAM,KAAK,WAAW,CAAC;AAC9B,eAAO,MAAM,UAAU,iDAAiD,CAAC;AAKzE,oBAAY,MAAM;IAChB,OAAO,YAAY;IACnB,MAAM,WAAW;IACjB,YAAY,iBAAiB;CAC9B;AAED,oBAAY,UAAU;IACpB,UAAU,eAAe;IACzB,IAAI,SAAS;IACb,IAAI,SAAS;IACb,SAAS,cAAc;CACxB"}

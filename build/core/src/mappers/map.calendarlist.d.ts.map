@@ -1,1 +1,0 @@
-{"version":3,"file":"map.calendarlist.d.ts","sourceRoot":"","sources":["../../../../packages/core/src/mappers/map.calendarlist.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,oBAAoB,EAAE,MAAM,kBAAkB,CAAC;AACxD,OAAO,EAAE,mBAAmB,EAAE,MAAM,4BAA4B,CAAC;AAEjE,QAAA,MAAM,eAAe;wBACC,oBAAoB,GAAG,mBAAmB;CAe/D,CAAC;AAEF,OAAO,EAAE,eAAe,EAAE,CAAC"}
