@@ -21,7 +21,7 @@
   },
   "compilerOptions": {
     // "target": "ES2016",
-    "outDir": "./build",
+    // "outDir": "./build",
     "sourceMap": false,
     "inlineSourceMap": true
     // "baseUrl": "."

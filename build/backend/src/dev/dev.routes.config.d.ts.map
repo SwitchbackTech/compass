@@ -1,0 +1,1 @@
+{"version":3,"file":"dev.routes.config.d.ts","sourceRoot":"","sources":["../../../../packages/backend/src/dev/dev.routes.config.ts"],"names":[],"mappings":"AAAA,OAAO,OAAO,MAAM,SAAS,CAAC;AAC9B,OAAO,EAAE,kBAAkB,EAAE,MAAM,sCAAsC,CAAC;AAK1E,qBAAa,SAAU,SAAQ,kBAAkB;gBACnC,GAAG,EAAE,OAAO,CAAC,WAAW;IAIpC,eAAe;CAQhB"}

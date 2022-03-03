@@ -1,0 +1,1 @@
+{"version":3,"file":"auth.routes.config.d.ts","sourceRoot":"","sources":["../../../../packages/backend/src/auth/auth.routes.config.ts"],"names":[],"mappings":"AAAA,OAAO,OAAO,MAAM,SAAS,CAAC;AAC9B,OAAO,EAAE,kBAAkB,EAAE,MAAM,sCAAsC,CAAC;AAO1E,qBAAa,UAAW,SAAQ,kBAAkB;gBACpC,GAAG,EAAE,OAAO,CAAC,WAAW;IAIpC,eAAe,IAAI,OAAO,CAAC,WAAW;CAqCvC"}
