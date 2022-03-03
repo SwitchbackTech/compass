@@ -1,5 +1,7 @@
 {
+  // "include": ["package/core/src/**/*.ts", ".package/backend/src/**/*.ts"],
   "extends": "../../tsconfig.json",
+  // "include": ["./src/**/*.ts"],
   "ts-node": {
     // It is faster to skip typechecking.
     // Remove if you want ts-node to do typechecking.

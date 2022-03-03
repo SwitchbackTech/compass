@@ -1,16 +1,12 @@
 {
-  "include": [
-    "./packages/backend/**/*.ts",
-    "./packages/core/**/*.ts",
-    "./packages/web/**/*.ts*"
-  ],
-  "exclude": ["**/__mocks__/*", "**/*.test.ts", "**/*.test.js"],
+  "include": ["packages/core/src/**/*.ts", "packages/backend/src/**/*.ts"],
+  "exclude": ["**/__mocks__/*", "**/*.test.ts*", "**/*.test.js*"],
   "files": [],
-  "references": [
-    { "path": "packages/backend/tsconfig.json" },
-    { "path": "packages/core/tsconfig.json" },
-    { "path": "packages/web/tsconfig.json" }
-  ],
+  // "references": [
+  // { "path": "packages/backend/tsconfig.json" },
+  // { "path": "packages/core/tsconfig.json" }
+  // { "path": "packages/web/tsconfig.json" }
+  // ],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
 

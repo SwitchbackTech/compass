@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  // "extends": "../../tsconfig.json",
   // "include": ["./src/**/*.tsx", "./src/**/*.ts", "./declaration.d.ts"],
   // "exclude": ["./src/node_modules", "**/*.test.ts"],
   "compilerOptions": {
@@ -17,19 +17,17 @@
     // "noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */,
     // "importHelpers": true,
     // "skipLibCheck": true,
-    // "esModuleInterop": true,
+    "esModuleInterop": true,
     // "allowSyntheticDefaultImports": true,
     // "experimentalDecorators": true,
     // "sourceMap": true,
     // "outDir": "./dist/tsc/",
-    "jsx": "react-jsx",
-    // "paths": {
-    // "@web/*": ["./src/*"],
-    // "@core/*": ["../core/src/*"],
-    //todo remove backend dependency,
-    // moving whats needed from @backend to @core
-    // "@backend/*": ["../backend/src/*"]
-    // },
+    // "jsx": "react-jsx",
+    "jsx": "react",
+    "paths": {
+      "@web/*": ["./src/*"],
+      "@core/*": ["../core/src/*"]
+    },
     "lib": ["ES6", "dom"],
     "plugins": [{ "name": "typescript-plugin-css-modules" }]
   }
