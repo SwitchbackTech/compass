@@ -8,11 +8,11 @@ import { setupServer } from "msw/node";
 import { CalendarView } from "@web/views/Calendar";
 import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
-import { render } from "@web/common/helpers/test.helpers";
+import { render } from "@web/common/__mocks__/mock.render";
 import {
   mockLocalStorage,
   clearLocalStorageMock,
-} from "@web/common/__tests__/test.util";
+} from "@web/common/helpers/test.util";
 describe("CalendarView: Interactions", () => {
   const server = setupServer(
     rest.get("/api/event", (req, res, ctx) => {

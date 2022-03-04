@@ -2,11 +2,11 @@ import React from "react";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { CalendarView } from "@web/views/Calendar";
-import { render } from "@web/common/helpers/test.helpers";
+import { render } from "@web/common/__mocks__/mock.render";
 import {
   mockLocalStorage,
   clearLocalStorageMock,
-} from "@web/common/__tests__/test.util";
+} from "@web/common/helpers/test.util";
 import { weekEventState } from "@web/common/__mocks__/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
 
