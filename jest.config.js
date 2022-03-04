@@ -120,7 +120,7 @@ module.exports = {
         "^@web/containers/(.*)$": "<rootDir>/packages/web/src/containers/$1",
         "^@web/ducks/(.*)$": "<rootDir>/packages/web/src/ducks/$1",
         "^@web/public/(.*)$": "<rootDir>/packages/web/src/public/$1",
-        "^@web/routers/(.*)$": "<rootDir>/packages/web/src/routers/$1",
+        "^@web/routers/(.*)$": "<rootDir>/packages/web/src/routers/",
         "^@web/store/(.*)$": "<rootDir>/packages/web/src/store/$1",
         "^@web/views/(.*)$": "<rootDir>/packages/web/src/views/$1",
         "^.+\\.(css|less)$":

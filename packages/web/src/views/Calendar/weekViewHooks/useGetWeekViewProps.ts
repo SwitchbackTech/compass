@@ -1,13 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useDispatch, useSelector, shallowEqual } from "react-redux";
+import React, { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import weekPlugin from "dayjs/plugin/weekOfYear";
-
 import { Origin, Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-
 import {
   HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
@@ -90,7 +88,7 @@ export const useGetWeekViewProps = () => {
   }
 
   const allDayEventsMaxCount =
-    // 1 to allow space for user to add another
+    // always at least 1 to allow space for user to add another
     Math.max(...[1, ...Object.values(allDayCountsEditing)]);
 
   /****************
@@ -138,6 +136,7 @@ export const useGetWeekViewProps = () => {
         endDate: toUTCOffset(endOfSelectedWeekDay),
       })
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [week]);
 
   /*************

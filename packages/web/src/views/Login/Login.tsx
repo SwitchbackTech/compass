@@ -15,8 +15,6 @@ import { Button, FeedbackButtonContainer } from "@web/components/Button";
 
 import { StyledLogin } from "./styled";
 
-console.log("v1.0.2");
-
 export const LoginView = () => {
   const [redirect, setRedirect] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -36,13 +34,6 @@ export const LoginView = () => {
     setRedirect(true);
   }
 
-  useEffect(() => {
-    const token = localStorage.getItem(LocalStorage.TOKEN);
-    if (token && !redirect) {
-      refreshToken();
-    }
-  }, [redirect]);
-
   const startGoogleOauth = async () => {
     setIsAuthenticating(true);
     const googleOauthData = await AuthApi.getOauthData(GOOGLE);
@@ -55,7 +46,6 @@ export const LoginView = () => {
       await new Promise((resolve) => setTimeout(resolve, 4000));
       const status: Result_OauthStatus = await AuthApi.checkOauthStatus();
 
-      console.log(status);
       if (status.isOauthComplete) {
         localStorage.setItem(LocalStorage.TOKEN, status.token);
         //throws error if token has expired or has a invalid signature
