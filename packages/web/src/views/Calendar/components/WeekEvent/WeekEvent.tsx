@@ -59,11 +59,9 @@ const WeekEventComponent = (
     component.endOfSelectedWeekDay
   );
   let left = getLeftPosition(category, startIndex, widths);
-  // const durationHours = endDate.diff(startDate) * 2.7777777777778e-7 || 0; // ms to hours
-  const durationHours = endDate.diff(startDate) * 2.7777777777778e-7; // ms to hours
-  console.log("durHours:", durationHours);
+  // get duration by converting ms to hours
+  const durationHours = endDate.diff(startDate) * 2.7777777777778e-7 || 0;
   let height = core.getEventCellHeight() * durationHours;
-  // console.log("height [orig]:", height.toString());
   let width =
     component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
   // auto-deduct width for padding
@@ -88,7 +86,6 @@ const WeekEventComponent = (
     width /= event.groupCount;
     left += event.groupOrder * width - width;
   }
-  // console.log("height:", height.toString(), typeof height);
 
   return (
     <StyledEvent
