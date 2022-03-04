@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import React from "react";
-
 import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
@@ -60,8 +59,11 @@ const WeekEventComponent = (
     component.endOfSelectedWeekDay
   );
   let left = getLeftPosition(category, startIndex, widths);
+  // const durationHours = endDate.diff(startDate) * 2.7777777777778e-7 || 0; // ms to hours
   const durationHours = endDate.diff(startDate) * 2.7777777777778e-7; // ms to hours
+  console.log("durHours:", durationHours);
   let height = core.getEventCellHeight() * durationHours;
+  // console.log("height [orig]:", height.toString());
   let width =
     component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
   // auto-deduct width for padding
@@ -86,6 +88,7 @@ const WeekEventComponent = (
     width /= event.groupCount;
     left += event.groupOrder * width - width;
   }
+  // console.log("height:", height.toString(), typeof height);
 
   return (
     <StyledEvent
