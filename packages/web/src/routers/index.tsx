@@ -1,11 +1,10 @@
 import React from "react";
 import { HashRouter, Route, Switch } from "react-router-dom";
-
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { CalendarView } from "@web/views/Calendar";
 import { LoginView } from "@web/views/Login";
 
-export const RootRouter = () => (
+export const CompassRoot = (
   <HashRouter>
     <div>
       <Switch>
@@ -19,3 +18,5 @@ export const RootRouter = () => (
     </div>
   </HashRouter>
 );
+
+export const RootRouter = () => CompassRoot;

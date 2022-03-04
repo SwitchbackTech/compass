@@ -1,4 +1,4 @@
 export const ROOT_ROUTES = {
-  ROOT: '/',
-  LOGIN: '/login',
+  ROOT: "/",
+  LOGIN: "/login",
 };

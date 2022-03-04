@@ -1,20 +1,19 @@
 import React from "react";
-import "@testing-library/jest-dom";
 import dayjs from "dayjs";
 import { rest } from "msw";
-
+import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { setupServer } from "msw/node";
 import { CalendarView } from "@web/views/Calendar";
+import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
 import { render } from "@web/common/helpers/test.helpers";
-
+import {
+  mockLocalStorage,
+  clearLocalStorageMock,
+} from "@web/common/__tests__/test.util";
 describe("CalendarView: Interactions", () => {
-  beforeAll(() => {
-    window.HTMLElement.prototype.scroll = jest.fn();
-  });
-
   const server = setupServer(
     rest.get("/api/event", (req, res, ctx) => {
       const events = [
@@ -37,14 +36,21 @@ describe("CalendarView: Interactions", () => {
   );
 
   beforeAll(() => {
+    window.HTMLElement.prototype.scroll = jest.fn();
+    mockLocalStorage();
+    localStorage.setItem("token", "mytoken123");
     server.listen();
   });
   afterEach(() => server.resetHandlers());
-  afterAll(() => server.close());
+
+  afterAll(() => {
+    clearLocalStorageMock();
+    server.close();
+  });
 
   it("navigates to previous week upon nav arrow click", async () => {
     const user = userEvent.setup();
-    const { container } = render(<CalendarView />);
+    const { container } = render(CompassRoot);
     const todayId = "#id-" + getWeekDayLabel(dayjs());
 
     expect(container.querySelector(todayId)).not.toBe(null);

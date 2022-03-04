@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { Redirect } from "react-router-dom";
 import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
-
 import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
 import { getHourlyTimes } from "@web/common/helpers/date.helpers";
 import { ColorNames } from "@web/common/types/styles";
@@ -12,12 +12,15 @@ import {
   JustifyContent,
 } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { getAlphaColor, getColor } from "@web/common/helpers/colors";
 import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
-import { Sidebar } from "@web/views/Calendar/components/Sidebar";
+import { useToken } from "@web/common/hooks/useToken";
+// import { Sidebar } from "@web/views/Calendar/components/Sidebar";
+
 import { useGetWeekViewProps } from "./weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "./weekViewHooks/types";
 import {
@@ -40,11 +43,13 @@ import {
   StyledAllDayEventsGrid,
   StyledPrevDaysOverflow,
 } from "./styled";
+import { LoginView } from "../Login";
 
 const dayTimes = getHourlyTimes(dayjs());
 
 export const CalendarView = () => {
-  // console.log("rendering CalendarView");
+  const { token } = useToken();
+
   const weekViewProps = useGetWeekViewProps();
   const { component, core, eventHandlers } = weekViewProps;
 
@@ -53,19 +58,6 @@ export const CalendarView = () => {
     { width: number; height: number } | undefined
   >();
   const [isTodayPopoverOpen, setIsTodayPopoverOpen] = useState(false);
-
-  /*
-  useEffect(() => {
-    // let timer1 = setTimeout(() => setIsLoading(false), 500);
-
-    // this will clear Timeout
-    // when component unmount like in willComponentUnmount
-    // and show will not change to true
-    return () => {
-      clearTimeout(timer1);
-    };
-  }, []);
-  */
 
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
@@ -123,9 +115,11 @@ export const CalendarView = () => {
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
   }, [component.eventsGridRef]);
 
-  // if (isLoading) {
-  //   return <p>loading </p>;
-  // } else {
+  if (!token) {
+    return <Redirect to={ROOT_ROUTES.LOGIN} />;
+    // return <LoginView />;
+  }
+
   return (
     <Styled>
       {/* <Sidebar
@@ -343,5 +337,4 @@ export const CalendarView = () => {
       </StyledCalendar>
     </Styled>
   );
-  // }
 };

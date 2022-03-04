@@ -1,11 +1,9 @@
 import { createSelector } from "@reduxjs/toolkit";
-
 import { Schema_Event } from "@core/types/event.types";
-
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
-import { orderEvents } from "./event.helpers";
 
+import { orderEvents } from "./event.helpers";
 import { SectionType } from "./types";
 
 export const selectAreEventsProcessingBySectionType = (
@@ -61,7 +59,7 @@ export const selectAllDayEvents = (state: RootState) => {
   return allDayEvents;
 };
 
-export const selectWeekEvents = (state: RootState) => {
+export const selectWeekEvents = (state: RootState): Schema_Event[] => {
   const entities = state.events.entities.value || {};
   const weekIds = state.events.getWeekEvents.value || [];
   if (!weekIds.data || weekIds.data.length === 0) return [];
