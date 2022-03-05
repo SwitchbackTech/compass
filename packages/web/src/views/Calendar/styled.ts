@@ -23,6 +23,7 @@ export const StyledCalendar = styled(Flex)`
   flex-grow: 1;
   height: 100%;
   background: ${getColor(ColorNames.DARK_2)};
+  overflow-x: hidden;
   padding: ${CALENDAR_TOP_PADDING}px ${CALENDAR_X_PADDING}px 0
     ${CALENDAR_X_PADDING}px;
 `;
@@ -102,8 +103,6 @@ export const StyledEventsGrid = styled.div`
   flex: 1;
   margin-bottom: 20px;
   width: 100%;
-  overflow: auto;
-  overflow-x: hidden;
   position: relative;
 `;
 
