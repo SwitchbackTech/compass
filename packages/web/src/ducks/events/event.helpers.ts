@@ -1,6 +1,6 @@
-import dayjs, { Dayjs } from "dayjs";
 import { schema } from "normalizr";
 import { v4 as uuidv4 } from "uuid";
+import dayjs, { Dayjs } from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isBetween from "dayjs/plugin/isBetween";
@@ -102,6 +102,7 @@ export const getEventCategory = (
   return Category.ThisWeekOnly;
 };
 
+// $$ move to grid
 export const getLeftPosition = (
   category: Category,
   startIndex: number,

@@ -16,9 +16,7 @@ import { roundByNumber } from "@web/common/helpers";
 import { getAmPmTimes, toUTCOffset } from "@web/common/helpers/date.helpers";
 import {
   selectAllDayEvents,
-  selectAllDayEventsMemo,
   selectWeekEvents,
-  selectWeekEventsMemo,
 } from "@web/ducks/events/selectors";
 import {
   createEventSlice,
@@ -28,6 +26,7 @@ import {
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
 import { getAllDayCounts } from "@web/ducks/events/event.helpers";
+import { getFlexBasis } from "@web/common/helpers/grid.util";
 
 import {
   GRID_TIME_STEP,
@@ -44,7 +43,9 @@ export const useGetWeekViewProps = () => {
   /**************
    * General
    *************/
-  const today = dayjs();
+  // const today = dayjs();
+  // const today = dayjs().set("date", 9); //$$
+  const today = dayjs("2022-03-04");
   const dispatch = useDispatch();
 
   /**************
@@ -208,6 +209,10 @@ export const useGetWeekViewProps = () => {
   const getEventCellHeight = () =>
     (eventsGridRef.current?.clientHeight || 0) / 11;
 
+  const getFlexBasisWrapper = (day: Dayjs) => {
+    return getFlexBasis(day, week, today, dayjsBasedOnWeekDay);
+  };
+
   const getFlexBasisByDay = (day: Dayjs) => {
     if (week !== today.week()) return 100 / 7;
 
@@ -221,15 +226,30 @@ export const useGetWeekViewProps = () => {
 
     const flexBasis = fixedFlexBasisesByDayNumber[dayWeekNumber];
     const flexBasisForBeforeDay = getBeforeDayWidth();
+    let summary = `${monthDayJs.toString()}:
+    week: ${week}
+    monthDayJs: ${monthDayJs}
+    dayWeekNumber: ${dayWeekNumber}
+    flexBasis: ${flexBasis}
+    flexBasisForBeforeDay: ${flexBasisForBeforeDay}
+    `;
 
     if (!flexBasis) {
       if (today.isAfter(monthDayJs)) {
+        summary += `type: no flexBasis - before today:\n\t\t${flexBasisForBeforeDay}`;
+        console.log(summary);
         return flexBasisForBeforeDay;
       }
 
+      summary += `type: no flexBasis - after today \n\t\t${
+        flexBasisForBeforeDay * 1.5
+      }`;
+      console.log(summary);
       return flexBasisForBeforeDay * 1.5;
     }
 
+    summary += `type: today/tmrw:\n\t\t${flexBasis || 0}`;
+    console.log(summary);
     return flexBasis || 0;
   };
 
@@ -549,6 +569,7 @@ export const useGetWeekViewProps = () => {
       getBeforeDaysOverflowWidth,
       getEventCellHeight,
       getFlexBasisByDay,
+      getFlexBasisWrapper,
     },
   };
 };

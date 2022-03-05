@@ -5,6 +5,7 @@ import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
 import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
 import { getHourlyTimes } from "@web/common/helpers/date.helpers";
+import { getFlexBasis } from "@web/common/helpers/grid.util";
 import { ColorNames } from "@web/common/types/styles";
 import {
   AlignItems,
@@ -252,7 +253,7 @@ export const CalendarView = () => {
           <StyledGridColumns>
             {component.weekDays.map((day) => (
               <StyledGridCol
-                flexBasis={core.getFlexBasisByDay(day)}
+                flexBasis={core.getFlexBasisWrapper(day)}
                 key={day.format(YEAR_MONTH_DAY_FORMAT)}
               />
             ))}
@@ -299,7 +300,8 @@ export const CalendarView = () => {
 
             {component.weekDays.map((day) => (
               <StyledGridCol
-                flexBasis={core.getFlexBasisByDay(day)}
+                // flexBasis={core.getFlexBasisByDay(day)}
+                flexBasis={core.getFlexBasisWrapper(day)}
                 key={day.format(YEAR_MONTH_DAY_FORMAT)}
               />
             ))}

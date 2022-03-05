@@ -1,5 +1,4 @@
 import styled from "styled-components";
-
 import { ColorNames } from "@web/common/types/styles";
 import { Flex } from "@web/components/Flex";
 import { getAlphaColor, getColor } from "@web/common/helpers/colors";
@@ -155,7 +154,7 @@ export interface StyledGridColProps {
 }
 
 export const StyledGridCol = styled.div<StyledGridColProps>`
-  min-width: 80px;
+  min-width: 80px; //$$ where this from?
   flex-basis: ${({ flexBasis }) => flexBasis}%;
   border-left: ${gridDividerBorder};
   height: 100%;
