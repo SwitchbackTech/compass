@@ -38,9 +38,9 @@ export const getFlexBasis = (
   if (flexBasis) return flexBasis;
 
   const prevDayFlex = getPrevDayWidth(today);
-  const thisDaysDate = todaysWeek.set("date", +day.format("DD"));
-  //   if (today.isAfter(day)) {
-  if (today.isAfter(thisDaysDate)) {
+  //   const thisDaysDate = todaysWeek.set("date", +day.format("DD"));
+  if (today.isAfter(day)) {
+    //   if (today.isAfter(thisDaysDate)) {
     // previous day
     return prevDayFlex;
   }
