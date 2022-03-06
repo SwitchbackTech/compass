@@ -294,11 +294,11 @@ export const CalendarView = () => {
           <StyledGridColumns>
             <StyledPrevDaysOverflow
               widthPercent={core.getBeforeDaysOverflowWidth()}
+              width={core.getPastOverflowWidth()}
             />
 
             {component.weekDays.map((day) => (
               <StyledGridCol
-                // flexBasis={core.getFlexBasisByDay(day)}
                 flexBasis={core.getFlexBasisWrapper(day)}
                 key={day.format(YEAR_MONTH_DAY_FORMAT)}
               />

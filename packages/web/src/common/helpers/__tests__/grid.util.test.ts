@@ -23,9 +23,7 @@ describe("getFlexBasisByDay", () => {
     ];
 
     decWeekDays.forEach((d) => {
-      expect(getFlexBasis(dayjs(d), weekInFocus, july10, july20Week)).toBe(
-        FLEX_EQUAL
-      );
+      expect(getFlexBasis(dayjs(d), weekInFocus, july10)).toBe(FLEX_EQUAL);
     });
   });
 
@@ -44,9 +42,7 @@ describe("getFlexBasisByDay", () => {
     ];
 
     decWeekDays.forEach((d) => {
-      expect(getFlexBasis(dayjs(d), weekInFocus, jan1, jan1Week)).toBe(
-        FLEX_EQUAL
-      );
+      expect(getFlexBasis(dayjs(d), weekInFocus, jan1)).toBe(FLEX_EQUAL);
     });
   });
 });
@@ -58,22 +54,20 @@ describe("regular week: March 6-12", () => {
   test("Sun - Tue", () => {
     const pastDays = ["2022-03-06", "2022-03-07", "2022-03-08"];
     pastDays.forEach((d) => {
-      expect(getFlexBasis(dayjs(d), week, mar9, mar9Week)).toBe(prevDayWidth);
+      expect(getFlexBasis(dayjs(d), week, mar9)).toBe(prevDayWidth);
     });
   });
 
   test("Wed [today]", () => {
-    expect(getFlexBasis(mar9, week, mar9, mar9Week)).toBe(FLEX_TODAY);
+    expect(getFlexBasis(mar9, week, mar9)).toBe(FLEX_TODAY);
   });
   test("Thu [tmrw]", () => {
-    expect(getFlexBasis(dayjs("2022-03-10"), week, mar9, mar9Week)).toBe(
-      FLEX_TMRW
-    );
+    expect(getFlexBasis(dayjs("2022-03-10"), week, mar9)).toBe(FLEX_TMRW);
   });
   test("Fri - Sat", () => {
     const futureDays = ["2022-03-11", "2022-03-12"];
     futureDays.forEach((d) => {
-      expect(getFlexBasis(dayjs(d), week, mar9, mar9Week)).toBe(
+      expect(getFlexBasis(dayjs(d), week, mar9)).toBe(
         prevDayWidth * FUTURE_MULTIPLE
       );
     });
@@ -94,15 +88,13 @@ describe("beginning of month: Feb 27 - Mar 5", () => {
       "2022-03-03",
     ];
     pastDays.forEach((d) => {
-      expect(getFlexBasis(dayjs(d), weekInFocus, today, feb27Week)).toBe(
-        prevDayWidth
-      );
+      expect(getFlexBasis(dayjs(d), weekInFocus, today)).toBe(prevDayWidth);
     });
   });
 
   test("Fri [today]", () => {
-    expect(
-      getFlexBasis(dayjs("2022-03-04"), weekInFocus, today, feb27Week)
-    ).toBe(FLEX_TODAY);
+    expect(getFlexBasis(dayjs("2022-03-04"), weekInFocus, today)).toBe(
+      FLEX_TODAY
+    );
   });
 });

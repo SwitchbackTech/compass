@@ -27,6 +27,7 @@ import {
 } from "@web/ducks/events/slice";
 import { getAllDayCounts } from "@web/ducks/events/event.helpers";
 import { getFlexBasis } from "@web/common/helpers/grid.util";
+import { FUTURE_MULTIPLE } from "@web/common/constants/grid.constants";
 
 import {
   GRID_TIME_STEP,
@@ -44,8 +45,7 @@ export const useGetWeekViewProps = () => {
    * General
    *************/
   // const today = dayjs();
-  // const today = dayjs().set("date", 9); //$$
-  const today = dayjs("2022-02-22");
+  const today = dayjs("2022-03-05");
   const dispatch = useDispatch();
 
   /**************
@@ -105,7 +105,7 @@ export const useGetWeekViewProps = () => {
   const dayjsBasedOnWeekDay = today.week(week);
   const times = getAmPmTimes();
   const todayDayWeekNumber = today.get("day") + 1;
-  const beforeDaysCount = todayDayWeekNumber - 1;
+  const yesterdayDayNumber = todayDayWeekNumber - 1;
 
   /*********
    * Grid
@@ -147,23 +147,57 @@ export const useGetWeekViewProps = () => {
     allDayEventsGridRef.current?.clientHeight || 0;
 
   const getBeforeDayWidth = () => {
-    const afterDaysCount = 5 - beforeDaysCount;
+    // 5 cuz exclude today and tmrw, which have flex basis
+    const futureDays = 5 - yesterdayDayNumber;
+    const futureX = FUTURE_MULTIPLE * futureDays;
+    const diff = yesterdayDayNumber + futureX;
+    const width = 60 / diff;
+    /*
+    console.log(`
+    ydn = ${yesterdayDayNumber}
+    fd = ${futureDays} (5 - ydn)
+    fx = ${futureX} (${FUTURE_MULTIPLE} * fd)
+    diff = ${diff}  (ydn + fx)
+    ---
+    width = ${width} (60 / diff)
+    `);
+    */
+    return width;
+  };
 
-    return 60 / (beforeDaysCount + 1.5 * afterDaysCount);
+  const getPastOverflowWidth = () => {
+    if (yesterdayDayNumber === 6) {
+      /* 
+       then its the last day of the week.
+       using the same logic as the other days
+       would normally be fine, but the scrollbar width 
+       would throw things off. 
+       this works around that by just relying on todays width.
+
+       PS not sure why you need to round up
+      */
+      const todayBasis = getFlexBasisByDay(today);
+      return Math.ceil(100 - todayBasis);
+    }
+
+    const yesterday = today.add(-1, "day");
+    const yesterdayBasis = getFlexBasisByDay(yesterday);
+    const width = yesterdayBasis * yesterdayDayNumber;
+    return width;
   };
 
   const getBeforeDaysOverflowWidth = () => {
-    let _beforeDaysCount = beforeDaysCount;
-
-    if (dayjs().week() < week) {
-      _beforeDaysCount = 0;
-    }
-
     if (dayjs().week() > week) {
+      // viewing past week
       return 100;
     }
 
-    return getBeforeDayWidth() * _beforeDaysCount;
+    if (dayjs().week() < week) {
+      // future week, no overflow
+      return 0;
+    }
+
+    return getBeforeDayWidth() * yesterdayDayNumber;
   };
 
   const getDateByMousePosition = (x: number, y: number) => {
@@ -210,7 +244,7 @@ export const useGetWeekViewProps = () => {
     (eventsGridRef.current?.clientHeight || 0) / 11;
 
   const getFlexBasisWrapper = (day: Dayjs) => {
-    return getFlexBasis(day, week, today, dayjsBasedOnWeekDay);
+    return getFlexBasis(day, week, today);
   };
 
   const getFlexBasisByDay = (day: Dayjs) => {
@@ -225,32 +259,17 @@ export const useGetWeekViewProps = () => {
     };
 
     const flexBasis = fixedFlexBasisesByDayNumber[dayWeekNumber];
-    const flexBasisForBeforeDay = getBeforeDayWidth();
-    let summary = `${monthDayJs.toString()}:
-    week: ${week}
-    monthDayJs: ${monthDayJs}
-    dayWeekNumber: ${dayWeekNumber}
-    flexBasis: ${flexBasis}
-    flexBasisForBeforeDay: ${flexBasisForBeforeDay}
-    `;
 
-    if (!flexBasis) {
-      if (today.isAfter(monthDayJs)) {
-        summary += `type: no flexBasis - before today:\n\t\t${flexBasisForBeforeDay}`;
-        console.log(summary);
-        return flexBasisForBeforeDay;
-      }
+    // then the day is today or tmrw
+    if (flexBasis) return flexBasis;
 
-      summary += `type: no flexBasis - after today \n\t\t${
-        flexBasisForBeforeDay * 1.5
-      }`;
-      console.log(summary);
-      return flexBasisForBeforeDay * 1.5;
+    const beforeDayWidth = getBeforeDayWidth();
+    // if (today.isAfter(monthDayJs)) {
+    if (day.isBefore(today)) {
+      return beforeDayWidth;
     }
 
-    summary += `type: today/tmrw:\n\t\t${flexBasis || 0}`;
-    console.log(summary);
-    return flexBasis || 0;
+    return beforeDayWidth * FUTURE_MULTIPLE;
   };
 
   const getYByDate = (date: string) => {
@@ -565,8 +584,8 @@ export const useGetWeekViewProps = () => {
     },
     core: {
       getAllDayEventCellHeight,
-      getBeforeDayWidth,
       getBeforeDaysOverflowWidth,
+      getPastOverflowWidth,
       getEventCellHeight,
       getFlexBasisByDay,
       getFlexBasisWrapper,

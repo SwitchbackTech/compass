@@ -17,12 +17,7 @@ export const getPrevDayWidth = (today: Dayjs) => {
   return 60 / (beforeDaysCount + FUTURE_MULTIPLE * afterDaysCount);
 };
 
-export const getFlexBasis = (
-  day: Dayjs,
-  week: number,
-  today: Dayjs,
-  todaysWeek: Dayjs
-) => {
+export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
   // past/future week
   if (week !== today.week()) return FLEX_EQUAL;
 
@@ -38,9 +33,7 @@ export const getFlexBasis = (
   if (flexBasis) return flexBasis;
 
   const prevDayFlex = getPrevDayWidth(today);
-  //   const thisDaysDate = todaysWeek.set("date", +day.format("DD"));
   if (today.isAfter(day)) {
-    //   if (today.isAfter(thisDaysDate)) {
     // previous day
     return prevDayFlex;
   }

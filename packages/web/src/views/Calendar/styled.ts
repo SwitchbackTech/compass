@@ -130,10 +130,12 @@ export const StyledEventsGrid = styled.div`
 
 export interface PrevDaysOverflowProps {
   widthPercent: number;
+  width: number;
 }
 
 export const StyledPrevDaysOverflow = styled.div<PrevDaysOverflowProps>`
-  width: ${({ widthPercent }) => widthPercent}%;
+  width: ${({ width }) => width}%;
+  /* width: ${({ widthPercent }) => widthPercent}%; */
   height: 100%;
   background: ${getColor(ColorNames.WHITE_1)};
   opacity: 0.03;
