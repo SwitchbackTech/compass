@@ -165,7 +165,18 @@ export const useGetWeekViewProps = () => {
   };
 
   const getPastOverflowWidth = () => {
+    if (dayjs().week() > week) {
+      // viewing past week
+      return 100;
+    }
+
+    if (today.week() < week) {
+      // future week, no overflow
+      return 0;
+    }
+
     if (yesterdayDayNumber === 6) {
+      // then today is Sat
       /* 
        then its the last day of the week.
        using the same logic as the other days
@@ -179,24 +190,11 @@ export const useGetWeekViewProps = () => {
       return Math.ceil(100 - todayBasis);
     }
 
+    // Sun - Fri
     const yesterday = today.add(-1, "day");
     const yesterdayBasis = getFlexBasisByDay(yesterday);
     const width = yesterdayBasis * yesterdayDayNumber;
     return width;
-  };
-
-  const getBeforeDaysOverflowWidth = () => {
-    if (dayjs().week() > week) {
-      // viewing past week
-      return 100;
-    }
-
-    if (dayjs().week() < week) {
-      // future week, no overflow
-      return 0;
-    }
-
-    return getBeforeDayWidth() * yesterdayDayNumber;
   };
 
   const getDateByMousePosition = (x: number, y: number) => {
@@ -250,7 +248,6 @@ export const useGetWeekViewProps = () => {
     if (week !== today.week()) return 100 / 7;
 
     const dayWeekNumber = day.get("day") + 1;
-    const monthDayJs = dayjsBasedOnWeekDay.set("date", +day.format("DD"));
 
     const fixedFlexBasisesByDayNumber = {
       [todayDayWeekNumber]: 21.4,
@@ -263,7 +260,6 @@ export const useGetWeekViewProps = () => {
     if (flexBasis) return flexBasis;
 
     const beforeDayWidth = getBeforeDayWidth();
-    // if (today.isAfter(monthDayJs)) {
     if (day.isBefore(today)) {
       return beforeDayWidth;
     }
@@ -583,7 +579,6 @@ export const useGetWeekViewProps = () => {
     },
     core: {
       getAllDayEventCellHeight,
-      getBeforeDaysOverflowWidth,
       getPastOverflowWidth,
       getEventCellHeight,
       getFlexBasisByDay,
