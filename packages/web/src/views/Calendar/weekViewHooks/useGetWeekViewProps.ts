@@ -151,21 +151,12 @@ export const useGetWeekViewProps = () => {
     const futureX = FUTURE_MULTIPLE * futureDays;
     const diff = yesterdayDayNumber + futureX;
     const width = 60 / diff;
-    /*
-    console.log(`
-    ydn = ${yesterdayDayNumber}
-    fd = ${futureDays} (5 - ydn)
-    fx = ${futureX} (${FUTURE_MULTIPLE} * fd)
-    diff = ${diff}  (ydn + fx)
-    ---
-    width = ${width} (60 / diff)
-    `);
-    */
+
     return width;
   };
 
   const getPastOverflowWidth = () => {
-    if (dayjs().week() > week) {
+    if (today.week() > week) {
       // viewing past week
       return 100;
     }
@@ -176,9 +167,8 @@ export const useGetWeekViewProps = () => {
     }
 
     if (yesterdayDayNumber === 6) {
-      // then today is Sat
       /* 
-       then its the last day of the week.
+       then its the last day of the week (Sat)
        using the same logic as the other days
        would normally be fine, but the scrollbar width 
        would throw things off. 
