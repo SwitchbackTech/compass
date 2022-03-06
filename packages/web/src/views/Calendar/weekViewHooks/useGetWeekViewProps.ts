@@ -44,8 +44,7 @@ export const useGetWeekViewProps = () => {
   /**************
    * General
    *************/
-  // const today = dayjs();
-  const today = dayjs("2022-03-05");
+  const today = dayjs();
   const dispatch = useDispatch();
 
   /**************

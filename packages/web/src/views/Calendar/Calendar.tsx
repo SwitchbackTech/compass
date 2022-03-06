@@ -293,8 +293,7 @@ export const CalendarView = () => {
           </StyledDayTimes>
           <StyledGridColumns>
             <StyledPrevDaysOverflow
-              widthPercent={core.getBeforeDaysOverflowWidth()}
-              width={core.getPastOverflowWidth()}
+              widthPercent={core.getPastOverflowWidth()}
             />
 
             {component.weekDays.map((day) => (
