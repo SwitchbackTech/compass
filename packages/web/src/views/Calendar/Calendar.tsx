@@ -44,7 +44,6 @@ import {
   StyledAllDayEventsGrid,
   StyledPrevDaysOverflow,
 } from "./styled";
-import { LoginView } from "../Login";
 
 const dayTimes = getHourlyTimes(dayjs());
 
@@ -114,11 +113,10 @@ export const CalendarView = () => {
     const top = minutes * minuteHeight;
 
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
-  }, [component.eventsGridRef]);
+  }, [component.calendarRef]);
 
   if (!token) {
     return <Redirect to={ROOT_ROUTES.LOGIN} />;
-    // return <LoginView />;
   }
 
   return (

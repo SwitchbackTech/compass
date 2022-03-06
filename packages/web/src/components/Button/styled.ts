@@ -1,5 +1,4 @@
 import styled from "styled-components";
-
 import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
 import {
   getColor,

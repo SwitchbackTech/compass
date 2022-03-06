@@ -8,6 +8,7 @@ import {
   CALENDAR_GRID_MARGIN_LEFT,
   CALENDAR_TOP_PADDING,
   CALENDAR_X_PADDING,
+  GRID_SCROLLBAR_WIDTH,
   GRID_Y_OFFSET,
   WEEK_DAYS_MARGIN_Y,
 } from "./constants";
@@ -23,7 +24,6 @@ export const StyledCalendar = styled(Flex)`
   flex-grow: 1;
   height: 100%;
   background: ${getColor(ColorNames.DARK_2)};
-  overflow-x: hidden;
   padding: ${CALENDAR_TOP_PADDING}px ${CALENDAR_X_PADDING}px 0
     ${CALENDAR_X_PADDING}px;
 `;
@@ -87,9 +87,10 @@ export interface AllDayEventsGridProps {
 const gridHeight = `100% - (${GRID_Y_OFFSET}px + 20px)`;
 const gridCellHeight = `(${gridHeight}) / 11`;
 const fullDayEventHeight = `${gridCellHeight} / 4`;
+const gridWidth = `100% - ${GRID_SCROLLBAR_WIDTH}px`;
 
 export const StyledAllDayEventsGrid = styled(Flex)<AllDayEventsGridProps>`
-  width: 100%;
+  width: calc(${gridWidth});
   height: ${({ maxCount }) =>
     `calc(${fullDayEventHeight} * 2 + ${
       maxCount || 0
@@ -104,6 +105,27 @@ export const StyledEventsGrid = styled.div`
   margin-bottom: 20px;
   width: 100%;
   position: relative;
+  overflow-y: visible;
+  overflow-x: hidden;
+
+  /* 
+  webkit-scrollbar isn't standardized among browsers, 
+  meaning it could break on some broswers or after a browser update.
+  (see: https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar
+  it's used here nonetheless because it was an easy way to get the grid widths
+  to align correctly
+  */
+  ::-webkit-scrollbar {
+    width: ${GRID_SCROLLBAR_WIDTH}px;
+  }
+  ::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: ${getColor(ColorNames.GREY_4)};
+    &:hover {
+      background: ${getColor(ColorNames.GREY_4_BRIGHT)};
+      transition: background-color 0.2s;
+    }
+  }
 `;
 
 export interface PrevDaysOverflowProps {
@@ -153,7 +175,7 @@ export interface StyledGridColProps {
 }
 
 export const StyledGridCol = styled.div<StyledGridColProps>`
-  min-width: 80px; //$$ where this from?
+  min-width: 80px;
   flex-basis: ${({ flexBasis }) => flexBasis}%;
   border-left: ${gridDividerBorder};
   height: 100%;
