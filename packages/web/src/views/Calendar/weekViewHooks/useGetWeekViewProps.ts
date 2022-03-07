@@ -176,13 +176,13 @@ export const useGetWeekViewProps = () => {
 
        PS not sure why you need to round up
       */
-      const todayBasis = getFlexBasisByDay(today);
+      const todayBasis = getFlexBasisWrapper(today);
       return Math.ceil(100 - todayBasis);
     }
 
     // Sun - Fri
     const yesterday = today.add(-1, "day");
-    const yesterdayBasis = getFlexBasisByDay(yesterday);
+    const yesterdayBasis = getFlexBasisWrapper(yesterday);
     const width = yesterdayBasis * yesterdayDayNumber;
     return width;
   };
@@ -232,29 +232,6 @@ export const useGetWeekViewProps = () => {
 
   const getFlexBasisWrapper = (day: Dayjs) => {
     return getFlexBasis(day, week, today);
-  };
-
-  const getFlexBasisByDay = (day: Dayjs) => {
-    if (week !== today.week()) return 100 / 7;
-
-    const dayWeekNumber = day.get("day") + 1;
-
-    const fixedFlexBasisesByDayNumber = {
-      [todayDayWeekNumber]: 21.4,
-      [todayDayWeekNumber + 1]: 18.6,
-    };
-
-    const flexBasis = fixedFlexBasisesByDayNumber[dayWeekNumber];
-
-    // then the day is today or tmrw
-    if (flexBasis) return flexBasis;
-
-    const beforeDayWidth = getBeforeDayWidth();
-    if (day.isBefore(today)) {
-      return beforeDayWidth;
-    }
-
-    return beforeDayWidth * FUTURE_MULTIPLE;
   };
 
   const getYByDate = (date: string) => {
@@ -571,7 +548,6 @@ export const useGetWeekViewProps = () => {
       getAllDayEventCellHeight,
       getPastOverflowWidth,
       getEventCellHeight,
-      getFlexBasisByDay,
       getFlexBasisWrapper,
     },
   };

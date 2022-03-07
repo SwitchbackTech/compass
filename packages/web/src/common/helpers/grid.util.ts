@@ -9,14 +9,6 @@ import {
 
 dayjs.extend(weekPlugin);
 
-export const getPrevDayWidth = (today: Dayjs) => {
-  const todayWeekNum = today.get("day") + 1;
-  const beforeDaysCount = todayWeekNum - 1;
-  const afterDaysCount = 5 - beforeDaysCount;
-
-  return 60 / (beforeDaysCount + FUTURE_MULTIPLE * afterDaysCount);
-};
-
 export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
   // past/future week
   if (week !== today.week()) return FLEX_EQUAL;
@@ -39,4 +31,12 @@ export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
   }
   // future day
   return prevDayFlex * FUTURE_MULTIPLE;
+};
+
+export const getPrevDayWidth = (today: Dayjs) => {
+  const todayWeekNum = today.get("day") + 1;
+  const beforeDaysCount = todayWeekNum - 1;
+  const afterDaysCount = 5 - beforeDaysCount;
+
+  return 60 / (beforeDaysCount + FUTURE_MULTIPLE * afterDaysCount);
 };

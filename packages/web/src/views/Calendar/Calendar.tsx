@@ -5,7 +5,6 @@ import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
 import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
 import { getHourlyTimes } from "@web/common/helpers/date.helpers";
-import { getFlexBasis } from "@web/common/helpers/grid.util";
 import { ColorNames } from "@web/common/types/styles";
 import {
   AlignItems,
@@ -221,7 +220,7 @@ export const CalendarView = () => {
               weekDayTextColor = getAlphaColor(ColorNames.WHITE_1, 0.55);
             }
 
-            const flexBasis = core.getFlexBasisByDay(day);
+            const flexBasis = core.getFlexBasisWrapper(day);
 
             return (
               <StyledWeekDayFlex
