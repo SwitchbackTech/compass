@@ -4225,14 +4225,13 @@ arg@^5.0.1:
   integrity sha512-e0hDa9H2Z9AwFkk2qDlwhoMYE4eToKarchkQHovNdLTCYMHZHeRjI71crOh+dio4K6u1IcwubQqo79Ga4CyAQA==
 
 argon2@^0.28.2:
-  version "0.28.4"
-  resolved "https://registry.yarnpkg.com/argon2/-/argon2-0.28.4.tgz#af6df523b839a78b3cfbfdbfa789ffa2c6672d9f"
-  integrity sha512-WsfqiDp/tf5+eieLc1+S7RtO7Y3cAiZQ1F6GIaskENoJy/6xuCN5WGBIc8dG7QVPDavy6jUSads8zwZTtrHVag==
+  version "0.28.5"
+  resolved "https://registry.yarnpkg.com/argon2/-/argon2-0.28.5.tgz#0c8d6366c389bae3194c89baf4011721a644ded4"
+  integrity sha512-kGFCctzc3VWmR1aCOYjNgvoTmVF5uVBUtWlXCKKO54d1K+31zRz45KAcDIqMo2746ozv/52d25nfEekitaXP0w==
   dependencies:
     "@mapbox/node-pre-gyp" "^1.0.8"
     "@phc/format" "^1.0.0"
     node-addon-api "^4.3.0"
-    opencollective-postinstall "^2.0.3"
 
 argparse@^1.0.7:
   version "1.0.10"
@@ -11900,11 +11899,6 @@ open@^8.0.9:
     define-lazy-prop "^2.0.0"
     is-docker "^2.1.1"
     is-wsl "^2.2.0"
-
-opencollective-postinstall@^2.0.3:
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/opencollective-postinstall/-/opencollective-postinstall-2.0.3.tgz#7a0fff978f6dbfa4d006238fbac98ed4198c3259"
-  integrity sha512-8AV/sCtuzUeTo8gQK5qDZzARrulB3egtLzFgteqB2tcT4Mw7B8Kt7JcDHmltjz6FOAHsvTevk70gZEbhM4ZS9Q==
 
 opener@^1.5.1, opener@^1.5.2:
   version "1.5.2"
