@@ -145,16 +145,6 @@ export const useGetWeekViewProps = () => {
   const getAllDayEventCellHeight = () =>
     allDayEventsGridRef.current?.clientHeight || 0;
 
-  const getBeforeDayWidth = () => {
-    // 5 cuz exclude today and tmrw, which have flex basis
-    const futureDays = 5 - yesterdayDayNumber;
-    const futureX = FUTURE_MULTIPLE * futureDays;
-    const diff = yesterdayDayNumber + futureX;
-    const width = 60 / diff;
-
-    return width;
-  };
-
   const getPastOverflowWidth = () => {
     if (today.week() > week) {
       // viewing past week

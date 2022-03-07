@@ -35,8 +35,11 @@ export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
 
 export const getPrevDayWidth = (today: Dayjs) => {
   const todayWeekNum = today.get("day") + 1;
-  const beforeDaysCount = todayWeekNum - 1;
-  const afterDaysCount = 5 - beforeDaysCount;
+  const yesterdayDayNum = todayWeekNum - 1;
+  const futureDays = 5 - yesterdayDayNum; // 5 cuz exclude today and tmrw
+  const futureFactor = futureDays * FUTURE_MULTIPLE;
+  const diff = yesterdayDayNum + futureFactor;
+  const width = 60 / diff;
 
-  return 60 / (beforeDaysCount + FUTURE_MULTIPLE * afterDaysCount);
+  return width;
 };
