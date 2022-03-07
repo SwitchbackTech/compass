@@ -1,12 +1,12 @@
 import dayjs from "dayjs";
 import { allDayEventsMinimal } from "@core/__mocks__/events.allday.1";
 import { allDayEvents } from "@core/__mocks__/events.allday.2";
+import { getLeftPosition } from "@web/common/helpers/grid.util";
 
 import {
   getAllDayCounts,
   getAllDayEventWidth,
   getEventCategory,
-  getLeftPosition,
   orderEvents,
 } from "../event.helpers";
 

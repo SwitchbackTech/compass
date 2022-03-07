@@ -8,16 +8,12 @@ import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
 import { Priorities } from "@core/core.constants";
 
+import { Category } from "./types";
+
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isBetween);
 
-enum Category {
-  ThisWeekOnly = "thisWeekOnly",
-  ThisToFutureWeek = "thisToFutureWeek",
-  PastToThisWeek = "pastToThisWeek",
-  PastToFutureWeek = "pastToFutureWeek",
-}
 // rudimentary handling of errors
 // meant for temporary testing, will be replaced
 export const handleErrorTemp = (error: Error) => {
@@ -100,36 +96,6 @@ export const getEventCategory = (
 
   console.log("Logic error while getting event category");
   return Category.ThisWeekOnly;
-};
-
-// $$ move to grid
-export const getLeftPosition = (
-  category: Category,
-  startIndex: number,
-  widths: number[]
-) => {
-  let positionStart: number;
-  switch (category) {
-    case Category.PastToThisWeek:
-    case Category.PastToFutureWeek: {
-      positionStart = 0;
-      break;
-    }
-    case Category.ThisWeekOnly:
-    case Category.ThisToFutureWeek:
-      {
-        // add up from 0 index to startIndex
-        positionStart = widths.reduce((accum, width, index) => {
-          return index < startIndex ? accum + width : accum;
-        }, 0);
-      }
-      break;
-    default: {
-      console.log("Logic error while parsing left position of date");
-      positionStart = -666;
-    }
-  }
-  return positionStart;
 };
 
 export const getWeekDayLabel = (day: Dayjs) =>

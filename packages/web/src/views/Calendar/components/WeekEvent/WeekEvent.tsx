@@ -10,8 +10,8 @@ import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 import {
   getAllDayEventWidth,
   getEventCategory,
-  getLeftPosition,
 } from "@web/ducks/events/event.helpers";
+import { getLeftPosition } from "@web/common/helpers/grid.util";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 

@@ -6,6 +6,7 @@ import {
   FUTURE_MULTIPLE,
   FLEX_EQUAL,
 } from "@web/common/constants/grid.constants";
+import { Category } from "@web/ducks/events/types";
 
 dayjs.extend(weekPlugin);
 
@@ -31,6 +32,35 @@ export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
   }
   // future day
   return prevDayFlex * FUTURE_MULTIPLE;
+};
+
+export const getLeftPosition = (
+  category: Category,
+  startIndex: number,
+  widths: number[]
+) => {
+  let positionStart: number;
+  switch (category) {
+    case Category.PastToThisWeek:
+    case Category.PastToFutureWeek: {
+      positionStart = 0;
+      break;
+    }
+    case Category.ThisWeekOnly:
+    case Category.ThisToFutureWeek:
+      {
+        // add up from 0 index to startIndex
+        positionStart = widths.reduce((accum, width, index) => {
+          return index < startIndex ? accum + width : accum;
+        }, 0);
+      }
+      break;
+    default: {
+      console.log("Logic error while parsing left position of date");
+      positionStart = -666;
+    }
+  }
+  return positionStart;
 };
 
 export const getPrevDayWidth = (today: Dayjs) => {

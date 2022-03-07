@@ -1,8 +1,6 @@
 import { Action } from "redux";
-
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import {
   Response_HttpPaginatedSuccess,
@@ -37,6 +35,13 @@ export interface Action_InsertEvents extends Action {
 
 export interface Action_TimezoneChange extends Action {
   payload: { timezone: string };
+}
+
+export enum Category {
+  ThisWeekOnly = "thisWeekOnly",
+  ThisToFutureWeek = "thisToFutureWeek",
+  PastToThisWeek = "pastToThisWeek",
+  PastToFutureWeek = "pastToFutureWeek",
 }
 
 export interface Entities_Event {
