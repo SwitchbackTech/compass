@@ -24,7 +24,9 @@ import { useToken } from "@web/common/hooks/useToken";
 import { useGetWeekViewProps } from "./weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "./weekViewHooks/types";
 import {
+  ArrowNavigationButton,
   Styled,
+  StyledAllDayEventsGrid,
   StyledCalendar,
   StyledGridCol,
   StyledGridRow,
@@ -32,16 +34,14 @@ import {
   StyledHeaderFlex,
   StyledEventsGrid,
   StyledGridColumns,
-  StyledWeekDaysFlex,
   StyledNavigationButtons,
   StyledDayTimes,
   StyledEvents,
-  TodayNavigationButton,
-  ArrowNavigationButton,
   StyledWeekDayFlex,
+  StyledWeekDaysFlex,
   StyledTodayPopoverContainer,
-  StyledAllDayEventsGrid,
   StyledPrevDaysOverflow,
+  TodayNavigationButton,
 } from "./styled";
 
 const dayTimes = getHourlyTimes(dayjs());
@@ -202,11 +202,6 @@ export const CalendarView = () => {
               ? getColor(ColorNames.TEAL_3)
               : getColor(ColorNames.WHITE_2);
 
-            const monthDayJs = component.dayjsBasedOnWeekDay.set(
-              "date",
-              +day.format("DD")
-            );
-
             let dayNumberToDisplay = day.format("D");
 
             dayNumberToDisplay =
@@ -216,7 +211,7 @@ export const CalendarView = () => {
                 ? day.format("MMM D")
                 : dayNumberToDisplay;
 
-            if (component.today.isAfter(monthDayJs)) {
+            if (day.isBefore(component.today)) {
               weekDayTextColor = getAlphaColor(ColorNames.WHITE_1, 0.55);
             }
 

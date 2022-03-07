@@ -27,7 +27,6 @@ import {
 } from "@web/ducks/events/slice";
 import { getAllDayCounts } from "@web/ducks/events/event.utils";
 import { getFlexBasis } from "@web/common/utils/grid.util";
-import { FUTURE_MULTIPLE } from "@web/common/constants/grid.constants";
 
 import {
   GRID_TIME_STEP,
