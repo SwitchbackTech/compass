@@ -4,7 +4,7 @@ import {
   getColor,
   getDarkerColor,
   getInvertedColor,
-} from "@web/common/helpers/colors";
+} from "@web/common/utils/colors";
 import { Flex } from "@web/components/Flex";
 
 export interface Props {

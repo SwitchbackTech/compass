@@ -1,7 +1,7 @@
 import React from "react";
 
 import { ArrowDownFilledIcon } from "@web/assets/svg";
-import { getColor } from "@web/common/helpers/colors";
+import { getColor } from "@web/common/utils/colors";
 import { ColorNames } from "@web/common/types/styles";
 
 export interface Props {

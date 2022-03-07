@@ -4,7 +4,7 @@ import { Priorities } from "@core/core.constants";
 
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { API_BASEURL } from "@web/common/constants/web.constants";
-import { headers } from "../helpers";
+import { headers } from "../utils";
 
 const PriorityApi = {
   async createPriorities(token: string) {

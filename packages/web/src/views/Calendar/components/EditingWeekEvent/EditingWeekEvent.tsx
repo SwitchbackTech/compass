@@ -4,7 +4,7 @@ import { ArrowContainer, Popover } from "react-tiny-popover";
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 
-import { getColor } from "@web/common/helpers/colors";
+import { getColor } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { EventForm } from "@web/views/EventForm";
 

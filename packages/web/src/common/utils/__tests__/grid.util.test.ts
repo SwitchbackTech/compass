@@ -1,4 +1,4 @@
-import { getPrevDayWidth, getFlexBasis } from "@web/common/helpers/grid.util";
+import { getPrevDayWidth, getFlexBasis } from "@web/common/utils/grid.util";
 import {
   FLEX_TODAY,
   FLEX_TMRW,

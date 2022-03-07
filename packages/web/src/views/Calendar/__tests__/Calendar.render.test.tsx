@@ -6,7 +6,7 @@ import { render } from "@web/common/__mocks__/mock.render";
 import {
   mockLocalStorage,
   clearLocalStorageMock,
-} from "@web/common/helpers/test.util";
+} from "@web/common/utils/test.util";
 import { weekEventState } from "@web/common/__mocks__/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
 

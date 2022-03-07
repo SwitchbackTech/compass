@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 import { SidebarCollapseIcon, SidebarOpenIcon } from "@web/assets/svg";
-import { getColor } from "@web/common/helpers/colors";
+import { getColor } from "@web/common/utils/colors";
 import { ColorNames } from "@web/common/types/styles";
 import { CheckBox } from "@web/components/CheckBox";
 import { Flex } from "@web/components/Flex";

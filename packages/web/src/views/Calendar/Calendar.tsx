@@ -3,8 +3,8 @@ import { Redirect } from "react-router-dom";
 import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
-import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
-import { getHourlyTimes } from "@web/common/helpers/date.helpers";
+import { getWeekDayLabel } from "@web/ducks/events/event.utils";
+import { getHourlyTimes } from "@web/common/utils/date.utils";
 import { ColorNames } from "@web/common/types/styles";
 import {
   AlignItems,
@@ -14,7 +14,7 @@ import {
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
-import { getAlphaColor, getColor } from "@web/common/helpers/colors";
+import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";

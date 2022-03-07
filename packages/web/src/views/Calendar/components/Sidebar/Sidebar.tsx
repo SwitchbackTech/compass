@@ -12,7 +12,7 @@ import {
   FlexDirections,
   JustifyContent,
 } from "@web/components/Flex/styled";
-import { getAlphaColor, getColor } from "@web/common/helpers/colors";
+import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Divider } from "@web/components/Divider";
 import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates";

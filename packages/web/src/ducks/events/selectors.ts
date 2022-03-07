@@ -3,7 +3,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
 
-import { orderEvents } from "./event.helpers";
+import { orderEvents } from "./event.utils";
 import { SectionType } from "./types";
 
 export const selectAreEventsProcessingBySectionType = (

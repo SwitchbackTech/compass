@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import { ColorNames } from "@web/common/types/styles";
 import { Flex } from "@web/components/Flex";
-import { getAlphaColor, getColor } from "@web/common/helpers/colors";
+import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
 
 import {

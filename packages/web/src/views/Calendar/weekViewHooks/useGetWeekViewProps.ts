@@ -12,8 +12,8 @@ import {
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
 import { LocalStorage } from "@web/common/constants/web.constants";
-import { roundByNumber } from "@web/common/helpers";
-import { getAmPmTimes, toUTCOffset } from "@web/common/helpers/date.helpers";
+import { roundByNumber } from "@web/common/utils";
+import { getAmPmTimes, toUTCOffset } from "@web/common/utils/date.utils";
 import {
   selectAllDayEvents,
   selectWeekEvents,
@@ -25,8 +25,8 @@ import {
   eventsEntitiesSlice,
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
-import { getAllDayCounts } from "@web/ducks/events/event.helpers";
-import { getFlexBasis } from "@web/common/helpers/grid.util";
+import { getAllDayCounts } from "@web/ducks/events/event.utils";
+import { getFlexBasis } from "@web/common/utils/grid.util";
 import { FUTURE_MULTIPLE } from "@web/common/constants/grid.constants";
 
 import {

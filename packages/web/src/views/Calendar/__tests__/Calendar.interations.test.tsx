@@ -7,12 +7,12 @@ import userEvent from "@testing-library/user-event";
 import { setupServer } from "msw/node";
 import { CalendarView } from "@web/views/Calendar";
 import { CompassRoot } from "@web/routers/index";
-import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
+import { getWeekDayLabel } from "@web/ducks/events/event.utils";
 import { render } from "@web/common/__mocks__/mock.render";
 import {
   mockLocalStorage,
   clearLocalStorageMock,
-} from "@web/common/helpers/test.util";
+} from "@web/common/utils/test.util";
 describe("CalendarView: Interactions", () => {
   const server = setupServer(
     rest.get("/api/event", (req, res, ctx) => {

@@ -2,11 +2,10 @@ import React, { useState } from "react";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { Key } from "ts-keycode-enum";
-
 import { Text } from "@web/components/Text";
 import { SelectOption } from "@web/common/types/components";
-import { roundByNumber } from "@web/common/helpers";
-import { getTimes } from "@web/common/helpers/date.helpers";
+import { roundByNumber } from "@web/common/utils";
+import { getTimes } from "@web/common/utils/date.utils";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
 import { DatePicker } from "@web/components/DatePicker";
@@ -17,6 +16,7 @@ import {
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
 import { GRID_TIME_STEP } from "@web/views/Calendar/constants";
+
 import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
 
 export interface RelatedTargetElement extends EventTarget {
