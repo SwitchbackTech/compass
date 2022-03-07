@@ -211,7 +211,7 @@ export const CalendarView = () => {
                 ? day.format("MMM D")
                 : dayNumberToDisplay;
 
-            if (day.isBefore(component.today)) {
+            if (day.isBefore(component.today, "day")) {
               weekDayTextColor = getAlphaColor(ColorNames.WHITE_1, 0.55);
             }
 
