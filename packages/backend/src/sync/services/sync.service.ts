@@ -6,23 +6,25 @@ import {
   Params_Sync_Gcal,
   Request_Sync_Gcal,
   Result_Notif_Gcal,
-  Result_Start_Watch,
-  Result_Stop_Watch,
+  Result_Watch_Start,
+  Result_Watch_Stop,
+  Result_Watch_Stop_All,
   Result_Sync_Prep_Gcal,
+  Result_Watch_Delete,
+  Schema_Watch_Gcal,
 } from "@core/types/sync.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { getGcal } from "@backend/auth/services/google.auth.service";
 import { Logger } from "@core/logger/winston.logger";
+import { ENV } from "@backend/common/constants/env.constants";
 import {
   GCAL_NOTIFICATION_URL,
   GCAL_PRIMARY,
 } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
-import { isDev } from "@backend/common/helpers/common.helpers";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import devService from "@backend/dev/services/dev.service";
 
 import {
   assembleBulkOperations,
@@ -35,6 +37,19 @@ import {
 const logger = Logger("app:sync.service");
 
 class SyncService {
+  async deleteWatchInfo(
+    userId: string,
+    channelId: string,
+    resourceId: string
+  ): Promise<Result_Watch_Delete> {
+    const delWatchInfo = await mongoService.db
+      .collection(Collections.WATCHLOG_GCAL)
+      .deleteOne({ userId, channelId, resourceId });
+
+    const delRes = delWatchInfo.acknowledged ? "success" : "failed";
+    return { result: delRes };
+  }
+
   async handleGcalNotification(
     reqParams: Request_Sync_Gcal
   ): Promise<Result_Notif_Gcal | BaseError> {
@@ -94,6 +109,27 @@ class SyncService {
     }
   }
 
+  async saveWatchInfo(
+    userId: string,
+    calendarId: string,
+    channelId: string,
+    resourceId: string
+  ) {
+    logger.debug("Saving watch info");
+    const watchInfo = { userId, calendarId, channelId, resourceId };
+    const saveRes = await mongoService.db
+      .collection(Collections.WATCHLOG_GCAL)
+      .insertOne(watchInfo);
+
+    if (saveRes.acknowledged) {
+      return "success";
+    } else {
+      logger.error("Failed to save watch info");
+      logger.error(saveRes);
+      return "failed";
+    }
+  }
+
   /*
   Setup the notification channel for a user's calendar,
   telling google where to notify us when an event changes
@@ -103,7 +139,7 @@ class SyncService {
     userId: string,
     calendarId: string,
     channelId: string
-  ): Promise<Result_Start_Watch> {
+  ): Promise<Result_Watch_Start> {
     logger.info(
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
@@ -115,18 +151,19 @@ class SyncService {
         requestBody: {
           id: channelId,
           // address always needs to be HTTPS, so use prod url
-          address: `${process.env.BASEURL_PROD}${GCAL_NOTIFICATION_URL}`,
+          address: `${ENV.BASEURL_PROD}${GCAL_NOTIFICATION_URL}`,
           type: "web_hook",
           expiration: _expiration,
         },
       });
 
-      if (response.data && isDev()) {
-        const saveWatchInfoRes = await devService.saveWatchInfo(
+      if (response.data) {
+        const resourceId = response.data.resourceId || "missingResourceId";
+        const saveWatchInfoRes = await this.saveWatchInfo(
           userId,
           calendarId,
           channelId,
-          response.data.resourceId
+          resourceId
         );
         return { channel: response.data, saveForDev: saveWatchInfoRes };
       }
@@ -136,7 +173,7 @@ class SyncService {
       if (e.code && e.code === 400) {
         throw new BaseError(
           "Start Watch Failed",
-          e.errors,
+          JSON.stringify(e.errors),
           Status.BAD_REQUEST,
           false
         );
@@ -144,7 +181,7 @@ class SyncService {
         logger.error(e);
         throw new BaseError(
           "Start Watch Failed",
-          e.toString(),
+          JSON.stringify(e),
           Status.INTERNAL_SERVER,
           false
         );
@@ -152,11 +189,63 @@ class SyncService {
     }
   }
 
+  async stopAllChannelWatches(
+    userId: string
+  ): Promise<Result_Watch_Stop_All | BaseError> {
+    try {
+      logger.info(`Stopping all watches for user: ${userId}`);
+      const allWatches = (await mongoService.db
+        .collection(Collections.WATCHLOG_GCAL)
+        .find({ userId: userId })
+        .toArray()) as Schema_Watch_Gcal[];
+
+      if (allWatches.length === 0) {
+        return {
+          summary: "failed",
+          message: `no active watches for user: ${userId}`,
+        };
+      }
+
+      const watchResults = [];
+      for (const w of allWatches) {
+        const stopResult = await this.stopWatchingChannel(
+          userId,
+          w.channelId,
+          w.resourceId
+        );
+        if ("statusCode" in stopResult) {
+          // then it failed
+          // TODO this assumes it failed cuz of 404 not found,
+          // make more dynamic
+          const filter = { userId, channelId: w.channelId };
+          const delRes = await mongoService.db
+            .collection(Collections.WATCHLOG_GCAL)
+            .deleteOne(filter);
+          const dr = delRes.acknowledged ? "pruned" : "prune failed";
+          watchResults.push(`${w.channelId}: ${dr}`);
+        } else {
+          const channelId = stopResult.stopWatching.channelId || "unsure";
+          watchResults.push(`${channelId}: ${stopResult.deleteWatch.result}`);
+        }
+      }
+      const watchStopSummary = { summary: "success", watches: watchResults };
+      return watchStopSummary;
+    } catch (e) {
+      logger.error(e);
+      return new BaseError(
+        "Stop All Watches Failed",
+        JSON.stringify(e),
+        Status.UNSURE,
+        false
+      );
+    }
+  }
+
   async stopWatchingChannel(
     userId: string,
     channelId: string,
     resourceId: string
-  ): Promise<Result_Stop_Watch | BaseError> {
+  ): Promise<Result_Watch_Stop | BaseError> {
     logger.debug(
       `Stopping watch for channelId: ${channelId} and resourceId: ${resourceId}`
     );
@@ -178,25 +267,27 @@ class SyncService {
           resourceId: resourceId,
         };
 
-        if (isDev()) {
-          const deleteForDev = await devService.deleteWatchInfo(
-            userId,
-            channelId,
-            resourceId
-          );
-          return { stopWatching: stopWatchSummary, deleteForDev };
-        } else {
-          return { stopWatching: stopWatchSummary };
-        }
+        const deleteWatchSummary = await this.deleteWatchInfo(
+          userId,
+          channelId,
+          resourceId
+        );
+        return {
+          stopWatching: stopWatchSummary,
+          deleteWatch: deleteWatchSummary,
+        };
       }
 
       logger.warn("Stop Watch failed for unexpected reason");
-      return { stopWatching: { result: "failed", debug: stopResult } };
+      return {
+        stopWatching: { result: "failed", debug: stopResult },
+        deleteWatch: { result: "failed" },
+      };
     } catch (e) {
       if (e.code && e.code === 404) {
         return new BaseError(
           "Stop Watch Failed",
-          e.message,
+          JSON.stringify(e?.message),
           Status.NOT_FOUND,
           false
         );

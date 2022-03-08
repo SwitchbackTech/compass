@@ -61,6 +61,19 @@ class GcalSyncController {
     }
   };
 
+  stopAllChannelWatches = (req: express.Request, res: express.Response) => {
+    try {
+      //@ts-ignore
+      const userId: string = req.params.userId;
+      const stopResult = syncService.stopAllChannelWatches(userId);
+      //@ts-ignore
+      res.promise(Promise.resolve(stopResult));
+    } catch (e) {
+      //@ts-ignore
+      res.promise(Promise.reject(e));
+    }
+  };
+
   stopWatching = async (req: ReqBody<Body_Watch_Gcal_Stop>, res: Res) => {
     try {
       const userId = res.locals.user.id;
