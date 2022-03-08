@@ -8,7 +8,7 @@ export const SIDEBAR_WIDTH = 350;
 export const WEEK_DAYS_HEIGHT = 26;
 export const WEEK_DAYS_MARGIN_Y = 22;
 
-export const GRID_SCROLLBAR_WIDTH = 10;
+export const GRID_SCROLLBAR_WIDTH = 8;
 export const GRID_X_OFFSET = CALENDAR_X_PADDING + CALENDAR_GRID_MARGIN_LEFT;
 export const GRID_Y_OFFSET =
   CALENDAR_TOP_PADDING +

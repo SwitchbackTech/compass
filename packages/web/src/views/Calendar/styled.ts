@@ -119,10 +119,10 @@ export const StyledEventsGrid = styled.div`
     width: ${GRID_SCROLLBAR_WIDTH}px;
   }
   ::-webkit-scrollbar-thumb {
-    border-radius: 8px;
-    background: ${getColor(ColorNames.GREY_4)};
+    border-radius: 7px;
+    background: ${getColor(ColorNames.DARK_3)};
     &:hover {
-      background: ${getColor(ColorNames.GREY_4_BRIGHT)};
+      background: ${getColor(ColorNames.DARK_4)};
       transition: background-color 0.2s;
     }
   }

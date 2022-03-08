@@ -108,11 +108,11 @@ export const useGetWeekViewProps = () => {
   /*********
    * Grid
    *********/
-  const [GRID_Y_OFFSET, setGridYOffset] = useState(
-    allDayEventsGridRef.current?.clientHeight || 0
-  );
   const [CALCULATED_GRID_X_OFFSET, setGridXOffset] = useState(
     (calendarRef.current?.offsetLeft || 0) + GRID_X_OFFSET
+  );
+  const [GRID_Y_OFFSET, setGridYOffset] = useState(
+    allDayEventsGridRef.current?.clientHeight || 0
   );
 
   /*************
