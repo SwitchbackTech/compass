@@ -2,14 +2,17 @@
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
 import { ReqBody, Res } from "@core/types/express.types";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
+import { Status } from "@core/errors/status.codes";
+import { BaseError } from "@core/errors/errors.base";
+import { Logger } from "@core/logger/winston.logger";
 import { Schema_Event, Params_DeleteMany } from "@core/types/event.types";
+import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
-import { Logger } from "@core/logger/winston.logger";
 import { getGcal } from "@backend/auth/services/google.auth.service";
 import syncService from "@backend/sync/services/sync.service";
 import eventService from "@backend/event/services/event.service";
+import { Result_Watch_Stop_All } from "@core/types/sync.types";
 
 const logger = Logger("app:event.controller");
 class EventController {
@@ -56,9 +59,23 @@ class EventController {
         _id: mongoService.objectId(userId),
       });
       if (userExists) {
-        //@ts-ignore
         logger.debug(`Deleting events for clean import for user: ${userId}`);
         await eventService.deleteAllByUser(userId);
+
+        logger.debug(`Clearing watches before import for user: ${userId}`);
+        const stopWatchesRes = (await syncService.stopAllChannelWatches(
+          userId
+        )) as Result_Watch_Stop_All;
+        if (stopWatchesRes.summary !== "success") {
+          throw new BaseError(
+            "Import Failed",
+            `failed to stop existing watches because: ${
+              stopWatchesRes.message || "unsure"
+            }`,
+            Status.INTERNAL_SERVER,
+            false
+          );
+        }
       }
 
       const gcal = await getGcal(userId);

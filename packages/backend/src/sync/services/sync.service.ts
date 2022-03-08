@@ -201,7 +201,7 @@ class SyncService {
 
       if (allWatches.length === 0) {
         return {
-          summary: "failed",
+          summary: "success",
           message: `no active watches for user: ${userId}`,
         };
       }

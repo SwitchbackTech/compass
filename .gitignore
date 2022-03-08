@@ -12,6 +12,7 @@ globalConfig.json
 *.tsbuildinfo
 
 # root dirs
+build/
 node_modules/
 # where build files are currently located on production
 prod/
