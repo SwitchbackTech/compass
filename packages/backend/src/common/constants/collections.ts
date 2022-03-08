@@ -5,7 +5,7 @@ const useDevCollections = isDev();
 
 export const Collections = {
   CALENDARLIST: useDevCollections ? "dev.calendarlist" : "calendarlist",
-  DEV_WATCHLOG_GCAL: "dev.watch.gcal", // only for dev, so no conditional
+  WATCHLOG_GCAL: useDevCollections ? "dev.watch.gcal" : "watch.gcal",
   EVENT: useDevCollections ? "dev.event" : "event",
   OAUTH: useDevCollections ? "dev.oauth" : "oauth",
   PRIORITY: useDevCollections ? "dev.priority" : "priority",

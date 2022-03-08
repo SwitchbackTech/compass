@@ -44,6 +44,7 @@ class CompassAuthService {
       );
     const updatedOAuth = response.value;
 
+    // @ts-ignore
     return updatedOAuth as Schema_Oauth;
   }
 }

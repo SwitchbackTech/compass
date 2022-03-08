@@ -16,14 +16,19 @@ export class SyncRoutes extends CommonRoutesConfig {
       .post(gcalSyncController.handleNotification);
 
     this.app
+      .route(`${GCAL_NOTIFICATION_URL}/start`)
+      .all(jwtMiddleware.verifyTokenAndSaveUserId)
+      .post(gcalSyncController.startWatching);
+
+    this.app
       .route(`${GCAL_NOTIFICATION_URL}/stop`)
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
       .post(gcalSyncController.stopWatching);
 
     this.app
-      .route(`${GCAL_NOTIFICATION_URL}/start`)
+      .route(`${GCAL_NOTIFICATION_URL}/stop-all/:userId`)
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
-      .post(gcalSyncController.startWatching);
+      .post(gcalSyncController.stopAllChannelWatches);
 
     return this.app;
   }
