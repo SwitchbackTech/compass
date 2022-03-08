@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import ReactSelect, { NamedProps as ReactSelectProps } from "react-select";
-
-import { getTimes } from "@web/common/helpers/date.helpers";
+import { getTimes } from "@web/common/utils/date.utils";
 import { SelectOption } from "@web/common/types/components";
 
 import { Styled, StyledDivider } from "./styled";

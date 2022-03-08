@@ -2,11 +2,10 @@ import axios from "axios";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-
 import { Params_Events, Schema_Event } from "@core/types/event.types";
-import { headers } from "@web/common/helpers";
+import { headers } from "@web/common/utils";
 import { API_BASEURL } from "@web/common/constants/web.constants";
-import { createEventLocalStorage } from "@web/ducks/events/event.helpers";
+import { createEventLocalStorage } from "@web/ducks/events/event.utils";
 
 //not sure what this does
 dayjs.extend(isSameOrAfter);

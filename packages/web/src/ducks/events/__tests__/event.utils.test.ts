@@ -1,17 +1,14 @@
 import dayjs from "dayjs";
-import {
-  allDayEventsMinimal,
-  staggeredAllDayEvents,
-} from "@core/__mocks__/events.allday.1";
+import { allDayEventsMinimal } from "@core/__mocks__/events.allday.1";
 import { allDayEvents } from "@core/__mocks__/events.allday.2";
+import { getLeftPosition } from "@web/common/utils/grid.util";
 
 import {
   getAllDayCounts,
   getAllDayEventWidth,
   getEventCategory,
-  getLeftPosition,
   orderEvents,
-} from "../event.helpers";
+} from "../event.utils";
 
 describe("getAllDayCounts", () => {
   const allDayCounts = getAllDayCounts(allDayEvents);

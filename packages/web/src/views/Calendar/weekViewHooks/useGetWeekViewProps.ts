@@ -12,13 +12,11 @@ import {
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
 import { LocalStorage } from "@web/common/constants/web.constants";
-import { roundByNumber } from "@web/common/helpers";
-import { getAmPmTimes, toUTCOffset } from "@web/common/helpers/date.helpers";
+import { roundByNumber } from "@web/common/utils";
+import { getAmPmTimes, toUTCOffset } from "@web/common/utils/date.utils";
 import {
   selectAllDayEvents,
-  selectAllDayEventsMemo,
   selectWeekEvents,
-  selectWeekEventsMemo,
 } from "@web/ducks/events/selectors";
 import {
   createEventSlice,
@@ -27,7 +25,8 @@ import {
   eventsEntitiesSlice,
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
-import { getAllDayCounts } from "@web/ducks/events/event.helpers";
+import { getAllDayCounts } from "@web/ducks/events/event.utils";
+import { getFlexBasis } from "@web/common/utils/grid.util";
 
 import {
   GRID_TIME_STEP,
@@ -104,16 +103,16 @@ export const useGetWeekViewProps = () => {
   const dayjsBasedOnWeekDay = today.week(week);
   const times = getAmPmTimes();
   const todayDayWeekNumber = today.get("day") + 1;
-  const beforeDaysCount = todayDayWeekNumber - 1;
+  const yesterdayDayNumber = todayDayWeekNumber - 1;
 
   /*********
    * Grid
    *********/
-  const [GRID_Y_OFFSET, setGridYOffset] = useState(
-    allDayEventsGridRef.current?.clientHeight || 0
-  );
   const [CALCULATED_GRID_X_OFFSET, setGridXOffset] = useState(
     (calendarRef.current?.offsetLeft || 0) + GRID_X_OFFSET
+  );
+  const [GRID_Y_OFFSET, setGridYOffset] = useState(
+    allDayEventsGridRef.current?.clientHeight || 0
   );
 
   /*************
@@ -145,24 +144,36 @@ export const useGetWeekViewProps = () => {
   const getAllDayEventCellHeight = () =>
     allDayEventsGridRef.current?.clientHeight || 0;
 
-  const getBeforeDayWidth = () => {
-    const afterDaysCount = 5 - beforeDaysCount;
-
-    return 60 / (beforeDaysCount + 1.5 * afterDaysCount);
-  };
-
-  const getBeforeDaysOverflowWidth = () => {
-    let _beforeDaysCount = beforeDaysCount;
-
-    if (dayjs().week() < week) {
-      _beforeDaysCount = 0;
-    }
-
-    if (dayjs().week() > week) {
+  const getPastOverflowWidth = () => {
+    if (today.week() > week) {
+      // viewing past week
       return 100;
     }
 
-    return getBeforeDayWidth() * _beforeDaysCount;
+    if (today.week() < week) {
+      // future week, no overflow
+      return 0;
+    }
+
+    if (yesterdayDayNumber === 6) {
+      /* 
+       then its the last day of the week (Sat)
+       using the same logic as the other days
+       would normally be fine, but the scrollbar width 
+       would throw things off. 
+       this works around that by just relying on todays width.
+
+       PS not sure why you need to round up
+      */
+      const todayBasis = getFlexBasisWrapper(today);
+      return Math.ceil(100 - todayBasis);
+    }
+
+    // Sun - Fri
+    const yesterday = today.add(-1, "day");
+    const yesterdayBasis = getFlexBasisWrapper(yesterday);
+    const width = yesterdayBasis * yesterdayDayNumber;
+    return width;
   };
 
   const getDateByMousePosition = (x: number, y: number) => {
@@ -208,29 +219,8 @@ export const useGetWeekViewProps = () => {
   const getEventCellHeight = () =>
     (eventsGridRef.current?.clientHeight || 0) / 11;
 
-  const getFlexBasisByDay = (day: Dayjs) => {
-    if (week !== today.week()) return 100 / 7;
-
-    const dayWeekNumber = day.get("day") + 1;
-    const monthDayJs = dayjsBasedOnWeekDay.set("date", +day.format("DD"));
-
-    const fixedFlexBasisesByDayNumber = {
-      [todayDayWeekNumber]: 21.4,
-      [todayDayWeekNumber + 1]: 18.6,
-    };
-
-    const flexBasis = fixedFlexBasisesByDayNumber[dayWeekNumber];
-    const flexBasisForBeforeDay = getBeforeDayWidth();
-
-    if (!flexBasis) {
-      if (today.isAfter(monthDayJs)) {
-        return flexBasisForBeforeDay;
-      }
-
-      return flexBasisForBeforeDay * 1.5;
-    }
-
-    return flexBasis || 0;
+  const getFlexBasisWrapper = (day: Dayjs) => {
+    return getFlexBasis(day, week, today);
   };
 
   const getYByDate = (date: string) => {
@@ -545,10 +535,9 @@ export const useGetWeekViewProps = () => {
     },
     core: {
       getAllDayEventCellHeight,
-      getBeforeDayWidth,
-      getBeforeDaysOverflowWidth,
+      getPastOverflowWidth,
       getEventCellHeight,
-      getFlexBasisByDay,
+      getFlexBasisWrapper,
     },
   };
 };

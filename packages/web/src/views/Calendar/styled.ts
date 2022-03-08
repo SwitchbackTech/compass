@@ -1,14 +1,14 @@
 import styled from "styled-components";
-
 import { ColorNames } from "@web/common/types/styles";
 import { Flex } from "@web/components/Flex";
-import { getAlphaColor, getColor } from "@web/common/helpers/colors";
+import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
 
 import {
   CALENDAR_GRID_MARGIN_LEFT,
   CALENDAR_TOP_PADDING,
   CALENDAR_X_PADDING,
+  GRID_SCROLLBAR_WIDTH,
   GRID_Y_OFFSET,
   WEEK_DAYS_MARGIN_Y,
 } from "./constants";
@@ -87,9 +87,10 @@ export interface AllDayEventsGridProps {
 const gridHeight = `100% - (${GRID_Y_OFFSET}px + 20px)`;
 const gridCellHeight = `(${gridHeight}) / 11`;
 const fullDayEventHeight = `${gridCellHeight} / 4`;
+const gridWidth = `100% - ${GRID_SCROLLBAR_WIDTH}px`;
 
 export const StyledAllDayEventsGrid = styled(Flex)<AllDayEventsGridProps>`
-  width: 100%;
+  width: calc(${gridWidth});
   height: ${({ maxCount }) =>
     `calc(${fullDayEventHeight} * 2 + ${
       maxCount || 0
@@ -103,9 +104,28 @@ export const StyledEventsGrid = styled.div`
   flex: 1;
   margin-bottom: 20px;
   width: 100%;
-  overflow: auto;
-  overflow-x: hidden;
   position: relative;
+  overflow-y: visible;
+  overflow-x: hidden;
+
+  /* 
+  webkit-scrollbar isn't standardized among browsers, 
+  meaning it could break on some broswers or after a browser update.
+  (see: https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar
+  it's used here nonetheless because it was an easy way to get the grid widths
+  to align correctly
+  */
+  ::-webkit-scrollbar {
+    width: ${GRID_SCROLLBAR_WIDTH}px;
+  }
+  ::-webkit-scrollbar-thumb {
+    border-radius: 7px;
+    background: ${getColor(ColorNames.DARK_3)};
+    &:hover {
+      background: ${getColor(ColorNames.DARK_4)};
+      transition: background-color 0.2s;
+    }
+  }
 `;
 
 export interface PrevDaysOverflowProps {

@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 import { Flex } from "@web/components/Flex";
-import { getColor } from "@web/common/helpers/colors";
+import { getColor } from "@web/common/utils/colors";
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
 import { EventForm } from "@web/views/EventForm";

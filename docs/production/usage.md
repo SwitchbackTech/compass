@@ -90,6 +90,12 @@ env: `/compass-calendar/build/../.env`
 
 ### HTTP cert expired error from browser:
 
+Confirm its not user error
+
+- the CORS and certificate depend on exact addresses, so going to `https://***REMOVED***` is not the same as `https://www.***REMOVED***`. Make sure user is going to the expected route
+
+Fix issue
+
 - Plan A: Fix the cert issue
 - In the meantime: type `thisisunsafe` in chrome window, which should bypass the error
 

@@ -4,7 +4,7 @@ import { Schema_CalendarList } from "@core/types/calendar.types";
 import { gSchema$CalendarList } from "../../../../backend/declarations";
 
 import { API_BASEURL } from "@web/common/constants/web.constants";
-import { headers } from "@web/common/helpers";
+import { headers } from "@web/common/utils";
 
 const CalendarListApi = {
   async list(): Promise<gSchema$CalendarList> {

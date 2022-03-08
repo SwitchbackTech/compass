@@ -1,12 +1,11 @@
 import { call, put, takeLatest, select } from "@redux-saga/core/effects";
 import { normalize } from "normalizr";
 import dayjs from "dayjs";
-
 import { Params_Events, Schema_Event } from "@core/types/event.types";
-
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { EventApi } from "@web/ducks/events/event.api";
+import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
 
 import {
   createEventSlice,
@@ -29,8 +28,7 @@ import {
   Entities_Event,
 } from "./types";
 import { selectPaginatedEventsBySectionType } from "./selectors";
-import { handleErrorTemp, normalizedEventsSchema } from "./event.helpers";
-import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
+import { handleErrorTemp, normalizedEventsSchema } from "./event.utils";
 
 function* createEventSaga({ payload }: Action_CreateEvent) {
   try {

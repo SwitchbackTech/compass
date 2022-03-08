@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-import { getColor } from "@web/common/helpers/colors";
+import { getColor } from "@web/common/utils/colors";
 import { ColorNames } from "@web/common/types/styles";
 
 export const StyledLogin = styled.div`

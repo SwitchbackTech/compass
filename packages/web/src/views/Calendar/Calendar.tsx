@@ -3,8 +3,8 @@ import { Redirect } from "react-router-dom";
 import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
-import { getWeekDayLabel } from "@web/ducks/events/event.helpers";
-import { getHourlyTimes } from "@web/common/helpers/date.helpers";
+import { getWeekDayLabel } from "@web/ducks/events/event.utils";
+import { getHourlyTimes } from "@web/common/utils/date.utils";
 import { ColorNames } from "@web/common/types/styles";
 import {
   AlignItems,
@@ -14,7 +14,7 @@ import {
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
-import { getAlphaColor, getColor } from "@web/common/helpers/colors";
+import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
@@ -24,7 +24,9 @@ import { useToken } from "@web/common/hooks/useToken";
 import { useGetWeekViewProps } from "./weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "./weekViewHooks/types";
 import {
+  ArrowNavigationButton,
   Styled,
+  StyledAllDayEventsGrid,
   StyledCalendar,
   StyledGridCol,
   StyledGridRow,
@@ -32,18 +34,15 @@ import {
   StyledHeaderFlex,
   StyledEventsGrid,
   StyledGridColumns,
-  StyledWeekDaysFlex,
   StyledNavigationButtons,
   StyledDayTimes,
   StyledEvents,
-  TodayNavigationButton,
-  ArrowNavigationButton,
   StyledWeekDayFlex,
+  StyledWeekDaysFlex,
   StyledTodayPopoverContainer,
-  StyledAllDayEventsGrid,
   StyledPrevDaysOverflow,
+  TodayNavigationButton,
 } from "./styled";
-import { LoginView } from "../Login";
 
 const dayTimes = getHourlyTimes(dayjs());
 
@@ -113,11 +112,10 @@ export const CalendarView = () => {
     const top = minutes * minuteHeight;
 
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
-  }, [component.eventsGridRef]);
+  }, [component.calendarRef]);
 
   if (!token) {
     return <Redirect to={ROOT_ROUTES.LOGIN} />;
-    // return <LoginView />;
   }
 
   return (
@@ -204,11 +202,6 @@ export const CalendarView = () => {
               ? getColor(ColorNames.TEAL_3)
               : getColor(ColorNames.WHITE_2);
 
-            const monthDayJs = component.dayjsBasedOnWeekDay.set(
-              "date",
-              +day.format("DD")
-            );
-
             let dayNumberToDisplay = day.format("D");
 
             dayNumberToDisplay =
@@ -218,11 +211,11 @@ export const CalendarView = () => {
                 ? day.format("MMM D")
                 : dayNumberToDisplay;
 
-            if (component.today.isAfter(monthDayJs)) {
+            if (day.isBefore(component.today, "day")) {
               weekDayTextColor = getAlphaColor(ColorNames.WHITE_1, 0.55);
             }
 
-            const flexBasis = core.getFlexBasisByDay(day);
+            const flexBasis = core.getFlexBasisWrapper(day);
 
             return (
               <StyledWeekDayFlex
@@ -252,7 +245,7 @@ export const CalendarView = () => {
           <StyledGridColumns>
             {component.weekDays.map((day) => (
               <StyledGridCol
-                flexBasis={core.getFlexBasisByDay(day)}
+                flexBasis={core.getFlexBasisWrapper(day)}
                 key={day.format(YEAR_MONTH_DAY_FORMAT)}
               />
             ))}
@@ -294,12 +287,12 @@ export const CalendarView = () => {
           </StyledDayTimes>
           <StyledGridColumns>
             <StyledPrevDaysOverflow
-              widthPercent={core.getBeforeDaysOverflowWidth()}
+              widthPercent={core.getPastOverflowWidth()}
             />
 
             {component.weekDays.map((day) => (
               <StyledGridCol
-                flexBasis={core.getFlexBasisByDay(day)}
+                flexBasis={core.getFlexBasisWrapper(day)}
                 key={day.format(YEAR_MONTH_DAY_FORMAT)}
               />
             ))}

@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
 import { ColorNames } from "@web/common/types/styles";
-import { getColor } from "@web/common/helpers/colors";
+import { getColor } from "@web/common/utils/colors";
 
 export interface Props {
   monthsCount?: number;

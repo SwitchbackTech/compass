@@ -33,6 +33,7 @@ export const colors = {
   [ColorNames.GREY_2]: "#395264",
   [ColorNames.GREY_3]: "#567B96",
   [ColorNames.GREY_4]: "#92A8B9",
+  [ColorNames.GREY_4_BRIGHT]: "#ABC7DC",
   [ColorNames.GREY_5]: "#BDCFDC",
 
   [ColorNames.GREY_5_BRIGHT]: "#F0FFFF",
