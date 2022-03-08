@@ -39,6 +39,18 @@ class EventController {
     res.promise(Promise.resolve(deleteResponse));
   };
 
+  deleteAllByUser = async (req: express.Request, res: Res) => {
+    // const userMakingRequest = res.locals.user.id;
+    // if (userMakingRequest !== userToRemove) {
+    //check if user is an app admin?
+    // res.promise(Promise.resolve("ignored cuz its not your (current) user"));
+    // }
+    const userToRemove: string = req.params.userId;
+    const deleteAllRes = await eventService.deleteAllByUser(userToRemove);
+    //@ts-ignore
+    res.promise(Promise.resolve(deleteAllRes));
+  };
+
   deleteMany = async (
     // req: ReqBody<{ key: string; ids: string[] }>,
     req: ReqBody<Params_DeleteMany>,
