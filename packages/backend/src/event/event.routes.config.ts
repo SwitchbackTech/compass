@@ -27,13 +27,12 @@ export class EventRoutes extends CommonRoutesConfig {
       .delete(eventController.deleteMany);
 
     /* 
-    this one's so dangerous that it's commented out
-    only enabled on an as-needed basis
-    this.app
-    .route(`/api/event/delete-all/:userId`)
-    .all(jwtMiddleware.verifyTokenAndSaveUserId)
-    .delete(eventController.deleteAllByUser);
+    careful: this one's dangerous 
     */
+    this.app
+      .route(`/api/event/delete-all/:userId`)
+      .all(jwtMiddleware.verifyTokenAndSaveUserId)
+      .delete(eventController.deleteAllByUser);
 
     this.app
       .route(`/api/event/import`)

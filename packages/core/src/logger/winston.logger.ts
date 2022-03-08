@@ -1,4 +1,5 @@
 import { MB_50 } from "@core/core.constants";
+import { ENV } from "@backend/common/constants/env.constants";
 import { TransformableInfo } from "logform";
 import * as winston from "winston";
 
@@ -16,10 +17,10 @@ const consoleFormat = winston.format.combine(
   })
 );
 
-const transports = () => {
+const transports = (logFileName?: string) => {
   const fileTransport = new winston.transports.File({
-    filename: "logs/app.log",
-    level: process.env["LOG_LEVEL"],
+    filename: logFileName ? logFileName : "logs/app.log",
+    level: ENV.LOG_LEVEL,
     maxsize: MB_50,
     maxFiles: 1,
   });
@@ -27,18 +28,33 @@ const transports = () => {
     format: consoleFormat,
   });
 
-  return [fileTransport, consoleTransport];
+  if (logFileName) {
+    return [fileTransport];
+  } else {
+    return [fileTransport, consoleTransport];
+  }
 };
 
-const parentLogger = winston.createLogger({
-  level: process.env["LOG_LEVEL"],
-  transports: transports(),
-});
-
-export const Logger = (namespace?: string) => {
-  // child logger that allows including namespace metadata
-  if (namespace) {
-    return parentLogger.child({ namespace });
+export const Logger = (namespace?: string, logFile?: string) => {
+  if (!namespace) {
+    return winston.createLogger({
+      level: ENV.LOG_LEVEL,
+      transports: transports(),
+    });
   }
-  return parentLogger;
+
+  if (logFile) {
+    const secondaryLogger = winston.createLogger({
+      level: ENV.LOG_LEVEL,
+      transports: transports(logFile),
+    });
+    return secondaryLogger.child({ namespace });
+  }
+
+  const primaryLogger = winston.createLogger({
+    level: ENV.LOG_LEVEL,
+    transports: transports(),
+  });
+
+  return primaryLogger.child({ namespace });
 };

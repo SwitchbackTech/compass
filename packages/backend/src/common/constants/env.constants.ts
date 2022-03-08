@@ -9,6 +9,7 @@ export const ENV = {
   ACCESS_TOKEN_SECRET: process.env["ACCESS_TOKEN_SECRET"] || _error,
   CLIENT_ID: process.env["CLIENT_ID"] || _error,
   CLIENT_SECRET: process.env["CLIENT_SECRET"] || _error,
+  LOG_LEVEL: process.env["LOG_LEVEL"] || "debug",
   PORT: process.env["PORT"] || _default.port,
   BASEURL_PROD: process.env["BASEURL_PROD"] || _error,
   SCOPES: _default.scopes.split(","),
