@@ -26,6 +26,7 @@ installs dependencies: `yarn dev`
 Set up `pm2` processes for backend ([quickstart](https://pm2.keymetrics.io/docs/usage/quick-start/))
 
 ```
+pm2 install pm2-logrotate  # enable log rotation, using defaults
 
 # init pm2 process called `backend`, which runs the `yarn start:backend` script
 pm2 start yarn --name backend -- start:backend
@@ -33,6 +34,7 @@ pm2 start yarn --name backend -- start:backend
 pm2 save    # save to synchronize
 pm2 startup # run it on boot
 pm2 logs    # confirm it's working
+            # PS these logs are saved in /root/.pm2/logs
 ```
 
 - may need to be updated if installed on something other than Ubuntu | [reference](https://stackoverflow.com/questions/59046837/what-is-the-pm2-for-command-yarn-run-start)

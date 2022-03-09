@@ -1,5 +1,4 @@
 import express from "express";
-
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import jwtMiddleware from "@backend/auth/middleware/jwt.middleware";
 
@@ -26,6 +25,14 @@ export class EventRoutes extends CommonRoutesConfig {
       .route(`/api/event/deleteMany`)
       .all(jwtMiddleware.verifyTokenAndSaveUserId)
       .delete(eventController.deleteMany);
+
+    /* 
+    careful: this one's dangerous 
+    */
+    this.app
+      .route(`/api/event/delete-all/:userId`)
+      .all(jwtMiddleware.verifyTokenAndSaveUserId)
+      .delete(eventController.deleteAllByUser);
 
     this.app
       .route(`/api/event/import`)

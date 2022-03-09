@@ -35,6 +35,8 @@ import {
 } from "./sync.helpers";
 
 const logger = Logger("app:sync.service");
+// separate logger to keep main less noisy
+const syncFileLogger = Logger("app:sync.gcal", "logs/sync.gcal.log");
 
 class SyncService {
   async deleteWatchInfo(
@@ -101,10 +103,12 @@ class SyncService {
             .bulkWrite(prepResult.operations);
       }
 
-      logger.debug(JSON.stringify(result, null, 2));
+      // syncFileLogger.debug(JSON.stringify(result, null, 2));
+      syncFileLogger.debug(result);
       return result;
     } catch (e) {
       logger.error(e);
+      syncFileLogger.error(e);
       return new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, false);
     }
   }
@@ -201,7 +205,7 @@ class SyncService {
 
       if (allWatches.length === 0) {
         return {
-          summary: "failed",
+          summary: "success",
           message: `no active watches for user: ${userId}`,
         };
       }
@@ -381,6 +385,7 @@ class SyncService {
       return prepResult;
     } catch (e) {
       logger.error(`Errow while sycning\n`, e);
+      syncFileLogger.error(`Errow while sycning\n`, e);
       const err = new BaseError(
         "Sync Update Failed",
         e,

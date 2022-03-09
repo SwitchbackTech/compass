@@ -1,22 +1,28 @@
-# files
+#########
+# FILES #
+#########
 build.zip
 .DS_Store
 .vscode/
 .idea/
 .eslintcache
 globalConfig.json
+electron/localization/locales/en/translation.missing.json
 
-# wildcard files
+# wildcards
 .env*
 *.log
 *.tsbuildinfo
 
-# root dirs
-node_modules/
-# where build files are currently located on production
-prod/
+########
+# DIRS #
+########
+# root
 build/
 buildcache/
+logs/
+node_modules/
+prod/
 
 #core
 packages/core/build/
@@ -30,5 +36,3 @@ packages/backend/logs
 packages/backend/build
 packages/backend/node_modules
 
-# electron
-electron/localization/locales/en/translation.missing.json

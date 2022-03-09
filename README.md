@@ -15,8 +15,8 @@ cd {repo name}
 
 ```bash
 yarn
-cd packages/web
-yarn start
+yarn build # build entire project at least once to make incremental builds easier
+yarn <...> # see package.json scripts and decide what script to run now
 ```
 
 ### Setup Styling IDE Tools (optional)

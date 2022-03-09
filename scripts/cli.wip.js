@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
-const d = require("./deleteUserData");
 const inquirer = require("inquirer");
 const { program } = require("commander");
+
+const d = require("./delete");
 
 /* setup CLI */
 program.option("-d, --delete", "deletes users data from compass database");
@@ -26,7 +27,7 @@ if (options.delete) {
       /* delete */
       if (answers.confirmed === "yes") {
         console.log("okie dokie, here we go!");
-        d.deleteAllUserData();
+        // d.deleteAllUserData();
       }
     })
     .catch((error) => {
