@@ -1,5 +1,4 @@
 import { MB_50 } from "@core/core.constants";
-import { ENV } from "@backend/common/constants/env.constants";
 import { TransformableInfo } from "logform";
 import * as winston from "winston";
 
@@ -20,7 +19,7 @@ const consoleFormat = winston.format.combine(
 const transports = (logFileName?: string) => {
   const fileTransport = new winston.transports.File({
     filename: logFileName ? logFileName : "logs/app.log",
-    level: ENV.LOG_LEVEL,
+    level: process.env["LOG_LEVEL"],
     maxsize: MB_50,
     maxFiles: 1,
   });
@@ -38,21 +37,21 @@ const transports = (logFileName?: string) => {
 export const Logger = (namespace?: string, logFile?: string) => {
   if (!namespace) {
     return winston.createLogger({
-      level: ENV.LOG_LEVEL,
+      level: process.env["LOG_LEVEL"],
       transports: transports(),
     });
   }
 
   if (logFile) {
     const secondaryLogger = winston.createLogger({
-      level: ENV.LOG_LEVEL,
+      level: process.env["LOG_LEVEL"],
       transports: transports(logFile),
     });
     return secondaryLogger.child({ namespace });
   }
 
   const primaryLogger = winston.createLogger({
-    level: ENV.LOG_LEVEL,
+    level: process.env["LOG_LEVEL"],
     transports: transports(),
   });
 
