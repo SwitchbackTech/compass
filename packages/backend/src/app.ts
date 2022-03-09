@@ -19,6 +19,7 @@ import { EventRoutes } from "@backend/event/event.routes.config";
 import { PriorityRoutes } from "@backend/priority/priority.routes.config";
 import { SyncRoutes } from "@backend/sync/sync.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
+import { ENV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import expressLogger from "@backend/common/logger/express.logger";
 import { Logger } from "@core/logger/winston.logger";
@@ -34,7 +35,7 @@ mongoService;
 /* Express Configuration */
 const app: express.Application = express();
 const server: http.Server = http.createServer(app);
-const port = process.env["PORT"] || 3000;
+const port = ENV.PORT;
 const routes: Array<CommonRoutesConfig> = [];
 
 app.use(corsWhitelist);

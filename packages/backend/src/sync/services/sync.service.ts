@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { v4 as uuidv4 } from "uuid";
 import { gCalendar } from "@core/types/gcal";
 import { Schema_CalendarList } from "@core/types/calendar.types";
@@ -33,9 +34,9 @@ import {
   getChannelExpiration,
 } from "./sync.helpers";
 
-const logger = Logger("app:sync.service", "logs/sync.gcal.log");
+const logger = Logger("app:sync.service");
 // separate logger to keep main less noisy
-const syncFileLogger = Logger("app:sync.service", "logs/sync.gcal.log");
+const syncFileLogger = Logger("app:sync.gcal", "logs/sync.gcal.log");
 
 class SyncService {
   async deleteWatchInfo(
@@ -102,7 +103,8 @@ class SyncService {
             .bulkWrite(prepResult.operations);
       }
 
-      syncFileLogger.debug(JSON.stringify(result, null, 2));
+      // syncFileLogger.debug(JSON.stringify(result, null, 2));
+      syncFileLogger.debug(result);
       return result;
     } catch (e) {
       logger.error(e);
