@@ -42,12 +42,13 @@ export const getAllDayEventWidth = (
   let width: number;
   switch (category) {
     case Category.ThisWeekOnly: {
-      const days = end.diff(start, "days");
-      if (days === 0) {
+      let duration = end.diff(start, "days");
+      if (duration === 0) {
         // if only one day, then use original width
         width = widths[startIndex];
+        duration = 1; // prevents width from being 0
       }
-      width = _sumEventWidths(days, startIndex, widths);
+      width = _sumEventWidths(duration, startIndex, widths);
       break;
     }
     case Category.ThisToFutureWeek: {

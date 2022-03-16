@@ -74,7 +74,7 @@ export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
       display: -webkit-box;
       overflow: hidden;
       text-overflow: ellipsis;
-      /* width: "100%";  / titleWidth props logic <-- $$ deleted if not needed*/
+      /* width: "100%"; // titleWidth props logic <-- $$ deleted if not needed */
       word-break: break-all;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: ${(props) => props.lineClamp};

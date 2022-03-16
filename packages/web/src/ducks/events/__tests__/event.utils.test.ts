@@ -25,6 +25,38 @@ describe("getAllDayCounts", () => {
   });
 });
 describe("getAllDayEventWidth", () => {
+  it("is never wider than 1 week", () => {
+    const widths = [88, 89, 205, 178, 133, 132, 133];
+    const maxWidth = widths.reduce((a, b) => a + b, 0);
+    const start = dayjs("2022-02-20");
+    const end = dayjs("2099-12-12");
+    const startOfWeek = dayjs("2040-01-01");
+    const endOfWeek = dayjs("2040-01-06");
+
+    const category = getEventCategory(start, end, startOfWeek, endOfWeek);
+    expect(
+      getAllDayEventWidth(category, 0, start, end, startOfWeek, widths)
+    ).toBeLessThanOrEqual(maxWidth);
+  });
+
+  it("handles events with same start & end date", () => {
+    const start = dayjs("2022-03-15");
+    const end = dayjs("2022-03-15"); // same day as start
+    const startOfWeek = dayjs("2022-03-13");
+    const endOfWeek = dayjs("2022-03-19");
+    const category = getEventCategory(start, end, startOfWeek, endOfWeek);
+    expect(
+      getAllDayEventWidth(
+        category,
+        2,
+        start,
+        end,
+        startOfWeek,
+        [118, 117, 273, 237, 177, 176, 177]
+      )
+    ).toBe(273);
+  });
+
   test("thisWeekOnly: 1 day", () => {
     const start = dayjs("2040-10-28");
     const end = dayjs("2040-10-29");
@@ -137,20 +169,6 @@ describe("getAllDayEventWidth", () => {
         [1, 1, 1, 1, 1, 1, 1]
       )
     ).toBe(7);
-  });
-
-  it("is never wider than 1 week", () => {
-    const widths = [88, 89, 205, 178, 133, 132, 133];
-    const maxWidth = widths.reduce((a, b) => a + b, 0);
-    const start = dayjs("2022-02-20");
-    const end = dayjs("2099-12-12");
-    const startOfWeek = dayjs("2040-01-01");
-    const endOfWeek = dayjs("2040-01-06");
-
-    const category = getEventCategory(start, end, startOfWeek, endOfWeek);
-    expect(
-      getAllDayEventWidth(category, 0, start, end, startOfWeek, widths)
-    ).toBeLessThanOrEqual(maxWidth);
   });
 });
 
