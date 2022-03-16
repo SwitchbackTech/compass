@@ -99,6 +99,7 @@ class PriorityService {
       return new BaseError("Update Failed", "Ensure id is correct", 400, true);
     }
 
+    //@ts-ignore
     const updatedPriority = response.value as Schema_Priority;
     return updatedPriority;
   }

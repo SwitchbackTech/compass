@@ -4,7 +4,7 @@ export interface PriorityReq {
 }
 
 export interface Schema_Priority extends PriorityReq {
-  _id: string;
+  _id: string | ObjectId;
   user: string;
 }
 
