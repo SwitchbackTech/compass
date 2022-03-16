@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Collections } from "@backend/common/constants/collections";
