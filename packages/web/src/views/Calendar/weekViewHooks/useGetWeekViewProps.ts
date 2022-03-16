@@ -86,9 +86,13 @@ export const useGetWeekViewProps = () => {
     allDayCountsEditing[editingEvent.startDate] = editingEvent.allDayOrder || 1;
   }
 
-  const allDayEventsMaxCount =
-    // always at least 1 to allow space for user to add another
-    Math.max(...[1, ...Object.values(allDayCountsEditing)]);
+  // always at least 1 to allow space for user to add another
+  //$$
+  const allDayOverlapCounts = 1 + 2;
+
+  const allDayEventsMaxCount = Math.max(
+    ...[allDayOverlapCounts, ...Object.values(allDayCountsEditing)]
+  );
 
   /****************
    * Relative Times

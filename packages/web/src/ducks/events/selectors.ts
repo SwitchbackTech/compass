@@ -3,9 +3,26 @@ import { Schema_Event } from "@core/types/event.types";
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
 
-import { orderEvents } from "./event.utils";
+import { groupEvents, orderEvents } from "./event.utils";
 import { SectionType } from "./types";
 
+export const selectAllDayEvents = (state: RootState) => {
+  const entities = state.events.entities.value || {};
+  const weekIds = state.events.getWeekEvents.value || [];
+  if (!weekIds.data || weekIds.data.length === 0) return [];
+  const weekEventsMapped: Schema_Event[] = weekIds.data.map(
+    (_id: string) => entities[_id]
+  );
+
+  const _allDayEvents = weekEventsMapped.filter(
+    (e: Schema_Event) => e !== undefined && e.isAllDay
+  );
+
+  const allDayEvents = orderEvents(_allDayEvents);
+  const allDayEventsGrouped = groupEvents(allDayEvents);
+  return allDayEventsGrouped;
+  // return allDayEvents;
+};
 export const selectAreEventsProcessingBySectionType = (
   state: RootState,
   type: SectionType
@@ -43,20 +60,6 @@ export const selectPaginatedEventsBySectionType = (
     state.events[`get${statePieceName}Events` as "getWeekEvents"];
 
   return (isSuccess(statePiece) && statePiece.value) || null;
-};
-
-export const selectAllDayEvents = (state: RootState) => {
-  const entities = state.events.entities.value || {};
-  const weekIds = state.events.getWeekEvents.value || [];
-  if (!weekIds.data || weekIds.data.length === 0) return [];
-  const weekEventsMapped = weekIds.data.map((_id: string) => entities[_id]);
-
-  const _allDayEvents = weekEventsMapped.filter(
-    (e: Schema_Event) => e !== undefined && e.isAllDay
-  );
-
-  const allDayEvents = orderEvents(_allDayEvents);
-  return allDayEvents;
 };
 
 export const selectWeekEvents = (state: RootState): Schema_Event[] => {

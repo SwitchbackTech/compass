@@ -102,6 +102,71 @@ export const getEventCategory = (
 export const getWeekDayLabel = (day: Dayjs) =>
   `day-${day.format(YEAR_MONTH_DAY_FORMAT)}`;
 
+export const groupEvents = (eventsData: Schema_Event[]) => {
+  let groups: Schema_Event[][] = [];
+  let groupIndex = 0;
+
+  if (eventsData.length) {
+    eventsData.forEach((event, index) => {
+      if (index === 0) return;
+
+      const prevValue = eventsData[index - 1];
+      if (doEventsIntercept(prevValue, event)) {
+        if (!groups[groupIndex]) {
+          groups[groupIndex] = [prevValue, event];
+
+          return;
+        }
+
+        groups[groupIndex].push(event);
+
+        return;
+      }
+
+      groupIndex += 1;
+    });
+  }
+
+  /* sorting groups
+  groups.forEach((group) => {
+    group.sort((a, b) => {
+      if (dayjs(b.startDate).isBefore(a.startDate)) {
+        return 1;
+      }
+
+      if (dayjs(b.endDate).isAfter(a.endDate)) {
+        return 0;
+      }
+
+      return -1;
+    });
+  });
+  */
+  groups = groups.filter((group) => group.length);
+
+  eventsData = eventsData.map((event) => {
+    let groupCount = 0;
+    let groupOrder = 0;
+
+    // if (event.isAllDay) return event;
+
+    groups.find((group) => {
+      groupOrder = group.findIndex(
+        (groupEvent) => groupEvent._id === event._id
+      );
+      if (groupOrder === -1) return false;
+
+      groupOrder += 1;
+
+      groupCount = groupOrder && group.length;
+      return true;
+    });
+
+    return { ...event, groupOrder, groupCount };
+  });
+  return eventsData;
+};
+
 export const orderEvents = (events: Schema_Event[]) => {
   // set default for days that dont have overlapping events
   const updatedEvents = events.map((e) => ({ ...e, allDayOrder: 1 }));
@@ -157,7 +222,11 @@ ordering group events
 export const _readEventsFromStorage = (): Schema_Event[] =>
   (JSON.parse(localStorage.getItem("events") || "[]") as Schema_Event[]) || [];
 
-const doEventsIntercept = (event1: Schema_Event, event2: Schema_Event) => {
+export const doEventsIntercept = (
+  event1: Schema_Event,
+  event2: Schema_Event
+) => {
+  //refactor to just is 'isBetween'?
   const firstDotIntercepts = dayjs(event1.startDate).isBefore(event2.endDate);
   const secondDotIntercepts = dayjs(event1.endDate).isAfter(event2.startDate);
 

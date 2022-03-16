@@ -86,15 +86,13 @@ export interface AllDayEventsGridProps {
 
 const gridHeight = `100% - (${GRID_Y_OFFSET}px + 20px)`;
 const gridCellHeight = `(${gridHeight}) / 11`;
-const fullDayEventHeight = `${gridCellHeight} / 4`;
+const allDayHeight = `${gridCellHeight} / 4`;
 const gridWidth = `100% - ${GRID_SCROLLBAR_WIDTH}px`;
 
 export const StyledAllDayEventsGrid = styled(Flex)<AllDayEventsGridProps>`
   width: calc(${gridWidth});
   height: ${({ maxCount }) =>
-    `calc(${fullDayEventHeight} * 2 + ${
-      maxCount || 0
-    } * ${fullDayEventHeight})`};
+    `calc(${allDayHeight} * 2 + ${maxCount || 0} * ${allDayHeight})`};
   position: relative;
   overflow: hidden;
   border-bottom: ${gridDividerBorder};

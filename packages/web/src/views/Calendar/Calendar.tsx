@@ -117,6 +117,7 @@ export const CalendarView = () => {
   if (!token) {
     return <Redirect to={ROOT_ROUTES.LOGIN} />;
   }
+  console.log("maxCount:", component.allDayEventsMaxCount);
 
   return (
     <Styled>
@@ -254,9 +255,10 @@ export const CalendarView = () => {
           <StyledEvents>
             {component.allDayEvents.map((event: Schema_GridEvent) => (
               <WeekEvent
-                key={event._id}
-                weekViewProps={weekViewProps}
                 event={event}
+                key={event._id}
+                maxCount={component.allDayEventsMaxCount}
+                weekViewProps={weekViewProps}
               />
             ))}
 

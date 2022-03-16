@@ -18,10 +18,11 @@ import { StyledEvent, StyledEventScaler } from "./styled";
 export interface Props {
   event: Schema_GridEvent;
   weekViewProps: WeekViewProps;
+  maxCount: number;
 }
 
 const WeekEventComponent = (
-  { event, weekViewProps }: Props,
+  { event, weekViewProps, maxCount }: Props,
   ref: React.ForwardedRef<HTMLButtonElement>
 ) => {
   if (!event) return null;
@@ -58,7 +59,7 @@ const WeekEventComponent = (
     component.startOfSelectedWeekDay,
     component.endOfSelectedWeekDay
   );
-  let left = getLeftPosition(category, startIndex, widths);
+  const left = getLeftPosition(category, startIndex, widths);
   // get duration by converting ms to hours
   const durationHours = endDate.diff(startDate) * 2.7777777777778e-7 || 0;
   let height = core.getEventCellHeight() * durationHours;
@@ -69,9 +70,13 @@ const WeekEventComponent = (
   width -= 13;
 
   if (event.isAllDay) {
+    const allDayRowHeight = core.getAllDayEventCellHeight();
+    // why 4? cuz max # of rows?
+    // $$ find # of events that can fit in max all-day row height
     height = core.getEventCellHeight() / 4;
+    // height = core.getEventCellHeight();
     const order = event.allDayOrder || 1;
-    top = core.getAllDayEventCellHeight() - height * order;
+    top = allDayRowHeight - height * order;
     width = getAllDayEventWidth(
       category,
       startIndex,
@@ -80,11 +85,19 @@ const WeekEventComponent = (
       component.startOfSelectedWeekDay,
       widths
     );
-  }
 
-  if (event.groupCount && event.groupOrder) {
-    width /= event.groupCount;
-    left += event.groupOrder * width - width;
+    if (event.groupCount && event.groupOrder) {
+      console.log(`${event.title}:
+      maxCount: ${maxCount}
+      height: ${height}
+      allDay-: ${allDayRowHeight}
+      allDayOrder: ${event.allDayOrder}
+      group Count: ${event.groupCount} 
+      group order: ${event.groupOrder}
+      `);
+      top = height * event.groupOrder;
+      console.log("top new:", top);
+    }
   }
 
   return (

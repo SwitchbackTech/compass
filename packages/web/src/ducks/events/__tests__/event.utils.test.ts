@@ -1,17 +1,25 @@
 import dayjs from "dayjs";
-import { allDayEventsMinimal } from "@core/__mocks__/events.allday.1";
+import {
+  allDayEventsMinimal,
+  staggeredAllDayEvents,
+  staggeredWithMultiWeek,
+} from "@core/__mocks__/events.allday.1";
 import { allDayEvents } from "@core/__mocks__/events.allday.2";
 import { getLeftPosition } from "@web/common/utils/grid.util";
 
 import {
+  doEventsIntercept,
   getAllDayCounts,
   getAllDayEventWidth,
   getEventCategory,
+  groupEvents,
   orderEvents,
 } from "../event.utils";
 
 describe("getAllDayCounts", () => {
   const allDayCounts = getAllDayCounts(allDayEvents);
+  const allDayStaggered = getAllDayCounts(staggeredWithMultiWeek);
+  const y = 1;
   it("adds dates up correctly", () => {
     expect(allDayCounts["2022-02-07"]).toBe(3);
     expect(allDayCounts["2022-02-08"]).toBe(1);
@@ -269,12 +277,11 @@ describe("getLeftPosition", () => {
   });
 });
 
-describe("orderAllDayEvents", () => {
-  // const combinedEvents = [...allDayEventsMinimal, ...staggeredAllDayEvents];
-  const combinedEvents = [...allDayEventsMinimal];
+describe("orderEvents", () => {
+  const combinedEvents = [...allDayEventsMinimal, ...staggeredAllDayEvents];
   const orderedEvents = orderEvents(combinedEvents);
   it("doesn't add or remove any events", () => {
-    expect(orderedEvents).toHaveLength(allDayEventsMinimal.length);
+    expect(orderedEvents).toHaveLength(combinedEvents.length);
   });
   it("sets order for each event", () => {
     orderedEvents.forEach((e) => {
@@ -282,8 +289,7 @@ describe("orderAllDayEvents", () => {
     });
   });
   it("sets unique order for each event", () => {
-    // const _events = orderEvents(events);
-    // assert that there arent duplicate '1's for each day
+    expect(allDayOrderIsUnique(orderedEvents)).toBe(true);
     const uniqueStartDates = Array.from(
       new Set(orderedEvents.map((e) => e.startDate))
     );
@@ -298,6 +304,25 @@ describe("orderAllDayEvents", () => {
         expect(noDuplicates).toBe(true);
       }
     });
+  });
+
+  it("wip: demo ", () => {
+    const groupRes = groupEvents(staggeredWithMultiWeek);
+    const y = 1;
+  });
+
+  it("sets unique order for each event: multi-week event", () => {
+    //TODO just merge this with orig test, updating the event data
+
+    // if updating events data that's passed to orderEvents,
+    // ensure event starts on the same day as the others.
+    // otherwise, this test is invalid, because it doesn't filter
+    // by week
+    const _orderedEvents = orderEvents(staggeredWithMultiWeek);
+    const uniqueAllDayOrders = Array.from(
+      new Set(_orderedEvents.map((e) => e.allDayOrder))
+    );
+    expect(uniqueAllDayOrders).toHaveLength(_orderedEvents.length);
   });
   it("orders title descending (c, b, a)", () => {
     const first = orderedEvents.filter((e) => e.title === "test1")[0];
