@@ -1,39 +1,19 @@
 /*
-13  14  15  16  17  18  19
---
-------                    
---  ------  --     --    --
-0   1   2   3       5   6
+note: diff combos OK; depends on the order passed in
+what matters is # of events/row and # total rows
 
-let rows = 1
-let eventsSoFar = [ [03-23, 04-11], [03-23, 03,24] ]
-for (event, index) in events:
-    if (index === 0)
-        event.row = 1 
-        return
-
-    const anyOverlaps = (event, eventsSoFar) => 
-        for e in eventsSoFar
-            if event.start.isBetween(e[0], e[1]) || event.end.isBetween(e[0], e[1])
-                return true
-        return false
-
-    if (anyOverlaps)
-        rows += 1
-
-    event.row = rows
+0   1   2   3   4    5   6  
+13  14  15  16  17  18  19  
+    ----------------------  
+    ----------              
+    --  --  -----           
+    ----------              
+    --  ------  --          
 
 
-13  14  15  16  17  18  19
-    --  ------
-    ----------
-    --------------
-    ---------------------->
-    --  --  --  
---------------  --
-
+                
 */
-export const allDayManyOverlaps = [
+export const mar13To19 = [
   {
     _id: "62322b127837957382660240",
     gEventId: "sqs4bgu2i16ej51p84s2ufmsfg",
@@ -44,7 +24,7 @@ export const allDayManyOverlaps = [
     priorities: [],
     isAllDay: true,
     startDate: "2022-03-14",
-    endDate: "2022-03-14",
+    endDate: "2022-03-15",
     priority: "work",
   },
   {
@@ -118,7 +98,7 @@ export const allDayManyOverlaps = [
     priority: "self",
     isAllDay: true,
     startDate: "2022-03-17",
-    endDate: "2022-03-17",
+    endDate: "2022-03-18",
     title: "no intercept",
     origin: "compass",
     user: "6227e1a1623abad10d70afbf",
@@ -129,7 +109,7 @@ export const allDayManyOverlaps = [
     priority: "work",
     isAllDay: true,
     startDate: "2022-03-16",
-    endDate: "2022-03-16",
+    endDate: "2022-03-17",
     title: "monu",
     origin: "compass",
     user: "6227e1a1623abad10d70afbf",
@@ -140,10 +120,20 @@ export const allDayManyOverlaps = [
     priority: "work",
     isAllDay: true,
     startDate: "2022-03-15",
-    endDate: "2022-03-15",
+    endDate: "2022-03-16",
     title: "scoop",
     origin: "compass",
     user: "6227e1a1623abad10d70afbf",
     gEventId: "6qcb9mpop2dl33g0e5315b5mr8",
   },
 ];
+
+/*
+13  14  15  16  17  18  19
+    --  ------
+    ----------
+    --------------
+    ---------------------->
+    --------------  --
+    --  --  --  
+*/
