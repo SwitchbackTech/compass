@@ -18,11 +18,10 @@ import { StyledEvent, StyledEventScaler } from "./styled";
 export interface Props {
   event: Schema_GridEvent;
   weekViewProps: WeekViewProps;
-  maxCount: number;
 }
 
 const WeekEventComponent = (
-  { event, weekViewProps, maxCount }: Props,
+  { event, weekViewProps }: Props,
   ref: React.ForwardedRef<HTMLButtonElement>
 ) => {
   if (!event) return null;
@@ -73,7 +72,7 @@ const WeekEventComponent = (
     const allDayRowHeight = core.getAllDayEventCellHeight();
     // why 4? cuz max # of rows?
     // $$ find # of events that can fit in max all-day row height
-    height = core.getEventCellHeight() / 4;
+    height = core.getEventCellHeight() / 3;
     // height = core.getEventCellHeight();
     const order = event.allDayOrder || 1;
     top = allDayRowHeight - height * order;
@@ -86,17 +85,16 @@ const WeekEventComponent = (
       widths
     );
 
-    if (event.groupCount && event.groupOrder) {
+    if (event.rowCount && event.rowOrder) {
       console.log(`${event.title}:
-      maxCount: ${maxCount}
+      maxCount: ${component.allDayEventsMaxCount}
       height: ${height}
       allDay-: ${allDayRowHeight}
       allDayOrder: ${event.allDayOrder}
-      group Count: ${event.groupCount} 
-      group order: ${event.groupOrder}
+      group Count: ${event.rowCount} 
+      group order: ${event.rowOrder}
       `);
-      top = height * event.groupOrder;
-      console.log("top new:", top);
+      top = height * event.rowOrder;
     }
   }
 

@@ -84,10 +84,10 @@ export interface AllDayEventsGridProps {
   maxCount?: number;
 }
 
-const gridHeight = `100% - (${GRID_Y_OFFSET}px + 20px)`;
+const gridWidth = `100% - ${GRID_SCROLLBAR_WIDTH}px`;
+const gridHeight = `100% - (${GRID_Y_OFFSET}px + 20px)`; //$$ why 20?
 const gridCellHeight = `(${gridHeight}) / 11`;
 const allDayHeight = `${gridCellHeight} / 4`;
-const gridWidth = `100% - ${GRID_SCROLLBAR_WIDTH}px`;
 
 export const StyledAllDayEventsGrid = styled(Flex)<AllDayEventsGridProps>`
   width: calc(${gridWidth});

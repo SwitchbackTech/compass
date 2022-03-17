@@ -102,23 +102,24 @@ export const getEventCategory = (
 export const getWeekDayLabel = (day: Dayjs) =>
   `day-${day.format(YEAR_MONTH_DAY_FORMAT)}`;
 
-export const groupEvents = (eventsData: Schema_Event[]) => {
-  let groups: Schema_Event[][] = [];
+export const groupEvents = (events: Schema_Event[]) => {
+  console.log(events);
+  let rows: Schema_Event[][] = [];
   let groupIndex = 0;
 
-  if (eventsData.length) {
-    eventsData.forEach((event, index) => {
+  if (events.length) {
+    events.forEach((event, index) => {
       if (index === 0) return;
 
-      const prevValue = eventsData[index - 1];
+      const prevValue = events[index - 1];
       if (doEventsIntercept(prevValue, event)) {
-        if (!groups[groupIndex]) {
-          groups[groupIndex] = [prevValue, event];
+        if (!rows[groupIndex]) {
+          rows[groupIndex] = [prevValue, event];
 
           return;
         }
 
-        groups[groupIndex].push(event);
+        rows[groupIndex].push(event);
 
         return;
       }
@@ -127,44 +128,26 @@ export const groupEvents = (eventsData: Schema_Event[]) => {
     });
   }
 
-  /* sorting groups
-  groups.forEach((group) => {
-    group.sort((a, b) => {
-      if (dayjs(b.startDate).isBefore(a.startDate)) {
-        return 1;
-      }
+  rows = rows.filter((group) => group.length);
 
-      if (dayjs(b.endDate).isAfter(a.endDate)) {
-        return 0;
-      }
+  events = events.map((event) => {
+    let rowCount = 0;
+    let rowOrder = 0;
 
-      return -1;
-    });
-  });
-  */
-  groups = groups.filter((group) => group.length);
+    rows.find((group) => {
+      rowOrder = group.findIndex((e) => e._id === event._id);
+      if (rowOrder === -1) return false;
 
-  eventsData = eventsData.map((event) => {
-    let groupCount = 0;
-    let groupOrder = 0;
+      rowOrder += 1;
 
-    // if (event.isAllDay) return event;
-
-    groups.find((group) => {
-      groupOrder = group.findIndex(
-        (groupEvent) => groupEvent._id === event._id
-      );
-      if (groupOrder === -1) return false;
-
-      groupOrder += 1;
-
-      groupCount = groupOrder && group.length;
+      rowCount = rowOrder && group.length;
       return true;
     });
 
-    return { ...event, groupOrder, groupCount };
+    return { ...event, rowOrder, rowCount };
   });
-  return eventsData;
+
+  return events;
 };
 
 export const orderEvents = (events: Schema_Event[]) => {
@@ -322,24 +305,24 @@ export const getEventsLocalStorage = async (params: Params_Events = {}) => {
 
   eventsData = eventsData
     .map((event) => {
-      let groupCount = 0;
-      let groupOrder = 0;
+      let rowCount = 0;
+      let rowOrder = 0;
 
       if (event.allDay) return event;
 
       groups.find((group) => {
-        groupOrder = group.findIndex(
+        rowOrder = group.findIndex(
           (groupEvent) => groupEvent._id === event._id
         );
-        if (groupOrder === -1) return false;
+        if (rowOrder === -1) return false;
 
-        groupOrder += 1;
+        rowOrder += 1;
 
-        groupCount = groupOrder && group.length;
+        rowCount = rowOrder && group.length;
         return true;
       });
 
-      return { ...event, groupOrder, groupCount };
+      return { ...event, rowOrder, rowCount };
     })
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 

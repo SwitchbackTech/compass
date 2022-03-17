@@ -85,15 +85,7 @@ const _toCompass = (
     startDate: _isAllDay ? _start.date : _start.dateTime,
     // @ts-ignore
     endDate: _isAllDay ? _end.date : _end.dateTime,
-
-    // temp stuff to update
-    // priority: Priorities.UNASSIGNED,
     priority: Priorities.WORK,
-    // isTimeSelected: true,
-    // isOpen: false,
-    // order: 0,
-    // groupOrder: 0,
-    // groupCount: 0,
   };
 
   return compassEvent;

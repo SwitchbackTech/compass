@@ -15,6 +15,12 @@ import {
   groupEvents,
   orderEvents,
 } from "../event.utils";
+/*
+ROWS
+
+if no groups: row = 1
+if groups: 
+*/
 
 describe("getAllDayCounts", () => {
   const allDayCounts = getAllDayCounts(allDayEvents);

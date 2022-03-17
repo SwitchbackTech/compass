@@ -5,7 +5,6 @@ import { RootState } from "@web/store";
 
 import { groupEvents, orderEvents } from "./event.utils";
 import { SectionType } from "./types";
-
 export const selectAllDayEvents = (state: RootState) => {
   const entities = state.events.entities.value || {};
   const weekIds = state.events.getWeekEvents.value || [];
@@ -21,7 +20,6 @@ export const selectAllDayEvents = (state: RootState) => {
   const allDayEvents = orderEvents(_allDayEvents);
   const allDayEventsGrouped = groupEvents(allDayEvents);
   return allDayEventsGrouped;
-  // return allDayEvents;
 };
 export const selectAreEventsProcessingBySectionType = (
   state: RootState,
@@ -118,7 +116,6 @@ export const selectWeekEventsMemo = createSelector(
   _selectWeekIds,
   _selectWeekEntities,
   (weekIds, weekEntities) => {
-    console.log("getting week events");
     if (weekIds === null) return [];
     const weekEventsMapped = weekIds.data.map(
       (_id: string) => weekEntities[_id]

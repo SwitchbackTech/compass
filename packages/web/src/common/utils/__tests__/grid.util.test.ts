@@ -1,4 +1,9 @@
-import { getPrevDayWidth, getFlexBasis } from "@web/common/utils/grid.util";
+import { allDayManyOverlaps } from "@core/__mocks__/events.allday.3";
+import {
+  getAllDayRowData,
+  getPrevDayWidth,
+  getFlexBasis,
+} from "@web/common/utils/grid.util";
 import {
   FLEX_TODAY,
   FLEX_TMRW,
@@ -7,6 +12,12 @@ import {
 } from "@web/common/constants/grid.constants";
 import dayjs from "dayjs";
 
+describe("getAllDayRowsCount", () => {
+  it("returns number of overlaps + 1", () => {
+    const f = getAllDayRowData(allDayManyOverlaps);
+    const y = 1;
+  });
+});
 describe("getFlexBasis", () => {
   test("past week: all same", () => {
     const july10 = dayjs("2022-07-10");

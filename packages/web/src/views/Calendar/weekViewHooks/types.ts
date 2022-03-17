@@ -1,5 +1,4 @@
 import React from "react";
-
 import { Schema_Event } from "@core/types/event.types";
 
 export interface WeekViewHelpersProps {

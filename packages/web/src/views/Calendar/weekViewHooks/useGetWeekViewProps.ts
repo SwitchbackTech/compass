@@ -26,7 +26,7 @@ import {
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
 import { getAllDayCounts } from "@web/ducks/events/event.utils";
-import { getFlexBasis } from "@web/common/utils/grid.util";
+import { getAllDayRowsCount, getFlexBasis } from "@web/common/utils/grid.util";
 
 import {
   GRID_TIME_STEP,
@@ -86,12 +86,11 @@ export const useGetWeekViewProps = () => {
     allDayCountsEditing[editingEvent.startDate] = editingEvent.allDayOrder || 1;
   }
 
-  // always at least 1 to allow space for user to add another
-  //$$
-  const allDayOverlapCounts = 1 + 2;
+  const allDayRows = getAllDayRowsCount(allDayEvents);
 
+  // $$ rename
   const allDayEventsMaxCount = Math.max(
-    ...[allDayOverlapCounts, ...Object.values(allDayCountsEditing)]
+    ...[allDayRows, ...Object.values(allDayCountsEditing)]
   );
 
   /****************
