@@ -102,6 +102,7 @@ export const getEventCategory = (
 export const getWeekDayLabel = (day: Dayjs) =>
   `day-${day.format(YEAR_MONTH_DAY_FORMAT)}`;
 
+//$$ delete
 export const groupEvents = (events: Schema_Event[]) => {
   console.log(events);
   let rows: Schema_Event[][] = [];

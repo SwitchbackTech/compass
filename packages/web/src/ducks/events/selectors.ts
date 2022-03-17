@@ -2,9 +2,11 @@ import { createSelector } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
+import { getAllDayRowData } from "@web/common/utils/grid.util";
 
 import { groupEvents, orderEvents } from "./event.utils";
 import { SectionType } from "./types";
+
 export const selectAllDayEvents = (state: RootState) => {
   const entities = state.events.entities.value || {};
   const weekIds = state.events.getWeekEvents.value || [];
@@ -13,14 +15,16 @@ export const selectAllDayEvents = (state: RootState) => {
     (_id: string) => entities[_id]
   );
 
-  const _allDayEvents = weekEventsMapped.filter(
+  let allDayEvents = weekEventsMapped.filter(
     (e: Schema_Event) => e !== undefined && e.isAllDay
   );
 
-  const allDayEvents = orderEvents(_allDayEvents);
-  const allDayEventsGrouped = groupEvents(allDayEvents);
-  return allDayEventsGrouped;
+  allDayEvents = orderEvents(allDayEvents);
+  const rowData = getAllDayRowData(allDayEvents);
+  allDayEvents = rowData.allDayEvents;
+  return allDayEvents;
 };
+
 export const selectAreEventsProcessingBySectionType = (
   state: RootState,
   type: SectionType

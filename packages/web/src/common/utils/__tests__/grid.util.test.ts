@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { mar13To19 } from "@core/__mocks__/events.allday.3";
 import {
-  fitInExistingRow,
+  assignEventToRow,
   getAllDayRowData,
   getPrevDayWidth,
   getFlexBasis,
@@ -12,6 +12,18 @@ import {
   FUTURE_MULTIPLE,
   FLEX_EQUAL,
 } from "@web/common/constants/grid.constants";
+
+const assignsRowNumberToEachEvent = (events) => {
+  let res = true;
+  for (const e of events) {
+    if (!("row" in e) || typeof e.row !== "number") {
+      res = false;
+      break;
+    }
+  }
+  return res;
+};
+
 describe("fitInExistingRow", () => {
   it("doesnt fit when row full: 2022-23", () => {
     const rows = {
@@ -21,7 +33,7 @@ describe("fitInExistingRow", () => {
       startDate: "2022-12-15",
       endDate: "2022-01-02",
     };
-    const fitResult = fitInExistingRow(eventThatDoesntFit, rows);
+    const fitResult = assignEventToRow(eventThatDoesntFit, rows);
     expect(fitResult.fits).toBe(false);
   });
   it("fits event in row 2: mar13-19", () => {
@@ -55,23 +67,38 @@ describe("fitInExistingRow", () => {
       startDate: "2022-03-15",
       endDate: "2022-03-17",
     };
-    const fitResult = fitInExistingRow(eventThatFits, rows);
+    const fitResult = assignEventToRow(eventThatFits, rows);
     expect(fitResult.fits).toBe(true);
     expect(fitResult.rowNum).toBe(2);
   });
 });
 describe("getAllDayRowData", () => {
-  it("doesnt create unnecessary rows: tbd", () => {});
-  test("March 13 - 19", () => {
-    const rowData = getAllDayRowData(mar13To19);
-    const y = 1;
+  it("doesnt create unnecessary rows: no events", () => {
+    const rowData = getAllDayRowData([]);
+    expect(rowData.rowCount).toBe(0);
   });
-  test("10 long all-day events", () => {
-    // const eventz = [];
+  it("doesnt create unnecessary rows: 2 events", () => {
+    const rowData = getAllDayRowData([
+      { startDate: "2012-07-07", endDate: "2012-12-31" },
+      { startDate: "2012-12-12", endDate: "2013-06-09" },
+    ]);
+    expect(rowData.rowCount).toBe(2);
+    expect(assignsRowNumberToEachEvent(rowData.allDayEvents)).toBe(true);
+  });
+
+  it("creates 10 rows for 10 multi-week events", () => {
     const longEvent = { startDate: "2023-02-28", endDate: "2023-06-06" };
     const events = new Array(10).fill(longEvent);
+
     const rowData = getAllDayRowData(events);
-    const y = 1;
+
+    expect(rowData.rowCount).toBe(10);
+    expect(Object.keys(rowData.allDayEvents)).toHaveLength(10);
+    expect(assignsRowNumberToEachEvent(rowData.allDayEvents)).toBe(true);
+  });
+  test("March 13 - 19", () => {
+    const rowData = getAllDayRowData(mar13To19);
+    expect(assignsRowNumberToEachEvent(rowData.allDayEvents)).toBe(true);
   });
 });
 describe("getFlexBasis", () => {

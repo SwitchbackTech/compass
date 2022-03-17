@@ -12,38 +12,53 @@ import { Schema_Event } from "@core/types/event.types";
 
 dayjs.extend(weekPlugin);
 dayjs.extend(isBetween);
+interface AssignResult {
+  fits: boolean;
+  rowNum?: number;
+}
 
-const dayColumns = [0, 1, 2, 3, 4, 5, 6] as const;
-type Columns = { [K in typeof dayColumns[number]]: string[][] };
+export const assignEventToRow = (event: Schema_Event, rows: AssignResult) => {
+  const start = dayjs(event.startDate);
+
+  for (const rowIndex of Object.keys(rows)) {
+    const rowNum = parseInt(rowIndex);
+
+    for (const i of rows[rowNum]) {
+      const startFits = !start.isBetween(dayjs(i[0]), dayjs(i[1]), "day", "[]");
+
+      if (startFits) {
+        const end = dayjs(event.endDate);
+        const endFits = !end.isBetween(dayjs(i[0]), dayjs(i[1]), "day", "[]");
+
+        if (endFits) {
+          return { fits: true, rowNum };
+        }
+      }
+    }
+  }
+  return { fits: false };
+};
 
 export const getAllDayRowData = (allDayEvents: Schema_Event[]) => {
-  //$$ TODO filter/ignore start/ends that overflow the week
   let rowCount = 0;
-  const columns: Columns = {
-    0: [],
-    1: [],
-    2: [],
-    3: [],
-    4: [],
-    5: [],
-    6: [],
-  };
+  const rows = {};
+
   allDayEvents.forEach((event) => {
-    const { fits, rowNum } = plotEvent(event, columns);
+    const { fits, rowNum } = assignEventToRow(event, rows);
 
     if (fits) {
-      columns[rowNum].push([event.startDate, event.endDate]);
+      // add to existing
+      rows[rowNum].push([event.startDate, event.endDate]);
+      event["row"] = rowNum;
     } else {
-      // add new row
+      // add new
       rowCount += 1;
-      columns[rowCount].push([[event.startDate, event.endDate]]);
+      rows[rowCount] = [[event.startDate, event.endDate]];
+      event["row"] = rowCount;
     }
-
-    event["row"] = rowNum;
   });
 
-  // calculate # of rows needed
-  return { rowCount, rows: columns, allDayEvents };
+  return { rowCount, allDayEvents };
 };
 
 export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
@@ -108,43 +123,4 @@ export const getPrevDayWidth = (today: Dayjs) => {
   const width = 60 / diff;
 
   return width;
-};
-
-//$$ move
-interface FitResult {
-  fits: boolean;
-  rowNum?: number;
-}
-/*
-    if (fits) {
-      columns[rowNum].push([event.startDate, event.endDate]);
-    } else {
-      // add new row
-      rowCount += 1;
-      columns[rowCount].push([[event.startDate, event.endDate]]);
-    }
-*/
-export const plotEvent = (event: Schema_Event, rows: Columns): FitResult => {
-  const start = dayjs(event.startDate);
-
-  for (const rowIndex of Object.keys(rows)) {
-    const rowNum = parseInt(rowIndex);
-    if (rows[rowNum].length === 0) {
-      return { fits: true, rowNum };
-    }
-    for (const i of rows[rowNum]) {
-      const startFits = !start.isBetween(dayjs(i[0]), dayjs(i[1]), "day", "[]");
-
-      if (startFits) {
-        const end = dayjs(event.endDate);
-        const endFits = !end.isBetween(dayjs(i[0]), dayjs(i[1]), "day", "[]");
-
-        if (endFits) {
-          return { fits: true, rowNum };
-        }
-      }
-    }
-  }
-
-  return { fits: false };
 };
