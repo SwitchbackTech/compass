@@ -66,6 +66,13 @@ describe("getAllDayRowData", () => {
     const rowData = getAllDayRowData(mar13To19);
     const y = 1;
   });
+  test("10 long all-day events", () => {
+    // const eventz = [];
+    const longEvent = { startDate: "2023-02-28", endDate: "2023-06-06" };
+    const events = new Array(10).fill(longEvent);
+    const rowData = getAllDayRowData(events);
+    const y = 1;
+  });
 });
 describe("getFlexBasis", () => {
   test("past week: all same", () => {

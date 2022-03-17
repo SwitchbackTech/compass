@@ -29,7 +29,7 @@ export const getAllDayRowData = (allDayEvents: Schema_Event[]) => {
     6: [],
   };
   allDayEvents.forEach((event) => {
-    const { fits, rowNum } = fitInExistingRow(event, columns);
+    const { fits, rowNum } = plotEvent(event, columns);
 
     if (fits) {
       columns[rowNum].push([event.startDate, event.endDate]);
@@ -115,10 +115,16 @@ interface FitResult {
   fits: boolean;
   rowNum?: number;
 }
-export const fitInExistingRow = (
-  event: Schema_Event,
-  rows: Columns
-): FitResult => {
+/*
+    if (fits) {
+      columns[rowNum].push([event.startDate, event.endDate]);
+    } else {
+      // add new row
+      rowCount += 1;
+      columns[rowCount].push([[event.startDate, event.endDate]]);
+    }
+*/
+export const plotEvent = (event: Schema_Event, rows: Columns): FitResult => {
   const start = dayjs(event.startDate);
 
   for (const rowIndex of Object.keys(rows)) {
