@@ -11,7 +11,10 @@ import {
   getAllDayEventWidth,
   getEventCategory,
 } from "@web/ducks/events/event.utils";
-import { getLeftPosition } from "@web/common/utils/grid.util";
+import {
+  getAllDayEventTop,
+  getLeftPosition,
+} from "@web/common/utils/grid.util";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 
@@ -44,14 +47,20 @@ const WeekEventComponent = (
     component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
   const endDate = dayjs(event.endDate);
   const endTimeShortAm = endDate.format(HOURS_AM_FORMAT);
+  // get duration by converting ms to hours
+  const durationHours = endDate.diff(startDate) * 2.7777777777778e-7 || 0;
 
   /**************
    Size + Position
    **************/
+  let top: number;
+  // auto-deduct width for padding
+  // TODO: handle width in CSS and without using hard-coded numbers, but rather %
+  let width = -13;
+  let height: number;
   const widths = Array.from(component.weekDaysRef.current?.children || []).map(
     (e) => e.clientWidth
   );
-  let top = core.getEventCellHeight() * startTime;
   const category = getEventCategory(
     startDate,
     endDate,
@@ -59,23 +68,19 @@ const WeekEventComponent = (
     component.endOfSelectedWeekDay
   );
   const left = getLeftPosition(category, startIndex, widths);
-  // get duration by converting ms to hours
-  const durationHours = endDate.diff(startDate) * 2.7777777777778e-7 || 0;
-  let height = core.getEventCellHeight() * durationHours;
-  let width =
-    component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
-  // auto-deduct width for padding
-  // TODO: handle width in CSS and without using hard-coded numbers, but rather %
-  width -= 13;
 
   if (event.isAllDay) {
+    /* 
+    height notes
+      - uses dynamic style; height changes based on window size; no min/max
+      - setting to a constant (20 e.g) requires the allday row height to also have
+        a max. otherwise, events will appear out of place
+     - got 2.62 by experimenting by what looks right
+    */
+    height = core.getEventCellHeight() / 2.62;
     const allDayRowHeight = core.getAllDayEventCellHeight();
-    // why 4? cuz max # of rows?
-    // $$ find # of events that can fit in max all-day row height
-    height = core.getEventCellHeight() / 3;
-    // height = core.getEventCellHeight();
-    const order = event.allDayOrder || 1;
-    top = allDayRowHeight - height * order;
+    console.log(event.title);
+    top = getAllDayEventTop(height, event.row, allDayRowHeight);
     width = getAllDayEventWidth(
       category,
       startIndex,
@@ -84,20 +89,21 @@ const WeekEventComponent = (
       component.startOfSelectedWeekDay,
       widths
     );
-
-    if (event.rowCount && event.rowOrder) {
-      /*
-      console.log(`${event.title}:
-      maxCount: ${component.allDayEventsMaxCount}
-      height: ${height}
-      allDay-: ${allDayRowHeight}
-      allDayOrder: ${event.allDayOrder}
-      group Count: ${event.rowCount} 
-      group order: ${event.rowOrder}
-      `);
-      top = height * event.rowOrder;
-      */
-    }
+    console.log(component.rowsCount);
+    // $$
+    // console.log(`${event.title}:
+    // maxCount: ${component.rowsCount}
+    // top: ${top}
+    // height: ${height}
+    // allDay-: ${allDayRowHeight}
+    // allDayOrder: ${event.allDayOrder}
+    // row: ${event.row}
+    // `);
+  } else {
+    top = core.getEventCellHeight() * startTime;
+    height = core.getEventCellHeight() * durationHours;
+    width =
+      component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
   }
 
   return (

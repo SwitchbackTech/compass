@@ -81,18 +81,19 @@ export const StyledWeekDayFlex = styled(Flex)<StyledWeekDayFlexProps>`
 `;
 
 export interface AllDayEventsGridProps {
-  maxCount?: number;
+  rowsCount?: number;
 }
 
 const gridWidth = `100% - ${GRID_SCROLLBAR_WIDTH}px`;
-const gridHeight = `100% - (${GRID_Y_OFFSET}px + 20px)`; //$$ why 20?
+// + 20 to give space on top (?)
+const gridHeight = `100% - (${GRID_Y_OFFSET}px + 20px)`;
 const gridCellHeight = `(${gridHeight}) / 11`;
 const allDayHeight = `${gridCellHeight} / 4`;
 
 export const StyledAllDayEventsGrid = styled(Flex)<AllDayEventsGridProps>`
+  height: ${({ rowsCount }) =>
+    `calc(${allDayHeight} * 2 + ${rowsCount || 0} * ${allDayHeight})`};
   width: calc(${gridWidth});
-  height: ${({ maxCount }) =>
-    `calc(${allDayHeight} * 2 + ${maxCount || 0} * ${allDayHeight})`};
   position: relative;
   overflow: hidden;
   border-bottom: ${gridDividerBorder};

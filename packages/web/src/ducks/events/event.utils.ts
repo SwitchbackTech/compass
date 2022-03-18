@@ -31,6 +31,7 @@ export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
   return allDayCountByDate;
 };
 
+//$$ move to grid util
 export const getAllDayEventWidth = (
   category: Category,
   startIndex: number,
@@ -150,6 +151,7 @@ const _sumEventWidths = (
 };
 
 /*
+-------------------------------------------------------------------------------
 Demo of using pagination and group ordering. 
 Keep until implementing for the Someday List and 
 ordering group events
@@ -317,3 +319,6 @@ export const editEventLocalStorage = async (
 
   localStorage.setItem("events", JSON.stringify(events));
 };
+/*
+-------------------------------------------------------------------------------
+*/

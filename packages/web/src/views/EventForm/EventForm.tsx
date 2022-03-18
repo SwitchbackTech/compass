@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
 import dayjs from "dayjs";
-
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-
 import { Button } from "@web/components/Button";
 import { JustifyContent } from "@web/components/Flex/styled";
 import { SelectOption } from "@web/common/types/components";

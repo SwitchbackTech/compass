@@ -88,9 +88,11 @@ export const useGetWeekViewProps = () => {
   }
 
   const rowVals = allDayEvents.map((e) => e.row);
+  // $$ explain [1] rationale
   const topRow = rowVals.length === 0 ? 1 : Math.max(...rowVals);
-  const allDayEventsMaxCount = Math.max(
-    ...[topRow, ...Object.values(allDayCountsEditing)]
+  // $$ explain +x rationale
+  const rowsCount = Math.max(
+    ...[topRow + 2, ...Object.values(allDayCountsEditing)]
   );
 
   /****************
@@ -125,7 +127,7 @@ export const useGetWeekViewProps = () => {
     setGridYOffset(
       _GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0)
     );
-  }, [allDayEventsGridRef.current?.clientHeight, allDayEventsMaxCount]);
+  }, [allDayEventsGridRef.current?.clientHeight, rowsCount]);
 
   useEffect(() => {
     setGridXOffset(GRID_X_OFFSET + (calendarRef.current?.offsetLeft || 0));
@@ -519,7 +521,7 @@ export const useGetWeekViewProps = () => {
     component: {
       allDayEvents,
       allDayEventsGridRef,
-      allDayEventsMaxCount,
+      rowsCount,
       calendarRef,
       dayjsBasedOnWeekDay,
       editingEvent,

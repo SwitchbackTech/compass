@@ -9,6 +9,7 @@ import { CalendarView } from "@web/views/Calendar";
 import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
 import { render } from "@web/common/__mocks__/mock.render";
+import { febToMarState } from "@web/common/__mocks__/state/state.0227To0305";
 import {
   mockLocalStorage,
   clearLocalStorageMock,
@@ -71,7 +72,50 @@ describe("CalendarView: Interactions", () => {
     expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
 
     await user.click(screen.getByText(/>/i));
-    expect(screen.queryByText(/today/i)).toBeInTheDocument();
+    expect(screen.getByText(/today/i)).toBeInTheDocument();
+  });
+
+  describe("All Day Events", () => {
+    it("opens event form upon click (and not before)", async () => {
+      /*
+      note: this doesn't test if an event is effectively 'hidden' from a user 
+      because the row logic was incorrect and allowed overlapping events. 
+        - the event may be on the DOM and clickable by testing-library,
+          but if a user tried clicking in that spot, she would only 
+          be able to click the event that's on the 'top' layer
+      */
+      const user = userEvent.setup();
+      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
+      render(<CalendarView />, { preloadedState });
+
+      // just testing a handful of events to prevent slowness
+      const titles = [
+        // all-day events
+        "multiweek event",
+        "Mar 1",
+        // regular events
+        "Ty <> Tim",
+      ];
+
+      for (const t of titles) {
+        expect(screen.queryByDisplayValue(t)).not.toBeInTheDocument(); // shouldnt show form before being clicked
+        await user.click(screen.getByRole("button", { name: t }));
+        expect(screen.getByDisplayValue(t)).toBeInTheDocument();
+        /*
+        TODO: escape +/ click out of even and confirm form disappears
+        opt: 
+          user.keyboard ...
+        opt (wasnt working initiall):
+          fireEvent.keyDown(screen.getByText(/today/i), {
+            key: "Escape",
+            code: "Escape",
+            charCode: 27,
+          });
+
+        expect(screen.queryByDisplayValue(t)).not.toBeInTheDocument(); // shouldnt show form before being clicked
+        */
+      }
+    });
   });
 });
 

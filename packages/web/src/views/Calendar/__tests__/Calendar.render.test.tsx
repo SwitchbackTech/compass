@@ -7,7 +7,7 @@ import {
   mockLocalStorage,
   clearLocalStorageMock,
 } from "@web/common/utils/test.util";
-import { weekEventState } from "@web/common/__mocks__/state.weekEvents";
+import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
 
 beforeAll(() => {

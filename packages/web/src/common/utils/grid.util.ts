@@ -39,6 +39,38 @@ export const assignEventToRow = (event: Schema_Event, rows: AssignResult) => {
   return { fits: false };
 };
 
+export const getAllDayEventTop = (
+  eventHeight: number,
+  row: number,
+  allDayRowHeight: number
+): number => {
+  // top = height / order;
+  // const order = event.allDayOrder || 1;
+  // top = allDayRowHeight - height * order;
+  //top = height * event.rowOrder;
+  const _eventHeight = 25.26;
+  const _rowsCount = 6;
+  const _position = {
+    0: _eventHeight * 1,
+    1: _eventHeight * 1,
+    2: _eventHeight * 2,
+    3: _eventHeight * 3,
+    4: _eventHeight * 4,
+    5: _eventHeight * 5,
+    6: _eventHeight * 6,
+    7: _eventHeight * 7,
+  };
+  const top = _position[row];
+  console.log(`
+  allDayRowHeight: ${allDayRowHeight}
+  eventHeight: ${eventHeight}
+  row: ${row}
+  ----
+  top: ${top}
+  `);
+  return top;
+};
+
 export const getAllDayRowData = (allDayEvents: Schema_Event[]) => {
   let rowCount = 0;
   const rows = {};
