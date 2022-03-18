@@ -4,7 +4,7 @@ import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
 import { getAllDayRowData } from "@web/common/utils/grid.util";
 
-import { groupEvents, orderEvents } from "./event.utils";
+import { orderEvents } from "./event.utils";
 import { SectionType } from "./types";
 
 export const selectAllDayEvents = (state: RootState) => {
@@ -23,17 +23,6 @@ export const selectAllDayEvents = (state: RootState) => {
   const rowData = getAllDayRowData(allDayEvents);
   allDayEvents = rowData.allDayEvents;
   return allDayEvents;
-};
-
-export const selectAreEventsProcessingBySectionType = (
-  state: RootState,
-  type: SectionType
-) => {
-  const statePieceName = type.charAt(0).toUpperCase() + type.slice(1);
-  const statePiece =
-    state.events[`get${statePieceName}Events` as "getWeekEvents"];
-
-  return isProcessing(statePiece);
 };
 
 export const selectEventEntities = (state: RootState) =>

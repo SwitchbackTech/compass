@@ -119,6 +119,7 @@ export const staggeredWithMultiWeek = [
     _id: "id1",
     title: "multiple days",
     isAllDay: true,
+    allDayOrder: 2,
     startDate: "2022-03-12",
     endDate: "2022-03-15",
     priority: "work",
@@ -126,6 +127,7 @@ export const staggeredWithMultiWeek = [
   {
     _id: "id2",
     title: "1 day",
+    allDayOrder: 2,
     isAllDay: true,
     startDate: "2022-03-12",
     endDate: "2022-03-13",
@@ -133,6 +135,7 @@ export const staggeredWithMultiWeek = [
   },
   {
     _id: "id3",
+    allDayOrder: 1,
     title: "Multi-Week Event",
     isAllDay: true,
     startDate: "2022-03-11",

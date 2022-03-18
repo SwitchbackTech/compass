@@ -8,34 +8,31 @@ import { allDayEvents } from "@core/__mocks__/events.allday.2";
 import { getLeftPosition } from "@web/common/utils/grid.util";
 
 import {
-  doEventsIntercept,
   getAllDayCounts,
   getAllDayEventWidth,
   getEventCategory,
-  groupEvents,
   orderEvents,
 } from "../event.utils";
-/*
-ROWS
-
-if no groups: row = 1
-if groups: 
-*/
 
 describe("getAllDayCounts", () => {
   const allDayCounts = getAllDayCounts(allDayEvents);
-  const allDayStaggered = getAllDayCounts(staggeredWithMultiWeek);
-  const y = 1;
+  const allDayStaggeredCounts = getAllDayCounts(staggeredWithMultiWeek);
   it("adds dates up correctly", () => {
     expect(allDayCounts["2022-02-07"]).toBe(3);
     expect(allDayCounts["2022-02-08"]).toBe(1);
     expect(allDayCounts["2022-02-09"]).toBe(1);
     expect(allDayCounts["2022-02-11"]).toBe(1);
+
+    expect(allDayStaggeredCounts["2022-03-11"]).toBe(1);
+    expect(allDayStaggeredCounts["2022-03-12"]).toBe(2);
   });
 
   it("returns one key for unique date", () => {
     const numDates = Object.keys(allDayCounts).length;
     expect(numDates).toBe(4); //07, 08, 09, 11
+
+    const numDates2 = Object.keys(allDayStaggeredCounts).length;
+    expect(numDates2).toBe(2); // 11, 12
   });
 });
 describe("getAllDayEventWidth", () => {
@@ -295,7 +292,6 @@ describe("orderEvents", () => {
     });
   });
   it("sets unique order for each event", () => {
-    expect(allDayOrderIsUnique(orderedEvents)).toBe(true);
     const uniqueStartDates = Array.from(
       new Set(orderedEvents.map((e) => e.startDate))
     );
@@ -312,24 +308,6 @@ describe("orderEvents", () => {
     });
   });
 
-  it("wip: demo ", () => {
-    const groupRes = groupEvents(staggeredWithMultiWeek);
-    const y = 1;
-  });
-
-  it("sets unique order for each event: multi-week event", () => {
-    //TODO just merge this with orig test, updating the event data
-
-    // if updating events data that's passed to orderEvents,
-    // ensure event starts on the same day as the others.
-    // otherwise, this test is invalid, because it doesn't filter
-    // by week
-    const _orderedEvents = orderEvents(staggeredWithMultiWeek);
-    const uniqueAllDayOrders = Array.from(
-      new Set(_orderedEvents.map((e) => e.allDayOrder))
-    );
-    expect(uniqueAllDayOrders).toHaveLength(_orderedEvents.length);
-  });
   it("orders title descending (c, b, a)", () => {
     const first = orderedEvents.filter((e) => e.title === "test1")[0];
     expect(first.allDayOrder).toBe(5);

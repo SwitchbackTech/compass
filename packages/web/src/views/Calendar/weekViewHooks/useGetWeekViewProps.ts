@@ -26,7 +26,7 @@ import {
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
 import { getAllDayCounts } from "@web/ducks/events/event.utils";
-import { getAllDayRowsCount, getFlexBasis } from "@web/common/utils/grid.util";
+import { getFlexBasis } from "@web/common/utils/grid.util";
 
 import {
   GRID_TIME_STEP,
@@ -70,14 +70,15 @@ export const useGetWeekViewProps = () => {
   /*********
    * Events
    *********/
-  // move these to memo-ized once fixing issue of
-  // entire calendarview re-rendering
-  const allDayEvents = useSelector(selectAllDayEvents);
+  /*
+   enable these memo-ized version once fixing issue of entire calendarview re-rendering:
+    const allDayEvents = useSelector(selectAllDayEventsMemo);
+    const weekEvents = useSelector(selectWeekEventsMemo);
+    const allDayCounts = useMemo(() => getAllDayCounts(), []); // this has been slow, inaccurate
+  */
   const weekEvents = useSelector(selectWeekEvents);
-  // const allDayEvents = useSelector(selectAllDayEventsMemo);
-  // const weekEvents = useSelector(selectWeekEventsMemo);
+  const allDayEvents = useSelector(selectAllDayEvents);
 
-  // const allDayCounts = useMemo(() => getAllDayCounts(), []); // this has been slow, inaccurate
   const allDayCounts = getAllDayCounts(allDayEvents);
   const allDayCountsEditing = { ...allDayCounts };
 
@@ -86,11 +87,10 @@ export const useGetWeekViewProps = () => {
     allDayCountsEditing[editingEvent.startDate] = editingEvent.allDayOrder || 1;
   }
 
-  const allDayRows = getAllDayRowsCount(allDayEvents);
-
-  // $$ rename
+  const rowVals = allDayEvents.map((e) => e.row);
+  const topRow = rowVals.length === 0 ? 1 : Math.max(...rowVals);
   const allDayEventsMaxCount = Math.max(
-    ...[allDayRows, ...Object.values(allDayCountsEditing)]
+    ...[topRow, ...Object.values(allDayCountsEditing)]
   );
 
   /****************

@@ -102,55 +102,6 @@ export const getEventCategory = (
 export const getWeekDayLabel = (day: Dayjs) =>
   `day-${day.format(YEAR_MONTH_DAY_FORMAT)}`;
 
-//$$ delete
-export const groupEvents = (events: Schema_Event[]) => {
-  console.log(events);
-  let rows: Schema_Event[][] = [];
-  let groupIndex = 0;
-
-  if (events.length) {
-    events.forEach((event, index) => {
-      if (index === 0) return;
-
-      const prevValue = events[index - 1];
-      if (doEventsIntercept(prevValue, event)) {
-        if (!rows[groupIndex]) {
-          rows[groupIndex] = [prevValue, event];
-
-          return;
-        }
-
-        rows[groupIndex].push(event);
-
-        return;
-      }
-
-      groupIndex += 1;
-    });
-  }
-
-  rows = rows.filter((group) => group.length);
-
-  events = events.map((event) => {
-    let rowCount = 0;
-    let rowOrder = 0;
-
-    rows.find((group) => {
-      rowOrder = group.findIndex((e) => e._id === event._id);
-      if (rowOrder === -1) return false;
-
-      rowOrder += 1;
-
-      rowCount = rowOrder && group.length;
-      return true;
-    });
-
-    return { ...event, rowOrder, rowCount };
-  });
-
-  return events;
-};
-
 export const orderEvents = (events: Schema_Event[]) => {
   // set default for days that dont have overlapping events
   const updatedEvents = events.map((e) => ({ ...e, allDayOrder: 1 }));

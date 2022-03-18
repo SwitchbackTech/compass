@@ -86,6 +86,7 @@ const WeekEventComponent = (
     );
 
     if (event.rowCount && event.rowOrder) {
+      /*
       console.log(`${event.title}:
       maxCount: ${component.allDayEventsMaxCount}
       height: ${height}
@@ -95,6 +96,7 @@ const WeekEventComponent = (
       group order: ${event.rowOrder}
       `);
       top = height * event.rowOrder;
+      */
     }
   }
 
