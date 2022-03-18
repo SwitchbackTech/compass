@@ -89,7 +89,7 @@ const WeekEventComponent = (
       component.startOfSelectedWeekDay,
       widths
     );
-    console.log(component.rowsCount);
+    // console.log(component.rowsCount);
     // $$
     // console.log(`${event.title}:
     // maxCount: ${component.rowsCount}

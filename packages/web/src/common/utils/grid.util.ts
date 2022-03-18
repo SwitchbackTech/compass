@@ -18,6 +18,7 @@ interface AssignResult {
 }
 
 export const assignEventToRow = (event: Schema_Event, rows: AssignResult) => {
+  // only checking within its peer row, not all rows (?)
   const start = dayjs(event.startDate);
 
   for (const rowIndex of Object.keys(rows)) {
@@ -60,14 +61,15 @@ export const getAllDayEventTop = (
     6: _eventHeight * 6,
     7: _eventHeight * 7,
   };
-  const top = _position[row];
-  console.log(`
-  allDayRowHeight: ${allDayRowHeight}
-  eventHeight: ${eventHeight}
-  row: ${row}
-  ----
-  top: ${top}
-  `);
+  const top: number = _position[row];
+  //$$
+  // console.log(`
+  // allDayRowHeight: ${allDayRowHeight}
+  // eventHeight: ${eventHeight}
+  // row: ${row}
+  // ----
+  // top: ${top}
+  // `);
   return top;
 };
 
@@ -90,6 +92,8 @@ export const getAllDayRowData = (allDayEvents: Schema_Event[]) => {
     }
   });
 
+  // console.log(allDayEvents.map((e) => console.log(`${e.title}: ${e.row}`)));
+  console.log(rows);
   return { rowCount, allDayEvents };
 };
 
