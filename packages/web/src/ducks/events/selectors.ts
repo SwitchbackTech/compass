@@ -2,7 +2,7 @@ import { createSelector } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
-import { getAllDayRowData } from "@web/common/utils/grid.util";
+import { getAllDayRowDataByComparison } from "@web/common/utils/grid.util";
 
 import { orderEvents } from "./event.utils";
 import { SectionType } from "./types";
@@ -20,7 +20,7 @@ export const selectAllDayEvents = (state: RootState) => {
   );
 
   allDayEvents = orderEvents(allDayEvents);
-  const rowData = getAllDayRowData(allDayEvents);
+  const rowData = getAllDayRowDataByComparison(allDayEvents);
   allDayEvents = rowData.allDayEvents;
   return allDayEvents;
 };

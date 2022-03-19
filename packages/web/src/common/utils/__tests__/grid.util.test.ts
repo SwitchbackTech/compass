@@ -1,10 +1,11 @@
 import dayjs from "dayjs";
 import { mar13To19 } from "@core/__mocks__/events.allday.3";
 import {
-  assignEventToRow,
-  getAllDayRowData,
+  assignEventToRowByComparison,
+  getAllDayRowDataByComparison,
   getPrevDayWidth,
   getFlexBasis,
+  getAllRowData,
 } from "@web/common/utils/grid.util";
 import {
   FLEX_TODAY,
@@ -24,7 +25,13 @@ const assignsRowNumberToEachEvent = (events) => {
   return res;
 };
 
-describe("assignEventToRow", () => {
+describe("assignEventToRow: Mar 13 - 19", () => {
+  const { rowsCount, allDayEvents } = getAllRowData(mar13To19);
+  it("increments rows by 1 in order", () => {
+    expect(rowsCount).toBe(5);
+  });
+});
+describe("assignEventToRow - By Comparison", () => {
   it("doesnt fit when row full: 2022-23", () => {
     const rows = {
       0: [["2022-12-01", "2023-02-02"]],
@@ -33,7 +40,7 @@ describe("assignEventToRow", () => {
       startDate: "2022-12-15",
       endDate: "2022-01-02",
     };
-    const fitResult = assignEventToRow(eventThatDoesntFit, rows);
+    const fitResult = assignEventToRowByComparison(eventThatDoesntFit, rows);
     expect(fitResult.fits).toBe(false);
   });
   it("fits event in row 2: mar13-19", () => {
@@ -65,7 +72,7 @@ describe("assignEventToRow", () => {
       startDate: "2022-03-15",
       endDate: "2022-03-17",
     };
-    const fitResult = assignEventToRow(eventThatFits, rows);
+    const fitResult = assignEventToRowByComparison(eventThatFits, rows);
     expect(fitResult.fits).toBe(true);
     expect(fitResult.rowNum).toBe(2);
   });
@@ -99,7 +106,7 @@ describe("assignEventToRow", () => {
       3: [["2022-03-14", "2022-03-17"]],
       4: [["2022-03-15", "2022-03-17"]],
     };
-    const fitResult = assignEventToRow(
+    const fitResult = assignEventToRowByComparison(
       { startDate: "2022-03-14", endDate: "2022-03-15" },
       rows
     );
@@ -109,11 +116,11 @@ describe("assignEventToRow", () => {
 });
 describe("getAllDayRowData", () => {
   it("doesnt create unnecessary rows: no events", () => {
-    const rowData = getAllDayRowData([]);
+    const rowData = getAllDayRowDataByComparison([]);
     expect(rowData.rowCount).toBe(0);
   });
   it("doesnt create unnecessary rows: 2 events", () => {
-    const rowData = getAllDayRowData([
+    const rowData = getAllDayRowDataByComparison([
       { startDate: "2012-07-07", endDate: "2012-12-31" },
       { startDate: "2012-12-12", endDate: "2013-06-09" },
     ]);
@@ -125,14 +132,14 @@ describe("getAllDayRowData", () => {
     const longEvent = { startDate: "2023-02-28", endDate: "2023-06-06" };
     const events = new Array(10).fill(longEvent);
 
-    const rowData = getAllDayRowData(events);
+    const rowData = getAllDayRowDataByComparison(events);
 
     expect(rowData.rowCount).toBe(10);
     expect(Object.keys(rowData.allDayEvents)).toHaveLength(10);
     expect(assignsRowNumberToEachEvent(rowData.allDayEvents)).toBe(true);
   });
   test("March 13 - 19", () => {
-    const rowData = getAllDayRowData(mar13To19);
+    const rowData = getAllDayRowDataByComparison(mar13To19);
     expect(assignsRowNumberToEachEvent(rowData.allDayEvents)).toBe(true);
   });
 });
