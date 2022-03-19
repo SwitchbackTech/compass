@@ -2,6 +2,7 @@ import dayjs, { Dayjs } from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 import weekPlugin from "dayjs/plugin/weekOfYear";
 import dayOfYear from "dayjs/plugin/dayOfYear";
+import { Schema_Event } from "@core/types/event.types";
 import {
   FLEX_EQUAL,
   FLEX_TMRW,
@@ -9,7 +10,6 @@ import {
   FUTURE_MULTIPLE,
 } from "@web/common/constants/grid.constants";
 import { Category } from "@web/ducks/events/types";
-import { Schema_Event } from "@core/types/event.types";
 
 dayjs.extend(dayOfYear);
 dayjs.extend(weekPlugin);
@@ -26,27 +26,13 @@ export const assignEventToRow = (
   let fits = false;
   let rowNum: number;
 
-  if (eventDays[0] === 76 && eventDays[1] === 77) {
-    console.log("checking for space in:", rows);
-  }
-
-  // this is looping thru every # in every row array
-  // need to jus go thru every child array in the parent row array
-  // for (const [i, assignedDays] of rows.entries()) {
-  for (let i = 0; i < rows.length; ++i) {
-    const occupiedDays = rows[i];
-
-    // for (let j = 0; j < occupiedDays.length; ++j) {
-    const anyOverlaps = eventDays.some((r) => occupiedDays.indexOf(r) >= 0);
-    if (!anyOverlaps) {
-      if (eventDays[0] === 76 && eventDays[1] === 77) {
-        console.log(`${eventDays} doesnt overlap anything in:`, occupiedDays);
-      }
+  for (let rowIndex = 0; rowIndex < rows.length; ++rowIndex) {
+    const occupiedDays = rows[rowIndex];
+    if (_noOverlaps(eventDays, occupiedDays)) {
       fits = true;
-      rowNum = i;
+      rowNum = rowIndex;
       break;
     }
-    // }
   }
 
   return { fits, rowNum };
@@ -127,25 +113,12 @@ export const getAllDayEventTop = (
   return top;
 };
 
-const range = (start: number, end: number) => {
-  return Array(end - start + 1)
-    .fill()
-    .map((_, idx) => start + idx);
-};
-
 export const getAllRowData = (allDayEvents: Schema_Event[]) => {
   const rows: number[][] = [];
-  const allEventNums = [];
 
   allDayEvents.forEach((event, i) => {
-    const startDayOfYear = dayjs(event.startDate).dayOfYear();
-    const endDayOfYear = dayjs(event.endDate).dayOfYear();
-    const eventDays = range(startDayOfYear, endDayOfYear);
-    allEventNums[i] = [eventDays];
-    //i = 7
-    if (i === 5) {
-      const f = "me";
-    }
+    const eventDays = _getEventDayNumbers(event);
+
     if (i === 0) {
       rows.push(eventDays);
       event["row"] = 1;
@@ -153,20 +126,17 @@ export const getAllRowData = (allDayEvents: Schema_Event[]) => {
       const { fits, rowNum } = assignEventToRow(eventDays, rows);
 
       if (fits) {
-        event["row"] = rowNum + 1;
+        // add to existing row
         rows[rowNum] = [...rows[rowNum], ...eventDays];
+        event["row"] = rowNum + 1;
       } else {
-        // create new row
-        // rowsCount += 1;
-        // const newRowNum = rows.length + 1;
-        rows[rows.length] = eventDays; // .length is 1 index
-        // event["row"] = rows.length + 1; // +1 cuz row is 0 index (?)
+        // add to new row
+        rows[rows.length] = eventDays;
         event["row"] = rows.length;
       }
     }
   });
 
-  console.log(allEventNums);
   return { rowsCount: rows.length, allDayEvents };
 };
 
@@ -254,4 +224,83 @@ export const getPrevDayWidth = (today: Dayjs) => {
   const width = 60 / diff;
 
   return width;
+};
+
+const _anySharedValues = (arr1: number[], arr2: number[]) => {
+  return arr1.some((v) => arr2.indexOf(v) >= 0);
+};
+
+const normalizeDayNums = (days: number[]) => {
+  // doesn't support events longer than 365/6 days
+  return days.map((d) => {
+    if (d < 365) {
+      return d + 365;
+    } else {
+      return d;
+    }
+  });
+};
+
+const _getEventDayNumbers = (event: Schema_Event) => {
+  const startDayOfYear = dayjs(event.startDate).dayOfYear();
+  const endDayOfYear = dayjs(event.endDate).dayOfYear();
+  const eventDays = _range(startDayOfYear, endDayOfYear);
+
+  /*
+    removes the last number so that it doesnt overlap with neighboring events
+    example: 
+      - an event on July 4 is represented as yyyy-07-04 - yyyy-07-05
+        - its originaly day numbers are: [85, 86]
+      - this will cause it to erroneously overlap with an event on July 5 
+        - because July 5 day numbers will be [86, 87]
+        - 86 is shared between both days
+      - removing the second number fixes this, because:
+        - July 4 is represented as [85]
+        - July 5 is [86]
+        - There is no overlap, so they can fit on the same row
+  */
+  eventDays.pop();
+  return eventDays;
+};
+
+const _noOverlaps = (eventDays: number[], occupiedDays: number[]) => {
+  const anyOverlapsThisYear = eventDays.some(
+    (day) => occupiedDays.indexOf(day) >= 0
+  );
+  if (anyOverlapsThisYear) {
+    return false;
+  }
+
+  /*
+  check for events that go into next year
+  */
+  const normalizedDays = normalizeDayNums(eventDays);
+  const normalizedOccupiedDays = normalizeDayNums(occupiedDays);
+
+  const anyOverlapsNextYear = _anySharedValues(
+    normalizedDays,
+    normalizedOccupiedDays
+  );
+
+  if (anyOverlapsNextYear) {
+    return false;
+  }
+
+  return true;
+};
+
+const _range = (start: number, end: number) => {
+  const yearChanges = end - start < 0;
+
+  if (yearChanges) {
+    const endYearChange = start + end; // eg. converts 2 to 367/8 (365/6 +2)
+    const r = Array(endYearChange - start + 1)
+      .fill(null)
+      .map((_, idx) => start + idx);
+    return r;
+  }
+
+  return Array(end - start + 1)
+    .fill(null)
+    .map((_, idx) => start + idx);
 };
