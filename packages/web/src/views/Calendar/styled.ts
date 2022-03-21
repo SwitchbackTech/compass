@@ -10,6 +10,7 @@ import {
   CALENDAR_X_PADDING,
   GRID_SCROLLBAR_WIDTH,
   GRID_Y_OFFSET,
+  MYSTERY_PADDING,
   WEEK_DAYS_MARGIN_Y,
 } from "./constants";
 
@@ -85,14 +86,16 @@ export interface AllDayEventsGridProps {
 }
 
 const gridWidth = `100% - ${GRID_SCROLLBAR_WIDTH}px`;
-// + 20 to give space on top (?)
-const gridHeight = `100% - (${GRID_Y_OFFSET}px + 20px)`;
+const gridHeight = `100% - (${GRID_Y_OFFSET}px + ${MYSTERY_PADDING}px)`;
 const gridCellHeight = `(${gridHeight}) / 11`;
 const allDayHeight = `${gridCellHeight} / 4`;
 
+/* orig height calc: $$
+ `calc(${allDayHeight} * 2 + ${rowsCount + 5 || 1} * ${allDayHeight})`}; */
+
 export const StyledAllDayEventsGrid = styled(Flex)<AllDayEventsGridProps>`
   height: ${({ rowsCount }) =>
-    `calc(${allDayHeight} * 2 + ${rowsCount || 0} * ${allDayHeight})`};
+    `calc(${allDayHeight} * 2 + ${rowsCount * 2 || 1} * ${allDayHeight})`};
   width: calc(${gridWidth});
   position: relative;
   overflow: hidden;

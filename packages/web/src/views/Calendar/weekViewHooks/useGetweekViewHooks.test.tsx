@@ -19,7 +19,7 @@ describe("component", () => {
   );
 
   const { result } = renderHook(() => useGetWeekViewProps(), { wrapper });
-  const { core, component } = result.current;
+  const { component } = result.current;
   describe("rowsCount", () => {
     it("is never less than 1", () => {
       expect(component.rowsCount).toBeGreaterThanOrEqual(1);

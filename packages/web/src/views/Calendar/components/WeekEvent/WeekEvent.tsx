@@ -79,7 +79,6 @@ const WeekEventComponent = (
     */
     height = core.getEventCellHeight() / 2.62;
     const allDayRowHeight = core.getAllDayEventCellHeight();
-    console.log(event.title);
     top = getAllDayEventTop(height, event.row, allDayRowHeight);
     width = getAllDayEventWidth(
       category,

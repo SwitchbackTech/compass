@@ -78,7 +78,6 @@ export const useGetWeekViewProps = () => {
   */
   const weekEvents = useSelector(selectWeekEvents);
   const allDayEvents = useSelector(selectAllDayEvents);
-
   const allDayCounts = getAllDayCounts(allDayEvents);
   const allDayCountsEditing = { ...allDayCounts };
 
@@ -87,13 +86,9 @@ export const useGetWeekViewProps = () => {
     allDayCountsEditing[editingEvent.startDate] = editingEvent.allDayOrder || 1;
   }
 
+  // $$ update for adding an event upon click (...Editing)
   const rowVals = allDayEvents.map((e) => e.row);
-  // $$ explain [1] rationale
-  const topRow = rowVals.length === 0 ? 1 : Math.max(...rowVals);
-  // $$ explain +x rationale
-  const rowsCount = Math.max(
-    ...[topRow + 2, ...Object.values(allDayCountsEditing)]
-  );
+  const rowsCount = rowVals.length === 0 ? 1 : Math.max(...rowVals);
 
   /****************
    * Relative Times

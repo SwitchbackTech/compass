@@ -101,7 +101,9 @@ export const getAllDayEventTop = (
     6: _eventHeight * 6,
     7: _eventHeight * 7,
   };
-  const top: number = _position[row];
+  // const top: number = _position[row];
+  const top = _eventHeight * row;
+
   //$$
   // console.log(`
   // allDayRowHeight: ${allDayRowHeight}
