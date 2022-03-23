@@ -1,6 +1,4 @@
 /*
-note: diff combos OK; depends on the order passed in
-what matters is # of events/row and # total rows
 13  14  15  16  17  18  19   
     --  ------  --
     ----------

@@ -38,80 +38,10 @@ export const assignEventToRow = (
   return { fits, rowNum };
 };
 
-// $$
-export const assignEventToRowByComparison = (
-  event: Schema_Event,
-  rows: AssignResult
-) => {
-  // only checking within its peer row, not all rows (?)
-  const start = dayjs(event.startDate);
+export const getAllDayEventTop = (row: number): number => {
+  const eventHeight = 25.26; // found by experimenting with what 'looked right'
+  const top = eventHeight * row;
 
-  for (const rowIndex of Object.keys(rows)) {
-    const rowNum = parseInt(rowIndex);
-
-    //$$ todo check for each place, cuz later one might conflict
-    const startFitsResults = [];
-    const endFitsResults = [];
-    for (const i of rows[rowNum]) {
-      const startFitsInterval = !start.isBetween(
-        dayjs(i[0]),
-        dayjs(i[1]),
-        "day",
-        "[]"
-      );
-      startFitsResults.push(startFitsInterval);
-
-      const end = dayjs(event.endDate);
-      const endFitsInterval = !end.isBetween(
-        dayjs(i[0]),
-        dayjs(i[1]),
-        "day",
-        "[]"
-      );
-      endFitsResults.push(endFitsInterval);
-    }
-    //$$ confirm they fit in the same slot (?)
-    const eventFitsInRow =
-      startFitsResults.includes(true) && endFitsResults.includes(true);
-    if (eventFitsInRow) {
-      return { fits: true, rowNum };
-    }
-  }
-  return { fits: false };
-};
-
-export const getAllDayEventTop = (
-  eventHeight: number,
-  row: number,
-  allDayRowHeight: number
-): number => {
-  // top = height / order;
-  // const order = event.allDayOrder || 1;
-  // top = allDayRowHeight - height * order;
-  //top = height * event.rowOrder;
-  const _eventHeight = 25.26;
-  const _rowsCount = 6;
-  const _position = {
-    0: _eventHeight * 1,
-    1: _eventHeight * 1,
-    2: _eventHeight * 2,
-    3: _eventHeight * 3,
-    4: _eventHeight * 4,
-    5: _eventHeight * 5,
-    6: _eventHeight * 6,
-    7: _eventHeight * 7,
-  };
-  // const top: number = _position[row];
-  const top = _eventHeight * row;
-
-  //$$
-  // console.log(`
-  // allDayRowHeight: ${allDayRowHeight}
-  // eventHeight: ${eventHeight}
-  // row: ${row}
-  // ----
-  // top: ${top}
-  // `);
   return top;
 };
 
@@ -140,28 +70,6 @@ export const getAllRowData = (allDayEvents: Schema_Event[]) => {
   });
 
   return { rowsCount: rows.length, allDayEvents };
-};
-
-export const getAllDayRowDataByComparison = (allDayEvents: Schema_Event[]) => {
-  let rowCount = 0;
-  const rows = {};
-
-  allDayEvents.forEach((event) => {
-    const { fits, rowNum } = assignEventToRowByComparison(event, rows);
-
-    if (fits) {
-      // add to existing
-      rows[rowNum].push([event.startDate, event.endDate]);
-      event["row"] = rowNum;
-    } else {
-      // add new
-      rowCount += 1;
-      rows[rowCount] = [[event.startDate, event.endDate]];
-      event["row"] = rowCount;
-    }
-  });
-
-  return { rowCount, allDayEvents };
 };
 
 export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {

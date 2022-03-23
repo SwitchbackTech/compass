@@ -114,6 +114,12 @@ export const staggeredAllDayEvents = [
   },
 ];
 
+/*
+11  12  13  14  15  16 
+    ----------
+    --
+------------------>
+*/
 export const staggeredWithMultiWeek = [
   {
     _id: "id1",
