@@ -33,7 +33,6 @@ export const mar13To19 = [
     endDate: "2022-03-17",
     priority: "work",
   },
-
   {
     _id: "62322b127837957382660241",
     gEventId: "6unof6mvr61mtldejqctdtq8t7",

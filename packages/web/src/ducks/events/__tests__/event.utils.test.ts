@@ -5,14 +5,12 @@ import {
   staggeredWithMultiWeek,
 } from "@core/__mocks__/events.allday.1";
 import { allDayEvents } from "@core/__mocks__/events.allday.2";
-import { getLeftPosition } from "@web/common/utils/grid.util";
-
 import {
-  getAllDayCounts,
   getAllDayEventWidth,
-  getEventCategory,
-  orderEvents,
-} from "../event.utils";
+  getLeftPosition,
+} from "@web/common/utils/grid.util";
+
+import { getAllDayCounts, getEventCategory, orderEvents } from "../event.utils";
 
 describe("getAllDayCounts", () => {
   const allDayCounts = getAllDayCounts(allDayEvents);

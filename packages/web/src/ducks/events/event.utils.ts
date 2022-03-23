@@ -31,49 +31,6 @@ export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
   return allDayCountByDate;
 };
 
-//$$ move to grid util
-export const getAllDayEventWidth = (
-  category: Category,
-  startIndex: number,
-  start: Dayjs,
-  end: Dayjs,
-  startOfWeek: Dayjs,
-  widths: number[]
-) => {
-  let width: number;
-  switch (category) {
-    case Category.ThisWeekOnly: {
-      let duration = end.diff(start, "days");
-      if (duration === 0) {
-        // if only one day, then use original width
-        width = widths[startIndex];
-        duration = 1; // prevents width from being 0
-      }
-      width = _sumEventWidths(duration, startIndex, widths);
-      break;
-    }
-    case Category.ThisToFutureWeek: {
-      width = _sumEventWidths(7 - startIndex, startIndex, widths);
-      break;
-    }
-    case Category.PastToThisWeek: {
-      const daysThisWeek = end.diff(startOfWeek, "days");
-      // start at 0 because event carries over from last week
-      width = _sumEventWidths(daysThisWeek, 0, widths);
-      break;
-    }
-    case Category.PastToFutureWeek: {
-      width = _sumEventWidths(7, 0, widths);
-      break;
-    }
-    default: {
-      console.log("Logic error while parsing date width");
-      width = -666;
-    }
-  }
-  return width;
-};
-
 export const getEventCategory = (
   start: Dayjs,
   end: Dayjs,
@@ -132,22 +89,6 @@ export const orderEvents = (events: Schema_Event[]) => {
   });
 
   return updatedEvents;
-};
-
-const _sumEventWidths = (
-  duration: number,
-  startIndex: number,
-  widths: number[]
-) => {
-  // create array of numbers, one for each day, setting each to 0 by default,
-  // then set values based on the widths of the days of the event
-  const eventWidths: number[] = Array(duration)
-    .fill(0)
-    .map((_, index) => widths[index + startIndex] || 0);
-
-  // add up width of each day of the event
-  const eventWidth = eventWidths.reduce((accum, value) => accum + value, 0);
-  return eventWidth;
 };
 
 /*

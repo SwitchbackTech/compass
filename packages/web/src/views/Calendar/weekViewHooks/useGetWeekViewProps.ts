@@ -87,7 +87,7 @@ export const useGetWeekViewProps = () => {
   }
 
   // $$ update for adding an event upon click (...Editing)
-  const rowVals = allDayEvents.map((e) => e.row);
+  const rowVals = allDayEvents.map((e: Schema_GridEvent) => e.row);
   const rowsCount = rowVals.length === 0 ? 1 : Math.max(...rowVals);
 
   /****************

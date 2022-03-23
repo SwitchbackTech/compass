@@ -7,12 +7,9 @@ import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
+import { getEventCategory } from "@web/ducks/events/event.utils";
 import {
   getAllDayEventWidth,
-  getEventCategory,
-} from "@web/ducks/events/event.utils";
-import {
-  getAllDayEventTop,
   getLeftPosition,
 } from "@web/common/utils/grid.util";
 
@@ -78,7 +75,7 @@ const WeekEventComponent = (
      - got 2.62 by experimenting by what looks right
     */
     height = core.getEventCellHeight() / 2.62;
-    top = getAllDayEventTop(event.row);
+    top = 25.26 * event.row; // found by experimenting with what 'looked right'
     width = getAllDayEventWidth(
       category,
       startIndex,
@@ -87,16 +84,6 @@ const WeekEventComponent = (
       component.startOfSelectedWeekDay,
       widths
     );
-    // console.log(component.rowsCount);
-    // $$
-    // console.log(`${event.title}:
-    // maxCount: ${component.rowsCount}
-    // top: ${top}
-    // height: ${height}
-    // allDay-: ${allDayRowHeight}
-    // allDayOrder: ${event.allDayOrder}
-    // row: ${event.row}
-    // `);
   } else {
     top = core.getEventCellHeight() * startTime;
     height = core.getEventCellHeight() * durationHours;
