@@ -2,7 +2,7 @@ import { createSelector } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
-import { getAllRowData } from "@web/common/utils/grid.util";
+import { assignEventsToRow } from "@web/common/utils/grid.util";
 
 import { SectionType } from "./types";
 
@@ -18,7 +18,7 @@ export const selectAllDayEvents = (state: RootState) => {
     (e: Schema_Event) => e !== undefined && e.isAllDay
   );
 
-  const { allDayEvents } = getAllRowData(_allDayEvents);
+  const { allDayEvents } = assignEventsToRow(_allDayEvents);
   return allDayEvents;
 };
 
@@ -97,7 +97,7 @@ export const selectAllDayEventsMemo = createSelector(
       (e: Schema_Event) => e !== undefined && e.isAllDay
     );
 
-    const { allDayEvents } = getAllRowData(_allDayEvents);
+    const { allDayEvents } = assignEventsToRow(_allDayEvents);
     return allDayEvents;
   }
 );

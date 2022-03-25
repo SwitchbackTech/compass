@@ -80,7 +80,7 @@ export const getAllDayEventWidth = (
   return width;
 };
 
-export const getAllRowData = (allDayEvents: Schema_Event[]) => {
+export const assignEventsToRow = (allDayEvents: Schema_Event[]) => {
   const rows: number[][] = [];
   // makes copy of all event objects to allow for adding a 'row' field
   // can likely be optimized using immer's `produce` and `draft`
