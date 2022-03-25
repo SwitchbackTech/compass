@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { Schema_Event } from "@core/types/event.types";
 import { mar13To19 } from "@core/__mocks__/events/events.allday.3";
-import { getAllRowData } from "@web/common/utils/grid.util";
+import { assignEventsToRow } from "@web/common/utils/grid.util";
 
 const assignsRowNumberToEachEvent = (events: Schema_Event[]) => {
   let res = true;
@@ -23,17 +23,17 @@ const noEventsOnSameRow = (events: Schema_Event[]) => {
 
 describe("case: no events", () => {
   it("doesnt create any rows", () => {
-    const { rowsCount, allDayEvents } = getAllRowData([]);
+    const { rowsCount, allDayEvents } = assignEventsToRow([]);
     expect(rowsCount).toBe(0);
     expect(allDayEvents).toHaveLength(0);
   });
   it("doesnt create any events", () => {
-    const { allDayEvents } = getAllRowData([]);
+    const { allDayEvents } = assignEventsToRow([]);
     expect(assignsRowNumberToEachEvent(allDayEvents)).toBe(false);
   });
 });
 describe("case: 1 event, 1 day", () => {
-  const { rowsCount, allDayEvents } = getAllRowData([
+  const { rowsCount, allDayEvents } = assignEventsToRow([
     { startDate: "2024-09-12", endDate: "2024-09-13" },
   ]);
   it("uses 1 row", () => {
@@ -45,7 +45,7 @@ describe("case: 1 event, 1 day", () => {
 });
 
 describe("case: 4 events, year change", () => {
-  const { rowsCount, allDayEvents } = getAllRowData([
+  const { rowsCount, allDayEvents } = assignEventsToRow([
     /*
     29  30  31  1   2   3   4   5
     -----------------------------
@@ -71,7 +71,7 @@ describe("case: 4 events, year change", () => {
 });
 
 describe("case: 2 overlapping events", () => {
-  const { rowsCount, allDayEvents } = getAllRowData([
+  const { rowsCount, allDayEvents } = assignEventsToRow([
     { startDate: "2023-03-29", endDate: "2024-04-02" },
     { startDate: "2023-03-29", endDate: "2024-04-01" },
   ]);
@@ -93,7 +93,7 @@ describe("case: 10 multi-week events with identical times", () => {
       _id: uuidv4(),
     });
   }
-  const { rowsCount, allDayEvents } = getAllRowData(events);
+  const { rowsCount, allDayEvents } = assignEventsToRow(events);
   it("creates 10 rows", () => {
     expect(rowsCount).toBe(10);
   });
@@ -107,7 +107,7 @@ describe("case: 10 multi-week events with identical times", () => {
 });
 
 describe("case: March 13-19", () => {
-  const { rowsCount, allDayEvents } = getAllRowData(mar13To19);
+  const { rowsCount, allDayEvents } = assignEventsToRow(mar13To19);
   it("uses 5 rows", () => {
     expect(rowsCount).toBe(5);
   });
@@ -123,7 +123,7 @@ describe("case: leap year (2024) + year change", () => {
         --
     <------------->
 */
-  const { rowsCount, allDayEvents } = getAllRowData([
+  const { rowsCount, allDayEvents } = assignEventsToRow([
     { startDate: "2024-02-27", endDate: "2024-02-29", _id: uuidv4() },
     { startDate: "2024-02-28", endDate: "2024-02-29", _id: uuidv4() },
     { startDate: "2024-02-29", endDate: "2024-03-01", _id: uuidv4() },
