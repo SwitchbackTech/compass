@@ -27,6 +27,6 @@ export interface Schema_GridEvent extends Schema_Event {
   isOpen?: boolean;
   isEditing?: boolean;
   importanceIndex?: number;
-  row: number;
+  row?: number;
   siblingsCount?: number;
 }

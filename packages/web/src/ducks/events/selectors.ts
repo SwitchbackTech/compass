@@ -4,7 +4,6 @@ import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
 import { getAllRowData } from "@web/common/utils/grid.util";
 
-import { orderEvents } from "./event.utils";
 import { SectionType } from "./types";
 
 export const selectAllDayEvents = (state: RootState) => {
@@ -15,13 +14,11 @@ export const selectAllDayEvents = (state: RootState) => {
     (_id: string) => entities[_id]
   );
 
-  let allDayEvents = weekEventsMapped.filter(
+  const _allDayEvents = weekEventsMapped.filter(
     (e: Schema_Event) => e !== undefined && e.isAllDay
   );
 
-  allDayEvents = orderEvents(allDayEvents);
-  const rowData = getAllRowData(allDayEvents);
-  allDayEvents = rowData.allDayEvents;
+  const { allDayEvents } = getAllRowData(_allDayEvents);
   return allDayEvents;
 };
 
@@ -96,11 +93,11 @@ export const selectAllDayEventsMemo = createSelector(
       (_id: string) => weekEntities[_id]
     );
 
-    const _allDayEvents = weekEventsMapped.filter(
+    const _allDayEvents: Schema_Event[] = weekEventsMapped.filter(
       (e: Schema_Event) => e !== undefined && e.isAllDay
     );
 
-    const allDayEvents = orderEvents(_allDayEvents);
+    const { allDayEvents } = getAllRowData(_allDayEvents);
     return allDayEvents;
   }
 );
