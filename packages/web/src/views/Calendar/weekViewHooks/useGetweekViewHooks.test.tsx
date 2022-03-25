@@ -19,10 +19,10 @@ describe("component", () => {
   );
 
   const { result } = renderHook(() => useGetWeekViewProps(), { wrapper });
-  const { core, component } = result.current;
-  describe("allDayEventsMaxCount", () => {
+  const { component } = result.current;
+  describe("rowsCount", () => {
     it("is never less than 1", () => {
-      expect(component.allDayEventsMaxCount).toBeGreaterThanOrEqual(1);
+      expect(component.rowsCount).toBeGreaterThanOrEqual(1);
     });
   });
 });

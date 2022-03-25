@@ -5,7 +5,6 @@ import React, {
   RefObject,
   useRef,
 } from "react";
-
 import { FocusableUnderlineLayout } from "@web/components/FocusableUnderlinedComponent";
 
 import { Styled } from "./styled";

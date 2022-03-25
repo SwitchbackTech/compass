@@ -1,7 +1,5 @@
 import styled from "styled-components";
-
 import { Priorities } from "@core/core.constants";
-
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";

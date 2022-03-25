@@ -119,5 +119,4 @@ export const allDayEvents = [
     description: null,
     priorities: [],
   },
-  ,
 ];

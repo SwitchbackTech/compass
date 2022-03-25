@@ -2,19 +2,27 @@ import { createSelector } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
+import { getAllRowData } from "@web/common/utils/grid.util";
 
 import { orderEvents } from "./event.utils";
 import { SectionType } from "./types";
 
-export const selectAreEventsProcessingBySectionType = (
-  state: RootState,
-  type: SectionType
-) => {
-  const statePieceName = type.charAt(0).toUpperCase() + type.slice(1);
-  const statePiece =
-    state.events[`get${statePieceName}Events` as "getWeekEvents"];
+export const selectAllDayEvents = (state: RootState) => {
+  const entities = state.events.entities.value || {};
+  const weekIds = state.events.getWeekEvents.value || [];
+  if (!weekIds.data || weekIds.data.length === 0) return [];
+  const weekEventsMapped: Schema_Event[] = weekIds.data.map(
+    (_id: string) => entities[_id]
+  );
 
-  return isProcessing(statePiece);
+  let allDayEvents = weekEventsMapped.filter(
+    (e: Schema_Event) => e !== undefined && e.isAllDay
+  );
+
+  allDayEvents = orderEvents(allDayEvents);
+  const rowData = getAllRowData(allDayEvents);
+  allDayEvents = rowData.allDayEvents;
+  return allDayEvents;
 };
 
 export const selectEventEntities = (state: RootState) =>
@@ -43,20 +51,6 @@ export const selectPaginatedEventsBySectionType = (
     state.events[`get${statePieceName}Events` as "getWeekEvents"];
 
   return (isSuccess(statePiece) && statePiece.value) || null;
-};
-
-export const selectAllDayEvents = (state: RootState) => {
-  const entities = state.events.entities.value || {};
-  const weekIds = state.events.getWeekEvents.value || [];
-  if (!weekIds.data || weekIds.data.length === 0) return [];
-  const weekEventsMapped = weekIds.data.map((_id: string) => entities[_id]);
-
-  const _allDayEvents = weekEventsMapped.filter(
-    (e: Schema_Event) => e !== undefined && e.isAllDay
-  );
-
-  const allDayEvents = orderEvents(_allDayEvents);
-  return allDayEvents;
 };
 
 export const selectWeekEvents = (state: RootState): Schema_Event[] => {
@@ -115,7 +109,6 @@ export const selectWeekEventsMemo = createSelector(
   _selectWeekIds,
   _selectWeekEntities,
   (weekIds, weekEntities) => {
-    console.log("getting week events");
     if (weekIds === null) return [];
     const weekEventsMapped = weekIds.data.map(
       (_id: string) => weekEntities[_id]

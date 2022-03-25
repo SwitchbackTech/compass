@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { getPrevDayWidth, getFlexBasis } from "@web/common/utils/grid.util";
 import {
   FLEX_TODAY,
@@ -5,7 +6,6 @@ import {
   FUTURE_MULTIPLE,
   FLEX_EQUAL,
 } from "@web/common/constants/grid.constants";
-import dayjs from "dayjs";
 
 describe("getFlexBasis", () => {
   test("past week: all same", () => {

@@ -1,5 +1,4 @@
 import { Query } from "express-serve-static-core";
-
 import { Origin, Priorities } from "@core/core.constants";
 
 export interface Params_DeleteMany {
@@ -37,8 +36,8 @@ export interface Schema_Event {
   //$$ WIP.these to either be refactored or kept
   isTimeSelected?: boolean;
   showStartTimeLabel?: boolean;
-  groupOrder?: number;
-  groupCount?: number;
+  rowOrder?: number;
+  rowCount?: number;
   order?: number;
 }
 

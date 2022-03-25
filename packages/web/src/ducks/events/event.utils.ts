@@ -31,47 +31,6 @@ export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
   return allDayCountByDate;
 };
 
-export const getAllDayEventWidth = (
-  category: Category,
-  startIndex: number,
-  start: Dayjs,
-  end: Dayjs,
-  startOfWeek: Dayjs,
-  widths: number[]
-) => {
-  let width: number;
-  switch (category) {
-    case Category.ThisWeekOnly: {
-      const days = end.diff(start, "days");
-      if (days === 0) {
-        // if only one day, then use original width
-        width = widths[startIndex];
-      }
-      width = _sumEventWidths(days, startIndex, widths);
-      break;
-    }
-    case Category.ThisToFutureWeek: {
-      width = _sumEventWidths(7 - startIndex, startIndex, widths);
-      break;
-    }
-    case Category.PastToThisWeek: {
-      const daysThisWeek = end.diff(startOfWeek, "days");
-      // start at 0 because event carries over from last week
-      width = _sumEventWidths(daysThisWeek, 0, widths);
-      break;
-    }
-    case Category.PastToFutureWeek: {
-      width = _sumEventWidths(7, 0, widths);
-      break;
-    }
-    default: {
-      console.log("Logic error while parsing date width");
-      width = -666;
-    }
-  }
-  return width;
-};
-
 export const getEventCategory = (
   start: Dayjs,
   end: Dayjs,
@@ -132,23 +91,8 @@ export const orderEvents = (events: Schema_Event[]) => {
   return updatedEvents;
 };
 
-const _sumEventWidths = (
-  duration: number,
-  startIndex: number,
-  widths: number[]
-) => {
-  // create array of numbers, one for each day, setting each to 0 by default,
-  // then set values based on the widths of the days of the event
-  const eventWidths: number[] = Array(duration)
-    .fill(0)
-    .map((_, index) => widths[index + startIndex] || 0);
-
-  // add up width of each day of the event
-  const eventWidth = eventWidths.reduce((accum, value) => accum + value, 0);
-  return eventWidth;
-};
-
 /*
+-------------------------------------------------------------------------------
 Demo of using pagination and group ordering. 
 Keep until implementing for the Someday List and 
 ordering group events
@@ -156,7 +100,11 @@ ordering group events
 export const _readEventsFromStorage = (): Schema_Event[] =>
   (JSON.parse(localStorage.getItem("events") || "[]") as Schema_Event[]) || [];
 
-const doEventsIntercept = (event1: Schema_Event, event2: Schema_Event) => {
+export const doEventsIntercept = (
+  event1: Schema_Event,
+  event2: Schema_Event
+) => {
+  //refactor to just is 'isBetween'?
   const firstDotIntercepts = dayjs(event1.startDate).isBefore(event2.endDate);
   const secondDotIntercepts = dayjs(event1.endDate).isAfter(event2.startDate);
 
@@ -252,24 +200,24 @@ export const getEventsLocalStorage = async (params: Params_Events = {}) => {
 
   eventsData = eventsData
     .map((event) => {
-      let groupCount = 0;
-      let groupOrder = 0;
+      let rowCount = 0;
+      let rowOrder = 0;
 
       if (event.allDay) return event;
 
       groups.find((group) => {
-        groupOrder = group.findIndex(
+        rowOrder = group.findIndex(
           (groupEvent) => groupEvent._id === event._id
         );
-        if (groupOrder === -1) return false;
+        if (rowOrder === -1) return false;
 
-        groupOrder += 1;
+        rowOrder += 1;
 
-        groupCount = groupOrder && group.length;
+        rowCount = rowOrder && group.length;
         return true;
       });
 
-      return { ...event, groupOrder, groupCount };
+      return { ...event, rowOrder, rowCount };
     })
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
@@ -312,3 +260,6 @@ export const editEventLocalStorage = async (
 
   localStorage.setItem("events", JSON.stringify(events));
 };
+/*
+-------------------------------------------------------------------------------
+*/

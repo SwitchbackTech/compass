@@ -237,7 +237,7 @@ export const CalendarView = () => {
         </StyledWeekDaysFlex>
 
         <StyledAllDayEventsGrid
-          maxCount={component.allDayEventsMaxCount}
+          rowsCount={component.rowsCount}
           onMouseDown={eventHandlers.onAllDayEventsGridMouseDown}
           onMouseMove={eventHandlers.onEventGridMouseMove}
           ref={component.allDayEventsGridRef}
@@ -254,9 +254,9 @@ export const CalendarView = () => {
           <StyledEvents>
             {component.allDayEvents.map((event: Schema_GridEvent) => (
               <WeekEvent
+                event={event}
                 key={event._id}
                 weekViewProps={weekViewProps}
-                event={event}
               />
             ))}
 

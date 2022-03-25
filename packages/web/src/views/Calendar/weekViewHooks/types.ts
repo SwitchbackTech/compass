@@ -1,5 +1,4 @@
 import React from "react";
-
 import { Schema_Event } from "@core/types/event.types";
 
 export interface WeekViewHelpersProps {
@@ -28,5 +27,6 @@ export interface Schema_GridEvent extends Schema_Event {
   isOpen?: boolean;
   isEditing?: boolean;
   importanceIndex?: number;
+  row: number;
   siblingsCount?: number;
 }

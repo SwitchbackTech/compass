@@ -16,4 +16,3 @@ rm /home/***REMOVED***/backend.zip
 # start
 pm2 start yarn --name backend -- start:backend --update-env
 pm2 save
-#pm2 start backend --update-env

@@ -70,14 +70,14 @@ export const useGetWeekViewProps = () => {
   /*********
    * Events
    *********/
-  // move these to memo-ized once fixing issue of
-  // entire calendarview re-rendering
-  const allDayEvents = useSelector(selectAllDayEvents);
+  /*
+   enable these memo-ized version once fixing issue of entire calendarview re-rendering:
+    const allDayEvents = useSelector(selectAllDayEventsMemo);
+    const weekEvents = useSelector(selectWeekEventsMemo);
+    const allDayCounts = useMemo(() => getAllDayCounts(), []); // this has been slow, inaccurate
+  */
   const weekEvents = useSelector(selectWeekEvents);
-  // const allDayEvents = useSelector(selectAllDayEventsMemo);
-  // const weekEvents = useSelector(selectWeekEventsMemo);
-
-  // const allDayCounts = useMemo(() => getAllDayCounts(), []); // this has been slow, inaccurate
+  const allDayEvents = useSelector(selectAllDayEvents);
   const allDayCounts = getAllDayCounts(allDayEvents);
   const allDayCountsEditing = { ...allDayCounts };
 
@@ -86,9 +86,9 @@ export const useGetWeekViewProps = () => {
     allDayCountsEditing[editingEvent.startDate] = editingEvent.allDayOrder || 1;
   }
 
-  const allDayEventsMaxCount =
-    // always at least 1 to allow space for user to add another
-    Math.max(...[1, ...Object.values(allDayCountsEditing)]);
+  // $$ update for adding an event upon click (...Editing)
+  const rowVals = allDayEvents.map((e: Schema_GridEvent) => e.row);
+  const rowsCount = rowVals.length === 0 ? 1 : Math.max(...rowVals);
 
   /****************
    * Relative Times
@@ -122,7 +122,7 @@ export const useGetWeekViewProps = () => {
     setGridYOffset(
       _GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0)
     );
-  }, [allDayEventsGridRef.current?.clientHeight, allDayEventsMaxCount]);
+  }, [allDayEventsGridRef.current?.clientHeight, rowsCount]);
 
   useEffect(() => {
     setGridXOffset(GRID_X_OFFSET + (calendarRef.current?.offsetLeft || 0));
@@ -241,7 +241,9 @@ export const useGetWeekViewProps = () => {
       .startOf("day")
       .format(YEAR_MONTH_DAY_FORMAT);
 
-    const endDate = dayjs(startDate).endOf("day").format(YEAR_MONTH_DAY_FORMAT);
+    const endDate = dayjs(startDate)
+      .add(1, "day")
+      .format(YEAR_MONTH_DAY_FORMAT);
 
     setModifiableDateField("endDate");
 
@@ -516,7 +518,7 @@ export const useGetWeekViewProps = () => {
     component: {
       allDayEvents,
       allDayEventsGridRef,
-      allDayEventsMaxCount,
+      rowsCount,
       calendarRef,
       dayjsBasedOnWeekDay,
       editingEvent,

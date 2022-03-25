@@ -5,7 +5,6 @@ import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
 import { headers } from "@web/common/utils";
 import { API_BASEURL } from "@web/common/constants/web.constants";
-import { createEventLocalStorage } from "@web/ducks/events/event.utils";
 
 //not sure what this does
 dayjs.extend(isSameOrAfter);
