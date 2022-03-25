@@ -241,7 +241,9 @@ export const useGetWeekViewProps = () => {
       .startOf("day")
       .format(YEAR_MONTH_DAY_FORMAT);
 
-    const endDate = dayjs(startDate).endOf("day").format(YEAR_MONTH_DAY_FORMAT);
+    const endDate = dayjs(startDate)
+      .add(1, "day")
+      .format(YEAR_MONTH_DAY_FORMAT);
 
     setModifiableDateField("endDate");
 
