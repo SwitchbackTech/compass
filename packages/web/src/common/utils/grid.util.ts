@@ -260,7 +260,7 @@ const _sumEventWidths = (
 ) => {
   // create array of numbers, one for each day, setting each to 0 by default,
   // then set values based on the widths of the days of the event
-  const eventWidths: number[] = Array(duration)
+  const eventWidths: number[] = Array(duration || 0)
     .fill(0)
     .map((_, index) => widths[index + startIndex] || 0);
 

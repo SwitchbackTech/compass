@@ -237,6 +237,7 @@ export const CalendarView = () => {
         </StyledWeekDaysFlex>
 
         <StyledAllDayEventsGrid
+          id="allDayGrid"
           rowsCount={component.rowsCount}
           onMouseDown={eventHandlers.onAllDayEventsGridMouseDown}
           onMouseMove={eventHandlers.onEventGridMouseMove}

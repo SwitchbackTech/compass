@@ -189,6 +189,8 @@ export const EventForm: React.FC<ComponentProps> = ({
       isOpen={isOpen}
       priority={priority}
       onMouseDown={(e) => e.stopPropagation()}
+      role="form"
+      title="Event Form"
     >
       <StyledTitleField
         background={colorNameByPriority[priority]}
