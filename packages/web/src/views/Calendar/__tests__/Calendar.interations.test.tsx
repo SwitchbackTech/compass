@@ -2,7 +2,7 @@ import React from "react";
 import dayjs from "dayjs";
 import { rest } from "msw";
 import "@testing-library/jest-dom";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { setupServer } from "msw/node";
 import { CalendarView } from "@web/views/Calendar";
@@ -82,11 +82,13 @@ describe("CalendarView: Interactions", () => {
       const { container } = render(<CalendarView />, { preloadedState });
 
       await user.click(container.querySelector("#allDayGrid"));
-      expect(
-        screen.getByRole("form", {
-          name: /event form/i,
-        })
-      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          screen.getByRole("form", {
+            name: /event form/i,
+          })
+        ).toBeInTheDocument();
+      });
       await user.type(screen.getByPlaceholderText(/title/i), "Hello, World");
       await userEvent.keyboard("{Enter}");
 
@@ -111,13 +113,15 @@ describe("CalendarView: Interactions", () => {
         "multiweek event",
         "Mar 1",
         // regular events
-        "Ty & Tim", // note: fails event named 'Ty <> Tim' for some reason
+        "Ty & Tim",
       ];
 
       for (const t of titles) {
         expect(screen.queryByDisplayValue(t)).not.toBeInTheDocument(); // shouldnt show form before being clicked
         await user.click(screen.getByRole("button", { name: t }));
-        expect(screen.getByDisplayValue(t)).toBeInTheDocument();
+        await waitFor(() => {
+          expect(screen.getByDisplayValue(t)).toBeInTheDocument();
+        });
         /*
         TODO: escape +/ click out of even and confirm form disappears
         opt: 
