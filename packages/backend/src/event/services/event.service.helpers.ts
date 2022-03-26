@@ -1,5 +1,4 @@
 import { Filter } from "mongodb";
-
 import { Query_Event } from "@core/types/event.types";
 
 export const getReadAllFilter = (
@@ -16,8 +15,6 @@ export const getReadAllFilter = (
   }
 
   if (start && end) {
-    const startIso = new Date(start).toISOString();
-    const endIso = new Date(end).toISOString();
     // include inbetween events:
     //  start OR end date are between the date range in query
     const inBetweenOrOverlappingEvents = {
@@ -26,12 +23,12 @@ export const getReadAllFilter = (
           $and: [
             {
               startDate: {
-                $gte: startIso,
+                $gte: start,
               },
             },
             {
               startDate: {
-                $lte: endIso,
+                $lte: end,
               },
             },
           ],
@@ -40,12 +37,12 @@ export const getReadAllFilter = (
           $and: [
             {
               endDate: {
-                $gte: startIso,
+                $gte: start,
               },
             },
             {
               endDate: {
-                $lte: endIso,
+                $lte: end,
               },
             },
           ],
@@ -54,10 +51,10 @@ export const getReadAllFilter = (
         //   starts before AND ends after dates
         {
           startDate: {
-            $lte: startIso,
+            $lte: start,
           },
           endDate: {
-            $gte: endIso,
+            $gte: end,
           },
         },
       ],
