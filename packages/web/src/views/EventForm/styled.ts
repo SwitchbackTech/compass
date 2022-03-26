@@ -10,7 +10,7 @@ import { Button } from "@web/components/Button";
 
 import { StyledProps } from "./types";
 
-export const Styled = styled.div<StyledProps>`
+export const Styled = styled.form<StyledProps>`
   ${({ isOpen }) =>
     isOpen
       ? `

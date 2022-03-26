@@ -25,7 +25,6 @@ import {
   eventsEntitiesSlice,
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
-import { getAllDayCounts } from "@web/ducks/events/event.utils";
 import { getFlexBasis } from "@web/common/utils/grid.util";
 
 import {
@@ -74,19 +73,10 @@ export const useGetWeekViewProps = () => {
    enable these memo-ized version once fixing issue of entire calendarview re-rendering:
     const allDayEvents = useSelector(selectAllDayEventsMemo);
     const weekEvents = useSelector(selectWeekEventsMemo);
-    const allDayCounts = useMemo(() => getAllDayCounts(), []); // this has been slow, inaccurate
   */
   const weekEvents = useSelector(selectWeekEvents);
   const allDayEvents = useSelector(selectAllDayEvents);
-  const allDayCounts = getAllDayCounts(allDayEvents);
-  const allDayCountsEditing = { ...allDayCounts };
 
-  const isAddingAllDayEvent = !!(editingEvent?.isAllDay && !editingEvent._id);
-  if (isAddingAllDayEvent && editingEvent.startDate) {
-    allDayCountsEditing[editingEvent.startDate] = editingEvent.allDayOrder || 1;
-  }
-
-  // $$ update for adding an event upon click (...Editing)
   const rowVals = allDayEvents.map((e: Schema_GridEvent) => e.row);
   const rowsCount = rowVals.length === 0 ? 1 : Math.max(...rowVals);
 
@@ -252,7 +242,6 @@ export const useGetWeekViewProps = () => {
       isAllDay: true,
       startDate,
       endDate,
-      allDayOrder: (allDayCounts[startDate] || 0) + 1,
     });
   };
 

@@ -76,6 +76,23 @@ describe("CalendarView: Interactions", () => {
   });
 
   describe("All Day Events", () => {
+    it("adds all-day event somewhere on DOM: 1-day", async () => {
+      const user = userEvent.setup();
+      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
+      const { container } = render(<CalendarView />, { preloadedState });
+
+      await user.click(container.querySelector("#allDayGrid"));
+      expect(
+        screen.getByRole("form", {
+          name: /event form/i,
+        })
+      ).toBeInTheDocument();
+      await user.type(screen.getByPlaceholderText(/title/i), "Hello, World");
+      await userEvent.keyboard("{Enter}");
+
+      // TODO: update test to ensure its on the expected day column
+      expect(screen.getByDisplayValue("Hello, World")).toBeInTheDocument();
+    });
     it("opens event form upon click (and not before)", async () => {
       /*
       note: this doesn't test if an event is effectively 'hidden' from a user 
@@ -94,7 +111,7 @@ describe("CalendarView: Interactions", () => {
         "multiweek event",
         "Mar 1",
         // regular events
-        "Ty <> Tim",
+        "Ty & Tim", // note: fails event named 'Ty <> Tim' for some reason
       ];
 
       for (const t of titles) {

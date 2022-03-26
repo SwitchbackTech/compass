@@ -21,16 +21,6 @@ export const handleErrorTemp = (error: Error) => {
   alert(error);
 };
 
-export const getAllDayCounts = (allDayEvents: Schema_Event[]) => {
-  const allDayCountByDate: { [key: string]: number } = {};
-  allDayEvents.forEach((event: Schema_Event) => {
-    if (!event.startDate) return;
-    allDayCountByDate[event.startDate] = event.allDayOrder || 1;
-  });
-
-  return allDayCountByDate;
-};
-
 export const getEventCategory = (
   start: Dayjs,
   end: Dayjs,
@@ -59,37 +49,6 @@ export const getEventCategory = (
 
 export const getWeekDayLabel = (day: Dayjs) =>
   `day-${day.format(YEAR_MONTH_DAY_FORMAT)}`;
-
-export const orderEvents = (events: Schema_Event[]) => {
-  // set default for days that dont have overlapping events
-  const updatedEvents = events.map((e) => ({ ...e, allDayOrder: 1 }));
-
-  const uniqueStartDates = Array.from(
-    new Set(updatedEvents.map((e) => e.startDate))
-  );
-
-  uniqueStartDates.forEach((startDate) => {
-    const eventsOnDay = updatedEvents.filter((e) => e.startDate === startDate);
-    if (eventsOnDay.length > 1) {
-      // sort in descending order (c, b, a)
-      const sortedEventsOnDay = eventsOnDay.sort(
-        (a: Schema_Event, b: Schema_Event) =>
-          b.title.toLowerCase().localeCompare(a.title.toLowerCase())
-      );
-
-      sortedEventsOnDay.map((e, index) => {
-        // calculate the order
-        e.allDayOrder += index;
-
-        // find & replace matching element so it has the updated allDayOrder
-        const i = updatedEvents.findIndex((event) => event._id === e._id);
-        updatedEvents[i] = e;
-      });
-    }
-  });
-
-  return updatedEvents;
-};
 
 /*
 -------------------------------------------------------------------------------

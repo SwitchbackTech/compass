@@ -1,38 +1,11 @@
 import dayjs from "dayjs";
 import {
-  allDayEventsMinimal,
-  staggeredAllDayEvents,
-  staggeredWithMultiWeek,
-} from "@core/__mocks__/events.allday.1";
-import { allDayEvents } from "@core/__mocks__/events.allday.2";
-import {
   getAllDayEventWidth,
   getLeftPosition,
 } from "@web/common/utils/grid.util";
 
-import { getAllDayCounts, getEventCategory, orderEvents } from "../event.utils";
+import { getEventCategory } from "../event.utils";
 
-describe("getAllDayCounts", () => {
-  const allDayCounts = getAllDayCounts(allDayEvents);
-  const allDayStaggeredCounts = getAllDayCounts(staggeredWithMultiWeek);
-  it("adds dates up correctly", () => {
-    expect(allDayCounts["2022-02-07"]).toBe(3);
-    expect(allDayCounts["2022-02-08"]).toBe(1);
-    expect(allDayCounts["2022-02-09"]).toBe(1);
-    expect(allDayCounts["2022-02-11"]).toBe(1);
-
-    expect(allDayStaggeredCounts["2022-03-11"]).toBe(1);
-    expect(allDayStaggeredCounts["2022-03-12"]).toBe(2);
-  });
-
-  it("returns one key for unique date", () => {
-    const numDates = Object.keys(allDayCounts).length;
-    expect(numDates).toBe(4); //07, 08, 09, 11
-
-    const numDates2 = Object.keys(allDayStaggeredCounts).length;
-    expect(numDates2).toBe(2); // 11, 12
-  });
-});
 describe("getAllDayEventWidth", () => {
   it("is never wider than 1 week", () => {
     const widths = [88, 89, 205, 178, 133, 132, 133];
@@ -275,48 +248,5 @@ describe("getLeftPosition", () => {
     );
     const endOfWeek = getLeftPosition(category3, 6, [1, 1, 1, 1, 1, 1, 0]);
     expect(endOfWeek).toBe(6);
-  });
-});
-
-describe("orderEvents", () => {
-  const combinedEvents = [...allDayEventsMinimal, ...staggeredAllDayEvents];
-  const orderedEvents = orderEvents(combinedEvents);
-  it("doesn't add or remove any events", () => {
-    expect(orderedEvents).toHaveLength(combinedEvents.length);
-  });
-  it("sets order for each event", () => {
-    orderedEvents.forEach((e) => {
-      if (e.allDayOrder === undefined) throw Error("missing order");
-    });
-  });
-  it("sets unique order for each event", () => {
-    const uniqueStartDates = Array.from(
-      new Set(orderedEvents.map((e) => e.startDate))
-    );
-
-    uniqueStartDates.forEach((startDate) => {
-      const eventsOnDay = orderedEvents.filter(
-        (e) => e.startDate === startDate
-      );
-      if (eventsOnDay.length > 1) {
-        const orderValues = eventsOnDay.map((e) => e.allDayOrder);
-        const noDuplicates = new Set(orderValues).size === orderValues.length;
-        expect(noDuplicates).toBe(true);
-      }
-    });
-  });
-
-  it("orders title descending (c, b, a)", () => {
-    const first = orderedEvents.filter((e) => e.title === "test1")[0];
-    expect(first.allDayOrder).toBe(5);
-
-    const fifth = orderedEvents.filter((e) => e.title === "test5")[0];
-    expect(fifth.allDayOrder).toBe(1);
-  });
-
-  it("sets unique order for two events with same title", () => {
-    const dup1 = orderedEvents.filter((e) => e.title === "test3duplicate")[0];
-    const dup2 = orderedEvents.filter((e) => e.title === "test3duplicate")[1];
-    expect(dup1.allDayOrder).not.toEqual(dup2.allDayOrder);
   });
 });

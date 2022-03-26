@@ -80,10 +80,13 @@ export const getAllDayEventWidth = (
   return width;
 };
 
-export const getAllRowData = (allDayEvents: Schema_Event[]) => {
+export const assignEventsToRow = (allDayEvents: Schema_Event[]) => {
   const rows: number[][] = [];
+  // makes copy of all event objects to allow for adding a 'row' field
+  // can likely be optimized using immer's `produce` and `draft`
+  const orderedAllDayEvents = allDayEvents.map((e) => ({ ...e }));
 
-  allDayEvents.forEach((event, i) => {
+  orderedAllDayEvents.forEach((event, i) => {
     const eventDays = _getEventDayNumbers(event);
 
     if (i === 0) {
@@ -104,7 +107,7 @@ export const getAllRowData = (allDayEvents: Schema_Event[]) => {
     }
   });
 
-  return { rowsCount: rows.length, allDayEvents };
+  return { rowsCount: rows.length, allDayEvents: orderedAllDayEvents };
 };
 
 export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
@@ -257,7 +260,7 @@ const _sumEventWidths = (
 ) => {
   // create array of numbers, one for each day, setting each to 0 by default,
   // then set values based on the widths of the days of the event
-  const eventWidths: number[] = Array(duration)
+  const eventWidths: number[] = Array(duration || 0)
     .fill(0)
     .map((_, index) => widths[index + startIndex] || 0);
 
