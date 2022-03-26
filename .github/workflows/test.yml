@@ -24,6 +24,6 @@ jobs:
         run: |
           yarn test
 
-      - name: Build each package and distributable
+      - name: Compile and Compress into Distributables
         run: |
           yarn build

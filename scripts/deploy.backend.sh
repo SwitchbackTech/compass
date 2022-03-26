@@ -1,6 +1,12 @@
 # run on production VM where the build.zip was copied to
 # requires root priviledges, so 'sudo su' before running
 
+# remove existing pm2 service
+#   not sure if this'll break on the first run,
+#   before a backend service has been created
+pm2 stop backend
+pm2 delete backend
+
 # delete old build
 # TODO: save logs first
 rm -rf /compass-calendar/build/backend
