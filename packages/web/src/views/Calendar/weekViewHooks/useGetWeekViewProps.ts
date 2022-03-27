@@ -186,7 +186,9 @@ export const useGetWeekViewProps = () => {
       .add(dayNumber, "day")
       .add(minute, "minutes");
 
-    //$$ change format -- should never use that format anymore
+    // $$ try using a TZ offset format
+    // the frontend is currently trusted to pass it to backend
+    // in TZ format, so better to keep it like that
     return date.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
   };
 
@@ -372,7 +374,6 @@ export const useGetWeekViewProps = () => {
   const onEventsGridRelease = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
     setEventState((actualEventState) => {
       setEditingEvent((actualEditingEvent) => {
         if (!actualEditingEvent) return actualEditingEvent;
