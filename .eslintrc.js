@@ -2,7 +2,7 @@ const path = require("path");
 
 module.exports = {
   parser: "@typescript-eslint/parser",
-  ignorePatterns: [],
+  ignorePatterns: [".eslintrc.js"],
   plugins: [
     "@typescript-eslint",
     "import",
@@ -29,7 +29,7 @@ module.exports = {
       parserOptions: {
         project: [
           "./tsconfig.json",
-          // "./packages/backend/tsconfig.json", //$$
+          "./packages/backend/tsconfig.json",
           "./packages/web/tsconfig.json",
         ],
       },

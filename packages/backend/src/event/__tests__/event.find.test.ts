@@ -1,10 +1,9 @@
 import { MongoClient } from "mongodb";
-
-import { mockEventSetJan22 } from "@core/__mocks__/events.jan22";
-
 import { getReadAllFilter } from "../services/event.service.helpers";
+import { mockEventSetJan22 } from "@core/__mocks__/events/events.22jan";
+import { mockEventSetMar22 } from "@core/__mocks__/events/events.22mar";
 
-describe("getReadAllFilter", () => {
+describe("Jan 2022: Many Formats", () => {
   let connection;
   let db;
   let eventCollection;
@@ -33,7 +32,13 @@ describe("getReadAllFilter", () => {
     const events = await eventCollection.find(filter).toArray();
     events.forEach((e) => expect(e.user).toBe("user1"));
   });
-  it("uses ISO date values", () => {
+  it("does NOT transform query dates to ISO format", () => {
+    /* 
+    it shouldn't transform the format, because mongo
+    will do that during its date comparison
+
+    this depends on the frontend passing the date values in the correct format 
+     */
     const start = "2011-10-20T00:00:00-10:00";
     const end = "2011-11-26T00:00:00-10:00";
     const filter = getReadAllFilter("123user", {
@@ -41,42 +46,58 @@ describe("getReadAllFilter", () => {
       end,
     });
     const flatFilter = flatten(filter, {});
-    expect(flatFilter["$lte"]).toEqual(new Date(start).toISOString());
-    expect(flatFilter["$gte"]).toEqual(new Date(end).toISOString());
+    expect(flatFilter["$lte"]).not.toEqual(new Date(start).toISOString());
+    expect(flatFilter["$gte"]).not.toEqual(new Date(end).toISOString());
   });
-  it("finds events within one day: UTC", async () => {
-    const filter = getReadAllFilter("user1", {
-      start: "2022-01-01T00:11:00Z",
-      end: "2022-01-01T00:11:00Z",
+  describe("finds events with exact same timestamps", () => {
+    test("format: TZ offset", async () => {
+      const filter = getReadAllFilter("user1", {
+        // make sure these match text data exactly
+        start: "2022-01-01T00:00:00+03:00",
+        end: "2022-01-020T11:11:11+03:00",
+      });
+
+      const result = await eventCollection.find(filter).toArray();
+      const titles = result.map((e) => e.title);
+      expect(titles.includes("Jan 1 (times)")).toBe(true);
+    });
+    test("format: UTC", async () => {
+      const filter = getReadAllFilter("user1", {
+        // make sure these match text data exactly
+        start: "2022-01-01T00:11:00Z",
+        end: "2022-01-02T00:12:00Z",
+      });
+
+      const result = await eventCollection.find(filter).toArray();
+      const titles = result.map((e) => e.title);
+      expect(titles.includes("Jan 1 (UTC times)")).toBe(true);
+    });
+  });
+
+  describe("finds event within 1 day", () => {
+    it("format: TZ offset with +", async () => {
+      const tzOffsetFilter = getReadAllFilter("user1", {
+        start: "2022-01-01T00:00:00+03:00",
+        end: "2022-01-01T23:59:59+03:00",
+      });
+
+      const offsetResult = await eventCollection.find(tzOffsetFilter).toArray();
+      const offsetTitles = offsetResult.map((e) => e.title);
+      expect(offsetTitles.includes("Jan 1 (times)")).toBe(true);
     });
 
-    const result = await eventCollection.find(filter).toArray();
-    const titles = result.map((e) => e.title);
-    expect(titles.includes("Jan 1 (UTC times)")).toBe(false);
-  });
+    it("format: TZ offset with -", async () => {
+      const filter = getReadAllFilter("user1", {
+        start: "2022-01-01T00:00:00-07:00",
+        end: "2022-01-03T00:00:00-07:00",
+      });
 
-  it("finds events within one day: TZ offset", async () => {
-    const tzOffsetFilter = getReadAllFilter("user1", {
-      start: "2022-01-01T00:00:00+03:00",
-      end: "2022-01-01T23:59:59+03:00",
+      const result = await eventCollection.find(filter).toArray();
+      jan1ToJan3Assertions(result);
     });
-
-    const offsetResult = await eventCollection.find(tzOffsetFilter).toArray();
-    const offsetTitles = offsetResult.map((e) => e.title);
-    expect(offsetTitles.includes("Jan 1 (times)")).toBe(true);
   });
 
-  it("finds events within day range: TZ offset", async () => {
-    const filter = getReadAllFilter("user1", {
-      start: "2022-01-01T00:00:00-07:00",
-      end: "2022-01-03T00:00:00-07:00",
-    });
-
-    const result = await eventCollection.find(filter).toArray();
-    jan1ToJan3Assertions(result);
-  });
-
-  it("finds events within day range: UTC", async () => {
+  it("finds events within days range: UTC", async () => {
     const filter = getReadAllFilter("user1", {
       start: "2022-01-01T00:00:00Z",
       end: "2022-01-03T00:00:00Z",
@@ -142,6 +163,53 @@ describe("getReadAllFilter", () => {
     expect(titles.includes("Jan 4")).toBe(false);
     expect(titles.includes("Jan 1 2023")).toBe(false);
   };
+});
+
+describe("Mar 6 - 12, 2022: All-Day Events", () => {
+  let connection;
+  let db;
+  let eventCollection;
+  let filter;
+  let titles;
+
+  beforeAll(async () => {
+    // setup in-memory connection using jest-mongodb
+    connection = await MongoClient.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    db = await connection.db();
+    eventCollection = db.collection("event");
+    await eventCollection.insertMany(mockEventSetMar22);
+
+    filter = getReadAllFilter("user1", {
+      start: "2022-03-06T00:00:00-07:00",
+      end: "2022-03-12T23:59:59-07:00",
+    });
+    const result = await eventCollection.find(filter).toArray();
+    titles = result.map((e) => e.title);
+  });
+
+  afterAll(async () => {
+    await connection.close();
+  });
+
+  it("finds overlapping multi-week event", async () => {
+    expect(titles.includes("Feb 14 - Mar 8")).toBe(true);
+  });
+  it("finds events within target query", () => {
+    expect(titles.includes("Mar 8")).toBe(true);
+    expect(titles.includes("Mar 10 - 12")).toBe(true);
+  });
+
+  it("ignores events from prev week", () => {
+    expect(titles.includes("Mar 5")).toBe(false);
+    expect(titles.includes("Feb 28 - Mar 5")).toBe(false);
+  });
+  it("ignores events next week", () => {
+    expect(titles.includes("Mar 13")).toBe(false);
+    expect(titles.includes("Mar 13 - 16")).toBe(false);
+  });
 });
 
 /* useful for deeply nested objects, like Mongo filters */

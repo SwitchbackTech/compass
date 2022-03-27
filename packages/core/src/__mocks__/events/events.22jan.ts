@@ -54,7 +54,7 @@ export const mockEventSetJan22 = [
     title: "Jan 1 (times)",
     isAllDay: false,
     startDate: "2022-01-01T00:00:00+03:00",
-    endDate: "2022-01-010T11:11:11+03:00",
+    endDate: "2022-01-020T11:11:11+03:00",
   },
   {
     _id: "noo",
@@ -62,7 +62,7 @@ export const mockEventSetJan22 = [
     title: "Jan 1 (UTC times)",
     isAllDay: false,
     startDate: "2022-01-01T00:11:00Z",
-    endDate: "2022-01-01T00:12:00Z",
+    endDate: "2022-01-02T00:12:00Z",
   },
   {
     _id: "moo",
@@ -118,7 +118,7 @@ export const mockEventSetJan22 = [
     title: "Jan 1 2022 - Jan 1 2023",
     isAllDay: true,
     startDate: "2022-01-01",
-    endDate: "2023-01-01",
+    endDate: "2023-01-02",
   },
   {
     _id: "929hs",
