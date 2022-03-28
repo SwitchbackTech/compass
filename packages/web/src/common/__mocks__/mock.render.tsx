@@ -5,7 +5,7 @@ import { render as rtlRender } from "@testing-library/react";
 import { reducers } from "@web/store/reducers";
 
 function render(
-  ui,
+  ui: JSX.Element,
   {
     preloadedState,
     store = configureStore({ reducer: reducers, preloadedState }),

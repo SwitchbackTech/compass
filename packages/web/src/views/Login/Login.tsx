@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Redirect } from "react-router-dom";
+import React, { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { Result_OauthStatus } from "@core/types/auth.types";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { SURVEY_URL } from "@core/core.constants";
@@ -111,7 +111,7 @@ export const LoginView = () => {
     return (
       <>
         {redirect ? (
-          <Redirect to={ROOT_ROUTES.ROOT} />
+          <Navigate to={ROOT_ROUTES.ROOT} />
         ) : (
           <StyledLogin>
             {isAuthenticating && <Spinner />}
