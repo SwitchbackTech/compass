@@ -60,13 +60,13 @@ export const CalendarView = () => {
 
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
-      component.setEditingEvent((editingEvent) => {
+      eventHandlers.setEditingEvent((editingEvent) => {
         if (editingEvent) return editingEvent;
 
         const handlersByKey = {
-          [Key.C]: () => component.setEditingEvent({} as Schema_GridEvent),
-          [Key.N]: () => component.setWeek((week) => week + 1),
-          [Key.P]: () => component.setWeek((week) => week - 1),
+          [Key.C]: () => eventHandlers.setEditingEvent({} as Schema_GridEvent),
+          [Key.N]: () => eventHandlers.setWeek((week) => week + 1),
+          [Key.P]: () => eventHandlers.setWeek((week) => week - 1),
         } as { [key: number]: () => void };
 
         const handler = handlersByKey[e.which];
@@ -144,7 +144,9 @@ export const CalendarView = () => {
             <ArrowNavigationButton
               size={40}
               colorName={ColorNames.WHITE_2}
-              onClick={() => component.setWeek((actualWeek) => actualWeek - 1)}
+              onClick={() =>
+                eventHandlers.setWeek((actualWeek) => actualWeek - 1)
+              }
               cursor="pointer"
             >
               {"<"}
@@ -153,7 +155,9 @@ export const CalendarView = () => {
             <ArrowNavigationButton
               size={40}
               colorName={ColorNames.WHITE_2}
-              onClick={() => component.setWeek((actualWeek) => +actualWeek + 1)}
+              onClick={() =>
+                eventHandlers.setWeek((actualWeek) => +actualWeek + 1)
+              }
               cursor="pointer"
             >
               {">"}
@@ -177,7 +181,7 @@ export const CalendarView = () => {
                   onMouseLeave={() => setIsTodayPopoverOpen(false)}
                   cursor="pointer"
                   onClick={() => {
-                    component.setWeek(component.today.week());
+                    eventHandlers.setWeek(component.today.week());
                     setIsTodayPopoverOpen(false);
                   }}
                   colorName={ColorNames.WHITE_2}
@@ -265,9 +269,9 @@ export const CalendarView = () => {
               <EditingWeekEvent
                 event={component.editingEvent}
                 isOpen={!!component.editingEvent.isOpen}
-                onCloseEventForm={() => component.setEditingEvent(null)}
+                onCloseEventForm={() => eventHandlers.setEditingEvent(null)}
                 onSubmitEventForm={eventHandlers.onSubmitEvent}
-                setEvent={(event) => component.setEditingEvent(event)}
+                setEvent={(event) => eventHandlers.setEditingEvent(event)}
                 weekViewProps={weekViewProps}
               />
             )}
@@ -317,12 +321,12 @@ export const CalendarView = () => {
             {component.editingEvent && !component.editingEvent.isAllDay && (
               <EditingWeekEvent
                 setEvent={(event) =>
-                  component.setEditingEvent(event as Schema_GridEvent)
+                  eventHandlers.setEditingEvent(event as Schema_GridEvent)
                 }
                 isOpen={!!component.editingEvent?.isOpen}
                 event={component.editingEvent}
                 weekViewProps={weekViewProps}
-                onCloseEventForm={() => component.setEditingEvent(null)}
+                onCloseEventForm={() => eventHandlers.setEditingEvent(null)}
                 onSubmitEventForm={eventHandlers.onSubmitEvent}
               />
             )}

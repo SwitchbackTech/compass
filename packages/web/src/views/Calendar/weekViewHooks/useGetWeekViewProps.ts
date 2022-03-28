@@ -504,6 +504,7 @@ export const useGetWeekViewProps = () => {
       onSubmitEvent,
       onTimezoneChange,
       setEditingEvent,
+      setWeek,
     },
     component: {
       allDayEvents,
@@ -514,8 +515,6 @@ export const useGetWeekViewProps = () => {
       editingEvent,
       eventsGridRef,
       eventState,
-      setEditingEvent,
-      setWeek,
       startOfSelectedWeekDay,
       endOfSelectedWeekDay,
       times,
