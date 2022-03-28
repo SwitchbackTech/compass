@@ -32,6 +32,7 @@ Note: Check-in with Ty to determine how much testing is needed for the project i
 - [Jest](https://jestjs.io/): test runner & unit tests
 - [React-Testing-Library](https://testing-library.com/docs/react-testing-library/intro): DOM testing
 - [jest-styled-components:](https://github.com/styled-components/jest-styled-components#react-testing-library) `styled-components` testing
+- [@shelf/jest-mongodb](https://github.com/shelfio/jest-mongodb): Jest preset to run MongoDB memory server
 
 Once electron is supported, these will (probably) be added:
 
