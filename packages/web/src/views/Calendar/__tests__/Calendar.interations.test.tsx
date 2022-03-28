@@ -14,7 +14,7 @@ import {
   mockLocalStorage,
   clearLocalStorageMock,
 } from "@web/common/utils/test.util";
-describe("CalendarView: Interactions", () => {
+describe("Calendar Interactions", () => {
   const server = setupServer(
     rest.get("/api/event", (req, res, ctx) => {
       const events = [
@@ -49,53 +49,36 @@ describe("CalendarView: Interactions", () => {
     server.close();
   });
 
-  it("navigates to previous week upon nav arrow click", async () => {
-    const user = userEvent.setup();
-    const { container } = render(CompassRoot);
-    const todayId = "#id-" + getWeekDayLabel(dayjs());
-
-    expect(container.querySelector(todayId)).not.toBe(null);
-    await user.click(screen.getByText(/</i));
-    expect(container.querySelector(todayId)).toBe(null);
-  });
-
-  it("renders today only when on different week than current", async () => {
-    const user = userEvent.setup();
-    render(<CalendarView />);
-
-    expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
-    await user.click(screen.getByText(/</i));
-    expect(screen.getByText(/today/i)).toBeInTheDocument();
-
-    // user returns to original week
-    await user.click(screen.getByText(/>/i));
-    expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
-
-    await user.click(screen.getByText(/>/i));
-    expect(screen.getByText(/today/i)).toBeInTheDocument();
-  });
-
-  describe("All Day Events", () => {
-    it("adds all-day event somewhere on DOM: 1-day", async () => {
+  describe("Navigation Arrow Row", () => {
+    it("navigates to previous week upon nav arrow click", async () => {
       const user = userEvent.setup();
-      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
-      const { container } = render(<CalendarView />, { preloadedState });
+      const { container } = render(CompassRoot);
+      const todayId = "#id-" + getWeekDayLabel(dayjs());
 
-      await user.click(container.querySelector("#allDayGrid"));
-      await waitFor(() => {
-        expect(
-          screen.getByRole("form", {
-            name: /event form/i,
-          })
-        ).toBeInTheDocument();
-      });
-      await user.type(screen.getByPlaceholderText(/title/i), "Hello, World");
-      await userEvent.keyboard("{Enter}");
-
-      // TODO: update test to ensure its on the expected day column
-      expect(screen.getByDisplayValue("Hello, World")).toBeInTheDocument();
+      expect(container.querySelector(todayId)).not.toBe(null);
+      await user.click(screen.getByText(/</i));
+      expect(container.querySelector(todayId)).toBe(null);
     });
-    it("opens event form upon click (and not before)", async () => {
+
+    it("renders today only when on different week than current", async () => {
+      const user = userEvent.setup();
+      render(<CalendarView />);
+
+      expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
+      await user.click(screen.getByText(/</i));
+      expect(screen.getByText(/today/i)).toBeInTheDocument();
+
+      // user returns to original week
+      await user.click(screen.getByText(/>/i));
+      expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
+
+      await user.click(screen.getByText(/>/i));
+      expect(screen.getByText(/today/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("Event Form", () => {
+    it("opens upon click all-day event click (and not before)", async () => {
       /*
       note: this doesn't test if an event is effectively 'hidden' from a user 
       because the row logic was incorrect and allowed overlapping events. 
@@ -136,6 +119,43 @@ describe("CalendarView: Interactions", () => {
         expect(screen.queryByDisplayValue(t)).not.toBeInTheDocument(); // shouldnt show form before being clicked
         */
       }
+    });
+
+    it("closes when clicking page heading", async () => {
+      const user = userEvent.setup();
+      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
+      render(<CalendarView />, { preloadedState });
+
+      await user.click(screen.getByRole("button", { name: "Mar 1" }));
+      await user.click(screen.getByRole("heading", { level: 1 }));
+
+      await waitFor(() => {
+        expect(
+          screen.queryByRole("form", { name: /event form/i })
+        ).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("All Day Events", () => {
+    it("adds 1-day event somewhere on DOM", async () => {
+      const user = userEvent.setup();
+      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
+      const { container } = render(<CalendarView />, { preloadedState });
+
+      await user.click(container.querySelector("#allDayGrid"));
+      await waitFor(() => {
+        expect(
+          screen.getByRole("form", {
+            name: /event form/i,
+          })
+        ).toBeInTheDocument();
+      });
+      await user.type(screen.getByPlaceholderText(/title/i), "Hello, World");
+      await userEvent.keyboard("{Enter}");
+
+      // TODO: update test to ensure its on the expected day column
+      expect(screen.getByDisplayValue("Hello, World")).toBeInTheDocument();
     });
   });
 });

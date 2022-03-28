@@ -128,17 +128,20 @@ export const CalendarView = () => {
       <StyledCalendar
         ref={component.calendarRef}
         direction={FlexDirections.COLUMN}
+        onMouseDown={eventHandlers.onCalendarAreaMouseDown}
       >
         <StyledHeaderFlex alignItems={AlignItems.CENTER}>
-          <Text colorName={ColorNames.TEAL_3} size={45}>
-            {component.dayjsBasedOnWeekDay.format("MMMM")}
-          </Text>
+          <div role="heading" aria-level={1}>
+            <Text colorName={ColorNames.TEAL_3} size={45}>
+              {component.dayjsBasedOnWeekDay.format("MMMM")}
+            </Text>
 
-          <SpaceCharacter />
+            <SpaceCharacter />
 
-          <Text colorName={ColorNames.WHITE_2} size={45}>
-            {component.dayjsBasedOnWeekDay.format("YYYY")}
-          </Text>
+            <Text colorName={ColorNames.WHITE_2} size={45}>
+              {component.dayjsBasedOnWeekDay.format("YYYY")}
+            </Text>
+          </div>
 
           <StyledNavigationButtons>
             <ArrowNavigationButton
