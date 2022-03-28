@@ -107,7 +107,7 @@ describe("CalendarView: Interactions", () => {
       const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
       render(<CalendarView />, { preloadedState });
 
-      // just testing a handful of events to prevent slowness
+      // just testing a handful of events to minimize slowness
       const titles = [
         // all-day events
         "multiweek event",

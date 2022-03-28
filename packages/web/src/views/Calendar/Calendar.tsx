@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Redirect } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
 import { Popover } from "react-tiny-popover";
@@ -115,7 +115,7 @@ export const CalendarView = () => {
   }, [component.calendarRef]);
 
   if (!token) {
-    return <Redirect to={ROOT_ROUTES.LOGIN} />;
+    return <Navigate to={ROOT_ROUTES.LOGIN} />;
   }
 
   return (
