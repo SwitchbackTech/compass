@@ -282,7 +282,19 @@ export const useGetWeekViewProps = () => {
     });
   };
 
+  const onCalendarAreaMouseDown = () => {
+    if (editingEvent) {
+      setEditingEvent(null);
+      return;
+    }
+  };
+
   const onEventsGridMouseDown = (e: React.MouseEvent) => {
+    if (editingEvent) {
+      setEditingEvent(null);
+      return;
+    }
+
     const startDate = getDateByMousePosition(e.clientX, e.clientY);
     const endDate = dayjs(startDate)
       .add(GRID_TIME_STEP, "minute")
@@ -496,6 +508,7 @@ export const useGetWeekViewProps = () => {
     eventHandlers: {
       onAllDayEventsGridMouseDown,
       onDeleteEvent,
+      onCalendarAreaMouseDown,
       onEventsGridRelease,
       onEventsGridMouseDown,
       onEventGridMouseMove,
@@ -504,6 +517,7 @@ export const useGetWeekViewProps = () => {
       onSubmitEvent,
       onTimezoneChange,
       setEditingEvent,
+      setWeek,
     },
     component: {
       allDayEvents,
@@ -514,8 +528,6 @@ export const useGetWeekViewProps = () => {
       editingEvent,
       eventsGridRef,
       eventState,
-      setEditingEvent,
-      setWeek,
       startOfSelectedWeekDay,
       endOfSelectedWeekDay,
       times,

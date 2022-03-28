@@ -201,18 +201,20 @@ export const EventForm: React.FC<ComponentProps> = ({
         onChange={onChangeEventTextField("title")}
       />
 
-      <DateTimePickersSection
-        setEndTime={setEndTime}
-        setStartTime={setStartTime}
-        setSelectedDate={setSelectedStartDate}
-        endTime={endTime}
-        startTime={startTime}
-        selectedDate={selectedStartDate}
-        showStartTimeLabel={!!showStartTimeLabel}
-        setShowStartTimeLabel={(value) =>
-          onSetEventField("showStartTimeLabel", !!value)
-        }
-      />
+      {!event.isAllDay && (
+        <DateTimePickersSection
+          setEndTime={setEndTime}
+          setStartTime={setStartTime}
+          setSelectedDate={setSelectedStartDate}
+          endTime={endTime}
+          startTime={startTime}
+          selectedDate={selectedStartDate}
+          showStartTimeLabel={!!showStartTimeLabel}
+          setShowStartTimeLabel={(value) =>
+            onSetEventField("showStartTimeLabel", !!value)
+          }
+        />
+      )}
 
       <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
         <Button
