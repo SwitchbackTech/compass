@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
 import {
+  getBrighterColor,
   getColor,
   getDarkerColor,
   getInvertedColor,
@@ -20,16 +21,15 @@ export const StyledFeedbackBtnContainer = styled(Flex)`
 `;
 
 export const Styled = styled.div<Props>`
-  background: ${({ color }) => getColor(color || ColorNames.BLUE_3)};
+  align-items: center;
+  background: ${({ color }) => getColor(color)};
+  color: ${({ color }) => getInvertedColor(color)};
+  display: flex;
   min-width: 158px;
   padding: 0 8px;
   height: 36px;
-  display: flex;
-  align-items: center;
   font-weight: 600;
   justify-content: center;
-  color: ${({ color = InvertedColorNames.BLUE_3 }) =>
-    getInvertedColor(color as InvertedColorNames)};
   cursor: pointer;
   border-radius: 7px;
   border: ${({ bordered, color = InvertedColorNames.BLUE_3, border }) =>
@@ -41,7 +41,7 @@ export const Styled = styled.div<Props>`
   }
 
   &:hover {
-    background: ${({ color }) => getDarkerColor(color || ColorNames.BLUE_3)};
+    background: ${({ color }) => getBrighterColor(color)};
     transition: background-color 0.2s;
   }
 `;

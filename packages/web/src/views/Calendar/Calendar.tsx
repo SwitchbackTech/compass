@@ -132,13 +132,13 @@ export const CalendarView = () => {
       >
         <StyledHeaderFlex alignItems={AlignItems.CENTER}>
           <div role="heading" aria-level={1}>
-            <Text colorName={ColorNames.TEAL_3} size={45}>
+            <Text colorName={ColorNames.WHITE_1} size={45}>
               {component.dayjsBasedOnWeekDay.format("MMMM")}
             </Text>
 
             <SpaceCharacter />
 
-            <Text colorName={ColorNames.WHITE_2} size={45}>
+            <Text colorName={ColorNames.DARK_5} size={45}>
               {component.dayjsBasedOnWeekDay.format("YYYY")}
             </Text>
           </div>
@@ -146,7 +146,7 @@ export const CalendarView = () => {
           <StyledNavigationButtons>
             <ArrowNavigationButton
               size={40}
-              colorName={ColorNames.WHITE_2}
+              colorName={ColorNames.DARK_5}
               onClick={() =>
                 eventHandlers.setWeek((actualWeek) => actualWeek - 1)
               }
@@ -157,7 +157,7 @@ export const CalendarView = () => {
 
             <ArrowNavigationButton
               size={40}
-              colorName={ColorNames.WHITE_2}
+              colorName={ColorNames.DARK_5}
               onClick={() =>
                 eventHandlers.setWeek((actualWeek) => +actualWeek + 1)
               }
@@ -207,7 +207,7 @@ export const CalendarView = () => {
 
             let weekDayTextColor = isToday
               ? getColor(ColorNames.TEAL_3)
-              : getColor(ColorNames.WHITE_2);
+              : getAlphaColor(ColorNames.WHITE_1, 0.72);
 
             let dayNumberToDisplay = day.format("D");
 

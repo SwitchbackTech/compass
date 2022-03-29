@@ -26,29 +26,28 @@ export const Styled = styled.form<StyledProps>`
 
   overflow: auto;
   box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.25);
-  border-radius: 12px;
+  border-radius: 7px;
   width: 585px;
   font-size: 20px;
   background: ${({ priority }) =>
-    getColor(colorNameByPriority[priority || Priorities.WORK])};
+    getColor(colorNameByPriority[priority || Priorities.UNASSIGNED])};
   color: ${({ priority }) =>
     getInvertedColor(
       colorNameByPriority[
-        priority || Priorities.WORK
+        priority || Priorities.UNASSIGNED
       ] as unknown as InvertedColorNames
     )};
   transition: ${ANIMATION_TIME_3_MS};
 `;
 
-export const StyledTitleField = styled(Textarea)`
-  background: transparent;
-  /* padding: 10px 0; */
-  height: 55px;
-  font-size: 50px;
-`;
+export const StyledDeleteButton = styled(Button)`
+  background: ${() => getColor(ColorNames.DARK_4)};
+  color: ${() => getColor(ColorNames.DARK_5)};
+  margin-top: 35px;
 
-export const StyledPriorityFlex = styled(Flex)`
-  margin: 20px 0;
+  &:hover {
+    background: ${getColor(ColorNames.YELLOW_3)};
+  }
 `;
 
 export const StyledDescriptionField = styled(Textarea)`
@@ -58,23 +57,23 @@ export const StyledDescriptionField = styled(Textarea)`
   position: relative;
 `;
 
-export const StyledDeleteButton = styled(Button)`
-/* these colors being overridden by sth */
-  background: "#000000"
-  color: "#000000";
-  margin-top: 35px;
-
-  &:hover {
-      background: "red";
-  }
+export const StyledPriorityFlex = styled(Flex)`
+  margin: 20px 0;
 `;
 
 export const StyledSubmitButton = styled(Button)`
-  background: ${getColor(ColorNames.WHITE_5)};
-  color: ${getColor(ColorNames.GREY_1)};
   margin-top: 35px;
+  min-width: 80px;
+`;
 
-  &:hover {
-    background: ${getColor(ColorNames.WHITE_3)};
-  }
+export const StyledSubmitRow = styled(Flex)`
+  align-items: right;
+  justify-content: space-between;
+`;
+
+export const StyledTitleField = styled(Textarea)`
+  background: transparent;
+  /* padding: 10px 0; */
+  height: 55px;
+  font-size: 50px;
 `;
