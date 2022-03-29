@@ -7900,16 +7900,16 @@ fn.name@1.x.x:
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
 focus-trap-react@^8.7.0:
-  version "8.9.0"
-  resolved "https://registry.yarnpkg.com/focus-trap-react/-/focus-trap-react-8.9.0.tgz#28bd4c9c117de6cb72bad4773ee58345b785117f"
-  integrity sha512-zxV5b0sRn9IeDYvDbApfZUdH5vrWBqHoltB+HbSZCAgDML58vft6qTjgiEO3ROVKjX2wbNF1A1Rv1An1uhJI6A==
+  version "8.9.2"
+  resolved "https://registry.yarnpkg.com/focus-trap-react/-/focus-trap-react-8.9.2.tgz#af19c6d65bedeba925859d7ec51c41d8d2c30855"
+  integrity sha512-m6TQQHLcqkisc6Qq92q1yYzzOaxo34Szh5FQOXzky7028PXFEhuUxScTbT7EG9qL0QG7B+oR2ZbxyU0lK4kIwQ==
   dependencies:
-    focus-trap "^6.7.1"
+    focus-trap "^6.7.3"
 
-focus-trap@^6.7.1:
-  version "6.7.1"
-  resolved "https://registry.yarnpkg.com/focus-trap/-/focus-trap-6.7.1.tgz#d474f86dbaf3c7fbf0d53cf0b12295f4f4068d10"
-  integrity sha512-a6czHbT9twVpy2RpkWQA9vIgwQgB9Nx1PIxNNUxQT4nugG/3QibwxO+tWTh9i+zSY2SFiX4pnYhTaFaQF/6ZAg==
+focus-trap@^6.7.3:
+  version "6.7.3"
+  resolved "https://registry.yarnpkg.com/focus-trap/-/focus-trap-6.7.3.tgz#b5dc195b49c90001f08a63134471d1e6dd381ddd"
+  integrity sha512-8xCEKndV4KrseGhFKKKmczVA14yx1/hnmFICPOjcFjToxCJYj/NHH43tPc3YE/PLnLRNZoFug0EcWkGQde/miQ==
   dependencies:
     tabbable "^5.2.1"
 
