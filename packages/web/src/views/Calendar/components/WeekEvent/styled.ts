@@ -23,8 +23,9 @@ interface StyledEventProps {
 }
 
 const hoverColorsByPriority = {
-  [Priorities.WORK]: getColor(ColorNames.GREY_5_BRIGHT),
-  [Priorities.RELATIONS]: getColor(ColorNames.GREY_7_BRIGHT),
+  [Priorities.UNASSIGNED]: getColor(ColorNames.GREY_5_BRIGHT),
+  [Priorities.WORK]: getColor(ColorNames.GREY_3_BRIGHT),
+  [Priorities.RELATIONS]: getColor(ColorNames.TEAL_6_BRIGHT),
   [Priorities.SELF]: getColor(ColorNames.BLUE_3_BRIGHT),
 };
 

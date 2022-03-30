@@ -1,6 +1,5 @@
 import styled from "styled-components";
 import TextareaAutoSize from "react-textarea-autosize";
-
 import { getInputCommonStyles } from "@web/common/styles/components";
 
 import { Props } from "./types";

@@ -1,4 +1,4 @@
-import { Styled, StyledFeedbackBtnContainer } from './styled';
+import { Styled, StyledFeedbackBtnContainer } from "./styled";
 
 export const Button = Styled;
 

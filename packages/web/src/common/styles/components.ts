@@ -12,7 +12,7 @@ export interface ColorProps {
 export type ColorNameAndBackgroundProps = ColorProps & BackgroundProps;
 
 export const getInputCommonStyles = ({
-  background = ColorNames.BLUE_3,
+  background,
   colorName,
 }: ColorNameAndBackgroundProps) => `
   background: ${getColor(background)};
@@ -21,12 +21,7 @@ export const getInputCommonStyles = ({
       ? getColor(colorName)
       : getInvertedColor(background as unknown as InvertedColorNames)
   };
-  
-  ${
-    background === ColorNames.BLUE_3
-      ? `&::placeholder {
-    color: ${getColor(ColorNames.GREY_5)}
-  }`
-      : ""
+  ::placeholder {
+    color: ${getColor(colorName)}
   }
 `;

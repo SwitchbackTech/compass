@@ -47,8 +47,7 @@ export const ArrowNavigationButton = styled(Text)`
 
   &:hover {
     border-radius: 50%;
-    background-color: ${getColor(ColorNames.BLUE_5)};
-    color: ${getColor(ColorNames.DARK_2)};
+    color: ${getColor(ColorNames.WHITE_1)};
   }
 
   &:first-child {

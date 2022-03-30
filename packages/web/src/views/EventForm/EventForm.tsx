@@ -7,13 +7,11 @@ import { Button } from "@web/components/Button";
 import { JustifyContent } from "@web/components/Flex/styled";
 import { SelectOption } from "@web/common/types/components";
 import { colorNameByPriority } from "@web/common/styles/colors";
-import { ColorNames } from "@web/common/types/styles";
 import {
   HOURS_MINUTES_FORMAT,
   HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
 } from "@web/common/constants/dates";
-import { getColor } from "@web/common/utils/colors";
 
 import {
   Styled,
@@ -22,9 +20,11 @@ import {
   StyledDescriptionField,
   StyledDeleteButton,
   StyledSubmitButton,
+  StyledSubmitRow,
 } from "./styled";
 import { ComponentProps } from "./types";
 import { DateTimePickersSection } from "./DateTimePickersSection";
+import { selectAreEventsProcessingBySectionType } from "../../ducks/events/selectors";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
@@ -34,7 +34,7 @@ export const EventForm: React.FC<ComponentProps> = ({
   setEvent,
   ...props
 }) => {
-  const { priority = Priorities.WORK, title, showStartTimeLabel } = event || {};
+  const { priority, title, showStartTimeLabel } = event || {};
 
   const calculatedInitialStartTimeDayJs =
     event?.startDate && dayjs(event.startDate);
@@ -69,7 +69,7 @@ export const EventForm: React.FC<ComponentProps> = ({
   >();
 
   const defaultEventState: Schema_Event = {
-    priority: Priorities.WORK,
+    priority: event.priority,
     title: "",
     description: "",
     isAllDay: false,
@@ -148,7 +148,7 @@ export const EventForm: React.FC<ComponentProps> = ({
 
     onSubmit({
       ..._event,
-      priority: _event.priority || Priorities.WORK,
+      priority: _event.priority || Priorities.UNASSIGNED,
       startDate,
       endDate,
       isTimeSelected: !!startTime,
@@ -179,6 +179,7 @@ export const EventForm: React.FC<ComponentProps> = ({
     if (isShiftKeyPressed || e.which !== Key.Enter) return;
 
     e.preventDefault();
+    e.stopPropagation();
 
     onSubmitForm();
   };
@@ -193,9 +194,8 @@ export const EventForm: React.FC<ComponentProps> = ({
       title="Event Form"
     >
       <StyledTitleField
-        background={colorNameByPriority[priority]}
+        autoFocus={true}
         placeholder="Title"
-        autoFocus
         onKeyDown={submitFormWithKeyboard}
         value={title}
         onChange={onChangeEventTextField("title")}
@@ -230,6 +230,7 @@ export const EventForm: React.FC<ComponentProps> = ({
 
         <Button
           bordered={priority === Priorities.SELF}
+          color={colorNameByPriority.self}
           onClick={() => onSetEventField("priority", Priorities.SELF)}
           onFocus={() => onSetEventField("priority", Priorities.SELF)}
           role="tab"
@@ -239,30 +240,29 @@ export const EventForm: React.FC<ComponentProps> = ({
         </Button>
 
         <Button
+          bordered={priority === Priorities.RELATIONS}
+          color={colorNameByPriority.relations}
           onClick={() => onSetEventField("priority", Priorities.RELATIONS)}
           onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
-          border={
-            priority === Priorities.RELATIONS
-              ? `2px solid ${getColor(ColorNames.WHITE_3)}`
-              : undefined
-          }
           role="tab"
           tabIndex={0}
-          color={colorNameByPriority.relations}
         >
           Relationships
         </Button>
       </StyledPriorityFlex>
 
       <StyledDescriptionField
-        background={colorNameByPriority[priority]}
-        placeholder="Description"
         onChange={onChangeEventTextField("description")}
+        placeholder="Description"
         value={event.description || ""}
       />
 
-      <StyledSubmitButton onClick={onSubmitForm}>Submit</StyledSubmitButton>
-      <StyledDeleteButton onClick={onDeleteForm}>Delete</StyledDeleteButton>
+      <StyledSubmitRow>
+        <StyledSubmitButton bordered={true} onClick={onSubmitForm}>
+          Submit
+        </StyledSubmitButton>
+        <StyledDeleteButton onClick={onDeleteForm}>Delete</StyledDeleteButton>
+      </StyledSubmitRow>
     </Styled>
   );
 };

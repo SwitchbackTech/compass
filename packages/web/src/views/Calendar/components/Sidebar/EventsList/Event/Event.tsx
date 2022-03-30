@@ -2,9 +2,7 @@ import React, { useState } from "react";
 import { Popover } from "react-tiny-popover";
 import { useDispatch } from "react-redux";
 import { useDrag, useDrop } from "react-dnd";
-
 import { Schema_Event } from "@core/types/event.types";
-
 import { editEventSlice } from "@web/ducks/events/slice";
 
 import { Styled } from "./styled";

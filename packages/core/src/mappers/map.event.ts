@@ -85,7 +85,7 @@ const _toCompass = (
     startDate: _isAllDay ? _start.date : _start.dateTime,
     // @ts-ignore
     endDate: _isAllDay ? _end.date : _end.dateTime,
-    priority: Priorities.WORK,
+    priority: Priorities.UNASSIGNED,
   };
 
   return compassEvent;
