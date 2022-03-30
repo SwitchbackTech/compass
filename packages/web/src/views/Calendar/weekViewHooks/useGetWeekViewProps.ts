@@ -277,7 +277,7 @@ export const useGetWeekViewProps = () => {
         ...actualEditingEvent,
         startDate,
         endDate,
-        priority: actualEditingEvent?.priority || Priorities.WORK,
+        priority: actualEditingEvent?.priority || Priorities.UNASSIGNED,
       };
     });
   };
@@ -303,7 +303,7 @@ export const useGetWeekViewProps = () => {
     setModifiableDateField("endDate");
 
     setEditingEvent({
-      priority: Priorities.WORK,
+      priority: Priorities.UNASSIGNED,
       startDate,
       endDate,
       isAllDay: false,

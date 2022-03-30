@@ -7,13 +7,11 @@ import { Button } from "@web/components/Button";
 import { JustifyContent } from "@web/components/Flex/styled";
 import { SelectOption } from "@web/common/types/components";
 import { colorNameByPriority } from "@web/common/styles/colors";
-import { ColorNames } from "@web/common/types/styles";
 import {
   HOURS_MINUTES_FORMAT,
   HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
 } from "@web/common/constants/dates";
-import { getColor } from "@web/common/utils/colors";
 
 import {
   Styled,
@@ -26,6 +24,7 @@ import {
 } from "./styled";
 import { ComponentProps } from "./types";
 import { DateTimePickersSection } from "./DateTimePickersSection";
+import { selectAreEventsProcessingBySectionType } from "../../ducks/events/selectors";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
@@ -180,6 +179,7 @@ export const EventForm: React.FC<ComponentProps> = ({
     if (isShiftKeyPressed || e.which !== Key.Enter) return;
 
     e.preventDefault();
+    e.stopPropagation();
 
     onSubmitForm();
   };

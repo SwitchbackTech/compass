@@ -22,7 +22,6 @@ interface StyledEventProps {
   top: number;
 }
 
-// $$ replace with inverted colors ?
 const hoverColorsByPriority = {
   [Priorities.UNASSIGNED]: getColor(ColorNames.GREY_5_BRIGHT),
   [Priorities.WORK]: getColor(ColorNames.GREY_3_BRIGHT),
