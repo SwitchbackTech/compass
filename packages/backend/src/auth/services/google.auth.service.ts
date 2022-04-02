@@ -71,23 +71,17 @@ class GoogleOauthService {
       .collection(Collections.OAUTH)
       .findOne({ state: state });
 
-    const isComplete = oauth && oauth.user ? true : false;
-
-    if (isComplete) {
-      //TODO use other token creation method above
-      // Create an access token //
-      const accessToken = jwt.sign(
-        { _id: oauth.user },
-        ENV.ACCESS_TOKEN_SECRET,
-        {
-          algorithm: "HS256",
-          expiresIn: ENV.ACCESS_TOKEN_LIFE,
-        }
-      );
-
-      return { token: accessToken, isOauthComplete: isComplete };
+    const foundOauthUser = oauth && oauth.user ? true : false;
+    if (!foundOauthUser) {
+      return { isOauthComplete: false };
     }
-    return { isOauthComplete: isComplete };
+
+    const accessToken = jwt.sign({ _id: oauth.user }, ENV.ACCESS_TOKEN_SECRET, {
+      algorithm: "HS256",
+      expiresIn: ENV.ACCESS_TOKEN_LIFE,
+    });
+
+    return { isOauthComplete: true, token: accessToken };
   }
 
   generateAuthUrl(state: string) {

@@ -1,14 +1,40 @@
 // @ts-nocheck
 import express from "express";
-import jwt, { JsonWebTokenError } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { Jwt } from "@core/types/jwt.types";
+import { Status } from "@core/errors/status.codes";
 import { BaseError } from "@core/errors/errors.base";
+import { validateToken } from "@backend/common/helpers/jwt.utils";
+import { Logger } from "@core/logger/winston.logger";
 
-const jwtSecret: string = process.env.JWT_SECRET;
+const logger = Logger("app:jwt.middleware");
+const demoJwtSecret: string = process.env.JWT_SECRET;
 
 type JwtToken = { _id: string; exp: number; iat: number };
 class JwtMiddleware {
+  // $$ delete (?)
+  checkIfRefreshNeeded = (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    const accessToken: string = req.headers.authorization
+      ? req.headers.authorization.split("Bearer ").join("").trim()
+      : null;
+
+    try {
+      const payload: JwtToken = jwt.verify(
+        accessToken,
+        process.env.ACCESS_TOKEN_SECRET
+      );
+      // save refreshneeded false to req
+      next();
+    } catch (e) {
+      next();
+    }
+  };
+
   verifyTokenAndSaveUserId = (
     req: express.Request,
     res: express.Response,
@@ -18,29 +44,36 @@ class JwtMiddleware {
       ? req.headers.authorization.split("Bearer ").join("").trim()
       : null;
 
-    //if there is no token stored in cookies, the request is unauthorized
-    // TODO use BaseError
-    if (!accessToken) {
-      return res.status(403).json({ error: "Authentication required!" });
+    if (!accessToken || accessToken === "null") {
+      return res
+        .status(Status.FORBIDDEN)
+        .json({ error: "Authentication required!" });
     }
 
     try {
-      //throws error if token has expired or has a invalid signature
-      const payload: JwtToken = jwt.verify(
-        accessToken,
-        process.env.ACCESS_TOKEN_SECRET
-      );
+      const { refreshNeeded, payload, error } = validateToken(accessToken);
 
-      // Capture the user id for future use //
+      if (error) {
+        logger.error(error);
+        return res.status(Status.UNSURE).json(error);
+      }
+
+      if (refreshNeeded) {
+        return res.status(Status.UNAUTHORIZED).send();
+      }
+
+      // The current token is valid
+      // use the _id value to associate it and infer the userId
+      // then save it for future
       res.locals = Object.assign({}, res.locals, { user: { id: payload._id } });
 
       next();
     } catch (e) {
       next(
         new BaseError(
-          "Bad Access Token",
-          `${e.message}. Clear local storage and retry`,
-          401,
+          "Unexpected Token Error",
+          `${JSON.stringify(e.message)}`,
+          Status.INTERNAL_SERVER,
           true
         )
       );
@@ -77,7 +110,7 @@ class JwtMiddleware {
     );
     const hash = crypto
       .createHmac("sha512", salt)
-      .update(res.locals.jwt.userId + jwtSecret)
+      .update(res.locals.jwt.userId + demoJwtSecret)
       .digest("base64");
     if (hash === req.body.refreshToken) {
       req.body = {
@@ -102,7 +135,7 @@ class JwtMiddleware {
         if (authorization[0] !== "Bearer") {
           return res.status(401).send();
         } else {
-          res.locals.jwt = jwt.verify(authorization[1], jwtSecret) as Jwt;
+          res.locals.jwt = jwt.verify(authorization[1], demoJwtSecret) as Jwt;
           next();
         }
       } catch (err) {

@@ -175,8 +175,6 @@ function* getEverySectionEvents() {
  * Assemble
  ***********/
 export function* eventsSagas() {
-  // TODO consider replacing some takeLatests with takeEverys so you can
-  // run some sagas concurrently
   yield takeLatest(getWeekEventsSlice.actions.request, getWeekEventsSaga);
   yield takeLatest(
     getCurrentMonthEventsSlice.actions.request,

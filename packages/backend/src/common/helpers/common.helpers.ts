@@ -1,4 +1,4 @@
-import { NodeEnv } from "../constants/backend.constants";
+import { NodeEnv } from "@backend/common/constants/backend.constants";
 
 export const isDev = () => {
   return process.env["NODE_ENV"] === NodeEnv.Development;

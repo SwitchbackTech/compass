@@ -1,11 +1,14 @@
 import axios from "axios";
-
+import {
+  Result_OauthStatus,
+  Result_OauthUrl,
+  Result_TokenRefresh,
+} from "@core/types/auth.types";
 import {
   API_BASEURL,
   GOOGLE,
   LocalStorage,
 } from "@web/common/constants/web.constants";
-import { Result_OauthStatus } from "@core/types/auth.types";
 
 const headers = {
   // TODO replace with method in helpers
@@ -15,8 +18,7 @@ const headers = {
 };
 
 const AuthApi = {
-  async checkOauthStatus() {
-    const authState = localStorage.getItem(LocalStorage.AUTHSTATE);
+  async checkOauthStatus(authState: string) {
     const url = `${API_BASEURL}/auth/oauth-status?integration=${GOOGLE}&state=${authState}`;
     const response = await axios.get(url);
     return response.data as Result_OauthStatus;
@@ -27,22 +29,35 @@ const AuthApi = {
       const response = await axios.get(
         `${API_BASEURL}/auth/oauth-url?integration=${GOOGLE}`
       );
-      return response.data;
+      return response.data as Result_OauthUrl;
     }
-    return { e: `${integration}not supported` };
   },
 
-  async refresh() {
+  /*
+      // $$ move this elsewhere?
+      // shouldn't need to check for refreshing, cuz
+      // there isn't a token yet - right?
+      if (status.refreshNeeded) {
+        console.log("$$ temp: refreshing token");
+        const newStatus = await AuthApi.refreshToken();
+        if (newStatus.error) {
+          alert(newStatus.error);
+          // $$ give up, send back to login screen to break out of loop (?)
+          return;
+        }
+        token = newStatus.token;
+      }
+      */
+  async refreshToken() {
     try {
       const response = await axios.post(
         `${API_BASEURL}/auth/refresh-token`,
         {},
         headers
       );
-      return response.data;
+      return response.data as Result_TokenRefresh;
     } catch (err) {
-      console.log("err while refreshing token:", err);
-      return false;
+      return { token: null, error: JSON.stringify(err) };
     }
   },
 };

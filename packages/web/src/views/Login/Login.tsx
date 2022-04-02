@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Result_OauthStatus } from "@core/types/auth.types";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { SURVEY_URL } from "@core/core.constants";
 import { PriorityApi } from "@web/common/apis/priority.api";
@@ -16,44 +15,46 @@ import { Button, FeedbackButtonContainer } from "@web/components/Button";
 import { StyledLogin } from "./styled";
 
 export const LoginView = () => {
-  const [redirect, setRedirect] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   async function refreshToken() {
-    const refresh: { token: string } = await AuthApi.refresh();
+    const refresh = await AuthApi.refreshToken();
 
+    if (refresh.error) {
+      alert(refresh.error);
+      return;
+    }
     // Token has expired or invalid, user has to re-login //
-    if (!refresh) {
+    if (!refresh.token) {
       localStorage.setItem(LocalStorage.TOKEN, "");
       localStorage.setItem(LocalStorage.STATE, "");
 
-      setRedirect(false);
+      setIsAuthenticated(false);
+      return;
     }
 
     localStorage.setItem(LocalStorage.TOKEN, refresh.token);
-    setRedirect(true);
+    setIsAuthenticated(true);
   }
 
-  const startGoogleOauth = async () => {
+  const startGoogleOauth = async (freshData: boolean) => {
     setIsAuthenticating(true);
-    const googleOauthData = await AuthApi.getOauthData(GOOGLE);
-    localStorage.setItem(LocalStorage.AUTHSTATE, googleOauthData.authState);
-    window.open(googleOauthData.authUrl);
+    const { authState, authUrl } = await AuthApi.getOauthData(GOOGLE);
+    localStorage.setItem(LocalStorage.AUTHSTATE, authState); // do you even need to set this?
+    window.open(authUrl);
 
     // poll while user grants permissions
     let isComplete = false;
     while (!isComplete) {
       await new Promise((resolve) => setTimeout(resolve, 4000));
-      const status: Result_OauthStatus = await AuthApi.checkOauthStatus();
+      const status = await AuthApi.checkOauthStatus(
+        localStorage.getItem(LocalStorage.AUTHSTATE)
+      );
 
       if (status.isOauthComplete) {
         localStorage.setItem(LocalStorage.TOKEN, status.token);
-        //throws error if token has expired or has a invalid signature
         /*
-        OR NOT, cuz user would only go through the oauth init flow 
-        the first time, and their token would be refreshed after that.
-        so just always send them to the onboarding screen?
-
         If new user:
           - send to onboarding screen where:
             - priorities created
@@ -70,14 +71,16 @@ export const LoginView = () => {
         // console.log(`\tsetting default TZ to: ${devTz}`);
         // localStorage.setItem(LocalStorage.TIMEZONE, devTz);
 
-        await createPriorities(status.token);
-        await createCalendarList();
-        await importEvents();
+        if (freshData) {
+          await createPriorities(status.token);
+          await createCalendarList();
+          await importEvents();
+        }
         isComplete = true;
       }
     }
     setIsAuthenticating(false);
-    setRedirect(true);
+    setIsAuthenticated(true);
   };
 
   // User initialization stuff
@@ -110,7 +113,7 @@ export const LoginView = () => {
   const MainPage = () => {
     return (
       <>
-        {redirect ? (
+        {isAuthenticated ? (
           <Navigate to={ROOT_ROUTES.ROOT} />
         ) : (
           <StyledLogin>
@@ -123,8 +126,11 @@ export const LoginView = () => {
                 Compass syncs with your primary Google Calendar
               </Text>
             </p>
-            <button type="button" onClick={startGoogleOauth}>
-              Connect My Google Calendar
+            <button type="button" onClick={() => startGoogleOauth(true)}>
+              Sign up
+            </button>
+            <button type="button" onClick={() => startGoogleOauth(false)}>
+              Sign in
             </button>
 
             <FeedbackButtonContainer>

@@ -2,7 +2,7 @@ export const loginCompleteHtml = `
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Compass Login</title>
+    <title>You're logged in!</title>
   <style>
     body {
       position: relative;

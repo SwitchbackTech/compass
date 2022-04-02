@@ -8,10 +8,13 @@ import { Status } from "@core/errors/status.codes";
 import { Origin } from "@core/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import {
-  GoogleUser,
   CombinedLogin_Google,
+  GoogleUser,
   Params_AfterOAuth,
+  Result_OauthUrl,
+  Result_TokenRefresh,
 } from "@core/types/auth.types";
+import { ENV } from "@backend/common/constants/env.constants";
 
 import googleOauthService from "../services/google.auth.service";
 import CompassAuthService from "../services/compass.auth.service";
@@ -43,27 +46,6 @@ class AuthController {
     }
   }
 
-  createJwt(req: express.Request, res: express.Response) {
-    // we know this will be present thanks to jwt middleware
-    const accessToken = req.headers.authorization
-      .split("Bearer ")
-      .join("")
-      .trim();
-
-    const payload = jwt.verify(accessToken, process.env["ACCESS_TOKEN_SECRET"]);
-
-    const newToken = jwt.sign(
-      { _id: payload["_id"] },
-      process.env["ACCESS_TOKEN_SECRET"],
-      {
-        algorithm: "HS256",
-        expiresIn: process.env["ACCESS_TOKEN_LIFE"],
-      }
-    );
-
-    res.promise(Promise.resolve({ token: newToken }));
-  }
-
   checkOauthStatus = async (req: express.Request, res: express.Response) => {
     const integration: string = req.query["integration"];
     if (integration === Origin.Google) {
@@ -81,7 +63,10 @@ class AuthController {
     }
   };
 
-  getOauthUrl = (req: express.Request, res: express.Response) => {
+  getOauthUrl = (
+    req: express.Request,
+    res: express.Response
+  ): Promise<Result_OauthUrl> => {
     if (req.query["integration"] === Origin.Google) {
       const authState = uuidv4();
       const authUrl = new googleOauthService().generateAuthUrl(authState);
@@ -132,6 +117,25 @@ class AuthController {
       res.promise(Promise.resolve(loginCompleteHtml));
     }
   };
+
+  refreshJwt(
+    req: express.Request,
+    res: express.Response
+  ): Promise<Result_TokenRefresh> {
+    const accessToken = req.headers.authorization
+      .split("Bearer ")
+      .join("")
+      .trim();
+
+    const payload = jwt.verify(accessToken, ENV.ACCESS_TOKEN_SECRET);
+
+    const newToken = jwt.sign({ _id: payload._id }, ENV.ACCESS_TOKEN_SECRET, {
+      algorithm: "HS256",
+      expiresIn: ENV.ACCESS_TOKEN_LIFE,
+    });
+
+    res.promise(Promise.resolve({ token: newToken }));
+  }
 }
 
 export default new AuthController();

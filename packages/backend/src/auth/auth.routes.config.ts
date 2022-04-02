@@ -33,19 +33,12 @@ export class AuthRoutes extends CommonRoutesConfig {
     ]);
 
     this.app.get(`/api/auth/oauth-url`, [authController.getOauthUrl]);
-    this.app.get(`/api/auth/oauth-status`, [
-      // TODO validate that required integration query is present first
-      // or replace query with params (oauth/google)
-      authController.checkOauthStatus,
-    ]);
+    this.app.get(`/api/auth/oauth-status`, [authController.checkOauthStatus]);
     // Called by Google after successful oauth
     this.app.get(`/api/auth/oauth-complete`, [
       authController.loginAfterOauthSucceeded,
     ]);
-    this.app.post(`/api/auth/refresh-token`, [
-      jwtMiddleware.verifyTokenAndSaveUserId,
-      authController.createJwt,
-    ]);
+    this.app.post(`/api/auth/refresh-token`, [authController.refreshJwt]);
     return this.app;
   }
 }

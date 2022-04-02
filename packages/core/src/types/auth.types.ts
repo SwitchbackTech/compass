@@ -28,8 +28,18 @@ export interface GoogleUser {
   locale: string;
 }
 
-export interface Result_OauthStatus { 
+export interface Result_OauthStatus {
+  isOauthComplete: boolean;
+  refreshNeeded?: boolean;
   token?: string;
-  isOauthComplete: boolean; 
 }
 
+export interface Result_OauthUrl {
+  authUrl: string;
+  authState: string;
+}
+
+export interface Result_TokenRefresh {
+  token: string;
+  error?: string;
+}
