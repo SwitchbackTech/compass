@@ -7,7 +7,7 @@ import { LoginView } from "@web/views/Login";
 it("renders oauth and feedback buttons", () => {
   render(<LoginView />);
   const gOauthButton = screen.getByRole("button", {
-    name: /connect my google calendar/i,
+    name: /sign up/i,
   });
   expect(gOauthButton).toBeInTheDocument;
 
@@ -20,7 +20,7 @@ it("shows loading message after clicking auth button", async () => {
   render(<LoginView />);
   const user = userEvent.setup();
   const gOauthButton = screen.getByRole("button", {
-    name: /connect my google calendar/i,
+    name: /sign up/i,
   });
   await user.click(gOauthButton);
   const loadingEl = screen.getByRole("heading", { name: /loading \.\.\./i });

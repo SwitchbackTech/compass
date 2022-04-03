@@ -21,27 +21,6 @@ import { loginCompleteHtml } from "../services/login.complete";
 const logger = Logger("app:auth.controller");
 
 class AuthController {
-  async demoCreateJWT(req: express.Request, res: express.Response) {
-    const tokenExpirationInSeconds = 36000;
-    const jwtSecret: string | undefined = process.env["JWT_SECRET"];
-    try {
-      const refreshId = req.body.userId + jwtSecret;
-      const salt = crypto.createSecretKey(crypto.randomBytes(16));
-      const hash = crypto
-        .createHmac("sha512", salt)
-        .update(refreshId)
-        .digest("base64");
-      req.body.refreshKey = salt.export();
-      const token = jwt.sign(req.body, jwtSecret, {
-        expiresIn: tokenExpirationInSeconds,
-      });
-      return res.status(201).send({ accessToken: token, refreshToken: hash });
-    } catch (err) {
-      logger.error("createJWT error: %O", err);
-      return res.status(500).send();
-    }
-  }
-
   checkOauthStatus = async (req: express.Request, res: express.Response) => {
     const integration: string = req.query["integration"];
     if (integration === Origin.Google) {
