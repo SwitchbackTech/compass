@@ -35,6 +35,7 @@
     "test:backend": "yarn jest backend",
     "test:core": "yarn test core",
     "test:web": "yarn test web",
+    "update:all": "yarn update:backend && yarn update:web",
     "update:backend": "yarn build:backend && yarn deploy:backend",
     "update:web": "yarn build:web && yarn deploy:web",
     "zip": "yarn zip:backend && yarn zip:web",

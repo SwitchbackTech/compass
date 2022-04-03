@@ -10,7 +10,6 @@ const CalendarListApi = {
       `${API_BASEURL}/calendarlist`,
       headers()
     );
-    console.log(response.data);
     return response.data;
   },
 
@@ -20,7 +19,6 @@ const CalendarListApi = {
       payload,
       headers()
     );
-    console.log(response.data);
     return response.data;
   },
 };

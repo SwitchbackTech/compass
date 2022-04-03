@@ -70,7 +70,7 @@ describe("toCompass", () => {
   );
 
   const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
-  it("sets priority to unassigned", () => {
+  it("sets default priority to unassigned", () => {
     allEvents.forEach((ce) => expect(ce.priority).toBe(Priorities.UNASSIGNED));
   });
   it("sets isAllDay correctly", () => {

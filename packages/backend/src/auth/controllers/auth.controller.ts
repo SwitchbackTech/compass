@@ -92,27 +92,6 @@ class AuthController {
       res.promise(Promise.resolve(loginCompleteHtml));
     }
   };
-
-  /* finish onces enabling auto-refreshing tokens 
-  refreshJwt(
-    req: express.Request,
-    res: express.Response
-  ): Promise<Result_TokenRefresh> {
-    const accessToken = req.headers.authorization
-      .split("Bearer ")
-      .join("")
-      .trim();
-
-    const payload = jwt.verify(accessToken, ENV.ACCESS_TOKEN_SECRET);
-
-    const newToken = jwt.sign({ _id: payload._id }, ENV.ACCESS_TOKEN_SECRET, {
-      algorithm: "HS256",
-      expiresIn: ENV.ACCESS_TOKEN_LIFE,
-    });
-
-    res.promise(Promise.resolve({ token: newToken }));
-  }
-  */
 }
 
 export default new AuthController();

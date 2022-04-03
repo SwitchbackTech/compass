@@ -43,12 +43,6 @@ export const LoginView = () => {
         */
         // await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        /* 
-        if !create account
-          stop old watch
-          start new (?)
-        */
-
         if (createAccount) {
           await createPriorities(status.token);
           await createCalendarList();
@@ -56,7 +50,7 @@ export const LoginView = () => {
           /*
           await setTimezone()...
             const devTz = "America/Los_Angeles";
-            localStorage.setItem(LocalStorage.TIMEZONE, devTz);
+            localStorage.setItem(LocalStorage.TIMEZONE, devTz); // migrate to DB instead
           */
         }
         isComplete = true;
