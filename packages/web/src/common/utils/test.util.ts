@@ -1,4 +1,3 @@
-import { Schema_Event } from "@core/types/event.types";
 interface Spies {
   [key: string]: jest.SpyInstance;
 }

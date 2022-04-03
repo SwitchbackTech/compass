@@ -12,9 +12,7 @@ import {
   GoogleUser,
   Params_AfterOAuth,
   Result_OauthUrl,
-  Result_TokenRefresh,
 } from "@core/types/auth.types";
-import { ENV } from "@backend/common/constants/env.constants";
 
 import googleOauthService from "../services/google.auth.service";
 import CompassAuthService from "../services/compass.auth.service";
@@ -22,12 +20,10 @@ import { loginCompleteHtml } from "../services/login.complete";
 
 const logger = Logger("app:auth.controller");
 
-const jwtSecret: string | undefined = process.env["JWT_SECRET"];
-const tokenExpirationInSeconds = 36000;
-
-// eventually split up for each provider (google, outlook, email+pw)
 class AuthController {
   async demoCreateJWT(req: express.Request, res: express.Response) {
+    const tokenExpirationInSeconds = 36000;
+    const jwtSecret: string | undefined = process.env["JWT_SECRET"];
     try {
       const refreshId = req.body.userId + jwtSecret;
       const salt = crypto.createSecretKey(crypto.randomBytes(16));
@@ -118,6 +114,7 @@ class AuthController {
     }
   };
 
+  /* finish onces enabling auto-refreshing tokens 
   refreshJwt(
     req: express.Request,
     res: express.Response
@@ -136,6 +133,7 @@ class AuthController {
 
     res.promise(Promise.resolve({ token: newToken }));
   }
+  */
 }
 
 export default new AuthController();

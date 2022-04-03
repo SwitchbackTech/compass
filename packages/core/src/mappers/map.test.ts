@@ -70,10 +70,9 @@ describe("toCompass", () => {
   );
 
   const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
-  // $$ uncomment once re-enabling unassigned priorities
-  // it("sets priority to unassigned", () => {
-  // allEvents.forEach((ce) => expect(ce.priority).toBe(Priorities.UNASSIGNED));
-  // });
+  it("sets priority to unassigned", () => {
+    allEvents.forEach((ce) => expect(ce.priority).toBe(Priorities.UNASSIGNED));
+  });
   it("sets isAllDay correctly", () => {
     allEvents.forEach((e) => {
       if (e.startDate.length === "YYYY-MM-DD".length) {

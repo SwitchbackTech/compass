@@ -18,27 +18,6 @@ export const LoginView = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  /*
-  async function refreshToken() {
-    const refresh = await AuthApi.refreshToken();
-
-    if (refresh.error) {
-      alert(refresh.error);
-      return;
-    }
-
-    if (!refresh.token) {
-      localStorage.setItem(LocalStorage.TOKEN, null);
-
-      setIsAuthenticated(false);
-      return;
-    }
-
-    localStorage.setItem(LocalStorage.TOKEN, refresh.token);
-    setIsAuthenticated(true);
-  }
-  */
-
   const startGoogleOauth = async (createAccount: boolean) => {
     setIsAuthenticating(true);
     const { authState, authUrl } = await AuthApi.getOauthData(GOOGLE);
@@ -95,7 +74,7 @@ export const LoginView = () => {
     const gcalList = await CalendarListApi.list();
     const ccalList = MapCalendarList.toCompass(gcalList);
     const res = await CalendarListApi.create(ccalList);
-    console.log(res);
+    // console.log(res);
   };
 
   const createPriorities = async (token: string) => {
@@ -104,13 +83,13 @@ export const LoginView = () => {
 
     //TODO save to redux for future reference
     // move to a priority ducks dir
-    console.log(res);
+    // console.log(res);
   };
 
   const importEvents = async () => {
     console.log("importing events ...");
     const res = await EventApi.import();
-    console.log(res);
+    // console.log(res);
   };
 
   const Spinner = () => <h1>Loading ...</h1>;

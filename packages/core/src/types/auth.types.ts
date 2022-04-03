@@ -38,8 +38,3 @@ export interface Result_OauthUrl {
   authUrl: string;
   authState: string;
 }
-
-export interface Result_TokenRefresh {
-  token: string;
-  error?: string;
-}

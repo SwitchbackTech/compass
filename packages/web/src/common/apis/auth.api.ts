@@ -1,21 +1,6 @@
 import axios from "axios";
-import {
-  Result_OauthStatus,
-  Result_OauthUrl,
-  Result_TokenRefresh,
-} from "@core/types/auth.types";
-import {
-  API_BASEURL,
-  GOOGLE,
-  LocalStorage,
-} from "@web/common/constants/web.constants";
-
-const headers = {
-  // TODO replace with method in helpers
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem(LocalStorage.TOKEN)}`,
-  },
-};
+import { Result_OauthStatus, Result_OauthUrl } from "@core/types/auth.types";
+import { API_BASEURL, GOOGLE } from "@web/common/constants/web.constants";
 
 const AuthApi = {
   async checkOauthStatus(authState: string) {
@@ -30,19 +15,6 @@ const AuthApi = {
         `${API_BASEURL}/auth/oauth-url?integration=${GOOGLE}`
       );
       return response.data as Result_OauthUrl;
-    }
-  },
-
-  async refreshToken() {
-    try {
-      const response = await axios.post(
-        `${API_BASEURL}/auth/refresh-token`,
-        {},
-        headers
-      );
-      return response.data as Result_TokenRefresh;
-    } catch (err) {
-      return { token: null, error: JSON.stringify(err) };
     }
   },
 };
