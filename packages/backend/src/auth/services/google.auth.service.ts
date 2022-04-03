@@ -1,5 +1,4 @@
 import { google } from "googleapis";
-import jwt from "jsonwebtoken";
 import express from "express";
 import { Credentials, OAuth2Client } from "google-auth-library";
 import { Result_OauthStatus, Schema_Oauth } from "@core/types/auth.types";
@@ -10,6 +9,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import { Collections } from "@backend/common/constants/collections";
 import { isDev } from "@backend/common/helpers/common.helpers";
 import { ENV } from "@backend/common/constants/env.constants";
+import { createToken } from "@backend/common/helpers/jwt.utils";
 
 const logger = Logger("app:google.auth.service");
 
@@ -71,23 +71,14 @@ class GoogleOauthService {
       .collection(Collections.OAUTH)
       .findOne({ state: state });
 
-    const isComplete = oauth && oauth.user ? true : false;
-
-    if (isComplete) {
-      //TODO use other token creation method above
-      // Create an access token //
-      const accessToken = jwt.sign(
-        { _id: oauth.user },
-        ENV.ACCESS_TOKEN_SECRET,
-        {
-          algorithm: "HS256",
-          expiresIn: ENV.ACCESS_TOKEN_LIFE,
-        }
-      );
-
-      return { token: accessToken, isOauthComplete: isComplete };
+    const foundOauthUser = oauth && oauth.user ? true : false;
+    if (!foundOauthUser) {
+      return { isOauthComplete: false };
     }
-    return { isOauthComplete: isComplete };
+
+    const accessToken = createToken(oauth.user);
+
+    return { isOauthComplete: true, token: accessToken };
   }
 
   generateAuthUrl(state: string) {

@@ -9,7 +9,8 @@ const logger = Logger("app:compass.auth.service");
 
 class CompassAuthService {
   async loginToCompass(loginData: CombinedLogin_Google) {
-    // use googleId to check if user exists in Compass' DB
+    // determine if Compass user already exists by looking
+    // for their googleid
     const compassUser = await mongoService.db
       .collection(Collections.USER)
       .findOne({ googleId: loginData.user.id });

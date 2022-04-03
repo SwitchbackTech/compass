@@ -21,14 +21,14 @@ describe("Routing", () => {
   it("goes to login page when local storage token missing", () => {
     render(CompassRoot);
     expect(
-      screen.getByRole("button", { name: /connect my google calendar/i })
+      screen.getByRole("button", { name: /sign in/i })
     ).toBeInTheDocument();
   });
   it("shows calendar when local storage token present", () => {
     localStorage.setItem("token", "secretTokenValue");
     render(CompassRoot);
     expect(
-      screen.getByRole("button", { name: /connect my google calendar/i })
+      screen.getByRole("button", { name: /sign in/i })
     ).toBeInTheDocument();
   });
 });

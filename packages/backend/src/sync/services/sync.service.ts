@@ -468,6 +468,8 @@ class SyncService {
   };
 
   updateResourceId = async (channelId: string, resourceId: string) => {
+    // the resourceId shouldn't change frequently (or at all?),
+    // so it might be safe to remove this step (after adequate confirmation)
     logger.debug(`Updating resourceId to: ${resourceId}`);
     const result = await mongoService.db
       .collection(Collections.CALENDARLIST)

@@ -192,6 +192,7 @@ class EventService {
         `Importing past ${numYears} years of GCal events for user: ${userId}`
       );
       const xYearsAgo = yearsAgo(numYears);
+
       // always fetches once, then continues until
       // there are no more events
       do {

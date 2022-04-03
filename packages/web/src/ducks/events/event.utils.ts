@@ -17,7 +17,14 @@ dayjs.extend(isBetween);
 // rudimentary handling of errors
 // meant for temporary testing, will be replaced
 export const handleErrorTemp = (error: Error) => {
-  console.log(error);
+  if (error.message.slice(-3) === "401") {
+    alert(
+      "Shucks, you gotta log in again (cuz security).\nClick this button to get started"
+    );
+    localStorage.clear();
+    window.location.reload();
+    return;
+  }
   alert(error);
 };
 

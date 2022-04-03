@@ -17,7 +17,6 @@ export const getDarkerColor = (colorName: ColorNames) => {
 };
 
 export const getInvertedColor = (colorName: InvertedColorNames) => {
-  // console.log(`inverted ${colorName}: ${invertedColors[colorName]}`); //$$
   return invertedColors[colorName];
 };
 
