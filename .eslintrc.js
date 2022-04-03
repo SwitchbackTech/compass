@@ -34,6 +34,22 @@ module.exports = {
         ],
       },
     },
+    {
+      // Only enable eslint-plugin-testing-library rules for tests
+      files: ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
+      extends: ["plugin:testing-library/react"],
+      rules: {
+        "testing-library/await-async-query": "error",
+        "testing-library/await-async-utils": "error",
+        "testing-library/no-await-sync-query": "error",
+        "testing-library/no-debugging-utils": "error",
+        "testing-library/no-dom-import": "off",
+        "testing-library/no-render-in-setup": "warn",
+        "testing-library/prefer-query-by-disappearance": "error",
+        "testing-library/prefer-screen-queries": "error",
+        "testing-library/prefer-user-event": "error",
+      },
+    },
   ],
   env: {
     "jest/globals": true,
@@ -48,7 +64,7 @@ module.exports = {
   extends: [
     "eslint:recommended",
     "plugin:jest-dom/recommended",
-    "plugin:testing-library/react",
+    // "plugin:testing-library/react", $$ delete
     // this prettier plugin adjusts other parts of this config,
     // so keep it as the last extends item
     "plugin:prettier/recommended",
@@ -76,15 +92,6 @@ module.exports = {
     "react/no-array-index-key": "off",
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn", // Checks effect dependencies
-    "testing-library/await-async-query": "error",
-    "testing-library/await-async-utils": "error",
-    "testing-library/no-await-sync-query": "error",
-    "testing-library/no-debugging-utils": "error",
-    "testing-library/no-dom-import": "off",
-    "testing-library/no-render-in-setup": "warn",
-    "testing-library/prefer-query-by-disappearance": "error",
-    "testing-library/prefer-screen-queries": "error",
-    "testing-library/prefer-user-event": "error",
     "import/order": [
       "error",
       {

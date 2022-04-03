@@ -19,6 +19,7 @@
     "dev:backend": "export DEBUG=app* && export NODE_ENV=development && yarn dev:backend-start",
     "dev:backend -verbose": "export DEBUG=* && yarn dev:backend-start",
     "dev:backend-start": "cd packages/backend && ts-node-dev --respawn --pretty --transpile-only -r tsconfig-paths/register src/app.ts",
+    "dev:update": "git checkout main && git pull && yarn",
     "dev:web": "cd packages/web && webpack serve --env development --mode=development",
     "deploy:backend": "gcloud compute scp build/backend.zip ***REMOVED***@compass-backend1:/home/***REMOVED***/",
     "deploy:web": "gcloud compute scp build/web.zip ***REMOVED***@compass-backend1:/home/***REMOVED***/",

@@ -18,6 +18,7 @@ export const LoginView = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
+  /*
   async function refreshToken() {
     const refresh = await AuthApi.refreshToken();
 
@@ -25,10 +26,9 @@ export const LoginView = () => {
       alert(refresh.error);
       return;
     }
-    // Token has expired or invalid, user has to re-login //
+
     if (!refresh.token) {
-      localStorage.setItem(LocalStorage.TOKEN, "");
-      localStorage.setItem(LocalStorage.STATE, "");
+      localStorage.setItem(LocalStorage.TOKEN, null);
 
       setIsAuthenticated(false);
       return;
@@ -37,20 +37,18 @@ export const LoginView = () => {
     localStorage.setItem(LocalStorage.TOKEN, refresh.token);
     setIsAuthenticated(true);
   }
+  */
 
-  const startGoogleOauth = async (freshData: boolean) => {
+  const startGoogleOauth = async (createAccount: boolean) => {
     setIsAuthenticating(true);
     const { authState, authUrl } = await AuthApi.getOauthData(GOOGLE);
-    localStorage.setItem(LocalStorage.AUTHSTATE, authState); // do you even need to set this?
     window.open(authUrl);
 
     // poll while user grants permissions
     let isComplete = false;
     while (!isComplete) {
       await new Promise((resolve) => setTimeout(resolve, 4000));
-      const status = await AuthApi.checkOauthStatus(
-        localStorage.getItem(LocalStorage.AUTHSTATE)
-      );
+      const status = await AuthApi.checkOauthStatus(authState);
 
       if (status.isOauthComplete) {
         localStorage.setItem(LocalStorage.TOKEN, status.token);
@@ -66,19 +64,26 @@ export const LoginView = () => {
         */
         // await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        // TODO move this stuff to onboard flow screen
-        // const devTz = "America/Los_Angeles";
-        // console.log(`\tsetting default TZ to: ${devTz}`);
-        // localStorage.setItem(LocalStorage.TIMEZONE, devTz);
+        /* 
+        if !create account
+          stop old watch
+          start new (?)
+        */
 
-        if (freshData) {
+        if (createAccount) {
           await createPriorities(status.token);
           await createCalendarList();
           await importEvents();
+          /*
+          await setTimezone()...
+            const devTz = "America/Los_Angeles";
+            localStorage.setItem(LocalStorage.TIMEZONE, devTz);
+          */
         }
         isComplete = true;
       }
     }
+
     setIsAuthenticating(false);
     setIsAuthenticated(true);
   };

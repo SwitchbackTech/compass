@@ -33,21 +33,6 @@ const AuthApi = {
     }
   },
 
-  /*
-      // $$ move this elsewhere?
-      // shouldn't need to check for refreshing, cuz
-      // there isn't a token yet - right?
-      if (status.refreshNeeded) {
-        console.log("$$ temp: refreshing token");
-        const newStatus = await AuthApi.refreshToken();
-        if (newStatus.error) {
-          alert(newStatus.error);
-          // $$ give up, send back to login screen to break out of loop (?)
-          return;
-        }
-        token = newStatus.token;
-      }
-      */
   async refreshToken() {
     try {
       const response = await axios.post(

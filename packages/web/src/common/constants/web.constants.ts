@@ -12,8 +12,6 @@ export const API_BASEURL = getBaseUrl();
 export const GOOGLE = "google";
 
 export enum LocalStorage {
-  AUTHSTATE = "authState",
   TIMEZONE = "timezone",
   TOKEN = "token",
-  STATE = "state",
 }

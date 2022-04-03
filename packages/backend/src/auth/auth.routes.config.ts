@@ -3,8 +3,6 @@ import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 
 import authController from "./controllers/auth.controller";
 import jwtMiddleware from "./middleware/jwt.middleware";
-// import authMiddleware from "./middleware/auth.middleware";
-// import BodyValidationMiddleware from "../common/middleware/body.validation.middleware";
 
 export class AuthRoutes extends CommonRoutesConfig {
   constructor(app: express.Application) {
