@@ -60,8 +60,9 @@ export const LoginView = () => {
     }
 
     setIsAuthenticating(false);
-    !isComplete && alert("That took a little too long. Please try again");
-    isComplete && setIsAuthenticated(true);
+    isComplete
+      ? setIsAuthenticated(true)
+      : alert("That took a little too long. Please try again");
   };
 
   // User initialization stuff
