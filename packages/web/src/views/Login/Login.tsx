@@ -23,11 +23,14 @@ export const LoginView = () => {
     const { authState, authUrl } = await AuthApi.getOauthData(GOOGLE);
     window.open(authUrl);
 
-    // poll while user grants permissions
     let isComplete = false;
-    while (!isComplete) {
+    let statusChecks = 0;
+
+    while (!isComplete && statusChecks < 15) {
+      // limiting attempts prevents endless requests upon issue/delay
       await new Promise((resolve) => setTimeout(resolve, 4000));
       const status = await AuthApi.checkOauthStatus(authState);
+      statusChecks += 1;
 
       if (status.isOauthComplete) {
         localStorage.setItem(LocalStorage.TOKEN, status.token);
@@ -41,7 +44,6 @@ export const LoginView = () => {
           - Send to calendar page, where you'll
             - fetching most-recent GCal events and sync with Compass
         */
-        // await new Promise((resolve) => setTimeout(resolve, 2000));
 
         if (createAccount) {
           await createPriorities(status.token);
@@ -58,7 +60,8 @@ export const LoginView = () => {
     }
 
     setIsAuthenticating(false);
-    setIsAuthenticated(true);
+    !isComplete && alert("That took a little too long. Please try again");
+    isComplete && setIsAuthenticated(true);
   };
 
   // User initialization stuff
