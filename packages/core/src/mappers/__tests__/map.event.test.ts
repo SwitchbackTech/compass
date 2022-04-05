@@ -1,5 +1,5 @@
 import { Origin, Priorities } from "../../core.constants";
-import { gcalEvents } from "../../__mocks__/gcal/gcal.event";
+import { gcalEvents } from "../../__mocks__/events/gcal/gcal.event";
 import { MapEvent } from "../map.event";
 
 describe("toGcal", () => {

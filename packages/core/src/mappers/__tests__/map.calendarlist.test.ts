@@ -1,4 +1,4 @@
-import { gcalCalendarList } from "../../__mocks__/gcal/gcal.calendarlist";
+import { gcalCalendarList } from "../../__mocks__/calendarlist/gcal.calendarlist";
 import { MapCalendarList } from "../../mappers/map.calendarlist";
 
 it("only supports primary calendar [for now]", () => {
