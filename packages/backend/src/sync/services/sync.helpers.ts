@@ -187,10 +187,7 @@ export const getSummary = (
 
   if (eventsToDelete.length > min) {
     if (eventsToDelete.length < max) {
-      deleteSummary = `deleting: ${eventsToDelete.toString()}`;
-      // deleteSummary = ` deleting: "${eventsToDelete
-      //   .map((e) => e.summary)
-      //   .toString()}"`;
+      deleteSummary = `deleting: ${eventsToDelete.toString()}`; // will just be the googleId
     } else {
       deleteSummary = ` deleting ${eventsToDelete.length}`;
     }
