@@ -170,24 +170,29 @@ export const getSummary = (
   eventsToUpdate: gSchema$Event[],
   eventsToDelete: gSchema$Event[]
 ) => {
-  let summary: string;
+  let updateSummary: string;
+  let deleteSummary: string;
   const min = 0;
   const max = 3;
 
   if (eventsToUpdate.length > min) {
     if (eventsToUpdate.length < max) {
-      summary += eventsToUpdate.map((e) => e.summary).toString();
+      updateSummary = `updating: "${eventsToUpdate
+        .map((e) => e.summary)
+        .toString()}", `;
+    } else {
+      updateSummary = `updating ${eventsToUpdate.length}`;
     }
-    summary += `updating ${eventsToUpdate.length}`;
   }
 
   if (eventsToDelete.length > min) {
     if (eventsToDelete.length < max) {
-      summary += eventsToDelete.map((e) => e.summary).toString();
+      deleteSummary = eventsToDelete.map((e) => e.summary).toString();
+    } else {
+      deleteSummary = ` | deleting ${eventsToDelete.length}`;
     }
-    summary += ` | deleting ${eventsToDelete.length}`;
   }
-  return summary;
+  return `${updateSummary} && ${deleteSummary}`;
 };
 
 export const hasExpectedHeaders = (headers: object) => {
