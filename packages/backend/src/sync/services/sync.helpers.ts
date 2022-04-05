@@ -187,12 +187,19 @@ export const getSummary = (
 
   if (eventsToDelete.length > min) {
     if (eventsToDelete.length < max) {
-      deleteSummary = eventsToDelete.map((e) => e.summary).toString();
+      deleteSummary = `deleting: "${eventsToDelete
+        .map((e) => e.summary)
+        .toString()}"`;
     } else {
-      deleteSummary = ` | deleting ${eventsToDelete.length}`;
+      deleteSummary = `deleting ${eventsToDelete.length}`;
     }
   }
-  return `${updateSummary} && ${deleteSummary}`;
+
+  let summary: string;
+  if (updateSummary !== undefined) summary += updateSummary;
+  if (deleteSummary !== undefined) summary += deleteSummary;
+
+  return summary;
 };
 
 export const hasExpectedHeaders = (headers: object) => {
