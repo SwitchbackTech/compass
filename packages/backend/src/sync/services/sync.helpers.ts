@@ -179,7 +179,7 @@ export const getSummary = (
     if (eventsToUpdate.length < max) {
       updateSummary = `updating: "${eventsToUpdate
         .map((e) => e.summary)
-        .toString()}", `;
+        .toString()}" `;
     } else {
       updateSummary = `updating ${eventsToUpdate.length}`;
     }
@@ -195,7 +195,7 @@ export const getSummary = (
     }
   }
 
-  let summary: string;
+  let summary = "";
   if (updateSummary !== "") summary += updateSummary;
   if (deleteSummary !== "") summary += deleteSummary;
 
