@@ -8,6 +8,7 @@ export enum Origin {
   Compass = "compass",
   Google = "google",
   GoogleImport = "googleimport",
+  UNSURE = "unsure",
 }
 
 export enum Priorities {

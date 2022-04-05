@@ -1,7 +1,7 @@
 export const gcalEvents = {
   kind: "calendar#events",
   etag: '"p320cj0e0m6hf80g"',
-  summary: "Miscellaneous",
+  summary: "Miscellaneous Calendar",
   updated: "2021-11-18T17:00:20.816Z",
   timeZone: "America/Denver",
   accessRole: "owner",
@@ -45,7 +45,7 @@ export const gcalEvents = {
         "https://www.google.com/calendar/event?eid=a2phdG9zc2JsOGN0dDd1YjY0MzYzcGliZWsgdHlsZXIuaGl0emVtYW5AbQ",
       created: "2012-10-26T03:46:50.000Z",
       updated: "2012-10-26T03:46:50.000Z",
-      summary: "PresHouse Meeting with Steve",
+      summary: "Meeting with Stan",
       description: "Sign Lease and pick apartment",
       location: "PH",
       creator: {
@@ -72,6 +72,7 @@ export const gcalEvents = {
       extendedProperties: {
         private: {
           origin: "compass",
+          priority: "work",
         },
       },
       reminders: {
@@ -88,7 +89,7 @@ export const gcalEvents = {
         "https://www.google.com/calendar/event?eid=bTI0bTNjcnN0Z2NpN280NjhrOWhxcnIyZ2sgdHlsZXIuaGl0emVtYW5AbQ",
       created: "2012-10-26T03:46:09.000Z",
       updated: "2012-10-26T03:47:10.000Z",
-      summary: "PoliSci Alum?",
+      summary: "No extendedProperties",
       description: "Speakers",
       location: "Memorial TITU",
       creator: {
@@ -111,11 +112,12 @@ export const gcalEvents = {
       },
       iCalUID: "m24m3crstgci7o468k9hqrr2gk@google.com",
       sequence: 1,
-      extendedProperties: {
-        private: {
-          origin: "googleimport",
-        },
-      },
+      // extendedProperties: {
+      //   private: {
+      //     origin: "googleimport",
+      //     priority: "self",
+      //   },
+      // },
       reminders: {
         useDefault: true,
       },
@@ -156,6 +158,13 @@ export const gcalEvents = {
       reminders: {
         useDefault: true,
       },
+      extendedProperties: {
+        private: {
+          origin: "googleimport",
+          priority: "relations",
+        },
+      },
+
       eventType: "default",
     },
     // ~~ all day
@@ -186,6 +195,11 @@ export const gcalEvents = {
       transparency: "transparent",
       iCalUID: "1evdi8c1s5knlt5ofhncl654u9@google.com",
       sequence: 0,
+      private: {
+        origin: "googleimport",
+        priority: "relations",
+      },
+
       reminders: {
         useDefault: false,
       },

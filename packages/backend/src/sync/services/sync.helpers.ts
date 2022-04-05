@@ -166,6 +166,30 @@ export const getChannelExpiration = () => {
   return prodExpiration;
 };
 
+export const getSummary = (
+  eventsToUpdate: gSchema$Event[],
+  eventsToDelete: gSchema$Event[]
+) => {
+  let summary: string;
+  const min = 0;
+  const max = 3;
+
+  if (eventsToUpdate.length > min) {
+    if (eventsToUpdate.length < max) {
+      summary += eventsToUpdate.map((e) => e.summary).toString();
+    }
+    summary += `updating ${eventsToUpdate.length}`;
+  }
+
+  if (eventsToDelete.length > min) {
+    if (eventsToDelete.length < max) {
+      summary += eventsToDelete.map((e) => e.summary).toString();
+    }
+    summary += ` | deleting ${eventsToDelete.length}`;
+  }
+  return summary;
+};
+
 export const hasExpectedHeaders = (headers: object) => {
   const hasExpected =
     typeof headers["x-goog-channel-id"] === "string" &&

@@ -32,6 +32,7 @@ import {
   channelRefreshNeeded,
   findCalendarByResourceId,
   getChannelExpiration,
+  getSummary,
 } from "./sync.helpers";
 
 const logger = Logger("app:sync.service");
@@ -372,9 +373,8 @@ class SyncService {
         updatedEvents.data.items
       );
 
-      logger.debug(
-        `Events to update: ${eventsToUpdate.length}  |  Events to delete: ${eventsToDelete.length}`
-      );
+      const summary = getSummary(eventsToUpdate, eventsToDelete);
+      logger.debug(summary);
 
       prepResult.operations = assembleBulkOperations(
         params.userId,

@@ -30,7 +30,8 @@ export namespace MapEvent {
         private: {
           // capture where event came from to later decide how to
           // sync changes between compass and integrations
-          origin: event.origin || "undefined",
+          origin: event.origin || Origin.UNSURE,
+          priority: event.priority || Priorities.UNASSIGNED,
         },
       },
     };
@@ -73,6 +74,10 @@ const _toCompass = (
   const _end = gEvent.end === undefined ? placeHolder.end : gEvent.end;
   const _isAllDay = gEvent.start !== undefined && "date" in gEvent.start;
 
+  const _origPriority = gEvent.extendedProperties?.private?.["priority"];
+  const _priority =
+    _origPriority === undefined ? Priorities.UNASSIGNED : _origPriority;
+
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
     user: userId,
@@ -85,7 +90,7 @@ const _toCompass = (
     startDate: _isAllDay ? _start.date : _start.dateTime,
     // @ts-ignore
     endDate: _isAllDay ? _end.date : _end.dateTime,
-    priority: Priorities.UNASSIGNED,
+    priority: _priority,
   };
 
   return compassEvent;
