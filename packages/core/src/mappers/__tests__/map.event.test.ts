@@ -88,13 +88,13 @@ describe("toCompass", () => {
   const eventsFromCompass = MapEvent.toCompass(
     "user1",
     gcalEvents.items,
-    Origin.Compass
+    Origin.COMPASS
   );
 
   const eventsFromGcalImport = MapEvent.toCompass(
     "user1",
     gcalEvents.items,
-    Origin.GoogleImport
+    Origin.GOOGLE_IMPORT
   );
 
   const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
@@ -102,7 +102,7 @@ describe("toCompass", () => {
     const gEvent = gcalEvents.items.find(
       (ge) => ge.summary === "No extendedProperties"
     );
-    const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.Compass);
+    const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.COMPASS);
     expect(cEvent[0].priority).toBe(Priorities.UNASSIGNED);
   });
 
@@ -122,7 +122,7 @@ describe("toCompass", () => {
       const cEvent = MapEvent.toCompass(
         "user99",
         [regularGcalEvent],
-        Origin.GoogleImport
+        Origin.GOOGLE_IMPORT
       );
 
       expect(cEvent[0].priority).toBe("work");
@@ -131,7 +131,7 @@ describe("toCompass", () => {
     it("skips cancelled events", () => {
       // future: run schema validation
       const i = gcalEvents.items;
-      const events = MapEvent.toCompass("someId", i, Origin.Google);
+      const events = MapEvent.toCompass("someId", i, Origin.GOOGLE);
 
       let hasCancelledEvent = false;
       events.forEach((e) => {

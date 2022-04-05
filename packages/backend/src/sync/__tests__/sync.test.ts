@@ -21,7 +21,7 @@ describe("assembleBulkOperations", () => {
     const updateOps = bulkOps.filter((o) => o.updateOne !== undefined);
     updateOps.forEach((o) => {
       const origin = o.updateOne.update.$set.origin;
-      expect(origin).toEqual(Origin.Google);
+      expect(origin).toEqual(Origin.GOOGLE);
     });
   });
 });

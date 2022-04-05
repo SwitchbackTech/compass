@@ -38,7 +38,7 @@ class EventService {
         // so we dont attempt to re-add it during the next gcal sync
         extendedProperties: {
           private: {
-            origin: Origin.Compass,
+            origin: Origin.COMPASS,
           },
         },
       };
@@ -208,7 +208,7 @@ class EventService {
           const cEvents = MapEvent.toCompass(
             userId,
             gEvents.data.items,
-            Origin.GoogleImport
+            Origin.GOOGLE_IMPORT
           );
           const response: InsertManyResult = await this.createMany(
             userId,
