@@ -434,8 +434,6 @@ class SyncService {
   };
 
   updateNextSyncToken = async (userId: string, nextSyncToken: string) => {
-    logger.debug(`Updating nextSyncToken to: ${nextSyncToken}`);
-
     const msg = `Failed to update the nextSyncToken for calendar record of user: ${userId}`;
     const err = new BaseError("Update Failed", msg, 500, true);
 
