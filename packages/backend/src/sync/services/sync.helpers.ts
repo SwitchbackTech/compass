@@ -170,8 +170,8 @@ export const getSummary = (
   eventsToUpdate: gSchema$Event[],
   eventsToDelete: gSchema$Event[]
 ) => {
-  let updateSummary: string;
-  let deleteSummary: string;
+  let updateSummary = "";
+  let deleteSummary = "";
   const min = 0;
   const max = 3;
 
@@ -187,17 +187,17 @@ export const getSummary = (
 
   if (eventsToDelete.length > min) {
     if (eventsToDelete.length < max) {
-      deleteSummary = `deleting: "${eventsToDelete
+      deleteSummary = ` deleting: "${eventsToDelete
         .map((e) => e.summary)
         .toString()}"`;
     } else {
-      deleteSummary = `deleting ${eventsToDelete.length}`;
+      deleteSummary = ` deleting ${eventsToDelete.length}`;
     }
   }
 
   let summary: string;
-  if (updateSummary !== undefined) summary += updateSummary;
-  if (deleteSummary !== undefined) summary += deleteSummary;
+  if (updateSummary !== "") summary += updateSummary;
+  if (deleteSummary !== "") summary += deleteSummary;
 
   return summary;
 };
