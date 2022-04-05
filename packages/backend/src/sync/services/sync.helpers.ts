@@ -187,9 +187,10 @@ export const getSummary = (
 
   if (eventsToDelete.length > min) {
     if (eventsToDelete.length < max) {
-      deleteSummary = ` deleting: "${eventsToDelete
-        .map((e) => e.summary)
-        .toString()}"`;
+      deleteSummary = `deleting: ${eventsToDelete.toString()}`;
+      // deleteSummary = ` deleting: "${eventsToDelete
+      //   .map((e) => e.summary)
+      //   .toString()}"`;
     } else {
       deleteSummary = ` deleting ${eventsToDelete.length}`;
     }
