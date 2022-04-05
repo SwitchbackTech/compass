@@ -38,7 +38,7 @@ class EventService {
         // so we dont attempt to re-add it during the next gcal sync
         extendedProperties: {
           private: {
-            origin: Origin.Compass,
+            origin: Origin.COMPASS,
           },
         },
       };
@@ -102,7 +102,7 @@ class EventService {
   /* 
   Deletes all of a user's events 
   REMINDER: this should only delete a user's *Compass* events --
-            don't delete their events in gcal or any other 3rd party calendar
+            don't ever delete their events in gcal or any other 3rd party calendar
   */
   async deleteAllByUser(userId: string) {
     const response = await mongoService.db
@@ -208,7 +208,7 @@ class EventService {
           const cEvents = MapEvent.toCompass(
             userId,
             gEvents.data.items,
-            Origin.GoogleImport
+            Origin.GOOGLE_IMPORT
           );
           const response: InsertManyResult = await this.createMany(
             userId,

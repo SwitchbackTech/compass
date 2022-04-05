@@ -21,7 +21,7 @@ const logger = Logger("app:auth.controller");
 class AuthController {
   checkOauthStatus = async (req: express.Request, res: express.Response) => {
     const integration: string = req.query["integration"];
-    if (integration === Origin.Google) {
+    if (integration === Origin.GOOGLE) {
       const status = await new googleOauthService().checkOauthStatus(req);
       res.promise(Promise.resolve(status));
     } else {
@@ -40,7 +40,7 @@ class AuthController {
     req: express.Request,
     res: express.Response
   ): Promise<Result_OauthUrl> => {
-    if (req.query["integration"] === Origin.Google) {
+    if (req.query["integration"] === Origin.GOOGLE) {
       const authState = uuidv4();
       const authUrl = new googleOauthService().generateAuthUrl(authState);
       res.promise(Promise.resolve({ authUrl, authState }));
@@ -62,8 +62,8 @@ class AuthController {
     req: express.Request,
     res: express.Response
   ) => {
-    const _integration = Origin.Google;
-    if (_integration === Origin.Google) {
+    const _integration = Origin.GOOGLE;
+    if (_integration === Origin.GOOGLE) {
       const query: Params_AfterOAuth = req.query;
 
       const gAuthService = new googleOauthService();

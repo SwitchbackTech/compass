@@ -35,7 +35,7 @@ export const assembleBulkOperations = (
   }
 
   if (eventsToUpdate.length > 0) {
-    const cEvents = MapEvent.toCompass(userId, eventsToUpdate, Origin.Google);
+    const cEvents = MapEvent.toCompass(userId, eventsToUpdate, Origin.GOOGLE);
 
     cEvents.forEach((e: Schema_Event) => {
       bulkOperations.push({
@@ -164,6 +164,40 @@ export const getChannelExpiration = () => {
   const numDays = parseInt(process.env.CHANNEL_EXPIRATION_PROD_DAYS);
   const prodExpiration = daysFromNowTimestamp(numDays, "ms").toString();
   return prodExpiration;
+};
+
+export const getSummary = (
+  eventsToUpdate: gSchema$Event[],
+  eventsToDelete: gSchema$Event[]
+) => {
+  let updateSummary = "";
+  let deleteSummary = "";
+  const min = 0;
+  const max = 3;
+
+  if (eventsToUpdate.length > min) {
+    if (eventsToUpdate.length < max) {
+      updateSummary = `updating: "${eventsToUpdate
+        .map((e) => e.summary)
+        .toString()}" `;
+    } else {
+      updateSummary = `updating ${eventsToUpdate.length}`;
+    }
+  }
+
+  if (eventsToDelete.length > min) {
+    if (eventsToDelete.length < max) {
+      deleteSummary = `deleting: ${eventsToDelete.toString()}`; // will just be the googleId
+    } else {
+      deleteSummary = ` deleting ${eventsToDelete.length}`;
+    }
+  }
+
+  let summary = "";
+  if (updateSummary !== "") summary += updateSummary;
+  if (deleteSummary !== "") summary += deleteSummary;
+
+  return summary;
 };
 
 export const hasExpectedHeaders = (headers: object) => {

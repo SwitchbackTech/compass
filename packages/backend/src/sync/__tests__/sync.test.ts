@@ -1,8 +1,8 @@
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
 import { Origin } from "@core/core.constants";
 
-import { gcalEvents } from "@core/__mocks__/gcal/gcal.event";
-import { compassCalendarList } from "@core/__mocks__/calendarlist";
+import { gcalEvents } from "@core/__mocks__/events/gcal/gcal.event";
+import { compassCalendarList } from "@core/__mocks__/calendarlist/calendarlist";
 import {
   assembleBulkOperations,
   categorizeGcalEvents,
@@ -21,7 +21,7 @@ describe("assembleBulkOperations", () => {
     const updateOps = bulkOps.filter((o) => o.updateOne !== undefined);
     updateOps.forEach((o) => {
       const origin = o.updateOne.update.$set.origin;
-      expect(origin).toEqual(Origin.Google);
+      expect(origin).toEqual(Origin.GOOGLE);
     });
   });
 });
