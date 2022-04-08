@@ -18,6 +18,16 @@ yarn
 yarn build # build entire project at least once to make incremental builds easier
 ```
 
+### Setup the `.env` file
+
+- If you haven't received it already, ask Ty for it
+- Save the `.env` to `packages/backend` directory
+- Reminders:
+  1. never commit this file to GitHub
+  2. never share any of its contents with anyone outside of the org
+  3. never make a copy of this file and store it on an insecure channel (eg Discord, email, Google Drive)
+  4. make the contents of the file accessible via API. For example, don't create a `/app/api/.env` route that you can make GET requests on
+
 ### Start app
 
 ```bash
