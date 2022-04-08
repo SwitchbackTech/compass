@@ -27,6 +27,24 @@ yarn dev:web # start web  app in dev mode
 # go to the app/address listed from the command output to access the app
 ```
 
+### Setup Postman (optional)
+
+Postman is useful for manual API testing.
+
+Authenticate Postman with your Compass user:
+
+- Authenticate to compass
+- Copy the `token` local storage value
+- Download Postman
+- Click on the `compass-calendar-vx` collection
+- Click `Authorization`
+- Specify `Bearer Token`
+- Paste the token value into the Token field
+- Save
+- Your user token should not be used for all Postman requests
+
+Open up one of the requests and test it out, referencing the example requests as-needed.
+
 ### Other useful scripts
 
 - see `package.json` scripts for all scripts

@@ -36,7 +36,7 @@ export const EditingWeekEvent: React.FC<Props> = ({
         {...props}
         arrowSize={10}
         arrowColor={getColor(
-          colorNameByPriority[event?.priority || Priorities.WORK]
+          colorNameByPriority[event.priority || Priorities.UNASSIGNED]
         )}
       >
         <div onClick={(e) => e.stopPropagation()}>

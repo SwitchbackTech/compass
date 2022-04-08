@@ -36,3 +36,5 @@ packages/backend/logs
 packages/backend/build
 packages/backend/node_modules
 
+
+!.env.project

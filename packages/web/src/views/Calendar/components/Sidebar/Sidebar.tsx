@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Popover } from "react-tiny-popover";
 import dayjs from "dayjs";
-
 import { Priorities } from "@core/core.constants";
-
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
 import { StrawberryMenuIcon } from "@web/assets/svg";
