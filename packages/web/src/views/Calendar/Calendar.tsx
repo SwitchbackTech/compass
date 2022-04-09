@@ -162,8 +162,6 @@ export const CalendarView: React.FC<Props> = React.memo(({ weekViewProps }) => {
 
   const { component, core, eventHandlers } = weekViewProps;
 
-  console.log("rerender");
-
   // const [isLoading, setIsLoading] = useState(true);
   const [, setResize] = useState<
     { width: number; height: number } | undefined

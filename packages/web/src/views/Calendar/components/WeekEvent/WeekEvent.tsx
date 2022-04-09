@@ -96,8 +96,6 @@ const WeekEventComponent = (
       component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
   }
 
-  console.log(event._id);
-
   return (
     <StyledEvent
       ref={ref}
