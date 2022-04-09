@@ -47,7 +47,6 @@ import {
 const dayTimes = getHourlyTimes(dayjs());
 
 export const CalendarView = () => {
-  console.log("rendering CalendarView");
   const { token } = useToken();
 
   const weekViewProps = useGetWeekViewProps();
@@ -65,7 +64,8 @@ export const CalendarView = () => {
         if (editingEvent) return editingEvent;
 
         const handlersByKey = {
-          [Key.C]: () => eventHandlers.setEditingEvent({} as Schema_GridEvent),
+          [Key.C]: () =>
+            eventHandlers.setEditingEvent({ isOpen: true } as Schema_GridEvent),
           [Key.N]: () => eventHandlers.setWeek((week) => week + 1),
           [Key.P]: () => eventHandlers.setWeek((week) => week - 1),
         } as { [key: number]: () => void };

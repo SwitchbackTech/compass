@@ -24,7 +24,7 @@ export const Styled = styled.form<StyledProps>`
     padding: 0 30px;
   `}
 
-  overflow: auto;
+  overflow: visible;
   box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.25);
   border-radius: 7px;
   width: 585px;

@@ -94,7 +94,7 @@ export const StyledAllDayEventsGrid = styled(Flex)<AllDayEventsGridProps>`
     `calc(${allDayHeight} * 2 + ${rowsCount * 2 || 1} * ${allDayHeight})`};
   width: calc(${gridWidth});
   position: relative;
-  overflow: hidden;
+  /* overflow: hidden; */
   border-bottom: ${gridDividerBorder};
 `;
 

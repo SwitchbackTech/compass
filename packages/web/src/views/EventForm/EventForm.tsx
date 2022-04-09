@@ -92,7 +92,8 @@ export const EventForm: React.FC<ComponentProps> = ({
   };
 
   useEffect(() => {
-    setEvent(event || defaultEventState);
+    setEvent(event || {}); //$$
+    // setEvent(event || defaultEventState);
     setStartTime(initialStartTime || undefined);
     setEndTime(initialEndTime || undefined);
     setSelectedStartDate(initialStartDate);

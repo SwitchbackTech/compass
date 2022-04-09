@@ -20,9 +20,9 @@ const Component: ForwardRefRenderFunction<HTMLTextAreaElement, Props> = (
   return (
     <FocusableUnderlineLayout
       Component={Styled}
+      ref={ref}
       withUnderline={withUnderline}
       {...props}
-      ref={ref}
     />
   );
 };

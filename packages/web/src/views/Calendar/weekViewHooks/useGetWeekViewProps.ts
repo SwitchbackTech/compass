@@ -377,7 +377,9 @@ export const useGetWeekViewProps = () => {
         ...actualEditingEvent,
         endDate,
         startDate,
-        priority: actualEditingEvent?.priority || Priorities.WORK,
+        priority: actualEditingEvent?.priority,
+        // $$ confirm not setting fallback is OK
+        // priority: actualEditingEvent?.priority || Priorities.WORK,
         [dateField]: date,
       };
     });
@@ -522,14 +524,14 @@ export const useGetWeekViewProps = () => {
     component: {
       allDayEvents,
       allDayEventsGridRef,
-      rowsCount,
       calendarRef,
       dayjsBasedOnWeekDay,
       editingEvent,
+      endOfSelectedWeekDay,
       eventsGridRef,
       eventState,
+      rowsCount,
       startOfSelectedWeekDay,
-      endOfSelectedWeekDay,
       times,
       today,
       weekDays,
