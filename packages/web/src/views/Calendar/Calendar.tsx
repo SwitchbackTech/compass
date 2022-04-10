@@ -66,7 +66,9 @@ export const CalendarView = () => {
         if (editingEvent) return editingEvent;
 
         const handlersByKey = {
-          [Key.C]: () => eventHandlers.setEditingEvent({} as Schema_GridEvent),
+          [Key.C]: () =>
+            eventHandlers.setEditingEvent({ isOpen: true } as Schema_GridEvent),
+          [Key.T]: () => eventHandlers.setWeek(component.today.week()),
           [Key.N]: () => eventHandlers.setWeek((week) => week + 1),
           [Key.P]: () => eventHandlers.setWeek((week) => week - 1),
         } as { [key: number]: () => void };
@@ -154,7 +156,7 @@ export const CalendarView = () => {
               }
               role="button"
               size={40}
-              title="previous week button"
+              title="previous week"
             >
               {"<"}
             </ArrowNavigationButton>
@@ -211,7 +213,7 @@ export const CalendarView = () => {
                 justifyContent={JustifyContent.CENTER}
                 key={getWeekDayLabel(day)}
                 alignItems={AlignItems.FLEX_END}
-                id={`id-${getWeekDayLabel(day)}`}
+                title={getWeekDayLabel(day)}
                 color={weekDayTextColor}
                 flexBasis={flexBasis}
               >

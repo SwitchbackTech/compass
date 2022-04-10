@@ -53,9 +53,7 @@ describe("Calendar Interactions", () => {
       render(CompassRoot);
 
       expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
-      await user.click(
-        screen.getByRole("button", { name: /previous week button/i })
-      );
+      await user.click(screen.getByRole("button", { name: /previous week/i }));
       expect(screen.getByText(/today/i)).toBeInTheDocument();
     });
 

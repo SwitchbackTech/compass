@@ -7,6 +7,7 @@ export const HOURS_MINUTES_FORMAT = "HH:mm";
 export const YEAR_MONTH_FORMAT = "YYYY-MM";
 
 export const YEAR_MONTH_DAY_FORMAT = "YYYY-MM-DD";
+export const YEAR_MONTH_DAY_COMPACT_FORMAT = "YYYYMMDD";
 
 export const YEAR_MONTH_DAY_AM_FORMAT = `${YEAR_MONTH_DAY_FORMAT} ${HOURS_AM_FORMAT}`;
 
