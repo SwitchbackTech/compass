@@ -25,7 +25,6 @@ import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
 import { useToken } from "@web/common/hooks/useToken";
-// import { Sidebar } from "@web/views/Calendar/components/Sidebar";
 
 import { getLeftPosition } from "@web/common/utils/grid.util";
 import { isEqual } from "lodash";
@@ -162,7 +161,6 @@ export const CalendarView: React.FC<Props> = React.memo(({ weekViewProps }) => {
 
   const { component, core, eventHandlers } = weekViewProps;
 
-  // const [isLoading, setIsLoading] = useState(true);
   const [, setResize] = useState<
     { width: number; height: number } | undefined
   >();
