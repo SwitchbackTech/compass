@@ -55,14 +55,6 @@ export const ArrowNavigationButton = styled(Text)`
   }
 `;
 
-export const TodayNavigationButton = styled(Text)`
-  margin-left: 15px;
-
-  &:hover {
-    border-radius: 0;
-  }
-`;
-
 export const StyledWeekDaysFlex = styled(Flex)`
   width: calc(100% - ${CALENDAR_GRID_MARGIN_LEFT}px);
   margin: ${WEEK_DAYS_MARGIN_Y}px 0 0 0;
@@ -198,9 +190,4 @@ export const StyledEvents = styled.div`
   height: 100%;
   width: 100%;
   margin-left: ${CALENDAR_GRID_MARGIN_LEFT}px;
-`;
-
-export const StyledTodayPopoverContainer = styled(Flex)`
-  padding: 12px;
-  background: ${getAlphaColor(ColorNames.DARK_1, 0.8)};
 `;

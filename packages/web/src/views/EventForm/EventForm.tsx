@@ -1,6 +1,6 @@
+import dayjs from "dayjs";
 import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
-import dayjs from "dayjs";
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { Button } from "@web/components/Button";
@@ -13,6 +13,8 @@ import {
   YEAR_MONTH_DAY_FORMAT,
 } from "@web/common/constants/dates";
 
+import { ComponentProps } from "./types";
+import { DateTimePickersSection } from "./DateTimePickersSection";
 import {
   Styled,
   StyledTitleField,
@@ -22,9 +24,6 @@ import {
   StyledSubmitButton,
   StyledSubmitRow,
 } from "./styled";
-import { ComponentProps } from "./types";
-import { DateTimePickersSection } from "./DateTimePickersSection";
-import { selectAreEventsProcessingBySectionType } from "../../ducks/events/selectors";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
@@ -194,7 +193,7 @@ export const EventForm: React.FC<ComponentProps> = ({
       title="Event Form"
     >
       <StyledTitleField
-        autoFocus={true}
+        autoFocus
         placeholder="Title"
         onKeyDown={submitFormWithKeyboard}
         value={title}

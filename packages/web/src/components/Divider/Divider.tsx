@@ -1,7 +1,7 @@
-import React, { HTMLAttributes, useEffect, useState } from 'react';
+import React, { HTMLAttributes, useEffect, useState } from "react";
 
-import { Styled } from './styled';
-import { Props } from './types';
+import { Styled } from "./styled";
+import { Props } from "./types";
 
 export const Divider: React.FC<Props & HTMLAttributes<HTMLDivElement>> = (
   props

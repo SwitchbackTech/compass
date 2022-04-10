@@ -406,7 +406,7 @@ export const useGetWeekViewProps = () => {
         return {
           ...actualEditingEvent,
           isOpen: true,
-          priority: actualEditingEvent?.priority || Priorities.WORK,
+          priority: actualEditingEvent?.priority || Priorities.UNASSIGNED,
         };
       });
 
@@ -482,7 +482,7 @@ export const useGetWeekViewProps = () => {
         })
       );
     } else {
-      eventToSave.origin = Origin.Compass;
+      eventToSave.origin = Origin.COMPASS;
       dispatch(createEventSlice.actions.request(eventToSave));
     }
 
@@ -507,8 +507,8 @@ export const useGetWeekViewProps = () => {
   return {
     eventHandlers: {
       onAllDayEventsGridMouseDown,
-      onDeleteEvent,
       onCalendarAreaMouseDown,
+      onDeleteEvent,
       onEventsGridRelease,
       onEventsGridMouseDown,
       onEventGridMouseMove,

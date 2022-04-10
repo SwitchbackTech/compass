@@ -1,5 +1,4 @@
 import { TextareaAutosizeProps } from "react-textarea-autosize";
-
 import { ColorNames } from "@web/common/types/styles";
 import {
   ClassNamedComponent,

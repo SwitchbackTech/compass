@@ -12,6 +12,7 @@ import {
   getAllDayEventWidth,
   getLeftPosition,
 } from "@web/common/utils/grid.util";
+import { isEqual } from "lodash";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 
@@ -19,6 +20,10 @@ export interface Props {
   event: Schema_GridEvent;
   weekViewProps: WeekViewProps;
 }
+
+const arePropsSame = (prevProps: Props, nextProps: Props) => {
+  return isEqual(prevProps.event, nextProps.event);
+};
 
 const WeekEventComponent = (
   { event, weekViewProps }: Props,
@@ -144,4 +149,7 @@ const WeekEventComponent = (
   );
 };
 
-export const WeekEvent = React.forwardRef(WeekEventComponent);
+export const WeekEvent = React.memo(
+  React.forwardRef(WeekEventComponent),
+  arePropsSame
+);

@@ -1,4 +1,6 @@
-# WIP: Frontend Data Flow
+# Frontend Data Flow
+
+WIP: This is my ongoing notes of how Sagas work while I try to wrap my head around them
 
 ## On Startup
 
