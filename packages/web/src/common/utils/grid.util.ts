@@ -38,6 +38,36 @@ export const assignEventToRow = (
   return { fits, rowNum };
 };
 
+export const assignEventsToRow = (allDayEvents: Schema_Event[]) => {
+  const rows: number[][] = [];
+  // makes copy of all event objects to allow for adding a 'row' field
+  // can likely be optimized using immer's `produce` and `draft`
+  const orderedAllDayEvents = allDayEvents.map((e) => ({ ...e }));
+
+  orderedAllDayEvents.forEach((event, i) => {
+    const eventDays = _getEventDayNumbers(event);
+
+    if (i === 0) {
+      rows.push(eventDays);
+      event["row"] = 1;
+    } else {
+      const { fits, rowNum } = assignEventToRow(eventDays, rows);
+
+      if (fits) {
+        // add to existing row
+        rows[rowNum] = [...rows[rowNum], ...eventDays];
+        event["row"] = rowNum + 1;
+      } else {
+        // add to new row
+        rows[rows.length] = eventDays;
+        event["row"] = rows.length;
+      }
+    }
+  });
+
+  return { rowsCount: rows.length, allDayEvents: orderedAllDayEvents };
+};
+
 export const getAllDayEventWidth = (
   category: Category,
   startIndex: number,
@@ -80,34 +110,14 @@ export const getAllDayEventWidth = (
   return width;
 };
 
-export const assignEventsToRow = (allDayEvents: Schema_Event[]) => {
-  const rows: number[][] = [];
-  // makes copy of all event objects to allow for adding a 'row' field
-  // can likely be optimized using immer's `produce` and `draft`
-  const orderedAllDayEvents = allDayEvents.map((e) => ({ ...e }));
+export const getCurrentMinute = () => {
+  return dayjs().get("hours") * 60 + dayjs().get("minutes");
+};
 
-  orderedAllDayEvents.forEach((event, i) => {
-    const eventDays = _getEventDayNumbers(event);
-
-    if (i === 0) {
-      rows.push(eventDays);
-      event["row"] = 1;
-    } else {
-      const { fits, rowNum } = assignEventToRow(eventDays, rows);
-
-      if (fits) {
-        // add to existing row
-        rows[rowNum] = [...rows[rowNum], ...eventDays];
-        event["row"] = rowNum + 1;
-      } else {
-        // add to new row
-        rows[rows.length] = eventDays;
-        event["row"] = rows.length;
-      }
-    }
-  });
-
-  return { rowsCount: rows.length, allDayEvents: orderedAllDayEvents };
+export const getCurrentPercentOfDay = () => {
+  const currPercent = (getCurrentMinute() / 1440) * 100;
+  console.log(`currPercent: ${currPercent}`);
+  return (getCurrentMinute() / 1440) * 100;
 };
 
 export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
@@ -174,10 +184,6 @@ export const getPrevDayWidth = (today: Dayjs) => {
   return width;
 };
 
-const _anySharedValues = (arr1: number[], arr2: number[]) => {
-  return arr1.some((v) => arr2.indexOf(v) >= 0);
-};
-
 const normalizeDayNums = (days: number[]) => {
   // doesn't support events longer than 365/6 days
   return days.map((d) => {
@@ -187,6 +193,10 @@ const normalizeDayNums = (days: number[]) => {
       return d;
     }
   });
+};
+
+const _anySharedValues = (arr1: number[], arr2: number[]) => {
+  return arr1.some((v) => arr2.indexOf(v) >= 0);
 };
 
 const _getEventDayNumbers = (event: Schema_Event) => {

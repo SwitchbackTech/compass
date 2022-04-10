@@ -14,9 +14,12 @@ import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { getAlphaColor, getColor } from "@web/common/utils/colors";
+import { getCurrentMinute } from "@web/common/utils/grid.util";
 import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
+import { TodayButtonPopover } from "@web/views/Calendar/components/TodayButtonPopover";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
+import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { useToken } from "@web/common/hooks/useToken";
 
 import {
@@ -42,7 +45,6 @@ import {
   StyledWeekDaysFlex,
   StyledPrevDaysOverflow,
 } from "./styled";
-import { TodayButtonPopover } from "./components/TodayButtonPopover/TodayButtonPopover";
 
 export interface Props {
   weekViewProps: WeekViewProps;
@@ -112,8 +114,7 @@ export const CalendarView = () => {
 
     // scroll down to the current time in grid
     const minuteHeight = core.getEventCellHeight() / 60;
-    const minutes = dayjs().get("hours") * 60 + dayjs().get("minutes");
-    const top = minutes * minuteHeight;
+    const top = getCurrentMinute() * minuteHeight;
 
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
   }, [component.calendarRef]);
@@ -278,6 +279,9 @@ export const CalendarView = () => {
             ))}
           </StyledDayTimes>
           <StyledGridColumns>
+            {component.week === component.today.week() && (
+              <NowLine width={100} />
+            )}
             <StyledPrevDaysOverflow
               widthPercent={core.getPastOverflowWidth()}
             />
