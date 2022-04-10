@@ -53,7 +53,6 @@ export const CalendarView = () => {
   const weekViewProps = useGetWeekViewProps();
   const { component, core, eventHandlers } = weekViewProps;
 
-  // const [isLoading, setIsLoading] = useState(true);
   const [, setResize] = useState<
     { width: number; height: number } | undefined
   >();
