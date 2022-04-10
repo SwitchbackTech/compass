@@ -1,5 +1,4 @@
 import React from "react";
-import dayjs from "dayjs";
 import { rest } from "msw";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
@@ -7,7 +6,6 @@ import userEvent from "@testing-library/user-event";
 import { setupServer } from "msw/node";
 import { CalendarView } from "@web/views/Calendar";
 import { CompassRoot } from "@web/routers/index";
-import { getWeekDayLabel } from "@web/ducks/events/event.utils";
 import { render } from "@web/common/__mocks__/mock.render";
 import { febToMarState } from "@web/common/__mocks__/state/state.0227To0305";
 import {
@@ -49,18 +47,16 @@ describe("Calendar Interactions", () => {
     server.close();
   });
 
-  /* commented out due to issues finding 'today' in DOM after 
-  Aleksei's update on 4.9.22
-
   describe("Navigation Arrow Row", () => {
     it("navigates to previous week upon nav arrow click", async () => {
       const user = userEvent.setup();
-      const { container } = render(CompassRoot);
-      const todayId = "#id-" + getWeekDayLabel(dayjs());
+      render(CompassRoot);
 
-      expect(container.querySelector(todayId)).not.toBe(null);
-      await user.click(screen.getByText(/</i));
-      expect(container.querySelector(todayId)).toBe(null);
+      expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
+      await user.click(
+        screen.getByRole("button", { name: /previous week button/i })
+      );
+      expect(screen.getByText(/today/i)).toBeInTheDocument();
     });
 
     it("renders today only when on different week than current", async () => {
@@ -79,7 +75,6 @@ describe("Calendar Interactions", () => {
       expect(screen.getByText(/today/i)).toBeInTheDocument();
     });
   });
-  */
 
   describe("Event Form", () => {
     it("opens upon click all-day event click (and not before)", async () => {

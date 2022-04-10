@@ -2,12 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
-import { Popover } from "react-tiny-popover";
-import {
-  getEventCategory,
-  getWeekDayLabel,
-} from "@web/ducks/events/event.utils";
-import { getAmPmTimes, getHourlyTimes } from "@web/common/utils/date.utils";
+import { getWeekDayLabel } from "@web/ducks/events/event.utils";
+import { getHourlyTimes } from "@web/common/utils/date.utils";
 import { ColorNames } from "@web/common/types/styles";
 import {
   AlignItems,
@@ -16,18 +12,12 @@ import {
 } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import {
-  HOURS_AM_FORMAT,
-  YEAR_MONTH_DAY_FORMAT,
-} from "@web/common/constants/dates";
+import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
 import { useToken } from "@web/common/hooks/useToken";
-
-import { getLeftPosition } from "@web/common/utils/grid.util";
-import { isEqual } from "lodash";
 
 import {
   useGetWeekViewProps,
@@ -50,9 +40,7 @@ import {
   StyledEvents,
   StyledWeekDayFlex,
   StyledWeekDaysFlex,
-  StyledTodayPopoverContainer,
   StyledPrevDaysOverflow,
-  TodayNavigationButton,
 } from "./styled";
 import { TodayButtonPopover } from "./components/TodayButtonPopover/TodayButtonPopover";
 
@@ -61,103 +49,10 @@ export interface Props {
 }
 
 const dayTimes = getHourlyTimes(dayjs());
-const times = getAmPmTimes();
 
-const getTopRoundedPosition = (startDate: string, eventCellheight: number) => {
-  const startTimeIndex =
-    times.indexOf(dayjs(startDate).format(HOURS_AM_FORMAT)) / 4;
-
-  const top = eventCellheight * startTimeIndex;
-
-  return top;
-};
-
-/* So this is not most efficient way of doing it.
-The best way in our situation is to change editingEvent state in following way:
-when we are moving it we should change start and end date only when it is devideable by 15mins.
-Now each event rerenders when it's not moving.
-It is fixed within way below.
-
-But it would be better if we set correct start end end date for event when we changing it's position
-(so we have to move this solution to onEventDrag() in "useGetWeekViewProps")
-*/
-const compare = (prevProps: Props, nextProps: Props) => {
-  const { component: prevComponent } = prevProps.weekViewProps || {};
-  const { core, component: nextComponent } = nextProps.weekViewProps || {};
-
-  const {
-    startDate: prevStartDate,
-    endDate: prevEndDate,
-    ...prevEditingEvent
-  } = prevComponent.editingEvent || {};
-
-  const {
-    startDate: nextStartDate,
-    endDate: nextEndDate,
-    ...nextEditingEvent
-  } = nextComponent.editingEvent || {};
-
-  const eventCellheight = nextProps.weekViewProps.core.getEventCellHeight();
-
-  const prevTop = getTopRoundedPosition(prevStartDate, eventCellheight);
-  const nextTop = getTopRoundedPosition(nextStartDate, eventCellheight);
-
-  const prevStartIndex = dayjs(prevStartDate).get("day");
-  const nextStartIndex = dayjs(nextStartDate).get("day");
-
-  const prevCategory = getEventCategory(
-    dayjs(prevStartDate),
-    dayjs(prevEndDate),
-    prevProps?.weekViewProps?.component.startOfSelectedWeekDay,
-    prevProps?.weekViewProps?.component.endOfSelectedWeekDay
-  );
-
-  const nextCategory = getEventCategory(
-    dayjs(nextStartDate),
-    dayjs(nextEndDate),
-    nextProps?.weekViewProps?.component.startOfSelectedWeekDay,
-    nextProps?.weekViewProps?.component.endOfSelectedWeekDay
-  );
-
-  const widths = Array.from(
-    nextProps?.weekViewProps?.component.weekDaysRef.current?.children || []
-  ).map((e) => e.clientWidth);
-
-  const prevLeft = getLeftPosition(prevCategory, prevStartIndex, widths);
-  const nextLeft = getLeftPosition(nextCategory, nextStartIndex, widths);
-
-  const areWeeksLengthSame =
-    prevProps.weekViewProps.component.weekEvents.length ===
-    nextProps.weekViewProps.component.weekEvents.length;
-
-  const prevDurationHours =
-    dayjs(prevEndDate).diff(prevStartDate) * 2.7777777777778e-7 || 0;
-
-  const nextDurationHours =
-    dayjs(nextEndDate).diff(nextStartDate) * 2.7777777777778e-7 || 0;
-
-  const prevHeight = core.getEventCellHeight() * prevDurationHours;
-  const nextHeight = core.getEventCellHeight() * nextDurationHours;
-
-  const areTopsSame = prevTop === nextTop;
-
-  const areLeftsSame = prevLeft === nextLeft;
-
-  const areHeightsSame = prevHeight === nextHeight;
-
-  const areEventsEqual = isEqual(prevEditingEvent, nextEditingEvent);
-
-  return (
-    areWeeksLengthSame &&
-    areTopsSame &&
-    areLeftsSame &&
-    areHeightsSame &&
-    areEventsEqual
-  );
-};
-
-export const CalendarView: React.FC<Props> = React.memo(({ weekViewProps }) => {
+export const CalendarView = () => {
   const { token } = useToken();
+  const weekViewProps = useGetWeekViewProps();
 
   const { component, core, eventHandlers } = weekViewProps;
 
@@ -252,12 +147,14 @@ export const CalendarView: React.FC<Props> = React.memo(({ weekViewProps }) => {
 
           <StyledNavigationButtons>
             <ArrowNavigationButton
-              size={40}
+              cursor="pointer"
               colorName={ColorNames.DARK_5}
               onClick={() =>
                 eventHandlers.setWeek((actualWeek) => actualWeek - 1)
               }
-              cursor="pointer"
+              role="button"
+              size={40}
+              title="previous week button"
             >
               {"<"}
             </ArrowNavigationButton>
@@ -423,4 +320,4 @@ export const CalendarView: React.FC<Props> = React.memo(({ weekViewProps }) => {
       </StyledCalendar>
     </Styled>
   );
-}, compare);
+};
