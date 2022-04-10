@@ -19,7 +19,6 @@ import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
 import { useToken } from "@web/common/hooks/useToken";
-// import { Sidebar } from "@web/views/Calendar/components/Sidebar";
 
 import { useGetWeekViewProps } from "./weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "./weekViewHooks/types";
