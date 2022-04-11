@@ -17,5 +17,5 @@ export const NowLine: React.FC<NowLineProps> = ({ width }) => {
     return () => clearInterval(interval);
   }, []);
 
-  return <StyledNowLine top={percentOfDay} width={width} />;
+  return <StyledNowLine role="separator" top={percentOfDay} width={width} />;
 };
