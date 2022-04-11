@@ -40,6 +40,7 @@ describe("Calendar Interactions", () => {
     localStorage.setItem("token", "mytoken123");
     server.listen();
   });
+
   afterEach(() => server.resetHandlers());
 
   afterAll(() => {
@@ -53,9 +54,7 @@ describe("Calendar Interactions", () => {
       render(CompassRoot);
 
       expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
-      await user.click(
-        screen.getByRole("button", { name: /previous week button/i })
-      );
+      await user.click(screen.getByRole("button", { name: /previous week/i }));
       expect(screen.getByText(/today/i)).toBeInTheDocument();
     });
 
@@ -73,6 +72,23 @@ describe("Calendar Interactions", () => {
 
       await user.click(screen.getByText(/>/i));
       expect(screen.getByText(/today/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("Now Line", () => {
+    it("disappears when viewing future week", async () => {
+      const user = userEvent.setup();
+      render(<CalendarView />);
+
+      await user.click(screen.getByText(/>/i));
+      expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+    });
+    it("disappears when viewing past week", async () => {
+      const user = userEvent.setup();
+      render(<CalendarView />);
+
+      await user.click(screen.getByText(/</i));
+      expect(screen.queryByRole("separator")).not.toBeInTheDocument();
     });
   });
 

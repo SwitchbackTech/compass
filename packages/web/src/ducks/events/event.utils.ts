@@ -4,7 +4,7 @@ import dayjs, { Dayjs } from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isBetween from "dayjs/plugin/isBetween";
-import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
+import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@web/common/constants/dates";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
 import { Priorities } from "@core/core.constants";
 
@@ -55,7 +55,7 @@ export const getEventCategory = (
 };
 
 export const getWeekDayLabel = (day: Dayjs) =>
-  `day-${day.format(YEAR_MONTH_DAY_FORMAT)}`;
+  day.format(YEAR_MONTH_DAY_COMPACT_FORMAT);
 
 /*
 -------------------------------------------------------------------------------
