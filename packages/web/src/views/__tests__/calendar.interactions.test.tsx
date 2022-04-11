@@ -40,6 +40,7 @@ describe("Calendar Interactions", () => {
     localStorage.setItem("token", "mytoken123");
     server.listen();
   });
+
   afterEach(() => server.resetHandlers());
 
   afterAll(() => {
@@ -71,6 +72,23 @@ describe("Calendar Interactions", () => {
 
       await user.click(screen.getByText(/>/i));
       expect(screen.getByText(/today/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("Now Line", () => {
+    it("disappears when viewing future week", async () => {
+      const user = userEvent.setup();
+      render(<CalendarView />);
+
+      await user.click(screen.getByText(/>/i));
+      expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+    });
+    it("disappears when viewing past week", async () => {
+      const user = userEvent.setup();
+      render(<CalendarView />);
+
+      await user.click(screen.getByText(/</i));
+      expect(screen.queryByRole("separator")).not.toBeInTheDocument();
     });
   });
 

@@ -115,8 +115,6 @@ export const getCurrentMinute = () => {
 };
 
 export const getCurrentPercentOfDay = () => {
-  const currPercent = (getCurrentMinute() / 1440) * 100;
-  console.log(`currPercent: ${currPercent}`);
   return (getCurrentMinute() / 1440) * 100;
 };
 

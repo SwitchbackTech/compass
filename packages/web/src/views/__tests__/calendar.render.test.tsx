@@ -26,30 +26,43 @@ describe("Routing", () => {
   });
   it("shows calendar when local storage token present", () => {
     localStorage.setItem("token", "secretTokenValue");
-    render(CompassRoot);
+    render(<CalendarView />);
     expect(
-      screen.getByRole("button", { name: /sign in/i })
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /sign in/i })
+    ).not.toBeInTheDocument();
   });
 });
 
-describe("CalendarView: Renders", () => {
-  it("current year in YYYY format", () => {
+describe("CalendarView", () => {
+  beforeAll(() => {
+    mockLocalStorage();
+    localStorage.setItem("token", "secretTokenValue");
+  });
+  afterAll(() => {
+    clearLocalStorageMock();
+  });
+
+  it("renders current year in YYYY format", () => {
     render(<CalendarView />);
     const currentYear = new Date().getFullYear().toString(); // YYYY
     expect(screen.getByText(currentYear)).toBeInTheDocument();
   });
 
-  it("navigation arrows", () => {
+  it("renders navigation arrows", () => {
     render(<CalendarView />);
     expect(screen.getByText(/</i)).toBeInTheDocument();
     expect(screen.getByText(/>/i)).toBeInTheDocument();
   });
 
-  it("current week", () => {
+  it("renders current week", () => {
     render(<CalendarView />);
     const todaysDateNumber = new Date().getDate().toString();
     expect(screen.getByText(todaysDateNumber)).toBeInTheDocument();
+  });
+
+  it("renders now line", () => {
+    render(<CalendarView />);
+    expect(screen.getByRole("separator")).toBeInTheDocument();
   });
 
   it("automatically scrolls", () => {
@@ -62,11 +75,16 @@ describe("CalendarView: Renders", () => {
 
 describe("CalendarView: Renders with State", () => {
   beforeEach(() => {
-    const preloadedState = weekEventState; // has to be called 'preloadedState' to render correctly
-    render(<CalendarView />, { preloadedState });
+    mockLocalStorage();
+    localStorage.setItem("token", "secretTokenValue");
+  });
+  afterAll(() => {
+    clearLocalStorageMock();
   });
 
-  it("timed and all day event", () => {
+  it("renders both timed and all day events", () => {
+    const preloadedState = weekEventState; // has to be called 'preloadedState' to render correctly
+    render(<CalendarView />, { preloadedState });
     expect(
       screen.getByRole("button", { name: /groceries/i })
     ).toBeInTheDocument();
