@@ -88,11 +88,12 @@ export const EventForm: React.FC<ComponentProps> = ({
 
     setTimeout(() => {
       _onClose();
-    }, 300);
+    }, 120);
   };
 
   useEffect(() => {
-    setEvent(event || defaultEventState);
+    setEvent(event || {}); //$$
+    // setEvent(event || defaultEventState);
     setStartTime(initialStartTime || undefined);
     setEndTime(initialEndTime || undefined);
     setSelectedStartDate(initialStartDate);

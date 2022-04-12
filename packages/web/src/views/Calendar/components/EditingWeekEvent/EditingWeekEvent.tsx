@@ -1,9 +1,6 @@
-import React, { SetStateAction } from "react";
-import { ArrowContainer, Popover } from "react-tiny-popover";
-import { Priorities } from "@core/core.constants";
+import React, { useState, SetStateAction } from "react";
+import { usePopper } from "react-popper";
 import { Schema_Event } from "@core/types/event.types";
-import { getColor } from "@web/common/utils/colors";
-import { colorNameByPriority } from "@web/common/styles/colors";
 import { EventForm } from "@web/views/EventForm";
 
 import { WeekEvent } from "../WeekEvent";
@@ -26,20 +23,30 @@ export const EditingWeekEvent: React.FC<Props> = ({
   setEvent,
   onCloseEventForm,
   weekViewProps,
-}) => (
-  <Popover
-    containerStyle={{ zIndex: "2" }}
-    isOpen={isOpen}
-    positions={["right", "left", "bottom", "top"]}
-    content={(props) => (
-      <ArrowContainer
-        {...props}
-        arrowSize={10}
-        arrowColor={getColor(
-          colorNameByPriority[event.priority || Priorities.UNASSIGNED]
-        )}
-      >
-        <div onClick={(e) => e.stopPropagation()}>
+}) => {
+  const [referenceElement, setReferenceElement] = useState<HTMLElement>(null);
+  const [popperElement, setPopperElement] = useState<HTMLElement>(null);
+
+  const { styles, attributes } = usePopper(referenceElement, popperElement, {
+    placement: "auto-start",
+  });
+  const popperStyles = { ...styles.popper, zIndex: 2 };
+
+  return (
+    <>
+      <div>
+        <WeekEvent
+          event={{
+            ...event,
+            isEditing: true,
+          }}
+          weekViewProps={weekViewProps}
+          ref={setReferenceElement}
+        />
+      </div>
+
+      <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
+        {isOpen && (
           <EventForm
             setEvent={setEvent}
             event={event}
@@ -47,17 +54,8 @@ export const EditingWeekEvent: React.FC<Props> = ({
             onClose={onCloseEventForm}
             onSubmit={onSubmitEventForm}
           />
-        </div>
-      </ArrowContainer>
-    )}
-  >
-    <WeekEvent
-      weekViewProps={weekViewProps}
-      event={{
-        ...event,
-        priority: event?.priority || Priorities.WORK,
-        isEditing: true,
-      }}
-    />
-  </Popover>
-);
+        )}
+      </div>
+    </>
+  );
+};

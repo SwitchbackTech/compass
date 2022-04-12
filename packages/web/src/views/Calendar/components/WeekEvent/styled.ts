@@ -73,7 +73,7 @@ export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
   & span {
     &:first-child {
       display: -webkit-box;
-      overflow: hidden;
+      /* overflow: hidden; */
       text-overflow: ellipsis;
       /* width: "100%"; // titleWidth props logic <-- $$ deleted if not needed */
       word-break: break-all;
