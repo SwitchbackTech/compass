@@ -29,11 +29,6 @@ export const EditingWeekEvent: React.FC<Props> = ({
 
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
     placement: "auto-start",
-    // modifiers: [
-    //   {
-    //     name: "preventOverflow",
-    //   },
-    // ],
   });
   const popperStyles = { ...styles.popper, zIndex: 2 };
 
