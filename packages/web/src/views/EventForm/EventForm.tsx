@@ -88,7 +88,7 @@ export const EventForm: React.FC<ComponentProps> = ({
 
     setTimeout(() => {
       _onClose();
-    }, 300);
+    }, 120);
   };
 
   useEffect(() => {

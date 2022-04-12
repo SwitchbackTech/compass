@@ -1,9 +1,6 @@
 import React, { useState, SetStateAction } from "react";
 import { usePopper } from "react-popper";
-import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { getColor } from "@web/common/utils/colors";
-import { colorNameByPriority } from "@web/common/styles/colors";
 import { EventForm } from "@web/views/EventForm";
 
 import { WeekEvent } from "../WeekEvent";
@@ -27,32 +24,18 @@ export const EditingWeekEvent: React.FC<Props> = ({
   onCloseEventForm,
   weekViewProps,
 }) => {
-  const [referenceElement, setReferenceElement] = useState(null);
-  const [popperElement, setPopperElement] = useState(null);
-  const [arrowElement, setArrowElement] = useState(null);
+  const [referenceElement, setReferenceElement] = useState<HTMLElement>(null);
+  const [popperElement, setPopperElement] = useState<HTMLElement>(null);
+
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
-    placement: "right",
-    // strategy: "fixed", // prevents scrolling (is scroll is also false), but has other issues
-    modifiers: [
-      // { name: "eventListeners", options: { scroll: false, resize: false } },
-      // { name: "eventListeners", enabled: false },
-      // { name: "arrow", options: { element: arrowElement } },
-      {
-        name: "preventOverflow",
-        options: {
-          // rootBoundary: "document",
-          tether: false,
-        },
-      },
-      // },
-      // {
-      //   name: "offset",
-      //   options: {
-      //     offset: [0, 20],
-      //   },
-      // },
-    ],
+    placement: "auto-start",
+    // modifiers: [
+    //   {
+    //     name: "preventOverflow",
+    //   },
+    // ],
   });
+  const popperStyles = { ...styles.popper, zIndex: 1 };
 
   return (
     <>
@@ -67,7 +50,7 @@ export const EditingWeekEvent: React.FC<Props> = ({
         />
       </div>
 
-      <div ref={setPopperElement} style={styles.popper} {...attributes.popper}>
+      <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
         {isOpen && (
           <EventForm
             setEvent={setEvent}
@@ -77,7 +60,6 @@ export const EditingWeekEvent: React.FC<Props> = ({
             onSubmit={onSubmitEventForm}
           />
         )}
-        <div ref={setArrowElement} style={styles.arrow} />
       </div>
     </>
   );

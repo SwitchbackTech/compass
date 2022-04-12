@@ -15,7 +15,6 @@ export const Styled = styled.form<StyledProps>`
     isOpen
       ? `
       min-height: 355px;
-      max-height: 500px;
       padding: 18px 30px;
   `
       : `
