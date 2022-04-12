@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
-import { Popover } from "react-tiny-popover";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
 import { getHourlyTimes } from "@web/common/utils/date.utils";
 import { ColorNames } from "@web/common/types/styles";
@@ -15,13 +14,18 @@ import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { getAlphaColor, getColor } from "@web/common/utils/colors";
+import { getCurrentMinute } from "@web/common/utils/grid.util";
 import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
+import { TodayButtonPopover } from "@web/views/Calendar/components/TodayButtonPopover";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
+import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { useToken } from "@web/common/hooks/useToken";
-// import { Sidebar } from "@web/views/Calendar/components/Sidebar";
 
-import { useGetWeekViewProps } from "./weekViewHooks/useGetWeekViewProps";
+import {
+  useGetWeekViewProps,
+  WeekViewProps,
+} from "./weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "./weekViewHooks/types";
 import {
   ArrowNavigationButton,
@@ -39,24 +43,24 @@ import {
   StyledEvents,
   StyledWeekDayFlex,
   StyledWeekDaysFlex,
-  StyledTodayPopoverContainer,
   StyledPrevDaysOverflow,
-  TodayNavigationButton,
 } from "./styled";
+
+export interface Props {
+  weekViewProps: WeekViewProps;
+}
 
 const dayTimes = getHourlyTimes(dayjs());
 
 export const CalendarView = () => {
   const { token } = useToken();
-
   const weekViewProps = useGetWeekViewProps();
+
   const { component, core, eventHandlers } = weekViewProps;
 
-  // const [isLoading, setIsLoading] = useState(true);
   const [, setResize] = useState<
     { width: number; height: number } | undefined
   >();
-  const [isTodayPopoverOpen, setIsTodayPopoverOpen] = useState(false);
 
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
@@ -66,6 +70,7 @@ export const CalendarView = () => {
         const handlersByKey = {
           [Key.C]: () =>
             eventHandlers.setEditingEvent({ isOpen: true } as Schema_GridEvent),
+          [Key.T]: () => eventHandlers.setWeek(component.today.week()),
           [Key.N]: () => eventHandlers.setWeek((week) => week + 1),
           [Key.P]: () => eventHandlers.setWeek((week) => week - 1),
         } as { [key: number]: () => void };
@@ -109,8 +114,7 @@ export const CalendarView = () => {
 
     // scroll down to the current time in grid
     const minuteHeight = core.getEventCellHeight() / 60;
-    const minutes = dayjs().get("hours") * 60 + dayjs().get("minutes");
-    const top = minutes * minuteHeight;
+    const top = getCurrentMinute() * minuteHeight;
 
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
   }, [component.calendarRef]);
@@ -146,12 +150,14 @@ export const CalendarView = () => {
 
           <StyledNavigationButtons>
             <ArrowNavigationButton
-              size={40}
+              cursor="pointer"
               colorName={ColorNames.DARK_5}
               onClick={() =>
                 eventHandlers.setWeek((actualWeek) => actualWeek - 1)
               }
-              cursor="pointer"
+              role="button"
+              size={40}
+              title="previous week"
             >
               {"<"}
             </ArrowNavigationButton>
@@ -168,32 +174,10 @@ export const CalendarView = () => {
             </ArrowNavigationButton>
 
             {component.today.week() !== component.week && (
-              <Popover
-                isOpen={isTodayPopoverOpen}
-                positions={["bottom"]}
-                padding={10}
-                content={
-                  <StyledTodayPopoverContainer>
-                    <Text colorName={ColorNames.WHITE_1} size={12}>
-                      {component.today.format("dddd, MMMM D")}
-                    </Text>
-                  </StyledTodayPopoverContainer>
-                }
-              >
-                <TodayNavigationButton
-                  onMouseEnter={() => setIsTodayPopoverOpen(true)}
-                  onMouseLeave={() => setIsTodayPopoverOpen(false)}
-                  cursor="pointer"
-                  onClick={() => {
-                    eventHandlers.setWeek(component.today.week());
-                    setIsTodayPopoverOpen(false);
-                  }}
-                  colorName={ColorNames.WHITE_2}
-                  size={20}
-                >
-                  Today
-                </TodayNavigationButton>
-              </Popover>
+              <TodayButtonPopover
+                today={component.today.format("dddd, MMMM D")}
+                onClick={() => eventHandlers.setWeek(component.today.week())}
+              />
             )}
           </StyledNavigationButtons>
         </StyledHeaderFlex>
@@ -230,7 +214,7 @@ export const CalendarView = () => {
                 justifyContent={JustifyContent.CENTER}
                 key={getWeekDayLabel(day)}
                 alignItems={AlignItems.FLEX_END}
-                id={`id-${getWeekDayLabel(day)}`}
+                title={getWeekDayLabel(day)}
                 color={weekDayTextColor}
                 flexBasis={flexBasis}
               >
@@ -295,6 +279,9 @@ export const CalendarView = () => {
             ))}
           </StyledDayTimes>
           <StyledGridColumns>
+            {component.week === component.today.week() && (
+              <NowLine width={100} />
+            )}
             <StyledPrevDaysOverflow
               widthPercent={core.getPastOverflowWidth()}
             />

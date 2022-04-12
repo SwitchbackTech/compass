@@ -1,3 +1,3 @@
-import { WeekEvent } from './WeekEvent';
+import { WeekEvent } from "./WeekEvent";
 
 export { WeekEvent };

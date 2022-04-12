@@ -39,8 +39,6 @@ yarn dev:web # start web  app in dev mode
 
 ### Setup Postman (optional)
 
-Postman is useful for manual API testing.
-
 Authenticate Postman with your Compass user:
 
 - Authenticate to compass
@@ -51,7 +49,7 @@ Authenticate Postman with your Compass user:
 - Specify `Bearer Token`
 - Paste the token value into the Token field
 - Save
-- Your user token should not be used for all Postman requests
+- Your user token should now be used for all Postman requests
 
 Open up one of the requests and test it out, referencing the example requests as-needed.
 
