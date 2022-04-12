@@ -35,7 +35,7 @@ export const EditingWeekEvent: React.FC<Props> = ({
     //   },
     // ],
   });
-  const popperStyles = { ...styles.popper, zIndex: 1 };
+  const popperStyles = { ...styles.popper, zIndex: 2 };
 
   return (
     <>
