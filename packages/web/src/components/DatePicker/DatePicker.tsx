@@ -3,7 +3,6 @@ import ReactDatePicker, { ReactDatePickerProps } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import dayjs from "dayjs";
 import classNames from "classnames";
-
 import { Text } from "@web/components/Text";
 import { ColorNames } from "@web/common/types/styles";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
@@ -87,7 +86,7 @@ export const DatePicker: React.FC<Props> = ({
         }
       }}
       calendarClassName={classNames("calendar", calendarClassName, {
-        "calendar--open": isShown,
+        "calendar--open": _isShown,
         "calendar--animation": animationOnToggle,
       })}
       onCalendarOpen={() => {
@@ -95,6 +94,12 @@ export const DatePicker: React.FC<Props> = ({
         onCalendarOpen();
       }}
       onCalendarClose={() => {
+        toggleIsShown(false);
+        toggleDatePicker(false);
+        onCalendarClose();
+      }}
+      onClickOutside={() => {
+        toggleIsShown(false);
         toggleDatePicker(false);
         onCalendarClose();
       }}

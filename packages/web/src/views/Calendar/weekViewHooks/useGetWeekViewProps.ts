@@ -294,7 +294,6 @@ export const useGetWeekViewProps = () => {
       setEditingEvent(null);
       return;
     }
-
     const startDate = getDateByMousePosition(e.clientX, e.clientY);
     const endDate = dayjs(startDate)
       .add(GRID_TIME_STEP, "minute")
@@ -386,8 +385,10 @@ export const useGetWeekViewProps = () => {
   };
 
   const onEventsGridRelease = (e: React.MouseEvent) => {
+    console.log("on grid release [week view]");
     e.preventDefault();
     e.stopPropagation();
+
     setEventState((actualEventState) => {
       setEditingEvent((actualEditingEvent) => {
         if (!actualEditingEvent) return actualEditingEvent;

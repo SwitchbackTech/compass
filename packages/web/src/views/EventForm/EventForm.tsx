@@ -35,6 +35,24 @@ export const EventForm: React.FC<ComponentProps> = ({
 }) => {
   const { priority, title, showStartTimeLabel } = event || {};
 
+  /********
+   * State
+   ********/
+  const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>();
+  const [isShiftKeyPressed, toggleShiftKeyPressed] = useState(false);
+  const [isOpen, setIsFormOpen] = useState(false); //rename to isFormOpen
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [startTime, setStartTime] = useState<
+    SelectOption<string> | undefined
+  >();
+  const [endTime, setEndTime] = useState<SelectOption<string> | undefined>();
+  const [selectedStartDate, setSelectedStartDate] = useState<
+    Date | undefined
+  >();
+
+  /******************
+   * Date Calculations
+   ******************/
   const calculatedInitialStartTimeDayJs =
     event?.startDate && dayjs(event.startDate);
   const calculatedInitialEndTimeDayJs =
@@ -50,11 +68,6 @@ export const EventForm: React.FC<ComponentProps> = ({
     label: calculatedInitialEndTimeDayJs.format(HOURS_AM_FORMAT),
   };
 
-  const [startTime, setStartTime] = useState<
-    SelectOption<string> | undefined
-  >();
-  const [endTime, setEndTime] = useState<SelectOption<string> | undefined>();
-
   const initialStartDate = event?.startDate
     ? dayjs(event?.startDate).toDate()
     : new Date();
@@ -63,34 +76,9 @@ export const EventForm: React.FC<ComponentProps> = ({
     ? dayjs(event.endDate).toDate()
     : new Date();
 
-  const [selectedStartDate, setSelectedStartDate] = useState<
-    Date | undefined
-  >();
-
-  const defaultEventState: Schema_Event = {
-    priority: event.priority,
-    title: "",
-    description: "",
-    isAllDay: false,
-    startDate: "",
-    endDate: "",
-    origin: event.origin,
-    showStartTimeLabel: false,
-  };
-
-  const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>();
-
-  const [isShiftKeyPressed, toggleShiftKeyPressed] = useState(false);
-  const [isOpen, toggleForm] = useState(false);
-
-  const onClose = () => {
-    toggleForm(false);
-
-    setTimeout(() => {
-      _onClose();
-    }, 120);
-  };
-
+  /********
+   * Effect
+   *********/
   useEffect(() => {
     setEvent(event || {}); //$$
     // setEvent(event || defaultEventState);
@@ -118,7 +106,7 @@ export const EventForm: React.FC<ComponentProps> = ({
     document.addEventListener("keydown", keyDownHandler);
     document.addEventListener("keyup", keyUpHandler);
 
-    toggleForm(true);
+    setIsFormOpen(true);
 
     return () => {
       document.removeEventListener("keydown", keyDownHandler);
@@ -126,9 +114,39 @@ export const EventForm: React.FC<ComponentProps> = ({
     };
   }, []);
 
+  /*********
+   * Handlers
+   **********/
+  const onChangeEventTextField =
+    (fieldName: "title" | "description") =>
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onSetEventField(fieldName, e.target.value);
+    };
+
+  const onClose = () => {
+    setIsFormOpen(false);
+
+    _onClose();
+    setTimeout(() => {
+      _onClose();
+    }, 120);
+  };
+
   const onDeleteForm = () => {
     onDelete(event._id);
     onClose();
+  };
+
+  const onFormClick = (e: MouseEvent) => {
+    e.stopImmediatePropagation();
+    return;
+    // e.stopPropagation();
+    // e.preventDefault();
+  };
+
+  const onDatePickerIsOpenChange = () => {
+    console.log("changing date picker open state");
+    setIsDatePickerOpen(!!isOpen);
   };
 
   const onSubmitForm = () => {
@@ -167,12 +185,6 @@ export const EventForm: React.FC<ComponentProps> = ({
     }));
   };
 
-  const onChangeEventTextField =
-    (fieldName: "title" | "description") =>
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onSetEventField(fieldName, e.target.value);
-    };
-
   const submitFormWithKeyboard: React.KeyboardEventHandler<
     HTMLTextAreaElement
   > = (e) => {
@@ -189,7 +201,20 @@ export const EventForm: React.FC<ComponentProps> = ({
       {...props}
       isOpen={isOpen}
       priority={priority}
-      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        console.log("clicked somewhere in form");
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onMouseUp={(e) => {
+        console.log("stopping prop upon mouse");
+        if (isDatePickerOpen) {
+          console.log("trying to close date picker");
+          onDatePickerIsOpenChange();
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }}
       role="form"
       title="Event Form"
     >
@@ -203,6 +228,8 @@ export const EventForm: React.FC<ComponentProps> = ({
 
       {!event.isAllDay && (
         <DateTimePickersSection
+          isDatePickerShown={isDatePickerOpen}
+          toggleDatePicker={onDatePickerIsOpenChange}
           setEndTime={setEndTime}
           setStartTime={setStartTime}
           setSelectedDate={setSelectedStartDate}

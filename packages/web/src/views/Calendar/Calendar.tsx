@@ -84,10 +84,10 @@ export const CalendarView = () => {
       });
     };
 
-    const mouseUpHandler = (e: MouseEvent) => {
-      setTimeout(() =>
-        eventHandlers.onEventsGridRelease(e as unknown as React.MouseEvent)
-      );
+    const mouseReleaseHandler = (e: MouseEvent) => {
+      setTimeout(() => {
+        eventHandlers.onEventsGridRelease(e as unknown as React.MouseEvent);
+      });
     };
 
     const contextMenuHandler = (e: MouseEvent) => e.preventDefault();
@@ -97,27 +97,17 @@ export const CalendarView = () => {
     };
 
     document.addEventListener("keydown", keyDownHandler);
-    document.addEventListener("mouseup", mouseUpHandler);
+    // document.addEventListener("mouseup", mouseReleaseHandler);
     document.addEventListener("contextmenu", contextMenuHandler);
     window.addEventListener("resize", resizeHandler);
 
     return () => {
       document.addEventListener("contextmenu", contextMenuHandler);
       document.removeEventListener("keydown", keyDownHandler);
-      document.removeEventListener("mouseup", mouseUpHandler);
+      // document.removeEventListener("mouseup", mouseReleaseHandler);
       window.removeEventListener("resize", resizeHandler);
     };
   }, []);
-
-  useEffect(() => {
-    if (!component.eventsGridRef.current) return;
-
-    // scroll down to the current time in grid
-    const minuteHeight = core.getEventCellHeight() / 60;
-    const top = getCurrentMinute() * minuteHeight;
-
-    component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
-  }, [component.calendarRef]);
 
   if (!token) {
     return <Navigate to={ROOT_ROUTES.LOGIN} />;
