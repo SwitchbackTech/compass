@@ -100,6 +100,7 @@ export const DatePicker: React.FC<Props> = ({
         onCalendarClose();
       }}
       onClickOutside={() => {
+        console.log("clicked out"); //$$
         toggleIsShown(false);
         _toggleDatePicker(false);
         onCalendarClose();
@@ -162,10 +163,7 @@ export const DatePicker: React.FC<Props> = ({
                   </Text>
                   <Text
                     cursor="pointer"
-                    onClick={() => {
-                      console.log("increasing month");
-                      increaseMonth();
-                    }}
+                    onClick={increaseMonth}
                     fontWeight={600}
                     colorName={ColorNames.WHITE_1}
                     size={20}

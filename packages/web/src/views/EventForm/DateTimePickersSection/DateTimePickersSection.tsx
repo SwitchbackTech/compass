@@ -193,16 +193,28 @@ export const DateTimePickersSection: React.FC<Props> = ({
     <StyledDateTimeFlex role="tablist" alignItems={AlignItems.CENTER}>
       <StyledDateFlex alignItems={AlignItems.CENTER}>
         {isDatePickerShown ? (
-          <DatePicker
-            autoFocus
-            defaultOpen
-            onCalendarClose={toggleDatePicker}
-            onClickOutside={toggleDatePicker}
-            onChange={() => {}}
-            onKeyDown={onDatePickerKeyDown}
-            onSelect={onSelectDate}
-            selected={selectedDate}
-          />
+          <div
+            onMouseUp={(e) => {
+              console.log("stopping prop in DTPS [on mouse UP]");
+              e.stopPropagation();
+            }}
+            onMouseDown={(e) => {
+              console.log("stopping prop in DTPS [on mouse DOWN]");
+              e.stopPropagation();
+            }}
+            // onClick={() => console.log("clicked")}
+          >
+            <DatePicker
+              autoFocus
+              defaultOpen
+              onCalendarClose={toggleDatePicker}
+              onClickOutside={toggleDatePicker}
+              onChange={() => {}}
+              onKeyDown={onDatePickerKeyDown}
+              onSelect={onSelectDate}
+              selected={selectedDate}
+            />
+          </div>
         ) : (
           <Text
             role="tab"

@@ -196,10 +196,10 @@ export const EventForm: React.FC<ComponentProps> = ({
       isOpen={isOpen}
       priority={priority}
       onMouseUp={(e) => {
-        // if (isDatePickerOpen) {
-        //   console.log("closing date picker [Event Form Mouse UP]");
-        //   setIsDatePickerOpen(false);
-        // }
+        if (isDatePickerOpen) {
+          console.log("closing date picker [Event Form Mouse UP]");
+          setIsDatePickerOpen(false);
+        }
         console.log("stopping prop [on mouse UP]");
         e.stopPropagation();
       }}
