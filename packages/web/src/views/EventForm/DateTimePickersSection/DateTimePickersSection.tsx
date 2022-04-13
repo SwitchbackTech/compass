@@ -137,6 +137,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
   };
 
   const onSelectDate = (date: Date | null | [Date | null, Date | null]) => {
+    console.log("onselect date");
     setSelectedDate(date as Date);
     toggleDatePicker();
   };
@@ -185,25 +186,23 @@ export const DateTimePickersSection: React.FC<Props> = ({
   const onDatePickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.which !== Key.Tab) return;
     console.log("ondatepickerkeydown");
-    toggleDatePicker(!!isDatePickerShown);
+    toggleDatePicker();
   };
 
   return (
     <StyledDateTimeFlex role="tablist" alignItems={AlignItems.CENTER}>
       <StyledDateFlex alignItems={AlignItems.CENTER}>
         {isDatePickerShown ? (
-          <div>
-            <DatePicker
-              autoFocus
-              defaultOpen
-              onCalendarClose={toggleDatePicker}
-              onClickOutside={toggleDatePicker}
-              onChange={() => {}}
-              onKeyDown={onDatePickerKeyDown}
-              onSelect={onSelectDate}
-              selected={selectedDate}
-            />
-          </div>
+          <DatePicker
+            autoFocus
+            defaultOpen
+            onCalendarClose={toggleDatePicker}
+            onClickOutside={toggleDatePicker}
+            onChange={() => {}}
+            onKeyDown={onDatePickerKeyDown}
+            onSelect={onSelectDate}
+            selected={selectedDate}
+          />
         ) : (
           <Text
             role="tab"

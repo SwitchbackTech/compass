@@ -46,7 +46,8 @@ export const DatePicker: React.FC<Props> = ({
   const datepickerRef = useRef<CalendarRef>(null);
   const isShown = _isShown || propsIsShown;
 
-  const toggleDatePicker = (show: boolean) => {
+  //replace with paren'ts version
+  const _toggleDatePicker = (show: boolean) => {
     setTimeout(() => {
       toggleIsShown(show);
     });
@@ -62,7 +63,7 @@ export const DatePicker: React.FC<Props> = ({
   }, [_autoFocus]);
 
   useEffect(() => {
-    toggleDatePicker(defaultOpen);
+    _toggleDatePicker(defaultOpen);
   }, [defaultOpen]);
 
   return (
@@ -90,17 +91,17 @@ export const DatePicker: React.FC<Props> = ({
         "calendar--animation": animationOnToggle,
       })}
       onCalendarOpen={() => {
-        toggleDatePicker(true);
+        _toggleDatePicker(true);
         onCalendarOpen();
       }}
       onCalendarClose={() => {
         toggleIsShown(false);
-        toggleDatePicker(false);
+        _toggleDatePicker(false);
         onCalendarClose();
       }}
       onClickOutside={() => {
         toggleIsShown(false);
-        toggleDatePicker(false);
+        _toggleDatePicker(false);
         onCalendarClose();
       }}
       showPopperArrow={false}
@@ -163,7 +164,7 @@ export const DatePicker: React.FC<Props> = ({
                     cursor="pointer"
                     onClick={() => {
                       console.log("increasing month");
-                      increaseMonth;
+                      increaseMonth();
                     }}
                     fontWeight={600}
                     colorName={ColorNames.WHITE_1}
