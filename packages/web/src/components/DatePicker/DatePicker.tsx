@@ -30,10 +30,10 @@ export interface CalendarRef extends HTMLDivElement {
 
 export const DatePicker: React.FC<Props> = ({
   defaultOpen = false,
-  onSelect = () => {},
+  onSelect = () => null,
   onInputBlur,
-  onCalendarClose = () => {},
-  onCalendarOpen = () => {},
+  onCalendarClose = () => null,
+  onCalendarOpen = () => null,
   autoFocus: _autoFocus = false,
   animationOnToggle = true,
   calendarClassName,
@@ -42,14 +42,13 @@ export const DatePicker: React.FC<Props> = ({
   shouldCloseOnSelect = true,
   ...props
 }) => {
-  const [_isShown, toggleIsShown] = useState(propsIsShown);
+  const [_isShown, setIsShown] = useState(propsIsShown);
   const datepickerRef = useRef<CalendarRef>(null);
   const isShown = _isShown || propsIsShown;
 
-  //replace with paren'ts version
-  const _toggleDatePicker = (show: boolean) => {
+  const _showDatePicker = (show: boolean) => {
     setTimeout(() => {
-      toggleIsShown(show);
+      setIsShown(show);
     });
   };
 
@@ -63,7 +62,7 @@ export const DatePicker: React.FC<Props> = ({
   }, [_autoFocus]);
 
   useEffect(() => {
-    _toggleDatePicker(defaultOpen);
+    _showDatePicker(defaultOpen);
   }, [defaultOpen]);
 
   return (
@@ -84,25 +83,25 @@ export const DatePicker: React.FC<Props> = ({
           onSelect(date, event);
 
           if (shouldCloseOnSelect) {
-            toggleIsShown(false);
+            setIsShown(false);
           }
         }}
         calendarClassName={classNames("calendar", calendarClassName, {
-          "calendar--open": _isShown,
+          "calendar--open": isShown,
           "calendar--animation": animationOnToggle,
         })}
         onCalendarOpen={() => {
-          _toggleDatePicker(true);
+          _showDatePicker(true);
           onCalendarOpen();
         }}
         onCalendarClose={() => {
-          toggleIsShown(false);
-          _toggleDatePicker(false);
+          setIsShown(false);
+          _showDatePicker(false);
           onCalendarClose();
         }}
         onClickOutside={() => {
-          toggleIsShown(false);
-          _toggleDatePicker(false);
+          setIsShown(false);
+          _showDatePicker(false);
           onCalendarClose();
         }}
         showPopperArrow={false}

@@ -136,7 +136,7 @@ export const EventForm: React.FC<ComponentProps> = ({
     onClose();
   };
 
-  const onDatePickerIsOpenChange = () => {
+  const toggleDatePicker = () => {
     setIsDatePickerOpen(!!isOpen);
   };
 
@@ -213,20 +213,20 @@ export const EventForm: React.FC<ComponentProps> = ({
       />
 
       {!event.isAllDay && (
-        <div onClick={onDatePickerIsOpenChange}>
+        <div onClick={toggleDatePicker}>
           <DateTimePickersSection
-            isDatePickerShown={isDatePickerOpen}
-            toggleDatePicker={onDatePickerIsOpenChange}
-            setEndTime={setEndTime}
-            setStartTime={setStartTime}
-            setSelectedDate={setSelectedStartDate}
             endTime={endTime}
-            startTime={startTime}
+            isDatePickerShown={isDatePickerOpen}
             selectedDate={selectedStartDate}
-            showStartTimeLabel={!!showStartTimeLabel}
+            setEndTime={setEndTime}
+            setSelectedDate={setSelectedStartDate}
             setShowStartTimeLabel={(value) =>
               onSetEventField("showStartTimeLabel", !!value)
             }
+            setStartTime={setStartTime}
+            showStartTimeLabel={!!showStartTimeLabel}
+            startTime={startTime}
+            toggleDatePicker={toggleDatePicker}
           />
         </div>
       )}

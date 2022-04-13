@@ -62,7 +62,7 @@ const getTimepickerFilteredOptions = (
 
 export interface Props {
   isDatePickerShown: boolean;
-  toggleDatePicker: any;
+  toggleDatePicker: () => void;
   setStartTime: (value: SelectOption<string>) => void;
   setEndTime: (value: SelectOption<string>) => void;
   setSelectedDate: (value: Date) => void;
@@ -137,7 +137,6 @@ export const DateTimePickersSection: React.FC<Props> = ({
   };
 
   const onSelectDate = (date: Date | null | [Date | null, Date | null]) => {
-    console.log("onselect date");
     setSelectedDate(date as Date);
     toggleDatePicker();
   };
@@ -206,7 +205,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
               defaultOpen
               onCalendarClose={toggleDatePicker}
               onClickOutside={toggleDatePicker}
-              onChange={() => {}}
+              onChange={() => null}
               onKeyDown={onDatePickerKeyDown}
               onSelect={onSelectDate}
               selected={selectedDate}
