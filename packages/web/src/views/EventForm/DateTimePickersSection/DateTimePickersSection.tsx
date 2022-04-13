@@ -195,14 +195,11 @@ export const DateTimePickersSection: React.FC<Props> = ({
         {isDatePickerShown ? (
           <div
             onMouseUp={(e) => {
-              console.log("stopping prop in DTPS [on mouse UP]");
               e.stopPropagation();
             }}
             onMouseDown={(e) => {
-              console.log("stopping prop in DTPS [on mouse DOWN]");
               e.stopPropagation();
             }}
-            // onClick={() => console.log("clicked")}
           >
             <DatePicker
               autoFocus

@@ -137,10 +137,7 @@ export const EventForm: React.FC<ComponentProps> = ({
   };
 
   const onDatePickerIsOpenChange = () => {
-    console.log("changing to:", !!isOpen);
-    // console.log("setting to true");
     setIsDatePickerOpen(!!isOpen);
-    // setIsDatePickerOpen(true);
   };
 
   const onSubmitForm = () => {
@@ -197,14 +194,11 @@ export const EventForm: React.FC<ComponentProps> = ({
       priority={priority}
       onMouseUp={(e) => {
         if (isDatePickerOpen) {
-          console.log("closing date picker [Event Form Mouse UP]");
           setIsDatePickerOpen(false);
         }
-        console.log("stopping prop [on mouse UP]");
         e.stopPropagation();
       }}
       onMouseDown={(e) => {
-        console.log("stopping Prop [on mouse DOWN]");
         e.stopPropagation();
       }}
       role="form"

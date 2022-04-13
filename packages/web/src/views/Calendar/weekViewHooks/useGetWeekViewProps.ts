@@ -385,7 +385,6 @@ export const useGetWeekViewProps = () => {
   };
 
   const onEventsGridRelease = (e: React.MouseEvent) => {
-    console.log("[week view]");
     e.preventDefault();
     e.stopPropagation();
 
