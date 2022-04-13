@@ -161,7 +161,10 @@ export const DatePicker: React.FC<Props> = ({
                   </Text>
                   <Text
                     cursor="pointer"
-                    onClick={increaseMonth}
+                    onClick={() => {
+                      console.log("increasing month");
+                      increaseMonth;
+                    }}
                     fontWeight={600}
                     colorName={ColorNames.WHITE_1}
                     size={20}

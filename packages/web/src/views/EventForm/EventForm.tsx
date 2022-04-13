@@ -80,8 +80,7 @@ export const EventForm: React.FC<ComponentProps> = ({
    * Effect
    *********/
   useEffect(() => {
-    setEvent(event || {}); //$$
-    // setEvent(event || defaultEventState);
+    setEvent(event || {});
     setStartTime(initialStartTime || undefined);
     setEndTime(initialEndTime || undefined);
     setSelectedStartDate(initialStartDate);
@@ -137,16 +136,11 @@ export const EventForm: React.FC<ComponentProps> = ({
     onClose();
   };
 
-  const onFormClick = (e: MouseEvent) => {
-    e.stopImmediatePropagation();
-    return;
-    // e.stopPropagation();
-    // e.preventDefault();
-  };
-
   const onDatePickerIsOpenChange = () => {
-    console.log("changing date picker open state");
-    setIsDatePickerOpen(!!isOpen);
+    // console.log("changing to:", !!isOpen);
+    console.log("setting to true");
+    // setIsDatePickerOpen(!!isOpen);
+    setIsDatePickerOpen(true);
   };
 
   const onSubmitForm = () => {
@@ -201,20 +195,23 @@ export const EventForm: React.FC<ComponentProps> = ({
       {...props}
       isOpen={isOpen}
       priority={priority}
-      onClick={(e) => {
-        console.log("clicked somewhere in form");
-        e.preventDefault();
+      onMouseUp={(e) => {
+        console.log("on mouse UP");
+        if (isDatePickerOpen) {
+          console.log("trying to close date picker after mouse UP");
+          setIsDatePickerOpen(false);
+        }
         e.stopPropagation();
       }}
-      onMouseUp={(e) => {
-        console.log("stopping prop upon mouse");
+      onMouseDown={(e) => {
+        console.log("on mouse DOWN");
         if (isDatePickerOpen) {
-          console.log("trying to close date picker");
-          onDatePickerIsOpenChange();
-          e.preventDefault();
-          e.stopPropagation();
+          console.log("trying to close date picker after mouse DOWN");
+          setIsDatePickerOpen(false);
         }
+        e.stopPropagation();
       }}
+      onClick={(e) => console.log("onclick [FORM]")}
       role="form"
       title="Event Form"
     >
@@ -227,20 +224,22 @@ export const EventForm: React.FC<ComponentProps> = ({
       />
 
       {!event.isAllDay && (
-        <DateTimePickersSection
-          isDatePickerShown={isDatePickerOpen}
-          toggleDatePicker={onDatePickerIsOpenChange}
-          setEndTime={setEndTime}
-          setStartTime={setStartTime}
-          setSelectedDate={setSelectedStartDate}
-          endTime={endTime}
-          startTime={startTime}
-          selectedDate={selectedStartDate}
-          showStartTimeLabel={!!showStartTimeLabel}
-          setShowStartTimeLabel={(value) =>
-            onSetEventField("showStartTimeLabel", !!value)
-          }
-        />
+        <div onClick={onDatePickerIsOpenChange}>
+          <DateTimePickersSection
+            isDatePickerShown={isDatePickerOpen}
+            toggleDatePicker={onDatePickerIsOpenChange}
+            setEndTime={setEndTime}
+            setStartTime={setStartTime}
+            setSelectedDate={setSelectedStartDate}
+            endTime={endTime}
+            startTime={startTime}
+            selectedDate={selectedStartDate}
+            showStartTimeLabel={!!showStartTimeLabel}
+            setShowStartTimeLabel={(value) =>
+              onSetEventField("showStartTimeLabel", !!value)
+            }
+          />
+        </div>
       )}
 
       <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>

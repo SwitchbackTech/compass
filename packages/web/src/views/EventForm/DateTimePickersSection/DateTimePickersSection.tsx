@@ -184,7 +184,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
 
   const onDatePickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.which !== Key.Tab) return;
-
+    console.log("ondatepickerkeydown");
     toggleDatePicker(!!isDatePickerShown);
   };
 
@@ -192,22 +192,23 @@ export const DateTimePickersSection: React.FC<Props> = ({
     <StyledDateTimeFlex role="tablist" alignItems={AlignItems.CENTER}>
       <StyledDateFlex alignItems={AlignItems.CENTER}>
         {isDatePickerShown ? (
-          <DatePicker
-            autoFocus
-            defaultOpen
-            onCalendarClose={toggleDatePicker}
-            onClickOutside={toggleDatePicker}
-            onChange={() => {}}
-            onKeyDown={onDatePickerKeyDown}
-            onSelect={onSelectDate}
-            selected={selectedDate}
-          />
+          <div>
+            <DatePicker
+              autoFocus
+              defaultOpen
+              onCalendarClose={toggleDatePicker}
+              onClickOutside={toggleDatePicker}
+              onChange={() => {}}
+              onKeyDown={onDatePickerKeyDown}
+              onSelect={onSelectDate}
+              selected={selectedDate}
+            />
+          </div>
         ) : (
           <Text
             role="tab"
             tabIndex={0}
-            onFocus={toggleDatePicker}
-            // onFocus={() => toggleDatePicker(true)}
+            onFocus={() => toggleDatePicker}
             withUnderline
           >
             {dayjs(selectedDate).format("MMM DD")}

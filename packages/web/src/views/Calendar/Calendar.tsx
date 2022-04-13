@@ -97,14 +97,14 @@ export const CalendarView = () => {
     };
 
     document.addEventListener("keydown", keyDownHandler);
-    // document.addEventListener("mouseup", mouseReleaseHandler);
+    document.addEventListener("mouseup", mouseReleaseHandler);
     document.addEventListener("contextmenu", contextMenuHandler);
     window.addEventListener("resize", resizeHandler);
 
     return () => {
       document.addEventListener("contextmenu", contextMenuHandler);
       document.removeEventListener("keydown", keyDownHandler);
-      // document.removeEventListener("mouseup", mouseReleaseHandler);
+      document.removeEventListener("mouseup", mouseReleaseHandler);
       window.removeEventListener("resize", resizeHandler);
     };
   }, []);
