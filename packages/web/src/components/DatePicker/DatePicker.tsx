@@ -66,117 +66,116 @@ export const DatePicker: React.FC<Props> = ({
   }, [defaultOpen]);
 
   return (
-    <div id="hii there" role="dialog">
-      <ReactDatePicker
-        open
-        shouldCloseOnSelect={shouldCloseOnSelect}
-        portalId="root"
-        calendarContainer={(containerProps) => (
-          <Styled
-            {...containerProps}
-            monthsCount={(props.monthsShown || 0) + 1}
-          />
-        )}
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        ref={datepickerRef as any}
-        onSelect={(date, event: React.SyntheticEvent<Event> | undefined) => {
-          onSelect(date, event);
+    <ReactDatePicker
+      open
+      shouldCloseOnSelect={shouldCloseOnSelect}
+      portalId="root"
+      calendarContainer={(containerProps) => (
+        <Styled
+          {...containerProps}
+          monthsCount={(props.monthsShown || 0) + 1}
+        />
+      )}
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      ref={datepickerRef as any}
+      onSelect={(date, event: React.SyntheticEvent<Event> | undefined) => {
+        onSelect(date, event);
 
-          if (shouldCloseOnSelect) {
-            setIsShown(false);
-          }
-        }}
-        calendarClassName={classNames("calendar", calendarClassName, {
-          "calendar--open": isShown,
-          "calendar--animation": animationOnToggle,
-        })}
-        onCalendarOpen={() => {
-          _showDatePicker(true);
-          onCalendarOpen();
-        }}
-        onCalendarClose={() => {
+        if (shouldCloseOnSelect) {
           setIsShown(false);
-          _showDatePicker(false);
-          onCalendarClose();
-        }}
-        onClickOutside={() => {
-          setIsShown(false);
-          _showDatePicker(false);
-          onCalendarClose();
-        }}
-        showPopperArrow={false}
-        formatWeekDay={(day) => day[0]}
-        customInput={
-          <Input
-            onBlurCapture={onInputBlur}
-            background={ColorNames.DARK_3}
-            colorName={ColorNames.WHITE_1}
-          />
         }
-        renderCustomHeader={({
-          monthDate,
-          increaseMonth,
-          decreaseMonth,
-          changeMonth,
-          changeYear,
-          customHeaderCount,
-        }) => {
-          const formattedSelectedMonth = dayjs(monthDate).format("MMM YYYY");
-          const formattedCurrentMonth = dayjs().format("MMM YYYY");
+      }}
+      calendarClassName={classNames("calendar", calendarClassName, {
+        "calendar--open": isShown,
+        "calendar--animation": animationOnToggle,
+      })}
+      onCalendarOpen={() => {
+        _showDatePicker(true);
+        onCalendarOpen();
+      }}
+      onCalendarClose={() => {
+        setIsShown(false);
+        _showDatePicker(false);
+        onCalendarClose();
+      }}
+      onClickOutside={() => {
+        setIsShown(false);
+        _showDatePicker(false);
+        onCalendarClose();
+      }}
+      showPopperArrow={false}
+      formatWeekDay={(day) => day[0]}
+      //$$ this is causing the memory leak
+      customInput={
+        <Input
+          onBlurCapture={onInputBlur}
+          background={ColorNames.DARK_3}
+          colorName={ColorNames.WHITE_1}
+        />
+      }
+      renderCustomHeader={({
+        monthDate,
+        increaseMonth,
+        decreaseMonth,
+        changeMonth,
+        changeYear,
+        customHeaderCount,
+      }) => {
+        const formattedSelectedMonth = dayjs(monthDate).format("MMM YYYY");
+        const formattedCurrentMonth = dayjs().format("MMM YYYY");
 
-          return (
-            <StyledHeaderFlex
-              justifyContent={JustifyContent.SPACE_BETWEEN}
-              alignItems={AlignItems.CENTER}
-            >
-              <Text colorName={ColorNames.WHITE_1} size={25}>
-                {formattedSelectedMonth}
-              </Text>
+        return (
+          <StyledHeaderFlex
+            justifyContent={JustifyContent.SPACE_BETWEEN}
+            alignItems={AlignItems.CENTER}
+          >
+            <Text colorName={ColorNames.WHITE_1} size={25}>
+              {formattedSelectedMonth}
+            </Text>
 
-              {!customHeaderCount && (
-                <Flex alignItems={AlignItems.CENTER}>
-                  {withTodayButton &&
-                    formattedCurrentMonth !== formattedSelectedMonth && (
-                      <TodayStyledText
-                        cursor="pointer"
-                        onClick={() => {
-                          changeMonth(dayjs().month());
-                          changeYear(dayjs().year());
-                        }}
-                        colorName={ColorNames.WHITE_1}
-                        size={16}
-                      >
-                        Today
-                      </TodayStyledText>
-                    )}
-
-                  <ChangeDayButtonsStyledFlex>
-                    <Text
+            {!customHeaderCount && (
+              <Flex alignItems={AlignItems.CENTER}>
+                {withTodayButton &&
+                  formattedCurrentMonth !== formattedSelectedMonth && (
+                    <TodayStyledText
                       cursor="pointer"
-                      onClick={decreaseMonth}
-                      fontWeight={600}
+                      onClick={() => {
+                        changeMonth(dayjs().month());
+                        changeYear(dayjs().year());
+                      }}
                       colorName={ColorNames.WHITE_1}
-                      size={20}
+                      size={16}
                     >
-                      {"<"}
-                    </Text>
-                    <Text
-                      cursor="pointer"
-                      onClick={increaseMonth}
-                      fontWeight={600}
-                      colorName={ColorNames.WHITE_1}
-                      size={20}
-                    >
-                      {">"}
-                    </Text>
-                  </ChangeDayButtonsStyledFlex>
-                </Flex>
-              )}
-            </StyledHeaderFlex>
-          );
-        }}
-        {...props}
-      />
-    </div>
+                      Today
+                    </TodayStyledText>
+                  )}
+
+                <ChangeDayButtonsStyledFlex>
+                  <Text
+                    cursor="pointer"
+                    onClick={decreaseMonth}
+                    fontWeight={600}
+                    colorName={ColorNames.WHITE_1}
+                    size={20}
+                  >
+                    {"<"}
+                  </Text>
+                  <Text
+                    cursor="pointer"
+                    onClick={increaseMonth}
+                    fontWeight={600}
+                    colorName={ColorNames.WHITE_1}
+                    size={20}
+                  >
+                    {">"}
+                  </Text>
+                </ChangeDayButtonsStyledFlex>
+              </Flex>
+            )}
+          </StyledHeaderFlex>
+        );
+      }}
+      {...props}
+    />
   );
 };

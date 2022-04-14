@@ -99,6 +99,29 @@ export const DateTimePickersSection: React.FC<Props> = ({
     "isAfter"
   );
 
+  const closeAllTimePickers = () => {
+    toggleStartTimePicker(false);
+    toggleEndTimePicker(false);
+  };
+
+  const closeDatePicker = () => {
+    setTimeout(() => {
+      toggleDatePicker();
+    }, 150);
+  };
+
+  const onDatePickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.which !== Key.Tab) return;
+    toggleDatePicker(); //$$
+    // closeDatePicker();
+  };
+
+  const onEndTimePickerOpen = () => {
+    setAutoFocusedTimePicker("end");
+    toggleStartTimePicker(true);
+    toggleEndTimePicker(true);
+  };
+
   const onSelectStartTime = (value: SelectOption<string> | null) => {
     if (!value) return;
 
@@ -124,9 +147,10 @@ export const DateTimePickersSection: React.FC<Props> = ({
     toggleEndTimePicker(true);
   };
 
-  const closeAllTimePickers = () => {
-    toggleStartTimePicker(false);
-    toggleEndTimePicker(false);
+  const onSelectDate = (date: Date | null | [Date | null, Date | null]) => {
+    setSelectedDate(date as Date);
+    toggleDatePicker(); //$$
+    // closeDatePicker();
   };
 
   const onSelectEndTime = (value: SelectOption<string> | null) => {
@@ -134,11 +158,6 @@ export const DateTimePickersSection: React.FC<Props> = ({
 
     setEndTime(value);
     closeAllTimePickers();
-  };
-
-  const onSelectDate = (date: Date | null | [Date | null, Date | null]) => {
-    setSelectedDate(date as Date);
-    toggleDatePicker();
   };
 
   const onTimePickerBlur = (e: React.FocusEvent<HTMLElement>) => {
@@ -176,18 +195,6 @@ export const DateTimePickersSection: React.FC<Props> = ({
     }
   };
 
-  const onEndTimePickerOpen = () => {
-    setAutoFocusedTimePicker("end");
-    toggleStartTimePicker(true);
-    toggleEndTimePicker(true);
-  };
-
-  const onDatePickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.which !== Key.Tab) return;
-    console.log("ondatepickerkeydown");
-    toggleDatePicker();
-  };
-
   return (
     <StyledDateTimeFlex role="tablist" alignItems={AlignItems.CENTER}>
       <StyledDateFlex alignItems={AlignItems.CENTER}>
@@ -203,7 +210,8 @@ export const DateTimePickersSection: React.FC<Props> = ({
             <DatePicker
               autoFocus
               defaultOpen
-              onCalendarClose={toggleDatePicker}
+              onCalendarClose={toggleDatePicker} //$$
+              // onCalendarClose={closeDatePicker}
               onClickOutside={toggleDatePicker}
               onChange={() => null}
               onKeyDown={onDatePickerKeyDown}

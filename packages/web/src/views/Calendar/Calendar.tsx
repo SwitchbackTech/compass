@@ -14,13 +14,13 @@ import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { getAlphaColor, getColor } from "@web/common/utils/colors";
-import { getCurrentMinute } from "@web/common/utils/grid.util";
 import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
 import { TodayButtonPopover } from "@web/views/Calendar/components/TodayButtonPopover";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
 import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { useToken } from "@web/common/hooks/useToken";
+import { getCurrentMinute } from "@web/common/utils/grid.util";
 
 import {
   useGetWeekViewProps,
@@ -62,6 +62,9 @@ export const CalendarView = () => {
     { width: number; height: number } | undefined
   >();
 
+  /**********************
+   * Keys & Shortcuts Init
+   **********************/
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
       eventHandlers.setEditingEvent((editingEvent) => {
@@ -84,7 +87,7 @@ export const CalendarView = () => {
       });
     };
 
-    const mouseReleaseHandler = (e: MouseEvent) => {
+    const mouseUpHandler = (e: MouseEvent) => {
       setTimeout(() => {
         eventHandlers.onEventsGridRelease(e as unknown as React.MouseEvent);
       });
@@ -97,17 +100,27 @@ export const CalendarView = () => {
     };
 
     document.addEventListener("keydown", keyDownHandler);
-    document.addEventListener("mouseup", mouseReleaseHandler);
+    document.addEventListener("mouseup", mouseUpHandler);
     document.addEventListener("contextmenu", contextMenuHandler);
     window.addEventListener("resize", resizeHandler);
 
     return () => {
       document.addEventListener("contextmenu", contextMenuHandler);
       document.removeEventListener("keydown", keyDownHandler);
-      document.removeEventListener("mouseup", mouseReleaseHandler);
+      document.removeEventListener("mouseup", mouseUpHandler);
       window.removeEventListener("resize", resizeHandler);
     };
   }, []);
+
+  useEffect(() => {
+    if (!component.eventsGridRef.current) return;
+
+    // scroll down to the current time in grid
+    const minuteHeight = core.getEventCellHeight() / 60;
+    const top = getCurrentMinute() * minuteHeight;
+
+    component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
+  }, [component.calendarRef]);
 
   if (!token) {
     return <Navigate to={ROOT_ROUTES.LOGIN} />;
