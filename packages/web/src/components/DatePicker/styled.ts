@@ -1,5 +1,4 @@
 import styled from "styled-components";
-
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
 import { ColorNames } from "@web/common/types/styles";
@@ -9,9 +8,28 @@ export interface Props {
   monthsCount?: number;
 }
 
-const dayHoverStyles = `
+const _dayHoverStyles = `
   background-color: ${getColor(ColorNames.BLUE_5)};
   color: ${getColor(ColorNames.DARK_2)};
+`;
+
+export const ChangeDayButtonsStyledFlex = styled(Flex)`
+  & span {
+    padding: 0 9px;
+    border-radius: 50%;
+
+    &:hover {
+      ${_dayHoverStyles}
+    }
+
+    &:first-child {
+      margin-right: 10px;
+    }
+  }
+`;
+
+export const MonthContainerStyled = styled(Flex)`
+  padding-right: 20px;
 `;
 
 export const Styled = styled.div<Props>`
@@ -65,7 +83,7 @@ export const Styled = styled.div<Props>`
       margin: 0;
 
       &:hover {
-        ${dayHoverStyles}
+        ${_dayHoverStyles}
       }
 
       &-names {
@@ -110,7 +128,7 @@ export const Styled = styled.div<Props>`
 `;
 
 export const StyledHeaderFlex = styled(Flex)`
-  padding: 10px 35px 5px 35px;
+  padding: 10px 20px 8px 20px;
 `;
 
 export const TodayStyledText = styled(Text)`
@@ -118,21 +136,6 @@ export const TodayStyledText = styled(Text)`
   padding: 0px 6px;
 
   &:hover {
-    ${dayHoverStyles}
-  }
-`;
-
-export const ChangeDayButtonsStyledFlex = styled(Flex)`
-  & span {
-    padding: 0 9px;
-    border-radius: 50%;
-
-    &:hover {
-      ${dayHoverStyles}
-    }
-
-    &:first-child {
-      margin-right: 10px;
-    }
+    ${_dayHoverStyles}
   }
 `;

@@ -3,7 +3,6 @@ import ReactDatePicker, { ReactDatePickerProps } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import dayjs from "dayjs";
 import classNames from "classnames";
-
 import { Text } from "@web/components/Text";
 import { ColorNames } from "@web/common/types/styles";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
@@ -12,6 +11,7 @@ import { Input } from "@web/components/Input";
 
 import {
   ChangeDayButtonsStyledFlex,
+  MonthContainerStyled,
   Styled,
   StyledHeaderFlex,
   TodayStyledText,
@@ -31,10 +31,10 @@ export interface CalendarRef extends HTMLDivElement {
 
 export const DatePicker: React.FC<Props> = ({
   defaultOpen = false,
-  onSelect = () => {},
+  onSelect = () => null,
   onInputBlur,
-  onCalendarClose = () => {},
-  onCalendarOpen = () => {},
+  onCalendarClose = () => null,
+  onCalendarOpen = () => null,
   autoFocus: _autoFocus = false,
   animationOnToggle = true,
   calendarClassName,
@@ -43,13 +43,13 @@ export const DatePicker: React.FC<Props> = ({
   shouldCloseOnSelect = true,
   ...props
 }) => {
-  const [_isShown, toggleIsShown] = useState(propsIsShown);
+  const [_isShown, setIsShown] = useState(propsIsShown);
   const datepickerRef = useRef<CalendarRef>(null);
   const isShown = _isShown || propsIsShown;
 
-  const toggleDatePicker = (show: boolean) => {
+  const _showDatePicker = (show: boolean) => {
     setTimeout(() => {
-      toggleIsShown(show);
+      setIsShown(show);
     });
   };
 
@@ -63,7 +63,7 @@ export const DatePicker: React.FC<Props> = ({
   }, [_autoFocus]);
 
   useEffect(() => {
-    toggleDatePicker(defaultOpen);
+    _showDatePicker(defaultOpen);
   }, [defaultOpen]);
 
   return (
@@ -83,7 +83,7 @@ export const DatePicker: React.FC<Props> = ({
         onSelect(date, event);
 
         if (shouldCloseOnSelect) {
-          toggleIsShown(false);
+          setIsShown(false);
         }
       }}
       calendarClassName={classNames("calendar", calendarClassName, {
@@ -91,15 +91,22 @@ export const DatePicker: React.FC<Props> = ({
         "calendar--animation": animationOnToggle,
       })}
       onCalendarOpen={() => {
-        toggleDatePicker(true);
+        _showDatePicker(true);
         onCalendarOpen();
       }}
       onCalendarClose={() => {
-        toggleDatePicker(false);
+        setIsShown(false);
+        _showDatePicker(false);
+        onCalendarClose();
+      }}
+      onClickOutside={() => {
+        setIsShown(false);
+        _showDatePicker(false);
         onCalendarClose();
       }}
       showPopperArrow={false}
       formatWeekDay={(day) => day[0]}
+      //$$ this is causing the memory leak
       customInput={
         <Input
           onBlurCapture={onInputBlur}
@@ -120,30 +127,17 @@ export const DatePicker: React.FC<Props> = ({
 
         return (
           <StyledHeaderFlex
-            justifyContent={JustifyContent.SPACE_BETWEEN}
+            justifyContent={JustifyContent.LEFT}
             alignItems={AlignItems.CENTER}
           >
-            <Text colorName={ColorNames.WHITE_1} size={25}>
-              {formattedSelectedMonth}
-            </Text>
+            <MonthContainerStyled>
+              <Text colorName={ColorNames.WHITE_1} size={25}>
+                {formattedSelectedMonth}
+              </Text>
+            </MonthContainerStyled>
 
             {!customHeaderCount && (
               <Flex alignItems={AlignItems.CENTER}>
-                {withTodayButton &&
-                  formattedCurrentMonth !== formattedSelectedMonth && (
-                    <TodayStyledText
-                      cursor="pointer"
-                      onClick={() => {
-                        changeMonth(dayjs().month());
-                        changeYear(dayjs().year());
-                      }}
-                      colorName={ColorNames.WHITE_1}
-                      size={16}
-                    >
-                      Today
-                    </TodayStyledText>
-                  )}
-
                 <ChangeDayButtonsStyledFlex>
                   <Text
                     cursor="pointer"
@@ -164,6 +158,21 @@ export const DatePicker: React.FC<Props> = ({
                     {">"}
                   </Text>
                 </ChangeDayButtonsStyledFlex>
+
+                {withTodayButton &&
+                  formattedCurrentMonth !== formattedSelectedMonth && (
+                    <TodayStyledText
+                      cursor="pointer"
+                      onClick={() => {
+                        changeMonth(dayjs().month());
+                        changeYear(dayjs().year());
+                      }}
+                      colorName={ColorNames.WHITE_1}
+                      size={16}
+                    >
+                      Today
+                    </TodayStyledText>
+                  )}
               </Flex>
             )}
           </StyledHeaderFlex>

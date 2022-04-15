@@ -213,7 +213,7 @@ export const febToMarState = {
             "ccq34eb261j3ab9jckpj6b9kcos6cbb26pi38b9pc5i64e9mcgp3ao9p6o",
           user: "6227e1a1623abad10d70afbf",
           origin: "googleimport",
-          title: "Climb with Spencer",
+          title: "Climb",
           description: "",
           priorities: [],
           isAllDay: false,

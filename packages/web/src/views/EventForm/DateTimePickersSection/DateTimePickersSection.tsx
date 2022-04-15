@@ -61,6 +61,8 @@ const getTimepickerFilteredOptions = (
 };
 
 export interface Props {
+  isDatePickerShown: boolean;
+  toggleDatePicker: () => void;
   setStartTime: (value: SelectOption<string>) => void;
   setEndTime: (value: SelectOption<string>) => void;
   setSelectedDate: (value: Date) => void;
@@ -72,6 +74,8 @@ export interface Props {
 }
 
 export const DateTimePickersSection: React.FC<Props> = ({
+  isDatePickerShown,
+  toggleDatePicker,
   setStartTime,
   setEndTime,
   setSelectedDate,
@@ -83,7 +87,6 @@ export const DateTimePickersSection: React.FC<Props> = ({
 }) => {
   const [isStartTimePickerShown, toggleStartTimePicker] = useState(false);
   const [isEndTimePickerShown, toggleEndTimePicker] = useState(false);
-  const [isDatePickerShown, toggleDatePicker] = useState(false);
   const [autoFocusedTimePicker, setAutoFocusedTimePicker] = useState("");
 
   const startTimePickerOptions = getTimepickerFilteredOptions(
@@ -95,6 +98,29 @@ export const DateTimePickersSection: React.FC<Props> = ({
     startTime,
     "isAfter"
   );
+
+  const closeAllTimePickers = () => {
+    toggleStartTimePicker(false);
+    toggleEndTimePicker(false);
+  };
+
+  const closeDatePicker = () => {
+    setTimeout(() => {
+      toggleDatePicker();
+    }, 150);
+  };
+
+  const onDatePickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.which !== Key.Tab) return;
+    toggleDatePicker(); //$$
+    // closeDatePicker();
+  };
+
+  const onEndTimePickerOpen = () => {
+    setAutoFocusedTimePicker("end");
+    toggleStartTimePicker(true);
+    toggleEndTimePicker(true);
+  };
 
   const onSelectStartTime = (value: SelectOption<string> | null) => {
     if (!value) return;
@@ -121,9 +147,10 @@ export const DateTimePickersSection: React.FC<Props> = ({
     toggleEndTimePicker(true);
   };
 
-  const closeAllTimePickers = () => {
-    toggleStartTimePicker(false);
-    toggleEndTimePicker(false);
+  const onSelectDate = (date: Date | null | [Date | null, Date | null]) => {
+    setSelectedDate(date as Date);
+    toggleDatePicker(); //$$
+    // closeDatePicker();
   };
 
   const onSelectEndTime = (value: SelectOption<string> | null) => {
@@ -131,17 +158,6 @@ export const DateTimePickersSection: React.FC<Props> = ({
 
     setEndTime(value);
     closeAllTimePickers();
-  };
-
-  const closeDatePicker = () => {
-    setTimeout(() => {
-      toggleDatePicker(false);
-    }, 150);
-  };
-
-  const onSelectDate = (date: Date | null | [Date | null, Date | null]) => {
-    setSelectedDate(date as Date);
-    closeDatePicker();
   };
 
   const onTimePickerBlur = (e: React.FocusEvent<HTMLElement>) => {
@@ -179,36 +195,35 @@ export const DateTimePickersSection: React.FC<Props> = ({
     }
   };
 
-  const onEndTimePickerOpen = () => {
-    setAutoFocusedTimePicker("end");
-    toggleStartTimePicker(true);
-    toggleEndTimePicker(true);
-  };
-
-  const onDatePickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.which !== Key.Tab) return;
-
-    closeDatePicker();
-  };
-
   return (
     <StyledDateTimeFlex role="tablist" alignItems={AlignItems.CENTER}>
       <StyledDateFlex alignItems={AlignItems.CENTER}>
         {isDatePickerShown ? (
-          <DatePicker
-            defaultOpen
-            autoFocus
-            onCalendarClose={closeDatePicker}
-            onChange={() => {}}
-            onSelect={onSelectDate}
-            selected={selectedDate}
-            onKeyDown={onDatePickerKeyDown}
-          />
+          <div
+            onMouseUp={(e) => {
+              e.stopPropagation();
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <DatePicker
+              autoFocus
+              defaultOpen
+              onCalendarClose={toggleDatePicker} //$$
+              // onCalendarClose={closeDatePicker}
+              onClickOutside={toggleDatePicker}
+              onChange={() => null}
+              onKeyDown={onDatePickerKeyDown}
+              onSelect={onSelectDate}
+              selected={selectedDate}
+            />
+          </div>
         ) : (
           <Text
             role="tab"
             tabIndex={0}
-            onFocus={() => toggleDatePicker(true)}
+            onFocus={() => toggleDatePicker}
             withUnderline
           >
             {dayjs(selectedDate).format("MMM DD")}

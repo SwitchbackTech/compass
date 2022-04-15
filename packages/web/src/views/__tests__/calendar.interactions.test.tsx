@@ -150,6 +150,34 @@ describe("Calendar Interactions", () => {
         ).not.toBeInTheDocument();
       });
     });
+
+    describe("DatePicker", () => {
+      it("closes when clicking outside of form, while keeping form open", async () => {
+        const user = userEvent.setup();
+        const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
+        render(<CalendarView />, { preloadedState });
+
+        await user.click(screen.getByRole("button", { name: "Climb" })); // open event
+        await user.click(screen.getByRole("tab", { name: /mar 01/i })); // click date input
+        await user.click(
+          screen.getByRole("form", {
+            name: /event form/i,
+          })
+        );
+
+        // datepicker closes
+        // assumes that the datepicker structures options as a listbox
+        // (which 'react-datepicker' does)
+        expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+
+        // form is still open
+        expect(
+          screen.getByRole("form", {
+            name: /event form/i,
+          })
+        ).toBeInTheDocument();
+      });
+    });
   });
 
   describe("All Day Events", () => {
