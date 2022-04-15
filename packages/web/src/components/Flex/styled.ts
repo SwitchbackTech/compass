@@ -9,6 +9,7 @@ export enum FlexDirections {
 
 export enum JustifyContent {
   CENTER = "center",
+  LEFT = "left",
   SPACE_BETWEEN = "space-between",
   SPACE_AROUND = "space-around",
 }

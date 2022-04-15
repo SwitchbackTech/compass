@@ -11,6 +11,7 @@ import { Input } from "@web/components/Input";
 
 import {
   ChangeDayButtonsStyledFlex,
+  MonthContainerStyled,
   Styled,
   StyledHeaderFlex,
   TodayStyledText,
@@ -126,30 +127,17 @@ export const DatePicker: React.FC<Props> = ({
 
         return (
           <StyledHeaderFlex
-            justifyContent={JustifyContent.SPACE_BETWEEN}
+            justifyContent={JustifyContent.LEFT}
             alignItems={AlignItems.CENTER}
           >
-            <Text colorName={ColorNames.WHITE_1} size={25}>
-              {formattedSelectedMonth}
-            </Text>
+            <MonthContainerStyled>
+              <Text colorName={ColorNames.WHITE_1} size={25}>
+                {formattedSelectedMonth}
+              </Text>
+            </MonthContainerStyled>
 
             {!customHeaderCount && (
               <Flex alignItems={AlignItems.CENTER}>
-                {withTodayButton &&
-                  formattedCurrentMonth !== formattedSelectedMonth && (
-                    <TodayStyledText
-                      cursor="pointer"
-                      onClick={() => {
-                        changeMonth(dayjs().month());
-                        changeYear(dayjs().year());
-                      }}
-                      colorName={ColorNames.WHITE_1}
-                      size={16}
-                    >
-                      Today
-                    </TodayStyledText>
-                  )}
-
                 <ChangeDayButtonsStyledFlex>
                   <Text
                     cursor="pointer"
@@ -170,6 +158,21 @@ export const DatePicker: React.FC<Props> = ({
                     {">"}
                   </Text>
                 </ChangeDayButtonsStyledFlex>
+
+                {withTodayButton &&
+                  formattedCurrentMonth !== formattedSelectedMonth && (
+                    <TodayStyledText
+                      cursor="pointer"
+                      onClick={() => {
+                        changeMonth(dayjs().month());
+                        changeYear(dayjs().year());
+                      }}
+                      colorName={ColorNames.WHITE_1}
+                      size={16}
+                    >
+                      Today
+                    </TodayStyledText>
+                  )}
               </Flex>
             )}
           </StyledHeaderFlex>
