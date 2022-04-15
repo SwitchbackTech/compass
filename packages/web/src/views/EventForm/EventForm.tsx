@@ -222,27 +222,26 @@ export const EventForm: React.FC<ComponentProps> = ({
         onChange={onChangeEventTextField("title")}
       />
 
-      {!event.isAllDay && (
-        <DateTimePickersSection
-          endTime={endTime}
-          isStartDatePickerShown={isStartDatePickerOpen}
-          isEndDatePickerShown={isEndDatePickerOpen}
-          selectedEndDate={selectedEndDate}
-          selectedStartDate={selectedStartDate}
-          setEndTime={setEndTime}
-          setSelectedEndDate={setSelectedEndDate}
-          setSelectedStartDate={setSelectedStartDate}
-          setShowStartTimeLabel={(value) =>
-            onSetEventField("showStartTimeLabel", !!value)
-          }
-          setStartTime={setStartTime}
-          // showStartTimeLabel={!!showStartTimeLabel}
-          showStartTimeLabel={showStartTimeLabel}
-          startTime={startTime}
-          toggleEndDatePicker={toggleEndDatePicker}
-          toggleStartDatePicker={toggleStartDatePicker}
-        />
-      )}
+      <DateTimePickersSection
+        endTime={endTime}
+        isAllDay={event.isAllDay}
+        isEndDatePickerShown={isEndDatePickerOpen}
+        isStartDatePickerShown={isStartDatePickerOpen}
+        selectedEndDate={selectedEndDate}
+        selectedStartDate={selectedStartDate}
+        setEndTime={setEndTime}
+        setSelectedEndDate={setSelectedEndDate}
+        setSelectedStartDate={setSelectedStartDate}
+        setShowStartTimeLabel={(value) =>
+          onSetEventField("showStartTimeLabel", !!value)
+        }
+        setStartTime={setStartTime}
+        // showStartTimeLabel={!!showStartTimeLabel}
+        showStartTimeLabel={showStartTimeLabel}
+        startTime={startTime}
+        toggleEndDatePicker={toggleEndDatePicker}
+        toggleStartDatePicker={toggleStartDatePicker}
+      />
 
       <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
         <Button

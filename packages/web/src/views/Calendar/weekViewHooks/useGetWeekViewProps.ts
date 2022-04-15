@@ -452,7 +452,6 @@ export const useGetWeekViewProps = () => {
 
   const onSubmitEvent = (event: Schema_Event | Schema_GridEvent) => {
     const eventToSave = { ...event };
-
     const maxDayMinutes = 1440;
 
     const isEventOverlappingCurrentDay =

@@ -61,8 +61,9 @@ const getTimepickerFilteredOptions = (
 };
 
 export interface Props {
-  isStartDatePickerShown: boolean;
+  isAllDay: boolean;
   isEndDatePickerShown: boolean;
+  isStartDatePickerShown: boolean;
   toggleStartDatePicker: () => void;
   toggleEndDatePicker: () => void;
   setStartTime: (value: SelectOption<string>) => void;
@@ -78,8 +79,9 @@ export interface Props {
 }
 
 export const DateTimePickersSection: React.FC<Props> = ({
-  isStartDatePickerShown,
+  isAllDay,
   isEndDatePickerShown,
+  isStartDatePickerShown,
   toggleStartDatePicker,
   toggleEndDatePicker,
   setStartTime,
@@ -280,58 +282,60 @@ export const DateTimePickersSection: React.FC<Props> = ({
         )}
       </StyledDateFlex>
 
-      <StyledTimeFlex alignItems={AlignItems.CENTER}>
-        {!isStartTimePickerShown ? (
-          <Text
-            role="tab"
-            tabIndex={0}
-            onFocus={onStartTimePickerOpen}
-            withUnderline
-            onClick={onStartTimePickerOpen}
-          >
-            {startTime?.label}
-          </Text>
-        ) : (
-          <TimePicker
-            openMenuOnFocus
-            inputId="startTimePicker"
-            onBlur={onTimePickerBlur}
-            options={startTimePickerOptions}
-            autoFocus={autoFocusedTimePicker === "start"}
-            value={startTime}
-            onChange={onSelectStartTime}
-          />
-        )}
-
-        {isEndTimePickerShown && (
-          <>
-            <SpaceCharacter />-<SpaceCharacter />
-            <TimePicker
-              inputId="endTimePicker"
-              onBlur={onTimePickerBlur}
-              options={endTimePickerOptions}
-              autoFocus={autoFocusedTimePicker === "end"}
-              value={endTime}
-              onChange={onSelectEndTime}
-            />
-          </>
-        )}
-
-        {endTime?.value && !isEndTimePickerShown && (
-          <>
-            <SpaceCharacter />-<SpaceCharacter />
+      {!isAllDay && (
+        <StyledTimeFlex alignItems={AlignItems.CENTER}>
+          {!isStartTimePickerShown ? (
             <Text
               role="tab"
               tabIndex={0}
-              onFocus={onEndTimePickerOpen}
+              onFocus={onStartTimePickerOpen}
               withUnderline
-              onClick={onEndTimePickerOpen}
+              onClick={onStartTimePickerOpen}
             >
-              {endTime.label}
+              {startTime?.label || "Start"}
             </Text>
-          </>
-        )}
-      </StyledTimeFlex>
+          ) : (
+            <TimePicker
+              openMenuOnFocus
+              inputId="startTimePicker"
+              onBlur={onTimePickerBlur}
+              options={startTimePickerOptions}
+              autoFocus={autoFocusedTimePicker === "start"}
+              value={startTime}
+              onChange={onSelectStartTime}
+            />
+          )}
+
+          {isEndTimePickerShown && (
+            <>
+              <SpaceCharacter />-<SpaceCharacter />
+              <TimePicker
+                inputId="endTimePicker"
+                onBlur={onTimePickerBlur}
+                options={endTimePickerOptions}
+                autoFocus={autoFocusedTimePicker === "end"}
+                value={endTime}
+                onChange={onSelectEndTime}
+              />
+            </>
+          )}
+
+          {endTime?.value && !isEndTimePickerShown && (
+            <>
+              <SpaceCharacter />-<SpaceCharacter />
+              <Text
+                role="tab"
+                tabIndex={0}
+                onFocus={onEndTimePickerOpen}
+                withUnderline
+                onClick={onEndTimePickerOpen}
+              >
+                {endTime.label}
+              </Text>
+            </>
+          )}
+        </StyledTimeFlex>
+      )}
     </StyledDateTimeFlex>
   );
 };
