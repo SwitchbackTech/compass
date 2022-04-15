@@ -199,11 +199,9 @@ export const EventForm: React.FC<ComponentProps> = ({
       priority={priority}
       onMouseUp={(e) => {
         if (isStartDatePickerOpen) {
-          console.log("closing start picker");
           setIsStartDatePickerOpen(false);
         }
         if (isEndDatePickerOpen) {
-          console.log("closing end picker");
           setIsEndDatePickerOpen(false);
         }
 
@@ -224,18 +222,6 @@ export const EventForm: React.FC<ComponentProps> = ({
       />
 
       {!event.isAllDay && (
-        // <div
-        //   onClick={() => {
-        //     if (!isStartDatePickerOpen) {
-        //       setIsStartDatePickerOpen(true);
-        //     } else {
-        //       console.log("checking end");
-        //       if (!isEndDatePickerOpen) {
-        //         setIsEndDatePickerOpen(true);
-        //       }
-        //     }
-        //   }}
-        // >
         <DateTimePickersSection
           endTime={endTime}
           isStartDatePickerShown={isStartDatePickerOpen}
@@ -249,12 +235,12 @@ export const EventForm: React.FC<ComponentProps> = ({
             onSetEventField("showStartTimeLabel", !!value)
           }
           setStartTime={setStartTime}
-          showStartTimeLabel={!!showStartTimeLabel}
+          // showStartTimeLabel={!!showStartTimeLabel}
+          showStartTimeLabel={showStartTimeLabel}
           startTime={startTime}
           toggleEndDatePicker={toggleEndDatePicker}
           toggleStartDatePicker={toggleStartDatePicker}
         />
-        // </div>
       )}
 
       <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
