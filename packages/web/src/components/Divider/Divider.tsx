@@ -9,9 +9,10 @@ export const Divider: React.FC<Props & HTMLAttributes<HTMLDivElement>> = (
   const [toggled, toggle] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => {
-      toggle(true);
-    });
+    // commented setTimeout because caused memory leak warning
+    // setTimeout(() => {
+    toggle(true);
+    // });
   }, []);
 
   return <Styled toggled={toggled} {...props} />;
