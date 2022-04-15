@@ -38,14 +38,15 @@ export const EventForm: React.FC<ComponentProps> = ({
   /********
    * State
    ********/
-  const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>();
+  const [endTime, setEndTime] = useState<SelectOption<string> | undefined>();
   const [isShiftKeyPressed, toggleShiftKeyPressed] = useState(false);
-  const [isOpen, setIsFormOpen] = useState(false); //rename to isFormOpen
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
+  const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
   const [startTime, setStartTime] = useState<
     SelectOption<string> | undefined
   >();
-  const [endTime, setEndTime] = useState<SelectOption<string> | undefined>();
+  const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>();
   const [selectedStartDate, setSelectedStartDate] = useState<
     Date | undefined
   >();
@@ -136,8 +137,12 @@ export const EventForm: React.FC<ComponentProps> = ({
     onClose();
   };
 
-  const toggleDatePicker = () => {
-    setIsDatePickerOpen(!!isOpen);
+  const toggleEndDatePicker = () => {
+    setIsEndDatePickerOpen(!isEndDatePickerOpen);
+  };
+
+  const toggleStartDatePicker = () => {
+    setIsStartDatePickerOpen(!isStartDatePickerOpen);
   };
 
   const onSubmitForm = () => {
@@ -190,12 +195,18 @@ export const EventForm: React.FC<ComponentProps> = ({
   return (
     <Styled
       {...props}
-      isOpen={isOpen}
+      isOpen={isFormOpen}
       priority={priority}
       onMouseUp={(e) => {
-        if (isDatePickerOpen) {
-          setIsDatePickerOpen(false);
+        if (isStartDatePickerOpen) {
+          console.log("closing start picker");
+          setIsStartDatePickerOpen(false);
         }
+        if (isEndDatePickerOpen) {
+          console.log("closing end picker");
+          setIsEndDatePickerOpen(false);
+        }
+
         e.stopPropagation();
       }}
       onMouseDown={(e) => {
@@ -213,22 +224,37 @@ export const EventForm: React.FC<ComponentProps> = ({
       />
 
       {!event.isAllDay && (
-        <div onClick={toggleDatePicker}>
-          <DateTimePickersSection
-            endTime={endTime}
-            isDatePickerShown={isDatePickerOpen}
-            selectedDate={selectedStartDate}
-            setEndTime={setEndTime}
-            setSelectedDate={setSelectedStartDate}
-            setShowStartTimeLabel={(value) =>
-              onSetEventField("showStartTimeLabel", !!value)
-            }
-            setStartTime={setStartTime}
-            showStartTimeLabel={!!showStartTimeLabel}
-            startTime={startTime}
-            toggleDatePicker={toggleDatePicker}
-          />
-        </div>
+        // <div
+        //   onClick={() => {
+        //     if (!isStartDatePickerOpen) {
+        //       setIsStartDatePickerOpen(true);
+        //     } else {
+        //       console.log("checking end");
+        //       if (!isEndDatePickerOpen) {
+        //         setIsEndDatePickerOpen(true);
+        //       }
+        //     }
+        //   }}
+        // >
+        <DateTimePickersSection
+          endTime={endTime}
+          isStartDatePickerShown={isStartDatePickerOpen}
+          isEndDatePickerShown={isEndDatePickerOpen}
+          selectedEndDate={selectedEndDate}
+          selectedStartDate={selectedStartDate}
+          setEndTime={setEndTime}
+          setSelectedEndDate={setSelectedEndDate}
+          setSelectedStartDate={setSelectedStartDate}
+          setShowStartTimeLabel={(value) =>
+            onSetEventField("showStartTimeLabel", !!value)
+          }
+          setStartTime={setStartTime}
+          showStartTimeLabel={!!showStartTimeLabel}
+          startTime={startTime}
+          toggleEndDatePicker={toggleEndDatePicker}
+          toggleStartDatePicker={toggleStartDatePicker}
+        />
+        // </div>
       )}
 
       <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>

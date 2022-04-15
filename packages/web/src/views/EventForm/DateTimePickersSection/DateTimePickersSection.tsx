@@ -61,33 +61,41 @@ const getTimepickerFilteredOptions = (
 };
 
 export interface Props {
-  isDatePickerShown: boolean;
-  toggleDatePicker: () => void;
+  isStartDatePickerShown: boolean;
+  isEndDatePickerShown: boolean;
+  toggleStartDatePicker: () => void;
+  toggleEndDatePicker: () => void;
   setStartTime: (value: SelectOption<string>) => void;
   setEndTime: (value: SelectOption<string>) => void;
-  setSelectedDate: (value: Date) => void;
+  setSelectedEndDate: (value: Date) => void;
+  setSelectedStartDate: (value: Date) => void;
   startTime?: SelectOption<string>;
   endTime?: SelectOption<string>;
-  selectedDate?: Date;
+  selectedEndDate?: Date;
+  selectedStartDate?: Date;
   showStartTimeLabel: boolean;
   setShowStartTimeLabel: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const DateTimePickersSection: React.FC<Props> = ({
-  isDatePickerShown,
-  toggleDatePicker,
+  isStartDatePickerShown,
+  isEndDatePickerShown,
+  toggleStartDatePicker,
+  toggleEndDatePicker,
   setStartTime,
   setEndTime,
-  setSelectedDate,
-  selectedDate,
+  setSelectedEndDate,
+  setSelectedStartDate,
+  selectedEndDate,
+  selectedStartDate,
   startTime,
   endTime,
   showStartTimeLabel = false,
   setShowStartTimeLabel,
 }) => {
+  const [autoFocusedTimePicker, setAutoFocusedTimePicker] = useState("");
   const [isStartTimePickerShown, toggleStartTimePicker] = useState(false);
   const [isEndTimePickerShown, toggleEndTimePicker] = useState(false);
-  const [autoFocusedTimePicker, setAutoFocusedTimePicker] = useState("");
 
   const startTimePickerOptions = getTimepickerFilteredOptions(
     endTime,
@@ -104,22 +112,39 @@ export const DateTimePickersSection: React.FC<Props> = ({
     toggleEndTimePicker(false);
   };
 
-  const closeDatePicker = () => {
-    setTimeout(() => {
-      toggleDatePicker();
-    }, 150);
-  };
-
   const onDatePickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    console.log("onkey");
     if (e.which !== Key.Tab) return;
-    toggleDatePicker(); //$$
-    // closeDatePicker();
+    if (isStartDatePickerShown) {
+      console.log("toggling");
+      toggleStartDatePicker();
+    }
+    isEndDatePickerShown && toggleEndDatePicker();
   };
 
   const onEndTimePickerOpen = () => {
     setAutoFocusedTimePicker("end");
     toggleStartTimePicker(true);
     toggleEndTimePicker(true);
+  };
+
+  const onSelectEndDate = (date: Date | null | [Date | null, Date | null]) => {
+    setSelectedEndDate(date as Date);
+    toggleEndDatePicker();
+  };
+
+  const onSelectEndTime = (value: SelectOption<string> | null) => {
+    if (!value) return;
+
+    setEndTime(value);
+    closeAllTimePickers();
+  };
+
+  const onSelectStartDate = (
+    date: Date | null | [Date | null, Date | null]
+  ) => {
+    setSelectedStartDate(date as Date);
+    toggleStartDatePicker();
   };
 
   const onSelectStartTime = (value: SelectOption<string> | null) => {
@@ -145,19 +170,6 @@ export const DateTimePickersSection: React.FC<Props> = ({
     setStartTime(value);
     setAutoFocusedTimePicker("end");
     toggleEndTimePicker(true);
-  };
-
-  const onSelectDate = (date: Date | null | [Date | null, Date | null]) => {
-    setSelectedDate(date as Date);
-    toggleDatePicker(); //$$
-    // closeDatePicker();
-  };
-
-  const onSelectEndTime = (value: SelectOption<string> | null) => {
-    if (!value) return;
-
-    setEndTime(value);
-    closeAllTimePickers();
   };
 
   const onTimePickerBlur = (e: React.FocusEvent<HTMLElement>) => {
@@ -198,7 +210,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
   return (
     <StyledDateTimeFlex role="tablist" alignItems={AlignItems.CENTER}>
       <StyledDateFlex alignItems={AlignItems.CENTER}>
-        {isDatePickerShown ? (
+        {isStartDatePickerShown ? (
           <div
             onMouseUp={(e) => {
               e.stopPropagation();
@@ -210,23 +222,57 @@ export const DateTimePickersSection: React.FC<Props> = ({
             <DatePicker
               autoFocus
               defaultOpen
-              onCalendarClose={toggleDatePicker} //$$
-              // onCalendarClose={closeDatePicker}
-              onClickOutside={toggleDatePicker}
+              onCalendarClose={toggleStartDatePicker}
+              onClickOutside={toggleStartDatePicker}
               onChange={() => null}
               onKeyDown={onDatePickerKeyDown}
-              onSelect={onSelectDate}
-              selected={selectedDate}
+              onSelect={onSelectStartDate}
+              selected={selectedStartDate}
+            />
+          </div>
+        ) : (
+          <Text
+            onFocus={() => toggleStartDatePicker}
+            onClick={() => toggleStartDatePicker()}
+            role="tab"
+            tabIndex={0}
+            withUnderline
+          >
+            {dayjs(selectedStartDate).format("MMM DD")}
+          </Text>
+        )}
+      </StyledDateFlex>
+
+      <StyledDateFlex alignItems={AlignItems.CENTER}>
+        {isEndDatePickerShown ? (
+          <div
+            onMouseUp={(e) => {
+              e.stopPropagation();
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <DatePicker
+              autoFocus
+              defaultOpen
+              onCalendarClose={toggleEndDatePicker}
+              onClickOutside={toggleEndDatePicker}
+              onChange={() => null}
+              onKeyDown={onDatePickerKeyDown}
+              onSelect={onSelectEndDate}
+              selected={selectedEndDate}
             />
           </div>
         ) : (
           <Text
             role="tab"
             tabIndex={0}
-            onFocus={() => toggleDatePicker}
+            onFocus={toggleEndDatePicker}
+            onClick={toggleEndDatePicker}
             withUnderline
           >
-            {dayjs(selectedDate).format("MMM DD")}
+            {dayjs(selectedEndDate).format("MMM DD")}
           </Text>
         )}
       </StyledDateFlex>
@@ -268,7 +314,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
           </>
         )}
 
-        {endTime?.value && !isEndTimePickerShown && showStartTimeLabel && (
+        {endTime?.value && !isEndTimePickerShown && (
           <>
             <SpaceCharacter />-<SpaceCharacter />
             <Text
