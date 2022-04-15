@@ -138,6 +138,7 @@ export const EventForm: React.FC<ComponentProps> = ({
   };
 
   const toggleEndDatePicker = () => {
+    // $$ need to convert to !! to actually toggle
     setIsEndDatePickerOpen(!isEndDatePickerOpen);
   };
 

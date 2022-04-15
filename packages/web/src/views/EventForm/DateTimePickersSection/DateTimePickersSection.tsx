@@ -116,10 +116,13 @@ export const DateTimePickersSection: React.FC<Props> = ({
     console.log("onkey");
     if (e.which !== Key.Tab) return;
     if (isStartDatePickerShown) {
-      console.log("toggling");
+      console.log("toggling start wip");
       toggleStartDatePicker();
     }
-    isEndDatePickerShown && toggleEndDatePicker();
+    if (isEndDatePickerShown) {
+      console.log("toglin end wip");
+      toggleEndDatePicker();
+    }
   };
 
   const onEndTimePickerOpen = () => {
@@ -286,7 +289,7 @@ export const DateTimePickersSection: React.FC<Props> = ({
             withUnderline
             onClick={onStartTimePickerOpen}
           >
-            {showStartTimeLabel ? startTime?.label : "Start"}
+            {startTime?.label}
           </Text>
         ) : (
           <TimePicker
