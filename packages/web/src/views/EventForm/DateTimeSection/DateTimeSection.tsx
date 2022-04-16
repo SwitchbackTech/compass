@@ -67,8 +67,8 @@ export interface Props {
   selectedEndDate?: Date;
   selectedStartDate?: Date;
   setEndTime: (value: SelectOption<string>) => void;
-  setIsEndDatePickerOpen: (boolean) => void;
-  setIsStartDatePickerOpen: (boolean) => void;
+  setIsEndDatePickerOpen: (arg0: boolean) => void;
+  setIsStartDatePickerOpen: (arg0: boolean) => void;
   setSelectedEndDate: (value: Date) => void;
   setSelectedStartDate: (value: Date) => void;
   setStartTime: (value: SelectOption<string>) => void;
@@ -131,10 +131,8 @@ export const DateTimeSection: React.FC<Props> = ({
     isStartDatePickerShown && toggleStartDatePicker(false);
 
     if (isEndDatePickerShown) {
-      console.log("closing end");
       closeEndDatePicker();
     } else {
-      console.log("opening end");
       openEndDatePicker();
     }
   };
@@ -145,21 +143,17 @@ export const DateTimeSection: React.FC<Props> = ({
     isEndDatePickerShown && toggleEndDatePicker(false);
 
     if (isStartDatePickerShown) {
-      console.log("closing start & opening end");
       toggleStartDatePicker(false);
       toggleEndDatePicker(true);
     } else {
-      console.log("opening start");
       toggleStartDatePicker(true);
     }
   };
 
   const onEndTimePickerOpen = () => {
     setIsStartTimePickerOpen(true);
-    console.log(autoFocusedTimePicker);
     setIsEndTimePickerOpen(true);
     setAutoFocusedTimePicker("end");
-    console.log(autoFocusedTimePicker);
   };
 
   const onSelectEndDate = (date: Date | null | [Date | null, Date | null]) => {
@@ -207,13 +201,11 @@ export const DateTimeSection: React.FC<Props> = ({
   };
 
   const onStartTimePickerOpen = () => {
-    console.log("opening start time picker");
     setIsStartTimePickerOpen(true);
     setAutoFocusedTimePicker("start");
 
     if (startTime) {
       setStartTime(startTime);
-      console.log("closing after setting start time");
       setIsEndTimePickerOpen(true);
       return;
     }
@@ -233,11 +225,16 @@ export const DateTimeSection: React.FC<Props> = ({
   const onTimePickerBlur = (e: React.FocusEvent<HTMLElement>) => {
     const relatedTarget = e.relatedTarget as RelatedTargetElement;
 
+    if (relatedTarget?.id === "startTimePicker") {
+      setIsEndTimePickerOpen(true);
+    }
+
     if (
       relatedTarget?.id === "endTimePicker" ||
       relatedTarget?.id === "startTimePicker"
     )
       return;
+
     closeAllTimePickers();
   };
 
@@ -316,13 +313,13 @@ export const DateTimeSection: React.FC<Props> = ({
         <StyledTimeFlex alignItems={AlignItems.CENTER}>
           {isStartTimePickerOpen ? (
             <TimePicker
-              openMenuOnFocus
+              autoFocus={autoFocusedTimePicker === "start"}
               inputId="startTimePicker"
               onBlur={onTimePickerBlur}
-              options={startTimePickerOptions}
-              autoFocus={autoFocusedTimePicker === "start"}
-              value={startTime}
               onChange={onSelectStartTime}
+              openMenuOnFocus
+              options={startTimePickerOptions}
+              value={startTime}
             />
           ) : (
             <Text
@@ -336,7 +333,7 @@ export const DateTimeSection: React.FC<Props> = ({
             </Text>
           )}
 
-          {isEndTimePickerOpen && (
+          {isEndTimePickerOpen ? (
             <>
               <SpaceCharacter />-<SpaceCharacter />
               <TimePicker
@@ -344,13 +341,12 @@ export const DateTimeSection: React.FC<Props> = ({
                 inputId="endTimePicker"
                 onBlur={onTimePickerBlur}
                 onChange={onSelectEndTime}
+                openMenuOnFocus
                 options={endTimePickerOptions}
                 value={endTime}
               />
             </>
-          )}
-
-          {endTime?.value && !isEndTimePickerOpen && (
+          ) : (
             <>
               <SpaceCharacter />-<SpaceCharacter />
               <Text
@@ -360,7 +356,7 @@ export const DateTimeSection: React.FC<Props> = ({
                 tabIndex={0}
                 withUnderline
               >
-                {endTime.label}
+                {endTime?.label}
               </Text>
             </>
           )}
