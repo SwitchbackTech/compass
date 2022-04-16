@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
+import FocusTrap from "focus-trap-react";
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { Button } from "@web/components/Button";
@@ -185,97 +186,99 @@ export const EventForm: React.FC<ComponentProps> = ({
   };
 
   return (
-    <Styled
-      {...props}
-      isOpen={isFormOpen}
-      priority={priority}
-      onMouseUp={(e) => {
-        if (isStartDatePickerOpen) {
-          setIsStartDatePickerOpen(false);
-        }
-        if (isEndDatePickerOpen) {
-          setIsEndDatePickerOpen(false);
-        }
+    <FocusTrap>
+      <Styled
+        {...props}
+        isOpen={isFormOpen}
+        priority={priority}
+        onMouseUp={(e) => {
+          if (isStartDatePickerOpen) {
+            setIsStartDatePickerOpen(false);
+          }
+          if (isEndDatePickerOpen) {
+            setIsEndDatePickerOpen(false);
+          }
 
-        e.stopPropagation();
-      }}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-      }}
-      role="form"
-      title="Event Form"
-    >
-      <StyledTitleField
-        autoFocus
-        placeholder="Title"
-        onKeyDown={submitFormWithKeyboard}
-        value={title}
-        onChange={onChangeEventTextField("title")}
-      />
+          e.stopPropagation();
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+        }}
+        role="form"
+        title="Event Form"
+      >
+        <StyledTitleField
+          autoFocus
+          placeholder="Title"
+          onKeyDown={submitFormWithKeyboard}
+          value={title}
+          onChange={onChangeEventTextField("title")}
+        />
 
-      <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
-        <Button
-          bordered={priority === Priorities.WORK}
-          color={colorNameByPriority.work}
-          onClick={() => onSetEventField("priority", Priorities.WORK)}
-          onFocus={() => onSetEventField("priority", Priorities.WORK)}
-          role="tab"
-          tabIndex={0}
-        >
-          Work
-        </Button>
+        <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
+          <Button
+            bordered={priority === Priorities.WORK}
+            color={colorNameByPriority.work}
+            onClick={() => onSetEventField("priority", Priorities.WORK)}
+            onFocus={() => onSetEventField("priority", Priorities.WORK)}
+            role="tab"
+            tabIndex={0}
+          >
+            Work
+          </Button>
 
-        <Button
-          bordered={priority === Priorities.SELF}
-          color={colorNameByPriority.self}
-          onClick={() => onSetEventField("priority", Priorities.SELF)}
-          onFocus={() => onSetEventField("priority", Priorities.SELF)}
-          role="tab"
-          tabIndex={0}
-        >
-          Self
-        </Button>
+          <Button
+            bordered={priority === Priorities.SELF}
+            color={colorNameByPriority.self}
+            onClick={() => onSetEventField("priority", Priorities.SELF)}
+            onFocus={() => onSetEventField("priority", Priorities.SELF)}
+            role="tab"
+            tabIndex={0}
+          >
+            Self
+          </Button>
 
-        <Button
-          bordered={priority === Priorities.RELATIONS}
-          color={colorNameByPriority.relations}
-          onClick={() => onSetEventField("priority", Priorities.RELATIONS)}
-          onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
-          role="tab"
-          tabIndex={0}
-        >
-          Relationships
-        </Button>
-      </StyledPriorityFlex>
+          <Button
+            bordered={priority === Priorities.RELATIONS}
+            color={colorNameByPriority.relations}
+            onClick={() => onSetEventField("priority", Priorities.RELATIONS)}
+            onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
+            role="tab"
+            tabIndex={0}
+          >
+            Relationships
+          </Button>
+        </StyledPriorityFlex>
 
-      <DateTimeSection
-        endTime={endTime}
-        isAllDay={event.isAllDay}
-        isEndDatePickerShown={isEndDatePickerOpen}
-        isStartDatePickerShown={isStartDatePickerOpen}
-        selectedEndDate={selectedEndDate}
-        selectedStartDate={selectedStartDate}
-        setEndTime={setEndTime}
-        setSelectedEndDate={setSelectedEndDate}
-        setSelectedStartDate={setSelectedStartDate}
-        setStartTime={setStartTime}
-        startTime={startTime}
-        setIsEndDatePickerOpen={setIsEndDatePickerOpen}
-        setIsStartDatePickerOpen={setIsStartDatePickerOpen}
-      />
+        <DateTimeSection
+          endTime={endTime}
+          isAllDay={event.isAllDay}
+          isEndDatePickerShown={isEndDatePickerOpen}
+          isStartDatePickerShown={isStartDatePickerOpen}
+          selectedEndDate={selectedEndDate}
+          selectedStartDate={selectedStartDate}
+          setEndTime={setEndTime}
+          setSelectedEndDate={setSelectedEndDate}
+          setSelectedStartDate={setSelectedStartDate}
+          setStartTime={setStartTime}
+          startTime={startTime}
+          setIsEndDatePickerOpen={setIsEndDatePickerOpen}
+          setIsStartDatePickerOpen={setIsStartDatePickerOpen}
+        />
 
-      <StyledDescriptionField
-        onChange={onChangeEventTextField("description")}
-        placeholder="Description"
-        value={event.description || ""}
-      />
+        <StyledDescriptionField
+          onChange={onChangeEventTextField("description")}
+          placeholder="Description"
+          value={event.description || ""}
+        />
 
-      <StyledSubmitRow>
-        <StyledSubmitButton bordered={true} onClick={onSubmitForm}>
-          Submit
-        </StyledSubmitButton>
-        <StyledDeleteButton onClick={onDeleteForm}>Delete</StyledDeleteButton>
-      </StyledSubmitRow>
-    </Styled>
+        <StyledSubmitRow>
+          <StyledSubmitButton bordered={true} onClick={onSubmitForm}>
+            Submit
+          </StyledSubmitButton>
+          <StyledDeleteButton onClick={onDeleteForm}>Delete</StyledDeleteButton>
+        </StyledSubmitRow>
+      </Styled>
+    </FocusTrap>
   );
 };
