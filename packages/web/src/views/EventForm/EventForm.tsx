@@ -14,7 +14,6 @@ import {
 } from "@web/common/constants/dates";
 
 import { ComponentProps } from "./types";
-import { DateTimePickersSection } from "./DateTimePickersSection";
 import {
   Styled,
   StyledTitleField,
@@ -24,6 +23,7 @@ import {
   StyledSubmitButton,
   StyledSubmitRow,
 } from "./styled";
+import { DateTimeSection } from "./DateTimeSection";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
@@ -222,7 +222,7 @@ export const EventForm: React.FC<ComponentProps> = ({
         onChange={onChangeEventTextField("title")}
       />
 
-      <DateTimePickersSection
+      <DateTimeSection
         endTime={endTime}
         isAllDay={event.isAllDay}
         isEndDatePickerShown={isEndDatePickerOpen}
@@ -239,8 +239,9 @@ export const EventForm: React.FC<ComponentProps> = ({
         // showStartTimeLabel={!!showStartTimeLabel}
         showStartTimeLabel={showStartTimeLabel}
         startTime={startTime}
-        toggleEndDatePicker={toggleEndDatePicker}
-        toggleStartDatePicker={toggleStartDatePicker}
+        // toggleEndDatePicker={toggleEndDatePicker}
+        toggleEndDatePicker={setIsEndDatePickerOpen}
+        toggleStartDatePicker={setIsStartDatePickerOpen}
       />
 
       <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
