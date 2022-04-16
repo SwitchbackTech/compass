@@ -92,8 +92,6 @@ const WeekEventComponent = (
       component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
   }
 
-  // $$
-  // backgroundColor, hoverColor, opacity, padding;
   return (
     <StyledEvent
       allDay={event.isAllDay || false}
@@ -104,7 +102,7 @@ const WeekEventComponent = (
       isPlaceholder={isPlaceholder}
       isTimeShown={!!event.isTimeSelected}
       left={left}
-      lineClamp={event.isAllDay ? 1 : getLineClamp(durationHours)} //$$ ternary based on if allday
+      lineClamp={event.isAllDay ? 1 : getLineClamp(durationHours)}
       onMouseDown={(e) => eventHandlers.onEventMouseDown(e, event)}
       priority={event.priority}
       ref={ref}

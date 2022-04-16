@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { Priorities } from "@core/core.constants";
+import { Priority, Priorities } from "@core/core.constants";
 import { getColor } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { ColorNames } from "@web/common/types/styles";
@@ -7,32 +7,27 @@ import { ColorNames } from "@web/common/types/styles";
 const hoverColorsByPriority = {
   [Priorities.UNASSIGNED]: getColor(ColorNames.GREY_5_BRIGHT),
   [Priorities.WORK]: getColor(ColorNames.GREY_3_BRIGHT),
-  [Priorities.RELATIONS]: getColor(ColorNames.TEAL_6_BRIGHT),
+  [Priorities.RELATIONS]: getColor(ColorNames.TEAL_4),
   [Priorities.SELF]: getColor(ColorNames.BLUE_3_BRIGHT),
 };
 
 interface StyledEventProps {
   allDay: boolean;
-  backgroundColor: string;
   duration: number;
   height: number;
-  hoverColor: string;
   isDragging: boolean;
   isPlaceholder: boolean;
   isTimeShown: boolean;
   left: number;
   lineClamp: number;
-  opacity: number;
-  padding: string;
-  // priority: Priorities;
-  priority: string;
+  // priority: string;
+  priority: Priority;
   width: number;
   top: number;
 }
 
 export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
   const bgColor = getColor(colorNameByPriority[props.priority]);
-
   return {
     backgroundColor: bgColor,
     left: props.left,

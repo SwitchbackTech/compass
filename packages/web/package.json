@@ -14,7 +14,6 @@
     "css-loader": "^6.3.0",
     "dayjs": "^1.10.7",
     "eslint-plugin-testing-library": "^5.0.5",
-    "focus-trap-react": "^8.9.2",
     "html-webpack-plugin": "^5.3.2",
     "http-server": "^14.1.0",
     "lodash.debounce": "^4.0.8",

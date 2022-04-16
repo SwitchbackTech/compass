@@ -24,8 +24,6 @@ export enum ColorNames {
   TEAL_3 = "teal_3",
   TEAL_4 = "teal_4",
   TEAL_5 = "teal_5",
-  TEAL_6 = "teal_6",
-  TEAL_6_BRIGHT = "teal_6_bright",
 
   GREY_1 = "grey_1",
   GREY_2 = "grey_2",
@@ -50,6 +48,6 @@ export enum InvertedColorNames {
   BLUE_3 = "blue_3",
   GREY_3 = "grey_3",
   GREY_4 = "grey_4",
-  TEAL_6 = "teal_6",
+  TEAL_2 = "teal_2",
   WHITE_1 = "white_1",
 }
