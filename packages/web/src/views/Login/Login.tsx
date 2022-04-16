@@ -12,7 +12,6 @@ import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
 import { Button, FeedbackButtonContainer } from "@web/components/Button";
 
-import { DateTimePickersSection } from "../EventForm/DateTimePickersSection";
 import { StyledLogin } from "./styled";
 
 export const LoginView = () => {
@@ -102,18 +101,6 @@ export const LoginView = () => {
           <StyledLogin>
             {isAuthenticating && <Spinner />}
 
-            <DateTimePickersSection
-              setEndTime={undefined}
-              setStartTime={undefined}
-              setSelectedDate={"2022-04-12"}
-              endTime={undefined}
-              startTime={undefined}
-              selectedDate={undefined}
-              showStartTimeLabel={true}
-              setShowStartTimeLabel={(value) =>
-                onSetEventField("showStartTimeLabel", !!value)
-              }
-            />
             <Text colorName={ColorNames.WHITE_2} size={30}>
               Connect your Google Calendar
             </Text>

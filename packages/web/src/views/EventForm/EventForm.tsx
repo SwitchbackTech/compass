@@ -137,15 +137,6 @@ export const EventForm: React.FC<ComponentProps> = ({
     onClose();
   };
 
-  const toggleEndDatePicker = () => {
-    // $$ need to convert to !! to actually toggle
-    setIsEndDatePickerOpen(!isEndDatePickerOpen);
-  };
-
-  const toggleStartDatePicker = () => {
-    setIsStartDatePickerOpen(!isStartDatePickerOpen);
-  };
-
   const onSubmitForm = () => {
     const startDateString = dayjs(selectedStartDate).format(
       YEAR_MONTH_DAY_FORMAT
@@ -232,16 +223,11 @@ export const EventForm: React.FC<ComponentProps> = ({
         setEndTime={setEndTime}
         setSelectedEndDate={setSelectedEndDate}
         setSelectedStartDate={setSelectedStartDate}
-        setShowStartTimeLabel={(value) =>
-          onSetEventField("showStartTimeLabel", !!value)
-        }
         setStartTime={setStartTime}
-        // showStartTimeLabel={!!showStartTimeLabel}
         showStartTimeLabel={showStartTimeLabel}
         startTime={startTime}
-        // toggleEndDatePicker={toggleEndDatePicker}
-        toggleEndDatePicker={setIsEndDatePickerOpen}
-        toggleStartDatePicker={setIsStartDatePickerOpen}
+        setIsEndDatePickerOpen={setIsEndDatePickerOpen}
+        setIsStartDatePickerOpen={setIsStartDatePickerOpen}
       />
 
       <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>

@@ -1,5 +1,4 @@
 import styled from "styled-components";
-
 import { linearGradient } from "@web/common/styles/colors";
 import { BackgroundProps, ColorProps } from "@web/common/styles/components";
 import { getColor } from "@web/common/utils/colors";

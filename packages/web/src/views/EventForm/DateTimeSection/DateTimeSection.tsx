@@ -19,10 +19,6 @@ import { GRID_TIME_STEP } from "@web/views/Calendar/constants";
 
 import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
 
-export interface RelatedTargetElement extends EventTarget {
-  id?: string;
-}
-
 dayjs.extend(customParseFormat);
 
 const getTimepickerFilteredOptions = (
@@ -59,30 +55,32 @@ const getTimepickerFilteredOptions = (
     );
   });
 };
-
+export interface RelatedTargetElement extends EventTarget {
+  id?: string;
+}
 export interface Props {
+  endTime?: SelectOption<string>;
   isAllDay: boolean;
   isEndDatePickerShown: boolean;
   isStartDatePickerShown: boolean;
-  toggleStartDatePicker: (boolean) => void;
-  toggleEndDatePicker: (boolean) => void;
-  setStartTime: (value: SelectOption<string>) => void;
-  setEndTime: (value: SelectOption<string>) => void;
-  setSelectedEndDate: (value: Date) => void;
-  setSelectedStartDate: (value: Date) => void;
-  startTime?: SelectOption<string>;
-  endTime?: SelectOption<string>;
   selectedEndDate?: Date;
   selectedStartDate?: Date;
   showStartTimeLabel: boolean;
+  setEndTime: (value: SelectOption<string>) => void;
+  setIsEndDatePickerOpen: (boolean) => void;
+  setIsStartDatePickerOpen: (boolean) => void;
+  setSelectedEndDate: (value: Date) => void;
+  setSelectedStartDate: (value: Date) => void;
+  setStartTime: (value: SelectOption<string>) => void;
+  startTime?: SelectOption<string>;
 }
 
 export const DateTimeSection: React.FC<Props> = ({
   isAllDay,
   isEndDatePickerShown,
   isStartDatePickerShown,
-  toggleStartDatePicker,
-  toggleEndDatePicker,
+  setIsStartDatePickerOpen: toggleStartDatePicker,
+  setIsEndDatePickerOpen: toggleEndDatePicker,
   setStartTime,
   setEndTime,
   setSelectedEndDate,
@@ -135,7 +133,7 @@ export const DateTimeSection: React.FC<Props> = ({
     if (isEndDatePickerShown) {
       console.log("closing end");
       closeEndDatePicker();
-    } else if (!isEndDatePickerShown) {
+    } else {
       console.log("opening end");
       openEndDatePicker();
     }
@@ -255,8 +253,8 @@ export const DateTimeSection: React.FC<Props> = ({
             <DatePicker
               autoFocus
               defaultOpen
-              onCalendarClose={() => toggleStartDatePicker(false)}
-              onClickOutside={() => toggleStartDatePicker(false)}
+              onCalendarClose={closeStartDatePicker}
+              onClickOutside={closeStartDatePicker}
               onChange={() => null}
               onKeyDown={onStartDatePickerKeyDown}
               onSelect={onSelectStartDate}
@@ -317,7 +315,7 @@ export const DateTimeSection: React.FC<Props> = ({
             <Text
               role="tab"
               tabIndex={0}
-              onFocus={() => isStartDatePickerShown && onStartTimePickerOpen}
+              onFocus={() => isStartTimePickerShown && onStartTimePickerOpen}
               withUnderline
               onClick={onStartTimePickerOpen}
             >
