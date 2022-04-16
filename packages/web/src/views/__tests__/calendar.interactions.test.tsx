@@ -158,7 +158,11 @@ describe("Calendar Interactions", () => {
         render(<CalendarView />, { preloadedState });
 
         await user.click(screen.getByRole("button", { name: "Climb" })); // open event
-        await user.click(screen.getByRole("tab", { name: /mar 01/i })); // click date input
+        const startDatePicker = screen.getAllByRole("tab", {
+          name: /mar 01/i,
+        })[0];
+
+        await user.click(startDatePicker);
         await user.click(
           screen.getByRole("form", {
             name: /event form/i,

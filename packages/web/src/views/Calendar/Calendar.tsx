@@ -72,7 +72,10 @@ export const CalendarView = () => {
 
         const handlersByKey = {
           [Key.C]: () =>
-            eventHandlers.setEditingEvent({ isOpen: true } as Schema_GridEvent),
+            eventHandlers.setEditingEvent({
+              isAllDay: true,
+              isOpen: true,
+            } as Schema_GridEvent),
           [Key.T]: () => eventHandlers.setWeek(component.today.week()),
           [Key.N]: () => eventHandlers.setWeek((week) => week + 1),
           [Key.P]: () => eventHandlers.setWeek((week) => week - 1),

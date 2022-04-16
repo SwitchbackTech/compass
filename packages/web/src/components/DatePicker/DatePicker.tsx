@@ -30,17 +30,17 @@ export interface CalendarRef extends HTMLDivElement {
 }
 
 export const DatePicker: React.FC<Props> = ({
+  animationOnToggle = true,
+  autoFocus: _autoFocus = false,
   defaultOpen = false,
+  calendarClassName,
   onSelect = () => null,
   onInputBlur,
   onCalendarClose = () => null,
   onCalendarOpen = () => null,
-  autoFocus: _autoFocus = false,
-  animationOnToggle = true,
-  calendarClassName,
-  withTodayButton = true,
   isShown: propsIsShown = false,
   shouldCloseOnSelect = true,
+  withTodayButton = true,
   ...props
 }) => {
   const [_isShown, setIsShown] = useState(propsIsShown);
@@ -106,7 +106,6 @@ export const DatePicker: React.FC<Props> = ({
       }}
       showPopperArrow={false}
       formatWeekDay={(day) => day[0]}
-      //$$ this is causing the memory leak
       customInput={
         <Input
           onBlurCapture={onInputBlur}

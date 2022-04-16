@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
+import FocusTrap from "focus-trap-react";
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { Button } from "@web/components/Button";
@@ -14,7 +15,6 @@ import {
 } from "@web/common/constants/dates";
 
 import { ComponentProps } from "./types";
-import { DateTimePickersSection } from "./DateTimePickersSection";
 import {
   Styled,
   StyledTitleField,
@@ -24,6 +24,7 @@ import {
   StyledSubmitButton,
   StyledSubmitRow,
 } from "./styled";
+import { DateTimeSection } from "./DateTimeSection";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
@@ -33,19 +34,20 @@ export const EventForm: React.FC<ComponentProps> = ({
   setEvent,
   ...props
 }) => {
-  const { priority, title, showStartTimeLabel } = event || {};
+  const { priority, title } = event || {};
 
   /********
    * State
    ********/
-  const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>();
+  const [endTime, setEndTime] = useState<SelectOption<string> | undefined>();
   const [isShiftKeyPressed, toggleShiftKeyPressed] = useState(false);
-  const [isOpen, setIsFormOpen] = useState(false); //rename to isFormOpen
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
+  const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
   const [startTime, setStartTime] = useState<
     SelectOption<string> | undefined
   >();
-  const [endTime, setEndTime] = useState<SelectOption<string> | undefined>();
+  const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>();
   const [selectedStartDate, setSelectedStartDate] = useState<
     Date | undefined
   >();
@@ -136,10 +138,6 @@ export const EventForm: React.FC<ComponentProps> = ({
     onClose();
   };
 
-  const toggleDatePicker = () => {
-    setIsDatePickerOpen(!!isOpen);
-  };
-
   const onSubmitForm = () => {
     const startDateString = dayjs(selectedStartDate).format(
       YEAR_MONTH_DAY_FORMAT
@@ -188,96 +186,99 @@ export const EventForm: React.FC<ComponentProps> = ({
   };
 
   return (
-    <Styled
-      {...props}
-      isOpen={isOpen}
-      priority={priority}
-      onMouseUp={(e) => {
-        if (isDatePickerOpen) {
-          setIsDatePickerOpen(false);
-        }
-        e.stopPropagation();
-      }}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-      }}
-      role="form"
-      title="Event Form"
-    >
-      <StyledTitleField
-        autoFocus
-        placeholder="Title"
-        onKeyDown={submitFormWithKeyboard}
-        value={title}
-        onChange={onChangeEventTextField("title")}
-      />
+    <FocusTrap>
+      <Styled
+        {...props}
+        isOpen={isFormOpen}
+        priority={priority}
+        onMouseUp={(e) => {
+          if (isStartDatePickerOpen) {
+            setIsStartDatePickerOpen(false);
+          }
+          if (isEndDatePickerOpen) {
+            setIsEndDatePickerOpen(false);
+          }
 
-      {!event.isAllDay && (
-        <div onClick={toggleDatePicker}>
-          <DateTimePickersSection
-            endTime={endTime}
-            isDatePickerShown={isDatePickerOpen}
-            selectedDate={selectedStartDate}
-            setEndTime={setEndTime}
-            setSelectedDate={setSelectedStartDate}
-            setShowStartTimeLabel={(value) =>
-              onSetEventField("showStartTimeLabel", !!value)
-            }
-            setStartTime={setStartTime}
-            showStartTimeLabel={!!showStartTimeLabel}
-            startTime={startTime}
-            toggleDatePicker={toggleDatePicker}
-          />
-        </div>
-      )}
+          e.stopPropagation();
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+        }}
+        role="form"
+        title="Event Form"
+      >
+        <StyledTitleField
+          autoFocus
+          placeholder="Title"
+          onKeyDown={submitFormWithKeyboard}
+          value={title}
+          onChange={onChangeEventTextField("title")}
+        />
 
-      <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
-        <Button
-          bordered={priority === Priorities.WORK}
-          color={colorNameByPriority.work}
-          onClick={() => onSetEventField("priority", Priorities.WORK)}
-          onFocus={() => onSetEventField("priority", Priorities.WORK)}
-          role="tab"
-          tabIndex={0}
-        >
-          Work
-        </Button>
+        <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
+          <Button
+            bordered={priority === Priorities.WORK}
+            color={colorNameByPriority.work}
+            onClick={() => onSetEventField("priority", Priorities.WORK)}
+            onFocus={() => onSetEventField("priority", Priorities.WORK)}
+            role="tab"
+            tabIndex={0}
+          >
+            Work
+          </Button>
 
-        <Button
-          bordered={priority === Priorities.SELF}
-          color={colorNameByPriority.self}
-          onClick={() => onSetEventField("priority", Priorities.SELF)}
-          onFocus={() => onSetEventField("priority", Priorities.SELF)}
-          role="tab"
-          tabIndex={0}
-        >
-          Self
-        </Button>
+          <Button
+            bordered={priority === Priorities.SELF}
+            color={colorNameByPriority.self}
+            onClick={() => onSetEventField("priority", Priorities.SELF)}
+            onFocus={() => onSetEventField("priority", Priorities.SELF)}
+            role="tab"
+            tabIndex={0}
+          >
+            Self
+          </Button>
 
-        <Button
-          bordered={priority === Priorities.RELATIONS}
-          color={colorNameByPriority.relations}
-          onClick={() => onSetEventField("priority", Priorities.RELATIONS)}
-          onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
-          role="tab"
-          tabIndex={0}
-        >
-          Relationships
-        </Button>
-      </StyledPriorityFlex>
+          <Button
+            bordered={priority === Priorities.RELATIONS}
+            color={colorNameByPriority.relations}
+            onClick={() => onSetEventField("priority", Priorities.RELATIONS)}
+            onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
+            role="tab"
+            tabIndex={0}
+          >
+            Relationships
+          </Button>
+        </StyledPriorityFlex>
 
-      <StyledDescriptionField
-        onChange={onChangeEventTextField("description")}
-        placeholder="Description"
-        value={event.description || ""}
-      />
+        <DateTimeSection
+          endTime={endTime}
+          isAllDay={event.isAllDay}
+          isEndDatePickerShown={isEndDatePickerOpen}
+          isStartDatePickerShown={isStartDatePickerOpen}
+          selectedEndDate={selectedEndDate}
+          selectedStartDate={selectedStartDate}
+          setEndTime={setEndTime}
+          setSelectedEndDate={setSelectedEndDate}
+          setSelectedStartDate={setSelectedStartDate}
+          setStartTime={setStartTime}
+          startTime={startTime}
+          setIsEndDatePickerOpen={setIsEndDatePickerOpen}
+          setIsStartDatePickerOpen={setIsStartDatePickerOpen}
+        />
 
-      <StyledSubmitRow>
-        <StyledSubmitButton bordered={true} onClick={onSubmitForm}>
-          Submit
-        </StyledSubmitButton>
-        <StyledDeleteButton onClick={onDeleteForm}>Delete</StyledDeleteButton>
-      </StyledSubmitRow>
-    </Styled>
+        <StyledDescriptionField
+          onChange={onChangeEventTextField("description")}
+          placeholder="Description"
+          value={event.description || ""}
+        />
+
+        <StyledSubmitRow>
+          <StyledSubmitButton bordered={true} onClick={onSubmitForm}>
+            Submit
+          </StyledSubmitButton>
+          <StyledDeleteButton onClick={onDeleteForm}>Delete</StyledDeleteButton>
+        </StyledSubmitRow>
+      </Styled>
+    </FocusTrap>
   );
 };
