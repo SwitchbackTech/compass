@@ -33,7 +33,7 @@ export const EventForm: React.FC<ComponentProps> = ({
   setEvent,
   ...props
 }) => {
-  const { priority, title, showStartTimeLabel } = event || {};
+  const { priority, title } = event || {};
 
   /********
    * State
@@ -213,23 +213,6 @@ export const EventForm: React.FC<ComponentProps> = ({
         onChange={onChangeEventTextField("title")}
       />
 
-      <DateTimeSection
-        endTime={endTime}
-        isAllDay={event.isAllDay}
-        isEndDatePickerShown={isEndDatePickerOpen}
-        isStartDatePickerShown={isStartDatePickerOpen}
-        selectedEndDate={selectedEndDate}
-        selectedStartDate={selectedStartDate}
-        setEndTime={setEndTime}
-        setSelectedEndDate={setSelectedEndDate}
-        setSelectedStartDate={setSelectedStartDate}
-        setStartTime={setStartTime}
-        showStartTimeLabel={showStartTimeLabel}
-        startTime={startTime}
-        setIsEndDatePickerOpen={setIsEndDatePickerOpen}
-        setIsStartDatePickerOpen={setIsStartDatePickerOpen}
-      />
-
       <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
         <Button
           bordered={priority === Priorities.WORK}
@@ -264,6 +247,22 @@ export const EventForm: React.FC<ComponentProps> = ({
           Relationships
         </Button>
       </StyledPriorityFlex>
+
+      <DateTimeSection
+        endTime={endTime}
+        isAllDay={event.isAllDay}
+        isEndDatePickerShown={isEndDatePickerOpen}
+        isStartDatePickerShown={isStartDatePickerOpen}
+        selectedEndDate={selectedEndDate}
+        selectedStartDate={selectedStartDate}
+        setEndTime={setEndTime}
+        setSelectedEndDate={setSelectedEndDate}
+        setSelectedStartDate={setSelectedStartDate}
+        setStartTime={setStartTime}
+        startTime={startTime}
+        setIsEndDatePickerOpen={setIsEndDatePickerOpen}
+        setIsStartDatePickerOpen={setIsStartDatePickerOpen}
+      />
 
       <StyledDescriptionField
         onChange={onChangeEventTextField("description")}
