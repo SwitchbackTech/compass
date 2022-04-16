@@ -4,6 +4,13 @@ import { getColor } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { ColorNames } from "@web/common/types/styles";
 
+const hoverColorsByPriority = {
+  [Priorities.UNASSIGNED]: getColor(ColorNames.GREY_5_BRIGHT),
+  [Priorities.WORK]: getColor(ColorNames.GREY_3_BRIGHT),
+  [Priorities.RELATIONS]: getColor(ColorNames.TEAL_6_BRIGHT),
+  [Priorities.SELF]: getColor(ColorNames.BLUE_3_BRIGHT),
+};
+
 interface StyledEventProps {
   allDay: boolean;
   backgroundColor: string;
@@ -14,33 +21,22 @@ interface StyledEventProps {
   isPlaceholder: boolean;
   isTimeShown: boolean;
   left: number;
-  lineClamp: string;
+  lineClamp: number;
   opacity: number;
   padding: string;
-  priority: Priorities;
+  // priority: Priorities;
+  priority: string;
   width: number;
   top: number;
 }
 
-const hoverColorsByPriority = {
-  [Priorities.UNASSIGNED]: getColor(ColorNames.GREY_5_BRIGHT),
-  [Priorities.WORK]: getColor(ColorNames.GREY_3_BRIGHT),
-  [Priorities.RELATIONS]: getColor(ColorNames.TEAL_6_BRIGHT),
-  [Priorities.SELF]: getColor(ColorNames.BLUE_3_BRIGHT),
-};
-
 export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
   const bgColor = getColor(colorNameByPriority[props.priority]);
 
-  const lineClamp = () => {
-    // how where these magic numbers determined?
-    const heightOfEvent = 54 * props.duration;
-    return `${Math.round((heightOfEvent - 7) / 16) || 1}`;
-  };
   return {
     backgroundColor: bgColor,
     left: props.left,
-    lineClamp: lineClamp,
+    lineClamp: props.lineClamp,
     height: props.height,
     hoverColor: hoverColorsByPriority[props.priority],
     opacity: props.isPlaceholder ? 0.5 : 1,
@@ -51,7 +47,7 @@ export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
     width: props.width,
   };
 })<StyledEventProps>`
-  border-radius: 4px;
+  border-radius: 3px;
   position: absolute;
   top: ${(props) => props.top}px;
   left: ${(props) => props.left}px;
@@ -73,9 +69,8 @@ export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
   & span {
     &:first-child {
       display: -webkit-box;
-      /* overflow: hidden; */
+      overflow: hidden;
       text-overflow: ellipsis;
-      /* width: "100%"; // titleWidth props logic <-- $$ deleted if not needed */
       word-break: break-all;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: ${(props) => props.lineClamp};

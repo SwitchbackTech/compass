@@ -15,6 +15,7 @@ import {
 } from "./constants";
 
 const gridDividerBorder = `1px solid ${getColor(ColorNames.GREY_4)}70`;
+const allDayGridDividerBorder = `2px solid ${getColor(ColorNames.GREY_4)}70`;
 
 export const Styled = styled(Flex)`
   width: 100vw;
@@ -86,8 +87,7 @@ export const StyledAllDayEventsGrid = styled(Flex)<AllDayEventsGridProps>`
     `calc(${allDayHeight} * 2 + ${rowsCount * 2 || 1} * ${allDayHeight})`};
   width: calc(${gridWidth});
   position: relative;
-  /* overflow: hidden; */
-  border-bottom: ${gridDividerBorder};
+  border-bottom: ${allDayGridDividerBorder};
 `;
 
 export const StyledEventsGrid = styled.div`
