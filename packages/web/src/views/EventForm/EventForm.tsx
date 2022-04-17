@@ -5,6 +5,7 @@ import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { Button } from "@web/components/Button";
 import { JustifyContent } from "@web/components/Flex/styled";
+import { StyledTrashIcon } from "@web/components/Svg";
 import { ColorNames } from "@web/common/types/styles";
 import { SelectOption } from "@web/common/types/components";
 import { colorNameByPriority } from "@web/common/styles/colors";
@@ -14,7 +15,6 @@ import {
   HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
 } from "@web/common/constants/dates";
-import { StyledTrashIcon } from "@web/components/Svg";
 
 import { ComponentProps } from "./types";
 import {
@@ -27,10 +27,6 @@ import {
   StyledSubmitRow,
 } from "./styled";
 import { DateTimeSection } from "./DateTimeSection";
-// import logoURL from "../assets/logo.svg";
-// and
-// import { ReactComponent as TrashIcon } from "../../assets/svg/trash.svg";
-import TrashUrl from "../../assets/svg/trash.svg";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
@@ -215,7 +211,6 @@ export const EventForm: React.FC<ComponentProps> = ({
       <StyledIconRow>
         <div onClick={onDeleteForm} role="button" title="Delete Event">
           <StyledTrashIcon hovercolor={getColor(ColorNames.DARK_5)} />
-          {/* <TrashUrl /> */}
         </div>
       </StyledIconRow>
 

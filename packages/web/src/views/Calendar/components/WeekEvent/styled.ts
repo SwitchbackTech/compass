@@ -20,7 +20,6 @@ interface StyledEventProps {
   isTimeShown: boolean;
   left: number;
   lineClamp: number;
-  // priority: string;
   priority: Priority;
   width: number;
   top: number;
