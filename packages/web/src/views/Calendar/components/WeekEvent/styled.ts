@@ -35,8 +35,6 @@ export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
     hoverColor: hoverColorsByPriority[props.priority],
     opacity: props.isPlaceholder ? 0.5 : 1,
     padding: !props.allDay && props.duration > 0.5 ? "4px" : "0 4px",
-    // caused bugs with title + width; $$ delete if not needed after a while
-    // titleWidth: !props.isTimeShown || props.width < 125 ? "100%" : "calc(100% - 65px)",
     top: props.top,
     width: props.width,
   };

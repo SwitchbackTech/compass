@@ -1,5 +1,5 @@
 import { Query } from "express-serve-static-core";
-import { Origin, Priorities } from "@core/core.constants";
+import { Origin, Priority, Priorities } from "@core/core.constants";
 
 export interface Params_DeleteMany {
   key: string;
@@ -27,7 +27,8 @@ export interface Schema_Event {
   isAllDay?: boolean;
   gEventId?: string;
   origin?: Origin;
-  priority?: string; // $$ temporary structure for v1
+  // priority?: string; // $$ temporary structure for v1
+  priority?: Priority;
   priorities?: string[]; // the eventual structure, with ids as strs
   startDate?: string;
   title?: string;
