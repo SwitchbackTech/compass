@@ -16,10 +16,12 @@ import {
 import { ComponentProps } from "./types";
 import {
   Styled,
-  StyledTitleField,
-  StyledPriorityFlex,
-  StyledDescriptionField,
   StyledDeleteButton,
+  StyledDescriptionField,
+  StyledIconRow,
+  StyledPriorityFlex,
+  StyledTitleField,
+  StyledTrashIcon,
   StyledSubmitButton,
   StyledSubmitRow,
 } from "./styled";
@@ -205,6 +207,10 @@ export const EventForm: React.FC<ComponentProps> = ({
       role="form"
       title="Event Form"
     >
+      <StyledIconRow>
+        <StyledTrashIcon />
+      </StyledIconRow>
+
       <StyledTitleField
         autoFocus
         placeholder="Title"

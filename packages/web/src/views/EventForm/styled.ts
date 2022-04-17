@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { Priorities } from "@core/core.constants";
 import { colorNameByPriority } from "@web/common/styles/colors";
+import { TrashIcon } from "@web/assets/svg";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
 import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
@@ -25,7 +26,7 @@ export const Styled = styled.form<StyledProps>`
 
   overflow: visible;
   box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.25);
-  border-radius: 7px;
+  border-radius: 4px;
   width: 585px;
   font-size: 20px;
   background: ${({ priority }) =>
@@ -34,7 +35,7 @@ export const Styled = styled.form<StyledProps>`
     getInvertedColor(
       colorNameByPriority[
         priority || Priorities.UNASSIGNED
-      ] as unknown as InvertedColorNames
+      ] as InvertedColorNames
     )};
   transition: ${ANIMATION_TIME_3_MS};
 `;
@@ -56,6 +57,10 @@ export const StyledDescriptionField = styled(Textarea)`
   position: relative;
 `;
 
+export const StyledIconRow = styled(Flex)`
+  justify-content: end;
+`;
+
 export const StyledPriorityFlex = styled(Flex)`
   margin: 20px 0;
 `;
@@ -75,4 +80,10 @@ export const StyledTitleField = styled(Textarea)`
   /* padding: 10px 0; */
   height: 55px;
   font-size: 50px;
+`;
+
+export const StyledTrashIcon = styled(TrashIcon)`
+  &:hover {
+    color: ${getColor(ColorNames.YELLOW_3)};
+  }
 `;

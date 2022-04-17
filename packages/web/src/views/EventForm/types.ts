@@ -1,5 +1,5 @@
 import React from "react";
-import { Priority, Priorities } from "@core/core.constants";
+import { Priority } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 
 export interface BasicProps {
