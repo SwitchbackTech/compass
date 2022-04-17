@@ -151,6 +151,25 @@ describe("Calendar Interactions", () => {
       });
     });
 
+    it("deletes event after clicking trash icon", async () => {
+      const user = userEvent.setup();
+      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
+      render(<CalendarView />, { preloadedState });
+
+      await user.click(screen.getByRole("button", { name: "Climb" })); // open event
+      await user.click(
+        screen.getByRole("button", {
+          name: /delete event/i,
+        })
+      );
+
+      expect(
+        screen.queryByRole("button", {
+          name: /delete event/i,
+        })
+      ).not.toBeInTheDocument();
+    });
+
     describe("DatePicker", () => {
       it("closes when clicking outside of form, while keeping form open", async () => {
         const user = userEvent.setup();
