@@ -162,14 +162,15 @@ describe("Calendar Interactions", () => {
           name: /mar 01/i,
         })[0];
 
-        await user.click(startDatePicker);
+        await user.click(startDatePicker); // picker should open
+
+        // picker should close
         await user.click(
           screen.getByRole("form", {
             name: /event form/i,
           })
         );
 
-        // datepicker closes
         // assumes that the datepicker structures options as a listbox
         // (which 'react-datepicker' does)
         expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
