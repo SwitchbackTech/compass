@@ -5,23 +5,24 @@ import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { Button } from "@web/components/Button";
 import { JustifyContent } from "@web/components/Flex/styled";
+import { ColorNames } from "@web/common/types/styles";
 import { SelectOption } from "@web/common/types/components";
 import { colorNameByPriority } from "@web/common/styles/colors";
+import { getColor } from "@web/common/utils/colors";
 import {
   HOURS_MINUTES_FORMAT,
   HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
 } from "@web/common/constants/dates";
+import { StyledTrashIcon } from "@web/components/Svg";
 
 import { ComponentProps } from "./types";
 import {
   Styled,
-  StyledDeleteButton,
   StyledDescriptionField,
   StyledIconRow,
   StyledPriorityFlex,
   StyledTitleField,
-  StyledTrashIcon,
   StyledSubmitButton,
   StyledSubmitRow,
 } from "./styled";
@@ -208,7 +209,9 @@ export const EventForm: React.FC<ComponentProps> = ({
       title="Event Form"
     >
       <StyledIconRow>
-        <StyledTrashIcon />
+        <div onClick={onDeleteForm} role="button" title="Delete Event">
+          <StyledTrashIcon hoverColor={getColor(ColorNames.DARK_5)} />
+        </div>
       </StyledIconRow>
 
       <StyledTitleField
@@ -280,7 +283,6 @@ export const EventForm: React.FC<ComponentProps> = ({
         <StyledSubmitButton bordered={true} onClick={onSubmitForm}>
           Submit
         </StyledSubmitButton>
-        <StyledDeleteButton onClick={onDeleteForm}>Delete</StyledDeleteButton>
       </StyledSubmitRow>
     </Styled>
   );

@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { Priorities } from "@core/core.constants";
 import { colorNameByPriority } from "@web/common/styles/colors";
-import { TrashIcon } from "@web/assets/svg";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
 import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
@@ -40,16 +39,6 @@ export const Styled = styled.form<StyledProps>`
   transition: ${ANIMATION_TIME_3_MS};
 `;
 
-export const StyledDeleteButton = styled(Button)`
-  background: ${() => getColor(ColorNames.DARK_4)};
-  color: ${() => getColor(ColorNames.DARK_5)};
-  margin-top: 35px;
-
-  &:hover {
-    background: ${getColor(ColorNames.YELLOW_3)};
-  }
-`;
-
 export const StyledDescriptionField = styled(Textarea)`
   background: transparent;
   width: calc(100% - 20px) !important;
@@ -66,13 +55,14 @@ export const StyledPriorityFlex = styled(Flex)`
 `;
 
 export const StyledSubmitButton = styled(Button)`
+  border: 2px solid;
   margin-top: 35px;
   min-width: 80px;
 `;
 
 export const StyledSubmitRow = styled(Flex)`
   align-items: right;
-  justify-content: space-between;
+  justify-content: end;
 `;
 
 export const StyledTitleField = styled(Textarea)`
@@ -80,10 +70,4 @@ export const StyledTitleField = styled(Textarea)`
   /* padding: 10px 0; */
   height: 55px;
   font-size: 50px;
-`;
-
-export const StyledTrashIcon = styled(TrashIcon)`
-  &:hover {
-    color: ${getColor(ColorNames.YELLOW_3)};
-  }
 `;

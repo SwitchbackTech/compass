@@ -1,3 +1,3 @@
-import { SpaceCharacter } from './SpaceCharacter';
+import { SpaceCharacter } from "./SpaceCharacter";
 
 export { SpaceCharacter };
