@@ -27,6 +27,10 @@ import {
   StyledSubmitRow,
 } from "./styled";
 import { DateTimeSection } from "./DateTimeSection";
+// import logoURL from "../assets/logo.svg";
+// and
+// import { ReactComponent as TrashIcon } from "../../assets/svg/trash.svg";
+import TrashUrl from "../../assets/svg/trash.svg";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
@@ -210,7 +214,8 @@ export const EventForm: React.FC<ComponentProps> = ({
     >
       <StyledIconRow>
         <div onClick={onDeleteForm} role="button" title="Delete Event">
-          <StyledTrashIcon hoverColor={getColor(ColorNames.DARK_5)} />
+          <StyledTrashIcon hovercolor={getColor(ColorNames.DARK_5)} />
+          {/* <TrashUrl /> */}
         </div>
       </StyledIconRow>
 

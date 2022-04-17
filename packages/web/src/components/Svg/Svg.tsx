@@ -3,17 +3,17 @@ import { TrashIcon } from "@web/assets/svg";
 
 interface SvgStylesProps {
   color?: string;
-  hoverColor?: string;
+  hovercolor?: string;
 }
 
-const svgStyles = ({ color, hoverColor }: SvgStylesProps) => {
+const svgStyles = ({ color, hovercolor }: SvgStylesProps) => {
   return css`
     &path {
       fill: ${color || "white"};
     }
 
     &:hover path {
-      stroke: ${hoverColor || "white"};
+      stroke: ${hovercolor || "white"};
     }
   `;
 };
