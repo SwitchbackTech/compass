@@ -3,12 +3,9 @@ import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { Button } from "@web/components/Button";
-import { JustifyContent } from "@web/components/Flex/styled";
 import { StyledTrashIcon } from "@web/components/Svg";
 import { ColorNames } from "@web/common/types/styles";
 import { SelectOption } from "@web/common/types/components";
-import { colorNameByPriority } from "@web/common/styles/colors";
 import { getColor } from "@web/common/utils/colors";
 import {
   HOURS_MINUTES_FORMAT,
@@ -21,12 +18,12 @@ import {
   Styled,
   StyledDescriptionField,
   StyledIconRow,
-  StyledPriorityFlex,
   StyledTitleField,
   StyledSubmitButton,
   StyledSubmitRow,
 } from "./styled";
 import { DateTimeSection } from "./DateTimeSection";
+import { PrioritySection } from "./PrioritySection";
 
 export const EventForm: React.FC<ComponentProps> = ({
   onClose: _onClose,
@@ -206,7 +203,7 @@ export const EventForm: React.FC<ComponentProps> = ({
         e.stopPropagation();
       }}
       role="form"
-      title="Event Form"
+      // title="Event Form"
     >
       <StyledIconRow>
         <div onClick={onDeleteForm} role="button" title="Delete Event">
@@ -222,40 +219,7 @@ export const EventForm: React.FC<ComponentProps> = ({
         onChange={onChangeEventTextField("title")}
       />
 
-      <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
-        <Button
-          bordered={priority === Priorities.WORK}
-          color={colorNameByPriority.work}
-          onClick={() => onSetEventField("priority", Priorities.WORK)}
-          onFocus={() => onSetEventField("priority", Priorities.WORK)}
-          role="tab"
-          tabIndex={0}
-        >
-          Work
-        </Button>
-
-        <Button
-          bordered={priority === Priorities.SELF}
-          color={colorNameByPriority.self}
-          onClick={() => onSetEventField("priority", Priorities.SELF)}
-          onFocus={() => onSetEventField("priority", Priorities.SELF)}
-          role="tab"
-          tabIndex={0}
-        >
-          Self
-        </Button>
-
-        <Button
-          bordered={priority === Priorities.RELATIONS}
-          color={colorNameByPriority.relationships}
-          onClick={() => onSetEventField("priority", Priorities.RELATIONS)}
-          onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
-          role="tab"
-          tabIndex={0}
-        >
-          Relationships
-        </Button>
-      </StyledPriorityFlex>
+      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
 
       <DateTimeSection
         endTime={endTime}

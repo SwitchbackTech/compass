@@ -3,7 +3,7 @@ import { Priorities } from "@core/core.constants";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
-import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
+import { InvertedColorNames } from "@web/common/types/styles";
 import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
 import { getColor, getInvertedColor } from "@web/common/utils/colors";
 import { Button } from "@web/components/Button";
@@ -48,10 +48,6 @@ export const StyledDescriptionField = styled(Textarea)`
 
 export const StyledIconRow = styled(Flex)`
   justify-content: end;
-`;
-
-export const StyledPriorityFlex = styled(Flex)`
-  margin: 20px 0;
 `;
 
 export const StyledSubmitButton = styled(Button)`
