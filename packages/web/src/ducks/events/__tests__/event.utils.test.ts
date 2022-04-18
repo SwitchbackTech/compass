@@ -5,11 +5,13 @@ import {
 } from "@web/common/utils/grid.util";
 
 import { getEventCategory } from "../event.utils";
+import { widthMinusPadding } from "../../../common/utils/grid.util";
 
 describe("getAllDayEventWidth", () => {
   it("is never wider than 1 week", () => {
     const widths = [88, 89, 205, 178, 133, 132, 133];
-    const maxWidth = widths.reduce((a, b) => a + b, 0);
+    const _maxWidth = widths.reduce((a, b) => a + b, 0);
+    const maxWidth = widthMinusPadding(_maxWidth);
     const start = dayjs("2022-02-20");
     const end = dayjs("2099-12-12");
     const startOfWeek = dayjs("2040-01-01");
@@ -36,7 +38,7 @@ describe("getAllDayEventWidth", () => {
         startOfWeek,
         [118, 117, 273, 237, 177, 176, 177]
       )
-    ).toBe(273);
+    ).toBe(widthMinusPadding(273));
   });
 
   test("thisWeekOnly: 1 day", () => {

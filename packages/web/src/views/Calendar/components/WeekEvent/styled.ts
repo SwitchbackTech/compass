@@ -25,7 +25,7 @@ interface StyledEventProps {
   top: number;
 }
 
-export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
+export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   const bgColor = getColor(colorNameByPriority[props.priority]);
   return {
     backgroundColor: bgColor,

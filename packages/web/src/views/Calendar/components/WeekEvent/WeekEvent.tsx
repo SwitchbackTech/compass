@@ -13,6 +13,7 @@ import {
   getLeftPosition,
   getLineClamp,
 } from "@web/common/utils/grid.util";
+import { EVENT_PADDING_RIGHT } from "@web/common/constants/grid.constants";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 
@@ -89,7 +90,8 @@ const WeekEventComponent = (
     top = core.getEventCellHeight() * startTime;
     height = core.getEventCellHeight() * durationHours;
     width =
-      component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
+      component.weekDaysRef.current?.children[startIndex].clientWidth -
+        EVENT_PADDING_RIGHT || 0;
   }
 
   return (
@@ -106,6 +108,8 @@ const WeekEventComponent = (
       onMouseDown={(e) => eventHandlers.onEventMouseDown(e, event)}
       priority={event.priority}
       ref={ref}
+      role="button"
+      tabindex="0"
       top={top}
       width={width}
     >
