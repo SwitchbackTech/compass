@@ -49,7 +49,6 @@ export const PrioritySection: React.FC<Props> = ({
         color={colorNameByPriority.relationships}
         onClick={() => {
           onSetEventField("priority", Priorities.RELATIONS);
-          setIsRelationsTooltipOpen(false);
         }}
         onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
         role="tab"

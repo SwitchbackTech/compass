@@ -240,7 +240,7 @@ export const useGetWeekViewProps = () => {
     setModifiableDateField("endDate");
 
     setEditingEvent({
-      priority: Priorities.WORK,
+      priority: Priorities.UNASSIGNED,
       isAllDay: true,
       startDate,
       endDate,
