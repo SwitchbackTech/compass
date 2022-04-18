@@ -7,8 +7,8 @@
 Clone the repo via git and install dependencies:
 
 ```bash
-git clone {repo URL}
-cd {repo name}
+git clone { repo URL }
+cd compass-calendar
 ```
 
 ### Install dependencies
