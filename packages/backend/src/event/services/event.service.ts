@@ -114,6 +114,15 @@ class EventService {
   async deleteById(userId: string, id: string) {
     // TODO refactor this so it doesn't require so many calls
 
+    if (id === "undefined") {
+      return new BaseError(
+        "Delete Failed",
+        "no id provided ('undefined')",
+        Status.BAD_REQUEST,
+        true
+      );
+    }
+
     try {
       const filter = { _id: mongoService.objectId(id), user: userId };
 
