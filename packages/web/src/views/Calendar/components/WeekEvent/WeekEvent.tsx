@@ -114,12 +114,12 @@ const WeekEventComponent = (
       width={width}
     >
       <Flex flexWrap={FlexWrap.WRAP} alignItems={AlignItems.CENTER}>
-        <Text size={10}>
+        <Text size={12}>
           {event.title}
           <SpaceCharacter />
         </Text>
 
-        {event.isTimeSelected && event.showStartTimeLabel && (
+        {event.showStartTimeLabel && (
           <Text lineHeight={7} size={7}>
             {startDate.format(HOURS_AM_FORMAT)}
             {endTimeShortAm && ` - ${endTimeShortAm}`}
