@@ -248,6 +248,9 @@ export const useGetWeekViewProps = () => {
   };
 
   const onDeleteEvent = (_id: string) => {
+    if (_id === undefined) {
+      return; // assume event was never created
+    }
     dispatch(deleteEventSlice.actions.request({ _id: _id }));
     setEditingEvent(null);
   };
