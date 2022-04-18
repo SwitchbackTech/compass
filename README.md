@@ -15,7 +15,12 @@ cd compass-calendar
 
 ```bash
 yarn
-yarn build # build entire project at least once to make incremental builds easier
+```
+
+optional: build entire project to make future incremental builds faster:
+
+```bash
+yarn build
 ```
 
 ### Setup the `.env` file
