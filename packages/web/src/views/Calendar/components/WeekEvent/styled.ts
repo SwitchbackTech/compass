@@ -27,6 +27,7 @@ interface StyledEventProps {
 
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   const bgColor = getColor(colorNameByPriority[props.priority]);
+
   return {
     backgroundColor: bgColor,
     left: props.left,
@@ -56,6 +57,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   &:hover,
   &.active {
     background-color: ${(props) => props.hoverColor};
+    filter: drop-shadow(2px 4px 4px black);
   }
 
   & span {

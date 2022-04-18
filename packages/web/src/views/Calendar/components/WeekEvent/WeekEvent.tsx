@@ -120,7 +120,7 @@ const WeekEventComponent = (
         </Text>
 
         {event.showStartTimeLabel && (
-          <Text lineHeight={7} size={7}>
+          <Text lineHeight={11} size={11}>
             {startDate.format(HOURS_AM_FORMAT)}
             {endTimeShortAm && ` - ${endTimeShortAm}`}
           </Text>
