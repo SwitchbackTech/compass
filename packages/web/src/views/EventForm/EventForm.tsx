@@ -203,7 +203,6 @@ export const EventForm: React.FC<ComponentProps> = ({
         e.stopPropagation();
       }}
       role="form"
-      // title="Event Form"
     >
       <StyledIconRow>
         <div onClick={onDeleteForm} role="button" title="Delete Event">

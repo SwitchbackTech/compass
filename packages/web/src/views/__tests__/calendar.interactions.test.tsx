@@ -145,9 +145,7 @@ describe("Calendar Interactions", () => {
       await user.click(screen.getByRole("heading", { level: 1 }));
 
       await waitFor(() => {
-        expect(
-          screen.queryByRole("form", { name: /event form/i })
-        ).not.toBeInTheDocument();
+        expect(screen.queryByRole("form")).not.toBeInTheDocument();
       });
     });
 
@@ -184,22 +182,14 @@ describe("Calendar Interactions", () => {
         await user.click(startDatePicker); // picker should open
 
         // picker should close
-        await user.click(
-          screen.getByRole("form", {
-            name: /event form/i,
-          })
-        );
+        await user.click(screen.getByRole("form"));
 
         // assumes that the datepicker structures options as a listbox
         // (which 'react-datepicker' does)
         expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
 
         // form is still open
-        expect(
-          screen.getByRole("form", {
-            name: /event form/i,
-          })
-        ).toBeInTheDocument();
+        expect(screen.getByRole("form")).toBeInTheDocument();
       });
     });
   });
@@ -212,11 +202,7 @@ describe("Calendar Interactions", () => {
 
       await user.click(container.querySelector("#allDayGrid"));
       await waitFor(() => {
-        expect(
-          screen.getByRole("form", {
-            name: /event form/i,
-          })
-        ).toBeInTheDocument();
+        expect(screen.getByRole("form")).toBeInTheDocument();
       });
       await user.type(screen.getByPlaceholderText(/title/i), "Hello, World");
       await userEvent.keyboard("{Enter}");
