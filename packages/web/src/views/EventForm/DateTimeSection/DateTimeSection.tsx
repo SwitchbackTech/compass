@@ -79,14 +79,14 @@ export const DateTimeSection: React.FC<Props> = ({
   isAllDay,
   isEndDatePickerShown,
   isStartDatePickerShown,
+  selectedEndDate,
+  selectedStartDate,
   setIsStartDatePickerOpen: toggleStartDatePicker,
   setIsEndDatePickerOpen: toggleEndDatePicker,
   setStartTime,
   setEndTime,
   setSelectedEndDate,
   setSelectedStartDate,
-  selectedEndDate,
-  selectedStartDate,
   startTime,
   endTime,
 }) => {
@@ -158,7 +158,7 @@ export const DateTimeSection: React.FC<Props> = ({
 
   const onSelectEndDate = (date: Date | null | [Date | null, Date | null]) => {
     setSelectedEndDate(date as Date);
-    toggleEndDatePicker(true);
+    toggleEndDatePicker(false);
   };
 
   const onSelectEndTime = (value: SelectOption<string> | null) => {
@@ -171,6 +171,7 @@ export const DateTimeSection: React.FC<Props> = ({
   const onSelectStartDate = (
     date: Date | null | [Date | null, Date | null]
   ) => {
+    console.log("selected start");
     setSelectedStartDate(date as Date);
     toggleStartDatePicker(false);
   };

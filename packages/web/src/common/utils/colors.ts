@@ -7,6 +7,7 @@ export const getAlphaColor = (colorName: ColorNames, opacity: number) => {
 };
 
 export const getBrighterColor = (colorName: ColorNames) => {
+  // assumes that the higher the numbers are, the brighter the colors
   return colors[getNeighbourKey(colorName, colors, 1) as ColorNames];
 };
 
@@ -20,23 +21,19 @@ export const getInvertedColor = (colorName: InvertedColorNames) => {
   return invertedColors[colorName];
 };
 
-const getNeighbourKey = (key = "", obj = {}, diff = 1): string => {
-  const splittedKey = key.split("_");
-  if (splittedKey.length < 1) {
+export const getNeighbourKey = (key = "", obj = {}, diff = 1): string => {
+  const splitKeys = key.split("_");
+  if (splitKeys.length < 1) {
     throw new Error(
       'You should provide object with keys "ANYTHING_KEY_NUMBER" where NUMBER is number'
     );
   }
 
-  const index = +splittedKey[splittedKey.length - 1];
-  const propName = splittedKey
-    .filter((value) => value !== `${index}`)
-    .join("_");
+  const index = +splitKeys[splitKeys.length - 1];
+  const propName = splitKeys.filter((value) => value !== `${index}`).join("_");
 
   const neighbourIndex = index + diff;
   const neighbourKey = `${propName}_${neighbourIndex}`;
-  // console.log(
-  // `${key}: ${Object.keys(obj).find((_key) => _key === neighbourKey) || key}`
-  // );
+
   return Object.keys(obj).find((_key) => _key === neighbourKey) || key;
 };

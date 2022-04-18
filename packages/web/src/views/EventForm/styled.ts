@@ -3,7 +3,7 @@ import { Priorities } from "@core/core.constants";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
-import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
+import { InvertedColorNames } from "@web/common/types/styles";
 import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
 import { getColor, getInvertedColor } from "@web/common/utils/colors";
 import { Button } from "@web/components/Button";
@@ -25,7 +25,7 @@ export const Styled = styled.form<StyledProps>`
 
   overflow: visible;
   box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.25);
-  border-radius: 7px;
+  border-radius: 4px;
   width: 585px;
   font-size: 20px;
   background: ${({ priority }) =>
@@ -34,19 +34,9 @@ export const Styled = styled.form<StyledProps>`
     getInvertedColor(
       colorNameByPriority[
         priority || Priorities.UNASSIGNED
-      ] as unknown as InvertedColorNames
+      ] as InvertedColorNames
     )};
   transition: ${ANIMATION_TIME_3_MS};
-`;
-
-export const StyledDeleteButton = styled(Button)`
-  background: ${() => getColor(ColorNames.DARK_4)};
-  color: ${() => getColor(ColorNames.DARK_5)};
-  margin-top: 35px;
-
-  &:hover {
-    background: ${getColor(ColorNames.YELLOW_3)};
-  }
 `;
 
 export const StyledDescriptionField = styled(Textarea)`
@@ -56,18 +46,19 @@ export const StyledDescriptionField = styled(Textarea)`
   position: relative;
 `;
 
-export const StyledPriorityFlex = styled(Flex)`
-  margin: 20px 0;
+export const StyledIconRow = styled(Flex)`
+  justify-content: end;
 `;
 
 export const StyledSubmitButton = styled(Button)`
+  border: 2px solid;
   margin-top: 35px;
   min-width: 80px;
 `;
 
 export const StyledSubmitRow = styled(Flex)`
   align-items: right;
-  justify-content: space-between;
+  justify-content: end;
 `;
 
 export const StyledTitleField = styled(Textarea)`

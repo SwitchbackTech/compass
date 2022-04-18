@@ -125,6 +125,7 @@ module.exports = {
         "^@web/views/(.*)$": "<rootDir>/packages/web/src/views/$1",
         "^.+\\.(css|less)$":
           "<rootDir>/packages/web/src/common/__mocks__/css.stub.js",
+        "\\.(svg)$": "<rootDir>/packages/web/src/common/__mocks__/svg.js",
       },
     },
     {

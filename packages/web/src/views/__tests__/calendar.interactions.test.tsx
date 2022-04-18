@@ -145,10 +145,27 @@ describe("Calendar Interactions", () => {
       await user.click(screen.getByRole("heading", { level: 1 }));
 
       await waitFor(() => {
-        expect(
-          screen.queryByRole("form", { name: /event form/i })
-        ).not.toBeInTheDocument();
+        expect(screen.queryByRole("form")).not.toBeInTheDocument();
       });
+    });
+
+    it("deletes event after clicking trash icon", async () => {
+      const user = userEvent.setup();
+      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
+      render(<CalendarView />, { preloadedState });
+
+      await user.click(screen.getByRole("button", { name: "Climb" })); // open event
+      await user.click(
+        screen.getByRole("button", {
+          name: /delete event/i,
+        })
+      );
+
+      expect(
+        screen.queryByRole("button", {
+          name: /delete event/i,
+        })
+      ).not.toBeInTheDocument();
     });
 
     describe("DatePicker", () => {
@@ -162,24 +179,17 @@ describe("Calendar Interactions", () => {
           name: /mar 01/i,
         })[0];
 
-        await user.click(startDatePicker);
-        await user.click(
-          screen.getByRole("form", {
-            name: /event form/i,
-          })
-        );
+        await user.click(startDatePicker); // picker should open
 
-        // datepicker closes
+        // picker should close
+        await user.click(screen.getByRole("form"));
+
         // assumes that the datepicker structures options as a listbox
         // (which 'react-datepicker' does)
         expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
 
         // form is still open
-        expect(
-          screen.getByRole("form", {
-            name: /event form/i,
-          })
-        ).toBeInTheDocument();
+        expect(screen.getByRole("form")).toBeInTheDocument();
       });
     });
   });
@@ -192,11 +202,7 @@ describe("Calendar Interactions", () => {
 
       await user.click(container.querySelector("#allDayGrid"));
       await waitFor(() => {
-        expect(
-          screen.getByRole("form", {
-            name: /event form/i,
-          })
-        ).toBeInTheDocument();
+        expect(screen.getByRole("form")).toBeInTheDocument();
       });
       await user.type(screen.getByPlaceholderText(/title/i), "Hello, World");
       await userEvent.keyboard("{Enter}");

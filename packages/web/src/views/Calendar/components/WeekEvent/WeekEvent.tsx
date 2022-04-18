@@ -11,6 +11,7 @@ import { getEventCategory } from "@web/ducks/events/event.utils";
 import {
   getAllDayEventWidth,
   getLeftPosition,
+  getLineClamp,
 } from "@web/common/utils/grid.util";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
@@ -93,19 +94,20 @@ const WeekEventComponent = (
 
   return (
     <StyledEvent
-      ref={ref}
-      height={height}
-      isPlaceholder={isPlaceholder}
-      isDragging={component.eventState?.name === "dragging"}
+      allDay={event.isAllDay || false}
       className={isActive ? "active" : ""}
+      duration={+durationHours.toFixed(2) || 0.25}
+      height={height}
+      isDragging={component.eventState?.name === "dragging"}
+      isPlaceholder={isPlaceholder}
+      isTimeShown={!!event.isTimeSelected}
+      left={left}
+      lineClamp={event.isAllDay ? 1 : getLineClamp(durationHours)}
       onMouseDown={(e) => eventHandlers.onEventMouseDown(e, event)}
       priority={event.priority}
-      left={left}
-      width={width}
+      ref={ref}
       top={top}
-      isTimeShown={!!event.isTimeSelected}
-      duration={+durationHours.toFixed(2) || 0.25}
-      allDay={event.isAllDay || false}
+      width={width}
     >
       <Flex flexWrap={FlexWrap.WRAP} alignItems={AlignItems.CENTER}>
         <Text size={10}>

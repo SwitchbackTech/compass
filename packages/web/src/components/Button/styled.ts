@@ -3,7 +3,6 @@ import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
 import {
   getBrighterColor,
   getColor,
-  getDarkerColor,
   getInvertedColor,
 } from "@web/common/utils/colors";
 import { Flex } from "@web/components/Flex";
@@ -31,7 +30,7 @@ export const Styled = styled.div<Props>`
   font-weight: 600;
   justify-content: center;
   cursor: pointer;
-  border-radius: 7px;
+  border-radius: 4px;
   border: ${({ bordered, color = InvertedColorNames.BLUE_3, border }) =>
     border ||
     (bordered && `2px solid ${getInvertedColor(color as InvertedColorNames)}`)};

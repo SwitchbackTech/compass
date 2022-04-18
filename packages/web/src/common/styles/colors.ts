@@ -25,14 +25,11 @@ export const colors: Colors = {
   [ColorNames.BLUE_3_BRIGHT]: "#8EB1FF",
   [ColorNames.BLUE_4]: "#A5B7EA",
   [ColorNames.BLUE_5]: "#C4D1F5",
-
-  [ColorNames.TEAL_1]: "#053342",
-  [ColorNames.TEAL_2]: "#2F7AA5",
-  [ColorNames.TEAL_3]: "#50C4ED",
+  [ColorNames.TEAL_1]: "#4b94a0",
+  [ColorNames.TEAL_2]: "#4c96b3",
+  [ColorNames.TEAL_3]: "#6cd7e9",
   [ColorNames.TEAL_4]: "#86D2ED",
   [ColorNames.TEAL_5]: "#ABE0F2",
-  [ColorNames.TEAL_6]: "#2F7AA5",
-  [ColorNames.TEAL_6_BRIGHT]: "#3C9AD0",
 
   [ColorNames.GREY_1]: "#1D2932",
   [ColorNames.GREY_2]: "#395264",
@@ -57,15 +54,15 @@ export const colorNameByPriority = {
   [Priorities.UNASSIGNED]: ColorNames.GREY_4,
   [Priorities.WORK]: ColorNames.GREY_3,
   [Priorities.SELF]: ColorNames.BLUE_3,
-  [Priorities.RELATIONS]: ColorNames.TEAL_6,
+  [Priorities.RELATIONS]: ColorNames.TEAL_2,
 };
 
 export const invertedColors = {
-  // priorities
+  // priority colors (colorNameByPriority)
   [ColorNames.BLUE_3]: colors.blue_1,
   [ColorNames.GREY_3]: colors.dark_2,
   [ColorNames.GREY_4]: colors.grey_1,
-  [ColorNames.TEAL_6]: colors.teal_1,
+  [ColorNames.TEAL_2]: colors.dark_2,
 
   // other
   [ColorNames.WHITE_1]: colors.white_3,

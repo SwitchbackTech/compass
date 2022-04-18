@@ -11,9 +11,16 @@ export enum Origin {
   UNSURE = "unsure",
 }
 
+export type Priority =
+  | Priorities.UNASSIGNED
+  | Priorities.WORK
+  | Priorities.SELF
+  | Priorities.RELATIONS;
+// export type Priority = keyof Priorities & string;
+
 export enum Priorities {
   UNASSIGNED = "unassigned",
   WORK = "work",
   SELF = "self",
-  RELATIONS = "relations",
+  RELATIONS = "relationships",
 }

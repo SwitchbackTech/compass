@@ -170,6 +170,11 @@ export const getLeftPosition = (
   }
   return positionStart;
 };
+export const getLineClamp = (durationHours: number) => {
+  // how were these magic numbers determined?
+  const heightOfEvent = 54 * +durationHours.toFixed(2) || 0.25;
+  return Math.round((heightOfEvent - 7) / 16) || 1;
+};
 
 export const getPrevDayWidth = (today: Dayjs) => {
   const todayWeekNum = today.get("day") + 1;
