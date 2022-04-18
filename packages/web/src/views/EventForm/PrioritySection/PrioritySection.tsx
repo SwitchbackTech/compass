@@ -1,12 +1,11 @@
-import React, { useState } from "react";
-import { Popover } from "react-tiny-popover";
+import React from "react";
 import { Priorities, Priority } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { JustifyContent } from "@web/components/Flex/styled";
 import { Button } from "@web/components/Button";
 
-import { StyledPriorityFlex, StyledToolTipContainer } from "./styled";
+import { StyledPriorityFlex } from "./styled";
 
 interface Props {
   priority: Priority;
@@ -17,8 +16,6 @@ export const PrioritySection: React.FC<Props> = ({
   onSetEventField,
   priority,
 }) => {
-  const [isRelationsTooltipOpen, setIsRelationsTooltipOpen] = useState(true);
-
   return (
     <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
       <Button
@@ -30,6 +27,7 @@ export const PrioritySection: React.FC<Props> = ({
         onFocus={() => onSetEventField("priority", Priorities.WORK)}
         role="tab"
         tabIndex={0}
+        title="Doing your best work"
       >
         Work
       </Button>
@@ -41,36 +39,25 @@ export const PrioritySection: React.FC<Props> = ({
         onFocus={() => onSetEventField("priority", Priorities.SELF)}
         role="tab"
         tabIndex={0}
+        title="Nurturing your authentic self"
       >
         Self
       </Button>
 
-      <Popover
-        isOpen={isRelationsTooltipOpen}
-        positions={["right"]}
-        padding={10}
-        content={
-          <StyledToolTipContainer>
-            <h1>its open yo</h1>
-          </StyledToolTipContainer>
-        }
+      <Button
+        bordered={priority === Priorities.RELATIONS}
+        color={colorNameByPriority.relationships}
+        onClick={() => {
+          onSetEventField("priority", Priorities.RELATIONS);
+          setIsRelationsTooltipOpen(false);
+        }}
+        onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
+        role="tab"
+        tabIndex={0}
+        title="Connecting with others"
       >
-        <Button
-          bordered={priority === Priorities.RELATIONS}
-          color={colorNameByPriority.relationships}
-          onClick={() => {
-            onSetEventField("priority", Priorities.RELATIONS);
-            setIsRelationsTooltipOpen(false);
-          }}
-          onMouseEnter={() => setIsRelationsTooltipOpen(true)}
-          onMouseLeave={() => setIsRelationsTooltipOpen(false)}
-          onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
-          role="tab"
-          tabIndex={0}
-        >
-          Relationships
-        </Button>
-      </Popover>
+        Relationships
+      </Button>
     </StyledPriorityFlex>
   );
 };
