@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { usePopper } from "react-popper";
+import { Popover } from "react-tiny-popover";
 import { Priorities, Priority } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { JustifyContent } from "@web/components/Flex/styled";
 import { Button } from "@web/components/Button";
 
-import { StyledPriorityFlex, StyledToolTip } from "./styled";
+import { StyledPriorityFlex, StyledToolTipContainer } from "./styled";
 
 interface Props {
   priority: Priority;
@@ -17,22 +17,16 @@ export const PrioritySection: React.FC<Props> = ({
   onSetEventField,
   priority,
 }) => {
-  const [isRelationsTooltipOpen, setIsRelationsTooltipOpen] = useState(false);
-  const [referenceElement, setReferenceElement] = useState<HTMLElement>(null);
-  const [popperElement, setPopperElement] = useState<HTMLElement>(null);
-
-  const { styles, attributes } = usePopper(referenceElement, popperElement, {
-    placement: "bottom",
-  });
-  //   const popperStyles = { ...styles.popper, zIndex: 2 }; // $$
-  const popperStyles = { ...styles.popper };
+  const [isRelationsTooltipOpen, setIsRelationsTooltipOpen] = useState(true);
 
   return (
     <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
       <Button
         bordered={priority === Priorities.WORK}
         color={colorNameByPriority.work}
-        onClick={() => onSetEventField("priority", Priorities.WORK)}
+        onClick={() => {
+          onSetEventField("priority", Priorities.WORK);
+        }}
         onFocus={() => onSetEventField("priority", Priorities.WORK)}
         role="tab"
         tabIndex={0}
@@ -51,22 +45,32 @@ export const PrioritySection: React.FC<Props> = ({
         Self
       </Button>
 
-      <Button
-        bordered={priority === Priorities.RELATIONS}
-        color={colorNameByPriority.relationships}
-        onClick={() => onSetEventField("priority", Priorities.RELATIONS)}
-        onMouseEnter={() => setIsRelationsTooltipOpen(true)}
-        onMouseLeave={() => setIsRelationsTooltipOpen(false)}
-        onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
-        ref={setReferenceElement}
-        role="tab"
-        tabIndex={0}
+      <Popover
+        isOpen={isRelationsTooltipOpen}
+        positions={["right"]}
+        padding={10}
+        content={
+          <StyledToolTipContainer>
+            <h1>its open yo</h1>
+          </StyledToolTipContainer>
+        }
       >
-        Relationships
-      </Button>
-      <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
-        {isRelationsTooltipOpen && <StyledToolTip>its open</StyledToolTip>}
-      </div>
+        <Button
+          bordered={priority === Priorities.RELATIONS}
+          color={colorNameByPriority.relationships}
+          onClick={() => {
+            onSetEventField("priority", Priorities.RELATIONS);
+            setIsRelationsTooltipOpen(false);
+          }}
+          onMouseEnter={() => setIsRelationsTooltipOpen(true)}
+          onMouseLeave={() => setIsRelationsTooltipOpen(false)}
+          onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
+          role="tab"
+          tabIndex={0}
+        >
+          Relationships
+        </Button>
+      </Popover>
     </StyledPriorityFlex>
   );
 };

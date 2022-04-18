@@ -5,8 +5,9 @@ export const StyledPriorityFlex = styled(Flex)`
   margin: 20px 0;
 `;
 
-//$$ move
-export const StyledToolTip = styled.div`
+//$$ move to common
+export const StyledToolTipContainer = styled(Flex)`
   color: orange;
   background-color: white;
+  /* z-index: 99; */
 `;

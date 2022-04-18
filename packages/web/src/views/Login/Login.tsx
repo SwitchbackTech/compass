@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { EventForm } from "@web/views/EventForm";
 import { Navigate } from "react-router-dom";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { SURVEY_URL } from "@core/core.constants";
@@ -100,6 +101,14 @@ export const LoginView = () => {
         ) : (
           <StyledLogin>
             {isAuthenticating && <Spinner />}
+
+            <EventForm
+              setEvent={() => null}
+              event={{ isAllDay: false }}
+              onDelete={() => null}
+              onClose={() => null}
+              onSubmit={() => null}
+            />
 
             <Text colorName={ColorNames.WHITE_2} size={30}>
               Connect your Google Calendar
