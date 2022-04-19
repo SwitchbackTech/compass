@@ -5,17 +5,13 @@ interface Props {
 }
 
 export const StyledTimes = styled.div<Props>`
-  /* transform: translate(0%); */
-  /* transition: 0.3s ease-out; */
+  transition: box-shadow 0.2s linear;
 
   ${(props) =>
     props.isHovered &&
     css`
       &:hover {
-        border: 2px solid;
-        position: fixed;
-        transform: translate(0%, -3%);
-        transition: 0.1s ease-in;
+        box-shadow: 0px 0px 0px 2px black;
       }
     `}
 `;
