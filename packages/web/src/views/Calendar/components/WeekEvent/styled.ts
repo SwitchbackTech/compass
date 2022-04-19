@@ -21,6 +21,7 @@ interface StyledEventProps {
   left: number;
   lineClamp: number;
   priority: Priority;
+  // ref: React.ForwardedRef<HTMLButtonElement>; // not correct type $$
   width: number;
   top: number;
 }
@@ -36,6 +37,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
     hoverColor: hoverColorsByPriority[props.priority],
     opacity: props.isPlaceholder ? 0.5 : 1,
     padding: !props.allDay && props.duration > 0.5 ? "4px" : "0 4px",
+    ref: props.ref,
     top: props.top,
     width: props.width,
   };

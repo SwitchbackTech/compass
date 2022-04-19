@@ -16,6 +16,7 @@ import {
 import { EVENT_PADDING_RIGHT } from "@web/common/constants/grid.constants";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
+import { Times } from "./Times";
 
 export interface Props {
   event: Schema_GridEvent;
@@ -45,7 +46,6 @@ const WeekEventComponent = (
   const startTime =
     component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
   const endDate = dayjs(event.endDate);
-  const endTimeShortAm = endDate.format(HOURS_AM_FORMAT);
   // get duration by converting ms to hours
   const durationHours = endDate.diff(startDate) * 2.7777777777778e-7 || 0;
 
@@ -120,10 +120,7 @@ const WeekEventComponent = (
         </Text>
 
         {event.showStartTimeLabel && (
-          <Text lineHeight={11} size={11}>
-            {startDate.format(HOURS_AM_FORMAT)}
-            {endTimeShortAm && ` - ${endTimeShortAm}`}
-          </Text>
+          <Times startDate={startDate} endDate={endDate} />
         )}
       </Flex>
 
