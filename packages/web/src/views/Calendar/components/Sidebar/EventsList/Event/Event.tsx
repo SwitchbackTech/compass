@@ -7,9 +7,11 @@ import { editEventSlice } from "@web/ducks/events/slice";
 
 import { Styled } from "./styled";
 import { StyledEventForm } from "../../ToggleableEventsListSection/styled";
-
+interface TempEventSchema extends Schema_Event {
+  order: number;
+}
 export interface Props {
-  event: Schema_Event;
+  event: TempEventSchema; // replace with Schema_Event or .._Grid
 }
 
 export const Event = ({ event: _event }: Props) => {
@@ -35,7 +37,8 @@ export const Event = ({ event: _event }: Props) => {
     },
   }));
 
-  const onDrop = (draggedEvent: Schema_Event) => {
+  const onDrop = (draggedEvent: TempEventSchema) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const order =
       (draggedEvent.order || 0) < (event.order || 0)
         ? (event.order || 0) + 1

@@ -85,7 +85,6 @@ export const allDayEvents = [
     priority: "self",
     allDayOrder: 1,
     isOpen: false,
-    isTimeSelected: true,
   },
   {
     _id: "620684a62ca742378271b7e4",
@@ -101,7 +100,6 @@ export const allDayEvents = [
     priority: "self",
     allDayOrder: 3,
     isOpen: true,
-    isTimeSelected: true,
   },
   {
     _id: "62068eae722447aa668a53b6",
@@ -112,7 +110,6 @@ export const allDayEvents = [
     allDayOrder: 1,
     isOpen: false,
     title: "aa",
-    isTimeSelected: true,
     origin: "google",
     user: "61f2f0704d0ee49134c7a01d",
     gEventId: "2u6lvpo45kgajrsfeg6otugtcc",

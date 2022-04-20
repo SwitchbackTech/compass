@@ -103,7 +103,6 @@ const WeekEventComponent = (
       height={height}
       isDragging={component.eventState?.name === "dragging"}
       isPlaceholder={isPlaceholder}
-      isTimeShown={!!event.isTimeSelected}
       left={left}
       lineClamp={event.isAllDay ? 1 : getLineClamp(durationHours)}
       onMouseDown={(e) => eventHandlers.onEventMouseDown(e, event)}

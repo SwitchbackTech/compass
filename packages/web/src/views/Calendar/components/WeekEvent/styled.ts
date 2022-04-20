@@ -17,7 +17,6 @@ interface StyledEventProps {
   height: number;
   isDragging: boolean;
   isPlaceholder: boolean;
-  isTimeShown: boolean;
   left: number;
   lineClamp: number;
   priority: Priority;

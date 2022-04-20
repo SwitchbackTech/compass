@@ -157,7 +157,6 @@ export const EventForm: React.FC<ComponentProps> = ({
       priority: _event.priority || Priorities.UNASSIGNED,
       startDate,
       endDate,
-      isTimeSelected: !!startTime,
     });
 
     onClose();

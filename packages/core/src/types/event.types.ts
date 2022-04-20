@@ -25,21 +25,14 @@ export interface Schema_Event {
   endDate?: string;
   description?: string | null | undefined;
   isAllDay?: boolean;
+  isTimesShown?: boolean;
   gEventId?: string;
   origin?: Origin;
-  // priority?: string; // $$ temporary structure for v1
   priority?: Priority;
   priorities?: string[]; // the eventual structure, with ids as strs
   startDate?: string;
   title?: string;
   user?: string;
-
-  //$$ WIP.these to either be refactored or kept
-  isTimeSelected?: boolean;
-  showStartTimeLabel?: boolean;
-  rowOrder?: number;
-  rowCount?: number;
-  order?: number;
 }
 
 export interface Query_Event extends Query {
