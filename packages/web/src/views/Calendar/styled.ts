@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import { ColorNames } from "@web/common/types/styles";
 import { Flex } from "@web/components/Flex";
-import { getAlphaColor, getColor } from "@web/common/utils/colors";
+import { getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
 
 import {
@@ -128,22 +128,6 @@ export const StyledPrevDaysOverflow = styled.div<PrevDaysOverflowProps>`
   background: ${getColor(ColorNames.WHITE_1)};
   opacity: 0.03;
   position: absolute;
-`;
-
-export const StyledDayTimes = styled.div`
-  position: absolute;
-  height: 100%;
-  top: calc(100% / 11 + -5px);
-  z-index: 2;
-  color: ${getColor(ColorNames.WHITE_4)}80;
-
-  & > div {
-    height: calc(100% / 11);
-
-    & > span {
-      display: block;
-    }
-  }
 `;
 
 export const StyledGridColumns = styled(Flex)`

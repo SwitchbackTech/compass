@@ -20,13 +20,15 @@ export const getTimes = () =>
       return `0${~~(i / 4)}:0${60 * ((i / 4) % 1)}`.replace(/\d(\d\d)/g, "$1");
     });
 
-export const getHourlyTimes = (day: Dayjs) =>
-  [...(new Array(23) as number[])].map((_, index) => {
+export const getHourlyTimes = () => {
+  const day = dayjs();
+  return [...(new Array(23) as number[])].map((_, index) => {
     return day
       .startOf("day")
       .add(index + 1, "hour")
       .format(HOURS_AM_SHORT_FORMAT);
   });
+};
 
 // uses inferred timezone and shortened string to
 // convert to a format that the backend/gcal/mongo accepts:
