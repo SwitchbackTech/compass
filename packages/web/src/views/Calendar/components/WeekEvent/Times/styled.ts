@@ -13,5 +13,13 @@ export const StyledTimes = styled.div<Props>`
       &:hover {
         box-shadow: 0px 0px 0px 2px black;
       }
-    `}
+    `};
+`;
+
+export const StyledTimesPlaceholder = styled.div`
+  min-width: 80px;
+  min-height: 11px;
+  &:hover {
+    box-shadow: 0px 0px 0px 2px black;
+  }
 `;

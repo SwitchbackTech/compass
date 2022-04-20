@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import React from "react";
+import React, { useState } from "react";
 import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
@@ -27,6 +27,8 @@ const WeekEventComponent = (
   { event, weekViewProps }: Props,
   ref: React.ForwardedRef<HTMLButtonElement>
 ) => {
+  const [isTimesShown, setIsTimesShown] = useState(true);
+
   if (!event) return null;
 
   const { component, core, eventHandlers } = weekViewProps;
@@ -34,6 +36,7 @@ const WeekEventComponent = (
   /*****
   State
   *****/
+
   const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
     component.editingEvent?._id === event._id && !event.isEditing;
@@ -113,16 +116,27 @@ const WeekEventComponent = (
       top={top}
       width={width}
     >
-      <Flex flexWrap={FlexWrap.WRAP} alignItems={AlignItems.CENTER}>
-        <Text size={12}>
+      <Flex
+        alignItems={AlignItems.CENTER}
+        flexWrap={FlexWrap.WRAP}
+        title={event.title}
+      >
+        <Text size={12} role="textbox">
           {event.title}
           <SpaceCharacter />
         </Text>
-
-        {event.showStartTimeLabel && (
-          <Times startDate={startDate} endDate={endDate} />
-        )}
       </Flex>
+
+      {!event.isAllDay && (
+        <Flex flexWrap={FlexWrap.WRAP}>
+          <Times
+            endDate={endDate}
+            isTimesShown={isTimesShown}
+            setIsTimesShown={setIsTimesShown}
+            startDate={startDate}
+          />
+        </Flex>
+      )}
 
       {component.eventState?.name !== "dragging" && !event.isAllDay && (
         <>
