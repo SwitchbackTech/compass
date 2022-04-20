@@ -219,7 +219,7 @@ describe("Calendar Interactions", () => {
       render(<CalendarView />, { preloadedState });
 
       const eventWithTimesBtn = screen.getByRole("button", {
-        name: /climb 5:00pm - 7:00pm/i,
+        name: /climb 5:00pm \- 7:00pm/i,
       });
       const hideTimesBox = within(eventWithTimesBtn).getByRole("textbox", {
         name: /click to hide times/i,
