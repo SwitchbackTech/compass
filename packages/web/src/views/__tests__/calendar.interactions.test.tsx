@@ -220,7 +220,9 @@ describe("Calendar Interactions", () => {
 
       const eventWithTimesBtn = screen.getByRole("button", {
         // name: /climb 5:00pm \- 7:00pm/i,
-        name: /climb [1-9]:00pm - [1-9]:00pm/i, // dyanmic times because CI server could be in a diff timezone
+        ///^[0-9]|[0-9][0-9]$/
+
+        name: /climb ^[0-9]|[0-9][0-9]:00(am|pm) - ^[0-9]|[0-9][0-9]:00(am|pm)/i, // dyanmic times because CI server could be in a diff timezone
       });
       const hideTimesBox = within(eventWithTimesBtn).getByRole("textbox", {
         name: /click to hide times/i,
