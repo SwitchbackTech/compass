@@ -297,6 +297,7 @@ export const useGetWeekViewProps = () => {
       setEditingEvent(null);
       return;
     }
+
     const startDate = getDateByMousePosition(e.clientX, e.clientY);
     const endDate = dayjs(startDate)
       .add(GRID_TIME_STEP, "minute")
@@ -305,11 +306,11 @@ export const useGetWeekViewProps = () => {
     setModifiableDateField("endDate");
 
     setEditingEvent({
-      priority: Priorities.UNASSIGNED,
-      startDate,
       endDate,
       isAllDay: false,
-      isTimeSelected: false,
+      isTimesShown: true,
+      priority: Priorities.UNASSIGNED,
+      startDate,
     });
   };
 
