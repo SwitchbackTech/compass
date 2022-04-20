@@ -71,6 +71,7 @@ export const gcalEvents = {
 
       extendedProperties: {
         private: {
+          isTimesShown: false,
           origin: "compass",
           priority: "work",
         },
