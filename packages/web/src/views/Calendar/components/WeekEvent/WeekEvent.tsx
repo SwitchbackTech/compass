@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import React, { useState } from "react";
+import React from "react";
 import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
@@ -27,8 +27,6 @@ const WeekEventComponent = (
   { event, weekViewProps }: Props,
   ref: React.ForwardedRef<HTMLButtonElement>
 ) => {
-  const [isTimesShown, setIsTimesShown] = useState(true);
-
   if (!event) return null;
 
   const { component, core, eventHandlers } = weekViewProps;
@@ -129,12 +127,7 @@ const WeekEventComponent = (
 
       {!event.isAllDay && (
         <Flex flexWrap={FlexWrap.WRAP}>
-          <Times
-            endDate={endDate}
-            isTimesShown={isTimesShown}
-            setIsTimesShown={setIsTimesShown}
-            startDate={startDate}
-          />
+          <Times endDate={endDate} event={event} startDate={startDate} />
         </Flex>
       )}
 

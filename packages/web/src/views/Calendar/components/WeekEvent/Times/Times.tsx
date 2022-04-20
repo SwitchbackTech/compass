@@ -1,27 +1,40 @@
 import React, { useState } from "react";
+import { useDispatch } from "react-redux";
 import { Dayjs } from "dayjs";
 import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
 import { Text } from "@web/components/Text";
+import { editEventSlice } from "@web/ducks/events/slice";
+import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 
 import { StyledTimes, StyledTimesPlaceholder } from "./styled";
 
 interface Props {
   endDate: Dayjs;
-  isTimesShown: boolean;
-  setIsTimesShown: any;
+  event: Schema_GridEvent;
   startDate: Dayjs;
 }
 
-export const Times: React.FC<Props> = ({
-  endDate,
-  isTimesShown,
-  setIsTimesShown,
-  startDate,
-}) => {
+export const Times: React.FC<Props> = ({ endDate, event, startDate }) => {
+  const dispatch = useDispatch();
   const [isHovered, setIsHovered] = useState(false);
+  const [isTimesShown, setIsTimesShown] = useState(event.isTimesShown);
 
   const endTimeShortAm = endDate.format(HOURS_AM_FORMAT);
   const SIZE = 11;
+
+  const toggleTimes = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const newVal = !isTimesShown;
+    setIsTimesShown(() => newVal);
+
+    dispatch(
+      editEventSlice.actions.request({
+        _id: event._id,
+        event: { ...event, isTimesShown: newVal },
+      })
+    );
+  };
 
   return (
     <div
@@ -29,13 +42,7 @@ export const Times: React.FC<Props> = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       {isTimesShown ? (
-        <StyledTimes
-          isHovered={isHovered}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            setIsTimesShown(false);
-          }}
-        >
+        <StyledTimes isHovered={isHovered} onMouseDown={toggleTimes}>
           <Text
             lineHeight={SIZE}
             role="textbox"
@@ -51,10 +58,7 @@ export const Times: React.FC<Props> = ({
           {isHovered ? (
             <Text
               lineHeight={SIZE}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                setIsTimesShown(true);
-              }}
+              onMouseDown={toggleTimes}
               size={SIZE}
               role="textbox"
               title="Click to show times"
