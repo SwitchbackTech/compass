@@ -49,7 +49,7 @@ export interface Props {
   weekViewProps: WeekViewProps;
 }
 
-const dayTimes = getHourlyTimes();
+const hourLabels = getHourlyTimes();
 
 export const CalendarView = () => {
   const { token } = useToken();
@@ -277,6 +277,7 @@ export const CalendarView = () => {
           onMouseMove={eventHandlers.onEventGridMouseMove}
         >
           <TimesColumn />
+
           <StyledGridColumns>
             {component.week === component.today.week() && (
               <NowLine width={100} />
@@ -294,7 +295,7 @@ export const CalendarView = () => {
           </StyledGridColumns>
 
           <StyledGridRows>
-            {dayTimes.map((dayTime, index) => (
+            {hourLabels.map((dayTime, index) => (
               <StyledGridRow key={`${dayTime}-${index}:dayTimes`} />
             ))}
           </StyledGridRows>

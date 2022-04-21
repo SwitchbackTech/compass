@@ -4,6 +4,7 @@ export enum ColorNames {
   WHITE_3 = "white_3",
   WHITE_4 = "white_4",
   WHITE_5 = "white_5",
+  WHITE_6 = "white_6",
 
   DARK_1 = "dark_1",
   DARK_2 = "dark_2",

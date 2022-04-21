@@ -1,6 +1,10 @@
 import dayjs from "dayjs";
 import { headers } from "@web/common/utils";
-import { getHourlyTimes, toUTCOffset } from "@web/common/utils/date.utils";
+import {
+  getHourlyTimes,
+  getHourlyTimesDynamic,
+  toUTCOffset,
+} from "@web/common/utils/date.utils";
 
 describe("headers", () => {
   it("uses Bearer token", () => {
@@ -14,9 +18,17 @@ describe("headers", () => {
 });
 
 describe("getHourlyTimes", () => {
-  it("has 24 intervals (1 per hour)", () => {
+  it("has 23 intervals)", () => {
+    // not 24 to prevent duplicates from 11pm-midnight
     const dayTimes = getHourlyTimes(dayjs());
-    expect(dayTimes).toHaveLength(23); // 23 cuz 0 index
+    expect(dayTimes).toHaveLength(23);
+  });
+});
+
+describe("getHourlyTimesDynamic", () => {
+  it("idk", () => {
+    const f = getHourlyTimesDynamic(dayjs());
+    const fm = "";
   });
 });
 

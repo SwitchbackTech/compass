@@ -3,7 +3,7 @@ import { ColorNames } from "@web/common/types/styles";
 import { getColor } from "@web/common/utils/colors";
 import { linearGradient } from "@web/common/styles/colors";
 
-export interface StyledNowLineProps {
+interface StyledNowLineProps {
   width: number;
   top: number;
 }

@@ -77,7 +77,7 @@ export const StyledTopSectionFlex = styled(Flex)<SectionProps>`
 `;
 
 export const StyledFiltersPopoverContent = styled.div`
-  background: ${getColor(ColorNames.WHITE_5)};
+  background: ${getColor(ColorNames.WHITE_6)};
   padding: 8px 8px 8px 5px;
   border-radius: 4px;
 `;
