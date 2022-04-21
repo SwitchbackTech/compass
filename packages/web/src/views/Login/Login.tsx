@@ -102,14 +102,6 @@ export const LoginView = () => {
           <StyledLogin>
             {isAuthenticating && <Spinner />}
 
-            <EventForm
-              setEvent={() => null}
-              event={{ isAllDay: false }}
-              onDelete={() => null}
-              onClose={() => null}
-              onSubmit={() => null}
-            />
-
             <Text colorName={ColorNames.WHITE_2} size={30}>
               Connect your Google Calendar
             </Text>

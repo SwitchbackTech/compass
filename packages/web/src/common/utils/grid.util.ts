@@ -4,6 +4,7 @@ import weekPlugin from "dayjs/plugin/weekOfYear";
 import dayOfYear from "dayjs/plugin/dayOfYear";
 import { Schema_Event } from "@core/types/event.types";
 import {
+  EVENT_PADDING_RIGHT,
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
@@ -107,7 +108,8 @@ export const getAllDayEventWidth = (
       width = -666;
     }
   }
-  return width;
+
+  return widthMinusPadding(width);
 };
 
 export const getCurrentMinute = () => {
@@ -196,6 +198,15 @@ const normalizeDayNums = (days: number[]) => {
       return d;
     }
   });
+};
+
+export const widthMinusPadding = (width: number) => {
+  const adjustedWidth = width - EVENT_PADDING_RIGHT;
+
+  if (adjustedWidth < 0) {
+    return width;
+  }
+  return adjustedWidth;
 };
 
 const _anySharedValues = (arr1: number[], arr2: number[]) => {

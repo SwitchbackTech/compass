@@ -3,6 +3,15 @@ interface Spies {
 }
 const spies: Spies = {};
 
+export const arraysAreEqual = (a: any[], b: any[]) => {
+  return (
+    Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((val, index) => val === b[index])
+  );
+};
+
 export const clearLocalStorageMock = () => {
   Object.keys(spies).forEach((key: string) => spies[key].mockRestore());
 };

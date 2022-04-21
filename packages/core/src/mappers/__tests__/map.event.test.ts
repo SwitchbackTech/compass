@@ -44,7 +44,7 @@ describe("toGcal", () => {
     });
   });
 
-  it("saves priority as private extended properties", () => {
+  it("saves priority as private extended property", () => {
     const gcalEvent = MapEvent.toGcal({
       _id: "yupm",
       user: "user1",
@@ -56,7 +56,7 @@ describe("toGcal", () => {
     });
     expect(gcalEvent.extendedProperties.private.priority).toBe(Priorities.WORK);
   });
-  it("set priority to unassigned as private extended properties when no none provided", () => {
+  it("sets priority to unassigned as private extended properties when none provided", () => {
     const gcalEvent = MapEvent.toGcal({
       // no priority here
       _id: "yupm",
@@ -70,7 +70,34 @@ describe("toGcal", () => {
       Priorities.UNASSIGNED
     );
   });
-  it("set origin to unsure as private extended properties when no none provided", () => {
+  it("saves isTimesShown as private extended property", () => {
+    const gcalEvent = MapEvent.toGcal({
+      _id: "yupm",
+      user: "user1",
+      title: "Jan 1 2021",
+      isAllDay: true,
+      isTimesShown: false,
+      startDate: "2022-01-01T07:07:00-05:00",
+      endDate: "2022-01-01T07:11:30-05:00",
+      priority: Priorities.WORK,
+    });
+    expect(gcalEvent.extendedProperties.private.isTimesShown).toBe("false");
+  });
+
+  it("sets isTimesShown to true when none provided", () => {
+    const gcalEvent = MapEvent.toGcal({
+      _id: "yupm",
+      user: "user1",
+      title: "Jan 1 2021",
+      isAllDay: true,
+      // no isTimesShown here
+      startDate: "2022-01-01T07:07:00-05:00",
+      endDate: "2022-01-01T07:11:30-05:00",
+      priority: Priorities.WORK,
+    });
+    expect(gcalEvent.extendedProperties.private.isTimesShown).toBe("true");
+  });
+  it("set origin to unsure as private extended properties when none provided", () => {
     const gcalEvent = MapEvent.toGcal({
       // no origin here
       _id: "yupm",
@@ -98,12 +125,13 @@ describe("toCompass", () => {
   );
 
   const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
-  it("sets default priority to unassigned", () => {
+  it("sets priority to unassigned by default", () => {
     const gEvent = gcalEvents.items.find(
       (ge) => ge.summary === "No extendedProperties"
     );
-    const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.COMPASS);
-    expect(cEvent[0].priority).toBe(Priorities.UNASSIGNED);
+    const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.COMPASS)[0];
+
+    expect(cEvent.priority).toBe(Priorities.UNASSIGNED);
   });
 
   it("infers isAllDay when date is in YYYY-MM-DD format", () => {
@@ -114,7 +142,29 @@ describe("toCompass", () => {
     });
   });
 
+  it("sets isTimesShown to true by default", () => {
+    const gEvent = gcalEvents.items.find(
+      (ge) => ge.summary === "No extendedProperties"
+    );
+    const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.COMPASS)[0];
+
+    expect(cEvent.isTimesShown).toBe(true);
+  });
+
   describe("from Gcal", () => {
+    it("gets isTimesShown from private extended properties", () => {
+      const regularGcalEvent = gcalEvents.items.find(
+        (ge) => ge.summary === "Meeting with Stan"
+      );
+      const cEvent = MapEvent.toCompass(
+        "user99",
+        [regularGcalEvent],
+        Origin.GOOGLE_IMPORT
+      );
+
+      expect(cEvent[0].isTimesShown).toBe(false);
+    });
+
     it("gets priority from private extended properties", () => {
       const regularGcalEvent = gcalEvents.items.find(
         (ge) => ge.summary === "Meeting with Stan"

@@ -1,7 +1,7 @@
 import React from "react";
 import { rest } from "msw";
 import "@testing-library/jest-dom";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { setupServer } from "msw/node";
 import { CalendarView } from "@web/views/Calendar";
@@ -93,7 +93,7 @@ describe("Calendar Interactions", () => {
   });
 
   describe("Event Form", () => {
-    it("opens upon click all-day event click (and not before)", async () => {
+    it("opens after clicking all-day event (and not before)", async () => {
       /*
       note: this doesn't test if an event is effectively 'hidden' from a user 
       because the row logic was incorrect and allowed overlapping events. 
@@ -116,12 +116,12 @@ describe("Calendar Interactions", () => {
 
       for (const t of titles) {
         expect(screen.queryByDisplayValue(t)).not.toBeInTheDocument(); // shouldnt show form before being clicked
-        await user.click(screen.getByRole("button", { name: t }));
+        await user.click(screen.getByTitle(t));
         await waitFor(() => {
           expect(screen.getByDisplayValue(t)).toBeInTheDocument();
         });
         /*
-        TODO: escape +/ click out of even and confirm form disappears
+        TODO: escape out of even and confirm form disappears
         opt: 
           user.keyboard ...
         opt (wasnt working initiall):
@@ -154,7 +154,7 @@ describe("Calendar Interactions", () => {
       const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
       render(<CalendarView />, { preloadedState });
 
-      await user.click(screen.getByRole("button", { name: "Climb" })); // open event
+      await user.click(screen.getByTitle("Climb")); // open event
       await user.click(
         screen.getByRole("button", {
           name: /delete event/i,
@@ -174,7 +174,7 @@ describe("Calendar Interactions", () => {
         const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
         render(<CalendarView />, { preloadedState });
 
-        await user.click(screen.getByRole("button", { name: "Climb" })); // open event
+        await user.click(screen.getByTitle("Climb")); // open event
         const startDatePicker = screen.getAllByRole("tab", {
           name: /mar 01/i,
         })[0];
@@ -211,8 +211,41 @@ describe("Calendar Interactions", () => {
       expect(screen.getByDisplayValue("Hello, World")).toBeInTheDocument();
     });
   });
-});
 
+  describe("Regular Events", () => {
+    it("toggles times when clicking them", async () => {
+      const user = userEvent.setup();
+      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
+      render(<CalendarView />, { preloadedState });
+
+      const eventWithTimesBtn = screen.getByRole("button", {
+        // accept any times because times will be different if
+        // CI server in different timezone than you
+        name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,
+      });
+      const hideTimesBox = within(eventWithTimesBtn).getByRole("textbox", {
+        name: /click to hide times/i,
+      });
+
+      // user tries to hide times
+      await user.click(hideTimesBox);
+
+      const eventWithoutTimes = screen.getByRole("button", {
+        name: /climb/i, // no times
+      });
+      expect(eventWithoutTimes).toBeInTheDocument();
+
+      const showTimesBox = within(eventWithoutTimes).getByRole("textbox", {
+        name: /show times/i,
+      });
+
+      // user tries to show times
+      await user.click(showTimesBox);
+
+      expect(eventWithTimesBtn).toBeInTheDocument();
+    });
+  });
+});
 /* 
   Finish this once adding better error-handling
     - Difficult to mock `alert`, so not worth spending time on it,

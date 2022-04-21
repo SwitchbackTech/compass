@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import dayjs from "dayjs";
 import { Key } from "ts-keycode-enum";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
-import { getHourlyTimes } from "@web/common/utils/date.utils";
+import { getHourLabels } from "@web/common/utils/date.utils";
 import { ColorNames } from "@web/common/types/styles";
 import {
   AlignItems,
@@ -16,6 +15,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
+import { TimesColumn } from "@web/views/Calendar/components/TimesColumn";
 import { TodayButtonPopover } from "@web/views/Calendar/components/TodayButtonPopover";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
 import { NowLine } from "@web/views/Calendar/components/NowLine";
@@ -39,7 +39,6 @@ import {
   StyledEventsGrid,
   StyledGridColumns,
   StyledNavigationButtons,
-  StyledDayTimes,
   StyledEvents,
   StyledWeekDayFlex,
   StyledWeekDaysFlex,
@@ -50,7 +49,7 @@ export interface Props {
   weekViewProps: WeekViewProps;
 }
 
-const dayTimes = getHourlyTimes(dayjs());
+// const hourLabels = getHourLabels();
 
 export const CalendarView = () => {
   const { token } = useToken();
@@ -277,13 +276,8 @@ export const CalendarView = () => {
           onMouseDown={eventHandlers.onEventsGridMouseDown}
           onMouseMove={eventHandlers.onEventGridMouseMove}
         >
-          <StyledDayTimes>
-            {dayTimes.map((time, index) => (
-              <div key={`${time}-${index}`}>
-                <Text size={9}>{time}</Text>
-              </div>
-            ))}
-          </StyledDayTimes>
+          <TimesColumn />
+
           <StyledGridColumns>
             {component.week === component.today.week() && (
               <NowLine width={100} />
@@ -301,7 +295,7 @@ export const CalendarView = () => {
           </StyledGridColumns>
 
           <StyledGridRows>
-            {dayTimes.map((dayTime, index) => (
+            {getHourLabels().map((dayTime, index) => (
               <StyledGridRow key={`${dayTime}-${index}:dayTimes`} />
             ))}
           </StyledGridRows>

@@ -28,6 +28,7 @@ import {
 import { getFlexBasis } from "@web/common/utils/grid.util";
 
 import {
+  EVENT_DEFAULT_MIN,
   GRID_TIME_STEP,
   GRID_X_OFFSET,
   GRID_Y_OFFSET as _GRID_Y_OFFSET,
@@ -297,19 +298,20 @@ export const useGetWeekViewProps = () => {
       setEditingEvent(null);
       return;
     }
+
     const startDate = getDateByMousePosition(e.clientX, e.clientY);
     const endDate = dayjs(startDate)
-      .add(GRID_TIME_STEP, "minute")
+      .add(EVENT_DEFAULT_MIN, "minute")
       .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
 
     setModifiableDateField("endDate");
 
     setEditingEvent({
-      priority: Priorities.UNASSIGNED,
-      startDate,
       endDate,
       isAllDay: false,
-      isTimeSelected: false,
+      isTimesShown: true,
+      priority: Priorities.UNASSIGNED,
+      startDate,
     });
   };
 

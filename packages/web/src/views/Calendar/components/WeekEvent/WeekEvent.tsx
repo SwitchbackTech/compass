@@ -13,8 +13,10 @@ import {
   getLeftPosition,
   getLineClamp,
 } from "@web/common/utils/grid.util";
+import { EVENT_PADDING_RIGHT } from "@web/common/constants/grid.constants";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
+import { Times } from "./Times";
 
 export interface Props {
   event: Schema_GridEvent;
@@ -32,6 +34,7 @@ const WeekEventComponent = (
   /*****
   State
   *****/
+
   const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
     component.editingEvent?._id === event._id && !event.isEditing;
@@ -44,7 +47,6 @@ const WeekEventComponent = (
   const startTime =
     component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
   const endDate = dayjs(event.endDate);
-  const endTimeShortAm = endDate.format(HOURS_AM_FORMAT);
   // get duration by converting ms to hours
   const durationHours = endDate.diff(startDate) * 2.7777777777778e-7 || 0;
 
@@ -89,7 +91,8 @@ const WeekEventComponent = (
     top = core.getEventCellHeight() * startTime;
     height = core.getEventCellHeight() * durationHours;
     width =
-      component.weekDaysRef.current?.children[startIndex].clientWidth || 0;
+      component.weekDaysRef.current?.children[startIndex].clientWidth -
+        EVENT_PADDING_RIGHT || 0;
   }
 
   return (
@@ -100,28 +103,32 @@ const WeekEventComponent = (
       height={height}
       isDragging={component.eventState?.name === "dragging"}
       isPlaceholder={isPlaceholder}
-      isTimeShown={!!event.isTimeSelected}
       left={left}
       lineClamp={event.isAllDay ? 1 : getLineClamp(durationHours)}
       onMouseDown={(e) => eventHandlers.onEventMouseDown(e, event)}
       priority={event.priority}
       ref={ref}
+      role="button"
+      tabindex="0"
       top={top}
       width={width}
     >
-      <Flex flexWrap={FlexWrap.WRAP} alignItems={AlignItems.CENTER}>
-        <Text size={10}>
+      <Flex
+        alignItems={AlignItems.CENTER}
+        flexWrap={FlexWrap.WRAP}
+        title={event.title}
+      >
+        <Text size={12} role="textbox">
           {event.title}
           <SpaceCharacter />
         </Text>
-
-        {event.isTimeSelected && event.showStartTimeLabel && (
-          <Text lineHeight={7} size={7}>
-            {startDate.format(HOURS_AM_FORMAT)}
-            {endTimeShortAm && ` - ${endTimeShortAm}`}
-          </Text>
-        )}
       </Flex>
+
+      {!event.isAllDay && (
+        <Flex flexWrap={FlexWrap.WRAP}>
+          <Times endDate={endDate} event={event} startDate={startDate} />
+        </Flex>
+      )}
 
       {component.eventState?.name !== "dragging" && !event.isAllDay && (
         <>

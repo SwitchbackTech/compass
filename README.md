@@ -7,15 +7,20 @@
 Clone the repo via git and install dependencies:
 
 ```bash
-git clone {repo URL}
-cd {repo name}
+git clone { repo URL }
+cd compass-calendar
 ```
 
 ### Install dependencies
 
 ```bash
 yarn
-yarn build # build entire project at least once to make incremental builds easier
+```
+
+optional: build entire project to make future incremental builds faster:
+
+```bash
+yarn build
 ```
 
 ### Setup the `.env` file

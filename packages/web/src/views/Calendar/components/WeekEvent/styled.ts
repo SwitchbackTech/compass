@@ -17,16 +17,17 @@ interface StyledEventProps {
   height: number;
   isDragging: boolean;
   isPlaceholder: boolean;
-  isTimeShown: boolean;
   left: number;
   lineClamp: number;
   priority: Priority;
+  // ref: React.ForwardedRef<HTMLButtonElement>; // not correct type $$
   width: number;
   top: number;
 }
 
-export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
+export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   const bgColor = getColor(colorNameByPriority[props.priority]);
+
   return {
     backgroundColor: bgColor,
     left: props.left,
@@ -35,6 +36,7 @@ export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
     hoverColor: hoverColorsByPriority[props.priority],
     opacity: props.isPlaceholder ? 0.5 : 1,
     padding: !props.allDay && props.duration > 0.5 ? "4px" : "0 4px",
+    ref: props.ref,
     top: props.top,
     width: props.width,
   };
@@ -56,6 +58,7 @@ export const StyledEvent = styled.button.attrs<StyledEventProps>((props) => {
   &:hover,
   &.active {
     background-color: ${(props) => props.hoverColor};
+    filter: drop-shadow(2px 4px 4px black);
   }
 
   & span {
