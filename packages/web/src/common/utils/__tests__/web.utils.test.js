@@ -1,10 +1,11 @@
 import dayjs from "dayjs";
 import { headers } from "@web/common/utils";
 import {
-  getHourlyTimes,
-  getHourlyTimesDynamic,
+  getColorsByHour,
+  getHourLabels,
   toUTCOffset,
 } from "@web/common/utils/date.utils";
+import { arraysAreEqual } from "@web/common/utils/test.util";
 
 describe("headers", () => {
   it("uses Bearer token", () => {
@@ -17,18 +18,55 @@ describe("headers", () => {
   });
 });
 
-describe("getHourlyTimes", () => {
+describe("getHourLabels", () => {
   it("has 23 intervals)", () => {
     // not 24 to prevent duplicates from 11pm-midnight
-    const dayTimes = getHourlyTimes(dayjs());
+    const dayTimes = getHourLabels();
     expect(dayTimes).toHaveLength(23);
   });
 });
 
-describe("getHourlyTimesDynamic", () => {
-  it("idk", () => {
-    const f = getHourlyTimesDynamic(dayjs());
-    const fm = "";
+describe("getColorsByHour", () => {
+  it("has 23 intervals", () => {
+    const colors = getColorsByHour(dayjs());
+    expect(colors).toHaveLength(23);
+  });
+
+  it("uses two colors", () => {
+    const colors = getColorsByHour(dayjs());
+    expect(new Set(colors).size).toBe(2);
+  });
+
+  it("only higlights one hour", () => {
+    const colors = getColorsByHour(dayjs());
+    const uniqueColors = Array.from(new Set(colors));
+
+    const color1 = colors.filter((c) => c === uniqueColors[0]);
+    const color2 = colors.filter((c) => c === uniqueColors[1]);
+    const colorTotals = [color1.length, color2.length];
+
+    expect(colorTotals).toContain(22);
+    expect(colorTotals).toContain(1);
+  });
+
+  it("returns same order for minute 0 to 59", () => {
+    const day1 = dayjs("2022-04-04T00:00:00.000Z");
+    const day2 = dayjs("2022-04-04T00:59:00.000Z");
+    const day1Colors = getColorsByHour(day1);
+    const day2Colors = getColorsByHour(day2);
+
+    const sameOrder = arraysAreEqual(day1Colors, day2Colors);
+    expect(sameOrder).toBe(true);
+  });
+
+  it("changes at the top of the hour", () => {
+    const day1 = dayjs("2022-04-04T23:59:59.000Z");
+    const day2 = dayjs("2022-04-05T00:00:00.000Z");
+    const day1Colors = getColorsByHour(day1);
+    const day2Colors = getColorsByHour(day2);
+
+    const sameOrder = arraysAreEqual(day1Colors, day2Colors);
+    expect(sameOrder).toBe(false);
   });
 });
 

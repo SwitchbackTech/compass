@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Key } from "ts-keycode-enum";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
-import { getHourlyTimes } from "@web/common/utils/date.utils";
+import { getHourLabels } from "@web/common/utils/date.utils";
 import { ColorNames } from "@web/common/types/styles";
 import {
   AlignItems,
@@ -49,7 +49,7 @@ export interface Props {
   weekViewProps: WeekViewProps;
 }
 
-const hourLabels = getHourlyTimes();
+// const hourLabels = getHourLabels();
 
 export const CalendarView = () => {
   const { token } = useToken();
@@ -295,7 +295,7 @@ export const CalendarView = () => {
           </StyledGridColumns>
 
           <StyledGridRows>
-            {hourLabels.map((dayTime, index) => (
+            {getHourLabels().map((dayTime, index) => (
               <StyledGridRow key={`${dayTime}-${index}:dayTimes`} />
             ))}
           </StyledGridRows>
