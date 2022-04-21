@@ -1,3 +1,7 @@
+export type Colors = {
+  [key in ColorNames]: string;
+};
+
 export enum ColorNames {
   WHITE_1 = "white_1",
   WHITE_2 = "white_2",

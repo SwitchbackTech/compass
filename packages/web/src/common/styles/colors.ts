@@ -1,9 +1,5 @@
 import { Priorities } from "@core/core.constants";
-import { ColorNames } from "@web/common/types/styles";
-
-export type Colors = {
-  [key in ColorNames]: string;
-};
+import { Colors, ColorNames } from "@web/common/types/styles";
 
 export const colors: Colors = {
   [ColorNames.WHITE_1]: "#FFFFFF",
