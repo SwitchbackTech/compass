@@ -54,7 +54,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
   const [isToggled, setIsToggled] = useState(true);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>({
-    relations: true,
+    relationships: true,
     self: true,
     work: true,
   });
