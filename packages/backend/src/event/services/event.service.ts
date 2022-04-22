@@ -12,7 +12,10 @@ import {
 } from "@core/types/event.types";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
+import {
+  GCAL_PRIMARY,
+  SOMEDAY_EVENTS_LIMIT,
+} from "@backend/common/constants/backend.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
@@ -196,7 +199,7 @@ class EventService {
       let total = 0;
       const errors = [];
 
-      const numYears = 2;
+      const numYears = 1;
       logger.info(
         `Importing past ${numYears} years of GCal events for user: ${userId}`
       );
@@ -265,11 +268,23 @@ class EventService {
   ): Promise<Schema_Event[] | BaseError> {
     try {
       const filter = getReadAllFilter(userId, query);
-      const response: Schema_Event[] = await mongoService.db
-        .collection(Collections.EVENT)
-        .find(filter)
-        .toArray();
-      return response;
+
+      // (temporarily) limit number of results
+      // to speed up development
+      if (query.isSomeday) {
+        const response: Schema_Event[] = await mongoService.db
+          .collection(Collections.EVENT)
+          .find(filter)
+          .limit(SOMEDAY_EVENTS_LIMIT)
+          .toArray();
+        return response;
+      } else {
+        const response: Schema_Event[] = await mongoService.db
+          .collection(Collections.EVENT)
+          .find(filter)
+          .toArray();
+        return response;
+      }
     } catch (e) {
       logger.error(e);
       return new BaseError("Read Failed", e, 500, true);
