@@ -45,8 +45,8 @@ const EventApi = {
   },
 
   get: (params: Params_Events) => {
-    if (params.isSomeday) {
-      return axios.get(`${API_BASEURL}/event?isSomeday=true`, headers());
+    if (params.someday) {
+      return axios.get(`${API_BASEURL}/event?someday=true`, headers());
     } else {
       return axios.get(
         `${API_BASEURL}/event?start=${params.startDate}&end=${params.endDate}`,

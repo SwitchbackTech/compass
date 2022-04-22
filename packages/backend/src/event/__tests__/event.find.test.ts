@@ -59,7 +59,7 @@ describe("Jan 2022: Many Formats", () => {
       expect(somedayEvents).toHaveLength(0);
     });
     it("returns someday events (exclusive) when someday query provided", async () => {
-      const filter = getReadAllFilter("user1", { isSomeday: "true" });
+      const filter = getReadAllFilter("user1", { someday: "true" });
       const result = await eventCollection.find(filter).toArray();
 
       const somedayEvents = result.filter((e) => e.isSomeday === true);

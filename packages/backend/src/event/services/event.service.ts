@@ -271,7 +271,7 @@ class EventService {
 
       // (temporarily) limit number of results
       // to speed up development
-      if (query.isSomeday) {
+      if (query.someday) {
         const response: Schema_Event[] = await mongoService.db
           .collection(Collections.EVENT)
           .find(filter)

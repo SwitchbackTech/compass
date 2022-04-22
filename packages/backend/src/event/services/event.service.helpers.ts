@@ -5,11 +5,11 @@ export const getReadAllFilter = (
   userId: string,
   query: Query_Event
 ): Filter<object> => {
-  const { end, isSomeday, start, priorities } = query;
+  const { end, someday, start, priorities } = query;
 
   let filter = { user: userId };
 
-  if (isSomeday) {
+  if (someday) {
     filter = { ...filter, ...{ isSomeday: true } };
   } else {
     filter = { ...filter, ...{ isSomeday: false } };
