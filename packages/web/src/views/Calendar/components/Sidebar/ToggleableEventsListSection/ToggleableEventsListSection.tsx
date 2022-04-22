@@ -2,10 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Popover } from "react-tiny-popover";
 import dayjs from "dayjs";
-
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-
 import { ArrowLeftIcon } from "@web/assets/svg";
 import { SectionType_Sidebar } from "@web/ducks/events/types";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors";
@@ -61,7 +59,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   const dispatch = useDispatch();
 
   const { count = 0 } = paginatedEventsData || {};
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(1);
   const [offset, setOffset] = useState(0);
   const [_isToggled, setIsToggled] = useState(false);
   const [isEventFormOpen, setEventFormOpen] = useState(false);

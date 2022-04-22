@@ -190,7 +190,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
           </Popover>
         </StyledHeaderFlex>
 
-        <ToggleableEventsListSection
+        {/* <ToggleableEventsListSection
           flex={getEventsSectionFlex("currentMonth")}
           isToggled={isCurrentMonthToggled}
           onToggle={() => setIsCurrentMonthToggled((toggle) => !toggle)}
@@ -202,7 +202,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
           }
           EventsListContainer={SidebarCurrentMonthEventsContainer}
           sectionType="currentMonth"
-        />
+        /> */}
 
         <StyledFutureEventsToggleableSection
           shouldSetTopMargin={isCurrentMonthToggled}
@@ -212,7 +212,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
             .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT)}
           isToggled={isFutureToggled}
           onToggle={() => setIsFutureToggled((toggle) => !toggle)}
-          title="Future"
+          title=""
           priorities={
             Object.keys(priorityFilter).filter(
               (key) => priorityFilter[key as Priorities]

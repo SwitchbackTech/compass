@@ -135,14 +135,15 @@ function* getCurrentMonthEventsSaga({ payload }: Action_GetPaginatedEvents) {
 
 function* getFutureEventsSaga({ payload }: Action_GetPaginatedEvents) {
   try {
-    const startDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
+    // const startDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
     const data: Response_GetEventsSaga = (yield call(getEventsSaga, {
       ...payload,
-      startDate,
-      endDate: "2022-12-31",
+      isSomeday: true,
+      // startDate,
+      // endDate: "2022-12-31",
     })) as Response_GetEventsSaga;
 
-    console.log("reminder: not getting events past dec 2022");
+    // console.log("reminder: not getting events past dec 2022");
     yield put(getFutureEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getFutureEventsSlice.actions.error());

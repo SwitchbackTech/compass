@@ -45,10 +45,14 @@ const EventApi = {
   },
 
   get: (params: Params_Events) => {
-    return axios.get(
-      `${API_BASEURL}/event?start=${params.startDate}&end=${params.endDate}`,
-      headers()
-    );
+    if (params.isSomeday) {
+      return axios.get(`${API_BASEURL}/event?isSomeday=true`, headers());
+    } else {
+      return axios.get(
+        `${API_BASEURL}/event?start=${params.startDate}&end=${params.endDate}`,
+        headers()
+      );
+    }
   },
 
   // TODO convert to saga
