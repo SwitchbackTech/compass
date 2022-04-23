@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
-
 import { DatePicker } from "@web/components/DatePicker";
 import { ColorNames } from "@web/common/types/styles";
 
@@ -24,16 +23,20 @@ export const ToggleableMonthWidget: React.FC<Props> = ({
   }, [monthsShown]);
 
   const selectedDateLabel = dayjs(selectedDate).format("MMM DD");
+  const temporarilyDisableToggle = true;
 
   return (
     <Styled>
-      <StyledToggleArrow
+      {/* <StyledToggleArrow
         isToggled={isToggled}
         onToggle={() => setIsToggled((toggle) => !toggle)}
-      />
-      {isToggled ? (
+      /> */}
+      {temporarilyDisableToggle ? (
         <DatePicker
-          onChange={(date) => setSelectedDate(date as Date)}
+          onChange={(date) => {
+            console.log(date);
+            setSelectedDate(date);
+          }}
           shouldCloseOnSelect={false}
           selected={selectedDate}
           defaultOpen

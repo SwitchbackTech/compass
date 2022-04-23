@@ -1,5 +1,4 @@
 import styled from "styled-components";
-
 import { Text } from "@web/components/Text";
 
 import { ToggleArrow } from "../ToggleArrow";

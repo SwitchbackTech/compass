@@ -101,7 +101,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   return (
     <Styled flex={flex} {...props}>
       <StyledHeader alignItems={AlignItems.CENTER}>
-        <ToggleArrow isToggled={isToggled} onToggle={onToggle} />
+        {/* <ToggleArrow isToggled={isToggled} onToggle={onToggle} /> */}
         <StyledHeaderTitle size={18}>{title}</StyledHeaderTitle>
 
         <Popover
@@ -124,7 +124,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
           </StyledAddEventButton>
         </Popover>
 
-        <StyledPaginationFlex
+        {/* <StyledPaginationFlex
           justifyContent={JustifyContent.SPACE_BETWEEN}
           alignItems={AlignItems.CENTER}
         >
@@ -152,7 +152,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
           >
             <ArrowLeftIcon transform="rotate(180)" />
           </StyledArrowButton>
-        </StyledPaginationFlex>
+        </StyledPaginationFlex> */}
       </StyledHeader>
 
       {isToggled && (

@@ -223,16 +223,16 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
         />
       </StyledTopSectionFlex>
 
-      <StyledDividerWrapper
+      {/* <StyledDividerWrapper
         onMouseDown={() => {
           setIsDividerDragging(true);
         }}
-      >
-        <Divider
-          withAnimation={false}
-          color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
-        />
-      </StyledDividerWrapper>
+      > */}
+      <Divider
+        withAnimation={false}
+        color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
+      />
+      {/* </StyledDividerWrapper> */}
 
       <StyledBottomSection height={String(bottomSectionHeight)}>
         <ToggleableMonthWidget
