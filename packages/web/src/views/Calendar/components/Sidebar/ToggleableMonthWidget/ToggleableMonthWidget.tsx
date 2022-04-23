@@ -18,9 +18,9 @@ export const ToggleableMonthWidget: React.FC<Props> = ({
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
-  useEffect(() => {
-    setIsToggled(!!monthsShown);
-  }, [monthsShown]);
+  // useEffect(() => {
+  //   setIsToggled(!!monthsShown);
+  // }, [monthsShown]);
 
   const selectedDateLabel = dayjs(selectedDate).format("MMM DD");
   const temporarilyDisableToggle = true;
@@ -41,6 +41,7 @@ export const ToggleableMonthWidget: React.FC<Props> = ({
           selected={selectedDate}
           defaultOpen
           animationOnToggle={false}
+          isShown={true}
           inline
           calendarClassName="sidebarDatePicker"
           withTodayButton={false}
