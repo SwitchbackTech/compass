@@ -6,7 +6,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { editEventSlice } from "@web/ducks/events/slice";
 
 import { Styled } from "./styled";
-import { StyledEventForm } from "../../ToggleableEventsListSection/styled";
+import { StyledSomedayEventForm } from "../../ToggleableEventsListSection/styled";
 interface TempEventSchema extends Schema_Event {
   order: number;
 }
@@ -65,7 +65,7 @@ export const Event = ({ event: _event }: Props) => {
       isOpen={isEventFormOpen && !isDragging}
       containerStyle={{ zIndex: "10" }}
       content={
-        <StyledEventForm
+        <StyledSomedayEventForm
           event={event}
           setEvent={setEvent}
           onSubmit={onSubmit}

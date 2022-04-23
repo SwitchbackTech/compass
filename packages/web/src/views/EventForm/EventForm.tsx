@@ -3,10 +3,8 @@ import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { StyledTrashIcon } from "@web/components/Svg";
-import { ColorNames } from "@web/common/types/styles";
+import { DeleteIcon } from "@web/components/Icons";
 import { SelectOption } from "@web/common/types/components";
-import { getColor } from "@web/common/utils/colors";
 import {
   HOURS_MINUTES_FORMAT,
   HOURS_AM_FORMAT,
@@ -15,7 +13,7 @@ import {
 
 import { ComponentProps } from "./types";
 import {
-  Styled,
+  StyledEventForm,
   StyledDescriptionField,
   StyledIconRow,
   StyledTitleField,
@@ -184,7 +182,7 @@ export const EventForm: React.FC<ComponentProps> = ({
   };
 
   return (
-    <Styled
+    <StyledEventForm
       {...props}
       isOpen={isFormOpen}
       priority={priority}
@@ -204,9 +202,7 @@ export const EventForm: React.FC<ComponentProps> = ({
       role="form"
     >
       <StyledIconRow>
-        <div onClick={onDeleteForm} role="button" title="Delete Event">
-          <StyledTrashIcon hovercolor={getColor(ColorNames.DARK_5)} />
-        </div>
+        <DeleteIcon onDelete={onDeleteForm} title="Delete Event" />
       </StyledIconRow>
 
       <StyledTitleField
@@ -246,6 +242,6 @@ export const EventForm: React.FC<ComponentProps> = ({
           Submit
         </StyledSubmitButton>
       </StyledSubmitRow>
-    </Styled>
+    </StyledEventForm>
   );
 };

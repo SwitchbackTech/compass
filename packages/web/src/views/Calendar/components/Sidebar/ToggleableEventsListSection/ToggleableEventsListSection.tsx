@@ -16,7 +16,7 @@ import {
   Styled,
   StyledAddEventButton,
   StyledArrowButton,
-  StyledEventForm,
+  StyledSomedayEventForm,
   StyledEventsList,
   StyledHeader,
   StyledHeaderTitle,
@@ -62,7 +62,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   const [pageSize, setPageSize] = useState(1);
   const [offset, setOffset] = useState(0);
   const [_isToggled, setIsToggled] = useState(false);
-  const [isEventFormOpen, setEventFormOpen] = useState(false);
+  const [isEventFormOpen, setIsEventFormOpen] = useState(false);
 
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -90,13 +90,16 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   });
 
   const isToggled = isParentToggled || _isToggled;
-  const onToggle = onParentToggle || (() => setIsToggled((toggle) => !toggle));
 
-  const showNextPageButton = count > pageSize + offset;
+  // const toggleForm = () => setEventFormOpen((open) => !open);
+  // const closeForm = () => setEventFormOpen((open) => !open);
 
   const onSubmit = (eventToSubmit: Schema_Event) => {
+    setIsEventFormOpen(false);
     dispatch(createEventSlice.actions.request(eventToSubmit));
   };
+  const onToggle = onParentToggle || (() => setIsToggled((toggle) => !toggle));
+  const showNextPageButton = count > pageSize + offset;
 
   return (
     <Styled flex={flex} {...props}>
@@ -108,17 +111,21 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
           isOpen={isEventFormOpen}
           containerStyle={{ zIndex: "10" }}
           content={
-            <StyledEventForm
+            <StyledSomedayEventForm
               event={event}
               setEvent={setEvent}
+              onDelete={() => {
+                console.log("todo: delete");
+                setIsEventFormOpen(false);
+              }}
               onSubmit={onSubmit}
-              onClose={() => setEventFormOpen(false)}
+              onClose={() => setIsEventFormOpen(false)}
             />
           }
         >
           <StyledAddEventButton
             size={25}
-            onClick={() => setEventFormOpen((open) => !open)}
+            onClick={() => setIsEventFormOpen((open) => !open)}
           >
             +
           </StyledAddEventButton>
