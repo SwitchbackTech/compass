@@ -1,4 +1,4 @@
-import { createGlobalStyle } from 'styled-components';
+import { createGlobalStyle } from "styled-components";
 
 export const GlobalStyle = createGlobalStyle`
   * {
@@ -11,7 +11,7 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   .react-datepicker-popper {
-    z-index: 10000;
+    z-index: 10000; // refactor to use enum in web.constants
   }
 
   :focus-visible {

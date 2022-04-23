@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Popover } from "react-tiny-popover";
+import { usePopper } from "react-popper";
 import dayjs from "dayjs";
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
@@ -11,12 +11,13 @@ import { RootState } from "@web/store";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { createEventSlice } from "@web/ducks/events/slice";
 import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates";
+import { ZIndex } from "@web/common/constants/web.constants";
+import { SomedayEventForm } from "@web/views/SomedayEventForm";
 
 import {
   Styled,
   StyledAddEventButton,
   StyledArrowButton,
-  StyledSomedayEventForm,
   StyledEventsList,
   StyledHeader,
   StyledHeaderTitle,
@@ -53,29 +54,46 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   flex,
   ...props
 }) => {
+  const dispatch = useDispatch();
+  const eventsRef = useRef<HTMLDivElement>(null);
+
   const paginatedEventsData = useSelector((state: RootState) =>
     selectPaginatedEventsBySectionType(state, sectionType)
   );
-  const dispatch = useDispatch();
-
   const { count = 0 } = paginatedEventsData || {};
+
   const [pageSize, setPageSize] = useState(1);
   const [offset, setOffset] = useState(0);
   const [_isToggled, setIsToggled] = useState(false);
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
+  const [popperRef, setPopperRef] = useState<HTMLElement>(null);
+  const [popperElement, setPopperElement] = useState<HTMLElement>(null);
 
-  const ref = useRef<HTMLDivElement>(null);
+  const { styles, attributes } = usePopper(popperRef, popperElement, {
+    placement: "right",
+    strategy: "fixed",
+    modifiers: [
+      {
+        name: "offset",
+        options: {
+          offset: [0, 285],
+        },
+      },
+    ],
+  });
+  const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_3 };
+
   useEffect(() => {
     setTimeout(() => {
-      if (ref.current?.clientHeight) {
+      if (eventsRef.current?.clientHeight) {
         const computedPageSize = Math.floor(
-          (ref.current.clientHeight - 40) / 34
+          (eventsRef.current.clientHeight - 40) / 34
         );
 
         setPageSize(computedPageSize || 1);
       }
     });
-  }, [ref.current?.clientHeight]);
+  }, [eventsRef.current?.clientHeight]);
 
   const today = dayjs(eventStartDate);
   const startDate = today.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
@@ -86,13 +104,10 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   const [event, setEvent] = useState<Schema_Event>({
     startDate,
     endDate,
-    priority: Priorities.WORK,
+    priority: Priorities.UNASSIGNED,
   });
 
   const isToggled = isParentToggled || _isToggled;
-
-  // const toggleForm = () => setEventFormOpen((open) => !open);
-  // const closeForm = () => setEventFormOpen((open) => !open);
 
   const onSubmit = (eventToSubmit: Schema_Event) => {
     setIsEventFormOpen(false);
@@ -107,29 +122,26 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
         {/* <ToggleArrow isToggled={isToggled} onToggle={onToggle} /> */}
         <StyledHeaderTitle size={18}>{title}</StyledHeaderTitle>
 
-        <Popover
-          isOpen={isEventFormOpen}
-          containerStyle={{ zIndex: "10" }}
-          content={
-            <StyledSomedayEventForm
+        <StyledAddEventButton
+          size={25}
+          onClick={() => setIsEventFormOpen((open) => !open)}
+          ref={setPopperRef}
+        >
+          +
+        </StyledAddEventButton>
+
+        <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
+          {isEventFormOpen && (
+            <SomedayEventForm
               event={event}
+              isOpen={isEventFormOpen}
+              // setIsOpen={setIsEventFormOpen}
               setEvent={setEvent}
-              onDelete={() => {
-                console.log("todo: delete");
-                setIsEventFormOpen(false);
-              }}
               onSubmit={onSubmit}
               onClose={() => setIsEventFormOpen(false)}
             />
-          }
-        >
-          <StyledAddEventButton
-            size={25}
-            onClick={() => setIsEventFormOpen((open) => !open)}
-          >
-            +
-          </StyledAddEventButton>
-        </Popover>
+          )}
+        </div>
 
         {/* <StyledPaginationFlex
           justifyContent={JustifyContent.SPACE_BETWEEN}
@@ -163,7 +175,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
       </StyledHeader>
 
       {isToggled && (
-        <StyledEventsList ref={ref}>
+        <StyledEventsList ref={eventsRef}>
           <EventsListContainer
             pageSize={pageSize}
             priorities={priorities}

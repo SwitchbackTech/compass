@@ -4,14 +4,14 @@ import { useDispatch } from "react-redux";
 import { useDrag, useDrop } from "react-dnd";
 import { Schema_Event } from "@core/types/event.types";
 import { editEventSlice } from "@web/ducks/events/slice";
+import { SomedayEventForm } from "@web/views/SomedayEventForm";
 
 import { Styled } from "./styled";
-import { StyledSomedayEventForm } from "../../ToggleableEventsListSection/styled";
 interface TempEventSchema extends Schema_Event {
   order: number;
 }
 export interface Props {
-  event: TempEventSchema; // replace with Schema_Event or .._Grid
+  event: TempEventSchema; // $$ replace with Schema_Event or .._Grid
 }
 
 export const Event = ({ event: _event }: Props) => {
@@ -65,11 +65,12 @@ export const Event = ({ event: _event }: Props) => {
       isOpen={isEventFormOpen && !isDragging}
       containerStyle={{ zIndex: "10" }}
       content={
-        <StyledSomedayEventForm
+        <SomedayEventForm
           event={event}
-          setEvent={setEvent}
+          isOpen={isEventFormOpen}
           onSubmit={onSubmit}
           onClose={() => setEventFormOpen(false)}
+          setEvent={setEvent}
         />
       }
     >
