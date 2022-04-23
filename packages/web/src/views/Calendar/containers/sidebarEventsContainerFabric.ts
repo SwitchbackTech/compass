@@ -1,6 +1,5 @@
 import { connect } from "react-redux";
 import { Dispatch } from "redux";
-
 import { selectEventIdsBySectionType } from "@web/ducks/events/selectors";
 import { RootState } from "@web/store";
 import {

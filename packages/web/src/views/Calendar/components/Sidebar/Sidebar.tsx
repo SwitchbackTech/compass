@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Popover } from "react-tiny-popover";
 import dayjs from "dayjs";
-import { Priorities } from "@core/core.constants";
+import { Priorities, Priority } from "@core/core.constants";
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
 import { StrawberryMenuIcon } from "@web/assets/svg";
@@ -88,6 +88,20 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
     setBottomSectionHeight(height);
   }, [isCalendarsToggled]);
 
+  const getEventsSectionFlex = (sectionType: "currentMonth" | "future") => {
+    const dividerIndexBySectionType = {
+      currentMonth: isCurrentMonthToggled && 1,
+      future: isFutureToggled && 1,
+    };
+
+    return dividerIndexBySectionType[sectionType] || undefined;
+  };
+
+  const onChangePriorityFilter =
+    (name: keyof PriorityFilter) => (value: boolean) => {
+      setPriorityFilter((filter) => ({ ...filter, [name]: value }));
+    };
+
   const onFilterButtonBlur = (e: React.FocusEvent) => {
     const relatedTarget = e.relatedTarget as Element;
     if (relatedTarget && relatedTarget.id === "priority-sort-popover") {
@@ -104,12 +118,11 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
     setBottomSectionHeight(window.innerHeight - e.clientY + 5);
   };
 
-  const onChangePriorityFilter =
-    (name: keyof PriorityFilter) => (value: boolean) => {
-      setPriorityFilter((filter) => ({ ...filter, [name]: value }));
-    };
+  const onMouseUp = () => {
+    setIsDividerDragging(false);
+  };
 
-  const renderPriorityFilter = (priorityKey: Priorities) => (
+  const renderPriorityFilter = (priorityKey: Priority) => (
     <StyledPriorityFilterItem key={priorityKey} alignItems={AlignItems.CENTER}>
       <StyledCheckBox
         isChecked={priorityFilter[priorityKey]}
@@ -121,19 +134,6 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
   );
 
   const StyledSidebarToggleIcon = renderStyledSidebarToggleIcon(isToggled);
-
-  const getEventsSectionFlex = (sectionType: "currentMonth" | "future") => {
-    const dividerIndexBySectionType = {
-      currentMonth: isCurrentMonthToggled && 1,
-      future: isFutureToggled && 1,
-    };
-
-    return dividerIndexBySectionType[sectionType] || undefined;
-  };
-
-  const onMouseUp = () => {
-    setIsDividerDragging(false);
-  };
 
   return (
     <Styled
@@ -157,9 +157,9 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
           justifyContent={JustifyContent.SPACE_BETWEEN}
         >
           <Text size={30} colorName={ColorNames.WHITE_1}>
-            Someday List
+            Someday
           </Text>
-
+          {/* 
           <Popover
             isOpen={isFilterPopoverOpen}
             positions={["bottom"]}
@@ -185,9 +185,9 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
               onFocus={() => setIsFilterPopoverOpen(true)}
               onBlur={onFilterButtonBlur}
             >
-              <StrawberryMenuIcon />
+            <StrawberryMenuIcon />
             </StyledPriorityFilterButton>
-          </Popover>
+          </Popover> */}
         </StyledHeaderFlex>
 
         {/* <ToggleableEventsListSection
