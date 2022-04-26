@@ -30,15 +30,9 @@ export const SomedayEventForm: React.FC<Props> = ({
   onClose: _onClose,
   onSubmit,
   setEvent,
-  setIsOpen,
   ...props
 }) => {
   const dispatch = useDispatch();
-  const testRef = useRef<HTMLDivElement>(null);
-  const formRef = useRef<HTMLDivElement>(null);
-
-  const [isModalOpen, setModalOpen] = useState(true);
-  useOnClickOutside(formRef, () => setModalOpen(false));
 
   /*
   useEffect(() => {
@@ -54,20 +48,20 @@ export const SomedayEventForm: React.FC<Props> = ({
       console.log("escape pressed");
       // setTimeout(onClose);
 
-      elem.addEventListener("keydown", keyDownHandler);
+      document.addEventListener("keydown", keyDownHandler);
 
       return () => {
-        elem.removeEventListener("keydown", keyDownHandler);
+        document.removeEventListener("keydown", keyDownHandler);
       };
     };
   }, []);
   */
 
   const onSomedayDelete = () => {
+    _onClose();
     if (event._id === undefined) {
-      return; // assume event was never created
+      return; // event was never created, so no need to dispatch delete
     }
-    // setIsOpen(false);
     console.log("reminder: not dispatching delete for now");
     // dispatch(deleteEventSlice.actions.request({ _id: event._id }));
   };
