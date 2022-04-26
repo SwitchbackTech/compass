@@ -57,6 +57,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
 }) => {
   const dispatch = useDispatch();
   const eventsListRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const paginatedEventsData = useSelector((state: RootState) =>
     selectPaginatedEventsBySectionType(state, sectionType)
@@ -69,6 +70,8 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
   const [popperRef, setPopperRef] = useState<HTMLElement>(null);
   const [popperElement, setPopperElement] = useState<HTMLElement>(null);
+
+  useOnClickOutside(formRef, () => setIsEventFormOpen(false));
 
   const { styles, attributes } = usePopper(popperRef, popperElement, {
     placement: "right",
@@ -133,14 +136,15 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
 
         <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
           {isEventFormOpen && (
-            <SomedayEventForm
-              event={event}
-              isOpen={isEventFormOpen}
-              // setIsOpen={setIsEventFormOpen}
-              setEvent={setEvent}
-              onSubmit={onSubmit}
-              onClose={() => setIsEventFormOpen(false)}
-            />
+            <div ref={formRef}>
+              <SomedayEventForm
+                event={event}
+                isOpen={isEventFormOpen}
+                setEvent={setEvent}
+                onSubmit={onSubmit}
+                onClose={() => setIsEventFormOpen(false)}
+              />
+            </div>
           )}
         </div>
 

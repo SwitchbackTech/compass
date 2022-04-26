@@ -38,7 +38,6 @@ export const SomedayEventForm: React.FC<Props> = ({
   const formRef = useRef<HTMLDivElement>(null);
 
   const [isModalOpen, setModalOpen] = useState(true);
-  // useOnClickOutside(testRef, () => setModalOpen(false));
   useOnClickOutside(formRef, () => setModalOpen(false));
 
   /*
@@ -73,24 +72,16 @@ export const SomedayEventForm: React.FC<Props> = ({
     // dispatch(deleteEventSlice.actions.request({ _id: event._id }));
   };
 
-  console.log("isOpen:", isOpen);
-
   return (
     <StyledEventForm
       {...props}
       isOpen={true}
       onKeyDown={() => console.log("keyed ")}
       priority={event.priority}
-      ref={formRef}
     >
       <StyledIconRow>
         <DeleteIcon onDelete={onSomedayDelete} title="Delete Someday Event" />
       </StyledIconRow>
-      {isModalOpen && (
-        <div ref={testRef}>
-          👋 Hey, I'm a modal. Click anywhere outside of me to close.
-        </div>
-      )}
     </StyledEventForm>
   );
 };

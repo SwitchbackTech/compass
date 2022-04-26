@@ -1,8 +1,10 @@
-import React, { useState } from "react";
-import { Popover } from "react-tiny-popover";
+import React, { useRef, useState } from "react";
+import { usePopper } from "react-popper";
 import { useDispatch } from "react-redux";
 import { useDrag, useDrop } from "react-dnd";
 import { Schema_Event } from "@core/types/event.types";
+import { ZIndex } from "@web/common/constants/web.constants";
+import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { editEventSlice } from "@web/ducks/events/slice";
 import { SomedayEventForm } from "@web/views/SomedayEventForm";
 
@@ -15,10 +17,29 @@ export interface Props {
 }
 
 export const Event = ({ event: _event }: Props) => {
-  const [isEventFormOpen, setEventFormOpen] = useState(false);
-  const [event, setEvent] = useState(_event);
-
   const dispatch = useDispatch();
+  const formRef = useRef<HTMLDivElement>(null);
+
+  const [isEventFormOpen, setIsEventFormOpen] = useState(false);
+  const [event, setEvent] = useState(_event);
+  const [popperRef, setPopperRef] = useState<HTMLElement>(null);
+  const [popperElement, setPopperElement] = useState<HTMLElement>(null);
+
+  useOnClickOutside(formRef, () => setIsEventFormOpen(false));
+
+  const { styles, attributes } = usePopper(popperRef, popperElement, {
+    placement: "right",
+    strategy: "fixed",
+    modifiers: [
+      {
+        name: "offset",
+        options: {
+          offset: [0, 20],
+        },
+      },
+    ],
+  });
+  const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_3 };
 
   const onSubmit = (eventData: Schema_Event) => {
     dispatch(
@@ -60,30 +81,32 @@ export const Event = ({ event: _event }: Props) => {
   );
 
   return (
-    <Popover
-      ref={drag}
-      isOpen={isEventFormOpen && !isDragging}
-      containerStyle={{ zIndex: "10" }}
-      content={
-        <SomedayEventForm
-          event={event}
-          isOpen={isEventFormOpen}
-          onSubmit={onSubmit}
-          onClose={() => setEventFormOpen(false)}
-          setEvent={setEvent}
-        />
-      }
-    >
-      <div ref={drag}>
-        <Styled
-          ref={drop}
-          isDragging={isDragging}
-          onClick={() => setEventFormOpen(true)}
-          priority={event.priority}
-        >
-          {event.title}
-        </Styled>
+    <>
+      <div ref={setPopperRef}>
+        <div ref={drag}>
+          <Styled
+            ref={drop}
+            isDragging={isDragging}
+            onClick={() => setIsEventFormOpen(true)}
+            priority={event.priority}
+          >
+            {event.title}
+          </Styled>
+        </div>
       </div>
-    </Popover>
+      <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
+        {isEventFormOpen && (
+          <div ref={formRef}>
+            <SomedayEventForm
+              event={event}
+              isOpen={isEventFormOpen}
+              setEvent={setEvent}
+              onSubmit={onSubmit}
+              onClose={() => setIsEventFormOpen(false)}
+            />
+          </div>
+        )}
+      </div>
+    </>
   );
 };
