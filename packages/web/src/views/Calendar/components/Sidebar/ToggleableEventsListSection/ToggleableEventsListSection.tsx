@@ -13,6 +13,7 @@ import { createEventSlice } from "@web/ducks/events/slice";
 import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { SomedayEventForm } from "@web/views/SomedayEventForm";
+import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 
 import {
   Styled,
@@ -56,6 +57,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
 }) => {
   const dispatch = useDispatch();
   const eventsRef = useRef<HTMLDivElement>(null);
+  const testRef = useRef<HTMLDivElement>(null);
 
   const paginatedEventsData = useSelector((state: RootState) =>
     selectPaginatedEventsBySectionType(state, sectionType)
@@ -66,8 +68,12 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   const [offset, setOffset] = useState(0);
   const [_isToggled, setIsToggled] = useState(false);
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
+  const [isModalOpen, setModalOpen] = useState(false);
   const [popperRef, setPopperRef] = useState<HTMLElement>(null);
   const [popperElement, setPopperElement] = useState<HTMLElement>(null);
+
+  useOnClickOutside(testRef, () => setModalOpen(false));
+  // useOnClickOutside(eventsRef, () => setModalOpen(false));
 
   const { styles, attributes } = usePopper(popperRef, popperElement, {
     placement: "right",
@@ -129,6 +135,16 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
         >
           +
         </StyledAddEventButton>
+
+        <div>
+          {isModalOpen ? (
+            <div ref={testRef}>
+              👋 Hey, I'm a modal. Click anywhere outside of me to close.
+            </div>
+          ) : (
+            <button onClick={() => setModalOpen(true)}>Open Modal</button>
+          )}
+        </div>
 
         <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
           {isEventFormOpen && (
