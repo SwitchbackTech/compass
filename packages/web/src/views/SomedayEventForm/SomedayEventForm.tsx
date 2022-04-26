@@ -34,28 +34,19 @@ export const SomedayEventForm: React.FC<Props> = ({
 }) => {
   const dispatch = useDispatch();
 
-  /*
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
-      console.log(e);
-      if (e.which === Key.Shift) {
-        // toggleShiftKeyPressed(true);
-        console.log("shift pressed");
-      }
-
       if (e.which !== Key.Escape) return;
-
-      console.log("escape pressed");
-      // setTimeout(onClose);
-
-      document.addEventListener("keydown", keyDownHandler);
-
-      return () => {
-        document.removeEventListener("keydown", keyDownHandler);
-      };
+      _onClose();
     };
-  }, []);
-  */
+    // setTimeout(_onClose);
+
+    document.addEventListener("keydown", keyDownHandler);
+
+    return () => {
+      document.removeEventListener("keydown", keyDownHandler);
+    };
+  }, [_onClose]);
 
   const onSomedayDelete = () => {
     _onClose();
