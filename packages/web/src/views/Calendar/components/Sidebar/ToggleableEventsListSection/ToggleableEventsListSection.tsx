@@ -56,8 +56,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   ...props
 }) => {
   const dispatch = useDispatch();
-  const eventsRef = useRef<HTMLDivElement>(null);
-  const testRef = useRef<HTMLDivElement>(null);
+  const eventsListRef = useRef<HTMLDivElement>(null);
 
   const paginatedEventsData = useSelector((state: RootState) =>
     selectPaginatedEventsBySectionType(state, sectionType)
@@ -68,12 +67,8 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   const [offset, setOffset] = useState(0);
   const [_isToggled, setIsToggled] = useState(false);
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
-  const [isModalOpen, setModalOpen] = useState(false);
   const [popperRef, setPopperRef] = useState<HTMLElement>(null);
   const [popperElement, setPopperElement] = useState<HTMLElement>(null);
-
-  useOnClickOutside(testRef, () => setModalOpen(false));
-  // useOnClickOutside(eventsRef, () => setModalOpen(false));
 
   const { styles, attributes } = usePopper(popperRef, popperElement, {
     placement: "right",
@@ -91,15 +86,15 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
 
   useEffect(() => {
     setTimeout(() => {
-      if (eventsRef.current?.clientHeight) {
+      if (eventsListRef.current?.clientHeight) {
         const computedPageSize = Math.floor(
-          (eventsRef.current.clientHeight - 40) / 34
+          (eventsListRef.current.clientHeight - 40) / 34
         );
 
         setPageSize(computedPageSize || 1);
       }
     });
-  }, [eventsRef.current?.clientHeight]);
+  }, [eventsListRef.current?.clientHeight]);
 
   const today = dayjs(eventStartDate);
   const startDate = today.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
@@ -135,16 +130,6 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
         >
           +
         </StyledAddEventButton>
-
-        <div>
-          {isModalOpen ? (
-            <div ref={testRef}>
-              👋 Hey, I'm a modal. Click anywhere outside of me to close.
-            </div>
-          ) : (
-            <button onClick={() => setModalOpen(true)}>Open Modal</button>
-          )}
-        </div>
 
         <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
           {isEventFormOpen && (
@@ -191,7 +176,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
       </StyledHeader>
 
       {isToggled && (
-        <StyledEventsList ref={eventsRef}>
+        <StyledEventsList ref={eventsListRef}>
           <EventsListContainer
             pageSize={pageSize}
             priorities={priorities}

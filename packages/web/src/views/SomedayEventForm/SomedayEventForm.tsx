@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Key } from "ts-keycode-enum";
 import { useDispatch } from "react-redux";
 import { Priority } from "@core/core.constants";
@@ -6,6 +6,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { StyledEventForm, StyledIconRow } from "@web/views/EventForm/styled";
 import { DeleteIcon } from "@web/components/Icons";
 import { deleteEventSlice } from "@web/ducks/events/slice";
+import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 
 interface BasicProps {
   priority?: Priority;
@@ -33,6 +34,12 @@ export const SomedayEventForm: React.FC<Props> = ({
   ...props
 }) => {
   const dispatch = useDispatch();
+  const testRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  const [isModalOpen, setModalOpen] = useState(true);
+  // useOnClickOutside(testRef, () => setModalOpen(false));
+  useOnClickOutside(formRef, () => setModalOpen(false));
 
   /*
   useEffect(() => {
@@ -74,10 +81,16 @@ export const SomedayEventForm: React.FC<Props> = ({
       isOpen={true}
       onKeyDown={() => console.log("keyed ")}
       priority={event.priority}
+      ref={formRef}
     >
       <StyledIconRow>
         <DeleteIcon onDelete={onSomedayDelete} title="Delete Someday Event" />
       </StyledIconRow>
+      {isModalOpen && (
+        <div ref={testRef}>
+          👋 Hey, I'm a modal. Click anywhere outside of me to close.
+        </div>
+      )}
     </StyledEventForm>
   );
 };
