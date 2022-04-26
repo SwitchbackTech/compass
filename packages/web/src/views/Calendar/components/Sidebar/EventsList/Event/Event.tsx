@@ -42,9 +42,12 @@ export const Event = ({ event: _event }: Props) => {
   const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_3 };
 
   const onSubmit = (eventData: Schema_Event) => {
-    dispatch(
-      editEventSlice.actions.request({ _id: event._id || "", event: eventData })
-    );
+    console.log("editing existing event .. [jk]");
+    setIsEventFormOpen(false);
+
+    // dispatch(
+    // editEventSlice.actions.request({ _id: event._id || "", event: eventData })
+    // );
   };
 
   const [{ isDragging }, drag] = useDrag(() => ({

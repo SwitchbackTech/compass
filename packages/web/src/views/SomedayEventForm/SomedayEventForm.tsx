@@ -1,37 +1,21 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect } from "react";
 import { Key } from "ts-keycode-enum";
 import { useDispatch } from "react-redux";
-import { Priority } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import {
+  StyledDescriptionField,
   StyledEventForm,
   StyledIconRow,
   StyledTitleField,
 } from "@web/views/EventForm/styled";
 import { DeleteIcon } from "@web/components/Icons";
-import { deleteEventSlice } from "@web/ducks/events/slice";
-import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
+import { PrioritySection } from "@web/views/EventForm/PrioritySection";
+import { FormProps, SetEventFormField } from "@web/views/EventForm/types";
 
-interface BasicProps {
-  priority?: Priority;
-}
-
-interface Props extends BasicProps {
-  event: Schema_Event;
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (event: Schema_Event) => void;
-  setEvent: React.Dispatch<React.SetStateAction<Schema_Event>>;
-}
-
-interface StyledProps extends BasicProps {
-  title?: string;
-  isOpen?: boolean;
-}
-export const SomedayEventForm: React.FC<Props> = ({
+export const SomedayEventForm: React.FC<FormProps> = ({
   event,
-  isOpen,
   onClose: _onClose,
+  onDelete: _onDelete,
   onSubmit,
   setEvent,
   ...props
@@ -39,6 +23,7 @@ export const SomedayEventForm: React.FC<Props> = ({
   const dispatch = useDispatch();
 
   useEffect(() => {
+    setEvent(event || {});
     const keyDownHandler = (e: KeyboardEvent) => {
       if (e.which !== Key.Escape) return;
       _onClose();
@@ -52,22 +37,20 @@ export const SomedayEventForm: React.FC<Props> = ({
     };
   }, [_onClose]);
 
-  // $$ DRY
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       onSetEventField(fieldName, e.target.value);
     };
 
-  // $$ DRY
-  const onSetEventField = <FieldName extends keyof Schema_Event>(
-    fieldName: FieldName,
-    value: Schema_Event[FieldName]
-  ) => {
-    setEvent((_event) => ({
-      ..._event,
-      [fieldName]: value,
-    }));
+  const onSetEventField: SetEventFormField = (field, value) => {
+    const newEvent = { ...event, [field]: value };
+    setEvent(newEvent);
+    // $$ remove after confident above works
+    // setEvent((_event) => ({
+    //   ..._event,
+    //   [fieldName]: value,
+    // }));
   };
 
   const onSomedayDelete = () => {
@@ -75,20 +58,17 @@ export const SomedayEventForm: React.FC<Props> = ({
     if (event._id === undefined) {
       return; // event was never created, so no need to dispatch delete
     }
-    console.log("reminder: not dispatching delete for now");
-    // dispatch(deleteEventSlice.actions.request({ _id: event._id }));
+    _onDelete;
   };
 
-  // $$ DRY
-  const submitFormWithKeyboard: React.KeyboardEventHandler<
-    HTMLTextAreaElement
-  > = (e) => {
+  const onEnterKey: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
     if (e.which !== Key.Enter) return;
 
     e.preventDefault();
     e.stopPropagation();
 
-    console.log("submitting ...");
+    console.log("onenterkey");
+    onSubmit(event);
   };
 
   return (
@@ -100,9 +80,20 @@ export const SomedayEventForm: React.FC<Props> = ({
       <StyledTitleField
         autoFocus
         placeholder="Title"
-        onKeyDown={submitFormWithKeyboard}
+        onKeyDown={onEnterKey}
         value={event.title}
         onChange={onChangeEventTextField("title")}
+      />
+
+      <PrioritySection
+        onSetEventField={onSetEventField}
+        priority={event.priority}
+      />
+
+      <StyledDescriptionField
+        onChange={onChangeEventTextField("description")}
+        placeholder="Description"
+        value={event.description || ""}
       />
     </StyledEventForm>
   );

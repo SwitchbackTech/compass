@@ -11,7 +11,7 @@ import {
   YEAR_MONTH_DAY_FORMAT,
 } from "@web/common/constants/dates";
 
-import { ComponentProps } from "./types";
+import { FormProps } from "./types";
 import {
   StyledEventForm,
   StyledDescriptionField,
@@ -23,11 +23,11 @@ import {
 import { DateTimeSection } from "./DateTimeSection";
 import { PrioritySection } from "./PrioritySection";
 
-export const EventForm: React.FC<ComponentProps> = ({
+export const EventForm: React.FC<FormProps> = ({
+  event,
   onClose: _onClose,
   onDelete,
   onSubmit,
-  event,
   setEvent,
   ...props
 }) => {
@@ -164,10 +164,14 @@ export const EventForm: React.FC<ComponentProps> = ({
     fieldName: FieldName,
     value: Schema_Event[FieldName]
   ) => {
-    setEvent((_event) => ({
-      ..._event,
-      [fieldName]: value,
-    }));
+    const newEvent = { ...event, [fieldName]: value };
+    setEvent(newEvent);
+
+    // $$ remove after confident above works
+    // setEvent((_event) => ({
+    //   ..._event,
+    //   [fieldName]: value,
+    // }));
   };
 
   const submitFormWithKeyboard: React.KeyboardEventHandler<

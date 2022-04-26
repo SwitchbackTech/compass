@@ -8,9 +8,9 @@ import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
 import { getColor, getInvertedColor } from "@web/common/utils/colors";
 import { Button } from "@web/components/Button";
 
-import { StyledProps } from "./types";
+import { StyledFormProps } from "./types";
 
-export const StyledEventForm = styled.form<StyledProps>`
+export const StyledEventForm = styled.form<StyledFormProps>`
   ${({ isOpen }) =>
     isOpen
       ? `

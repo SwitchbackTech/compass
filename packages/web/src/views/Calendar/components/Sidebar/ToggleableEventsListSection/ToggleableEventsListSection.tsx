@@ -14,6 +14,7 @@ import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates
 import { ZIndex } from "@web/common/constants/web.constants";
 import { SomedayEventForm } from "@web/views/SomedayEventForm";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
+import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 
 import {
   Styled,
@@ -113,10 +114,19 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
 
   const isToggled = isParentToggled || _isToggled;
 
-  const onSubmit = (eventToSubmit: Schema_Event) => {
-    setIsEventFormOpen(false);
-    dispatch(createEventSlice.actions.request(eventToSubmit));
+  const onDelete = () => {
+    console.log("deleting [not rlly]");
+    // dispatch(deleteEventSlice.actions.request({ _id: event._id }));
   };
+
+  const onSubmit = (event: Schema_Event) => {
+    console.log("creating new someday event [jk]");
+    console.log(event);
+    setIsEventFormOpen(false);
+
+    // dispatch(createEventSlice.actions.request(eventToSubmit));
+  };
+
   const onToggle = onParentToggle || (() => setIsToggled((toggle) => !toggle));
   const showNextPageButton = count > pageSize + offset;
 
@@ -141,8 +151,9 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
                 event={event}
                 isOpen={isEventFormOpen}
                 setEvent={setEvent}
-                onSubmit={onSubmit}
                 onClose={() => setIsEventFormOpen(false)}
+                onDelete={onDelete}
+                onSubmit={onSubmit}
               />
             </div>
           )}

@@ -1,22 +1,16 @@
-import React, { useState, SetStateAction } from "react";
+import React, { useState } from "react";
 import { usePopper } from "react-popper";
-import { Schema_Event } from "@core/types/event.types";
 import { EventForm } from "@web/views/EventForm";
+import { FormProps } from "@web/views/EventForm/types";
 
 import { WeekEvent } from "../WeekEvent";
-import { Schema_GridEvent } from "../../weekViewHooks/types";
 import { WeekViewProps } from "../../weekViewHooks/useGetWeekViewProps";
 
-export interface Props {
-  isOpen: boolean;
-  onSubmitEventForm: (event: Schema_Event) => void;
-  event: Schema_GridEvent;
-  onCloseEventForm: () => void;
+interface WeekFormProps extends FormProps {
   weekViewProps: WeekViewProps;
-  setEvent: React.Dispatch<SetStateAction<Schema_Event>>;
 }
 
-export const EditingWeekEvent: React.FC<Props> = ({
+export const EditingWeekEvent: React.FC<WeekFormProps> = ({
   isOpen,
   onSubmitEventForm,
   event,
