@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Key } from "ts-keycode-enum";
 import { useDispatch } from "react-redux";
 import {
@@ -19,6 +19,21 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   setEvent,
   ...props
 }) => {
+  useEffect(() => {
+    const keyDownHandler = (e: KeyboardEvent) => {
+      if (e.which === Key.Escape) {
+        _onClose();
+      }
+    };
+    // setTimeout(_onClose);
+
+    document.addEventListener("keydown", keyDownHandler);
+
+    return () => {
+      document.removeEventListener("keydown", keyDownHandler);
+    };
+  }, [_onClose]);
+
   const dispatch = useDispatch();
 
   const onChangeEventTextField =

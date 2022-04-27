@@ -243,7 +243,7 @@ export const EventForm: React.FC<FormProps> = ({
 
       <StyledSubmitRow>
         <StyledSubmitButton bordered={true} onClick={onSubmitForm}>
-          Submit
+          Save
         </StyledSubmitButton>
       </StyledSubmitRow>
     </StyledEventForm>
