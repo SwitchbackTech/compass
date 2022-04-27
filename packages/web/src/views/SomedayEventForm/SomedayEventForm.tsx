@@ -1,7 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Key } from "ts-keycode-enum";
 import { useDispatch } from "react-redux";
-import { Schema_Event } from "@core/types/event.types";
 import {
   StyledDescriptionField,
   StyledEventForm,
@@ -22,21 +21,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 }) => {
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    setEvent(event || {});
-    const keyDownHandler = (e: KeyboardEvent) => {
-      if (e.which !== Key.Escape) return;
-      _onClose();
-    };
-    // setTimeout(_onClose);
-
-    document.addEventListener("keydown", keyDownHandler);
-
-    return () => {
-      document.removeEventListener("keydown", keyDownHandler);
-    };
-  }, [_onClose]);
-
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -46,10 +30,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const onSetEventField: SetEventFormField = (field, value) => {
     const newEvent = { ...event, [field]: value };
     setEvent(newEvent);
+
     // $$ remove after confident above works
     // setEvent((_event) => ({
     //   ..._event,
-    //   [fieldName]: value,
+    //   [field]: value,
     // }));
   };
 
@@ -61,18 +46,25 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     _onDelete;
   };
 
-  const onEnterKey: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
-    if (e.which !== Key.Enter) return;
+  const keyHandler: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+    if (e.which === Key.Escape) {
+      _onClose();
+    }
+    if (e.which !== Key.Enter && e.metaKey) {
+      onSubmit(event);
+    }
 
-    e.preventDefault();
+    // prevents triggering other shortcuts
     e.stopPropagation();
-
-    console.log("onenterkey");
-    onSubmit(event);
   };
 
   return (
-    <StyledEventForm {...props} isOpen={true} priority={event.priority}>
+    <StyledEventForm
+      {...props}
+      isOpen={true}
+      onKeyDown={keyHandler}
+      priority={event.priority}
+    >
       <StyledIconRow>
         <DeleteIcon onDelete={onSomedayDelete} title="Delete Someday Event" />
       </StyledIconRow>
@@ -80,7 +72,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       <StyledTitleField
         autoFocus
         placeholder="Title"
-        onKeyDown={onEnterKey}
         value={event.title}
         onChange={onChangeEventTextField("title")}
       />

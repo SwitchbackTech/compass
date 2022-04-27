@@ -135,7 +135,7 @@ export const CalendarView = () => {
         onTransitionEnd={() =>
           setResize({ height: window.innerHeight, width: window.innerWidth })
         }
-        weekViewProps={weekViewProps}
+        // weekViewProps={weekViewProps}
       />
       <StyledCalendar
         ref={component.calendarRef}

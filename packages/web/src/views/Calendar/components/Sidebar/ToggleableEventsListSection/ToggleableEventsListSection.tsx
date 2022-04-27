@@ -154,6 +154,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
                 onClose={() => setIsEventFormOpen(false)}
                 onDelete={onDelete}
                 onSubmit={onSubmit}
+                ref={formRef}
               />
             </div>
           )}
