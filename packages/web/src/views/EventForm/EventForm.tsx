@@ -17,11 +17,10 @@ import {
   StyledDescriptionField,
   StyledIconRow,
   StyledTitleField,
-  StyledSubmitButton,
-  StyledSubmitRow,
 } from "./styled";
 import { DateTimeSection } from "./DateTimeSection";
 import { PrioritySection } from "./PrioritySection";
+import { SaveSection } from "./SaveSection";
 
 export const EventForm: React.FC<FormProps> = ({
   event,
@@ -241,11 +240,7 @@ export const EventForm: React.FC<FormProps> = ({
         value={event.description || ""}
       />
 
-      <StyledSubmitRow>
-        <StyledSubmitButton bordered={true} onClick={onSubmitForm}>
-          Save
-        </StyledSubmitButton>
-      </StyledSubmitRow>
+      <SaveSection onSubmit={onSubmitForm} />
     </StyledEventForm>
   );
 };

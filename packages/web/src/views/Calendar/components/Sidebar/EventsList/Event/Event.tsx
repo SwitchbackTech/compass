@@ -41,15 +41,6 @@ export const Event = ({ event: _event }: Props) => {
   });
   const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_3 };
 
-  const onSubmit = (eventData: Schema_Event) => {
-    console.log("editing existing event .. [jk]");
-    setIsEventFormOpen(false);
-
-    // dispatch(
-    // editEventSlice.actions.request({ _id: event._id || "", event: eventData })
-    // );
-  };
-
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "event",
     collect: (monitor) => ({
@@ -73,6 +64,15 @@ export const Event = ({ event: _event }: Props) => {
         event: { ...draggedEvent, order },
       })
     );
+  };
+
+  const onSubmit = (eventData: Schema_Event) => {
+    console.log("editing existing event .. [jk]");
+    setIsEventFormOpen(false);
+
+    // dispatch(
+    // editEventSlice.actions.request({ _id: event._id || "", event: eventData })
+    // );
   };
 
   const [, drop] = useDrop(
@@ -103,9 +103,9 @@ export const Event = ({ event: _event }: Props) => {
             <SomedayEventForm
               event={event}
               isOpen={isEventFormOpen}
-              setEvent={setEvent}
               onSubmit={onSubmit}
               onClose={() => setIsEventFormOpen(false)}
+              setEvent={setEvent}
             />
           </div>
         )}

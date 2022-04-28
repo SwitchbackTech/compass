@@ -1,20 +1,21 @@
 import React, { useEffect } from "react";
 import { Key } from "ts-keycode-enum";
 import { useDispatch } from "react-redux";
+import { DeleteIcon } from "@web/components/Icons";
+import { deleteEventSlice } from "@web/ducks/events/slice";
+import { PrioritySection } from "@web/views/EventForm/PrioritySection";
+import { SaveSection } from "@web/views/EventForm/SaveSection";
+import { FormProps, SetEventFormField } from "@web/views/EventForm/types";
 import {
   StyledDescriptionField,
   StyledEventForm,
   StyledIconRow,
   StyledTitleField,
 } from "@web/views/EventForm/styled";
-import { DeleteIcon } from "@web/components/Icons";
-import { PrioritySection } from "@web/views/EventForm/PrioritySection";
-import { FormProps, SetEventFormField } from "@web/views/EventForm/types";
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
   onClose: _onClose,
-  onDelete: _onDelete,
   onSubmit,
   setEvent,
   ...props
@@ -53,12 +54,14 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     // }));
   };
 
-  const onSomedayDelete = () => {
+  const onDelete = () => {
     _onClose();
     if (event._id === undefined) {
       return; // event was never created, so no need to dispatch delete
     }
-    _onDelete;
+
+    console.log("dispatching delete for:", event.title);
+    dispatch(deleteEventSlice.actions.request({ _id: event._id }));
   };
 
   const keyHandler: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
@@ -81,7 +84,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       priority={event.priority}
     >
       <StyledIconRow>
-        <DeleteIcon onDelete={onSomedayDelete} title="Delete Someday Event" />
+        <DeleteIcon onDelete={onDelete} title="Delete Someday Event" />
       </StyledIconRow>
 
       <StyledTitleField
@@ -101,6 +104,8 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         placeholder="Description"
         value={event.description || ""}
       />
+
+      <SaveSection onSubmit={() => console.log("submitting:", event)} />
     </StyledEventForm>
   );
 };

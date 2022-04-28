@@ -7,7 +7,7 @@ export interface FormProps {
   isOpen?: boolean;
   onClose: () => void;
   onCloseEventForm?: () => void;
-  onDelete: (eventId?: string) => void;
+  onDelete?: (eventId?: string) => void;
   onSubmit: (event: Schema_Event) => void;
   onSubmitEventForm?: (event: Schema_Event) => void;
   priority?: Priority;
@@ -19,8 +19,6 @@ export interface FormProps {
 export type SetEventFormField = <FieldName extends keyof Schema_Event>(
   field: FieldName,
   value: Schema_Event[FieldName]
-  // field: string,
-  // value: string
 ) => void;
 
 export interface StyledFormProps {

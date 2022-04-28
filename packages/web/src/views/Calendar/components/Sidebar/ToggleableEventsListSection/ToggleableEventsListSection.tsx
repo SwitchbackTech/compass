@@ -114,11 +114,6 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
 
   const isToggled = isParentToggled || _isToggled;
 
-  const onDelete = () => {
-    console.log("deleting [not rlly]");
-    // dispatch(deleteEventSlice.actions.request({ _id: event._id }));
-  };
-
   const onSubmit = (event: Schema_Event) => {
     console.log("creating new someday event [jk]");
     console.log(event);
@@ -152,9 +147,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
                 isOpen={isEventFormOpen}
                 setEvent={setEvent}
                 onClose={() => setIsEventFormOpen(false)}
-                onDelete={onDelete}
                 onSubmit={onSubmit}
-                ref={formRef}
               />
             </div>
           )}

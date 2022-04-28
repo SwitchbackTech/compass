@@ -155,19 +155,18 @@ function* getEverySectionEvents() {
   const currentMonthEvents: Response_GetEventsSaga = (yield select((state) =>
     selectPaginatedEventsBySectionType(state, "currentMonth")
   )) as Response_GetEventsSaga;
-
+  
   const futureEvents: Response_GetEventsSaga = (yield select((state) =>
-    selectPaginatedEventsBySectionType(state, "future")
+  selectPaginatedEventsBySectionType(state, "future")
   )) as Response_GetEventsSaga;
-
   */
+
   const weekEvents: Response_GetEventsSaga = (yield select((state) =>
     selectPaginatedEventsBySectionType(state, "week")
   )) as Response_GetEventsSaga;
 
   // yield put(getCurrentMonthEventsSlice.actions.request(currentMonthEvents));
   // yield put(getFutureEventsSlice.actions.request(futureEvents));
-  // console.log("weekEvents [getEvSec]:", weekEvents);
   yield put(getWeekEventsSlice.actions.request(weekEvents));
 }
 
