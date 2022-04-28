@@ -93,6 +93,14 @@ export const getFutureEventsSlice = createAsyncSlice<
   Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
 >({
   name: "getFutureEvents",
+  reducers: {
+    delete: (state: RootState, action: Action_DeleteEvent) => {
+      // delete state.value.data[action.payload._id];
+      state.value.data = state.value.data.filter(
+        (i: string) => i !== action.payload._id
+      );
+    },
+  },
 });
 
 export const eventsReducer = combineReducers({
