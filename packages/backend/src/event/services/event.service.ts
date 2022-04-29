@@ -107,8 +107,9 @@ class EventService {
   }
 
   async deleteById(userId: string, id: string) {
-    // TODO refactor this so it doesn't require so many calls
-
+    /* 
+    Part I: Validate
+    */
     if (id === "undefined") {
       return new BaseError(
         "Delete Failed",
@@ -134,9 +135,11 @@ class EventService {
           true
         );
       }
+
+      const deleteFromGcal = !event.isSomeday;
       const { gEventId } = event;
 
-      if (gEventId === undefined) {
+      if (deleteFromGcal && gEventId === undefined) {
         return new BaseError(
           "Delete Failed",
           `GoogleEvent id cannot be null`,
@@ -145,14 +148,19 @@ class EventService {
         );
       }
 
+      /* 
+      Part II: Delete
+      */
       const response = await mongoService.db
         .collection(Collections.EVENT)
         .deleteOne(filter);
 
-      const gcal = await getGcal(userId);
-      // no await because gcal doesnt return much of a response,
-      // so there's no use in waiting for it to finish
-      gcalService.deleteEvent(gcal, gEventId);
+      if (deleteFromGcal) {
+        const gcal = await getGcal(userId);
+        // no await because gcal doesnt return much of a response,
+        // so there's no use in waiting for it to finish
+        gcalService.deleteEvent(gcal, gEventId);
+      }
 
       return response;
     } catch (e) {

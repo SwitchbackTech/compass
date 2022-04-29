@@ -11,8 +11,7 @@ import {
   SectionType_Sidebar,
 } from "@web/ducks/events/types";
 import { Priorities } from "@core/core.constants";
-
-import { EventsList } from "../components/Sidebar/EventsList";
+import { EventsList } from "@web/views/Calendar/components/Sidebar/EventsList";
 
 export const sidebarEventsContainerFabric = (
   sectionType: SectionType_Sidebar
