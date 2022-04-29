@@ -1,6 +1,7 @@
 //@ts-nocheck
 import { InsertManyResult } from "mongodb";
 import { Result_Import_Gcal } from "@core/types/sync.types";
+import { gSchema$Event } from "@core/types/gcal";
 import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -21,7 +22,7 @@ import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
 import { getGcal } from "@backend/auth/services/google.auth.service";
 import { Origin } from "@core/core.constants";
-import { gCalendar, gParamsEventsList, gSchema$Event } from "@core/types/gcal";
+import { gCalendar, gParamsEventsList } from "@core/types/gcal";
 
 import { getReadAllFilter } from "./event.service.helpers";
 
@@ -33,35 +34,26 @@ class EventService {
     event: Schema_Event
   ): Promise<Schema_Event | BaseError> {
     try {
-      /* Save to Gcal */
-      const _gEvent = MapEvent.toGcal(event);
-      const gEventWithOrigin: gSchema$Event = {
-        ..._gEvent,
-        // capture the fact that this event originated from Compass,
-        // so we dont attempt to re-add it during the next gcal sync
-        extendedProperties: {
-          private: {
-            origin: Origin.COMPASS,
-          },
-        },
-      };
-      const gcal = await getGcal(userId);
-      const gEvent = await gcalService.createEvent(gcal, gEventWithOrigin);
-
-      /* Save to Compass */
-      const eventWithGcalId = {
+      const _event = {
         ...event,
         user: userId,
-        gEventId: gEvent.id,
       };
 
+      const syncToGcal = !event.isSomeday;
+
+      if (syncToGcal) {
+        const gEvent = await this._createGcalEvent(userId, event);
+        _event["gEventId"] = gEvent.id;
+      }
+
+      /* Save to Compass */
       const response = await mongoService.db
         .collection(Collections.EVENT)
-        .insertOne(eventWithGcalId);
+        .insertOne(_event);
 
       if ("acknowledged" in response) {
         const eventWithId: Schema_Event = {
-          ...eventWithGcalId,
+          ..._event,
           _id: response.insertedId.toString(),
         };
         return eventWithId;
@@ -373,6 +365,33 @@ class EventService {
   async updateMany(userId: string, events: Schema_Event[]) {
     return "not done implementing this operation";
   }
+
+  /**********
+   * Helpers
+   *  (that have too many dependencies
+   *  to put in event.service.helpers)
+   *********/
+
+  _createGcalEvent = async (userId: string, event: Schema_Event) => {
+    const _gEvent = MapEvent.toGcal(event);
+
+    const gEventWithOrigin: gSchema$Event = {
+      ..._gEvent,
+      // capture the fact that this event originated from Compass,
+      // so we dont attempt to re-add it during the next gcal sync
+      extendedProperties: {
+        private: {
+          origin: Origin.COMPASS,
+        },
+      },
+    };
+
+    const gcal = await getGcal(userId);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const gEvent = await gcalService.createEvent(gcal, gEventWithOrigin);
+
+    return gEvent;
+  };
 }
 
 export default new EventService();

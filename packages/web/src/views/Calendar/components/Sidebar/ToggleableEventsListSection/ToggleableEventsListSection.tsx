@@ -10,7 +10,7 @@ import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors"
 import { RootState } from "@web/store";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { createEventSlice } from "@web/ducks/events/slice";
-import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates";
+import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { SomedayEventForm } from "@web/views/SomedayEventForm";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
@@ -63,6 +63,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   const paginatedEventsData = useSelector((state: RootState) =>
     selectPaginatedEventsBySectionType(state, sectionType)
   );
+  console.log(paginatedEventsData);
   const { count = 0 } = paginatedEventsData || {};
 
   const [pageSize, setPageSize] = useState(1);
@@ -101,25 +102,20 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   }, [eventsListRef.current?.clientHeight]);
 
   const today = dayjs(eventStartDate);
-  const startDate = today.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
-  const endDate = today
-    .add(1, "hour")
-    .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
+  const startDate = today.format(YEAR_MONTH_FORMAT);
 
   const [event, setEvent] = useState<Schema_Event>({
-    startDate,
-    endDate,
+    isSomeday: true,
     priority: Priorities.UNASSIGNED,
+    startDate,
   });
 
   const isToggled = isParentToggled || _isToggled;
 
-  const onSubmit = (event: Schema_Event) => {
-    console.log("creating new someday event [jk]");
-    console.log(event);
+  const onSubmit = () => {
     setIsEventFormOpen(false);
 
-    // dispatch(createEventSlice.actions.request(eventToSubmit));
+    dispatch(createEventSlice.actions.request(event));
   };
 
   const onToggle = onParentToggle || (() => setIsToggled((toggle) => !toggle));

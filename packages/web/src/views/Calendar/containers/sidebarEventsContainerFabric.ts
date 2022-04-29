@@ -23,6 +23,7 @@ export const sidebarEventsContainerFabric = (
   ) => {
     const actionBySectionType = {
       currentMonth: getCurrentMonthEventsSlice.actions.request,
+      // currentMonth: getFutureEventsSlice.actions.request,
       future: getFutureEventsSlice.actions.request,
     };
 

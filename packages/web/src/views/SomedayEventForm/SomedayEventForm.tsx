@@ -60,7 +60,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       return; // event was never created, so no need to dispatch delete
     }
 
-    console.log("dispatching delete for:", event.title);
     dispatch(deleteEventSlice.actions.request({ _id: event._id }));
   };
 
@@ -105,7 +104,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         value={event.description || ""}
       />
 
-      <SaveSection onSubmit={() => console.log("submitting:", event)} />
+      <SaveSection onSubmit={onSubmit} />
     </StyledEventForm>
   );
 };

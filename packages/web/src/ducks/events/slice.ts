@@ -95,10 +95,17 @@ export const getFutureEventsSlice = createAsyncSlice<
   name: "getFutureEvents",
   reducers: {
     delete: (state: RootState, action: Action_DeleteEvent) => {
-      // delete state.value.data[action.payload._id];
       state.value.data = state.value.data.filter(
         (i: string) => i !== action.payload._id
       );
+    },
+    insert: (state, action: { payload: string }) => {
+      // payload is the event id
+      if (state.value === null || state.value === undefined) {
+        console.log("error: state.value needs to be initialized");
+      } else {
+        state.value.data.push(action.payload);
+      }
     },
   },
 });
