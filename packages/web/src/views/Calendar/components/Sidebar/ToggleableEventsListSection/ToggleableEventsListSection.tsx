@@ -2,14 +2,17 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { usePopper } from "react-popper";
 import dayjs from "dayjs";
-import { Priorities } from "@core/core.constants";
+import { Origin, Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { ArrowLeftIcon } from "@web/assets/svg";
 import { SectionType_Sidebar } from "@web/ducks/events/types";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors";
 import { RootState } from "@web/store";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
-import { createEventSlice } from "@web/ducks/events/slice";
+import {
+  createEventSlice,
+  getFutureEventsSlice,
+} from "@web/ducks/events/slice";
 import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { SomedayEventForm } from "@web/views/SomedayEventForm";
@@ -63,7 +66,6 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   const paginatedEventsData = useSelector((state: RootState) =>
     selectPaginatedEventsBySectionType(state, sectionType)
   );
-  console.log(paginatedEventsData);
   const { count = 0 } = paginatedEventsData || {};
 
   const [pageSize, setPageSize] = useState(1);
@@ -106,6 +108,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
 
   const [event, setEvent] = useState<Schema_Event>({
     isSomeday: true,
+    origin: Origin.COMPASS,
     priority: Priorities.UNASSIGNED,
     startDate,
   });
@@ -116,6 +119,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
     setIsEventFormOpen(false);
 
     dispatch(createEventSlice.actions.request(event));
+    dispatch(getFutureEventsSlice.actions.request()); // causes entire list re-render
   };
 
   const onToggle = onParentToggle || (() => setIsToggled((toggle) => !toggle));

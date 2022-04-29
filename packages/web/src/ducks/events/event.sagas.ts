@@ -47,6 +47,7 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
     } else {
       yield put(getWeekEventsSlice.actions.insert(res.data._id));
     }
+
     yield put(
       eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
     );

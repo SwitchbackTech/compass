@@ -3,6 +3,13 @@ import { getReadAllFilter } from "../services/event.service.helpers";
 import { mockEventSetJan22 } from "@core/__mocks__/events/events.22jan";
 import { mockEventSetMar22 } from "@core/__mocks__/events/events.22mar";
 
+/* 
+Keep in mind:
+This suite works because it doesn't require
+instantiating any services, which introduce
+dependency and environment variable complexities.  
+*/
+
 describe("Jan 2022: Many Formats", () => {
   let connection;
   let db;

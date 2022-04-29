@@ -59,6 +59,13 @@ export const eventsEntitiesSlice = createSlice({
   },
 });
 
+export const getCurrentMonthEventsSlice = createAsyncSlice<
+  Payload_GetPaginatedEvents,
+  Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
+>({
+  name: "getCurrentMonthEvents",
+});
+
 export const getWeekEventsSlice = createAsyncSlice<
   Payload_GetWeekEvents,
   Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
@@ -79,13 +86,6 @@ export const getWeekEventsSlice = createAsyncSlice<
       }
     },
   },
-});
-
-export const getCurrentMonthEventsSlice = createAsyncSlice<
-  Payload_GetPaginatedEvents,
-  Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
->({
-  name: "getCurrentMonthEvents",
 });
 
 export const getFutureEventsSlice = createAsyncSlice<

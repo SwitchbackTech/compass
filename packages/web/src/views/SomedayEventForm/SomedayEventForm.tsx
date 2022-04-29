@@ -67,7 +67,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     if (e.which === Key.Escape) {
       _onClose();
     }
-    if (e.which !== Key.Enter && e.metaKey) {
+    if (e.which === Key.Enter && e.metaKey) {
       onSubmit(event);
     }
 
