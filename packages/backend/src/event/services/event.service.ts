@@ -348,20 +348,23 @@ class EventService {
       }
       const updatedEvent = response.value as Schema_Event;
 
-      const gEvent = MapEvent.toGcal(updatedEvent);
-      const gcal = await getGcal(userId);
-      const gEventId = updatedEvent.gEventId;
-      if (gEventId === undefined) {
-        return new BaseError(
-          "Update Failed",
-          "no gEventId",
-          Status.INTERNAL_SERVER,
-          true
-        );
+      const updateGcal = !event.isSomeday;
+      if (updateGcal) {
+        const gEvent = MapEvent.toGcal(updatedEvent);
+        const gcal = await getGcal(userId);
+        const gEventId = updatedEvent.gEventId;
+        if (gEventId === undefined) {
+          return new BaseError(
+            "Update Failed",
+            "no gEventId",
+            Status.INTERNAL_SERVER,
+            true
+          );
+        }
+        //TODO error-handle this and/or extract from this and turn into its own saga,
+        // in order to remove extra work that delays response to user
+        const gcalRes = await gcalService.updateEvent(gcal, gEventId, gEvent);
       }
-      //TODO error-handle this and/or extract from this and turn into its own saga,
-      // in order to remove extra work that delays response to user
-      const gcalRes = await gcalService.updateEvent(gcal, gEventId, gEvent);
 
       return updatedEvent;
     } catch (e) {

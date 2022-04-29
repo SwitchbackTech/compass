@@ -67,13 +67,9 @@ export const Event = ({ event: _event }: Props) => {
     );
   };
 
-  const onSubmit = (eventData: Schema_Event) => {
-    console.log("editing existing event .. [jk]");
+  const onSubmit = () => {
+    dispatch(editEventSlice.actions.request({ _id: event._id, event }));
     setIsEventFormOpen(false);
-
-    // dispatch(
-    // editEventSlice.actions.request({ _id: event._id || "", event: eventData })
-    // );
   };
 
   const [, drop] = useDrop(
