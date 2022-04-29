@@ -44,7 +44,7 @@ export interface Props {
   priorities: Priorities[];
   isToggled?: boolean;
   onToggle?: () => void;
-  eventStartDate?: string;
+  startDate?: string;
   flex?: number;
 }
 
@@ -55,7 +55,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   priorities,
   isToggled: isParentToggled,
   onToggle: onParentToggle,
-  eventStartDate,
+  startDate,
   flex,
   ...props
 }) => {
@@ -103,8 +103,8 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
     });
   }, [eventsListRef.current?.clientHeight]);
 
-  const today = dayjs(eventStartDate);
-  const startDate = today.format(YEAR_MONTH_FORMAT);
+  // const today = dayjs(eventStartDate);
+  // const startDate = dayjs(eventStartDate).format(YEAR_MONTH_FORMAT);
 
   const [event, setEvent] = useState<Schema_Event>({
     isSomeday: true,

@@ -13,7 +13,7 @@ import {
 import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Divider } from "@web/components/Divider";
-import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates";
+import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
 import { SidebarFutureEventsContainer } from "@web/views/Calendar/containers/SidebarFutureEventsContainer";
 import { SidebarCurrentMonthEventsContainer } from "@web/views/Calendar/containers/SidebarCurrentMonthEventsContainer";
 
@@ -207,9 +207,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
         <StyledFutureEventsToggleableSection
           shouldSetTopMargin={isCurrentMonthToggled}
           flex={getEventsSectionFlex("future")}
-          eventStartDate={dayjs()
-            .add(1, "month")
-            .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT)}
+          startDate={dayjs().format(YEAR_MONTH_FORMAT)}
           isToggled={isFutureToggled}
           onToggle={() => setIsFutureToggled((toggle) => !toggle)}
           title=""
