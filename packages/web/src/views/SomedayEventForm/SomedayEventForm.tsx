@@ -1,9 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
 import { useDispatch } from "react-redux";
 import { DeleteIcon } from "@web/components/Icons";
 import { deleteEventSlice } from "@web/ducks/events/slice";
 import { PrioritySection } from "@web/views/EventForm/PrioritySection";
+import { MonthPicker } from "@web/views/EventForm/MonthPicker";
 import { SaveSection } from "@web/views/EventForm/SaveSection";
 import { FormProps, SetEventFormField } from "@web/views/EventForm/types";
 import {
@@ -26,7 +27,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         _onClose();
       }
     };
-    // setTimeout(_onClose);
 
     document.addEventListener("keydown", keyDownHandler);
 
@@ -35,6 +35,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     };
   }, [_onClose]);
 
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const dispatch = useDispatch();
 
   const onChangeEventTextField =
@@ -67,6 +68,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     if (e.which === Key.Escape) {
       _onClose();
     }
+
+    if (e.which === Key.Tab) {
+      isPickerOpen && setIsPickerOpen(false);
+    }
+
     if (e.which === Key.Enter && e.metaKey) {
       onSubmit(event);
     }
@@ -80,7 +86,17 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       {...props}
       isOpen={true}
       onKeyDown={keyHandler}
+      onMouseDown={(e) => {
+        e.stopPropagation();
+      }}
+      onMouseUp={(e) => {
+        if (isPickerOpen) {
+          setIsPickerOpen(false);
+        }
+        e.stopPropagation();
+      }}
       priority={event.priority}
+      role="form"
     >
       <StyledIconRow>
         <DeleteIcon onDelete={onDelete} title="Delete Someday Event" />
@@ -96,6 +112,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       <PrioritySection
         onSetEventField={onSetEventField}
         priority={event.priority}
+      />
+
+      <MonthPicker
+        isPickerOpen={isPickerOpen}
+        setIsPickerOpen={setIsPickerOpen}
       />
 
       <StyledDescriptionField

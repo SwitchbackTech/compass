@@ -188,7 +188,6 @@ export const EventForm: React.FC<FormProps> = ({
     <StyledEventForm
       {...props}
       isOpen={isFormOpen}
-      priority={priority}
       onMouseUp={(e) => {
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
@@ -202,6 +201,7 @@ export const EventForm: React.FC<FormProps> = ({
       onMouseDown={(e) => {
         e.stopPropagation();
       }}
+      priority={priority}
       role="form"
     >
       <StyledIconRow>

@@ -171,7 +171,6 @@ export const DateTimeSection: React.FC<Props> = ({
   const onSelectStartDate = (
     date: Date | null | [Date | null, Date | null]
   ) => {
-    console.log("selected start");
     setSelectedStartDate(date as Date);
     toggleStartDatePicker(false);
   };
@@ -299,10 +298,10 @@ export const DateTimeSection: React.FC<Props> = ({
           </div>
         ) : (
           <Text
+            onClick={openEndDatePicker}
+            onFocus={() => isEndDatePickerShown && openEndDatePicker}
             role="tab"
             tabIndex={0}
-            onFocus={() => isEndDatePickerShown && openEndDatePicker}
-            onClick={openEndDatePicker}
             withUnderline
           >
             {dayjs(selectedEndDate).format(MONTH_DAY_COMPACT_FORMAT)}

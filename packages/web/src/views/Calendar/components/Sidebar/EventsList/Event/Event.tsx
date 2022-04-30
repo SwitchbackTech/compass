@@ -22,6 +22,9 @@ export const Event = ({ event: _event }: Props) => {
 
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
   const [event, setEvent] = useState(_event);
+  // const [editingEvent, setEditingEvent] = useState<TempEventSchema | null>(
+  //   null
+  // );
   const [popperRef, setPopperRef] = useState<HTMLElement>(null);
   const [popperElement, setPopperElement] = useState<HTMLElement>(null);
 
