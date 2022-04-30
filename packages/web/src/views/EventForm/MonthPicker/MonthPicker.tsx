@@ -40,15 +40,21 @@ export const MonthPicker: React.FC<Props> = ({
       }}
     >
       {isPickerOpen ? (
-        <DatePicker
-          dateFormat="M/yyyy"
-          defaultOpen
-          onCalendarClose={closePicker}
-          onChange={(date) => setStartMonth(date)}
-          onSelect={onSelectMonth}
-          selected={startMonth}
-          showMonthYearPicker
-        />
+        <div
+          onMouseDown={(e) => e.stopPropagation()}
+          onMouseUp={(e) => e.stopPropagation()}
+        >
+          <DatePicker
+            autoFocus
+            dateFormat="M/yyyy"
+            defaultOpen
+            onCalendarClose={closePicker}
+            onChange={(date) => setStartMonth(date)}
+            onSelect={onSelectMonth}
+            selected={startMonth}
+            showMonthYearPicker
+          />
+        </div>
       ) : (
         <div>
           <Text onClick={openPicker} withUnderline>
