@@ -117,7 +117,6 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
     setIsEventFormOpen(false);
     resetSomedayFormState();
 
-    console.log(event);
     dispatch(createEventSlice.actions.request(event));
     dispatch(getFutureEventsSlice.actions.request()); // causes entire list re-render
   };

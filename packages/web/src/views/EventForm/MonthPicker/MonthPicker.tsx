@@ -58,7 +58,8 @@ export const MonthPicker: React.FC<Props> = ({
             dateFormat="M/yyyy"
             defaultOpen
             onCalendarClose={closePicker}
-            onChange={() => null}
+            onChange={closePicker}
+            // onChange={() => null}
             onSelect={onSelectMonth}
             selected={startMonth}
             showMonthYearPicker

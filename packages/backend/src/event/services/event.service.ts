@@ -276,6 +276,7 @@ class EventService {
           .collection(Collections.EVENT)
           .find(filter)
           .limit(SOMEDAY_EVENTS_LIMIT)
+          .sort({ startDate: 1 })
           .toArray();
         return response;
       } else {
