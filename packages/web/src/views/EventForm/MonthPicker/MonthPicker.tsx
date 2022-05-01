@@ -4,19 +4,26 @@ import { Text } from "@web/components/Text";
 import { DatePicker } from "@web/components/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
 import { MONTH_YEAR_COMPACT_FORMAT } from "@web/common/constants/dates";
+import { toUTCOffset } from "@web/common/utils/date.utils";
 
 import { StyledDateFlex } from "../DateTimeSection/styled";
+import { SetEventFormField } from "../types";
 
 interface Props {
   isPickerOpen: boolean;
   setIsPickerOpen: (arg0: boolean) => void;
+  startMonth: string;
+  onSetEventField: SetEventFormField;
 }
 
 export const MonthPicker: React.FC<Props> = ({
   isPickerOpen,
   setIsPickerOpen,
+  startMonth: _startMonth,
+  onSetEventField,
 }) => {
-  const [startMonth, setStartMonth] = useState(new Date());
+  const startMonthDate = _startMonth ? new Date(_startMonth) : new Date();
+  const [startMonth, setStartMonth] = useState(startMonthDate);
 
   const closePicker = () => {
     setIsPickerOpen(false);
@@ -26,9 +33,10 @@ export const MonthPicker: React.FC<Props> = ({
     setIsPickerOpen(true);
   };
 
-  const onSelectMonth = (date: Date | null | [Date | null, Date | null]) => {
-    console.log(date);
-    setStartMonth(date as Date);
+  const onSelectMonth = (date: Date | null) => {
+    setStartMonth(date);
+    const dateString = toUTCOffset(date);
+    onSetEventField("startDate", dateString);
   };
 
   return (

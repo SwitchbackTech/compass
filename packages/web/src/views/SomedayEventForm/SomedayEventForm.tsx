@@ -44,6 +44,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       onSetEventField(fieldName, e.target.value);
     };
 
+  // $$ TODO DRY with EventForm's version
   const onSetEventField: SetEventFormField = (field, value) => {
     const newEvent = { ...event, [field]: value };
     setEvent(newEvent);
@@ -116,7 +117,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
       <MonthPicker
         isPickerOpen={isPickerOpen}
+        onSetEventField={onSetEventField}
         setIsPickerOpen={setIsPickerOpen}
+        startMonth={event.startDate}
       />
 
       <StyledDescriptionField

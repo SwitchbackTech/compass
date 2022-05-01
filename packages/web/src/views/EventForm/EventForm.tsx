@@ -159,6 +159,7 @@ export const EventForm: React.FC<FormProps> = ({
     onClose();
   };
 
+  // $$ TODO make it easy for someday event form to use this
   const onSetEventField = <FieldName extends keyof Schema_Event>(
     fieldName: FieldName,
     value: Schema_Event[FieldName]

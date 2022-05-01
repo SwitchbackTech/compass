@@ -44,7 +44,7 @@ export interface Props {
   priorities: Priorities[];
   isToggled?: boolean;
   onToggle?: () => void;
-  startDate?: string;
+  // startDate?: string;
   flex?: number;
 }
 
@@ -55,7 +55,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
   priorities,
   isToggled: isParentToggled,
   onToggle: onParentToggle,
-  startDate,
+  // startDate,
   flex,
   ...props
 }) => {
@@ -103,26 +103,30 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
     });
   }, [eventsListRef.current?.clientHeight]);
 
-  // const today = dayjs(eventStartDate);
-  // const startDate = dayjs(eventStartDate).format(YEAR_MONTH_FORMAT);
-
-  const [event, setEvent] = useState<Schema_Event>({
+  const eventDefault = {
     isSomeday: true,
     origin: Origin.COMPASS,
     priority: Priorities.UNASSIGNED,
-    startDate,
-  });
+  };
+
+  const [event, setEvent] = useState<Schema_GridEvent | null>(eventDefault);
 
   const isToggled = isParentToggled || _isToggled;
 
   const onSubmit = () => {
     setIsEventFormOpen(false);
+    resetEventState();
 
     dispatch(createEventSlice.actions.request(event));
     dispatch(getFutureEventsSlice.actions.request()); // causes entire list re-render
   };
 
   const onToggle = onParentToggle || (() => setIsToggled((toggle) => !toggle));
+
+  const resetEventState = () => {
+    setEvent(eventDefault);
+  };
+
   const showNextPageButton = count > pageSize + offset;
 
   return (

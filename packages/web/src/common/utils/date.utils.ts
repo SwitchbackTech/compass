@@ -57,10 +57,10 @@ export const getHourLabels = () => {
 };
 
 // uses inferred timezone and shortened string to
-// convert to a format that the backend/gcal/mongo accepts:
+// convert to a string format that the backend/gcal/mongo accepts:
 // '2022-02-04 12:15' -> '2022-02-04T12:15:00-06:00'
-export const toUTCOffset = (date: string | Dayjs) => {
-  if (typeof date === "string") {
+export const toUTCOffset = (date: string | Dayjs | Date) => {
+  if (typeof date === "string" || date instanceof Date) {
     return dayjs(date).format();
   } else return date.format(); // then already a DayJs object
 };
