@@ -57,12 +57,12 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   };
 
   const onDelete = () => {
-    _onClose();
     if (event._id === undefined) {
       return; // event was never created, so no need to dispatch delete
     }
-
     dispatch(deleteEventSlice.actions.request({ _id: event._id }));
+
+    _onClose();
   };
 
   const keyHandler: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {

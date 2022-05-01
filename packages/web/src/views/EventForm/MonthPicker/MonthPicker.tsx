@@ -22,8 +22,9 @@ export const MonthPicker: React.FC<Props> = ({
   startMonth: _startMonth,
   onSetEventField,
 }) => {
-  const startMonthDate = _startMonth ? new Date(_startMonth) : new Date();
-  const [startMonth, setStartMonth] = useState(startMonthDate);
+  const startMonthDefault = _startMonth ? new Date(_startMonth) : new Date();
+  const [startMonth, setStartMonth] = useState(startMonthDefault);
+  const startMonthStr = dayjs(startMonth).format(MONTH_YEAR_COMPACT_FORMAT);
 
   const closePicker = () => {
     setIsPickerOpen(false);
@@ -57,7 +58,7 @@ export const MonthPicker: React.FC<Props> = ({
             dateFormat="M/yyyy"
             defaultOpen
             onCalendarClose={closePicker}
-            onChange={(date) => setStartMonth(date)}
+            onChange={() => null}
             onSelect={onSelectMonth}
             selected={startMonth}
             showMonthYearPicker
@@ -66,7 +67,7 @@ export const MonthPicker: React.FC<Props> = ({
       ) : (
         <div>
           <Text onClick={openPicker} withUnderline>
-            {dayjs(startMonth).format(MONTH_YEAR_COMPACT_FORMAT)}
+            {startMonthStr}
           </Text>
         </div>
       )}

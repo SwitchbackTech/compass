@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { usePopper } from "react-popper";
-import dayjs from "dayjs";
 import { Origin, Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { ArrowLeftIcon } from "@web/assets/svg";
@@ -103,28 +102,30 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
     });
   }, [eventsListRef.current?.clientHeight]);
 
-  const eventDefault = {
+  const eventBase = {
     isSomeday: true,
     origin: Origin.COMPASS,
     priority: Priorities.UNASSIGNED,
+    title: "",
   };
 
-  const [event, setEvent] = useState<Schema_GridEvent | null>(eventDefault);
+  const [event, setEvent] = useState<Schema_GridEvent | null>(eventBase);
 
   const isToggled = isParentToggled || _isToggled;
 
   const onSubmit = () => {
     setIsEventFormOpen(false);
-    resetEventState();
+    resetSomedayFormState();
 
+    console.log(event);
     dispatch(createEventSlice.actions.request(event));
     dispatch(getFutureEventsSlice.actions.request()); // causes entire list re-render
   };
 
   const onToggle = onParentToggle || (() => setIsToggled((toggle) => !toggle));
 
-  const resetEventState = () => {
-    setEvent(eventDefault);
+  const resetSomedayFormState = () => {
+    setEvent(eventBase);
   };
 
   const showNextPageButton = count > pageSize + offset;
@@ -147,10 +148,14 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
           {isEventFormOpen && (
             <div ref={formRef}>
               <SomedayEventForm
+                cleanup={resetSomedayFormState}
                 event={event}
                 isOpen={isEventFormOpen}
                 setEvent={setEvent}
-                onClose={() => setIsEventFormOpen(false)}
+                onClose={() => {
+                  setIsEventFormOpen(false);
+                  resetSomedayFormState();
+                }}
                 onSubmit={onSubmit}
               />
             </div>
