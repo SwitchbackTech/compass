@@ -253,7 +253,6 @@ export const useGetWeekViewProps = () => {
       return; // assume event was never created
     }
     dispatch(deleteEventSlice.actions.request({ _id: _id }));
-    setEditingEvent(null);
   };
 
   const onEventDrag = (e: React.MouseEvent) => {

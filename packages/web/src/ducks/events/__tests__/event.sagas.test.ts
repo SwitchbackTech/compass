@@ -2,7 +2,7 @@ import * as matchers from "redux-saga-test-plan/matchers";
 import { expectSaga } from "redux-saga-test-plan";
 
 import { EventApi } from "../event.api";
-import { deleteEventSaga } from "../sagas";
+import { deleteEventSaga } from "../event.sagas";
 import { deleteEventSlice } from "../slice";
 
 /**

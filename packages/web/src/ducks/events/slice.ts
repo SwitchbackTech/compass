@@ -59,6 +59,13 @@ export const eventsEntitiesSlice = createSlice({
   },
 });
 
+export const getCurrentMonthEventsSlice = createAsyncSlice<
+  Payload_GetPaginatedEvents,
+  Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
+>({
+  name: "getCurrentMonthEvents",
+});
+
 export const getWeekEventsSlice = createAsyncSlice<
   Payload_GetWeekEvents,
   Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
@@ -81,18 +88,26 @@ export const getWeekEventsSlice = createAsyncSlice<
   },
 });
 
-export const getCurrentMonthEventsSlice = createAsyncSlice<
-  Payload_GetPaginatedEvents,
-  Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
->({
-  name: "getCurrentMonthEvents",
-});
-
 export const getFutureEventsSlice = createAsyncSlice<
   Payload_GetPaginatedEvents,
   Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
 >({
   name: "getFutureEvents",
+  reducers: {
+    delete: (state: RootState, action: Action_DeleteEvent) => {
+      state.value.data = state.value.data.filter(
+        (i: string) => i !== action.payload._id
+      );
+    },
+    insert: (state, action: { payload: string }) => {
+      // payload is the event id
+      if (state.value === null || state.value === undefined) {
+        console.log("error: state.value needs to be initialized");
+      } else {
+        state.value.data.push(action.payload);
+      }
+    },
+  },
 });
 
 export const eventsReducer = combineReducers({

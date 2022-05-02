@@ -1,6 +1,6 @@
 # Frontend Data Flow
 
-WIP: This is my ongoing notes of how Sagas work while I try to wrap my head around them
+notes of how Sagas work in Compass
 
 ## On Startup
 
@@ -18,7 +18,7 @@ WIP: This is my ongoing notes of how Sagas work while I try to wrap my head arou
 - adds all those reducers to the redux store
 - uses store to init `RootState` and `AppDispatch`
 
-## Runtime
+## Runtime - Events
 
 `useGetWeekProps.ts`
 
@@ -46,3 +46,13 @@ WIP: This is my ongoing notes of how Sagas work while I try to wrap my head arou
   - calls `eventsApi.createEvent`
     ->
     `ducks/events/api.ts` - `eventsApi.createEvent`: - creates event - creates new id, adds to running list of events in localStorage
+
+## Runtime - Someday List
+
+### Frontend finds someday events
+
+`EventsList` calls `getEvents()` on load
+
+`SidebarEventContainer` - `mapStateToProps` -> `selectors.ts`
+
+- finds event from `entities` slice

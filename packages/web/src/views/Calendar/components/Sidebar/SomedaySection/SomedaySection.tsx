@@ -1,24 +1,26 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Popover } from "react-tiny-popover";
-import dayjs from "dayjs";
-
-import { Priorities } from "@core/core.constants";
+import { usePopper } from "react-popper";
+import { Origin, Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-
 import { ArrowLeftIcon } from "@web/assets/svg";
 import { SectionType_Sidebar } from "@web/ducks/events/types";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors";
 import { RootState } from "@web/store";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
-import { createEventSlice } from "@web/ducks/events/slice";
-import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates";
+import {
+  createEventSlice,
+  getFutureEventsSlice,
+} from "@web/ducks/events/slice";
+import { ZIndex } from "@web/common/constants/web.constants";
+import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
+import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
+import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 
 import {
   Styled,
   StyledAddEventButton,
   StyledArrowButton,
-  StyledEventForm,
   StyledEventsList,
   StyledHeader,
   StyledHeaderTitle,
@@ -40,93 +42,125 @@ export interface Props {
   priorities: Priorities[];
   isToggled?: boolean;
   onToggle?: () => void;
-  eventStartDate?: string;
+  // startDate?: string;
   flex?: number;
 }
 
-export const ToggleableEventsListSection: React.FC<Props> = ({
+export const SomedaySection: React.FC<Props> = ({
   EventsListContainer,
   title,
   sectionType,
   priorities,
   isToggled: isParentToggled,
   onToggle: onParentToggle,
-  eventStartDate,
+  // startDate,
   flex,
   ...props
 }) => {
+  const dispatch = useDispatch();
+  const eventsListRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+
   const paginatedEventsData = useSelector((state: RootState) =>
     selectPaginatedEventsBySectionType(state, sectionType)
   );
-  const dispatch = useDispatch();
-
   const { count = 0 } = paginatedEventsData || {};
-  const [pageSize, setPageSize] = useState(5);
+
+  const [pageSize, setPageSize] = useState(1);
   const [offset, setOffset] = useState(0);
   const [_isToggled, setIsToggled] = useState(false);
-  const [isEventFormOpen, setEventFormOpen] = useState(false);
+  const [isEventFormOpen, setIsEventFormOpen] = useState(false);
+  const [popperRef, setPopperRef] = useState<HTMLElement>(null);
+  const [popperElement, setPopperElement] = useState<HTMLElement>(null);
 
-  const ref = useRef<HTMLDivElement>(null);
+  useOnClickOutside(formRef, () => setIsEventFormOpen(false));
+
+  const { styles, attributes } = usePopper(popperRef, popperElement, {
+    placement: "right",
+    strategy: "fixed",
+    modifiers: [
+      {
+        name: "offset",
+        options: {
+          offset: [0, 285],
+        },
+      },
+    ],
+  });
+  const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_2 };
+
   useEffect(() => {
     setTimeout(() => {
-      if (ref.current?.clientHeight) {
+      if (eventsListRef.current?.clientHeight) {
         const computedPageSize = Math.floor(
-          (ref.current.clientHeight - 40) / 34
+          (eventsListRef.current.clientHeight - 40) / 34
         );
 
         setPageSize(computedPageSize || 1);
       }
     });
-  }, [ref.current?.clientHeight]);
+  }, [eventsListRef.current?.clientHeight]);
 
-  const today = dayjs(eventStartDate);
-  const startDate = today.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
-  const endDate = today
-    .add(1, "hour")
-    .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
+  const eventBase = {
+    isSomeday: true,
+    origin: Origin.COMPASS,
+    priority: Priorities.UNASSIGNED,
+    title: "",
+  };
 
-  const [event, setEvent] = useState<Schema_Event>({
-    startDate,
-    endDate,
-    priority: Priorities.WORK,
-  });
+  const [event, setEvent] = useState<Schema_GridEvent | null>(eventBase);
 
   const isToggled = isParentToggled || _isToggled;
+
+  const onSubmit = () => {
+    setIsEventFormOpen(false);
+    resetSomedayFormState();
+
+    dispatch(createEventSlice.actions.request(event));
+    dispatch(getFutureEventsSlice.actions.request()); // causes entire list re-render
+  };
+
   const onToggle = onParentToggle || (() => setIsToggled((toggle) => !toggle));
 
-  const showNextPageButton = count > pageSize + offset;
-
-  const onSubmit = (eventToSubmit: Schema_Event) => {
-    dispatch(createEventSlice.actions.request(eventToSubmit));
+  const resetSomedayFormState = () => {
+    setEvent(eventBase);
   };
+
+  const showNextPageButton = count > pageSize + offset;
 
   return (
     <Styled flex={flex} {...props}>
       <StyledHeader alignItems={AlignItems.CENTER}>
-        <ToggleArrow isToggled={isToggled} onToggle={onToggle} />
+        {/* <ToggleArrow isToggled={isToggled} onToggle={onToggle} /> */}
         <StyledHeaderTitle size={18}>{title}</StyledHeaderTitle>
 
-        <Popover
-          isOpen={isEventFormOpen}
-          containerStyle={{ zIndex: "10" }}
-          content={
-            <StyledEventForm
-              event={event}
-              setEvent={setEvent}
-              onSubmit={onSubmit}
-              onClose={() => setEventFormOpen(false)}
-            />
-          }
+        <StyledAddEventButton
+          size={25}
+          onClick={() => setIsEventFormOpen((open) => !open)}
+          ref={setPopperRef}
         >
-          <StyledAddEventButton
-            size={25}
-            onClick={() => setEventFormOpen((open) => !open)}
-          >
-            +
-          </StyledAddEventButton>
-        </Popover>
+          +
+        </StyledAddEventButton>
 
-        <StyledPaginationFlex
+        <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
+          {isEventFormOpen && (
+            <div ref={formRef}>
+              <SomedayEventForm
+                cleanup={resetSomedayFormState}
+                event={event}
+                isOpen={isEventFormOpen}
+                setEvent={setEvent}
+                onClose={() => {
+                  setIsEventFormOpen(false);
+                  resetSomedayFormState();
+                }}
+                onSubmit={onSubmit}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* <StyledPaginationFlex
           justifyContent={JustifyContent.SPACE_BETWEEN}
           alignItems={AlignItems.CENTER}
         >
@@ -154,11 +188,11 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
           >
             <ArrowLeftIcon transform="rotate(180)" />
           </StyledArrowButton>
-        </StyledPaginationFlex>
+        </StyledPaginationFlex> */}
       </StyledHeader>
 
       {isToggled && (
-        <StyledEventsList ref={ref}>
+        <StyledEventsList ref={eventsListRef}>
           <EventsListContainer
             pageSize={pageSize}
             priorities={priorities}

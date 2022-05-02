@@ -1,10 +1,8 @@
 import styled from "styled-components";
-
 import { Flex } from "@web/components/Flex";
 import { getColor } from "@web/common/utils/colors";
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
-import { EventForm } from "@web/views/EventForm";
 
 export interface Props {
   flex?: number;
@@ -16,10 +14,6 @@ export const Styled = styled.div<Props>`
   flex: ${({ flex }) => flex};
   width: 100%;
   max-height: calc(100% - 46px);
-`;
-
-export const StyledEventForm = styled(EventForm)`
-  z-index: 200;
 `;
 
 export const StyledHeader = styled(Flex)`

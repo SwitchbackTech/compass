@@ -1,15 +1,15 @@
 import React from "react";
 import { Priorities, Priority } from "@core/core.constants";
-import { Schema_Event } from "@core/types/event.types";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { JustifyContent } from "@web/components/Flex/styled";
 import { Button } from "@web/components/Button";
 
 import { StyledPriorityFlex } from "./styled";
+import { SetEventFormField } from "../types";
 
 interface Props {
   priority: Priority;
-  onSetEventField: () => React.SetStateAction<Schema_Event>;
+  onSetEventField: SetEventFormField;
 }
 
 export const PrioritySection: React.FC<Props> = ({

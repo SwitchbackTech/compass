@@ -79,10 +79,20 @@ describe("toUTCOffset", () => {
     // Z is used for pure UTC timestamps (which don't use an offset)
     expect(result.slice(-1)).not.toEqual("Z");
   };
-  it("includes a TZ offset - when passing str", () => {
+  it("includes a TZ offset - when passing str with times", () => {
     const result = toUTCOffset("2022-01-01 10:00");
     validateResult(result);
   });
+  it("includes a TZ offset - when passing string YYYY-MM (no times) ", () => {
+    const result = toUTCOffset("2022-05-21");
+    validateResult(result);
+  });
+
+  it("includes a TZ offset - when passing Date object", () => {
+    const result = toUTCOffset(new Date());
+    validateResult(result);
+  });
+
   it("includes a TZ offset - when passing a dayjs object", () => {
     const d = dayjs();
     const resultFromDayJsObj = toUTCOffset(d);

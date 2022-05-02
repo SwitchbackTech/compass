@@ -1,9 +1,7 @@
 import React, { useEffect } from "react";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-
+// import { DndProvider } from "react-dnd";
+// import HTML5Backend from "react-dnd-html5-backend";
 import { Priorities } from "@core/core.constants";
-
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { SidebarEventContainer } from "@web/views/Calendar/containers/SidebarEventContainer";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
@@ -38,11 +36,11 @@ export const EventsList: React.FC<Props> = ({
       {isProcessing && <AbsoluteOverflowLoader />}
 
       <StyledList>
-        <DndProvider backend={HTML5Backend}>
-          {eventIds.map((id) => (
-            <SidebarEventContainer key={id} _id={id} />
-          ))}
-        </DndProvider>
+        {/* <DndProvider backend={HTML5Backend}> */}
+        {eventIds.map((id) => (
+          <SidebarEventContainer key={id} _id={id} />
+        ))}
+        {/* </DndProvider> */}
       </StyledList>
     </Styled>
   );

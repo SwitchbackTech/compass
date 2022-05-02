@@ -1,4 +1,4 @@
-import { sidebarEventsContainerFabric } from './sidebarEventsContainerFabric';
+import { sidebarEventsContainerFabric } from "./sidebarEventsContainerFabric";
 
 export const SidebarFutureEventsContainer =
-  sidebarEventsContainerFabric('future');
+  sidebarEventsContainerFabric("future");

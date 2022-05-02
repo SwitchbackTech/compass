@@ -54,7 +54,9 @@ describe("Calendar Interactions", () => {
       render(CompassRoot);
 
       expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
-      await user.click(screen.getByRole("button", { name: /previous week/i }));
+      await user.click(
+        screen.getByRole("navigation", { name: /previous week/i })
+      );
       expect(screen.getByText(/today/i)).toBeInTheDocument();
     });
 
@@ -63,14 +65,24 @@ describe("Calendar Interactions", () => {
       render(<CalendarView />);
 
       expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
-      await user.click(screen.getByText(/</i));
+      await user.click(
+        screen.getByRole("navigation", { name: /previous week/i })
+      );
       expect(screen.getByText(/today/i)).toBeInTheDocument();
 
       // user returns to original week
-      await user.click(screen.getByText(/>/i));
+      await user.click(
+        screen.getByRole("navigation", {
+          name: /next week/i,
+        })
+      );
       expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
 
-      await user.click(screen.getByText(/>/i));
+      await user.click(
+        screen.getByRole("navigation", {
+          name: /next week/i,
+        })
+      );
       expect(screen.getByText(/today/i)).toBeInTheDocument();
     });
   });
@@ -80,14 +92,20 @@ describe("Calendar Interactions", () => {
       const user = userEvent.setup();
       render(<CalendarView />);
 
-      await user.click(screen.getByText(/>/i));
+      await user.click(
+        screen.getByRole("navigation", {
+          name: /next week/i,
+        })
+      );
       expect(screen.queryByRole("separator")).not.toBeInTheDocument();
     });
     it("disappears when viewing past week", async () => {
       const user = userEvent.setup();
       render(<CalendarView />);
 
-      await user.click(screen.getByText(/</i));
+      await user.click(
+        screen.getByRole("navigation", { name: /previous week/i })
+      );
       expect(screen.queryByRole("separator")).not.toBeInTheDocument();
     });
   });
@@ -184,9 +202,10 @@ describe("Calendar Interactions", () => {
         // picker should close
         await user.click(screen.getByRole("form"));
 
-        // assumes that the datepicker structures options as a listbox
-        // (which 'react-datepicker' does)
-        expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+        // looks for the date input that appears when editing
+        // (instead of date picker, because sidebar month picker still present)
+        const tablist = screen.getByRole("tablist");
+        expect(within(tablist).queryByRole("textbox")).not.toBeInTheDocument();
 
         // form is still open
         expect(screen.getByRole("form")).toBeInTheDocument();

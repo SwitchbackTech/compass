@@ -3,33 +3,30 @@ import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
 import { Priorities } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { StyledTrashIcon } from "@web/components/Svg";
-import { ColorNames } from "@web/common/types/styles";
+import { DeleteIcon } from "@web/components/Icons";
 import { SelectOption } from "@web/common/types/components";
-import { getColor } from "@web/common/utils/colors";
 import {
   HOURS_MINUTES_FORMAT,
   HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
 } from "@web/common/constants/dates";
 
-import { ComponentProps } from "./types";
+import { FormProps } from "./types";
 import {
-  Styled,
+  StyledEventForm,
   StyledDescriptionField,
   StyledIconRow,
   StyledTitleField,
-  StyledSubmitButton,
-  StyledSubmitRow,
 } from "./styled";
 import { DateTimeSection } from "./DateTimeSection";
 import { PrioritySection } from "./PrioritySection";
+import { SaveSection } from "./SaveSection";
 
-export const EventForm: React.FC<ComponentProps> = ({
+export const EventForm: React.FC<FormProps> = ({
+  event,
   onClose: _onClose,
   onDelete,
   onSubmit,
-  event,
   setEvent,
   ...props
 }) => {
@@ -162,14 +159,19 @@ export const EventForm: React.FC<ComponentProps> = ({
     onClose();
   };
 
+  // $$ TODO make it easy for someday event form to use this
   const onSetEventField = <FieldName extends keyof Schema_Event>(
     fieldName: FieldName,
     value: Schema_Event[FieldName]
   ) => {
-    setEvent((_event) => ({
-      ..._event,
-      [fieldName]: value,
-    }));
+    const newEvent = { ...event, [fieldName]: value };
+    setEvent(newEvent);
+
+    // $$ remove after confident above works
+    // setEvent((_event) => ({
+    //   ..._event,
+    //   [fieldName]: value,
+    // }));
   };
 
   const submitFormWithKeyboard: React.KeyboardEventHandler<
@@ -184,10 +186,9 @@ export const EventForm: React.FC<ComponentProps> = ({
   };
 
   return (
-    <Styled
+    <StyledEventForm
       {...props}
       isOpen={isFormOpen}
-      priority={priority}
       onMouseUp={(e) => {
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
@@ -201,12 +202,11 @@ export const EventForm: React.FC<ComponentProps> = ({
       onMouseDown={(e) => {
         e.stopPropagation();
       }}
+      priority={priority}
       role="form"
     >
       <StyledIconRow>
-        <div onClick={onDeleteForm} role="button" title="Delete Event">
-          <StyledTrashIcon hovercolor={getColor(ColorNames.DARK_5)} />
-        </div>
+        <DeleteIcon onDelete={onDeleteForm} title="Delete Event" />
       </StyledIconRow>
 
       <StyledTitleField
@@ -241,11 +241,7 @@ export const EventForm: React.FC<ComponentProps> = ({
         value={event.description || ""}
       />
 
-      <StyledSubmitRow>
-        <StyledSubmitButton bordered={true} onClick={onSubmitForm}>
-          Submit
-        </StyledSubmitButton>
-      </StyledSubmitRow>
-    </Styled>
+      <SaveSection onSubmit={onSubmitForm} />
+    </StyledEventForm>
   );
 };

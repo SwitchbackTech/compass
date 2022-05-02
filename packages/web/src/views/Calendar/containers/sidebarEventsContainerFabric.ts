@@ -1,6 +1,6 @@
 import { connect } from "react-redux";
 import { Dispatch } from "redux";
-
+import { Priorities } from "@core/core.constants";
 import { selectEventIdsBySectionType } from "@web/ducks/events/selectors";
 import { RootState } from "@web/store";
 import {
@@ -11,9 +11,7 @@ import {
   Payload_GetPaginatedEvents,
   SectionType_Sidebar,
 } from "@web/ducks/events/types";
-import { Priorities } from "@core/core.constants";
-
-import { EventsList } from "../components/Sidebar/EventsList";
+import { EventsList } from "@web/views/Calendar/components/Sidebar/EventsList";
 
 export const sidebarEventsContainerFabric = (
   sectionType: SectionType_Sidebar

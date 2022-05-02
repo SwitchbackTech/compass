@@ -91,6 +91,7 @@ const _toCompass = (
     description: description,
     priorities: [],
     isAllDay: _isAllDay,
+    isSomeday: false,
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     isTimesShown: _isTimesShown,
     // @ts-ignore

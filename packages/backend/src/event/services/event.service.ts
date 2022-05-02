@@ -1,6 +1,7 @@
 //@ts-nocheck
 import { InsertManyResult } from "mongodb";
 import { Result_Import_Gcal } from "@core/types/sync.types";
+import { gSchema$Event } from "@core/types/gcal";
 import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -12,13 +13,16 @@ import {
 } from "@core/types/event.types";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
+import {
+  GCAL_PRIMARY,
+  SOMEDAY_EVENTS_LIMIT,
+} from "@backend/common/constants/backend.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
 import { getGcal } from "@backend/auth/services/google.auth.service";
 import { Origin } from "@core/core.constants";
-import { gCalendar, gParamsEventsList, gSchema$Event } from "@core/types/gcal";
+import { gCalendar, gParamsEventsList } from "@core/types/gcal";
 
 import { getReadAllFilter } from "./event.service.helpers";
 
@@ -30,35 +34,26 @@ class EventService {
     event: Schema_Event
   ): Promise<Schema_Event | BaseError> {
     try {
-      /* Save to Gcal */
-      const _gEvent = MapEvent.toGcal(event);
-      const gEventWithOrigin: gSchema$Event = {
-        ..._gEvent,
-        // capture the fact that this event originated from Compass,
-        // so we dont attempt to re-add it during the next gcal sync
-        extendedProperties: {
-          private: {
-            origin: Origin.COMPASS,
-          },
-        },
-      };
-      const gcal = await getGcal(userId);
-      const gEvent = await gcalService.createEvent(gcal, gEventWithOrigin);
-
-      /* Save to Compass */
-      const eventWithGcalId = {
+      const _event = {
         ...event,
         user: userId,
-        gEventId: gEvent.id,
       };
 
+      const syncToGcal = !event.isSomeday;
+
+      if (syncToGcal) {
+        const gEvent = await this._createGcalEvent(userId, event);
+        _event["gEventId"] = gEvent.id;
+      }
+
+      /* Save to Compass */
       const response = await mongoService.db
         .collection(Collections.EVENT)
-        .insertOne(eventWithGcalId);
+        .insertOne(_event);
 
       if ("acknowledged" in response) {
         const eventWithId: Schema_Event = {
-          ...eventWithGcalId,
+          ..._event,
           _id: response.insertedId.toString(),
         };
         return eventWithId;
@@ -112,8 +107,9 @@ class EventService {
   }
 
   async deleteById(userId: string, id: string) {
-    // TODO refactor this so it doesn't require so many calls
-
+    /* 
+    Part I: Validate
+    */
     if (id === "undefined") {
       return new BaseError(
         "Delete Failed",
@@ -139,9 +135,11 @@ class EventService {
           true
         );
       }
+
+      const deleteFromGcal = !event.isSomeday;
       const { gEventId } = event;
 
-      if (gEventId === undefined) {
+      if (deleteFromGcal && gEventId === undefined) {
         return new BaseError(
           "Delete Failed",
           `GoogleEvent id cannot be null`,
@@ -150,14 +148,19 @@ class EventService {
         );
       }
 
+      /* 
+      Part II: Delete
+      */
       const response = await mongoService.db
         .collection(Collections.EVENT)
         .deleteOne(filter);
 
-      const gcal = await getGcal(userId);
-      // no await because gcal doesnt return much of a response,
-      // so there's no use in waiting for it to finish
-      gcalService.deleteEvent(gcal, gEventId);
+      if (deleteFromGcal) {
+        const gcal = await getGcal(userId);
+        // no await because gcal doesnt return much of a response,
+        // so there's no use in waiting for it to finish
+        gcalService.deleteEvent(gcal, gEventId);
+      }
 
       return response;
     } catch (e) {
@@ -196,7 +199,7 @@ class EventService {
       let total = 0;
       const errors = [];
 
-      const numYears = 2;
+      const numYears = 1;
       logger.info(
         `Importing past ${numYears} years of GCal events for user: ${userId}`
       );
@@ -265,11 +268,24 @@ class EventService {
   ): Promise<Schema_Event[] | BaseError> {
     try {
       const filter = getReadAllFilter(userId, query);
-      const response: Schema_Event[] = await mongoService.db
-        .collection(Collections.EVENT)
-        .find(filter)
-        .toArray();
-      return response;
+
+      // (temporarily) limit number of results
+      // to speed up development
+      if (query.someday) {
+        const response: Schema_Event[] = await mongoService.db
+          .collection(Collections.EVENT)
+          .find(filter)
+          .limit(SOMEDAY_EVENTS_LIMIT)
+          .sort({ startDate: 1 })
+          .toArray();
+        return response;
+      } else {
+        const response: Schema_Event[] = await mongoService.db
+          .collection(Collections.EVENT)
+          .find(filter)
+          .toArray();
+        return response;
+      }
     } catch (e) {
       logger.error(e);
       return new BaseError("Read Failed", e, 500, true);
@@ -333,20 +349,23 @@ class EventService {
       }
       const updatedEvent = response.value as Schema_Event;
 
-      const gEvent = MapEvent.toGcal(updatedEvent);
-      const gcal = await getGcal(userId);
-      const gEventId = updatedEvent.gEventId;
-      if (gEventId === undefined) {
-        return new BaseError(
-          "Update Failed",
-          "no gEventId",
-          Status.INTERNAL_SERVER,
-          true
-        );
+      const updateGcal = !event.isSomeday;
+      if (updateGcal) {
+        const gEvent = MapEvent.toGcal(updatedEvent);
+        const gcal = await getGcal(userId);
+        const gEventId = updatedEvent.gEventId;
+        if (gEventId === undefined) {
+          return new BaseError(
+            "Update Failed",
+            "no gEventId",
+            Status.INTERNAL_SERVER,
+            true
+          );
+        }
+        //TODO error-handle this and/or extract from this and turn into its own saga,
+        // in order to remove extra work that delays response to user
+        const gcalRes = await gcalService.updateEvent(gcal, gEventId, gEvent);
       }
-      //TODO error-handle this and/or extract from this and turn into its own saga,
-      // in order to remove extra work that delays response to user
-      const gcalRes = await gcalService.updateEvent(gcal, gEventId, gEvent);
 
       return updatedEvent;
     } catch (e) {
@@ -358,6 +377,33 @@ class EventService {
   async updateMany(userId: string, events: Schema_Event[]) {
     return "not done implementing this operation";
   }
+
+  /**********
+   * Helpers
+   *  (that have too many dependencies
+   *  to put in event.service.helpers)
+   *********/
+
+  _createGcalEvent = async (userId: string, event: Schema_Event) => {
+    const _gEvent = MapEvent.toGcal(event);
+
+    const gEventWithOrigin: gSchema$Event = {
+      ..._gEvent,
+      // capture the fact that this event originated from Compass,
+      // so we dont attempt to re-add it during the next gcal sync
+      extendedProperties: {
+        private: {
+          origin: Origin.COMPASS,
+        },
+      },
+    };
+
+    const gcal = await getGcal(userId);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const gEvent = await gcalService.createEvent(gcal, gEventWithOrigin);
+
+    return gEvent;
+  };
 }
 
 export default new EventService();

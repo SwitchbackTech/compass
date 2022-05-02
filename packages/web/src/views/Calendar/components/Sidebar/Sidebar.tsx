@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Popover } from "react-tiny-popover";
 import dayjs from "dayjs";
-import { Priorities } from "@core/core.constants";
+import { Priorities, Priority } from "@core/core.constants";
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
 import { StrawberryMenuIcon } from "@web/assets/svg";
@@ -13,7 +13,7 @@ import {
 import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Divider } from "@web/components/Divider";
-import { YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT } from "@web/common/constants/dates";
+import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
 import { SidebarFutureEventsContainer } from "@web/views/Calendar/containers/SidebarFutureEventsContainer";
 import { SidebarCurrentMonthEventsContainer } from "@web/views/Calendar/containers/SidebarCurrentMonthEventsContainer";
 
@@ -31,7 +31,7 @@ import {
   StyledSidebarOverflow,
   StyledFutureEventsToggleableSection,
 } from "./styled";
-import { ToggleableEventsListSection } from "./ToggleableEventsListSection";
+// import { SomedaySection } from "./SomedaySection";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 
 const DATEPICKER_HEIGHT = 346;
@@ -54,7 +54,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
   const [isToggled, setIsToggled] = useState(true);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>({
-    relations: true,
+    relationships: true,
     self: true,
     work: true,
   });
@@ -88,6 +88,20 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
     setBottomSectionHeight(height);
   }, [isCalendarsToggled]);
 
+  const getEventsSectionFlex = (sectionType: "currentMonth" | "future") => {
+    const dividerIndexBySectionType = {
+      currentMonth: isCurrentMonthToggled && 1,
+      future: isFutureToggled && 1,
+    };
+
+    return dividerIndexBySectionType[sectionType] || undefined;
+  };
+
+  const onChangePriorityFilter =
+    (name: keyof PriorityFilter) => (value: boolean) => {
+      setPriorityFilter((filter) => ({ ...filter, [name]: value }));
+    };
+
   const onFilterButtonBlur = (e: React.FocusEvent) => {
     const relatedTarget = e.relatedTarget as Element;
     if (relatedTarget && relatedTarget.id === "priority-sort-popover") {
@@ -104,12 +118,11 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
     setBottomSectionHeight(window.innerHeight - e.clientY + 5);
   };
 
-  const onChangePriorityFilter =
-    (name: keyof PriorityFilter) => (value: boolean) => {
-      setPriorityFilter((filter) => ({ ...filter, [name]: value }));
-    };
+  const onMouseUp = () => {
+    setIsDividerDragging(false);
+  };
 
-  const renderPriorityFilter = (priorityKey: Priorities) => (
+  const renderPriorityFilter = (priorityKey: Priority) => (
     <StyledPriorityFilterItem key={priorityKey} alignItems={AlignItems.CENTER}>
       <StyledCheckBox
         isChecked={priorityFilter[priorityKey]}
@@ -121,19 +134,6 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
   );
 
   const StyledSidebarToggleIcon = renderStyledSidebarToggleIcon(isToggled);
-
-  const getEventsSectionFlex = (sectionType: "currentMonth" | "future") => {
-    const dividerIndexBySectionType = {
-      currentMonth: isCurrentMonthToggled && 1,
-      future: isFutureToggled && 1,
-    };
-
-    return dividerIndexBySectionType[sectionType] || undefined;
-  };
-
-  const onMouseUp = () => {
-    setIsDividerDragging(false);
-  };
 
   return (
     <Styled
@@ -157,9 +157,9 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
           justifyContent={JustifyContent.SPACE_BETWEEN}
         >
           <Text size={30} colorName={ColorNames.WHITE_1}>
-            Someday List
+            Someday
           </Text>
-
+          {/* 
           <Popover
             isOpen={isFilterPopoverOpen}
             positions={["bottom"]}
@@ -185,12 +185,12 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
               onFocus={() => setIsFilterPopoverOpen(true)}
               onBlur={onFilterButtonBlur}
             >
-              <StrawberryMenuIcon />
+            <StrawberryMenuIcon />
             </StyledPriorityFilterButton>
-          </Popover>
+          </Popover> */}
         </StyledHeaderFlex>
 
-        <ToggleableEventsListSection
+        {/* <SomedaySection
           flex={getEventsSectionFlex("currentMonth")}
           isToggled={isCurrentMonthToggled}
           onToggle={() => setIsCurrentMonthToggled((toggle) => !toggle)}
@@ -202,17 +202,15 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
           }
           EventsListContainer={SidebarCurrentMonthEventsContainer}
           sectionType="currentMonth"
-        />
+        /> */}
 
         <StyledFutureEventsToggleableSection
           shouldSetTopMargin={isCurrentMonthToggled}
           flex={getEventsSectionFlex("future")}
-          eventStartDate={dayjs()
-            .add(1, "month")
-            .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT)}
+          startDate={dayjs().format(YEAR_MONTH_FORMAT)}
           isToggled={isFutureToggled}
           onToggle={() => setIsFutureToggled((toggle) => !toggle)}
-          title="Future"
+          title=""
           priorities={
             Object.keys(priorityFilter).filter(
               (key) => priorityFilter[key as Priorities]
@@ -223,16 +221,16 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
         />
       </StyledTopSectionFlex>
 
-      <StyledDividerWrapper
+      {/* <StyledDividerWrapper
         onMouseDown={() => {
           setIsDividerDragging(true);
         }}
-      >
-        <Divider
-          withAnimation={false}
-          color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
-        />
-      </StyledDividerWrapper>
+      > */}
+      <Divider
+        withAnimation={false}
+        color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
+      />
+      {/* </StyledDividerWrapper> */}
 
       <StyledBottomSection height={String(bottomSectionHeight)}>
         <ToggleableMonthWidget

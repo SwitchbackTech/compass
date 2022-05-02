@@ -8,6 +8,8 @@ export interface Params_DeleteMany {
 export interface Params_Events {
   startDate: string;
   endDate: string;
+  someday: boolean;
+  /* these not implemented yet */
   page?: number;
   pageSize?: number;
   offset?: number;
@@ -25,6 +27,7 @@ export interface Schema_Event {
   endDate?: string;
   description?: string | null | undefined;
   isAllDay?: boolean;
+  isSomeday?: boolean;
   isTimesShown?: boolean;
   gEventId?: string;
   origin?: Origin;
@@ -36,7 +39,8 @@ export interface Schema_Event {
 }
 
 export interface Query_Event extends Query {
-  start?: string;
   end?: string;
+  someday?: string;
+  start?: string;
   priorities?: string; // example: 'p1,p2,p3'
 }

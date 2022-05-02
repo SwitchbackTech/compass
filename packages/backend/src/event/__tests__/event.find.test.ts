@@ -3,6 +3,13 @@ import { getReadAllFilter } from "../services/event.service.helpers";
 import { mockEventSetJan22 } from "@core/__mocks__/events/events.22jan";
 import { mockEventSetMar22 } from "@core/__mocks__/events/events.22mar";
 
+/* 
+Keep in mind:
+This suite works because it doesn't require
+instantiating any services, which introduce
+dependency and environment variable complexities.  
+*/
+
 describe("Jan 2022: Many Formats", () => {
   let connection;
   let db;
@@ -48,6 +55,24 @@ describe("Jan 2022: Many Formats", () => {
     const flatFilter = flatten(filter, {});
     expect(flatFilter["$lte"]).not.toEqual(new Date(start).toISOString());
     expect(flatFilter["$gte"]).not.toEqual(new Date(end).toISOString());
+  });
+  describe("Someday Events", () => {
+    it("excludes someday events by default", async () => {
+      const filter = getReadAllFilter("user1", {}); // no someday query
+      const result = await eventCollection.find(filter).toArray();
+
+      const somedayEvents = result.filter((e) => e.isSomeday === true);
+
+      expect(somedayEvents).toHaveLength(0);
+    });
+    it("returns someday events (exclusive) when someday query provided", async () => {
+      const filter = getReadAllFilter("user1", { someday: "true" });
+      const result = await eventCollection.find(filter).toArray();
+
+      const somedayEvents = result.filter((e) => e.isSomeday === true);
+      const onlyReturnsSomedayEvents = result.length === somedayEvents.length;
+      expect(onlyReturnsSomedayEvents).toBe(true);
+    });
   });
   describe("finds events with exact same timestamps", () => {
     test("format: TZ offset", async () => {

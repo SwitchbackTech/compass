@@ -1,6 +1,6 @@
 /* Visit https://aka.ms/tsconfig.json to read more about this file */
 {
-  /* the web files not included because webpack handles that */
+  /* web files not included because webpack handles that */
   "include": ["packages/core/src/**/*.ts", "packages/backend/src/**/*.ts"],
   "exclude": ["**/__mocks__/*", "**/*.test.ts*", "**/*.test.js*"],
   "compilerOptions": {

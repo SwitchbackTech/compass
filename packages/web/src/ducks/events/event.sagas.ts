@@ -42,7 +42,12 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
       normalizedEventsSchema()
     );
 
-    yield put(getWeekEventsSlice.actions.insert(res.data._id));
+    if (payload.isSomeday) {
+      yield put(getFutureEventsSlice.actions.insert(res.data._id));
+    } else {
+      yield put(getWeekEventsSlice.actions.insert(res.data._id));
+    }
+
     yield put(
       eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
     );
@@ -55,7 +60,13 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
 
 export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
   try {
+    /* 
+    calls getWeekEvents..delete and getFuture..delete,
+    but only makes one request because the state in the 
+    other hasn't changed
+    */
     yield put(getWeekEventsSlice.actions.delete(payload));
+    yield put(getFutureEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
     yield call(EventApi.delete, payload._id);
     yield put(deleteEventSlice.actions.success());
@@ -135,14 +146,14 @@ function* getCurrentMonthEventsSaga({ payload }: Action_GetPaginatedEvents) {
 
 function* getFutureEventsSaga({ payload }: Action_GetPaginatedEvents) {
   try {
-    const startDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
+    // const startDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
     const data: Response_GetEventsSaga = (yield call(getEventsSaga, {
       ...payload,
-      startDate,
-      endDate: "2022-12-31",
+      someday: true,
+      // startDate,
+      // endDate: "2022-12-31",
     })) as Response_GetEventsSaga;
 
-    console.log("reminder: not getting events past dec 2022");
     yield put(getFutureEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getFutureEventsSlice.actions.error());
@@ -155,19 +166,18 @@ function* getEverySectionEvents() {
   const currentMonthEvents: Response_GetEventsSaga = (yield select((state) =>
     selectPaginatedEventsBySectionType(state, "currentMonth")
   )) as Response_GetEventsSaga;
-
+  
   const futureEvents: Response_GetEventsSaga = (yield select((state) =>
-    selectPaginatedEventsBySectionType(state, "future")
+  selectPaginatedEventsBySectionType(state, "future")
   )) as Response_GetEventsSaga;
-
   */
+
   const weekEvents: Response_GetEventsSaga = (yield select((state) =>
     selectPaginatedEventsBySectionType(state, "week")
   )) as Response_GetEventsSaga;
 
   // yield put(getCurrentMonthEventsSlice.actions.request(currentMonthEvents));
   // yield put(getFutureEventsSlice.actions.request(futureEvents));
-  // console.log("weekEvents [getEvSec]:", weekEvents);
   yield put(getWeekEventsSlice.actions.request(weekEvents));
 }
 

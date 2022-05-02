@@ -19,6 +19,7 @@ import { TimesColumn } from "@web/views/Calendar/components/TimesColumn";
 import { TodayButtonPopover } from "@web/views/Calendar/components/TodayButtonPopover";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
 import { NowLine } from "@web/views/Calendar/components/NowLine";
+import { Sidebar } from "@web/views/Calendar/components/Sidebar";
 import { useToken } from "@web/common/hooks/useToken";
 import { getCurrentMinute } from "@web/common/utils/grid.util";
 
@@ -130,11 +131,12 @@ export const CalendarView = () => {
 
   return (
     <Styled>
-      {/* <Sidebar
+      <Sidebar
         onTransitionEnd={() =>
           setResize({ height: window.innerHeight, width: window.innerWidth })
         }
-      /> */}
+        // weekViewProps={weekViewProps}
+      />
       <StyledCalendar
         ref={component.calendarRef}
         direction={FlexDirections.COLUMN}
@@ -160,7 +162,7 @@ export const CalendarView = () => {
               onClick={() =>
                 eventHandlers.setWeek((actualWeek) => actualWeek - 1)
               }
-              role="button"
+              role="navigation"
               size={40}
               title="previous week"
             >
@@ -168,12 +170,14 @@ export const CalendarView = () => {
             </ArrowNavigationButton>
 
             <ArrowNavigationButton
-              size={40}
               colorName={ColorNames.DARK_5}
+              cursor="pointer"
               onClick={() =>
                 eventHandlers.setWeek((actualWeek) => +actualWeek + 1)
               }
-              cursor="pointer"
+              role="navigation"
+              size={40}
+              title="next week"
             >
               {">"}
             </ArrowNavigationButton>
