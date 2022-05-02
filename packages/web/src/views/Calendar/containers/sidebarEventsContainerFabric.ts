@@ -11,7 +11,7 @@ import {
   Payload_GetPaginatedEvents,
   SectionType_Sidebar,
 } from "@web/ducks/events/types";
-import { EventsList } from "@web/views/Calendar/components/Sidebar/EventsList";
+import { SomedayEventsList } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEventsList";
 
 export const sidebarEventsContainerFabric = (
   sectionType: SectionType_Sidebar
@@ -47,5 +47,5 @@ export const sidebarEventsContainerFabric = (
   ) => ({
     getEvents: () => getEvents(dispatch, { offset, pageSize, priorities }),
   });
-  return connect(mapStateToProps, mapDispatchToProps)(EventsList);
+  return connect(mapStateToProps, mapDispatchToProps)(SomedayEventsList);
 };

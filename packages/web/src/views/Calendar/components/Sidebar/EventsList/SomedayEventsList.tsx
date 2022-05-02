@@ -17,7 +17,7 @@ export interface Props {
   pageSize: number;
 }
 
-export const EventsList: React.FC<Props> = ({
+export const SomedayEventsList: React.FC<Props> = ({
   eventIds,
   getEvents,
   isProcessing = false,
