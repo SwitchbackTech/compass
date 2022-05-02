@@ -15,7 +15,7 @@ export const StyledDayTimes = styled.div`
   height: 100%;
   position: absolute;
   top: calc(100% / 11 + -5px);
-  z-index: ${ZIndex.LAYER_2};
+  z-index: ${ZIndex.LAYER_1};
 
   & > div {
     height: calc(100% / 11);

@@ -42,7 +42,7 @@ export const Event = ({ event: _event }: Props) => {
       },
     ],
   });
-  const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_3 };
+  const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_2 };
 
   /*
   const [{ isDragging }, drag] = useDrag(() => ({

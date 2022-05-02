@@ -21,9 +21,12 @@ describe("Sidebar", () => {
   afterAll(() => {
     clearLocalStorageMock();
   });
-  it("renders button to add someday events", () => {
-    render(<CalendarView />);
-    expect(screen.getByText(/\+/i)).toBeInTheDocument();
+  it("renders button to add someday events", async () => {
+    // workaround to for Redux connected component act() warning
+    await waitFor(() => {
+      render(<CalendarView />);
+      expect(screen.getByText(/\+/i)).toBeInTheDocument();
+    });
   });
 });
 

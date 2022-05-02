@@ -29,7 +29,7 @@ export const StyledSidebarOverflow = styled.div<Props>`
   height: 100%;
   right: 0;
   transition: 0.4s;
-  z-index: ${ZIndex.LAYER_3};
+  z-index: ${ZIndex.LAYER_1};
 `;
 
 // TODO make this dynamic so you don't have to duplicate styles
@@ -39,7 +39,7 @@ const StyledOpenIcon = styled(SidebarOpenIcon)`
   position: absolute;
   right: 20px;
   top: 28px;
-  z-index: ${ZIndex.LAYER_4};
+  z-index: ${ZIndex.LAYER_1};
 
   &:hover {
     color: ${getColor(ColorNames.WHITE_2)};
@@ -52,7 +52,7 @@ const StyledCollapseIcon = styled(SidebarCollapseIcon)`
   position: absolute;
   right: 20px;
   top: 28px;
-  z-index: ${ZIndex.LAYER_4};
+  z-index: ${ZIndex.LAYER_1};
 
   &:hover {
     color: ${getColor(ColorNames.WHITE_2)};

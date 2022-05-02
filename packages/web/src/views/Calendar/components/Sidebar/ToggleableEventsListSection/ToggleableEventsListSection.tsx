@@ -88,7 +88,7 @@ export const ToggleableEventsListSection: React.FC<Props> = ({
       },
     ],
   });
-  const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_3 };
+  const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_2 };
 
   useEffect(() => {
     setTimeout(() => {
