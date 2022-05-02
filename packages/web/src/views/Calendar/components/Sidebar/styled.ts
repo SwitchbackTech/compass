@@ -5,6 +5,7 @@ import { ColorNames } from "@web/common/types/styles";
 import { CheckBox } from "@web/components/CheckBox";
 import { Flex } from "@web/components/Flex";
 import { SIDEBAR_WIDTH } from "@web/views/Calendar/constants";
+import { ZIndex } from "@web/common/constants/web.constants";
 
 import { ToggleableEventsListSection } from "./ToggleableEventsListSection";
 
@@ -28,7 +29,7 @@ export const StyledSidebarOverflow = styled.div<Props>`
   height: 100%;
   right: 0;
   transition: 0.4s;
-  z-index: 3;
+  z-index: ${ZIndex.LAYER_3};
 `;
 
 // TODO make this dynamic so you don't have to duplicate styles
@@ -38,7 +39,7 @@ const StyledOpenIcon = styled(SidebarOpenIcon)`
   position: absolute;
   right: 20px;
   top: 28px;
-  z-index: 4;
+  z-index: ${ZIndex.LAYER_4};
 
   &:hover {
     color: ${getColor(ColorNames.WHITE_2)};
@@ -51,7 +52,7 @@ const StyledCollapseIcon = styled(SidebarCollapseIcon)`
   position: absolute;
   right: 20px;
   top: 28px;
-  z-index: 4;
+  z-index: ${ZIndex.LAYER_4};
 
   &:hover {
     color: ${getColor(ColorNames.WHITE_2)};

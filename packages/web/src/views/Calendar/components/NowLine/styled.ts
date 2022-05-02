@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { ColorNames } from "@web/common/types/styles";
 import { getColor } from "@web/common/utils/colors";
 import { linearGradient } from "@web/common/styles/colors";
@@ -19,5 +20,5 @@ export const StyledNowLine = styled.div<StyledNowLineProps>`
   position: absolute;
   top: ${({ top }) => top}%;
   width: ${({ width }) => width}%;
-  z-index: 1;
+  z-index: ${ZIndex.LAYER_1};
 `;
