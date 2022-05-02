@@ -54,8 +54,12 @@ export const getEventCategory = (
   return Category.ThisWeekOnly;
 };
 
-export const getWeekDayLabel = (day: Dayjs) =>
-  day.format(YEAR_MONTH_DAY_COMPACT_FORMAT);
+export const getWeekDayLabel = (day: Dayjs | Date) => {
+  if (day instanceof Date) {
+    return dayjs(day).format(YEAR_MONTH_DAY_COMPACT_FORMAT);
+  }
+  return day.format(YEAR_MONTH_DAY_COMPACT_FORMAT);
+};
 
 /*
 -------------------------------------------------------------------------------
