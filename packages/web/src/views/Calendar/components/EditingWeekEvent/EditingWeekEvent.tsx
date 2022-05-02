@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { usePopper } from "react-popper";
-import { EventForm } from "@web/views/EventForm";
-import { FormProps } from "@web/views/EventForm/types";
+import { EventForm } from "@web/views/Forms/EventForm";
+import { FormProps } from "@web/views/Forms/EventForm/types";
 
 import { WeekEvent } from "../WeekEvent";
 import { WeekViewProps } from "../../weekViewHooks/useGetWeekViewProps";

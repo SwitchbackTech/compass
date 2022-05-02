@@ -6,7 +6,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { editEventSlice } from "@web/ducks/events/slice";
-import { SomedayEventForm } from "@web/views/SomedayEventForm";
+import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 
 import { Styled } from "./styled";
 interface TempEventSchema extends Schema_Event {
@@ -16,7 +16,7 @@ export interface Props {
   event: TempEventSchema; // $$ replace with Schema_Event or .._Grid
 }
 
-export const Event = ({ event: _event }: Props) => {
+export const SomedayEvent = ({ event: _event }: Props) => {
   const dispatch = useDispatch();
   const formRef = useRef<HTMLDivElement>(null);
 

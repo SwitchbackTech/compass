@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { EventForm } from "@web/views/EventForm";
 import { Navigate } from "react-router-dom";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { SURVEY_URL } from "@core/core.constants";

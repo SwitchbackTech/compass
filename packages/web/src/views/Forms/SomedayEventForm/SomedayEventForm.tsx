@@ -3,16 +3,16 @@ import { Key } from "ts-keycode-enum";
 import { useDispatch } from "react-redux";
 import { DeleteIcon } from "@web/components/Icons";
 import { deleteEventSlice } from "@web/ducks/events/slice";
-import { PrioritySection } from "@web/views/EventForm/PrioritySection";
-import { MonthPicker } from "@web/views/EventForm/MonthPicker";
-import { SaveSection } from "@web/views/EventForm/SaveSection";
-import { FormProps, SetEventFormField } from "@web/views/EventForm/types";
+import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
+import { MonthPicker } from "@web/views/Forms/EventForm/MonthPicker";
+import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
+import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 import {
   StyledDescriptionField,
   StyledEventForm,
   StyledIconRow,
   StyledTitleField,
-} from "@web/views/EventForm/styled";
+} from "@web/views/Forms/EventForm/styled";
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,

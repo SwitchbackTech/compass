@@ -12,9 +12,8 @@ import {
   createEventSlice,
   getFutureEventsSlice,
 } from "@web/ducks/events/slice";
-import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { SomedayEventForm } from "@web/views/SomedayEventForm";
+import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 
