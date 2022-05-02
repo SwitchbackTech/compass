@@ -47,7 +47,7 @@ export interface Props {
   flex?: number;
 }
 
-export const ToggleableEventsListSection: React.FC<Props> = ({
+export const SomedaySection: React.FC<Props> = ({
   EventsListContainer,
   title,
   sectionType,

@@ -31,7 +31,7 @@ import {
   StyledSidebarOverflow,
   StyledFutureEventsToggleableSection,
 } from "./styled";
-// import { ToggleableEventsListSection } from "./ToggleableEventsListSection";
+// import { SomedaySection } from "./SomedaySection";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 
 const DATEPICKER_HEIGHT = 346;
@@ -190,7 +190,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
           </Popover> */}
         </StyledHeaderFlex>
 
-        {/* <ToggleableEventsListSection
+        {/* <SomedaySection
           flex={getEventsSectionFlex("currentMonth")}
           isToggled={isCurrentMonthToggled}
           onToggle={() => setIsCurrentMonthToggled((toggle) => !toggle)}

@@ -7,7 +7,7 @@ import { Flex } from "@web/components/Flex";
 import { SIDEBAR_WIDTH } from "@web/views/Calendar/constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 
-import { ToggleableEventsListSection } from "./ToggleableEventsListSection";
+import { SomedaySection } from "./SomedaySection";
 
 export interface Props {
   isToggled: boolean;
@@ -121,7 +121,7 @@ export interface FutureEventsProps {
 }
 
 export const StyledFutureEventsToggleableSection = styled(
-  ToggleableEventsListSection
+  SomedaySection
 )<FutureEventsProps>`
   margin-top: ${({ shouldSetTopMargin }) => (shouldSetTopMargin ? "auto" : 0)};
 `;
