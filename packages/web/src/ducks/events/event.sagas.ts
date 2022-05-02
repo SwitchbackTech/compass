@@ -144,16 +144,22 @@ function* getCurrentMonthEventsSaga({ payload }: Action_GetPaginatedEvents) {
   }
 }
 
-function* getFutureEventsSaga({ payload }: Action_GetPaginatedEvents) {
+export function* getSomedayEventsSaga() {
   try {
-    // const startDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
-    const data: Response_GetEventsSaga = (yield call(getEventsSaga, {
-      ...payload,
+    const res: Response_GetEventsSuccess = (yield call(EventApi.get, {
       someday: true,
-      // startDate,
-      // endDate: "2022-12-31",
-    })) as Response_GetEventsSaga;
+    })) as Response_GetEventsSuccess;
 
+    const normalizedEvents = normalize<Schema_Event>(res.data, [
+      normalizedEventsSchema(),
+    ]);
+    yield put(
+      eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events)
+    );
+
+    const data = {
+      data: normalizedEvents.result as Payload_NormalizedAsyncAction,
+    };
     yield put(getFutureEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getFutureEventsSlice.actions.error());
@@ -190,7 +196,7 @@ export function* eventsSagas() {
     getCurrentMonthEventsSlice.actions.request,
     getCurrentMonthEventsSaga
   );
-  yield takeLatest(getFutureEventsSlice.actions.request, getFutureEventsSaga);
+  yield takeLatest(getFutureEventsSlice.actions.request, getSomedayEventsSaga);
   yield takeLatest(createEventSlice.actions.request, createEventSaga);
   yield takeLatest(editEventSlice.actions.request, editEventSaga);
   yield takeLatest(deleteEventSlice.actions.request, deleteEventSaga);
