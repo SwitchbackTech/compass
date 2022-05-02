@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { usePopper } from "react-popper";
 import { useDispatch } from "react-redux";
-import { useDrag, useDrop } from "react-dnd";
+// import { useDrag, useDrop } from "react-dnd";
 import { Schema_Event } from "@core/types/event.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
@@ -44,6 +44,7 @@ export const Event = ({ event: _event }: Props) => {
   });
   const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_3 };
 
+  /*
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "event",
     collect: (monitor) => ({
@@ -54,6 +55,7 @@ export const Event = ({ event: _event }: Props) => {
       dropEffect: "move",
     },
   }));
+  */
 
   const onDrop = (draggedEvent: TempEventSchema) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -75,6 +77,7 @@ export const Event = ({ event: _event }: Props) => {
     setIsEventFormOpen(false);
   };
 
+  /*
   const [, drop] = useDrop(
     () => ({
       accept: "event",
@@ -82,14 +85,17 @@ export const Event = ({ event: _event }: Props) => {
     }),
     [event.order]
   );
+  */
 
   return (
     <>
       <div ref={setPopperRef}>
-        <div ref={drag}>
+        {/* <div ref={drag}> */}
+        <div>
           <Styled
-            ref={drop}
-            isDragging={isDragging}
+            // ref={drop}
+            // isDragging={isDragging}
+            isDragging={false}
             onClick={() => setIsEventFormOpen(true)}
             priority={event.priority}
           >

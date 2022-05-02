@@ -162,7 +162,7 @@ export const CalendarView = () => {
               onClick={() =>
                 eventHandlers.setWeek((actualWeek) => actualWeek - 1)
               }
-              role="button"
+              role="navigation"
               size={40}
               title="previous week"
             >
@@ -170,12 +170,14 @@ export const CalendarView = () => {
             </ArrowNavigationButton>
 
             <ArrowNavigationButton
-              size={40}
               colorName={ColorNames.DARK_5}
+              cursor="pointer"
               onClick={() =>
                 eventHandlers.setWeek((actualWeek) => +actualWeek + 1)
               }
-              cursor="pointer"
+              role="navigation"
+              size={40}
+              title="next week"
             >
               {">"}
             </ArrowNavigationButton>

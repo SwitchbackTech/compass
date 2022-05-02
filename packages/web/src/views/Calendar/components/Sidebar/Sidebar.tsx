@@ -31,7 +31,7 @@ import {
   StyledSidebarOverflow,
   StyledFutureEventsToggleableSection,
 } from "./styled";
-import { ToggleableEventsListSection } from "./ToggleableEventsListSection";
+// import { ToggleableEventsListSection } from "./ToggleableEventsListSection";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 
 const DATEPICKER_HEIGHT = 346;

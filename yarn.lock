@@ -12708,7 +12708,7 @@ react-datepicker@^4.2.1:
     react-onclickoutside "^6.12.0"
     react-popper "^2.2.5"
 
-react-dnd-html5-backend@^16.0.0:
+react-dnd-html5-backend@16.0.0:
   version "16.0.0"
   resolved "https://registry.yarnpkg.com/react-dnd-html5-backend/-/react-dnd-html5-backend-16.0.0.tgz#671d6c64a119e91604eb8a8c3111c0a0af350479"
   integrity sha512-be3lKEbbT8FQcoTjFlQ4ZXG/NVrFNJu9W0INc5rm/5EFQpHCkz+xpbB2U8j9uh5Bvk7AsJyQrZznEut0hrNPIA==

@@ -115,12 +115,6 @@ module.exports = (env) => {
     resolve: {
       extensions: [".tsx", ".ts", ".js"],
       modules: [path.resolve("./src"), "node_modules"],
-      // temporary fix for react-dnd + react17 bug
-      // https://github.com/react-dnd/react-dnd/issues/3423
-      fallback: {
-        "react/jsx-runtime": "react/jsx-runtime.js",
-        "react/jsx-dev-runtime": "react/jsx-dev-runtime.js",
-      },
       alias: {
         "@core": resolvePath("../core/src"),
         "@web/assets": resolvePath("./src/assets"),

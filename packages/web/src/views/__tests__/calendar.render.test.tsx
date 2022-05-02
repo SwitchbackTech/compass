@@ -1,6 +1,6 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { CalendarView } from "@web/views/Calendar";
 import { render } from "@web/common/__mocks__/mock.render";
 import {
@@ -48,10 +48,26 @@ describe("CalendarView", () => {
     expect(screen.getByText(currentYear)).toBeInTheDocument();
   });
 
-  it("renders navigation arrows", () => {
-    render(<CalendarView />);
-    expect(screen.getByText(/</i)).toBeInTheDocument();
-    expect(screen.getByText(/>/i)).toBeInTheDocument();
+  it("renders week navigation arrows", async () => {
+    // const preloadedState = weekEventState; // has to be called 'preloadedState' to render correctly
+    // render(<CalendarView />, { preloadedState });
+
+    // workaround to for Redux connected component act() warning
+    await waitFor(() => {
+      render(<CalendarView />);
+    });
+
+    // render(<CalendarView />);
+    expect(
+      screen.getByRole("navigation", {
+        name: /previous week/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", {
+        name: /next week/i,
+      })
+    ).toBeInTheDocument();
   });
 
   it("renders current week", () => {
