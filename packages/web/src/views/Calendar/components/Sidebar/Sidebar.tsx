@@ -16,6 +16,7 @@ import { Divider } from "@web/components/Divider";
 import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
 import { SidebarFutureEventsContainer } from "@web/views/Calendar/containers/SidebarFutureEventsContainer";
 import { SidebarCurrentMonthEventsContainer } from "@web/views/Calendar/containers/SidebarCurrentMonthEventsContainer";
+import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 
 import {
   Styled,
@@ -48,7 +49,11 @@ const priorityNameByKey = {
   [Priorities.SELF]: "Self",
 };
 
-export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
+interface Props {
+  weekViewProps: WeekViewProps;
+}
+
+export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
   props
 ) => {
   const [isToggled, setIsToggled] = useState(true);
@@ -234,9 +239,10 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
 
       <StyledBottomSection height={String(bottomSectionHeight)}>
         <ToggleableMonthWidget
-          setIsToggled={setIsCalendarsToggled}
           isToggled={isCalendarsToggled}
           monthsShown={monthsShown}
+          setIsToggled={setIsCalendarsToggled}
+          setWeek={props.weekViewProps.eventHandlers.setWeek}
         />
       </StyledBottomSection>
     </Styled>

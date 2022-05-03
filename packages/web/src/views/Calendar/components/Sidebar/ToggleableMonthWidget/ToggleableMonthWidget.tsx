@@ -1,20 +1,24 @@
 import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
+import weekPlugin from "dayjs/plugin/weekOfYear";
 import { DatePicker } from "@web/components/DatePicker";
 import { ColorNames } from "@web/common/types/styles";
 
 import { Props as ToggleArrowProps } from "../ToggleArrow/ToggleArrow";
 import { Styled, StyledMonthName, StyledToggleArrow } from "./styled";
 
+dayjs.extend(weekPlugin);
 export interface Props extends Omit<ToggleArrowProps, "onToggle"> {
   monthsShown?: number;
   setIsToggled: React.Dispatch<React.SetStateAction<boolean>>;
+  setWeek: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export const ToggleableMonthWidget: React.FC<Props> = ({
   monthsShown,
   isToggled,
   setIsToggled,
+  setWeek,
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
@@ -34,7 +38,8 @@ export const ToggleableMonthWidget: React.FC<Props> = ({
       {temporarilyDisableToggle ? (
         <DatePicker
           onChange={(date) => {
-            console.log(date);
+            const week = dayjs(date).week();
+            setWeek(week);
             setSelectedDate(date);
           }}
           shouldCloseOnSelect={false}
@@ -48,7 +53,7 @@ export const ToggleableMonthWidget: React.FC<Props> = ({
           monthsShown={monthsShown}
         />
       ) : (
-        <StyledMonthName size={25} colorName={ColorNames.WHITE_1}>
+        <StyledMonthName size={19} colorName={ColorNames.WHITE_1}>
           {selectedDateLabel}
         </StyledMonthName>
       )}
