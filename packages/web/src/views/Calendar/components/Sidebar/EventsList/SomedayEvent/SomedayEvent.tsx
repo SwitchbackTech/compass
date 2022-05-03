@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { usePopper } from "react-popper";
 import { useDispatch } from "react-redux";
-// import { useDrag, useDrop } from "react-dnd";
+import { useDrag, useDrop } from "react-dnd";
 import { Schema_Event } from "@core/types/event.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
@@ -44,7 +44,6 @@ export const SomedayEvent = ({ event: _event }: Props) => {
   });
   const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_2 };
 
-  /*
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "event",
     collect: (monitor) => ({
@@ -55,21 +54,20 @@ export const SomedayEvent = ({ event: _event }: Props) => {
       dropEffect: "move",
     },
   }));
-  */
 
   const onDrop = (draggedEvent: TempEventSchema) => {
+    console.log("dropped");
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const order =
-      (draggedEvent.order || 0) < (event.order || 0)
-        ? (event.order || 0) + 1
-        : event.order;
-
-    dispatch(
-      editEventSlice.actions.request({
-        _id: draggedEvent._id || "",
-        event: { ...draggedEvent, order },
-      })
-    );
+    // const order =
+    //   (draggedEvent.order || 0) < (event.order || 0)
+    //     ? (event.order || 0) + 1
+    //     : event.order;
+    // console.log("dispatching [todo");
+    // dispatch(
+    //   editEventSlice.actions.request({
+    //     _id: draggedEvent._id || "",
+    //     event: { ...draggedEvent, order },
+    // })
   };
 
   const onSubmit = () => {
@@ -77,7 +75,6 @@ export const SomedayEvent = ({ event: _event }: Props) => {
     setIsEventFormOpen(false);
   };
 
-  /*
   const [, drop] = useDrop(
     () => ({
       accept: "event",
@@ -85,22 +82,22 @@ export const SomedayEvent = ({ event: _event }: Props) => {
     }),
     [event.order]
   );
-  */
 
   return (
     <>
       <div ref={setPopperRef}>
-        {/* <div ref={drag}> */}
-        <div>
-          <Styled
-            // ref={drop}
-            // isDragging={isDragging}
-            isDragging={false}
-            onClick={() => setIsEventFormOpen(true)}
-            priority={event.priority}
-          >
-            {event.title}
-          </Styled>
+        <div ref={drag}>
+          <div>
+            <Styled
+              ref={drop}
+              isDragging={isDragging}
+              isDragging={false}
+              onClick={() => setIsEventFormOpen(true)}
+              priority={event.priority}
+            >
+              {event.title}
+            </Styled>
+          </div>
         </div>
       </div>
       <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
