@@ -1,11 +1,11 @@
 import React, { useRef, useState } from "react";
 import { usePopper } from "react-popper";
 import { useDispatch } from "react-redux";
-import { useDrag, useDrop } from "react-dnd";
+import { useDrag } from "react-dnd";
 import { Schema_Event } from "@core/types/event.types";
-import { ZIndex } from "@web/common/constants/web.constants";
+import { DragItem, ZIndex } from "@web/common/constants/web.constants";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
-import { editEventSlice, getFutureEventsSlice } from "@web/ducks/events/slice";
+import { editEventSlice } from "@web/ducks/events/slice";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 
 import { Styled } from "./styled";
@@ -20,9 +20,7 @@ export const SomedayEvent = ({ event: _event }: Props) => {
 
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
   const [event, setEvent] = useState(_event);
-  // const [editingEvent, setEditingEvent] = useState<TempEventSchema | null>(
-  //   null
-  // );
+
   const [popperRef, setPopperRef] = useState<HTMLElement>(null);
   const [popperElement, setPopperElement] = useState<HTMLElement>(null);
 
@@ -43,7 +41,7 @@ export const SomedayEvent = ({ event: _event }: Props) => {
   const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_2 };
 
   const [{ isDragging }, drag] = useDrag(() => ({
-    type: "event",
+    type: DragItem.EVENT_SOMEDAY,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
@@ -53,23 +51,7 @@ export const SomedayEvent = ({ event: _event }: Props) => {
     },
   }));
 
-  const onDrop = (draggedEvent: Schema_Event) => {
-    const demoEvent = {
-      ...draggedEvent,
-      isSomeday: false,
-      startDate: "2022-05-03T19:00:00-05:00",
-      endDate: "2022-05-03T21:00:00-05:00",
-    };
-
-    dispatch(
-      getFutureEventsSlice.actions.convert({
-        _id: draggedEvent._id,
-        event: demoEvent,
-      })
-    );
-  };
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  // const order =
+  // const order = //$$ move to wherever drop logic is
   //   (draggedEvent.order || 0) < (event.order || 0)
   //     ? (event.order || 0) + 1
   //     : event.order;
@@ -79,24 +61,13 @@ export const SomedayEvent = ({ event: _event }: Props) => {
     setIsEventFormOpen(false);
   };
 
-  const [, drop] = useDrop(
-    () => ({
-      accept: "event",
-      drop: onDrop,
-    }),
-    []
-    // [event.order]
-  );
-
   return (
     <>
       <div ref={setPopperRef}>
         <div ref={drag}>
           <div>
             <Styled
-              ref={drop}
               isDragging={isDragging}
-              isDragging={false}
               onClick={() => setIsEventFormOpen(true)}
               priority={event.priority}
             >

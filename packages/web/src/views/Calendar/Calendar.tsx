@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { useDrop } from "react-dnd";
 import { Key } from "ts-keycode-enum";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
 import { getHourLabels } from "@web/common/utils/date.utils";
@@ -11,6 +12,7 @@ import {
 } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { DragItem } from "@web/common/constants/web.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
@@ -22,6 +24,9 @@ import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { Sidebar } from "@web/views/Calendar/components/Sidebar";
 import { useToken } from "@web/common/hooks/useToken";
 import { getCurrentMinute } from "@web/common/utils/grid.util";
+import { Schema_Event } from "@core/types/event.types";
+import { getFutureEventsSlice } from "@web/ducks/events/slice";
+import { useDispatch } from "react-redux";
 
 import {
   useGetWeekViewProps,
@@ -50,10 +55,9 @@ export interface Props {
   weekViewProps: WeekViewProps;
 }
 
-// const hourLabels = getHourLabels();
-
 export const CalendarView = () => {
   const { token } = useToken();
+  const dispatch = useDispatch();
   const weekViewProps = useGetWeekViewProps();
 
   const { component, core, eventHandlers } = weekViewProps;
@@ -125,6 +129,37 @@ export const CalendarView = () => {
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
   }, [component.calendarRef]);
 
+  /*********
+   * TEMP
+   ***********/
+  const _onDrop = (draggedEvent: Schema_Event) => {
+    const demoEvent = {
+      ...draggedEvent,
+      isSomeday: false,
+      startDate: "2022-05-03T19:00:00-05:00",
+      endDate: "2022-05-03T21:00:00-05:00",
+    };
+
+    dispatch(
+      getFutureEventsSlice.actions.convert({
+        _id: draggedEvent._id,
+        event: demoEvent,
+      })
+    );
+  };
+
+  const [, drop] = useDrop(
+    () => ({
+      accept: DragItem.EVENT_SOMEDAY,
+      drop: _onDrop,
+    }),
+    []
+  );
+
+  /*********
+   * render
+   ***********/
+
   if (!token) {
     return <Navigate to={ROOT_ROUTES.LOGIN} />;
   }
@@ -143,7 +178,7 @@ export const CalendarView = () => {
         onMouseDown={eventHandlers.onCalendarAreaMouseDown}
       >
         <StyledHeaderFlex alignItems={AlignItems.CENTER}>
-          <div role="heading" aria-level={1}>
+          <div ref={drop} role="heading" aria-level={1}>
             <Text colorName={ColorNames.WHITE_1} size={45}>
               {component.dayjsBasedOnWeekDay.format("MMMM")}
             </Text>

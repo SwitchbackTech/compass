@@ -88,14 +88,7 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
 
 export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
   try {
-    /* 
-    calls getWeekEvents..delete and getFuture..delete,
-    but only makes one request because the state in the 
-    other hasn't changed
-    */
-    console.log(payload);
     yield put(getWeekEventsSlice.actions.delete(payload));
-    // yield put(getFutureEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
     yield call(EventApi.delete, payload._id);
     yield put(deleteEventSlice.actions.success());
