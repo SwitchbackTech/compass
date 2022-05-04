@@ -327,9 +327,23 @@ class EventService {
     event: Schema_Event
   ): Promise<Schema_Event | BaseError> {
     try {
-      /* Part I: Compass */
       if ("_id" in event) {
         delete event._id; // mongo doesn't allow changing this field directly
+      }
+
+      const updateGcal = !event.isSomeday;
+      if (updateGcal) {
+        const wasSomedayEvent = event.gEventId === undefined;
+
+        if (wasSomedayEvent) {
+          console.log("creating new"); //$$
+          const gEvent = await this._createGcalEvent(userId, event);
+          event["gEventId"] = gEvent.id;
+        } else {
+          const gEvent = MapEvent.toGcal(updatedEvent);
+          const gcal = await getGcal(userId);
+          await gcalService.updateEvent(gcal, updatedEvent.gEventId, gEvent);
+        }
       }
 
       const response = await mongoService.db
@@ -350,28 +364,6 @@ class EventService {
         );
       }
       const updatedEvent = response.value as Schema_Event;
-
-      /* Part II: Gcal */
-      const updateGcal = !event.isSomeday;
-      if (updateGcal) {
-        const gEvent = MapEvent.toGcal(updatedEvent);
-
-        console.log(updatedEvent); //$$
-        const wasSomedayEvent = updatedEvent.gEventId === undefined; // someday evts not synced with gcal
-        if (wasSomedayEvent) {
-          console.log("creating new"); //$$
-          const gEvent = await this._createGcalEvent(userId, event);
-          updatedEvent["gEventId"] = gEvent.id;
-        } else {
-          console.log("editing existing"); //$$
-          const gcal = await getGcal(userId);
-          const gcalEditRes = await gcalService.updateEvent(
-            gcal,
-            updatedEvent.gEventId,
-            gEvent
-          );
-        }
-      }
 
       return updatedEvent;
     } catch (e) {
