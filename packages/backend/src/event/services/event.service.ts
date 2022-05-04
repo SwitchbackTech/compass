@@ -327,9 +327,11 @@ class EventService {
     event: Schema_Event
   ): Promise<Schema_Event | BaseError> {
     try {
+      /* Part I: Compass */
       if ("_id" in event) {
         delete event._id; // mongo doesn't allow changing this field directly
       }
+
       const response = await mongoService.db
         .collection(Collections.EVENT)
         .findOneAndUpdate(
@@ -349,22 +351,26 @@ class EventService {
       }
       const updatedEvent = response.value as Schema_Event;
 
+      /* Part II: Gcal */
       const updateGcal = !event.isSomeday;
       if (updateGcal) {
         const gEvent = MapEvent.toGcal(updatedEvent);
-        const gcal = await getGcal(userId);
-        const gEventId = updatedEvent.gEventId;
-        if (gEventId === undefined) {
-          return new BaseError(
-            "Update Failed",
-            "no gEventId",
-            Status.INTERNAL_SERVER,
-            true
+
+        console.log(updatedEvent); //$$
+        const wasSomedayEvent = updatedEvent.gEventId === undefined; // someday evts not synced with gcal
+        if (wasSomedayEvent) {
+          console.log("creating new"); //$$
+          const gEvent = await this._createGcalEvent(userId, event);
+          updatedEvent["gEventId"] = gEvent.id;
+        } else {
+          console.log("editing existing"); //$$
+          const gcal = await getGcal(userId);
+          const gcalEditRes = await gcalService.updateEvent(
+            gcal,
+            updatedEvent.gEventId,
+            gEvent
           );
         }
-        //TODO error-handle this and/or extract from this and turn into its own saga,
-        // in order to remove extra work that delays response to user
-        const gcalRes = await gcalService.updateEvent(gcal, gEventId, gEvent);
       }
 
       return updatedEvent;
