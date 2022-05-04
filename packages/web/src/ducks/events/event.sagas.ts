@@ -30,6 +30,34 @@ import {
 import { selectPaginatedEventsBySectionType } from "./selectors";
 import { handleErrorTemp, normalizedEventsSchema } from "./event.utils";
 
+/*
+ * Converts Someday event into a regular, timed event
+ */
+function* convertSomedayEventSaga({ payload }: Action_EditEvent) {
+  try {
+    const res = yield call(EventApi.edit, payload._id, payload.event);
+    yield put(getWeekEventsSlice.actions.insert(res.data._id));
+
+    const normalizedEvent = normalize<Schema_Event>(
+      res.data,
+      normalizedEventsSchema()
+    );
+    yield put(
+      eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
+    );
+
+    const futureEvents: Response_GetEventsSaga = (yield select((state) =>
+      selectPaginatedEventsBySectionType(state, "future")
+    )) as Response_GetEventsSaga;
+
+    yield put(getFutureEventsSlice.actions.request(futureEvents));
+    yield put(getFutureEventsSlice.actions.success());
+  } catch (error) {
+    yield put(getFutureEventsSlice.actions.error());
+    handleErrorTemp(error);
+  }
+}
+
 function* createEventSaga({ payload }: Action_CreateEvent) {
   try {
     const res = (yield call(
@@ -65,8 +93,9 @@ export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
     but only makes one request because the state in the 
     other hasn't changed
     */
+    console.log(payload);
     yield put(getWeekEventsSlice.actions.delete(payload));
-    yield put(getFutureEventsSlice.actions.delete(payload));
+    // yield put(getFutureEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
     yield call(EventApi.delete, payload._id);
     yield put(deleteEventSlice.actions.success());
@@ -91,7 +120,7 @@ export function* editEventSaga({ payload }: Action_EditEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.edit(payload));
     yield call(EventApi.edit, payload._id, payload.event);
-    yield call(getEverySectionEvents);
+    // yield call(getEverySectionEvents); //$$
     yield put(editEventSlice.actions.success());
   } catch (error) {
     handleErrorTemp(error);
@@ -145,14 +174,16 @@ function* getEventsSaga(
   }
 }
 
+/*
+ * gets data from state, categorized by time frame (week, month, future)
+ */
 function* getEverySectionEvents() {
-  // gets data from state, categorized by time frame (week, month, future)
   /*
   const currentMonthEvents: Response_GetEventsSaga = (yield select((state) =>
     selectPaginatedEventsBySectionType(state, "currentMonth")
   )) as Response_GetEventsSaga;
-  
   */
+
   const futureEvents: Response_GetEventsSaga = (yield select((state) =>
     selectPaginatedEventsBySectionType(state, "future")
   )) as Response_GetEventsSaga;
@@ -206,6 +237,10 @@ export function* eventsSagas() {
   yield takeLatest(
     getCurrentMonthEventsSlice.actions.request,
     getCurrentMonthEventsSaga
+  );
+  yield takeLatest(
+    getFutureEventsSlice.actions.convert,
+    convertSomedayEventSaga
   );
   yield takeLatest(getFutureEventsSlice.actions.request, getSomedayEventsSaga);
   yield takeLatest(getFutureEventsSlice.actions.delete, deleteSomedayEventSaga);

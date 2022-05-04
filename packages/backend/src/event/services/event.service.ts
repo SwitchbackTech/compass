@@ -331,21 +331,22 @@ class EventService {
         delete event._id; // mongo doesn't allow changing this field directly
       }
 
+      /* Part I: Gcal */
       const updateGcal = !event.isSomeday;
       if (updateGcal) {
         const wasSomedayEvent = event.gEventId === undefined;
 
         if (wasSomedayEvent) {
-          console.log("creating new"); //$$
           const gEvent = await this._createGcalEvent(userId, event);
           event["gEventId"] = gEvent.id;
         } else {
-          const gEvent = MapEvent.toGcal(updatedEvent);
+          const gEvent = MapEvent.toGcal(event);
           const gcal = await getGcal(userId);
-          await gcalService.updateEvent(gcal, updatedEvent.gEventId, gEvent);
+          await gcalService.updateEvent(gcal, event.gEventId, gEvent);
         }
       }
 
+      /* Part II: Compass */
       const response = await mongoService.db
         .collection(Collections.EVENT)
         .findOneAndUpdate(

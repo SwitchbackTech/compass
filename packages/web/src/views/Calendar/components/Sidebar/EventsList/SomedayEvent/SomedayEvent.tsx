@@ -62,17 +62,21 @@ export const SomedayEvent = ({ event: _event }: Props) => {
       startDate: "2022-05-03T19:00:00-05:00",
       endDate: "2022-05-03T21:00:00-05:00",
     };
-    console.log(demoEvent);
 
     dispatch(
-      editEventSlice.actions.request({
+      getFutureEventsSlice.actions.convert({
         _id: draggedEvent._id,
         event: demoEvent,
       })
     );
+    // dispatch(
+    //   editEventSlice.actions.request({
+    //     _id: draggedEvent._id,
+    //     event: demoEvent,
+    //   })
+    // );
 
     // const payload = { payload: { _id: demoEvent._id } };
-    // dispatch(getFutureEventsSlice.actions.delete({ _id: demoEvent._id }));
     console.log("done dispatching");
   };
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

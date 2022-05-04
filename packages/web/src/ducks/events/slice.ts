@@ -94,6 +94,7 @@ export const getFutureEventsSlice = createAsyncSlice<
 >({
   name: "getFutureEvents",
   reducers: {
+    convert: (state, action) => {},
     delete: (state: RootState, action: Action_DeleteEvent) => {
       state.value.data = state.value.data.filter(
         (i: string) => i !== action.payload._id
