@@ -76,6 +76,17 @@ export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
   }
 }
 
+export function* deleteSomedayEventSaga({ payload }: Action_DeleteEvent) {
+  try {
+    yield put(getFutureEventsSlice.actions.delete(payload));
+    yield put(eventsEntitiesSlice.actions.delete(payload));
+    yield put(getFutureEventsSlice.actions.success());
+  } catch (error) {
+    handleErrorTemp(error);
+    yield put(getFutureEventsSlice.actions.error());
+  }
+}
+
 export function* editEventSaga({ payload }: Action_EditEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.edit(payload));
@@ -197,6 +208,7 @@ export function* eventsSagas() {
     getCurrentMonthEventsSaga
   );
   yield takeLatest(getFutureEventsSlice.actions.request, getSomedayEventsSaga);
+  yield takeLatest(getFutureEventsSlice.actions.delete, deleteSomedayEventSaga);
   yield takeLatest(createEventSlice.actions.request, createEventSaga);
   yield takeLatest(editEventSlice.actions.request, editEventSaga);
   yield takeLatest(deleteEventSlice.actions.request, deleteEventSaga);

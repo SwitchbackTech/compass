@@ -5,7 +5,7 @@ import { useDrag, useDrop } from "react-dnd";
 import { Schema_Event } from "@core/types/event.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
-import { editEventSlice } from "@web/ducks/events/slice";
+import { editEventSlice, getFutureEventsSlice } from "@web/ducks/events/slice";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 
 import { Styled } from "./styled";
@@ -55,20 +55,32 @@ export const SomedayEvent = ({ event: _event }: Props) => {
     },
   }));
 
-  const onDrop = (draggedEvent: TempEventSchema) => {
-    console.log("dropped");
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    // const order =
-    //   (draggedEvent.order || 0) < (event.order || 0)
-    //     ? (event.order || 0) + 1
-    //     : event.order;
-    // console.log("dispatching [todo");
-    // dispatch(
-    //   editEventSlice.actions.request({
-    //     _id: draggedEvent._id || "",
-    //     event: { ...draggedEvent, order },
-    // })
+  const onDrop = (draggedEvent: Schema_Event) => {
+    const demoEvent = {
+      ...draggedEvent,
+      gEventId: "znam",
+      isSomeday: false,
+      startDate: "2022-05-03T19:00:00-05:00",
+      endDate: "2022-05-03T21:00:00-05:00",
+    };
+    console.log(demoEvent);
+
+    dispatch(
+      editEventSlice.actions.request({
+        _id: draggedEvent._id,
+        event: demoEvent,
+      })
+    );
+
+    // const payload = { payload: { _id: demoEvent._id } };
+    // dispatch(getFutureEventsSlice.actions.delete({ _id: demoEvent._id }));
+    console.log("done dispatching");
   };
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  // const order =
+  //   (draggedEvent.order || 0) < (event.order || 0)
+  //     ? (event.order || 0) + 1
+  //     : event.order;
 
   const onSubmit = () => {
     dispatch(editEventSlice.actions.request({ _id: event._id, event }));
@@ -80,7 +92,8 @@ export const SomedayEvent = ({ event: _event }: Props) => {
       accept: "event",
       drop: onDrop,
     }),
-    [event.order]
+    [event.order] //$$ remove
+    // [] $$
   );
 
   return (
