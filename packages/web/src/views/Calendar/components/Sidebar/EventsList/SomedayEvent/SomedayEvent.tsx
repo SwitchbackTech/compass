@@ -9,11 +9,9 @@ import { editEventSlice, getFutureEventsSlice } from "@web/ducks/events/slice";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 
 import { Styled } from "./styled";
-interface TempEventSchema extends Schema_Event {
-  order: number;
-}
+
 export interface Props {
-  event: TempEventSchema; // $$ replace with Schema_Event or .._Grid
+  event: Schema_Event;
 }
 
 export const SomedayEvent = ({ event: _event }: Props) => {
@@ -69,15 +67,6 @@ export const SomedayEvent = ({ event: _event }: Props) => {
         event: demoEvent,
       })
     );
-    // dispatch(
-    //   editEventSlice.actions.request({
-    //     _id: draggedEvent._id,
-    //     event: demoEvent,
-    //   })
-    // );
-
-    // const payload = { payload: { _id: demoEvent._id } };
-    console.log("done dispatching");
   };
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   // const order =
@@ -95,8 +84,8 @@ export const SomedayEvent = ({ event: _event }: Props) => {
       accept: "event",
       drop: onDrop,
     }),
-    [event.order] //$$ remove
-    // [] $$
+    []
+    // [event.order]
   );
 
   return (
