@@ -111,12 +111,11 @@ export const getFutureEventsSlice = createAsyncSlice<
 });
 
 export const eventsReducer = combineReducers({
-  getWeekEvents: getWeekEventsSlice.reducer,
-  getCurrentMonthEvents: getCurrentMonthEventsSlice.reducer,
-  getFutureEvents: getFutureEventsSlice.reducer,
   createEvent: createEventSlice.reducer,
   deleteEvent: deleteEventSlice.reducer,
   editEvent: editEventSlice.reducer,
-
   entities: eventsEntitiesSlice.reducer,
+  getCurrentMonthEvents: getCurrentMonthEventsSlice.reducer,
+  getFutureEvents: getFutureEventsSlice.reducer,
+  getWeekEvents: getWeekEventsSlice.reducer,
 });

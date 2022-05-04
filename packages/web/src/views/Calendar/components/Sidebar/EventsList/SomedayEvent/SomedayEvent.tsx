@@ -58,7 +58,6 @@ export const SomedayEvent = ({ event: _event }: Props) => {
   const onDrop = (draggedEvent: Schema_Event) => {
     const demoEvent = {
       ...draggedEvent,
-      gEventId: "znam",
       isSomeday: false,
       startDate: "2022-05-03T19:00:00-05:00",
       endDate: "2022-05-03T21:00:00-05:00",
