@@ -12,7 +12,6 @@ import {
 } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { DragItem } from "@web/common/constants/web.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
@@ -26,7 +25,7 @@ import { useToken } from "@web/common/hooks/useToken";
 import { getCurrentMinute } from "@web/common/utils/grid.util";
 import { getFutureEventsSlice } from "@web/ducks/events/slice";
 import { useDispatch } from "react-redux";
-import { DropResult } from "@web/common/types/dnd.types";
+import { DragItem, DropResult } from "@web/common/types/dnd.types";
 
 import {
   useGetWeekViewProps,
@@ -134,18 +133,29 @@ export const CalendarView = () => {
    ***********/
 
   const _onDrop = (result: DropResult) => {
+    // const delta = monitor.getDifferenceFromInitialOffset() as {
+    // x: number;
+    // y: number;
+    // };
+
+    // const left = Math.round(item.left + delta.x);
+    // const top = Math.round(item.top + delta.y);
+    // console.log(delta);
+    // console.log(`${left} | ${top}`);
+
     const updatedFields = {
       isSomeday: false,
       startDate: "2022-05-03T19:00:00-05:00",
       endDate: "2022-05-03T21:00:00-05:00",
     };
+    console.log(result);
 
-    dispatch(
-      getFutureEventsSlice.actions.convert({
-        _id: result._id,
-        updatedFields,
-      })
-    );
+    // dispatch(
+    //   getFutureEventsSlice.actions.convert({
+    //     _id: result._id,
+    //     updatedFields,
+    //   })
+    // );
   };
 
   const [{ canDrop, isOver }, drop] = useDrop(

@@ -12,12 +12,6 @@ export const ANIMATION_TIME_3_MS = "0.3s";
 export const API_BASEURL = getBaseUrl();
 export const GOOGLE = "google";
 
-export enum DragItem {
-  EVENT_SOMEDAY = "event_someday",
-  EVENT_DATE = "event_date",
-  EVENT_DATETIME = "event_datetime",
-}
-
 export enum LocalStorage {
   TIMEZONE = "timezone",
   TOKEN = "token",
