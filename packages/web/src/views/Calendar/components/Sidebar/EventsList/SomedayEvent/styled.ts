@@ -9,7 +9,7 @@ export interface Props {
   isDragging?: boolean;
 }
 
-export const Styled = styled.div<Props>`
+export const StyledEventOrPlaceholder = styled.div<Props>`
   cursor: ${({ isDragging }) => (isDragging ? "grabbing" : "pointer")};
   background: ${({ priority }) => getColor(colorNameByPriority[priority])};
   border-radius: 2px;

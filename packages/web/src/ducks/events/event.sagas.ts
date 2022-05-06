@@ -6,6 +6,7 @@ import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { EventApi } from "@web/ducks/events/event.api";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
+import { selectEventById } from "@web/ducks/events/selectors";
 
 import {
   createEventSlice,
@@ -17,6 +18,7 @@ import {
   getWeekEventsSlice,
 } from "./slice";
 import {
+  Action_ConvertSomedayEvent,
   Action_CreateEvent,
   Action_EditEvent,
   Response_GetEventsSaga,
@@ -33,9 +35,15 @@ import { handleErrorTemp, normalizedEventsSchema } from "./event.utils";
 /*
  * Converts Someday event into a regular, timed event
  */
-function* convertSomedayEventSaga({ payload }: Action_EditEvent) {
+function* convertSomedayEventSaga({ payload }: Action_ConvertSomedayEvent) {
   try {
-    const res = yield call(EventApi.edit, payload._id, payload.event);
+    const currEvent = (yield select((state) =>
+      selectEventById(state, payload._id)
+    )) as Response_GetEventsSaga;
+    const { _id, updatedFields } = payload;
+    const updatedEvent = { ...currEvent, ...updatedFields };
+
+    const res = yield call(EventApi.edit, _id, updatedEvent);
     yield put(getWeekEventsSlice.actions.insert(res.data._id));
 
     const normalizedEvent = normalize<Schema_Event>(

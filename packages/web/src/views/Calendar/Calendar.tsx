@@ -24,9 +24,9 @@ import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { Sidebar } from "@web/views/Calendar/components/Sidebar";
 import { useToken } from "@web/common/hooks/useToken";
 import { getCurrentMinute } from "@web/common/utils/grid.util";
-import { Schema_Event } from "@core/types/event.types";
 import { getFutureEventsSlice } from "@web/ducks/events/slice";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { selectEventById } from "@web/ducks/events/selectors";
 
 import {
   useGetWeekViewProps,
@@ -132,9 +132,11 @@ export const CalendarView = () => {
   /*********
    * TEMP
    ***********/
-  const _onDrop = (draggedEvent: Schema_Event) => {
-    const demoEvent = {
-      ...draggedEvent,
+  interface DropResult {
+    _id: string;
+  }
+  const _onDrop = (result: DropResult) => {
+    const updatedFields = {
       isSomeday: false,
       startDate: "2022-05-03T19:00:00-05:00",
       endDate: "2022-05-03T21:00:00-05:00",
@@ -142,16 +144,21 @@ export const CalendarView = () => {
 
     dispatch(
       getFutureEventsSlice.actions.convert({
-        _id: draggedEvent._id,
-        event: demoEvent,
+        _id: result._id,
+        updatedFields,
       })
     );
   };
 
-  const [, drop] = useDrop(
+  const [{ canDrop, isOver }, drop] = useDrop(
     () => ({
       accept: DragItem.EVENT_SOMEDAY,
       drop: _onDrop,
+      hover: (monitor) => console.log("hovering"),
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+        canDrop: monitor.canDrop(),
+      }),
     }),
     []
   );
@@ -177,8 +184,21 @@ export const CalendarView = () => {
         direction={FlexDirections.COLUMN}
         onMouseDown={eventHandlers.onCalendarAreaMouseDown}
       >
+        <div ref={drop}>
+          <div style={{ backgroundColor: isOver ? "red" : "blue" }}>
+            <Text colorName={ColorNames.WHITE_1} size={25}>
+              {canDrop ? "Drop here" : "Pick up an event"}
+            </Text>
+          </div>
+
+          <div style={{ marginTop: "20px" }}>
+            <Text colorName={ColorNames.WHITE_1} size={25}>
+              {canDrop ? "Or here" : "What you waitin for?"}
+            </Text>
+          </div>
+        </div>
         <StyledHeaderFlex alignItems={AlignItems.CENTER}>
-          <div ref={drop} role="heading" aria-level={1}>
+          <div role="heading" aria-level={1}>
             <Text colorName={ColorNames.WHITE_1} size={45}>
               {component.dayjsBasedOnWeekDay.format("MMMM")}
             </Text>

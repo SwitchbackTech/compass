@@ -8,7 +8,7 @@ import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { editEventSlice } from "@web/ducks/events/slice";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 
-import { Styled } from "./styled";
+import { StyledEventOrPlaceholder } from "./styled";
 
 export interface Props {
   event: Schema_Event;
@@ -42,19 +42,23 @@ export const SomedayEvent = ({ event: _event }: Props) => {
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: DragItem.EVENT_SOMEDAY,
+    end: (item, monitor) => {
+      console.log("done dragging");
+      const dropResult = monitor.getDropResult();
+      if (item && dropResult) {
+        console.log(`you dropped ${item._id}`);
+        console.log("dropResult:", dropResult);
+      }
+    },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
+      foo: "fooProp",
     }),
-    item: event,
+    item: { _id: event._id },
     options: {
       dropEffect: "move",
     },
   }));
-
-  // const order = //$$ move to wherever drop logic is
-  //   (draggedEvent.order || 0) < (event.order || 0)
-  //     ? (event.order || 0) + 1
-  //     : event.order;
 
   const onSubmit = () => {
     dispatch(editEventSlice.actions.request({ _id: event._id, event }));
@@ -66,13 +70,13 @@ export const SomedayEvent = ({ event: _event }: Props) => {
       <div ref={setPopperRef}>
         <div ref={drag}>
           <div>
-            <Styled
+            <StyledEventOrPlaceholder
               isDragging={isDragging}
               onClick={() => setIsEventFormOpen(true)}
               priority={event.priority}
             >
               {event.title}
-            </Styled>
+            </StyledEventOrPlaceholder>
           </div>
         </div>
       </div>

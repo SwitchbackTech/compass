@@ -7,6 +7,10 @@ import {
   Filters_Pagination,
 } from "@web/common/types/apiTypes";
 
+export interface Action_ConvertSomedayEvent extends Action {
+  payload: Payload_ConvertSomedayEvent;
+}
+
 export interface Action_CreateEvent extends Action {
   payload: Schema_Event;
 }
@@ -51,6 +55,12 @@ export enum Category {
 export interface Entities_Event {
   [key: string]: Schema_Event;
 }
+
+export interface Payload_ConvertSomedayEvent {
+  _id: string;
+  updatedFields: Schema_Event; //$$ use something better
+}
+
 export interface Payload_DeleteEvent {
   _id: string;
 }
