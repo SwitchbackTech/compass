@@ -7,6 +7,7 @@ import { DragItem, ZIndex } from "@web/common/constants/web.constants";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { editEventSlice } from "@web/ducks/events/slice";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
+import { DropResult } from "@web/common/types/dnd.types";
 
 import { StyledEventOrPlaceholder } from "./styled";
 
@@ -44,7 +45,7 @@ export const SomedayEvent = ({ event: _event }: Props) => {
     type: DragItem.EVENT_SOMEDAY,
     end: (item, monitor) => {
       console.log("done dragging");
-      const dropResult = monitor.getDropResult();
+      const dropResult = monitor.getDropResult<DropResult>();
       if (item && dropResult) {
         console.log(`you dropped ${item._id}`);
         console.log("dropResult:", dropResult);

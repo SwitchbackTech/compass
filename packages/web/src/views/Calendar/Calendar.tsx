@@ -25,8 +25,8 @@ import { Sidebar } from "@web/views/Calendar/components/Sidebar";
 import { useToken } from "@web/common/hooks/useToken";
 import { getCurrentMinute } from "@web/common/utils/grid.util";
 import { getFutureEventsSlice } from "@web/ducks/events/slice";
-import { useDispatch, useSelector } from "react-redux";
-import { selectEventById } from "@web/ducks/events/selectors";
+import { useDispatch } from "react-redux";
+import { DropResult } from "@web/common/types/dnd.types";
 
 import {
   useGetWeekViewProps,
@@ -132,9 +132,7 @@ export const CalendarView = () => {
   /*********
    * TEMP
    ***********/
-  interface DropResult {
-    _id: string;
-  }
+
   const _onDrop = (result: DropResult) => {
     const updatedFields = {
       isSomeday: false,

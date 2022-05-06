@@ -58,7 +58,7 @@ export interface Entities_Event {
 
 export interface Payload_ConvertSomedayEvent {
   _id: string;
-  updatedFields: Schema_Event; //$$ use something better
+  updatedFields: Schema_Event;
 }
 
 export interface Payload_DeleteEvent {
