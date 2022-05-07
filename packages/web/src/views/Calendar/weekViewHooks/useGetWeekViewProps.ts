@@ -31,7 +31,7 @@ import {
   EVENT_DEFAULT_MIN,
   GRID_TIME_STEP,
   GRID_X_OFFSET,
-  GRID_Y_OFFSET as _GRID_Y_OFFSET,
+  GRID_Y_OFFSET,
 } from "../constants";
 import { State_Event, Schema_GridEvent } from "./types";
 
@@ -102,7 +102,7 @@ export const useGetWeekViewProps = () => {
   const [CALCULATED_GRID_X_OFFSET, setGridXOffset] = useState(
     (calendarRef.current?.offsetLeft || 0) + GRID_X_OFFSET
   );
-  const [GRID_Y_OFFSET, setGridYOffset] = useState(
+  const [CALCULATED_GRID_Y_OFFSET, setGridYOffset] = useState(
     allDayEventsGridRef.current?.clientHeight || 0
   );
 
@@ -111,7 +111,7 @@ export const useGetWeekViewProps = () => {
    *************/
   useEffect(() => {
     setGridYOffset(
-      _GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0)
+      GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0)
     );
   }, [allDayEventsGridRef.current?.clientHeight, rowsCount]);
 
@@ -169,7 +169,7 @@ export const useGetWeekViewProps = () => {
 
   const getDateByMousePosition = (x: number, y: number) => {
     const clickX = x - CALCULATED_GRID_X_OFFSET;
-    const clickY = y - GRID_Y_OFFSET;
+    const clickY = y - CALCULATED_GRID_Y_OFFSET;
     const eventCellHeight = getEventCellHeight();
 
     const dayNumber = getDayNumberByX(clickX);
@@ -191,6 +191,13 @@ export const useGetWeekViewProps = () => {
     // the frontend is currently trusted to pass it to backend
     // in TZ format, so better to keep it like that
     return date.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
+  };
+
+  const getColumnWidths = () => {
+    const widths = Array.from(weekDaysRef.current?.children || []).map(
+      (e) => e.clientWidth
+    );
+    return widths;
   };
 
   const getDayNumberByX = (x: number) => {
@@ -431,7 +438,7 @@ export const useGetWeekViewProps = () => {
 
     const initialYOffset =
       e.clientY -
-      GRID_Y_OFFSET +
+      CALCULATED_GRID_Y_OFFSET +
       (eventsGridRef.current?.scrollTop || 0) -
       getYByDate(eventToDrag.startDate || "");
 
@@ -528,6 +535,8 @@ export const useGetWeekViewProps = () => {
       allDayEvents,
       allDayEventsGridRef,
       calendarRef,
+      CALCULATED_GRID_X_OFFSET,
+      CALCULATED_GRID_Y_OFFSET,
       dayjsBasedOnWeekDay,
       editingEvent,
       endOfSelectedWeekDay,
@@ -544,9 +553,11 @@ export const useGetWeekViewProps = () => {
     },
     core: {
       getAllDayEventCellHeight,
-      getPastOverflowWidth,
+      getDayNumberByX,
+      getColumnWidths,
       getEventCellHeight,
       getFlexBasisWrapper,
+      getPastOverflowWidth,
     },
   };
 };

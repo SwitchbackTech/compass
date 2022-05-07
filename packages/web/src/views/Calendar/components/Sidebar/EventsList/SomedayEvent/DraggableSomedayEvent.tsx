@@ -36,13 +36,11 @@ const left = 10;
 const top = 10;
 
 export const DraggableSomedayEvent: FC<DraggableBoxProps> = memo(
-  function DraggableSomedayEvent(props) {
-    const { _id } = props.event;
+  function DraggableSomedayEvent({ event }) {
     const [{ isDragging }, drag, preview] = useDrag(
       () => ({
         type: DragItem.EVENT_SOMEDAY,
-        item: { _id: _id },
-        // options: { dropEffect: "move" }, $$ think this breaks the layer
+        item: { _id: event._id },
         end: (item, monitor) => {
           console.log("done dragging");
           const dropResult = monitor.getDropResult<DropResult>();
@@ -55,7 +53,7 @@ export const DraggableSomedayEvent: FC<DraggableBoxProps> = memo(
           isDragging: monitor.isDragging(),
         }),
       }),
-      [_id, left, top]
+      [event._id, left, top]
     );
 
     useEffect(() => {
@@ -66,9 +64,8 @@ export const DraggableSomedayEvent: FC<DraggableBoxProps> = memo(
       <div
         ref={drag}
         // style={getStyles(left, top, isDragging)}
-        // role="DraggableBox"
       >
-        <SomedayEvent event={props.event} isDragging={isDragging} />
+        <SomedayEvent event={event} isDragging={isDragging} />
       </div>
     );
   }

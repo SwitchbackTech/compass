@@ -49,6 +49,7 @@ import {
   StyledWeekDaysFlex,
   StyledPrevDaysOverflow,
 } from "./styled";
+import { DragLayer } from "./containers/DragLayer";
 
 export interface Props {
   weekViewProps: WeekViewProps;
@@ -162,7 +163,7 @@ export const CalendarView = () => {
     () => ({
       accept: DragItem.EVENT_SOMEDAY,
       drop: _onDrop,
-      hover: (monitor) => console.log("hovering"),
+      // hover: (monitor) => console.log("hovering"),
       collect: (monitor) => ({
         isOver: monitor.isOver(),
         canDrop: monitor.canDrop(),
@@ -171,7 +172,7 @@ export const CalendarView = () => {
     []
   );
 
-  /*********
+  /***********
    * render
    ***********/
 
@@ -181,6 +182,7 @@ export const CalendarView = () => {
 
   return (
     <Styled>
+      <DragLayer weekViewProps={weekViewProps} />
       <Sidebar
         onTransitionEnd={() =>
           setResize({ height: window.innerHeight, width: window.innerWidth })
