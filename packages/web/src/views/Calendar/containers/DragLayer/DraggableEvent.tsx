@@ -37,7 +37,7 @@ export const DraggableEvent = ({
   const timePreview = component.startOfSelectedWeekDay
     .add(dayIndex, "day")
     .add(minutes, "minutes")
-    .format("ddd HH:mm");
+    .format("ddd H:mm");
 
   const _start = "2022-05-07T11:00:00-05:00";
 

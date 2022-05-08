@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { useDrop } from "react-dnd";
 import { Key } from "ts-keycode-enum";
-import { getWeekDayLabel } from "@web/ducks/events/event.utils";
-import { getHourLabels } from "@web/common/utils/date.utils";
 import { ColorNames } from "@web/common/types/styles";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
+import { getAlphaColor, getColor } from "@web/common/utils/colors";
+import { useToken } from "@web/common/hooks/useToken";
+import { getCurrentMinute } from "@web/common/utils/grid.util";
+import { getWeekDayLabel } from "@web/ducks/events/event.utils";
+import { getFutureEventsSlice } from "@web/ducks/events/slice";
 import {
   AlignItems,
   FlexDirections,
   JustifyContent,
 } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
-import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
 import { TimesColumn } from "@web/views/Calendar/components/TimesColumn";
@@ -21,25 +22,21 @@ import { TodayButtonPopover } from "@web/views/Calendar/components/TodayButtonPo
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
 import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { Sidebar } from "@web/views/Calendar/components/Sidebar";
-import { useToken } from "@web/common/hooks/useToken";
-import { getCurrentMinute } from "@web/common/utils/grid.util";
-import { getFutureEventsSlice } from "@web/ducks/events/slice";
-import { useDispatch } from "react-redux";
-import { DragItem, DropResult } from "@web/common/types/dnd.types";
-
+import { DragLayer } from "@web/views/Calendar/containers/DragLayer";
+import { GridRows } from "@web/views/Calendar/components/Grid/GridRows";
 import {
   useGetWeekViewProps,
   WeekViewProps,
-} from "./weekViewHooks/useGetWeekViewProps";
-import { Schema_GridEvent } from "./weekViewHooks/types";
+} from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
+import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
+import { AllDayRow } from "@web/views/Calendar/components/Grid/AllDayRow/AllDayRow";
+
 import {
   ArrowNavigationButton,
   Styled,
   StyledAllDayEventsGrid,
   StyledCalendar,
   StyledGridCol,
-  StyledGridRow,
-  StyledGridRows,
   StyledHeaderFlex,
   StyledEventsGrid,
   StyledGridColumns,
@@ -49,7 +46,6 @@ import {
   StyledWeekDaysFlex,
   StyledPrevDaysOverflow,
 } from "./styled";
-import { DragLayer } from "./containers/DragLayer";
 
 export interface Props {
   weekViewProps: WeekViewProps;
@@ -57,7 +53,6 @@ export interface Props {
 
 export const CalendarView = () => {
   const { token } = useToken();
-  const dispatch = useDispatch();
   const weekViewProps = useGetWeekViewProps();
 
   const { component, core, eventHandlers } = weekViewProps;
@@ -129,52 +124,9 @@ export const CalendarView = () => {
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
   }, [component.calendarRef]);
 
-  /*********
-   * TEMP
-   ***********/
-
-  const _onDrop = (result: DropResult) => {
-    // const delta = monitor.getDifferenceFromInitialOffset() as {
-    // x: number;
-    // y: number;
-    // };
-
-    // const left = Math.round(item.left + delta.x);
-    // const top = Math.round(item.top + delta.y);
-    // console.log(delta);
-    // console.log(`${left} | ${top}`);
-
-    const updatedFields = {
-      isSomeday: false,
-      startDate: "2022-05-03T19:00:00-05:00",
-      endDate: "2022-05-03T21:00:00-05:00",
-    };
-    console.log(result);
-
-    // dispatch(
-    //   getFutureEventsSlice.actions.convert({
-    //     _id: result._id,
-    //     updatedFields,
-    //   })
-    // );
-  };
-
-  const [{ canDrop, isOver }, drop] = useDrop(
-    () => ({
-      accept: DragItem.EVENT_SOMEDAY,
-      drop: _onDrop,
-      // hover: (monitor) => console.log("hovering"),
-      collect: (monitor) => ({
-        isOver: monitor.isOver(),
-        canDrop: monitor.canDrop(),
-      }),
-    }),
-    []
-  );
-
-  /***********
-   * render
-   ***********/
+  /**********
+   * Render
+   **********/
 
   if (!token) {
     return <Navigate to={ROOT_ROUTES.LOGIN} />;
@@ -194,19 +146,6 @@ export const CalendarView = () => {
         direction={FlexDirections.COLUMN}
         onMouseDown={eventHandlers.onCalendarAreaMouseDown}
       >
-        {/* <div ref={drop}>
-          <div style={{ backgroundColor: isOver ? "red" : "blue" }}>
-            <Text colorName={ColorNames.WHITE_1} size={25}>
-              {canDrop ? "Drop here" : "Pick up an event"}
-            </Text>
-          </div>
-
-          <div style={{ marginTop: "20px" }}>
-            <Text colorName={ColorNames.WHITE_1} size={25}>
-              {canDrop ? "Or here" : "What you waitin for?"}
-            </Text>
-          </div>
-        </div> */}
         <StyledHeaderFlex alignItems={AlignItems.CENTER}>
           <div role="heading" aria-level={1}>
             <Text colorName={ColorNames.WHITE_1} size={45}>
@@ -318,26 +257,7 @@ export const CalendarView = () => {
             ))}
           </StyledGridColumns>
 
-          <StyledEvents>
-            {component.allDayEvents.map((event: Schema_GridEvent) => (
-              <WeekEvent
-                event={event}
-                key={event._id}
-                weekViewProps={weekViewProps}
-              />
-            ))}
-
-            {component.editingEvent && component.editingEvent.isAllDay && (
-              <EditingWeekEvent
-                event={component.editingEvent}
-                isOpen={!!component.editingEvent.isOpen}
-                onCloseEventForm={() => eventHandlers.setEditingEvent(null)}
-                onSubmitEventForm={eventHandlers.onSubmitEvent}
-                setEvent={(event) => eventHandlers.setEditingEvent(event)}
-                weekViewProps={weekViewProps}
-              />
-            )}
-          </StyledEvents>
+          <AllDayRow weekViewProps={weekViewProps} />
         </StyledAllDayEventsGrid>
 
         <StyledEventsGrid
@@ -363,11 +283,7 @@ export const CalendarView = () => {
             ))}
           </StyledGridColumns>
 
-          <StyledGridRows>
-            {getHourLabels().map((dayTime, index) => (
-              <StyledGridRow key={`${dayTime}-${index}:dayTimes`} />
-            ))}
-          </StyledGridRows>
+          <GridRows />
 
           <StyledEvents>
             {component.weekEvents.map((event: Schema_GridEvent) => (

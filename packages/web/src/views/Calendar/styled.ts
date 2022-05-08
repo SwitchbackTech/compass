@@ -14,7 +14,7 @@ import {
   WEEK_DAYS_MARGIN_Y,
 } from "./constants";
 
-const gridDividerBorder = `1px solid ${getColor(ColorNames.GREY_4)}70`;
+export const gridDividerBorder = `1px solid ${getColor(ColorNames.GREY_4)}70`;
 const allDayGridDividerBorder = `2px solid ${getColor(ColorNames.GREY_4)}70`;
 
 export const Styled = styled(Flex)`
@@ -137,13 +137,6 @@ export const StyledGridColumns = styled(Flex)`
   left: ${CALENDAR_GRID_MARGIN_LEFT}px;
 `;
 
-export const StyledGridRows = styled.div`
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 35px;
-`;
-
 export interface StyledGridColProps {
   flexBasis: number;
 }
@@ -154,19 +147,6 @@ export const StyledGridCol = styled.div<StyledGridColProps>`
   border-left: ${gridDividerBorder};
   height: 100%;
   position: relative;
-`;
-
-export const StyledGridRow = styled(Flex)`
-  height: calc(100% / 11);
-  border-bottom: ${gridDividerBorder};
-  width: 100%;
-  position: relative;
-
-  & > span {
-    position: absolute;
-    bottom: -5px;
-    left: -${CALENDAR_GRID_MARGIN_LEFT}px;
-  }
 `;
 
 export const StyledEvents = styled.div`
