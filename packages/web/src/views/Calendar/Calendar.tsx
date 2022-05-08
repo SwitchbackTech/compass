@@ -194,7 +194,7 @@ export const CalendarView = () => {
         direction={FlexDirections.COLUMN}
         onMouseDown={eventHandlers.onCalendarAreaMouseDown}
       >
-        <div ref={drop}>
+        {/* <div ref={drop}>
           <div style={{ backgroundColor: isOver ? "red" : "blue" }}>
             <Text colorName={ColorNames.WHITE_1} size={25}>
               {canDrop ? "Drop here" : "Pick up an event"}
@@ -206,7 +206,7 @@ export const CalendarView = () => {
               {canDrop ? "Or here" : "What you waitin for?"}
             </Text>
           </div>
-        </div>
+        </div> */}
         <StyledHeaderFlex alignItems={AlignItems.CENTER}>
           <div role="heading" aria-level={1}>
             <Text colorName={ColorNames.WHITE_1} size={45}>

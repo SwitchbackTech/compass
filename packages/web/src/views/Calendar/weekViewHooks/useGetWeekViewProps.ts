@@ -170,18 +170,21 @@ export const useGetWeekViewProps = () => {
   const getDateByMousePosition = (x: number, y: number) => {
     const clickX = x - CALCULATED_GRID_X_OFFSET;
     const clickY = y - CALCULATED_GRID_Y_OFFSET;
-    const eventCellHeight = getEventCellHeight();
 
     const dayNumber = getDayNumberByX(clickX);
-    const minutesOnGrid = Math.round(
-      ((clickY + (eventsGridRef.current?.scrollTop || 0)) / eventCellHeight) *
-        60
-    );
+    const minute = getMinuteByMousePosition(clickY);
 
-    const minute = roundByNumber(
-      minutesOnGrid - GRID_TIME_STEP / 2,
-      GRID_TIME_STEP
-    );
+    // $$ delete once Someday List working fine
+    // const eventCellHeight = getEventCellHeight();
+    // const minutesOnGrid = Math.round(
+    //   ((clickY + (eventsGridRef.current?.scrollTop || 0)) / eventCellHeight) *
+    //     60
+    // );
+
+    // const minute = roundByNumber(
+    //   minutesOnGrid - GRID_TIME_STEP / 2,
+    //   GRID_TIME_STEP
+    // );
 
     const date = startOfSelectedWeekDay
       .add(dayNumber, "day")
@@ -221,6 +224,20 @@ export const useGetWeekViewProps = () => {
 
   const getFlexBasisWrapper = (day: Dayjs) => {
     return getFlexBasis(day, week, today);
+  };
+
+  const getMinuteByMousePosition = (y: number) => {
+    const height = getEventCellHeight();
+    const minutesOnGrid = Math.round(
+      ((y + (eventsGridRef.current?.scrollTop || 0)) / height) * 60
+    );
+
+    const minute = roundByNumber(
+      minutesOnGrid - GRID_TIME_STEP / 2,
+      GRID_TIME_STEP
+    );
+
+    return minute;
   };
 
   const getYByDate = (date: string) => {
@@ -557,6 +574,7 @@ export const useGetWeekViewProps = () => {
       getColumnWidths,
       getEventCellHeight,
       getFlexBasisWrapper,
+      getMinuteByMousePosition,
       getPastOverflowWidth,
     },
   };
