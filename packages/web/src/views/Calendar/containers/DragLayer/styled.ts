@@ -1,18 +1,9 @@
 import styled from "styled-components";
-import { Priority, Priorities } from "@core/core.constants";
-import { getColor } from "@web/common/utils/colors";
-import { colorNameByPriority } from "@web/common/styles/colors";
-import { ColorNames } from "@web/common/types/styles";
-
-const hoverColorsByPriority = {
-  [Priorities.UNASSIGNED]: getColor(ColorNames.GREY_5_BRIGHT),
-  [Priorities.WORK]: getColor(ColorNames.GREY_3_BRIGHT),
-  [Priorities.RELATIONS]: getColor(ColorNames.TEAL_4),
-  [Priorities.SELF]: getColor(ColorNames.BLUE_3_BRIGHT),
-};
+import { Priority } from "@core/core.constants";
+import { hoverColorsByPriority } from "@web/common/utils/colors";
 
 interface StyledEventProps {
-  backgroundColor: string;
+  backgroundColor?: string;
   duration: number;
   height: number;
   priority: Priority;
@@ -21,10 +12,8 @@ interface StyledEventProps {
 
 export const StyledDraggableEvent = styled.div.attrs<StyledEventProps>(
   (props) => {
-    const bgColor = getColor(colorNameByPriority[props.priority]);
-
     return {
-      backgroundColor: bgColor,
+      backgroundColor: hoverColorsByPriority[props.priority],
       height: props.height,
       hoverColor: hoverColorsByPriority[props.priority],
       width: props.width,

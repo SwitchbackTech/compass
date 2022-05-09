@@ -30,7 +30,7 @@ import { getFlexBasis } from "@web/common/utils/grid.util";
 import {
   EVENT_DEFAULT_MIN,
   GRID_TIME_STEP,
-  GRID_X_OFFSET,
+  X_OFFSET,
   GRID_Y_OFFSET,
 } from "../calendar.constants";
 import { State_Event, Schema_GridEvent } from "./types";
@@ -100,7 +100,7 @@ export const useGetWeekViewProps = () => {
    * Grid
    *********/
   const [CALCULATED_GRID_X_OFFSET, setGridXOffset] = useState(
-    (calendarRef.current?.offsetLeft || 0) + GRID_X_OFFSET
+    (calendarRef.current?.offsetLeft || 0) + X_OFFSET
   );
   const [CALCULATED_GRID_Y_OFFSET, setGridYOffset] = useState(
     allDayEventsGridRef.current?.clientHeight || 0
@@ -116,7 +116,7 @@ export const useGetWeekViewProps = () => {
   }, [allDayEventsGridRef.current?.clientHeight, rowsCount]);
 
   useEffect(() => {
-    setGridXOffset(GRID_X_OFFSET + (calendarRef.current?.offsetLeft || 0));
+    setGridXOffset(X_OFFSET + (calendarRef.current?.offsetLeft || 0));
   }, [calendarRef.current?.offsetLeft]);
 
   useEffect(() => {

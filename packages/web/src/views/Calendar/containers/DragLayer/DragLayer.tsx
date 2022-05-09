@@ -84,7 +84,7 @@ export const DragLayer: FC<CustomDragLayerProps> = ({ weekViewProps }) => {
 
   const tempEvt = {
     title: "foo",
-    priority: "work",
+    priority: "self",
   };
 
   function renderItem() {

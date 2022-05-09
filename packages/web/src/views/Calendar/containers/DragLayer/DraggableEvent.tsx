@@ -7,8 +7,8 @@ import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewP
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEvent/styled";
 import {
-  GRID_X_OFFSET,
   SIDEBAR_WIDTH,
+  X_PLUS_SIDEBAR_OFFSET,
 } from "@web/views/Calendar/calendar.constants";
 
 import { StyledDraggableEvent } from "./styled";
@@ -29,7 +29,7 @@ export const DraggableEvent = ({
 
   const { x, y } = coordinates;
 
-  const isOverGrid = x > SIDEBAR_WIDTH + GRID_X_OFFSET;
+  const isOverGrid = x > X_PLUS_SIDEBAR_OFFSET;
   const hoverX =
     coordinates.x - component.CALCULATED_GRID_X_OFFSET + SIDEBAR_WIDTH;
   const adjustedY = y - component.CALCULATED_GRID_Y_OFFSET;
@@ -53,7 +53,7 @@ export const DraggableEvent = ({
 
   return (
     <StyledDraggableEvent
-      // className={"active"}
+      className={"active"}
       duration={1}
       height={height}
       priority={event.priority}

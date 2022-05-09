@@ -1,15 +1,7 @@
 import styled from "styled-components";
-import { Priority, Priorities } from "@core/core.constants";
-import { getColor } from "@web/common/utils/colors";
+import { Priority } from "@core/core.constants";
+import { getColor, hoverColorsByPriority } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
-import { ColorNames } from "@web/common/types/styles";
-
-const hoverColorsByPriority = {
-  [Priorities.UNASSIGNED]: getColor(ColorNames.GREY_5_BRIGHT),
-  [Priorities.WORK]: getColor(ColorNames.GREY_3_BRIGHT),
-  [Priorities.RELATIONS]: getColor(ColorNames.TEAL_4),
-  [Priorities.SELF]: getColor(ColorNames.BLUE_3_BRIGHT),
-};
 
 interface StyledEventProps {
   allDay: boolean;
