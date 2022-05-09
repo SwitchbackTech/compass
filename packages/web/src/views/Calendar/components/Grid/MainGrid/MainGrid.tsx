@@ -15,7 +15,10 @@ import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEven
 import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { TimesColumn } from "@web/views/Calendar/components/TimesColumn";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
-import { GRID_TIME_STEP, SIDEBAR_WIDTH } from "@web/views/Calendar/constants";
+import {
+  GRID_TIME_STEP,
+  SIDEBAR_WIDTH,
+} from "@web/views/Calendar/calendar.constants";
 
 import { GridRows } from "../GridRows";
 import { StyledMainGrid, StyledPrevDaysOverflow } from "./styled";

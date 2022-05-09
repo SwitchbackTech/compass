@@ -12,7 +12,7 @@ import {
   GRID_Y_OFFSET,
   MYSTERY_PADDING,
   WEEK_DAYS_MARGIN_Y,
-} from "./constants";
+} from "./calendar.constants";
 
 export const gridDividerBorder = `1px solid ${getColor(ColorNames.GREY_4)}70`;
 const allDayGridDividerBorder = `2px solid ${getColor(ColorNames.GREY_4)}70`;

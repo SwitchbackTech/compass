@@ -6,10 +6,10 @@ import { DragItem } from "@web/common/types/dnd.types";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { roundByNumber } from "@web/common/utils";
-import { SIDEBAR_WIDTH } from "@web/views/Calendar/constants";
+import { SIDEBAR_WIDTH } from "@web/views/Calendar/calendar.constants";
 
 import { DraggableEvent } from "./DraggableEvent";
-import { GRID_TIME_STEP } from "../../constants"; //$$
+import { GRID_TIME_STEP } from "../../calendar.constants"; //$$
 
 const layerStyles: CSSProperties = {
   position: "fixed",

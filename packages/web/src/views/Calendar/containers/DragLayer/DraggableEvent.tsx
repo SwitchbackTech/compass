@@ -6,7 +6,10 @@ import { Text } from "@web/components/Text";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEvent/styled";
-import { GRID_X_OFFSET, SIDEBAR_WIDTH } from "@web/views/Calendar/constants";
+import {
+  GRID_X_OFFSET,
+  SIDEBAR_WIDTH,
+} from "@web/views/Calendar/calendar.constants";
 
 import { StyledDraggableEvent } from "./styled";
 

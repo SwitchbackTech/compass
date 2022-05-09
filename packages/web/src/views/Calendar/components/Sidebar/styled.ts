@@ -4,7 +4,7 @@ import { getColor } from "@web/common/utils/colors";
 import { ColorNames } from "@web/common/types/styles";
 import { CheckBox } from "@web/components/CheckBox";
 import { Flex } from "@web/components/Flex";
-import { SIDEBAR_WIDTH } from "@web/views/Calendar/constants";
+import { SIDEBAR_WIDTH } from "@web/views/Calendar/calendar.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 
 import { SomedaySection } from "./SomedaySection";

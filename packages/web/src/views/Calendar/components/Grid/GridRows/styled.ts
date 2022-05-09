@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import { Flex } from "@web/components/Flex";
 import { gridDividerBorder } from "@web/views/Calendar/styled";
-import { CALENDAR_GRID_MARGIN_LEFT } from "@web/views/Calendar/constants";
+import { CALENDAR_GRID_MARGIN_LEFT } from "@web/views/Calendar/calendar.constants";
 
 export const StyledGridRow = styled(Flex)`
   height: calc(100% / 11);

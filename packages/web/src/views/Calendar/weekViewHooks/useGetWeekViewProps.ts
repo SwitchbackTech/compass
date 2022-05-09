@@ -32,7 +32,7 @@ import {
   GRID_TIME_STEP,
   GRID_X_OFFSET,
   GRID_Y_OFFSET,
-} from "../constants";
+} from "../calendar.constants";
 import { State_Event, Schema_GridEvent } from "./types";
 
 dayjs.extend(weekPlugin);
