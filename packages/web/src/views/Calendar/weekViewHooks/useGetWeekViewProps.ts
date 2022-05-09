@@ -110,12 +110,14 @@ export const useGetWeekViewProps = () => {
    * Effects
    *************/
   useEffect(() => {
-    setGridYOffset(
-      GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0)
-    );
+    setGridYOffset(getYOffset);
   }, [allDayEventsGridRef.current?.clientHeight, rowsCount]);
 
   useEffect(() => {
+    console.log(
+      "setting x to ",
+      X_OFFSET + (calendarRef.current?.offsetLeft || 0)
+    );
     setGridXOffset(X_OFFSET + (calendarRef.current?.offsetLeft || 0));
   }, [calendarRef.current?.offsetLeft]);
 
@@ -132,11 +134,7 @@ export const useGetWeekViewProps = () => {
   /*************
    * Getters
    *************/
-  /* 
-      - height changes based on window size
-      - got 2.62 by experimenting by what looks right
-    */
-  const getAllDayEventCellHeight = () => getEventCellHeight() / 2.62;
+  const getAllDayEventCellHeight = () => getEventCellHeight() / 2.62; // got by experimenting by what looks right
 
   const getPastOverflowWidth = () => {
     if (today.week() > week) {
@@ -252,6 +250,9 @@ export const useGetWeekViewProps = () => {
 
     return eventCellHeight * startTime;
   };
+
+  const getYOffset = () =>
+    GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0);
 
   /**********
    * Handlers
@@ -585,6 +586,7 @@ export const useGetWeekViewProps = () => {
       getFlexBasisWrapper,
       getMinuteByMousePosition,
       getPastOverflowWidth,
+      getYOffset,
     },
   };
 };

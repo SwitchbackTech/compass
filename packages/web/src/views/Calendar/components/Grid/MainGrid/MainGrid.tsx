@@ -29,22 +29,11 @@ interface Props {
 
 export const MainGrid: FC<Props> = ({ weekViewProps }) => {
   const { component, core, eventHandlers } = weekViewProps;
+  console.log(`${component.CALCULATED_GRID_Y_OFFSET} [Main]`);
 
   const convertSomedayEvent = (x: number, y: number) => {
     const date = dateByCoordinates(x, y);
-
-    const updatedFields = {
-      isSomeday: false,
-      startDate: "2022-05-08T19:00:00-05:00",
-      endDate: "2022-05-08T21:00:00-05:00",
-    };
-
-    // dispatch(
-    //   getFutureEventsSlice.actions.convert({
-    //     _id: result._id,
-    //     updatedFields,
-    //   })
-    // );
+    // dispatch code (notion)
   };
 
   // const height = core.getEventCellHeight();
@@ -65,43 +54,37 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
   };
 
   const dateByCoordinates = (x: number, y: number) => {
-    const _dateByMousePosition = core.getDateByMousePosition(x, y);
-    console.log(`
-    START:
-        gridHeight ${gridHeight}
-        scrollTop: ${scrollTop}
-        X_OFFSET: ${component.CALCULATED_GRID_X_OFFSET}
-        Y_OFFSET: ${component.CALCULATED_GRID_Y_OFFSET}
-
-        x: ${x} 
-        y: ${y}
-        orig date: ${_dateByMousePosition}
-        `);
+    // const _dateByMousePosition = core.getDateByMousePosition(x, y);
+    // console.log(`
+    // START:
+    //     gridHeight ${gridHeight}
+    //     scrollTop: ${scrollTop}
+    //     ----
+    //     orig date: ${_dateByMousePosition}
+    //     `);
 
     const clickX = x - component.CALCULATED_GRID_X_OFFSET - SIDEBAR_WIDTH;
-    const clickY = y - component.CALCULATED_GRID_Y_OFFSET;
+
+    const yOffset = core.getYOffset();
+    const clickY = y - yOffset;
     console.log(`
     CLICKS:
-        adjustedX: ${clickX}
-        adjustedY: ${clickY}
+        ${x} -> ${clickX}
+        ${y} -> ${clickY}
         `);
     // minByY: ${_minByY(y)}
     // minByAdjustedY: ${_minByY(clickY)}
 
     const dayIndex = core.getDayNumberByX(clickX);
     const minutes = core.getMinuteByMousePosition(clickY);
+    // console.log("minutes", minutes);
+    // console.log(component.startOfSelectedWeekDay.add(1, "day").add(minutes, "m"));
     const date = component.startOfSelectedWeekDay
       .add(dayIndex, "day")
-      .add(minutes, "mintues")
+      .add(minutes, "minutes")
       .format("YYYY-MM-DD HH:mm");
 
-    /*
-    console.log(`
-    RESULT:
-        dayIndex: ${dayIndex}
-        date: ${date}    
-    `);
-    */
+    console.log(date);
     return date;
   };
 
@@ -114,13 +97,14 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
       }),
       //   hover: () => console.log("hover grid"),
       drop: (item, monitor) => {
-        console.log("dropped");
         const { x, y } = monitor.getClientOffset();
+
         convertSomedayEvent(x, y);
       },
     }),
     []
   );
+
   return (
     <StyledMainGrid
       ref={mergeRefs([component.eventsGridRef, drop])}
