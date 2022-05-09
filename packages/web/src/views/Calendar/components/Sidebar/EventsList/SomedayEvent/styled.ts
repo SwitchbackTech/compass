@@ -9,11 +9,13 @@ export interface Props {
   isDragging?: boolean;
 }
 
+export const SOMEDAY_EVENT_HEIGHT = 32;
+
 export const StyledEventOrPlaceholder = styled.div<Props>`
-  cursor: ${({ isDragging }) => (isDragging ? "grabbing" : "pointer")};
+  /* cursor: ${({ isDragging }) => (isDragging ? "grabbing" : "pointer")}; */
   background: ${({ priority }) => getColor(colorNameByPriority[priority])};
   border-radius: 2px;
-  height: 32px;
+  height: ${SOMEDAY_EVENT_HEIGHT}px;
   width: 100%;
   margin-bottom: 2px;
   padding: 5px;

@@ -5,6 +5,8 @@ import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
+import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEvent/styled";
+import { GRID_X_OFFSET, SIDEBAR_WIDTH } from "@web/views/Calendar/constants";
 
 import { StyledDraggableEvent } from "./styled";
 
@@ -14,41 +16,46 @@ export interface Props {
   weekViewProps: WeekViewProps;
 }
 
-// memoize like DragPreview
+// $$ memoize like DragPreview
 export const DraggableEvent = ({
   coordinates,
   event,
   weekViewProps,
 }: Props) => {
-  const { component, core, eventHandlers } = weekViewProps;
+  const { component, core } = weekViewProps;
 
-  const clickX = coordinates.x - component.CALCULATED_GRID_X_OFFSET;
-  const clickY = coordinates.y - component.CALCULATED_GRID_Y_OFFSET;
+  const { x, y } = coordinates;
+
+  const isOverGrid = x > SIDEBAR_WIDTH + GRID_X_OFFSET;
+  const hoverX =
+    coordinates.x - component.CALCULATED_GRID_X_OFFSET + SIDEBAR_WIDTH;
+  const adjustedY = y - component.CALCULATED_GRID_Y_OFFSET;
 
   /* Width & Height & Width */
-  const height = core.getEventCellHeight();
+  const height = isOverGrid ? core.getEventCellHeight() : SOMEDAY_EVENT_HEIGHT;
 
-  const dayIndex = core.getDayNumberByX(clickX);
+  const dayIndex = core.getDayNumberByX(hoverX);
   const columnWidths = core.getColumnWidths();
-  const width = columnWidths[dayIndex];
+  const _padding = 12; // arbitrary
+  const width = isOverGrid
+    ? columnWidths[dayIndex] - _padding
+    : SIDEBAR_WIDTH - 80; // 40px padding on both sides
 
   /* Date & Time */
-  const minutes = core.getMinuteByMousePosition(clickY);
+  const minutes = core.getMinuteByMousePosition(adjustedY);
   const timePreview = component.startOfSelectedWeekDay
     .add(dayIndex, "day")
     .add(minutes, "minutes")
-    .format("ddd H:mm");
-
-  const _start = "2022-05-07T11:00:00-05:00";
+    .format("ddd H:mm"); // tue 7:00 //$$ move to constant
 
   return (
     <StyledDraggableEvent
-      className={"active"}
+      // className={"active"}
       duration={1}
       height={height}
       priority={event.priority}
       role="button"
-      tabindex="0"
+      tabIndex={0}
       width={width}
     >
       <Flex alignItems={AlignItems.CENTER} flexWrap={FlexWrap.WRAP}>
@@ -57,9 +64,11 @@ export const DraggableEvent = ({
         </Text>
       </Flex>
 
-      <Flex flexWrap={FlexWrap.WRAP}>
-        <Text size={10}>{timePreview}</Text>
-      </Flex>
+      {isOverGrid && (
+        <Flex flexWrap={FlexWrap.WRAP}>
+          <Text size={10}>{timePreview}</Text>
+        </Flex>
+      )}
     </StyledDraggableEvent>
   );
 };

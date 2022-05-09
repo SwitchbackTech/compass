@@ -132,6 +132,7 @@ export const useGetWeekViewProps = () => {
   /*************
    * Getters
    *************/
+
   const getAllDayEventCellHeight = () =>
     allDayEventsGridRef.current?.clientHeight || 0;
 
@@ -168,6 +169,7 @@ export const useGetWeekViewProps = () => {
   };
 
   const getDateByMousePosition = (x: number, y: number) => {
+    // $$ use helper method in this file
     const clickX = x - CALCULATED_GRID_X_OFFSET;
     const clickY = y - CALCULATED_GRID_Y_OFFSET;
 
@@ -231,6 +233,7 @@ export const useGetWeekViewProps = () => {
     const minutesOnGrid = Math.round(
       ((y + (eventsGridRef.current?.scrollTop || 0)) / height) * 60
     );
+    // console.log("minutesOnGrid", minutesOnGrid); //$$
 
     const minute = roundByNumber(
       minutesOnGrid - GRID_TIME_STEP / 2,
@@ -322,6 +325,9 @@ export const useGetWeekViewProps = () => {
       return;
     }
 
+    // const minute = getMinuteByMousePosition(e.clientY); //$$
+    // console.log(`${minute} (${e.clientX}, ${e.clientY})`); //$$
+    console.log(`GRID:\n\t${e.clientX}, ${e.clientY}`);
     const startDate = getDateByMousePosition(e.clientX, e.clientY);
     const endDate = dayjs(startDate)
       .add(EVENT_DEFAULT_MIN, "minute")
@@ -551,9 +557,9 @@ export const useGetWeekViewProps = () => {
     component: {
       allDayEvents,
       allDayEventsGridRef,
-      calendarRef,
       CALCULATED_GRID_X_OFFSET,
       CALCULATED_GRID_Y_OFFSET,
+      calendarRef,
       dayjsBasedOnWeekDay,
       editingEvent,
       endOfSelectedWeekDay,
@@ -570,6 +576,7 @@ export const useGetWeekViewProps = () => {
     },
     core: {
       getAllDayEventCellHeight,
+      getDateByMousePosition,
       getDayNumberByX,
       getColumnWidths,
       getEventCellHeight,

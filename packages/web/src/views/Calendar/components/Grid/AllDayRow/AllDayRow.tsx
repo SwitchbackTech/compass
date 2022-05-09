@@ -1,6 +1,8 @@
 import React, { FC } from "react";
 import { useDrop } from "react-dnd";
 import { DragItem } from "@web/common/types/dnd.types";
+import { ColorNames } from "@web/common/types/styles";
+import { getColor } from "@web/common/utils/colors";
 import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
 import { StyledEvents } from "@web/views/Calendar/styled";
@@ -27,10 +29,11 @@ export const AllDayRow: FC<Props> = ({ weekViewProps }) => {
     []
   );
 
+  const border = `1px solid ${getColor(ColorNames.WHITE_2)}`;
   return (
     <StyledEvents
       ref={drop}
-      style={{ backgroundColor: isOver && canDrop ? "blue" : "" }}
+      style={{ borderTop: isOver && canDrop ? border : "" }}
     >
       {component.allDayEvents.map((event: Schema_GridEvent) => (
         <WeekEvent

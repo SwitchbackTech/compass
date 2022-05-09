@@ -1,10 +1,9 @@
 import React, { memo, useEffect } from "react";
 import type { CSSProperties, FC } from "react";
-import type { DragSourceMonitor } from "react-dnd";
-import { getEmptyImage } from "react-dnd-html5-backend";
 import { useDrag } from "react-dnd";
-import { DragItem, DropResult } from "@web/common/types/dnd.types";
+import { getEmptyImage } from "react-dnd-html5-backend";
 import { Schema_Event } from "@core/types/event.types";
+import { DragItem, DropResult } from "@web/common/types/dnd.types";
 
 import { SomedayEvent } from "./SomedayEvent";
 
@@ -42,14 +41,12 @@ export const DraggableSomedayEvent: FC<DraggableBoxProps> = memo(
         type: DragItem.EVENT_SOMEDAY,
         item: { _id: event._id },
         end: (item, monitor) => {
-          console.log("done dragging");
           const dropResult = monitor.getDropResult<DropResult>();
           if (item && dropResult) {
-            console.log(`you dropped ${item._id}`);
-            console.log("dropResult:", dropResult);
+            // console.log(`you dropped ${item._id}`);
           }
         },
-        collect: (monitor: DragSourceMonitor) => ({
+        collect: (monitor) => ({
           isDragging: monitor.isDragging(),
         }),
       }),

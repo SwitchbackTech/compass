@@ -8,7 +8,6 @@ import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { useToken } from "@web/common/hooks/useToken";
 import { getCurrentMinute } from "@web/common/utils/grid.util";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
-import { getFutureEventsSlice } from "@web/ducks/events/slice";
 import {
   AlignItems,
   FlexDirections,
@@ -16,14 +15,9 @@ import {
 } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
-import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
-import { TimesColumn } from "@web/views/Calendar/components/TimesColumn";
 import { TodayButtonPopover } from "@web/views/Calendar/components/TodayButtonPopover";
-import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
-import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { Sidebar } from "@web/views/Calendar/components/Sidebar";
 import { DragLayer } from "@web/views/Calendar/containers/DragLayer";
-import { GridRows } from "@web/views/Calendar/components/Grid/GridRows";
 import {
   useGetWeekViewProps,
   WeekViewProps,
@@ -38,14 +32,12 @@ import {
   StyledCalendar,
   StyledGridCol,
   StyledHeaderFlex,
-  StyledEventsGrid,
   StyledGridColumns,
   StyledNavigationButtons,
-  StyledEvents,
   StyledWeekDayFlex,
   StyledWeekDaysFlex,
-  StyledPrevDaysOverflow,
 } from "./styled";
+import { MainGrid } from "./components/Grid/MainGrid";
 
 export interface Props {
   weekViewProps: WeekViewProps;
@@ -53,8 +45,8 @@ export interface Props {
 
 export const CalendarView = () => {
   const { token } = useToken();
-  const weekViewProps = useGetWeekViewProps();
 
+  const weekViewProps = useGetWeekViewProps();
   const { component, core, eventHandlers } = weekViewProps;
 
   const [, setResize] = useState<
@@ -194,7 +186,6 @@ export const CalendarView = () => {
             )}
           </StyledNavigationButtons>
         </StyledHeaderFlex>
-
         <StyledWeekDaysFlex ref={component.weekDaysRef}>
           {component.weekDays.map((day) => {
             const isDayInCurrentWeek =
@@ -240,7 +231,6 @@ export const CalendarView = () => {
             );
           })}
         </StyledWeekDaysFlex>
-
         <StyledAllDayEventsGrid
           id="allDayGrid"
           rowsCount={component.rowsCount}
@@ -259,55 +249,7 @@ export const CalendarView = () => {
 
           <AllDayRow weekViewProps={weekViewProps} />
         </StyledAllDayEventsGrid>
-
-        <StyledEventsGrid
-          ref={component.eventsGridRef}
-          onMouseDown={eventHandlers.onEventsGridMouseDown}
-          onMouseMove={eventHandlers.onEventGridMouseMove}
-        >
-          <TimesColumn />
-
-          <StyledGridColumns>
-            {component.week === component.today.week() && (
-              <NowLine width={100} />
-            )}
-            <StyledPrevDaysOverflow
-              widthPercent={core.getPastOverflowWidth()}
-            />
-
-            {component.weekDays.map((day) => (
-              <StyledGridCol
-                flexBasis={core.getFlexBasisWrapper(day)}
-                key={day.format(YEAR_MONTH_DAY_FORMAT)}
-              />
-            ))}
-          </StyledGridColumns>
-
-          <GridRows />
-
-          <StyledEvents>
-            {component.weekEvents.map((event: Schema_GridEvent) => (
-              <WeekEvent
-                key={event._id}
-                weekViewProps={weekViewProps}
-                event={event}
-              />
-            ))}
-
-            {component.editingEvent && !component.editingEvent.isAllDay && (
-              <EditingWeekEvent
-                setEvent={(event) =>
-                  eventHandlers.setEditingEvent(event as Schema_GridEvent)
-                }
-                isOpen={!!component.editingEvent?.isOpen}
-                event={component.editingEvent}
-                weekViewProps={weekViewProps}
-                onCloseEventForm={() => eventHandlers.setEditingEvent(null)}
-                onSubmitEventForm={eventHandlers.onSubmitEvent}
-              />
-            )}
-          </StyledEvents>
-        </StyledEventsGrid>
+        <MainGrid weekViewProps={weekViewProps} />
       </StyledCalendar>
     </Styled>
   );

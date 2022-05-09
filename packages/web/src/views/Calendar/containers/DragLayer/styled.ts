@@ -12,9 +12,9 @@ const hoverColorsByPriority = {
 };
 
 interface StyledEventProps {
+  backgroundColor: string;
   duration: number;
   height: number;
-  isDragging: boolean;
   priority: Priority;
   width: number;
 }
@@ -39,7 +39,7 @@ export const StyledDraggableEvent = styled.div.attrs<StyledEventProps>(
   user-select: none;
   transition: background-color 0.2s, box-shadow 0.2s;
   box-shadow: 0 0 0 0 transparent;
-  cursor: "grabbing";
+  /* cursor: "grabbing"; */
 
   &:hover,
   &.active {

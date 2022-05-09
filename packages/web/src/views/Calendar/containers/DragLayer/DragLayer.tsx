@@ -6,6 +6,7 @@ import { DragItem } from "@web/common/types/dnd.types";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { roundByNumber } from "@web/common/utils";
+import { SIDEBAR_WIDTH } from "@web/views/Calendar/constants";
 
 import { DraggableEvent } from "./DraggableEvent";
 import { GRID_TIME_STEP } from "../../constants"; //$$
@@ -30,8 +31,8 @@ const snapToGrid = (x: number, y: number): [number, number] => {
   /* good enough version */
   const yInterval = 10; // good enough for now, but won't be perfect
   const snappedY = Math.round(y / yInterval) * yInterval;
+  // const snappedX = x + SIDEBAR_WIDTH;
   const snappedX = x;
-  //   console.log(`origY: ${y}, snappedY: ${snappedY}`);
 
   return [snappedX, snappedY];
 };
@@ -78,6 +79,7 @@ export const DragLayer: FC<CustomDragLayerProps> = ({ weekViewProps }) => {
       initialOffset: monitor.getInitialSourceClientOffset(),
       isDragging: monitor.isDragging(),
       currentOffset: monitor.getSourceClientOffset(),
+      // currentOffset: monitor.getClientOffset(),
     }));
 
   const tempEvt = {
@@ -95,7 +97,6 @@ export const DragLayer: FC<CustomDragLayerProps> = ({ weekViewProps }) => {
             weekViewProps={weekViewProps}
           />
         );
-      // return <DragPreview />; //$$
       default:
         return null;
     }
