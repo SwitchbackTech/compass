@@ -26,30 +26,52 @@ export const DraggableEvent = ({
   weekViewProps,
 }: Props) => {
   const { component, core } = weekViewProps;
-
   const { x, y } = coordinates;
 
+  /* Helpers */
+  const _getHeight = () => {
+    const heightMargin = 7; // arbitrary
+    let height = heightMargin;
+
+    if (isOverGrid && isOverAllDayRow) {
+      return core.getAllDayEventCellHeight();
+    }
+
+    height = isOverGrid
+      ? core.getEventCellHeight() - heightMargin
+      : SOMEDAY_EVENT_HEIGHT;
+
+    return height;
+  };
+
+  const _getWidth = () => {
+    const columnWidths = core.getColumnWidths();
+
+    const widthMargin = 12; // arbitrary
+    const width = isOverGrid
+      ? columnWidths[dayIndex] - widthMargin
+      : SIDEBAR_WIDTH - 80; // 40px padding on both sides
+
+    return width;
+  };
+
+  /* Position */
   const isOverGrid = x > X_PLUS_SIDEBAR_OFFSET;
-  const hoverX =
-    coordinates.x - component.CALCULATED_GRID_X_OFFSET + SIDEBAR_WIDTH;
-  const adjustedY = y - component.CALCULATED_GRID_Y_OFFSET;
+  const isOverAllDayRow = y < component.CALCULATED_GRID_Y_OFFSET;
+  const gridX = x - component.CALCULATED_GRID_X_OFFSET;
+  const dayIndex = core.getDayNumberByX(gridX);
 
-  /* Width & Height & Width */
-  const height = isOverGrid ? core.getEventCellHeight() : SOMEDAY_EVENT_HEIGHT;
-
-  const dayIndex = core.getDayNumberByX(hoverX);
-  const columnWidths = core.getColumnWidths();
-  const _padding = 12; // arbitrary
-  const width = isOverGrid
-    ? columnWidths[dayIndex] - _padding
-    : SIDEBAR_WIDTH - 80; // 40px padding on both sides
+  /* Size */
+  const height = _getHeight();
+  const width = _getWidth();
 
   /* Date & Time */
+  const adjustedY = y - component.CALCULATED_GRID_Y_OFFSET;
   const minutes = core.getMinuteByMousePosition(adjustedY);
   const timePreview = component.startOfSelectedWeekDay
     .add(dayIndex, "day")
     .add(minutes, "minutes")
-    .format("ddd H:mm"); // tue 7:00 //$$ move to constant
+    .format("ddd h:mm"); //$$ move to constant with example
 
   return (
     <StyledDraggableEvent
@@ -67,7 +89,7 @@ export const DraggableEvent = ({
         </Text>
       </Flex>
 
-      {isOverGrid && (
+      {isOverGrid && !isOverAllDayRow && (
         <Flex flexWrap={FlexWrap.WRAP}>
           <Text size={10}>{timePreview}</Text>
         </Flex>

@@ -20,7 +20,7 @@ export const AllDayRow: FC<Props> = ({ weekViewProps }) => {
     () => ({
       accept: DragItem.EVENT_SOMEDAY,
       drop: () => console.log("dropped onto a AllDayRow"),
-      hover: (monitor) => console.log("hovering [AllDay]"),
+      // hover: (monitor) => console.log("hovering [AllDay]"),
       collect: (monitor) => ({
         isOver: monitor.isOver(),
         canDrop: monitor.canDrop(),

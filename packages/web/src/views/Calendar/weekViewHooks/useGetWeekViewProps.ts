@@ -132,9 +132,11 @@ export const useGetWeekViewProps = () => {
   /*************
    * Getters
    *************/
-
-  const getAllDayEventCellHeight = () =>
-    allDayEventsGridRef.current?.clientHeight || 0;
+  /* 
+      - height changes based on window size
+      - got 2.62 by experimenting by what looks right
+    */
+  const getAllDayEventCellHeight = () => getEventCellHeight() / 2.62;
 
   const getPastOverflowWidth = () => {
     if (today.week() > week) {
