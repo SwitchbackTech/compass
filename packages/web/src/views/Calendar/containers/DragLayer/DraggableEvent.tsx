@@ -66,7 +66,8 @@ export const DraggableEvent = ({
   const width = _getWidth();
 
   /* Date & Time */
-  const adjustedY = y - component.CALCULATED_GRID_Y_OFFSET;
+  const adjustedX = x - component.CALCULATED_GRID_X_OFFSET - SIDEBAR_WIDTH;
+  const adjustedY = y - core.getYOffset();
   const minutes = core.getMinuteByMousePosition(adjustedY);
   const timePreview = component.startOfSelectedWeekDay
     .add(dayIndex, "day")

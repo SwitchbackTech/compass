@@ -78,8 +78,8 @@ export const DragLayer: FC<CustomDragLayerProps> = ({ weekViewProps }) => {
       itemType: monitor.getItemType(),
       initialOffset: monitor.getInitialSourceClientOffset(),
       isDragging: monitor.isDragging(),
-      currentOffset: monitor.getSourceClientOffset(),
-      // currentOffset: monitor.getClientOffset(),
+      // currentOffset: monitor.getSourceClientOffset(),
+      currentOffset: monitor.getClientOffset(),
     }));
 
   const tempEvt = {

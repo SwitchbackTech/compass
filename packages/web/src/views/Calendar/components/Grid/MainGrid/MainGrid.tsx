@@ -33,58 +33,23 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
 
   const convertSomedayEvent = (x: number, y: number) => {
     const date = dateByCoordinates(x, y);
+    console.log(date);
     // dispatch code (notion)
   };
 
-  // const height = core.getEventCellHeight();
-  const gridHeight = component.eventsGridRef.current?.clientHeight || 0;
-  const scrollTop = gridHeight / 11 || 0;
-
-  const _minByY = (y: number) => {
-    const minutesOnGrid = Math.round((y + scrollTop / gridHeight) * 60);
-
-    // uncoment once working to get rounding to work
-    // const minute = roundByNumber(
-    //   minutesOnGrid - GRID_TIME_STEP / 2,
-    //   GRID_TIME_STEP
-    // );
-
-    // return minute;
-    return minutesOnGrid;
-  };
-
   const dateByCoordinates = (x: number, y: number) => {
-    // const _dateByMousePosition = core.getDateByMousePosition(x, y);
-    // console.log(`
-    // START:
-    //     gridHeight ${gridHeight}
-    //     scrollTop: ${scrollTop}
-    //     ----
-    //     orig date: ${_dateByMousePosition}
-    //     `);
-
     const clickX = x - component.CALCULATED_GRID_X_OFFSET - SIDEBAR_WIDTH;
 
     const yOffset = core.getYOffset();
     const clickY = y - yOffset;
-    console.log(`
-    CLICKS:
-        ${x} -> ${clickX}
-        ${y} -> ${clickY}
-        `);
-    // minByY: ${_minByY(y)}
-    // minByAdjustedY: ${_minByY(clickY)}
 
     const dayIndex = core.getDayNumberByX(clickX);
     const minutes = core.getMinuteByMousePosition(clickY);
-    // console.log("minutes", minutes);
-    // console.log(component.startOfSelectedWeekDay.add(1, "day").add(minutes, "m"));
     const date = component.startOfSelectedWeekDay
       .add(dayIndex, "day")
       .add(minutes, "minutes")
       .format("YYYY-MM-DD HH:mm");
 
-    console.log(date);
     return date;
   };
 
@@ -95,7 +60,6 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
         canDrop: monitor.canDrop(),
         isOver: monitor.isOver(),
       }),
-      //   hover: () => console.log("hover grid"),
       drop: (item, monitor) => {
         const { x, y } = monitor.getClientOffset();
 
