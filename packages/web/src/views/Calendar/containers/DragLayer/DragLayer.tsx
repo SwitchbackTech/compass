@@ -1,41 +1,12 @@
-import React from "react";
-import type { CSSProperties, FC } from "react";
+import React, { FC } from "react";
 import type { XYCoord } from "react-dnd";
 import { useDragLayer } from "react-dnd";
 import { DragItem } from "@web/common/types/dnd.types";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
-import { ZIndex } from "@web/common/constants/web.constants";
-import { roundByNumber } from "@web/common/utils";
-import { SIDEBAR_WIDTH } from "@web/views/Calendar/calendar.constants";
 
 import { DraggableEvent } from "./DraggableEvent";
-import { GRID_TIME_STEP } from "../../calendar.constants"; //$$
-
-const layerStyles: CSSProperties = {
-  position: "fixed",
-  pointerEvents: "none",
-  zIndex: ZIndex.MAX,
-  left: 0,
-  top: 0,
-  width: "100%",
-  height: "100%",
-};
-
-const snapToGrid = (x: number, y: number): [number, number] => {
-  /* attempt at accurate version
-  const height = 60.8;
-  const minOnGrid = (y / height) * 60;
-  const min = roundByNumber(minOnGrid - GRID_TIME_STEP / 2, GRID_TIME_STEP);
-  const snappedY = min; */
-
-  /* good enough version */
-  const yInterval = 10; // good enough for now, but won't be perfect
-  const snappedY = Math.round(y / yInterval) * yInterval;
-  // const snappedX = x + SIDEBAR_WIDTH;
-  const snappedX = x;
-
-  return [snappedX, snappedY];
-};
+import { layerStyles } from "./styled";
+import { snapToGrid } from "./snap.grid";
 
 function getItemStyles(
   initialOffset: XYCoord | null,
@@ -49,15 +20,12 @@ function getItemStyles(
 
   let { x, y } = currentOffset;
 
-  //$$
-  const shouldSnapToGrid = true;
-  if (shouldSnapToGrid) {
-    x -= initialOffset.x;
-    y -= initialOffset.y;
-    [x, y] = snapToGrid(x, y);
-    x += initialOffset.x;
-    y += initialOffset.y;
-  }
+  // snap logic
+  x -= initialOffset.x;
+  y -= initialOffset.y;
+  [x, y] = snapToGrid(x, y);
+  x += initialOffset.x;
+  y += initialOffset.y;
 
   const transform = `translate(${x}px, ${y}px)`;
   return {
@@ -72,15 +40,15 @@ export interface CustomDragLayerProps {
 }
 
 export const DragLayer: FC<CustomDragLayerProps> = ({ weekViewProps }) => {
-  const { itemType, isDragging, item, currentOffset, initialOffset } =
-    useDragLayer((monitor) => ({
+  const { itemType, item, currentOffset, initialOffset } = useDragLayer(
+    (monitor) => ({
       item: monitor.getItem(),
       itemType: monitor.getItemType(),
       initialOffset: monitor.getInitialSourceClientOffset(),
       isDragging: monitor.isDragging(),
-      // currentOffset: monitor.getSourceClientOffset(),
       currentOffset: monitor.getClientOffset(),
-    }));
+    })
+  );
 
   const tempEvt = {
     title: "foo",

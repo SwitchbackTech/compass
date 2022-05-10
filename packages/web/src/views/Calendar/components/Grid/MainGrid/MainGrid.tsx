@@ -1,5 +1,4 @@
 import React, { FC } from "react";
-import { roundByNumber } from "@web/common/utils";
 import { useDrop } from "react-dnd";
 import mergeRefs from "react-merge-refs";
 import { DragItem } from "@web/common/types/dnd.types";
@@ -15,10 +14,7 @@ import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEven
 import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { TimesColumn } from "@web/views/Calendar/components/TimesColumn";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
-import {
-  GRID_TIME_STEP,
-  SIDEBAR_WIDTH,
-} from "@web/views/Calendar/calendar.constants";
+import { SIDEBAR_WIDTH } from "@web/views/Calendar/calendar.constants";
 
 import { GridRows } from "../GridRows";
 import { StyledMainGrid, StyledPrevDaysOverflow } from "./styled";
@@ -29,7 +25,6 @@ interface Props {
 
 export const MainGrid: FC<Props> = ({ weekViewProps }) => {
   const { component, core, eventHandlers } = weekViewProps;
-  console.log(`${component.CALCULATED_GRID_Y_OFFSET} [Main]`);
 
   const convertSomedayEvent = (x: number, y: number) => {
     const date = dateByCoordinates(x, y);
@@ -53,13 +48,9 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
     return date;
   };
 
-  const [{ canDrop, isOver }, drop] = useDrop(
+  const [, drop] = useDrop(
     () => ({
       accept: DragItem.EVENT_SOMEDAY,
-      collect: (monitor) => ({
-        canDrop: monitor.canDrop(),
-        isOver: monitor.isOver(),
-      }),
       drop: (item, monitor) => {
         const { x, y } = monitor.getClientOffset();
 

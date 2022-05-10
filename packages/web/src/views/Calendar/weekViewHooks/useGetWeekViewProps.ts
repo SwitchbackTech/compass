@@ -134,7 +134,7 @@ export const useGetWeekViewProps = () => {
   /*************
    * Getters
    *************/
-  const getAllDayEventCellHeight = () => getEventCellHeight() / 2.62; // got by experimenting by what looks right
+  const getAllDayEventCellHeight = () => getEventGridHeight() / 2.62; // got by experimenting by what looks right
 
   const getPastOverflowWidth = () => {
     if (today.week() > week) {
@@ -221,7 +221,7 @@ export const useGetWeekViewProps = () => {
     return +dayNumber;
   };
 
-  const getEventCellHeight = () =>
+  const getEventGridHeight = () =>
     (eventsGridRef.current?.clientHeight || 0) / 11;
 
   const getFlexBasisWrapper = (day: Dayjs) => {
@@ -229,7 +229,7 @@ export const useGetWeekViewProps = () => {
   };
 
   const getMinuteByMousePosition = (y: number) => {
-    const height = getEventCellHeight();
+    const height = getEventGridHeight();
     const minutesOnGrid = Math.round(
       ((y + (eventsGridRef.current?.scrollTop || 0)) / height) * 60
     );
@@ -245,7 +245,7 @@ export const useGetWeekViewProps = () => {
 
   const getYByDate = (date: string) => {
     const day = dayjs(date);
-    const eventCellHeight = getEventCellHeight();
+    const eventCellHeight = getEventGridHeight();
     const startTime = times.indexOf(day.format(HOURS_AM_FORMAT)) / 4;
 
     return eventCellHeight * startTime;
@@ -328,9 +328,6 @@ export const useGetWeekViewProps = () => {
       return;
     }
 
-    // const minute = getMinuteByMousePosition(e.clientY); //$$
-    // console.log(`${minute} (${e.clientX}, ${e.clientY})`); //$$
-    console.log(`GRID:\n\t${e.clientX}, ${e.clientY}`);
     const startDate = getDateByMousePosition(e.clientX, e.clientY);
     const endDate = dayjs(startDate)
       .add(EVENT_DEFAULT_MIN, "minute")
@@ -582,7 +579,7 @@ export const useGetWeekViewProps = () => {
       getDateByMousePosition,
       getDayNumberByX,
       getColumnWidths,
-      getEventCellHeight,
+      getEventCellHeight: getEventGridHeight,
       getFlexBasisWrapper,
       getMinuteByMousePosition,
       getPastOverflowWidth,

@@ -1,6 +1,18 @@
 import styled from "styled-components";
+import type { CSSProperties } from "react";
 import { Priority } from "@core/core.constants";
 import { hoverColorsByPriority } from "@web/common/utils/colors";
+import { ZIndex } from "@web/common/constants/web.constants";
+
+export const layerStyles: CSSProperties = {
+  position: "fixed",
+  pointerEvents: "none",
+  zIndex: ZIndex.MAX,
+  left: 0,
+  top: 0,
+  width: "100%",
+  height: "100%",
+};
 
 interface StyledEventProps {
   backgroundColor?: string;

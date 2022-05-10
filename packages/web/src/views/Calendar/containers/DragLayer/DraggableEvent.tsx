@@ -10,6 +10,7 @@ import {
   SIDEBAR_WIDTH,
   X_PLUS_SIDEBAR_OFFSET,
 } from "@web/views/Calendar/calendar.constants";
+import { DAY_HOUR_MIN_M } from "@web/common/constants/dates";
 
 import { StyledDraggableEvent } from "./styled";
 
@@ -19,7 +20,6 @@ export interface Props {
   weekViewProps: WeekViewProps;
 }
 
-// $$ memoize like DragPreview
 export const DraggableEvent = ({
   coordinates,
   event,
@@ -66,13 +66,12 @@ export const DraggableEvent = ({
   const width = _getWidth();
 
   /* Date & Time */
-  const adjustedX = x - component.CALCULATED_GRID_X_OFFSET - SIDEBAR_WIDTH;
   const adjustedY = y - core.getYOffset();
   const minutes = core.getMinuteByMousePosition(adjustedY);
   const timePreview = component.startOfSelectedWeekDay
     .add(dayIndex, "day")
     .add(minutes, "minutes")
-    .format("ddd h:mm"); //$$ move to constant with example
+    .format(DAY_HOUR_MIN_M);
 
   return (
     <StyledDraggableEvent
