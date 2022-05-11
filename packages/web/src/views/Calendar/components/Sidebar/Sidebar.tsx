@@ -16,7 +16,6 @@ import { Divider } from "@web/components/Divider";
 import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
 import { SidebarFutureEventsContainer } from "@web/views/Calendar/containers/SidebarFutureEventsContainer";
 import { SidebarCurrentMonthEventsContainer } from "@web/views/Calendar/containers/SidebarCurrentMonthEventsContainer";
-import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 
 import {
   Styled,
@@ -50,12 +49,12 @@ const priorityNameByKey = {
 };
 
 interface Props {
-  weekViewProps: WeekViewProps;
+  setWeek: () => void;
 }
 
-export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
-  props
-) => {
+export const Sidebar: React.FC<
+  Props & React.HTMLAttributes<HTMLDivElement>
+> = ({ setWeek }) => {
   const [isToggled, setIsToggled] = useState(true);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>({
@@ -142,7 +141,6 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
 
   return (
     <Styled
-      {...props}
       isToggled={isToggled}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
@@ -242,7 +240,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           isToggled={isCalendarsToggled}
           monthsShown={monthsShown}
           setIsToggled={setIsCalendarsToggled}
-          setWeek={props.weekViewProps.eventHandlers.setWeek}
+          setWeek={setWeek}
         />
       </StyledBottomSection>
     </Styled>
