@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FC, memo } from "react";
 import type { XYCoord } from "react-dnd";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
@@ -20,11 +20,11 @@ export interface Props {
   weekViewProps: WeekViewProps;
 }
 
-export const DraggableEvent = ({
+export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
   coordinates,
   event,
   weekViewProps,
-}: Props) => {
+}) {
   const { component, core } = weekViewProps;
   const { x, y } = coordinates;
 
@@ -96,4 +96,4 @@ export const DraggableEvent = ({
       )}
     </StyledDraggableEvent>
   );
-};
+});
