@@ -1,7 +1,7 @@
 import React, { FC } from "react";
 import type { XYCoord } from "react-dnd";
 import { useDragLayer } from "react-dnd";
-import { DragItem } from "@web/common/types/dnd.types";
+import { DragItem, DropResult } from "@web/common/types/dnd.types";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 
 import { DraggableEvent } from "./DraggableEvent";
@@ -42,7 +42,7 @@ export interface CustomDragLayerProps {
 export const DragLayer: FC<CustomDragLayerProps> = ({ weekViewProps }) => {
   const { itemType, item, currentOffset, initialOffset } = useDragLayer(
     (monitor) => ({
-      item: monitor.getItem(),
+      item: monitor.getItem<DropResult>(),
       itemType: monitor.getItemType(),
       initialOffset: monitor.getInitialSourceClientOffset(),
       isDragging: monitor.isDragging(),
@@ -50,18 +50,13 @@ export const DragLayer: FC<CustomDragLayerProps> = ({ weekViewProps }) => {
     })
   );
 
-  const tempEvt = {
-    title: "foo",
-    priority: "self",
-  };
-
   function renderItem() {
     switch (itemType) {
       case DragItem.EVENT_SOMEDAY:
         return (
           <DraggableEvent
             coordinates={currentOffset}
-            event={tempEvt}
+            event={item}
             weekViewProps={weekViewProps}
           />
         );

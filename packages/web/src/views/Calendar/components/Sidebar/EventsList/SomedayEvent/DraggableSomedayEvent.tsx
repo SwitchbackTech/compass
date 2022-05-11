@@ -7,6 +7,7 @@ import { DragItem, DropResult } from "@web/common/types/dnd.types";
 
 import { SomedayEvent } from "./SomedayEvent";
 
+// $$ remove if unneeded
 function getStyles(
   left: number,
   top: number,
@@ -39,11 +40,12 @@ export const DraggableSomedayEvent: FC<DraggableBoxProps> = memo(
     const [{ isDragging }, drag, preview] = useDrag(
       () => ({
         type: DragItem.EVENT_SOMEDAY,
-        item: { _id: event._id },
+        // only use props needed for drag & drop
+        item: { _id: event._id, title: event.title, priority: event.priority },
         end: (item, monitor) => {
           const dropResult = monitor.getDropResult<DropResult>();
           if (item && dropResult) {
-            // console.log(`you dropped ${item._id}`);
+            console.log("you dropped:", item);
           }
         },
         collect: (monitor) => ({

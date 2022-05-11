@@ -6,4 +6,5 @@ export enum DragItem {
 
 export interface DropResult {
   _id: string;
+  title: string;
 }

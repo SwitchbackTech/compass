@@ -114,10 +114,6 @@ export const useGetWeekViewProps = () => {
   }, [allDayEventsGridRef.current?.clientHeight, rowsCount]);
 
   useEffect(() => {
-    console.log(
-      "setting x to ",
-      X_OFFSET + (calendarRef.current?.offsetLeft || 0)
-    );
     setGridXOffset(X_OFFSET + (calendarRef.current?.offsetLeft || 0));
   }, [calendarRef.current?.offsetLeft]);
 

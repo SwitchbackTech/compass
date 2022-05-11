@@ -1,7 +1,8 @@
 import React, { FC } from "react";
+import { useDispatch } from "react-redux";
 import { useDrop } from "react-dnd";
 import mergeRefs from "react-merge-refs";
-import { DragItem } from "@web/common/types/dnd.types";
+import { DragItem, DropResult } from "@web/common/types/dnd.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import {
   StyledEvents,
@@ -15,6 +16,8 @@ import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { TimesColumn } from "@web/views/Calendar/components/TimesColumn";
 import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
 import { SIDEBAR_WIDTH } from "@web/views/Calendar/calendar.constants";
+import { getFutureEventsSlice } from "@web/ducks/events/slice";
+import { Schema_Event } from "@core/types/event.types";
 
 import { GridRows } from "../GridRows";
 import { StyledMainGrid, StyledPrevDaysOverflow } from "./styled";
@@ -25,11 +28,27 @@ interface Props {
 
 export const MainGrid: FC<Props> = ({ weekViewProps }) => {
   const { component, core, eventHandlers } = weekViewProps;
+  const dispatch = useDispatch();
 
-  const convertSomedayEvent = (x: number, y: number) => {
-    const date = dateByCoordinates(x, y);
-    console.log(date);
-    // dispatch code (notion)
+  const convertSomedayEvent = (_id: string, x: number, y: number) => {
+    const start = dateByCoordinates(x, y);
+    const end = start.add(1, "hour");
+
+    const updatedFields: Schema_Event = {
+      isAllDay: false,
+      isSomeday: false,
+      isTimesShown: true,
+      startDate: start.format(),
+      endDate: end.format(),
+    };
+
+    console.log(updatedFields);
+    dispatch(
+      getFutureEventsSlice.actions.convert({
+        _id,
+        updatedFields,
+      })
+    );
   };
 
   const dateByCoordinates = (x: number, y: number) => {
@@ -42,8 +61,7 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
     const minutes = core.getMinuteByMousePosition(clickY);
     const date = component.startOfSelectedWeekDay
       .add(dayIndex, "day")
-      .add(minutes, "minutes")
-      .format("YYYY-MM-DD HH:mm");
+      .add(minutes, "minutes");
 
     return date;
   };
@@ -51,10 +69,10 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
   const [, drop] = useDrop(
     () => ({
       accept: DragItem.EVENT_SOMEDAY,
-      drop: (item, monitor) => {
+      drop: (item: DropResult, monitor) => {
         const { x, y } = monitor.getClientOffset();
 
-        convertSomedayEvent(x, y);
+        convertSomedayEvent(item._id, x, y);
       },
     }),
     []
