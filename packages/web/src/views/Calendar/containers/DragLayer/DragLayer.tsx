@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, memo } from "react";
 import type { XYCoord } from "react-dnd";
 import { useDragLayer } from "react-dnd";
 import { DragItem, DropResult } from "@web/common/types/dnd.types";
@@ -34,12 +34,12 @@ function getItemStyles(
   };
 }
 
-export interface CustomDragLayerProps {
+export interface Props {
   snapToGrid?: boolean;
   weekViewProps: WeekViewProps;
 }
 
-export const DragLayer: FC<CustomDragLayerProps> = ({ weekViewProps }) => {
+export const DragLayer: FC<Props> = memo(function DragLayer({ weekViewProps }) {
   const { itemType, item, currentOffset, initialOffset } = useDragLayer(
     (monitor) => ({
       item: monitor.getItem<DropResult>(),
@@ -72,4 +72,4 @@ export const DragLayer: FC<CustomDragLayerProps> = ({ weekViewProps }) => {
       </div>
     </div>
   );
-};
+});
