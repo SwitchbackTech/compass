@@ -4,7 +4,6 @@ import dayjs from "dayjs";
 import { Priorities, Priority } from "@core/core.constants";
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
-import { StrawberryMenuIcon } from "@web/assets/svg";
 import {
   AlignItems,
   FlexDirections,
@@ -15,6 +14,7 @@ import { colorNameByPriority } from "@web/common/styles/colors";
 import { Divider } from "@web/components/Divider";
 import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
 import { SomedayEventsFutureContainer } from "@web/views/Calendar/containers/SomedayContainer/SomedayCategories";
+import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 
 import {
   Styled,
@@ -30,7 +30,6 @@ import {
   StyledSidebarOverflow,
   StyledFutureEventsToggleableSection,
 } from "./styled";
-// import { SomedaySection } from "./SomedaySection";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 
 const DATEPICKER_HEIGHT = 346;
@@ -48,12 +47,12 @@ const priorityNameByKey = {
 };
 
 interface Props {
-  setWeek: () => void;
+  weekViewProps: WeekViewProps;
 }
 
-export const Sidebar: React.FC<
-  Props & React.HTMLAttributes<HTMLDivElement>
-> = ({ setWeek }) => {
+export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
+  props
+) => {
   const [isToggled, setIsToggled] = useState(true);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>({
@@ -140,6 +139,7 @@ export const Sidebar: React.FC<
 
   return (
     <Styled
+      {...props}
       isToggled={isToggled}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
@@ -161,6 +161,7 @@ export const Sidebar: React.FC<
           <Text size={30} colorName={ColorNames.WHITE_1}>
             Someday
           </Text>
+
           {/* 
           <Popover
             isOpen={isFilterPopoverOpen}
@@ -239,7 +240,7 @@ export const Sidebar: React.FC<
           isToggled={isCalendarsToggled}
           monthsShown={monthsShown}
           setIsToggled={setIsCalendarsToggled}
-          setWeek={setWeek}
+          setWeek={props.weekViewProps.eventHandlers.setWeek}
         />
       </StyledBottomSection>
     </Styled>
