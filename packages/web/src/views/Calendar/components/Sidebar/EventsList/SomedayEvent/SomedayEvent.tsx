@@ -48,15 +48,13 @@ export const SomedayEvent = ({ event: _event, isDragging }: Props) => {
   return (
     <>
       <div ref={setPopperRef}>
-        <div>
-          <StyledEventOrPlaceholder
-            isDragging={isDragging}
-            onClick={() => setIsEventFormOpen(true)}
-            priority={event.priority}
-          >
-            {event.title}
-          </StyledEventOrPlaceholder>
-        </div>
+        <StyledEventOrPlaceholder
+          isDragging={isDragging}
+          onClick={() => setIsEventFormOpen(true)}
+          priority={event.priority}
+        >
+          {event.title}
+        </StyledEventOrPlaceholder>
       </div>
       <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
         {isEventFormOpen && (
