@@ -166,8 +166,6 @@ export const useGetWeekViewProps = () => {
 
   // $$ merge with above
   const getDateByXY = (x: number, y: number) => {
-    // assumes sidebar is open
-    // $$ subtract SIDEBARWIDTH from MainGrid call
     const clickX = x - CALCULATED_GRID_X_OFFSET;
 
     const yOffset = getYOffset();
@@ -420,8 +418,6 @@ export const useGetWeekViewProps = () => {
         endDate,
         startDate,
         priority: actualEditingEvent?.priority,
-        // $$ confirm not setting fallback is OK
-        // priority: actualEditingEvent?.priority || Priorities.WORK,
         [dateField]: date,
       };
     });
