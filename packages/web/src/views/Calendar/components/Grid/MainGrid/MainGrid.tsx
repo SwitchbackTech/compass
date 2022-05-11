@@ -30,7 +30,7 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
   const { component, core, eventHandlers } = weekViewProps;
   const dispatch = useDispatch();
 
-  const convertSomedayEvent = (_id: string, x: number, y: number) => {
+  const convertSomedayToTimed = (_id: string, x: number, y: number) => {
     const adjustedX = x - SIDEBAR_WIDTH; // deduct sidebar because it had to be open if event was dropped
     const start = core.getDateByXY(adjustedX, y);
     const end = start.add(1, "hour");
@@ -57,7 +57,7 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
       drop: (item: DropResult, monitor) => {
         const { x, y } = monitor.getClientOffset();
 
-        convertSomedayEvent(item._id, x, y);
+        convertSomedayToTimed(item._id, x, y);
       },
     }),
     []
