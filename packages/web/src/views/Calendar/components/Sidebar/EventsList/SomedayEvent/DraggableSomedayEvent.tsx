@@ -19,12 +19,7 @@ export const DraggableSomedayEvent: FC<Props> = memo(
         type: DragItem.EVENT_SOMEDAY,
         // only include props needed for drag & drop
         item: { _id: event._id, title: event.title, priority: event.priority },
-        // end: (item, monitor) => { //$$ remove if not needed
-        //   const dropResult = monitor.getDropResult<DropResult>();
-        //   if (item && dropResult) {
-        //     console.log("you dropped:", item);
-        //   }
-        // },
+
         collect: (monitor) => ({
           isDragging: monitor.isDragging(),
         }),

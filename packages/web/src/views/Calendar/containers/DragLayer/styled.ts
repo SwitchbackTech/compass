@@ -61,14 +61,14 @@ export const StyledDraggableEvent = styled.div.attrs<StyledEventProps>(
     };
   }
 )<StyledEventProps>`
-  border-radius: 3px;
-  position: absolute;
-  width: ${(props) => props.width}px;
-  height: ${({ height }) => height}px;
   background-color: ${(props) => props.backgroundColor};
-  user-select: none;
-  transition: background-color 0.2s, box-shadow 0.2s;
+  border-radius: 3px;
   box-shadow: 0 0 0 0 transparent;
+  height: ${({ height }) => height}px;
+  position: absolute;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  user-select: none;
+  width: ${(props) => props.width}px;
 
   &:hover,
   &.active {
