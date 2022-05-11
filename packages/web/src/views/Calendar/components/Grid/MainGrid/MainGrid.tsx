@@ -31,7 +31,8 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
   const dispatch = useDispatch();
 
   const convertSomedayEvent = (_id: string, x: number, y: number) => {
-    const start = dateByCoordinates(x, y);
+    const adjustedX = x - SIDEBAR_WIDTH; // deduct sidebar because it had to be open if event was dropped
+    const start = core.getDateByXY(adjustedX, y);
     const end = start.add(1, "hour");
 
     const updatedFields: Schema_Event = {
@@ -42,28 +43,12 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
       endDate: end.format(),
     };
 
-    console.log(updatedFields);
     dispatch(
       getFutureEventsSlice.actions.convert({
         _id,
         updatedFields,
       })
     );
-  };
-
-  const dateByCoordinates = (x: number, y: number) => {
-    const clickX = x - component.CALCULATED_GRID_X_OFFSET - SIDEBAR_WIDTH;
-
-    const yOffset = core.getYOffset();
-    const clickY = y - yOffset;
-
-    const dayIndex = core.getDayNumberByX(clickX);
-    const minutes = core.getMinuteByMousePosition(clickY);
-    const date = component.startOfSelectedWeekDay
-      .add(dayIndex, "day")
-      .add(minutes, "minutes");
-
-    return date;
   };
 
   const [, drop] = useDrop(

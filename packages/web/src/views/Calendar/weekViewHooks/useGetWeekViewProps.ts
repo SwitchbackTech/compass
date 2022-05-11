@@ -132,38 +132,20 @@ export const useGetWeekViewProps = () => {
    *************/
   const getAllDayEventCellHeight = () => getEventGridHeight() / 2.62; // got by experimenting by what looks right
 
-  const getPastOverflowWidth = () => {
-    if (today.week() > week) {
-      // viewing past week
-      return 100;
-    }
-
-    if (today.week() < week) {
-      // future week, no overflow
-      return 0;
-    }
-
-    if (yesterdayDayNumber === 6) {
-      /* 
-       then its the last day of the week (Sat)
-       using the same logic as the other days
-       would normally be fine, but the scrollbar width 
-       would throw things off. 
-       this works around that by just relying on todays width.
-
-       PS not sure why you need to round up
-      */
-      const todayBasis = getFlexBasisWrapper(today);
-      return Math.ceil(100 - todayBasis);
-    }
-
-    // Sun - Fri
-    const yesterday = today.add(-1, "day");
-    const yesterdayBasis = getFlexBasisWrapper(yesterday);
-    const width = yesterdayBasis * yesterdayDayNumber;
-    return width;
+  const getColumnWidths = () => {
+    const widths = Array.from(weekDaysRef.current?.children || []).map(
+      (e) => e.clientWidth
+    );
+    return widths;
   };
 
+  /*
+  replace logic -- use same as getDateByXy
+  then just return in format
+  then confirm it all works
+  then rename to `getDateStrByXY` with default format
+  of the one currently used
+  */
   const getDateByMousePosition = (x: number, y: number) => {
     // $$ use helper method in this file
     const clickX = x - CALCULATED_GRID_X_OFFSET;
@@ -171,18 +153,6 @@ export const useGetWeekViewProps = () => {
 
     const dayNumber = getDayNumberByX(clickX);
     const minute = getMinuteByMousePosition(clickY);
-
-    // $$ delete once Someday List working fine
-    // const eventCellHeight = getEventCellHeight();
-    // const minutesOnGrid = Math.round(
-    //   ((clickY + (eventsGridRef.current?.scrollTop || 0)) / eventCellHeight) *
-    //     60
-    // );
-
-    // const minute = roundByNumber(
-    //   minutesOnGrid - GRID_TIME_STEP / 2,
-    //   GRID_TIME_STEP
-    // );
 
     const date = startOfSelectedWeekDay
       .add(dayNumber, "day")
@@ -194,11 +164,22 @@ export const useGetWeekViewProps = () => {
     return date.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
   };
 
-  const getColumnWidths = () => {
-    const widths = Array.from(weekDaysRef.current?.children || []).map(
-      (e) => e.clientWidth
-    );
-    return widths;
+  // $$ merge with above
+  const getDateByXY = (x: number, y: number) => {
+    // assumes sidebar is open
+    // $$ subtract SIDEBARWIDTH from MainGrid call
+    const clickX = x - CALCULATED_GRID_X_OFFSET;
+
+    const yOffset = getYOffset();
+    const clickY = y - yOffset;
+
+    const dayIndex = getDayNumberByX(clickX);
+    const minutes = getMinuteByMousePosition(clickY);
+    const date = startOfSelectedWeekDay
+      .add(dayIndex, "day")
+      .add(minutes, "minutes");
+
+    return date;
   };
 
   const getDayNumberByX = (x: number) => {
@@ -237,6 +218,38 @@ export const useGetWeekViewProps = () => {
     );
 
     return minute;
+  };
+
+  const getPastOverflowWidth = () => {
+    if (today.week() > week) {
+      // viewing past week
+      return 100;
+    }
+
+    if (today.week() < week) {
+      // future week, no overflow
+      return 0;
+    }
+
+    if (yesterdayDayNumber === 6) {
+      /* 
+       then its the last day of the week (Sat)
+       using the same logic as the other days
+       would normally be fine, but the scrollbar width 
+       would throw things off. 
+       this works around that by just relying on todays width.
+
+       PS not sure why you need to round up
+      */
+      const todayBasis = getFlexBasisWrapper(today);
+      return Math.ceil(100 - todayBasis);
+    }
+
+    // Sun - Fri
+    const yesterday = today.add(-1, "day");
+    const yesterdayBasis = getFlexBasisWrapper(yesterday);
+    const width = yesterdayBasis * yesterdayDayNumber;
+    return width;
   };
 
   const getYByDate = (date: string) => {
@@ -573,6 +586,7 @@ export const useGetWeekViewProps = () => {
     core: {
       getAllDayEventCellHeight,
       getDateByMousePosition,
+      getDateByXY,
       getDayNumberByX,
       getColumnWidths,
       getEventCellHeight: getEventGridHeight,
