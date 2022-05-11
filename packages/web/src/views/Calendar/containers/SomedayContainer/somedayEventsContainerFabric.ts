@@ -13,7 +13,7 @@ import {
 } from "@web/ducks/events/types";
 import { SomedayEventsList } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEventsList";
 
-export const sidebarEventsContainerFabric = (
+export const somedayEventsContainerFabric = (
   sectionType: SectionType_Sidebar
 ) => {
   const getEvents = (

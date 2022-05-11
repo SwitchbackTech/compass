@@ -14,8 +14,7 @@ import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Divider } from "@web/components/Divider";
 import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
-import { SidebarFutureEventsContainer } from "@web/views/Calendar/containers/SidebarFutureEventsContainer";
-import { SidebarCurrentMonthEventsContainer } from "@web/views/Calendar/containers/SidebarCurrentMonthEventsContainer";
+import { SomedayEventsFutureContainer } from "@web/views/Calendar/containers/SomedayContainer/SomedayCategories";
 
 import {
   Styled,
@@ -219,7 +218,7 @@ export const Sidebar: React.FC<
               (key) => priorityFilter[key as Priorities]
             ) as Priorities[]
           }
-          EventsListContainer={SidebarFutureEventsContainer}
+          EventsListContainer={SomedayEventsFutureContainer}
           sectionType="future"
         />
       </StyledTopSectionFlex>
