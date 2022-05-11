@@ -36,4 +36,15 @@ export const StyledEventOrPlaceholder = styled.div<Props>`
         colorNameByPriority[priority] as unknown as InvertedColorNames
       )};
   }
+
+  & span {
+    &:first-child {
+      display: -webkit-box;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-all;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
+    }
+  }
 `;

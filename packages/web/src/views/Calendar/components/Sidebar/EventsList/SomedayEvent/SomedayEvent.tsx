@@ -1,11 +1,12 @@
 import React, { useRef, useState } from "react";
 import { usePopper } from "react-popper";
 import { useDispatch } from "react-redux";
+import { Schema_Event } from "@core/types/event.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
+import { Text } from "@web/components/Text";
 import { editEventSlice } from "@web/ducks/events/slice";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
-import { Schema_Event } from "@core/types/event.types";
 
 import { StyledEventOrPlaceholder } from "./styled";
 
@@ -53,7 +54,7 @@ export const SomedayEvent = ({ event: _event, isDragging }: Props) => {
           onClick={() => setIsEventFormOpen(true)}
           priority={event.priority}
         >
-          {event.title}
+          <Text size={14}>{event.title}</Text>
         </StyledEventOrPlaceholder>
       </div>
       <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>

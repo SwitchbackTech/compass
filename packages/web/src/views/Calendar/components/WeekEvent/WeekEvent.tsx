@@ -118,7 +118,7 @@ const WeekEventComponent = (
         flexWrap={FlexWrap.WRAP}
         title={event.title}
       >
-        <Text size={12} role="textbox">
+        <Text size={13} role="textbox">
           {event.title}
           <SpaceCharacter />
         </Text>
