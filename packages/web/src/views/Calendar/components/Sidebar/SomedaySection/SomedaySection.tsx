@@ -42,7 +42,6 @@ export interface Props {
   priorities: Priorities[];
   isToggled?: boolean;
   onToggle?: () => void;
-  // startDate?: string;
   flex?: number;
 }
 
@@ -53,7 +52,6 @@ export const SomedaySection: React.FC<Props> = ({
   priorities,
   isToggled: isParentToggled,
   onToggle: onParentToggle,
-  // startDate,
   flex,
   ...props
 }) => {

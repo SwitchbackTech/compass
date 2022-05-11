@@ -4,7 +4,10 @@ import { getColor } from "@web/common/utils/colors";
 import { ColorNames } from "@web/common/types/styles";
 import { CheckBox } from "@web/components/CheckBox";
 import { Flex } from "@web/components/Flex";
-import { SIDEBAR_WIDTH } from "@web/views/Calendar/calendar.constants";
+import {
+  SIDEBAR_COLLAPSED_WIDTH,
+  SIDEBAR_WIDTH,
+} from "@web/views/Calendar/calendar.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 
 import { SomedaySection } from "./SomedaySection";
@@ -15,7 +18,8 @@ export interface Props {
 
 export const Styled = styled.div<Props>`
   height: 100%;
-  width: ${({ isToggled }) => (isToggled ? SIDEBAR_WIDTH : 65)}px;
+  width: ${({ isToggled }) =>
+    isToggled ? SIDEBAR_WIDTH : SIDEBAR_COLLAPSED_WIDTH}px;
   background: ${getColor(ColorNames.DARK_3)};
   overflow: hidden;
   transition: 0.4s;
@@ -32,13 +36,13 @@ export const StyledSidebarOverflow = styled.div<Props>`
   z-index: ${ZIndex.LAYER_1};
 `;
 
-// TODO make this dynamic so you don't have to duplicate styles
+// $$ make this into variable or dynamic so you don't have to duplicate styles
 const StyledOpenIcon = styled(SidebarOpenIcon)`
   cursor: pointer;
   color: #7a858d;
   position: absolute;
-  right: 20px;
-  top: 28px;
+  right: 13px;
+  top: 64px;
   z-index: ${ZIndex.LAYER_1};
 
   &:hover {
@@ -51,7 +55,7 @@ const StyledCollapseIcon = styled(SidebarCollapseIcon)`
   color: #7a858d;
   position: absolute;
   right: 20px;
-  top: 28px;
+  top: 64px;
   z-index: ${ZIndex.LAYER_1};
 
   &:hover {
@@ -72,7 +76,7 @@ export interface SectionProps {
 }
 
 export const StyledTopSectionFlex = styled(Flex)<SectionProps>`
-  padding: 16px 22px 0 14px;
+  padding: 54px 38px 0 14px;
   height: ${({ height }) => height};
   overflow: hidden;
 `;
@@ -84,6 +88,7 @@ export const StyledFiltersPopoverContent = styled.div`
 `;
 
 export const StyledHeaderFlex = styled(Flex)`
+  padding-left: 17px;
   width: calc(100% - 45px);
 `;
 

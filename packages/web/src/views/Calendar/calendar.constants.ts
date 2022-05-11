@@ -3,6 +3,7 @@ export const CALENDAR_X_PADDING = 25;
 export const CALENDAR_GRID_MARGIN_LEFT = 50;
 export const CALENDAR_HEADER_HEIGHT = 68;
 export const SIDEBAR_WIDTH = 350;
+export const SIDEBAR_COLLAPSED_WIDTH = 44;
 
 /* Miscellaneous */
 export const EVENT_DEFAULT_MIN = 30;
