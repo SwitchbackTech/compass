@@ -9,8 +9,8 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 const customRender = (
   ui: JSX.Element,
   {
-    preloadedState,
-    store = configureStore({ reducer: reducers, preloadedState }),
+    state,
+    store = configureStore({ reducer: reducers, preloadedState: state }),
     ...renderOptions
   } = {}
 ) => {

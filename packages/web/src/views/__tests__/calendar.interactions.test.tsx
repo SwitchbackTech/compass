@@ -121,7 +121,7 @@ describe("Calendar Interactions", () => {
           be able to click the event that's on the 'top' layer
       */
       const user = userEvent.setup();
-      render(<CalendarView />, { preloadedState: febToMarState });
+      render(<CalendarView />, { state: febToMarState });
 
       // just testing a handful of events to minimize slowness
       const titles = [
@@ -156,7 +156,7 @@ describe("Calendar Interactions", () => {
 
     it("closes when clicking page heading", async () => {
       const user = userEvent.setup();
-      render(<CalendarView />, { preloadedState: febToMarState });
+      render(<CalendarView />, { state: febToMarState });
 
       await user.click(screen.getByRole("button", { name: "Mar 1" }));
       await user.click(screen.getByRole("heading", { level: 1 }));
@@ -168,7 +168,7 @@ describe("Calendar Interactions", () => {
 
     it("deletes event after clicking trash icon", async () => {
       const user = userEvent.setup();
-      render(<CalendarView />, { preloadedState: febToMarState });
+      render(<CalendarView />, { state: febToMarState });
 
       await user.click(screen.getByTitle("Climb")); // open event
       await user.click(
@@ -187,7 +187,7 @@ describe("Calendar Interactions", () => {
     describe("DatePicker", () => {
       it("closes when clicking outside of form, while keeping form open", async () => {
         const user = userEvent.setup();
-        render(<CalendarView />, { preloadedState: febToMarState });
+        render(<CalendarView />, { state: febToMarState });
 
         const eventWithTimesBtn = screen.getByRole("button", {
           // accept any times because times will be different if
@@ -222,7 +222,7 @@ describe("Calendar Interactions", () => {
     it("adds 1-day event somewhere on DOM", async () => {
       const user = userEvent.setup();
       const { container } = render(<CalendarView />, {
-        preloadedState: febToMarState,
+        state: febToMarState,
       });
 
       await user.click(container.querySelector("#allDayGrid"));
@@ -240,7 +240,7 @@ describe("Calendar Interactions", () => {
   describe("Regular Events", () => {
     it("toggles times when clicking them", async () => {
       const user = userEvent.setup();
-      render(<CalendarView />, { preloadedState: febToMarState });
+      render(<CalendarView />, { state: febToMarState });
 
       const eventWithTimesBtn = screen.getByRole("button", {
         name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,
