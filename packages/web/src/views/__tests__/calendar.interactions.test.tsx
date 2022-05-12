@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { setupServer } from "msw/node";
 import { CalendarView } from "@web/views/Calendar";
 import { CompassRoot } from "@web/routers/index";
-import { render } from "@web/common/__mocks__/oldmock.render";
+import { render } from "@web/common/__mocks__/simple.mock.render";
 import { febToMarState } from "@web/common/__mocks__/state/state.0227To0305";
 import {
   mockLocalStorage,

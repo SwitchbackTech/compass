@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import { screen, waitFor } from "@testing-library/react";
-import { render } from "@web/common/__mocks__/oldmock.render";
+import { render } from "@web/common/__mocks__/simple.mock.render";
 import { CalendarView } from "@web/views/Calendar";
 import {
   mockLocalStorage,

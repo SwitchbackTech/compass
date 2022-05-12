@@ -16,13 +16,17 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 // ) {
 
 // const store = configureStore({ reducer: reducers, preloadedState });
+interface Props {
+  children: React.ReactNode;
+  preloadedState: PreloadedState;
+}
 
-const AllTheProviders: FC = ({ children }) => {
+const AllTheProviders: FC<Props> = ({ children }) => {
   // const container = document.getElementById("root");
   // const root = createRoot(container);
   //   const preloadedState: PreloadedState = {};
   //   const store = configureStore({ reducer: reducers, preloadedState });
-  const store = configureStore({ reducer: reducers });
+  const store = configureStore({ reducer: reducers, preloadedState });
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -33,11 +37,9 @@ const AllTheProviders: FC = ({ children }) => {
 
 const customRender = (
   ui: ReactElement,
+  preloadedState,
   options?: Omit<RenderOptions, "wrapper">
-) => render(ui, { wrapper: AllTheProviders, ...options });
-//   return rtlRender(ui, { wrapper: Wrapper, ...renderOptions });
-//   return rtlRoot.render(ui, { wrapper: Providers, ...renderOptions });
-// }
+) => render(ui, { wrapper: AllTheProviders, preloadedState, ...options });
 
 // re-export everything
 export * from "@testing-library/react";

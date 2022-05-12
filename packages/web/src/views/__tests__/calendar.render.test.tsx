@@ -2,7 +2,7 @@ import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import { CalendarView } from "@web/views/Calendar";
-import { render } from "@web/common/__mocks__/mock.render";
+import { render } from "@web/common/__mocks__/simple.mock.render";
 import {
   mockLocalStorage,
   clearLocalStorageMock,
@@ -16,34 +16,22 @@ beforeAll(() => {
 });
 
 describe("Routing", () => {
-  beforeEach(() => mockLocalStorage());
-  afterEach(() => clearLocalStorageMock());
-
   it("goes to login page when local storage token missing", () => {
+    mockLocalStorage();
     render(CompassRoot);
     expect(
       screen.getByRole("button", { name: /sign in/i })
     ).toBeInTheDocument();
-  });
-
-  it("shows calendar when local storage token present", async () => {
-    localStorage.setItem("token", "secretTokenValue");
-    await waitFor(() => {
-      render(CompassRoot);
-    });
-
-    expect(
-      screen.queryByRole("button", { name: /sign in/i })
-    ).not.toBeInTheDocument();
+    clearLocalStorageMock();
   });
 });
 
-describe("CalendarView: Renders When No State", () => {
-  beforeAll(() => {
+describe("CalendarView: Stateless Rendering", () => {
+  beforeEach(() => {
     mockLocalStorage();
     localStorage.setItem("token", "secretTokenValue");
   });
-  afterAll(() => {
+  afterEach(() => {
     clearLocalStorageMock();
   });
 
@@ -102,7 +90,7 @@ describe("CalendarView: Renders When No State", () => {
   });
 });
 
-describe("CalendarView: Renders with State", () => {
+describe("CalendarView: Stateful Rendering", () => {
   beforeEach(() => {
     mockLocalStorage();
     localStorage.setItem("token", "secretTokenValue");
