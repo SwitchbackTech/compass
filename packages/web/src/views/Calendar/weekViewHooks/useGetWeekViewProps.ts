@@ -146,26 +146,18 @@ export const useGetWeekViewProps = () => {
   then rename to `getDateStrByXY` with default format
   of the one currently used
   */
-  const getDateByMousePosition = (x: number, y: number) => {
-    // $$ use helper method in this file
-    const clickX = x - CALCULATED_GRID_X_OFFSET;
-    const clickY = y - CALCULATED_GRID_Y_OFFSET;
+  const getDateStrByXY = (x: number, y: number) => {
+    const date = getDateByXY(x, y);
 
-    const dayNumber = getDayNumberByX(clickX);
-    const minute = getMinuteByMousePosition(clickY);
-
-    const date = startOfSelectedWeekDay
-      .add(dayNumber, "day")
-      .add(minute, "minutes");
-
-    // $$ try using a TZ offset format
+    // $$ try using a TZ offset format (like the default .format())
     // the frontend is currently trusted to pass it to backend
     // in TZ format, so better to keep it like that
     return date.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
   };
 
-  // $$ merge with above
+  // $$ rename to getDayjsByXY
   const getDateByXY = (x: number, y: number) => {
+    // $$ replace with getXOffset, similar to yOffset below?
     const clickX = x - CALCULATED_GRID_X_OFFSET;
 
     const yOffset = getYOffset();
@@ -266,7 +258,7 @@ export const useGetWeekViewProps = () => {
   const onAllDayEventsGridMouseDown = (e: React.MouseEvent) => {
     if (editingEvent) return;
 
-    const startDate = dayjs(getDateByMousePosition(e.clientX, e.clientY))
+    const startDate = dayjs(getDateStrByXY(e.clientX, e.clientY))
       .startOf("day")
       .format(YEAR_MONTH_DAY_FORMAT);
 
@@ -293,7 +285,7 @@ export const useGetWeekViewProps = () => {
 
   const onEventDrag = (e: React.MouseEvent) => {
     setEditingEvent((actualEditingEvent) => {
-      const _initialStart = getDateByMousePosition(
+      const _initialStart = getDateStrByXY(
         e.clientX,
         // $$ get rid of mystery 2 - fixed the move bug...
         e.clientY - (eventState?.initialYOffset || 0) + 2
@@ -334,7 +326,7 @@ export const useGetWeekViewProps = () => {
       return;
     }
 
-    const startDate = getDateByMousePosition(e.clientX, e.clientY);
+    const startDate = getDateStrByXY(e.clientX, e.clientY);
     const endDate = dayjs(startDate)
       .add(EVENT_DEFAULT_MIN, "minute")
       .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
@@ -354,7 +346,7 @@ export const useGetWeekViewProps = () => {
     if (eventState?.name === "dragging") {
       if (
         !eventState.hasMoved &&
-        editingEvent?.startDate !== getDateByMousePosition(e.clientX, e.clientY)
+        editingEvent?.startDate !== getDateStrByXY(e.clientX, e.clientY)
       ) {
         setEventState((actualEventState) => ({
           ...actualEventState,
@@ -371,7 +363,7 @@ export const useGetWeekViewProps = () => {
       return;
     }
 
-    const date = getDateByMousePosition(e.clientX, e.clientY);
+    const date = getDateStrByXY(e.clientX, e.clientY);
 
     setEditingEvent((actualEditingEvent) => {
       if (!modifiableDateField) return actualEditingEvent;
@@ -580,7 +572,6 @@ export const useGetWeekViewProps = () => {
     },
     core: {
       getAllDayEventCellHeight,
-      getDateByMousePosition,
       getDateByXY,
       getDayNumberByX,
       getColumnWidths,
