@@ -2,7 +2,7 @@ import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import { CalendarView } from "@web/views/Calendar";
-import { render } from "@web/common/__mocks__/oldmock.render";
+import { render } from "@web/common/__mocks__/mock.render";
 import {
   mockLocalStorage,
   clearLocalStorageMock,
@@ -10,8 +10,6 @@ import {
 import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
 
 beforeAll(() => {
   window.HTMLElement.prototype.scroll = jest.fn();
@@ -28,21 +26,19 @@ describe("Routing", () => {
     ).toBeInTheDocument();
   });
 
-  /* disabled because breaks with container root stuff 
-    and the awaitFor() workaround not working
-
-  it("shows calendar when local storage token present", () => {
+  it("shows calendar when local storage token present", async () => {
     localStorage.setItem("token", "secretTokenValue");
-    render(CompassRoot);
-    
+    await waitFor(() => {
+      render(CompassRoot);
+    });
+
     expect(
       screen.queryByRole("button", { name: /sign in/i })
     ).not.toBeInTheDocument();
   });
-  */
 });
 
-describe("CalendarView", () => {
+describe("CalendarView: Renders When No State", () => {
   beforeAll(() => {
     mockLocalStorage();
     localStorage.setItem("token", "secretTokenValue");
@@ -52,17 +48,13 @@ describe("CalendarView", () => {
   });
 
   it("renders current year in YYYY format", async () => {
-    // workaround to for Redux connected component act() warning
-    // render(<CalendarView />);
     await waitFor(() => {
-      render(
-        <DndProvider backend={HTML5Backend}>
-          <CalendarView />
-        </DndProvider>
-      );
-      const currentYear = new Date().getFullYear().toString(); // YYYY
-      expect(screen.getByText(currentYear)).toBeInTheDocument();
+      // workaround to for Redux connected component act() warning
+      render(<CalendarView />);
     });
+
+    const currentYear = new Date().getFullYear().toString(); // YYYY
+    expect(screen.getByText(currentYear)).toBeInTheDocument();
   });
 
   it("renders week navigation arrows", async () => {
@@ -71,7 +63,6 @@ describe("CalendarView", () => {
       render(<CalendarView />);
     });
 
-    // render(<CalendarView />);
     expect(
       screen.getByRole("navigation", {
         name: /previous week/i,

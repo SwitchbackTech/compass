@@ -113,7 +113,7 @@ module.exports = {
       testEnvironment: "jsdom",
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
       transformIgnorePatterns: [
-        "/node_modules/(?!react-dnd|dnd-core|@react-dnd)",
+        "/node_modules/(?!react-dnd|dnd-core|@react-dnd|react-dnd-test-utils)",
       ],
 
       moduleNameMapper: {
