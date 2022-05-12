@@ -2821,7 +2821,7 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
-"@testing-library/dom@^8.0.0", "@testing-library/dom@^8.11.1":
+"@testing-library/dom@^8.11.1":
   version "8.11.3"
   resolved "https://registry.yarnpkg.com/@testing-library/dom/-/dom-8.11.3.tgz#38fd63cbfe14557021e88982d931e33fb7c1a808"
   integrity sha512-9LId28I+lx70wUiZjLvi1DB/WT2zGOxUh46glrSNMaWVx849kKAluezVzZrXJfTKKoQTmEOutLes/bHg4Bj3aA==
@@ -2835,7 +2835,21 @@
     lz-string "^1.4.4"
     pretty-format "^27.0.2"
 
-"@testing-library/jest-dom@^5.14.1":
+"@testing-library/dom@^8.5.0":
+  version "8.13.0"
+  resolved "https://registry.yarnpkg.com/@testing-library/dom/-/dom-8.13.0.tgz#bc00bdd64c7d8b40841e27a70211399ad3af46f5"
+  integrity sha512-9VHgfIatKNXQNaZTtLnalIy0jNZzY35a4S3oi08YAt9Hv1VsfZ/DfA45lM8D/UhtHBGJ4/lGwp0PZkVndRkoOQ==
+  dependencies:
+    "@babel/code-frame" "^7.10.4"
+    "@babel/runtime" "^7.12.5"
+    "@types/aria-query" "^4.2.0"
+    aria-query "^5.0.0"
+    chalk "^4.1.0"
+    dom-accessibility-api "^0.5.9"
+    lz-string "^1.4.4"
+    pretty-format "^27.0.2"
+
+"@testing-library/jest-dom@^5.16.4":
   version "5.16.4"
   resolved "https://registry.yarnpkg.com/@testing-library/jest-dom/-/jest-dom-5.16.4.tgz#938302d7b8b483963a3ae821f1c0808f872245cd"
   integrity sha512-Gy+IoFutbMQcky0k+bqqumXZ1cTGswLsFqmNLzNdSKkU9KGV2u9oXhukCbbJ9/LRPKiqwxEE8VpV/+YZlfkPUA==
@@ -2861,19 +2875,19 @@
     "@types/react-test-renderer" ">=16.9.0"
     react-error-boundary "^3.1.0"
 
-"@testing-library/react@^12.1.2":
-  version "12.1.5"
-  resolved "https://registry.yarnpkg.com/@testing-library/react/-/react-12.1.5.tgz#bb248f72f02a5ac9d949dea07279095fa577963b"
-  integrity sha512-OfTXCJUFgjd/digLUuPxa0+/3ZxsQmE7ub9kcbW/wi96Bh3o/p5vrETcBGfP17NWPGqeYYl5LTRpwyGoMC4ysg==
+"@testing-library/react@^13.2.0":
+  version "13.2.0"
+  resolved "https://registry.yarnpkg.com/@testing-library/react/-/react-13.2.0.tgz#2db00bc94d71c4e90e5c25582e90a650ae2925bf"
+  integrity sha512-Bprbz/SZVONCJy5f7hcihNCv313IJXdYiv0nSJklIs1SQCIHHNlnGNkosSXnGZTmesyGIcBGNppYhXcc11pb7g==
   dependencies:
     "@babel/runtime" "^7.12.5"
-    "@testing-library/dom" "^8.0.0"
-    "@types/react-dom" "<18.0.0"
+    "@testing-library/dom" "^8.5.0"
+    "@types/react-dom" "^18.0.0"
 
-"@testing-library/user-event@^14.0.0-beta":
-  version "14.1.1"
-  resolved "https://registry.yarnpkg.com/@testing-library/user-event/-/user-event-14.1.1.tgz#e1ff6118896e4b22af31e5ea2f9da956adde23d8"
-  integrity sha512-XrjH/iEUqNl9lF2HX9YhPNV7Amntkcnpw0Bo1KkRzowNDcgSN9i0nm4Q8Oi5wupgdfPaJNMAWa61A+voD6Kmwg==
+"@testing-library/user-event@^14.2.0":
+  version "14.2.0"
+  resolved "https://registry.yarnpkg.com/@testing-library/user-event/-/user-event-14.2.0.tgz#8293560f8f80a00383d6c755ec3e0b918acb1683"
+  integrity sha512-+hIlG4nJS6ivZrKnOP7OGsDu9Fxmryj9vCl8x0ZINtTJcCHs2zLsYif5GzuRiBF2ck5GZG2aQr7Msg+EHlnYVQ==
 
 "@tootallnate/once@1":
   version "1.1.2"
@@ -3285,13 +3299,6 @@
     date-fns "^2.0.1"
     react-popper "^2.2.5"
 
-"@types/react-dom@<18.0.0":
-  version "17.0.15"
-  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-17.0.15.tgz#f2c8efde11521a4b7991e076cb9c70ba3bb0d156"
-  integrity sha512-Tr9VU9DvNoHDWlmecmcsE5ZZiUkYx+nKBzum4Oxe1K0yJVyBlfbq7H3eXjxXqJczBKqPGq3EgfTru4MgKb9+Yw==
-  dependencies:
-    "@types/react" "^17"
-
 "@types/react-dom@>=16.9.0":
   version "18.0.0"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-18.0.0.tgz#b13f8d098e4b0c45df4f1ed123833143b0c71141"
@@ -3299,7 +3306,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-dom@^18.0.3":
+"@types/react-dom@^18.0.0", "@types/react-dom@^18.0.3":
   version "18.0.3"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-18.0.3.tgz#a022ea08c75a476fe5e96b675c3e673363853831"
   integrity sha512-1RRW9kst+67gveJRYPxGmVy8eVJ05O43hg77G2j5m76/RFJtMbcfAs2viQ2UNsvvDg8F7OfQZx8qQcl6ymygaQ==
@@ -3358,15 +3365,6 @@
   version "18.0.0"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-18.0.0.tgz#4be8aa3a2d04afc3ac2cc1ca43d39b0bd412890c"
   integrity sha512-7+K7zEQYu7NzOwQGLR91KwWXXDzmTFODRVizJyIALf6RfLv2GDpqpknX64pvRVILXCpXi7O/pua8NGk44dLvJw==
-  dependencies:
-    "@types/prop-types" "*"
-    "@types/scheduler" "*"
-    csstype "^3.0.2"
-
-"@types/react@^17":
-  version "17.0.44"
-  resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.44.tgz#c3714bd34dd551ab20b8015d9d0dbec812a51ec7"
-  integrity sha512-Ye0nlw09GeMp2Suh8qoOv0odfgCoowfM/9MG6WeRD60Gq9wS90bdkdRtYbRkNhXOpG4H+YXGvj4wOWhAC0LJ1g==
   dependencies:
     "@types/prop-types" "*"
     "@types/scheduler" "*"

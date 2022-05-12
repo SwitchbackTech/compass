@@ -2,7 +2,7 @@ import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import { CalendarView } from "@web/views/Calendar";
-import { render } from "@web/common/__mocks__/mock.render";
+import { render } from "@web/common/__mocks__/oldmock.render";
 import {
   mockLocalStorage,
   clearLocalStorageMock,
@@ -10,6 +10,8 @@ import {
 import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 beforeAll(() => {
   window.HTMLElement.prototype.scroll = jest.fn();
@@ -51,11 +53,16 @@ describe("CalendarView", () => {
 
   it("renders current year in YYYY format", async () => {
     // workaround to for Redux connected component act() warning
+    // render(<CalendarView />);
     await waitFor(() => {
-      render(<CalendarView />);
+      render(
+        <DndProvider backend={HTML5Backend}>
+          <CalendarView />
+        </DndProvider>
+      );
+      const currentYear = new Date().getFullYear().toString(); // YYYY
+      expect(screen.getByText(currentYear)).toBeInTheDocument();
     });
-    const currentYear = new Date().getFullYear().toString(); // YYYY
-    expect(screen.getByText(currentYear)).toBeInTheDocument();
   });
 
   it("renders week navigation arrows", async () => {

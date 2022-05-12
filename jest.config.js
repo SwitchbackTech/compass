@@ -112,6 +112,10 @@ module.exports = {
       displayName: "web",
       testEnvironment: "jsdom",
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
+      transformIgnorePatterns: [
+        "/node_modules/(?!react-dnd|dnd-core|@react-dnd)",
+      ],
+
       moduleNameMapper: {
         "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
         "^@web/assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",

@@ -6,12 +6,14 @@ import userEvent from "@testing-library/user-event";
 import { setupServer } from "msw/node";
 import { CalendarView } from "@web/views/Calendar";
 import { CompassRoot } from "@web/routers/index";
-import { render } from "@web/common/__mocks__/mock.render";
+import { render } from "@web/common/__mocks__/oldmock.render";
 import { febToMarState } from "@web/common/__mocks__/state/state.0227To0305";
 import {
   mockLocalStorage,
   clearLocalStorageMock,
 } from "@web/common/utils/test.util";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 describe("Calendar Interactions", () => {
   const server = setupServer(
     rest.get("/api/event", (req, res, ctx) => {
@@ -62,7 +64,12 @@ describe("Calendar Interactions", () => {
 
     it("renders today only when on different week than current", async () => {
       const user = userEvent.setup();
-      render(<CalendarView />);
+
+      render(
+        <DndProvider backend={HTML5Backend}>
+          <CalendarView />
+        </DndProvider>
+      );
 
       expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
       await user.click(
