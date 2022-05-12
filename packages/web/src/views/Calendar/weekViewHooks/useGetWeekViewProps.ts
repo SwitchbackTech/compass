@@ -139,23 +139,6 @@ export const useGetWeekViewProps = () => {
     return widths;
   };
 
-  /*
-  replace logic -- use same as getDateByXy
-  then just return in format
-  then confirm it all works
-  then rename to `getDateStrByXY` with default format
-  of the one currently used
-  */
-  const getDateStrByXY = (x: number, y: number) => {
-    const date = getDateByXY(x, y);
-
-    // $$ try using a TZ offset format (like the default .format())
-    // the frontend is currently trusted to pass it to backend
-    // in TZ format, so better to keep it like that
-    return date.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
-  };
-
-  // $$ rename to getDayjsByXY
   const getDateByXY = (x: number, y: number) => {
     // $$ replace with getXOffset, similar to yOffset below?
     const clickX = x - CALCULATED_GRID_X_OFFSET;
@@ -170,6 +153,15 @@ export const useGetWeekViewProps = () => {
       .add(minutes, "minutes");
 
     return date;
+  };
+
+  const getDateStrByXY = (x: number, y: number) => {
+    const date = getDateByXY(x, y);
+
+    // $$ try using a TZ offset format (like the default .format())
+    // the frontend is currently trusted to pass it to backend
+    // in TZ format, so better to keep it like that
+    return date.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
   };
 
   const getDayNumberByX = (x: number) => {
