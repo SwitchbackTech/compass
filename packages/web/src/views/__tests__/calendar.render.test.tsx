@@ -2,7 +2,7 @@ import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import { CalendarView } from "@web/views/Calendar";
-import { render } from "@web/common/__mocks__/simple.mock.render";
+import { render } from "@web/common/__mocks__/mock.render";
 import {
   mockLocalStorage,
   clearLocalStorageMock,

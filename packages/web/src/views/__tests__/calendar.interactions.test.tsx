@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { setupServer } from "msw/node";
 import { CalendarView } from "@web/views/Calendar";
 import { CompassRoot } from "@web/routers/index";
-import { render } from "@web/common/__mocks__/simple.mock.render";
+import { render } from "@web/common/__mocks__/mock.render";
 import { febToMarState } from "@web/common/__mocks__/state/state.0227To0305";
 import {
   mockLocalStorage,
@@ -65,11 +65,7 @@ describe("Calendar Interactions", () => {
     it("renders today only when on different week than current", async () => {
       const user = userEvent.setup();
 
-      render(
-        <DndProvider backend={HTML5Backend}>
-          <CalendarView />
-        </DndProvider>
-      );
+      render(<CalendarView />);
 
       expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
       await user.click(
@@ -199,10 +195,19 @@ describe("Calendar Interactions", () => {
         const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
         render(<CalendarView />, { preloadedState });
 
-        await user.click(screen.getByTitle("Climb")); // open event
-        const startDatePicker = screen.getAllByRole("tab", {
-          name: /mar 01/i,
-        })[0];
+        const eventWithTimesBtn = screen.getByRole("button", {
+          // accept any times because times will be different if
+          // CI server in different timezone than you
+          name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,
+        });
+
+        // await user.click(screen.getByTitle("Climb")); // open event
+        await user.click(eventWithTimesBtn); // open event
+        const startDatePicker = await waitFor(() => {
+          screen.getAllByRole("tab", {
+            name: /mar 01/i,
+          })[0];
+        });
 
         await user.click(startDatePicker); // picker should open
 

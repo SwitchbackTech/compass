@@ -1,7 +1,7 @@
 import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
-import { render } from "@web/common/__mocks__/simple.mock.render";
+import { render } from "@web/common/__mocks__/mock.render";
 import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
 import {
   mockLocalStorage,
