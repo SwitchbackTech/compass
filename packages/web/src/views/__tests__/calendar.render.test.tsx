@@ -100,9 +100,8 @@ describe("CalendarView: Stateful Rendering", () => {
   });
 
   it("renders both timed and all day events", async () => {
-    const preloadedState = weekEventState; // has to be called 'preloadedState' to render correctly
     await waitFor(() => {
-      render(<CalendarView />, { preloadedState });
+      render(<CalendarView />, { state: weekEventState });
     });
 
     expect(
