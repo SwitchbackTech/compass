@@ -39,6 +39,6 @@ export const StyledPrevDaysOverflow = styled.div<PrevDaysOverflowProps>`
   width: ${({ widthPercent }) => widthPercent}%;
   height: 100%;
   background: ${getColor(ColorNames.WHITE_1)};
-  opacity: 0.03;
+  opacity: 0.05;
   position: absolute;
 `;

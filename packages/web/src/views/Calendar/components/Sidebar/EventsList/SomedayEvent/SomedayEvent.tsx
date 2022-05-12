@@ -54,7 +54,7 @@ export const SomedayEvent = ({ event: _event, isDragging }: Props) => {
           onClick={() => setIsEventFormOpen(true)}
           priority={event.priority}
         >
-          <Text size={14}>{event.title}</Text>
+          <Text size={15}>{event.title}</Text>
         </StyledEventOrPlaceholder>
       </div>
       <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>

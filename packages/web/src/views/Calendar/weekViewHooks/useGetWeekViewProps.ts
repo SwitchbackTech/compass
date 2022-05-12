@@ -219,25 +219,24 @@ export const useGetWeekViewProps = () => {
   };
 
   const getPastOverflowWidth = () => {
-    if (today.week() > week) {
-      // viewing past week
+    const focusedWeek = today.week();
+    if (focusedWeek > week) {
+      // past week
       return 100;
     }
 
-    if (today.week() < week) {
+    if (focusedWeek < week) {
       // future week, no overflow
       return 0;
     }
 
     if (yesterdayDayNumber === 6) {
       /* 
-       then its the last day of the week (Sat)
+       Saturday
        using the same logic as the other days
        would normally be fine, but the scrollbar width 
        would throw things off. 
        this works around that by just relying on todays width.
-
-       PS not sure why you need to round up
       */
       const todayBasis = getFlexBasisWrapper(today);
       return Math.ceil(100 - todayBasis);
