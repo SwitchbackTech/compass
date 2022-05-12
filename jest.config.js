@@ -102,20 +102,14 @@ module.exports = {
   projects: [
     {
       displayName: "core",
-      testEnvironment: "node",
-      testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
       moduleNameMapper: {
         "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
       },
+      testEnvironment: "node",
+      testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
     },
     {
       displayName: "web",
-      testEnvironment: "jsdom",
-      testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
-      transformIgnorePatterns: [
-        "/node_modules/(?!react-dnd|dnd-core|@react-dnd|react-dnd-test-utils)",
-      ],
-
       moduleNameMapper: {
         "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
         "^@web/assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
@@ -131,11 +125,15 @@ module.exports = {
           "<rootDir>/packages/web/src/common/__mocks__/css.stub.js",
         "\\.(svg)$": "<rootDir>/packages/web/src/common/__mocks__/svg.js",
       },
+      testEnvironment: "jsdom",
+      testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
+      transformIgnorePatterns: [
+        //https://github.com/react-dnd/react-dnd/issues/3443
+        "/node_modules/(?!react-dnd|dnd-core|@react-dnd)",
+      ],
     },
     {
       displayName: "backend",
-      testEnvironment: "node",
-      testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],
       moduleNameMapper: {
         "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
         "^@backend/auth/(.*)$": "<rootDir>/packages/backend/src/auth/$1",
@@ -149,6 +147,8 @@ module.exports = {
         "^@backend/sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
         "^@backend/user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
       },
+      testEnvironment: "node",
+      testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],
     },
   ],
   // Use this configuration option to add custom reporters to Jest
