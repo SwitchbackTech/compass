@@ -1,61 +1,52 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Key } from "ts-keycode-enum";
-import { getWeekDayLabel } from "@web/ducks/events/event.utils";
-import { getHourLabels } from "@web/common/utils/date.utils";
 import { ColorNames } from "@web/common/types/styles";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
+import { getAlphaColor, getColor } from "@web/common/utils/colors";
+import { useToken } from "@web/common/hooks/useToken";
+import { getCurrentMinute } from "@web/common/utils/grid.util";
+import { getWeekDayLabel } from "@web/ducks/events/event.utils";
 import {
   AlignItems,
   FlexDirections,
   JustifyContent,
 } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
-import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
-import { EditingWeekEvent } from "@web/views/Calendar/components/EditingWeekEvent";
-import { TimesColumn } from "@web/views/Calendar/components/TimesColumn";
 import { TodayButtonPopover } from "@web/views/Calendar/components/TodayButtonPopover";
-import { WeekEvent } from "@web/views/Calendar/components/WeekEvent";
-import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { Sidebar } from "@web/views/Calendar/components/Sidebar";
-import { useToken } from "@web/common/hooks/useToken";
-import { getCurrentMinute } from "@web/common/utils/grid.util";
-
+import { DragLayer } from "@web/views/Calendar/containers/DragLayer";
 import {
   useGetWeekViewProps,
   WeekViewProps,
-} from "./weekViewHooks/useGetWeekViewProps";
-import { Schema_GridEvent } from "./weekViewHooks/types";
+} from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
+import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
+import { AllDayRow } from "@web/views/Calendar/components/Grid/AllDayRow/AllDayRow";
+
 import {
   ArrowNavigationButton,
   Styled,
   StyledAllDayEventsGrid,
   StyledCalendar,
   StyledGridCol,
-  StyledGridRow,
-  StyledGridRows,
   StyledHeaderFlex,
-  StyledEventsGrid,
   StyledGridColumns,
   StyledNavigationButtons,
-  StyledEvents,
   StyledWeekDayFlex,
   StyledWeekDaysFlex,
-  StyledPrevDaysOverflow,
 } from "./styled";
+import { MainGrid } from "./components/Grid/MainGrid";
 
 export interface Props {
   weekViewProps: WeekViewProps;
 }
 
-// const hourLabels = getHourLabels();
-
 export const CalendarView = () => {
   const { token } = useToken();
-  const weekViewProps = useGetWeekViewProps();
 
+  const weekViewProps = useGetWeekViewProps();
   const { component, core, eventHandlers } = weekViewProps;
 
   const [, setResize] = useState<
@@ -125,17 +116,22 @@ export const CalendarView = () => {
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
   }, [component.calendarRef]);
 
+  /**********
+   * Render
+   **********/
+
   if (!token) {
     return <Navigate to={ROOT_ROUTES.LOGIN} />;
   }
 
   return (
     <Styled>
+      <DragLayer weekViewProps={weekViewProps} />
       <Sidebar
         onTransitionEnd={() =>
           setResize({ height: window.innerHeight, width: window.innerWidth })
         }
-        // weekViewProps={weekViewProps}
+        weekViewProps={weekViewProps}
       />
       <StyledCalendar
         ref={component.calendarRef}
@@ -190,7 +186,6 @@ export const CalendarView = () => {
             )}
           </StyledNavigationButtons>
         </StyledHeaderFlex>
-
         <StyledWeekDaysFlex ref={component.weekDaysRef}>
           {component.weekDays.map((day) => {
             const isDayInCurrentWeek =
@@ -236,7 +231,6 @@ export const CalendarView = () => {
             );
           })}
         </StyledWeekDaysFlex>
-
         <StyledAllDayEventsGrid
           id="allDayGrid"
           rowsCount={component.rowsCount}
@@ -253,80 +247,9 @@ export const CalendarView = () => {
             ))}
           </StyledGridColumns>
 
-          <StyledEvents>
-            {component.allDayEvents.map((event: Schema_GridEvent) => (
-              <WeekEvent
-                event={event}
-                key={event._id}
-                weekViewProps={weekViewProps}
-              />
-            ))}
-
-            {component.editingEvent && component.editingEvent.isAllDay && (
-              <EditingWeekEvent
-                event={component.editingEvent}
-                isOpen={!!component.editingEvent.isOpen}
-                onCloseEventForm={() => eventHandlers.setEditingEvent(null)}
-                onSubmitEventForm={eventHandlers.onSubmitEvent}
-                setEvent={(event) => eventHandlers.setEditingEvent(event)}
-                weekViewProps={weekViewProps}
-              />
-            )}
-          </StyledEvents>
+          <AllDayRow weekViewProps={weekViewProps} />
         </StyledAllDayEventsGrid>
-
-        <StyledEventsGrid
-          ref={component.eventsGridRef}
-          onMouseDown={eventHandlers.onEventsGridMouseDown}
-          onMouseMove={eventHandlers.onEventGridMouseMove}
-        >
-          <TimesColumn />
-
-          <StyledGridColumns>
-            {component.week === component.today.week() && (
-              <NowLine width={100} />
-            )}
-            <StyledPrevDaysOverflow
-              widthPercent={core.getPastOverflowWidth()}
-            />
-
-            {component.weekDays.map((day) => (
-              <StyledGridCol
-                flexBasis={core.getFlexBasisWrapper(day)}
-                key={day.format(YEAR_MONTH_DAY_FORMAT)}
-              />
-            ))}
-          </StyledGridColumns>
-
-          <StyledGridRows>
-            {getHourLabels().map((dayTime, index) => (
-              <StyledGridRow key={`${dayTime}-${index}:dayTimes`} />
-            ))}
-          </StyledGridRows>
-
-          <StyledEvents>
-            {component.weekEvents.map((event: Schema_GridEvent) => (
-              <WeekEvent
-                key={event._id}
-                weekViewProps={weekViewProps}
-                event={event}
-              />
-            ))}
-
-            {component.editingEvent && !component.editingEvent.isAllDay && (
-              <EditingWeekEvent
-                setEvent={(event) =>
-                  eventHandlers.setEditingEvent(event as Schema_GridEvent)
-                }
-                isOpen={!!component.editingEvent?.isOpen}
-                event={component.editingEvent}
-                weekViewProps={weekViewProps}
-                onCloseEventForm={() => eventHandlers.setEditingEvent(null)}
-                onSubmitEventForm={eventHandlers.onSubmitEvent}
-              />
-            )}
-          </StyledEvents>
-        </StyledEventsGrid>
+        <MainGrid weekViewProps={weekViewProps} />
       </StyledCalendar>
     </Styled>
   );

@@ -16,7 +16,7 @@ import {
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
   MONTH_DAY_COMPACT_FORMAT,
 } from "@web/common/constants/dates";
-import { GRID_TIME_STEP } from "@web/views/Calendar/constants";
+import { GRID_TIME_STEP } from "@web/views/Calendar/calendar.constants";
 
 import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
 

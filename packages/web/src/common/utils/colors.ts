@@ -1,4 +1,5 @@
 import { colors, invertedColors } from "@web/common/styles/colors";
+import { Priorities } from "@core/core.constants";
 import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
 
 export const getAlphaColor = (colorName: ColorNames, opacity: number) => {
@@ -36,4 +37,11 @@ export const getNeighbourKey = (key = "", obj = {}, diff = 1): string => {
   const neighbourKey = `${propName}_${neighbourIndex}`;
 
   return Object.keys(obj).find((_key) => _key === neighbourKey) || key;
+};
+
+export const hoverColorsByPriority = {
+  [Priorities.UNASSIGNED]: getColor(ColorNames.GREY_5_BRIGHT),
+  [Priorities.WORK]: getColor(ColorNames.GREY_3_BRIGHT),
+  [Priorities.RELATIONS]: getColor(ColorNames.TEAL_4),
+  [Priorities.SELF]: getColor(ColorNames.BLUE_3_BRIGHT),
 };

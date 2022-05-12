@@ -330,6 +330,23 @@ class EventService {
       if ("_id" in event) {
         delete event._id; // mongo doesn't allow changing this field directly
       }
+
+      /* Part I: Gcal */
+      const updateGcal = !event.isSomeday;
+      if (updateGcal) {
+        const wasSomedayEvent = event.gEventId === undefined;
+
+        if (wasSomedayEvent) {
+          const gEvent = await this._createGcalEvent(userId, event);
+          event["gEventId"] = gEvent.id;
+        } else {
+          const gEvent = MapEvent.toGcal(event);
+          const gcal = await getGcal(userId);
+          await gcalService.updateEvent(gcal, event.gEventId, gEvent);
+        }
+      }
+
+      /* Part II: Compass */
       const response = await mongoService.db
         .collection(Collections.EVENT)
         .findOneAndUpdate(
@@ -348,24 +365,6 @@ class EventService {
         );
       }
       const updatedEvent = response.value as Schema_Event;
-
-      const updateGcal = !event.isSomeday;
-      if (updateGcal) {
-        const gEvent = MapEvent.toGcal(updatedEvent);
-        const gcal = await getGcal(userId);
-        const gEventId = updatedEvent.gEventId;
-        if (gEventId === undefined) {
-          return new BaseError(
-            "Update Failed",
-            "no gEventId",
-            Status.INTERNAL_SERVER,
-            true
-          );
-        }
-        //TODO error-handle this and/or extract from this and turn into its own saga,
-        // in order to remove extra work that delays response to user
-        const gcalRes = await gcalService.updateEvent(gcal, gEventId, gEvent);
-      }
 
       return updatedEvent;
     } catch (e) {

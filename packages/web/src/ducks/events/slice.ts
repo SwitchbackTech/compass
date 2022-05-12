@@ -94,6 +94,7 @@ export const getFutureEventsSlice = createAsyncSlice<
 >({
   name: "getFutureEvents",
   reducers: {
+    convert: (state, action) => {},
     delete: (state: RootState, action: Action_DeleteEvent) => {
       state.value.data = state.value.data.filter(
         (i: string) => i !== action.payload._id
@@ -111,12 +112,11 @@ export const getFutureEventsSlice = createAsyncSlice<
 });
 
 export const eventsReducer = combineReducers({
-  getWeekEvents: getWeekEventsSlice.reducer,
-  getCurrentMonthEvents: getCurrentMonthEventsSlice.reducer,
-  getFutureEvents: getFutureEventsSlice.reducer,
   createEvent: createEventSlice.reducer,
   deleteEvent: deleteEventSlice.reducer,
   editEvent: editEventSlice.reducer,
-
   entities: eventsEntitiesSlice.reducer,
+  getCurrentMonthEvents: getCurrentMonthEventsSlice.reducer,
+  getFutureEvents: getFutureEventsSlice.reducer,
+  getWeekEvents: getWeekEventsSlice.reducer,
 });

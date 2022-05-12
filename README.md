@@ -4,7 +4,7 @@
 
 <br>
 
-Clone the repo via git and install dependencies:
+Clone the repo and install dependencies:
 
 ```bash
 git clone { repo URL }
@@ -29,9 +29,9 @@ yarn build
 - Save the `.env` to `packages/backend` directory
 - Reminders:
   1. never commit this file to GitHub
-  2. never share any of its contents with anyone outside of the org
+  2. never share any of its contents with anyone outside of Switchback
   3. never make a copy of this file and store it on an insecure channel (eg Discord, email, Google Drive)
-  4. make the contents of the file accessible via API. For example, don't create a `/app/api/.env` route that you can make GET requests on
+  4. never make the contents of the file accessible. For example, don't create a `/app/api/.env` route that you users can make GET requests on
 
 ### Start app
 
@@ -85,7 +85,7 @@ Note: Check-in with Ty to determine how much testing is needed for the project i
 - [jest-styled-components:](https://github.com/styled-components/jest-styled-components#react-testing-library) `styled-components` testing
 - [@shelf/jest-mongodb](https://github.com/shelfio/jest-mongodb): Jest preset for an in-memory MongoDB server, which is used for integration tests
 
-Once electron is supported, these will (probably) be added:
+If/when electron is supported, these will (probably) be added:
 
 - [Spectron](https://www.electronjs.org/spectron): Integration & accessibility tests for Electron apps, using Chrome's accessibility tools
 - [electronegativity](https://github.com/doyensec/electronegativity#electronegativity): security audits for electron

@@ -76,9 +76,9 @@ export const createAsyncSlice = <
       },
     }),
     actionNames: {
+      error: `async/${options.name}/error`,
       request: `async/${options.name}/request`,
       success: `async/${options.name}/success`,
-      error: `async/${options.name}/error`,
     },
   };
 };

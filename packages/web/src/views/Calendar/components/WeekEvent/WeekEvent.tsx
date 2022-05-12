@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
 import React from "react";
+import dayjs from "dayjs";
 import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
@@ -118,7 +118,7 @@ const WeekEventComponent = (
         flexWrap={FlexWrap.WRAP}
         title={event.title}
       >
-        <Text size={12} role="textbox">
+        <Text size={13} role="textbox">
           {event.title}
           <SpaceCharacter />
         </Text>

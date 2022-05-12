@@ -4,7 +4,6 @@ import dayjs from "dayjs";
 import { Priorities, Priority } from "@core/core.constants";
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
-import { StrawberryMenuIcon } from "@web/assets/svg";
 import {
   AlignItems,
   FlexDirections,
@@ -14,8 +13,8 @@ import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Divider } from "@web/components/Divider";
 import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
-import { SidebarFutureEventsContainer } from "@web/views/Calendar/containers/SidebarFutureEventsContainer";
-import { SidebarCurrentMonthEventsContainer } from "@web/views/Calendar/containers/SidebarCurrentMonthEventsContainer";
+import { SomedayEventsFutureContainer } from "@web/views/Calendar/containers/SomedayContainer/SomedayCategories";
+import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 
 import {
   Styled,
@@ -31,7 +30,6 @@ import {
   StyledSidebarOverflow,
   StyledFutureEventsToggleableSection,
 } from "./styled";
-// import { SomedaySection } from "./SomedaySection";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 
 const DATEPICKER_HEIGHT = 346;
@@ -48,7 +46,11 @@ const priorityNameByKey = {
   [Priorities.SELF]: "Self",
 };
 
-export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
+interface Props {
+  weekViewProps: WeekViewProps;
+}
+
+export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
   props
 ) => {
   const [isToggled, setIsToggled] = useState(true);
@@ -159,6 +161,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
           <Text size={30} colorName={ColorNames.WHITE_1}>
             Someday
           </Text>
+
           {/* 
           <Popover
             isOpen={isFilterPopoverOpen}
@@ -216,7 +219,7 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
               (key) => priorityFilter[key as Priorities]
             ) as Priorities[]
           }
-          EventsListContainer={SidebarFutureEventsContainer}
+          EventsListContainer={SomedayEventsFutureContainer}
           sectionType="future"
         />
       </StyledTopSectionFlex>
@@ -234,9 +237,10 @@ export const Sidebar: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
 
       <StyledBottomSection height={String(bottomSectionHeight)}>
         <ToggleableMonthWidget
-          setIsToggled={setIsCalendarsToggled}
           isToggled={isCalendarsToggled}
           monthsShown={monthsShown}
+          setIsToggled={setIsCalendarsToggled}
+          setWeek={props.weekViewProps.eventHandlers.setWeek}
         />
       </StyledBottomSection>
     </Styled>
