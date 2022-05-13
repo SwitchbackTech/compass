@@ -120,7 +120,6 @@ export const SomedaySection: React.FC<Props> = ({
     resetSomedayFormState();
 
     dispatch(createEventSlice.actions.request(event));
-    dispatch(getFutureEventsSlice.actions.request()); // causes entire list re-render
   };
 
   const onToggle = onParentToggle || (() => setIsToggled((toggle) => !toggle));
