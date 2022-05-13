@@ -162,12 +162,12 @@ export const SomedaySection: React.FC<Props> = ({
                 cleanup={resetSomedayFormState}
                 event={event}
                 isOpen={isEventFormOpen}
-                setEvent={setEvent}
                 onClose={() => {
                   setIsEventFormOpen(false);
                   resetSomedayFormState();
                 }}
                 onSubmit={onSubmit}
+                setEvent={setEvent}
               />
             </div>
           )}

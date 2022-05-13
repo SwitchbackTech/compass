@@ -66,12 +66,13 @@ export const getCurrentMonthEventsSlice = createAsyncSlice<
   name: "getCurrentMonthEvents",
 });
 
-export const getWeekEventsSlice = createAsyncSlice<
-  Payload_GetWeekEvents,
+export const getFutureEventsSlice = createAsyncSlice<
+  Payload_GetPaginatedEvents,
   Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
 >({
-  name: "getWeekEvents",
+  name: "getFutureEvents",
   reducers: {
+    convert: (state, action) => {},
     delete: (state: RootState, action: Action_DeleteEvent) => {
       state.value.data = state.value.data.filter(
         (i: string) => i !== action.payload._id
@@ -88,13 +89,12 @@ export const getWeekEventsSlice = createAsyncSlice<
   },
 });
 
-export const getFutureEventsSlice = createAsyncSlice<
-  Payload_GetPaginatedEvents,
+export const getWeekEventsSlice = createAsyncSlice<
+  Payload_GetWeekEvents,
   Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
 >({
-  name: "getFutureEvents",
+  name: "getWeekEvents",
   reducers: {
-    convert: (state, action) => {},
     delete: (state: RootState, action: Action_DeleteEvent) => {
       state.value.data = state.value.data.filter(
         (i: string) => i !== action.payload._id

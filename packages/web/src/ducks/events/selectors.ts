@@ -63,6 +63,7 @@ export const selectWeekEvents = (state: RootState): Schema_Event[] => {
   const weekEvents = weekEventsMapped.filter(
     (e: Schema_Event) => e !== undefined && !e.isAllDay
   );
+
   return weekEvents;
 };
 
