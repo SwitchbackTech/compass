@@ -2,6 +2,7 @@
 import { InsertManyResult } from "mongodb";
 import { Result_Import_Gcal } from "@core/types/sync.types";
 import { gSchema$Event } from "@core/types/gcal";
+import { SOMEDAY_EVENTS_LIMIT } from "@core/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -13,10 +14,7 @@ import {
 } from "@core/types/event.types";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import {
-  GCAL_PRIMARY,
-  SOMEDAY_EVENTS_LIMIT,
-} from "@backend/common/constants/backend.constants";
+import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";

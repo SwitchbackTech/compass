@@ -28,4 +28,3 @@ export const BACKEND_URL = _getBaseUrl();
 export const BASE_URL_DEV = `http://localhost:${process.env["PORT"] || 3000}`;
 export const GCAL_NOTIFICATION_URL = "/api/sync/gcal/notifications";
 export const GCAL_PRIMARY = "primary";
-export const SOMEDAY_EVENTS_LIMIT = 10;

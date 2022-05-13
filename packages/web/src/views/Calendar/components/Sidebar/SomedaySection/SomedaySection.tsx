@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { usePopper } from "react-popper";
-import { Origin, Priorities } from "@core/core.constants";
+import { Origin, Priorities, SOMEDAY_EVENTS_LIMIT } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { ArrowLeftIcon } from "@web/assets/svg";
 import { SectionType_Sidebar } from "@web/ducks/events/types";
-import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors";
+import {
+  selectPaginatedEventsBySectionType,
+  selectSomedayEventsCount,
+} from "@web/ducks/events/selectors";
 import { RootState } from "@web/store";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import {
@@ -59,6 +62,7 @@ export const SomedaySection: React.FC<Props> = ({
   const eventsListRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
+  const somedayEventsCount = useSelector(selectSomedayEventsCount);
   const paginatedEventsData = useSelector((state: RootState) =>
     selectPaginatedEventsBySectionType(state, sectionType)
   );
@@ -135,7 +139,17 @@ export const SomedaySection: React.FC<Props> = ({
 
         <StyledAddEventButton
           size={25}
-          onClick={() => setIsEventFormOpen((open) => !open)}
+          onClick={() => {
+            if (somedayEventsCount >= SOMEDAY_EVENTS_LIMIT) {
+              alert(`
+                Sorry, you can only have ${SOMEDAY_EVENTS_LIMIT} Someday events for now.
+                This will be increased in a future update
+                `);
+              return;
+            }
+
+            setIsEventFormOpen((open) => !open);
+          }}
           ref={setPopperRef}
         >
           +
