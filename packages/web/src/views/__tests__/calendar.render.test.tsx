@@ -16,44 +16,31 @@ beforeAll(() => {
 });
 
 describe("Routing", () => {
-  beforeEach(() => mockLocalStorage());
-  afterEach(() => clearLocalStorageMock());
-
   it("goes to login page when local storage token missing", () => {
+    mockLocalStorage();
     render(CompassRoot);
     expect(
       screen.getByRole("button", { name: /sign in/i })
     ).toBeInTheDocument();
+    clearLocalStorageMock();
   });
-
-  /* disabled because breaks with container root stuff 
-    and the awaitFor() workaround not working
-
-  it("shows calendar when local storage token present", () => {
-    localStorage.setItem("token", "secretTokenValue");
-    render(CompassRoot);
-    
-    expect(
-      screen.queryByRole("button", { name: /sign in/i })
-    ).not.toBeInTheDocument();
-  });
-  */
 });
 
-describe("CalendarView", () => {
-  beforeAll(() => {
+describe("CalendarView: Stateless Rendering", () => {
+  beforeEach(() => {
     mockLocalStorage();
     localStorage.setItem("token", "secretTokenValue");
   });
-  afterAll(() => {
+  afterEach(() => {
     clearLocalStorageMock();
   });
 
   it("renders current year in YYYY format", async () => {
-    // workaround to for Redux connected component act() warning
     await waitFor(() => {
+      // workaround to for Redux connected component act() warning
       render(<CalendarView />);
     });
+
     const currentYear = new Date().getFullYear().toString(); // YYYY
     expect(screen.getByText(currentYear)).toBeInTheDocument();
   });
@@ -64,7 +51,6 @@ describe("CalendarView", () => {
       render(<CalendarView />);
     });
 
-    // render(<CalendarView />);
     expect(
       screen.getByRole("navigation", {
         name: /previous week/i,
@@ -104,7 +90,7 @@ describe("CalendarView", () => {
   });
 });
 
-describe("CalendarView: Renders with State", () => {
+describe("CalendarView: Stateful Rendering", () => {
   beforeEach(() => {
     mockLocalStorage();
     localStorage.setItem("token", "secretTokenValue");
@@ -114,9 +100,8 @@ describe("CalendarView: Renders with State", () => {
   });
 
   it("renders both timed and all day events", async () => {
-    const preloadedState = weekEventState; // has to be called 'preloadedState' to render correctly
     await waitFor(() => {
-      render(<CalendarView />, { preloadedState });
+      render(<CalendarView />, { state: weekEventState });
     });
 
     expect(

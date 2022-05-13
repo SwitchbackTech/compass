@@ -62,6 +62,7 @@ describe("Calendar Interactions", () => {
 
     it("renders today only when on different week than current", async () => {
       const user = userEvent.setup();
+
       render(<CalendarView />);
 
       expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
@@ -120,8 +121,7 @@ describe("Calendar Interactions", () => {
           be able to click the event that's on the 'top' layer
       */
       const user = userEvent.setup();
-      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
-      render(<CalendarView />, { preloadedState });
+      render(<CalendarView />, { state: febToMarState });
 
       // just testing a handful of events to minimize slowness
       const titles = [
@@ -156,8 +156,7 @@ describe("Calendar Interactions", () => {
 
     it("closes when clicking page heading", async () => {
       const user = userEvent.setup();
-      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
-      render(<CalendarView />, { preloadedState });
+      render(<CalendarView />, { state: febToMarState });
 
       await user.click(screen.getByRole("button", { name: "Mar 1" }));
       await user.click(screen.getByRole("heading", { level: 1 }));
@@ -169,8 +168,7 @@ describe("Calendar Interactions", () => {
 
     it("deletes event after clicking trash icon", async () => {
       const user = userEvent.setup();
-      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
-      render(<CalendarView />, { preloadedState });
+      render(<CalendarView />, { state: febToMarState });
 
       await user.click(screen.getByTitle("Climb")); // open event
       await user.click(
@@ -189,13 +187,20 @@ describe("Calendar Interactions", () => {
     describe("DatePicker", () => {
       it("closes when clicking outside of form, while keeping form open", async () => {
         const user = userEvent.setup();
-        const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
-        render(<CalendarView />, { preloadedState });
+        render(<CalendarView />, { state: febToMarState });
 
-        await user.click(screen.getByTitle("Climb")); // open event
-        const startDatePicker = screen.getAllByRole("tab", {
-          name: /mar 01/i,
-        })[0];
+        const eventWithTimesBtn = screen.getByRole("button", {
+          // accept any times because times will be different if
+          // CI server in different timezone than you
+          name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,
+        });
+
+        await user.click(eventWithTimesBtn); // open event
+        const startDatePicker = await waitFor(() => {
+          screen.getAllByRole("tab", {
+            name: /mar 01/i,
+          })[0];
+        });
 
         await user.click(startDatePicker); // picker should open
 
@@ -216,8 +221,9 @@ describe("Calendar Interactions", () => {
   describe("All Day Events", () => {
     it("adds 1-day event somewhere on DOM", async () => {
       const user = userEvent.setup();
-      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
-      const { container } = render(<CalendarView />, { preloadedState });
+      const { container } = render(<CalendarView />, {
+        state: febToMarState,
+      });
 
       await user.click(container.querySelector("#allDayGrid"));
       await waitFor(() => {
@@ -234,12 +240,9 @@ describe("Calendar Interactions", () => {
   describe("Regular Events", () => {
     it("toggles times when clicking them", async () => {
       const user = userEvent.setup();
-      const preloadedState = febToMarState; // has to be called 'preloadedState' to render correctly
-      render(<CalendarView />, { preloadedState });
+      render(<CalendarView />, { state: febToMarState });
 
       const eventWithTimesBtn = screen.getByRole("button", {
-        // accept any times because times will be different if
-        // CI server in different timezone than you
         name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,
       });
       const hideTimesBox = within(eventWithTimesBtn).getByRole("textbox", {
