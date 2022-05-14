@@ -26,10 +26,10 @@ import {
   getWeekEventsSlice,
 } from "@web/ducks/events/slice";
 import { getFlexBasis } from "@web/common/utils/grid.util";
+import { GRID_TIME_STEP } from "@web/common/constants/grid.constants";
 
 import {
   EVENT_DEFAULT_MIN,
-  GRID_TIME_STEP,
   CALENDAR_X_START,
   CALENDAR_Y_START,
 } from "../calendar.constants";
@@ -49,14 +49,15 @@ export const useGetWeekViewProps = () => {
   /**************
    * Refs Init
    *************/
+  const allDayEventsGridRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
   const eventsGridRef = useRef<HTMLDivElement>(null);
   const weekDaysRef = useRef<HTMLDivElement>(null);
-  const allDayEventsGridRef = useRef<HTMLDivElement>(null);
 
   /*********
    * Grid
    *********/
+  const [columnWidths, setColumnWidths] = useState<number[]>([]);
   const [gridXOffset, setGridXOffset] = useState(0);
   const [gridYOffset, setGridYOffset] = useState(0);
 
@@ -104,6 +105,15 @@ export const useGetWeekViewProps = () => {
   /*************
    * Effects
    *************/
+
+  useEffect(() => {
+    const widths = Array.from(weekDaysRef.current?.children || []).map(
+      (e) => e.clientWidth
+    );
+
+    setColumnWidths(widths);
+  }, [week, weekDaysRef.current?.clientWidth]);
+
   useEffect(() => {
     setGridYOffset(getYOffset);
   }, [allDayEventsGridRef.current?.clientHeight, rowsCount]);
@@ -127,18 +137,16 @@ export const useGetWeekViewProps = () => {
   /*************
    * Getters
    *************/
-
+  /* 
+    height notes
+      - uses dynamic style; height changes based on window size; no min/max
+      - setting to a constant (20 e.g) requires the allday row height to also have
+        a max. otherwise, events will appear out of place
+     - got 2.62 by experimenting by what looks right
+    */
   const getAllDayEventCellHeight = () => getHourlyCellHeight() / 2.62; // got by experimenting by what looks right
 
-  const getColumnWidth = (dayIndex: number) =>
-    weekDaysRef.current?.children[dayIndex].clientWidth;
-
-  const getColumnWidths = () => {
-    const widths = Array.from(weekDaysRef.current?.children || []).map(
-      (e) => e.clientWidth
-    );
-    return widths;
-  };
+  const getColumnWidth = (dayIndex: number) => columnWidths[dayIndex];
 
   const getDateByXY = (x: number, y: number) => {
     const clickX = x - gridXOffset;
@@ -547,6 +555,7 @@ export const useGetWeekViewProps = () => {
       allDayEvents,
       allDayEventsGridRef,
       calendarRef,
+      columnWidths,
       dayjsBasedOnWeekDay,
       editingEvent,
       endOfSelectedWeekDay,
@@ -566,7 +575,6 @@ export const useGetWeekViewProps = () => {
     core: {
       getAllDayEventCellHeight,
       getColumnWidth,
-      getColumnWidths,
       getDateByXY,
       getDayNumberByX,
       getFlexBasisWrapper,

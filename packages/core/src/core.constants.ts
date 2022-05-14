@@ -1,4 +1,5 @@
 export const MB_50 = 50000000; // in bytes
+export const MS_IN_HR = 2.7777777777778e-7;
 export const SOMEDAY_EVENTS_LIMIT = 10;
 export const SURVEY_URL = "https://qot2dz1necm.typeform.com/to/YXpg6Ykp";
 

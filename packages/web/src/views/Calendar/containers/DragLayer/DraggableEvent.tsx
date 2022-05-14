@@ -11,6 +11,7 @@ import {
   CALENDAR_SIDEBAR_X_START,
 } from "@web/views/Calendar/calendar.constants";
 import { DAY_HOUR_MIN_M } from "@web/common/constants/dates";
+import { EVENT_PADDING_WIDTH } from "@web/common/constants/grid.constants";
 
 import { StyledDraggableEvent } from "./styled";
 
@@ -45,11 +46,8 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
   };
 
   const _getWidth = () => {
-    const columnWidths = core.getColumnWidths();
-
-    const widthMargin = 12; // arbitrary
     const width = isOverGrid
-      ? columnWidths[dayIndex] - widthMargin
+      ? component.columnWidths[dayIndex] - EVENT_PADDING_WIDTH
       : SIDEBAR_WIDTH - 80; // 40px padding on both sides
 
     return width;

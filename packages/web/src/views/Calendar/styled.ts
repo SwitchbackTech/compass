@@ -3,12 +3,12 @@ import { ColorNames } from "@web/common/types/styles";
 import { Flex } from "@web/components/Flex";
 import { getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
+import { GRID_SCROLLBAR_WIDTH } from "@web/common/constants/grid.constants";
 
 import {
   CALENDAR_GRID_MARGIN_LEFT,
   CALENDAR_TOP_PADDING,
   CALENDAR_X_PADDING,
-  GRID_SCROLLBAR_WIDTH,
   CALENDAR_Y_START,
   MYSTERY_PADDING,
   WEEK_DAYS_MARGIN_Y,

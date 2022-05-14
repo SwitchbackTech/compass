@@ -89,6 +89,7 @@ export const getAllDayEventWidth = (
   widths: number[]
 ) => {
   let width: number;
+
   switch (category) {
     case Category.ThisWeekOnly: {
       let duration = end.diff(start, "days");

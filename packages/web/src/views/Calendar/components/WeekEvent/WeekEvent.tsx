@@ -13,8 +13,12 @@ import {
   getLeftPosition,
   getLineClamp,
 } from "@web/common/utils/grid.util";
-import { EVENT_PADDING_RIGHT } from "@web/common/constants/grid.constants";
+import {
+  EVENT_PADDING_RIGHT,
+  EVENT_PADDING_WIDTH,
+} from "@web/common/constants/grid.constants";
 import { Category } from "@web/ducks/events/types";
+import { MS_IN_HR } from "@core/core.constants";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 import { Times } from "./Times";
@@ -35,61 +39,46 @@ const WeekEventComponent = (
   /*****
   State
   *****/
-
   const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
     component.editingEvent?._id === event._id && !event.isEditing;
 
-  // starting stuff
+  /************
+   Date + Times
+   ************/
   const startDate = dayjs(event.startDate);
   const startIndex = startDate.get("day");
 
-  /****
-  Times
-  *****/
-  const startTime =
-    component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
   const endDate = dayjs(event.endDate);
-  // get duration by converting ms to hours
-  const durationHours = endDate.diff(startDate) * 2.7777777777778e-7 || 0;
+
+  const durationHours = endDate.diff(startDate) * MS_IN_HR || 0;
 
   /**************
    Size + Position
    **************/
   let top: number;
-  // auto-deduct width for padding
-  // TODO: handle width in CSS and without using hard-coded numbers, but rather %
-  let width = -13;
+  let width = -EVENT_PADDING_WIDTH;
   let height: number;
-  const widths = core.getColumnWidths();
   const category = getEventCategory(
     startDate,
     endDate,
     component.startOfSelectedWeekDay,
     component.endOfSelectedWeekDay
   );
-  const left = getLeftPosition(category, startIndex, widths);
+  const left = getLeftPosition(category, startIndex, component.columnWidths);
 
   // console.log("calculating for ", event.title);
   if (event.isAllDay) {
-    /* 
-    height notes
-      - uses dynamic style; height changes based on window size; no min/max
-      - setting to a constant (20 e.g) requires the allday row height to also have
-        a max. otherwise, events will appear out of place
-     - got 2.62 by experimenting by what looks right
-    */
     height = core.getAllDayEventCellHeight();
     top = 25.26 * (event.row || 1); // found by experimenting with what 'looked right'
     // top = 25.26 * event.row; // found by experimenting with what 'looked right'
-    // console.log(`${event.row}, ${top}`); //$$
     width = getAllDayEventWidth(
       category,
       startIndex,
       startDate,
       endDate,
       component.startOfSelectedWeekDay,
-      widths
+      component.columnWidths
     );
     if (category === Category.PastToThisWeek) {
       console.log(event.startDate);
@@ -100,6 +89,9 @@ const WeekEventComponent = (
       // );
     }
   } else {
+    const startTime =
+      component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
+
     top = core.getHourlyCellHeight() * startTime;
     height = core.getHourlyCellHeight() * durationHours;
 

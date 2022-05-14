@@ -2,20 +2,12 @@
 export const EVENT_DEFAULT_MIN = 30;
 export const MYSTERY_PADDING = 20; // not sure how this was determined
 
-/* 
-Grid: Section I
-   Values that aren't required for 
-   any further calculations
-*/
-export const GRID_TIME_STEP = 15;
-export const GRID_SCROLLBAR_WIDTH = 8;
 export const SIDEBAR_COLLAPSED_WIDTH = 44;
 
 /*
-Grid: Section II
-  Values used to calculate:
-    - Sidebar
-    - X & Y offsets
+Values used to calculate:
+  - Sidebar
+  - X & Y offsets
 */
 export const CALENDAR_TOP_PADDING = 45;
 export const CALENDAR_X_PADDING = 25;
