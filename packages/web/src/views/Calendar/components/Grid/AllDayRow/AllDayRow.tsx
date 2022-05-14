@@ -59,6 +59,7 @@ export const AllDayRow: FC<Props> = ({ weekViewProps }) => {
   );
 
   const border = `1px solid ${getColor(ColorNames.WHITE_2)}`;
+
   return (
     <StyledEvents
       ref={drop}

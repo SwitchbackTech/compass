@@ -165,9 +165,6 @@ export const useGetWeekViewProps = () => {
   };
 
   const getDayNumberByX = (x: number) => {
-    console.log(
-      `${x}, ${Array.from(weekDaysRef.current?.children).toString()}`
-    );
     let dayNumber = 0;
     Array.from(weekDaysRef.current?.children || []).reduce(
       (accum, child, index) => {
@@ -179,6 +176,8 @@ export const useGetWeekViewProps = () => {
       },
       0
     );
+
+    // console.log(`${x}, ${dayNumber}, ${+dayNumber}`); //$$
 
     return +dayNumber;
   };
