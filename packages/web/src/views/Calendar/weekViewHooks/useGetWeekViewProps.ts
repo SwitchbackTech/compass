@@ -250,7 +250,7 @@ export const useGetWeekViewProps = () => {
   const onAllDayEventsGridMouseDown = (e: React.MouseEvent) => {
     if (editingEvent) return;
 
-    const startDate = dayjs(getDateStrByXY(e.clientX, e.clientY))
+    const startDate = getDateByXY(e.clientX, e.clientY)
       .startOf("day")
       .format(YEAR_MONTH_DAY_FORMAT);
 

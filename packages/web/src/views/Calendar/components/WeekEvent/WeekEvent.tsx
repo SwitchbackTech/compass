@@ -14,6 +14,7 @@ import {
   getLineClamp,
 } from "@web/common/utils/grid.util";
 import { EVENT_PADDING_RIGHT } from "@web/common/constants/grid.constants";
+import { Category } from "@web/ducks/events/types";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 import { Times } from "./Times";
@@ -78,7 +79,9 @@ const WeekEventComponent = (
      - got 2.62 by experimenting by what looks right
     */
     height = core.getEventCellHeight() / 2.62;
-    top = 25.26 * event.row; // found by experimenting with what 'looked right'
+    top = 25.26 * (event.row || 1); // found by experimenting with what 'looked right'
+    // top = 25.26 * event.row; // found by experimenting with what 'looked right'
+    // console.log(`${event.row}, ${top}`); //$$
     width = getAllDayEventWidth(
       category,
       startIndex,
@@ -87,6 +90,13 @@ const WeekEventComponent = (
       component.startOfSelectedWeekDay,
       widths
     );
+    if (category === Category.PastToThisWeek) {
+      console.log(
+        `${category}\n${startIndex}\n${startDate.toString()}\n${endDate.toString()}\n${component.startOfSelectedWeekDay.toString()}\n${JSON.stringify(
+          widths
+        )}`
+      );
+    }
   } else {
     top = core.getEventCellHeight() * startTime;
     height = core.getEventCellHeight() * durationHours;
