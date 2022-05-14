@@ -30,8 +30,8 @@ import { getFlexBasis } from "@web/common/utils/grid.util";
 import {
   EVENT_DEFAULT_MIN,
   GRID_TIME_STEP,
-  X_OFFSET,
-  GRID_Y_OFFSET,
+  CALENDAR_X_START,
+  CALENDAR_Y_START,
 } from "../calendar.constants";
 import { State_Event, Schema_GridEvent } from "./types";
 
@@ -99,14 +99,8 @@ export const useGetWeekViewProps = () => {
   /*********
    * Grid
    *********/
-  const [CALCULATED_GRID_X_OFFSET, setGridXOffset] = useState(
-    (calendarRef.current?.offsetLeft || 0) + X_OFFSET
-  );
-
-  // GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0);
-  const [CALCULATED_GRID_Y_OFFSET, setGridYOffset] = useState(
-    allDayEventsGridRef.current?.clientHeight || 0
-  );
+  const [gridXOffset, setGridXOffset] = useState(0);
+  const [gridYOffset, setGridYOffset] = useState(0);
 
   /*************
    * Effects
@@ -116,7 +110,7 @@ export const useGetWeekViewProps = () => {
   }, [allDayEventsGridRef.current?.clientHeight, rowsCount]);
 
   useEffect(() => {
-    setGridXOffset(X_OFFSET + (calendarRef.current?.offsetLeft || 0));
+    setGridXOffset(getXOffset);
   }, [calendarRef.current?.offsetLeft]);
 
   useEffect(() => {
@@ -142,11 +136,8 @@ export const useGetWeekViewProps = () => {
   };
 
   const getDateByXY = (x: number, y: number) => {
-    // $$ replace with getXOffset, similar to yOffset below?
-    const clickX = x - CALCULATED_GRID_X_OFFSET;
-
-    const yOffset = getYOffset();
-    const clickY = y - yOffset;
+    const clickX = x - gridXOffset;
+    const clickY = y - gridYOffset;
 
     const dayIndex = getDayNumberByX(clickX);
     const minutes = getMinuteByMousePosition(clickY);
@@ -245,8 +236,11 @@ export const useGetWeekViewProps = () => {
     return eventCellHeight * startTime;
   };
 
+  const getXOffset = () =>
+    CALENDAR_X_START + (calendarRef.current?.offsetLeft || 0);
+
   const getYOffset = () =>
-    GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0);
+    CALENDAR_Y_START + (allDayEventsGridRef.current?.clientHeight || 0);
 
   /**********
    * Handlers
@@ -451,11 +445,9 @@ export const useGetWeekViewProps = () => {
       "minutes"
     );
 
-    // GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0);
-
     const initialYOffset =
       e.clientY -
-      CALCULATED_GRID_Y_OFFSET +
+      gridYOffset +
       (eventsGridRef.current?.scrollTop || 0) -
       getYByDate(eventToDrag.startDate || "");
 
@@ -551,14 +543,14 @@ export const useGetWeekViewProps = () => {
     component: {
       allDayEvents,
       allDayEventsGridRef,
-      CALCULATED_GRID_X_OFFSET,
-      CALCULATED_GRID_Y_OFFSET,
       calendarRef,
       dayjsBasedOnWeekDay,
       editingEvent,
       endOfSelectedWeekDay,
       eventsGridRef,
       eventState,
+      gridXOffset,
+      gridYOffset,
       rowsCount,
       startOfSelectedWeekDay,
       times,
@@ -577,7 +569,6 @@ export const useGetWeekViewProps = () => {
       getFlexBasisWrapper,
       getMinuteByMousePosition,
       getPastOverflowWidth,
-      getYOffset,
     },
   };
 };

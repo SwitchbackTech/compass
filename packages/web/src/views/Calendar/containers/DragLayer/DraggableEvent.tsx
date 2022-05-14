@@ -8,7 +8,7 @@ import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEvent/styled";
 import {
   SIDEBAR_WIDTH,
-  X_PLUS_SIDEBAR_OFFSET,
+  CALENDAR_SIDEBAR_X_START,
 } from "@web/views/Calendar/calendar.constants";
 import { DAY_HOUR_MIN_M } from "@web/common/constants/dates";
 
@@ -56,9 +56,9 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
   };
 
   /* Position */
-  const isOverGrid = x > X_PLUS_SIDEBAR_OFFSET;
-  const isOverAllDayRow = y < component.CALCULATED_GRID_Y_OFFSET;
-  const gridX = x - component.CALCULATED_GRID_X_OFFSET;
+  const isOverGrid = x > CALENDAR_SIDEBAR_X_START;
+  const isOverAllDayRow = y < component.gridYOffset;
+  const gridX = x - component.gridXOffset;
   const dayIndex = core.getDayNumberByX(gridX);
 
   /* Size */
@@ -66,7 +66,7 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
   const width = _getWidth();
 
   /* Date & Time */
-  const adjustedY = y - core.getYOffset();
+  const adjustedY = y - component.gridYOffset;
   const minutes = core.getMinuteByMousePosition(adjustedY);
   const timePreview = component.startOfSelectedWeekDay
     .add(dayIndex, "day")
