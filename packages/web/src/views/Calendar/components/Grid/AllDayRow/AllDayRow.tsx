@@ -78,7 +78,7 @@ export const AllDayRow: FC<Props> = ({ weekViewProps }) => {
           isOpen={!!component.editingEvent.isOpen}
           onCloseEventForm={() => eventHandlers.setEditingEvent(null)}
           onSubmitEventForm={eventHandlers.onSubmitEvent}
-          setEvent={(event) => eventHandlers.setEditingEvent(event)}
+          // setEvent={(event) => eventHandlers.setEditingEvent(event)}
           weekViewProps={weekViewProps}
         />
       )}

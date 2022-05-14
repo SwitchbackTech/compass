@@ -14,7 +14,7 @@ export const EditingWeekEvent: React.FC<WeekFormProps> = ({
   isOpen,
   onSubmitEventForm,
   event,
-  setEvent,
+  // setEvent,
   onCloseEventForm,
   weekViewProps,
 }) => {
@@ -42,7 +42,8 @@ export const EditingWeekEvent: React.FC<WeekFormProps> = ({
       <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
         {isOpen && (
           <EventForm
-            setEvent={setEvent}
+            // setEvent={setEvent} //$$
+            setEvent={weekViewProps.eventHandlers.setEditingEvent}
             event={event}
             onDelete={() => {
               weekViewProps.eventHandlers.onDeleteEvent(event._id);

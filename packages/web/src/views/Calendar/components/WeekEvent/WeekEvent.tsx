@@ -91,11 +91,12 @@ const WeekEventComponent = (
       widths
     );
     if (category === Category.PastToThisWeek) {
-      console.log(
-        `${category}\n${startIndex}\n${startDate.toString()}\n${endDate.toString()}\n${component.startOfSelectedWeekDay.toString()}\n${JSON.stringify(
-          widths
-        )}`
-      );
+      console.log(event.startDate);
+      // console.log(
+      //   `${category}\n${startIndex}\n${startDate.toString()}\n${endDate.toString()}\n${component.startOfSelectedWeekDay.toString()}\n${JSON.stringify(
+      //     widths
+      //   )}`
+      // );
     }
   } else {
     top = core.getEventCellHeight() * startTime;
