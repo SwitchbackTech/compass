@@ -1,5 +1,6 @@
 import React from "react";
 import dayjs from "dayjs";
+import { MS_IN_HR } from "@core/core.constants";
 import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
@@ -18,7 +19,6 @@ import {
   EVENT_PADDING_WIDTH,
 } from "@web/common/constants/grid.constants";
 import { Category } from "@web/ducks/events/types";
-import { MS_IN_HR } from "@core/core.constants";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 import { Times } from "./Times";
