@@ -38,6 +38,7 @@ import {
   StyledWeekDaysFlex,
 } from "./styled";
 import { MainGrid } from "./components/Grid/MainGrid";
+import { WEEK_DAYS_HEIGHT } from "./calendar.constants";
 
 export interface Props {
   weekViewProps: WeekViewProps;
@@ -222,7 +223,7 @@ export const CalendarView = () => {
                 color={weekDayTextColor}
                 flexBasis={flexBasis}
               >
-                <Text lineHeight={26} size={26}>
+                <Text lineHeight={WEEK_DAYS_HEIGHT} size={WEEK_DAYS_HEIGHT}>
                   {dayNumberToDisplay}
                 </Text>
                 <SpaceCharacter />

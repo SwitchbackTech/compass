@@ -60,12 +60,12 @@ export const useGetWeekViewProps = () => {
   const [editingEvent, setEditingEvent] = useState<Schema_GridEvent | null>(
     null
   );
-  const [week, setWeek] = useState(today.week());
+  const [eventState, setEventState] = useState<State_Event | null>(null);
   //$$ change to useRef to avoid re-rendering?
   const [modifiableDateField, setModifiableDateField] = useState<
     "startDate" | "endDate" | null
   >(null);
-  const [eventState, setEventState] = useState<State_Event | null>(null);
+  const [week, setWeek] = useState(today.week());
 
   /*********
    * Events
@@ -102,6 +102,8 @@ export const useGetWeekViewProps = () => {
   const [CALCULATED_GRID_X_OFFSET, setGridXOffset] = useState(
     (calendarRef.current?.offsetLeft || 0) + X_OFFSET
   );
+
+  // GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0);
   const [CALCULATED_GRID_Y_OFFSET, setGridYOffset] = useState(
     allDayEventsGridRef.current?.clientHeight || 0
   );
@@ -448,6 +450,8 @@ export const useGetWeekViewProps = () => {
       eventToDrag.startDate,
       "minutes"
     );
+
+    // GRID_Y_OFFSET + (allDayEventsGridRef.current?.clientHeight || 0);
 
     const initialYOffset =
       e.clientY -
