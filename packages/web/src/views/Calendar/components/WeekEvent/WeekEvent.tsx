@@ -70,6 +70,7 @@ const WeekEventComponent = (
   );
   const left = getLeftPosition(category, startIndex, widths);
 
+  console.log("calculating for ", event.title);
   if (event.isAllDay) {
     /* 
     height notes

@@ -54,6 +54,12 @@ export const useGetWeekViewProps = () => {
   const weekDaysRef = useRef<HTMLDivElement>(null);
   const allDayEventsGridRef = useRef<HTMLDivElement>(null);
 
+  /*********
+   * Grid
+   *********/
+  const [gridXOffset, setGridXOffset] = useState(0);
+  const [gridYOffset, setGridYOffset] = useState(0);
+
   /*************
    * State Init
    *************/
@@ -95,13 +101,6 @@ export const useGetWeekViewProps = () => {
   const times = getAmPmTimes();
   const todayDayWeekNumber = today.get("day") + 1;
   const yesterdayDayNumber = todayDayWeekNumber - 1;
-
-  /*********
-   * Grid
-   *********/
-  const [gridXOffset, setGridXOffset] = useState(0);
-  const [gridYOffset, setGridYOffset] = useState(0);
-
   /*************
    * Effects
    *************/
