@@ -38,7 +38,7 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
     }
 
     height = isOverGrid
-      ? core.getEventCellHeight() - heightMargin
+      ? core.getHourlyCellHeight() - heightMargin
       : SOMEDAY_EVENT_HEIGHT;
 
     return height;

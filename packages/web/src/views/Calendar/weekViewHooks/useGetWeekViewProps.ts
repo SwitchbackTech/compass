@@ -67,7 +67,6 @@ export const useGetWeekViewProps = () => {
     null
   );
   const [eventState, setEventState] = useState<State_Event | null>(null);
-  //$$ change to useRef to avoid re-rendering?
   const [modifiableDateField, setModifiableDateField] = useState<
     "startDate" | "endDate" | null
   >(null);
@@ -101,6 +100,7 @@ export const useGetWeekViewProps = () => {
   const times = getAmPmTimes();
   const todayDayWeekNumber = today.get("day") + 1;
   const yesterdayDayNumber = todayDayWeekNumber - 1;
+
   /*************
    * Effects
    *************/
@@ -109,6 +109,8 @@ export const useGetWeekViewProps = () => {
   }, [allDayEventsGridRef.current?.clientHeight, rowsCount]);
 
   useEffect(() => {
+    // reminder: runs after toggling side bar toggled,
+    // but not when resizing window
     setGridXOffset(getXOffset);
   }, [calendarRef.current?.offsetLeft]);
 
@@ -125,7 +127,11 @@ export const useGetWeekViewProps = () => {
   /*************
    * Getters
    *************/
-  const getAllDayEventCellHeight = () => getEventGridHeight() / 2.62; // got by experimenting by what looks right
+
+  const getAllDayEventCellHeight = () => getHourlyCellHeight() / 2.62; // got by experimenting by what looks right
+
+  const getColumnWidth = (dayIndex: number) =>
+    weekDaysRef.current?.children[dayIndex].clientWidth;
 
   const getColumnWidths = () => {
     const widths = Array.from(weekDaysRef.current?.children || []).map(
@@ -169,20 +175,18 @@ export const useGetWeekViewProps = () => {
       0
     );
 
-    // console.log(`${x}, ${dayNumber}, ${+dayNumber}`); //$$
-
-    return +dayNumber;
+    return +dayNumber; //$$ remove +
   };
-
-  const getEventGridHeight = () =>
-    (eventsGridRef.current?.clientHeight || 0) / 11;
 
   const getFlexBasisWrapper = (day: Dayjs) => {
     return getFlexBasis(day, week, today);
   };
 
+  const getHourlyCellHeight = () =>
+    (eventsGridRef.current?.clientHeight || 0) / 11;
+
   const getMinuteByMousePosition = (y: number) => {
-    const height = getEventGridHeight();
+    const height = getHourlyCellHeight();
     const minutesOnGrid = Math.round(
       ((y + (eventsGridRef.current?.scrollTop || 0)) / height) * 60
     );
@@ -229,7 +233,7 @@ export const useGetWeekViewProps = () => {
 
   const getYByDate = (date: string) => {
     const day = dayjs(date);
-    const eventCellHeight = getEventGridHeight();
+    const eventCellHeight = getHourlyCellHeight();
     const startTime = times.indexOf(day.format(HOURS_AM_FORMAT)) / 4;
 
     return eventCellHeight * startTime;
@@ -561,11 +565,12 @@ export const useGetWeekViewProps = () => {
     },
     core: {
       getAllDayEventCellHeight,
+      getColumnWidth,
+      getColumnWidths,
       getDateByXY,
       getDayNumberByX,
-      getColumnWidths,
-      getEventCellHeight: getEventGridHeight,
       getFlexBasisWrapper,
+      getHourlyCellHeight,
       getMinuteByMousePosition,
       getPastOverflowWidth,
     },

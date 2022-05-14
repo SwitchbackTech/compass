@@ -40,11 +40,13 @@ const WeekEventComponent = (
   const isPlaceholder =
     component.editingEvent?._id === event._id && !event.isEditing;
 
+  // starting stuff
+  const startDate = dayjs(event.startDate);
+  const startIndex = startDate.get("day");
+
   /****
   Times
   *****/
-  const startDate = dayjs(event.startDate);
-  const startIndex = startDate.get("day");
   const startTime =
     component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
   const endDate = dayjs(event.endDate);
@@ -59,9 +61,7 @@ const WeekEventComponent = (
   // TODO: handle width in CSS and without using hard-coded numbers, but rather %
   let width = -13;
   let height: number;
-  const widths = Array.from(component.weekDaysRef.current?.children || []).map(
-    (e) => e.clientWidth
-  );
+  const widths = core.getColumnWidths();
   const category = getEventCategory(
     startDate,
     endDate,
@@ -70,7 +70,7 @@ const WeekEventComponent = (
   );
   const left = getLeftPosition(category, startIndex, widths);
 
-  console.log("calculating for ", event.title);
+  // console.log("calculating for ", event.title);
   if (event.isAllDay) {
     /* 
     height notes
@@ -79,7 +79,7 @@ const WeekEventComponent = (
         a max. otherwise, events will appear out of place
      - got 2.62 by experimenting by what looks right
     */
-    height = core.getEventCellHeight() / 2.62;
+    height = core.getAllDayEventCellHeight();
     top = 25.26 * (event.row || 1); // found by experimenting with what 'looked right'
     // top = 25.26 * event.row; // found by experimenting with what 'looked right'
     // console.log(`${event.row}, ${top}`); //$$
@@ -100,11 +100,11 @@ const WeekEventComponent = (
       // );
     }
   } else {
-    top = core.getEventCellHeight() * startTime;
-    height = core.getEventCellHeight() * durationHours;
-    width =
-      component.weekDaysRef.current?.children[startIndex].clientWidth -
-        EVENT_PADDING_RIGHT || 0;
+    top = core.getHourlyCellHeight() * startTime;
+    height = core.getHourlyCellHeight() * durationHours;
+
+    const colWidth = core.getColumnWidth(startIndex);
+    width = colWidth - EVENT_PADDING_RIGHT || 0;
   }
 
   return (

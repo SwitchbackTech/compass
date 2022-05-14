@@ -111,7 +111,7 @@ export const CalendarView = () => {
     if (!component.eventsGridRef.current) return;
 
     // scroll down to the current time in grid
-    const minuteHeight = core.getEventCellHeight() / 60;
+    const minuteHeight = core.getHourlyCellHeight() / 60;
     const top = getCurrentMinute() * minuteHeight;
 
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
