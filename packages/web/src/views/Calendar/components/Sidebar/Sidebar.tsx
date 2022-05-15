@@ -28,7 +28,7 @@ import {
   renderStyledSidebarToggleIcon,
   StyledHeaderFlex,
   StyledSidebarOverflow,
-  StyledFutureEventsToggleableSection,
+  StyledSomedaySection,
 } from "./styled";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 
@@ -192,7 +192,6 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
             </StyledPriorityFilterButton>
           </Popover> */}
         </StyledHeaderFlex>
-
         {/* <SomedaySection
           flex={getEventsSectionFlex("currentMonth")}
           isToggled={isCurrentMonthToggled}
@@ -206,8 +205,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           EventsListContainer={SidebarCurrentMonthEventsContainer}
           sectionType="currentMonth"
         /> */}
-
-        <StyledFutureEventsToggleableSection
+        <StyledSomedaySection
           shouldSetTopMargin={isCurrentMonthToggled}
           flex={getEventsSectionFlex("future")}
           startDate={dayjs().format(YEAR_MONTH_FORMAT)}

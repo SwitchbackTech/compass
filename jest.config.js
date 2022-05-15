@@ -125,6 +125,7 @@ module.exports = {
           "<rootDir>/packages/web/src/common/__mocks__/css.stub.js",
         "\\.(svg)$": "<rootDir>/packages/web/src/common/__mocks__/svg.js",
       },
+
       testEnvironment: "jsdom",
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
       transformIgnorePatterns: [

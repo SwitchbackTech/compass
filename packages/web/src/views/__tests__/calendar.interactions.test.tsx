@@ -1,9 +1,7 @@
 import React from "react";
-import { rest } from "msw";
 import "@testing-library/jest-dom";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { setupServer } from "msw/node";
 import { CalendarView } from "@web/views/Calendar";
 import { CompassRoot } from "@web/routers/index";
 import { render } from "@web/common/__mocks__/mock.render";
@@ -12,40 +10,16 @@ import {
   mockLocalStorage,
   clearLocalStorageMock,
 } from "@web/common/utils/test.util";
-describe("Calendar Interactions", () => {
-  const server = setupServer(
-    rest.get("/api/event", (req, res, ctx) => {
-      const events = [
-        {
-          _id: "620c177bfadfdec705cdd6a6",
-          gEventId: "6qnjpveml3kol7q9tdqaklh1mb",
-          user: "61f2f0704d0ee49134c7a01d",
-          origin: "googleimport",
-          title: "groceries",
-          description: "some details",
-          priorities: [],
-          isAllDay: false,
-          startDate: "2022-02-15T17:00:00-06:00",
-          endDate: "2022-02-15T18:00:00-06:00",
-          priority: "relations",
-        },
-      ];
-      return res(ctx.json(events));
-    })
-  );
 
+describe("Calendar Interactions", () => {
   beforeAll(() => {
     window.HTMLElement.prototype.scroll = jest.fn();
     mockLocalStorage();
     localStorage.setItem("token", "mytoken123");
-    server.listen();
   });
-
-  afterEach(() => server.resetHandlers());
 
   afterAll(() => {
     clearLocalStorageMock();
-    server.close();
   });
 
   describe("Navigation Arrow Row", () => {
@@ -54,10 +28,16 @@ describe("Calendar Interactions", () => {
       render(CompassRoot);
 
       expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
-      await user.click(
-        screen.getByRole("navigation", { name: /previous week/i })
-      );
-      expect(screen.getByText(/today/i)).toBeInTheDocument();
+
+      await act(async () => {
+        await user.click(
+          screen.getByRole("navigation", { name: /previous week/i })
+        );
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/today/i)).toBeInTheDocument();
+      });
     });
 
     it("renders today only when on different week than current", async () => {
@@ -66,24 +46,30 @@ describe("Calendar Interactions", () => {
       render(<CalendarView />);
 
       expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
-      await user.click(
-        screen.getByRole("navigation", { name: /previous week/i })
-      );
+      await act(async () => {
+        await user.click(
+          screen.getByRole("navigation", { name: /previous week/i })
+        );
+      });
       expect(screen.getByText(/today/i)).toBeInTheDocument();
 
       // user returns to original week
-      await user.click(
-        screen.getByRole("navigation", {
-          name: /next week/i,
-        })
-      );
+      await act(async () => {
+        await user.click(
+          screen.getByRole("navigation", {
+            name: /next week/i,
+          })
+        );
+      });
       expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
 
-      await user.click(
-        screen.getByRole("navigation", {
-          name: /next week/i,
-        })
-      );
+      await act(async () => {
+        await user.click(
+          screen.getByRole("navigation", {
+            name: /next week/i,
+          })
+        );
+      });
       expect(screen.getByText(/today/i)).toBeInTheDocument();
     });
   });
@@ -93,20 +79,24 @@ describe("Calendar Interactions", () => {
       const user = userEvent.setup();
       render(<CalendarView />);
 
-      await user.click(
-        screen.getByRole("navigation", {
-          name: /next week/i,
-        })
-      );
+      await act(async () => {
+        await user.click(
+          screen.getByRole("navigation", {
+            name: /next week/i,
+          })
+        );
+      });
       expect(screen.queryByRole("separator")).not.toBeInTheDocument();
     });
     it("disappears when viewing past week", async () => {
       const user = userEvent.setup();
       render(<CalendarView />);
 
-      await user.click(
-        screen.getByRole("navigation", { name: /previous week/i })
-      );
+      await act(async () => {
+        await user.click(
+          screen.getByRole("navigation", { name: /previous week/i })
+        );
+      });
       expect(screen.queryByRole("separator")).not.toBeInTheDocument();
     });
   });
@@ -134,15 +124,18 @@ describe("Calendar Interactions", () => {
 
       for (const t of titles) {
         expect(screen.queryByDisplayValue(t)).not.toBeInTheDocument(); // shouldnt show form before being clicked
-        await user.click(screen.getByTitle(t));
+        await act(async () => {
+          await user.click(screen.getByTitle(t));
+        });
+
         await waitFor(() => {
           expect(screen.getByDisplayValue(t)).toBeInTheDocument();
         });
         /*
-        TODO: escape out of even and confirm form disappears
+        TODO: press ESC and confirm form disappears
         opt: 
           user.keyboard ...
-        opt (wasnt working initiall):
+        opt (wasnt working initially):
           fireEvent.keyDown(screen.getByText(/today/i), {
             key: "Escape",
             code: "Escape",
@@ -158,8 +151,13 @@ describe("Calendar Interactions", () => {
       const user = userEvent.setup();
       render(<CalendarView />, { state: febToMarState });
 
-      await user.click(screen.getByRole("button", { name: "Mar 1" }));
-      await user.click(screen.getByRole("heading", { level: 1 }));
+      await act(async () => {
+        await user.click(screen.getByRole("button", { name: "Mar 1" }));
+      });
+
+      await act(async () => {
+        await user.click(screen.getByRole("heading", { level: 1 }));
+      });
 
       await waitFor(() => {
         expect(screen.queryByRole("form")).not.toBeInTheDocument();
@@ -170,12 +168,17 @@ describe("Calendar Interactions", () => {
       const user = userEvent.setup();
       render(<CalendarView />, { state: febToMarState });
 
-      await user.click(screen.getByTitle("Climb")); // open event
-      await user.click(
-        screen.getByRole("button", {
-          name: /delete event/i,
-        })
-      );
+      await act(async () => {
+        await user.click(screen.getByTitle("Climb")); // open event
+      });
+
+      await act(async () => {
+        await user.click(
+          screen.getByRole("button", {
+            name: /delete event/i,
+          })
+        );
+      });
 
       expect(
         screen.queryByRole("button", {
@@ -195,17 +198,23 @@ describe("Calendar Interactions", () => {
           name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,
         });
 
-        await user.click(eventWithTimesBtn); // open event
+        await act(async () => {
+          await user.click(eventWithTimesBtn); // open event
+        });
         const startDatePicker = await waitFor(() => {
           screen.getAllByRole("tab", {
             name: /mar 01/i,
           })[0];
         });
 
-        await user.click(startDatePicker); // picker should open
+        await act(async () => {
+          await user.click(startDatePicker); // picker should open
+        });
 
-        // picker should close
-        await user.click(screen.getByRole("form"));
+        await act(async () => {
+          // picker should close
+          await user.click(screen.getByRole("form"));
+        });
 
         // looks for the date input that appears when editing
         // (instead of date picker, because sidebar month picker still present)
@@ -225,12 +234,20 @@ describe("Calendar Interactions", () => {
         state: febToMarState,
       });
 
-      await user.click(container.querySelector("#allDayGrid"));
+      await act(async () => {
+        await user.click(container.querySelector("#allDayGrid"));
+      });
       await waitFor(() => {
         expect(screen.getByRole("form")).toBeInTheDocument();
       });
-      await user.type(screen.getByPlaceholderText(/title/i), "Hello, World");
-      await userEvent.keyboard("{Enter}");
+
+      await act(async () => {
+        await user.type(screen.getByPlaceholderText(/title/i), "Hello, World");
+      });
+
+      await act(async () => {
+        await userEvent.keyboard("{Enter}");
+      });
 
       // TODO: update test to ensure its on the expected day column
       expect(screen.getByDisplayValue("Hello, World")).toBeInTheDocument();
@@ -249,8 +266,10 @@ describe("Calendar Interactions", () => {
         name: /click to hide times/i,
       });
 
-      // user tries to hide times
-      await user.click(hideTimesBox);
+      await act(async () => {
+        // user tries to hide times
+        await user.click(hideTimesBox);
+      });
 
       const eventWithoutTimes = screen.getByRole("button", {
         name: /climb/i, // no times
@@ -261,8 +280,10 @@ describe("Calendar Interactions", () => {
         name: /show times/i,
       });
 
-      // user tries to show times
-      await user.click(showTimesBox);
+      await act(async () => {
+        // user tries to show times
+        await user.click(showTimesBox);
+      });
 
       expect(eventWithTimesBtn).toBeInTheDocument();
     });

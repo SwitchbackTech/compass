@@ -11,9 +11,7 @@ import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
 
-beforeAll(() => {
-  window.HTMLElement.prototype.scroll = jest.fn();
-});
+import { useGetWeekViewProps } from "../Calendar/weekViewHooks/useGetWeekViewProps";
 
 describe("Routing", () => {
   it("goes to login page when local storage token missing", () => {
@@ -26,7 +24,25 @@ describe("Routing", () => {
   });
 });
 
-describe("CalendarView: Stateless Rendering", () => {
+describe("Scroll", () => {
+  // separate from other tests to preserve
+  // '.toHaveBeenCalledTimes' reliability
+  it("only scrolls once", async () => {
+    mockLocalStorage();
+    localStorage.setItem("token", "secretTokenValue");
+    window.HTMLElement.prototype.scroll = jest.fn();
+
+    await waitFor(() => {
+      render(<CalendarView />);
+    });
+    // expect(window.HTMLElement.prototype.scroll).toHaveBeenCalled();
+    // $$ set back to 1 once duplicate rerenders gets fixed
+    expect(window.HTMLElement.prototype.scroll).toHaveBeenCalledTimes(1);
+    clearLocalStorageMock();
+  });
+});
+
+describe("Stateless Rendering", () => {
   beforeEach(() => {
     mockLocalStorage();
     localStorage.setItem("token", "secretTokenValue");
@@ -37,7 +53,6 @@ describe("CalendarView: Stateless Rendering", () => {
 
   it("renders current year in YYYY format", async () => {
     await waitFor(() => {
-      // workaround to for Redux connected component act() warning
       render(<CalendarView />);
     });
 
@@ -46,7 +61,6 @@ describe("CalendarView: Stateless Rendering", () => {
   });
 
   it("renders week navigation arrows", async () => {
-    // workaround to for Redux connected component act() warning
     await waitFor(() => {
       render(<CalendarView />);
     });
@@ -64,7 +78,6 @@ describe("CalendarView: Stateless Rendering", () => {
   });
 
   it("renders current week", async () => {
-    // workaround to for Redux connected component act() warning
     await waitFor(() => {
       render(<CalendarView />);
     });
@@ -78,19 +91,12 @@ describe("CalendarView: Stateless Rendering", () => {
     });
     expect(screen.getByRole("separator")).toBeInTheDocument();
   });
-
-  it("automatically scrolls", async () => {
-    // workaround to for Redux connected component act() warning
-    await waitFor(() => {
-      render(<CalendarView />);
-    });
-    expect(window.HTMLElement.prototype.scroll).toHaveBeenCalled();
-    // $$ set back to 1 once duplicate rerenders gets fixed
-    // expect(window.HTMLElement.prototype.scroll).toHaveBeenCalledTimes(1);
-  });
 });
 
-describe("CalendarView: Stateful Rendering", () => {
+describe("Stateful Rendering", () => {
+  beforeAll(() => {
+    window.HTMLElement.prototype.scroll = jest.fn();
+  });
   beforeEach(() => {
     mockLocalStorage();
     localStorage.setItem("token", "secretTokenValue");
