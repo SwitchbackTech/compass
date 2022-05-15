@@ -7,24 +7,6 @@ import {
   FLEX_EQUAL,
 } from "@web/common/constants/grid.constants";
 
-test("grid demo", () => {
-  const x = 98;
-  // const x = 124;
-  const columnWidths = [124, 124, 124, 124, 124, 124, 199];
-  let dayNumber = 0;
-
-  // columnWidths.reduce((accum, width, index) => {
-  columnWidths.reduce((prev, width, index) => {
-    if (x >= prev && x < prev + width) {
-      dayNumber = index;
-    }
-
-    return prev + width;
-  }, 0);
-
-  expect(dayNumber).toBe(0);
-});
-
 describe("getFlexBasis", () => {
   test("past week: all same", () => {
     const july10 = dayjs("2022-07-10");

@@ -184,13 +184,12 @@ export const useGetWeekViewProps = () => {
 
   const getDayNumberByX = (x: number) => {
     let dayNumber = 0;
-    // Array.from(weekDaysRef.current?.children || []).reduce( //$$
-    columnWidths.reduce((accum, child, index) => {
-      if (x >= accum && x < accum + child) {
+    columnWidths.reduce((prev, width, index) => {
+      if (x >= prev && x < prev + width) {
         dayNumber = index;
       }
 
-      return accum + child;
+      return prev + width;
     }, 0);
 
     return dayNumber;
