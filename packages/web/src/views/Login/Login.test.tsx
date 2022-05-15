@@ -1,46 +1,28 @@
 import React from "react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
-import { rest } from "msw";
-import { setupServer } from "msw/node";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { server } from "@web/common/__mocks__/server/mock.server";
 import { LoginView } from "@web/views/Login";
-import { API_BASEURL } from "@web/common/constants/web.constants";
 
-describe("Login Tests", () => {
-  // move to setup file
-  const server = setupServer(
-    rest.get(`${API_BASEURL}/auth/oauth-url`, (req, res, ctx) => {
-      return res(ctx.json({ authUrl: "foo", authState: "bar" }));
-    }),
-    rest.get("/api/auth/oauth-status", (req, res, ctx) => {
-      return res(
-        ctx.json({ isOauthComplete: false, refreshNeeded: false, token: "noo" })
-      );
-    })
-  );
-
-  beforeAll(() => {
-    server.listen();
-  });
-  afterAll(() => {
-    server.close();
-  });
-
-  it("renders oauth and feedback buttons", async () => {
+describe("Login", () => {
+  beforeAll(() => server.listen());
+  afterEach(() => server.resetHandlers());
+  afterAll(() => server.close());
+  it("displays oauth and feedback buttons", async () => {
     render(<LoginView />);
     const gOauthButton = screen.getByRole("button", {
       name: /sign up/i,
     });
     await waitFor(() => {
-      expect(gOauthButton).toBeInTheDocument;
+      expect(gOauthButton).toBeInTheDocument();
     });
 
     const feedbackButton = screen.getByText(/send feedback/i);
-    expect(feedbackButton).toBeInTheDocument;
+    expect(feedbackButton).toBeInTheDocument();
   });
 
-  it("shows loading message after clicking auth button", async () => {
+  it("displays loading message after clicking sign up button", async () => {
     window.open = jest.fn();
 
     render(<LoginView />);

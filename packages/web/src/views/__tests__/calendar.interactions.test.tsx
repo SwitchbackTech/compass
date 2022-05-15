@@ -1,9 +1,7 @@
 import React from "react";
-import { rest } from "msw";
 import "@testing-library/jest-dom";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { setupServer } from "msw/node";
 import { CalendarView } from "@web/views/Calendar";
 import { CompassRoot } from "@web/routers/index";
 import { render } from "@web/common/__mocks__/mock.render";
@@ -14,39 +12,14 @@ import {
 } from "@web/common/utils/test.util";
 
 describe("Calendar Interactions", () => {
-  const server = setupServer(
-    rest.get("/api/event", (req, res, ctx) => {
-      const events = [
-        {
-          _id: "620c177bfadfdec705cdd6a6",
-          gEventId: "6qnjpveml3kol7q9tdqaklh1mb",
-          user: "61f2f0704d0ee49134c7a01d",
-          origin: "googleimport",
-          title: "groceries",
-          description: "some details",
-          priorities: [],
-          isAllDay: false,
-          startDate: "2022-02-15T17:00:00-06:00",
-          endDate: "2022-02-15T18:00:00-06:00",
-          priority: "relations",
-        },
-      ];
-      return res(ctx.json(events));
-    })
-  );
-
   beforeAll(() => {
     window.HTMLElement.prototype.scroll = jest.fn();
     mockLocalStorage();
     localStorage.setItem("token", "mytoken123");
-    server.listen();
   });
-
-  afterEach(() => server.resetHandlers());
 
   afterAll(() => {
     clearLocalStorageMock();
-    server.close();
   });
 
   describe("Navigation Arrow Row", () => {
