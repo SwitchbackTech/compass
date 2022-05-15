@@ -59,6 +59,7 @@ export const createAsyncSlice = <
       state.isSuccess = false;
       state.error = action.payload;
     },
+
     ...options.reducers,
   };
 
@@ -83,13 +84,13 @@ export const createAsyncSlice = <
   };
 };
 
+export const isError = (asyncState: _AsyncState<unknown, unknown>) =>
+  !asyncState.isProcessing && !!asyncState.error;
+
 export const isProcessing = (asyncState: _AsyncState<unknown, unknown>) =>
-  asyncState.isProcessing;
+  asyncState.isProcessing && !!asyncState.error;
 
 export const isSuccess = (asyncState: _AsyncState<unknown, unknown>) =>
   !asyncState.isProcessing && asyncState.isSuccess;
-
-export const isError = (asyncState: _AsyncState<unknown, unknown>) =>
-  !asyncState.isProcessing && !!asyncState.error;
 
 export const pure = <T>(state: T) => state;

@@ -38,6 +38,7 @@ import {
   StyledWeekDaysFlex,
 } from "./styled";
 import { MainGrid } from "./components/Grid/MainGrid";
+import { WEEK_DAYS_HEIGHT } from "./calendar.constants";
 
 export interface Props {
   weekViewProps: WeekViewProps;
@@ -110,7 +111,7 @@ export const CalendarView = () => {
     if (!component.eventsGridRef.current) return;
 
     // scroll down to the current time in grid
-    const minuteHeight = core.getEventCellHeight() / 60;
+    const minuteHeight = component.hourlyCellHeight / 60;
     const top = getCurrentMinute() * minuteHeight;
 
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
@@ -222,7 +223,7 @@ export const CalendarView = () => {
                 color={weekDayTextColor}
                 flexBasis={flexBasis}
               >
-                <Text lineHeight={26} size={26}>
+                <Text lineHeight={WEEK_DAYS_HEIGHT} size={WEEK_DAYS_HEIGHT}>
                   {dayNumberToDisplay}
                 </Text>
                 <SpaceCharacter />

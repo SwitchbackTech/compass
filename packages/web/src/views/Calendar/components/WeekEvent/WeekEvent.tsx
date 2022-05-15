@@ -1,5 +1,6 @@
 import React from "react";
 import dayjs from "dayjs";
+import { MS_IN_HR } from "@core/core.constants";
 import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
@@ -13,7 +14,11 @@ import {
   getLeftPosition,
   getLineClamp,
 } from "@web/common/utils/grid.util";
-import { EVENT_PADDING_RIGHT } from "@web/common/constants/grid.constants";
+import {
+  EVENT_PADDING_RIGHT,
+  EVENT_PADDING_WIDTH,
+} from "@web/common/constants/grid.constants";
+import { Category } from "@web/ducks/events/types";
 
 import { StyledEvent, StyledEventScaler } from "./styled";
 import { Times } from "./Times";
@@ -34,65 +39,54 @@ const WeekEventComponent = (
   /*****
   State
   *****/
-
   const isActive = component.editingEvent?._id === event._id;
   const isPlaceholder =
     component.editingEvent?._id === event._id && !event.isEditing;
 
-  /****
-  Times
-  *****/
+  /************
+   Date + Times
+   ************/
   const startDate = dayjs(event.startDate);
   const startIndex = startDate.get("day");
-  const startTime =
-    component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
+
   const endDate = dayjs(event.endDate);
-  // get duration by converting ms to hours
-  const durationHours = endDate.diff(startDate) * 2.7777777777778e-7 || 0;
+
+  const durationHours = endDate.diff(startDate) * MS_IN_HR || 0;
 
   /**************
    Size + Position
    **************/
   let top: number;
-  // auto-deduct width for padding
-  // TODO: handle width in CSS and without using hard-coded numbers, but rather %
-  let width = -13;
+  let width = -EVENT_PADDING_WIDTH;
   let height: number;
-  const widths = Array.from(component.weekDaysRef.current?.children || []).map(
-    (e) => e.clientWidth
-  );
   const category = getEventCategory(
     startDate,
     endDate,
     component.startOfSelectedWeekDay,
     component.endOfSelectedWeekDay
   );
-  const left = getLeftPosition(category, startIndex, widths);
+  const left = getLeftPosition(category, startIndex, component.columnWidths);
 
   if (event.isAllDay) {
-    /* 
-    height notes
-      - uses dynamic style; height changes based on window size; no min/max
-      - setting to a constant (20 e.g) requires the allday row height to also have
-        a max. otherwise, events will appear out of place
-     - got 2.62 by experimenting by what looks right
-    */
-    height = core.getEventCellHeight() / 2.62;
-    top = 25.26 * event.row; // found by experimenting with what 'looked right'
+    height = core.getAllDayEventCellHeight();
+    top = 25.26 * (event.row || 1); // found by experimenting with what 'looked right'
     width = getAllDayEventWidth(
       category,
       startIndex,
       startDate,
       endDate,
       component.startOfSelectedWeekDay,
-      widths
+      component.columnWidths
     );
   } else {
-    top = core.getEventCellHeight() * startTime;
-    height = core.getEventCellHeight() * durationHours;
-    width =
-      component.weekDaysRef.current?.children[startIndex].clientWidth -
-        EVENT_PADDING_RIGHT || 0;
+    const startTime =
+      component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
+
+    top = component.hourlyCellHeight * startTime;
+    height = component.hourlyCellHeight * durationHours;
+
+    const colWidth = core.getColumnWidth(startIndex);
+    width = colWidth - EVENT_PADDING_RIGHT || 0;
   }
 
   return (

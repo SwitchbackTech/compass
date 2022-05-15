@@ -8,9 +8,10 @@ import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEvent/styled";
 import {
   SIDEBAR_WIDTH,
-  X_PLUS_SIDEBAR_OFFSET,
+  CALENDAR_SIDEBAR_X_START,
 } from "@web/views/Calendar/calendar.constants";
 import { DAY_HOUR_MIN_M } from "@web/common/constants/dates";
+import { EVENT_PADDING_WIDTH } from "@web/common/constants/grid.constants";
 
 import { StyledDraggableEvent } from "./styled";
 
@@ -38,27 +39,24 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
     }
 
     height = isOverGrid
-      ? core.getEventCellHeight() - heightMargin
+      ? component.hourlyCellHeight - heightMargin
       : SOMEDAY_EVENT_HEIGHT;
 
     return height;
   };
 
   const _getWidth = () => {
-    const columnWidths = core.getColumnWidths();
-
-    const widthMargin = 12; // arbitrary
     const width = isOverGrid
-      ? columnWidths[dayIndex] - widthMargin
+      ? component.columnWidths[dayIndex] - EVENT_PADDING_WIDTH
       : SIDEBAR_WIDTH - 80; // 40px padding on both sides
 
     return width;
   };
 
   /* Position */
-  const isOverGrid = x > X_PLUS_SIDEBAR_OFFSET;
-  const isOverAllDayRow = y < component.CALCULATED_GRID_Y_OFFSET;
-  const gridX = x - component.CALCULATED_GRID_X_OFFSET;
+  const isOverGrid = x > CALENDAR_SIDEBAR_X_START;
+  const isOverAllDayRow = y < component.gridYOffset;
+  const gridX = x - component.gridXOffset;
   const dayIndex = core.getDayNumberByX(gridX);
 
   /* Size */
@@ -66,7 +64,7 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
   const width = _getWidth();
 
   /* Date & Time */
-  const adjustedY = y - core.getYOffset();
+  const adjustedY = y - component.gridYOffset;
   const minutes = core.getMinuteByMousePosition(adjustedY);
   const timePreview = component.startOfSelectedWeekDay
     .add(dayIndex, "day")

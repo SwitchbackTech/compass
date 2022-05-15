@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import { ColorNames } from "@web/common/types/styles";
 import { getColor } from "@web/common/utils/colors";
-import { GRID_SCROLLBAR_WIDTH } from "@web/views/Calendar/calendar.constants";
+import { GRID_SCROLLBAR_WIDTH } from "@web/common/constants/grid.constants";
 
 export const StyledMainGrid = styled.div`
   flex: 1;

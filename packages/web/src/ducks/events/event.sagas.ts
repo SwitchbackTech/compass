@@ -108,12 +108,16 @@ export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
 
 export function* deleteSomedayEventSaga({ payload }: Action_DeleteEvent) {
   try {
-    yield put(getFutureEventsSlice.actions.delete(payload));
+    // doesn't call futureEventsSlice..delete, because that
+    // is (somehow) automatically called in response to entity slice
+    // delete
     yield put(eventsEntitiesSlice.actions.delete(payload));
-    yield put(getFutureEventsSlice.actions.success());
+
+    yield call(EventApi.delete, payload._id);
   } catch (error) {
     handleErrorTemp(error);
     yield put(getFutureEventsSlice.actions.error());
+    yield put(getFutureEventsSlice.actions.request());
   }
 }
 

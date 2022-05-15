@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
 import { useDispatch } from "react-redux";
 import { DeleteIcon } from "@web/components/Icons";
-import { deleteEventSlice } from "@web/ducks/events/slice";
+import { getFutureEventsSlice } from "@web/ducks/events/slice";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { MonthPicker } from "@web/views/Forms/EventForm/MonthPicker";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
@@ -60,7 +60,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     if (event._id === undefined) {
       return; // event was never created, so no need to dispatch delete
     }
-    dispatch(deleteEventSlice.actions.request({ _id: event._id }));
+    dispatch(getFutureEventsSlice.actions.delete({ _id: event._id }));
 
     _onClose();
   };

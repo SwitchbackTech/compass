@@ -59,6 +59,7 @@ export const AllDayRow: FC<Props> = ({ weekViewProps }) => {
   );
 
   const border = `1px solid ${getColor(ColorNames.WHITE_2)}`;
+
   return (
     <StyledEvents
       ref={drop}
@@ -78,7 +79,6 @@ export const AllDayRow: FC<Props> = ({ weekViewProps }) => {
           isOpen={!!component.editingEvent.isOpen}
           onCloseEventForm={() => eventHandlers.setEditingEvent(null)}
           onSubmitEventForm={eventHandlers.onSubmitEvent}
-          setEvent={(event) => eventHandlers.setEditingEvent(event)}
           weekViewProps={weekViewProps}
         />
       )}

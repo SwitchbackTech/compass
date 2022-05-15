@@ -50,6 +50,10 @@ export const selectPaginatedEventsBySectionType = (
   return (isSuccess(statePiece) && statePiece.value) || null;
 };
 
+export const selectSomedayEventsCount = (state: RootState): number => {
+  return state.events["getFutureEvents"].value?.data?.length + 1 || 0;
+};
+
 export const selectWeekEvents = (state: RootState): Schema_Event[] => {
   const entities = state.events.entities.value || {};
   const weekIds = state.events.getWeekEvents.value || [];
@@ -59,6 +63,7 @@ export const selectWeekEvents = (state: RootState): Schema_Event[] => {
   const weekEvents = weekEventsMapped.filter(
     (e: Schema_Event) => e !== undefined && !e.isAllDay
   );
+
   return weekEvents;
 };
 

@@ -95,9 +95,6 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
 
         {component.editingEvent && !component.editingEvent.isAllDay && (
           <EditingWeekEvent
-            setEvent={(event) =>
-              eventHandlers.setEditingEvent(event as Schema_GridEvent)
-            }
             isOpen={!!component.editingEvent?.isOpen}
             event={component.editingEvent}
             weekViewProps={weekViewProps}

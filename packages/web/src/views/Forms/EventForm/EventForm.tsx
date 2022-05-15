@@ -168,10 +168,10 @@ export const EventForm: React.FC<FormProps> = ({
     setEvent(newEvent);
 
     // $$ remove after confident above works
-    // setEvent((_event) => ({
-    //   ..._event,
-    //   [fieldName]: value,
-    // }));
+    //   setEvent((_event) => ({
+    //     ..._event,
+    //     [fieldName]: value,
+    //   }));
   };
 
   const submitFormWithKeyboard: React.KeyboardEventHandler<

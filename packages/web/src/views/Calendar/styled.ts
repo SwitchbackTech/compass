@@ -3,13 +3,13 @@ import { ColorNames } from "@web/common/types/styles";
 import { Flex } from "@web/components/Flex";
 import { getColor } from "@web/common/utils/colors";
 import { Text } from "@web/components/Text";
+import { GRID_SCROLLBAR_WIDTH } from "@web/common/constants/grid.constants";
 
 import {
   CALENDAR_GRID_MARGIN_LEFT,
   CALENDAR_TOP_PADDING,
   CALENDAR_X_PADDING,
-  GRID_SCROLLBAR_WIDTH,
-  GRID_Y_OFFSET,
+  CALENDAR_Y_START,
   MYSTERY_PADDING,
   WEEK_DAYS_MARGIN_Y,
 } from "./calendar.constants";
@@ -78,7 +78,7 @@ export interface AllDayEventsGridProps {
 }
 
 const gridWidth = `100% - ${GRID_SCROLLBAR_WIDTH}px`;
-const gridHeight = `100% - (${GRID_Y_OFFSET}px + ${MYSTERY_PADDING}px)`;
+const gridHeight = `100% - (${CALENDAR_Y_START}px + ${MYSTERY_PADDING}px)`;
 const gridCellHeight = `(${gridHeight}) / 11`;
 const allDayHeight = `${gridCellHeight} / 4`;
 
