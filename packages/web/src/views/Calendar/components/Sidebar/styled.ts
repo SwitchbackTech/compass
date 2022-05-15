@@ -125,8 +125,6 @@ export interface FutureEventsProps {
   shouldSetTopMargin?: boolean;
 }
 
-export const StyledFutureEventsToggleableSection = styled(
-  SomedaySection
-)<FutureEventsProps>`
+export const StyledSomedaySection = styled(SomedaySection)<FutureEventsProps>`
   margin-top: ${({ shouldSetTopMargin }) => (shouldSetTopMargin ? "auto" : 0)};
 `;
