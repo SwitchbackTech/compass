@@ -67,11 +67,9 @@ const WeekEventComponent = (
   );
   const left = getLeftPosition(category, startIndex, component.columnWidths);
 
-  // console.log("calculating for ", event.title);
   if (event.isAllDay) {
     height = core.getAllDayEventCellHeight();
     top = 25.26 * (event.row || 1); // found by experimenting with what 'looked right'
-    // top = 25.26 * event.row; // found by experimenting with what 'looked right'
     width = getAllDayEventWidth(
       category,
       startIndex,
@@ -80,16 +78,6 @@ const WeekEventComponent = (
       component.startOfSelectedWeekDay,
       component.columnWidths
     );
-    if (category === Category.PastToThisWeek) {
-      // console.log(event.startDate);
-      // console.log(`height: ${height}\nwidth:${width}`);
-      // console.log(`index: ${startIndex}\ncategory:${category}`);
-      // console.log(
-      //   `${category}\n${startIndex}\n${startDate.toString()}\n${endDate.toString()}\n${component.startOfSelectedWeekDay.toString()}\n${JSON.stringify(
-      //     widths
-      //   )}`
-      // );
-    }
   } else {
     const startTime =
       component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;

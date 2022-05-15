@@ -144,13 +144,6 @@ export const useGetWeekViewProps = () => {
   /*************
    * Getters
    *************/
-  /* 
-    height notes
-      - uses dynamic style; height changes based on window size; no min/max
-      - setting to a constant (20 e.g) requires the allday row height to also have
-        a max. otherwise, events will appear out of place
-     - got 2.62 by experimenting by what looks right
-    */
   const getAllDayEventCellHeight = () => hourlyCellHeight / 2.62; // got by experimenting by what looks right: ;
 
   const getColumnWidth = (dayIndex: number) => columnWidths[dayIndex];
@@ -207,8 +200,7 @@ export const useGetWeekViewProps = () => {
       GRID_TIME_STEP
     );
 
-    // clicking all day row causes min to be negative
-    // so set to 0
+    // prevents negative number when clicking all-day row
     return Math.max(0, minute);
   };
 

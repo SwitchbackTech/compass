@@ -69,17 +69,6 @@ export const assignEventsToRow = (allDayEvents: Schema_Event[]) => {
   return { rowsCount: rows.length, allDayEvents: orderedAllDayEvents };
 };
 
-//$$
-const weekData = (event: Schema_Event) => {
-  const startDate = dayjs(event.startDate);
-  const startIndex = startDate.get("day");
-
-  // const height = 2;
-  // const top = 1;
-  // const width = 20;
-  // const left = 200;
-};
-
 export const getAllDayEventWidth = (
   category: Category,
   startIndex: number,
