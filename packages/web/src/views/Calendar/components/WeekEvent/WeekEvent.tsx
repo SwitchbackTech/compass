@@ -81,7 +81,9 @@ const WeekEventComponent = (
       component.columnWidths
     );
     if (category === Category.PastToThisWeek) {
-      console.log(event.startDate);
+      // console.log(event.startDate);
+      // console.log(`height: ${height}\nwidth:${width}`);
+      // console.log(`index: ${startIndex}\ncategory:${category}`);
       // console.log(
       //   `${category}\n${startIndex}\n${startDate.toString()}\n${endDate.toString()}\n${component.startOfSelectedWeekDay.toString()}\n${JSON.stringify(
       //     widths
@@ -92,8 +94,8 @@ const WeekEventComponent = (
     const startTime =
       component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
 
-    top = core.getHourlyCellHeight() * startTime;
-    height = core.getHourlyCellHeight() * durationHours;
+    top = component.hourlyCellHeight * startTime;
+    height = component.hourlyCellHeight * durationHours;
 
     const colWidth = core.getColumnWidth(startIndex);
     width = colWidth - EVENT_PADDING_RIGHT || 0;
