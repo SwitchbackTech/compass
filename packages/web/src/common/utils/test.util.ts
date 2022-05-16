@@ -22,3 +22,7 @@ export const mockLocalStorage = () => {
     spies[fn] = jest.spyOn(Storage.prototype, fn).mockImplementation(mock);
   });
 };
+
+export const mockScroll = () => {
+  window.HTMLElement.prototype.scroll = jest.fn();
+};

@@ -86,7 +86,9 @@ describe("Calendar Interactions", () => {
           })
         );
       });
-      expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("separator", { name: /now line/i })
+      ).not.toBeInTheDocument();
     });
     it("disappears when viewing past week", async () => {
       const user = userEvent.setup();
@@ -97,7 +99,9 @@ describe("Calendar Interactions", () => {
           screen.getByRole("navigation", { name: /previous week/i })
         );
       });
-      expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("separator", { name: /now line/i })
+      ).not.toBeInTheDocument();
     });
   });
 

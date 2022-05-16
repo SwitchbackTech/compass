@@ -6,12 +6,11 @@ import { render } from "@web/common/__mocks__/mock.render";
 import {
   mockLocalStorage,
   clearLocalStorageMock,
+  mockScroll,
 } from "@web/common/utils/test.util";
 import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
-
-import { useGetWeekViewProps } from "../Calendar/weekViewHooks/useGetWeekViewProps";
 
 describe("Routing", () => {
   it("goes to login page when local storage token missing", () => {
@@ -29,20 +28,20 @@ describe("Scroll", () => {
   // '.toHaveBeenCalledTimes' reliability
   it("only scrolls once", async () => {
     mockLocalStorage();
+    mockScroll();
     localStorage.setItem("token", "secretTokenValue");
-    window.HTMLElement.prototype.scroll = jest.fn();
 
     await waitFor(() => {
       render(<CalendarView />);
     });
-    // expect(window.HTMLElement.prototype.scroll).toHaveBeenCalled();
-    // $$ set back to 1 once duplicate rerenders gets fixed
+
     expect(window.HTMLElement.prototype.scroll).toHaveBeenCalledTimes(1);
     clearLocalStorageMock();
   });
 });
 
 describe("Stateless Rendering", () => {
+  beforeAll(() => mockScroll());
   beforeEach(() => {
     mockLocalStorage();
     localStorage.setItem("token", "secretTokenValue");
@@ -51,20 +50,16 @@ describe("Stateless Rendering", () => {
     clearLocalStorageMock();
   });
 
-  it("renders current year in YYYY format", async () => {
+  it("displays all the things that a user needs to see", async () => {
     await waitFor(() => {
       render(<CalendarView />);
     });
 
+    /* current year in YYYY format */
     const currentYear = new Date().getFullYear().toString(); // YYYY
     expect(screen.getByText(currentYear)).toBeInTheDocument();
-  });
 
-  it("renders week navigation arrows", async () => {
-    await waitFor(() => {
-      render(<CalendarView />);
-    });
-
+    /* week nav arrows */
     expect(
       screen.getByRole("navigation", {
         name: /previous week/i,
@@ -75,27 +70,21 @@ describe("Stateless Rendering", () => {
         name: /next week/i,
       })
     ).toBeInTheDocument();
-  });
 
-  it("renders current week", async () => {
-    await waitFor(() => {
-      render(<CalendarView />);
-    });
+    /* current week label */
     const todayLabel = getWeekDayLabel(new Date());
     expect(screen.getByTitle(todayLabel)).toBeInTheDocument();
-  });
 
-  it("renders now line", async () => {
-    await waitFor(() => {
-      render(<CalendarView />);
-    });
-    expect(screen.getByRole("separator")).toBeInTheDocument();
+    /* now line */
+    expect(
+      screen.getByRole("separator", { name: /now line/i })
+    ).toBeInTheDocument();
   });
 });
 
 describe("Stateful Rendering", () => {
   beforeAll(() => {
-    window.HTMLElement.prototype.scroll = jest.fn();
+    mockScroll();
   });
   beforeEach(() => {
     mockLocalStorage();
@@ -105,7 +94,7 @@ describe("Stateful Rendering", () => {
     clearLocalStorageMock();
   });
 
-  it("renders both timed and all day events", async () => {
+  it("dispays both timed and all day events", async () => {
     await waitFor(() => {
       render(<CalendarView />, { state: weekEventState });
     });

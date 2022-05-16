@@ -192,19 +192,6 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
             </StyledPriorityFilterButton>
           </Popover> */}
         </StyledHeaderFlex>
-        {/* <SomedaySection
-          flex={getEventsSectionFlex("currentMonth")}
-          isToggled={isCurrentMonthToggled}
-          onToggle={() => setIsCurrentMonthToggled((toggle) => !toggle)}
-          title="This Month"
-          priorities={
-            Object.keys(priorityFilter).filter(
-              (key) => priorityFilter[key as Priorities]
-            ) as Priorities[]
-          }
-          EventsListContainer={SidebarCurrentMonthEventsContainer}
-          sectionType="currentMonth"
-        /> */}
         <StyledSomedaySection
           shouldSetTopMargin={isCurrentMonthToggled}
           flex={getEventsSectionFlex("future")}
@@ -228,8 +215,10 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         }}
       > */}
       <Divider
-        withAnimation={false}
         color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
+        role="separator"
+        title="sidebar divider"
+        withAnimation={false}
       />
       {/* </StyledDividerWrapper> */}
 

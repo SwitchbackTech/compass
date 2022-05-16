@@ -6,32 +6,47 @@ import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
 import {
   mockLocalStorage,
   clearLocalStorageMock,
+  mockScroll,
 } from "@web/common/utils/test.util";
 import { CalendarView } from "@web/views/Calendar";
-
-beforeAll(() => {
-  window.HTMLElement.prototype.scroll = jest.fn();
-});
 
 describe("Sidebar", () => {
   beforeAll(() => {
     mockLocalStorage();
+    mockScroll();
     localStorage.setItem("token", "secretTokenValue");
   });
   afterAll(() => {
     clearLocalStorageMock();
   });
-  it("renders button to add someday events", async () => {
-    // workaround to for Redux connected component act() warning
+  it("displays everything user expects", async () => {
     await waitFor(() => {
       render(<CalendarView />);
-      expect(screen.getByText(/\+/i)).toBeInTheDocument();
     });
+
+    // Someday title
+    expect(screen.getByText(/someday/i)).toBeInTheDocument();
+    // Add button
+    expect(screen.getByText(/\+/i)).toBeInTheDocument();
+    // Divider
+    expect(
+      screen.getByRole("separator", { name: /sidebar divider/i })
+    ).toBeInTheDocument();
+
+    // Month Widget
+    expect(
+      screen.getByRole("dialog", { name: /month widget/i })
+    ).toBeInTheDocument();
   });
+  // it("adds someday event to sidebar", async () => {
+  //   render(<CalendarView />);
+  //   console.log("todo finish...");
+  // });
 });
 
-/*
+/* TODO re-enable & finish
 describe("Sidebar: Renders with State", () => {
+  beforeAll(() => mockScroll());
   beforeEach(() => {
     mockLocalStorage();
     localStorage.setItem("token", "secretTokenValue");
@@ -40,12 +55,11 @@ describe("Sidebar: Renders with State", () => {
     clearLocalStorageMock();
   });
 
-    it("renders someday events", async () => {
-      const preloadedState = weekEventState; // has to be called 'preloadedState' to render correctly
-      await waitFor(() => {
-        render(<CalendarView />, { preloadedState });
-      });
-      expect(screen.getByText(/europe trip/i)).toBeInTheDocument();
+  it("renders someday events", async () => {
+    await waitFor(() => {
+      render(<CalendarView />, { state: weekEventState });
     });
+    expect(screen.getByText(/europe trip/i)).toBeInTheDocument();
+  });
 });
 */
