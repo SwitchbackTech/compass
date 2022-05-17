@@ -13,7 +13,7 @@ import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Divider } from "@web/components/Divider";
 import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
-import { SomedayEventsFutureContainer } from "@web/views/Calendar/containers/SomedayContainer/SomedayCategories";
+// import { SomedayEventsFutureContainer } from "@web/views/Calendar/containers/SomedayContainer/SomedayCategories";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 
 import {
@@ -31,6 +31,7 @@ import {
   StyledSomedaySection,
 } from "./styled";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
+import { NewSomedaySection } from "./NewSomedaySection";
 
 const DATEPICKER_HEIGHT = 346;
 
@@ -158,7 +159,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           alignItems={AlignItems.CENTER}
           justifyContent={JustifyContent.SPACE_BETWEEN}
         >
-          <Text size={30} colorName={ColorNames.WHITE_1}>
+          <Text colorName={ColorNames.WHITE_1} role="heading" size={30}>
             Someday
           </Text>
 
@@ -192,7 +193,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
             </StyledPriorityFilterButton>
           </Popover> */}
         </StyledHeaderFlex>
-        <StyledSomedaySection
+        {/* <StyledSomedaySection
           shouldSetTopMargin={isCurrentMonthToggled}
           flex={getEventsSectionFlex("future")}
           startDate={dayjs().format(YEAR_MONTH_FORMAT)}
@@ -206,7 +207,8 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           }
           EventsListContainer={SomedayEventsFutureContainer}
           sectionType="future"
-        />
+        /> */}
+        <NewSomedaySection flex={getEventsSectionFlex("future")} />
       </StyledTopSectionFlex>
 
       {/* <StyledDividerWrapper

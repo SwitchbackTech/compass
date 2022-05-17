@@ -6,6 +6,7 @@ import { DragItem } from "@web/common/types/dnd.types";
 
 import { SomedayEvent } from "./SomedayEvent";
 
+// $$ remove title and id if you don't need
 export interface Props {
   id: string;
   title: string;
