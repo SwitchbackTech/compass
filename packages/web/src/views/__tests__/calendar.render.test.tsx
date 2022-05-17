@@ -98,7 +98,6 @@ describe("Stateful Rendering", () => {
     await waitFor(() => {
       render(<CalendarView />, { state: weekEventState });
     });
-
     expect(
       screen.getByRole("button", { name: /groceries/i })
     ).toBeInTheDocument();

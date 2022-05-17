@@ -22,8 +22,8 @@ const customRender = (
     );
   };
 
-  // wraps each test component with our providers by extended
-  // React's default render
+  // wraps each test component with our providers by
+  // extending React's default render
   return render(ui, { wrapper: AllTheProviders, ...renderOptions });
 };
 

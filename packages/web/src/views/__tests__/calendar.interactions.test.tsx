@@ -231,6 +231,10 @@ describe("Calendar Interactions", () => {
     });
   });
 
+  describe("All Day Row", () => {
+    it.todo("displays preview + form on the column that was clicked");
+    // ^ this week and past/future week (cuz diff column widths)
+  });
   describe("All Day Events", () => {
     it("adds 1-day event somewhere on DOM", async () => {
       const user = userEvent.setup();

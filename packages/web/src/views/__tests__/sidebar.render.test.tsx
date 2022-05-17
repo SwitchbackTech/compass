@@ -37,10 +37,31 @@ describe("Sidebar", () => {
     expect(
       screen.getByRole("dialog", { name: /month widget/i })
     ).toBeInTheDocument();
+
+    // TODO - check for pre-loaded state events
   });
-  // it("adds someday event to sidebar", async () => {
-  //   render(<CalendarView />);
-  //   console.log("todo finish...");
+
+  it.todo("collapses sidebar after clicking toggle button");
+
+  it.todo("displays someday event form after clicking add button");
+
+  //interactions
+  it.todo("adds someday event to sidebar");
+  it.todo("displays times preview while dragging");
+  it.todo("moves event from sidebar to grid after drop");
+  it.todo("moves event from sidebar to all-day row after drop");
+
+  // it("displays (preloaded) someday events", async () => {
+  //   //TODO move to basic render test after this works (?)
+  //   await waitFor(() => {
+  //     const { debug } = render(<CalendarView />, { state: weekEventState });
+  //     // debug();
+  //   });
+  //   await waitFor(() => {
+  //     expect(
+  //       screen.getByRole("button", { name: /europe trip/i })
+  //     ).toBeInTheDocument();
+  //   });
   // });
 });
 
