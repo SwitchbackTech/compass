@@ -71,6 +71,7 @@ export const NewSomedaySection: FC<Props> = ({ flex, ...props }) => {
     resetSomedayFormState();
 
     dispatch(createEventSlice.actions.request(event));
+    console.log("++ dispatched ++");
   };
 
   const resetSomedayFormState = () => {
@@ -96,6 +97,7 @@ export const NewSomedaySection: FC<Props> = ({ flex, ...props }) => {
           ref={setPopperRef}
           role="button"
           size={25}
+          title="Add Someday event"
         >
           +
         </StyledAddEventButton>

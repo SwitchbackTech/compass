@@ -105,9 +105,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
       <StyledTitleField
         autoFocus
-        placeholder="Title"
-        value={event.title}
         onChange={onChangeEventTextField("title")}
+        placeholder="Title"
+        role="input"
+        title="title"
+        value={event.title}
       />
 
       <PrioritySection
