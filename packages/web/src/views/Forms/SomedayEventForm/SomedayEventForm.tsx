@@ -98,6 +98,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       }}
       priority={event.priority}
       role="form"
+      data-testid="somedayForm"
     >
       <StyledIconRow>
         <DeleteIcon onDelete={onDelete} title="Delete Someday Event" />
@@ -109,6 +110,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         placeholder="Title"
         role="input"
         title="title"
+        // title={event.title}
         value={event.title}
       />
 

@@ -1,3 +1,4 @@
+import { MARCH_1, MULTI_WEEK, TY_TIM } from "../events/feb27ToMar5";
 /*
 All day event structure:
     27  28  1   2   3   4   5
@@ -14,6 +15,9 @@ export const febToMarState = {
       error: null,
       value: {
         data: [
+          MARCH_1._id,
+          MULTI_WEEK._id,
+          TY_TIM._id,
           "62322b127837957382660244",
           "62322b127837957382660237",
           "62322b127837957382660241",
@@ -25,13 +29,10 @@ export const febToMarState = {
           "62322b127837957382660207",
           "62322b12783795738266020e",
           "62322b127837957382660211",
-          "62322b127837957382660212",
           "62322b127837957382660217",
           "62322b127837957382660218",
-          "62322b12783795738266022e",
           "62322b127837957382660242",
           "62322b127837957382660230",
-          "62322b127837957382660231",
           "62322b127837957382660238",
         ],
       },
@@ -39,22 +40,12 @@ export const febToMarState = {
 
     entities: {
       value: {
+        [MULTI_WEEK._id]: MULTI_WEEK,
+        [MARCH_1._id]: MARCH_1,
+        [TY_TIM._id]: TY_TIM,
         /*
         all day events
         */
-        "62322b12783795738266022e": {
-          _id: "62322b12783795738266022e",
-          gEventId: "1k2rgneltn79cbchccut08alqs",
-          user: "6227e1a1623abad10d70afbf",
-          origin: "googleimport",
-          title: "multiweek event",
-          description: "",
-          priorities: [],
-          isAllDay: true,
-          startDate: "2022-02-01",
-          endDate: "2022-03-08",
-          priority: "work",
-        },
         "62322b127837957382660211": {
           _id: "62322b127837957382660211",
           gEventId: "3829btrolom8icaq6gglr2sfls",
@@ -66,19 +57,6 @@ export const febToMarState = {
           isAllDay: true,
           startDate: "2022-03-02",
           endDate: "2022-03-04",
-          priority: "work",
-        },
-        "62322b127837957382660212": {
-          _id: "62322b127837957382660212",
-          gEventId: "2ip0l4k0kqhg22cagtmrlml5mn",
-          user: "6227e1a1623abad10d70afbf",
-          origin: "googleimport",
-          title: "Mar 1",
-          description: "",
-          priorities: [],
-          isAllDay: true,
-          startDate: "2022-03-01",
-          endDate: "2022-03-02",
           priority: "work",
         },
         "62322b127837957382660237": {
@@ -209,7 +187,6 @@ export const febToMarState = {
           endDate: "2022-03-01T15:00:00-06:00",
           priority: "work",
         },
-
         "62322b127837957382660217": {
           _id: "62322b127837957382660217",
           gEventId:
@@ -238,22 +215,6 @@ export const febToMarState = {
           isTimesShown: true,
           startDate: "2022-03-01T15:30:00-06:00",
           endDate: "2022-03-01T16:00:00-06:00",
-          priority: "work",
-        },
-
-        "62322b127837957382660231": {
-          _id: "62322b127837957382660231",
-          gEventId: "726v6dgnasekgmv5hc1jifpumm",
-          user: "6227e1a1623abad10d70afbf",
-          origin: "googleimport",
-          title: "Ty & Tim",
-          description:
-            "──────────\n\nTim Schuster is inviting you to a scheduled Zoom meeting.\n\nJoin Zoom Meeting\nhttps://us02web.zoom.us/j/87324397243?pwd=ZmpuYitCelZYVll0aDdiVUNXejdzdz09\n\nMeeting ID: 873 2439 7243\nPasscode: 305275\nOne tap mobile\n+16465588656,,87324397243#,,,,*305275# US (New York)\n+13017158592,,87324397243#,,,,*305275# US (Washington DC)\n\nDial by your location\n        +1 646 558 8656 US (New York)\n        +1 301 715 8592 US (Washington DC)\n        +1 312 626 6799 US (Chicago)\n        +1 669 900 9128 US (San Jose)\n        +1 253 215 8782 US (Tacoma)\n        +1 346 248 7799 US (Houston)\nMeeting ID: 873 2439 7243\nPasscode: 305275\nFind your local number: https://us02web.zoom.us/u/kdbALZcOSa\n\n\n──────────",
-          priorities: [],
-          isAllDay: false,
-          isTimesShown: true,
-          startDate: "2022-03-01T12:15:00-06:00",
-          endDate: "2022-03-01T12:45:00-06:00",
           priority: "work",
         },
         "62322b127837957382660238": {

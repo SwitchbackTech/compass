@@ -158,9 +158,11 @@ function* getEventsSaga(
 ) {
   try {
     if (!payload.startDate && !payload.endDate && "data" in payload) {
+      console.log("^ inserting events");
       yield put(eventsEntitiesSlice.actions.insert(payload.data));
       return { data: payload.data };
     }
+    console.log("^getting events from api");
     const res: Response_GetEventsSuccess = (yield call(
       EventApi.get,
       payload

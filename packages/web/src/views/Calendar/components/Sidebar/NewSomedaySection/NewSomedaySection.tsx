@@ -71,7 +71,6 @@ export const NewSomedaySection: FC<Props> = ({ flex, ...props }) => {
     resetSomedayFormState();
 
     dispatch(createEventSlice.actions.request(event));
-    console.log("++ dispatched ++");
   };
 
   const resetSomedayFormState = () => {

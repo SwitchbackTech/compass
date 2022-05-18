@@ -40,7 +40,7 @@ describe("Scroll", () => {
   });
 });
 
-describe("Stateless Rendering", () => {
+describe("Calendar: Display without State", () => {
   beforeAll(() => mockScroll());
   beforeEach(() => {
     mockLocalStorage();
@@ -82,7 +82,7 @@ describe("Stateless Rendering", () => {
   });
 });
 
-describe("Stateful Rendering", () => {
+describe("Calendar: Display with State", () => {
   beforeAll(() => {
     mockScroll();
   });
