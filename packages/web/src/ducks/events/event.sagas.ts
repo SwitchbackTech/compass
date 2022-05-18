@@ -68,13 +68,10 @@ function* convertSomedayEventSaga({ payload }: Action_ConvertSomedayEvent) {
 
 function* createEventSaga({ payload }: Action_CreateEvent) {
   try {
-    console.log("\n** creating event **\n");
     const res = (yield call(
       EventApi.create,
       payload
     )) as Response_CreateEventSaga;
-
-    console.log(res.data);
 
     const normalizedEvent = normalize<Schema_Event>(
       res.data,
@@ -162,7 +159,7 @@ function* getEventsSaga(
       yield put(eventsEntitiesSlice.actions.insert(payload.data));
       return { data: payload.data };
     }
-    console.log("^getting events from api");
+    // console.log("^getting events from api"); //$$
     const res: Response_GetEventsSuccess = (yield call(
       EventApi.get,
       payload

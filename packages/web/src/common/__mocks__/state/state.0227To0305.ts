@@ -1,4 +1,4 @@
-import { MARCH_1, MULTI_WEEK, TY_TIM } from "../events/feb27ToMar5";
+import { CLIMB, MARCH_1, MULTI_WEEK, TY_TIM } from "../events/feb27ToMar5";
 /*
 All day event structure:
     27  28  1   2   3   4   5
@@ -187,21 +187,7 @@ export const febToMarState = {
           endDate: "2022-03-01T15:00:00-06:00",
           priority: "work",
         },
-        "62322b127837957382660217": {
-          _id: "62322b127837957382660217",
-          gEventId:
-            "ccq34eb261j3ab9jckpj6b9kcos6cbb26pi38b9pc5i64e9mcgp3ao9p6o",
-          user: "6227e1a1623abad10d70afbf",
-          origin: "googleimport",
-          title: "Climb",
-          description: "",
-          priorities: [],
-          isAllDay: false,
-          isTimesShown: true,
-          startDate: "2022-03-01T17:00:00-06:00",
-          endDate: "2022-03-01T19:00:00-06:00",
-          priority: "work",
-        },
+        [CLIMB._id]: CLIMB,
         "62322b127837957382660218": {
           _id: "62322b127837957382660218",
           gEventId: "0m0a6t7ii5susrh63iinu7ekhh",

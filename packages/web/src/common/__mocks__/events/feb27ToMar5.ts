@@ -1,3 +1,17 @@
+export const CLIMB = {
+  _id: "62322b127837957382660217",
+  gEventId: "ccq34eb261j3ab9jckpj6b9kcos6cbb26pi38b9pc5i64e9mcgp3ao9p6o",
+  user: "6227e1a1623abad10d70afbf",
+  origin: "googleimport",
+  title: "Climb",
+  description: "",
+  priorities: [],
+  isAllDay: false,
+  isTimesShown: true,
+  startDate: "2022-03-01T17:00:00-06:00",
+  endDate: "2022-03-01T19:00:00-06:00",
+  priority: "work",
+};
 export const MARCH_1 = {
   _id: "62322b127837957382660212",
   gEventId: "2ip0l4k0kqhg22cagtmrlml5mn",

@@ -1,15 +1,10 @@
 import React from "react";
 import { rest } from "msw";
 import "@testing-library/jest-dom";
-import {
-  act,
-  prettyDOM,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { server } from "@web/common/__mocks__/server/mock.server";
+import { feb27ToMar5Handlers } from "@web/common/__mocks__/server/mock.handlers";
 import { render } from "@web/common/__mocks__/mock.render";
 import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
 import {
@@ -35,6 +30,7 @@ describe("Sidebar: Interactions", () => {
     server.close();
   });
   it("adds someday event to sidebar", async () => {
+    server.use(feb27ToMar5Handlers);
     server.use(
       rest.post(`${API_BASEURL}/event`, (req, res, ctx) => {
         return res(
