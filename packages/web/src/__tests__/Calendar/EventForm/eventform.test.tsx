@@ -88,7 +88,6 @@ describe("Event Form", () => {
   it("deletes event after clicking trash icon", async () => {
     const user = userEvent.setup();
     await waitFor(() => {
-      // render(<CalendarView />, { state: weekEventState });
       render(<CalendarView />, { state: preloadedState });
     });
 
@@ -111,7 +110,7 @@ describe("Event Form", () => {
         })
       ).not.toBeInTheDocument();
     });
-  });
+  }, 10000);
 
   describe("DatePicker", () => {
     it("closes when clicking outside of form, while keeping form open", async () => {

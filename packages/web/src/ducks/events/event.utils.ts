@@ -25,9 +25,8 @@ export const handleErrorTemp = (error: Error) => {
     window.location.reload();
     return;
   }
-  // alert(error);
+  alert(error);
   console.log(error);
-  console.log("reminder: re-enable alert");
 };
 
 export const getEventCategory = (
@@ -232,6 +231,3 @@ export const editEventLocalStorage = async (
 
   localStorage.setItem("events", JSON.stringify(events));
 };
-/*
--------------------------------------------------------------------------------
-*/

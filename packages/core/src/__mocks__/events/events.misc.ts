@@ -41,6 +41,15 @@ export const EUROPE_TRIP: Schema_Event = {
   // startDate: "2022-05-02",
   priority: Priorities.SELF,
 };
+export const LEARN_CHINESE: Schema_Event = {
+  _id: "awk92akknm",
+  description: "",
+  isSomeday: true,
+  origin: Origin.COMPASS,
+  priority: Priorities.UNASSIGNED,
+  title: "Learn Chinese",
+  user: "6279ae1f6df90e20e7a15ffd",
+};
 export const MARCH_1: Schema_Event = {
   _id: "62322b127837957382660212",
   gEventId: "2ip0l4k0kqhg22cagtmrlml5mn",

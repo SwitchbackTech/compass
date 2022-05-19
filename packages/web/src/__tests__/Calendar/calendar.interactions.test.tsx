@@ -8,6 +8,28 @@ import { render } from "@web/common/__mocks__/mock.render";
 import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
 import { server } from "@web/common/__mocks__/server/mock.server";
 import { API_BASEURL } from "@web/common/constants/web.constants";
+it("displays alert upon server error", async () => {
+  server.use(
+    rest.get(`${API_BASEURL}/event`, (req, res, ctx) => {
+      return res(
+        ctx.status(500),
+        ctx.json({
+          errorMessage: "something broke",
+        })
+      );
+    })
+  );
+
+  const alertMock = jest.spyOn(window, "alert").mockImplementation();
+  const consoleLogMock = (console.log = jest.fn()); // mock so doesnt clutter test logs
+
+  render(<CalendarView />);
+
+  await waitFor(() => {
+    expect(alertMock).toHaveBeenCalledTimes(1);
+  });
+  expect(consoleLogMock).toHaveBeenCalledTimes(1);
+});
 
 describe("Calendar Interactions", () => {
   describe("Now Line + Today Button", () => {
@@ -145,28 +167,3 @@ describe("Calendar Interactions", () => {
     });
   });
 });
-
-/* 
-  Finish this once adding better error-handling
-    - Difficult to mock `alert`, so not worth spending time on it,
-    since we'll have a more robust way of handling errors anyway
-    - Consider using redux, similar to this example:
-        https://testing-library.com/docs/react-testing-library/example-intro/#system-under-test
-*/
-it.todo("sends alert upon server error");
-/*
-  it("sends alert upon server error", async () => {
-    server.use(
-      rest.get("/api/event", (req, res, ctx) => {
-        return res(
-          ctx.status(500),
-          ctx.json({
-            errorMessage: `sth bad happened`,
-          })
-        );
-      })
-    );
-    // expect(screen.getByRole("alert")).toBeInTheDocument;
-    // ...
-  });
-  */

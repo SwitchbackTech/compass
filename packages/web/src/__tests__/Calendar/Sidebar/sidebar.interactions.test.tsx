@@ -8,22 +8,13 @@ import { render } from "@web/common/__mocks__/mock.render";
 import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
 import { CalendarView } from "@web/views/Calendar";
 import { API_BASEURL } from "@web/common/constants/web.constants";
+import { LEARN_CHINESE } from "@core/__mocks__/events/events.misc";
 
 describe("Sidebar: Interactions", () => {
   it("adds someday event to sidebar", async () => {
     server.use(
-      rest.post(`${API_BASEURL}/event`, (req, res, ctx) => {
-        return res(
-          ctx.json({
-            _id: "awk92akknm",
-            description: "",
-            isSomeday: true,
-            origin: "compass",
-            priority: "unassigned",
-            title: "Learn Chinese",
-            user: "6279ae1f6df90e20e7a15ffd",
-          })
-        );
+      rest.post(`${API_BASEURL}/event`, (_, res, ctx) => {
+        return res(ctx.json(LEARN_CHINESE));
       })
     );
 
@@ -43,7 +34,7 @@ describe("Sidebar: Interactions", () => {
     await act(async () => {
       await user.type(
         screen.getByRole("input", { name: /title/i }),
-        "Learn Chinese"
+        LEARN_CHINESE.title
       );
     });
 
