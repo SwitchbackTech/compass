@@ -1,7 +1,16 @@
-// Establish API mocking before all tests.
 import { server } from "@web/common/__mocks__/server/mock.server";
+import { LocalStorage } from "@web/common/constants/web.constants";
+import {
+  mockLocalStorage,
+  clearLocalStorageMock,
+  mockScroll,
+} from "@web/common/utils/test.util";
 
 beforeAll(() => {
+  mockLocalStorage();
+  // eslint-disable-next-line no-undef
+  localStorage.setItem(LocalStorage.TOKEN, "secretTokenValue");
+  mockScroll();
   server.listen();
 });
 
@@ -10,4 +19,8 @@ beforeAll(() => {
 afterEach(() => server.resetHandlers());
 
 // Clean up after the tests are finished.
-afterAll(() => server.close());
+afterAll(() => {
+  server.close();
+
+  clearLocalStorageMock();
+});

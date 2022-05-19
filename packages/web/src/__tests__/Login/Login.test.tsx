@@ -2,7 +2,6 @@ import React from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
-import { server } from "@web/common/__mocks__/server/mock.server";
 import { LoginView } from "@web/views/Login";
 
 describe("Login", () => {

@@ -2,23 +2,9 @@ import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import { render } from "@web/common/__mocks__/mock.render";
-import {
-  mockLocalStorage,
-  clearLocalStorageMock,
-  mockScroll,
-} from "@web/common/utils/test.util";
 import { CalendarView } from "@web/views/Calendar";
 import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
 
-beforeAll(() => {
-  mockLocalStorage();
-  mockScroll();
-  localStorage.setItem("token", "secretTokenValue");
-});
-
-afterAll(() => {
-  clearLocalStorageMock();
-});
 describe("Sidebar: Display without State", () => {
   it("displays everything user expects when no events", async () => {
     await waitFor(() => {

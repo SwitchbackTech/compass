@@ -6,25 +6,10 @@ import userEvent from "@testing-library/user-event";
 import { CalendarView } from "@web/views/Calendar";
 import { render } from "@web/common/__mocks__/mock.render";
 import { febToMarState } from "@web/common/__mocks__/state/state.0227To0305";
-import {
-  mockLocalStorage,
-  clearLocalStorageMock,
-  mockScroll,
-} from "@web/common/utils/test.util";
 import { server } from "@web/common/__mocks__/server/mock.server";
 import { API_BASEURL } from "@web/common/constants/web.constants";
 
 describe("Calendar Interactions", () => {
-  beforeAll(() => {
-    mockScroll();
-    mockLocalStorage();
-    localStorage.setItem("token", "mytoken123");
-  });
-
-  afterAll(() => {
-    clearLocalStorageMock();
-  });
-
   describe("Now Line + Today Button", () => {
     it("appear/disappear when viewing future or past week", async () => {
       const user = userEvent.setup();

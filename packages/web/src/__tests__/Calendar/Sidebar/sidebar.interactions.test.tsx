@@ -4,27 +4,12 @@ import "@testing-library/jest-dom";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { server } from "@web/common/__mocks__/server/mock.server";
-import { feb27ToMar5Handlers } from "@web/common/__mocks__/server/mock.handlers";
 import { render } from "@web/common/__mocks__/mock.render";
 import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
-import {
-  mockLocalStorage,
-  clearLocalStorageMock,
-  mockScroll,
-} from "@web/common/utils/test.util";
 import { CalendarView } from "@web/views/Calendar";
 import { API_BASEURL } from "@web/common/constants/web.constants";
 
 describe("Sidebar: Interactions", () => {
-  beforeAll(() => {
-    mockLocalStorage();
-    mockScroll();
-    localStorage.setItem("token", "secretTokenValue");
-  });
-
-  afterAll(() => {
-    clearLocalStorageMock();
-  });
   it("adds someday event to sidebar", async () => {
     server.use(
       rest.post(`${API_BASEURL}/event`, (req, res, ctx) => {
@@ -72,7 +57,7 @@ describe("Sidebar: Interactions", () => {
     expect(
       within(sidebar).getByRole("button", { name: /^learn chinese$/i })
     ).toBeInTheDocument();
-  });
+  }, 10000);
   describe("Drag & Drop", () => {
     it.todo("moves event from sidebar to grid after drop");
 

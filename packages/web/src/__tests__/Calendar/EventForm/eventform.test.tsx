@@ -10,50 +10,29 @@ import {
 } from "@web/common/__mocks__/events/feb27ToMar5";
 import { render } from "@web/common/__mocks__/mock.render";
 import { febToMarState } from "@web/common/__mocks__/state/state.0227To0305";
-import {
-  mockLocalStorage,
-  clearLocalStorageMock,
-  mockScroll,
-} from "@web/common/utils/test.util";
-import { server } from "@web/common/__mocks__/server/mock.server";
-import { feb27ToMar5Handlers } from "@web/common/__mocks__/server/mock.handlers";
-
-const _confirmCorrectEventFormIsOpen = (eventName: string) => {
-  expect(
-    within(screen.getByRole("form")).getByText(eventName)
-  ).toBeInTheDocument();
-};
-
-beforeAll(() => {
-  mockScroll();
-  mockLocalStorage();
-  localStorage.setItem("token", "mytoken123");
-});
-
-afterAll(() => {
-  clearLocalStorageMock();
-});
 
 describe("Event Form", () => {
   it.todo("only allows 1 form to be open at a time"); // currently allows concurrent someday and grid forms
 
   it("opens when clicking events", async () => {
-    jest.setTimeout(10000);
     const user = userEvent.setup();
-    render(<CalendarView />, { state: febToMarState });
+
+    await waitFor(() => {
+      render(<CalendarView />, { state: febToMarState });
+    });
     expect(screen.queryByRole("form")).not.toBeInTheDocument();
 
     /* all-day event */
     await act(async () => {
       await user.click(screen.getByRole("button", { name: /Mar 1/i }));
     });
-    _confirmCorrectEventFormIsOpen(MARCH_1.title);
+    await _confirmCorrectEventFormIsOpen(MARCH_1.title);
 
     /* timed event */
     await act(async () => {
       await user.click(screen.getByRole("button", { name: /Ty & Tim/i }));
     });
-    _confirmCorrectEventFormIsOpen(TY_TIM.title);
+    await _confirmCorrectEventFormIsOpen(TY_TIM.title);
 
     /* multi-week event */
     await act(async () => {
@@ -61,7 +40,7 @@ describe("Event Form", () => {
         screen.getByRole("button", { name: /multiweek event/i })
       );
     });
-    _confirmCorrectEventFormIsOpen(MULTI_WEEK.title);
+    await _confirmCorrectEventFormIsOpen(MULTI_WEEK.title);
 
     /* someday event */
     await act(async () => {
@@ -70,10 +49,12 @@ describe("Event Form", () => {
 
     // using testid because multiple forms currently allowed
     // converted to _confirmCorrect...() once ^ is fixed
-    expect(
-      within(screen.getByTestId("somedayForm")).getByText("Takeover world")
-    ).toBeInTheDocument();
-  });
+    await waitFor(() => {
+      expect(
+        within(screen.getByTestId("somedayForm")).getByText("Takeover world")
+      ).toBeInTheDocument();
+    });
+  }, 10000);
 
   it("closes when clicking outside or pressing ESC", async () => {
     /*
@@ -93,7 +74,6 @@ describe("Event Form", () => {
     render(<CalendarView />, { state: febToMarState });
 
     await act(async () => {
-      // await user.click(screen.getByRole("button", { name: "Mar 1" }));
       await user.click(screen.getByRole("button", { name: MARCH_1.title }));
     });
 
@@ -108,7 +88,10 @@ describe("Event Form", () => {
 
   it("deletes event after clicking trash icon", async () => {
     const user = userEvent.setup();
-    render(<CalendarView />, { state: febToMarState });
+    await waitFor(() => {
+      // render(<CalendarView />, { state: weekEventState });
+      render(<CalendarView />, { state: febToMarState });
+    });
 
     await act(async () => {
       await user.click(screen.getByTitle("Climb")); // open event
@@ -122,11 +105,13 @@ describe("Event Form", () => {
       );
     });
 
-    expect(
-      screen.queryByRole("button", {
-        name: /delete event/i,
-      })
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", {
+          name: /delete event/i,
+        })
+      ).not.toBeInTheDocument();
+    });
   });
 
   describe("DatePicker", () => {
@@ -164,7 +149,20 @@ describe("Event Form", () => {
       expect(within(tablist).queryByRole("textbox")).not.toBeInTheDocument();
 
       // form is still open
-      expect(screen.getByRole("form")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByRole("form")).toBeInTheDocument();
+      });
     });
   });
 });
+
+/***********
+ * Helpers *
+ ***********/
+const _confirmCorrectEventFormIsOpen = async (eventName: string) => {
+  await waitFor(() => {
+    expect(
+      within(screen.getByRole("form")).getByText(eventName)
+    ).toBeInTheDocument();
+  });
+};

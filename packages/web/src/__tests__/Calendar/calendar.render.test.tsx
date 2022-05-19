@@ -1,26 +1,24 @@
 import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
-import { CalendarView } from "@web/views/Calendar";
 import { render } from "@web/common/__mocks__/mock.render";
-import {
-  mockLocalStorage,
-  clearLocalStorageMock,
-  mockScroll,
-} from "@web/common/utils/test.util";
 import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
-import { server } from "@web/common/__mocks__/server/mock.server";
+import { LocalStorage } from "@web/common/constants/web.constants";
+import { CalendarView } from "@web/views/Calendar";
 
 describe("Routing", () => {
   it("goes to login page when local storage token missing", () => {
-    mockLocalStorage();
+    localStorage.removeItem(LocalStorage.TOKEN);
+
     render(CompassRoot);
     expect(
       screen.getByRole("button", { name: /sign in/i })
     ).toBeInTheDocument();
-    clearLocalStorageMock();
+
+    // re-add for other tests
+    localStorage.setItem(LocalStorage.TOKEN, "secretTokenValue");
   });
 });
 
@@ -28,29 +26,15 @@ describe("Scroll", () => {
   // separate from other tests to preserve
   // '.toHaveBeenCalledTimes' reliability
   it("only scrolls once", async () => {
-    mockLocalStorage();
-    mockScroll();
-    localStorage.setItem("token", "secretTokenValue");
-
     await waitFor(() => {
       render(<CalendarView />);
     });
 
     expect(window.HTMLElement.prototype.scroll).toHaveBeenCalledTimes(1);
-    clearLocalStorageMock();
   });
 });
 
 describe("Calendar: Display without State", () => {
-  beforeAll(() => mockScroll());
-  beforeEach(() => {
-    mockLocalStorage();
-    localStorage.setItem("token", "secretTokenValue");
-  });
-  afterEach(() => {
-    clearLocalStorageMock();
-  });
-
   it("displays all the things that a user needs to see", async () => {
     await waitFor(() => {
       render(<CalendarView />);
@@ -84,17 +68,6 @@ describe("Calendar: Display without State", () => {
 });
 
 describe("Calendar: Display with State", () => {
-  beforeAll(() => {
-    mockScroll();
-  });
-  beforeEach(() => {
-    mockLocalStorage();
-    localStorage.setItem("token", "secretTokenValue");
-  });
-  afterAll(() => {
-    clearLocalStorageMock();
-  });
-
   it("dispays both timed and all day events", async () => {
     await waitFor(() => {
       render(<CalendarView />, { state: weekEventState });
