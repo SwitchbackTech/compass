@@ -2,12 +2,12 @@ import React from "react";
 import "@testing-library/jest-dom";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CalendarView } from "@web/views/Calendar";
 import {
   MARCH_1,
   MULTI_WEEK,
   TY_TIM,
-} from "@web/common/__mocks__/events/feb27ToMar5";
+} from "@core/__mocks__/events/events.misc";
+import { CalendarView } from "@web/views/Calendar";
 import { render } from "@web/common/__mocks__/mock.render";
 import { febToMarState } from "@web/common/__mocks__/state/state.0227To0305";
 

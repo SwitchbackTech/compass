@@ -1,7 +1,11 @@
 import { rest } from "msw";
 import { API_BASEURL } from "@web/common/constants/web.constants";
-
-import { CLIMB, MARCH_1, MULTI_WEEK, TY_TIM } from "../events/feb27ToMar5";
+import {
+  CLIMB,
+  MARCH_1,
+  MULTI_WEEK,
+  TY_TIM,
+} from "@core//__mocks__/events/events.misc";
 
 export const globalHandlers = [
   rest.get(`${API_BASEURL}/auth/oauth-url`, (req, res, ctx) => {
