@@ -126,6 +126,7 @@ module.exports = {
         "\\.(svg)$": "<rootDir>/packages/web/src/common/__mocks__/svg.js",
       },
 
+      setupFilesAfterEnv: ["<rootDir>/packages/web/jest.setup.js"],
       testEnvironment: "jsdom",
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
       transformIgnorePatterns: [

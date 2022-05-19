@@ -25,16 +25,11 @@ const _confirmCorrectEventFormIsOpen = (eventName: string) => {
 };
 
 beforeAll(() => {
-  // TODO add these to test setup
   mockScroll();
   mockLocalStorage();
   localStorage.setItem("token", "mytoken123");
+});
 
-  server.listen();
-});
-afterEach(() => {
-  server.resetHandlers();
-});
 afterAll(() => {
   clearLocalStorageMock();
 });
@@ -44,7 +39,6 @@ describe("Event Form", () => {
 
   it("opens when clicking events", async () => {
     jest.setTimeout(10000);
-    server.use(feb27ToMar5Handlers);
     const user = userEvent.setup();
     render(<CalendarView />, { state: febToMarState });
     expect(screen.queryByRole("form")).not.toBeInTheDocument();
@@ -95,7 +89,6 @@ describe("Event Form", () => {
         */
 
     jest.setTimeout(10000);
-    server.use(feb27ToMar5Handlers);
     const user = userEvent.setup();
     render(<CalendarView />, { state: febToMarState });
 
@@ -114,7 +107,6 @@ describe("Event Form", () => {
   });
 
   it("deletes event after clicking trash icon", async () => {
-    server.use(feb27ToMar5Handlers);
     const user = userEvent.setup();
     render(<CalendarView />, { state: febToMarState });
 
@@ -139,7 +131,6 @@ describe("Event Form", () => {
 
   describe("DatePicker", () => {
     it("closes when clicking outside of form, while keeping form open", async () => {
-      server.use(feb27ToMar5Handlers);
       const user = userEvent.setup();
       render(<CalendarView />, { state: febToMarState });
 

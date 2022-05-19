@@ -12,27 +12,21 @@ import {
   mockScroll,
 } from "@web/common/utils/test.util";
 import { server } from "@web/common/__mocks__/server/mock.server";
-import { feb27ToMar5Handlers } from "@web/common/__mocks__/server/mock.handlers";
 import { API_BASEURL } from "@web/common/constants/web.constants";
 
 describe("Calendar Interactions", () => {
   beforeAll(() => {
-    server.listen();
     mockScroll();
     mockLocalStorage();
     localStorage.setItem("token", "mytoken123");
   });
-  afterEach(() => {
-    server.resetHandlers();
-  });
+
   afterAll(() => {
     clearLocalStorageMock();
-    server.close();
   });
 
   describe("Now Line + Today Button", () => {
     it("appear/disappear when viewing future or past week", async () => {
-      server.use(feb27ToMar5Handlers);
       const user = userEvent.setup();
       render(<CalendarView />);
 
@@ -80,7 +74,6 @@ describe("Calendar Interactions", () => {
   describe("All Day Events", () => {
     it("shows preview while typing in form", async () => {
       const user = userEvent.setup();
-      server.use(feb27ToMar5Handlers);
       const { container } = render(<CalendarView />, {
         state: febToMarState,
       });
@@ -105,7 +98,6 @@ describe("Calendar Interactions", () => {
 
   describe("Regular Events", () => {
     it("toggles times when clicking them", async () => {
-      server.use(feb27ToMar5Handlers);
       server.use(
         rest.put(
           `${API_BASEURL}/event/62322b127837957382660217`,

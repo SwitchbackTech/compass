@@ -15,6 +15,7 @@ beforeAll(() => {
   mockScroll();
   localStorage.setItem("token", "secretTokenValue");
 });
+
 afterAll(() => {
   clearLocalStorageMock();
 });

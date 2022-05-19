@@ -19,18 +19,13 @@ describe("Sidebar: Interactions", () => {
   beforeAll(() => {
     mockLocalStorage();
     mockScroll();
-    server.listen();
     localStorage.setItem("token", "secretTokenValue");
   });
-  afterEach(() => {
-    server.resetHandlers();
-  });
+
   afterAll(() => {
     clearLocalStorageMock();
-    server.close();
   });
   it("adds someday event to sidebar", async () => {
-    server.use(feb27ToMar5Handlers);
     server.use(
       rest.post(`${API_BASEURL}/event`, (req, res, ctx) => {
         return res(

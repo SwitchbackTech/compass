@@ -11,6 +11,7 @@ import {
 import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
+import { server } from "@web/common/__mocks__/server/mock.server";
 
 describe("Routing", () => {
   it("goes to login page when local storage token missing", () => {

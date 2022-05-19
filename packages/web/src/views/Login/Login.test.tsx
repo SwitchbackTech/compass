@@ -6,9 +6,6 @@ import { server } from "@web/common/__mocks__/server/mock.server";
 import { LoginView } from "@web/views/Login";
 
 describe("Login", () => {
-  beforeAll(() => server.listen());
-  afterEach(() => server.resetHandlers());
-  afterAll(() => server.close());
   it("displays oauth and feedback buttons", async () => {
     render(<LoginView />);
     const gOauthButton = screen.getByRole("button", {
