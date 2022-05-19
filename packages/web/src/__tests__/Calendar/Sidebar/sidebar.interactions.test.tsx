@@ -2,13 +2,13 @@ import React from "react";
 import { rest } from "msw";
 import "@testing-library/jest-dom";
 import { act, screen, waitFor, within } from "@testing-library/react";
+import { LEARN_CHINESE } from "@core/__mocks__/events/events.misc";
 import userEvent from "@testing-library/user-event";
 import { server } from "@web/common/__mocks__/server/mock.server";
 import { render } from "@web/common/__mocks__/mock.render";
 import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
 import { CalendarView } from "@web/views/Calendar";
 import { API_BASEURL } from "@web/common/constants/web.constants";
-import { LEARN_CHINESE } from "@core/__mocks__/events/events.misc";
 
 describe("Sidebar: Interactions", () => {
   it("adds someday event to sidebar", async () => {

@@ -14,7 +14,7 @@ it("displays alert upon server error", async () => {
       return res(
         ctx.status(500),
         ctx.json({
-          errorMessage: "something broke",
+          error: "something broke",
         })
       );
     })

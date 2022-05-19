@@ -13,7 +13,8 @@ const customRender = (
   {
     state,
     store = configureStore({
-      middleware: [sagaMiddleware],
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(sagaMiddleware),
       reducer: reducers,
       preloadedState: state,
     }),
