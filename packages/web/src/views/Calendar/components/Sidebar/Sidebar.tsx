@@ -149,6 +149,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
       <StyledSidebarToggleIcon
         cursor="pointer"
         onClick={() => setIsToggled((toggle) => !toggle)}
+        title="Sidebar Toggle"
       />
 
       <StyledTopSectionFlex

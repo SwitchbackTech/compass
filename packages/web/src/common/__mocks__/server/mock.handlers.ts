@@ -7,7 +7,14 @@ export const globalHandlers = [
   rest.get(`${API_BASEURL}/auth/oauth-url`, (req, res, ctx) => {
     return res(ctx.json({ authUrl: "foo", authState: "bar" }));
   }),
+  rest.delete(`${API_BASEURL}/event/:id`, (req, res, ctx) => {
+    return res(ctx.json({ acknowledged: true, deletedCount: 1 }));
+  }),
+  rest.options(`${API_BASEURL}/event`, (req, res, ctx) => {
+    return res(ctx.json([]));
+  }),
 ];
+
 export const feb27ToMar5Handlers = rest.get(
   `${API_BASEURL}/event`,
   (req, res, ctx) => {

@@ -1,13 +1,7 @@
 import React from "react";
 import { rest } from "msw";
 import "@testing-library/jest-dom";
-import {
-  act,
-  prettyDOM,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CalendarView } from "@web/views/Calendar";
 import { render } from "@web/common/__mocks__/mock.render";

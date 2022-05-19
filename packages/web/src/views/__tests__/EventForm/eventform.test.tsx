@@ -1,12 +1,6 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import {
-  act,
-  prettyDOM,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CalendarView } from "@web/views/Calendar";
 import {
@@ -119,70 +113,67 @@ describe("Event Form", () => {
     });
   });
 
-  it.todo("deletes event after clicking trash icon");
-  // it("deletes event after clicking trash icon", async () => {
-  //   const user = userEvent.setup();
-  //   render(<CalendarView />, { state: febToMarState });
+  it("deletes event after clicking trash icon", async () => {
+    server.use(feb27ToMar5Handlers);
+    const user = userEvent.setup();
+    render(<CalendarView />, { state: febToMarState });
 
-  //   await act(async () => {
-  //     await user.click(screen.getByTitle("Climb")); // open event
-  //   });
+    await act(async () => {
+      await user.click(screen.getByTitle("Climb")); // open event
+    });
 
-  //   await act(async () => {
-  //     await user.click(
-  //       screen.getByRole("button", {
-  //         name: /delete event/i,
-  //       })
-  //     );
-  //   });
+    await act(async () => {
+      await user.click(
+        screen.getByRole("button", {
+          name: /delete event/i,
+        })
+      );
+    });
 
-  //   expect(
-  //     screen.queryByRole("button", {
-  //       name: /delete event/i,
-  //     })
-  //   ).not.toBeInTheDocument();
-  // });
+    expect(
+      screen.queryByRole("button", {
+        name: /delete event/i,
+      })
+    ).not.toBeInTheDocument();
+  });
 
   describe("DatePicker", () => {
-    it.todo("closes when clicking outside of form, while keeping form open");
-    /*
-      it("closes when clicking outside of form, while keeping form open", async () => {
+    it("closes when clicking outside of form, while keeping form open", async () => {
+      server.use(feb27ToMar5Handlers);
+      const user = userEvent.setup();
+      render(<CalendarView />, { state: febToMarState });
 
-        const user = userEvent.setup();
-        render(<CalendarView />, { state: febToMarState });
-
-        const eventWithTimesBtn = screen.getByRole("button", {
-          // accept any times because times will be different if
-          // CI server in different timezone than you
-          name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,
-        });
-
-        await act(async () => {
-          await user.click(eventWithTimesBtn); // open event
-        });
-        const startDatePicker = await waitFor(() => {
-          screen.getAllByRole("tab", {
-            name: /mar 01/i,
-          })[0];
-        });
-
-        await act(async () => {
-          await user.click(startDatePicker); // picker should open
-        });
-
-        await act(async () => {
-          // picker should close
-          await user.click(screen.getByRole("form"));
-        });
-
-        // looks for the date input that appears when editing
-        // (instead of date picker, because sidebar month picker still present)
-        const tablist = screen.getByRole("tablist");
-        expect(within(tablist).queryByRole("textbox")).not.toBeInTheDocument();
-
-        // form is still open
-        expect(screen.getByRole("form")).toBeInTheDocument();
+      const eventWithTimesBtn = screen.getByRole("button", {
+        // accept any times because times will be different if
+        // CI server in different timezone than you
+        name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,
       });
-      */
+
+      await act(async () => {
+        await user.click(eventWithTimesBtn); // open event
+      });
+      const startDatePicker = await waitFor(() => {
+        screen.getAllByRole("tab", {
+          name: /mar 01/i,
+        })[0];
+      });
+
+      await act(async () => {
+        await user.click(startDatePicker); // picker should open
+      });
+
+      await act(async () => {
+        // picker should close
+        await user.click(screen.getByRole("form"));
+      });
+
+      // looks for the date input that appears when editing
+      // (instead of date picker, because sidebar month picker still present)
+      const tablist = screen.getByRole("tablist");
+      expect(within(tablist).queryByRole("textbox")).not.toBeInTheDocument();
+
+      // form is still open
+      expect(screen.getByRole("form")).toBeInTheDocument();
+    });
   });
 });

@@ -17,13 +17,13 @@ export interface Props {
 }
 
 export const Styled = styled.div<Props>`
+  background: ${getColor(ColorNames.DARK_3)};
   height: 100%;
+  overflow: hidden;
+  position: relative;
+  transition: 0.4s;
   width: ${({ isToggled }) =>
     isToggled ? SIDEBAR_WIDTH : SIDEBAR_COLLAPSED_WIDTH}px;
-  background: ${getColor(ColorNames.DARK_3)};
-  overflow: hidden;
-  transition: 0.4s;
-  position: relative;
 `;
 
 export const StyledSidebarOverflow = styled.div<Props>`
