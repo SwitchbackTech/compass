@@ -4,9 +4,9 @@ import "@testing-library/jest-dom";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CalendarView } from "@web/views/Calendar";
-import { render } from "@web/common/__mocks__/mock.render";
-import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
-import { server } from "@web/common/__mocks__/server/mock.server";
+import { render } from "@web/__tests__/__mocks__/mock.render";
+import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
+import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { API_BASEURL } from "@web/common/constants/web.constants";
 it("displays alert upon server error", async () => {
   server.use(

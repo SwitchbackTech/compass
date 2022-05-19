@@ -1,9 +1,9 @@
 import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
-import { render } from "@web/common/__mocks__/mock.render";
+import { render } from "@web/__tests__/__mocks__/mock.render";
 import { CalendarView } from "@web/views/Calendar";
-import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
+import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 
 describe("Sidebar: Display without State", () => {
   it("displays everything user expects when no events", async () => {

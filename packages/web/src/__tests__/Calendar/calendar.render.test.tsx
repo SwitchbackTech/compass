@@ -1,8 +1,8 @@
 import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
-import { render } from "@web/common/__mocks__/mock.render";
-import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
+import { render } from "@web/__tests__/__mocks__/mock.render";
+import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
 import { LocalStorage } from "@web/common/constants/web.constants";

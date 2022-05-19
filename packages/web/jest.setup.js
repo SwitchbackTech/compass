@@ -1,4 +1,4 @@
-import { server } from "@web/common/__mocks__/server/mock.server";
+import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { LocalStorage } from "@web/common/constants/web.constants";
 import {
   mockLocalStorage,

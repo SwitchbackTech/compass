@@ -4,9 +4,9 @@ import "@testing-library/jest-dom";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { LEARN_CHINESE } from "@core/__mocks__/events/events.misc";
 import userEvent from "@testing-library/user-event";
-import { server } from "@web/common/__mocks__/server/mock.server";
-import { render } from "@web/common/__mocks__/mock.render";
-import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
+import { server } from "@web/__tests__/__mocks__/server/mock.server";
+import { render } from "@web/__tests__/__mocks__/mock.render";
+import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { CalendarView } from "@web/views/Calendar";
 import { API_BASEURL } from "@web/common/constants/web.constants";
 
@@ -45,9 +45,11 @@ describe("Sidebar: Interactions", () => {
       await user.click(screen.getByText(/save/i));
     });
 
-    expect(
-      within(sidebar).getByRole("button", { name: /^learn chinese$/i })
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        within(sidebar).getByRole("button", { name: /^learn chinese$/i })
+      ).toBeInTheDocument();
+    });
   }, 10000);
   describe("Drag & Drop", () => {
     it.todo("moves event from sidebar to grid after drop");

@@ -8,8 +8,8 @@ import {
   TY_TIM,
 } from "@core/__mocks__/events/events.misc";
 import { CalendarView } from "@web/views/Calendar";
-import { render } from "@web/common/__mocks__/mock.render";
-import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
+import { render } from "@web/__tests__/__mocks__/mock.render";
+import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 
 describe("Event Form", () => {
   it.todo("only allows 1 form to be open at a time"); // currently allows concurrent someday and grid forms

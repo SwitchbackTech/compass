@@ -11,13 +11,7 @@ unsuccessful in getting keyboard events to fire
 might have to refactor how keyboard shortcuts are setup in app
 
 describe("Calendar shortcuts", () => {
-  beforeAll(() => {
-    localStorage.setItem("token", "mytoken123");
-  });
 
-  afterAll(() => {
-    clearLocalStorageMock();
-  });
   it("navigates to today's week after pressing 't'", async () => {
     const user = userEvent.setup({ keyboardMap: [{ code: "84" }] });
     render(<CalendarView />);
