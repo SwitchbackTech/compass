@@ -2,7 +2,7 @@ import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import { render } from "@web/common/__mocks__/mock.render";
-import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
+import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/ducks/events/event.utils";
 import { LocalStorage } from "@web/common/constants/web.constants";
@@ -70,7 +70,7 @@ describe("Calendar: Display without State", () => {
 describe("Calendar: Display with State", () => {
   it("dispays both timed and all day events", async () => {
     await waitFor(() => {
-      render(<CalendarView />, { state: weekEventState });
+      render(<CalendarView />, { state: preloadedState });
     });
     expect(
       screen.getByRole("button", { name: /groceries/i })

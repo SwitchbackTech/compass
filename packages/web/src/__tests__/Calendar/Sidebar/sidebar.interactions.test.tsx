@@ -5,7 +5,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { server } from "@web/common/__mocks__/server/mock.server";
 import { render } from "@web/common/__mocks__/mock.render";
-import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
+import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
 import { CalendarView } from "@web/views/Calendar";
 import { API_BASEURL } from "@web/common/constants/web.constants";
 
@@ -29,7 +29,7 @@ describe("Sidebar: Interactions", () => {
 
     const user = userEvent.setup();
     await waitFor(() => {
-      render(<CalendarView />, { state: weekEventState });
+      render(<CalendarView />, { state: preloadedState });
     });
 
     const sidebar = screen.getByRole("complementary");

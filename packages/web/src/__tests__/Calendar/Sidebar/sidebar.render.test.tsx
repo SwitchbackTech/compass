@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import { render } from "@web/common/__mocks__/mock.render";
 import { CalendarView } from "@web/views/Calendar";
-import { weekEventState } from "@web/common/__mocks__/state/state.weekEvents";
+import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
 
 describe("Sidebar: Display without State", () => {
   it("displays everything user expects when no events", async () => {
@@ -40,7 +40,7 @@ describe("Sidebar: Display without State", () => {
 describe("Sidebar: Display with State", () => {
   it("displays pre-existing someday event", async () => {
     await waitFor(() => {
-      render(<CalendarView />, { state: weekEventState });
+      render(<CalendarView />, { state: preloadedState });
     });
 
     const sidebar = screen.getByRole("complementary");

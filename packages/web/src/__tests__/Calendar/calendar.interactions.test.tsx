@@ -5,7 +5,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CalendarView } from "@web/views/Calendar";
 import { render } from "@web/common/__mocks__/mock.render";
-import { febToMarState } from "@web/common/__mocks__/state/state.0227To0305";
+import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
 import { server } from "@web/common/__mocks__/server/mock.server";
 import { API_BASEURL } from "@web/common/constants/web.constants";
 
@@ -60,7 +60,7 @@ describe("Calendar Interactions", () => {
     it("shows preview while typing in form", async () => {
       const user = userEvent.setup();
       const { container } = render(<CalendarView />, {
-        state: febToMarState,
+        state: preloadedState,
       });
 
       const allDayGrid = container.querySelector("#allDayGrid");
@@ -109,7 +109,7 @@ describe("Calendar Interactions", () => {
       );
 
       const user = userEvent.setup();
-      render(<CalendarView />, { state: febToMarState });
+      render(<CalendarView />, { state: preloadedState });
 
       const eventWithTimesBtn = screen.getByRole("button", {
         name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,

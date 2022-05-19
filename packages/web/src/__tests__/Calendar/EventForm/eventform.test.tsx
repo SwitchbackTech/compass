@@ -9,7 +9,7 @@ import {
 } from "@core/__mocks__/events/events.misc";
 import { CalendarView } from "@web/views/Calendar";
 import { render } from "@web/common/__mocks__/mock.render";
-import { febToMarState } from "@web/common/__mocks__/state/state.0227To0305";
+import { preloadedState } from "@web/common/__mocks__/state/state.weekEvents";
 
 describe("Event Form", () => {
   it.todo("only allows 1 form to be open at a time"); // currently allows concurrent someday and grid forms
@@ -18,7 +18,7 @@ describe("Event Form", () => {
     const user = userEvent.setup();
 
     await waitFor(() => {
-      render(<CalendarView />, { state: febToMarState });
+      render(<CalendarView />, { state: preloadedState });
     });
     expect(screen.queryByRole("form")).not.toBeInTheDocument();
 
@@ -69,9 +69,8 @@ describe("Event Form", () => {
           });
         */
 
-    jest.setTimeout(10000);
     const user = userEvent.setup();
-    render(<CalendarView />, { state: febToMarState });
+    render(<CalendarView />, { state: preloadedState });
 
     await act(async () => {
       await user.click(screen.getByRole("button", { name: MARCH_1.title }));
@@ -84,13 +83,13 @@ describe("Event Form", () => {
     await waitFor(() => {
       expect(screen.queryByRole("form")).not.toBeInTheDocument();
     });
-  });
+  }, 10000);
 
   it("deletes event after clicking trash icon", async () => {
     const user = userEvent.setup();
     await waitFor(() => {
       // render(<CalendarView />, { state: weekEventState });
-      render(<CalendarView />, { state: febToMarState });
+      render(<CalendarView />, { state: preloadedState });
     });
 
     await act(async () => {
@@ -117,7 +116,7 @@ describe("Event Form", () => {
   describe("DatePicker", () => {
     it("closes when clicking outside of form, while keeping form open", async () => {
       const user = userEvent.setup();
-      render(<CalendarView />, { state: febToMarState });
+      render(<CalendarView />, { state: preloadedState });
 
       const eventWithTimesBtn = screen.getByRole("button", {
         // accept any times because times will be different if
