@@ -15,6 +15,8 @@ import { Divider } from "@web/components/Divider";
 import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
 // import { SomedayEventsFutureContainer } from "@web/views/Calendar/containers/SomedayContainer/SomedayCategories";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
+import { useDispatch } from "react-redux";
+import { getFutureEventsSlice } from "@web/ducks/events/slice";
 
 import {
   Styled,
@@ -28,7 +30,7 @@ import {
   renderStyledSidebarToggleIcon,
   StyledHeaderFlex,
   StyledSidebarOverflow,
-  StyledSomedaySection,
+  // StyledSomedaySection,
 } from "./styled";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 import { NewSomedaySection } from "./NewSomedaySection";
@@ -71,6 +73,11 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
   const [isCalendarsToggled, setIsCalendarsToggled] = useState(true);
 
   const monthsShown = Math.floor(+(bottomSectionHeight / DATEPICKER_HEIGHT));
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(getFutureEventsSlice.actions.request());
+  }, [dispatch]);
 
   useEffect(() => {
     if (bottomSectionHeight > window.innerHeight / 2) {
@@ -90,6 +97,8 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
 
     setBottomSectionHeight(height);
   }, [isCalendarsToggled]);
+
+  // console.log("sidebar");
 
   const getEventsSectionFlex = (sectionType: "currentMonth" | "future") => {
     const dividerIndexBySectionType = {
@@ -140,10 +149,11 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
 
   return (
     <Styled
-      {...props}
+      // {...props} //$$
       isToggled={isToggled}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
+      role="complementary"
     >
       <StyledSidebarOverflow isToggled={isToggled} />
       <StyledSidebarToggleIcon
@@ -209,7 +219,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           EventsListContainer={SomedayEventsFutureContainer}
           sectionType="future"
         /> */}
-        <NewSomedaySection flex={getEventsSectionFlex("future")} />
+        <NewSomedaySection flex={1} />
       </StyledTopSectionFlex>
 
       {/* <StyledDividerWrapper

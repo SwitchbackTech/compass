@@ -23,11 +23,17 @@ describe("Sidebar: Interactions", () => {
       render(<CalendarView />, { state: preloadedState });
     });
 
+    // await waitFor(() => {
+    //   expect(screen.getByRole("complementary")).toBeInTheDocument();
+    // });
+
     const sidebar = screen.getByRole("complementary");
 
     await act(async () => {
       await user.click(
-        within(sidebar).getByRole("button", { name: /add someday event/i })
+        within(sidebar).getByRole("button", {
+          name: /add someday event/i,
+        })
       );
     });
 

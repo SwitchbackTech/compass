@@ -43,9 +43,12 @@ describe("Sidebar: Display with State", () => {
       render(<CalendarView />, { state: preloadedState });
     });
 
-    const sidebar = screen.getByRole("complementary");
-    expect(
-      within(sidebar).getByRole("button", { name: /^europe trip$/i })
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole("complementary")).getByRole("button", {
+          name: /^europe trip$/i,
+        })
+      ).toBeInTheDocument();
+    });
   });
 });

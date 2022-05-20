@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useRef, useState } from "react";
+import React, { FC, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Origin, Priorities, SOMEDAY_EVENTS_LIMIT } from "@core/core.constants";
 import { usePopper } from "react-popper";
@@ -7,12 +7,16 @@ import {
   createEventSlice,
   getFutureEventsSlice,
 } from "@web/ducks/events/slice";
-import { selectSomedayEvents } from "@web/ducks/events/selectors";
+import {
+  selectIsGetFutureEventsProcessing,
+  selectSomedayEvents,
+} from "@web/ducks/events/selectors";
 import { Schema_Event } from "@core/types/event.types";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
+import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
 import { DraggableSomedayEvent } from "../EventsList/SomedayEvent/DraggableSomedayEvent";
@@ -22,12 +26,11 @@ interface Props {
   flex?: number;
 }
 
-export const NewSomedaySection: FC<Props> = ({ flex, ...props }) => {
+export const NewSomedaySection: FC<Props> = ({ flex }) => {
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    dispatch(getFutureEventsSlice.actions.request());
-  }, []);
+  const isProcessing = useSelector(selectIsGetFutureEventsProcessing);
+  const somedayEvents = useSelector(selectSomedayEvents);
 
   const formRef = useRef<HTMLDivElement>(null);
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
@@ -60,9 +63,6 @@ export const NewSomedaySection: FC<Props> = ({ flex, ...props }) => {
 
   const [event, setEvent] = useState<Schema_GridEvent | null>(eventBase);
 
-  const somedayEvents = useSelector(selectSomedayEvents);
-  const anySomedays = Object.keys(somedayEvents).length > 0;
-
   /***********
    * Handlers *
    ***********/
@@ -78,13 +78,14 @@ export const NewSomedaySection: FC<Props> = ({ flex, ...props }) => {
   };
 
   return (
-    <Styled flex={flex} {...props}>
+    <Styled flex={flex}>
+      {isProcessing && <AbsoluteOverflowLoader />}
       <StyledHeader alignItems={AlignItems.CENTER}>
         {/* <ToggleArrow isToggled={isToggled} onToggle={onToggle} /> */}
 
         <StyledAddEventButton
           onClick={() => {
-            if (Object.keys(somedayEvents).length >= SOMEDAY_EVENTS_LIMIT) {
+            if (somedayEvents.length >= SOMEDAY_EVENTS_LIMIT) {
               alert(`
                 Sorry, you can only have ${SOMEDAY_EVENTS_LIMIT} Someday events for now.
                 This will be increased in a future update
@@ -148,15 +149,14 @@ export const NewSomedaySection: FC<Props> = ({ flex, ...props }) => {
         </StyledPaginationFlex> */}
       </StyledHeader>
       <StyledList>
-        {anySomedays &&
-          somedayEvents.map((event: Schema_Event) => (
-            <DraggableSomedayEvent
-              id={event._id}
-              key={event._id}
-              event={event}
-              title={event.title}
-            />
-          ))}
+        {somedayEvents.map((event: Schema_Event) => (
+          <DraggableSomedayEvent
+            id={event._id}
+            key={event._id}
+            event={event}
+            title={event.title}
+          />
+        ))}
       </StyledList>
     </Styled>
   );

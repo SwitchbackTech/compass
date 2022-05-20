@@ -117,14 +117,14 @@ describe("Event Form", () => {
       const user = userEvent.setup();
       render(<CalendarView />, { state: preloadedState });
 
-      const eventWithTimesBtn = screen.getByRole("button", {
-        // accept any times because times will be different if
-        // CI server in different timezone than you
-        name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,
-      });
-
       await act(async () => {
-        await user.click(eventWithTimesBtn); // open event
+        await user.click(
+          screen.getByRole("button", {
+            // accept any times because times will be different if
+            // CI server in different timezone than you
+            name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,
+          })
+        );
       });
       const startDatePicker = await waitFor(() => {
         screen.getAllByRole("tab", {

@@ -33,11 +33,15 @@ export const selectEventIdsBySectionType = (
 export const selectEventById = (state: RootState, id: string): Schema_Event =>
   selectEventEntities(state)[id] || {};
 
+/* isProcessing checks */
 export const selectIsCreateEventProcessing = (state: RootState) =>
   isProcessing(state.events.createEvent);
 
 export const selectIsEditEventProcessing = (state: RootState) =>
   isProcessing(state.events.editEvent);
+
+export const selectIsGetFutureEventsProcessing = (state: RootState) =>
+  isProcessing(state.events.getFutureEvents);
 
 export const selectPaginatedEventsBySectionType = (
   state: RootState,
@@ -55,13 +59,12 @@ export const selectSomedayEvents = (state: RootState) => {
   const somedayIds = state.events.getFutureEvents.value || [];
 
   if (somedayIds.length === 0 || Object.keys(entities).length === 0) {
-    return {};
+    return [];
   }
 
   const somedayEvents: Schema_Event[] = somedayIds.data.map(
     (_id: string) => entities[_id]
   );
-
   return somedayEvents;
 };
 

@@ -88,7 +88,7 @@ export const isError = (asyncState: _AsyncState<unknown, unknown>) =>
   !asyncState.isProcessing && !!asyncState.error;
 
 export const isProcessing = (asyncState: _AsyncState<unknown, unknown>) =>
-  asyncState.isProcessing && !!asyncState.error;
+  asyncState.isProcessing && !asyncState.error;
 
 export const isSuccess = (asyncState: _AsyncState<unknown, unknown>) =>
   !asyncState.isProcessing && asyncState.isSuccess;
