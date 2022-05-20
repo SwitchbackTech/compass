@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Popover } from "react-tiny-popover";
-import dayjs from "dayjs";
 import { Priorities, Priority } from "@core/core.constants";
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
@@ -12,25 +10,34 @@ import {
 import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Divider } from "@web/components/Divider";
-import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
-import { SomedayEventsFutureContainer } from "@web/views/Calendar/containers/SomedayContainer/SomedayCategories";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
+import { useDispatch } from "react-redux";
+import { getFutureEventsSlice } from "@web/ducks/events/slice";
 
 import {
   Styled,
   StyledTopSectionFlex,
-  StyledFiltersPopoverContent,
   StyledCheckBox,
   StyledPriorityFilterItem,
-  StyledPriorityFilterButton,
   StyledBottomSection,
-  StyledDividerWrapper,
   renderStyledSidebarToggleIcon,
   StyledHeaderFlex,
   StyledSidebarOverflow,
-  StyledSomedaySection,
 } from "./styled";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
+import { SomedaySection } from "./SomedaySection";
+
+/* imports from the old someday section*/
+// import {
+// OldStyledSomedaySection,
+// StyledFiltersPopoverContent
+// StyledPriorityFilterButton
+// StyledDividerWrapper
+// } from "./styled"
+// import { Popover } from "react-tiny-popover";
+// import dayjs from "dayjs";
+// import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
+// import { SomedayEventsFutureContainer } from "@web/views/Calendar/containers/SomedayContainer/SomedayCategories";
 
 const DATEPICKER_HEIGHT = 346;
 
@@ -70,6 +77,11 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
   const [isCalendarsToggled, setIsCalendarsToggled] = useState(true);
 
   const monthsShown = Math.floor(+(bottomSectionHeight / DATEPICKER_HEIGHT));
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(getFutureEventsSlice.actions.request());
+  }, [dispatch]);
 
   useEffect(() => {
     if (bottomSectionHeight > window.innerHeight / 2) {
@@ -139,15 +151,17 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
 
   return (
     <Styled
-      {...props}
+      // {...props} //$$
       isToggled={isToggled}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
+      role="complementary"
     >
       <StyledSidebarOverflow isToggled={isToggled} />
       <StyledSidebarToggleIcon
         cursor="pointer"
         onClick={() => setIsToggled((toggle) => !toggle)}
+        title="Sidebar Toggle"
       />
 
       <StyledTopSectionFlex
@@ -158,7 +172,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           alignItems={AlignItems.CENTER}
           justifyContent={JustifyContent.SPACE_BETWEEN}
         >
-          <Text size={30} colorName={ColorNames.WHITE_1}>
+          <Text colorName={ColorNames.WHITE_1} role="heading" size={30}>
             Someday
           </Text>
 
@@ -192,20 +206,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
             </StyledPriorityFilterButton>
           </Popover> */}
         </StyledHeaderFlex>
-        {/* <SomedaySection
-          flex={getEventsSectionFlex("currentMonth")}
-          isToggled={isCurrentMonthToggled}
-          onToggle={() => setIsCurrentMonthToggled((toggle) => !toggle)}
-          title="This Month"
-          priorities={
-            Object.keys(priorityFilter).filter(
-              (key) => priorityFilter[key as Priorities]
-            ) as Priorities[]
-          }
-          EventsListContainer={SidebarCurrentMonthEventsContainer}
-          sectionType="currentMonth"
-        /> */}
-        <StyledSomedaySection
+        {/* <OldStyledSomedaySection
           shouldSetTopMargin={isCurrentMonthToggled}
           flex={getEventsSectionFlex("future")}
           startDate={dayjs().format(YEAR_MONTH_FORMAT)}
@@ -219,7 +220,8 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           }
           EventsListContainer={SomedayEventsFutureContainer}
           sectionType="future"
-        />
+        /> */}
+        <SomedaySection flex={1} />
       </StyledTopSectionFlex>
 
       {/* <StyledDividerWrapper
@@ -228,8 +230,10 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         }}
       > */}
       <Divider
-        withAnimation={false}
         color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
+        role="separator"
+        title="sidebar divider"
+        withAnimation={false}
       />
       {/* </StyledDividerWrapper> */}
 

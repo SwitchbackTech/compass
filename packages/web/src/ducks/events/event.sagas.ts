@@ -125,7 +125,6 @@ export function* editEventSaga({ payload }: Action_EditEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.edit(payload));
     yield call(EventApi.edit, payload._id, payload.event);
-    // yield call(getEverySectionEvents); //$$
     yield put(editEventSlice.actions.success());
   } catch (error) {
     handleErrorTemp(error);
@@ -175,7 +174,6 @@ function* getEventsSaga(
     };
   } catch (error) {
     handleErrorTemp(error);
-    return error;
   }
 }
 

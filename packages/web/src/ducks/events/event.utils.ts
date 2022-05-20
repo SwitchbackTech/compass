@@ -26,6 +26,7 @@ export const handleErrorTemp = (error: Error) => {
     return;
   }
   alert(error);
+  console.log(error);
 };
 
 export const getEventCategory = (
@@ -230,6 +231,3 @@ export const editEventLocalStorage = async (
 
   localStorage.setItem("events", JSON.stringify(events));
 };
-/*
--------------------------------------------------------------------------------
-*/

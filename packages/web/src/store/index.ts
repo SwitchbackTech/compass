@@ -1,12 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
-
 import { sagaMiddleware } from "@web/common/store/middlewares";
 
 import { reducers } from "./reducers";
 
 export const store = configureStore({
   reducer: reducers,
-  middleware: [sagaMiddleware],
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(sagaMiddleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

@@ -53,6 +53,7 @@ export const SomedayEvent = ({ event: _event, isDragging }: Props) => {
           isDragging={isDragging}
           onClick={() => setIsEventFormOpen(true)}
           priority={event.priority}
+          role="button"
         >
           <Text size={15}>{event.title}</Text>
         </StyledEventOrPlaceholder>

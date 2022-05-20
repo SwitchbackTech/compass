@@ -212,9 +212,12 @@ export const EventForm: React.FC<FormProps> = ({
       <StyledTitleField
         autoFocus
         placeholder="Title"
-        onKeyDown={submitFormWithKeyboard}
-        value={title}
         onChange={onChangeEventTextField("title")}
+        onKeyDown={submitFormWithKeyboard}
+        role="textarea"
+        // title="title"
+        name="Event Title"
+        value={title}
       />
 
       <PrioritySection onSetEventField={onSetEventField} priority={priority} />

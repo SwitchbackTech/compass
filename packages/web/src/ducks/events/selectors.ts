@@ -33,11 +33,15 @@ export const selectEventIdsBySectionType = (
 export const selectEventById = (state: RootState, id: string): Schema_Event =>
   selectEventEntities(state)[id] || {};
 
+/* isProcessing checks */
 export const selectIsCreateEventProcessing = (state: RootState) =>
   isProcessing(state.events.createEvent);
 
 export const selectIsEditEventProcessing = (state: RootState) =>
   isProcessing(state.events.editEvent);
+
+export const selectIsGetFutureEventsProcessing = (state: RootState) =>
+  isProcessing(state.events.getFutureEvents);
 
 export const selectPaginatedEventsBySectionType = (
   state: RootState,
@@ -50,10 +54,23 @@ export const selectPaginatedEventsBySectionType = (
   return (isSuccess(statePiece) && statePiece.value) || null;
 };
 
+export const selectSomedayEvents = (state: RootState) => {
+  const entities = state.events.entities.value || {};
+  const somedayIds = state.events.getFutureEvents.value || [];
+
+  if (somedayIds.length === 0 || Object.keys(entities).length === 0) {
+    return [];
+  }
+
+  const somedayEvents: Schema_Event[] = somedayIds.data.map(
+    (_id: string) => entities[_id]
+  );
+  return somedayEvents;
+};
+
 export const selectSomedayEventsCount = (state: RootState): number => {
   return state.events["getFutureEvents"].value?.data?.length + 1 || 0;
 };
-
 export const selectWeekEvents = (state: RootState): Schema_Event[] => {
   const entities = state.events.entities.value || {};
   const weekIds = state.events.getWeekEvents.value || [];

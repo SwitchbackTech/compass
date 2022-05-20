@@ -30,7 +30,7 @@ export const ToggleableMonthWidget: React.FC<Props> = ({
   const temporarilyDisableToggle = true;
 
   return (
-    <Styled>
+    <Styled role="dialog" title="month widget">
       {/* <StyledToggleArrow
         isToggled={isToggled}
         onToggle={() => setIsToggled((toggle) => !toggle)}

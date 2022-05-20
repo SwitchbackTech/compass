@@ -65,9 +65,10 @@ export const MainGrid: FC<Props> = ({ weekViewProps }) => {
 
   return (
     <StyledMainGrid
-      ref={mergeRefs([component.eventsGridRef, drop])}
+      id="mainGrid"
       onMouseDown={eventHandlers.onEventsGridMouseDown}
       onMouseMove={eventHandlers.onEventGridMouseMove}
+      ref={mergeRefs([component.eventsGridRef, drop])}
     >
       <TimesColumn />
 

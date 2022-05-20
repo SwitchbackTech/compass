@@ -32,7 +32,6 @@ import {
   EVENT_DEFAULT_MIN,
   CALENDAR_X_START,
   CALENDAR_Y_START,
-  SIDEBAR_WIDTH,
 } from "../calendar.constants";
 import { State_Event, Schema_GridEvent } from "./types";
 

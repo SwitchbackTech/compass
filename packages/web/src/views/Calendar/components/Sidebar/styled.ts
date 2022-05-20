@@ -10,20 +10,20 @@ import {
 } from "@web/views/Calendar/calendar.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 
-import { SomedaySection } from "./SomedaySection";
+import { OldSomedaySection } from "./OldSomedaySection";
 
 export interface Props {
   isToggled: boolean;
 }
 
 export const Styled = styled.div<Props>`
+  background: ${getColor(ColorNames.DARK_3)};
   height: 100%;
+  overflow: hidden;
+  position: relative;
+  transition: 0.4s;
   width: ${({ isToggled }) =>
     isToggled ? SIDEBAR_WIDTH : SIDEBAR_COLLAPSED_WIDTH}px;
-  background: ${getColor(ColorNames.DARK_3)};
-  overflow: hidden;
-  transition: 0.4s;
-  position: relative;
 `;
 
 export const StyledSidebarOverflow = styled.div<Props>`
@@ -125,6 +125,8 @@ export interface FutureEventsProps {
   shouldSetTopMargin?: boolean;
 }
 
-export const StyledSomedaySection = styled(SomedaySection)<FutureEventsProps>`
+export const OldStyledSomedaySection = styled(
+  OldSomedaySection
+)<FutureEventsProps>`
   margin-top: ${({ shouldSetTopMargin }) => (shouldSetTopMargin ? "auto" : 0)};
 `;

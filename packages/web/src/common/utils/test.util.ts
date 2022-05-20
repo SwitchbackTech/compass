@@ -17,8 +17,12 @@ export const clearLocalStorageMock = () => {
 };
 
 export const mockLocalStorage = () => {
-  ["setItem", "getItem", "clear"].forEach((fn: string) => {
+  ["setItem", "getItem", "removeItem", "clear"].forEach((fn: string) => {
     const mock = jest.fn(localStorage[fn]);
     spies[fn] = jest.spyOn(Storage.prototype, fn).mockImplementation(mock);
   });
+};
+
+export const mockScroll = () => {
+  window.HTMLElement.prototype.scroll = jest.fn();
 };
