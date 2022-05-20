@@ -115,7 +115,11 @@ export const CalendarView = () => {
     const top = getCurrentMinute() * minuteHeight;
 
     component.eventsGridRef.current.scroll({ top, behavior: "smooth" });
-  }, [component.calendarRef]);
+  }, [
+    component.calendarRef,
+    component.eventsGridRef,
+    component.hourlyCellHeight,
+  ]);
 
   /**********
    * Render
