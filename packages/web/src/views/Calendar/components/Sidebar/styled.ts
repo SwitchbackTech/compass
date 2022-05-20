@@ -10,7 +10,7 @@ import {
 } from "@web/views/Calendar/calendar.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 
-import { SomedaySection } from "./SomedaySection";
+import { OldSomedaySection } from "./OldSomedaySection";
 
 export interface Props {
   isToggled: boolean;
@@ -125,6 +125,8 @@ export interface FutureEventsProps {
   shouldSetTopMargin?: boolean;
 }
 
-export const StyledSomedaySection = styled(SomedaySection)<FutureEventsProps>`
+export const OldStyledSomedaySection = styled(
+  OldSomedaySection
+)<FutureEventsProps>`
   margin-top: ${({ shouldSetTopMargin }) => (shouldSetTopMargin ? "auto" : 0)};
 `;

@@ -1,1 +1,2 @@
-export { SomedaySection } from "./SomedaySection";
+import { SomedaySection } from "./SomedaySection";
+export { SomedaySection };

@@ -1,76 +1,38 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { FC, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { usePopper } from "react-popper";
 import { Origin, Priorities, SOMEDAY_EVENTS_LIMIT } from "@core/core.constants";
-import { Schema_Event } from "@core/types/event.types";
-import { ArrowLeftIcon } from "@web/assets/svg";
-import { SectionType_Sidebar } from "@web/ducks/events/types";
-import {
-  selectPaginatedEventsBySectionType,
-  selectSomedayEventsCount,
-} from "@web/ducks/events/selectors";
-import { RootState } from "@web/store";
-import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
+import { usePopper } from "react-popper";
+import { ZIndex } from "@web/common/constants/web.constants";
 import {
   createEventSlice,
   getFutureEventsSlice,
 } from "@web/ducks/events/slice";
-import { ZIndex } from "@web/common/constants/web.constants";
+import {
+  selectIsGetFutureEventsProcessing,
+  selectSomedayEvents,
+} from "@web/ducks/events/selectors";
+import { Schema_Event } from "@core/types/event.types";
+import { AlignItems } from "@web/components/Flex/styled";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
+import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 
-import {
-  Styled,
-  StyledAddEventButton,
-  StyledArrowButton,
-  StyledEventsList,
-  StyledHeader,
-  StyledHeaderTitle,
-  StyledPaginationFlex,
-} from "./styled";
-import { ToggleArrow } from "../ToggleArrow";
+import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
+import { DraggableSomedayEvent } from "../EventsList/SomedayEvent/DraggableSomedayEvent";
+import { StyledList } from "../EventsList/styled";
 
-export interface EventsListProps {
-  offset: number;
-  sectionType: SectionType_Sidebar;
-  priorities: Priorities[];
-  pageSize: number;
-}
-
-export interface Props {
-  title: string;
-  EventsListContainer: React.ComponentType<EventsListProps>;
-  sectionType: SectionType_Sidebar;
-  priorities: Priorities[];
-  isToggled?: boolean;
-  onToggle?: () => void;
+interface Props {
   flex?: number;
 }
 
-export const SomedaySection: React.FC<Props> = ({
-  EventsListContainer,
-  title,
-  sectionType,
-  priorities,
-  isToggled: isParentToggled,
-  onToggle: onParentToggle,
-  flex,
-  ...props
-}) => {
+export const SomedaySection: FC<Props> = ({ flex }) => {
   const dispatch = useDispatch();
-  const eventsListRef = useRef<HTMLDivElement>(null);
+
+  const isProcessing = useSelector(selectIsGetFutureEventsProcessing);
+  const somedayEvents = useSelector(selectSomedayEvents);
+
   const formRef = useRef<HTMLDivElement>(null);
-
-  const somedayEventsCount = useSelector(selectSomedayEventsCount);
-  const paginatedEventsData = useSelector((state: RootState) =>
-    selectPaginatedEventsBySectionType(state, sectionType)
-  );
-  const { count = 0 } = paginatedEventsData || {};
-
-  const [pageSize, setPageSize] = useState(1);
-  const [offset, setOffset] = useState(0);
-  const [_isToggled, setIsToggled] = useState(false);
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
   const [popperRef, setPopperRef] = useState<HTMLElement>(null);
   const [popperElement, setPopperElement] = useState<HTMLElement>(null);
@@ -91,18 +53,6 @@ export const SomedaySection: React.FC<Props> = ({
   });
   const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_2 };
 
-  useEffect(() => {
-    setTimeout(() => {
-      if (eventsListRef.current?.clientHeight) {
-        const computedPageSize = Math.floor(
-          (eventsListRef.current.clientHeight - 40) / 34
-        );
-
-        setPageSize(computedPageSize || 1);
-      }
-    });
-  }, [eventsListRef.current?.clientHeight]);
-
   const eventBase = {
     description: "",
     isSomeday: true,
@@ -113,8 +63,9 @@ export const SomedaySection: React.FC<Props> = ({
 
   const [event, setEvent] = useState<Schema_GridEvent | null>(eventBase);
 
-  const isToggled = isParentToggled || _isToggled;
-
+  /***********
+   * Handlers *
+   ***********/
   const onSubmit = () => {
     setIsEventFormOpen(false);
     resetSomedayFormState();
@@ -122,38 +73,34 @@ export const SomedaySection: React.FC<Props> = ({
     dispatch(createEventSlice.actions.request(event));
   };
 
-  const onToggle = onParentToggle || (() => setIsToggled((toggle) => !toggle));
-
   const resetSomedayFormState = () => {
     setEvent(eventBase);
   };
 
-  const showNextPageButton = count > pageSize + offset;
-
   return (
-    <Styled flex={flex} {...props}>
+    <Styled flex={flex}>
+      {isProcessing && <AbsoluteOverflowLoader />}
       <StyledHeader alignItems={AlignItems.CENTER}>
         {/* <ToggleArrow isToggled={isToggled} onToggle={onToggle} /> */}
-        <StyledHeaderTitle size={18}>{title}</StyledHeaderTitle>
 
         <StyledAddEventButton
-          size={25}
           onClick={() => {
-            if (somedayEventsCount >= SOMEDAY_EVENTS_LIMIT) {
+            if (somedayEvents.length >= SOMEDAY_EVENTS_LIMIT) {
               alert(`
                 Sorry, you can only have ${SOMEDAY_EVENTS_LIMIT} Someday events for now.
                 This will be increased in a future update
                 `);
               return;
             }
-
             setIsEventFormOpen((open) => !open);
           }}
           ref={setPopperRef}
+          role="button"
+          size={25}
+          title="Add Someday event"
         >
           +
         </StyledAddEventButton>
-
         <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
           {isEventFormOpen && (
             <div ref={formRef}>
@@ -171,7 +118,6 @@ export const SomedaySection: React.FC<Props> = ({
             </div>
           )}
         </div>
-
         {/* <StyledPaginationFlex
           justifyContent={JustifyContent.SPACE_BETWEEN}
           alignItems={AlignItems.CENTER}
@@ -202,17 +148,16 @@ export const SomedaySection: React.FC<Props> = ({
           </StyledArrowButton>
         </StyledPaginationFlex> */}
       </StyledHeader>
-
-      {isToggled && (
-        <StyledEventsList ref={eventsListRef}>
-          <EventsListContainer
-            pageSize={pageSize}
-            priorities={priorities}
-            sectionType={sectionType}
-            offset={offset}
+      <StyledList>
+        {somedayEvents.map((event: Schema_Event) => (
+          <DraggableSomedayEvent
+            id={event._id}
+            key={event._id}
+            event={event}
+            title={event.title}
           />
-        </StyledEventsList>
-      )}
+        ))}
+      </StyledList>
     </Styled>
   );
 };
