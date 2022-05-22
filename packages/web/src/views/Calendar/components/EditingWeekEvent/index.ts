@@ -1,1 +1,0 @@
-export { EditingWeekEvent } from './EditingWeekEvent';

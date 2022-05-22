@@ -1,10 +1,14 @@
 import styled from "styled-components";
 import { Priorities } from "@core/core.constants";
 import { colorNameByPriority } from "@web/common/styles/colors";
+import { InvertedColorNames } from "@web/common/types/styles";
+import { EVENT_WIDTH_MINIMUM } from "@web/common/constants/grid.constants";
+import {
+  ANIMATION_TIME_3_MS,
+  ZIndex,
+} from "@web/common/constants/web.constants";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
-import { InvertedColorNames } from "@web/common/types/styles";
-import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
 import { getColor, getInvertedColor } from "@web/common/utils/colors";
 import { Button } from "@web/components/Button";
 
@@ -14,16 +18,12 @@ export const StyledEventForm = styled.form<StyledFormProps>`
   ${({ isOpen }) =>
     isOpen
       ? `
-      min-height: 355px;
-      padding: 18px 30px;
-  `
-      : `
-    max-height: 0;
-    min-height: 0;
-    padding: 0 30px;
-  `}
+      min-height: 255px;
+      padding: 18px 20px;
+        `
+      : ``}
 
-  overflow: visible;
+  /* overflow: visible; */
   box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.25);
   border-radius: 4px;
   width: 585px;
@@ -37,6 +37,7 @@ export const StyledEventForm = styled.form<StyledFormProps>`
       ] as InvertedColorNames
     )};
   transition: ${ANIMATION_TIME_3_MS};
+  z-index: ${ZIndex.LAYER_2};
 `;
 
 export const StyledDescriptionField = styled(Textarea)`
@@ -52,8 +53,8 @@ export const StyledIconRow = styled(Flex)`
 
 export const StyledSubmitButton = styled(Button)`
   border: 2px solid;
-  margin-top: 35px;
-  min-width: 80px;
+  margin-top: 15px;
+  min-width: ${EVENT_WIDTH_MINIMUM}px;
 `;
 
 export const StyledSubmitRow = styled(Flex)`
@@ -64,6 +65,6 @@ export const StyledSubmitRow = styled(Flex)`
 export const StyledTitleField = styled(Textarea)`
   background: transparent;
   /* padding: 10px 0; */
-  height: 55px;
-  font-size: 50px;
+  height: 40px;
+  font-size: 35px;
 `;

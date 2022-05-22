@@ -6,7 +6,11 @@ import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { EventApi } from "@web/ducks/events/event.api";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
-import { selectEventById } from "@web/ducks/events/selectors";
+import { selectEventById } from "@web/ducks/events/event.selectors";
+import {
+  handleErrorTemp,
+  normalizedEventsSchema,
+} from "@web/common/utils/event.util";
 
 import {
   createEventSlice,
@@ -16,7 +20,7 @@ import {
   getCurrentMonthEventsSlice,
   getFutureEventsSlice,
   getWeekEventsSlice,
-} from "./slice";
+} from "./event.slice";
 import {
   Action_ConvertSomedayEvent,
   Action_CreateEvent,
@@ -28,9 +32,8 @@ import {
   Response_CreateEventSaga,
   Action_DeleteEvent,
   Entities_Event,
-} from "./types";
-import { selectPaginatedEventsBySectionType } from "./selectors";
-import { handleErrorTemp, normalizedEventsSchema } from "./event.utils";
+} from "./event.types";
+import { selectPaginatedEventsBySectionType } from "./event.selectors";
 
 /*
  * Converts Someday event into a regular, timed event

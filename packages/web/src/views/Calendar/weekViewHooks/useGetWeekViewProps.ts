@@ -12,61 +12,41 @@ import {
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
 import { LocalStorage } from "@web/common/constants/web.constants";
-import { roundByNumber } from "@web/common/utils";
-import { getAmPmTimes, toUTCOffset } from "@web/common/utils/date.utils";
+import { roundToNext } from "@web/common/utils";
+import { toUTCOffset } from "@web/common/utils/date.utils";
 import {
   selectAllDayEvents,
-  selectWeekEvents,
-} from "@web/ducks/events/selectors";
+  selectGridEvents,
+} from "@web/ducks/events/event.selectors";
 import {
   createEventSlice,
   deleteEventSlice,
   editEventSlice,
   eventsEntitiesSlice,
   getWeekEventsSlice,
-} from "@web/ducks/events/slice";
+} from "@web/ducks/events/event.slice";
 import { getFlexBasis } from "@web/common/utils/grid.util";
 import { GRID_TIME_STEP } from "@web/common/constants/grid.constants";
 
-import {
-  EVENT_DEFAULT_MIN,
-  CALENDAR_X_START,
-  CALENDAR_Y_START,
-} from "../calendar.constants";
-import { State_Event, Schema_GridEvent } from "./types";
+import { GRID_X_START, GRID_Y_START } from "../layout.constants";
+import { Schema_GridEvent } from "./types";
 
 dayjs.extend(weekPlugin);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+//++ remove after done
+export interface State_Event {
+  name: "rescaling" | "dragging";
+  initialMinutesDifference?: number;
+  initialYOffset?: number;
+  hasMoved?: boolean;
+}
+
 export const useGetWeekViewProps = () => {
-  /**************
-   * General
-   *************/
   const today = dayjs();
   const dispatch = useDispatch();
 
-  /**************
-   * Refs Init
-   *************/
-  const allDayEventsGridRef = useRef<HTMLDivElement>(null);
-  const calendarRef = useRef<HTMLDivElement>(null);
-  const eventsGridRef = useRef<HTMLDivElement>(null);
-  const weekDaysRef = useRef<HTMLDivElement>(null);
-
-  /*********
-   * Grid
-   *********/
-  const [columnWidths, setColumnWidths] = useState<number[]>([]);
-  const [gridXOffset, setGridXOffset] = useState(0);
-  const [gridYOffset, setGridYOffset] = useState(0);
-
-  const hourlyCellHeight = (eventsGridRef.current?.clientHeight || 0) / 11;
-  const scrollTop = eventsGridRef.current?.scrollTop || 0;
-
-  /*************
-   * State Init
-   *************/
   const [editingEvent, setEditingEvent] = useState<Schema_GridEvent | null>(
     null
   );
@@ -84,8 +64,10 @@ export const useGetWeekViewProps = () => {
     const allDayEvents = useSelector(selectAllDayEventsMemo);
     const weekEvents = useSelector(selectWeekEventsMemo);
   */
-  const weekEvents = useSelector(selectWeekEvents);
-  const allDayEvents = useSelector(selectAllDayEvents);
+  // const weekEvents = useSelector(selectWeekEvents);
+  const weekEvents = [];
+  const allDayEvents = [];
+  // const allDayEvents = useSelector(selectAllDayEvents);
 
   const rowVals = allDayEvents.map((e: Schema_GridEvent) => e.row);
   const rowsCount = rowVals.length === 0 ? 1 : Math.max(...rowVals);
@@ -101,34 +83,13 @@ export const useGetWeekViewProps = () => {
   });
 
   const dayjsBasedOnWeekDay = today.week(week);
-  const times = getAmPmTimes();
+  // const times = getAmPmTimes();
   const todayDayWeekNumber = today.get("day") + 1;
   const yesterdayDayNumber = todayDayWeekNumber - 1;
 
   /*************
    * Effects
    *************/
-
-  useEffect(() => {
-    const widths = Array.from(weekDaysRef.current?.children || []).map(
-      (e) => e.clientWidth
-    );
-
-    setColumnWidths(widths);
-  }, [week, weekDaysRef.current?.clientWidth]);
-
-  useEffect(() => {
-    const yOffset =
-      CALENDAR_Y_START + (allDayEventsGridRef.current?.clientHeight || 0);
-    setGridYOffset(yOffset);
-  }, [allDayEventsGridRef.current?.clientHeight, rowsCount]);
-
-  useEffect(() => {
-    // reminder: runs after toggling side bar toggled,
-    // but not when resizing window
-    const xOffset = CALENDAR_X_START + (calendarRef.current?.offsetLeft || 0);
-    setGridXOffset(xOffset);
-  }, [calendarRef.current?.offsetLeft]);
 
   useEffect(() => {
     dispatch(
@@ -143,66 +104,14 @@ export const useGetWeekViewProps = () => {
   /*************
    * Getters
    *************/
-  const getAllDayEventCellHeight = () => hourlyCellHeight / 2.62; // got by experimenting by what looks right: ;
-
-  const getColumnWidth = (dayIndex: number) => columnWidths[dayIndex];
-
-  const getDateByX = (x: number) => {
-    const clickX = x - gridXOffset;
-    const dayIndex = getDayNumberByX(clickX);
-    const date = startOfSelectedWeekDay.add(dayIndex, "day");
-
-    return date;
-  };
-
-  const getDateByXY = (x: number, y: number) => {
-    let date = getDateByX(x);
-
-    const clickY = y - gridYOffset;
-    const minutes = getMinuteByMousePosition(clickY);
-    date = date.add(minutes, "minutes");
-
-    return date;
-  };
-
-  const getDateStrByXY = (x: number, y: number) => {
-    const date = getDateByXY(x, y);
-
-    // $$ try using a TZ offset format (like the default .format())
-    // the frontend is currently trusted to pass it to backend
-    // in TZ format, so better to keep it like that
-    return date.format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
-  };
-
-  const getDayNumberByX = (x: number) => {
-    let dayNumber = 0;
-    columnWidths.reduce((prev, width, index) => {
-      if (x >= prev && x < prev + width) {
-        dayNumber = index;
-      }
-
-      return prev + width;
-    }, 0);
-
-    return dayNumber;
-  };
+  // const getAllDayEventCellHeight = () => hourlyCellHeight / 2.62; // got by experimenting by what looks right: ;
+  const getAllDayEventCellHeight = () => 10;
 
   const getFlexBasisWrapper = (day: Dayjs) => {
     return getFlexBasis(day, week, today);
   };
 
-  const getMinuteByMousePosition = (y: number) => {
-    const minutesOnGrid = Math.round(((y + scrollTop) / hourlyCellHeight) * 60);
-
-    const minute = roundByNumber(
-      minutesOnGrid - GRID_TIME_STEP / 2,
-      GRID_TIME_STEP
-    );
-
-    // prevents negative number when clicking all-day row
-    return Math.max(0, minute);
-  };
-
+  // ++ remove
   const getPastOverflowWidth = () => {
     const focusedWeek = today.week();
     if (focusedWeek > week) {
@@ -234,33 +143,11 @@ export const useGetWeekViewProps = () => {
     return width;
   };
 
-  const getYByDate = (date: string) => {
-    const day = dayjs(date);
-    const startTime = times.indexOf(day.format(HOURS_AM_FORMAT)) / 4;
-
-    return hourlyCellHeight * startTime;
-  };
-
   /**********
    * Handlers
    **********/
   const onAllDayEventsGridMouseDown = (e: React.MouseEvent) => {
-    if (editingEvent) return;
-    const adjustedX = e.clientX;
-
-    const startDate = getDateByX(adjustedX).format();
-
-    const endDate = dayjs(startDate).add(1, "day").startOf("day").format();
-    // .format(YEAR_MONTH_DAY_FORMAT);
-
-    setModifiableDateField("endDate");
-
-    setEditingEvent({
-      priority: Priorities.UNASSIGNED,
-      isAllDay: true,
-      startDate,
-      endDate,
-    });
+    return;
   };
 
   const onDeleteEvent = (_id: string) => {
@@ -301,21 +188,25 @@ export const useGetWeekViewProps = () => {
   };
 
   const onCalendarAreaMouseDown = () => {
-    if (editingEvent) {
-      setEditingEvent(null);
-      return;
-    }
+    return;
+    // if (editingEvent) {
+    //   setEditingEvent(null);
+    //   return;
+    // }
   };
 
   const onEventsGridMouseDown = (e: React.MouseEvent) => {
+    return;
+    /*
     if (editingEvent) {
       setEditingEvent(null);
       return;
     }
 
-    const startDate = getDateStrByXY(e.clientX, e.clientY);
+    // const startDate = getDateStrByXY(e.clientX, e.clientY); //$$
+    const startDate = dayjs();
     const endDate = dayjs(startDate)
-      .add(EVENT_DEFAULT_MIN, "minute")
+      .add(30, "minute")
       .format(YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
 
     setModifiableDateField("endDate");
@@ -327,9 +218,11 @@ export const useGetWeekViewProps = () => {
       priority: Priorities.UNASSIGNED,
       startDate,
     });
+    */
   };
 
   const onEventGridMouseMove = (e: React.MouseEvent) => {
+    console.log("moving ...");
     if (eventState?.name === "dragging") {
       if (
         !eventState.hasMoved &&
@@ -404,7 +297,6 @@ export const useGetWeekViewProps = () => {
   const onEventsGridRelease = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
     setEventState((actualEventState) => {
       setEditingEvent((actualEditingEvent) => {
         if (!actualEditingEvent) return actualEditingEvent;
@@ -539,33 +431,20 @@ export const useGetWeekViewProps = () => {
     },
     component: {
       allDayEvents,
-      allDayEventsGridRef,
-      calendarRef,
-      columnWidths,
       dayjsBasedOnWeekDay,
       editingEvent,
       endOfSelectedWeekDay,
-      eventsGridRef,
       eventState,
-      gridXOffset,
-      gridYOffset,
-      hourlyCellHeight,
       rowsCount,
       startOfSelectedWeekDay,
-      times,
       today,
       weekDays,
-      weekDaysRef,
       weekEvents,
       week,
     },
     core: {
       getAllDayEventCellHeight,
-      getColumnWidth,
-      getDateByXY,
-      getDayNumberByX,
       getFlexBasisWrapper,
-      getMinuteByMousePosition,
       getPastOverflowWidth,
     },
   };

@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import { Dayjs } from "dayjs";
 import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
 import { Text } from "@web/components/Text";
-import { editEventSlice } from "@web/ducks/events/slice";
+import { editEventSlice } from "@web/ducks/events/event.slice";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 
 import { StyledTimes, StyledTimesPlaceholder } from "./styled";
@@ -13,7 +13,6 @@ interface Props {
   event: Schema_GridEvent;
   startDate: Dayjs;
 }
-
 export const Times: React.FC<Props> = ({ endDate, event, startDate }) => {
   const dispatch = useDispatch();
   const [isHovered, setIsHovered] = useState(false);

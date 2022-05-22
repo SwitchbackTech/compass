@@ -16,13 +16,7 @@ export interface WeekViewHelpersProps {
   onSubmitEvent: (event: Schema_Event | Schema_GridEvent) => void;
 }
 
-export interface State_Event {
-  name: "rescaling" | "dragging";
-  initialMinutesDifference?: number;
-  initialYOffset?: number;
-  hasMoved?: boolean;
-}
-
+// ++ remove after replacing all with other version in common
 export interface Schema_GridEvent extends Schema_Event {
   isOpen?: boolean;
   isEditing?: boolean;

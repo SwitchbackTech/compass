@@ -1,16 +1,16 @@
 import { connect } from "react-redux";
 import { Dispatch } from "redux";
 import { Priorities } from "@core/core.constants";
-import { selectEventIdsBySectionType } from "@web/ducks/events/selectors";
+import { selectEventIdsBySectionType } from "@web/ducks/events/event.selectors";
 import { RootState } from "@web/store";
 import {
   getCurrentMonthEventsSlice,
   getFutureEventsSlice,
-} from "@web/ducks/events/slice";
+} from "@web/ducks/events/event.slice";
 import {
   Payload_GetPaginatedEvents,
   SectionType_Sidebar,
-} from "@web/ducks/events/types";
+} from "@web/ducks/events/event.types";
 import { SomedayEventsList } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEventsList";
 
 export const somedayEventsContainerFabric = (

@@ -9,7 +9,7 @@ export const StyledTodayPopoverContainer = styled(Flex)`
   background: ${getAlphaColor(ColorNames.DARK_1, 0.8)};
 `;
 
-export const TodayNavigationButton = styled(Text)`
+export const StyledTodayButton = styled(Text)`
   margin-left: 15px;
 
   &:hover {

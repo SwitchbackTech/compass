@@ -1,5 +1,6 @@
 import { getBaseUrl } from "./web.constants";
 
+//++ move to _tests__
 describe("parses env variables", () => {
   const env = process.env;
 

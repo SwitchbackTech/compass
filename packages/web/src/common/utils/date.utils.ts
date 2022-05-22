@@ -7,16 +7,19 @@ import {
 import { ColorNames } from "@web/common/types/styles";
 import { getColor } from "@web/common/utils/colors";
 
-export const getAmPmTimes = () =>
-  getTimes().map((time) =>
+import { roundToNext } from ".";
+import { GRID_TIME_STEP } from "../constants/grid.constants";
+
+export const getAmPmTimes = () => {
+  console.log("getting times"); //++
+  return getTimes().map((time) =>
     dayjs(`2000-00-00 ${time}`, YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT)
       .format(HOURS_AM_FORMAT)
       .toLowerCase()
   );
+};
 
-export const getColorsByHour = (now: Dayjs) => {
-  const currentHour = now.hour();
-
+export const getColorsByHour = (currentHour: number) => {
   const colors: string[] = [];
 
   [...(new Array(23) as number[])].map((_, index) => {
@@ -28,7 +31,7 @@ export const getColorsByHour = (now: Dayjs) => {
 
     colors.push(color);
 
-    return now
+    return dayjs()
       .startOf("day")
       .add(index + 1, "hour")
       .format(HOURS_AM_SHORT_FORMAT);
@@ -37,13 +40,16 @@ export const getColorsByHour = (now: Dayjs) => {
   return colors;
 };
 
-export const getTimes = () =>
-  Array(24 * 4)
-    .fill(0)
-    .map((_, i) => {
-      // eslint-disable-next-line no-bitwise
-      return `0${~~(i / 4)}:0${60 * ((i / 4) % 1)}`.replace(/\d(\d\d)/g, "$1");
-    });
+export const getNextIntervalTimes = () => {
+  const currentMinute = dayjs().minute();
+  const nextInterval = roundToNext(currentMinute, GRID_TIME_STEP);
+  const start = dayjs().minute(nextInterval).second(0);
+  const end = start.add(1, "hour");
+  const startDate = start.format();
+  const endDate = end.format();
+
+  return { startDate, endDate };
+};
 
 export const getHourLabels = () => {
   const day = dayjs();
@@ -54,6 +60,24 @@ export const getHourLabels = () => {
       .add(index + 1, "hour")
       .format(HOURS_AM_SHORT_FORMAT);
   });
+};
+
+export const getTimes = () =>
+  Array(24 * 4)
+    .fill(0)
+    .map((_, i) => {
+      // eslint-disable-next-line no-bitwise
+      return `0${~~(i / 4)}:0${60 * ((i / 4) % 1)}`.replace(/\d(\d\d)/g, "$1");
+    });
+
+export const getTimeLabel = (startDate: string, endDate: string) => {
+  const startLabel = dayjs(startDate).format(HOURS_AM_FORMAT);
+  const endLabel = dayjs(endDate).format(HOURS_AM_FORMAT);
+  const times = `${startLabel} - ${endLabel}`;
+
+  //++ if lastitems === ':00', then drop (12:00pm -> 12pm)
+
+  return times;
 };
 
 // uses inferred timezone and shortened string to

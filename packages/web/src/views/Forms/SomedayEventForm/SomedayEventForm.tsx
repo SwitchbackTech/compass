@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
 import { useDispatch } from "react-redux";
 import { DeleteIcon } from "@web/components/Icons";
-import { getFutureEventsSlice } from "@web/ducks/events/slice";
+import { getFutureEventsSlice } from "@web/ducks/events/event.slice";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { MonthPicker } from "@web/views/Forms/EventForm/MonthPicker";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
@@ -110,7 +110,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         placeholder="Title"
         role="input"
         title="title"
-        // title={event.title}
         value={event.title}
       />
 

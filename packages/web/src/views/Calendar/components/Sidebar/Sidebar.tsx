@@ -10,9 +10,10 @@ import {
 import { getAlphaColor, getColor } from "@web/common/utils/colors";
 import { colorNameByPriority } from "@web/common/styles/colors";
 import { Divider } from "@web/components/Divider";
-import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 import { useDispatch } from "react-redux";
-import { getFutureEventsSlice } from "@web/ducks/events/slice";
+import { getFutureEventsSlice } from "@web/ducks/events/event.slice";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { Preferences } from "@web/views/Calendar/hooks/usePreferences";
 
 import {
   Styled,
@@ -54,13 +55,13 @@ const priorityNameByKey = {
 };
 
 interface Props {
-  weekViewProps: WeekViewProps;
+  prefs: Preferences;
+  weekProps: WeekProps;
 }
 
 export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
   props
 ) => {
-  const [isToggled, setIsToggled] = useState(true);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>({
     relationships: true,
@@ -147,20 +148,24 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
     </StyledPriorityFilterItem>
   );
 
-  const StyledSidebarToggleIcon = renderStyledSidebarToggleIcon(isToggled);
+  const StyledSidebarToggleIcon = renderStyledSidebarToggleIcon(
+    props.prefs.isSidebarOpen
+  );
 
   return (
     <Styled
       // {...props} //$$
-      isToggled={isToggled}
+      id="sidebar"
+      isToggled={props.prefs.isSidebarOpen}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
       role="complementary"
     >
-      <StyledSidebarOverflow isToggled={isToggled} />
+      <StyledSidebarOverflow isToggled={props.prefs.isSidebarOpen} />
       <StyledSidebarToggleIcon
         cursor="pointer"
-        onClick={() => setIsToggled((toggle) => !toggle)}
+        onClick={props.prefs.toggleSidebar}
+        // onClick={() => setIsToggled((toggle) => !toggle)}
         title="Sidebar Toggle"
       />
 
@@ -242,7 +247,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           isToggled={isCalendarsToggled}
           monthsShown={monthsShown}
           setIsToggled={setIsCalendarsToggled}
-          setWeek={props.weekViewProps.eventHandlers.setWeek}
+          setWeek={props.weekProps.state.setWeek}
         />
       </StyledBottomSection>
     </Styled>

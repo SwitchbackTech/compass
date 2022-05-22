@@ -47,6 +47,7 @@ interface StyledEventProps {
   backgroundColor?: string;
   duration: number;
   height: number;
+  isOverGrid: boolean;
   priority: Priority;
   width: number;
 }
@@ -57,6 +58,7 @@ export const StyledDraggableEvent = styled.div.attrs<StyledEventProps>(
       backgroundColor: hoverColorsByPriority[props.priority],
       height: props.height,
       hoverColor: hoverColorsByPriority[props.priority],
+      isOverGrid: props.isOverGrid,
       width: props.width,
     };
   }
@@ -65,6 +67,7 @@ export const StyledDraggableEvent = styled.div.attrs<StyledEventProps>(
   border-radius: 3px;
   box-shadow: 0 0 0 0 transparent;
   height: ${({ height }) => height}px;
+  opacity: ${(props) => (props.isOverGrid ? 1 : 0.85)};
   position: absolute;
   transition: background-color 0.2s, box-shadow 0.2s;
   user-select: none;

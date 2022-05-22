@@ -1,6 +1,12 @@
 import { Query } from "express-serve-static-core";
 import { Origin, Priority, Priorities } from "@core/core.constants";
 
+export enum Categories_Event {
+  ALLDAY = "allday",
+  TIMED = "timed",
+  SOMEDAY = "someday",
+}
+
 export interface Params_DeleteMany {
   key: string;
   ids: string[];

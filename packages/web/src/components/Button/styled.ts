@@ -26,17 +26,17 @@ export const Styled = styled.div<Props>`
   display: flex;
   min-width: 158px;
   padding: 0 8px;
-  height: 36px;
-  font-weight: 600;
+  /* height: 36px; */
+  /* font-weight: 100; */
   justify-content: center;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 3px;
   border: ${({ bordered, color = InvertedColorNames.BLUE_3, border }) =>
     border ||
     (bordered && `2px solid ${getInvertedColor(color as InvertedColorNames)}`)};
 
   &:focus {
-    border-width: ${({ bordered }) => (bordered ? 3 : 2)}px;
+    border-width: ${({ bordered }) => (bordered ? 2 : 1)}px;
   }
 
   &:hover {

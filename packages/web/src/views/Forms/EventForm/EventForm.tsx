@@ -12,15 +12,15 @@ import {
 } from "@web/common/constants/dates";
 
 import { FormProps } from "./types";
+import { DateTimeSection } from "./DateTimeSection";
+import { PrioritySection } from "./PrioritySection";
+import { SaveSection } from "./SaveSection";
 import {
   StyledEventForm,
   StyledDescriptionField,
   StyledIconRow,
   StyledTitleField,
 } from "./styled";
-import { DateTimeSection } from "./DateTimeSection";
-import { PrioritySection } from "./PrioritySection";
-import { SaveSection } from "./SaveSection";
 
 export const EventForm: React.FC<FormProps> = ({
   event,
@@ -83,15 +83,20 @@ export const EventForm: React.FC<FormProps> = ({
     setEndTime(initialEndTime || undefined);
     setSelectedStartDate(initialStartDate);
     setSelectedEndDate(initialEndDate);
+    setIsFormOpen(true);
 
     const keyDownHandler = (e: KeyboardEvent) => {
       if (e.which === Key.Shift) {
         toggleShiftKeyPressed(true);
       }
 
-      if (e.which !== Key.Escape) return;
-
-      setTimeout(onClose);
+      if (e.which === Key.Escape) {
+        // console.log("esc, exiting early");
+        setTimeout(onClose);
+        return;
+        // onClose();
+        // return;
+      }
     };
 
     const keyUpHandler = (e: KeyboardEvent) => {
@@ -103,13 +108,11 @@ export const EventForm: React.FC<FormProps> = ({
     document.addEventListener("keydown", keyDownHandler);
     document.addEventListener("keyup", keyUpHandler);
 
-    setIsFormOpen(true);
-
     return () => {
       document.removeEventListener("keydown", keyDownHandler);
       document.removeEventListener("keyup", keyUpHandler);
     };
-  }, []);
+  }, []); //use exhaustive ++
 
   /*********
    * Handlers
@@ -123,7 +126,7 @@ export const EventForm: React.FC<FormProps> = ({
   const onClose = () => {
     setIsFormOpen(false);
 
-    _onClose();
+    // _onClose();
     setTimeout(() => {
       _onClose();
     }, 120);
@@ -134,27 +137,73 @@ export const EventForm: React.FC<FormProps> = ({
     onClose();
   };
 
+  // const getDateStrWithTimes = (field: "start" | "end") => {
+  //   if (field === "start") {
+  //     return dayjs(selectedStartDate)
+  //       .hour(parseInt(startTime.value.slice(0, 2)))
+  //       .minute(parseInt(startTime.value.slice(3, 5)))
+  //       .format();
+  //   } else if (field === "end") {
+  //     dayjs(selectedEndDate)
+  //       .hour(parseInt(endTime.value.slice(0, 2)))
+  //       .minute(parseInt(endTime.value.slice(3, 5)))
+  //       .format();
+  //   }
+  // };
+
+  const addTimesToDates = () => {
+    const startDate = dayjs(selectedStartDate)
+      .hour(parseInt(startTime.value.slice(0, 2)))
+      .minute(parseInt(startTime.value.slice(3, 5)))
+      .format();
+
+    const endDate = dayjs(selectedEndDate)
+      .hour(parseInt(endTime.value.slice(0, 2)))
+      .minute(parseInt(endTime.value.slice(3, 5)))
+      .format();
+
+    return { startDate, endDate };
+  };
+
+  const getFinalDates = () => {
+    if (event?.isAllDay) {
+      return {
+        startDate: dayjs(selectedStartDate).format(YEAR_MONTH_DAY_FORMAT),
+        endDate: dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT),
+      };
+    } else {
+      const { startDate, endDate } = addTimesToDates();
+      return { startDate, endDate };
+    }
+  };
+
   const onSubmitForm = () => {
-    const startDateString = dayjs(selectedStartDate).format(
-      YEAR_MONTH_DAY_FORMAT
-    );
-    const endDateString = dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT);
+    // const startDateString = dayjs(selectedStartDate).format(
+    //   YEAR_MONTH_DAY_FORMAT
+    // );
 
-    const startDate = event?.isAllDay
-      ? startDateString
-      : `${startDateString} ${startTime?.value || ""}`;
-    const endDate = event?.isAllDay
-      ? endDateString
-      : `${endDateString} ${endTime?.value || ""}`;
+    // const endDateString = dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT);
+    // const startDate = event?.isAllDay
+    //   ? startDateString
+    //   : `${startDateString} ${startTime?.value || ""}`;
+    // const endDate = event?.isAllDay
+    //   ? endDateString
+    //   : `${endDateString} ${endTime?.value || ""}`;
 
-    const _event = { ...event };
+    // const startDateString = dayjs(selectedStartDate).format();
+    // const endDateString = dayjs(selectedEndDate).format();
 
-    onSubmit({
-      ..._event,
-      priority: _event.priority || Priorities.UNASSIGNED,
+    const { startDate, endDate } = getFinalDates();
+    // const _event = { ...event };
+
+    const finalEvent = {
+      ...event,
+      priority: event.priority || Priorities.UNASSIGNED,
       startDate,
       endDate,
-    });
+    };
+
+    onSubmit(finalEvent);
 
     onClose();
   };
@@ -166,18 +215,15 @@ export const EventForm: React.FC<FormProps> = ({
   ) => {
     const newEvent = { ...event, [fieldName]: value };
     setEvent(newEvent);
-
-    // $$ remove after confident above works
-    //   setEvent((_event) => ({
-    //     ..._event,
-    //     [fieldName]: value,
-    //   }));
   };
 
   const submitFormWithKeyboard: React.KeyboardEventHandler<
     HTMLTextAreaElement
   > = (e) => {
-    if (isShiftKeyPressed || e.which !== Key.Enter) return;
+    const shouldIgnore = isShiftKeyPressed || e.which !== Key.Enter;
+    if (shouldIgnore) {
+      return;
+    }
 
     e.preventDefault();
     e.stopPropagation();
@@ -189,6 +235,7 @@ export const EventForm: React.FC<FormProps> = ({
     <StyledEventForm
       {...props}
       isOpen={isFormOpen}
+      name="Event Form"
       onMouseUp={(e) => {
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
@@ -196,7 +243,6 @@ export const EventForm: React.FC<FormProps> = ({
         if (isEndDatePickerOpen) {
           setIsEndDatePickerOpen(false);
         }
-
         e.stopPropagation();
       }}
       onMouseDown={(e) => {
@@ -213,9 +259,9 @@ export const EventForm: React.FC<FormProps> = ({
         autoFocus
         placeholder="Title"
         onChange={onChangeEventTextField("title")}
+        // onKeyUp={submitFormWithKeyboard}
         onKeyDown={submitFormWithKeyboard}
         role="textarea"
-        // title="title"
         name="Event Title"
         value={title}
       />

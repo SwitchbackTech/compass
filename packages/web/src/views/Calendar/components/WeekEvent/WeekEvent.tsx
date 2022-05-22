@@ -8,19 +8,20 @@ import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { WeekViewProps } from "@web/views/Calendar/weekViewHooks/useGetWeekViewProps";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
-import { getEventCategory } from "@web/ducks/events/event.utils";
+import { getEventCategory } from "@web/common/utils/grid.util";
 import {
   getAllDayEventWidth,
-  getLeftPosition,
+  getLeftPositionOld,
   getLineClamp,
 } from "@web/common/utils/grid.util";
 import {
   EVENT_PADDING_RIGHT,
   EVENT_PADDING_WIDTH,
 } from "@web/common/constants/grid.constants";
-import { Category } from "@web/ducks/events/types";
+import { Category } from "@web/ducks/events/event.types";
+import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 
-import { StyledEvent, StyledEventScaler } from "./styled";
+import { OldStyledEvent, StyledEventScaler } from "./styled";
 import { Times } from "./Times";
 
 export interface Props {
@@ -65,32 +66,39 @@ const WeekEventComponent = (
     component.startOfSelectedWeekDay,
     component.endOfSelectedWeekDay
   );
-  const left = getLeftPosition(category, startIndex, component.columnWidths);
+  // const left = getLeftPosition(category, startIndex, component.columnWidths); //$$
+  const left = 10;
 
   if (event.isAllDay) {
     height = core.getAllDayEventCellHeight();
     top = 25.26 * (event.row || 1); // found by experimenting with what 'looked right'
-    width = getAllDayEventWidth(
-      category,
-      startIndex,
-      startDate,
-      endDate,
-      component.startOfSelectedWeekDay,
-      component.columnWidths
-    );
+    width = 15; //$$
+    // width = getAllDayEventWidth(
+    //   category,
+    //   startIndex,
+    //   startDate,
+    //   endDate,
+    //   component.startOfSelectedWeekDay,
+    //   component.columnWidths
+    // );
   } else {
     const startTime =
-      component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
+      // component.times.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4; //$$
+      ACCEPTED_TIMES.indexOf(startDate.format(HOURS_AM_FORMAT)) / 4;
 
-    top = component.hourlyCellHeight * startTime;
-    height = component.hourlyCellHeight * durationHours;
+    // top = component.hourlyCellHeight * startTime; //$$
+    // height = component.hourlyCellHeight * durationHours;
 
-    const colWidth = core.getColumnWidth(startIndex);
-    width = colWidth - EVENT_PADDING_RIGHT || 0;
+    // $$
+    // const colWidth = core.getColumnWidth(startIndex);
+    // width = colWidth - EVENT_PADDING_RIGHT || 0;
+    height = 10;
+    top = 10;
+    width = 10;
   }
 
   return (
-    <StyledEvent
+    <OldStyledEvent
       allDay={event.isAllDay || false}
       className={isActive ? "active" : ""}
       duration={+durationHours.toFixed(2) || 0.25}
@@ -143,7 +151,7 @@ const WeekEventComponent = (
           />
         </>
       )}
-    </StyledEvent>
+    </OldStyledEvent>
   );
 };
 

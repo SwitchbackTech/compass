@@ -1,5 +1,5 @@
 import { connect } from "react-redux";
-import { selectEventById } from "@web/ducks/events/selectors";
+import { selectEventById } from "@web/ducks/events/event.selectors";
 import { RootState } from "@web/store";
 
 import { DraggableSomedayEvent } from "../../components/Sidebar/EventsList/SomedayEvent/DraggableSomedayEvent";

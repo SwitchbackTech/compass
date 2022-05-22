@@ -4,7 +4,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import { Key } from "ts-keycode-enum";
 import { Text } from "@web/components/Text";
 import { SelectOption } from "@web/common/types/components";
-import { roundByNumber } from "@web/common/utils";
+import { roundToNext } from "@web/common/utils";
 import { getTimes } from "@web/common/utils/date.utils";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
@@ -210,7 +210,7 @@ export const DateTimeSection: React.FC<Props> = ({
       return;
     }
 
-    const roundedUpMinutes = roundByNumber(dayjs().minute(), GRID_TIME_STEP);
+    const roundedUpMinutes = roundToNext(dayjs().minute(), GRID_TIME_STEP);
     const startTimeDayjs = dayjs().set("minute", roundedUpMinutes);
     const value = startTimeDayjs.format(HOURS_MINUTES_FORMAT);
     const label = startTimeDayjs.format(HOURS_AM_FORMAT);

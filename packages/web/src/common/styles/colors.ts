@@ -54,6 +54,8 @@ export const colorNameByPriority = {
   [Priorities.RELATIONS]: ColorNames.TEAL_2,
 };
 
+export const GRID_LINE_OPACITY_PERCENT = 48;
+
 export const invertedColors = {
   // priority colors (colorNameByPriority)
   [ColorNames.BLUE_3]: colors.blue_1,

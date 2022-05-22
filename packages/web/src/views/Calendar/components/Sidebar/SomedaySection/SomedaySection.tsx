@@ -3,14 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { Origin, Priorities, SOMEDAY_EVENTS_LIMIT } from "@core/core.constants";
 import { usePopper } from "react-popper";
 import { ZIndex } from "@web/common/constants/web.constants";
-import {
-  createEventSlice,
-  getFutureEventsSlice,
-} from "@web/ducks/events/slice";
+import { createEventSlice } from "@web/ducks/events/event.slice";
 import {
   selectIsGetFutureEventsProcessing,
   selectSomedayEvents,
-} from "@web/ducks/events/selectors";
+} from "@web/ducks/events/event.selectors";
 import { Schema_Event } from "@core/types/event.types";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
