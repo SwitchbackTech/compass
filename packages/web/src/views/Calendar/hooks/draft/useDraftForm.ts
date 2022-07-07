@@ -7,20 +7,37 @@ export const useDraftForm = (onClickOut: () => void) => {
   const formRef = useRef<HTMLDivElement>(null);
   const [referenceElement, setReferenceElement] = useState<HTMLElement>(null);
   const [popperElement, setPopperElement] = useState<HTMLElement>(null);
-  const { styles, attributes } = usePopper(referenceElement, popperElement, {
-    placement: "auto",
+
+  //  | 'auto'
+  // | 'auto-start'
+  // | 'auto-end'
+  // | 'top'
+  // | 'top-start'
+  // | 'top-end'
+  // | 'bottom'
+  // | 'bottom-start'
+  // | 'bottom-end'
+  // | 'right'
+  // | 'right-start'
+  // | 'right-end'
+  // | 'left'
+  // | 'left-start'
+  // | 'left-end';
+  const { attributes, styles } = usePopper(referenceElement, popperElement, {
+    placement: "auto-start",
+    strategy: "fixed",
     modifiers: [
-      // {
-      //   name: "preventOverflow",
-      //   options: {
-      //     altAxis: true,
-      //     mainAxis: true,
-      //   },
-      // },
       {
         name: "flip",
         options: {
-          fallbackPlacements: ["right", "left", "top", "bottom"],
+          fallbackPlacements: [
+            "left-start",
+            "left-end",
+            "right-start",
+            "right-end",
+            "top",
+            "bottom",
+          ],
         },
       },
       {
@@ -40,7 +57,6 @@ export const useDraftForm = (onClickOut: () => void) => {
     e.stopPropagation();
     e.preventDefault();
 
-    console.log("on click out");
     onClickOut();
   });
 

@@ -1,4 +1,5 @@
 import React, { FC, MouseEvent, useEffect } from "react";
+import dayjs from "dayjs";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
@@ -31,6 +32,7 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
+import { getDefaultEvent } from "@web/common/utils/event.util";
 
 import { StyledEvent } from "../../Event/styled";
 import { StyledAllDayColumns, StyledGridCol } from "../Columns/styled";
@@ -116,6 +118,8 @@ export const AllDayRow: FC<Props> = ({
   };
 
   const draftNewEvent = (e: MouseEvent) => {
+    if (isDrafting) return; // prevents multiple forms
+
     const x = getX(e, isSidebarOpen);
     const startDate = dateCalcs.getDateStrByXY(
       x,
@@ -124,10 +128,11 @@ export const AllDayRow: FC<Props> = ({
       YEAR_MONTH_DAY_FORMAT
     );
 
+    const event = getDefaultEvent(Categories_Event.ALLDAY, startDate);
     dispatch(
       draftSlice.actions.start({
         eventType: Categories_Event.ALLDAY,
-        event: { startDate: startDate },
+        event,
       })
     );
   };
@@ -146,7 +151,9 @@ export const AllDayRow: FC<Props> = ({
           allDay={event.isAllDay}
           height={position.height}
           isDragging={false}
+          isInPast={dayjs().isAfter(dayjs(event.endDate))}
           isPlaceholder={isDrafting && event._id === draftId}
+          isResizing={false}
           key={`${event.title}-${i}`}
           left={position.left}
           onMouseDown={(e) => {
@@ -162,7 +169,7 @@ export const AllDayRow: FC<Props> = ({
             alignItems={AlignItems.FLEX_START}
             direction={FlexDirections.COLUMN}
           >
-            <Text size={12} role="textbox">
+            <Text size={10.3} role="textbox">
               {event.title}
               <SpaceCharacter />
             </Text>
@@ -188,7 +195,6 @@ export const AllDayRow: FC<Props> = ({
       </StyledAllDayColumns>
       <StyledEvents
         id={ID_GRID_EVENTS_ALLDAY}
-        // ref={drop} //++
         style={{ borderTop: isOver && canDrop ? border : "" }}
       >
         {renderAllDayEvents()}

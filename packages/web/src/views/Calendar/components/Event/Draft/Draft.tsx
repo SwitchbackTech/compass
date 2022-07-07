@@ -1,7 +1,6 @@
 import React, { FC, MouseEvent, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDraft } from "@web/views/Calendar/hooks/draft/useDraft";
-import { OldEventForm } from "@web/views/Forms/EventForm/OldEventForm";
 import { EventForm } from "@web/views/Forms/EventForm";
 import {
   ID_GRID_EVENTS_ALLDAY,
@@ -44,7 +43,6 @@ export const Draft: FC<Props> = ({
   const isDrafting = draftState.draft !== null;
   const { draft, isDragging } = draftState;
 
-  //++ move to within useDraft ?
   const onClickOut = () => {
     if (draft.isOpen) {
       draftHelpers.discard();
@@ -74,6 +72,7 @@ export const Draft: FC<Props> = ({
             isDragging={isDragging}
             isDraft={true}
             isPlaceholder={false}
+            isResizing={false}
             key={`draft-${draft?._id}`}
             measurements={measurements}
             onEventMouseDown={(event: Schema_GridEvent, e: MouseEvent) => {

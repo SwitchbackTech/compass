@@ -26,7 +26,8 @@ export const Styled = styled.div<Props>`
 
 export const StyledSidebarOverflow = styled.div<Props>`
   position: absolute;
-  background: ${getColor(ColorNames.DARK_3)};
+  background: ${({ isToggled }) =>
+    isToggled ? getColor(ColorNames.DARK_3) : getColor(ColorNames.DARK_2)};
   width: ${({ isToggled }) => (isToggled ? 0 : "100%")};
   height: 100%;
   right: 0;
@@ -39,8 +40,8 @@ const StyledOpenIcon = styled(SidebarOpenIcon)`
   cursor: pointer;
   color: #7a858d;
   position: absolute;
-  right: 13px;
-  top: 64px;
+  right: 7px;
+  top: 42px;
   z-index: ${ZIndex.LAYER_1};
 
   &:hover {
@@ -52,8 +53,8 @@ const StyledCollapseIcon = styled(SidebarCollapseIcon)`
   cursor: pointer;
   color: #7a858d;
   position: absolute;
-  right: 20px;
-  top: 64px;
+  right: 7px;
+  top: 42px;
   z-index: ${ZIndex.LAYER_1};
 
   &:hover {
@@ -74,7 +75,7 @@ export interface SectionProps {
 }
 
 export const StyledTopSectionFlex = styled(Flex)<SectionProps>`
-  padding: 54px 38px 0 14px;
+  padding: 34px 38px 0 14px;
   height: ${({ height }) => height};
   overflow: hidden;
 `;

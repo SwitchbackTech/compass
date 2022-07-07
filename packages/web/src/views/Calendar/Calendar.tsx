@@ -52,7 +52,7 @@ export const CalendarView = () => {
   }
 
   return (
-    <Styled>
+    <Styled id="cal">
       <DragLayer
         dateCalcs={dateCalcs}
         measurements={measurements}

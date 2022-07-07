@@ -22,6 +22,7 @@ import {
 } from "@web/common/types/web.event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
 import { getX, removeGridFields } from "@web/common/utils/grid.util";
+import { isDraftingSomeday } from "@web/common/utils";
 
 import { WeekProps } from "../useWeek";
 
@@ -71,7 +72,6 @@ export const useDraft = (
 
   useEffect(() => {
     if (isResizing) {
-      console.log("initing resize effect...");
       setDraft((_draft) => {
         setDateBeingChanged(dateBeingChanged);
         return { ..._draft, isOpen: false };
@@ -95,8 +95,8 @@ export const useDraft = (
         return;
       }
 
-      const clickedEmptyGridSpace = draft?.isOpen;
-      if (clickedEmptyGridSpace) {
+      const shouldResetDraft = draft?.isOpen;
+      if (shouldResetDraft) {
         setDraft(null);
         setIsResizing(false);
         setIsDragging(false);
@@ -110,7 +110,6 @@ export const useDraft = (
         return;
       }
 
-      console.log("initing local draft from redux data");
       setDraft({ ...reduxDraft, isOpen: false });
 
       if (activity === "dragging") {
@@ -123,11 +122,11 @@ export const useDraft = (
         setDateBeingChanged(dateToResize);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activity,
     dateToResize,
     dispatch,
-    draft?.isOpen,
     isDrafting,
     reduxDraft,
     reduxDraftType,
@@ -135,7 +134,6 @@ export const useDraft = (
 
   useEffect(() => {
     if (isDragging) {
-      console.log("running drag effect...");
       setDraft((_draft) => {
         const initialDiffMin = dayjs(_draft.endDate).diff(
           _draft.startDate,
@@ -161,13 +159,15 @@ export const useDraft = (
       e.preventDefault();
       e.stopPropagation();
 
-      if (!draft) return;
+      if (!draft) {
+        return;
+      }
 
-      const isNew = !draft._id && (isResizing || isDragging);
+      const isNew = !draft._id;
+      // const isMoving = isResizing || isDragging;
       const hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved;
       const clickedOnExisting = !isNew && !hasMoved;
       const shouldOpenForm = (isNew || clickedOnExisting) && !draft.isOpen;
-
       const shouldSubmit = !draft.isOpen;
 
       if (isResizing) {
@@ -178,7 +178,9 @@ export const useDraft = (
       }
 
       if (shouldOpenForm) {
-        setDraft({ ...draft, isOpen: true });
+        setDraft((_draft) => {
+          return { ..._draft, isOpen: true };
+        });
         return;
       }
 
@@ -198,11 +200,13 @@ export const useDraft = (
       e.stopPropagation();
 
       if (e.which === Key.C) {
+        if (isDraftingSomeday()) {
+          return;
+        }
         setDraft({ ...draft, isOpen: true });
       }
     };
 
-    // console.log("adding mouseup listener...");
     document.addEventListener("mouseup", handleMouseUp);
     document.addEventListener("keyup", shortCutHandler);
     return () => {
@@ -218,7 +222,6 @@ export const useDraft = (
     // console.log("initing mousemove handler...");
     const mouseMoveHandler = (e: MouseEvent) => {
       if (isResizing && !draft.isAllDay) {
-        console.log("resizing reg evt");
         resize(e);
       } else if (isDragging) {
         drag(e);
@@ -323,6 +326,9 @@ export const useDraft = (
     const diffDay = currTime.day() !== dayjs(draft.startDate).day();
     if (diffDay) return false;
 
+    const sameStart = currTime.format() === draft.startDate;
+    if (sameStart) return false;
+
     return true;
   };
 
@@ -352,7 +358,6 @@ export const useDraft = (
     const hasMoved = diffMin !== 0;
 
     if (!resizeStatus?.hasMoved && hasMoved) {
-      console.log("you moved it");
       setResizeStatus({ hasMoved: true });
     }
 
@@ -463,7 +468,7 @@ export const useDraft = (
 export type Hook_Draft = ReturnType<typeof useDraft>;
 export type Helpers_Draft = Hook_Draft["draftHelpers"];
 
-/* idk, was by shortcut stuff
+/* idk, was by shortcut stuff ++
 
 //   setDraftStatus((status) => {
 //     setDraft((_draft) => {

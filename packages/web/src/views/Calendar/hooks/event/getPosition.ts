@@ -4,7 +4,6 @@ import {
   getAllDayEventWidth,
   getEventCategory,
   getLeftPosition,
-  getWidthBuffer,
 } from "@web/common/utils/grid.util";
 import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
@@ -13,10 +12,7 @@ import {
   DRAFT_PADDING_BOTTOM,
   EVENT_ALLDAY_HEIGHT,
 } from "@web/common/constants/grid.constants";
-import {
-  DIVIDER_GRID,
-  GRID_MARGIN_LEFT,
-} from "@web/views/Calendar/layout.constants";
+import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 
 export const getPosition = (
@@ -36,7 +32,7 @@ export const getPosition = (
   let left = getLeftPosition(category, startIndex, colWidths);
 
   if (isDraft || !event.isAllDay) {
-    left += GRID_MARGIN_LEFT + DIVIDER_GRID;
+    left += GRID_MARGIN_LEFT;
   }
 
   let height: number;
@@ -44,7 +40,7 @@ export const getPosition = (
   let width: number;
   if (event.isAllDay) {
     height = EVENT_ALLDAY_HEIGHT;
-    top = 25.26 * (event?.row || 1); // found by experimenting with what 'looked right'
+    top = 23 * (event?.row || 1); // found by experimenting with what 'looked right'
     width = getAllDayEventWidth(
       category,
       startIndex,
@@ -55,7 +51,7 @@ export const getPosition = (
     );
   } else {
     width = colWidths[startIndex];
-    const widthBuffer = getWidthBuffer(startIndex);
+    const widthBuffer = 11;
     width -= widthBuffer;
 
     const startTime = ACCEPTED_TIMES.indexOf(start.format(HOURS_AM_FORMAT)) / 4;

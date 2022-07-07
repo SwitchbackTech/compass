@@ -404,15 +404,15 @@ export const getLeftPosition = (
   startIndex: number,
   widths: number[]
 ) => {
-  let left = getAbsoluteLeftPosition(category, startIndex, widths);
+  const left = getAbsoluteLeftPosition(category, startIndex, widths);
 
-  if (
-    category === Category.ThisToFutureWeek ||
-    category == Category.ThisWeekOnly
-  ) {
-    const buffer = DIVIDER_GRID * startIndex;
-    left += buffer;
-  }
+  //++
+  // if (
+  //   category === Category.ThisToFutureWeek ||
+  //   category == Category.ThisWeekOnly
+  // ) {
+
+  // }
 
   return left;
 };

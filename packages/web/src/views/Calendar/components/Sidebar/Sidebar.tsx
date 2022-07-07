@@ -62,13 +62,6 @@ interface Props {
 export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
   props
 ) => {
-  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
-  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>({
-    relationships: true,
-    self: true,
-    work: true,
-  });
-
   const [bottomSectionHeight, setBottomSectionHeight] =
     useState(DATEPICKER_HEIGHT);
 
@@ -112,20 +105,6 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
     return dividerIndexBySectionType[sectionType] || undefined;
   };
 
-  const onChangePriorityFilter =
-    (name: keyof PriorityFilter) => (value: boolean) => {
-      setPriorityFilter((filter) => ({ ...filter, [name]: value }));
-    };
-
-  const onFilterButtonBlur = (e: React.FocusEvent) => {
-    const relatedTarget = e.relatedTarget as Element;
-    if (relatedTarget && relatedTarget.id === "priority-sort-popover") {
-      return;
-    }
-
-    setIsFilterPopoverOpen(false);
-  };
-
   const onMouseMove = (e: React.MouseEvent) => {
     if (!isDividerDragging) return;
 
@@ -136,17 +115,6 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
   const onMouseUp = () => {
     setIsDividerDragging(false);
   };
-
-  const renderPriorityFilter = (priorityKey: Priority) => (
-    <StyledPriorityFilterItem key={priorityKey} alignItems={AlignItems.CENTER}>
-      <StyledCheckBox
-        isChecked={priorityFilter[priorityKey]}
-        onChange={onChangePriorityFilter(priorityKey)}
-        color={getColor(colorNameByPriority[priorityKey])}
-      />
-      {priorityNameByKey[priorityKey]}
-    </StyledPriorityFilterItem>
-  );
 
   const StyledSidebarToggleIcon = renderStyledSidebarToggleIcon(
     props.prefs.isSidebarOpen
@@ -165,7 +133,6 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
       <StyledSidebarToggleIcon
         cursor="pointer"
         onClick={props.prefs.toggleSidebar}
-        // onClick={() => setIsToggled((toggle) => !toggle)}
         title="Sidebar Toggle"
       />
 
@@ -173,59 +140,6 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         direction={FlexDirections.COLUMN}
         height={`calc(100% - ${bottomSectionHeight + 2}px)`}
       >
-        <StyledHeaderFlex
-          alignItems={AlignItems.CENTER}
-          justifyContent={JustifyContent.SPACE_BETWEEN}
-        >
-          <Text colorName={ColorNames.WHITE_1} role="heading" size={30}>
-            Someday
-          </Text>
-
-          {/* 
-          <Popover
-            isOpen={isFilterPopoverOpen}
-            positions={["bottom"]}
-            align="end"
-            content={
-              <div
-                onBlur={onFilterButtonBlur}
-                tabIndex={0}
-                role="button"
-                id="priority-sort-popover"
-              >
-                <StyledFiltersPopoverContent>
-                  {Object.keys(priorityFilter).map((priority) =>
-                    renderPriorityFilter(priority as Priorities)
-                  )}
-                </StyledFiltersPopoverContent>
-              </div>
-            }
-          >
-            <StyledPriorityFilterButton
-              role="button"
-              tabIndex={0}
-              onFocus={() => setIsFilterPopoverOpen(true)}
-              onBlur={onFilterButtonBlur}
-            >
-            <StrawberryMenuIcon />
-            </StyledPriorityFilterButton>
-          </Popover> */}
-        </StyledHeaderFlex>
-        {/* <OldStyledSomedaySection
-          shouldSetTopMargin={isCurrentMonthToggled}
-          flex={getEventsSectionFlex("future")}
-          startDate={dayjs().format(YEAR_MONTH_FORMAT)}
-          isToggled={isFutureToggled}
-          onToggle={() => setIsFutureToggled((toggle) => !toggle)}
-          title=""
-          priorities={
-            Object.keys(priorityFilter).filter(
-              (key) => priorityFilter[key as Priorities]
-            ) as Priorities[]
-          }
-          EventsListContainer={SomedayEventsFutureContainer}
-          sectionType="future"
-        /> */}
         <SomedaySection flex={1} />
       </StyledTopSectionFlex>
 

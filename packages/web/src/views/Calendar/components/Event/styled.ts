@@ -6,54 +6,85 @@ import { colorNameByPriority } from "@web/common/styles/colors";
 
 interface StyledEventProps {
   allDay: boolean;
-  // duration: number;
   height: number;
   isDragging: boolean;
+  isResizing: boolean;
+  isInPast: boolean;
   isPlaceholder: boolean;
   left: number;
-  // lineClamp: number;
   priority: Priority;
-  // ref: React.ForwardedRef<HTMLButtonElement>; // not correct type $$
-  width: number;
   top: number;
+  width: number;
 }
 
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
-  const bgColor = getColor(colorNameByPriority[props.priority]);
+  const pastDimness = 0.65;
+  const getBgColor = () => {
+    if (props.isResizing || props.isDragging) {
+      return hoverColorsByPriority[props.priority];
+    }
+
+    const origColor = getColor(colorNameByPriority[props.priority]);
+    return origColor;
+  };
+
+  const getCursor = () => {
+    // handles when over placeholder upon resizing up
+    if (props.isResizing || props.isPlaceholder) return "ns-resize";
+    if (props.isDragging) return "grabbing";
+    return "pointer";
+  };
 
   return {
-    backgroundColor: bgColor,
+    backgroundColor: getBgColor(),
+    cursor: getCursor(),
     left: props.left,
-    // lineClamp: props.lineClamp,
     height: props.height,
-    hoverColor: hoverColorsByPriority[props.priority],
-    opacity: props.isPlaceholder ? 0.5 : 1,
-    // padding: !props.allDay && props.duration > 0.5 ? "4px" : "0 4px",
+    isInPast: props.isInPast,
+    hoverColor: props.isPlaceholder
+      ? null
+      : hoverColorsByPriority[props.priority],
+    opacity: props.isPlaceholder ? 0.5 : null,
+    pastDimness,
     ref: props.ref,
     top: props.top,
     width: props.width,
   };
 })<StyledEventProps>`
   background-color: ${(props) => props.backgroundColor};
-  border-radius: 3px;
-  box-shadow: 0 0 0 0 transparent;
-  cursor: ${({ isDragging }) => (isDragging ? "grabbing" : "pointer")};
+  border-radius: 2px;
+  cursor: ${(props) => props.cursor};
+  filter: brightness(
+    ${({ isInPast, pastDimness }) => (isInPast ? pastDimness : null)}
+  );
   height: ${({ height }) => height}px;
   left: ${(props) => props.left}px;
   opacity: ${(props) => props.opacity};
   overflow: hidden;
   padding: 1px;
   position: absolute;
+  /* text-rendering: geometricPrecision; */
   top: ${(props) => props.top}px;
-  transition: background-color 0.2s, box-shadow 0.2s;
+
   user-select: none;
+  /* white-space: pre-line; */
   width: ${(props) => props.width}px;
   z-index: ${ZIndex.LAYER_1};
 
-  &:hover,
+  &:hover {
+    background-color: ${(props) => props.hoverColor};
+    filter: brightness(
+        ${({ isPlaceholder, pastDimness }) =>
+          isPlaceholder ? pastDimness : null}
+      )
+      drop-shadow(2px 4px 4px black);
+    transition: background-color 0.35s linear;
+  }
+
   &.active {
     background-color: ${(props) => props.hoverColor};
-    filter: drop-shadow(2px 4px 4px black);
+    filter: ${({ isPlaceholder }) =>
+      isPlaceholder ? null : "drop-shadow(2px 4px 4px black)"};
   }
 
   & span {

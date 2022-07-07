@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import {
   getAllDayEventWidth,
   getEventCategory,
-  getLeftPositionOld,
+  getLeftPosition,
 } from "@web/common/utils/grid.util";
 import { widthMinusPadding } from "@web/common/utils/grid.util";
 
@@ -163,11 +163,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-20"),
       dayjs("2022-02-26")
     );
-    const lastDayOfWeek = getLeftPositionOld(
-      category,
-      6,
-      [1, 1, 1, 1, 1, 1, 900]
-    );
+    const lastDayOfWeek = getLeftPosition(category, 6, [1, 1, 1, 1, 1, 1, 900]);
     expect(lastDayOfWeek).toBe(6);
   });
   test("pastToThisWeek", () => {
@@ -178,7 +174,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-26")
     );
 
-    expect(getLeftPositionOld(category, 9, [1, 1, 1, 1, 1, 1, 1])).toBe(0);
+    expect(getLeftPosition(category, 9, [1, 1, 1, 1, 1, 1, 1])).toBe(0);
   });
   test("pastToFutureWeek", () => {
     const category = getEventCategory(
@@ -187,7 +183,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-20"),
       dayjs("2022-02-26")
     );
-    expect(getLeftPositionOld(category, 6, [1, 1, 1, 1, 1, 1, 1])).toBe(0);
+    expect(getLeftPosition(category, 6, [1, 1, 1, 1, 1, 1, 1])).toBe(0);
   });
   test("thisWeekOnly", () => {
     const category1 = getEventCategory(
@@ -196,7 +192,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-20"),
       dayjs("2022-02-26")
     );
-    const beginningOfWeek = getLeftPositionOld(
+    const beginningOfWeek = getLeftPosition(
       category1,
       0,
       [0, 0, 0, 0, 0, 0, 0]
@@ -209,7 +205,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-20"),
       dayjs("2022-02-26")
     );
-    const midWeek = getLeftPositionOld(category2, 4, [1, 1, 1, 1, 0, 0, 0]);
+    const midWeek = getLeftPosition(category2, 4, [1, 1, 1, 1, 0, 0, 0]);
     expect(midWeek).toBe(4);
 
     const category3 = getEventCategory(
@@ -218,7 +214,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-20"),
       dayjs("2022-02-26")
     );
-    const endOfWeek = getLeftPositionOld(category3, 6, [1, 1, 1, 1, 1, 1, 900]);
+    const endOfWeek = getLeftPosition(category3, 6, [1, 1, 1, 1, 1, 1, 900]);
     expect(endOfWeek).toBe(6);
   });
 
@@ -229,7 +225,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-20"),
       dayjs("2022-02-26")
     );
-    const beginningOfWeek = getLeftPositionOld(
+    const beginningOfWeek = getLeftPosition(
       category1,
       1,
       [1, 0, 0, 0, 0, 0, 0]
@@ -242,7 +238,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-20"),
       dayjs("2022-02-26")
     );
-    const midWeek = getLeftPositionOld(category2, 4, [1, 1, 1, 1, 0, 0, 0]);
+    const midWeek = getLeftPosition(category2, 4, [1, 1, 1, 1, 0, 0, 0]);
     expect(midWeek).toBe(4);
 
     const category3 = getEventCategory(
@@ -251,7 +247,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-20"),
       dayjs("2022-02-26")
     );
-    const endOfWeek = getLeftPositionOld(category3, 6, [1, 1, 1, 1, 1, 1, 0]);
+    const endOfWeek = getLeftPosition(category3, 6, [1, 1, 1, 1, 1, 1, 0]);
     expect(endOfWeek).toBe(6);
   });
 });

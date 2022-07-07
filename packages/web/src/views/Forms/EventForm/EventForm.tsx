@@ -85,6 +85,7 @@ export const EventForm: React.FC<FormProps> = ({
     setSelectedEndDate(initialEndDate);
     setIsFormOpen(true);
 
+    //++ separate these effects
     const keyDownHandler = (e: KeyboardEvent) => {
       if (e.which === Key.Shift) {
         toggleShiftKeyPressed(true);
@@ -194,7 +195,11 @@ export const EventForm: React.FC<FormProps> = ({
     // const endDateString = dayjs(selectedEndDate).format();
 
     const { startDate, endDate } = getFinalDates();
-    // const _event = { ...event };
+
+    if (dayjs(startDate).isAfter(dayjs(endDate))) {
+      alert("uff-dah, looks like you got the start & end dates mixed up");
+      return;
+    }
 
     const finalEvent = {
       ...event,

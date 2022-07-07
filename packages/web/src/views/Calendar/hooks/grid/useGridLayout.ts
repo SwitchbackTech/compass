@@ -79,16 +79,17 @@ export const useGridLayout = (week: number) => {
   };
 
   const _measureColWidths = (node?: HTMLDivElement) => {
+    const daysInView = 7;
     if (node) {
-      // console.log("measuring col widths via nODE...");
-      const colWidths = Array.from(node.children).map((e) => e.clientWidth);
+      const colWidth = node.clientWidth / daysInView;
+      const colWidths = Array(daysInView).fill(colWidth);
       setColWidths(colWidths);
       return;
     }
 
-    // console.log("mreasuring col via SELECTOR ...");
     const cols = getElemById(ID_ALLDAY_COLUMNS);
-    const colWidths = Array.from(cols.children).map((e) => e.clientWidth);
+    const colWidth = cols.clientWidth / daysInView;
+    const colWidths = Array(daysInView).fill(colWidth);
     setColWidths(colWidths);
   };
 

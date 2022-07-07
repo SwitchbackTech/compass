@@ -1,4 +1,7 @@
-import { LocalStorage } from "@web/common/constants/web.constants";
+import {
+  ID_SIDEBAR_FORM,
+  LocalStorage,
+} from "@web/common/constants/web.constants";
 
 export const headers = (token?: string) => {
   if (token) {
@@ -19,6 +22,9 @@ export const headers = (token?: string) => {
 export const isDrafting = () =>
   document.getElementsByName("Event Form").length === 1;
 
+//++ refactor to a way that doesn't require checking DOM
+export const isDraftingSomeday = () =>
+  document.getElementById(ID_SIDEBAR_FORM) !== null;
 export const roundToNearest = (x: number, roundBy: number) =>
   Math.round(x / roundBy) * roundBy;
 

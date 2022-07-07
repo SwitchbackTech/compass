@@ -3,17 +3,19 @@ import { useDispatch, useSelector } from "react-redux";
 import { Origin, Priorities, SOMEDAY_EVENTS_LIMIT } from "@core/core.constants";
 import { usePopper } from "react-popper";
 import { ZIndex } from "@web/common/constants/web.constants";
+import { Text } from "@web/components/Text";
 import { createEventSlice } from "@web/ducks/events/event.slice";
 import {
   selectIsGetFutureEventsProcessing,
   selectSomedayEvents,
 } from "@web/ducks/events/event.selectors";
 import { Schema_Event } from "@core/types/event.types";
-import { AlignItems } from "@web/components/Flex/styled";
+import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
+import { ColorNames } from "@web/common/types/styles";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
 import { DraggableSomedayEvent } from "../EventsList/SomedayEvent/DraggableSomedayEvent";
@@ -60,9 +62,6 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
 
   const [event, setEvent] = useState<Schema_GridEvent | null>(eventBase);
 
-  /***********
-   * Handlers *
-   ***********/
   const onSubmit = () => {
     setIsEventFormOpen(false);
     resetSomedayFormState();
@@ -77,15 +76,19 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
   return (
     <Styled flex={flex}>
       {isProcessing && <AbsoluteOverflowLoader />}
-      <StyledHeader alignItems={AlignItems.CENTER}>
+      <StyledHeader
+        alignItems={AlignItems.CENTER}
+        justifyContent={JustifyContent.SPACE_BETWEEN}
+      >
         {/* <ToggleArrow isToggled={isToggled} onToggle={onToggle} /> */}
-
+        <Text colorName={ColorNames.WHITE_1} role="heading" size={27}>
+          Someday
+        </Text>
         <StyledAddEventButton
           onClick={() => {
             if (somedayEvents.length >= SOMEDAY_EVENTS_LIMIT) {
               alert(`
                 Sorry, you can only have ${SOMEDAY_EVENTS_LIMIT} Someday events for now.
-                This will be increased in a future update
                 `);
               return;
             }
@@ -158,3 +161,85 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
     </Styled>
   );
 };
+
+/* priority filter stuff
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>({
+    relationships: true,
+    self: true,
+    work: true,
+  });
+
+
+
+  const onChangePriorityFilter =
+    (name: keyof PriorityFilter) => (value: boolean) => {
+      setPriorityFilter((filter) => ({ ...filter, [name]: value }));
+    };
+
+  const onFilterButtonBlur = (e: React.FocusEvent) => {
+    const relatedTarget = e.relatedTarget as Element;
+    if (relatedTarget && relatedTarget.id === "priority-sort-popover") {
+      return;
+    }
+
+    setIsFilterPopoverOpen(false);
+  };
+
+
+      const renderPriorityFilter = (priorityKey: Priority) => (
+        <StyledPriorityFilterItem key={priorityKey} alignItems={AlignItems.CENTER}>
+          <StyledCheckBox
+            isChecked={priorityFilter[priorityKey]}
+            onChange={onChangePriorityFilter(priorityKey)}
+            color={getColor(colorNameByPriority[priorityKey])}
+          />
+          {priorityNameByKey[priorityKey]}
+        </StyledPriorityFilterItem>
+      );
+
+          <Popover
+            isOpen={isFilterPopoverOpen}
+            positions={["bottom"]}
+            align="end"
+            content={
+              <div
+                onBlur={onFilterButtonBlur}
+                tabIndex={0}
+                role="button"
+                id="priority-sort-popover"
+              >
+                <StyledFiltersPopoverContent>
+                  {Object.keys(priorityFilter).map((priority) =>
+                    renderPriorityFilter(priority as Priorities)
+                  )}
+                </StyledFiltersPopoverContent>
+              </div>
+            }
+          >
+            <StyledPriorityFilterButton
+              role="button"
+              tabIndex={0}
+              onFocus={() => setIsFilterPopoverOpen(true)}
+              onBlur={onFilterButtonBlur}
+            >
+            <StrawberryMenuIcon />
+            </StyledPriorityFilterButton>
+          </Popover> 
+*/
+
+/* <OldStyledSomedaySection
+          shouldSetTopMargin={isCurrentMonthToggled}
+          flex={getEventsSectionFlex("future")}
+          startDate={dayjs().format(YEAR_MONTH_FORMAT)}
+          isToggled={isFutureToggled}
+          onToggle={() => setIsFutureToggled((toggle) => !toggle)}
+          title=""
+          priorities={
+            Object.keys(priorityFilter).filter(
+              (key) => priorityFilter[key as Priorities]
+            ) as Priorities[]
+          }
+          EventsListContainer={SomedayEventsFutureContainer}
+          sectionType="future"
+        /> */

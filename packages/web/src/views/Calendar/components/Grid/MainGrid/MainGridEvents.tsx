@@ -21,7 +21,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const dispatch = useDispatch();
 
   const timedEvents = useSelector(selectGridEvents);
-  const { isDrafting, draftId } = useSelector(selectDraftId);
+  const { draftId, isDrafting } = useSelector(selectDraftId);
 
   const resizeTimedEvent = (
     event: Schema_GridEvent,
@@ -47,6 +47,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
             isDragging={false}
             isDraft={false}
             isPlaceholder={isDrafting && event._id === draftId}
+            isResizing={false}
             key={`initial-${event._id}`}
             measurements={measurements}
             onEventMouseDown={(event, e) => {

@@ -70,14 +70,14 @@ export const getTimes = () =>
       return `0${~~(i / 4)}:0${60 * ((i / 4) % 1)}`.replace(/\d(\d\d)/g, "$1");
     });
 
-export const getTimeLabel = (startDate: string, endDate: string) => {
-  const startLabel = dayjs(startDate).format(HOURS_AM_FORMAT);
-  const endLabel = dayjs(endDate).format(HOURS_AM_FORMAT);
-  const times = `${startLabel} - ${endLabel}`;
+export const getTimesLabel = (startDate: string, endDate: string) => {
+  const start = _getTimeLabel(startDate);
+  const end = _getTimeLabel(endDate);
+  const startMinimal = _cleanStartMeridiem(start, end);
 
-  //++ if lastitems === ':00', then drop (12:00pm -> 12pm)
+  const label = `${startMinimal} - ${end}`;
 
-  return times;
+  return label;
 };
 
 // uses inferred timezone and shortened string to
@@ -87,4 +87,18 @@ export const toUTCOffset = (date: string | Dayjs | Date) => {
   if (typeof date === "string" || date instanceof Date) {
     return dayjs(date).format();
   } else return date.format(); // then already a DayJs object
+};
+
+const _cleanStartMeridiem = (start: string, end: string) => {
+  const meridiems = [start.slice(-2), end.slice(-2)];
+  const verboseMeridiems = meridiems[0] === meridiems[1];
+  if (verboseMeridiems) {
+    return start.slice(0, -2);
+  }
+  return start;
+};
+
+const _getTimeLabel = (date: string) => {
+  const orig = dayjs(date).format(HOURS_AM_FORMAT);
+  return orig.replace(":00", "");
 };

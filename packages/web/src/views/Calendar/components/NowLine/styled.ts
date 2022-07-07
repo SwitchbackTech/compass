@@ -20,5 +20,5 @@ export const StyledNowLine = styled.div<StyledNowLineProps>`
   position: absolute;
   top: ${({ top }) => top}%;
   width: ${({ width }) => width}%;
-  z-index: ${ZIndex.LAYER_1};
+  z-index: ${ZIndex.LAYER_2};
 `;
