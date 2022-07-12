@@ -3,6 +3,18 @@
 [GCal Sync Guide](https://developers.google.com/calendar/api/guides/sync)
 [Push guide](https://developers.google.com/calendar/api/guides/push)
 
+### Ids
+
+There are a lot of ids involved in this process.
+Here's the breakdown for reference:
+
+- `calendarId`: the user's calendar.
+  - default is `primary`
+  - you can find the others using Gcal's `calendarList.list` API
+- `resourceId`: created by GCal to refer to a user's calendar (eg their primary calendar)
+  - `resourceId` looks like: `_erSB7UuK4_7Uy3CibSlcMLPwMg`
+- `channelId`: a unique id created by Compass to track the watch channel
+
 ## Part I: One-time sync
 
 Get all users calendar events
@@ -19,15 +31,6 @@ TL;DR Google notifies you when something changes, then you do an incremental syn
 One for each resource (eg 'primary' calendar)
 
 - Each notification channel is associated both with a particular user and a particular resource (or set of resources)
-
-There are lots of ids involved. Here's the breakdown:
-
-- the `calendarId` refers to the user's calendar.
-  - default is `primary`
-  - you can find the others using Gcal's `calendarList.list` API
-- the `resourceId` is created by GCal to refer to a user's calendar (eg their primary calendar)
-  - the `resourceId` looks like: `_erSB7UuK4_7Uy3CibSlcMLPwMg`
-- the `channelId` is a unique id created by Compass to track the watch channel
 
 How:
 `POST` to the user's primary calendar's `/watch` endpoint
@@ -80,7 +83,7 @@ User **creates/edits** event in **Compass**:
 5. Compass updates its DB with the response from GCal API
 
 - It does not attempt to filter out the events that it already updated based on `origin`, because doing so breaks when the user updates an event that was created in Compass and updated in GCal
-  - This is because the event will have `origin` of `compass`, but be changed in GCal, and thus should be synced. So, simpling excluding those events unfortunately doesn't work
+  - This is because the event will have `origin` of `compass`, but be changed in GCal, and thus should be synced. So, simply excluding those events unfortunately doesn't work
 
 User **deletes** event in **Compass**:
 

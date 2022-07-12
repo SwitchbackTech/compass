@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { PriorityReq, Schema_Priority } from "@core/types/priority.types";
 import { InsertedIds } from "@core/types/mongo.types";
 
-import { mapPriorityData } from "../services/priority.service.helpers";
+import { mapPriorityData } from "../priority/services/priority.service.helpers";
 
 test("Priority ids mapped in correct order", () => {
   const insertedIds: InsertedIds = {

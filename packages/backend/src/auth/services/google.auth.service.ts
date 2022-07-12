@@ -46,8 +46,7 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
 };
 
 class GoogleOauthService {
-  //@ts-ignore
-  tokens: {};
+  tokens: Credentials;
   oauthClient: OAuth2Client;
 
   constructor() {
@@ -125,7 +124,7 @@ class GoogleOauthService {
     }
 
     this.oauthClient.setCredentials(this.tokens);
-    logger.debug("Credentials set");
+    logger.debug("Set credentials");
   }
 }
 

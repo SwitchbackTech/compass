@@ -1,4 +1,4 @@
-import { yearsAgo } from "./common.helpers";
+import { yearsAgo } from "../common/helpers/common.helpers";
 
 test("yearsAgo is a Date object", () => {
   const twoYrs = yearsAgo(2);

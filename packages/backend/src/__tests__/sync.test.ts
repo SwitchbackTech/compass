@@ -9,7 +9,7 @@ import {
   channelNotFound,
   findCalendarByResourceId,
   hasExpectedHeaders,
-} from "../services/sync.helpers";
+} from "../sync/services/sync.helpers";
 
 describe("assembleBulkOperations", () => {
   const bulkOps = assembleBulkOperations(
