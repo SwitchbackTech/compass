@@ -4,7 +4,7 @@ import { screen, waitFor } from "@testing-library/react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { CompassRoot } from "@web/routers/index";
-import { getWeekDayLabel } from "@web/ducks/events/event.utils";
+import { getWeekDayLabel } from "@web/common/utils/event.util";
 import { LocalStorage } from "@web/common/constants/web.constants";
 import { CalendarView } from "@web/views/Calendar";
 

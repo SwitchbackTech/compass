@@ -13,29 +13,30 @@ export interface Props {
   event: Schema_Event;
 }
 
-export const DraggableSomedayEvent: FC<Props> = memo(
-  function DraggableSomedayEvent({ event }) {
-    const [{ isDragging }, drag, preview] = useDrag(
-      () => ({
-        type: DragItem.EVENT_SOMEDAY,
-        // only include props needed for drag & drop
-        item: { _id: event._id, title: event.title, priority: event.priority },
+// export const DraggableSomedayEvent: FC<Props> = memo(
+export const DraggableSomedayEvent: FC<Props> = ({ event }) => {
+  const [{ isDragging }, drag, preview] = useDrag(
+    () => ({
+      type: DragItem.EVENT_SOMEDAY,
+      // only includes props needed for drag & drop
+      item: { _id: event._id, title: event.title, priority: event.priority },
 
-        collect: (monitor) => ({
-          isDragging: monitor.isDragging(),
-        }),
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
       }),
-      [event._id]
-    );
+    }),
+    [event._id]
+  );
 
-    useEffect(() => {
-      preview(getEmptyImage(), { captureDraggingState: true });
-    }, [preview]);
+  useEffect(() => {
+    // preview(getEmptyImage(), { captureDraggingState: true });
+    preview(getEmptyImage());
+  }, [preview]);
 
-    return (
-      <div ref={drag}>
-        <SomedayEvent event={event} isDragging={isDragging} />
-      </div>
-    );
-  }
-);
+  return (
+    <div ref={drag}>
+      <SomedayEvent event={event} isDragging={isDragging} />
+    </div>
+  );
+};
+// );

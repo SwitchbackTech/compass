@@ -7,6 +7,7 @@
   // "include": ["./src/**/*.tsx", "./src/**/*.ts", "./declaration.d.ts"],
   // "exclude": ["./src/node_modules", "**/*.test.ts"],
   "compilerOptions": {
+    "allowUnreachableCode": true,
     // "target": "es5",
     // "module": "es6",
     // "moduleResolution": "node",

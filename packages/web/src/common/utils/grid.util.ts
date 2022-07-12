@@ -1,4 +1,5 @@
 import dayjs, { Dayjs } from "dayjs";
+import { MouseEvent } from "react";
 import isBetween from "dayjs/plugin/isBetween";
 import weekPlugin from "dayjs/plugin/weekOfYear";
 import dayOfYear from "dayjs/plugin/dayOfYear";
@@ -8,17 +9,21 @@ import {
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
-  FUTURE_MULTIPLE,
+  AFTER_TMRW_MULTIPLE,
 } from "@web/common/constants/grid.constants";
-import { Category } from "@web/ducks/events/types";
+import { AssignResult, WidthPercentages } from "@web/common/types/util.types";
+import { Category } from "@web/ducks/events/event.types";
+import {
+  DIVIDER_GRID,
+  GRID_X_PADDING_TOTAL,
+  SIDEBAR_CLOSED_WIDTH,
+  SIDEBAR_OPEN_WIDTH,
+} from "@web/views/Calendar/layout.constants";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 dayjs.extend(dayOfYear);
 dayjs.extend(weekPlugin);
 dayjs.extend(isBetween);
-interface AssignResult {
-  fits: boolean;
-  rowNum?: number;
-}
 
 export const assignEventToRow = (
   eventDays: number[],
@@ -113,6 +118,26 @@ export const getAllDayEventWidth = (
   return widthMinusPadding(width);
 };
 
+export const getBeforeAfterPercentages = (
+  percentRemaining: number,
+  todayIndex: number,
+  afterTmrwCount: number,
+  beforeTodayCount: number
+) => {
+  const diff = getBeforeTodayDiff(todayIndex, afterTmrwCount);
+
+  const beforeToday = percentRemaining / diff;
+  const afterTmrw =
+    (percentRemaining - beforeToday * beforeTodayCount) / afterTmrwCount;
+
+  return { afterTmrw, beforeToday };
+};
+
+export const getBeforeTodayPercent = () => {
+  // add up from idx 0 to n
+  return 10;
+};
+
 export const getCurrentMinute = () => {
   return dayjs().get("hours") * 60 + dayjs().get("minutes");
 };
@@ -121,6 +146,209 @@ export const getCurrentPercentOfDay = () => {
   return (getCurrentMinute() / 1440) * 100;
 };
 
+// ++ separate past-future from current (?)
+export const getColumnWidthPercentages = (
+  todayIndex: number
+): WidthPercentages => {
+  const daysInView = 7;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const pastFutureWeek: number[] = new Array(daysInView).fill(FLEX_EQUAL);
+
+  let currentWeek: number[];
+  const { afterTmrw, beforeToday } = getRelativePercentages(todayIndex);
+
+  switch (todayIndex) {
+    case 0:
+      currentWeek = [
+        FLEX_TODAY,
+        FLEX_TMRW,
+        afterTmrw,
+        afterTmrw,
+        afterTmrw,
+        afterTmrw,
+        afterTmrw,
+      ];
+      break;
+    case 1:
+      currentWeek = [
+        beforeToday,
+        FLEX_TODAY,
+        FLEX_TMRW,
+        afterTmrw,
+        afterTmrw,
+        afterTmrw,
+        afterTmrw,
+      ];
+      break;
+    case 2:
+      currentWeek = [
+        beforeToday,
+        beforeToday,
+        FLEX_TODAY,
+        FLEX_TMRW,
+        afterTmrw,
+        afterTmrw,
+        afterTmrw,
+      ];
+      break;
+    case 3:
+      currentWeek = [
+        beforeToday,
+        beforeToday,
+        beforeToday,
+        FLEX_TODAY,
+        FLEX_TMRW,
+        afterTmrw,
+        afterTmrw,
+      ];
+      break;
+    case 4:
+      currentWeek = [
+        beforeToday,
+        beforeToday,
+        beforeToday,
+        beforeToday,
+        FLEX_TODAY,
+        FLEX_TMRW,
+        afterTmrw,
+      ];
+      break;
+    case 5:
+      currentWeek = [
+        beforeToday,
+        beforeToday,
+        beforeToday,
+        beforeToday,
+        beforeToday,
+        FLEX_TODAY,
+        FLEX_TMRW,
+      ];
+      break;
+    case 6:
+      currentWeek = [
+        beforeToday,
+        beforeToday,
+        beforeToday,
+        beforeToday,
+        beforeToday,
+        beforeToday,
+        FLEX_TODAY,
+      ];
+      break;
+
+    default:
+      [];
+  }
+
+  return { pastFuture: pastFutureWeek, current: currentWeek };
+};
+
+export const getBeforeTodayDiff = (
+  todayIndex: number,
+  afterTmrwCount: number
+) => {
+  const futureFactor = afterTmrwCount * AFTER_TMRW_MULTIPLE;
+  const yesterdayIndex = todayIndex - 1;
+  const diff = yesterdayIndex + futureFactor;
+  return diff;
+};
+export const getElemById = (id: string): HTMLDivElement => {
+  return document.querySelector(`#${id}`);
+};
+
+export const getRelativePercentages = (todayIndex: number) => {
+  let afterTmrw: number;
+  let beforeToday: number;
+
+  const remaining = 100 - (FLEX_TODAY + FLEX_TMRW);
+
+  /*
+  S M T W R F S
+  */
+  switch (todayIndex) {
+    case 0:
+      afterTmrw = remaining / 5;
+      beforeToday = 0; // no day before today
+      break;
+    case 1: {
+      const beforeTodayCount = 1;
+      const afterTmrwCount = 4;
+      const percent = getBeforeAfterPercentages(
+        remaining,
+        todayIndex,
+        afterTmrwCount,
+        beforeTodayCount
+      );
+      beforeToday = percent.beforeToday;
+      afterTmrw = percent.afterTmrw;
+
+      break;
+    }
+    case 2: {
+      const beforeTodayCount = 2;
+      const afterTmrwCount = 3;
+
+      const percent = getBeforeAfterPercentages(
+        remaining,
+        todayIndex,
+        afterTmrwCount,
+        beforeTodayCount
+      );
+
+      beforeToday = percent.beforeToday;
+      afterTmrw = percent.afterTmrw;
+
+      break;
+    }
+    case 3: {
+      const beforeTodayCount = 3;
+      const afterTmrwCount = 2;
+
+      const percent = getBeforeAfterPercentages(
+        remaining,
+        todayIndex,
+        afterTmrwCount,
+        beforeTodayCount
+      );
+
+      beforeToday = percent.beforeToday;
+      afterTmrw = percent.afterTmrw;
+      break;
+    }
+    case 4: {
+      const beforeTodayCount = 4;
+      const afterTmrwCount = 1;
+
+      const percent = getBeforeAfterPercentages(
+        remaining,
+        todayIndex,
+        afterTmrwCount,
+        beforeTodayCount
+      );
+
+      beforeToday = percent.beforeToday;
+      afterTmrw = percent.afterTmrw;
+      break;
+    }
+    case 5: {
+      beforeToday = remaining / 5;
+      afterTmrw = 0; // no 'day after tmrw'
+      break;
+    }
+
+    case 6: {
+      beforeToday = (100 - FLEX_TODAY) / 6;
+      afterTmrw = 0; // no 'day after tmrw'
+      break;
+    }
+    default:
+      beforeToday = -666;
+      afterTmrw = -666;
+  }
+  return { beforeToday, afterTmrw };
+};
+
+// ++ remove
 export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
   // past/future week
   if (week !== today.week()) return FLEX_EQUAL;
@@ -142,10 +370,54 @@ export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
     return prevDayFlex;
   }
   // future day
-  return prevDayFlex * FUTURE_MULTIPLE;
+  return prevDayFlex * AFTER_TMRW_MULTIPLE;
+};
+
+export const getEventCategory = (
+  start: Dayjs,
+  end: Dayjs,
+  startOfWeek: Dayjs,
+  endOfWeek: Dayjs
+): Category => {
+  const startsThisWeek = start.isBetween(startOfWeek, endOfWeek, "day", "[]");
+  const endsThisWeek = end.isBetween(startOfWeek, endOfWeek, "day", "[]");
+
+  if (startsThisWeek && endsThisWeek) {
+    return Category.ThisWeekOnly;
+  }
+  if (startsThisWeek && !endsThisWeek) {
+    return Category.ThisToFutureWeek;
+  }
+  if (!startsThisWeek && endsThisWeek) {
+    return Category.PastToThisWeek;
+  }
+  if (!startsThisWeek && !endsThisWeek) {
+    return Category.PastToFutureWeek;
+  }
+
+  console.log("Logic error while getting event category");
+  return Category.ThisWeekOnly;
 };
 
 export const getLeftPosition = (
+  category: Category,
+  startIndex: number,
+  widths: number[]
+) => {
+  const left = getAbsoluteLeftPosition(category, startIndex, widths);
+
+  //++
+  // if (
+  //   category === Category.ThisToFutureWeek ||
+  //   category == Category.ThisWeekOnly
+  // ) {
+
+  // }
+
+  return left;
+};
+
+export const getAbsoluteLeftPosition = (
   category: Category,
   startIndex: number,
   widths: number[]
@@ -171,23 +443,68 @@ export const getLeftPosition = (
       positionStart = -666;
     }
   }
+
   return positionStart;
 };
+
 export const getLineClamp = (durationHours: number) => {
   // how were these magic numbers determined?
   const heightOfEvent = 54 * +durationHours.toFixed(2) || 0.25;
   return Math.round((heightOfEvent - 7) / 16) || 1;
 };
 
+// ++ remove
 export const getPrevDayWidth = (today: Dayjs) => {
   const todayWeekNum = today.get("day") + 1;
   const yesterdayDayNum = todayWeekNum - 1;
   const futureDays = 5 - yesterdayDayNum; // 5 cuz exclude today and tmrw
-  const futureFactor = futureDays * FUTURE_MULTIPLE;
+  const futureFactor = futureDays * AFTER_TMRW_MULTIPLE;
   const diff = yesterdayDayNum + futureFactor;
   const width = 60 / diff;
 
   return width;
+};
+
+export const getWidthBuffer = (startIndex: number) =>
+  startIndex * (DIVIDER_GRID * 2);
+
+export const getWidthInPixels = (
+  //++
+  percent: number, //eg 21.4 for 21.4%
+  windowWidth: number
+) => {
+  const gridWidth = windowWidth - GRID_X_PADDING_TOTAL;
+
+  const widthInPixels = gridWidth * (percent * 0.01);
+  return Math.floor(widthInPixels);
+};
+
+// ++
+// export const getWidths = (
+//   isCurrentWeek: boolean,
+//   isSidebarOpen: boolean,
+//   columnWidths: WidthPixels
+// ) => {
+//   const _daysInView = 7;
+//   if (isSidebarOpen) {
+//     return isCurrentWeek
+//       ? columnWidths.current.sidebarOpen
+//       : (new Array(_daysInView).fill(
+//           columnWidths.pastFuture.sidebarOpen
+//         ) as number[]);
+//   }
+
+//   return isCurrentWeek
+//     ? columnWidths.current.sidebarClosed
+//     : (new Array(_daysInView).fill(
+//         columnWidths.pastFuture.sidebarClosed
+//       ) as number[]);
+// };
+
+export const getX = (e: MouseEvent, isSidebarOpen: boolean) => {
+  const xOffset = isSidebarOpen ? SIDEBAR_OPEN_WIDTH : SIDEBAR_CLOSED_WIDTH;
+  const x = e.clientX - xOffset;
+  return x;
 };
 
 const normalizeDayNums = (days: number[]) => {
@@ -199,6 +516,19 @@ const normalizeDayNums = (days: number[]) => {
       return d;
     }
   });
+};
+
+export const removeGridFields = (event: Schema_GridEvent): Schema_Event => {
+  const {
+    isEditing,
+    importanceIndex,
+    isOpen,
+    row,
+    siblingsCount,
+    ...eventWithoutGridFields
+  } = event;
+
+  return eventWithoutGridFields;
 };
 
 export const widthMinusPadding = (width: number) => {

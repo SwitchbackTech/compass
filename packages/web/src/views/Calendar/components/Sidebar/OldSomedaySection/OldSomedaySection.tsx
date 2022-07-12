@@ -4,17 +4,17 @@ import { usePopper } from "react-popper";
 import { Origin, Priorities, SOMEDAY_EVENTS_LIMIT } from "@core/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { ArrowLeftIcon } from "@web/assets/svg";
-import { SectionType_Sidebar } from "@web/ducks/events/types";
+import { SectionType_Sidebar } from "@web/ducks/events/event.types";
 import {
   selectPaginatedEventsBySectionType,
   selectSomedayEventsCount,
-} from "@web/ducks/events/selectors";
+} from "@web/ducks/events/event.selectors";
 import { RootState } from "@web/store";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import {
   createEventSlice,
   getFutureEventsSlice,
-} from "@web/ducks/events/slice";
+} from "@web/ducks/events/event.slice";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";

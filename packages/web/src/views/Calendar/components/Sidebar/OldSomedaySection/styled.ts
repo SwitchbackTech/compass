@@ -4,9 +4,16 @@ import { getColor } from "@web/common/utils/colors";
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
 
+import { OldSomedaySection } from "./OldSomedaySection";
+
 export interface Props {
   flex?: number;
 }
+export const OldStyledSomedaySection = styled(
+  OldSomedaySection
+)<FutureEventsProps>`
+  margin-top: ${({ shouldSetTopMargin }) => (shouldSetTopMargin ? "auto" : 0)};
+`;
 
 export const Styled = styled.div<Props>`
   margin-bottom: 5px;

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Key } from "ts-keycode-enum";
 import { useDispatch } from "react-redux";
 import { DeleteIcon } from "@web/components/Icons";
-import { getFutureEventsSlice } from "@web/ducks/events/slice";
+import { getFutureEventsSlice } from "@web/ducks/events/event.slice";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { MonthPicker } from "@web/views/Forms/EventForm/MonthPicker";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
@@ -13,6 +13,7 @@ import {
   StyledIconRow,
   StyledTitleField,
 } from "@web/views/Forms/EventForm/styled";
+import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
@@ -21,20 +22,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   setEvent,
   ...props
 }) => {
-  useEffect(() => {
-    const keyDownHandler = (e: KeyboardEvent) => {
-      if (e.which === Key.Escape) {
-        _onClose();
-      }
-    };
-
-    document.addEventListener("keydown", keyDownHandler);
-
-    return () => {
-      document.removeEventListener("keydown", keyDownHandler);
-    };
-  }, [_onClose]);
-
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const dispatch = useDispatch();
 
@@ -48,12 +35,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const onSetEventField: SetEventFormField = (field, value) => {
     const newEvent = { ...event, [field]: value };
     setEvent(newEvent);
-
-    // $$ remove after confident above works
-    // setEvent((_event) => ({
-    //   ..._event,
-    //   [field]: value,
-    // }));
   };
 
   const onDelete = () => {
@@ -66,6 +47,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   };
 
   const keyHandler: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+    // prevents triggering other shortcuts
+    e.stopPropagation();
+
     if (e.which === Key.Escape) {
       _onClose();
     }
@@ -77,14 +61,12 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     if (e.which === Key.Enter && e.metaKey) {
       onSubmit(event);
     }
-
-    // prevents triggering other shortcuts
-    e.stopPropagation();
   };
 
   return (
     <StyledEventForm
       {...props}
+      id={ID_SIDEBAR_FORM}
       isOpen={true}
       onKeyDown={keyHandler}
       onMouseDown={(e) => {
@@ -110,7 +92,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         placeholder="Title"
         role="input"
         title="title"
-        // title={event.title}
         value={event.title}
       />
 
@@ -136,3 +117,21 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     </StyledEventForm>
   );
 };
+
+/*
+// useEffect(() => {
+  //   const keyDownHandler = (e: KeyboardEvent) => {
+  //     console.log(e.which);
+  //     if (e.which === Key.Escape) {
+  //       _onClose();
+  //     }
+  //   };
+
+  //   document.addEventListener("keydown", keyDownHandler);
+
+  //   return () => {
+  //     document.removeEventListener("keydown", keyDownHandler);
+  //   };
+  // }, [_onClose]);
+
+*/

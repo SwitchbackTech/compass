@@ -5,7 +5,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { Text } from "@web/components/Text";
-import { editEventSlice } from "@web/ducks/events/slice";
+import { editEventSlice } from "@web/ducks/events/event.slice";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 
 import { StyledEventOrPlaceholder } from "./styled";
@@ -39,7 +39,7 @@ export const SomedayEvent = ({ event: _event, isDragging }: Props) => {
       },
     ],
   });
-  const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_2 };
+  const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_3 };
 
   const onSubmit = () => {
     dispatch(editEventSlice.actions.request({ _id: event._id, event }));

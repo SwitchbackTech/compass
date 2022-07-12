@@ -1,44 +1,52 @@
 import { ColorNames } from "@web/common/types/styles";
 import { Text } from "@web/components/Text";
+import { Dayjs } from "dayjs";
 import React, { useState } from "react";
 import { Popover } from "react-tiny-popover";
 
-import { StyledTodayPopoverContainer, TodayNavigationButton } from "./styled";
+import { StyledTodayPopoverContainer, StyledTodayButton } from "./styled";
 
 export interface Props {
-  today: string;
+  weekInFocus: number;
+  today: Dayjs;
   onClick: () => void;
 }
 
-export const TodayButtonPopover: React.FC<Props> = ({ onClick, today }) => {
+export const TodayButtonPopover: React.FC<Props> = ({
+  onClick,
+  today,
+  weekInFocus,
+}) => {
   const [isTodayPopoverOpen, setIsTodayPopoverOpen] = useState(false);
 
-  return (
-    <Popover
-      isOpen={isTodayPopoverOpen}
-      positions={["bottom"]}
-      padding={10}
-      content={
-        <StyledTodayPopoverContainer>
-          <Text colorName={ColorNames.WHITE_1} size={12}>
-            {today}
-          </Text>
-        </StyledTodayPopoverContainer>
-      }
-    >
-      <TodayNavigationButton
-        onMouseEnter={() => setIsTodayPopoverOpen(true)}
-        onMouseLeave={() => setIsTodayPopoverOpen(false)}
-        cursor="pointer"
-        onClick={() => {
-          onClick();
-          setIsTodayPopoverOpen(false);
-        }}
-        colorName={ColorNames.WHITE_2}
-        size={20}
+  if (today.week() !== weekInFocus) {
+    return (
+      <Popover
+        isOpen={isTodayPopoverOpen}
+        positions={["bottom"]}
+        padding={10}
+        content={
+          <StyledTodayPopoverContainer>
+            <Text colorName={ColorNames.WHITE_1} size={12}>
+              {today.format("dddd, MMMM D")}
+            </Text>
+          </StyledTodayPopoverContainer>
+        }
       >
-        Today
-      </TodayNavigationButton>
-    </Popover>
-  );
+        <StyledTodayButton
+          onMouseEnter={() => setIsTodayPopoverOpen(true)}
+          onMouseLeave={() => setIsTodayPopoverOpen(false)}
+          cursor="pointer"
+          onClick={() => {
+            onClick();
+            setIsTodayPopoverOpen(false);
+          }}
+          colorName={ColorNames.WHITE_2}
+          size={20}
+        >
+          Today
+        </StyledTodayButton>
+      </Popover>
+    );
+  }
 };

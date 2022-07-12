@@ -1,11 +1,16 @@
 import styled from "styled-components";
 import { ColorNames } from "@web/common/types/styles";
 import { getColor } from "@web/common/utils/colors";
-import { GRID_SCROLLBAR_WIDTH } from "@web/common/constants/grid.constants";
+import { EVENT_WIDTH_MINIMUM } from "@web/common/constants/grid.constants";
+import {
+  GRID_PADDING_BOTTOM,
+  SCROLLBAR_WIDTH,
+} from "@web/views/Calendar/layout.constants";
+import { Flex } from "@web/components/Flex";
 
 export const StyledMainGrid = styled.div`
   flex: 1;
-  margin-bottom: 20px;
+  margin-bottom: ${GRID_PADDING_BOTTOM}px;
   width: 100%;
   position: relative;
   overflow-y: visible;
@@ -14,12 +19,12 @@ export const StyledMainGrid = styled.div`
   /* 
   webkit-scrollbar isn't standardized among browsers, 
   meaning it could break on some broswers or after a browser update.
-  (see: https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar
+  (see: https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar)
   it's used here nonetheless because it was an easy way to get the grid widths
   to align correctly
   */
   ::-webkit-scrollbar {
-    width: ${GRID_SCROLLBAR_WIDTH}px;
+    width: ${SCROLLBAR_WIDTH}px;
   }
   ::-webkit-scrollbar-thumb {
     border-radius: 7px;
@@ -31,14 +36,17 @@ export const StyledMainGrid = styled.div`
   }
 `;
 
-export interface PrevDaysOverflowProps {
-  widthPercent: number;
-}
+// export interface PrevDaysOverflowProps {
+//   width: number;
+// }
 
-export const StyledPrevDaysOverflow = styled.div<PrevDaysOverflowProps>`
-  width: ${({ widthPercent }) => widthPercent}%;
-  height: 100%;
+// export const StyledPrevDaysOverflow = styled.div<PrevDaysOverflowProps>`
+export const StyledPrevDaysOverflow = styled(Flex)`
   background: ${getColor(ColorNames.WHITE_1)};
+  flex-basis: 100%;
+  height: 100%;
+  min-width: ${EVENT_WIDTH_MINIMUM}px;
   opacity: 0.05;
   position: absolute;
+  width: 100%;
 `;

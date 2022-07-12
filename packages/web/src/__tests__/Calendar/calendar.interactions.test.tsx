@@ -85,10 +85,10 @@ describe("Calendar Interactions", () => {
         state: preloadedState,
       });
 
-      const allDayGrid = container.querySelector("#allDayGrid");
+      const allDayRow = container.querySelector("#allDayRow");
 
       await act(async () => {
-        await user.click(allDayGrid);
+        await user.click(allDayRow);
       });
       await waitFor(() => {
         expect(screen.getByRole("form")).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe("Calendar Interactions", () => {
         await user.type(screen.getByPlaceholderText(/title/i), "Hello, World");
       });
       expect(
-        within(allDayGrid).getByDisplayValue("Hello, World")
+        within(allDayRow).getByDisplayValue("Hello, World")
       ).toBeInTheDocument();
     });
   });

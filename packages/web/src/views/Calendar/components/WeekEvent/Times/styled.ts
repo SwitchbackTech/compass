@@ -1,4 +1,5 @@
 import styled, { css } from "styled-components";
+import { EVENT_WIDTH_MINIMUM } from "@web/common/constants/grid.constants";
 
 interface Props {
   isHovered: boolean;
@@ -17,7 +18,7 @@ export const StyledTimes = styled.div<Props>`
 `;
 
 export const StyledTimesPlaceholder = styled.div`
-  min-width: 80px;
+  min-width: ${EVENT_WIDTH_MINIMUM}px;
   min-height: 11px;
   &:hover {
     box-shadow: 0px 0px 0px 2px black;

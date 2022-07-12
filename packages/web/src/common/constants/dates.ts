@@ -1,3 +1,4 @@
+export const DAY_COMPACT = "ddd"; // Mon
 export const DAY_HOUR_MIN_M = "ddd h:mma"; // Mon 1:15am
 
 export const HOURS_AM_SHORT_FORMAT = "h A";

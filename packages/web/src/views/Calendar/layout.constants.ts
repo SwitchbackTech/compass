@@ -1,0 +1,24 @@
+export const PAGE_TOP_PADDING = 35;
+export const PAGE_X_PADDING = 25;
+
+export const HEADER_HEIGHT = 40;
+
+export const WEEK_DAYS_HEIGHT = 26;
+export const WEEK_DAYS_MARGIN_Y = 22;
+
+export const SCROLLBAR_WIDTH = 8;
+
+export const DIVIDER_ALLDAY = 2;
+export const DIVIDER_GRID = 1;
+
+export const GRID_PADDING_BOTTOM = 20;
+export const GRID_MARGIN_LEFT = 50;
+export const GRID_X_START = PAGE_X_PADDING + GRID_MARGIN_LEFT;
+export const GRID_Y_START =
+  PAGE_TOP_PADDING + HEADER_HEIGHT + WEEK_DAYS_HEIGHT + WEEK_DAYS_MARGIN_Y;
+export const GRID_X_PADDING_TOTAL =
+  PAGE_X_PADDING * 2 + GRID_MARGIN_LEFT + SCROLLBAR_WIDTH;
+
+export const SIDEBAR_CLOSED_WIDTH = 44;
+export const SIDEBAR_OPEN_WIDTH = 350;
+export const SIDEBAR_X_START = SIDEBAR_OPEN_WIDTH + GRID_X_START;

@@ -5,12 +5,10 @@ import { ColorNames } from "@web/common/types/styles";
 import { CheckBox } from "@web/components/CheckBox";
 import { Flex } from "@web/components/Flex";
 import {
-  SIDEBAR_COLLAPSED_WIDTH,
-  SIDEBAR_WIDTH,
-} from "@web/views/Calendar/calendar.constants";
+  SIDEBAR_CLOSED_WIDTH,
+  SIDEBAR_OPEN_WIDTH,
+} from "@web/views/Calendar/layout.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
-
-import { OldSomedaySection } from "./OldSomedaySection";
 
 export interface Props {
   isToggled: boolean;
@@ -23,12 +21,13 @@ export const Styled = styled.div<Props>`
   position: relative;
   transition: 0.4s;
   width: ${({ isToggled }) =>
-    isToggled ? SIDEBAR_WIDTH : SIDEBAR_COLLAPSED_WIDTH}px;
+    isToggled ? SIDEBAR_OPEN_WIDTH : SIDEBAR_CLOSED_WIDTH}px;
 `;
 
 export const StyledSidebarOverflow = styled.div<Props>`
   position: absolute;
-  background: ${getColor(ColorNames.DARK_3)};
+  background: ${({ isToggled }) =>
+    isToggled ? getColor(ColorNames.DARK_3) : getColor(ColorNames.DARK_2)};
   width: ${({ isToggled }) => (isToggled ? 0 : "100%")};
   height: 100%;
   right: 0;
@@ -41,8 +40,8 @@ const StyledOpenIcon = styled(SidebarOpenIcon)`
   cursor: pointer;
   color: #7a858d;
   position: absolute;
-  right: 13px;
-  top: 64px;
+  right: 7px;
+  top: 42px;
   z-index: ${ZIndex.LAYER_1};
 
   &:hover {
@@ -54,8 +53,8 @@ const StyledCollapseIcon = styled(SidebarCollapseIcon)`
   cursor: pointer;
   color: #7a858d;
   position: absolute;
-  right: 20px;
-  top: 64px;
+  right: 7px;
+  top: 42px;
   z-index: ${ZIndex.LAYER_1};
 
   &:hover {
@@ -76,7 +75,7 @@ export interface SectionProps {
 }
 
 export const StyledTopSectionFlex = styled(Flex)<SectionProps>`
-  padding: 54px 38px 0 14px;
+  padding: 34px 38px 0 14px;
   height: ${({ height }) => height};
   overflow: hidden;
 `;
@@ -124,9 +123,3 @@ export const StyledBottomSection = styled.div<SectionProps>`
 export interface FutureEventsProps {
   shouldSetTopMargin?: boolean;
 }
-
-export const OldStyledSomedaySection = styled(
-  OldSomedaySection
-)<FutureEventsProps>`
-  margin-top: ${({ shouldSetTopMargin }) => (shouldSetTopMargin ? "auto" : 0)};
-`;
