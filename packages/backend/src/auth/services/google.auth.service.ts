@@ -33,21 +33,54 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
     );
   }
 
-  const googleClient = new GoogleOauthService();
-  //@ts-ignore
-  await googleClient.setTokens(null, oauth.tokens);
+  // replace with service one, so don't have to keep re-doing
+  // client stuff
+  const oauthClient = new OAuth2Client(
+    ENV.CLIENT_ID,
+    ENV.CLIENT_SECRET,
+    "postmessage"
+  );
+
+  oauthClient.on("tokens", (tokens) => {
+    // ensures we use, persist the more recent refresh_token
+    if (tokens.refresh_token) {
+      console.log(
+        "***REFRESH TOKEN:",
+        tokens.refresh_token,
+        "TODO: save in DB"
+      );
+    }
+    console.log("*** ACCESS TOKEN:", tokens.access_token);
+  });
+
+  // make sure the token never expires by passing the persisted refresh token
+  // so the oauthClient can swap them out if needed
+  oauthClient.setCredentials({
+    refresh_token: oauth.tokens.refresh_token,
+  });
 
   const calendar = google.calendar({
     version: "v3",
-    auth: googleClient.oauthClient,
+    auth: oauthClient,
   });
 
   return calendar;
+
+  /* old way */
+  // const googleClient = new GoogleOauthService();
+  // //@ts-ignore
+  // await googleClient.oldSetTokens(null, oauth.tokens);
+
+  // const calendar = google.calendar({
+  //   version: "v3",
+  //   auth: googleClient.oauthClient,
+  // });
 };
 
 class GoogleOauthService {
-  tokens: Credentials;
+  accessToken: string | undefined;
   oauthClient: OAuth2Client;
+  tokens: Credentials;
 
   constructor() {
     const redirectUri = isDev()
@@ -75,9 +108,11 @@ class GoogleOauthService {
       return { isOauthComplete: false };
     }
 
-    const accessToken = createToken(oauth.user);
+    //!!-- need to save refresh token, cuz only here once
+    // const accessToken = createToken(oauth.user); //--
+    const accessToken = await this.initAccessToken(code);
 
-    return { isOauthComplete: true, token: accessToken };
+    return { isOauthComplete: true, token: oauth.tokens.access_token };
   }
 
   generateAuthUrl(state: string) {
@@ -111,11 +146,29 @@ class GoogleOauthService {
     }
   }
 
-  getTokens() {
+  async initAccessToken(code: string) {
+    const { tokens } = await this.oauthClient.getToken(code); //++
+    // const { tokens } = await this.oauthClient.getToken(code); //++
+    this.tokens = tokens;
+    this.oauthClient.setCredentials(this.tokens);
+    logger.debug("Set credentials as:", this.tokens);
+
+    const accessToken = this.oauthClient.getAccessToken();
+    return accessToken;
+  }
+
+  async initTokens(code: string) {
+    const { tokens } = await this.oauthClient.getToken(code);
+
+    this.tokens = tokens;
+    this.oauthClient.setCredentials(this.tokens);
+
+    console.log("inited tokens");
     return this.tokens;
   }
 
-  async setTokens(code: string, tokens: Credentials | null) {
+  //--++
+  async oldSetTokens(code: string, tokens: Credentials | null) {
     if (tokens === null) {
       const { tokens } = await this.oauthClient.getToken(code);
       this.tokens = tokens;

@@ -30,6 +30,7 @@ class JwtMiddleware {
       const { refreshNeeded, payload, error } = validateToken(token);
 
       if (refreshNeeded) {
+        //++
         return res.status(Status.UNAUTHORIZED).send();
       }
 

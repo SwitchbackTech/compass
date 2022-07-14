@@ -38,3 +38,7 @@ export interface Result_OauthUrl {
   authUrl: string;
   authState: string;
 }
+
+export interface Result_Token {
+  token: string;
+}

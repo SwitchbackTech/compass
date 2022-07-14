@@ -9,13 +9,14 @@ export class AuthRoutes extends CommonRoutesConfig {
   }
 
   configureRoutes(): express.Application {
-    this.app.get(`/api/auth/oauth-url`, [authController.getOauthUrl]);
-    this.app.get(`/api/auth/oauth-status`, [authController.checkOauthStatus]);
-
+    //--
+    // this.app.get(`/api/auth/oauth-url`, [authController.getOauthUrl]);
+    // this.app.get(`/api/auth/oauth-status`, [authController.checkOauthStatus]);
     // Called by Google after successful oauth
-    this.app.get(`/api/auth/oauth-complete`, [
-      authController.loginAfterOauthSucceeded,
-    ]);
+    // this.app.get(`/api/auth/oauth-complete`, [
+    // authController.loginAfterOauthSucceeded,
+    // ]);
+    this.app.post(`/api/oauth/google`, [authController.exchangeCodeForToken]);
 
     return this.app;
   }

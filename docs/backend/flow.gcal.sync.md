@@ -15,6 +15,10 @@ Here's the breakdown for reference:
   - `resourceId` looks like: `_erSB7UuK4_7Uy3CibSlcMLPwMg`
 - `channelId`: a unique id created by Compass to track the watch channel
 
+## Part 0: Auth
+
+- ... tokens, refreshing, oauth, etc
+
 ## Part I: One-time sync
 
 Get all users calendar events
@@ -45,7 +49,7 @@ How:
 
 ## Handling Notifications
 
-Keep the channel active
+Keep the channel active [old - TODO: update ++]
 
 - Keep track of when it expires
 - Before it does, `POST` another `/watch`

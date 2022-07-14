@@ -331,11 +331,13 @@ class SyncService {
 
     const refreshNeeded = channelRefreshNeeded(reqParams, calendarList);
     if (refreshNeeded) {
-      channelPrepResult.refresh = await this.refreshChannelWatch(
-        userId,
-        gcal,
-        reqParams
-      );
+      console.log("\n**** (this used to be when you refreshed channel) ***\n");
+      //--++
+      // channelPrepResult.refresh = await this.refreshChannelWatch(
+      //   userId,
+      //   gcal,
+      //   reqParams
+      // );
     } else {
       channelPrepResult.stillActive = true;
     }

@@ -1,6 +1,8 @@
 // @ts-nocheck
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
+import { google } from "googleapis";
+import { OAuth2Client } from "google-auth-library";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Origin } from "@core/core.constants";
@@ -11,6 +13,9 @@ import {
   Params_AfterOAuth,
   Result_OauthUrl,
 } from "@core/types/auth.types";
+import { ReqBody, Res } from "@core/types/express.types";
+import { isDev } from "@backend/common/helpers/common.helpers";
+import { ENV } from "@backend/common/constants/env.constants";
 
 import googleOauthService from "../services/google.auth.service";
 import CompassAuthService from "../services/compass.auth.service";
@@ -36,6 +41,33 @@ class AuthController {
     }
   };
 
+  exchangeCodeForToken = async (
+    req: ReqBody<{ code: string }>,
+    res: Res
+  ): Promise<Result_Token> => {
+    const { code } = req.body;
+
+    // const oauthClient = new google.auth.OAuth2(
+    //   ENV.CLIENT_ID,
+    //   ENV.CLIENT_SECRET,
+    //   "postmessage"
+    // );
+
+    const oauthClient = new OAuth2Client(
+      ENV.CLIENT_ID,
+      ENV.CLIENT_SECRET,
+      "postmessage"
+    );
+
+    const { tokens } = await oauthClient.getToken(code);
+    console.log("TODO: persist refresh token");
+    // oauthClient.setCredentials(tokens)
+    // oauthClient.setCredentials()
+    // const token = oauthClient.getAccessToken();
+    // oauthClient.setC
+    res.promise(Promise.resolve({ token: tokens.access_token }));
+  };
+
   getOauthUrl = (
     req: express.Request,
     res: express.Response
@@ -47,17 +79,6 @@ class AuthController {
     }
   };
 
-  loginWithPassword(req: express.Request, res: express.Response) {
-    res.promise(
-      new BaseError(
-        "Not Implemented",
-        "do this once adding user+pw support",
-        500,
-        true
-      )
-    );
-  }
-
   loginAfterOauthSucceeded = async (
     req: express.Request,
     res: express.Response
@@ -65,9 +86,11 @@ class AuthController {
     const _integration = Origin.GOOGLE;
     if (_integration === Origin.GOOGLE) {
       const query: Params_AfterOAuth = req.query;
+      const { code, state } = query;
 
       const gAuthService = new googleOauthService();
-      await gAuthService.setTokens(query.code, null);
+      const tokens = await gAuthService.initTokens(code);
+
       const gUser: GoogleUser = await gAuthService.getUser();
 
       // TODO use query.state to start watching for that channel
@@ -75,19 +98,15 @@ class AuthController {
 
       const compassLoginData: CombinedLogin_Google = {
         user: gUser,
-        oauth: Object.assign(
-          {},
-          { state: query.state },
-          { tokens: gAuthService.getTokens() }
-        ),
+        oauth: Object.assign({}, { state }, { tokens }),
       };
 
       const compassAuthService = new CompassAuthService();
       const loginResp = await compassAuthService.loginToCompass(
         compassLoginData
       );
-      //TODO validate resp
 
+      //TODO validate resp
       res.promise(Promise.resolve(loginCompleteHtml));
     }
   };
