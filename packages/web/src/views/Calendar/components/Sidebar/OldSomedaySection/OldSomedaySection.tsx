@@ -1,7 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { usePopper } from "react-popper";
-import { Origin, Priorities, SOMEDAY_EVENTS_LIMIT } from "@core/core.constants";
+import {
+  Origin,
+  Priorities,
+  SOMEDAY_EVENTS_LIMIT,
+} from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { ArrowLeftIcon } from "@web/assets/svg";
 import { SectionType_Sidebar } from "@web/ducks/events/event.types";

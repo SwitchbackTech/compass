@@ -9,7 +9,7 @@ export const getBaseUrl = () => {
 };
 export enum LocalStorage {
   TIMEZONE = "timezone",
-  TOKEN = "token",
+  ACCESS_TOKEN = "accessToken",
 }
 
 export enum ZIndex {

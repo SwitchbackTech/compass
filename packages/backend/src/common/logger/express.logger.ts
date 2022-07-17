@@ -1,6 +1,6 @@
 import * as winston from "winston";
 import * as expressWinston from "express-winston";
-import { MB_50 } from "@core/core.constants";
+import { MB_50 } from "@core/constants/core.constants";
 
 import { isDev } from "../helpers/common.helpers";
 

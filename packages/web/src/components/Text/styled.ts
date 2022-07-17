@@ -1,7 +1,7 @@
 import styled from "styled-components";
-import { linearGradient } from "@web/common/styles/colors";
+import { linearGradient } from "@core/constants/colors";
 import { BackgroundProps, ColorProps } from "@web/common/styles/components";
-import { getColor } from "@web/common/utils/colors";
+import { getColor } from "@core/util/color.utils";
 
 export interface Props extends BackgroundProps, ColorProps {
   cursor?: string;

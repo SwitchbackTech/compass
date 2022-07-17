@@ -1,6 +1,10 @@
 import React, { FC, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Origin, Priorities, SOMEDAY_EVENTS_LIMIT } from "@core/core.constants";
+import {
+  Origin,
+  Priorities,
+  SOMEDAY_EVENTS_LIMIT,
+} from "@core/constants/core.constants";
 import { usePopper } from "react-popper";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
@@ -15,7 +19,7 @@ import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { ColorNames } from "@web/common/types/styles";
+import { ColorNames } from "@core/constants/colors";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
 import { DraggableSomedayEvent } from "../EventsList/SomedayEvent/DraggableSomedayEvent";

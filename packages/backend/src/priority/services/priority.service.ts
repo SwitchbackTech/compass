@@ -1,4 +1,6 @@
 //@ts-nocheck
+import { Priorities } from "@core/constants/core.constants";
+import { colorNameByPriority } from "@core/constants/colors";
 import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Collections } from "@backend/common/constants/collections";
@@ -81,6 +83,33 @@ class PriorityService {
       };
       return priority;
     }
+  }
+
+  async createDefaultPriorities(
+    userId: string
+  ): Promise<Schema_Priority[] | BaseError> {
+    return this.create(userId, [
+      {
+        color: colorNameByPriority.unassigned,
+        name: Priorities.UNASSIGNED,
+        user: userId,
+      },
+      {
+        color: colorNameByPriority.self,
+        name: Priorities.SELF,
+        user: userId,
+      },
+      {
+        color: colorNameByPriority.work,
+        name: Priorities.WORK,
+        user: userId,
+      },
+      {
+        color: colorNameByPriority.relationships,
+        name: Priorities.RELATIONS,
+        user: userId,
+      },
+    ]);
   }
 
   async updateById(

@@ -1,6 +1,6 @@
 import axios from "axios";
-import { Priorities } from "@core/core.constants";
-import { colorNameByPriority } from "@web/common/styles/colors";
+import { Priorities } from "@core/constants/core.constants";
+import { colorNameByPriority } from "@core/constants/colors";
 import { API_BASEURL } from "@web/common/constants/web.constants";
 
 import { headers } from "../utils";
@@ -22,7 +22,7 @@ const PriorityApi = {
       },
       {
         name: Priorities.RELATIONS,
-        color: colorNameByPriority.relations,
+        color: colorNameByPriority.relationships,
       },
     ];
     const _headers = headers(token);

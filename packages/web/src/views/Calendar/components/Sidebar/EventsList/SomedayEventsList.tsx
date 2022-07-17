@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Priorities } from "@core/core.constants";
+import { Priorities } from "@core/constants/core.constants";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { SomedayEventContainer } from "@web/views/Calendar/containers/SomedayContainer/SomedayEventContainer";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";

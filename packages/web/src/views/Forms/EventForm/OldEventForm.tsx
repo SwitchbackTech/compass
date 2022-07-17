@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import React, { useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
-import { Priorities } from "@core/core.constants";
+import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { DeleteIcon } from "@web/components/Icons";
 import { SelectOption } from "@web/common/types/components";

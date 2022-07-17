@@ -13,7 +13,7 @@ import {
   Params_Events,
   Schema_Event,
 } from "@core/types/event.types";
-import { Priorities } from "@core/core.constants";
+import { Priorities } from "@core/constants/core.constants";
 
 import { Schema_GridEvent } from "../types/web.event.types";
 

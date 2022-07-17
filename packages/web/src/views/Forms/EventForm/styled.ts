@@ -1,7 +1,7 @@
 import styled from "styled-components";
-import { Priorities } from "@core/core.constants";
-import { colorNameByPriority } from "@web/common/styles/colors";
-import { InvertedColorNames } from "@web/common/types/styles";
+import { Priorities } from "@core/constants/core.constants";
+import { colorNameByPriority } from "@core/constants/colors";
+import { InvertedColorNames } from "@core/constants/colors";
 import { EVENT_WIDTH_MINIMUM } from "@web/common/constants/grid.constants";
 import {
   ANIMATION_TIME_3_MS,
@@ -9,7 +9,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
-import { getColor, getInvertedColor } from "@web/common/utils/colors";
+import { getColor, getInvertedColor } from "@core/util/color.utils";
 import { Button } from "@web/components/Button";
 
 import { StyledFormProps } from "./types";

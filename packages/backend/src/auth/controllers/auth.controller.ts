@@ -1,25 +1,24 @@
 // @ts-nocheck
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
-import { google } from "googleapis";
-import { OAuth2Client } from "google-auth-library";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { Origin } from "@core/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import {
-  CombinedLogin_Google,
-  GoogleUser,
+  CombinedLogin_GoogleOLD,
+  User_Google,
   Params_AfterOAuth,
+  Result_Auth_Compass,
   Result_OauthUrl,
 } from "@core/types/auth.types";
 import { ReqBody, Res } from "@core/types/express.types";
-import { isDev } from "@backend/common/helpers/common.helpers";
-import { ENV } from "@backend/common/constants/env.constants";
+import priorityService from "@backend/priority/services/priority.service";
 
-import googleOauthService from "../services/google.auth.service";
+import googleOauthServiceOLD from "../services/google.auth.service"; //--
 import CompassAuthService from "../services/compass.auth.service";
 import { loginCompleteHtml } from "../services/login.complete";
+import GoogleAuthService from "../services/google.auth.util";
 
 const logger = Logger("app:auth.controller");
 
@@ -27,7 +26,7 @@ class AuthController {
   checkOauthStatus = async (req: express.Request, res: express.Response) => {
     const integration: string = req.query["integration"];
     if (integration === Origin.GOOGLE) {
-      const status = await new googleOauthService().checkOauthStatus(req);
+      const status = await new googleOauthServiceOLD().checkOauthStatus(req);
       res.promise(Promise.resolve(status));
     } else {
       res.promise(
@@ -41,42 +40,51 @@ class AuthController {
     }
   };
 
-  exchangeCodeForToken = async (
-    req: ReqBody<{ code: string }>,
-    res: Res
-  ): Promise<Result_Token> => {
-    const { code } = req.body;
-
-    // const oauthClient = new google.auth.OAuth2(
-    //   ENV.CLIENT_ID,
-    //   ENV.CLIENT_SECRET,
-    //   "postmessage"
-    // );
-
-    const oauthClient = new OAuth2Client(
-      ENV.CLIENT_ID,
-      ENV.CLIENT_SECRET,
-      "postmessage"
-    );
-
-    const { tokens } = await oauthClient.getToken(code);
-    console.log("TODO: persist refresh token");
-    // oauthClient.setCredentials(tokens)
-    // oauthClient.setCredentials()
-    // const token = oauthClient.getAccessToken();
-    // oauthClient.setC
-    res.promise(Promise.resolve({ token: tokens.access_token }));
-  };
-
   getOauthUrl = (
     req: express.Request,
     res: express.Response
   ): Promise<Result_OauthUrl> => {
     if (req.query["integration"] === Origin.GOOGLE) {
       const authState = uuidv4();
-      const authUrl = new googleOauthService().generateAuthUrl(authState);
+      const authUrl = new googleOauthServiceOLD().generateAuthUrl(authState);
       res.promise(Promise.resolve({ authUrl, authState }));
     }
+  };
+
+  loginOrSignup = async (
+    req: ReqBody<{ code: string }>,
+    res: Res
+  ): Promise<Result_Auth_Compass> => {
+    const { code } = req.body;
+
+    const googleAuthService = new GoogleAuthService();
+    const gUserInfo = await googleAuthService.getGoogleUserInfo(code);
+    //save token info
+    // save tokens (esp refresh_token) in `oauth` collection
+    // oauthClient.setCredentials(tokens)
+    // oauthClient.setCredentials()
+    // const token = oauthClient.getAccessToken();
+
+    const compassAuthService = new CompassAuthService();
+    const { accessToken, authType, userId } = await compassAuthService.initUser(
+      gUserInfo
+    );
+
+    if (authType === "login") {
+      //-- sign user in
+      // incremental sync
+    } else {
+      //setup account
+      logger.debug("Setting up user account for new user");
+      await priorityService.createDefaultPriorities(userId);
+      // create calendarList
+      // import events
+      // setup channel watch
+    }
+
+    const authResult = { accessToken, authType };
+
+    res.promise(Promise.resolve(authResult));
   };
 
   loginAfterOauthSucceeded = async (
@@ -88,21 +96,21 @@ class AuthController {
       const query: Params_AfterOAuth = req.query;
       const { code, state } = query;
 
-      const gAuthService = new googleOauthService();
+      const gAuthService = new googleOauthServiceOLD();
       const tokens = await gAuthService.initTokens(code);
 
-      const gUser: GoogleUser = await gAuthService.getUser();
+      const gUser: User_Google = await gAuthService.getUser();
 
       // TODO use query.state to start watching for that channel
       // via gcal.service
 
-      const compassLoginData: CombinedLogin_Google = {
+      const compassLoginData: CombinedLogin_GoogleOLD = {
         user: gUser,
         oauth: Object.assign({}, { state }, { tokens }),
       };
 
       const compassAuthService = new CompassAuthService();
-      const loginResp = await compassAuthService.loginToCompass(
+      const loginResp = await compassAuthService.loginToCompassOLD(
         compassLoginData
       );
 

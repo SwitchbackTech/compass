@@ -26,6 +26,7 @@ export const validateToken = (token: string): Result_Token_Validate => {
   }
 
   try {
+    console.log("TODO: Validate token");
     const payload = jwt.verify(token, ENV.ACCESS_TOKEN_SECRET) as JwtToken;
 
     return { payload, refreshNeeded: false };

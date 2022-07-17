@@ -4,8 +4,8 @@ import {
   HOURS_AM_SHORT_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
-import { ColorNames } from "@web/common/types/styles";
-import { getColor } from "@web/common/utils/colors";
+import { ColorNames } from "@core/constants/colors";
+import { getColor } from "@core/util/color.utils";
 
 import { roundToNext } from ".";
 import { GRID_TIME_STEP } from "../constants/grid.constants";

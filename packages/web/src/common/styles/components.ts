@@ -1,5 +1,5 @@
-import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
-import { getColor, getInvertedColor } from "@web/common/utils/colors";
+import { ColorNames, InvertedColorNames } from "@core/constants/colors";
+import { getColor, getInvertedColor } from "@core/util/color.utils";
 
 export interface BackgroundProps {
   background?: ColorNames;

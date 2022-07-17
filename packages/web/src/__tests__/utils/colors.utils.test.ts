@@ -1,5 +1,5 @@
-import { getNeighbourKey } from "@web/common/utils/colors";
-import { colors } from "@web/common/styles/colors";
+import { getNeighbourKey } from "@core/util/color.utils";
+import { colors } from "@core/constants/colors";
 
 describe("getNeighbourKey", () => {
   it("increments when index is positive", () => {

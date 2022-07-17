@@ -3,13 +3,13 @@ import { LocalStorage } from "@web/common/constants/web.constants";
 
 export const useToken = () => {
   const getToken = (): string => {
-    return localStorage.getItem(LocalStorage.TOKEN);
+    return localStorage.getItem(LocalStorage.ACCESS_TOKEN);
   };
 
   const [token, setToken] = useState(getToken());
 
   const saveToken = (token: string) => {
-    localStorage.setItem(LocalStorage.TOKEN, token);
+    localStorage.setItem(LocalStorage.ACCESS_TOKEN, token);
     setToken(token);
   };
 

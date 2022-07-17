@@ -1,4 +1,4 @@
-import { MB_50 } from "@core/core.constants";
+import { MB_50 } from "@core/constants/core.constants";
 import { TransformableInfo } from "logform";
 import * as winston from "winston";
 

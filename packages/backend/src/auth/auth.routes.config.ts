@@ -16,7 +16,7 @@ export class AuthRoutes extends CommonRoutesConfig {
     // this.app.get(`/api/auth/oauth-complete`, [
     // authController.loginAfterOauthSucceeded,
     // ]);
-    this.app.post(`/api/oauth/google`, [authController.exchangeCodeForToken]);
+    this.app.post(`/api/oauth/google`, [authController.loginOrSignup]);
 
     return this.app;
   }

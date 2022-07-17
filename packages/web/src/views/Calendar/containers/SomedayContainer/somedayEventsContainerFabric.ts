@@ -1,6 +1,6 @@
 import { connect } from "react-redux";
 import { Dispatch } from "redux";
-import { Priorities } from "@core/core.constants";
+import { Priorities } from "@core/constants/core.constants";
 import { selectEventIdsBySectionType } from "@web/ducks/events/event.selectors";
 import { RootState } from "@web/store";
 import {

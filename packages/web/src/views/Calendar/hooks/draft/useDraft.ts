@@ -3,7 +3,7 @@ import { Key } from "ts-keycode-enum";
 import { MouseEvent, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Schema_Event } from "@core/types/event.types";
-import { Origin, Priorities } from "@core/core.constants";
+import { Origin, Priorities } from "@core/constants/core.constants";
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import {
   selectDraft,

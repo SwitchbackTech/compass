@@ -1,6 +1,9 @@
-import { MapUser } from "@core/mappers/map.user";
+import { mapUserToCompass } from "@core/mappers/map.user";
 import { Result_Delete_User } from "@core/types/user.types";
-import { CombinedLogin_Google } from "@core/types/auth.types";
+import {
+  CombinedLogin_GoogleOLD,
+  UserInfo_Google,
+} from "@core/types/auth.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";
@@ -9,7 +12,18 @@ import { Collections } from "@backend/common/constants/collections";
 const logger = Logger("app:user.service");
 
 class UserService {
-  createUser = async (userData: CombinedLogin_Google) => {
+  createUser = async (gUserInfo: UserInfo_Google) => {
+    const compassUser = mapUserToCompass(gUserInfo);
+
+    const createUserRes = await mongoService.db
+      .collection(Collections.USER)
+      .insertOne(compassUser);
+
+    const userId = createUserRes.insertedId.toString();
+    return userId;
+  };
+
+  createUserOLD = async (userData: CombinedLogin_GoogleOLD) => {
     logger.debug("Creating new user");
     const compassUser = MapUser.toCompass(userData);
     //TODO validate
@@ -59,4 +73,5 @@ class UserService {
     }
   }
 }
+
 export default new UserService();

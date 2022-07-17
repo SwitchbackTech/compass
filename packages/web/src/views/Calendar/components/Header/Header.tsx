@@ -1,7 +1,7 @@
 import React, { FC } from "react";
 import { Dayjs } from "dayjs";
-import { ColorNames } from "@web/common/types/styles";
-import { getAlphaColor, getColor } from "@web/common/utils/colors";
+import { ColorNames } from "@core/constants/colors";
+import { getAlphaColor, getColor } from "@core/util/color.utils";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";

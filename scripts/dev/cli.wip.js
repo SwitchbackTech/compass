@@ -17,17 +17,18 @@ if (options.delete) {
     {
       type: "input",
       name: "confirmed",
-      message: `Are you sure you want to delete all of your user data? 
-      \n** Reminder: Make sure you're using the correct user token **\n[type: "yes"]`,
+      message: `Are you sure you want to delete all of your user data? [enter: "yes"]`,
     },
+    { type: "input", name: "token", message: "Enter the user's access token:" },
   ];
   inquirer
     .prompt(questions)
     .then((answers) => {
       /* delete */
+      console.log(answers);
       if (answers.confirmed === "yes") {
         console.log("okie dokie, here we go!");
-        // d.deleteAllUserData();
+        d.deleteUserData(answers.token);
       }
     })
     .catch((error) => {

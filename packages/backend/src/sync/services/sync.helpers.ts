@@ -9,7 +9,7 @@ import { daysFromNowTimestamp } from "@core/util/date.utils";
 import { Request_Sync_Gcal } from "@core/types/sync.types";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { Schema_Event } from "@core/types/event.types";
-import { Origin } from "@core/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
 import { isDev } from "@backend/common/helpers/common.helpers";

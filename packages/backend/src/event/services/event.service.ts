@@ -2,7 +2,7 @@
 import { InsertManyResult } from "mongodb";
 import { Result_Import_Gcal } from "@core/types/sync.types";
 import { gSchema$Event } from "@core/types/gcal";
-import { SOMEDAY_EVENTS_LIMIT } from "@core/core.constants";
+import { SOMEDAY_EVENTS_LIMIT } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -19,7 +19,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
 import { getGcal } from "@backend/auth/services/google.auth.service";
-import { Origin } from "@core/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { gCalendar, gParamsEventsList } from "@core/types/gcal";
 
 import { getReadAllFilter } from "./event.service.helpers";

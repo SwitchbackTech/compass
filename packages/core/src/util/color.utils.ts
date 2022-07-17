@@ -1,6 +1,10 @@
-import { colors, invertedColors } from "@web/common/styles/colors";
-import { Priorities } from "@core/core.constants";
-import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
+import { Priorities } from "@core/constants/core.constants";
+import {
+  colors,
+  ColorNames,
+  invertedColors,
+  InvertedColorNames,
+} from "@core/constants/colors";
 
 export const getAlphaColor = (colorName: ColorNames, opacity: number) => {
   const _opacity = Math.round(Math.min(Math.max(opacity || 1, 0), 1) * 255);

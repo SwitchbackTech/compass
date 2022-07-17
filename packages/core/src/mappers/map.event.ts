@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { BaseError } from "@core/errors/errors.base";
-import { Origin, Priorities } from "@core/core.constants";
+import { Origin, Priorities } from "@core/constants/core.constants";
 import { isAllDay, notCancelled } from "@core/util/event.util";
 import { Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";

@@ -13,7 +13,9 @@ export const headers = (token?: string) => {
   } else {
     return {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem(LocalStorage.TOKEN)}`,
+        Authorization: `Bearer ${localStorage.getItem(
+          LocalStorage.ACCESS_TOKEN
+        )}`,
       },
     };
   }

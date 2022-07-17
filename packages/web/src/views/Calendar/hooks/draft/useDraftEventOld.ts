@@ -1,6 +1,6 @@
 import { KeyboardEvent, MouseEvent, useState } from "react";
 import dayjs from "dayjs";
-import { Priorities } from "@core/core.constants";
+import { Priorities } from "@core/constants/core.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   YEAR_MONTH_DAY_FORMAT,

@@ -2,7 +2,7 @@ import axios from "axios";
 import {
   Result_OauthStatus,
   Result_OauthUrl,
-  Result_Token,
+  Result_Auth_Compass,
 } from "@core/types/auth.types";
 import { API_BASEURL, GOOGLE } from "@web/common/constants/web.constants";
 
@@ -13,10 +13,10 @@ const AuthApi = {
     return response.data as Result_OauthStatus;
   },
 
-  async exchangeCodeForToken(code: string) {
+  async loginOrSignup(code: string) {
     const url = `${API_BASEURL}/oauth/google`;
     const response = await axios.post(url, { code });
-    return response.data as Result_Token;
+    return response.data as Result_Auth_Compass;
   },
 
   async getOauthData(integration: string) {

@@ -35,6 +35,7 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
 
   // replace with service one, so don't have to keep re-doing
   // client stuff
+  // does this set the 'offline' version (required for auto-refreshing)
   const oauthClient = new OAuth2Client(
     ENV.CLIENT_ID,
     ENV.CLIENT_SECRET,
@@ -44,13 +45,9 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
   oauthClient.on("tokens", (tokens) => {
     // ensures we use, persist the more recent refresh_token
     if (tokens.refresh_token) {
-      console.log(
-        "***REFRESH TOKEN:",
-        tokens.refresh_token,
-        "TODO: save in DB"
-      );
+      console.log("** got REFRESH TOKEN! TODO: save in DB");
     }
-    console.log("*** ACCESS TOKEN:", tokens.access_token);
+    console.log("** got access token");
   });
 
   // make sure the token never expires by passing the persisted refresh token
@@ -77,7 +74,7 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
   // });
 };
 
-class GoogleOauthService {
+class GoogleOauthServiceOLD {
   accessToken: string | undefined;
   oauthClient: OAuth2Client;
   tokens: Credentials;
@@ -110,7 +107,7 @@ class GoogleOauthService {
 
     //!!-- need to save refresh token, cuz only here once
     // const accessToken = createToken(oauth.user); //--
-    const accessToken = await this.initAccessToken(code);
+    const accessToken = await this.initTokens(code);
 
     return { isOauthComplete: true, token: oauth.tokens.access_token };
   }
@@ -146,7 +143,7 @@ class GoogleOauthService {
     }
   }
 
-  async initAccessToken(code: string) {
+  async initTokens(code: string) {
     const { tokens } = await this.oauthClient.getToken(code); //++
     // const { tokens } = await this.oauthClient.getToken(code); //++
     this.tokens = tokens;
@@ -181,4 +178,4 @@ class GoogleOauthService {
   }
 }
 
-export default GoogleOauthService;
+export default GoogleOauthServiceOLD;

@@ -10,7 +10,7 @@ import { CalendarView } from "@web/views/Calendar";
 
 describe("Routing", () => {
   it("goes to login page when local storage token missing", () => {
-    localStorage.removeItem(LocalStorage.TOKEN);
+    localStorage.removeItem(LocalStorage.ACCESS_TOKEN);
 
     render(CompassRoot);
     expect(
@@ -18,7 +18,7 @@ describe("Routing", () => {
     ).toBeInTheDocument();
 
     // re-add for other tests
-    localStorage.setItem(LocalStorage.TOKEN, "secretTokenValue");
+    localStorage.setItem(LocalStorage.ACCESS_TOKEN, "secretTokenValue");
   });
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import {
   hasGrantedAllScopesGoogle,
@@ -11,39 +11,69 @@ import { PriorityApi } from "@web/common/apis/priority.api";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { EventApi } from "@web/ducks/events/event.api";
 import { CalendarListApi } from "@web/common/apis/calendarlist.api";
-import { GOOGLE, LocalStorage } from "@web/common/constants/web.constants";
+import { LocalStorage } from "@web/common/constants/web.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { ColorNames } from "@web/common/types/styles";
+import { ColorNames } from "@core/constants/colors";
 import { Text } from "@web/components/Text";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import googleSignInBtn from "@web/assets/png/googleSignInBtn.png";
 
 import { StyledLogin } from "./styled";
 
+const ACCESS_TOKEN_SUCCESS = "accessTokenSuccess";
+// const ACCESS_TOKEN_ERROR = "accessTokenError";
+
 export const LoginView = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  // const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  // const
+  const antiCsrfToken = useRef(self.crypto.randomUUID()).current;
+
+  useEffect(() => {
+    const successListener = () => {
+      setIsAuthenticated(true);
+    };
+    // const errorListener = () => {
+    // setIsAuthenticating(false);
+    // };
+
+    window.addEventListener(ACCESS_TOKEN_SUCCESS, successListener);
+    // window.addEventListener(ACCESS_TOKEN_ERROR, errorListener);
+
+    return () => {
+      console.log("removing listeners...");
+      window.removeEventListener(ACCESS_TOKEN_SUCCESS, successListener);
+      // window.removeEventListener(ACCESS_TOKEN_ERROR, errorListener);
+    };
+  }, []);
 
   const login = useGoogleLogin({
     flow: "auth-code",
-    // onSuccess: ({ code }) => {
-    //   AuthApi.exchangeCodeForToken(code)
-    //     .then(({ token }) => {
-    //       console.log("token:", token);
-    //     })
-    //     .catch((e) => console.log(e))
-    //     .finally(() => setIsAuthenticated(false));
-    // },
-
+    state: antiCsrfToken,
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    onSuccess: async ({ code }) => {
-      const { token } = await AuthApi.exchangeCodeForToken(code);
-      console.log(token);
+    onSuccess: async ({ code, state }) => {
+      const isFromHacker = state !== antiCsrfToken;
+
+      if (isFromHacker) {
+        alert("Nice try, hacker");
+        // window.dispatchEvent(new Event(ACCESS_TOKEN_ERROR));
+        return;
+      }
+
+      const { error, accessToken } = await AuthApi.loginOrSignup(code);
+
+      if (error) {
+        alert("Something went wrong on Compass' backend during login/signup");
+        console.log(error);
+        return;
+      }
+
+      localStorage.setItem(LocalStorage.ACCESS_TOKEN, accessToken);
+      window.dispatchEvent(new Event(ACCESS_TOKEN_SUCCESS));
     },
     onError: (error) => {
-      console.log("err!", error);
+      alert("Something went wrong during Google Oauth");
+      console.log(error);
     },
   });
 
@@ -75,13 +105,14 @@ export const LoginView = () => {
   return (
     <>
       {isAuthenticated ? (
-        <Navigate to={ROOT_ROUTES.ROOT} />
+        // <Navigate to={ROOT_ROUTES.ROOT} />
+        <h1>TODO: Navigate to caledar ...</h1>
       ) : (
         <StyledLogin
           alignItems={AlignItems.CENTER}
           direction={FlexDirections.COLUMN}
         >
-          {isAuthenticating && <AbsoluteOverflowLoader />}
+          {/* {isAuthenticating && <AbsoluteOverflowLoader />} */}
           <Text colorName={ColorNames.WHITE_2} size={30}>
             Connect your Google Calendar
           </Text>
@@ -93,9 +124,8 @@ export const LoginView = () => {
 
           <div
             onClick={() => {
-              setIsAuthenticating(true);
+              // setIsAuthenticating(true);
               login();
-              setIsAuthenticated(false);
             }}
           >
             <img src={googleSignInBtn} alt="Sign In With Google" />
@@ -138,7 +168,6 @@ export const LoginView = () => {
           await createPriorities(status.token);
           await createCalendarList();
           await importEvents();
-          /*import { StyledSidebarOverflow } from '../Calendar/components/Sidebar/styled';
 
           await setTimezone()...
             const devTz = "America/Los_Angeles";
@@ -233,5 +262,19 @@ import { Button, FeedbackButtonContainer } from "@web/components/Button";
       //   setIsAuthenticating(false);
       //   return;
       // }
+
+*/
+
+/* the other promise way 
+    // onSuccess: ({ code }) => {
+    //   AuthApi.exchangeCodeForToken(code)
+    //     .then(({ token }) => {
+    //       console.log("token:", token);
+    //     })
+    //     .catch((e) => console.log(e))
+    //     .finally(() => setIsAuthenticated(false));
+    // },
+
+
 
 */

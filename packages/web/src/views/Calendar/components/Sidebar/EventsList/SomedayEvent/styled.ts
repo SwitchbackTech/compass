@@ -1,12 +1,12 @@
 import styled from "styled-components";
-import { Priorities } from "@core/core.constants";
+import { Priorities } from "@core/constants/core.constants";
 import {
   getColor,
   getInvertedColor,
   hoverColorsByPriority,
-} from "@web/common/utils/colors";
-import { InvertedColorNames } from "@web/common/types/styles";
-import { colorNameByPriority } from "@web/common/styles/colors";
+} from "@core/util/color.utils";
+import { InvertedColorNames } from "@core/constants/colors";
+import { colorNameByPriority } from "@core/constants/colors";
 
 export interface Props {
   priority: Priorities;
