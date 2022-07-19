@@ -42,16 +42,18 @@ const sendResponse = (res: express.Response, data: Record<string, unknown>) => {
     res.status(500).send("uh oh, no data provided");
   }
   //@ts-ignore
-  const code: number = data.statusCode || 200;
-  res.status(code).send(data);
+  res.status(data?.statusCode || 200).send(data);
 };
 
+/*
+ Turns everything into a promise, so you can have one place to 
+ handle both sync and async errors, which
+ reduces how much error handling you have to do for controllers/services
+ */
+
+type P = Promise<unknown> | (() => unknown);
+
 export function promiseMiddleware() {
-  /* 
-- turns everything into a promise, so you can have one place to 
-handle both sync and async errors
-- reduces how much error handling you have to do for controllers/services
-*/
   return (
     req: express.Request,
     // res: express.Response,
@@ -59,7 +61,7 @@ handle both sync and async errors
     next: express.NextFunction
   ) => {
     // res.promise = (p) => {
-    res.promise = (p: Promise<unknown> | (() => any)) => {
+    res.promise = (p: P) => {
       //function or promise
       let promiseToResolve: Promise<unknown> | (() => any);
 

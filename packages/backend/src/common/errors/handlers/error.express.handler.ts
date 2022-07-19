@@ -17,7 +17,20 @@ const invalidPathHandler = (
 };
 */
 
-export const handleExpressError = (res: express.Response, err: Error) => {
+interface Info_Error {
+  name: string;
+  message: string;
+  stack?: string;
+}
+
+interface CompassError extends Error {
+  status?: number;
+}
+
+export const handleExpressError = (
+  res: express.Response,
+  err: CompassError
+) => {
   errorHandler.log(err);
 
   res.header("Content-Type", "application/json");
@@ -25,12 +38,16 @@ export const handleExpressError = (res: express.Response, err: Error) => {
     res.status(err.statusCode).send(err);
   } else {
     //TODO convert this object into one that has same keys as BaseError (?)
-    const errInfo = { name: err.name, message: err.message };
+    const errInfo: Info_Error = {
+      name: err.name,
+      message: err.message,
+      stack: undefined,
+    };
+
     if (isDev()) {
-      //@ts-ignore
       errInfo.stack = err.stack;
     }
-    //@ts-ignore
+
     res.status(err.status || 500).send(errInfo);
   }
 

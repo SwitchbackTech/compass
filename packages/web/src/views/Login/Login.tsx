@@ -5,9 +5,8 @@ import {
   hasGrantedAnyScopeGoogle,
   useGoogleLogin,
 } from "@react-oauth/google";
-import { MapCalendarList } from "@core/mappers/map.calendarlist";
+import { BaseError } from "@core/errors/errors.base";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
-import { PriorityApi } from "@web/common/apis/priority.api";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { EventApi } from "@web/ducks/events/event.api";
 import { CalendarListApi } from "@web/common/apis/calendarlist.api";
@@ -47,11 +46,24 @@ export const LoginView = () => {
     };
   }, []);
 
+  const SCOPES_REQUIRED = [
+    "profile",
+    "email",
+    "https://www.googleapis.com/auth/calendar",
+  ];
+
+  const isMissingPermissions = (scope: string) => {
+    const scopesGranted = scope.split(" ");
+
+    return SCOPES_REQUIRED.some((s) => !scopesGranted.includes(s));
+  };
+
   const login = useGoogleLogin({
     flow: "auth-code",
+    scope: SCOPES_REQUIRED.join(" "),
     state: antiCsrfToken,
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    onSuccess: async ({ code, state }) => {
+    onSuccess: async ({ code, scope, state }) => {
       const isFromHacker = state !== antiCsrfToken;
 
       if (isFromHacker) {
@@ -59,48 +71,31 @@ export const LoginView = () => {
         // window.dispatchEvent(new Event(ACCESS_TOKEN_ERROR));
         return;
       }
-
-      const { error, accessToken } = await AuthApi.loginOrSignup(code);
-
-      if (error) {
-        alert("Something went wrong on Compass' backend during login/signup");
-        console.log(error);
+      if (isMissingPermissions(scope)) {
+        alert("Missing permissions, please try again");
         return;
       }
+
+      const authResult = await AuthApi.loginOrSignup(code);
+      if (authResult instanceof Error) {
+        alert(
+          "An error occured on Compass' backend while logging you in. Please let Ty know"
+        );
+        console.log(authResult);
+        return;
+      }
+
+      console.log("authRes:", authResult);
+      const { accessToken } = authResult;
 
       localStorage.setItem(LocalStorage.ACCESS_TOKEN, accessToken);
       window.dispatchEvent(new Event(ACCESS_TOKEN_SUCCESS));
     },
     onError: (error) => {
-      alert("Something went wrong during Google Oauth");
+      alert(`Login failed because: ${error.error}`);
       console.log(error);
     },
   });
-
-  // User initialization stuff
-  // TODO - add this to an onboarding flow
-  const createCalendarList = async () => {
-    console.log("creating calendarlist ...");
-    const gcalList = await CalendarListApi.list();
-    const ccalList = MapCalendarList.toCompass(gcalList);
-    const res = await CalendarListApi.create(ccalList);
-    // console.log(res);
-  };
-
-  const createPriorities = async (token: string) => {
-    console.log("creating priorities ...");
-    const res = await PriorityApi.createPriorities(token);
-
-    //TODO save to redux for future reference
-    // move to a priority ducks dir
-    // console.log(res);
-  };
-
-  const importEvents = async () => {
-    console.log("importing events ...");
-    const res = await EventApi.import();
-    console.log(res); //++
-  };
 
   return (
     <>
@@ -186,6 +181,7 @@ export const LoginView = () => {
 
 /* feedback btn
 import { Button, FeedbackButtonContainer } from "@web/components/Button";
+import { hasExpectedHeaders } from '../../../../backend/src/sync/services/sync.helpers';
               <FeedbackButtonContainer>
               <Button
                 color={ColorNames.DARK_5}
@@ -244,24 +240,6 @@ import { Button, FeedbackButtonContainer } from "@web/components/Button";
 */
 
 /* scopes 
-
-      //need to get scopes from backend, not frontend
-
-      // "profile", //add others
-      // "email"
-      // const hasAccess = hasGrantedAllScopesGoogle(
-      //   response,
-      //   "profile",
-      //   "email",
-      //   "https://www.googleapis.com/auth/calendar"
-      // );
-      // if (!hasAccess) {
-      //   alert(
-      //     "Oops, we need more Google permissions in order to work. Please try again"
-      //   );
-      //   setIsAuthenticating(false);
-      //   return;
-      // }
 
 */
 

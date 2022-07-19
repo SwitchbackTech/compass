@@ -1,29 +1,45 @@
 import { google } from "googleapis";
-import express from "express";
-import { Credentials, OAuth2Client } from "google-auth-library";
-import { Result_OauthStatus, Schema_Oauth } from "@core/types/auth.types";
-import { BaseError } from "@core/errors/errors.base";
-import { gCalendar } from "@core/types/gcal";
+import { Credentials, OAuth2Client, TokenPayload } from "google-auth-library";
+import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
-import mongoService from "@backend/common/services/mongo.service";
-import { Collections } from "@backend/common/constants/collections";
-import { isDev } from "@backend/common/helpers/common.helpers";
+import { gCalendar } from "@core/types/gcal";
+import { BaseError } from "@core/errors/errors.base";
+import { UserInfo_Google } from "@core/types/auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
-import { createToken } from "@backend/common/helpers/jwt.utils";
+import { Collections } from "@backend/common/constants/collections";
+import mongoService from "@backend/common/services/mongo.service";
+import { Schema_User } from "@core/types/user.types";
 
 const logger = Logger("app:google.auth.service");
 
-/********
-Helpers 
-********/
-export const getGcal = async (userId: string): Promise<gCalendar> => {
-  //@ts-ignore
-  const oauth: Schema_Oauth = await mongoService.db
-    .collection(Collections.OAUTH)
-    .findOne({ user: userId });
+export const getGcalWithExistingRefreshToken = (
+  tokens: Credentials
+): gCalendar => {
+  const oauthClient = new OAuth2Client(
+    ENV.CLIENT_ID,
+    ENV.CLIENT_SECRET,
+    "postmessage"
+  );
 
-  if (oauth === null) {
-    // throwing error forces middleware error handler to address
+  oauthClient.setCredentials({
+    refresh_token: tokens.refresh_token,
+  });
+
+  const calendar = google.calendar({
+    version: "v3",
+    auth: oauthClient,
+  });
+
+  return calendar;
+};
+
+export const getGcal = async (userId: string): Promise<gCalendar> => {
+  const user = (await mongoService.db.collection(Collections.USER).findOne({
+    _id: mongoService.objectId(userId),
+  })) as Schema_User | null;
+
+  if (!user) {
+    // throwing error here forces middleware error handler to address
     // before other bad stuff can happen
     throw new BaseError(
       "Gcal Auth failed",
@@ -33,9 +49,6 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
     );
   }
 
-  // replace with service one, so don't have to keep re-doing
-  // client stuff
-  // does this set the 'offline' version (required for auto-refreshing)
   const oauthClient = new OAuth2Client(
     ENV.CLIENT_ID,
     ENV.CLIENT_SECRET,
@@ -53,7 +66,7 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
   // make sure the token never expires by passing the persisted refresh token
   // so the oauthClient can swap them out if needed
   oauthClient.setCredentials({
-    refresh_token: oauth.tokens.refresh_token,
+    refresh_token: user.tokens.refresh_token,
   });
 
   const calendar = google.calendar({
@@ -62,120 +75,62 @@ export const getGcal = async (userId: string): Promise<gCalendar> => {
   });
 
   return calendar;
-
-  /* old way */
-  // const googleClient = new GoogleOauthService();
-  // //@ts-ignore
-  // await googleClient.oldSetTokens(null, oauth.tokens);
-
-  // const calendar = google.calendar({
-  //   version: "v3",
-  //   auth: googleClient.oauthClient,
-  // });
 };
 
-class GoogleOauthServiceOLD {
+class GoogleAuthService {
   accessToken: string | undefined;
   oauthClient: OAuth2Client;
-  tokens: Credentials;
+  // tokens: Credentials;
 
   constructor() {
-    const redirectUri = isDev()
-      ? `http://localhost:${ENV.PORT}/api/auth/oauth-complete`
-      : `${ENV.BASEURL_PROD}/api/auth/oauth-complete`;
-
-    this.oauthClient = new google.auth.OAuth2(
+    this.oauthClient = new OAuth2Client(
       ENV.CLIENT_ID,
       ENV.CLIENT_SECRET,
-      redirectUri
+      "postmessage"
     );
-    this.tokens = {};
+    // .on("tokens", (tokens) => {
+    //   if (tokens.refresh_token) {
+    //     logger.debug("refresh token! TODO, save in DB");
+    //   }
+    //   logger.debug("got an access token, yo");
+    // });
+    // this.tokens = {};
   }
 
-  async checkOauthStatus(req: express.Request): Promise<Result_OauthStatus> {
-    const state = req.query["state"];
-
-    //@ts-ignore
-    const oauth: Schema_Oauth = await mongoService.db
-      .collection(Collections.OAUTH)
-      .findOne({ state: state });
-
-    const foundOauthUser = oauth && oauth.user ? true : false;
-    if (!foundOauthUser) {
-      return { isOauthComplete: false };
-    }
-
-    //!!-- need to save refresh token, cuz only here once
-    // const accessToken = createToken(oauth.user); //--
-    const accessToken = await this.initTokens(code);
-
-    return { isOauthComplete: true, token: oauth.tokens.access_token };
-  }
-
-  generateAuthUrl(state: string) {
-    const authUrl = this.oauthClient.generateAuthUrl({
-      access_type: "offline",
-      prompt: "consent",
-      scope: ENV.SCOPES,
-      state: state,
-    });
-    return authUrl;
-  }
-
-  async getUser() {
-    const oauth2 = google.oauth2({
+  getGcalClient() {
+    const gcal = google.calendar({
+      version: "v3",
       auth: this.oauthClient,
-      version: "v2",
     });
+    return gcal;
+  }
 
-    const response = await oauth2.userinfo.get();
+  async getGoogleUserInfo(): Promise<UserInfo_Google | BaseError> {
+    const idToken = this.oauthClient.credentials.id_token;
 
-    if (response.status === 200) {
-      return response.data;
-    } else {
-      logger.error("Failed to get google oauth user");
+    if (!idToken) {
       return new BaseError(
-        "Failed to get Google OAuth user",
-        response.toString(),
-        500,
-        true
+        "No id_token",
+        "oauth client is missing id_token, so couldn't verify user",
+        Status.BAD_REQUEST,
+        false
       );
     }
+
+    const gUser = await this._decodeUserInfo(idToken);
+
+    return { gUser, tokens: this.oauthClient.credentials };
   }
 
-  async initTokens(code: string) {
-    const { tokens } = await this.oauthClient.getToken(code); //++
-    // const { tokens } = await this.oauthClient.getToken(code); //++
-    this.tokens = tokens;
-    this.oauthClient.setCredentials(this.tokens);
-    logger.debug("Set credentials as:", this.tokens);
-
-    const accessToken = this.oauthClient.getAccessToken();
-    return accessToken;
-  }
-
-  async initTokens(code: string) {
-    const { tokens } = await this.oauthClient.getToken(code);
-
-    this.tokens = tokens;
-    this.oauthClient.setCredentials(this.tokens);
-
-    console.log("inited tokens");
-    return this.tokens;
-  }
-
-  //--++
-  async oldSetTokens(code: string, tokens: Credentials | null) {
-    if (tokens === null) {
-      const { tokens } = await this.oauthClient.getToken(code);
-      this.tokens = tokens;
-    } else {
-      this.tokens = tokens;
-    }
-
-    this.oauthClient.setCredentials(this.tokens);
-    logger.debug("Set credentials");
+  async _decodeUserInfo(idToken: string) {
+    const ticket = await this.oauthClient.verifyIdToken({
+      idToken,
+      // audience: ENV.CLIENT_ID, //--
+      audience: this.oauthClient._clientId,
+    });
+    const payload = ticket.getPayload() as TokenPayload;
+    return payload;
   }
 }
 
-export default GoogleOauthServiceOLD;
+export default GoogleAuthService;

@@ -5,17 +5,17 @@ export interface Schema_User extends Schema_User_Base {
   _id: ObjectId;
 }
 export interface Schema_User_Base {
-  googleId: string;
   email: string;
   firstName: string;
   lastName: string;
   name: string;
   locale: string;
-  picture: string;
-  tokens: Credentials;
-  // tokens: {
-  // refresh_token: string;
-  // }
+  google: {
+    googleId: string;
+    picture: string;
+    refreshToken: string;
+    // tokens: Credentials;
+  };
 }
 
 //--

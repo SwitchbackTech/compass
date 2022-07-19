@@ -1,7 +1,12 @@
 import { BaseError } from "@core/errors/errors.base";
 import { gSchema$Channel } from "@core/types/gcal";
-import { BulkWriteResult, AnyBulkWriteOperation } from "mongodb";
-import type { WithId, Document } from "mongodb";
+import {
+  AnyBulkWriteOperation,
+  BulkWriteResult,
+  Document,
+  ModifyResult,
+  WithId,
+} from "mongodb";
 
 export interface Body_Watch_Gcal_Stop {
   channelId: string;
@@ -21,7 +26,8 @@ export interface Params_Sync_Gcal extends Request_Sync_Gcal {
 
 export interface Result_Import_Gcal {
   total: number;
-  nextSyncToken: string | null | undefined;
+  // nextSyncToken: string | null | undefined;
+  nextSyncToken: string;
   errors: unknown[];
 }
 
@@ -38,6 +44,7 @@ export interface Result_Watch_Delete {
 export interface Result_Watch_Start {
   channel: gSchema$Channel;
   saveForDev?: string;
+  syncUpdate: ModifyResult;
 }
 
 export interface Result_Watch_Stop {

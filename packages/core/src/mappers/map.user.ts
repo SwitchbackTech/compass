@@ -5,17 +5,17 @@ import { Status } from "@core/errors/status.codes";
 
 // Map  user object given by google signin to our schema //
 export const mapUserToCompass = (
-  gUserInfo: UserInfo_Google
+  gUser: UserInfo_Google["gUser"],
+  refreshToken: string
 ): Schema_User_Base => {
-  const { gUser } = gUserInfo;
-
   if (
     !gUser.email ||
     !gUser.name ||
     !gUser.given_name ||
     !gUser.family_name ||
     !gUser.picture ||
-    !gUser.locale
+    !gUser.locale ||
+    !refreshToken
   ) {
     throw new BaseError(
       "Missing UserInfo",
@@ -31,8 +31,10 @@ export const mapUserToCompass = (
     firstName: gUser.given_name,
     lastName: gUser.family_name,
     locale: gUser.locale,
-    googleId: gUser.sub,
-    picture: gUser.picture || "not provided",
-    tokens: gUserInfo.tokens,
+    google: {
+      googleId: gUser.sub,
+      picture: gUser.picture || "not provided",
+      refreshToken,
+    },
   };
 };

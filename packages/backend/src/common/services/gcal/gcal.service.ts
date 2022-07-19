@@ -1,11 +1,14 @@
 //@ts-nocheck
 import { gSchema$Event, gParamsEventsList, gCalendar } from "@core/types/gcal";
+import { GaxiosError } from "gaxios";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 
 const logger = Logger("app:compass.gcal.service");
+
+export const FAILED_GCALLIST = "";
 
 class GCalService {
   async createEvent(gcal: gCalendar, event: gSchema$Event) {
@@ -56,9 +59,15 @@ class GCalService {
   async listCalendars(gcal: gCalendar) {
     try {
       const response = await gcal.calendarList.list();
+      // const response = await gcal.settings.list();
       return response.data;
-    } catch (e) {
-      return new BaseError("GCal Calendar List Failed", e, Status.UNSURE, true);
+    } catch (e: GaxiosError) {
+      return new BaseError(
+        "Getting GCalendarLists Failed",
+        e,
+        e?.code || Status.UNSURE,
+        true
+      );
     }
   }
 

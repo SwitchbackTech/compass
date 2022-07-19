@@ -18,7 +18,7 @@ import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
-import { getGcal } from "@backend/auth/services/google.auth.service";
+import { getGcalOLD } from "@backend/auth/services/OLDgoogle.auth.service";
 import { Origin } from "@core/constants/core.constants";
 import { gCalendar, gParamsEventsList } from "@core/types/gcal";
 
@@ -154,7 +154,7 @@ class EventService {
         .deleteOne(filter);
 
       if (deleteFromGcal) {
-        const gcal = await getGcal(userId);
+        const gcal = await getGcalOLD(userId);
         // no await because gcal doesnt return much of a response,
         // so there's no use in waiting for it to finish
         gcalService.deleteEvent(gcal, gEventId);
@@ -339,7 +339,7 @@ class EventService {
           event["gEventId"] = gEvent.id;
         } else {
           const gEvent = MapEvent.toGcal(event);
-          const gcal = await getGcal(userId);
+          const gcal = await getGcalOLD(userId);
           await gcalService.updateEvent(gcal, event.gEventId, gEvent);
         }
       }
@@ -395,7 +395,7 @@ class EventService {
       },
     };
 
-    const gcal = await getGcal(userId);
+    const gcal = await getGcalOLD(userId);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const gEvent = await gcalService.createEvent(gcal, gEventWithOrigin);
 

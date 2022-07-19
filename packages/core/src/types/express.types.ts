@@ -13,12 +13,9 @@ export interface Res extends Express.Response {
 }
 
 export interface ResP<T> extends Express.Response {
-    promise: T; 
+  promise: T;
 }
 
-
 export interface Res_Promise extends Express.Response {
-    promise: (
-      p: Promise<unknown> | (() => unknown)
-    ) => Express.Response
+  promise: (p: Promise<unknown> | (() => unknown)) => Express.Response;
 }

@@ -12,21 +12,12 @@ import { Collections } from "@backend/common/constants/collections";
 const logger = Logger("app:user.service");
 
 class UserService {
-  createUser = async (gUserInfo: UserInfo_Google) => {
-    const compassUser = mapUserToCompass(gUserInfo);
+  createUser = async (
+    gUser: UserInfo_Google["gUser"],
+    refreshToken: string
+  ) => {
+    const compassUser = mapUserToCompass(gUser, refreshToken);
 
-    const createUserRes = await mongoService.db
-      .collection(Collections.USER)
-      .insertOne(compassUser);
-
-    const userId = createUserRes.insertedId.toString();
-    return userId;
-  };
-
-  createUserOLD = async (userData: CombinedLogin_GoogleOLD) => {
-    logger.debug("Creating new user");
-    const compassUser = MapUser.toCompass(userData);
-    //TODO validate
     const createUserRes = await mongoService.db
       .collection(Collections.USER)
       .insertOne(compassUser);
@@ -36,6 +27,10 @@ class UserService {
   };
 
   // TODO implement script to call this for easy DB cleaning
+  // only do this if the user matches the provided
+  // access Token (verify that works)
+  // why: prevent anyone from calling this
+  // only run if isDev() [for now]
   async deleteUserData(
     userId: string
   ): Promise<Result_Delete_User | BaseError> {

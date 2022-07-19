@@ -6,7 +6,7 @@ import {
 } from "@core/types/sync.types";
 import { ReqBody, Res } from "@core/types/express.types";
 import { Logger } from "@core/logger/winston.logger";
-import { getGcal } from "@backend/auth/services/google.auth.service";
+import { getGcalOLD } from "@backend/auth/services/OLDgoogle.auth.service";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 
@@ -45,8 +45,8 @@ class GcalSyncController {
       const calendarId = req.body.calendarId;
       const channelId = req.body.channelId;
 
-      const gcal = await getGcal(userId);
-      const watchResult = await syncService.startWatchingChannel(
+      const gcal = await getGcalOLD(userId);
+      const watchResult = await syncService.startWatchingCalendar(
         gcal,
         userId,
         calendarId,

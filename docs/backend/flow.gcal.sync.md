@@ -13,7 +13,7 @@ Here's the breakdown for reference:
   - you can find the others using Gcal's `calendarList.list` API
 - `resourceId`: created by GCal to refer to a user's calendar (eg their primary calendar)
   - `resourceId` looks like: `_erSB7UuK4_7Uy3CibSlcMLPwMg`
-- `channelId`: a unique id created by Compass to track the watch channel
+- `channelId`: a unique id created by Compass to track changes for a calendar (`calendarId`)
 
 ## Part 0: Auth
 

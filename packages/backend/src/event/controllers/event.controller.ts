@@ -9,7 +9,7 @@ import { Schema_Event, Params_DeleteMany } from "@core/types/event.types";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
-import { getGcal } from "@backend/auth/services/google.auth.service";
+import { getGcalOLD } from "@backend/auth/services/OLDgoogle.auth.service";
 import syncService from "@backend/sync/services/sync.service";
 import eventService from "@backend/event/services/event.service";
 import { Result_Watch_Stop_All } from "@core/types/sync.types";
@@ -90,7 +90,7 @@ class EventController {
         }
       }
 
-      const gcal = await getGcal(userId);
+      const gcal = await getGcalOLD(userId);
 
       const importEventsResult = await eventService.import(userId, gcal);
 
@@ -99,22 +99,9 @@ class EventController {
         importEventsResult.nextSyncToken
       );
 
-      // TODO remove 'primary-' after supporting multiple channels/user
-      const channelId = `primary-${uuidv4()}`;
+      const { watchResult, syncUpdate } =
+        await syncService.startWatchingCalendar(gcal, userId, GCAL_PRIMARY);
 
-      const watchResult = await syncService.startWatchingChannel(
-        gcal,
-        userId,
-        GCAL_PRIMARY,
-        channelId
-      );
-
-      const syncUpdate = await syncService.updateSyncData(
-        userId,
-        channelId,
-        watchResult.resourceId,
-        watchResult.expiration
-      );
       const syncUpdateSummary =
         //@ts-ignore
         syncUpdate.ok === 1 && syncUpdate.lastErrorObject.updatedExisting
@@ -126,7 +113,7 @@ class EventController {
         sync: {
           watch: watchResult,
           nextSyncToken: syncTokenUpdateResult,
-          syncDataUpdate: syncUpdateSummary,
+          syncDataUpdate: syncUpdate,
         },
       };
       //@ts-ignore

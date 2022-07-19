@@ -15,7 +15,7 @@ import {
 } from "@core/types/sync.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { getGcal } from "@backend/auth/services/google.auth.service";
+import { getGcalOLD } from "@backend/auth/services/OLDgoogle.auth.service";
 import { Logger } from "@core/logger/winston.logger";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
@@ -139,19 +139,21 @@ class SyncService {
   Setup the notification channel for a user's calendar,
   telling google where to notify us when an event changes
   */
-  async startWatchingChannel(
+  async startWatchingCalendar(
     gcal: gCalendar,
     userId: string,
     calendarId: string,
-    channelId: string
+    channelId?: string
   ): Promise<Result_Watch_Start> {
+    if (!channelId) channelId = uuidv4();
+
     logger.info(
       `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
     );
 
     try {
       const _expiration = getChannelExpiration();
-      const response = await gcal.events.watch({
+      const watchRes = await gcal.events.watch({
         calendarId: calendarId,
         requestBody: {
           id: channelId,
@@ -162,22 +164,28 @@ class SyncService {
         },
       });
 
-      if (response.data) {
-        const resourceId = response.data.resourceId || "missingResourceId";
-        const saveWatchInfoRes = await this.saveWatchInfo(
-          userId,
-          calendarId,
-          channelId,
-          resourceId
-        );
-        return { channel: response.data, saveForDev: saveWatchInfoRes };
-      }
+      const resourceId = watchRes.data.resourceId || "missingResourceId";
+      const saveWatchInfoRes = await this.saveWatchInfo(
+        userId,
+        calendarId,
+        channelId,
+        resourceId
+      );
+      const syncUpdate = await this.updateSyncData(
+        userId,
+        channelId,
+        resourceId,
+        _expiration
+      );
 
-      return { channel: response.data };
+      return {
+        watchResult: { channel: watchRes.data, saveForDev: saveWatchInfoRes },
+        syncUpdate,
+      };
     } catch (e) {
       if (e.code && e.code === 400) {
         throw new BaseError(
-          "Start Watch Failed",
+          "Start Watch / Sync Update Failed",
           JSON.stringify(e.errors),
           Status.BAD_REQUEST,
           false
@@ -185,7 +193,7 @@ class SyncService {
       } else {
         logger.error(e);
         throw new BaseError(
-          "Start Watch Failed",
+          "Start Watch  / Sync Update Failed",
           JSON.stringify(e),
           Status.INTERNAL_SERVER,
           false
@@ -255,7 +263,7 @@ class SyncService {
       `Stopping watch for channelId: ${channelId} and resourceId: ${resourceId}`
     );
     try {
-      const gcal = await getGcal(userId);
+      const gcal = await getGcalOLD(userId);
       const params = {
         requestBody: {
           id: channelId,
@@ -327,7 +335,7 @@ class SyncService {
     const cal = findCalendarByResourceId(reqParams.resourceId, calendarList);
     const nextSyncToken = cal.sync.nextSyncToken;
 
-    const gcal = await getGcal(userId);
+    const gcal = await getGcalOLD(userId);
 
     const refreshNeeded = channelRefreshNeeded(reqParams, calendarList);
     if (refreshNeeded) {
@@ -413,24 +421,24 @@ class SyncService {
 
     // create new channelId to prevent `channelIdNotUnique` google api error
     const newChannelId = `pri-rfrshd${uuidv4()}`;
-    const startResult = await this.startWatchingChannel(
+    const startResult = await this.startWatchingCalendar(
       gcal,
       userId,
       GCAL_PRIMARY,
       newChannelId
     );
 
-    const syncUpdate = await this.updateSyncData(
-      userId,
-      newChannelId,
-      reqParams.resourceId,
-      reqParams.expiration
-    );
+    // const syncUpdate = await this.updateSyncData( //--
+    //   userId,
+    //   newChannelId,
+    //   reqParams.resourceId,
+    //   reqParams.expiration
+    // );
 
     const refreshResult = {
       stop: stopResult,
       start: startResult,
-      syncUpdate: syncUpdate.ok === 1 ? "success" : "failed",
+      // syncUpdate: syncUpdate.ok === 1 ? "success" : "failed",
     };
     return refreshResult;
   };
