@@ -125,7 +125,6 @@ class GoogleAuthService {
   async _decodeUserInfo(idToken: string) {
     const ticket = await this.oauthClient.verifyIdToken({
       idToken,
-      // audience: ENV.CLIENT_ID, //--
       audience: this.oauthClient._clientId,
     });
     const payload = ticket.getPayload() as TokenPayload;

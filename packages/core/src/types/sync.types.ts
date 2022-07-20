@@ -43,7 +43,7 @@ export interface Result_Watch_Delete {
 
 export interface Result_Watch_Start {
   channel: gSchema$Channel;
-  saveForDev?: string;
+  saveForDev?: "success" | "failed";
   syncUpdate: ModifyResult;
 }
 

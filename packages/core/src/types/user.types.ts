@@ -1,4 +1,3 @@
-import { Credentials } from "google-auth-library";
 import { DeleteResult, ObjectId } from "mongodb";
 
 export interface Schema_User extends Schema_User_Base {
@@ -16,6 +15,8 @@ export interface Schema_User_Base {
     refreshToken: string;
     // tokens: Credentials;
   };
+  signedUpAt?: Date;
+  lastLoggedInAt?: Date;
 }
 
 //--

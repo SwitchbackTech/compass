@@ -1,9 +1,6 @@
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { Result_Delete_User } from "@core/types/user.types";
-import {
-  CombinedLogin_GoogleOLD,
-  UserInfo_Google,
-} from "@core/types/auth.types";
+import { UserInfo_Google } from "@core/types/auth.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";
@@ -16,7 +13,8 @@ class UserService {
     gUser: UserInfo_Google["gUser"],
     refreshToken: string
   ) => {
-    const compassUser = mapUserToCompass(gUser, refreshToken);
+    const _compassUser = mapUserToCompass(gUser, refreshToken);
+    const compassUser = { ..._compassUser, signedUpAt: new Date() };
 
     const createUserRes = await mongoService.db
       .collection(Collections.USER)
@@ -24,6 +22,17 @@ class UserService {
 
     const userId = createUserRes.insertedId.toString();
     return userId;
+  };
+
+  saveTimeFor = async (label: "lastLoggedInAt", userId: string) => {
+    const res = await mongoService.db
+      .collection(Collections.USER)
+      .findOneAndUpdate(
+        { _id: mongoService.objectId(userId) },
+        { $set: { [label]: new Date() } }
+      );
+
+    return res;
   };
 
   // TODO implement script to call this for easy DB cleaning

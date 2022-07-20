@@ -157,7 +157,8 @@ class SyncService {
         calendarId: calendarId,
         requestBody: {
           id: channelId,
-          // address always needs to be HTTPS, so use prod url
+          // uses prod URL because address always needs to be HTTPS
+          // TODO: once dedicated e2e test VM, use that instead of prod
           address: `${ENV.BASEURL_PROD}${GCAL_NOTIFICATION_URL}`,
           type: "web_hook",
           expiration: _expiration,

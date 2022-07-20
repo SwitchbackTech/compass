@@ -4,6 +4,11 @@ export interface Result_Auth_Compass {
   accessToken?: string | null;
 }
 
+export interface Result_Signup {
+  error?: string | Record<string, unknown> | unknown[];
+  success?: boolean;
+}
+
 export interface User_Google {
   id: string;
   email: string;

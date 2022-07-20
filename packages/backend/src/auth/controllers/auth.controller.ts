@@ -16,6 +16,7 @@ import priorityService from "@backend/priority/services/priority.service";
 import userService from "@backend/user/services/user.service";
 import syncService from "@backend/sync/services/sync.service";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
+import { Result_Signup } from "@core/types/auth.types";
 
 import compassAuthService, {
   findCompassUser,
@@ -38,8 +39,10 @@ class AuthController {
       ? await this.login(gAuthClient, user as Schema_User)
       : await this.signup(gAuthClient, tokens);
 
-    const { token: accessToken } =
-      await gAuthClient.oauthClient.getAccessToken();
+    // const { token: accessToken } =
+    // await gAuthClient.oauthClient.getAccessToken();
+
+    const accessToken = "get from compass JWT";
 
     res.promise(Promise.resolve({ ...result, accessToken }));
   };
@@ -54,7 +57,10 @@ class AuthController {
     // validation & incremental sync...
   };
 
-  signup = async (gAuthClient: GoogleAuthService, tokens: Credentials) => {
+  signup = async (
+    gAuthClient: GoogleAuthService,
+    tokens: Credentials
+  ): Promise<Result_Signup | BaseError> => {
     const refreshToken = tokens.refresh_token;
     if (!refreshToken) {
       return new BaseError(
@@ -92,16 +98,10 @@ class AuthController {
       return createCalListResult;
     }
 
-    /* import events
-    x import events
-    x update nextSyncToken
-    - start channel watch
-    - ...update sync data (?)
-    */
     const importEventsResult = await eventService.import(cUserId, gcalClient);
     if (importEventsResult.errors.length > 0) {
       logger.error(importEventsResult.errors);
-      return { succes: false, errors: importEventsResult.errors };
+      return { error: importEventsResult.errors };
     }
     const syncTokenUpdateResult = await syncService.updateNextSyncToken(
       cUserId,
@@ -116,11 +116,15 @@ class AuthController {
       cUserId,
       GCAL_PRIMARY
     );
-    if (watchResult.syncUpdate.ok !== 1) {
-      return { success: false, error: "sync update failed" };
+
+    const { saveForDev } = watchResult;
+    if (saveForDev && saveForDev === "failed") {
+      return { error: "saving watch info failed" };
     }
 
-    // save signup datetime in user collection
+    if (watchResult.syncUpdate.ok !== 1) {
+      return { error: "sync update failed" };
+    }
 
     return { success: true };
   };
