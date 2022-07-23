@@ -24,6 +24,20 @@ class UserService {
     return userId;
   };
 
+  // TODO implement script to call this for easy DB cleaning
+  // only do this if the user matches the provided
+  // access Token (verify that works)
+  // why: prevent anyone from calling this
+  // only run if isDev() [for now]
+  async deleteUser(userId: string) {
+    logger.info(`Deleting all data for user: ${userId}`);
+
+    const filter = { _id: mongoService.objectId(userId) };
+    const response = await mongoService.db
+      .collection(Collections.USER)
+      .deleteOne(filter);
+    return response;
+  }
   saveTimeFor = async (label: "lastLoggedInAt", userId: string) => {
     const res = await mongoService.db
       .collection(Collections.USER)
@@ -34,48 +48,6 @@ class UserService {
 
     return res;
   };
-
-  // TODO implement script to call this for easy DB cleaning
-  // only do this if the user matches the provided
-  // access Token (verify that works)
-  // why: prevent anyone from calling this
-  // only run if isDev() [for now]
-  async deleteUserData(
-    userId: string
-  ): Promise<Result_Delete_User | BaseError> {
-    logger.info(`Deleting all data for user: ${userId}`);
-
-    try {
-      //TODO add priorities
-      const eventsResponse = await mongoService.db
-        .collection(Collections.EVENT)
-        .deleteMany({ user: userId });
-
-      const oauthResponse = await mongoService.db
-        .collection(Collections.OAUTH)
-        .deleteOne({ user: userId });
-
-      const userResponse = await mongoService.db
-        .collection(Collections.USER)
-        .deleteOne({ _id: mongoService.objectId(userId) });
-
-      const summary: Result_Delete_User = {
-        events: eventsResponse,
-        oauth: oauthResponse,
-        user: userResponse,
-        errors: [],
-      };
-      return summary;
-    } catch (e) {
-      logger.error(e);
-      return new BaseError(
-        "Delete User Data Failed",
-        JSON.stringify(e),
-        500,
-        true
-      );
-    }
-  }
 }
 
 export default new UserService();

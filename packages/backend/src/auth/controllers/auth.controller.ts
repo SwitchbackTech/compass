@@ -1,6 +1,10 @@
 import { InsertOneResult } from "mongodb";
 import { v4 as uuidv4 } from "uuid";
+import { GaxiosResponse } from "gaxios";
 import { Credentials } from "google-auth-library";
+import { verifySession } from "supertokens-node/recipe/session/framework/express";
+import { SessionRequest } from "supertokens-node/framework/express";
+import Session from "supertokens-node/recipe/session";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -16,13 +20,14 @@ import priorityService from "@backend/priority/services/priority.service";
 import userService from "@backend/user/services/user.service";
 import syncService from "@backend/sync/services/sync.service";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import { Result_Signup } from "@core/types/auth.types";
-
-import compassAuthService, {
-  findCompassUser,
-} from "../services/compass.auth.service";
+import { Result_Auth } from "@core/types/auth.types";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const logger = Logger("app:auth.controller");
+
+const isCodeInvalid = (e: unknown | GaxiosResponse) => {
+  return e?.code === "400" && e?.message === "invalid_grant";
+};
 
 class AuthController {
   loginOrSignup = async (req: ReqBody<{ code: string }>, res: Res_Promise) => {
@@ -30,37 +35,74 @@ class AuthController {
 
     const gAuthClient = new GoogleAuthService();
 
-    const { tokens } = await gAuthClient.oauthClient.getToken(code);
+    try {
+      const { tokens } = await gAuthClient.oauthClient.getToken(code);
 
-    const googleId = tokens.id_token as string;
-    const { userExists, user } = await findCompassUser(googleId);
+      const { userExists, user } = await findCompassUserBy(
+        "googleId",
+        tokens.id_token as string
+      );
 
-    const result = userExists
-      ? await this.login(gAuthClient, user as Schema_User)
-      : await this.signup(gAuthClient, tokens);
+      const authResult = userExists
+        ? await this.login(gAuthClient, user as Schema_User)
+        : await this.signup(gAuthClient, tokens);
 
-    // const { token: accessToken } =
-    // await gAuthClient.oauthClient.getAccessToken();
+      if (authResult instanceof BaseError) {
+        //++verify this works (Promise.reject style)
+        res.promise(Promise.reject(authResult));
+        return;
+      }
 
-    const accessToken = "get from compass JWT";
+      // old token stuff
+      // const { token: accessToken } =
+      // await gAuthClient.oauthClient.getAccessToken();
+      // const accessToken = "get from compass JWT";
+      const { cUserId } = authResult;
+      // - creates new session & saves in supertokens DB
+      // - attaches access & refresh token to the response's cookie
+      cUserId && (await Session.createNewSession(res, cUserId));
 
-    res.promise(Promise.resolve({ ...result, accessToken }));
+      // const result = { success: true, message: `User logged in: ${cUserId}` };
+      res.json(authResult);
+      // res.promise(Promise.resolve({ ...result, accessToken }));
+    } catch (e) {
+      if (isCodeInvalid(e)) {
+        logger.error("Failed to get gAPI tokens from code, because:\n", e);
+        res.promise(Promise.resolve({ error: "Bad Code. See server logs" }));
+        return;
+      }
+      logger.error(e);
+      res.promise(
+        Promise.resolve({ error: "Login/Signup failed. See server logs" })
+      );
+    }
   };
 
-  login = async (gAuthClient: GoogleAuthService, user: Schema_User) => {
-    // uses existing refresh token
+  login = async (
+    gAuthClient: GoogleAuthService,
+    user: Schema_User
+  ): Promise<Result_Auth | BaseError> => {
+    // - check if existing calendar watch
+    //    - if not, start watching
+    //    - if so...
+    //      - check/extend expiration (?)
+    // - incremental sync
+    const cUserId = user._id.toString();
+
+    // uses refresh token to ensure google API access
     gAuthClient.oauthClient.setCredentials({
       refresh_token: user?.google.refreshToken,
     });
 
-    return { success: true };
     // validation & incremental sync...
+
+    return { cUserId, success: true };
   };
 
   signup = async (
     gAuthClient: GoogleAuthService,
     tokens: Credentials
-  ): Promise<Result_Signup | BaseError> => {
+  ): Promise<Result_Auth | BaseError> => {
     const refreshToken = tokens.refresh_token;
     if (!refreshToken) {
       return new BaseError(
@@ -107,6 +149,7 @@ class AuthController {
       cUserId,
       importEventsResult.nextSyncToken
     );
+
     if (syncTokenUpdateResult instanceof BaseError) {
       return syncTokenUpdateResult;
     }
@@ -126,8 +169,12 @@ class AuthController {
       return { error: "sync update failed" };
     }
 
-    return { success: true };
+    return { success: true, cUserId };
   };
+
+  // superTokensDemo = (req: SessionRequest, res: express.Response) => {
+  //   return "foo";
+  // };
 
   _createDefaultCalendarList = async (
     gcal: gCalendar,

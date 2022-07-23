@@ -15,7 +15,7 @@ import {
 } from "@core/types/sync.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { getGcalOLD } from "@backend/auth/services/OLDgoogle.auth.service";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Logger } from "@core/logger/winston.logger";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
@@ -242,6 +242,7 @@ class SyncService {
           watchResults.push(`${channelId}: ${stopResult.deleteWatch.result}`);
         }
       }
+
       const watchStopSummary = { summary: "success", watches: watchResults };
       return watchStopSummary;
     } catch (e) {
@@ -264,7 +265,8 @@ class SyncService {
       `Stopping watch for channelId: ${channelId} and resourceId: ${resourceId}`
     );
     try {
-      const gcal = await getGcalOLD(userId);
+      const gcal = await getGcalClient(userId);
+
       const params = {
         requestBody: {
           id: channelId,

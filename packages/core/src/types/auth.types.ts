@@ -4,7 +4,8 @@ export interface Result_Auth_Compass {
   accessToken?: string | null;
 }
 
-export interface Result_Signup {
+export interface Result_Auth {
+  cUserId?: string;
   error?: string | Record<string, unknown> | unknown[];
   success?: boolean;
 }

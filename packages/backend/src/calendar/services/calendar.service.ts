@@ -25,6 +25,14 @@ class CalendarService {
       );
     }
   }
+
+  async deleteAllByUser(userId: string) {
+    const filter = { user: userId };
+    const response = await mongoService.db
+      .collection(Collections.CALENDARLIST)
+      .deleteMany(filter);
+    return response;
+  }
 }
 
 export default new CalendarService();

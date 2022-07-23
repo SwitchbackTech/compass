@@ -112,6 +112,23 @@ class PriorityService {
     ]);
   }
 
+  async deleteAllByUser(userId: string) {
+    const filter = { user: userId };
+    const response = await mongoService.db
+      .collection(Collections.PRIORITY)
+      .deleteMany(filter);
+    return response;
+  }
+
+  async deleteById(id: string) {
+    //TODO add user to filter (?)
+    const filter = { _id: mongoService.objectId(id) };
+    const response = await mongoService.db
+      .collection(Collections.PRIORITY)
+      .deleteOne(filter);
+    return response;
+  }
+
   async updateById(
     id: string,
     priority: PriorityReq
@@ -132,15 +149,6 @@ class PriorityService {
     //@ts-ignore
     const updatedPriority = response.value as Schema_Priority;
     return updatedPriority;
-  }
-
-  async deleteById(id: string) {
-    //TODO add user to filter (?)
-    const filter = { _id: mongoService.objectId(id) };
-    const response = await mongoService.db
-      .collection(Collections.PRIORITY)
-      .deleteOne(filter);
-    return response;
   }
 }
 

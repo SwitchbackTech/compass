@@ -1,7 +1,6 @@
 import { google } from "googleapis";
 import express from "express";
 import { Credentials, OAuth2Client } from "google-auth-library";
-import { Result_OauthStatus, Schema_Oauth } from "@core/types/auth.types";
 import { BaseError } from "@core/errors/errors.base";
 import { gCalendar } from "@core/types/gcal";
 import { Logger } from "@core/logger/winston.logger";
@@ -152,16 +151,6 @@ class GoogleOauthServiceOLD {
 
     const accessToken = this.oauthClient.getAccessToken();
     return accessToken;
-  }
-
-  async initTokens(code: string) {
-    const { tokens } = await this.oauthClient.getToken(code);
-
-    this.tokens = tokens;
-    this.oauthClient.setCredentials(this.tokens);
-
-    console.log("inited tokens");
-    return this.tokens;
   }
 
   //--++

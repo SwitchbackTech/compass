@@ -86,10 +86,12 @@ export const LoginView = () => {
       }
 
       console.log("authRes:", authResult);
-      const { accessToken } = authResult;
+      // const { accessToken } = authResult;
 
-      localStorage.setItem(LocalStorage.ACCESS_TOKEN, accessToken);
-      window.dispatchEvent(new Event(ACCESS_TOKEN_SUCCESS));
+      // localStorage.setItem(LocalStorage.ACCESS_TOKEN, accessToken);
+      if (authResult.success) {
+        window.dispatchEvent(new Event(ACCESS_TOKEN_SUCCESS));
+      }
     },
     onError: (error) => {
       alert(`Login failed because: ${error.error}`);

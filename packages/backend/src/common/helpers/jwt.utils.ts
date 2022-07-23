@@ -12,12 +12,18 @@ export const parseBearerToken = (bearerToken: string | undefined) => {
   return { tokenIncluded: true, token };
 };
 
-export const createToken = (userId: string) => {
-  const accessToken = jwt.sign({ _id: userId }, ENV.ACCESS_TOKEN_SECRET, {
+export const createToken = (type: "access" | "refresh", userId: string) => {
+  const expiry =
+    type === "access" ? ENV.ACCESS_TOKEN_LIFE : ENV.REFRESH_TOKEN_LIFE;
+  const secret =
+    type === "access" ? ENV.ACCESS_TOKEN_SECRET : ENV.REFRESH_TOKEN_SECRET;
+
+  const token = jwt.sign({ _id: userId }, secret, {
     algorithm: "HS256",
-    expiresIn: ENV.ACCESS_TOKEN_LIFE,
+    expiresIn: expiry,
   });
-  return accessToken;
+
+  return token;
 };
 
 export const validateToken = (token: string): Result_Token_Validate => {
@@ -32,6 +38,7 @@ export const validateToken = (token: string): Result_Token_Validate => {
     return { payload, refreshNeeded: false };
   } catch (e) {
     if (e instanceof TokenExpiredError) {
+      // return 401 code //--
       return { refreshNeeded: true };
     } else {
       return { error: e, refreshNeeded: true };

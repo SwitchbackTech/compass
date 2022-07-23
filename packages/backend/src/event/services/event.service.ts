@@ -12,10 +12,10 @@ import {
   Params_DeleteMany,
   Result_DeleteMany,
 } from "@core/types/event.types";
+import { Logger } from "@core/logger/winston.logger";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
 import { getGcalOLD } from "@backend/auth/services/OLDgoogle.auth.service";

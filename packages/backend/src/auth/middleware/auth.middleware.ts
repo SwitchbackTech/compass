@@ -1,32 +1,19 @@
-// import express from "express";
+import { Response, NextFunction } from "express";
+import { Status } from "@core/errors/status.codes";
+import { ReqBody } from "@core/types/express.types";
 
-/*
-const hardCodedPw = "HardCodedCuzArgonWasCausingProblems";
 class AuthMiddleware {
-  async verifyUserPassword(
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) {
-    const user: any = await usersService.getUserByEmailWithPassword(
-      req.body.email
-    );
-    if (user) {
-      const passwordHash = user.password;
-      // if (await argon2.verify(passwordHash, req.body.password)) {
-      if (1 == 1) {
-        //TODO change, obviously
-        req.body = {
-          userId: user._id,
-          email: user.email,
-          permissionFlags: user.permissionFlags,
-        };
-        return next();
-      }
+  verifyGoogleOauthCode = (
+    req: ReqBody<{ code: string }>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const { code } = req.body;
+    if (!code || typeof code !== "string") {
+      res.status(Status.FORBIDDEN).json({ error: "Missing Oauth Credentails" });
     }
-    res.status(400).send({ errors: ["Invalid email and/or password"] });
-  }
+    next();
+  };
 }
 
 export default new AuthMiddleware();
-*/

@@ -1,12 +1,5 @@
 import { google } from "googleapis";
-import open from "open";
-import express from "express";
-import * as http from "http";
-import helmet from "helmet";
-import { Credentials, OAuth2Client } from "google-auth-library";
-import { CommonRoutesConfig } from "@backend/common/common.routes.config";
-import { AuthRoutes } from "@backend/auth/auth.routes.config";
-import corsWhitelist from "@backend/common/middleware/cors.middleware";
+import { getGcal } from "@backend/auth/services/google.auth.service";
 
 const port = 2999;
 const testCredentials = {
@@ -20,6 +13,10 @@ const testCredentials = {
 };
 
 describe("Google Auth Service", () => {
+  it("auths existing compass user", async () => {
+    const gcalClient = await getGcal("62dc6053943c292c57abbcb9");
+    const f = 1;
+  });
   it("refreshes access token", async () => {
     const gOauthClient = new google.auth.OAuth2(
       testCredentials.clientId,
@@ -44,32 +41,3 @@ describe("Google Auth Service", () => {
     const i = "";
   });
 });
-
-/*
-describe("auth redirect", () => {
-  it("idk, wip", () => {
-    const testApp = express();
-    testApp.use(corsWhitelist);
-    testApp.use(helmet());
-    testApp.use(express.json());
-
-    const routes: Array<CommonRoutesConfig> = [];
-    routes.push(new AuthRoutes(testApp));
-    const testServer: http.Server = http.createServer(testApp);
-    testServer.listen(port, () => {
-      console.log(`Server running on port: ${port}`);
-    });
-
-
-    const authUrl = oauthClient.generateAuthUrl({
-      access_type: "offline",
-      prompt: "consent",
-      scope: ["profile", "email", "https://www.googleapis.com/auth/calendar"],
-      state: "anyrandomid",
-    });
-
-    open(authUrl, { wait: false }).then((cp) => cp.unref());
-    const f = 1;
-  });
-});
-*/

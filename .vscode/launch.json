@@ -9,6 +9,13 @@
       "cwd": "${workspaceFolder}"
     },
     {
+      "type": "node-terminal",
+      "name": "dev:backend-auth",
+      "request": "launch",
+      "command": "yarn clean:auth && yarn dev:backend",
+      "cwd": "${workspaceFolder}"
+    },
+    {
       "type": "node",
       "request": "launch",
       "name": "jest:current",

@@ -1,77 +1,36 @@
 import { google } from "googleapis";
-import { Credentials, OAuth2Client, TokenPayload } from "google-auth-library";
+import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
-import { gCalendar } from "@core/types/gcal";
 import { BaseError } from "@core/errors/errors.base";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
-import { Collections } from "@backend/common/constants/collections";
-import mongoService from "@backend/common/services/mongo.service";
-import { Schema_User } from "@core/types/user.types";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const logger = Logger("app:google.auth.service");
 
-export const getGcalWithExistingRefreshToken = (
-  tokens: Credentials
-): gCalendar => {
-  const oauthClient = new OAuth2Client(
-    ENV.CLIENT_ID,
-    ENV.CLIENT_SECRET,
-    "postmessage"
-  );
-
-  oauthClient.setCredentials({
-    refresh_token: tokens.refresh_token,
-  });
-
-  const calendar = google.calendar({
-    version: "v3",
-    auth: oauthClient,
-  });
-
-  return calendar;
-};
-
-export const getGcal = async (userId: string): Promise<gCalendar> => {
-  const user = (await mongoService.db.collection(Collections.USER).findOne({
-    _id: mongoService.objectId(userId),
-  })) as Schema_User | null;
-
-  if (!user) {
-    // throwing error here forces middleware error handler to address
+export const getGcalClient = async (userId: string) => {
+  const { user, userExists } = await findCompassUserBy("_id", userId);
+  if (!userExists) {
+    // throwing error forces middleware error handler to address
     // before other bad stuff can happen
     throw new BaseError(
       "Gcal Auth failed",
-      `No OAUTH record for user: ${userId}`,
-      500,
+      `Compass user does not exist: ${userId}`,
+      Status.BAD_REQUEST,
       true
     );
   }
 
-  const oauthClient = new OAuth2Client(
-    ENV.CLIENT_ID,
-    ENV.CLIENT_SECRET,
-    "postmessage"
-  );
+  const gAuthClient = new GoogleAuthService();
 
-  oauthClient.on("tokens", (tokens) => {
-    // ensures we use, persist the more recent refresh_token
-    if (tokens.refresh_token) {
-      console.log("** got REFRESH TOKEN! TODO: save in DB");
-    }
-    console.log("** got access token");
-  });
-
-  // make sure the token never expires by passing the persisted refresh token
-  // so the oauthClient can swap them out if needed
-  oauthClient.setCredentials({
-    refresh_token: user.tokens.refresh_token,
+  gAuthClient.oauthClient.setCredentials({
+    refresh_token: user.google.refreshToken,
   });
 
   const calendar = google.calendar({
     version: "v3",
-    auth: oauthClient,
+    auth: gAuthClient.oauthClient,
   });
 
   return calendar;

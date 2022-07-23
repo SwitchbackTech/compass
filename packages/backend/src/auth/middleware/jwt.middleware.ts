@@ -39,9 +39,10 @@ class JwtMiddleware {
         return res.status(Status.UNSURE).json(error);
       }
 
-      // The current token is valid
-      // use the _id value to associate it and infer the userId
-      // then save it for future
+      // The current token is valid, so:
+      // - use the _id value to associate it and infer the userId
+      // - save userId in locals for extraction in relevant
+      //   controller/service endpoint
       res.locals = Object.assign({}, res.locals, {
         user: { id: payload?._id },
       });

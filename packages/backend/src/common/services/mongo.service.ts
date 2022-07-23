@@ -39,6 +39,8 @@ class MongoService {
       });
   };
 
+  isConnected = () => this.client !== undefined;
+
   objectId = (id: string): ObjectId => {
     return new ObjectId(id);
   };
