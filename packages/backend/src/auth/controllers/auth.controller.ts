@@ -20,8 +20,9 @@ import priorityService from "@backend/priority/services/priority.service";
 import userService from "@backend/user/services/user.service";
 import syncService from "@backend/sync/services/sync.service";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import { Result_Auth } from "@core/types/auth.types";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+
+import { AuthError, _throw } from "../auth.errors";
 
 const logger = Logger("app:auth.controller");
 
@@ -44,14 +45,8 @@ class AuthController {
       );
 
       const authResult = userExists
-        ? await this.login(gAuthClient, user as Schema_User)
+        ? await this.login(gAuthClient, user)
         : await this.signup(gAuthClient, tokens);
-
-      if (authResult instanceof BaseError) {
-        //++verify this works (Promise.reject style)
-        res.promise(Promise.reject(authResult));
-        return;
-      }
 
       // old token stuff
       // const { token: accessToken } =
@@ -69,19 +64,18 @@ class AuthController {
       if (isCodeInvalid(e)) {
         logger.error("Failed to get gAPI tokens from code, because:\n", e);
         res.promise(Promise.resolve({ error: "Bad Code. See server logs" }));
-        return;
       }
       logger.error(e);
       res.promise(
-        Promise.resolve({ error: "Login/Signup failed. See server logs" })
+        Promise.resolve({
+          error: e,
+        })
       );
     }
   };
 
-  login = async (
-    gAuthClient: GoogleAuthService,
-    user: Schema_User
-  ): Promise<Result_Auth | BaseError> => {
+  login = async (gAuthClient: GoogleAuthService, user: Schema_User) => {
+    // ): Promise<Result_Auth | BaseError> => { //--
     // - check if existing calendar watch
     //    - if not, start watching
     //    - if so...
@@ -99,94 +93,106 @@ class AuthController {
     return { cUserId, success: true };
   };
 
-  signup = async (
-    gAuthClient: GoogleAuthService,
-    tokens: Credentials
-  ): Promise<Result_Auth | BaseError> => {
+  signup = async (gAuthClient: GoogleAuthService, tokens: Credentials) => {
     const refreshToken = tokens.refresh_token;
     if (!refreshToken) {
-      return new BaseError(
-        "Create User Failed",
-        "Failed to create Compass user, because no gcal refresh token provided",
-        Status.BAD_REQUEST,
-        true
+      _throw(AuthError.MISSING_REFRESH_TOKEN, "Failed to auth to user's gCal");
+    }
+
+    try {
+      gAuthClient.oauthClient.setCredentials(tokens);
+
+      const gUserInfo = await gAuthClient.getGoogleUserInfo();
+      if (gUserInfo instanceof BaseError) {
+        return gUserInfo;
+      }
+
+      const cUserId = await userService.createUser(
+        gUserInfo.gUser,
+        refreshToken
       );
-    }
+      if (!cUserId) {
+        //replace with throw
+        return { error: "Failed to create Compass user" };
+      }
 
-    gAuthClient.oauthClient.setCredentials(tokens);
+      const gcalClient = gAuthClient.getGcalClient();
+      // const createCalListResult = await this._createDefaultCalendarList(
+      await this._createDefaultCalendarList(gcalClient, cUserId);
+      // if (createCalListResult instanceof BaseError) {
+      //   return createCalListResult;
+      // }
 
-    const gUserInfo = await gAuthClient.getGoogleUserInfo();
-    if (gUserInfo instanceof BaseError) {
-      return gUserInfo;
-    }
-
-    const cUserId = await userService.createUser(gUserInfo.gUser, refreshToken);
-    if (!cUserId) {
-      return { error: "Failed to create Compass user" };
-    }
-
-    const gcalClient = gAuthClient.getGcalClient();
-    const createCalListResult = await this._createDefaultCalendarList(
-      gcalClient,
-      cUserId
-    );
-    if (createCalListResult instanceof BaseError) {
-      return createCalListResult;
-    }
-
-    const createPrioritiesResult =
+      // const createPrioritiesResult =
       await priorityService.createDefaultPriorities(cUserId);
-    if (createPrioritiesResult instanceof BaseError) {
-      return createCalListResult;
+      // if (createPrioritiesResult instanceof BaseError) {
+      //   return createPrioritiesResult;
+      // }
+
+      const importEventsResult = await eventService.import(cUserId, gcalClient);
+      if (importEventsResult.errors.length > 0) {
+        logger.error(importEventsResult.errors);
+        return { error: importEventsResult.errors };
+      }
+      //-- move this into import event service (?)
+      await syncService.updateSyncToken(
+        cUserId,
+        "events",
+        importEventsResult.nextSyncToken
+      );
+
+      const watchResult = await syncService.startWatchingCalendar(
+        gcalClient,
+        cUserId,
+        GCAL_PRIMARY
+      );
+
+      const { saveForDev } = watchResult;
+      if (saveForDev && saveForDev === "failed") {
+        return { error: "saving watch info failed" };
+      }
+
+      if (watchResult.syncUpdate.ok !== 1) {
+        return { error: "sync update failed" };
+      }
+
+      return { cUserId };
+    } catch (e) {
+      logger.error("Failed to get login, because:\n", e);
+      return { error: e };
     }
-
-    const importEventsResult = await eventService.import(cUserId, gcalClient);
-    if (importEventsResult.errors.length > 0) {
-      logger.error(importEventsResult.errors);
-      return { error: importEventsResult.errors };
-    }
-    const syncTokenUpdateResult = await syncService.updateNextSyncToken(
-      cUserId,
-      importEventsResult.nextSyncToken
-    );
-
-    if (syncTokenUpdateResult instanceof BaseError) {
-      return syncTokenUpdateResult;
-    }
-
-    const watchResult = await syncService.startWatchingCalendar(
-      gcalClient,
-      cUserId,
-      GCAL_PRIMARY
-    );
-
-    const { saveForDev } = watchResult;
-    if (saveForDev && saveForDev === "failed") {
-      return { error: "saving watch info failed" };
-    }
-
-    if (watchResult.syncUpdate.ok !== 1) {
-      return { error: "sync update failed" };
-    }
-
-    return { success: true, cUserId };
   };
-
-  // superTokensDemo = (req: SessionRequest, res: express.Response) => {
-  //   return "foo";
-  // };
 
   _createDefaultCalendarList = async (
     gcal: gCalendar,
     userId: string
   ): Promise<InsertOneResult<Document> | BaseError> => {
+    //-- try throwing instead
     const gcalListRes = await gcalService.listCalendars(gcal);
     if (gcalListRes instanceof BaseError) {
       return gcalListRes;
     }
 
+    if (!gcalListRes.nextSyncToken) {
+      //-- try throwing instead
+      return new BaseError(
+        "No calendarlist Sync Token",
+        "Dev needs to support pagination",
+        Status.INTERNAL_SERVER,
+        true
+      );
+    }
+
     const ccalList = MapCalendarList.toCompass(gcalListRes);
     const ccalCreateRes = await calendarService.create(userId, ccalList);
+
+    await syncService.updateSyncToken(
+      userId,
+      "calendarlist",
+      gcalListRes.nextSyncToken
+    );
+    // if it worked, saved sync.calendarlist.nextSyncToken
+    // nextSyncToken: gcalList.nextSyncToken || "error", //-- !! move
 
     return ccalCreateRes;
   };

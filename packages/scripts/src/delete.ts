@@ -10,6 +10,7 @@ interface Summary_Delete {
   events?: number;
   eventWatches?: number;
   priorities?: number;
+  syncs?: number;
   user?: number;
 }
 
@@ -34,11 +35,13 @@ export const deleteAllCompassDataForUser = async (user: string) => {
   const { watches } = (await syncService.stopAllChannelWatches(userId)) as {
     watches: string[];
   };
-  const eventWatches = watches.length;
-  summary.eventWatches = eventWatches;
+  summary.eventWatches = watches?.length || 0;
+
+  const syncs = await syncService.deleteAllByUser(userId);
+  summary.syncs = syncs.deletedCount;
 
   const _user = await userService.deleteUser(userId);
   summary.user = _user.deletedCount;
 
-  console.log(`Deleted:\n\t${JSON.stringify(summary)}`);
+  console.log(`Deleted: ${JSON.stringify(summary, null, 2)}`);
 };

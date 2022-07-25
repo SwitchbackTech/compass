@@ -76,21 +76,20 @@ export const LoginView = () => {
         return;
       }
 
-      const authResult = await AuthApi.loginOrSignup(code);
-      if (authResult instanceof Error) {
-        alert(
-          "An error occured on Compass' backend while logging you in. Please let Ty know"
-        );
-        console.log(authResult);
-        return;
-      }
+      try {
+        const authResult = await AuthApi.loginOrSignup(code);
+        console.log("authRes:", authResult);
+        if (authResult.error) {
+          alert(
+            "An error occured on Compass' backend while logging you in. Please let Ty know"
+          );
+          console.log(authResult.error);
+          return;
+        }
 
-      console.log("authRes:", authResult);
-      // const { accessToken } = authResult;
-
-      // localStorage.setItem(LocalStorage.ACCESS_TOKEN, accessToken);
-      if (authResult.success) {
         window.dispatchEvent(new Event(ACCESS_TOKEN_SUCCESS));
+      } catch (e) {
+        console.log("errr", e);
       }
     },
     onError: (error) => {

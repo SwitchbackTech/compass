@@ -23,7 +23,14 @@ export interface Params_Sync_Gcal extends Request_Sync_Gcal {
   userId: string;
   calendarId?: string;
 }
+export interface Request_Sync_Gcal {
+  channelId: string;
+  resourceId: string;
+  resourceState: string;
+  expiration: string;
+}
 
+export type Resource_Sync = "calendarlist" | "events" | "settings";
 export interface Result_Import_Gcal {
   total: number;
   // nextSyncToken: string | null | undefined;
@@ -72,13 +79,6 @@ export interface Result_Sync_Prep_Gcal {
   syncToken: string;
   operations: AnyBulkWriteOperation[];
   errors: BaseError[];
-}
-
-export interface Request_Sync_Gcal {
-  channelId: string;
-  resourceId: string;
-  resourceState: string;
-  expiration: string;
 }
 
 export interface Schema_Watch_Gcal extends WithId<Document> {

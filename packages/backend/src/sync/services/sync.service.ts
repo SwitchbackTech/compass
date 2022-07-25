@@ -5,6 +5,7 @@ import { Schema_CalendarList } from "@core/types/calendar.types";
 import {
   Params_Sync_Gcal,
   Request_Sync_Gcal,
+  Resource_Sync,
   Result_Notif_Gcal,
   Result_Watch_Start,
   Result_Watch_Stop,
@@ -40,6 +41,13 @@ const logger = Logger("app:sync.service");
 const syncFileLogger = Logger("app:sync.gcal", "logs/sync.gcal.log");
 
 class SyncService {
+  deleteAllByUser = async (userId: string) => {
+    const delRes = await mongoService.db
+      .collection(Collections.SYNC)
+      .deleteMany({ user: userId });
+    return delRes;
+  };
+
   async deleteWatchInfo(
     userId: string,
     channelId: string,
@@ -446,6 +454,41 @@ class SyncService {
     return refreshResult;
   };
 
+  updateSyncToken = async (
+    userId: string,
+    resource: Resource_Sync,
+    nextSyncToken: string
+  ) => {
+    try {
+      const result = await mongoService.db
+        .collection(Collections.SYNC)
+        .findOneAndUpdate(
+          {
+            user: userId,
+          },
+          {
+            $set: {
+              [`google.${resource}.nextSyncToken`]: nextSyncToken,
+              [`google.${resource}.lastSyncedAt`]: new Date(),
+            },
+          },
+          { upsert: true },
+          { returnDocument: "after" }
+        );
+
+      return result;
+    } catch (e) {
+      logger.error(e);
+      throw new BaseError(
+        "Update Failed",
+        `failed to update ${resource} for ${userId}`,
+        500,
+        true
+      );
+    }
+  };
+
+  //__ replace with above
   updateNextSyncToken = async (userId: string, nextSyncToken: string) => {
     const msg = `Failed to update the nextSyncToken for calendar record of user: ${userId}`;
     const err = new BaseError("Update Failed", msg, 500, true);

@@ -6,13 +6,9 @@ Session.addAxiosInterceptors(axios);
 
 const AuthApi = {
   async loginOrSignup(code: string) {
-    try {
-      const url = `${API_BASEURL}/oauth/google`;
-      const response = await axios.post(url, { code });
-      return response.data as Result_Auth_Compass;
-    } catch (e: unknown) {
-      return e as Error;
-    }
+    const url = `${API_BASEURL}/oauth/google`;
+    const response = await axios.post(url, { code });
+    return response.data as Result_Auth_Compass;
   },
 };
 

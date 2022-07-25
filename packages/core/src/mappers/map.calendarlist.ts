@@ -9,7 +9,6 @@ const MapCalendarList = {
 
     const mapped = {
       google: {
-        nextSyncToken: gcalList.nextSyncToken || "error",
         items: [primaryGcal],
       },
     };

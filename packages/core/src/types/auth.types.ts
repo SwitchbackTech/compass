@@ -1,7 +1,9 @@
+import { BaseError } from "@core/errors/errors.base";
 import { Credentials, TokenPayload } from "google-auth-library";
 
 export interface Result_Auth_Compass {
   accessToken?: string | null;
+  error?: BaseError;
 }
 
 export interface Result_Auth {

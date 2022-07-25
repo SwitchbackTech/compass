@@ -17,7 +17,7 @@ class CalendarService {
         .insertOne(calListData);
       return response;
     } catch (e) {
-      return new BaseError(
+      throw new BaseError(
         "Create Failed",
         JSON.stringify(e),
         Status.INTERNAL_SERVER,

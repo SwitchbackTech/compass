@@ -1,18 +1,9 @@
 //@ts-nocheck
 import express from "express";
-import { v4 as uuidv4 } from "uuid";
 import { ReqBody, Res } from "@core/types/express.types";
-import { Status } from "@core/errors/status.codes";
-import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { Schema_Event, Params_DeleteMany } from "@core/types/event.types";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import { Collections } from "@backend/common/constants/collections";
-import mongoService from "@backend/common/services/mongo.service";
-import { getGcalOLD } from "@backend/auth/services/OLDgoogle.auth.service";
-import syncService from "@backend/sync/services/sync.service";
 import eventService from "@backend/event/services/event.service";
-import { Result_Watch_Stop_All } from "@core/types/sync.types";
 
 const logger = Logger("app:event.controller");
 class EventController {
@@ -63,67 +54,6 @@ class EventController {
     res.promise(Promise.resolve(deleteResponse));
   };
 
-  import = async (req: express.Request, res: Res) => {
-    try {
-      const userId: string = res.locals.user.id;
-
-      const userExists = await mongoService.recordExists(Collections.USER, {
-        _id: mongoService.objectId(userId),
-      });
-      if (userExists) {
-        logger.debug(`Deleting events for clean import for user: ${userId}`);
-        await eventService.deleteAllByUser(userId);
-
-        logger.debug(`Clearing watches before import for user: ${userId}`);
-        const stopWatchesRes = (await syncService.stopAllChannelWatches(
-          userId
-        )) as Result_Watch_Stop_All;
-        if (stopWatchesRes.summary !== "success") {
-          throw new BaseError(
-            "Import Failed",
-            `failed to stop existing watches because: ${
-              stopWatchesRes.message || "unsure"
-            }`,
-            Status.INTERNAL_SERVER,
-            false
-          );
-        }
-      }
-
-      const gcal = await getGcalOLD(userId);
-
-      const importEventsResult = await eventService.import(userId, gcal);
-
-      const syncTokenUpdateResult = await syncService.updateNextSyncToken(
-        userId,
-        importEventsResult.nextSyncToken
-      );
-
-      const { watchResult, syncUpdate } =
-        await syncService.startWatchingCalendar(gcal, userId, GCAL_PRIMARY);
-
-      const syncUpdateSummary =
-        //@ts-ignore
-        syncUpdate.ok === 1 && syncUpdate.lastErrorObject.updatedExisting
-          ? "success"
-          : "failed";
-
-      const fullResults = {
-        events: importEventsResult,
-        sync: {
-          watch: watchResult,
-          nextSyncToken: syncTokenUpdateResult,
-          syncDataUpdate: syncUpdate,
-        },
-      };
-      //@ts-ignore
-      res.promise(Promise.resolve(fullResults));
-    } catch (e) {
-      //@ts-ignore
-      res.promise(Promise.reject(e));
-    }
-  };
-
   readById = async (req: express.Request, res: Res) => {
     const userId = res.locals.user.id;
     //@ts-ignore
@@ -164,3 +94,73 @@ class EventController {
 }
 
 export default new EventController();
+
+/*
+start of a convenience method for how to wipe and 
+reimport resources (events, calendarlists, settings)
+after receiving a 410 GONE error from google's notification
+
+  reimport = async (req: express.Request, res: Res) => {
+    try {
+      //TODO: only call this when getting 410
+      // gone error from gcal
+      const userId: string = res.locals.user.id;
+
+      const userExists = await mongoService.recordExists(Collections.USER, {
+        _id: mongoService.objectId(userId),
+      });
+      if (userExists) {
+        logger.debug(`Deleting events for clean import for user: ${userId}`);
+        await eventService.deleteAllByUser(userId);
+
+        logger.debug(`Clearing watches before import for user: ${userId}`);
+        const stopWatchesRes = (await syncService.stopAllChannelWatches(
+          userId
+        )) as Result_Watch_Stop_All;
+        if (stopWatchesRes.summary !== "success") {
+          throw new BaseError(
+            "Import Failed",
+            `failed to stop existing watches because: ${
+              stopWatchesRes.message || "unsure"
+            }`,
+            Status.INTERNAL_SERVER,
+            false
+          );
+        }
+      }
+
+      const gcal = await getGcalOLD(userId);
+
+      const importEventsResult = await eventService.import(userId, gcal);
+
+      const syncTokenUpdateResult = await syncService.updateSyncToken(
+        userId,
+        "events",
+        importEventsResult.nextSyncToken
+      );
+
+      const { watchResult, syncUpdate } =
+        await syncService.startWatchingCalendar(gcal, userId, GCAL_PRIMARY);
+
+      const syncUpdateSummary =
+        //@ts-ignore
+        syncUpdate.ok === 1 && syncUpdate.lastErrorObject.updatedExisting
+          ? "success"
+          : "failed";
+
+      const fullResults = {
+        events: importEventsResult,
+        sync: {
+          watch: watchResult,
+          nextSyncToken: syncTokenUpdateResult,
+          syncDataUpdate: syncUpdate,
+        },
+      };
+      //@ts-ignore
+      res.promise(Promise.resolve(fullResults));
+    } catch (e) {
+      //@ts-ignore
+      res.promise(Promise.reject(e));
+    }
+  };
+*/

@@ -19,9 +19,16 @@ import { useGridLayout } from "./hooks/grid/useGridLayout";
 import { usePreferences } from "./hooks/usePreferences";
 import { Sidebar } from "./components/Sidebar";
 
+export const Calendar = () => {
+  const { token } = useToken();
+  if (!token) {
+    return <Navigate to={ROOT_ROUTES.LOGIN} />;
+  }
+  return <CalendarView />;
+};
+
 export const CalendarView = () => {
   const prefs = usePreferences();
-  const { token } = useToken();
 
   const { today, todayIndex } = useToday();
   const weekProps = useWeek(today);
@@ -46,10 +53,6 @@ export const CalendarView = () => {
   const rootProps: RootProps = {
     component: { today: today },
   };
-
-  if (!token) {
-    return <Navigate to={ROOT_ROUTES.LOGIN} />;
-  }
 
   return (
     <Styled id="cal">

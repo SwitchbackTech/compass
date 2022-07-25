@@ -9,5 +9,6 @@ export const Collections = {
   EVENT: useDevCollections ? "_dev.event" : "event",
   OAUTH: useDevCollections ? "_dev.oauth" : "oauth",
   PRIORITY: useDevCollections ? "_dev.priority" : "priority",
+  SYNC: useDevCollections ? "_dev.sync" : "sync",
   USER: useDevCollections ? "_dev.user" : "user",
 };
