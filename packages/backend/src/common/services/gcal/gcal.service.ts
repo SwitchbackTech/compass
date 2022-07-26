@@ -5,6 +5,7 @@ import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
+import { error, GcalError } from "@backend/common/errors/types/backend.errors";
 
 const logger = Logger("app:compass.gcal.service");
 
@@ -57,18 +58,18 @@ class GCalService {
   }
 
   async listCalendars(gcal: gCalendar) {
-    try {
-      const response = await gcal.calendarList.list();
-      // const response = await gcal.settings.list();
-      return response.data;
-    } catch (e: GaxiosError) {
-      return new BaseError(
-        "Getting GCalendarLists Failed",
-        e,
-        e?.code || Status.UNSURE,
-        true
-      );
-    }
+    // try { //-- just let bubble up and provide generic error (?)
+    const response = await gcal.calendarList.list();
+    return response.data;
+    // } catch (e: GaxiosError) {
+    // throw error(GcalError.Unsure, "Getting GCalendarLists failed");
+    // return new BaseError(
+    //   "Getting GCalendarLists Failed",
+    //   e,
+    //   e?.code || Status.UNSURE,
+    //   true
+    // );
+    // }
   }
 
   async updateEvent(gcal: gCalendar, gEventId: string, event: gSchema$Event) {

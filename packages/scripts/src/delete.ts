@@ -44,4 +44,6 @@ export const deleteAllCompassDataForUser = async (user: string) => {
   summary.user = _user.deletedCount;
 
   console.log(`Deleted: ${JSON.stringify(summary, null, 2)}`);
+
+  process.exit(0);
 };

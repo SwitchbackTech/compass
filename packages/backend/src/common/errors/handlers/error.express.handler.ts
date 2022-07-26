@@ -39,7 +39,7 @@ export const handleExpressError = (
   } else {
     //TODO convert this object into one that has same keys as BaseError (?)
     const errInfo: Info_Error = {
-      name: err.name,
+      name: err.result,
       message: err.message,
       stack: undefined,
     };

@@ -26,6 +26,7 @@ import {
 import { Collections } from "@backend/common/constants/collections";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { error, SyncError } from "@backend/common/errors/types/backend.errors";
 
 import {
   assembleBulkOperations,
@@ -133,19 +134,12 @@ class SyncService {
     const saveRes = await mongoService.db
       .collection(Collections.WATCHLOG_GCAL)
       .insertOne(watchInfo);
-
-    if (saveRes.acknowledged) {
-      return "success";
-    } else {
-      logger.error("Failed to save watch info");
-      logger.error(saveRes);
-      return "failed";
-    }
+    return saveRes;
   }
 
   /*
   Setup the notification channel for a user's calendar,
-  telling google where to notify us when an event changes
+  telling google how to notify us when an event changes
   */
   async startWatchingCalendar(
     gcal: gCalendar,
@@ -160,8 +154,8 @@ class SyncService {
     );
 
     try {
-      const _expiration = getChannelExpiration();
-      const watchRes = await gcal.events.watch({
+      const expiration = getChannelExpiration();
+      const { data: watchData } = await gcal.events.watch({
         calendarId: calendarId,
         requestBody: {
           id: channelId,
@@ -169,11 +163,15 @@ class SyncService {
           // TODO: once dedicated e2e test VM, use that instead of prod
           address: `${ENV.BASEURL_PROD}${GCAL_NOTIFICATION_URL}`,
           type: "web_hook",
-          expiration: _expiration,
+          expiration,
         },
       });
 
-      const resourceId = watchRes.data.resourceId || "missingResourceId";
+      const { resourceId } = watchData;
+      if (!resourceId) {
+        throw error(SyncError.MissingResourceId, "Calendar Watch Failed");
+      }
+
       const saveWatchInfoRes = await this.saveWatchInfo(
         userId,
         calendarId,
@@ -184,11 +182,11 @@ class SyncService {
         userId,
         channelId,
         resourceId,
-        _expiration
+        expiration
       );
 
       return {
-        watchResult: { channel: watchRes.data, saveForDev: saveWatchInfoRes },
+        watchResult: { channel: watchData, saveForDev: saveWatchInfoRes },
         syncUpdate,
       };
     } catch (e) {
@@ -459,33 +457,23 @@ class SyncService {
     resource: Resource_Sync,
     nextSyncToken: string
   ) => {
-    try {
-      const result = await mongoService.db
-        .collection(Collections.SYNC)
-        .findOneAndUpdate(
-          {
-            user: userId,
+    const result = await mongoService.db
+      .collection(Collections.SYNC)
+      .findOneAndUpdate(
+        {
+          user: userId,
+        },
+        {
+          $set: {
+            [`google.${resource}.nextSyncToken`]: nextSyncToken,
+            [`google.${resource}.lastSyncedAt`]: new Date(),
           },
-          {
-            $set: {
-              [`google.${resource}.nextSyncToken`]: nextSyncToken,
-              [`google.${resource}.lastSyncedAt`]: new Date(),
-            },
-          },
-          { upsert: true },
-          { returnDocument: "after" }
-        );
-
-      return result;
-    } catch (e) {
-      logger.error(e);
-      throw new BaseError(
-        "Update Failed",
-        `failed to update ${resource} for ${userId}`,
-        500,
-        true
+        },
+        { upsert: true },
+        { returnDocument: "after" }
       );
-    }
+
+    return result;
   };
 
   //__ replace with above

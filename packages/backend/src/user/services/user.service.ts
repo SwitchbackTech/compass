@@ -1,10 +1,9 @@
 import { mapUserToCompass } from "@core/mappers/map.user";
-import { Result_Delete_User } from "@core/types/user.types";
 import { UserInfo_Google } from "@core/types/auth.types";
-import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";
 import { Collections } from "@backend/common/constants/collections";
+import { AuthError, error } from "@backend/common/errors/types/backend.errors";
 
 const logger = Logger("app:user.service");
 
@@ -21,6 +20,10 @@ class UserService {
       .insertOne(compassUser);
 
     const userId = createUserRes.insertedId.toString();
+    if (!userId) {
+      throw error(AuthError.UserCreateFailed, "Failed to create Compass user");
+    }
+
     return userId;
   };
 

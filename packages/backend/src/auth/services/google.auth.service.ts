@@ -64,11 +64,11 @@ class GoogleAuthService {
     return gcal;
   }
 
-  async getGoogleUserInfo(): Promise<UserInfo_Google | BaseError> {
+  async getGoogleUserInfo(): Promise<UserInfo_Google> {
     const idToken = this.oauthClient.credentials.id_token;
 
     if (!idToken) {
-      return new BaseError(
+      throw new BaseError(
         "No id_token",
         "oauth client is missing id_token, so couldn't verify user",
         Status.BAD_REQUEST,

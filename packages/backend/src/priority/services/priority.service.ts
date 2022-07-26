@@ -2,6 +2,7 @@
 import { Priorities } from "@core/constants/core.constants";
 import { colorNameByPriority } from "@core/constants/colors";
 import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
+import { Status } from "@core/errors/status.codes";
 import { BaseError } from "@core/errors/errors.base";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
@@ -43,7 +44,7 @@ class PriorityService {
   async create(
     userId: string,
     data: PriorityReq | PriorityReq[]
-  ): Promise<Schema_Priority | Schema_Priority[] | BaseError> {
+  ): Promise<Schema_Priority | Schema_Priority[]> {
     if (data instanceof Array) {
       // TODO catch BulkWriteError
       // TODO confirm none exist with same name
@@ -62,11 +63,10 @@ class PriorityService {
         }
       );
       if (priorityExists) {
-        return new BaseError(
+        throw new BaseError(
           "Priority Exists",
           `${data.name} already exists`,
-          // 304, //todo status
-          200, //todo status
+          Status.NOT_IMPLEMENTED,
           true
         );
       }
@@ -85,9 +85,7 @@ class PriorityService {
     }
   }
 
-  async createDefaultPriorities(
-    userId: string
-  ): Promise<Schema_Priority[] | BaseError> {
+  createDefaultPriorities = async (userId: string) => {
     return this.create(userId, [
       {
         color: colorNameByPriority.unassigned,
@@ -110,7 +108,7 @@ class PriorityService {
         user: userId,
       },
     ]);
-  }
+  };
 
   async deleteAllByUser(userId: string) {
     const filter = { user: userId };

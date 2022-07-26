@@ -1,6 +1,5 @@
 //@ts-nocheck
 import { InsertManyResult } from "mongodb";
-import { Result_Import_Gcal } from "@core/types/sync.types";
 import { gSchema$Event } from "@core/types/gcal";
 import { SOMEDAY_EVENTS_LIMIT } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
@@ -13,10 +12,11 @@ import {
   Result_DeleteMany,
 } from "@core/types/event.types";
 import { Logger } from "@core/logger/winston.logger";
+import { Collections } from "@backend/common/constants/collections";
+import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import { Collections } from "@backend/common/constants/collections";
+import { error, EventError } from "@backend/common/errors/types/backend.errors";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
 import { getGcalOLD } from "@backend/auth/services/OLDgoogle.auth.service";
 import { Origin } from "@core/constants/core.constants";
@@ -190,75 +190,56 @@ class EventService {
     }
   }
 
-  async import(userId: string, gcal: gCalendar): Promise<Result_Import_Gcal> {
-    try {
-      let nextPageToken = undefined;
-      let nextSyncToken = undefined;
-      let total = 0;
-      const errors = [];
+  import = async (userId: string, gcal: gCalendar) => {
+    let nextPageToken = undefined;
+    let nextSyncToken = undefined;
+    let total = 0;
 
-      const numYears = 1;
-      logger.info(
-        `Importing past ${numYears} years of GCal events for user: ${userId}`
+    const numYears = 1;
+    logger.info(
+      `Importing past ${numYears} years of GCal events for user: ${userId}`
+    );
+    const xYearsAgo = yearsAgo(numYears);
+
+    // always fetches once, then continues until
+    // there are no more events
+    do {
+      const params: gParamsEventsList = {
+        calendarId: GCAL_PRIMARY,
+        timeMin: xYearsAgo,
+        pageToken: nextPageToken,
+      };
+      const gEvents = await gcalService.getEvents(gcal, params);
+
+      if (!gEvents.data.items) {
+        throw error(EventError.NoGevents, "Potentially missing events");
+      }
+
+      total += gEvents.data.items.length;
+
+      const cEvents = MapEvent.toCompass(
+        userId,
+        gEvents.data.items,
+        Origin.GOOGLE_IMPORT
       );
-      const xYearsAgo = yearsAgo(numYears);
+      const response: InsertManyResult = await this.createMany(userId, cEvents);
+      if (response.acknowledged && response.insertedCount !== cEvents.length) {
+        throw error(
+          EventError.MissingGevents,
+          `Only ${response.insertedCount}/${cEvents.length} imported`
+        );
+      }
 
-      // always fetches once, then continues until
-      // there are no more events
-      do {
-        const params: gParamsEventsList = {
-          calendarId: GCAL_PRIMARY,
-          timeMin: xYearsAgo,
-          pageToken: nextPageToken,
-        };
-        const gEvents = await gcalService.getEvents(gcal, params);
-        if (gEvents.data.items) total += gEvents.data.items.length;
+      nextPageToken = gEvents.data.nextPageToken;
+      nextSyncToken = gEvents.data.nextSyncToken;
+    } while (nextPageToken !== undefined);
 
-        if (gEvents.data.items) {
-          const cEvents = MapEvent.toCompass(
-            userId,
-            gEvents.data.items,
-            Origin.GOOGLE_IMPORT
-          );
-          const response: InsertManyResult = await this.createMany(
-            userId,
-            cEvents
-          );
-          if (
-            response.acknowledged &&
-            response.insertedCount !== cEvents.length
-          ) {
-            errors.push(
-              `Only ${response.insertedCount}/${cEvents.length} imported`
-            );
-          }
-
-          nextPageToken = gEvents.data.nextPageToken;
-          nextSyncToken = gEvents.data.nextSyncToken;
-        } else {
-          logger.error("unexpected empty values in events");
-        }
-      } while (nextPageToken !== undefined);
-
-      const summary = {
-        total: total,
-        nextSyncToken: nextSyncToken,
-        errors: errors,
-      };
-      return summary;
-    } catch (e) {
-      // TODO catch 401 error and start from the top
-      // this shouldn't happen for a first-time import
-      logger.error(e.message);
-
-      const errorSummary = {
-        total: -1,
-        nextSyncToken: "unsure",
-        errors: [e],
-      };
-      return errorSummary;
-    }
-  }
+    const summary = {
+      total: total,
+      nextSyncToken: nextSyncToken as string,
+    };
+    return summary;
+  };
 
   async readAll(
     userId: string,
