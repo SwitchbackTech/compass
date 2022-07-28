@@ -27,11 +27,6 @@ class UserService {
     return userId;
   };
 
-  // TODO implement script to call this for easy DB cleaning
-  // only do this if the user matches the provided
-  // access Token (verify that works)
-  // why: prevent anyone from calling this
-  // only run if isDev() [for now]
   async deleteUser(userId: string) {
     logger.info(`Deleting all data for user: ${userId}`);
 

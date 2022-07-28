@@ -1,6 +1,7 @@
 import express from "express";
 import { verifySession } from "supertokens-node/recipe/session/framework/express";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
+import authMiddleware from "@backend/auth/middleware/auth.middleware";
 
 import eventController from "./controllers/event.controller";
 
@@ -31,7 +32,7 @@ export class EventRoutes extends CommonRoutesConfig {
     */
     this.app
       .route(`/api/event/delete-all/:userId`)
-      .all(verifySession())
+      .all([verifySession(), authMiddleware.verifyIsDev])
       .delete(eventController.deleteAllByUser);
 
     this.app
@@ -40,11 +41,6 @@ export class EventRoutes extends CommonRoutesConfig {
       .get(eventController.readById)
       .put(eventController.update)
       .delete(eventController.delete);
-
-    // this.app
-    //   .route(`/api/event/import`)
-    //   .all(jwtMiddleware.verifyTokenAndSaveUserId)
-    //   .post(eventController.reimport);
 
     return this.app;
   }

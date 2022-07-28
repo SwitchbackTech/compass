@@ -18,16 +18,12 @@ const googleClientSecret = IS_DEV
 
 const _error = "error!!!";
 export const ENV = {
-  ACCESS_TOKEN_LIFE: process.env["ACCESS_TOKEN_LIFE"] || _error,
-  ACCESS_TOKEN_SECRET: process.env["ACCESS_TOKEN_SECRET"] || _error,
   BASEURL_PROD: process.env["BASEURL_PROD"] || _error,
   CLIENT_ID: googleClientId || _error,
   CLIENT_SECRET: googleClientSecret || _error,
   LOG_LEVEL: process.env["LOG_LEVEL"] || "debug",
   NODE_ENV: _nodeEnv,
   PORT: process.env["PORT"] || PORT_DEFAULT_API,
-  REFRESH_TOKEN_LIFE: process.env["REFRESH_TOKEN_LIFE"] || _error,
-  REFRESH_TOKEN_SECRET: process.env["REFRESH_TOKEN_SECRET"] || _error,
   SUPERTOKENS_URI: process.env["SUPERTOKENS_URI"] || _error,
   SUPERTOKENS_KEY: process.env["SUPERTOKENS_KEY"] || _error,
 };

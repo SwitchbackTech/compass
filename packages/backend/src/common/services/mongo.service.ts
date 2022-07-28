@@ -49,28 +49,6 @@ class MongoService {
     const r = await this.db.collection(collection).findOne(filter);
     return r !== null;
   };
-
-  /* Commented cuz TS has trouble inferring DTO type
-  findOneAndUpdate = async (
-    collection: string,
-    id: string,
-    userId: string,
-    payload: object
-  ) => {
-    const response = await this.db
-      .collection(collection)
-      .findOneAndUpdate(
-        { _id: this.objectId(id), user: userId },
-        { $set: payload },
-        { returnDocument: "after" }
-      );
-    if (response.value === null || response.ok === 0) {
-      logger.error("update failed");
-      return new BaseError("Update Failed", "Ensure id is correct", 400, true);
-    }
-    return response.value;
-  };
-  */
 }
 
 export default new MongoService();

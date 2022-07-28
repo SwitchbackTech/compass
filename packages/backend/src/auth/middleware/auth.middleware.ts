@@ -9,7 +9,7 @@ import {
 import { IS_DEV } from "@backend/common/constants/env.constants";
 
 class AuthMiddleware {
-  verifyIsDev = (req: Request, res: Response, next: NextFunction) => {
+  verifyIsDev = (_req: Request, res: Response, next: NextFunction) => {
     if (!IS_DEV) {
       res
         .status(Status.FORBIDDEN)

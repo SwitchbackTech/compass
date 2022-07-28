@@ -39,10 +39,3 @@ export class AuthRoutes extends CommonRoutesConfig {
     return this.app;
   }
 }
-//--
-// this.app.route(`/api/auth/demo`).post(authController.superTokensDemo);
-// this.app.get(`/api/auth/oauth-url`, [authController.getOauthUrl]);
-// this.app.get(`/api/auth/oauth-status`, [authController.checkOauthStatus]);
-// this.app.get(`/api/auth/oauth-complete`, [
-// authController.loginAfterOauthSucceeded,
-// ]);

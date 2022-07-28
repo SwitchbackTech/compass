@@ -41,13 +41,6 @@ class GoogleAuthService {
       ENV.CLIENT_SECRET,
       "postmessage"
     );
-    // .on("tokens", (tokens) => {
-    //   if (tokens.refresh_token) {
-    //     logger.debug("refresh token! TODO, save in DB");
-    //   }
-    //   logger.debug("got an access token, yo");
-    // });
-    // this.tokens = {};
   }
 
   getGcalClient() {

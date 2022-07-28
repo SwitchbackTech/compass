@@ -34,9 +34,14 @@ export const getNeighbourKey = (key = "", obj = {}, diff = 1): string => {
     );
   }
 
-  const index = +splitKeys[splitKeys.length - 1];
+  const index = splitKeys[splitKeys.length - 1];
+  // const index = +splitKeys[splitKeys.length - 1]; //++ previous
+  //++ fix
+  //@ts-ignore
   const propName = splitKeys.filter((value) => value !== `${index}`).join("_");
 
+  //++ fix
+  //@ts-ignore
   const neighbourIndex = index + diff;
   const neighbourKey = `${propName}_${neighbourIndex}`;
 

@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { GaxiosResponse } from "gaxios";
+import { GaxiosError } from "gaxios";
 import { Credentials } from "google-auth-library";
 import { SessionRequest } from "supertokens-node/framework/express";
 import Session from "supertokens-node/recipe/session";
@@ -27,8 +27,11 @@ import { Result_Auth_Compass, UserInfo_Compass } from "@core/types/auth.types";
 
 const logger = Logger("app:auth.controller");
 
-const isCodeInvalid = (e: unknown | GaxiosResponse) => {
-  return e?.code === "400" && e?.message === "invalid_grant";
+const isCodeInvalid = (e: GaxiosError | Error) => {
+  if ("code" in e && "message" in e) {
+    return e.code === "400" && e.message === "invalid_grant";
+  }
+  return false;
 };
 
 class AuthController {
@@ -43,12 +46,14 @@ class AuthController {
       const { userExists, user } = await findCompassUserBy("email", email);
 
       if (!userExists) {
+        //@ts-ignore
         res.promise(Promise.resolve({ error: "user doesn't exist" }));
         return;
       }
       await Session.createNewSession(res, user._id.toString(), {}, {});
     }
 
+    //@ts-ignore
     res.promise(
       Promise.resolve({
         message: `user session created for ${JSON.stringify(req.body)}`,
@@ -58,8 +63,9 @@ class AuthController {
 
   getUserIdFromSession = (req: SessionRequest, res: Response) => {
     const userId = req.session?.getUserId();
-    // res.promise(Promise.resolve({ userId }));
-    res.send({ userId });
+
+    //@ts-ignore
+    res.promise(Promise.resolve({ userId }));
   };
 
   loginOrSignup = async (
@@ -85,16 +91,22 @@ class AuthController {
       await Session.createNewSession(res, cUserId);
 
       const result: Result_Auth_Compass = { cUserId };
-      // res.json({ cUserId });
+
+      //@ts-ignore
       res.promise(Promise.resolve(result));
     } catch (e) {
+      //@ts-ignore
       if (isCodeInvalid(e)) {
         const gError = error(GcalError.CodeInvalid, "gAPI Auth Failed");
+
+        //@ts-ignore
         res.promise(Promise.resolve({ error: gError }));
         return;
       }
 
       logger.error("Auth failed, because:\n", e);
+
+      //@ts-ignore
       res.promise(
         Promise.resolve({
           error: e,
@@ -129,7 +141,7 @@ class AuthController {
     if (req.body.userId) {
       userId = req.body.userId;
     } else {
-      userId = req.session?.getUserId();
+      userId = req.session?.getUserId() as string;
     }
 
     const revokeResult = await compassAuthService.revokeSessionsByUser(userId);
@@ -146,7 +158,6 @@ class AuthController {
       );
     }
 
-    // try {
     gAuthClient.oauthClient.setCredentials(tokens);
 
     const { gUser } = await gAuthClient.getGoogleUserInfo();
@@ -190,65 +201,3 @@ class AuthController {
 }
 
 export default new AuthController();
-
-/* old auth routes
-
-  checkOauthStatus = async (req: express.Request, res: express.Response) => {
-    const integration: string = req.query["integration"];
-    if (integration === Origin.GOOGLE) {
-      const status = await new googleOauthServiceOLD().checkOauthStatus(req);
-      res.promise(Promise.resolve(status));
-    } else {
-      res.promise(
-        new BaseError(
-          "Not Supported",
-          `${integration} is not supported`,
-          Status.BAD_REQUEST,
-          true
-        )
-      );
-    }
-  };
-
-  getOauthUrl = (
-    req: express.Request,
-    res: express.Response
-  ): Promise<Result_OauthUrl> => {
-    if (req.query["integration"] === Origin.GOOGLE) {
-      const authState = uuidv4();
-      const authUrl = new googleOauthServiceOLD().generateAuthUrl(authState);
-      res.promise(Promise.resolve({ authUrl, authState }));
-    }
-  };
-
-  loginAfterOauthSucceeded = async (
-    req: express.Request,
-    res: express.Response
-  ) => {
-    const _integration = Origin.GOOGLE;
-    if (_integration === Origin.GOOGLE) {
-      const query: Params_AfterOAuth = req.query;
-      const { code, state } = query;
-
-      const gAuthService = new googleOauthServiceOLD();
-      const tokens = await gAuthService.initTokens(code);
-
-      const gUser: User_Google = await gAuthService.getUser();
-
-      // TODO use query.state to start watching for that channel
-      // via gcal.service
-
-      const compassLoginData: CombinedLogin_GoogleOLD = {
-        user: gUser,
-        oauth: Object.assign({}, { state }, { tokens }),
-      };
-
-      const loginResp = await compassAuthService.loginToCompassOLD(
-        compassLoginData
-      );
-
-      //TODO validate resp
-      res.promise(Promise.resolve(loginCompleteHtml));
-    }
-  };
-*/

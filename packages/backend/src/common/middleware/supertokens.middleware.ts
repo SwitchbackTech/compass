@@ -12,7 +12,6 @@ export const initSupertokens = () => {
   supertokens.init({
     appInfo: {
       appName: APP_NAME,
-      // apiDomain: "http://localhost:3000",  //prev 9080
       apiDomain: `http://localhost:${PORT_DEFAULT_API}`,
       websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
       apiBasePath: "/api",
@@ -21,7 +20,6 @@ export const initSupertokens = () => {
       connectionURI: ENV.SUPERTOKENS_URI,
       apiKey: ENV.SUPERTOKENS_KEY,
     },
-    enableDebugLogs: true,
     framework: "express",
     recipeList: [Session.init()],
   });
@@ -29,7 +27,6 @@ export const initSupertokens = () => {
 
 export const supertokensCors = () =>
   cors({
-    // origin: "http://localhost:9080", //--
     origin: `http://localhost:${PORT_DEFAULT_WEB}`,
     allowedHeaders: ["content-type", ...supertokens.getAllCORSHeaders()],
     credentials: true,

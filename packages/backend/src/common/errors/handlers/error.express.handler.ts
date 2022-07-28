@@ -18,12 +18,15 @@ const invalidPathHandler = (
 */
 
 interface Info_Error {
-  name: string;
+  name?: string;
   message: string;
   stack?: string;
 }
 
 interface CompassError extends Error {
+  name: string;
+  result?: string;
+  stack?: string;
   status?: number;
 }
 
