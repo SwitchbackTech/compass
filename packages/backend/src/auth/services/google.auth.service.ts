@@ -1,19 +1,14 @@
 import { google } from "googleapis";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { Status } from "@core/errors/status.codes";
-import { Logger } from "@core/logger/winston.logger";
 import { BaseError } from "@core/errors/errors.base";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
-const logger = Logger("app:google.auth.service");
-
 export const getGcalClient = async (userId: string) => {
   const { user, userExists } = await findCompassUserBy("_id", userId);
   if (!userExists) {
-    // throwing error forces middleware error handler to address
-    // before other bad stuff can happen
     throw new BaseError(
       "Gcal Auth failed",
       `Compass user does not exist: ${userId}`,
@@ -39,7 +34,6 @@ export const getGcalClient = async (userId: string) => {
 class GoogleAuthService {
   accessToken: string | undefined;
   oauthClient: OAuth2Client;
-  // tokens: Credentials;
 
   constructor() {
     this.oauthClient = new OAuth2Client(

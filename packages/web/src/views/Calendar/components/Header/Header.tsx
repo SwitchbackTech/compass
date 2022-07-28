@@ -10,6 +10,8 @@ import { getWeekDayLabel } from "@web/common/utils/event.util";
 import { WEEK_DAYS_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { EventApi } from "@web/ducks/events/event.api";
+import { AuthApi } from "@web/common/apis/auth.api";
 
 import {
   StyledHeaderFlex,
@@ -73,6 +75,18 @@ export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
             today={today}
             weekInFocus={weekProps.component.week}
           />
+          <button onClick={AuthApi.createSession}>Create session</button>
+          <button onClick={AuthApi.verifyTempShort}>Verify</button>
+          <button
+            onClick={() =>
+              EventApi.get({
+                startDate: "2022-07-20",
+                endDate: "2022-07-27",
+              })
+            }
+          >
+            Get Events
+          </button>
         </StyledNavigationButtons>
       </StyledHeaderFlex>
       <StyledWeekDaysFlex>

@@ -1,11 +1,11 @@
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { findCompassUsersBy } from "@backend/user/queries/user.queries";
 import calendarService from "@backend/calendar/services/calendar.service";
 import userService from "@backend/user/services/user.service";
 import syncService from "@backend/sync/services/sync.service";
 
-interface Summary_Delete {
+export interface Summary_Delete {
   calendarlist?: number;
   events?: number;
   eventWatches?: number;
@@ -14,15 +14,8 @@ interface Summary_Delete {
   user?: number;
 }
 
-export const deleteAllCompassDataForUser = async (user: string) => {
+const deleteCompassDataForUser = async (userId: string) => {
   const summary: Summary_Delete = {};
-
-  const isGmail = user.includes("@gmail.com");
-  const idKeyword = isGmail ? "email" : "_id";
-
-  const { user: userRecord } = await findCompassUserBy(idKeyword, user);
-  const userId = idKeyword === "_id" ? user : userRecord?._id.toString();
-
   const priorities = await priorityService.deleteAllByUser(userId);
   summary.priorities = priorities.deletedCount;
 
@@ -40,10 +33,35 @@ export const deleteAllCompassDataForUser = async (user: string) => {
   const syncs = await syncService.deleteAllByUser(userId);
   summary.syncs = syncs.deletedCount;
 
+  //--
+  // not relying on session auth in this script,
+  // so no need to revoke any sessions (?)
+  // initSupertokens();
+  // const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
+  // userId
+  // );
+  // summary.sessionsRevoked = sessionsRevoked;
+
   const _user = await userService.deleteUser(userId);
   summary.user = _user.deletedCount;
 
-  console.log(`Deleted: ${JSON.stringify(summary, null, 2)}`);
+  return summary;
+};
 
-  process.exit(0);
+export const deleteCompassDataForMatchingUsers = async (user: string) => {
+  console.log(`Deleting Compass data for users matching: ${user}`);
+
+  const isGmail = user.includes("@gmail.com");
+  const idKeyword = isGmail ? "email" : "_id";
+
+  const users = await findCompassUsersBy(idKeyword, user);
+
+  const totalSummary: Summary_Delete[] = [];
+  for (const user of users) {
+    const userId = user?._id.toString();
+    const summary = await deleteCompassDataForUser(userId);
+    totalSummary.push(summary);
+  }
+
+  console.log(`Deleted: ${JSON.stringify(totalSummary, null, 2)}`);
 };

@@ -1,6 +1,6 @@
 import express from "express";
+import { verifySession } from "supertokens-node/recipe/session/framework/express";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
-import jwtMiddleware from "@backend/auth/middleware/jwt.middleware";
 
 import calendarController from "./controllers/calendar.controller";
 
@@ -12,7 +12,7 @@ export class CalendarRoutes extends CommonRoutesConfig {
   configureRoutes(): express.Application {
     this.app
       .route(`/api/calendarlist`)
-      .all(jwtMiddleware.verifyTokenAndSaveUserId)
+      .all(verifySession())
       .get(calendarController.list)
       .post(calendarController.create);
     return this.app;

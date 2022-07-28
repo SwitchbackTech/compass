@@ -1,16 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
-import {
-  hasGrantedAllScopesGoogle,
-  hasGrantedAnyScopeGoogle,
-  useGoogleLogin,
-} from "@react-oauth/google";
-import { BaseError } from "@core/errors/errors.base";
+import { useGoogleLogin } from "@react-oauth/google";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { AuthApi } from "@web/common/apis/auth.api";
-import { EventApi } from "@web/ducks/events/event.api";
-import { CalendarListApi } from "@web/common/apis/calendarlist.api";
-import { LocalStorage } from "@web/common/constants/web.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ColorNames } from "@core/constants/colors";
 import { Text } from "@web/components/Text";
@@ -19,32 +11,11 @@ import googleSignInBtn from "@web/assets/png/googleSignInBtn.png";
 
 import { StyledLogin } from "./styled";
 
-const ACCESS_TOKEN_SUCCESS = "accessTokenSuccess";
-// const ACCESS_TOKEN_ERROR = "accessTokenError";
-
 export const LoginView = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const antiCsrfToken = useRef(self.crypto.randomUUID()).current;
-
-  useEffect(() => {
-    const successListener = () => {
-      setIsAuthenticated(true);
-    };
-    // const errorListener = () => {
-    // setIsAuthenticating(false);
-    // };
-
-    window.addEventListener(ACCESS_TOKEN_SUCCESS, successListener);
-    // window.addEventListener(ACCESS_TOKEN_ERROR, errorListener);
-
-    return () => {
-      console.log("removing listeners...");
-      window.removeEventListener(ACCESS_TOKEN_SUCCESS, successListener);
-      // window.removeEventListener(ACCESS_TOKEN_ERROR, errorListener);
-    };
-  }, []);
 
   const SCOPES_REQUIRED = [
     "profile",
@@ -68,7 +39,6 @@ export const LoginView = () => {
 
       if (isFromHacker) {
         alert("Nice try, hacker");
-        // window.dispatchEvent(new Event(ACCESS_TOKEN_ERROR));
         return;
       }
       if (isMissingPermissions(scope)) {
@@ -76,21 +46,19 @@ export const LoginView = () => {
         return;
       }
 
-      try {
-        const authResult = await AuthApi.loginOrSignup(code);
-        console.log("authRes:", authResult);
-        if (authResult.error) {
-          alert(
-            "An error occured on Compass' backend while logging you in. Please let Ty know"
-          );
-          console.log(authResult.error);
-          return;
-        }
-
-        window.dispatchEvent(new Event(ACCESS_TOKEN_SUCCESS));
-      } catch (e) {
-        console.log("errr", e);
+      setIsAuthenticating(true);
+      const { error } = await AuthApi.loginOrSignup(code);
+      if (error) {
+        alert(
+          "An error occured on Compass' backend while logging you in. Please let Ty know"
+        );
+        console.log(error);
+        setIsAuthenticating(false);
+        return;
       }
+
+      setIsAuthenticating(false);
+      setIsAuthenticated(true);
     },
     onError: (error) => {
       alert(`Login failed because: ${error.error}`);
@@ -101,14 +69,13 @@ export const LoginView = () => {
   return (
     <>
       {isAuthenticated ? (
-        // <Navigate to={ROOT_ROUTES.ROOT} />
-        <h1>TODO: Navigate to caledar ...</h1>
+        <Navigate to={ROOT_ROUTES.ROOT} />
       ) : (
         <StyledLogin
           alignItems={AlignItems.CENTER}
           direction={FlexDirections.COLUMN}
         >
-          {/* {isAuthenticating && <AbsoluteOverflowLoader />} */}
+          {isAuthenticating && <AbsoluteOverflowLoader />}
           <Text colorName={ColorNames.WHITE_2} size={30}>
             Connect your Google Calendar
           </Text>
@@ -120,7 +87,6 @@ export const LoginView = () => {
 
           <div
             onClick={() => {
-              // setIsAuthenticating(true);
               login();
             }}
           >
@@ -131,6 +97,29 @@ export const LoginView = () => {
     </>
   );
 };
+
+/* old success listener 
+
+        // window.dispatchEvent(new Event(AUTH_SUCCESS));
+
+  useEffect(() => {
+    const successListener = () => {
+      setIsAuthenticated(true);
+    };
+    // const errorListener = () => {
+    // setIsAuthenticating(false);
+    // };
+
+    window.addEventListener(ACCESS_TOKEN_SUCCESS, successListener);
+    // window.addEventListener(ACCESS_TOKEN_ERROR, errorListener);
+
+    return () => {
+      console.log("removing listeners...");
+      window.removeEventListener(ACCESS_TOKEN_SUCCESS, successListener);
+      // window.removeEventListener(ACCESS_TOKEN_ERROR, errorListener);
+    };
+  }, []);
+*/
 
 /* old stuff - remove once done 
   const startGoogleOauth = async (createAccount: boolean) => {

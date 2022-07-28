@@ -2,76 +2,17 @@ import { google } from "googleapis";
 import express from "express";
 import { Credentials, OAuth2Client } from "google-auth-library";
 import { BaseError } from "@core/errors/errors.base";
-import { gCalendar } from "@core/types/gcal";
 import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";
 import { Collections } from "@backend/common/constants/collections";
-import { isDev } from "@backend/common/helpers/common.helpers";
 import { ENV } from "@backend/common/constants/env.constants";
-import { createToken } from "@backend/common/helpers/jwt.utils";
+import { IS_DEV } from "@backend/common/constants/backend.constants";
 
 const logger = Logger("app:google.auth.serviceOLD");
 
 /********
 Helpers 
 ********/
-export const getGcalOLD = async (userId: string): Promise<gCalendar> => {
-  //@ts-ignore
-  const oauth: Schema_Oauth = await mongoService.db
-    .collection(Collections.OAUTH)
-    .findOne({ user: userId });
-
-  if (oauth === null) {
-    // throwing error forces middleware error handler to address
-    // before other bad stuff can happen
-    throw new BaseError(
-      "Gcal Auth failed",
-      `No OAUTH record for user: ${userId}`,
-      500,
-      true
-    );
-  }
-
-  // replace with service one, so don't have to keep re-doing
-  // client stuff
-  // does this set the 'offline' version (required for auto-refreshing)
-  const oauthClient = new OAuth2Client(
-    ENV.CLIENT_ID,
-    ENV.CLIENT_SECRET,
-    "postmessage"
-  );
-
-  oauthClient.on("tokens", (tokens) => {
-    // ensures we use, persist the more recent refresh_token
-    if (tokens.refresh_token) {
-      console.log("** got REFRESH TOKEN! TODO: save in DB");
-    }
-    console.log("** got access token");
-  });
-
-  // make sure the token never expires by passing the persisted refresh token
-  // so the oauthClient can swap them out if needed
-  oauthClient.setCredentials({
-    refresh_token: oauth.tokens.refresh_token,
-  });
-
-  const calendar = google.calendar({
-    version: "v3",
-    auth: oauthClient,
-  });
-
-  return calendar;
-
-  /* old way */
-  // const googleClient = new GoogleOauthService();
-  // //@ts-ignore
-  // await googleClient.oldSetTokens(null, oauth.tokens);
-
-  // const calendar = google.calendar({
-  //   version: "v3",
-  //   auth: googleClient.oauthClient,
-  // });
-};
 
 class GoogleOauthServiceOLD {
   accessToken: string | undefined;
@@ -79,7 +20,7 @@ class GoogleOauthServiceOLD {
   tokens: Credentials;
 
   constructor() {
-    const redirectUri = isDev()
+    const redirectUri = IS_DEV
       ? `http://localhost:${ENV.PORT}/api/auth/oauth-complete`
       : `${ENV.BASEURL_PROD}/api/auth/oauth-complete`;
 

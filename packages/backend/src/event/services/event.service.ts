@@ -18,7 +18,7 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { error, EventError } from "@backend/common/errors/types/backend.errors";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
-import { getGcalOLD } from "@backend/auth/services/OLDgoogle.auth.service";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Origin } from "@core/constants/core.constants";
 import { gCalendar, gParamsEventsList } from "@core/types/gcal";
 
@@ -154,10 +154,8 @@ class EventService {
         .deleteOne(filter);
 
       if (deleteFromGcal) {
-        const gcal = await getGcalOLD(userId);
-        // no await because gcal doesnt return much of a response,
-        // so there's no use in waiting for it to finish
-        gcalService.deleteEvent(gcal, gEventId);
+        const gcal = await getGcalClient(userId);
+        await gcalService.deleteEvent(gcal, gEventId);
       }
 
       return response;
@@ -320,7 +318,7 @@ class EventService {
           event["gEventId"] = gEvent.id;
         } else {
           const gEvent = MapEvent.toGcal(event);
-          const gcal = await getGcalOLD(userId);
+          const gcal = await getGcalClient(userId);
           await gcalService.updateEvent(gcal, event.gEventId, gEvent);
         }
       }
@@ -376,7 +374,7 @@ class EventService {
       },
     };
 
-    const gcal = await getGcalOLD(userId);
+    const gcal = await getGcalClient(userId);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const gEvent = await gcalService.createEvent(gcal, gEventWithOrigin);
 

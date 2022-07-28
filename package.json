@@ -19,7 +19,7 @@
     "cli": "export NODE_ENV=development && yarn ts-node  --pretty --transpile-only -r tsconfig-paths/register packages/scripts/src/cli",
     "cli:watch": "export NODE_ENV=development && yarn ts-node-dev  --pretty --transpile-only -r tsconfig-paths/register packages/scripts/src/cli",
     "dev:desktop": "cross-env NODE_ENV=development electron .",
-    "dev:backend": "export DEBUG=app* && export NODE_ENV=development && yarn dev:backend-start",
+    "dev:backend": "export DEBUG=com.supertokens && export NODE_ENV=development && yarn dev:backend-start",
     "dev:backend -verbose": "export DEBUG=* && yarn dev:backend-start",
     "dev:backend-start": "cd packages/backend && ts-node-dev --respawn --pretty --transpile-only -r tsconfig-paths/register src/app.ts",
     "dev:update": "git checkout main && git pull && yarn",

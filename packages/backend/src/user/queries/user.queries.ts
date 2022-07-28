@@ -13,17 +13,29 @@ export const findCompassUser = async (googleId: string) => {
 type Ids_User = "email" | "_id" | "googleId";
 
 export const findCompassUserBy = async (key: Ids_User, value: string) => {
-  let filter;
-
-  if (key === "_id") {
-    filter = { _id: mongoService.objectId(value) };
-  } else {
-    filter = { [key]: value };
-  }
+  const filter = _getIdFilter(key, value);
 
   const user = (await mongoService.db
     .collection(Collections.USER)
     .findOne(filter)) as Schema_User;
 
   return { userExists: user !== null, user };
+};
+
+export const findCompassUsersBy = async (key: Ids_User, value: string) => {
+  const filter = _getIdFilter(key, value);
+
+  const users = await mongoService.db
+    .collection(Collections.USER)
+    .find(filter)
+    .toArray();
+
+  return users;
+};
+
+const _getIdFilter = (key: string, value: string) => {
+  if (key === "_id") {
+    return { _id: mongoService.objectId(value) };
+  }
+  return { [key]: value };
 };

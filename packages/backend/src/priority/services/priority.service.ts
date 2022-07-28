@@ -118,9 +118,8 @@ class PriorityService {
     return response;
   }
 
-  async deleteById(id: string) {
-    //TODO add user to filter (?)
-    const filter = { _id: mongoService.objectId(id) };
+  async deleteById(id: string, userId: string) {
+    const filter = { _id: mongoService.objectId(id), user: userId };
     const response = await mongoService.db
       .collection(Collections.PRIORITY)
       .deleteOne(filter);
@@ -129,12 +128,13 @@ class PriorityService {
 
   async updateById(
     id: string,
-    priority: PriorityReq
+    priority: PriorityReq,
+    userId: string
   ): Promise<Schema_Priority | BaseError> {
     const response = await mongoService.db
       .collection(Collections.PRIORITY)
       .findOneAndUpdate(
-        { _id: mongoService.objectId(id) },
+        { _id: mongoService.objectId(id), user: userId },
         { $set: priority },
         { returnDocument: "after" } // the new document
       );

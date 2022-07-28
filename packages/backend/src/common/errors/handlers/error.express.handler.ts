@@ -1,8 +1,8 @@
 import express from "express";
 import { BaseError } from "@core/errors/errors.base";
+import { IS_DEV } from "@backend/common/constants/env.constants";
 
 import { errorHandler } from "./error.handler";
-import { isDev } from "../../helpers/common.helpers";
 
 /*
 const invalidPathHandler = (
@@ -44,7 +44,7 @@ export const handleExpressError = (
       stack: undefined,
     };
 
-    if (isDev()) {
+    if (IS_DEV) {
       errInfo.stack = err.stack;
     }
 

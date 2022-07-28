@@ -1,34 +1,40 @@
-import axios from "axios";
 import { Result_Auth_Compass } from "@core/types/auth.types";
-import { API_BASEURL } from "@web/common/constants/web.constants";
-import Session from "supertokens-auth-react/recipe/session";
-Session.addAxiosInterceptors(axios);
+
+import { CompassApi } from "./compass.api";
 
 const AuthApi = {
   async loginOrSignup(code: string) {
-    const url = `${API_BASEURL}/oauth/google`;
-    const response = await axios.post(url, { code });
+    const response = await CompassApi.post(`/oauth/google`, { code });
+    console.log(response); //--
     return response.data as Result_Auth_Compass;
   },
+  createSession: async () => await CompassApi.post(`/auth/session`),
+  verifyTempShort: async () => await CompassApi.post(`/auth/verify-demo`),
 };
 
 export { AuthApi };
 
-/* OLD OAUTH STUFF
+/*
+verifyTemp: async () => { //works
+  const response = await CompassApi.post(`/verify-demo`);
+  return response;
+},
 
-  async checkOauthStatus(authState: string) {
-    const url = `${API_BASEURL}/auth/oauth-status?integration=${GOOGLE}&state=${authState}`;
-    const response = await axios.get(url);
-    return response.data as Result_OauthStatus;
-  },
+<button onClick={async () => await createSessionTemp()}> 
+<button onClick={async () => await AuthApi.verifyTemp()}> 
+<button onClick={async () => await AuthApi.verifyTempShort()}> 
 
-  async getOauthData(integration: string) {
-    if (integration === GOOGLE) {
-      const response = await axios.get(
-        `${API_BASEURL}/auth/oauth-url?integration=${GOOGLE}`
-      );
-      return response.data as Result_OauthUrl;
-    }
-  },
-};
+// reminder: use logout() if possible
+// app.post(
+//   "/api/auth/logout",
+//   verifySession(),
+//   async (req: SessionRequest, res) => {
+//     // This will delete the session from the db and from the frontend (cookies)
+//     const user = req.session?.getUserId();
+//     await req.session!.revokeSession();
+
+//     res.send(`Success! session revoked for ${user}`);
+//   }
+// );
+
 */

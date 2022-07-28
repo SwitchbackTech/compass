@@ -13,7 +13,6 @@ export interface Schema_User_Base {
     googleId: string;
     picture: string;
     refreshToken: string;
-    // tokens: Credentials;
   };
   signedUpAt?: Date;
   lastLoggedInAt?: Date;

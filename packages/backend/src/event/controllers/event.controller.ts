@@ -1,14 +1,12 @@
 //@ts-nocheck
-import express from "express";
-import { ReqBody, Res } from "@core/types/express.types";
-import { Logger } from "@core/logger/winston.logger";
+import { SessionRequest } from "supertokens-node/framework/express";
+import { SReqBody, Res } from "@core/types/express.types";
 import { Schema_Event, Params_DeleteMany } from "@core/types/event.types";
 import eventService from "@backend/event/services/event.service";
 
-const logger = Logger("app:event.controller");
 class EventController {
-  create = async (req: ReqBody<Schema_Event>, res: Res) => {
-    const userId = res.locals.user.id;
+  create = async (req: SReqBody<Schema_Event>, res: Res) => {
+    const userId = req.session?.getUserId();
 
     if (req.body instanceof Array) {
       const response = await eventService.createMany(userId, req.body);
@@ -21,16 +19,15 @@ class EventController {
     }
   };
 
-  delete = async (req: express.Request, res: Res) => {
-    const userId = res.locals.user.id;
-    //@ts-ignore
+  delete = async (req: SessionRequest, res: Res) => {
+    const userId = req.session?.getUserId();
     const eventId: string = req.params.id;
     const deleteResponse = await eventService.deleteById(userId, eventId);
     //@ts-ignore
     res.promise(Promise.resolve(deleteResponse));
   };
 
-  deleteAllByUser = async (req: express.Request, res: Res) => {
+  deleteAllByUser = async (req: SessionRequest, res: Res) => {
     // const userMakingRequest = res.locals.user.id;
     // if (userMakingRequest !== userToRemove) {
     //check if user is an app admin?
@@ -42,46 +39,41 @@ class EventController {
     res.promise(Promise.resolve(deleteAllRes));
   };
 
-  deleteMany = async (
-    // req: ReqBody<{ key: string; ids: string[] }>,
-    req: ReqBody<Params_DeleteMany>,
-    res: Res
-  ) => {
-    const userId = res.locals.user.id;
+  deleteMany = async (req: SReqBody<Params_DeleteMany>, res: Res) => {
+    const userId = req.session?.getUserId();
     //TODO validate body
     const deleteResponse = await eventService.deleteMany(userId, req.body);
     //@ts-ignore
     res.promise(Promise.resolve(deleteResponse));
   };
 
-  readById = async (req: express.Request, res: Res) => {
-    const userId = res.locals.user.id;
+  readById = async (req: SessionRequest, res: Res) => {
+    const userId = req.session?.getUserId();
     //@ts-ignore
     const eventId: string = req.params.id;
     const response = await eventService.readById(userId, eventId);
     res.promise(Promise.resolve(response));
   };
 
-  readAll = async (req: express.Request, res: Res) => {
-    const userId = res.locals.user.id;
+  readAll = async (req: SessionRequest, res: Res) => {
+    const userId = req.session?.getUserId();
     const usersEvents = await eventService.readAll(userId, req.query);
-    //@ts-ignore
     res.promise(Promise.resolve(usersEvents));
   };
 
-  update = async (req: ReqBody<Schema_Event>, res: Res) => {
-    const userId = res.locals.user.id;
+  update = async (req: SReqBody<Schema_Event>, res: Res) => {
+    const userId = req.session?.getUserId();
     const event = req.body;
-    //@ts-ignore
     const eventId: string = req.params.id;
+
     const response = await eventService.updateById(userId, eventId, event);
     //@ts-ignore
     res.promise(Promise.resolve(response));
   };
 
-  updateMany = async (req: ReqBody<Schema_Event[]>, res: Res) => {
+  updateMany = async (req: SReqBody<Schema_Event[]>, res: Res) => {
     try {
-      const userId = res.locals.user.id;
+      const userId = req.session?.getUserId();
       const events = req.body;
       const response = await eventService.updateMany(userId, events);
       //@ts-ignore
@@ -104,7 +96,7 @@ after receiving a 410 GONE error from google's notification
     try {
       //TODO: only call this when getting 410
       // gone error from gcal
-      const userId: string = res.locals.user.id;
+      const userId: string = req.session?.getUserId();
 
       const userExists = await mongoService.recordExists(Collections.USER, {
         _id: mongoService.objectId(userId),

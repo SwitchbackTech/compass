@@ -1,7 +1,4 @@
-import {
-  ID_SIDEBAR_FORM,
-  LocalStorage,
-} from "@web/common/constants/web.constants";
+import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
 
 export const headers = (token?: string) => {
   if (token) {
@@ -14,7 +11,7 @@ export const headers = (token?: string) => {
     return {
       headers: {
         Authorization: `Bearer ${localStorage.getItem(
-          LocalStorage.ACCESS_TOKEN
+          "removedAsPartOfTokenRefactor"
         )}`,
       },
     };

@@ -60,11 +60,7 @@ export const getDefaultEvent = (
 // meant for temporary testing, will be replaced
 export const handleErrorTemp = (error: Error) => {
   if (error.message.slice(-3) === "401") {
-    alert(
-      "Shucks, you gotta log in again (cuz security).\nClick this button to get started"
-    );
-    localStorage.clear();
-    window.location.reload();
+    // SuperTokensWrapper will handle these
     return;
   }
   alert(error);

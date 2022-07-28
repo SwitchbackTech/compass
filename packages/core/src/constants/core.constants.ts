@@ -1,7 +1,16 @@
+export const APP_NAME = "Compass Calendar";
+export const API_URL_DEFAULT = "https://***REMOVED***";
 export const MB_50 = 50000000; // in bytes
 export const MS_IN_HR = 2.7777777777778e-7;
+export const PORT_DEFAULT_API = 3000;
+export const PORT_DEFAULT_WEB = 9080;
 export const SOMEDAY_EVENTS_LIMIT = 9;
-export const SURVEY_URL = "https://qot2dz1necm.typeform.com/to/YXpg6Ykp";
+
+export enum NodeEnv {
+  Development = "development",
+  Production = "production",
+  Test = "test",
+}
 
 /*
 Signifies where an event originated from

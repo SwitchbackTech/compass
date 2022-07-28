@@ -1,3 +1,8 @@
+import { SessionRequest } from "supertokens-node/framework/express";
+
+export interface SReqBody<T> extends SessionRequest {
+  body: T;
+}
 export interface ReqBody<T> extends Express.Request {
   body: T;
 }

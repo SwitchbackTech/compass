@@ -4,9 +4,9 @@ import {
   Body_Watch_Gcal_Stop,
   Request_Sync_Gcal,
 } from "@core/types/sync.types";
-import { ReqBody, Res } from "@core/types/express.types";
+import { SReqBody, Res } from "@core/types/express.types";
 import { Logger } from "@core/logger/winston.logger";
-import { getGcalOLD } from "@backend/auth/services/OLDgoogle.auth.service";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 
@@ -39,13 +39,13 @@ class GcalSyncController {
     }
   };
 
-  startWatching = async (req: ReqBody<Body_Watch_Gcal_Start>, res: Res) => {
+  startWatching = async (req: SReqBody<Body_Watch_Gcal_Start>, res: Res) => {
     try {
       const userId = res.locals.user.id;
       const calendarId = req.body.calendarId;
       const channelId = req.body.channelId;
 
-      const gcal = await getGcalOLD(userId);
+      const gcal = await getGcalClient(userId);
       const watchResult = await syncService.startWatchingCalendar(
         gcal,
         userId,
@@ -74,7 +74,7 @@ class GcalSyncController {
     }
   };
 
-  stopWatching = async (req: ReqBody<Body_Watch_Gcal_Stop>, res: Res) => {
+  stopWatching = async (req: SReqBody<Body_Watch_Gcal_Stop>, res: Res) => {
     try {
       const userId = res.locals.user.id;
       const channelId = req.body.channelId;

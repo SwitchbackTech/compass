@@ -2,14 +2,8 @@ import { BaseError } from "@core/errors/errors.base";
 import { Credentials, TokenPayload } from "google-auth-library";
 
 export interface Result_Auth_Compass {
-  accessToken?: string | null;
-  error?: BaseError;
-}
-
-export interface Result_Auth {
   cUserId?: string;
-  error?: string | Record<string, unknown> | unknown[];
-  success?: boolean;
+  error?: BaseError;
 }
 
 export interface User_Google {
@@ -22,6 +16,11 @@ export interface User_Google {
   picture: string;
   verified_email: boolean;
   tokens: Credentials;
+}
+
+export interface UserInfo_Compass {
+  cUserId?: string;
+  email?: string;
 }
 export interface UserInfo_Google {
   gUser: TokenPayload;

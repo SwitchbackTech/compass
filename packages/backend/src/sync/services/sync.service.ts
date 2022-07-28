@@ -344,7 +344,7 @@ class SyncService {
     const cal = findCalendarByResourceId(reqParams.resourceId, calendarList);
     const nextSyncToken = cal.sync.nextSyncToken;
 
-    const gcal = await getGcalOLD(userId);
+    const gcal = await getGcalClient(userId);
 
     const refreshNeeded = channelRefreshNeeded(reqParams, calendarList);
     if (refreshNeeded) {

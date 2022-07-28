@@ -12,7 +12,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
-import { isDev } from "@backend/common/helpers/common.helpers";
+import { IS_DEV } from "@backend/common/constants/env.constants";
 
 const logger = Logger("app:sync.helpers");
 
@@ -67,7 +67,7 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
 };
 
 export const channelExpiresSoon = (expiry: string) => {
-  if (isDev()) {
+  if (IS_DEV) {
     const numMin = 10;
     logger.warn(
       `** REMINDER: In dev mode, so only checking if channel expires in next ${numMin} min`
@@ -152,7 +152,7 @@ export const findCalendarByResourceId = (
 };
 
 export const getChannelExpiration = () => {
-  if (isDev()) {
+  if (IS_DEV) {
     const numMin = parseInt(process.env.CHANNEL_EXPIRATION_DEV_MIN);
     logger.warn(
       `\n** REMINDER: In dev mode, so channel is expiring in just ${numMin} mins **\n`

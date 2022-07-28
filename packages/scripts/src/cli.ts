@@ -9,13 +9,14 @@ import pkg from "inquirer";
 const { prompt } = pkg;
 import mongoService from "@backend/common/services/mongo.service";
 
-import { deleteAllCompassDataForUser } from "./delete";
+import { deleteCompassDataForMatchingUsers } from "./delete";
 
-const runScript = () => {
+const runScript = async () => {
   /* setup CLI */
   const program = new Command();
   program.option("-d, --delete", "deletes users data from compass database");
   program.option("-u, --user <type>", "specifies which user to run script for");
+  program.option("-f, --force", "forces operation, no cautionary prompts");
 
   program.parse(process.argv);
 
@@ -24,17 +25,21 @@ const runScript = () => {
 
   if (Object.keys(options).length === 0 || !user) {
     console.log(program.helpInformation());
-    process.exit();
+    process.exit(1);
   }
 
-  // const testUser = "***REMOVED***@gmail.com";
-
   if (options["delete"]) {
+    if (options["force"] === true) {
+      await deleteCompassDataForMatchingUsers(user);
+      process.exit(0);
+      // .then(() => process.exit(0))
+      // .catch((e) => console.log(e));
+    }
     const questions = [
       {
         type: "input",
         name: "confirmed",
-        message: `This will delete all Compass data for >> ${user} <<\nContinue? [enter: "yes"]`,
+        message: `This will delete all Compass data for all users matching: >> ${user} <<\nContinue? [enter: "yes"]`,
       },
     ];
 
@@ -42,13 +47,14 @@ const runScript = () => {
       .then((answersRd1: { confirmed: string }) => {
         if (answersRd1["confirmed"] === "yes") {
           console.log(`Okie dokie, deleting ${user}'s Compass data ...`);
-          deleteAllCompassDataForUser(user).catch((e) => console.log(e));
+          deleteCompassDataForMatchingUsers(user).catch((e) => console.log(e));
         } else {
           console.log("No worries, see ya next time");
-          process.exit();
         }
       })
       .catch((err) => console.log(err));
+
+    process.exit(0);
   }
 };
 

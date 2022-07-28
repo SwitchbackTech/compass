@@ -1,8 +1,5 @@
 import React from "react";
 import dayjs from "dayjs";
-import { Navigate } from "react-router-dom";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { useToken } from "@web/common/hooks/useToken";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { DragLayer } from "@web/views/Calendar/containers/DragLayer";
 
@@ -20,10 +17,11 @@ import { usePreferences } from "./hooks/usePreferences";
 import { Sidebar } from "./components/Sidebar";
 
 export const Calendar = () => {
-  const { token } = useToken();
-  if (!token) {
-    return <Navigate to={ROOT_ROUTES.LOGIN} />;
-  }
+  console.log("reminder: check if authed before showing cal (?)");
+  // const { token } = useToken();
+  // if (!token) {
+  //   return <Navigate to={ROOT_ROUTES.LOGIN} />;
+  // }
   return <CalendarView />;
 };
 

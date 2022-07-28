@@ -1,59 +1,24 @@
-import axios from "axios";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
-import { headers } from "@web/common/utils";
-import { API_BASEURL } from "@web/common/constants/web.constants";
-import Session from "supertokens-auth-react/recipe/session";
-
-Session.addAxiosInterceptors(axios);
-/*
-TODO: Add Pagination  for Someday event lists:
-  (to not fetching all existing events and filter them on front end because of perfomance)
-  When user clicks on "<" | ">" we fetch events with appropriate page and pagesize
-  (for example with 20 events per page). So the api response will be faster
-  and front end don't filter events by pages
-
-  So ideally back end has to be able to respond with page info so front end can receive not all events in one response
-  Because if we request all events once the next thing we'll need to do on front end side is filtering and sorting.
-  So imagine we have more than 10000 events per user.
-  We will have to fetch all 10k events which can take more time than user expects.
-  The other issue is perfomance (for big data)
-  Front end will have to filter all events and than sort them all.
-  That will cause perfomance isues especially on mobile devices when the amount of events is really big
-*/
+import { CompassApi } from "@web/common/apis/compass.api";
 
 const EventApi = {
-  create(event: Schema_Event) {
-    return axios.post(`${API_BASEURL}/event`, event, headers());
+  create: (event: Schema_Event) => {
+    return CompassApi.post(`/event`, event);
   },
-
-  delete(_id: string) {
-    return axios.delete(`${API_BASEURL}/event/${_id}`, headers());
+  delete: (_id: string) => {
+    return CompassApi.delete(`/event/${_id}`);
   },
-
   edit: (_id: string, event: Schema_Event) => {
-    return axios.put(`${API_BASEURL}/event/${_id}`, event, headers());
+    return CompassApi.put(`/event/${_id}`, event);
   },
-
   get: (params: Params_Events) => {
     if (params.someday) {
-      return axios.get(`${API_BASEURL}/event?someday=true`, headers());
+      return CompassApi.get(`/event?someday=true`);
     } else {
-      return axios.get(
-        `${API_BASEURL}/event?start=${params.startDate}&end=${params.endDate}`,
-        headers()
+      return CompassApi.get(
+        `/event?start=${params.startDate}&end=${params.endDate}`
       );
     }
-  },
-
-  // TODO convert to saga
-  async import() {
-    const response = await axios.post(
-      `${API_BASEURL}/event/import`,
-      null,
-
-      headers()
-    );
-    return response.data;
   },
 };
 

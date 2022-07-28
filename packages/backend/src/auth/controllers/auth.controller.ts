@@ -1,15 +1,12 @@
-import { InsertOneResult } from "mongodb";
-import { v4 as uuidv4 } from "uuid";
+import { Response } from "express";
 import { GaxiosResponse } from "gaxios";
 import { Credentials } from "google-auth-library";
 import { SessionRequest } from "supertokens-node/framework/express";
 import Session from "supertokens-node/recipe/session";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
-import { BaseError } from "@core/errors/errors.base";
-import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
-import { ReqBody, Res_Promise } from "@core/types/express.types";
+import { ReqBody, Res_Promise, SReqBody } from "@core/types/express.types";
 import { Schema_User } from "@core/types/user.types";
 import GoogleAuthService from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -17,10 +14,16 @@ import eventService from "@backend/event/services/event.service";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import priorityService from "@backend/priority/services/priority.service";
 import userService from "@backend/user/services/user.service";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 import syncService from "@backend/sync/services/sync.service";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import { error, AuthError } from "@backend/common/errors/types/backend.errors";
+import {
+  error,
+  AuthError,
+  GcalError,
+} from "@backend/common/errors/types/backend.errors";
+import { Result_Auth_Compass, UserInfo_Compass } from "@core/types/auth.types";
 
 const logger = Logger("app:auth.controller");
 
@@ -29,7 +32,40 @@ const isCodeInvalid = (e: unknown | GaxiosResponse) => {
 };
 
 class AuthController {
-  loginOrSignup = async (req: ReqBody<{ code: string }>, res: Res_Promise) => {
+  createSession = async (req: ReqBody<UserInfo_Compass>, res: Response) => {
+    const { cUserId, email } = req.body;
+
+    if (cUserId) {
+      await Session.createNewSession(res, cUserId, {}, {});
+    }
+
+    if (email) {
+      const { userExists, user } = await findCompassUserBy("email", email);
+
+      if (!userExists) {
+        res.promise(Promise.resolve({ error: "user doesn't exist" }));
+        return;
+      }
+      await Session.createNewSession(res, user._id.toString(), {}, {});
+    }
+
+    res.promise(
+      Promise.resolve({
+        message: `user session created for ${JSON.stringify(req.body)}`,
+      })
+    );
+  };
+
+  getUserIdFromSession = (req: SessionRequest, res: Response) => {
+    const userId = req.session?.getUserId();
+    // res.promise(Promise.resolve({ userId }));
+    res.send({ userId });
+  };
+
+  loginOrSignup = async (
+    req: SReqBody<{ code: string }>,
+    res: Res_Promise | Response
+  ) => {
     const { code } = req.body;
 
     const gAuthClient = new GoogleAuthService();
@@ -46,24 +82,18 @@ class AuthController {
         ? await this.login(gAuthClient, user)
         : await this.signup(gAuthClient, tokens);
 
-      // old token stuff
-      // const { token: accessToken } =
-      // await gAuthClient.oauthClient.getAccessToken();
-      // const accessToken = "get from compass JWT";
-      // const { cUserId } = authResult;
-      // - creates new session & saves in supertokens DB
-      // - attaches access & refresh token to the response's cookie
-      cUserId && (await Session.createNewSession(res, cUserId));
+      await Session.createNewSession(res, cUserId);
 
-      // const result = { success: true, message: `User logged in: ${cUserId}` };
+      const result: Result_Auth_Compass = { cUserId };
       // res.json({ cUserId });
-      res.promise(Promise.resolve({ cUserId }));
-      // res.promise(Promise.resolve({ ...result, accessToken }));
+      res.promise(Promise.resolve(result));
     } catch (e) {
       if (isCodeInvalid(e)) {
-        logger.error("Failed to get gAPI tokens from code, because:\n", e);
-        res.promise(Promise.resolve({ error: "Bad Code. See server logs" }));
+        const gError = error(GcalError.CodeInvalid, "gAPI Auth Failed");
+        res.promise(Promise.resolve({ error: gError }));
+        return;
       }
+
       logger.error("Auth failed, because:\n", e);
       res.promise(
         Promise.resolve({
@@ -74,7 +104,6 @@ class AuthController {
   };
 
   login = async (gAuthClient: GoogleAuthService, user: Schema_User) => {
-    // ): Promise<Result_Auth | BaseError> => { //--
     // - check if existing calendar watch
     //    - if not, start watching
     //    - if so...
@@ -90,6 +119,22 @@ class AuthController {
     // validation & incremental sync...
 
     return { cUserId };
+  };
+
+  revokeSessionsByUser = async (
+    req: SReqBody<{ userId?: string }>,
+    res: Response
+  ) => {
+    let userId;
+    if (req.body.userId) {
+      userId = req.body.userId;
+    } else {
+      userId = req.session?.getUserId();
+    }
+
+    const revokeResult = await compassAuthService.revokeSessionsByUser(userId);
+
+    res.send(revokeResult);
   };
 
   signup = async (gAuthClient: GoogleAuthService, tokens: Credentials) => {
@@ -120,10 +165,6 @@ class AuthController {
     await syncService.startWatchingCalendar(gcalClient, cUserId, GCAL_PRIMARY);
 
     return { cUserId };
-    // } catch (e) {
-    //   logger.error("Signup failed, because:\n", e);
-    //   return { error: e };
-    // }
   };
 
   _createDefaultCalendarList = async (gcal: gCalendar, userId: string) => {

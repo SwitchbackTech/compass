@@ -2,35 +2,42 @@ import React from "react";
 import { Provider } from "react-redux";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import Session from "supertokens-auth-react/recipe/session";
+import SuperTokens, { SuperTokensWrapper } from "supertokens-auth-react";
+import { APP_NAME, PORT_DEFAULT_WEB } from "@core/constants/core.constants";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { sagas } from "@web/store/sagas";
 import { GlobalStyle } from "@web/components/GlobalStyle";
-import SuperTokens, { SuperTokensWrapper } from "supertokens-auth-react";
-import Session from "supertokens-auth-react/recipe/session";
+import {
+  API_BASEURL,
+  GOOGLE_CLIENT_ID_PROD,
+  GOOGLE_CLIENT_ID_TEST,
+} from "@web/common/constants/web.constants";
+import { IS_DEV } from "@web/common/constants/env.constants";
 
 import { RootRouter } from "./routers";
 import { store } from "./store";
 
 SuperTokens.init({
   appInfo: {
-    // learn more about this on https://supertokens.com/docs/session/appinfo
-    appName: "Compass Calendar",
-    apiDomain: "http://localhost:9080",
-    websiteDomain: "http://localhost:9080",
-    apiBasePath: "/api/auth",
-    websiteBasePath: "/auth",
+    appName: APP_NAME,
+    // apiDomain: "http://localhost:3000", //-- worked
+    // websiteDomain: "http://localhost:9080", //--worked
+    apiDomain: API_BASEURL,
+    websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
+    apiBasePath: "/api",
   },
+  enableDebugLogs: true,
   recipeList: [Session.init()],
 });
 
-export const isDev = () => process.env["NODE_ENV"] === "development";
-const testClientId =
-  "***REMOVED***";
-const prodIdTemp =
-  "***REMOVED***";
-const clientId = isDev() ? testClientId : prodIdTemp;
-console.log("using clientId for:", clientId === testClientId ? "TEST" : "PROD");
+const clientId = IS_DEV ? GOOGLE_CLIENT_ID_TEST : GOOGLE_CLIENT_ID_PROD;
+console.log(
+  "using clientId for:",
+  clientId === GOOGLE_CLIENT_ID_TEST ? "TEST" : "PROD"
+);
 
 sagaMiddleware.run(sagas);
 
@@ -40,7 +47,7 @@ export const App = () => {
       <SuperTokensWrapper
         onSessionExpired={() => {
           alert("Long time no see! Let's login again");
-          location.reload();
+          window.location = `#${ROOT_ROUTES.LOGIN}`;
         }}
       >
         <DndProvider backend={HTML5Backend}>

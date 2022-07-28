@@ -1,16 +1,6 @@
+import { NodeEnv } from "@core/constants/core.constants";
+import { getApiBaseUrl } from "@core/util/api.util";
 import { getAmPmTimes } from "@web/common/utils/date.utils";
-
-export const getBaseUrl = () => {
-  if (process.env["NODE_ENV"] === "production") {
-    return "https://***REMOVED***/api";
-  } else {
-    return `http://localhost:${_BACKEND_PORT}/api`;
-  }
-};
-export enum LocalStorage {
-  TIMEZONE = "timezone",
-  ACCESS_TOKEN = "accessToken",
-}
 
 export enum ZIndex {
   LAYER_1 = 1,
@@ -21,11 +11,13 @@ export enum ZIndex {
   MAX = 20,
 }
 
-const _BACKEND_PORT = 3000;
-
 export const ACCEPTED_TIMES = getAmPmTimes();
 export const ANIMATION_TIME_3_MS = "0.3s";
-export const API_BASEURL = getBaseUrl();
+export const API_BASEURL = getApiBaseUrl(process.env["NODE_ENV"] as NodeEnv);
+export const GOOGLE_CLIENT_ID_PROD =
+  "***REMOVED***";
+export const GOOGLE_CLIENT_ID_TEST =
+  "***REMOVED***";
 export const GOOGLE = "google";
 
 export const ID_GRID_ALLDAY_ROW = "allDayRow";

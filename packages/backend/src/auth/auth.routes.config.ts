@@ -11,7 +11,26 @@ export class AuthRoutes extends CommonRoutesConfig {
   }
 
   configureRoutes(): express.Application {
-    // Google calls this route after successful oauth
+    /**
+     * Convenience routes for debuggin (eg via Postman)
+     *
+     * Production code shouldn't call these
+     * directly, which is why they're limited to devs only
+     */
+    this.app
+      .route(`/api/auth/session`)
+      .all(authMiddleware.verifyIsDev)
+      .post(authController.createSession)
+      .get([verifySession(), authController.getUserIdFromSession]);
+
+    this.app
+      .route(`/api/auth/session/revoke`)
+      .all(authMiddleware.verifyIsDev)
+      .post([verifySession(), authController.revokeSessionsByUser]);
+
+    /**
+     * Google calls this route after successful oauth
+     */
     this.app.post(`/api/oauth/google`, [
       authMiddleware.verifyGoogleOauthCode,
       authController.loginOrSignup,
