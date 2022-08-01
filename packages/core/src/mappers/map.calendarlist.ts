@@ -1,20 +1,12 @@
 import { gSchema$CalendarList } from "@core/types/gcal";
-import { Schema_CalendarList } from "@core/types/calendar.types";
 
 const MapCalendarList = {
-  toCompass(gcalList: gSchema$CalendarList): Schema_CalendarList {
-    const primaryGcal = gcalList.items?.filter((c) => {
-      return c.primary === true;
-    })[0];
-
-    const mapped = {
+  toCompass(gcalList: gSchema$CalendarList) {
+    return {
       google: {
-        items: [primaryGcal],
+        items: [gcalList],
       },
     };
-
-    // @ts-ignore
-    return mapped;
   },
 };
 

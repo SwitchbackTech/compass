@@ -7,16 +7,21 @@ import calendarService from "@backend/calendar/services/calendar.service";
 
 class CalendarController {
   create = async (req: SReqBody<Schema_CalendarList>, res: Res) => {
-    const userId = req.session?.getUserId() as string;
-    const response = await calendarService.create(userId, req.body);
-    //@ts-ignore
-    res.promise(Promise.resolve(response));
+    try {
+      const userId = req.session?.getUserId() as string;
+      const response = await calendarService.create(userId, req.body);
+      //@ts-ignore
+      res.promise(Promise.resolve(response));
+    } catch (e) {
+      //@ts-ignore
+      res.promise(Promise.resolve({ error: e }));
+    }
   };
 
   list = async (req: SessionRequest, res: Res) => {
     const userId = req.session?.getUserId() as string;
     const gcal = await getGcalClient(userId);
-    const response = await gcalService.listCalendars(gcal);
+    const response = await gcalService.getCalendarlist(gcal);
 
     //@ts-ignore
     res.promise(Promise.resolve(response));

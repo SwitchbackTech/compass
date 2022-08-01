@@ -10,7 +10,7 @@ export const findCompassUser = async (googleId: string) => {
   return { userExists: user !== null, user };
 };
 
-type Ids_User = "email" | "_id" | "googleId";
+type Ids_User = "email" | "_id" | "google.googleId";
 
 export const findCompassUserBy = async (key: Ids_User, value: string) => {
   const filter = _getIdFilter(key, value);

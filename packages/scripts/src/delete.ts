@@ -4,6 +4,7 @@ import { findCompassUsersBy } from "@backend/user/queries/user.queries";
 import calendarService from "@backend/calendar/services/calendar.service";
 import userService from "@backend/user/services/user.service";
 import syncService from "@backend/sync/services/sync.service";
+import { BaseError } from "@core/errors/errors.base";
 
 export interface Summary_Delete {
   calendarlist?: number;
@@ -16,36 +17,33 @@ export interface Summary_Delete {
 
 const deleteCompassDataForUser = async (userId: string) => {
   const summary: Summary_Delete = {};
-  const priorities = await priorityService.deleteAllByUser(userId);
-  summary.priorities = priorities.deletedCount;
+  try {
+    const priorities = await priorityService.deleteAllByUser(userId);
+    summary.priorities = priorities.deletedCount;
 
-  const calendars = await calendarService.deleteAllByUser(userId);
-  summary.calendarlist = calendars.deletedCount;
+    const calendars = await calendarService.deleteAllByUser(userId);
+    summary.calendarlist = calendars.deletedCount;
 
-  const events = await eventService.deleteAllByUser(userId);
-  summary.events = events.deletedCount;
+    const events = await eventService.deleteAllByUser(userId);
+    summary.events = events.deletedCount;
 
-  const { watches } = (await syncService.stopAllChannelWatches(userId)) as {
-    watches: string[];
-  };
-  summary.eventWatches = watches?.length || 0;
+    const { watchStopCount } = await syncService.stopAllGcalEventWatches(
+      userId
+    );
+    summary.eventWatches = watchStopCount;
 
-  const syncs = await syncService.deleteAllByUser(userId);
-  summary.syncs = syncs.deletedCount;
+    const syncs = await syncService.deleteAllByUser(userId);
+    summary.syncs = syncs.deletedCount;
 
-  //--
-  // not relying on session auth in this script,
-  // so no need to revoke any sessions (?)
-  // initSupertokens();
-  // const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
-  // userId
-  // );
-  // summary.sessionsRevoked = sessionsRevoked;
+    const _user = await userService.deleteUser(userId);
+    summary.user = _user.deletedCount;
 
-  const _user = await userService.deleteUser(userId);
-  summary.user = _user.deletedCount;
-
-  return summary;
+    return summary;
+  } catch (e) {
+    const _e = e as BaseError;
+    console.log("Stopped early because:", _e.description);
+    return summary;
+  }
 };
 
 export const deleteCompassDataForMatchingUsers = async (user: string) => {

@@ -1,5 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
+import Session from "supertokens-auth-react/recipe/session";
 import { useGoogleLogin } from "@react-oauth/google";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { AuthApi } from "@web/common/apis/auth.api";
@@ -16,6 +17,18 @@ export const LoginView = () => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const antiCsrfToken = useRef(self.crypto.randomUUID()).current;
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const isAlreadyAuthed = await Session.doesSessionExist();
+      setIsAuthenticated(isAlreadyAuthed);
+    };
+
+    checkSession().catch((e) => {
+      alert(e);
+      console.log(e);
+    });
+  }, []);
 
   const SCOPES_REQUIRED = [
     "profile",
@@ -47,7 +60,9 @@ export const LoginView = () => {
       }
 
       setIsAuthenticating(true);
+
       const { error } = await AuthApi.loginOrSignup(code);
+
       if (error) {
         alert(
           "An error occured on Compass' backend while logging you in. Please let Ty know"

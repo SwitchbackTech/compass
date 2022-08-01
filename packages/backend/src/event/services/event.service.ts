@@ -1,5 +1,4 @@
 //@ts-nocheck
-import { InsertManyResult } from "mongodb";
 import { gSchema$Event } from "@core/types/gcal";
 import { SOMEDAY_EVENTS_LIMIT } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
@@ -12,15 +11,12 @@ import {
   Result_DeleteMany,
 } from "@core/types/event.types";
 import { Logger } from "@core/logger/winston.logger";
-import { Collections } from "@backend/common/constants/collections";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import gcalService from "@backend/common/services/gcal/gcal.service";
-import mongoService from "@backend/common/services/mongo.service";
-import { error, EventError } from "@backend/common/errors/types/backend.errors";
-import { yearsAgo } from "@backend/common/helpers/common.helpers";
-import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Origin } from "@core/constants/core.constants";
-import { gCalendar, gParamsEventsList } from "@core/types/gcal";
+import { Collections } from "@backend/common/constants/collections";
+import gcalService from "@backend/common/services/gcal/gcal.service";
+import { error, EventError } from "@backend/common/errors/types/backend.errors";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import mongoService from "@backend/common/services/mongo.service";
 
 import { getReadAllFilter } from "./event.service.helpers";
 
@@ -67,17 +63,14 @@ class EventService {
       logger.error(e);
       return new BaseError(
         "Create Failed",
-        e.message,
+        e.message | "no msg",
         Status.INTERNAL_SERVER,
         true
       );
     }
   }
 
-  async createMany(
-    userId: string,
-    data: Schema_Event[]
-  ): Promise<InsertManyResult | BaseError> {
+  async createMany(userId: string, data: Schema_Event[]) {
     //TODO verify userId exists first (?)
     // TODO catch BulkWriteError
 
@@ -85,10 +78,11 @@ class EventService {
       .collection(Collections.EVENT)
       .insertMany(data);
 
-    if ("insertedCount" in response && response.insertedCount > 0) {
-      return response;
-    } else {
-      return new BaseError("Create Failed", response.toString(), 500, true);
+    if (response.acknowledged && response.insertedCount !== data.length) {
+      throw error(
+        EventError.MissingGevents,
+        `Only ${response.insertedCount}/${data.length} saved`
+      );
     }
   }
 
@@ -187,57 +181,6 @@ class EventService {
       throw new BaseError("DeleteMany Failed", e, 500, true);
     }
   }
-
-  import = async (userId: string, gcal: gCalendar) => {
-    let nextPageToken = undefined;
-    let nextSyncToken = undefined;
-    let total = 0;
-
-    const numYears = 1;
-    logger.info(
-      `Importing past ${numYears} years of GCal events for user: ${userId}`
-    );
-    const xYearsAgo = yearsAgo(numYears);
-
-    // always fetches once, then continues until
-    // there are no more events
-    do {
-      const params: gParamsEventsList = {
-        calendarId: GCAL_PRIMARY,
-        timeMin: xYearsAgo,
-        pageToken: nextPageToken,
-      };
-      const gEvents = await gcalService.getEvents(gcal, params);
-
-      if (!gEvents.data.items) {
-        throw error(EventError.NoGevents, "Potentially missing events");
-      }
-
-      total += gEvents.data.items.length;
-
-      const cEvents = MapEvent.toCompass(
-        userId,
-        gEvents.data.items,
-        Origin.GOOGLE_IMPORT
-      );
-      const response: InsertManyResult = await this.createMany(userId, cEvents);
-      if (response.acknowledged && response.insertedCount !== cEvents.length) {
-        throw error(
-          EventError.MissingGevents,
-          `Only ${response.insertedCount}/${cEvents.length} imported`
-        );
-      }
-
-      nextPageToken = gEvents.data.nextPageToken;
-      nextSyncToken = gEvents.data.nextSyncToken;
-    } while (nextPageToken !== undefined);
-
-    const summary = {
-      total: total,
-      nextSyncToken: nextSyncToken as string,
-    };
-    return summary;
-  };
 
   async readAll(
     userId: string,

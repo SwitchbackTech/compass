@@ -20,7 +20,7 @@ export const getGcalClient = async (userId: string) => {
   const gAuthClient = new GoogleAuthService();
 
   gAuthClient.oauthClient.setCredentials({
-    refresh_token: user.google.refreshToken,
+    refresh_token: user.google.gRefreshToken,
   });
 
   const calendar = google.calendar({
@@ -32,7 +32,6 @@ export const getGcalClient = async (userId: string) => {
 };
 
 class GoogleAuthService {
-  accessToken: string | undefined;
   oauthClient: OAuth2Client;
 
   constructor() {

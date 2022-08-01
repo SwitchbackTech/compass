@@ -1,41 +1,40 @@
-//@ts-nocheck
+import { GaxiosError } from "gaxios";
 import { v4 as uuidv4 } from "uuid";
 import { gCalendar } from "@core/types/gcal";
-import { Schema_CalendarList } from "@core/types/calendar.types";
 import {
   Params_Sync_Gcal,
-  Request_Sync_Gcal,
+  Payload_Sync_Notif,
   Resource_Sync,
-  Result_Notif_Gcal,
-  Result_Watch_Start,
-  Result_Watch_Stop,
-  Result_Watch_Stop_All,
-  Result_Sync_Prep_Gcal,
-  Result_Watch_Delete,
-  Schema_Watch_Gcal,
+  Payload_Resource_Events,
+  Schema_Sync,
+  Payload_Sync_Events,
 } from "@core/types/sync.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Logger } from "@core/logger/winston.logger";
-import { ENV } from "@backend/common/constants/env.constants";
-import {
-  GCAL_NOTIFICATION_URL,
-  GCAL_PRIMARY,
-} from "@backend/common/constants/backend.constants";
+import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
+import {
+  error,
+  GenericError,
+  SyncError,
+} from "@backend/common/errors/types/backend.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { error, SyncError } from "@backend/common/errors/types/backend.errors";
+import { getCalendarsToSync } from "@backend/auth/services/auth.utils";
 
 import {
-  assembleBulkOperations,
-  categorizeGcalEvents,
-  channelRefreshNeeded,
-  findCalendarByResourceId,
-  getChannelExpiration,
-  getSummary,
-} from "./sync.helpers";
+  isWatchingEvents,
+  assembleEventImports,
+  OLDprepareSyncChannels,
+  OLDprepareUpdate,
+  importEvents,
+  deleteSync,
+  prepareEventSyncChannels,
+  startWatchingGcalsById,
+} from "./sync.service.helpers";
+import { getChannelExpiration } from "./sync.utils";
 
 const logger = Logger("app:sync.service");
 // separate logger to keep main less noisy
@@ -49,22 +48,7 @@ class SyncService {
     return delRes;
   };
 
-  async deleteWatchInfo(
-    userId: string,
-    channelId: string,
-    resourceId: string
-  ): Promise<Result_Watch_Delete> {
-    const delWatchInfo = await mongoService.db
-      .collection(Collections.WATCHLOG_GCAL)
-      .deleteOne({ userId, channelId, resourceId });
-
-    const delRes = delWatchInfo.acknowledged ? "success" : "failed";
-    return { result: delRes };
-  }
-
-  async handleGcalNotification(
-    reqParams: Request_Sync_Gcal
-  ): Promise<Result_Notif_Gcal | BaseError> {
+  handleGcalNotification = async (payload: Payload_Sync_Notif) => {
     try {
       const result = {
         params: undefined,
@@ -74,37 +58,23 @@ class SyncService {
         events: undefined,
       };
 
-      if (reqParams.resourceState === "sync") {
-        const resourceIdResult = await this.updateResourceId(
-          reqParams.channelId,
-          reqParams.resourceId
-        );
-        if (resourceIdResult.ok === 1) {
-          result.init = `A new notification channel was successfully created for: channelId '${reqParams.channelId}' resourceId: '${reqParams.resourceId}'`;
-        } else {
-          result.init = {
-            "Something failed while setting the resourceId:": resourceIdResult,
-          };
-        }
-      }
-
       // There is new data to sync from GCal //
-      else if (reqParams.resourceState === "exists") {
+      if (payload.resourceState === "exists") {
         const { channelPrepResult, userId, gcal, nextSyncToken } =
-          await this.prepareSyncChannels(reqParams);
+          await OLDprepareSyncChannels(payload);
 
         result.watch = channelPrepResult;
 
         const params: Params_Sync_Gcal = {
-          ...reqParams,
+          ...payload,
           userId: userId,
-          nextSyncToken: nextSyncToken,
+          nextSyncToken,
           // TODO use non-hard-coded calendarId once supporting non-'primary' calendars
           calendarId: GCAL_PRIMARY,
         };
         result.params = params;
 
-        const prepResult = await this.prepareUpdate(gcal, params);
+        const prepResult = await OLDprepareUpdate(gcal, params);
         result.prep = prepResult;
 
         if (prepResult.operations.length > 0)
@@ -121,328 +91,169 @@ class SyncService {
       syncFileLogger.error(e);
       return new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, false);
     }
-  }
+  };
 
-  async saveWatchInfo(
-    userId: string,
-    calendarId: string,
-    channelId: string,
-    resourceId: string
-  ) {
-    logger.debug("Saving watch info");
-    const watchInfo = { userId, calendarId, channelId, resourceId };
-    const saveRes = await mongoService.db
-      .collection(Collections.WATCHLOG_GCAL)
-      .insertOne(watchInfo);
-    return saveRes;
-  }
-
-  /*
-  Setup the notification channel for a user's calendar,
-  telling google how to notify us when an event changes
-  */
-  async startWatchingCalendar(
+  importFull = async (
     gcal: gCalendar,
-    userId: string,
-    calendarId: string,
-    channelId?: string
-  ): Promise<Result_Watch_Start> {
-    if (!channelId) channelId = uuidv4();
-
-    logger.info(
-      `Setting up watch for calendarId: '${calendarId}' and channelId: '${channelId}'`
-    );
-
-    try {
-      const expiration = getChannelExpiration();
-      const { data: watchData } = await gcal.events.watch({
-        calendarId: calendarId,
-        requestBody: {
-          id: channelId,
-          // uses prod URL because address always needs to be HTTPS
-          // TODO: once dedicated e2e test VM, use that instead of prod
-          address: `${ENV.BASEURL_PROD}${GCAL_NOTIFICATION_URL}`,
-          type: "web_hook",
-          expiration,
-        },
-      });
-
-      const { resourceId } = watchData;
-      if (!resourceId) {
-        throw error(SyncError.MissingResourceId, "Calendar Watch Failed");
-      }
-
-      const saveWatchInfoRes = await this.saveWatchInfo(
-        userId,
-        calendarId,
-        channelId,
-        resourceId
-      );
-      const syncUpdate = await this.updateSyncData(
-        userId,
-        channelId,
-        resourceId,
-        expiration
-      );
-
-      return {
-        watchResult: { channel: watchData, saveForDev: saveWatchInfoRes },
-        syncUpdate,
-      };
-    } catch (e) {
-      if (e.code && e.code === 400) {
-        throw new BaseError(
-          "Start Watch / Sync Update Failed",
-          JSON.stringify(e.errors),
-          Status.BAD_REQUEST,
-          false
-        );
-      } else {
-        logger.error(e);
-        throw new BaseError(
-          "Start Watch  / Sync Update Failed",
-          JSON.stringify(e),
-          Status.INTERNAL_SERVER,
-          false
-        );
-      }
-    }
-  }
-
-  async stopAllChannelWatches(
+    gCalendarIds: string[],
     userId: string
-  ): Promise<Result_Watch_Stop_All | BaseError> {
-    try {
-      logger.info(`Stopping all watches for user: ${userId}`);
-      const allWatches = (await mongoService.db
-        .collection(Collections.WATCHLOG_GCAL)
-        .find({ userId: userId })
-        .toArray()) as Schema_Watch_Gcal[];
+  ) => {
+    const eventImports = gCalendarIds.map(async (gCalId) => {
+      const { nextSyncToken } = await importEvents(userId, gcal, gCalId);
+      await this.updateEventsSyncToken(userId, gCalId, nextSyncToken);
+    });
 
-      if (allWatches.length === 0) {
-        return {
-          summary: "success",
-          message: `no active watches for user: ${userId}`,
-        };
-      }
+    await Promise.all(eventImports);
+  };
 
-      const watchResults = [];
-      for (const w of allWatches) {
-        const stopResult = await this.stopWatchingChannel(
-          userId,
-          w.channelId,
-          w.resourceId
-        );
-        if ("statusCode" in stopResult) {
-          // then it failed
-          // TODO this assumes it failed cuz of 404 not found,
-          // make more dynamic
-          const filter = { userId, channelId: w.channelId };
-          const delRes = await mongoService.db
-            .collection(Collections.WATCHLOG_GCAL)
-            .deleteOne(filter);
-          const dr = delRes.acknowledged ? "pruned" : "prune failed";
-          watchResults.push(`${w.channelId}: ${dr}`);
-        } else {
-          const channelId = stopResult.stopWatching.channelId || "unsure";
-          watchResults.push(`${channelId}: ${stopResult.deleteWatch.result}`);
-        }
-      }
+  importIncremental = async (userId: string, gcal?: gCalendar) => {
+    if (!gcal) gcal = await getGcalClient(userId);
 
-      const watchStopSummary = { summary: "success", watches: watchResults };
-      return watchStopSummary;
-    } catch (e) {
-      logger.error(e);
-      return new BaseError(
-        "Stop All Watches Failed",
-        JSON.stringify(e),
-        Status.UNSURE,
-        false
-      );
-    }
-  }
+    const sync = await prepareEventSyncChannels(userId, gcal);
 
-  async stopWatchingChannel(
+    const importEvents = assembleEventImports(userId, gcal, sync.google.events);
+
+    const result = await Promise.all(importEvents);
+    return result;
+  };
+
+  startWatchingGcal = async (
     userId: string,
-    channelId: string,
-    resourceId: string
-  ): Promise<Result_Watch_Stop | BaseError> {
-    logger.debug(
-      `Stopping watch for channelId: ${channelId} and resourceId: ${resourceId}`
-    );
-    try {
-      const gcal = await getGcalClient(userId);
+    gCalendarId: string,
+    gcal?: gCalendar
+  ) => {
+    const channelId = uuidv4();
+    if (!gcal) gcal = await getGcalClient(userId);
 
-      const params = {
-        requestBody: {
-          id: channelId,
-          resourceId: resourceId,
-        },
-      };
-
-      const stopResult = await gcal.channels.stop(params);
-
-      if (stopResult.status === 204) {
-        const stopWatchSummary = {
-          result: "success",
-          channelId: channelId,
-          resourceId: resourceId,
-        };
-
-        const deleteWatchSummary = await this.deleteWatchInfo(
-          userId,
-          channelId,
-          resourceId
-        );
-        return {
-          stopWatching: stopWatchSummary,
-          deleteWatch: deleteWatchSummary,
-        };
-      }
-
-      logger.warn("Stop Watch failed for unexpected reason");
-      return {
-        stopWatching: { result: "failed", debug: stopResult },
-        deleteWatch: { result: "failed" },
-      };
-    } catch (e) {
-      if (e.code && e.code === 404) {
-        return new BaseError(
-          "Stop Watch Failed",
-          JSON.stringify(e?.message),
-          Status.NOT_FOUND,
-          false
-        );
-      }
-
-      logger.error(e);
-      return new BaseError(
-        "Stop Watch Failed",
-        e,
-        Status.INTERNAL_SERVER,
-        false
-      );
+    const alreadyWatching = await isWatchingEvents(userId, gCalendarId);
+    if (alreadyWatching) {
+      throw error(SyncError.CalendarWatchExists, "Skipped Start Watch");
     }
-  }
 
-  prepareSyncChannels = async (reqParams: Request_Sync_Gcal) => {
-    const channelPrepResult = {
-      stop: undefined,
-      refresh: undefined,
-      stillActive: undefined,
-    };
+    logger.debug(
+      `Setting up event watch for:\n\tgCalendarId: '${gCalendarId}'\n\tchannelId: '${channelId}'\n\tuser: ${userId}`
+    );
 
-    // initialize what you'll need later
-    const calendarList = (await mongoService.db
-      .collection(Collections.CALENDARLIST)
-      .findOne({
-        "google.items.sync.resourceId": reqParams.resourceId,
-      })) as Schema_CalendarList;
+    const expiration = getChannelExpiration();
+    const { watch } = await gcalService.watchEvents(
+      gcal,
+      gCalendarId,
+      channelId,
+      expiration
+    );
 
-    const userId = calendarList.user;
+    const { resourceId } = watch;
+    if (!resourceId) {
+      throw error(SyncError.MissingResourceId, "Calendar Watch Failed");
+    }
 
-    const cal = findCalendarByResourceId(reqParams.resourceId, calendarList);
-    const nextSyncToken = cal.sync.nextSyncToken;
+    const sync = await this.updateSyncData(userId, "events", {
+      gCalendarId,
+      channelId,
+      resourceId,
+      expiration,
+    });
+
+    return sync;
+  };
+
+  startWatchingGcals = async (userId: string, gcal: gCalendar) => {
+    const { gCalendarIds, nextSyncToken } = await getCalendarsToSync(
+      userId,
+      gcal
+    );
+    await this.updateSyncToken(userId, "calendarlist", nextSyncToken);
+
+    await startWatchingGcalsById(userId, gCalendarIds, gcal);
+  };
+
+  stopAllGcalEventWatches = async (userId: string) => {
+    logger.debug(`Stopping all gcal event watches for user: ${userId}`);
+
+    const sync = (await mongoService.db
+      .collection(Collections.SYNC)
+      .findOne({ user: userId })) as unknown as Schema_Sync;
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (!sync || !sync.google.events) {
+      throw error(SyncError.NoWatchesForUser, "Ignored Stop Request");
+    }
 
     const gcal = await getGcalClient(userId);
 
-    const refreshNeeded = channelRefreshNeeded(reqParams, calendarList);
-    if (refreshNeeded) {
-      console.log("\n**** (this used to be when you refreshed channel) ***\n");
-      //--++
-      // channelPrepResult.refresh = await this.refreshChannelWatch(
-      //   userId,
-      //   gcal,
-      //   reqParams
-      // );
-    } else {
-      channelPrepResult.stillActive = true;
+    for (const es of sync.google.events) {
+      await this.stopWatch(userId, es.channelId, es.resourceId, gcal);
     }
 
-    return { channelPrepResult, userId, gcal, nextSyncToken };
+    const watchStopSummary = {
+      watchStopCount: sync.google.events.length,
+    };
+    return watchStopSummary;
   };
 
-  prepareUpdate = async (
-    gcal: gCalendar,
-    params: Params_Sync_Gcal
-  ): Promise<Result_Sync_Prep_Gcal> => {
-    const prepResult = {
-      syncToken: undefined,
-      operations: undefined,
-      errors: [],
+  stopWatch = async (
+    userId: string,
+    channelId: string,
+    resourceId: string,
+    gcal?: gCalendar
+  ) => {
+    if (!gcal) gcal = await getGcalClient(userId);
+
+    logger.debug(
+      `Stopping watch for channelId: ${channelId} and resourceId: ${resourceId}`
+    );
+    const params = {
+      requestBody: {
+        id: channelId,
+        resourceId: resourceId,
+      },
     };
 
     try {
-      // TODO: support pageToken in case a lot of new events changed since last sync
+      const stopResult = await gcal.channels.stop(params);
+      if (stopResult.status !== 204) {
+        throw error(GenericError.NotSure, "Stop Failed");
+      }
+      await deleteSync(userId, "events", channelId);
 
-      const updatedEvents = await gcalService.getEvents(gcal, {
-        calendarId: params.calendarId,
-        syncToken: params.nextSyncToken,
-      });
-
-      // Save the updated sync token for next time
-      const syncTokenUpdateResult = await this.updateNextSyncToken(
-        params.userId,
-        updatedEvents.data.nextSyncToken
-      );
-      prepResult.syncToken = syncTokenUpdateResult;
-
-      // Update Compass' DB
-      const { eventsToDelete, eventsToUpdate } = categorizeGcalEvents(
-        updatedEvents.data.items
-      );
-
-      const summary = getSummary(eventsToUpdate, eventsToDelete);
-      logger.debug(summary);
-
-      prepResult.operations = assembleBulkOperations(
-        params.userId,
-        eventsToDelete,
-        eventsToUpdate
-      );
-
-      return prepResult;
+      return {
+        channelId: channelId,
+        resourceId: resourceId,
+      };
     } catch (e) {
-      logger.error(`Errow while sycning\n`, e);
-      syncFileLogger.error(`Errow while sycning\n`, e);
-      const err = new BaseError(
-        "Sync Update Failed",
-        e,
-        Status.INTERNAL_SERVER,
-        true
-      );
+      logger.error(e);
 
-      prepResult.errors.push(err);
-      return prepResult;
+      const _e = e as GaxiosError;
+
+      if (_e.code === "404" || e.code === 404) {
+        await deleteSync(userId, "events", channelId);
+
+        throw error(
+          SyncError.ChannelDoesNotExist,
+          "Stop Ignored, Sync Deleted"
+        );
+      }
+      throw error(GenericError.NotSure, "Stop Failed");
     }
   };
 
   refreshChannelWatch = async (
     userId: string,
     gcal: gCalendar,
-    reqParams: Request_Sync_Gcal
+    payload: Payload_Sync_Events
   ) => {
-    const stopResult = await this.stopWatchingChannel(
+    const stopResult = await this.stopWatch(
       userId,
-      reqParams.channelId,
-      reqParams.resourceId
+      payload.channelId,
+      payload.resourceId,
+      gcal
     );
 
-    // create new channelId to prevent `channelIdNotUnique` google api error
-    const newChannelId = `pri-rfrshd${uuidv4()}`;
-    const startResult = await this.startWatchingCalendar(
-      gcal,
+    const startResult = await this.startWatchingGcal(
       userId,
-      GCAL_PRIMARY,
-      newChannelId
+      payload.gCalendarId,
+      gcal
     );
-
-    // const syncUpdate = await this.updateSyncData( //--
-    //   userId,
-    //   newChannelId,
-    //   reqParams.resourceId,
-    //   reqParams.expiration
-    // );
 
     const refreshResult = {
       stop: stopResult,
@@ -450,6 +261,27 @@ class SyncService {
       // syncUpdate: syncUpdate.ok === 1 ? "success" : "failed",
     };
     return refreshResult;
+  };
+
+  updateEventsSyncToken = async (
+    userId: string,
+    gCalendarId: string,
+    nextSyncToken: string
+  ) => {
+    const response = await mongoService.db
+      .collection(Collections.SYNC)
+      .findOneAndUpdate(
+        { user: userId, "google.events.gCalendarId": gCalendarId },
+        {
+          $set: {
+            "google.events.$.nextSyncToken": nextSyncToken,
+            "google.events.$.lastSyncedAt": new Date(),
+          },
+        },
+        { upsert: true }
+      );
+
+    return response;
   };
 
   updateSyncToken = async (
@@ -469,8 +301,7 @@ class SyncService {
             [`google.${resource}.lastSyncedAt`]: new Date(),
           },
         },
-        { upsert: true },
-        { returnDocument: "after" }
+        { returnDocument: "after", upsert: true }
       );
 
     return result;
@@ -491,7 +322,7 @@ class SyncService {
           {
             $set: {
               "google.items.$.sync.nextSyncToken": nextSyncToken,
-              updatedAt: new Date().toISOString(),
+              updatedAt: new Date(),
             },
           },
           { returnDocument: "after" }
@@ -509,46 +340,39 @@ class SyncService {
     }
   };
 
-  updateResourceId = async (channelId: string, resourceId: string) => {
-    // the resourceId shouldn't change frequently (or at all?),
-    // so it might be safe to remove this step (after adequate confirmation)
-    logger.debug(`Updating resourceId to: ${resourceId}`);
-    const result = await mongoService.db
-      .collection(Collections.CALENDARLIST)
-      .findOneAndUpdate(
-        { "google.items.sync.channelId": channelId },
-        {
-          $set: {
-            "google.items.$.sync.resourceId": resourceId,
-            updatedAt: new Date().toISOString(),
-          },
-        }
-      );
-
-    return result;
-  };
-
   updateSyncData = async (
     userId: string,
-    channelId: string,
-    resourceId: string,
-    expiration: string
+    resource: Resource_Sync,
+    data: Payload_Resource_Events
   ) => {
-    const result = await mongoService.db
-      .collection(Collections.CALENDARLIST)
-      .findOneAndUpdate(
-        // TODO update after supporting more calendars
-        { user: userId, "google.items.primary": true },
-        {
-          $set: {
-            "google.items.$.sync.channelId": channelId,
-            "google.items.$.sync.resourceId": resourceId,
-            "google.items.$.sync.expiration": expiration,
-          },
-        }
-      );
+    if (resource !== "events") {
+      throw error(GenericError.NotImplemented, "Sync Update Failed");
+    }
 
-    return result;
+    await mongoService.db.collection(Collections.SYNC).updateOne(
+      { user: userId },
+      {
+        $push: {
+          "google.events": {
+            gCalendarId: data.gCalendarId,
+            channelId: data.channelId,
+            expiration: data.expiration,
+            resourceId: data.resourceId,
+            lastSyncedAt: new Date(),
+          },
+        },
+      },
+      { upsert: true }
+    );
+
+    const updatedSync = (await mongoService.db
+      .collection(Collections.SYNC)
+      .findOne({ user: userId })) as Schema_Sync | null;
+    if (!updatedSync) {
+      throw error(SyncError.NoSyncRecordForUser, "Failed to Update Sync Data");
+    }
+
+    return updatedSync;
   };
 }
 

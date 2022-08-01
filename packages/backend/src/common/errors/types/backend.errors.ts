@@ -39,6 +39,14 @@ export const AuthError = {
   },
 };
 
+export const DbError = {
+  InvalidId: {
+    description: "id is invalid (according to Mongo)",
+    status: Status.BAD_REQUEST,
+    isOperational: true,
+  },
+};
+
 export const EventError = {
   Gone: {
     description: "Resource is gone",
@@ -62,10 +70,28 @@ export const EventError = {
   },
 };
 
+export const GenericError = {
+  NotImplemented: {
+    description: "not implemented yet",
+    status: Status.UNSURE,
+    isOperational: true,
+  },
+  NotSure: {
+    description: "Not sure why error occured. See logs",
+    status: Status.UNSURE,
+    isOperational: true,
+  },
+};
+
 export const GcalError = {
   Unsure: {
     description: "generic gCal API Error",
     status: Status.UNSURE,
+    isOperational: true,
+  },
+  CalendarlistMissing: {
+    description: "No calendarlist",
+    status: Status.BAD_REQUEST,
     isOperational: true,
   },
   CodeInvalid: {
@@ -80,18 +106,30 @@ export const GcalError = {
   },
 };
 
-export const DbError = {
-  InvalidId: {
-    description: "id is invalid (according to Mongo)",
+export const SyncError = {
+  CalendarWatchExists: {
+    description: "Watch already exists",
     status: Status.BAD_REQUEST,
     isOperational: true,
   },
-};
-
-export const SyncError = {
+  ChannelDoesNotExist: {
+    description: "Channel does not exist",
+    status: Status.GONE,
+    isOperational: true,
+  },
   MissingResourceId: {
     description: "No resourceId provided",
     status: Status.NO_CONTENT,
+    isOperational: true,
+  },
+  NoSyncRecordForUser: {
+    description: "No sync record for user",
+    status: Status.BAD_REQUEST,
+    isOperational: true,
+  },
+  NoWatchesForUser: {
+    description: "No active watches for user",
+    status: Status.GONE,
     isOperational: true,
   },
 };

@@ -1,31 +1,20 @@
 import { Response } from "express";
 import { GaxiosError } from "gaxios";
-import { Credentials } from "google-auth-library";
+import { TokenPayload } from "google-auth-library";
 import { SessionRequest } from "supertokens-node/framework/express";
 import Session from "supertokens-node/recipe/session";
-import { MapCalendarList } from "@core/mappers/map.calendarlist";
-import { Logger } from "@core/logger/winston.logger";
-import { gCalendar } from "@core/types/gcal";
 import { ReqBody, Res_Promise, SReqBody } from "@core/types/express.types";
+import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
+import { Result_Auth_Compass, UserInfo_Compass } from "@core/types/auth.types";
 import GoogleAuthService from "@backend/auth/services/google.auth.service";
-import calendarService from "@backend/calendar/services/calendar.service";
-import eventService from "@backend/event/services/event.service";
-import gcalService from "@backend/common/services/gcal/gcal.service";
-import priorityService from "@backend/priority/services/priority.service";
 import userService from "@backend/user/services/user.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
-import syncService from "@backend/sync/services/sync.service";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import {
-  error,
-  AuthError,
-  GcalError,
-} from "@backend/common/errors/types/backend.errors";
-import { Result_Auth_Compass, UserInfo_Compass } from "@core/types/auth.types";
+import { error, GcalError } from "@backend/common/errors/types/backend.errors";
+import syncService from "@backend/sync/services/sync.service";
 
-const logger = Logger("app:auth.controller");
+import { initGoogleClient } from "../services/auth.utils";
 
 const isCodeInvalid = (e: GaxiosError | Error) => {
   if ("code" in e && "message" in e) {
@@ -79,14 +68,19 @@ class AuthController {
     try {
       const { tokens } = await gAuthClient.oauthClient.getToken(code);
 
+      const { gUser, gcalClient, gRefreshToken } = await initGoogleClient(
+        gAuthClient,
+        tokens
+      );
+
       const { userExists, user } = await findCompassUserBy(
-        "googleId",
-        tokens.id_token as string
+        "google.googleId",
+        gUser.sub
       );
 
       const { cUserId } = userExists
-        ? await this.login(gAuthClient, user)
-        : await this.signup(gAuthClient, tokens);
+        ? await this.login(gcalClient, user)
+        : await this.signup(gUser, gcalClient, gRefreshToken);
 
       await Session.createNewSession(res, cUserId);
 
@@ -95,16 +89,13 @@ class AuthController {
       //@ts-ignore
       res.promise(Promise.resolve(result));
     } catch (e) {
-      //@ts-ignore
-      if (isCodeInvalid(e)) {
+      if (isCodeInvalid(e as GaxiosError)) {
         const gError = error(GcalError.CodeInvalid, "gAPI Auth Failed");
 
         //@ts-ignore
         res.promise(Promise.resolve({ error: gError }));
         return;
       }
-
-      logger.error("Auth failed, because:\n", e);
 
       //@ts-ignore
       res.promise(
@@ -115,20 +106,12 @@ class AuthController {
     }
   };
 
-  login = async (gAuthClient: GoogleAuthService, user: Schema_User) => {
-    // - check if existing calendar watch
-    //    - if not, start watching
-    //    - if so...
-    //      - check/extend expiration (?)
-    // - incremental sync
+  login = async (gcal: gCalendar, user: Schema_User) => {
     const cUserId = user._id.toString();
 
-    // uses refresh token to ensure google API access
-    gAuthClient.oauthClient.setCredentials({
-      refresh_token: user?.google.refreshToken,
-    });
+    await syncService.importIncremental(cUserId, gcal);
 
-    // validation & incremental sync...
+    await userService.saveTimeFor("lastLoggedInAt", cUserId);
 
     return { cUserId };
   };
@@ -149,54 +132,18 @@ class AuthController {
     res.send(revokeResult);
   };
 
-  signup = async (gAuthClient: GoogleAuthService, tokens: Credentials) => {
-    const refreshToken = tokens.refresh_token;
-    if (!refreshToken) {
-      throw error(
-        AuthError.MissingRefreshToken,
-        "Failed to auth to user's gCal"
-      );
-    }
-
-    gAuthClient.oauthClient.setCredentials(tokens);
-
-    const { gUser } = await gAuthClient.getGoogleUserInfo();
-
-    const gcalClient = gAuthClient.getGcalClient();
-
-    const cUserId = await userService.createUser(gUser, refreshToken);
-    await this._createDefaultCalendarList(gcalClient, cUserId);
-
-    await priorityService.createDefaultPriorities(cUserId);
-
-    const { nextSyncToken } = await eventService.import(cUserId, gcalClient);
-
-    await syncService.updateSyncToken(cUserId, "events", nextSyncToken);
-
-    await syncService.startWatchingCalendar(gcalClient, cUserId, GCAL_PRIMARY);
-
-    return { cUserId };
-  };
-
-  _createDefaultCalendarList = async (gcal: gCalendar, userId: string) => {
-    const gcalListRes = await gcalService.listCalendars(gcal);
-    if (!gcalListRes.nextSyncToken) {
-      throw error(
-        AuthError.PaginationNotSupported,
-        "Calendarlist sync token not saved"
-      );
-    }
-
-    const ccalList = MapCalendarList.toCompass(gcalListRes);
-    const ccalCreateRes = await calendarService.create(userId, ccalList);
-
-    await syncService.updateSyncToken(
-      userId,
-      "calendarlist",
-      gcalListRes.nextSyncToken
+  signup = async (
+    gUser: TokenPayload,
+    gcalClient: gCalendar,
+    gRefreshToken: string
+  ) => {
+    const userId = await userService.initUserData(
+      gUser,
+      gcalClient,
+      gRefreshToken
     );
 
-    return ccalCreateRes;
+    return { cUserId: userId };
   };
 }
 

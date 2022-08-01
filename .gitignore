@@ -22,7 +22,6 @@ build/
 buildcache/
 logs/
 node_modules/
-prod/
 
 #core
 packages/core/build/

@@ -23,13 +23,11 @@ import { store } from "./store";
 SuperTokens.init({
   appInfo: {
     appName: APP_NAME,
-    // apiDomain: "http://localhost:3000", //-- worked
-    // websiteDomain: "http://localhost:9080", //--worked
     apiDomain: API_BASEURL,
     websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
     apiBasePath: "/api",
   },
-  enableDebugLogs: true,
+  // enableDebugLogs: true,
   recipeList: [Session.init()],
 });
 

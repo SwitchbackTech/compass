@@ -1,7 +1,8 @@
 import express from "express";
 import { verifySession } from "supertokens-node/recipe/session/framework/express";
+import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
-import { GCAL_NOTIFICATION_URL } from "@backend/common/constants/backend.constants";
+import authMiddleware from "@backend/auth/middleware/auth.middleware";
 
 import gcalSyncController from "./controllers/sync.gcal.controller";
 
@@ -12,23 +13,34 @@ export class SyncRoutes extends CommonRoutesConfig {
 
   configureRoutes() {
     this.app
-      .route(GCAL_NOTIFICATION_URL)
+      .route(GCAL_NOTIFICATION_ENDPOINT)
       .post(gcalSyncController.handleNotification);
 
     this.app
-      .route(`${GCAL_NOTIFICATION_URL}/start`)
+      .route([
+        `${GCAL_NOTIFICATION_ENDPOINT}/stop-all`,
+        `${GCAL_NOTIFICATION_ENDPOINT}/stop-all/:userId`,
+      ])
       .all(verifySession())
-      .post(gcalSyncController.startWatching);
+      .post(gcalSyncController.stopAllChannelWatches);
+
+    /**
+     * Dev convenience routes
+     */
+    this.app
+      .route(`${GCAL_NOTIFICATION_ENDPOINT}/start`)
+      .all([authMiddleware.verifyIsDev, verifySession()])
+      .post(gcalSyncController.startEventWatch);
 
     this.app
-      .route(`${GCAL_NOTIFICATION_URL}/stop`)
-      .all(verifySession())
+      .route(`${GCAL_NOTIFICATION_ENDPOINT}/stop`)
+      .all([authMiddleware.verifyIsDev, verifySession()])
       .post(gcalSyncController.stopWatching);
 
     this.app
-      .route(`${GCAL_NOTIFICATION_URL}/stop-all/:userId`)
-      .all(verifySession())
-      .post(gcalSyncController.stopAllChannelWatches);
+      .route(`/api/sync/gcal/incremental`)
+      .all([authMiddleware.verifyIsDev, verifySession()])
+      .post(gcalSyncController.importIncremental);
 
     return this.app;
   }

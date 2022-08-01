@@ -1,6 +1,4 @@
 //@ts-nocheck
-import { Priorities } from "@core/constants/core.constants";
-import { colorNameByPriority } from "@core/constants/colors";
 import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
 import { Status } from "@core/errors/status.codes";
 import { BaseError } from "@core/errors/errors.base";
@@ -46,8 +44,6 @@ class PriorityService {
     data: PriorityReq | PriorityReq[]
   ): Promise<Schema_Priority | Schema_Priority[]> {
     if (data instanceof Array) {
-      // TODO catch BulkWriteError
-      // TODO confirm none exist with same name
       const response = await mongoService.db
         .collection(Collections.PRIORITY)
         .insertMany(data);
@@ -84,31 +80,6 @@ class PriorityService {
       return priority;
     }
   }
-
-  createDefaultPriorities = async (userId: string) => {
-    return this.create(userId, [
-      {
-        color: colorNameByPriority.unassigned,
-        name: Priorities.UNASSIGNED,
-        user: userId,
-      },
-      {
-        color: colorNameByPriority.self,
-        name: Priorities.SELF,
-        user: userId,
-      },
-      {
-        color: colorNameByPriority.work,
-        name: Priorities.WORK,
-        user: userId,
-      },
-      {
-        color: colorNameByPriority.relationships,
-        name: Priorities.RELATIONS,
-        user: userId,
-      },
-    ]);
-  };
 
   async deleteAllByUser(userId: string) {
     const filter = { user: userId };
