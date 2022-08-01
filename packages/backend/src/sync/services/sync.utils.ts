@@ -1,4 +1,3 @@
-//@ts-nocheck
 import { AnyBulkWriteOperation } from "mongodb";
 import { gSchema$Event } from "@core/types/gcal";
 import { MapEvent } from "@core/mappers/map.event";
@@ -12,7 +11,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
-import { IS_DEV } from "@backend/common/constants/env.constants";
+import { ENV, IS_DEV } from "@backend/common/constants/env.constants";
 
 const logger = Logger("app:sync.helpers");
 
@@ -153,7 +152,7 @@ export const findCalendarByResourceId = (
 
 export const getChannelExpiration = () => {
   if (IS_DEV) {
-    const numMin = parseInt(process.env.CHANNEL_EXPIRATION_DEV_MIN);
+    const numMin = parseInt(ENV.CHANNEL_EXPIRATION_DEV_MIN);
     logger.warn(
       `\n** REMINDER: In dev mode, so channel is expiring in just ${numMin} mins **\n`
     );
@@ -161,7 +160,7 @@ export const getChannelExpiration = () => {
     return devExpiration;
   }
 
-  const numDays = parseInt(process.env.CHANNEL_EXPIRATION_PROD_DAYS);
+  const numDays = parseInt(ENV.CHANNEL_EXPIRATION_PROD_DAYS);
   const prodExpiration = daysFromNowTimestamp(numDays, "ms").toString();
   return prodExpiration;
 };

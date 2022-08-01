@@ -3,27 +3,17 @@ import { GaxiosError } from "gaxios";
 import { Credentials } from "google-auth-library";
 import { SessionRequest } from "supertokens-node/framework/express";
 import Session from "supertokens-node/recipe/session";
-import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { Logger } from "@core/logger/winston.logger";
-import { gCalendar } from "@core/types/gcal";
 import { ReqBody, Res_Promise, SReqBody } from "@core/types/express.types";
 import { Schema_User } from "@core/types/user.types";
 import GoogleAuthService from "@backend/auth/services/google.auth.service";
-import calendarService from "@backend/calendar/services/calendar.service";
-import eventService from "@backend/event/services/event.service";
-import gcalService from "@backend/common/services/gcal/gcal.service";
-import priorityService from "@backend/priority/services/priority.service";
 import userService from "@backend/user/services/user.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
-import syncService from "@backend/sync/services/sync.service";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import {
-  error,
-  AuthError,
-  GcalError,
-} from "@backend/common/errors/types/backend.errors";
+import { error, GcalError } from "@backend/common/errors/types/backend.errors";
 import { Result_Auth_Compass, UserInfo_Compass } from "@core/types/auth.types";
+
+import { initGoogleClient } from "../services/auth.utils";
 
 const logger = Logger("app:auth.controller");
 
@@ -116,16 +106,15 @@ class AuthController {
   };
 
   login = async (gAuthClient: GoogleAuthService, user: Schema_User) => {
+    const cUserId = user._id.toString();
     // - check if existing calendar watch
     //    - if not, start watching
     //    - if so...
     //      - check/extend expiration (?)
     // - incremental sync
-    const cUserId = user._id.toString();
 
-    // uses refresh token to ensure google API access
     gAuthClient.oauthClient.setCredentials({
-      refresh_token: user?.google.refreshToken,
+      refresh_token: user?.google.gRefreshToken,
     });
 
     // validation & incremental sync...
@@ -150,53 +139,17 @@ class AuthController {
   };
 
   signup = async (gAuthClient: GoogleAuthService, tokens: Credentials) => {
-    const refreshToken = tokens.refresh_token;
-    if (!refreshToken) {
-      throw error(
-        AuthError.MissingRefreshToken,
-        "Failed to auth to user's gCal"
-      );
-    }
-
-    gAuthClient.oauthClient.setCredentials(tokens);
-
-    const { gUser } = await gAuthClient.getGoogleUserInfo();
-
-    const gcalClient = gAuthClient.getGcalClient();
-
-    const cUserId = await userService.createUser(gUser, refreshToken);
-    await this._createDefaultCalendarList(gcalClient, cUserId);
-
-    await priorityService.createDefaultPriorities(cUserId);
-
-    const { nextSyncToken } = await eventService.import(cUserId, gcalClient);
-
-    await syncService.updateSyncToken(cUserId, "events", nextSyncToken);
-
-    await syncService.startWatchingCalendar(gcalClient, cUserId, GCAL_PRIMARY);
-
-    return { cUserId };
-  };
-
-  _createDefaultCalendarList = async (gcal: gCalendar, userId: string) => {
-    const gcalListRes = await gcalService.listCalendars(gcal);
-    if (!gcalListRes.nextSyncToken) {
-      throw error(
-        AuthError.PaginationNotSupported,
-        "Calendarlist sync token not saved"
-      );
-    }
-
-    const ccalList = MapCalendarList.toCompass(gcalListRes);
-    const ccalCreateRes = await calendarService.create(userId, ccalList);
-
-    await syncService.updateSyncToken(
-      userId,
-      "calendarlist",
-      gcalListRes.nextSyncToken
+    const { gUser, gcalClient, gRefreshToken } = await initGoogleClient(
+      gAuthClient,
+      tokens
+    );
+    const userId = await userService.initUserData(
+      gUser,
+      gcalClient,
+      gRefreshToken
     );
 
-    return ccalCreateRes;
+    return { cUserId: userId };
   };
 }
 

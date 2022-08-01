@@ -47,7 +47,9 @@ export const LoginView = () => {
       }
 
       setIsAuthenticating(true);
+
       const { error } = await AuthApi.loginOrSignup(code);
+
       if (error) {
         alert(
           "An error occured on Compass' backend while logging you in. Please let Ty know"

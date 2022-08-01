@@ -10,8 +10,8 @@ import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 
+import { hasExpectedHeaders } from "../services/sync.utils";
 import syncService from "../services/sync.service";
-import { hasExpectedHeaders } from "../services/sync.helpers";
 
 const logger = Logger("app:sync.gcal");
 class GcalSyncController {
@@ -39,14 +39,14 @@ class GcalSyncController {
     }
   };
 
-  startWatching = async (req: SReqBody<Body_Watch_Gcal_Start>, res: Res) => {
+  startEventWatch = async (req: SReqBody<Body_Watch_Gcal_Start>, res: Res) => {
     try {
-      const userId = res.locals.user.id;
+      const userId = req.session?.getUserId() as string;
       const calendarId = req.body.calendarId;
       const channelId = req.body.channelId;
 
       const gcal = await getGcalClient(userId);
-      const watchResult = await syncService.startWatchingCalendar(
+      const watchResult = await syncService.startWatchingEvents(
         gcal,
         userId,
         calendarId,
@@ -56,32 +56,34 @@ class GcalSyncController {
       // @ts-ignore
       res.promise(Promise.resolve(watchResult));
     } catch (e) {
+      logger.error(e);
       // @ts-ignore
-      res.promise(Promise.reject(e));
+      res.promise(Promise.reject({ error: e }));
     }
   };
 
   stopAllChannelWatches = (req: express.Request, res: express.Response) => {
     try {
-      //@ts-ignore
-      const userId: string = req.params.userId;
-      const stopResult = syncService.stopAllChannelWatches(userId);
+      const userId = req.params["userId"] as string;
+      const stopResult = syncService.stopAllGcalEventWatches(userId);
       //@ts-ignore
       res.promise(Promise.resolve(stopResult));
     } catch (e) {
       //@ts-ignore
-      res.promise(Promise.reject(e));
+      res.promise(Promise.reject({ error: e }));
     }
   };
 
   stopWatching = async (req: SReqBody<Body_Watch_Gcal_Stop>, res: Res) => {
     try {
-      const userId = res.locals.user.id;
+      const userId = req.session?.getUserId() as string;
       const channelId = req.body.channelId;
       const resourceId = req.body.resourceId;
 
-      const stopResult = await syncService.stopWatchingChannel(
-        userId,
+      const gcal = await getGcalClient(userId);
+
+      const stopResult = await syncService.stopWatch(
+        gcal,
         channelId,
         resourceId
       );

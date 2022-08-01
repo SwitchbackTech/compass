@@ -1,11 +1,11 @@
 //@ts-nocheck
 import { gSchema$Event, gParamsEventsList, gCalendar } from "@core/types/gcal";
-import { GaxiosError } from "gaxios";
+import { GCAL_NOTIFICATION_URL } from "@backend/common/constants/backend.constants";
+import { ENV } from "@backend/common/constants/env.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import { error, GcalError } from "@backend/common/errors/types/backend.errors";
 
 const logger = Logger("app:compass.gcal.service");
 
@@ -57,19 +57,9 @@ class GCalService {
     return response;
   }
 
-  async listCalendars(gcal: gCalendar) {
-    // try { //-- just let bubble up and provide generic error (?)
+  async getCalendarlist(gcal: gCalendar) {
     const response = await gcal.calendarList.list();
     return response.data;
-    // } catch (e: GaxiosError) {
-    // throw error(GcalError.Unsure, "Getting GCalendarLists failed");
-    // return new BaseError(
-    //   "Getting GCalendarLists Failed",
-    //   e,
-    //   e?.code || Status.UNSURE,
-    //   true
-    // );
-    // }
   }
 
   async updateEvent(gcal: gCalendar, gEventId: string, event: gSchema$Event) {
@@ -84,6 +74,26 @@ class GCalService {
       return new BaseError("GCal Update Failed", e, Status.BAD_REQUEST, true);
     }
   }
+
+  watchEvents = async (
+    gcal: gCalendar,
+    gCalendarId: string,
+    channelId: string,
+    expiration: string
+  ) => {
+    const { data } = await gcal.events.watch({
+      calendarId: gCalendarId,
+      requestBody: {
+        id: channelId,
+        // uses prod URL because address always needs to be HTTPS
+        // TODO: once dedicated e2e test VM, use that instead of prod
+        address: `${ENV.BASEURL_PROD}${GCAL_NOTIFICATION_URL}`,
+        type: "web_hook",
+        expiration,
+      },
+    });
+    return { watch: data };
+  };
 }
 
 export default new GCalService();

@@ -62,10 +62,23 @@ export const EventError = {
   },
 };
 
+export const GenericError = {
+  NotImplemented: {
+    description: "not implemented yet",
+    status: Status.UNSURE,
+    isOperational: true,
+  },
+};
+
 export const GcalError = {
   Unsure: {
     description: "generic gCal API Error",
     status: Status.UNSURE,
+    isOperational: true,
+  },
+  CalendarlistMissing: {
+    description: "No calendarlist",
+    status: Status.BAD_REQUEST,
     isOperational: true,
   },
   CodeInvalid: {
@@ -89,9 +102,19 @@ export const DbError = {
 };
 
 export const SyncError = {
+  ChannelDoesNotExist: {
+    description: "Channel does not exist",
+    status: Status.NOT_FOUND,
+    isOperational: true,
+  },
   MissingResourceId: {
     description: "No resourceId provided",
     status: Status.NO_CONTENT,
+    isOperational: true,
+  },
+  NoWatchesForUser: {
+    description: "No active watches for user",
+    status: Status.BAD_REQUEST,
     isOperational: true,
   },
 };

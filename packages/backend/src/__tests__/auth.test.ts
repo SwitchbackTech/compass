@@ -3,12 +3,11 @@ import { getGcal } from "@backend/auth/services/google.auth.service";
 
 const port = 2999;
 const testCredentials = {
-  clientId:
-    "***REMOVED***",
-  projectId: "***REMOVED***",
+  clientId: "foo",
+  projectId: "foo",
   authUri: "https://accounts.google.com/o/oauth2/auth",
   tokenUri: " https://oauth2.googleapis.com/token",
-  clientSecret: "***REMOVED***-nfh0MfCEzPLrMS3_F3068gmYDp9v",
+  clientSecret: "foo",
   redirectUri: `http://localhost:${port}/api/auth/oauth-complete`,
 };
 
@@ -26,8 +25,7 @@ describe("Google Auth Service", () => {
 
     gOauthClient.on("tokens", (tokens) => {
       if (tokens.refresh_token) {
-        // store the refresh_token in your secure persistent database
-        console.log("refreshToken:", tokens.refresh_token);
+        console.log("gRefreshToken:", tokens.refresh_token);
       }
       console.log("accessToken:", tokens.access_token);
     });

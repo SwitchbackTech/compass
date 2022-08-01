@@ -12,7 +12,7 @@ export interface Schema_User_Base {
   google: {
     googleId: string;
     picture: string;
-    refreshToken: string;
+    gRefreshToken: string;
   };
   signedUpAt?: Date;
   lastLoggedInAt?: Date;

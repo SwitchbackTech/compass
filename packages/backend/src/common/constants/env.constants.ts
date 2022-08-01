@@ -19,6 +19,10 @@ const googleClientSecret = IS_DEV
 const _error = "error!!!";
 export const ENV = {
   BASEURL_PROD: process.env["BASEURL_PROD"] || _error,
+  CHANNEL_EXPIRATION_DEV_MIN:
+    process.env["CHANNEL_EXPIRATION_DEV_MIN"] || _error,
+  CHANNEL_EXPIRATION_PROD_DAYS:
+    process.env["CHANNEL_EXPIRATION_PROD_DAYS"] || _error,
   CLIENT_ID: googleClientId || _error,
   CLIENT_SECRET: googleClientSecret || _error,
   LOG_LEVEL: process.env["LOG_LEVEL"] || "debug",

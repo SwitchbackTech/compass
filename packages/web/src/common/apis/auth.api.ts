@@ -5,7 +5,6 @@ import { CompassApi } from "./compass.api";
 const AuthApi = {
   async loginOrSignup(code: string) {
     const response = await CompassApi.post(`/oauth/google`, { code });
-    console.log(response); //--
     return response.data as Result_Auth_Compass;
   },
   createSession: async () => await CompassApi.post(`/auth/session`),

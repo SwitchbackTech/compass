@@ -188,7 +188,7 @@ class EventService {
     }
   }
 
-  import = async (userId: string, gcal: gCalendar) => {
+  importClean = async (userId: string, gcal: gCalendar, calendarId: string) => {
     let nextPageToken = undefined;
     let nextSyncToken = undefined;
     let total = 0;
@@ -203,7 +203,7 @@ class EventService {
     // there are no more events
     do {
       const params: gParamsEventsList = {
-        calendarId: GCAL_PRIMARY,
+        calendarId,
         timeMin: xYearsAgo,
         pageToken: nextPageToken,
       };
@@ -237,6 +237,18 @@ class EventService {
       nextSyncToken: nextSyncToken as string,
     };
     return summary;
+  };
+
+  importIncremental = async (
+    userId: string,
+    gcal: gCalendar,
+    calendarId: string,
+    nextSyncToken: string
+  ) => {
+    const updatedEvents = await gcalService.getEvents(gcal, {
+      calendarId: calendarId,
+      syncToken: nextSyncToken,
+    });
   };
 
   async readAll(

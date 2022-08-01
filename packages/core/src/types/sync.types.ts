@@ -23,6 +23,19 @@ export interface Params_Sync_Gcal extends Request_Sync_Gcal {
   userId: string;
   calendarId?: string;
 }
+
+export interface Payload_Resource_Events {
+  gCalendarId: string;
+  channelId: string;
+  expiration: string;
+  resourceId: string;
+}
+
+export interface Payload_Sync_Events extends Payload_Resource_Events {
+  lastSyncedAt: Date;
+  nextSyncToken: string;
+}
+
 export interface Request_Sync_Gcal {
   channelId: string;
   resourceId: string;
@@ -48,6 +61,7 @@ export interface Result_Watch_Delete {
   result: string;
 }
 
+//-- remove if unsed
 export interface Result_Watch_Start {
   channel: gSchema$Channel;
   saveForDev?: "success" | "failed";
@@ -81,7 +95,45 @@ export interface Result_Sync_Prep_Gcal {
   errors: BaseError[];
 }
 
-export interface Schema_Watch_Gcal extends WithId<Document> {
-  channelId: string;
-  resourceId: string;
+export interface Schema_Sync {
+  user: string;
+  google: {
+    calendarlist: Payload_Sync_Events[];
+    events: Payload_Sync_Events[];
+    // settings: Payload_Sync;
+  };
 }
+
+/*
+	]
+
+//sync
+user:
+google:
+	calendarlist:
+		channelId: "4bd6a7c7-af60-4eeb-b7d0-82674c7c8353"
+		expiration: 1659097148533
+		resourceId: "DpB-6oO_rXZufO6D45aRkQo_TkU"
+		lastSyncedAt: 
+		nextSyncToken:
+	events:
+		[
+			{
+			// save calendarId (in addition to resourceId)
+			// so you can reference it back to a calendarlist
+			// which you can't do if you just have resourceId
+			calendarId: "primary"
+			channelId: "4bd6a7c7-af60-4eeb-b7d0-82674c7c8353"
+			resourceId: "DpB-6oO_rXZufO6D45aRkQo_TkU"
+			nextSyncToken:
+			lastSyncedAt:
+			},
+			{
+			calendarId: "8g3jsa8-23gasf..."
+			channelId: "1234"
+			resourceId: "asdfU"
+			nextSyncToken:
+			lastSyncedAt:
+			}
+		]
+*/
