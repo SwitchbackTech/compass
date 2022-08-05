@@ -3,15 +3,16 @@
 #########
 build.zip
 .DS_Store
-.vscode/
-.idea/
 .eslintcache
+.idea/
+.vscode/
 globalConfig.json
 electron/localization/locales/en/translation.missing.json
 
 # wildcards
 .env*
 *.log
+*.mongodb
 *.tsbuildinfo
 
 ########
@@ -34,6 +35,7 @@ packages/web/build/
 packages/backend/logs
 packages/backend/build
 packages/backend/node_modules
+packages/backend/playgroud
 
 
 !.env.project

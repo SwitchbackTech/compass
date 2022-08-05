@@ -5,7 +5,10 @@ import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
+import {
+  GCAL_PRIMARY,
+  GCAL_NOTIFICATION_TOKEN,
+} from "@backend/common/constants/backend.constants";
 
 const logger = Logger("app:compass.gcal.service");
 
@@ -81,12 +84,13 @@ class GCalService {
     const { data } = await gcal.events.watch({
       calendarId: gCalendarId,
       requestBody: {
-        id: channelId,
         // uses prod URL because address always needs to be HTTPS
         // TODO: once dedicated e2e test VM, use that instead of prod
         address: `${ENV.BASEURL_PROD}${GCAL_NOTIFICATION_ENDPOINT}`,
-        type: "web_hook",
         expiration,
+        id: channelId,
+        token: GCAL_NOTIFICATION_TOKEN,
+        type: "web_hook",
       },
     });
     return { watch: data };

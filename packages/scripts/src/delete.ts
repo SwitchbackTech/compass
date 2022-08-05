@@ -27,9 +27,7 @@ const deleteCompassDataForUser = async (userId: string) => {
     const events = await eventService.deleteAllByUser(userId);
     summary.events = events.deletedCount;
 
-    const { watchStopCount } = await syncService.stopAllGcalEventWatches(
-      userId
-    );
+    const { watchStopCount } = await syncService.stopWatches(userId);
     summary.eventWatches = watchStopCount;
 
     const syncs = await syncService.deleteAllByUser(userId);

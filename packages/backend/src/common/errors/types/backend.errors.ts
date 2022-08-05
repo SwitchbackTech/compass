@@ -16,6 +16,19 @@ export const error = (cause: ErrorMetadata, result: string) => {
   );
 };
 
+export const genericError = (
+  e: unknown,
+  result: string,
+  status = Status.INTERNAL_SERVER,
+  isOperational = true
+) => {
+  const _e = e as Error;
+  const name = _e.name || "GenericName";
+  const description = `${name}: ${_e.message || "GenericMsg"}`;
+  const cause = { description, isOperational, status };
+  return error(cause, result);
+};
+
 export const AuthError = {
   DevOnly: {
     description: "Only available during development",
@@ -84,11 +97,6 @@ export const GenericError = {
 };
 
 export const GcalError = {
-  Unsure: {
-    description: "generic gCal API Error",
-    status: Status.UNSURE,
-    isOperational: true,
-  },
   CalendarlistMissing: {
     description: "No calendarlist",
     status: Status.BAD_REQUEST,
@@ -104,6 +112,16 @@ export const GcalError = {
     status: Status.FORBIDDEN,
     isOperational: true,
   },
+  Unauthorized: {
+    description: "Not Authorized",
+    status: Status.FORBIDDEN,
+    isOperational: true,
+  },
+  Unsure: {
+    description: "generic gCal API Error",
+    status: Status.UNSURE,
+    isOperational: true,
+  },
 };
 
 export const SyncError = {
@@ -117,6 +135,7 @@ export const SyncError = {
     status: Status.GONE,
     isOperational: true,
   },
+
   MissingResourceId: {
     description: "No resourceId provided",
     status: Status.NO_CONTENT,

@@ -9,12 +9,13 @@ import { Schema_CalendarList } from "@core/types/calendar.types";
 import { Schema_Event } from "@core/types/event.types";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
+import { Schema_Sync } from "@core/types/sync.types";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
 import { ENV, IS_DEV } from "@backend/common/constants/env.constants";
 
 const logger = Logger("app:sync.helpers");
 
-export const assembleBulkOperations = (
+export const assembleEventOperations = (
   userId: string,
   eventsToDelete: string[],
   eventsToUpdate: gSchema$Event[]
@@ -86,14 +87,9 @@ export const channelExpiresSoon = (expiry: string) => {
   return channelExpiresSoon;
 };
 
-export const findCalendarByResourceId = (
-  //todo loop through items.sync for the one that matches the resourceId,
-  // then grab that one's nextSyncToken
-  resourceId: string,
-  calendarList: Schema_CalendarList
-) => {
-  const matches = calendarList.google.items.filter((g) => {
-    return g.sync.resourceId === resourceId;
+export const findCalendarId = (resourceId: string, sync: Schema_Sync) => {
+  const matches = sync.google.events.filter((g) => {
+    return g.resourceId === resourceId;
   });
 
   if (matches.length !== 1) {
@@ -109,7 +105,7 @@ export const findCalendarByResourceId = (
     );
   }
 
-  return matches[0];
+  return matches[0]?.gCalendarId;
 };
 
 export const getChannelExpiration = () => {
@@ -161,14 +157,17 @@ export const getSummary = (
   return summary;
 };
 
-export const hasExpectedHeaders = (headers: object) => {
-  const hasExpected =
-    typeof headers["x-goog-channel-id"] === "string" &&
-    typeof headers["x-goog-resource-id"] === "string" &&
-    typeof headers["x-goog-resource-state"] === "string" &&
-    typeof headers["x-goog-channel-expiration"] === "string";
+export const hasGoogleHeaders = (headers: object) => {
+  const expected = [
+    "x-goog-channel-id",
+    "x-goog-resource-id",
+    "x-goog-resource-state",
+    "x-goog-channel-expiration",
+  ];
 
-  return hasExpected;
+  const hasHeaders = expected.every((i) => i in headers);
+
+  return hasHeaders;
 };
 
 /* 

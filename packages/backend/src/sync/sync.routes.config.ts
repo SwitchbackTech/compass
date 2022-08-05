@@ -14,7 +14,10 @@ export class SyncRoutes extends CommonRoutesConfig {
   configureRoutes() {
     this.app
       .route(GCAL_NOTIFICATION_ENDPOINT)
-      .post(gcalSyncController.handleNotification);
+      .post([
+        authMiddleware.verifyIsFromGoogle,
+        gcalSyncController.handleNotification,
+      ]);
 
     this.app
       .route([

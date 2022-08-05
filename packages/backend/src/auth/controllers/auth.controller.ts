@@ -11,7 +11,11 @@ import GoogleAuthService from "@backend/auth/services/google.auth.service";
 import userService from "@backend/user/services/user.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import { error, GcalError } from "@backend/common/errors/types/backend.errors";
+import {
+  error,
+  GcalError,
+  genericError,
+} from "@backend/common/errors/types/backend.errors";
 import syncService from "@backend/sync/services/sync.service";
 
 import { initGoogleClient } from "../services/auth.utils";
@@ -100,7 +104,7 @@ class AuthController {
       //@ts-ignore
       res.promise(
         Promise.resolve({
-          error: e,
+          error: genericError(e, "Auth Failed"),
         })
       );
     }

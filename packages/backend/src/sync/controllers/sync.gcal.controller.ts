@@ -6,13 +6,12 @@ import { Logger } from "@core/logger/winston.logger";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 
-import { hasExpectedHeaders } from "../services/sync.utils";
 import syncService from "../services/sync.service";
 
 const logger = Logger("app:sync.gcal");
 class GcalSyncController {
   handleNotification = async (req: express.Request, res: express.Response) => {
-    if (hasExpectedHeaders(req.headers)) {
+    try {
       const syncPayload = {
         channelId: req.headers["x-goog-channel-id"],
         resourceId: req.headers["x-goog-resource-id"],
@@ -20,20 +19,14 @@ class GcalSyncController {
         expiration: req.headers["x-goog-channel-expiration"],
       } as Payload_Sync_Notif;
 
-      const notifResponse = await syncService.handleGcalNotification(
-        syncPayload
-      );
+      const response = await syncService.handleGcalNotification(syncPayload);
 
       // @ts-ignore
-      res.promise(Promise.resolve(notifResponse));
-    } else {
-      const msg = `Notification request has invalid headers:\n${JSON.stringify(
-        req.headers
-      )}`;
-      logger.error(msg);
-      const err = new BaseError("Bad Headers", msg, Status.BAD_REQUEST, true);
+      res.promise(Promise.resolve(response));
+    } catch (e) {
       // @ts-ignore
-      res.promise(Promise.resolve(err));
+      logger.error(e);
+      res.promise(Promise.reject({ error: e }));
     }
   };
 
@@ -82,7 +75,7 @@ class GcalSyncController {
         userId = req.session?.getUserId() as string;
       }
 
-      const stopResult = await syncService.stopAllGcalEventWatches(userId);
+      const stopResult = await syncService.stopWatches(userId);
       //@ts-ignore
       res.promise(Promise.resolve(stopResult));
     } catch (e) {

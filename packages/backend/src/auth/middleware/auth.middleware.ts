@@ -7,6 +7,8 @@ import {
   GcalError,
 } from "@backend/common/errors/types/backend.errors";
 import { IS_DEV } from "@backend/common/constants/env.constants";
+import { hasGoogleHeaders } from "@backend/sync/services/sync.utils";
+import { GCAL_NOTIFICATION_TOKEN } from "@backend/common/constants/backend.constants";
 
 class AuthMiddleware {
   verifyIsDev = (_req: Request, res: Response, next: NextFunction) => {
@@ -15,6 +17,22 @@ class AuthMiddleware {
         .status(Status.FORBIDDEN)
         .json({ error: error(AuthError.DevOnly, "Request Failed") });
     }
+    next();
+  };
+
+  verifyIsFromGoogle = (req: Request, res: Response, next: NextFunction) => {
+    const tokenIsInvalid =
+      (req.headers["x-goog-channel-token"] as string) !==
+      GCAL_NOTIFICATION_TOKEN;
+    const isMissingHeaders = !hasGoogleHeaders(req.headers);
+
+    if (isMissingHeaders || tokenIsInvalid) {
+      res
+        .status(Status.FORBIDDEN)
+        .send({ error: error(GcalError.Unauthorized, "Notification Failed") });
+      return;
+    }
+
     next();
   };
 

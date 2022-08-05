@@ -12,7 +12,10 @@ import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import syncService from "@backend/sync/services/sync.service";
-import { startWatchingGcalsById } from "@backend/sync/services/sync.service.helpers";
+import {
+  startWatchingGcalsById,
+  updateSyncTokenFor,
+} from "@backend/sync/services/sync.service.helpers";
 
 const logger = Logger("app:user.service");
 
@@ -75,7 +78,7 @@ class UserService {
     const { cCalendarList, gCalendarIds, nextSyncToken } =
       await getCalendarsToSync(userId, gcal);
 
-    await syncService.updateSyncToken(userId, "calendarlist", nextSyncToken);
+    await updateSyncTokenFor("calendarlist", userId, nextSyncToken);
 
     await calendarService.create(cCalendarList);
 
