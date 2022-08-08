@@ -1,4 +1,5 @@
 import { gCalendar, gParamsEventsList } from "@core/types/gcal";
+import { Logger } from "@core/logger/winston.logger";
 import {
   Payload_Sync_Events,
   Schema_Sync,
@@ -25,6 +26,7 @@ import {
   assembleEventOperations,
   categorizeGcalEvents,
   channelExpiresSoon,
+  getSummary,
 } from "./sync.utils";
 
 /**
@@ -34,6 +36,8 @@ import {
  * testing more difficult)
  *
  */
+
+const logger = Logger("app:sync.service.helpers");
 
 export const assembleEventImports = (
   userId: string,
@@ -47,21 +51,7 @@ export const assembleEventImports = (
   return syncEvents;
 };
 
-export const deleteSync = async (
-  userId: string,
-  resource: Resource_Sync,
-  channelId: string
-) => {
-  await mongoService.db.collection(Collections.SYNC).updateOne(
-    { user: userId },
-    {
-      $pull: {
-        [`google.${resource}`]: { channelId: channelId },
-      },
-    }
-  );
-};
-export const getCalendarId = async (resourceId: string) => {
+export const getCalendarInfo = async (resourceId: string) => {
   const sync = await getSync({ resourceId });
   if (!sync) {
     throw error(SyncError.NoSyncRecordForUser, "Sync Failed");
@@ -79,6 +69,28 @@ export const getCalendarId = async (resourceId: string) => {
     nextSyncToken,
   };
 };
+
+export const deleteAllSyncData = async (userId: string) => {
+  await mongoService.db
+    .collection(Collections.SYNC)
+    .deleteOne({ user: userId });
+};
+
+export const deleteSync = async (
+  userId: string,
+  resource: Resource_Sync,
+  channelId: string
+) => {
+  await mongoService.db.collection(Collections.SYNC).updateOne(
+    { user: userId },
+    {
+      $pull: {
+        [`google.${resource}`]: { channelId: channelId },
+      },
+    }
+  );
+};
+
 export const getSync = async (params: {
   userId?: string;
   resourceId?: string;
@@ -146,25 +158,35 @@ export const importEvents = async (
 
 export const importEventsByCalendar = async (
   userId: string,
-  eventSync: Payload_Sync_Events,
+  syncInfo: Payload_Sync_Events,
   gcal?: gCalendar
 ) => {
   if (!gcal) gcal = await getGcalClient(userId);
-  const { gCalendarId } = eventSync;
+  const { gCalendarId } = syncInfo;
 
-  const updatedEvents = await prepareEventImport(userId, gcal, eventSync);
-  if (!updatedEvents || updatedEvents.length < 1) {
-    return {
-      calendar: gCalendarId,
-      result: {
-        updated: 0,
-        deleted: 0,
-      },
-    };
+  const noChanges = {
+    calendar: gCalendarId,
+    result: {
+      updated: 0,
+      deleted: 0,
+    },
+  };
+
+  const updatedEvents = await prepareEventImport(userId, gcal, syncInfo);
+  if (updatedEvents.length === 0) {
+    return noChanges;
   }
 
   const { toDelete, toUpdate } = categorizeGcalEvents(updatedEvents);
+  const summary = getSummary(toUpdate, toDelete);
+  logger.debug(summary);
+
   const ops = assembleEventOperations(userId, toDelete, toUpdate);
+
+  if (Object.keys(ops).length === 0) {
+    logger.warning("No detected changes");
+    return noChanges;
+  }
 
   const { result } = await mongoService.db
     .collection(Collections.EVENT)
@@ -220,7 +242,7 @@ const prepareEventImport = async (
     gCalendarId
   );
 
-  return data.items;
+  return data.items || [];
 };
 
 export const prepareEventSyncChannels = async (
@@ -347,6 +369,19 @@ const updateSyncTokenIfNeeded = async (
   if (prev !== curr) {
     await updateSyncTokenForGcal(userId, gCalendarId, curr);
   }
+};
+
+export const updateRefreshedAt = async (
+  userId: string,
+  gCalendarId: string
+) => {
+  const result = await mongoService.db
+    .collection(Collections.SYNC)
+    .updateOne(
+      { user: userId, "google.events.gCalendarId": gCalendarId },
+      { $set: { "google.events.$.lastRefreshedAt": new Date() } }
+    );
+  return result;
 };
 
 const updateSyncTimeBy = async (

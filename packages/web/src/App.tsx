@@ -32,10 +32,6 @@ SuperTokens.init({
 });
 
 const clientId = IS_DEV ? GOOGLE_CLIENT_ID_TEST : GOOGLE_CLIENT_ID_PROD;
-console.log(
-  "using clientId for:",
-  clientId === GOOGLE_CLIENT_ID_TEST ? "TEST" : "PROD"
-);
 
 sagaMiddleware.run(sagas);
 

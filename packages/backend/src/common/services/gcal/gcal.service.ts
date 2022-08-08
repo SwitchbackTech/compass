@@ -1,31 +1,27 @@
-//@ts-nocheck
+import { GaxiosError } from "gaxios";
 import { gSchema$Event, gParamsEventsList, gCalendar } from "@core/types/gcal";
-import { ENV } from "@backend/common/constants/env.constants";
-import { BaseError } from "@core/errors/errors.base";
-import { Status } from "@core/errors/status.codes";
-import { Logger } from "@core/logger/winston.logger";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
+import { ENV } from "@backend/common/constants/env.constants";
 import {
   GCAL_PRIMARY,
   GCAL_NOTIFICATION_TOKEN,
 } from "@backend/common/constants/backend.constants";
 
-const logger = Logger("app:compass.gcal.service");
-
-export const FAILED_GCALLIST = "";
+import { handleGcalError } from "./gcal.utils";
 
 class GCalService {
   async createEvent(gcal: gCalendar, event: gSchema$Event) {
-    const response = await gcal.events.insert({
-      calendarId: "primary",
-      requestBody: event,
-    });
+    try {
+      const response = await gcal.events.insert({
+        calendarId: "primary",
+        requestBody: event,
+      });
 
-    if (response.data.status !== "confirmed") {
-      logger.warning("The gcal event might be invalid");
+      return response.data;
+    } catch (e) {
+      handleGcalError("Failed to CreategEvent", e as GaxiosError);
+      return;
     }
-
-    return response.data;
   }
 
   async deleteEvent(gcal: gCalendar, gcalEventId: string) {
@@ -35,31 +31,31 @@ class GCalService {
         eventId: gcalEventId,
         sendUpdates: "all",
       });
+      return response;
     } catch (e) {
-      if (e.response.status === 410) {
-        // If the resource is `gone` [status code 410] just ignore
-        logger.warn(
-          `GCal Event was deleted before this request: ${gcalEventId}`
-        );
-      } else {
-        return new BaseError(
-          "GCal Delete Failed",
-          "Failed to delete event in gcal",
-          Status.BAD_REQUEST,
-          true
-        );
-      }
+      handleGcalError("Failed to Delete gEvent", e as GaxiosError);
+      return;
     }
   }
 
   async getEvents(gcal: gCalendar, params: gParamsEventsList) {
-    const response = await gcal.events.list(params);
-    return response;
+    try {
+      const response = await gcal.events.list(params);
+      return response;
+    } catch (e) {
+      handleGcalError("Failed to Get gEvent", e as GaxiosError);
+      return;
+    }
   }
 
   async getCalendarlist(gcal: gCalendar) {
-    const response = await gcal.calendarList.list();
-    return response.data;
+    try {
+      const response = await gcal.calendarList.list();
+      return response.data;
+    } catch (e) {
+      handleGcalError("Failed to Get gCalendarList", e as GaxiosError);
+      return;
+    }
   }
 
   async updateEvent(gcal: gCalendar, gEventId: string, event: gSchema$Event) {
@@ -71,7 +67,8 @@ class GCalService {
       });
       return response.data;
     } catch (e) {
-      return new BaseError("GCal Update Failed", e, Status.BAD_REQUEST, true);
+      handleGcalError("Failed to Update gEvent", e as GaxiosError);
+      return;
     }
   }
 
@@ -81,19 +78,24 @@ class GCalService {
     channelId: string,
     expiration: string
   ) => {
-    const { data } = await gcal.events.watch({
-      calendarId: gCalendarId,
-      requestBody: {
-        // uses prod URL because address always needs to be HTTPS
-        // TODO: once dedicated e2e test VM, use that instead of prod
-        address: `${ENV.BASEURL_PROD}${GCAL_NOTIFICATION_ENDPOINT}`,
-        expiration,
-        id: channelId,
-        token: GCAL_NOTIFICATION_TOKEN,
-        type: "web_hook",
-      },
-    });
-    return { watch: data };
+    try {
+      const { data } = await gcal.events.watch({
+        calendarId: gCalendarId,
+        requestBody: {
+          // uses prod URL because address always needs to be HTTPS
+          // TODO: once dedicated e2e test VM, use that instead of prod
+          address: `${ENV.BASEURL_PROD}${GCAL_NOTIFICATION_ENDPOINT}`,
+          expiration,
+          id: channelId,
+          token: GCAL_NOTIFICATION_TOKEN,
+          type: "web_hook",
+        },
+      });
+      return { watch: data };
+    } catch (e) {
+      handleGcalError("Failed to Watch for Events", e as GaxiosError);
+      return;
+    }
   };
 }
 

@@ -20,7 +20,6 @@ class MongoService {
   }
 
   _connect = () => {
-    logger.debug("Attempting MongoDB connection");
     MongoClient.connect(uri, this.options)
       .then((clientInstance) => {
         logger.debug(`Connected to '${dbName}' database`);

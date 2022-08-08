@@ -1,16 +1,18 @@
-import express from "express";
+import express, { Response } from "express";
 import { Payload_Sync_Notif } from "@core/types/sync.types";
 import { SessionRequest } from "supertokens-node/framework/express";
-import { SReqBody, Res } from "@core/types/express.types";
+import { SReqBody } from "@core/types/express.types";
 import { Logger } from "@core/logger/winston.logger";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
+import { genericError } from "@backend/common/errors/types/backend.errors";
 
 import syncService from "../services/sync.service";
+import { deleteAllSyncData } from "../services/sync.service.helpers";
 
 const logger = Logger("app:sync.gcal");
 class GcalSyncController {
-  handleNotification = async (req: express.Request, res: express.Response) => {
+  handleNotification = async (req: express.Request, res: Response) => {
     try {
       const syncPayload = {
         channelId: req.headers["x-goog-channel-id"],
@@ -24,13 +26,18 @@ class GcalSyncController {
       // @ts-ignore
       res.promise(Promise.resolve(response));
     } catch (e) {
-      // @ts-ignore
       logger.error(e);
-      res.promise(Promise.reject({ error: e }));
+      const _e = e as BaseError;
+      if (_e.statusCode === Status.GONE) {
+        logger.error("TODO: find userId using payload and delete sync record");
+        // await deleteAllSyncData(userId);
+      }
+      // @ts-ignore
+      res.promise(e);
     }
   };
 
-  importIncremental = async (req: SessionRequest, res: Res_Promise) => {
+  importIncremental = async (req: SessionRequest, res: Response) => {
     try {
       const userId = req.session?.getUserId() as string;
       const result = await syncService.importIncremental(userId);
@@ -39,11 +46,14 @@ class GcalSyncController {
       res.promise(Promise.resolve(result));
     } catch (e) {
       // @ts-ignore
-      res.promise(Promise.reject({ error: e }));
+      res.promise(e);
     }
   };
 
-  startEventWatch = async (req: SReqBody<{ calendarId: string }>, res: Res) => {
+  startEventWatch = async (
+    req: SReqBody<{ calendarId: string }>,
+    res: Response
+  ) => {
     try {
       const userId = req.session?.getUserId() as string;
       const calendarId = req.body.calendarId;
@@ -92,7 +102,7 @@ class GcalSyncController {
 
   stopWatching = async (
     req: SReqBody<{ channelId: string; resourceId: string }>,
-    res: Res
+    res: Response
   ) => {
     try {
       const userId = req.session?.getUserId() as string;

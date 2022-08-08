@@ -4,12 +4,21 @@ import { Schema_CalendarList } from "@core/types/calendar.types";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { AuthError, error } from "@backend/common/errors/types/backend.errors";
 
 class CalendarController {
   create = async (req: SReqBody<Schema_CalendarList>, res: Res) => {
     try {
       const userId = req.session?.getUserId() as string;
-      const response = await calendarService.create(userId, req.body);
+      if (userId !== req.body.user) {
+        //@ts-ignore
+        res.promise(
+          Promise.resolve({
+            error: error(AuthError.InadequatePermissions, "Create Failed"),
+          })
+        );
+      }
+      const response = await calendarService.create(req.body);
       //@ts-ignore
       res.promise(Promise.resolve(response));
     } catch (e) {

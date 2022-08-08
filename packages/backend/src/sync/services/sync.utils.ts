@@ -5,12 +5,11 @@ import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { minutesFromNow } from "@core/util/date.utils";
 import { daysFromNowTimestamp } from "@core/util/date.utils";
-import { Schema_CalendarList } from "@core/types/calendar.types";
 import { Schema_Event } from "@core/types/event.types";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { Schema_Sync } from "@core/types/sync.types";
-import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.helpers";
+import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
 import { ENV, IS_DEV } from "@backend/common/constants/env.constants";
 
 const logger = Logger("app:sync.helpers");
@@ -55,7 +54,8 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   const toDelete = cancelledEventsIds(events);
 
   // if its going to be deleted anyway, then dont bother updating
-  const _isntBeingDeleted = (e: gSchema$Event) => !toDelete.includes(e.id);
+  const _isntBeingDeleted = (e: gSchema$Event) =>
+    !toDelete.includes(e.id as string);
 
   const toUpdate = events.filter((e) => _isntBeingDeleted(e));
 
@@ -69,10 +69,6 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
 export const channelExpiresSoon = (expiry: string) => {
   if (IS_DEV) {
     const numMin = Math.round(parseInt(ENV.CHANNEL_EXPIRATION_DEV_MIN) / 2);
-    logger.warn(
-      `** REMINDER: In dev mode, so only checking if channel expires in next ${numMin} min`
-    );
-
     const xMinFromNow = minutesFromNow(numMin, "ms");
     const expiration = new Date(expiry).getTime();
     const channelExpiresSoon = expiration < xMinFromNow;
@@ -112,7 +108,7 @@ export const getChannelExpiration = () => {
   if (IS_DEV) {
     const numMin = parseInt(ENV.CHANNEL_EXPIRATION_DEV_MIN);
     logger.warn(
-      `\n** REMINDER: In dev mode, so channel is expiring in just ${numMin} mins **\n`
+      `** REMINDER: In dev mode, so channel is expiring in just ${numMin} mins **\n`
     );
     const devExpiration = minutesFromNow(numMin, "ms").toString();
     return devExpiration;
@@ -125,7 +121,7 @@ export const getChannelExpiration = () => {
 
 export const getSummary = (
   eventsToUpdate: gSchema$Event[],
-  eventsToDelete: gSchema$Event[]
+  eventsToDelete: string[]
 ) => {
   let updateSummary = "";
   let deleteSummary = "";
@@ -173,21 +169,21 @@ export const hasGoogleHeaders = (headers: object) => {
 /* 
 this can happen if sync fails unexpetedly,
 (eg server was down for awhile and it expired)
-*/
 export const channelNotFound = (
   calendar: Schema_CalendarList,
   channelId: string
-) => {
-  const matchingChannelIds = calendar.google.items.filter(
-    (c) => c.sync.channelId === channelId
-  );
-  if (matchingChannelIds.length != 1) {
-    return true;
-  } else {
-    // if exactly 1 entry, then the correct channel was found
-    return false;
-  }
-};
+  ) => {
+    const matchingChannelIds = calendar.google.items.filter(
+      (c) => c.sync.channelId === channelId
+      );
+      if (matchingChannelIds.length != 1) {
+        return true;
+      } else {
+        // if exactly 1 entry, then the correct channel was found
+        return false;
+      }
+    };
+*/
 
 /*
 export const channelRefreshNeeded = (channelId: string, expiration: string) => {

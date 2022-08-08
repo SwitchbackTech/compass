@@ -5,79 +5,55 @@ dotenv.config({
   path: path.resolve(process.cwd(), "packages/backend/.env"),
 });
 import { Command } from "commander";
-import pkg from "inquirer";
-const { prompt } = pkg;
-import mongoService from "@backend/common/services/mongo.service";
 
-import { deleteCompassDataForMatchingUsers } from "./delete";
+import { runBuild } from "./commands/build";
+import { updatePckgs } from "./commands/update";
 
 const runScript = async () => {
-  /* setup CLI */
+  const exitHelpfully = (msg?: string) => {
+    msg && console.log(msg);
+    console.log(program.helpInformation());
+    process.exit(1);
+  };
+
   const program = new Command();
+  program.option("-b, --build", "builds packages");
   program.option("-d, --delete", "deletes users data from compass database");
-  program.option("-u, --user <type>", "specifies which user to run script for");
+  program.option("-u, --user <id>", "specifies which user to run script for");
   program.option("-f, --force", "forces operation, no cautionary prompts");
 
   program.parse(process.argv);
 
   const options = program.opts();
-  const user = options["user"] as string;
 
-  if (Object.keys(options).length === 0 || !user) {
-    console.log(program.helpInformation());
-    process.exit(1);
+  if (Object.keys(options).length === 0) {
+    exitHelpfully();
   }
 
-  if (options["delete"]) {
-    if (options["force"] === true) {
-      await deleteCompassDataForMatchingUsers(user);
-      process.exit(0);
-      // .then(() => process.exit(0))
-      // .catch((e) => console.log(e));
+  switch (true) {
+    case options["build"]:
+      await runBuild();
+      break;
+    case options["delete"]: {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
+      const { startDeleteFlow } = require("./commands/delete");
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      await startDeleteFlow(
+        options["user"] as string | null,
+        options["force"] as boolean | undefined
+      );
+      break;
     }
-    const questions = [
-      {
-        type: "input",
-        name: "confirmed",
-        message: `This will delete all Compass data for all users matching: >> ${user} <<\nContinue? [enter: "yes"]`,
-      },
-    ];
-
-    prompt(questions)
-      .then((answersRd1: { confirmed: string }) => {
-        if (answersRd1["confirmed"] === "yes") {
-          console.log(`Okie dokie, deleting ${user}'s Compass data ...`);
-          deleteCompassDataForMatchingUsers(user).catch((e) => console.log(e));
-        } else {
-          console.log("No worries, see ya next time");
-        }
-      })
-      .catch((err) => console.log(err));
-
-    process.exit(0);
+    case options["update"]: {
+      await updatePckgs();
+      break;
+    }
+    default:
+      exitHelpfully("unsupported cmd");
   }
 };
 
-const runScriptOnceDbReady = () => {
-  /* wait for DB before running */
-  let isReady = false;
-  const checkDB = () => {
-    if (mongoService.isConnected()) {
-      isReady = true;
-    }
-  };
-
-  checkDB();
-  if (isReady) {
-    runScript();
-  } else {
-    setTimeout(() => {
-      checkDB();
-      if (isReady) {
-        runScript();
-      }
-    }, 2000);
-  }
-};
-
-runScriptOnceDbReady();
+runScript().catch((err) => {
+  console.log(err);
+  process.exit(1);
+});

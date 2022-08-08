@@ -13,9 +13,9 @@ import {
 import { Logger } from "@core/logger/winston.logger";
 import { Origin } from "@core/constants/core.constants";
 import { Collections } from "@backend/common/constants/collections";
-import gcalService from "@backend/common/services/gcal/gcal.service";
 import { error, EventError } from "@backend/common/errors/types/backend.errors";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 
 import { getReadAllFilter } from "./event.service.helpers";
@@ -111,52 +111,47 @@ class EventService {
       );
     }
 
-    try {
-      const filter = { _id: mongoService.objectId(id), user: userId };
+    const filter = { _id: mongoService.objectId(id), user: userId };
 
-      //get event so you can see the googleId
-      const event: Schema_Event = await mongoService.db
-        .collection(Collections.EVENT)
-        .findOne(filter);
+    //get event so you can see the googleId
+    const event: Schema_Event = await mongoService.db
+      .collection(Collections.EVENT)
+      .findOne(filter);
 
-      if (!event) {
-        return new BaseError(
-          "Delete Failed",
-          `Could not find event with id: ${id}`,
-          Status.BAD_REQUEST,
-          true
-        );
-      }
+    if (!event) {
+      return new BaseError(
+        "Delete Failed",
+        `Could not find event with id: ${id}`,
+        Status.BAD_REQUEST,
+        true
+      );
+    }
 
-      const deleteFromGcal = !event.isSomeday;
-      const { gEventId } = event;
+    const deleteFromGcal = !event.isSomeday;
+    const { gEventId } = event;
 
-      if (deleteFromGcal && gEventId === undefined) {
-        return new BaseError(
-          "Delete Failed",
-          `GoogleEvent id cannot be null`,
-          Status.BAD_REQUEST,
-          true
-        );
-      }
+    if (deleteFromGcal && gEventId === undefined) {
+      return new BaseError(
+        "Delete Failed",
+        `GoogleEvent id cannot be null`,
+        Status.BAD_REQUEST,
+        true
+      );
+    }
 
-      /* 
+    /* 
       Part II: Delete
       */
-      const response = await mongoService.db
-        .collection(Collections.EVENT)
-        .deleteOne(filter);
+    const response = await mongoService.db
+      .collection(Collections.EVENT)
+      .deleteOne(filter);
 
-      if (deleteFromGcal) {
-        const gcal = await getGcalClient(userId);
-        await gcalService.deleteEvent(gcal, gEventId);
-      }
-
-      return response;
-    } catch (e) {
-      logger.error(e);
-      return new BaseError("Delete Failed!", e, Status.INTERNAL_SERVER, true);
+    if (deleteFromGcal) {
+      const gcal = await getGcalClient(userId);
+      await gcalService.deleteEvent(gcal, gEventId);
     }
+
+    return response;
   }
 
   async deleteMany(
@@ -246,51 +241,41 @@ class EventService {
     eventId: string,
     event: Schema_Event
   ): Promise<Schema_Event | BaseError> {
-    try {
-      if ("_id" in event) {
-        delete event._id; // mongo doesn't allow changing this field directly
-      }
-
-      /* Part I: Gcal */
-      const updateGcal = !event.isSomeday;
-      if (updateGcal) {
-        const wasSomedayEvent = event.gEventId === undefined;
-
-        if (wasSomedayEvent) {
-          const gEvent = await this._createGcalEvent(userId, event);
-          event["gEventId"] = gEvent.id;
-        } else {
-          const gEvent = MapEvent.toGcal(event);
-          const gcal = await getGcalClient(userId);
-          await gcalService.updateEvent(gcal, event.gEventId, gEvent);
-        }
-      }
-
-      /* Part II: Compass */
-      const response = await mongoService.db
-        .collection(Collections.EVENT)
-        .findOneAndUpdate(
-          { _id: mongoService.objectId(eventId), user: userId },
-          { $set: event },
-          { returnDocument: "after" }
-        );
-
-      if (response.value === null || response.idUpdates === 0) {
-        logger.error("Update failed");
-        return new BaseError(
-          "Update Failed",
-          "Ensure id is correct",
-          400,
-          true
-        );
-      }
-      const updatedEvent = response.value as Schema_Event;
-
-      return updatedEvent;
-    } catch (e) {
-      logger.error(e);
-      return new BaseError("Update Failed", e, 500, true);
+    if ("_id" in event) {
+      delete event._id; // mongo doesn't allow changing this field directly
     }
+
+    /* Part I: Gcal */
+    const updateGcal = !event.isSomeday;
+    if (updateGcal) {
+      const wasSomedayEvent = event.gEventId === undefined;
+
+      if (wasSomedayEvent) {
+        const gEvent = await this._createGcalEvent(userId, event);
+        event["gEventId"] = gEvent.id;
+      } else {
+        const gEvent = MapEvent.toGcal(event);
+        const gcal = await getGcalClient(userId);
+        await gcalService.updateEvent(gcal, event.gEventId, gEvent);
+      }
+    }
+
+    /* Part II: Compass */
+    const response = await mongoService.db
+      .collection(Collections.EVENT)
+      .findOneAndUpdate(
+        { _id: mongoService.objectId(eventId), user: userId },
+        { $set: event },
+        { returnDocument: "after" }
+      );
+
+    if (response.value === null || response.idUpdates === 0) {
+      logger.error("Update failed");
+      return new BaseError("Update Failed", "Ensure id is correct", 400, true);
+    }
+    const updatedEvent = response.value as Schema_Event;
+
+    return updatedEvent;
   }
 
   async updateMany(userId: string, events: Schema_Event[]) {

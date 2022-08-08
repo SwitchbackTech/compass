@@ -1,5 +1,5 @@
 export const APP_NAME = "Compass Calendar";
-export const API_URL_DEFAULT = "https://***REMOVED***";
+export const API_URL_DEFAULT = "https://***REMOVED***/api";
 export const GCAL_NOTIFICATION_BASE = "/sync/gcal/notifications";
 export const GCAL_NOTIFICATION_ENDPOINT = `/api${GCAL_NOTIFICATION_BASE}`;
 export const MB_50 = 50000000; // in bytes

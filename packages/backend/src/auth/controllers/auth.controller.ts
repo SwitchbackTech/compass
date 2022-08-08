@@ -65,11 +65,11 @@ class AuthController {
     req: SReqBody<{ code: string }>,
     res: Res_Promise | Response
   ) => {
-    const { code } = req.body;
-
-    const gAuthClient = new GoogleAuthService();
-
     try {
+      const { code } = req.body;
+
+      const gAuthClient = new GoogleAuthService();
+
       const { tokens } = await gAuthClient.oauthClient.getToken(code);
 
       const { gUser, gcalClient, gRefreshToken } = await initGoogleClient(

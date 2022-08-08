@@ -1,5 +1,9 @@
 //@ts-nocheck
-import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
+import {
+  Schema_Priority,
+  PriorityReq,
+  PriorityReqUser,
+} from "@core/types/priority.types";
 import { Status } from "@core/errors/status.codes";
 import { BaseError } from "@core/errors/errors.base";
 import { Collections } from "@backend/common/constants/collections";
@@ -41,7 +45,7 @@ class PriorityService {
 
   async create(
     userId: string,
-    data: PriorityReq | PriorityReq[]
+    data: PriorityReq | PriorityReqUser[]
   ): Promise<Schema_Priority | Schema_Priority[]> {
     if (data instanceof Array) {
       const response = await mongoService.db

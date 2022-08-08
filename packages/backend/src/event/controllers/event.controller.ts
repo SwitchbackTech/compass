@@ -2,29 +2,55 @@
 import { SessionRequest } from "supertokens-node/framework/express";
 import { SReqBody, Res } from "@core/types/express.types";
 import { Schema_Event, Params_DeleteMany } from "@core/types/event.types";
+import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
+import { deleteAllSyncData } from "@backend/sync/services/sync.service.helpers";
 import eventService from "@backend/event/services/event.service";
+
+const logger = Logger("app:event.controller");
 
 class EventController {
   create = async (req: SReqBody<Schema_Event>, res: Res) => {
     const userId = req.session?.getUserId();
 
-    if (req.body instanceof Array) {
-      const response = await eventService.createMany(userId, req.body);
+    try {
+      if (req.body instanceof Array) {
+        const response = await eventService.createMany(userId, req.body);
+        //@ts-ignore
+        res.promise(Promise.resolve(response));
+      } else {
+        const response = await eventService.create(userId, req.body);
+        //@ts-ignore
+        res.promise(Promise.resolve(response));
+      }
+    } catch (e) {
+      logger.error(e);
+      const _e = e as BaseError;
+      if (_e.statusCode === Status.GONE) {
+        await deleteAllSyncData(userId);
+      }
       //@ts-ignore
-      res.promise(Promise.resolve(response));
-    } else {
-      const response = await eventService.create(userId, req.body);
-      //@ts-ignore
-      res.promise(Promise.resolve(response));
+      res.promise(e);
     }
   };
 
   delete = async (req: SessionRequest, res: Res) => {
     const userId = req.session?.getUserId();
-    const eventId: string = req.params.id;
-    const deleteResponse = await eventService.deleteById(userId, eventId);
-    //@ts-ignore
-    res.promise(Promise.resolve(deleteResponse));
+    try {
+      const eventId: string = req.params.id;
+      const deleteResponse = await eventService.deleteById(userId, eventId);
+      //@ts-ignore
+      res.promise(Promise.resolve(deleteResponse));
+    } catch (e) {
+      logger.error(e);
+      const _e = e as BaseError;
+      if (_e.statusCode === Status.GONE) {
+        await deleteAllSyncData(userId);
+      }
+      //@ts-ignore
+      res.promise(e);
+    }
   };
 
   deleteAllByUser = async (req: SessionRequest, res: Res) => {
@@ -62,13 +88,22 @@ class EventController {
   };
 
   update = async (req: SReqBody<Schema_Event>, res: Res) => {
-    const userId = req.session?.getUserId();
-    const event = req.body;
-    const eventId: string = req.params.id;
+    const userId = req.session?.getUserId() as string;
+    try {
+      const event = req.body;
+      const eventId: string = req.params.id;
 
-    const response = await eventService.updateById(userId, eventId, event);
-    //@ts-ignore
-    res.promise(Promise.resolve(response));
+      const response = await eventService.updateById(userId, eventId, event);
+      //@ts-ignore
+      res.promise(Promise.resolve(response));
+    } catch (e) {
+      logger.error(e);
+      const _e = e as BaseError;
+      if (_e.statusCode === Status.GONE) {
+        await deleteAllSyncData(userId);
+      }
+      res.promise(e);
+    }
   };
 
   updateMany = async (req: SReqBody<Schema_Event[]>, res: Res) => {
@@ -80,7 +115,7 @@ class EventController {
       res.promise(Promise.resolve(response));
     } catch (e) {
       //@ts-ignore
-      res.promise(Promise.reject(e));
+      res.promise(e);
     }
   };
 }
@@ -142,7 +177,8 @@ after receiving a 410 GONE error from google's notification
 
       const fullResults = {
         events: importEventsResult,
-        sync: {
+        sync: {import { syncService } from '@backend/sync/services/sync.service';
+
           watch: watchResult,
           nextSyncToken: syncTokenUpdateResult,
           syncDataUpdate: syncUpdate,

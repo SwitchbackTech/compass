@@ -22,7 +22,7 @@ import {
   assembleEventImports,
   deleteSync,
   isWatchingEvents,
-  getCalendarId,
+  getCalendarInfo,
   importEvents,
   importEventsByCalendar,
   prepareEventSyncChannels,
@@ -30,6 +30,7 @@ import {
   updateSyncTokenForGcal,
   updateSyncDataFor,
   updateSyncTokenFor,
+  updateRefreshedAt,
 } from "./sync.service.helpers";
 import { getChannelExpiration } from "./sync.utils";
 
@@ -43,24 +44,23 @@ class SyncService {
   };
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    // There is new data to sync from GCal
-    if (payload.resourceState === "exists") {
-      const { userId, gCalendarId, nextSyncToken } = await getCalendarId(
-        payload.resourceId
-      );
+    logger.debug(JSON.stringify(payload));
+    if (payload.resourceState !== "exists") return "ignored";
 
-      const eventSync = {
-        channelId: payload.channelId,
-        expiration: payload.expiration,
-        gCalendarId,
-        nextSyncToken,
-        resourceId: payload.resourceId,
-      };
+    const { userId, gCalendarId, nextSyncToken } = await getCalendarInfo(
+      payload.resourceId
+    );
 
-      const response = await importEventsByCalendar(userId, eventSync);
-      return response;
-    }
-    return "ignored";
+    const syncInfo = {
+      channelId: payload.channelId,
+      expiration: payload.expiration,
+      gCalendarId,
+      nextSyncToken,
+      resourceId: payload.resourceId,
+    };
+
+    const response = await importEventsByCalendar(userId, syncInfo);
+    return response;
   };
 
   importFull = async (
@@ -160,6 +160,7 @@ class SyncService {
       if (stopResult.status !== 204) {
         throw error(GenericError.NotSure, "Stop Failed");
       }
+
       await deleteSync(userId, "events", channelId);
 
       return {
@@ -170,8 +171,9 @@ class SyncService {
       logger.error(e);
 
       const _e = e as GaxiosError;
+      const code = (_e.code as unknown as number) || 0;
 
-      if (_e.code === "404" || e.code === 404) {
+      if (_e.code === "404" || code === 404) {
         await deleteSync(userId, "events", channelId);
 
         throw error(
@@ -212,25 +214,11 @@ class SyncService {
     gcal: gCalendar,
     payload: Payload_Sync_Events
   ) => {
-    const stopResult = await this.stopWatch(
-      userId,
-      payload.channelId,
-      payload.resourceId,
-      gcal
-    );
+    await this.stopWatch(userId, payload.channelId, payload.resourceId, gcal);
 
-    const startResult = await this.startWatchingGcal(
-      userId,
-      payload.gCalendarId,
-      gcal
-    );
+    await this.startWatchingGcal(userId, payload.gCalendarId, gcal);
 
-    const refreshResult = {
-      stop: stopResult,
-      start: startResult,
-      // syncUpdate: syncUpdate.ok === 1 ? "success" : "failed",
-    };
-    return refreshResult;
+    await updateRefreshedAt(userId, payload.gCalendarId);
   };
 }
 

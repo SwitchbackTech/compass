@@ -1,3 +1,4 @@
+# temp file until built into CLI
 # run on production VM where the build.zip was copied to
 # requires root priviledges, so 'sudo su' before running
 

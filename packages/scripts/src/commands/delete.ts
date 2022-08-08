@@ -1,10 +1,12 @@
+import pkg from "inquirer";
+const { prompt } = pkg;
+import { BaseError } from "@core/errors/errors.base";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
 import { findCompassUsersBy } from "@backend/user/queries/user.queries";
 import calendarService from "@backend/calendar/services/calendar.service";
 import userService from "@backend/user/services/user.service";
 import syncService from "@backend/sync/services/sync.service";
-import { BaseError } from "@core/errors/errors.base";
 
 export interface Summary_Delete {
   calendarlist?: number;
@@ -61,3 +63,59 @@ export const deleteCompassDataForMatchingUsers = async (user: string) => {
 
   console.log(`Deleted: ${JSON.stringify(totalSummary, null, 2)}`);
 };
+
+export const startDeleteFlow = async (user: string | null, force?: boolean) => {
+  if (!user) {
+    console.log("no user");
+    process.exit(1);
+  }
+
+  if (force === true) {
+    await deleteCompassDataForMatchingUsers(user);
+  }
+
+  const questions = [
+    {
+      type: "confirm",
+      name: "delete",
+      message: `This will delete all Compass data for all users matching: >> ${user} <<\nContinue?`,
+    },
+  ];
+
+  prompt(questions)
+    .then((a: { delete: boolean }) => {
+      if (a.delete) {
+        console.log(`Okie dokie, deleting ${user}'s Compass data ...`);
+        deleteCompassDataForMatchingUsers(user).catch((e) => console.log(e));
+      } else {
+        console.log("No worries, see ya next time");
+      }
+    })
+    .catch((err) => console.log(err));
+};
+
+// const runOnceDbReady = () => {
+//   // import mongoService from "@backend/common/services/mongo.service";
+//   /* wait for DB before running */
+//   let isReady = false;
+//   const checkDB = () => {
+//     // const connected = mongoService.isConnected();
+//     const connected = false;
+//     if (connected) {
+//       isReady = true;
+//     }
+//   };
+
+//   checkDB();
+//   if (isReady) {
+//     console.log("running func...");
+//     // void runScript();
+//   } else {
+//     setTimeout(() => {
+//       checkDB();
+//       if (isReady) {
+//         console.log("running func..");
+//       }
+//     }, 2000);
+//   }
+// };

@@ -35,6 +35,11 @@ export const AuthError = {
     status: Status.FORBIDDEN,
     isOperational: true,
   },
+  InadequatePermissions: {
+    description: "You don't have permission to do that",
+    status: Status.FORBIDDEN,
+    isOperational: true,
+  },
   MissingRefreshToken: {
     description: "No refresh token",
     status: Status.BAD_REQUEST,
@@ -125,6 +130,11 @@ export const GcalError = {
 };
 
 export const SyncError = {
+  AccessRevoked: {
+    description: "Access revoked (syncToken gone)",
+    status: Status.GONE,
+    isOperational: true,
+  },
   CalendarWatchExists: {
     description: "Watch already exists",
     status: Status.BAD_REQUEST,
@@ -135,7 +145,6 @@ export const SyncError = {
     status: Status.GONE,
     isOperational: true,
   },
-
   MissingResourceId: {
     description: "No resourceId provided",
     status: Status.NO_CONTENT,
