@@ -1,4 +1,5 @@
 import { Credentials } from "google-auth-library";
+import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { gCalendar, gSchema$CalendarList } from "@core/types/gcal";
 import { Schema_CalendarList } from "@core/types/calendar.types";
@@ -11,21 +12,15 @@ import {
 import gcalService from "@backend/common/services/gcal/gcal.service";
 
 export const getCalendarsToSync = async (userId: string, gcal: gCalendar) => {
-  const gCalendarList = await gcalService.getCalendarlist(gcal);
-
-  if (!gCalendarList.nextSyncToken) {
-    throw error(
-      AuthError.PaginationNotSupported,
-      "Calendarlist sync token not saved"
-    );
+  const { items, nextSyncToken } = await gcalService.getCalendarlist(gcal);
+  if (!nextSyncToken) {
+    throw error(GcalError.NoSyncToken, "Failed to Get Cals to Sync");
   }
 
-  if (!gCalendarList.items) {
-    throw error(GcalError.CalendarlistMissing, "Failed to map calendarlists");
-  }
+  const gCalendarList = items as gSchema$CalendarListEntry[];
 
   // filter out everything but primary cal for now
-  const primaryGcal = gCalendarList.items.filter((c) => {
+  const primaryGcal = gCalendarList.filter((c) => {
     return c.primary === true;
   })[0] as gSchema$CalendarList;
 
@@ -39,7 +34,7 @@ export const getCalendarsToSync = async (userId: string, gcal: gCalendar) => {
   return {
     cCalendarList,
     gCalendarIds,
-    nextSyncToken: gCalendarList.nextSyncToken,
+    nextSyncToken,
   };
 };
 

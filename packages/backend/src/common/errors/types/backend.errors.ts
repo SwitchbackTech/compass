@@ -45,11 +45,6 @@ export const AuthError = {
     status: Status.BAD_REQUEST,
     isOperational: true,
   },
-  PaginationNotSupported: {
-    description: "Code doesn't support calendarlist pagination yet",
-    status: Status.INTERNAL_SERVER,
-    isOperational: true,
-  },
   UserCreateFailed: {
     description: "Compass user was not created",
     status: Status.INTERNAL_SERVER,
@@ -81,11 +76,6 @@ export const EventError = {
     status: Status.NO_CONTENT,
     isOperational: true,
   },
-  NoSyncToken: {
-    description: "nextSyncToken is missing",
-    status: Status.INTERNAL_SERVER,
-    isOperational: true,
-  },
 };
 
 export const GenericError = {
@@ -115,6 +105,16 @@ export const GcalError = {
   CodeMissing: {
     description: "Missing gAPI code",
     status: Status.FORBIDDEN,
+    isOperational: true,
+  },
+  NoSyncToken: {
+    description: "nextSyncToken is missing",
+    status: Status.INTERNAL_SERVER,
+    isOperational: true,
+  },
+  PaginationNotSupported: {
+    description: "Compass doesn't support pagination yet",
+    status: Status.INTERNAL_SERVER,
     isOperational: true,
   },
   Unauthorized: {
@@ -150,6 +150,11 @@ export const SyncError = {
     status: Status.NO_CONTENT,
     isOperational: true,
   },
+  NoEventChanges: {
+    description: "Nothing changed",
+    status: Status.BAD_REQUEST,
+    isOperational: true,
+  },
   NoSyncRecordForUser: {
     description: "No sync record for user",
     status: Status.BAD_REQUEST,
@@ -163,9 +168,9 @@ export const SyncError = {
 };
 
 export const UserError = {
-  MultipleUsersFound: {
-    description: "Multiple users were found matching the filter",
-    status: Status.BAD_REQUEST,
+  UserDoesNotExist: {
+    description: "User does not exist",
+    status: Status.NOT_FOUND,
     isOperational: true,
   },
 };

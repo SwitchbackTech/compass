@@ -4,13 +4,12 @@ import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { minutesFromNow } from "@core/util/date.utils";
-import { daysFromNowTimestamp } from "@core/util/date.utils";
 import { Schema_Event } from "@core/types/event.types";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { Schema_Sync } from "@core/types/sync.types";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
-import { ENV, IS_DEV } from "@backend/common/constants/env.constants";
+import { ENV } from "@backend/common/constants/env.constants";
 
 const logger = Logger("app:sync.helpers");
 
@@ -67,18 +66,10 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
 };
 
 export const channelExpiresSoon = (expiry: string) => {
-  if (IS_DEV) {
-    const numMin = Math.round(parseInt(ENV.CHANNEL_EXPIRATION_DEV_MIN) / 2);
-    const xMinFromNow = minutesFromNow(numMin, "ms");
-    const expiration = new Date(expiry).getTime();
-    const channelExpiresSoon = expiration < xMinFromNow;
-
-    return channelExpiresSoon;
-  }
-
-  const xDaysFromNow = daysFromNowTimestamp(3, "ms");
+  const numMin = Math.round(parseInt(ENV.CHANNEL_EXPIRATION_MIN) / 2);
+  const xMinFromNow = minutesFromNow(numMin, "ms");
   const expiration = new Date(expiry).getTime();
-  const channelExpiresSoon = expiration < xDaysFromNow;
+  const channelExpiresSoon = expiration < xMinFromNow;
 
   return channelExpiresSoon;
 };
@@ -105,18 +96,10 @@ export const findCalendarId = (resourceId: string, sync: Schema_Sync) => {
 };
 
 export const getChannelExpiration = () => {
-  if (IS_DEV) {
-    const numMin = parseInt(ENV.CHANNEL_EXPIRATION_DEV_MIN);
-    logger.warn(
-      `** REMINDER: In dev mode, so channel is expiring in just ${numMin} mins **\n`
-    );
-    const devExpiration = minutesFromNow(numMin, "ms").toString();
-    return devExpiration;
-  }
-
-  const numDays = parseInt(ENV.CHANNEL_EXPIRATION_PROD_DAYS);
-  const prodExpiration = daysFromNowTimestamp(numDays, "ms").toString();
-  return prodExpiration;
+  const numMin = parseInt(ENV.CHANNEL_EXPIRATION_MIN);
+  logger.debug(`** REMINDER: Channel will expire in ${numMin} minutes **\n`);
+  const expiration = minutesFromNow(numMin, "ms").toString();
+  return expiration;
 };
 
 export const getSummary = (

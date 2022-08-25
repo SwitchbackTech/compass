@@ -1,11 +1,11 @@
-//@ts-nocheck
 import { Db, MongoClient, ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 
+import { ENV } from "../constants/env.constants";
+
 const logger = Logger("app:mongo.service");
 
-const uri = process.env["MONGO_URI"] || "mongodb://localhost:27017/";
-const dbName = process.env["DB_NAME"] || "test";
+const dbName = ENV.DB;
 
 class MongoService {
   private count = 0;
@@ -20,11 +20,13 @@ class MongoService {
   }
 
   _connect = () => {
-    MongoClient.connect(uri, this.options)
+    //@ts-ignore
+    MongoClient.connect(ENV.MONGO_URI, this.options)
       .then((clientInstance) => {
-        logger.debug(`Connected to '${dbName}' database`);
+        logger.debug(`Connected to database: '${dbName}'`);
         this.client = clientInstance;
         this.db = this.client.db(dbName);
+        //@ts-ignore
         this.db["ObjectId"] = ObjectId;
       })
       .catch((err) => {

@@ -5,16 +5,12 @@ import { BaseError } from "@core/errors/errors.base";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { error, UserError } from "@backend/common/errors/types/backend.errors";
 
 export const getGcalClient = async (userId: string) => {
   const { user, userExists } = await findCompassUserBy("_id", userId);
   if (!userExists) {
-    throw new BaseError(
-      "Gcal Auth failed",
-      `Compass user does not exist: ${userId}`,
-      Status.BAD_REQUEST,
-      true
-    );
+    throw error(UserError.UserDoesNotExist, "gCal Auth Failed");
   }
 
   const gAuthClient = new GoogleAuthService();

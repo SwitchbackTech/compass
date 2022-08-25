@@ -8,12 +8,11 @@ import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { CalendarView } from "@web/views/Calendar";
-import { API_BASEURL } from "@web/common/constants/web.constants";
-
+import { ENV_WEB } from "@web/common/constants/env.constants";
 describe("Sidebar: Interactions", () => {
   it("adds someday event to sidebar", async () => {
     server.use(
-      rest.post(`${API_BASEURL}/event`, (_, res, ctx) => {
+      rest.post(`${ENV_WEB.API_BASEURL}/event`, (_, res, ctx) => {
         return res(ctx.json(LEARN_CHINESE));
       })
     );

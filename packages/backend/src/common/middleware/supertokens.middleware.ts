@@ -6,7 +6,7 @@ import {
   PORT_DEFAULT_API,
   PORT_DEFAULT_WEB,
 } from "@core/constants/core.constants";
-import { ENV } from "@backend/common/constants/env.constants";
+import { ENV, IS_DEV } from "@backend/common/constants/env.constants";
 
 export const initSupertokens = () => {
   supertokens.init({
@@ -17,8 +17,10 @@ export const initSupertokens = () => {
       apiBasePath: "/api",
     },
     supertokens: {
-      connectionURI: ENV.SUPERTOKENS_URI,
-      apiKey: ENV.SUPERTOKENS_KEY,
+      connectionURI: IS_DEV
+        ? ENV.SUPERTOKENS_DEV_URI
+        : ENV.SUPERTOKENS_PROD_URI,
+      apiKey: IS_DEV ? ENV.SUPERTOKENS_DEV_KEY : ENV.SUPERTOKENS_PROD_KEY,
     },
     framework: "express",
     recipeList: [Session.init()],

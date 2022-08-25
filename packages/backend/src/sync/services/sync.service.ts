@@ -1,6 +1,6 @@
 import { GaxiosError } from "gaxios";
 import { v4 as uuidv4 } from "uuid";
-import { gCalendar } from "@core/types/gcal";
+import { gCalendar, gSchema$Channel } from "@core/types/gcal";
 import {
   Payload_Sync_Notif,
   Schema_Sync,
@@ -17,6 +17,7 @@ import {
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { getCalendarsToSync } from "@backend/auth/services/auth.utils";
+import { isAccessRevoked } from "@backend/common/services/gcal/gcal.utils";
 
 import {
   assembleEventImports,
@@ -31,6 +32,7 @@ import {
   updateSyncDataFor,
   updateSyncTokenFor,
   updateRefreshedAt,
+  deleteAllSyncData,
 } from "./sync.service.helpers";
 import { getChannelExpiration } from "./sync.utils";
 
@@ -44,8 +46,12 @@ class SyncService {
   };
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    logger.debug(JSON.stringify(payload));
-    if (payload.resourceState !== "exists") return "ignored";
+    logger.debug(JSON.stringify(payload, null, 2));
+
+    if (payload.resourceState !== "exists") {
+      logger.info("sync initialized");
+      return "ignored";
+    }
 
     const { userId, gCalendarId, nextSyncToken } = await getCalendarInfo(
       payload.resourceId
@@ -84,6 +90,7 @@ class SyncService {
     const importEvents = assembleEventImports(userId, gcal, sync.google.events);
 
     const result = await Promise.all(importEvents);
+
     return result;
   };
 
@@ -105,12 +112,12 @@ class SyncService {
     );
 
     const expiration = getChannelExpiration();
-    const { watch } = await gcalService.watchEvents(
+    const { watch } = (await gcalService.watchEvents(
       gcal,
       gCalendarId,
       channelId,
       expiration
-    );
+    )) as { watch: gSchema$Channel };
 
     const { resourceId } = watch;
     if (!resourceId) {
@@ -132,6 +139,7 @@ class SyncService {
       userId,
       gcal
     );
+
     await updateSyncTokenFor("calendarlist", userId, nextSyncToken);
 
     await startWatchingGcalsById(userId, gCalendarIds, gcal);
@@ -168,19 +176,24 @@ class SyncService {
         resourceId: resourceId,
       };
     } catch (e) {
-      logger.error(e);
-
       const _e = e as GaxiosError;
       const code = (_e.code as unknown as number) || 0;
 
+      const msg = "Stop Ignored, Sync Deleted";
+
+      const noAccess = isAccessRevoked(_e);
+      if (noAccess) {
+        logger.warn("Access revoked, cleaning data ...");
+        await deleteAllSyncData(userId);
+        throw error(SyncError.AccessRevoked, msg);
+      }
+
       if (_e.code === "404" || code === 404) {
         await deleteSync(userId, "events", channelId);
-
-        throw error(
-          SyncError.ChannelDoesNotExist,
-          "Stop Ignored, Sync Deleted"
-        );
+        throw error(SyncError.ChannelDoesNotExist, msg);
       }
+
+      logger.error(e);
       throw error(GenericError.NotSure, "Stop Failed");
     }
   };

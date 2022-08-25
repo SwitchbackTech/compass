@@ -1,9 +1,9 @@
 import axios from "axios";
 import Session from "supertokens-auth-react/recipe/session";
-import { API_BASEURL } from "@web/common/constants/web.constants";
+import { ENV_WEB } from "@web/common/constants/env.constants";
 
 export const CompassApi = axios.create({
-  baseURL: API_BASEURL,
+  baseURL: ENV_WEB.API_BASEURL,
 });
 
 Session.addAxiosInterceptors(CompassApi);

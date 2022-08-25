@@ -132,7 +132,7 @@ export const importEvents = async (
     };
     const gEvents = await gcalService.getEvents(gcal, params);
 
-    if (!gEvents.data.items) {
+    if (!gEvents || !gEvents.data.items) {
       throw error(EventError.NoGevents, "Potentially missing events");
     }
 
@@ -223,10 +223,16 @@ const prepareEventImport = async (
 ) => {
   const { gCalendarId, nextSyncToken } = eventSync;
 
-  const { data } = await gcalService.getEvents(gcal, {
+  const response = await gcalService.getEvents(gcal, {
     calendarId: gCalendarId,
     syncToken: nextSyncToken,
   });
+
+  if (!response) {
+    throw error(SyncError.NoEventChanges, "Import Ignored");
+  }
+
+  const { data } = response;
 
   if (!data.nextSyncToken) {
     throw error(

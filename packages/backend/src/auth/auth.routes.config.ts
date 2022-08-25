@@ -12,7 +12,7 @@ export class AuthRoutes extends CommonRoutesConfig {
 
   configureRoutes(): express.Application {
     /**
-     * Convenience routes for debuggin (eg via Postman)
+     * Convenience routes for debugging (eg via Postman)
      *
      * Production code shouldn't call these
      * directly, which is why they're limited to devs only

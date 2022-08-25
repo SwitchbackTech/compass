@@ -37,7 +37,6 @@ const deleteCompassDataForUser = async (userId: string) => {
 
     const _user = await userService.deleteUser(userId);
     summary.user = _user.deletedCount;
-
     return summary;
   } catch (e) {
     const _e = e as BaseError;
@@ -86,7 +85,9 @@ export const startDeleteFlow = async (user: string | null, force?: boolean) => {
     .then((a: { delete: boolean }) => {
       if (a.delete) {
         console.log(`Okie dokie, deleting ${user}'s Compass data ...`);
-        deleteCompassDataForMatchingUsers(user).catch((e) => console.log(e));
+        deleteCompassDataForMatchingUsers(user)
+          .catch((e) => console.log(e))
+          .finally(() => process.exit(0));
       } else {
         console.log("No worries, see ya next time");
       }

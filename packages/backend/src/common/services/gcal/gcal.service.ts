@@ -6,6 +6,7 @@ import {
   GCAL_PRIMARY,
   GCAL_NOTIFICATION_TOKEN,
 } from "@backend/common/constants/backend.constants";
+import { error, GcalError } from "@backend/common/errors/types/backend.errors";
 
 import { handleGcalError } from "./gcal.utils";
 
@@ -49,13 +50,19 @@ class GCalService {
   }
 
   async getCalendarlist(gcal: gCalendar) {
-    try {
-      const response = await gcal.calendarList.list();
-      return response.data;
-    } catch (e) {
-      handleGcalError("Failed to Get gCalendarList", e as GaxiosError);
-      return;
+    const response = await gcal.calendarList.list();
+
+    if (!response.data.nextSyncToken) {
+      throw error(
+        GcalError.PaginationNotSupported,
+        "Calendarlist sync token not saved"
+      );
     }
+
+    if (!response.data.items) {
+      throw error(GcalError.CalendarlistMissing, "gCalendarlist not found");
+    }
+    return response.data;
   }
 
   async updateEvent(gcal: gCalendar, gEventId: string, event: gSchema$Event) {
@@ -82,9 +89,8 @@ class GCalService {
       const { data } = await gcal.events.watch({
         calendarId: gCalendarId,
         requestBody: {
-          // uses prod URL because address always needs to be HTTPS
-          // TODO: once dedicated e2e test VM, use that instead of prod
-          address: `${ENV.BASEURL_PROD}${GCAL_NOTIFICATION_ENDPOINT}`,
+          // reminder: address always needs to be HTTPS
+          address: ENV.BASEURL + GCAL_NOTIFICATION_ENDPOINT,
           expiration,
           id: channelId,
           token: GCAL_NOTIFICATION_TOKEN,
@@ -94,7 +100,7 @@ class GCalService {
       return { watch: data };
     } catch (e) {
       handleGcalError("Failed to Watch for Events", e as GaxiosError);
-      return;
+      return { error: e };
     }
   };
 }

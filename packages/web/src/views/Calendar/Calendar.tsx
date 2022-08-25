@@ -18,10 +18,6 @@ import { Sidebar } from "./components/Sidebar";
 
 export const Calendar = () => {
   console.log("reminder: check if authed before showing cal (?)");
-  // const { token } = useToken();
-  // if (!token) {
-  //   return <Navigate to={ROOT_ROUTES.LOGIN} />;
-  // }
   return <CalendarView />;
 };
 

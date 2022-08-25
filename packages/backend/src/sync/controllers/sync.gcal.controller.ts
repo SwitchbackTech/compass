@@ -5,10 +5,8 @@ import { SReqBody } from "@core/types/express.types";
 import { Logger } from "@core/logger/winston.logger";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { genericError } from "@backend/common/errors/types/backend.errors";
 
 import syncService from "../services/sync.service";
-import { deleteAllSyncData } from "../services/sync.service.helpers";
 
 const logger = Logger("app:sync.gcal");
 class GcalSyncController {
@@ -26,11 +24,19 @@ class GcalSyncController {
       // @ts-ignore
       res.promise(Promise.resolve(response));
     } catch (e) {
-      logger.error(e);
       const _e = e as BaseError;
       if (_e.statusCode === Status.GONE) {
-        logger.error("TODO: find userId using payload and delete sync record");
+        logger.info(`User revoked access
+          - first time this happens: delete all user data (TODO)
+            - currently just delete sync
+          - subsequent: do nothing, waiting it out until watch expires (${
+            req.headers["x-goog-channel-expiration"] as string
+          })
+        `);
+        // const userId = (infer from resourceId/channelId)
         // await deleteAllSyncData(userId);
+      } else {
+        logger.error(e);
       }
       // @ts-ignore
       res.promise(e);
@@ -90,13 +96,8 @@ class GcalSyncController {
       res.promise(Promise.resolve(stopResult));
     } catch (e) {
       const _e = e as BaseError;
-      if (_e.statusCode === Status.GONE) {
-        //@ts-ignore
-        res.promise(Promise.resolve({}));
-        return;
-      }
       //@ts-ignore
-      res.promise(Promise.reject({ error: e }));
+      res.promise(Promise.resolve({ error: _e }));
     }
   };
 

@@ -1,17 +1,17 @@
 import { rest } from "msw";
-import { API_BASEURL } from "@web/common/constants/web.constants";
+import { ENV_WEB } from "@web/common/constants/env.constants";
 import {
   CLIMB,
   MARCH_1,
   MULTI_WEEK,
   TY_TIM,
-} from "@core//__mocks__/events/events.misc";
+} from "@core/__mocks__/events/events.misc";
 
 export const globalHandlers = [
-  rest.get(`${API_BASEURL}/auth/oauth-url`, (req, res, ctx) => {
+  rest.get(`${ENV_WEB.API_BASEURL}/auth/oauth-url`, (req, res, ctx) => {
     return res(ctx.json({ authUrl: "foo", authState: "bar" }));
   }),
-  rest.get(`${API_BASEURL}/event`, (req, res, ctx) => {
+  rest.get(`${ENV_WEB.API_BASEURL}/event`, (req, res, ctx) => {
     const getSomedayEvents = req.url.searchParams.get("someday");
     if (getSomedayEvents) {
       return res(
@@ -30,10 +30,10 @@ export const globalHandlers = [
     const events = [CLIMB, MARCH_1, MULTI_WEEK, TY_TIM];
     return res(ctx.json(events));
   }),
-  rest.delete(`${API_BASEURL}/event/:id`, (req, res, ctx) => {
+  rest.delete(`${ENV_WEB.API_BASEURL}/event/:id`, (req, res, ctx) => {
     return res(ctx.json({ acknowledged: true, deletedCount: 1 }));
   }),
-  rest.options(`${API_BASEURL}/event`, (req, res, ctx) => {
+  rest.options(`${ENV_WEB.API_BASEURL}/event`, (req, res, ctx) => {
     return res(ctx.json([]));
   }),
 ];

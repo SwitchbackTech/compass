@@ -1,38 +1,44 @@
 import shell from "shelljs";
 
+import { COMPASS_ROOT } from "../common/cli.constants";
 import { getPckgsTo } from "../common/cli.utils";
 
+const artifactName = "nodePckgs";
+
 // requires root priviledges, so 'sudo su' before running
-const updateBackend = () => {
+const updateBackendCore = () => {
+  console.log("updating backend+core");
+
+  console.log("removing old backend service");
   shell.exec("pm2 stop backend");
   shell.exec("pm2 delete backend");
 
-  // cleanup old build files
-  shell.rm("-rf", "/compass-calendar/build/backend");
-  shell.rm("-rf", "/compass-calendar/build/core");
+  console.log("cleaning old builds");
+  shell.rm("-rf", `${COMPASS_ROOT}/build/backend`);
+  shell.rm("-rf", `${COMPASS_ROOT}/build/core`);
 
-  // creates compass-calendar/build/backend and ../build/core
-  shell.exec("mkdir -p /compass-calendar/build/backend");
+  console.log("copying new builds...");
+  shell.exec(`mkdir -p ${COMPASS_ROOT}/build/backend`);
   shell.exec(
-    "unzip -n -d /compass-calendar /home/***REMOVED***/backend.zip"
+    `unzip -n -d ${COMPASS_ROOT} /home/***REMOVED***/${artifactName}.zip`
   );
-  shell.cp("/compass-calendar/.env", "/compass-calendar/build/backend/");
 
-  // cleanup build artifact
-  shell.rm("/home/***REMOVED***/backend.zip");
+  shell.rm(`/home/***REMOVED***/${artifactName}.zip`);
 
-  // init
-  shell.cd("/compass-calendar/");
-
-  // start
-  shell.exec("pm2 start yarn --name backend -- start:backend --update-env");
+  console.log("starting backend ....");
+  shell.cd(COMPASS_ROOT);
+  shell.exec(
+    "pm2 start /compass-calendar/build/backend/src/app.js --name backend --update-env"
+  );
   shell.exec("pm2 save");
+
+  console.log("done updating backend");
 };
 
 export const updatePckgs = async () => {
   const pckgs = await getPckgsTo("update");
-  if (pckgs.includes("backend")) {
-    updateBackend();
+  if (pckgs.includes("nodePckgs")) {
+    updateBackendCore();
   }
   if (pckgs.includes("web")) {
     updateWeb();
@@ -40,15 +46,20 @@ export const updatePckgs = async () => {
 };
 
 const updateWeb = () => {
-  shell.rm("-rf", "/compass-calendar/build/web.bak"); //remove old
-  shell.mv("/compass-calendar/build/web", "/compass-calendar/build/web.bak"); //create new
-  shell.mkdir("-p", "/compass-calendar/build/web");
+  console.log("backing up old web build ...");
+  shell.rm("-rf", `${COMPASS_ROOT}/build/web.bak`);
+  // create new
+  shell.mv(`${COMPASS_ROOT}/build/web`, `${COMPASS_ROOT}/build/web.bak`);
 
-  // creates compass-calendar/build/web
-  shell.exec("unzip -n -d /compass-calendar /home/***REMOVED***/web.zip");
+  console.log("deploying new web build ...");
+  shell.mkdir("-p", `${COMPASS_ROOT}/build/web`);
+  shell.exec(`unzip -n -d ${COMPASS_ROOT} /home/***REMOVED***/web.zip`);
 
-  //already have a backup now, so delete this one
-  shell.rm("rm /home/***REMOVED***/web.zip");
+  // already have a backup now, so delete this one
+  shell.rm("/home/***REMOVED***/web.zip");
 
+  console.log("restarting nginx ...");
   shell.exec("systemctl restart nginx");
+
+  console.log("done updating web");
 };
