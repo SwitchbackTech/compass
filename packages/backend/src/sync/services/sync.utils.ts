@@ -38,6 +38,7 @@ export const assembleEventOperations = (
       bulkOperations.push({
         updateOne: {
           filter: { gEventId: e.gEventId, user: userId },
+          //@ts-ignore
           update: { $set: e },
           upsert: true,
         },

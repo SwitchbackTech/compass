@@ -1,6 +1,6 @@
 /* Visit https://aka.ms/tsconfig.json to read more about this file */
 {
-  /* web files not included because webpack handles that */
+  /* web module excluded because webpack handles packaging*/
   "include": [
     "packages/core/src/**/*.ts",
     "packages/backend/src/**/*.ts",
@@ -17,7 +17,7 @@
     "declarationMap": true /* Generates a sourcemap for each corresponding '.d.ts' file. */,
     "sourceMap": true /* Generates corresponding '.map' file. */,
     // "outFile": "./",                             /* Concatenate and emit output to single file. */
-    "outDir": "./build" /* Redirect output structure to the directory. */,
+    "outDir": "build/node/packages" /* Redirect output structure to the directory. */,
     "rootDir": "packages/" /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */,
     "composite": true /* Enable project compilation */,
     // "tsBuildInfoFile": "./buildca/che" /* Specify file to store incremental compilation information */,

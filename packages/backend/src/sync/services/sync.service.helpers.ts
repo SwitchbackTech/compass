@@ -334,6 +334,7 @@ export const updateSyncTokenFor = async (
         user: userId,
       },
       {
+        //@ts-ignore
         $set: {
           [`google.${resource}.nextSyncToken`]: nextSyncToken,
           [`google.${resource}.lastSyncedAt`]: new Date(),
@@ -350,15 +351,18 @@ export const updateSyncTokenForGcal = async (
   gCalendarId: string,
   nextSyncToken: string
 ) => {
+  const payload = {
+    "google.events.$.nextSyncToken": nextSyncToken,
+    "google.events.$.lastSyncedAt": new Date(),
+  };
+
   const response = await mongoService.db
     .collection(Collections.SYNC)
     .findOneAndUpdate(
       { user: userId, "google.events.gCalendarId": gCalendarId },
       {
-        $set: {
-          "google.events.$.nextSyncToken": nextSyncToken,
-          "google.events.$.lastSyncedAt": new Date(),
-        },
+        //@ts-ignore
+        $set: payload,
       },
       { upsert: true }
     );

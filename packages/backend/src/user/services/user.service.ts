@@ -107,6 +107,7 @@ class UserService {
       .collection(Collections.USER)
       .findOneAndUpdate(
         { _id: mongoService.objectId(userId) },
+        //@ts-ignore
         { $set: { [label]: new Date() } }
       );
 

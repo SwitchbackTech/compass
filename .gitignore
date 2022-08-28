@@ -10,7 +10,7 @@ globalConfig.json
 electron/localization/locales/en/translation.missing.json
 
 # wildcards
-.env*
+*.env*
 *.log
 *.mongodb
 *.tsbuildinfo

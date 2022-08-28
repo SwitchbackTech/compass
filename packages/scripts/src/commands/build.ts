@@ -1,11 +1,12 @@
 import shell from "shelljs";
 
 import {
+  COMPASS_BUILD_DEV,
   COMPASS_ROOT_DEV,
-  PATH_UPDATE_SCRIPT,
+  SSH_TY_PROD,
   SSH_TY_STAGING,
 } from "../common/cli.constants";
-import { getApiBaseUrl, getPckgsTo, _confirm } from "../common/cli.utils";
+import { getVmInfo, getPckgsTo, _confirm } from "../common/cli.utils";
 
 // old way of building project-specific packages
 // "tsc:backend": "rm -rf packages/backend/build && yarn tsc --project packages/backend/tsconfig.json",
@@ -18,44 +19,45 @@ const buildPackages = async (pckgs: string[]) => {
   }
 
   if (pckgs.includes("nodePckgs")) {
-    buildNodePckgs();
+    await buildNodePckgs();
   }
 
   if (pckgs.includes("web")) {
-    await buildWeb();
-    await copyToProd(pckgs);
+    const destination = await buildWeb();
+    await copyToVM(pckgs, destination);
   }
 };
 
-const buildNodePckgs = () => {
-  console.log("Compiling node packages ...");
-  shell.rm("-rf", "build");
-  shell.rm("tsconfig.tsbuildinfo");
+// eslint-disable-next-line @typescript-eslint/require-await
+const buildNodePckgs = async () => {
+  removeOldBuildFor("nodePckgs");
 
-  shell.exec("yarn tsc --project tsconfig.json", async function (code) {
+  console.log("Compiling node packages ...");
+  shell.exec("yarn tsc --project tsconfig.json", function (code: number) {
     if (code !== 0) {
-      const ignoreErrors = await _confirm(
-        "Compilation errors. Continue anyway? (default: no)",
+      _confirm(
+        "Compilation errors. Use old build and continue anyway? (default: no)",
         false
-      );
-      if (!ignoreErrors) process.exit(code);
+      )
+        .then((ignoreErrors) => {
+          if (!ignoreErrors) process.exit(code);
+        })
+        .catch(() => process.exit());
     }
 
-    console.log("copying .env to backend ...");
-    shell.cp(
-      `${COMPASS_ROOT_DEV}/packages/backend/.env`,
-      `${COMPASS_ROOT_DEV}/build/backend`
-    );
+    console.log("Compiled node pckgs");
 
-    zip("nodePckgs");
-    await copyToProd(["nodePckgs"]);
+    copyConfigFilesToBuild();
+
+    installProdDependencies();
   });
 };
 
 const buildWeb = async () => {
+  removeOldBuildFor("web");
   shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
-
-  const { baseUrl, destination } = await getApiBaseUrl();
+  console.log("getting API baseUrl ...");
+  const { baseUrl, destination } = await getVmInfo();
   const gClientIdTest =
     "***REMOVED***";
   const gClientIdProd =
@@ -63,38 +65,97 @@ const buildWeb = async () => {
 
   const gClientId = destination === "staging" ? gClientIdTest : gClientIdProd;
 
-  console.log("Building web ...");
+  console.log("Compiling web files...");
   shell.exec(
     `webpack --mode=production --env API_BASEURL=${baseUrl} API_BASEURL_SYNC=${baseUrl} GOOGLE_CLIENT_ID=${gClientId}`
   );
 
   shell.cd(COMPASS_ROOT_DEV);
-  zip("web");
+  zipWeb();
+
+  return destination;
 };
 
-const copyToProd = async (packages: string[]) => {
-  const confirmed = await _confirm("Copy artifact to VM? (default y)");
+const copyToVM = async (packages: string[], destination?: string) => {
+  const confirmed = await _confirm("Copy artifact(s) to VM? (default y)");
 
   if (!confirmed) {
     console.log("OK, not copying to VM");
     return;
   }
 
-  shell.cd(COMPASS_ROOT_DEV);
+  if (!destination) {
+    const { destination: d } = await getVmInfo();
+    destination = d;
+  }
+  const vmPath = destination === "staging" ? SSH_TY_STAGING : SSH_TY_PROD;
 
   if (packages.includes("nodePckgs")) {
-    console.log(`copying backend+core to VM...`);
-    shell.exec(`gcloud compute scp build/nodePckgs.zip ${SSH_TY_STAGING}`);
-
-    console.log("copying scripts to VM...");
+    console.log(`copying node artifact to ${destination}...`);
     shell.exec(
-      `gcloud compute scp build/scripts.zip ${PATH_UPDATE_SCRIPT} ${SSH_TY_STAGING}`
+      `gcloud compute scp ${COMPASS_BUILD_DEV}/nodePckgs.zip ${vmPath}`
     );
   }
 
   if (packages.includes("web")) {
-    console.log("copying web to prod...");
-    shell.exec(`gcloud compute scp build/web.zip ${SSH_TY_STAGING}`);
+    console.log(`copying web artifact to ${destination} ...`);
+    shell.exec(`gcloud compute scp ${COMPASS_BUILD_DEV}/web.zip ${vmPath}`);
+  }
+
+  console.log("Done copying artifact(s) to VM");
+};
+
+const copyConfigFilesToBuild = () => {
+  // shell.cp(`${COMPASS_ROOT_DEV}/lerna.json`, COMPASS_BUILD_DEV); //++
+  const NODE_BUILD = `${COMPASS_BUILD_DEV}/node`;
+
+  console.log("copying root configs to build ...");
+  shell.cp(
+    `${COMPASS_ROOT_DEV}/packages/backend/.prod.env`,
+    `${NODE_BUILD}/.env`
+  );
+
+  console.log("copying package configs to build ...");
+  shell.cp(`${COMPASS_ROOT_DEV}/package.json`, `${NODE_BUILD}/package.json`);
+
+  shell.cp(
+    `${COMPASS_ROOT_DEV}/packages/backend/package.json`,
+    `${NODE_BUILD}/packages/backend/package.json`
+  );
+  shell.cp(
+    `${COMPASS_ROOT_DEV}/packages/core/package.json`,
+    `${NODE_BUILD}/packages/core/package.json`
+  );
+  shell.cp(
+    `${COMPASS_ROOT_DEV}/packages/scripts/package.json`,
+    `${NODE_BUILD}/packages/scripts/package.json`
+  );
+};
+
+const installProdDependencies = () => {
+  console.log("installing prod dependencies for node pckgs ...");
+
+  shell.cd(`${COMPASS_BUILD_DEV}/node`);
+  shell.exec("yarn install --production", async function (code: number) {
+    if (code !== 0) {
+      console.log("exiting cuz error during compiliation");
+      process.exit(code);
+    }
+
+    zipNode();
+
+    await copyToVM(["nodePckgs"]);
+  });
+};
+
+const removeOldBuildFor = (pckg: "nodePckgs" | "web") => {
+  if (pckg === "nodePckgs") {
+    console.log("Removing old node build ...");
+    shell.rm("-rf", ["build/node", "build/nodePckgs.zip"]);
+  }
+  if (pckg === "web") {
+    console.log("Removing old web build ...");
+    shell.rm("-rf", ["build/web", "build/web.zip"]);
   }
 };
 
@@ -103,11 +164,12 @@ export const runBuild = async () => {
   await buildPackages(pckgs);
 };
 
-const zip = (pckg: "nodePckgs" | "web") => {
-  if (pckg === "nodePckgs") {
-    shell.exec("zip -r build/nodePckgs.zip build/backend build/core");
-    shell.exec("zip -r build/scripts.zip build/scripts");
-  } else if (pckg === "web") {
-    shell.exec("zip -r build/web.zip build/web");
-  }
+const zipNode = () => {
+  shell.cd(COMPASS_ROOT_DEV);
+  shell.exec(`zip -r build/nodePckgs.zip build/node`);
+};
+
+const zipWeb = () => {
+  shell.cd(COMPASS_ROOT_DEV);
+  shell.exec(`zip -r build/web.zip build/web`);
 };

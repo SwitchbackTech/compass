@@ -10,11 +10,16 @@
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
   },
+  "_moduleAliases": {
+    "@compass/backend": "packages/backend/src",
+    "@compass/core": "packages/core/src",
+    "@compass/scripts": "packages/scripts/src"
+  },
   "scripts": {
     "cli": "export NODE_ENV=development && yarn ts-node  --pretty --transpile-only -r tsconfig-paths/register packages/scripts/src/cli",
     "debug:supertokens": "export DEBUG=com.supertokens && yarn dev:backend",
     "debug:web": "http-server build/web/",
-    "dev:backend": "export NODE_ENV=development && yarn dev:backend-start",
+    "dev:backend": "yarn dev:backend-start",
     "dev:backend -verbose": "export DEBUG=* && yarn dev:backend",
     "dev:backend-start": "cd packages/backend && ts-node-dev --respawn --pretty --transpile-only -r tsconfig-paths/register src/app.ts",
     "dev:update": "git checkout main && git pull && yarn",
@@ -34,18 +39,10 @@
   "dependencies": {
     "@compass/backend": "*",
     "@compass/core": "*",
-    "@compass/web": "*",
     "@compass/scripts": "*",
-    "focus-trap-react": "^8.7.0",
-    "inquirer": "^8.1.2",
-    "jsonwebtoken": "^8.5.1",
-    "lerna": "^4.0.0",
-    "lodash": "4.17.21",
-    "lodash.merge": "^4.6.2",
     "module-alias": "^2.2.2",
     "process": "^0.11.10",
     "source-map-support": "^0.5.20",
-    "tslib": "^2.3.1",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
@@ -58,7 +55,6 @@
     "@typescript-eslint/parser": "^5.0.0",
     "babel-loader": "^8.2.2",
     "buffer": "^6.0.3",
-    "commander": "^9.0.0",
     "concurrently": "^7.0.0",
     "cross-env": "^7.0.3",
     "crypto-browserify": "^3.12.0",
@@ -73,10 +69,13 @@
     "eslint-plugin-react-hooks": "^4.3.0",
     "husky": "^8.0.1",
     "jest": "^27.4.5",
+    "lerna": "^4.0.0",
     "lint-staged": "^12.1.5",
     "path-browserify": "^1.0.1",
     "prettier": "^2.5.1",
     "stream-browserify": "^3.0.0",
+    "ts-node": "^10.9.1",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^4.4.3"
   },
   "workspaces": {
