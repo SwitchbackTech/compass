@@ -3,9 +3,10 @@ import shell from "shelljs";
 import {
   COMPASS_ROOT_DEV,
   PATH_UPDATE_SCRIPT,
+  SSH_TY_PROD,
   SSH_TY_STAGING,
 } from "../common/cli.constants";
-import { getApiBaseUrl, getPckgsTo, _confirm } from "../common/cli.utils";
+import { getVmInfo, getPckgsTo, _confirm } from "../common/cli.utils";
 
 // old way of building project-specific packages
 // "tsc:backend": "rm -rf packages/backend/build && yarn tsc --project packages/backend/tsconfig.json",
@@ -22,8 +23,8 @@ const buildPackages = async (pckgs: string[]) => {
   }
 
   if (pckgs.includes("web")) {
-    await buildWeb();
-    await copyToProd(pckgs);
+    const destination = await buildWeb();
+    await copyToVM(pckgs, destination);
   }
 };
 
@@ -41,21 +42,22 @@ const buildNodePckgs = () => {
       if (!ignoreErrors) process.exit(code);
     }
 
-    console.log("copying .env to backend ...");
+    console.log("copying .prod.env to backend build ...");
     shell.cp(
-      `${COMPASS_ROOT_DEV}/packages/backend/.env`,
-      `${COMPASS_ROOT_DEV}/build/backend`
+      `${COMPASS_ROOT_DEV}/packages/backend/.prod.env`,
+      `${COMPASS_ROOT_DEV}/build/backend/.env`
     );
 
     zip("nodePckgs");
-    await copyToProd(["nodePckgs"]);
+    await copyToVM(["nodePckgs"]);
   });
 };
 
 const buildWeb = async () => {
   shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
 
-  const { baseUrl, destination } = await getApiBaseUrl();
+  console.log("getting API baseUrl ...");
+  const { baseUrl, destination } = await getVmInfo();
   const gClientIdTest =
     "***REMOVED***";
   const gClientIdProd =
@@ -70,9 +72,10 @@ const buildWeb = async () => {
 
   shell.cd(COMPASS_ROOT_DEV);
   zip("web");
+  return destination;
 };
 
-const copyToProd = async (packages: string[]) => {
+const copyToVM = async (packages: string[], destination?: string) => {
   const confirmed = await _confirm("Copy artifact to VM? (default y)");
 
   if (!confirmed) {
@@ -80,22 +83,33 @@ const copyToProd = async (packages: string[]) => {
     return;
   }
 
+  if (!destination) {
+    const { destination: d } = await getVmInfo();
+    destination = d;
+  }
+  const vmPath = destination === "staging" ? SSH_TY_STAGING : SSH_TY_PROD;
+
   shell.cd(COMPASS_ROOT_DEV);
 
-  if (packages.includes("nodePckgs")) {
-    console.log(`copying backend+core to VM...`);
-    shell.exec(`gcloud compute scp build/nodePckgs.zip ${SSH_TY_STAGING}`);
+  console.log(`copying package.json to ${destination} ...`);
+  shell.exec(`gcloud compute scp package.json ${vmPath}`);
 
-    console.log("copying scripts to VM...");
+  if (packages.includes("nodePckgs")) {
+    console.log(`copying backend+core to ${destination}...`);
+    shell.exec(`gcloud compute scp build/nodePckgs.zip ${vmPath}`);
+
+    console.log(`copying script artifact & bash to ${destination} ...`);
     shell.exec(
-      `gcloud compute scp build/scripts.zip ${PATH_UPDATE_SCRIPT} ${SSH_TY_STAGING}`
+      `gcloud compute scp ${COMPASS_ROOT_DEV}/build/scripts.zip ${PATH_UPDATE_SCRIPT} ${vmPath}`
     );
   }
 
   if (packages.includes("web")) {
     console.log("copying web to prod...");
-    shell.exec(`gcloud compute scp build/web.zip ${SSH_TY_STAGING}`);
+    shell.exec(`gcloud compute scp build/web.zip ${vmPath}`);
   }
+
+  console.log("Done copying artifact(s) to VM");
 };
 
 export const runBuild = async () => {
