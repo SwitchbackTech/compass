@@ -8,8 +8,6 @@ import { Command } from "commander";
 
 import { analyzeWeb } from "./commands/analyze";
 import { runBuild } from "./commands/build";
-import { updatePckgs } from "./commands/update";
-import { runInit } from "./commands/init";
 
 const runScript = async () => {
   const exitHelpfully = (msg?: string) => {
@@ -23,9 +21,7 @@ const runScript = async () => {
   program.option("-b, --build", "builds packages");
   program.option("-d, --delete", "deletes users data from compass database");
   program.option("-f, --force", "forces operation, no cautionary prompts");
-  program.option("-i, --init", "initialize a service on a VM");
-  program.option("-u, --update", "update a service on a VM");
-  program.option("--user <id>", "specifies which user to run script for");
+  program.option("-u, --user <id>", "specifies which user to run script for");
 
   program.parse(process.argv);
 
@@ -52,14 +48,6 @@ const runScript = async () => {
         options["user"] as string | null,
         options["force"] as boolean | undefined
       );
-      break;
-    }
-    case options["init"]: {
-      await runInit();
-      break;
-    }
-    case options["update"]: {
-      await updatePckgs();
       break;
     }
     default:

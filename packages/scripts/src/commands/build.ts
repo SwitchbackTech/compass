@@ -1,3 +1,4 @@
+import { VmInfo } from "@scripts/common/cli.types";
 import shell from "shelljs";
 
 import {
@@ -12,52 +13,54 @@ import { getVmInfo, getPckgsTo, _confirm } from "../common/cli.utils";
 // "tsc:backend": "rm -rf packages/backend/build && yarn tsc --project packages/backend/tsconfig.json",
 // "tsc:core": "rm -rf packages/core/build && yarn tsc --project packages/core/tsconfig.json",
 
-const buildPackages = async (pckgs: string[]) => {
+const buildPackages = async (pckgs: string[], vmInfo: VmInfo) => {
   if (pckgs.length === 0) {
     console.log("ya gotta select a package to build");
     process.exit(1);
   }
 
   if (pckgs.includes("nodePckgs")) {
-    await buildNodePckgs();
+    await buildNodePckgs(vmInfo);
   }
 
   if (pckgs.includes("web")) {
-    const destination = await buildWeb();
-    await copyToVM(pckgs, destination);
+    buildWeb(vmInfo);
+    await copyToVM(pckgs, vmInfo);
   }
 };
 
 // eslint-disable-next-line @typescript-eslint/require-await
-const buildNodePckgs = async () => {
+const buildNodePckgs = async (vmInfo: VmInfo) => {
   removeOldBuildFor("nodePckgs");
 
   console.log("Compiling node packages ...");
   shell.exec("yarn tsc --project tsconfig.json", function (code: number) {
     if (code !== 0) {
-      _confirm(
-        "Compilation errors. Use old build and continue anyway? (default: no)",
-        false
-      )
-        .then((ignoreErrors) => {
-          if (!ignoreErrors) process.exit(code);
-        })
-        .catch(() => process.exit());
+      console.log("Exiting because of compilation errors");
+      process.exit(code);
+      // _confirm(
+      //   "Compilation errors. Use old build and continue anyway? (default: no)",
+      //   false
+      // )
+      //   .then((ignoreErrors) => {
+      //     if (!ignoreErrors) process.exit(code);
+      //   })
+      //   .catch(() => process.exit());
     }
 
     console.log("Compiled node pckgs");
 
-    copyConfigFilesToBuild();
+    copyConfigFilesToBuild(vmInfo);
 
-    installProdDependencies();
+    installProdDependencies(vmInfo);
   });
 };
 
-const buildWeb = async () => {
+const buildWeb = (vmInfo: VmInfo) => {
   removeOldBuildFor("web");
   shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
   console.log("getting API baseUrl ...");
-  const { baseUrl, destination } = await getVmInfo();
+  const { baseUrl, destination } = vmInfo;
   const gClientIdTest =
     "***REMOVED***";
   const gClientIdProd =
@@ -72,11 +75,9 @@ const buildWeb = async () => {
 
   shell.cd(COMPASS_ROOT_DEV);
   zipWeb();
-
-  return destination;
 };
 
-const copyToVM = async (packages: string[], destination?: string) => {
+const copyToVM = async (packages: string[], vmInfo: VmInfo) => {
   const confirmed = await _confirm("Copy artifact(s) to VM? (default y)");
 
   if (!confirmed) {
@@ -84,34 +85,38 @@ const copyToVM = async (packages: string[], destination?: string) => {
     return;
   }
 
-  if (!destination) {
-    const { destination: d } = await getVmInfo();
-    destination = d;
-  }
+  const { destination, domain } = vmInfo;
   const vmPath = destination === "staging" ? SSH_TY_STAGING : SSH_TY_PROD;
 
   if (packages.includes("nodePckgs")) {
-    console.log(`copying node artifact to ${destination}...`);
+    console.log(`copying node artifact to ${destination} (${domain}) ...`);
     shell.exec(
       `gcloud compute scp ${COMPASS_BUILD_DEV}/nodePckgs.zip ${vmPath}`
     );
   }
 
   if (packages.includes("web")) {
-    console.log(`copying web artifact to ${destination} ...`);
+    console.log(`copying web artifact to ${destination} (${domain}) ...`);
     shell.exec(`gcloud compute scp ${COMPASS_BUILD_DEV}/web.zip ${vmPath}`);
   }
+
+  console.log("copying latest bash scripts to VM ...");
+  shell.exec(
+    `gcloud compute scp ${COMPASS_ROOT_DEV}/packages/scripts/src/prod/* ${vmPath}`
+  );
 
   console.log("Done copying artifact(s) to VM");
 };
 
-const copyConfigFilesToBuild = () => {
+const copyConfigFilesToBuild = (vmInfo: VmInfo) => {
   // shell.cp(`${COMPASS_ROOT_DEV}/lerna.json`, COMPASS_BUILD_DEV); //++
   const NODE_BUILD = `${COMPASS_BUILD_DEV}/node`;
 
+  const envName = vmInfo.destination === "production" ? ".prod.env" : ".env";
+
   console.log("copying root configs to build ...");
   shell.cp(
-    `${COMPASS_ROOT_DEV}/packages/backend/.prod.env`,
+    `${COMPASS_ROOT_DEV}/packages/backend/${envName}`,
     `${NODE_BUILD}/.env`
   );
 
@@ -126,13 +131,9 @@ const copyConfigFilesToBuild = () => {
     `${COMPASS_ROOT_DEV}/packages/core/package.json`,
     `${NODE_BUILD}/packages/core/package.json`
   );
-  shell.cp(
-    `${COMPASS_ROOT_DEV}/packages/scripts/package.json`,
-    `${NODE_BUILD}/packages/scripts/package.json`
-  );
 };
 
-const installProdDependencies = () => {
+const installProdDependencies = (vmInfo: VmInfo) => {
   console.log("installing prod dependencies for node pckgs ...");
 
   shell.cd(`${COMPASS_BUILD_DEV}/node`);
@@ -144,7 +145,7 @@ const installProdDependencies = () => {
 
     zipNode();
 
-    await copyToVM(["nodePckgs"]);
+    await copyToVM(["nodePckgs"], vmInfo);
   });
 };
 
@@ -161,12 +162,13 @@ const removeOldBuildFor = (pckg: "nodePckgs" | "web") => {
 
 export const runBuild = async () => {
   const pckgs = await getPckgsTo("build");
-  await buildPackages(pckgs);
+  const vmInfo = await getVmInfo();
+  await buildPackages(pckgs, vmInfo);
 };
 
 const zipNode = () => {
   shell.cd(COMPASS_ROOT_DEV);
-  shell.exec(`zip -r build/nodePckgs.zip build/node`);
+  shell.exec(`zip -q -r build/nodePckgs.zip build/node`);
 };
 
 const zipWeb = () => {

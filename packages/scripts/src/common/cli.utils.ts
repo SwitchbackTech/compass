@@ -7,7 +7,7 @@ import {
   COMPASS_ROOT_PROD,
   HOME_TY,
 } from "./cli.constants";
-import { Category_VM } from "./cli.types";
+import { Category_VM, VmInfo } from "./cli.types";
 const { prompt } = pkg;
 
 export const _confirm = async (question: string, _default = true) => {
@@ -31,20 +31,23 @@ export const fileExists = (file: string) => {
   return shell.test("-e", file);
 };
 
-export const getVmInfo = async (): Promise<{
-  baseUrl: string;
-  destination: Category_VM;
-}> => {
+export const getVmInfo = async (): Promise<VmInfo> => {
   const destination = (await getListAnswer("Select VM to use:", [
     "staging",
     "production",
   ])) as Category_VM;
 
-  const stagingUrl = "https://***REMOVED***/api";
-  const productionUrl = "https://app.compasscalendar.com/api";
+  const stagingDomain = "***REMOVED***";
+  const productionDomain = "app.compasscalendar.com";
 
-  const baseUrl = destination === "staging" ? stagingUrl : productionUrl;
-  return { baseUrl, destination };
+  const stagingUrl = `https://${stagingDomain}/api`;
+  const productionUrl = `https://${productionDomain}/api`;
+
+  const isStaging = destination === "staging";
+
+  const baseUrl = isStaging ? stagingUrl : productionUrl;
+  const domain = isStaging ? stagingDomain : productionDomain;
+  return { baseUrl, destination, domain };
 };
 
 export const getListAnswer = async (question: string, choices: string[]) => {
@@ -89,13 +92,4 @@ export const prepBackend = () => {
   );
 
   shell.rm(`${HOME_TY}/${ARTIFACT_NAME_NODE}.zip`);
-};
-
-export const startBackend = () => {
-  console.log("starting backend ....");
-  shell.exec(
-    `pm2 start ${COMPASS_ROOT_PROD}/build/node/packages/backend/src/app.js --name prod-backend --update-env`
-  );
-  // save to synchronize
-  shell.exec("pm2 save");
 };
