@@ -3,7 +3,6 @@ import moduleAlias from "module-alias";
 moduleAlias.addAliases({
   "@backend": `${__dirname}`,
   "@core": `${path.resolve(__dirname, "../../core/src")}`,
-  "@scripts": `${path.resolve(__dirname, "../../scripts/src")}`,
 });
 import dotenv from "dotenv";
 const dotenvResult = dotenv.config();

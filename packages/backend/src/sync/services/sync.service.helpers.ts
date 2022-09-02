@@ -51,6 +51,32 @@ export const assembleEventImports = (
   return syncEvents;
 };
 
+export const deleteAllSyncData = async (userId: string) => {
+  await mongoService.db
+    .collection(Collections.SYNC)
+    .deleteOne({ user: userId });
+};
+
+export const deleteSync = async (
+  userId: string,
+  resource: Resource_Sync,
+  channelId: string
+) => {
+  //++ removing the entry google.<event> entry is causing problems
+  // when user comes back, because it tries to do an incremental
+  // sync using a new sync token, which is effectively the same
+  // as doing a full sync
+  // better solution: remove everything except the nextSyncToken (?)
+  await mongoService.db.collection(Collections.SYNC).updateOne(
+    { user: userId },
+    {
+      $pull: {
+        [`google.${resource}`]: { channelId: channelId },
+      },
+    }
+  );
+};
+
 export const getCalendarInfo = async (resourceId: string) => {
   const sync = await getSync({ resourceId });
   if (!sync) {
@@ -70,35 +96,16 @@ export const getCalendarInfo = async (resourceId: string) => {
   };
 };
 
-export const deleteAllSyncData = async (userId: string) => {
-  await mongoService.db
-    .collection(Collections.SYNC)
-    .deleteOne({ user: userId });
-};
-
-export const deleteSync = async (
-  userId: string,
-  resource: Resource_Sync,
-  channelId: string
-) => {
-  await mongoService.db.collection(Collections.SYNC).updateOne(
-    { user: userId },
-    {
-      $pull: {
-        [`google.${resource}`]: { channelId: channelId },
-      },
-    }
-  );
-};
-
 export const getSync = async (params: {
   userId?: string;
   resourceId?: string;
 }) => {
   let filter = {};
+
   if (params.userId) {
     filter = { user: params.userId };
   }
+
   if (params.resourceId) {
     filter = { ...filter, "google.events.resourceId": params.resourceId };
   }
@@ -144,7 +151,8 @@ export const importEvents = async (
       Origin.GOOGLE_IMPORT
     );
 
-    await eventService.createMany(userId, cEvents);
+    await eventService.createMany(cEvents);
+
     nextPageToken = gEvents.data.nextPageToken as string;
     nextSyncToken = gEvents.data.nextSyncToken;
   } while (nextPageToken !== undefined);
@@ -235,9 +243,12 @@ const prepareEventImport = async (
   const { data } = response;
 
   if (!data.nextSyncToken) {
+    logger.error("pageToken:", data.nextPageToken);
+    logger.error("do sth with this:");
+    logger.error(JSON.stringify(data));
     throw error(
       GenericError.NotImplemented,
-      "Event Import Failed - no sync token + pagination not supported yet"
+      "Event Import Failed: no sync token in get event response (pagination not supported yet)"
     );
   }
 

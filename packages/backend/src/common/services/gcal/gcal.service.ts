@@ -20,8 +20,7 @@ class GCalService {
 
       return response.data;
     } catch (e) {
-      handleGcalError("Failed to CreategEvent", e as GaxiosError);
-      return;
+      return handleGcalError("Failed to Create gEvent", e as GaxiosError);
     }
   }
 

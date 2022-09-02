@@ -16,7 +16,7 @@ class EventController {
 
     try {
       if (req.body instanceof Array) {
-        const response = await eventService.createMany(userId, req.body);
+        const response = await eventService.createMany(req.body);
         //@ts-ignore
         res.promise(Promise.resolve(response));
       } else {

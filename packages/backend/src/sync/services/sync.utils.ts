@@ -36,10 +36,9 @@ export const assembleEventOperations = (
 
     cEvents.forEach((e: Schema_Event) => {
       bulkOperations.push({
-        updateOne: {
+        replaceOne: {
           filter: { gEventId: e.gEventId, user: userId },
-          //@ts-ignore
-          update: { $set: e },
+          replacement: e,
           upsert: true,
         },
       });
@@ -50,7 +49,6 @@ export const assembleEventOperations = (
 };
 
 export const categorizeGcalEvents = (events: gSchema$Event[]) => {
-  //-- check if you should ignore it (using data.updated)
   const toDelete = cancelledEventsIds(events);
 
   // if its going to be deleted anyway, then dont bother updating
@@ -70,9 +68,9 @@ export const channelExpiresSoon = (expiry: string) => {
   const numMin = Math.round(parseInt(ENV.CHANNEL_EXPIRATION_MIN) / 2);
   const xMinFromNow = minutesFromNow(numMin, "ms");
   const expiration = new Date(expiry).getTime();
-  const channelExpiresSoon = expiration < xMinFromNow;
+  const expiresSoon = expiration < xMinFromNow;
 
-  return channelExpiresSoon;
+  return expiresSoon;
 };
 
 export const findCalendarId = (resourceId: string, sync: Schema_Sync) => {

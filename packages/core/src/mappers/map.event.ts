@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { BaseError } from "@core/errors/errors.base";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin, Priorities, Priority } from "@core/constants/core.constants";
 import { isAllDay, notCancelled } from "@core/util/event.util";
 import { Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
@@ -81,7 +81,9 @@ const _toCompass = (
     _origIsTimesShown !== undefined ? JSON.parse(_origIsTimesShown) : true;
   const _origPriority = gEvent.extendedProperties?.private?.["priority"];
   const _priority =
-    _origPriority === undefined ? Priorities.UNASSIGNED : _origPriority;
+    _origPriority === undefined
+      ? Priorities.UNASSIGNED
+      : (_origPriority as Priority);
 
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
@@ -98,8 +100,8 @@ const _toCompass = (
     startDate: _isAllDay ? _start.date : _start.dateTime,
     // @ts-ignore
     endDate: _isAllDay ? _end.date : _end.dateTime,
-    // @ts-ignore
     priority: _priority,
+    updatedAt: new Date(),
   };
 
   return compassEvent;
