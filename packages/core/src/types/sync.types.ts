@@ -13,11 +13,16 @@ export interface Payload_Resource_Events {
   channelId: string;
   expiration: string;
   resourceId: string;
+  nextSyncToken: string;
 }
 
+export interface Payload_Resource_Events_TokenOptional
+  extends Omit<Payload_Resource_Events, "nextSyncToken"> {
+  nextSyncToken?: string;
+}
 export interface Payload_Sync_Events extends Payload_Resource_Events {
+  lastRefreshedAt?: Date;
   lastSyncedAt?: Date;
-  nextSyncToken: string;
 }
 
 export interface Payload_Sync_Notif {
@@ -82,7 +87,11 @@ export interface Result_Sync_Prep_Gcal {
 export interface Schema_Sync {
   user: string;
   google: {
-    calendarlist: Payload_Sync_Events[];
+    calendarlist: {
+      gCalendarId: string;
+      nextSyncToken: string;
+      lastSyncedAt: Date;
+    }[];
     events: Payload_Sync_Events[];
     // settings: Payload_Sync;
   };

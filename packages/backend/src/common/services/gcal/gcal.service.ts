@@ -80,26 +80,31 @@ class GCalService {
 
   watchEvents = async (
     gcal: gCalendar,
-    gCalendarId: string,
-    channelId: string,
-    expiration: string
+    params: {
+      gCalendarId: string;
+      channelId: string;
+      expiration: string;
+      nextSyncToken?: string;
+    }
   ) => {
     try {
       const { data } = await gcal.events.watch({
-        calendarId: gCalendarId,
+        calendarId: params.gCalendarId,
         requestBody: {
           // reminder: address always needs to be HTTPS
           address: ENV.BASEURL + GCAL_NOTIFICATION_ENDPOINT,
-          expiration,
-          id: channelId,
+          expiration: params.expiration,
+          id: params.channelId,
           token: GCAL_NOTIFICATION_TOKEN,
           type: "web_hook",
         },
+        syncToken: params.nextSyncToken,
       });
+
       return { watch: data };
     } catch (e) {
-      handleGcalError("Failed to Watch for Events", e as GaxiosError);
-      return { error: e };
+      return handleGcalError("Failed to Watch for Events", e as GaxiosError);
+      // return { error: e };
     }
   };
 }

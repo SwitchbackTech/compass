@@ -8,9 +8,10 @@ import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { error, UserError } from "@backend/common/errors/types/backend.errors";
 
 export const getGcalClient = async (userId: string) => {
-  const { user, userExists } = await findCompassUserBy("_id", userId);
-  if (!userExists) {
-    throw error(UserError.UserDoesNotExist, "gCal Auth Failed");
+  const user = await findCompassUserBy("_id", userId);
+  console.log("user res:", user);
+  if (!user) {
+    throw error(UserError.NoUser, "gCal Auth Failed");
   }
 
   const gAuthClient = new GoogleAuthService();

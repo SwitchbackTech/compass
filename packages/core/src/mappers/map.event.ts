@@ -9,7 +9,7 @@ export namespace MapEvent {
   export const toCompass = (
     userId: string,
     events: gSchema$Event[],
-    origin: Origin
+    origin?: Origin
   ): Schema_Event[] => {
     const mapped = events
       .filter(notCancelled)
@@ -44,7 +44,7 @@ export namespace MapEvent {
 const _toCompass = (
   userId: string,
   gEvent: gSchema$Event,
-  origin: Origin
+  origin?: Origin
 ): Schema_Event => {
   if (!gEvent.id) {
     throw new BaseError(
@@ -54,7 +54,10 @@ const _toCompass = (
       false
     );
   }
-  //TODO validate that event has either date or dateTime values
+  const _origin =
+    origin !== undefined
+      ? origin
+      : gEvent.extendedProperties?.private?.["origin"] || Origin.UNSURE;
 
   const gEventId = gEvent.id ? gEvent.id : "uh oh";
   const title = gEvent.summary ? gEvent.summary : "untitled";
@@ -88,7 +91,7 @@ const _toCompass = (
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
     user: userId,
-    origin: origin,
+    origin: _origin as Origin,
     title: title,
     description: description,
     priorities: [],

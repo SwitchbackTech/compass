@@ -17,6 +17,7 @@ import {
   genericError,
 } from "@backend/common/errors/types/backend.errors";
 import syncService from "@backend/sync/services/sync.service";
+import { WithId } from "mongodb";
 
 import { initGoogleClient } from "../services/auth.utils";
 
@@ -36,9 +37,9 @@ class AuthController {
     }
 
     if (email) {
-      const { userExists, user } = await findCompassUserBy("email", email);
+      const user = await findCompassUserBy("email", email);
 
-      if (!userExists) {
+      if (!user) {
         //@ts-ignore
         res.promise(Promise.resolve({ error: "user doesn't exist" }));
         return;
@@ -77,12 +78,11 @@ class AuthController {
         tokens
       );
 
-      const { userExists, user } = await findCompassUserBy(
-        "google.googleId",
-        gUser.sub
-      );
-
-      const { cUserId } = userExists
+      const user = await findCompassUserBy("google.googleId", gUser.sub);
+      // if (!user) {
+      //   throw error(UserError.NoUser, "Auth Failed");
+      // }
+      const { cUserId } = user
         ? await this.login(gcalClient, user)
         : await this.signup(gUser, gcalClient, gRefreshToken);
 
@@ -110,7 +110,7 @@ class AuthController {
     }
   };
 
-  login = async (gcal: gCalendar, user: Schema_User) => {
+  login = async (gcal: gCalendar, user: WithId<Schema_User>) => {
     const cUserId = user._id.toString();
 
     await syncService.importIncremental(cUserId, gcal);

@@ -145,8 +145,18 @@ export const SyncError = {
     status: Status.GONE,
     isOperational: true,
   },
-  MissingResourceId: {
+  NoGCalendarId: {
+    description: "No gCalendarId",
+    status: Status.NO_CONTENT,
+    isOperational: true,
+  },
+  NoResourceId: {
     description: "No resourceId provided",
+    status: Status.NO_CONTENT,
+    isOperational: true,
+  },
+  NoSyncToken: {
+    description: "No syncToken",
     status: Status.NO_CONTENT,
     isOperational: true,
   },
@@ -168,7 +178,7 @@ export const SyncError = {
 };
 
 export const UserError = {
-  UserDoesNotExist: {
+  NoUser: {
     description: "User does not exist",
     status: Status.NOT_FOUND,
     isOperational: true,

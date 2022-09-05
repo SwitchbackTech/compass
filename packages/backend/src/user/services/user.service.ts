@@ -5,17 +5,14 @@ import { colorNameByPriority } from "@core/constants/colors";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
-import { Collections } from "@backend/common/constants/collections";
 import { AuthError, error } from "@backend/common/errors/types/backend.errors";
 import { getCalendarsToSync } from "@backend/auth/services/auth.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import syncService from "@backend/sync/services/sync.service";
-import {
-  startWatchingGcalsById,
-  updateSyncTokenFor,
-} from "@backend/sync/services/sync.service.helpers";
+import { startWatchingGcalsById } from "@backend/sync/services/sync.service.helpers";
+import { createSync } from "@backend/sync/services/sync.queries";
 
 const logger = Logger("app:user.service");
 
@@ -52,9 +49,7 @@ class UserService {
     const _compassUser = mapUserToCompass(gUser, gRefreshToken);
     const compassUser = { ..._compassUser, signedUpAt: new Date() };
 
-    const createUserRes = await mongoService.db
-      .collection(Collections.USER)
-      .insertOne(compassUser);
+    const createUserRes = await mongoService.user.insertOne(compassUser);
 
     const userId = createUserRes.insertedId.toString();
     if (!userId) {
@@ -67,10 +62,10 @@ class UserService {
   deleteUser = async (userId: string) => {
     logger.info(`Deleting all data for user: ${userId}`);
 
-    const filter = { _id: mongoService.objectId(userId) };
-    const response = await mongoService.db
-      .collection(Collections.USER)
-      .deleteOne(filter);
+    const response = await mongoService.user.deleteOne({
+      _id: mongoService.objectId(userId),
+    });
+
     return response;
   };
 
@@ -78,7 +73,7 @@ class UserService {
     const { cCalendarList, gCalendarIds, nextSyncToken } =
       await getCalendarsToSync(userId, gcal);
 
-    await updateSyncTokenFor("calendarlist", userId, nextSyncToken);
+    await createSync(userId, cCalendarList, nextSyncToken);
 
     await calendarService.create(cCalendarList);
 
@@ -103,13 +98,10 @@ class UserService {
   };
 
   saveTimeFor = async (label: "lastLoggedInAt", userId: string) => {
-    const res = await mongoService.db
-      .collection(Collections.USER)
-      .findOneAndUpdate(
-        { _id: mongoService.objectId(userId) },
-        //@ts-ignore
-        { $set: { [label]: new Date() } }
-      );
+    const res = await mongoService.user.findOneAndUpdate(
+      { _id: mongoService.objectId(userId) },
+      { $set: { [label]: new Date() } }
+    );
 
     return res;
   };

@@ -1,4 +1,3 @@
-import { Schema_User } from "@core/types/user.types";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import { getIdFilter } from "@backend/common/helpers/mongo.utils";
@@ -8,11 +7,9 @@ type Ids_User = "email" | "_id" | "google.googleId";
 export const findCompassUserBy = async (key: Ids_User, value: string) => {
   const filter = getIdFilter(key, value);
 
-  const user = (await mongoService.db
-    .collection(Collections.USER)
-    .findOne(filter)) as Schema_User;
+  const user = await mongoService.user.findOne(filter);
 
-  return { userExists: user !== null, user };
+  return user;
 };
 
 export const findCompassUsersBy = async (key: Ids_User, value: string) => {

@@ -1,33 +1,38 @@
-import { Db, MongoClient, ObjectId } from "mongodb";
+import { Collection, Db, MongoClient, ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
+import { Schema_Sync } from "@core/types/sync.types";
+import { Schema_User } from "@core/types/user.types";
+import { Schema_Event } from "@core/types/event.types";
 
 import { ENV } from "../constants/env.constants";
+import { Collections } from "../constants/collections";
 
 const logger = Logger("app:mongo.service");
 
-const dbName = ENV.DB;
-
 class MongoService {
   private count = 0;
-  private options = {
-    useNewUrlParser: true,
-  };
   public client: MongoClient | undefined;
   public db!: Db;
+
+  // collections
+  public event!: Collection<Schema_Event>;
+  public sync!: Collection<Schema_Sync>;
+  public user!: Collection<Schema_User>;
 
   constructor() {
     this._connect();
   }
-
   _connect = () => {
-    //@ts-ignore
-    MongoClient.connect(ENV.MONGO_URI, this.options)
+    MongoClient.connect(ENV.MONGO_URI)
       .then((clientInstance) => {
-        logger.debug(`Connected to database: '${dbName}'`);
+        logger.debug(`Connected to database: '${ENV.DB}'`);
         this.client = clientInstance;
-        this.db = this.client.db(dbName);
-        //@ts-ignore
-        this.db["ObjectId"] = ObjectId;
+        this.db = this.client.db(ENV.DB);
+        // this.db["ObjectId"] = ObjectId;
+
+        this.event = this.db.collection<Schema_Event>(Collections.USER);
+        this.sync = this.db.collection<Schema_Sync>(Collections.SYNC);
+        this.user = this.db.collection<Schema_User>(Collections.USER);
       })
       .catch((err) => {
         const retrySeconds = 5;

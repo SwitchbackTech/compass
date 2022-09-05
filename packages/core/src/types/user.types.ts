@@ -1,9 +1,10 @@
-import { DeleteResult, ObjectId } from "mongodb";
+// import { ObjectId } from "mongodb";
 
-export interface Schema_User extends Schema_User_Base {
-  _id: ObjectId;
-}
-export interface Schema_User_Base {
+// export interface Schema_User extends Schema_User_Base {
+//   _id: ObjectId;
+// }
+export interface Schema_User {
+  // _id?: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -16,12 +17,4 @@ export interface Schema_User_Base {
   };
   signedUpAt?: Date;
   lastLoggedInAt?: Date;
-}
-
-//--
-export interface Result_Delete_User {
-  events: DeleteResult;
-  oauth: DeleteResult;
-  user: DeleteResult;
-  errors: object[] | [];
 }

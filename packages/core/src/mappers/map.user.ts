@@ -1,5 +1,5 @@
 import { UserInfo_Google } from "@core/types/auth.types";
-import { Schema_User_Base } from "@core/types/user.types";
+import { Schema_User } from "@core/types/user.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 
@@ -7,7 +7,7 @@ import { Status } from "@core/errors/status.codes";
 export const mapUserToCompass = (
   gUser: UserInfo_Google["gUser"],
   gRefreshToken: string
-): Schema_User_Base => {
+): Schema_User => {
   if (
     !gUser.email ||
     !gUser.name ||

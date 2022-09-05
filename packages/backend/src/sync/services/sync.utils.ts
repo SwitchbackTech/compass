@@ -5,13 +5,18 @@ import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { minutesFromNow } from "@core/util/date.utils";
 import { Schema_Event } from "@core/types/event.types";
-import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { Schema_Sync } from "@core/types/sync.types";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
 import { ENV } from "@backend/common/constants/env.constants";
 
 const logger = Logger("app:sync.helpers");
+
+/**
+ * Helper funcs that don't depend on
+ * other services
+ *
+ */
 
 export const assembleEventOperations = (
   userId: string,
@@ -32,7 +37,7 @@ export const assembleEventOperations = (
   }
 
   if (eventsToUpdate.length > 0) {
-    const cEvents = MapEvent.toCompass(userId, eventsToUpdate, Origin.GOOGLE);
+    const cEvents = MapEvent.toCompass(userId, eventsToUpdate);
 
     cEvents.forEach((e: Schema_Event) => {
       bulkOperations.push({
@@ -64,12 +69,24 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
   return categorized;
 };
 
-export const channelExpiresSoon = (expiry: string) => {
-  const numMin = Math.round(parseInt(ENV.CHANNEL_EXPIRATION_MIN) / 2);
-  const xMinFromNow = minutesFromNow(numMin, "ms");
-  const expiration = new Date(expiry).getTime();
-  const expiresSoon = expiration < xMinFromNow;
+export const syncExpired = (expiry?: string) => {
+  if (!expiry) return true;
 
+  const expiration = new Date(parseInt(expiry)).getTime();
+  const now = new Date().getTime();
+
+  const expired = now > expiration;
+  return expired;
+};
+
+export const syncExpiresSoon = (expiry: string) => {
+  const bufferDays = 3;
+  const MIN_IN_DAY = 1440;
+
+  const expiration = new Date(parseInt(expiry)).getTime();
+  const deadlineMs = minutesFromNow(MIN_IN_DAY * bufferDays, "ms");
+
+  const expiresSoon = expiration < deadlineMs;
   return expiresSoon;
 };
 
@@ -184,5 +201,16 @@ export const channelRefreshNeeded = (channelId: string, expiration: string) => {
   }
 
   return refreshNeeded;
+};
+*/
+
+/*
+export const channelExpiresSoon = (expiry: string) => {
+  const numMin = Math.round(parseInt(ENV.CHANNEL_EXPIRATION_MIN) / 2);
+  const xMinFromNow = minutesFromNow(numMin, "ms");
+  const expiration = new Date(expiry).getTime();
+  const expiresSoon = expiration < xMinFromNow;
+
+  return expiresSoon;
 };
 */

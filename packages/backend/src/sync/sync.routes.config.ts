@@ -4,6 +4,7 @@ import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import authMiddleware from "@backend/auth/middleware/auth.middleware";
 
+import syncController from "./controllers/sync.controller";
 import gcalSyncController from "./controllers/sync.gcal.controller";
 
 export class SyncRoutes extends CommonRoutesConfig {
@@ -18,6 +19,8 @@ export class SyncRoutes extends CommonRoutesConfig {
         authMiddleware.verifyIsFromGoogle,
         gcalSyncController.handleNotification,
       ]);
+
+    this.app.route(`/api/sync/maintain-all`).post([syncController.maintain]);
 
     this.app
       .route([

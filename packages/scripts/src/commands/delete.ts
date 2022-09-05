@@ -1,12 +1,14 @@
 import pkg from "inquirer";
 const { prompt } = pkg;
 import { BaseError } from "@core/errors/errors.base";
+import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
 import { findCompassUsersBy } from "@backend/user/queries/user.queries";
 import calendarService from "@backend/calendar/services/calendar.service";
 import userService from "@backend/user/services/user.service";
 import syncService from "@backend/sync/services/sync.service";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 
 export interface Summary_Delete {
   calendarlist?: number;
@@ -15,10 +17,12 @@ export interface Summary_Delete {
   priorities?: number;
   syncs?: number;
   user?: number;
+  sessions?: number;
 }
 
 const deleteCompassDataForUser = async (userId: string) => {
   const summary: Summary_Delete = {};
+
   try {
     const priorities = await priorityService.deleteAllByUser(userId);
     summary.priorities = priorities.deletedCount;
@@ -32,6 +36,12 @@ const deleteCompassDataForUser = async (userId: string) => {
     const { watchStopCount } = await syncService.stopWatches(userId);
     summary.eventWatches = watchStopCount;
 
+    initSupertokens();
+    const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
+      userId
+    );
+    summary.sessions = sessionsRevoked;
+
     const syncs = await syncService.deleteAllByUser(userId);
     summary.syncs = syncs.deletedCount;
 
@@ -40,7 +50,11 @@ const deleteCompassDataForUser = async (userId: string) => {
     return summary;
   } catch (e) {
     const _e = e as BaseError;
-    console.log("Stopped early because:", _e.description);
+    console.log("Stopped early because:", _e.description || _e);
+
+    const _user = await userService.deleteUser(userId);
+    summary.user = _user.deletedCount;
+
     return summary;
   }
 };
