@@ -5,9 +5,12 @@ dotenv.config({
   path: path.resolve(process.cwd(), "packages/backend/.env"),
 });
 import { Command } from "commander";
+import mongoService from "@backend/common/services/mongo.service";
 
 import { analyzeWeb } from "./commands/analyze";
 import { runBuild } from "./commands/build";
+
+mongoService;
 
 const runScript = async () => {
   const exitHelpfully = (msg?: string) => {
@@ -44,7 +47,7 @@ const runScript = async () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
       const { startDeleteFlow } = require("./commands/delete");
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await startDeleteFlow(
+      startDeleteFlow(
         options["user"] as string | null,
         options["force"] as boolean | undefined
       );
@@ -59,3 +62,37 @@ runScript().catch((err) => {
   console.log(err);
   process.exit(1);
 });
+// const connectToDb = async () => {
+//   let isReady = false;
+
+//   mongoService.client?.once("connection", () => {
+//     console.log("!!\n\nconnected");
+//   });
+//   const checkDB = () => {
+//     const connected = mongoService.isConnected();
+//     if (connected) {
+//       isReady = true;
+//     }
+//   };
+
+//   const wait = () => {
+//     console.log("waiting ...");
+//     setTimeout(() => {
+//       checkDB();
+//       if (isReady) {
+//         console.log("running func after waiting..");
+//       } else wait();
+//     }, 2000);
+//   };
+
+//   checkDB();
+
+//   if (isReady) {
+//     console.log("running func...");
+//     return Promise.resolve();
+//   } else {
+//     wait();
+//     checkDB();
+//     if (isReady) return Promise.resolve();
+//   }
+// };

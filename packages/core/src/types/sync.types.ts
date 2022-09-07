@@ -13,7 +13,7 @@ export interface Payload_Resource_Events {
   channelId: string;
   expiration: string;
   resourceId: string;
-  nextSyncToken: string;
+  nextSyncToken?: string;
 }
 
 export interface Payload_Resource_Events_TokenOptional
@@ -30,6 +30,11 @@ export interface Payload_Sync_Notif {
   resourceId: string;
   resourceState: string;
   expiration: string;
+}
+
+export interface Payload_Sync_Refresh {
+  userId: string;
+  payloads: Payload_Sync_Events[];
 }
 
 export type Resource_Sync = "calendarlist" | "events" | "settings";

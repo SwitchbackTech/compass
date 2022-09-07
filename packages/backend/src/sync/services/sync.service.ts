@@ -15,7 +15,6 @@ import {
 } from "@backend/common/errors/types/backend.errors";
 import { getCalendarsToSync } from "@backend/auth/services/auth.utils";
 import { isAccessRevoked } from "@backend/common/services/gcal/gcal.utils";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 
@@ -28,12 +27,14 @@ import {
   startWatchingGcalsById,
   deleteAllSyncData,
   prepareMaintenance,
+  refreshSync,
+  pruneSync,
 } from "./sync.service.helpers";
 import {
   deleteWatchData,
   getSync,
   isWatchingEvents,
-  saveNewSyncFor,
+  updateSyncFor,
   updateRefreshedAtFor,
   updateSyncTokenFor,
 } from "./sync.queries";
@@ -105,7 +106,10 @@ class SyncService {
   ) => {
     if (!gcal) gcal = await getGcalClient(userId);
 
-    await this.stopWatch(userId, payload.channelId, payload.resourceId, gcal);
+    const watchExists = payload.channelId && payload.resourceId;
+    if (watchExists) {
+      await this.stopWatch(userId, payload.channelId, payload.resourceId, gcal);
+    }
 
     const watchResult = await this.startWatchingGcal(
       userId,
@@ -124,34 +128,12 @@ class SyncService {
   runSyncMaintenance = async () => {
     const { toPrune, toRefresh } = await prepareMaintenance();
 
-    const prunes = toPrune.map(async (u) => {
-      const stopRes = await this.stopWatches(u);
-      const revokeRes = await compassAuthService.revokeSessionsByUser(u);
-      return { u: { stop: stopRes, revoke: revokeRes } };
-    });
-    const pruneResult = await Promise.all(prunes);
-
-    const refreshes = toRefresh.map(async (r) => {
-      const gcal = await getGcalClient(r.userId);
-
-      const refreshesByUser = r.payloads.map(async (syncPayload) => {
-        await this.refreshWatch(r.userId, syncPayload, gcal);
-      });
-
-      return await Promise.all(refreshesByUser);
-    });
-
-    const refreshResult = await Promise.all(refreshes);
+    const prunes = await pruneSync(toPrune);
+    const refreshes = await refreshSync(toRefresh);
 
     return {
-      prunes: {
-        found: toPrune.length,
-        result: pruneResult,
-      },
-      refreshes: {
-        found: toRefresh.length,
-        result: refreshResult,
-      },
+      prunes,
+      refreshes,
     };
   };
 
@@ -166,10 +148,6 @@ class SyncService {
     if (alreadyWatching) {
       throw error(SyncError.CalendarWatchExists, "Skipped Start Watch");
     }
-
-    logger.debug(
-      `Setting up event watch for:\n\tgCalendarId: '${params.gCalendarId}'\n\tuser: ${userId}`
-    );
 
     const channelId = uuidv4();
     const expiration = getChannelExpiration();
@@ -187,7 +165,7 @@ class SyncService {
       throw error(SyncError.NoResourceId, "Calendar Watch Failed");
     }
 
-    const sync = await saveNewSyncFor("events", userId, {
+    const sync = await updateSyncFor("events", userId, {
       gCalendarId: params.gCalendarId,
       channelId,
       resourceId,
@@ -216,10 +194,6 @@ class SyncService {
     gcal?: gCalendar
   ) => {
     if (!gcal) gcal = await getGcalClient(userId);
-
-    logger.debug(
-      `Stopping watch for channelId: ${channelId} and resourceId: ${resourceId}`
-    );
 
     const params = {
       requestBody: {
@@ -274,19 +248,26 @@ class SyncService {
 
     const gcal = await getGcalClient(userId);
 
+    const stopped = [];
     for (const es of sync.google.events) {
       if (!es.channelId || !es.resourceId) {
-        logger.debug(`Skipping stop for calendarId: ${es.gCalendarId} ...`);
+        logger.debug(
+          `Skipped stop for calendarId: ${es.gCalendarId} due to missing field(s):
+            channelId: ${es.channelId}
+            resourceid: ${es.resourceId}`
+        );
         continue;
       }
 
       await this.stopWatch(userId, es.channelId, es.resourceId, gcal);
+
+      stopped.push({
+        channelId: es.channelId,
+        resourceId: es.resourceId,
+      });
     }
 
-    const watchStopSummary = {
-      watchStopCount: sync.google.events.length,
-    };
-    return watchStopSummary;
+    return stopped;
   };
 }
 

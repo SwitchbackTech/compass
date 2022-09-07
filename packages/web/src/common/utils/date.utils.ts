@@ -11,7 +11,7 @@ import { roundToNext } from ".";
 import { GRID_TIME_STEP } from "../constants/grid.constants";
 
 export const getAmPmTimes = () => {
-  console.log("getting times"); //++
+  // console.log("getting times"); //++
   return getTimes().map((time) =>
     dayjs(`2000-00-00 ${time}`, YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT)
       .format(HOURS_AM_FORMAT)

@@ -17,7 +17,6 @@ import { usePreferences } from "./hooks/usePreferences";
 import { Sidebar } from "./components/Sidebar";
 
 export const Calendar = () => {
-  console.log("reminder: check if authed before showing cal (?)");
   return <CalendarView />;
 };
 

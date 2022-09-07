@@ -1,4 +1,5 @@
 import { AnyBulkWriteOperation } from "mongodb";
+import dayjs from "dayjs";
 import { gSchema$Event } from "@core/types/gcal";
 import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
@@ -67,6 +68,17 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
     toUpdate,
   };
   return categorized;
+};
+
+export const getActiveDeadline = () => {
+  const deadlineDays = 2;
+  logger.warn(`REMINDER: only checking last ${deadlineDays} days ...`);
+  const deadline = dayjs()
+    .hour(0)
+    .minute(0)
+    .subtract(deadlineDays, "days")
+    .format();
+  return deadline;
 };
 
 export const syncExpired = (expiry?: string) => {

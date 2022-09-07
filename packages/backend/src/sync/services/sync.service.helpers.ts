@@ -1,7 +1,10 @@
-import dayjs from "dayjs";
 import { gCalendar, gParamsEventsList } from "@core/types/gcal";
 import { Logger } from "@core/logger/winston.logger";
-import { Payload_Sync_Events, Schema_Sync } from "@core/types/sync.types";
+import {
+  Payload_Sync_Events,
+  Payload_Sync_Refresh,
+  Schema_Sync,
+} from "@core/types/sync.types";
 import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
@@ -16,11 +19,13 @@ import { yearsAgo } from "@backend/common/helpers/common.helpers";
 import { EventError } from "@backend/common/errors/types/backend.errors";
 import eventService from "@backend/event/services/event.service";
 import mongoService from "@backend/common/services/mongo.service";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 
 import syncService from "./sync.service";
 import {
   assembleEventOperations,
   categorizeGcalEvents,
+  getActiveDeadline,
   getSummary,
   syncExpired,
   syncExpiresSoon,
@@ -96,12 +101,10 @@ const checkExpiries = async (userId: string) => {
 };
 
 export const prepareMaintenance = async () => {
-  const deadlineDays = 2;
-  logger.warn(`REMINDER: only checking last ${deadlineDays} days ...`);
-  const deadline = dayjs().subtract(deadlineDays, "days").format();
-
   const toPrune = [];
   const toRefresh = [];
+
+  const deadline = getActiveDeadline();
 
   const cursor = mongoService.user.find();
   while (await cursor.hasNext()) {
@@ -143,21 +146,23 @@ export const importEvents = async (
       timeMin: xYearsAgo.toISOString(),
       pageToken: nextPageToken,
     };
+
     const gEvents = await gcalService.getEvents(gcal, params);
 
     if (!gEvents || !gEvents.data.items) {
       throw error(EventError.NoGevents, "Potentially missing events");
     }
 
-    total += gEvents.data.items.length;
+    if (gEvents.data.items.length > 0) {
+      total += gEvents.data.items.length;
 
-    const cEvents = MapEvent.toCompass(
-      userId,
-      gEvents.data.items,
-      Origin.GOOGLE_IMPORT
-    );
-
-    await eventService.createMany(cEvents);
+      const cEvents = MapEvent.toCompass(
+        userId,
+        gEvents.data.items,
+        Origin.GOOGLE_IMPORT
+      );
+      await eventService.createMany(cEvents);
+    }
 
     nextPageToken = gEvents.data.nextPageToken as string;
     nextSyncToken = gEvents.data.nextSyncToken;
@@ -247,12 +252,14 @@ const prepareEventImport = async (
     );
   }
 
-  await updateSyncTokenIfNeeded(
-    nextSyncToken,
-    data.nextSyncToken,
-    userId,
-    gCalendarId
-  );
+  if (nextSyncToken) {
+    await updateSyncTokenIfNeeded(
+      nextSyncToken,
+      data.nextSyncToken,
+      userId,
+      gCalendarId
+    );
+  }
 
   return data.items || [];
 };
@@ -272,6 +279,58 @@ export const prepareEventSyncChannels = async (
   }
 
   return sync;
+};
+
+export const pruneSync = async (toPrune: string[]) => {
+  const getStoppedSummary = (
+    stopped: { channelId: string; resourceId: string }[]
+  ) => {
+    const stoppedCount = stopped.length;
+
+    if (stoppedCount === 0) return "ignored";
+    if (stoppedCount > 0) return `success (${stopped.length})`;
+
+    return "programming error";
+  };
+
+  const _prunes = toPrune.map(async (u) => {
+    const _stopped = await syncService.stopWatches(u);
+    const stopResult = getStoppedSummary(_stopped);
+
+    const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
+      u
+    );
+
+    return { user: u, stops: stopResult, sessionsRevoked };
+  });
+
+  const pruneResult = await Promise.all(_prunes);
+  return pruneResult;
+};
+
+export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
+  const _refreshes = toRefresh.map(async (r) => {
+    const gcal = await getGcalClient(r.userId);
+
+    const refreshesByUser = r.payloads.map(async (syncPayload) => {
+      const _refresh = await syncService.refreshWatch(
+        r.userId,
+        syncPayload,
+        gcal
+      );
+      return {
+        gcalendarId: syncPayload.gCalendarId,
+        success: _refresh.acknowledged && _refresh.modifiedCount === 1,
+      };
+    });
+
+    const userRefreshes = await Promise.all(refreshesByUser);
+
+    return { user: r.userId, refreshes: userRefreshes };
+  });
+
+  const refreshes = await Promise.all(_refreshes);
+  return refreshes;
 };
 
 export const startWatchingGcalsById = async (

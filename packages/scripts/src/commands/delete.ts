@@ -33,8 +33,8 @@ const deleteCompassDataForUser = async (userId: string) => {
     const events = await eventService.deleteAllByUser(userId);
     summary.events = events.deletedCount;
 
-    const { watchStopCount } = await syncService.stopWatches(userId);
-    summary.eventWatches = watchStopCount;
+    const watches = await syncService.stopWatches(userId);
+    summary.eventWatches = watches.length;
 
     initSupertokens();
     const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
@@ -60,6 +60,11 @@ const deleteCompassDataForUser = async (userId: string) => {
 };
 
 export const deleteCompassDataForMatchingUsers = async (user: string) => {
+  // userService.mongoService.client?.once("connection", () => {
+  //   console.log("**!!\n\nconnected");
+  // });
+  // await connectToDb();
+
   console.log(`Deleting Compass data for users matching: ${user}`);
 
   const isGmail = user.includes("@gmail.com");
@@ -108,29 +113,3 @@ export const startDeleteFlow = async (user: string | null, force?: boolean) => {
     })
     .catch((err) => console.log(err));
 };
-
-// const runOnceDbReady = () => {
-//   // import mongoService from "@backend/common/services/mongo.service";
-//   /* wait for DB before running */
-//   let isReady = false;
-//   const checkDB = () => {
-//     // const connected = mongoService.isConnected();
-//     const connected = false;
-//     if (connected) {
-//       isReady = true;
-//     }
-//   };
-
-//   checkDB();
-//   if (isReady) {
-//     console.log("running func...");
-//     // void runScript();
-//   } else {
-//     setTimeout(() => {
-//       checkDB();
-//       if (isReady) {
-//         console.log("running func..");
-//       }
-//     }, 2000);
-//   }
-// };

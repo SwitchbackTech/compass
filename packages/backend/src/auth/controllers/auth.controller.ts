@@ -18,8 +18,11 @@ import {
 } from "@backend/common/errors/types/backend.errors";
 import syncService from "@backend/sync/services/sync.service";
 import { WithId } from "mongodb";
+import { Logger } from "@core/logger/winston.logger";
 
 import { initGoogleClient } from "../services/auth.utils";
+
+const logger = Logger("app:auth.controller");
 
 const isCodeInvalid = (e: GaxiosError | Error) => {
   if ("code" in e && "message" in e) {
@@ -79,9 +82,7 @@ class AuthController {
       );
 
       const user = await findCompassUserBy("google.googleId", gUser.sub);
-      // if (!user) {
-      //   throw error(UserError.NoUser, "Auth Failed");
-      // }
+
       const { cUserId } = user
         ? await this.login(gcalClient, user)
         : await this.signup(gUser, gcalClient, gRefreshToken);
@@ -93,6 +94,7 @@ class AuthController {
       //@ts-ignore
       res.promise(Promise.resolve(result));
     } catch (e) {
+      logger.error(e);
       if (isCodeInvalid(e as GaxiosError)) {
         const gError = error(GcalError.CodeInvalid, "gAPI Auth Failed");
 

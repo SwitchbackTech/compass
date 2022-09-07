@@ -25,12 +25,11 @@ class MongoService {
   _connect = () => {
     MongoClient.connect(ENV.MONGO_URI)
       .then((clientInstance) => {
-        logger.debug(`Connected to database: '${ENV.DB}'`);
         this.client = clientInstance;
         this.db = this.client.db(ENV.DB);
-        // this.db["ObjectId"] = ObjectId;
+        logger.debug(`Connected to database: '${this.db.namespace}'`);
 
-        this.event = this.db.collection<Schema_Event>(Collections.USER);
+        this.event = this.db.collection<Schema_Event>(Collections.EVENT);
         this.sync = this.db.collection<Schema_Sync>(Collections.SYNC);
         this.user = this.db.collection<Schema_User>(Collections.USER);
       })
