@@ -75,6 +75,7 @@ export const getCalendarInfo = async (resourceId: string) => {
 
   const gCalendarId = matches[0].gCalendarId;
   const nextSyncToken = matches[0].nextSyncToken;
+
   return {
     userId: sync.user,
     gCalendarId,
@@ -84,8 +85,13 @@ export const getCalendarInfo = async (resourceId: string) => {
 
 const checkExpiries = async (userId: string) => {
   const sync = await getSync({ userId });
-  if (!sync)
-    throw error(SyncError.NoSyncRecordForUser, "Sync Maintenance Failed");
+  if (!sync) {
+    logger.warn(
+      `No Sync Record Found for user: ${userId}\n\tDid they revoke access?`
+    );
+    // throw error(SyncError.NoSyncRecordForUser, "Sync Maintenance Failed");
+    return { needsRefresh: false, syncPayloads: [] };
+  }
 
   let needsRefresh = false;
   const syncsToRefresh: Payload_Sync_Events[] = [];
@@ -282,20 +288,9 @@ export const prepareEventSyncChannels = async (
 };
 
 export const pruneSync = async (toPrune: string[]) => {
-  const getStoppedSummary = (
-    stopped: { channelId: string; resourceId: string }[]
-  ) => {
-    const stoppedCount = stopped.length;
-
-    if (stoppedCount === 0) return "ignored";
-    if (stoppedCount > 0) return `success (${stopped.length})`;
-
-    return "programming error";
-  };
-
   const _prunes = toPrune.map(async (u) => {
     const _stopped = await syncService.stopWatches(u);
-    const stopResult = getStoppedSummary(_stopped);
+    const stopResult = _getStoppedSummary(_stopped);
 
     const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
       u
@@ -324,9 +319,9 @@ export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
       };
     });
 
-    const userRefreshes = await Promise.all(refreshesByUser);
+    const refreshes = await Promise.all(refreshesByUser);
 
-    return { user: r.userId, refreshes: userRefreshes };
+    return { user: r.userId, results: refreshes };
   });
 
   const refreshes = await Promise.all(_refreshes);
@@ -354,6 +349,17 @@ const updateSyncTokenIfNeeded = async (
   if (prev !== curr) {
     await updateSyncTokenFor("events", userId, curr, gCalendarId);
   }
+};
+
+const _getStoppedSummary = (
+  stopped: { channelId: string; resourceId: string }[]
+) => {
+  const stoppedCount = stopped.length;
+
+  if (stoppedCount === 0) return "ignored";
+  if (stoppedCount > 0) return `success (${stopped.length})`;
+
+  return "programming error";
 };
 
 /*

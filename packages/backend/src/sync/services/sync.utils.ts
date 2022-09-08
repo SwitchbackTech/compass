@@ -71,13 +71,13 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
 };
 
 export const getActiveDeadline = () => {
-  const deadlineDays = 2;
-  logger.warn(`REMINDER: only checking last ${deadlineDays} days ...`);
+  const deadlineDays = 14;
   const deadline = dayjs()
     .hour(0)
     .minute(0)
     .subtract(deadlineDays, "days")
     .format();
+
   return deadline;
 };
 
@@ -96,9 +96,9 @@ export const syncExpiresSoon = (expiry: string) => {
   const MIN_IN_DAY = 1440;
 
   const expiration = new Date(parseInt(expiry)).getTime();
-  const deadlineMs = minutesFromNow(MIN_IN_DAY * bufferDays, "ms");
+  const deadline = minutesFromNow(MIN_IN_DAY * bufferDays, "ms");
 
-  const expiresSoon = expiration < deadlineMs;
+  const expiresSoon = expiration < deadline;
   return expiresSoon;
 };
 
@@ -125,7 +125,7 @@ export const findCalendarId = (resourceId: string, sync: Schema_Sync) => {
 
 export const getChannelExpiration = () => {
   const numMin = parseInt(ENV.CHANNEL_EXPIRATION_MIN);
-  logger.debug(`** REMINDER: Channel will expire in ${numMin} minutes **\n`);
+  logExpirationReminder(numMin);
   const expiration = minutesFromNow(numMin, "ms").toString();
   return expiration;
 };
@@ -175,6 +175,14 @@ export const hasGoogleHeaders = (headers: object) => {
   const hasHeaders = expected.every((i) => i in headers);
 
   return hasHeaders;
+};
+
+export const logExpirationReminder = (min: number) => {
+  const hours = Math.round((min / 60) * 100) / 100;
+  const days = Math.round((hours / 24) * 100) / 100;
+
+  const label = hours > 24 ? `${days} days` : `${hours} hours`;
+  logger.debug(`REMINDER: Channel will expire in ${min} minutes (${label})`);
 };
 
 /* 

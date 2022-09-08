@@ -20,7 +20,9 @@ export class SyncRoutes extends CommonRoutesConfig {
         gcalSyncController.handleNotification,
       ]);
 
-    this.app.route(`/api/sync/maintain-all`).post([syncController.maintain]);
+    this.app
+      .route(`/api/sync/maintain-all`)
+      .post([authMiddleware.verifyIsFromCompass, syncController.maintain]);
 
     this.app
       .route([

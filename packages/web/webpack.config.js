@@ -38,6 +38,8 @@ module.exports = (env, argv) => {
       "process.env.GOOGLE_CLIENT_ID": JSON.stringify(GOOGLE_CLIENT_ID),
     }),
     new HtmlWebpackPlugin({
+      filename: "index.html",
+      hash: true,
       template: "./src/index.html",
       favicon: "./src/favicon.ico",
     }),
@@ -131,7 +133,8 @@ module.exports = (env, argv) => {
     },
 
     output: {
-      filename: "bundle.js",
+      clean: true,
+      filename: "[name].[contenthash].js",
       path: `${path.resolve(_dirname, "../../build/web")}`,
     },
 

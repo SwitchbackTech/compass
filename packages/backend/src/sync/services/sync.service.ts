@@ -50,12 +50,12 @@ class SyncService {
   };
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    logger.debug(JSON.stringify(payload, null, 2));
-
     if (payload.resourceState !== "exists") {
       logger.info("sync initialized");
-      return "ignored";
+      return "initialized";
     }
+
+    logger.debug(JSON.stringify(payload, null, 2));
 
     const { userId, gCalendarId, nextSyncToken } = await getCalendarInfo(
       payload.resourceId
@@ -68,7 +68,6 @@ class SyncService {
       nextSyncToken,
       resourceId: payload.resourceId,
     };
-    logger.warn("syncInfo:", syncInfo); //++
 
     const response = await importEventsByCalendar(userId, syncInfo);
     return response;

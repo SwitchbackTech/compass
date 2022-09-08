@@ -10,6 +10,8 @@ import { IS_DEV } from "@backend/common/constants/env.constants";
 import { hasGoogleHeaders } from "@backend/sync/services/sync.utils";
 import { GCAL_NOTIFICATION_TOKEN } from "@backend/common/constants/backend.constants";
 
+import { COMPASS_SYNC_TOKEN } from "../../common/constants/backend.constants";
+
 class AuthMiddleware {
   verifyIsDev = (_req: Request, res: Response, next: NextFunction) => {
     if (!IS_DEV) {
@@ -17,6 +19,23 @@ class AuthMiddleware {
         .status(Status.FORBIDDEN)
         .json({ error: error(AuthError.DevOnly, "Request Failed") });
     }
+    next();
+  };
+
+  verifyIsFromCompass = (req: Request, res: Response, next: NextFunction) => {
+    const tokenIsInvalid =
+      (req.headers["x-comp-token"] as string) !== COMPASS_SYNC_TOKEN;
+
+    if (tokenIsInvalid) {
+      res.status(Status.FORBIDDEN).send({
+        error: error(
+          AuthError.InadequatePermissions,
+          "Compass Verification Failed"
+        ),
+      });
+      return;
+    }
+
     next();
   };
 

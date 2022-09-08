@@ -34,7 +34,7 @@ const buildNodePckgs = async (vmInfo: VmInfo) => {
   removeOldBuildFor("nodePckgs");
 
   console.log("Compiling node packages ...");
-  shell.exec("yarn tsc --project tsconfig.json", function (code: number) {
+  shell.exec("yarn tsc --project tsconfig.json", async function (code: number) {
     if (code !== 0) {
       console.log("Exiting because of compilation errors");
       process.exit(code);
@@ -59,8 +59,9 @@ const buildNodePckgs = async (vmInfo: VmInfo) => {
 const buildWeb = (vmInfo: VmInfo) => {
   removeOldBuildFor("web");
   shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
-  console.log("getting API baseUrl ...");
+  console.log("Getting API baseUrl ...");
   const { baseUrl, destination } = vmInfo;
+
   const gClientIdTest =
     "***REMOVED***";
   const gClientIdProd =
@@ -106,6 +107,7 @@ const copyToVM = async (packages: string[], vmInfo: VmInfo) => {
   );
 
   console.log("Done copying artifact(s) to VM");
+  process.exit(0);
 };
 
 const copyConfigFilesToBuild = (vmInfo: VmInfo) => {
@@ -133,7 +135,7 @@ const copyConfigFilesToBuild = (vmInfo: VmInfo) => {
   );
 };
 
-const installProdDependencies = (vmInfo: VmInfo) => {
+const installProdDependencies = async (vmInfo: VmInfo) => {
   console.log("installing prod dependencies for node pckgs ...");
 
   shell.cd(`${COMPASS_BUILD_DEV}/node`);
