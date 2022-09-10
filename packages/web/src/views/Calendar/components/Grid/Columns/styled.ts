@@ -1,10 +1,10 @@
 import styled from "styled-components";
-import { ColorNames } from "@web/common/types/styles";
-import { getColor } from "@web/common/utils/colors";
+import { ColorNames } from "@core/constants/colors";
+import { getColor } from "@core/util/color.utils";
 import { EVENT_WIDTH_MINIMUM } from "@web/common/constants/grid.constants";
 import { Flex } from "@web/components/Flex";
 import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
-import { GRID_LINE_OPACITY_PERCENT } from "@web/common/styles/colors";
+import { GRID_LINE_OPACITY_PERCENT } from "@core/constants/colors";
 
 const colBorder = `1px solid ${getColor(
   ColorNames.GREY_4

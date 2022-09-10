@@ -1,5 +1,10 @@
 //@ts-nocheck
-import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
+import {
+  Schema_Priority,
+  PriorityReq,
+  PriorityReqUser,
+} from "@core/types/priority.types";
+import { Status } from "@core/errors/status.codes";
 import { BaseError } from "@core/errors/errors.base";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
@@ -40,11 +45,9 @@ class PriorityService {
 
   async create(
     userId: string,
-    data: PriorityReq | PriorityReq[]
-  ): Promise<Schema_Priority | Schema_Priority[] | BaseError> {
+    data: PriorityReq | PriorityReqUser[]
+  ): Promise<Schema_Priority | Schema_Priority[]> {
     if (data instanceof Array) {
-      // TODO catch BulkWriteError
-      // TODO confirm none exist with same name
       const response = await mongoService.db
         .collection(Collections.PRIORITY)
         .insertMany(data);
@@ -60,11 +63,10 @@ class PriorityService {
         }
       );
       if (priorityExists) {
-        return new BaseError(
+        throw new BaseError(
           "Priority Exists",
           `${data.name} already exists`,
-          // 304, //todo status
-          200, //todo status
+          Status.NOT_IMPLEMENTED,
           true
         );
       }
@@ -83,14 +85,31 @@ class PriorityService {
     }
   }
 
+  async deleteAllByUser(userId: string) {
+    const filter = { user: userId };
+    const response = await mongoService.db
+      .collection(Collections.PRIORITY)
+      .deleteMany(filter);
+    return response;
+  }
+
+  async deleteById(id: string, userId: string) {
+    const filter = { _id: mongoService.objectId(id), user: userId };
+    const response = await mongoService.db
+      .collection(Collections.PRIORITY)
+      .deleteOne(filter);
+    return response;
+  }
+
   async updateById(
     id: string,
-    priority: PriorityReq
+    priority: PriorityReq,
+    userId: string
   ): Promise<Schema_Priority | BaseError> {
     const response = await mongoService.db
       .collection(Collections.PRIORITY)
       .findOneAndUpdate(
-        { _id: mongoService.objectId(id) },
+        { _id: mongoService.objectId(id), user: userId },
         { $set: priority },
         { returnDocument: "after" } // the new document
       );
@@ -103,15 +122,6 @@ class PriorityService {
     //@ts-ignore
     const updatedPriority = response.value as Schema_Priority;
     return updatedPriority;
-  }
-
-  async deleteById(id: string) {
-    //TODO add user to filter (?)
-    const filter = { _id: mongoService.objectId(id) };
-    const response = await mongoService.db
-      .collection(Collections.PRIORITY)
-      .deleteOne(filter);
-    return response;
   }
 }
 

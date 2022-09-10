@@ -1,32 +1,73 @@
-// import express from "express";
+import { Response, Request, NextFunction } from "express";
+import { Status } from "@core/errors/status.codes";
+import { SReqBody } from "@core/types/express.types";
+import {
+  AuthError,
+  error,
+  GcalError,
+} from "@backend/common/errors/types/backend.errors";
+import { IS_DEV } from "@backend/common/constants/env.constants";
+import { hasGoogleHeaders } from "@backend/sync/services/sync.utils";
+import { GCAL_NOTIFICATION_TOKEN } from "@backend/common/constants/backend.constants";
 
-/*
-const hardCodedPw = "HardCodedCuzArgonWasCausingProblems";
+import { COMPASS_SYNC_TOKEN } from "../../common/constants/backend.constants";
+
 class AuthMiddleware {
-  async verifyUserPassword(
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) {
-    const user: any = await usersService.getUserByEmailWithPassword(
-      req.body.email
-    );
-    if (user) {
-      const passwordHash = user.password;
-      // if (await argon2.verify(passwordHash, req.body.password)) {
-      if (1 == 1) {
-        //TODO change, obviously
-        req.body = {
-          userId: user._id,
-          email: user.email,
-          permissionFlags: user.permissionFlags,
-        };
-        return next();
-      }
+  verifyIsDev = (_req: Request, res: Response, next: NextFunction) => {
+    if (!IS_DEV) {
+      res
+        .status(Status.FORBIDDEN)
+        .json({ error: error(AuthError.DevOnly, "Request Failed") });
     }
-    res.status(400).send({ errors: ["Invalid email and/or password"] });
-  }
+    next();
+  };
+
+  verifyIsFromCompass = (req: Request, res: Response, next: NextFunction) => {
+    const tokenIsInvalid =
+      (req.headers["x-comp-token"] as string) !== COMPASS_SYNC_TOKEN;
+
+    if (tokenIsInvalid) {
+      res.status(Status.FORBIDDEN).send({
+        error: error(
+          AuthError.InadequatePermissions,
+          "Compass Verification Failed"
+        ),
+      });
+      return;
+    }
+
+    next();
+  };
+
+  verifyIsFromGoogle = (req: Request, res: Response, next: NextFunction) => {
+    const tokenIsInvalid =
+      (req.headers["x-goog-channel-token"] as string) !==
+      GCAL_NOTIFICATION_TOKEN;
+    const isMissingHeaders = !hasGoogleHeaders(req.headers);
+
+    if (isMissingHeaders || tokenIsInvalid) {
+      res
+        .status(Status.FORBIDDEN)
+        .send({ error: error(GcalError.Unauthorized, "Notification Failed") });
+      return;
+    }
+
+    next();
+  };
+
+  verifyGoogleOauthCode = (
+    req: SReqBody<{ code: string }>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const { code } = req.body;
+    if (!code || typeof code !== "string") {
+      res
+        .status(Status.FORBIDDEN)
+        .json({ error: error(GcalError.CodeMissing, "gAPI Auth Failed") });
+    }
+    next();
+  };
 }
 
 export default new AuthMiddleware();
-*/

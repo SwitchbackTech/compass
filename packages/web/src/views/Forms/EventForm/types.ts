@@ -1,5 +1,5 @@
 import { SetStateAction } from "react";
-import { Priority } from "@core/core.constants";
+import { Priority } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 
 export interface FormProps {

@@ -1,6 +1,6 @@
 import styled from "styled-components";
-import { ColorNames } from "@web/common/types/styles";
-import { getColor } from "@web/common/utils/colors";
+import { ColorNames } from "@core/constants/colors";
+import { getColor } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 
 import { PAGE_TOP_PADDING, PAGE_X_PADDING } from "./layout.constants";

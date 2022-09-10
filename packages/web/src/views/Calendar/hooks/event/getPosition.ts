@@ -1,5 +1,5 @@
 import dayjs, { Dayjs } from "dayjs";
-import { MS_IN_HR } from "@core/core.constants";
+import { MS_IN_HR } from "@core/constants/core.constants";
 import {
   getAllDayEventWidth,
   getEventCategory,

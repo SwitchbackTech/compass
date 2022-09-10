@@ -1,95 +1,155 @@
-// @ts-nocheck
-import express from "express";
-import { v4 as uuidv4 } from "uuid";
-import { BaseError } from "@core/errors/errors.base";
-import { Status } from "@core/errors/status.codes";
-import { Origin } from "@core/core.constants";
-import { Logger } from "@core/logger/winston.logger";
+import { Response } from "express";
+import { GaxiosError } from "gaxios";
+import { TokenPayload } from "google-auth-library";
+import { SessionRequest } from "supertokens-node/framework/express";
+import Session from "supertokens-node/recipe/session";
+import { ReqBody, Res_Promise, SReqBody } from "@core/types/express.types";
+import { gCalendar } from "@core/types/gcal";
+import { Schema_User } from "@core/types/user.types";
+import { Result_Auth_Compass, UserInfo_Compass } from "@core/types/auth.types";
+import GoogleAuthService from "@backend/auth/services/google.auth.service";
+import userService from "@backend/user/services/user.service";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import {
-  CombinedLogin_Google,
-  GoogleUser,
-  Params_AfterOAuth,
-  Result_OauthUrl,
-} from "@core/types/auth.types";
+  error,
+  GcalError,
+  genericError,
+} from "@backend/common/errors/types/backend.errors";
+import syncService from "@backend/sync/services/sync.service";
+import { WithId } from "mongodb";
+import { Logger } from "@core/logger/winston.logger";
 
-import googleOauthService from "../services/google.auth.service";
-import CompassAuthService from "../services/compass.auth.service";
-import { loginCompleteHtml } from "../services/login.complete";
+import { initGoogleClient } from "../services/auth.utils";
 
 const logger = Logger("app:auth.controller");
 
-class AuthController {
-  checkOauthStatus = async (req: express.Request, res: express.Response) => {
-    const integration: string = req.query["integration"];
-    if (integration === Origin.GOOGLE) {
-      const status = await new googleOauthService().checkOauthStatus(req);
-      res.promise(Promise.resolve(status));
-    } else {
-      res.promise(
-        new BaseError(
-          "Not Supported",
-          `${integration} is not supported`,
-          Status.BAD_REQUEST,
-          true
-        )
-      );
-    }
-  };
-
-  getOauthUrl = (
-    req: express.Request,
-    res: express.Response
-  ): Promise<Result_OauthUrl> => {
-    if (req.query["integration"] === Origin.GOOGLE) {
-      const authState = uuidv4();
-      const authUrl = new googleOauthService().generateAuthUrl(authState);
-      res.promise(Promise.resolve({ authUrl, authState }));
-    }
-  };
-
-  loginWithPassword(req: express.Request, res: express.Response) {
-    res.promise(
-      new BaseError(
-        "Not Implemented",
-        "do this once adding user+pw support",
-        500,
-        true
-      )
-    );
+const isCodeInvalid = (e: GaxiosError | Error) => {
+  if ("code" in e && "message" in e) {
+    return e.code === "400" && e.message === "invalid_grant";
   }
+  return false;
+};
 
-  loginAfterOauthSucceeded = async (
-    req: express.Request,
-    res: express.Response
-  ) => {
-    const _integration = Origin.GOOGLE;
-    if (_integration === Origin.GOOGLE) {
-      const query: Params_AfterOAuth = req.query;
+class AuthController {
+  createSession = async (req: ReqBody<UserInfo_Compass>, res: Response) => {
+    const { cUserId, email } = req.body;
 
-      const gAuthService = new googleOauthService();
-      await gAuthService.setTokens(query.code, null);
-      const gUser: GoogleUser = await gAuthService.getUser();
-
-      // TODO use query.state to start watching for that channel
-      // via gcal.service
-
-      const compassLoginData: CombinedLogin_Google = {
-        user: gUser,
-        oauth: Object.assign(
-          {},
-          { state: query.state },
-          { tokens: gAuthService.getTokens() }
-        ),
-      };
-
-      const compassAuthService = new CompassAuthService();
-      const loginResp = await compassAuthService.loginToCompass(
-        compassLoginData
-      );
-      //TODO validate resp
-
-      res.promise(Promise.resolve(loginCompleteHtml));
+    if (cUserId) {
+      await Session.createNewSession(res, cUserId, {}, {});
     }
+
+    if (email) {
+      const user = await findCompassUserBy("email", email);
+
+      if (!user) {
+        //@ts-ignore
+        res.promise(Promise.resolve({ error: "user doesn't exist" }));
+        return;
+      }
+      await Session.createNewSession(res, user._id.toString(), {}, {});
+    }
+
+    //@ts-ignore
+    res.promise(
+      Promise.resolve({
+        message: `user session created for ${JSON.stringify(req.body)}`,
+      })
+    );
+  };
+
+  getUserIdFromSession = (req: SessionRequest, res: Response) => {
+    const userId = req.session?.getUserId();
+
+    //@ts-ignore
+    res.promise(Promise.resolve({ userId }));
+  };
+
+  loginOrSignup = async (
+    req: SReqBody<{ code: string }>,
+    res: Res_Promise | Response
+  ) => {
+    try {
+      const { code } = req.body;
+
+      const gAuthClient = new GoogleAuthService();
+
+      const { tokens } = await gAuthClient.oauthClient.getToken(code);
+
+      const { gUser, gcalClient, gRefreshToken } = await initGoogleClient(
+        gAuthClient,
+        tokens
+      );
+
+      const user = await findCompassUserBy("google.googleId", gUser.sub);
+
+      const { cUserId } = user
+        ? await this.login(gcalClient, user)
+        : await this.signup(gUser, gcalClient, gRefreshToken);
+
+      await Session.createNewSession(res, cUserId);
+
+      const result: Result_Auth_Compass = { cUserId };
+
+      //@ts-ignore
+      res.promise(Promise.resolve(result));
+    } catch (e) {
+      logger.error(e);
+      if (isCodeInvalid(e as GaxiosError)) {
+        const gError = error(GcalError.CodeInvalid, "gAPI Auth Failed");
+
+        //@ts-ignore
+        res.promise(Promise.resolve({ error: gError }));
+        return;
+      }
+
+      //@ts-ignore
+      res.promise(
+        Promise.resolve({
+          error: genericError(e, "Auth Failed"),
+        })
+      );
+    }
+  };
+
+  login = async (gcal: gCalendar, user: WithId<Schema_User>) => {
+    const cUserId = user._id.toString();
+
+    await syncService.importIncremental(cUserId, gcal);
+
+    await userService.saveTimeFor("lastLoggedInAt", cUserId);
+
+    return { cUserId };
+  };
+
+  revokeSessionsByUser = async (
+    req: SReqBody<{ userId?: string }>,
+    res: Response
+  ) => {
+    let userId;
+    if (req.body.userId) {
+      userId = req.body.userId;
+    } else {
+      userId = req.session?.getUserId() as string;
+    }
+
+    const revokeResult = await compassAuthService.revokeSessionsByUser(userId);
+
+    res.send(revokeResult);
+  };
+
+  signup = async (
+    gUser: TokenPayload,
+    gcalClient: gCalendar,
+    gRefreshToken: string
+  ) => {
+    const userId = await userService.initUserData(
+      gUser,
+      gcalClient,
+      gRefreshToken
+    );
+
+    return { cUserId: userId };
   };
 }
 

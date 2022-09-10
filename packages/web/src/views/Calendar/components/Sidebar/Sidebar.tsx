@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Priorities, Priority } from "@core/core.constants";
-import { ColorNames } from "@web/common/types/styles";
+import { Priorities, Priority } from "@core/constants/core.constants";
+import { ColorNames } from "@core/constants/colors";
 import { Text } from "@web/components/Text";
 import {
   AlignItems,
   FlexDirections,
   JustifyContent,
 } from "@web/components/Flex/styled";
-import { getAlphaColor, getColor } from "@web/common/utils/colors";
-import { colorNameByPriority } from "@web/common/styles/colors";
+import { getAlphaColor, getColor } from "@core/util/color.utils";
+import { colorNameByPriority } from "@core/constants/colors";
 import { Divider } from "@web/components/Divider";
 import { useDispatch } from "react-redux";
 import { getFutureEventsSlice } from "@web/ducks/events/event.slice";

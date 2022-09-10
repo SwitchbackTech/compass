@@ -3,6 +3,7 @@ import moduleAlias from "module-alias";
 moduleAlias.addAliases({
   "@backend": `${__dirname}`,
   "@core": `${path.resolve(__dirname, "../../core/src")}`,
+  // "@scripts": `${path.resolve(__dirname, "../../scripts/src")}`,
 });
 import dotenv from "dotenv";
 const dotenvResult = dotenv.config();
@@ -13,6 +14,7 @@ import express from "express";
 import * as http from "http";
 import helmet from "helmet";
 import corsWhitelist from "@backend/common/middleware/cors.middleware";
+import { Logger } from "@core/logger/winston.logger";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import { AuthRoutes } from "@backend/auth/auth.routes.config";
 import { EventRoutes } from "@backend/event/event.routes.config";
@@ -22,11 +24,15 @@ import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import { ENV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import expressLogger from "@backend/common/logger/express.logger";
-import { Logger } from "@core/logger/winston.logger";
 import {
   catchSyncErrors,
   promiseMiddleware,
 } from "@backend/common/middleware/promise.middleware";
+import {
+  supertokensCors,
+  supertokensErrorHandler,
+  supertokensMiddleware,
+} from "@backend/common/middleware/supertokens.middleware";
 
 /* Misc Configuration */
 const logger = Logger("app:root");
@@ -38,12 +44,14 @@ const app: express.Application = express();
 // some routes depend on them
 //@ts-ignore
 app.use(promiseMiddleware());
+app.use(supertokensCors());
+app.use(supertokensMiddleware());
 app.use(corsWhitelist);
 app.use(helmet());
 app.use(expressLogger);
 app.use(express.json());
 // app.use(catchUndefinedSyncErrors);
-app.use(catchSyncErrors);
+app.use(catchSyncErrors); // might need to move down
 
 const routes: Array<CommonRoutesConfig> = [];
 routes.push(new AuthRoutes(app));
@@ -51,6 +59,8 @@ routes.push(new PriorityRoutes(app));
 routes.push(new EventRoutes(app));
 routes.push(new SyncRoutes(app));
 routes.push(new CalendarRoutes(app));
+
+app.use(supertokensErrorHandler()); // Keep this after all routes
 
 /* Express Start */
 const server: http.Server = http.createServer(app);

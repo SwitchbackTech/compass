@@ -1,132 +1,76 @@
 import { google } from "googleapis";
-import express from "express";
-import { Credentials, OAuth2Client } from "google-auth-library";
-import { Result_OauthStatus, Schema_Oauth } from "@core/types/auth.types";
+import { OAuth2Client, TokenPayload } from "google-auth-library";
+import { Status } from "@core/errors/status.codes";
 import { BaseError } from "@core/errors/errors.base";
-import { gCalendar } from "@core/types/gcal";
-import { Logger } from "@core/logger/winston.logger";
-import mongoService from "@backend/common/services/mongo.service";
-import { Collections } from "@backend/common/constants/collections";
-import { isDev } from "@backend/common/helpers/common.helpers";
+import { UserInfo_Google } from "@core/types/auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
-import { createToken } from "@backend/common/helpers/jwt.utils";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { error, UserError } from "@backend/common/errors/types/backend.errors";
 
-const logger = Logger("app:google.auth.service");
-
-/********
-Helpers 
-********/
-export const getGcal = async (userId: string): Promise<gCalendar> => {
-  //@ts-ignore
-  const oauth: Schema_Oauth = await mongoService.db
-    .collection(Collections.OAUTH)
-    .findOne({ user: userId });
-
-  if (oauth === null) {
-    // throwing error forces middleware error handler to address
-    // before other bad stuff can happen
-    throw new BaseError(
-      "Gcal Auth failed",
-      `No OAUTH record for user: ${userId}`,
-      500,
-      true
-    );
+export const getGcalClient = async (userId: string) => {
+  const user = await findCompassUserBy("_id", userId);
+  if (!user) {
+    throw error(UserError.NoUser, "gCal Auth Failed");
   }
 
-  const googleClient = new GoogleOauthService();
-  //@ts-ignore
-  await googleClient.setTokens(null, oauth.tokens);
+  const gAuthClient = new GoogleAuthService();
+
+  gAuthClient.oauthClient.setCredentials({
+    refresh_token: user.google.gRefreshToken,
+  });
 
   const calendar = google.calendar({
     version: "v3",
-    auth: googleClient.oauthClient,
+    auth: gAuthClient.oauthClient,
   });
 
   return calendar;
 };
 
-class GoogleOauthService {
-  //@ts-ignore
-  tokens: {};
+class GoogleAuthService {
   oauthClient: OAuth2Client;
 
   constructor() {
-    const redirectUri = isDev()
-      ? `http://localhost:${ENV.PORT}/api/auth/oauth-complete`
-      : `${ENV.BASEURL_PROD}/api/auth/oauth-complete`;
-
-    this.oauthClient = new google.auth.OAuth2(
+    this.oauthClient = new OAuth2Client(
       ENV.CLIENT_ID,
       ENV.CLIENT_SECRET,
-      redirectUri
+      "postmessage"
     );
-    this.tokens = {};
   }
 
-  async checkOauthStatus(req: express.Request): Promise<Result_OauthStatus> {
-    const state = req.query["state"];
-
-    //@ts-ignore
-    const oauth: Schema_Oauth = await mongoService.db
-      .collection(Collections.OAUTH)
-      .findOne({ state: state });
-
-    const foundOauthUser = oauth && oauth.user ? true : false;
-    if (!foundOauthUser) {
-      return { isOauthComplete: false };
-    }
-
-    const accessToken = createToken(oauth.user);
-
-    return { isOauthComplete: true, token: accessToken };
-  }
-
-  generateAuthUrl(state: string) {
-    const authUrl = this.oauthClient.generateAuthUrl({
-      access_type: "offline",
-      prompt: "consent",
-      scope: ENV.SCOPES,
-      state: state,
-    });
-    return authUrl;
-  }
-
-  async getUser() {
-    const oauth2 = google.oauth2({
+  getGcalClient() {
+    const gcal = google.calendar({
+      version: "v3",
       auth: this.oauthClient,
-      version: "v2",
     });
+    return gcal;
+  }
 
-    const response = await oauth2.userinfo.get();
+  async getGoogleUserInfo(): Promise<UserInfo_Google> {
+    const idToken = this.oauthClient.credentials.id_token;
 
-    if (response.status === 200) {
-      return response.data;
-    } else {
-      logger.error("Failed to get google oauth user");
-      return new BaseError(
-        "Failed to get Google OAuth user",
-        response.toString(),
-        500,
-        true
+    if (!idToken) {
+      throw new BaseError(
+        "No id_token",
+        "oauth client is missing id_token, so couldn't verify user",
+        Status.BAD_REQUEST,
+        false
       );
     }
+
+    const gUser = await this._decodeUserInfo(idToken);
+
+    return { gUser, tokens: this.oauthClient.credentials };
   }
 
-  getTokens() {
-    return this.tokens;
-  }
-
-  async setTokens(code: string, tokens: Credentials | null) {
-    if (tokens === null) {
-      const { tokens } = await this.oauthClient.getToken(code);
-      this.tokens = tokens;
-    } else {
-      this.tokens = tokens;
-    }
-
-    this.oauthClient.setCredentials(this.tokens);
-    logger.debug("Credentials set");
+  async _decodeUserInfo(idToken: string) {
+    const ticket = await this.oauthClient.verifyIdToken({
+      idToken,
+      audience: this.oauthClient._clientId,
+    });
+    const payload = ticket.getPayload() as TokenPayload;
+    return payload;
   }
 }
 
-export default GoogleOauthService;
+export default GoogleAuthService;

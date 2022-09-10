@@ -1,7 +1,7 @@
 import styled from "styled-components";
-import { ColorNames } from "@web/common/types/styles";
+import { ColorNames } from "@core/constants/colors";
 import { Flex } from "@web/components/Flex";
-import { getColor } from "@web/common/utils/colors";
+import { getColor } from "@core/util/color.utils";
 import {
   DIVIDER_ALLDAY,
   SCROLLBAR_WIDTH,

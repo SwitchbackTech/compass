@@ -1,27 +1,47 @@
 import { BaseError } from "@core/errors/errors.base";
 import { gSchema$Channel } from "@core/types/gcal";
-import { BulkWriteResult, AnyBulkWriteOperation } from "mongodb";
-import type { WithId, Document } from "mongodb";
+import { AnyBulkWriteOperation, BulkWriteResult, ModifyResult } from "mongodb";
 
-export interface Body_Watch_Gcal_Stop {
-  channelId: string;
-  resourceId: string;
-}
-
-export interface Body_Watch_Gcal_Start {
-  calendarId: string;
-  channelId: string;
-}
-
-export interface Params_Sync_Gcal extends Request_Sync_Gcal {
+export interface Params_Sync_Gcal extends Payload_Sync_Notif {
   nextSyncToken: string;
   userId: string;
   calendarId?: string;
 }
 
+export interface Payload_Resource_Events {
+  gCalendarId: string;
+  channelId: string;
+  expiration: string;
+  resourceId: string;
+  nextSyncToken?: string;
+}
+
+export interface Payload_Resource_Events_TokenOptional
+  extends Omit<Payload_Resource_Events, "nextSyncToken"> {
+  nextSyncToken?: string;
+}
+export interface Payload_Sync_Events extends Payload_Resource_Events {
+  lastRefreshedAt?: Date;
+  lastSyncedAt?: Date;
+}
+
+export interface Payload_Sync_Notif {
+  channelId: string;
+  resourceId: string;
+  resourceState: string;
+  expiration: string;
+}
+
+export interface Payload_Sync_Refresh {
+  userId: string;
+  payloads: Payload_Sync_Events[];
+}
+
+export type Resource_Sync = "calendarlist" | "events" | "settings";
 export interface Result_Import_Gcal {
   total: number;
-  nextSyncToken: string | null | undefined;
+  // nextSyncToken: string | null | undefined;
+  nextSyncToken: string;
   errors: unknown[];
 }
 
@@ -35,9 +55,11 @@ export interface Result_Watch_Delete {
   result: string;
 }
 
+//-- remove if unsed
 export interface Result_Watch_Start {
   channel: gSchema$Channel;
-  saveForDev?: string;
+  saveForDev?: "success" | "failed";
+  syncUpdate: ModifyResult;
 }
 
 export interface Result_Watch_Stop {
@@ -67,14 +89,49 @@ export interface Result_Sync_Prep_Gcal {
   errors: BaseError[];
 }
 
-export interface Request_Sync_Gcal {
-  channelId: string;
-  resourceId: string;
-  resourceState: string;
-  expiration: string;
+export interface Schema_Sync {
+  user: string;
+  google: {
+    calendarlist: {
+      gCalendarId: string;
+      nextSyncToken: string;
+      lastSyncedAt: Date;
+    }[];
+    events: Payload_Sync_Events[];
+    // settings: Payload_Sync;
+  };
 }
 
-export interface Schema_Watch_Gcal extends WithId<Document> {
-  channelId: string;
-  resourceId: string;
-}
+/*
+	]
+
+//sync
+user:
+google:
+	calendarlist:
+		channelId: "4bd6a7c7-af60-4eeb-b7d0-82674c7c8353"
+		expiration: 1659097148533
+		resourceId: "DpB-6oO_rXZufO6D45aRkQo_TkU"
+		lastSyncedAt: 
+		nextSyncToken:
+	events:
+		[
+			{
+			// save calendarId (in addition to resourceId)
+			// so you can reference it back to a calendarlist
+			// which you can't do if you just have resourceId
+			calendarId: "primary"
+			channelId: "4bd6a7c7-af60-4eeb-b7d0-82674c7c8353"
+			resourceId: "DpB-6oO_rXZufO6D45aRkQo_TkU"
+			nextSyncToken:
+			lastSyncedAt:
+			},
+			{
+			calendarId: "8g3jsa8-23gasf..."
+			channelId: "1234"
+			resourceId: "asdfU"
+			nextSyncToken:
+			lastSyncedAt:
+			}
+		]
+*/

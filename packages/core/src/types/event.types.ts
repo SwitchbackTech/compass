@@ -1,5 +1,5 @@
 import { Query } from "express-serve-static-core";
-import { Origin, Priority, Priorities } from "@core/core.constants";
+import { Origin, Priority, Priorities } from "@core/constants/core.constants";
 
 export enum Categories_Event {
   ALLDAY = "allday",
@@ -30,17 +30,18 @@ export interface Result_DeleteMany {
 export interface Schema_Event {
   _id?: string;
   allDayOrder?: number;
-  endDate?: string;
   description?: string | null | undefined;
+  endDate?: string;
   isAllDay?: boolean;
   isSomeday?: boolean;
   isTimesShown?: boolean;
   gEventId?: string;
   origin?: Origin;
   priority?: Priority;
-  priorities?: string[]; // the eventual structure, with ids as strs
+  // priorities?: string[]; // the eventual structure, with ids as strs
   startDate?: string;
   title?: string;
+  updatedAt?: Date;
   user?: string;
 }
 

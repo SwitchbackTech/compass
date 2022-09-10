@@ -8,15 +8,17 @@ const BundleAnalyzerPlugin =
 const _dirname = path.resolve();
 const resolvePath = (p) => path.resolve(_dirname, p);
 
-module.exports = (env) => {
+module.exports = (env, argv) => {
   const GLOBAL_SCSS = resolvePath("src/common/styles/index.scss");
 
-  const isDevelopment = env.development;
-  const isProduction = env.production;
-  const analyzeBundle = env.analyze;
+  const ANALYZE_BUNDLE = env.analyze;
+  const API_BASEURL = env.API_BASEURL;
+  const API_BASEURL_SYNC = env.API_BASEURL_SYNC;
+  const IS_DEV = argv.mode === "development";
+  const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
 
-  if (!isDevelopment && !isProduction) {
-    console.log("oopsies, looks like you didn't include an env variable");
+  if (!argv.mode || !API_BASEURL || !API_BASEURL_SYNC || !GOOGLE_CLIENT_ID) {
+    console.error("oopsies, you didn't include an required env variable");
     return;
   }
 
@@ -27,35 +29,35 @@ module.exports = (env) => {
     },
   };
 
-  const styleLoader = isDevelopment
-    ? "style-loader"
-    : MiniCssExtractPlugin.loader;
+  const styleLoader = IS_DEV ? "style-loader" : MiniCssExtractPlugin.loader;
 
   const _plugins = [
     new DefinePlugin({
-      "process.env.NODE_ENV": isProduction
-        ? JSON.stringify("production")
-        : JSON.stringify("development"),
+      "process.env.API_BASEURL": JSON.stringify(API_BASEURL),
+      "process.env.API_BASEURL_SYNC": JSON.stringify(API_BASEURL_SYNC),
+      "process.env.GOOGLE_CLIENT_ID": JSON.stringify(GOOGLE_CLIENT_ID),
     }),
     new HtmlWebpackPlugin({
+      filename: "index.html",
+      hash: true,
       template: "./src/index.html",
       favicon: "./src/favicon.ico",
     }),
     // minify css
     new MiniCssExtractPlugin({
-      filename: isDevelopment ? "[name].css" : "[name].[contenthash].css",
-      chunkFilename: isDevelopment ? "[id].css" : "[id].[contenthash].css",
+      filename: IS_DEV ? "[name].css" : "[name].[contenthash].css",
+      chunkFilename: IS_DEV ? "[id].css" : "[id].[contenthash].css",
     }),
   ];
 
-  if (isProduction && analyzeBundle) {
+  if (ANALYZE_BUNDLE) {
     _plugins.push(new BundleAnalyzerPlugin());
   }
 
   return {
     entry: "./src/index.tsx",
-    // got devtool sourcemap errors when using eval, eval-cheap-source-map
-    devtool: isDevelopment ? "cheap-module-source-map" : "source-map",
+    // got devtool sourcemap errors with: eval, eval-cheap-source-map
+    devtool: IS_DEV ? "cheap-module-source-map" : "source-map",
     module: {
       rules: [
         {
@@ -89,7 +91,7 @@ module.exports = (env) => {
               options: {
                 modules: {
                   auto: true,
-                  localIdentName: isDevelopment
+                  localIdentName: IS_DEV
                     ? "[path]:[local]--[contenthash:base64:5]"
                     : "[contenthash:base64:5]",
                 },
@@ -131,7 +133,8 @@ module.exports = (env) => {
     },
 
     output: {
-      filename: "bundle.js",
+      clean: true,
+      filename: "[name].[contenthash].js",
       path: `${path.resolve(_dirname, "../../build/web")}`,
     },
 

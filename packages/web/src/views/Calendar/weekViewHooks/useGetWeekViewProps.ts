@@ -4,7 +4,7 @@ import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import weekPlugin from "dayjs/plugin/weekOfYear";
-import { Origin, Priorities } from "@core/core.constants";
+import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import {
   HOURS_AM_FORMAT,

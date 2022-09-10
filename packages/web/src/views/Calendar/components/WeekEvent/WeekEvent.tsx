@@ -1,6 +1,6 @@
 import React from "react";
 import dayjs from "dayjs";
-import { MS_IN_HR } from "@core/core.constants";
+import { MS_IN_HR } from "@core/constants/core.constants";
 import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";

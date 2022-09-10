@@ -1,40 +1,28 @@
-import { Credentials } from "google-auth-library";
+import { BaseError } from "@core/errors/errors.base";
+import { Credentials, TokenPayload } from "google-auth-library";
 
-export interface Params_AfterOAuth {
-  state: string;
-  code: string;
+export interface Result_Auth_Compass {
+  cUserId?: string;
+  error?: BaseError;
 }
-export interface Schema_Oauth {
-  _id?: string;
-  user: string;
-  state: string;
-  tokens: Credentials;
-}
-export interface CombinedLogin_Google {
-  user: GoogleUser;
-  oauth: {
-    state: string;
-    tokens: Credentials;
-  };
-}
-export interface GoogleUser {
+
+export interface User_Google {
   id: string;
   email: string;
-  verified_email: boolean;
-  name: string;
-  given_name: string;
   family_name: string;
-  picture: string;
+  given_name: string;
   locale: string;
+  name: string;
+  picture: string;
+  verified_email: boolean;
+  tokens: Credentials;
 }
 
-export interface Result_OauthStatus {
-  isOauthComplete: boolean;
-  refreshNeeded?: boolean;
-  token?: string;
+export interface UserInfo_Compass {
+  cUserId?: string;
+  email?: string;
 }
-
-export interface Result_OauthUrl {
-  authUrl: string;
-  authState: string;
+export interface UserInfo_Google {
+  gUser: TokenPayload;
+  tokens: Credentials;
 }

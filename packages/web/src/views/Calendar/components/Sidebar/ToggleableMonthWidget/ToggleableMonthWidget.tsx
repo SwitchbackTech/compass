@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import weekPlugin from "dayjs/plugin/weekOfYear";
 import { DatePicker } from "@web/components/DatePicker";
-import { ColorNames } from "@web/common/types/styles";
+import { ColorNames } from "@core/constants/colors";
 
 import { Props as ToggleArrowProps } from "../ToggleArrow/ToggleArrow";
 import { Styled, StyledMonthName, StyledToggleArrow } from "./styled";

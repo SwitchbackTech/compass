@@ -1,7 +1,11 @@
 /* Visit https://aka.ms/tsconfig.json to read more about this file */
 {
-  /* web files not included because webpack handles that */
-  "include": ["packages/core/src/**/*.ts", "packages/backend/src/**/*.ts"],
+  /* web module excluded because webpack handles packaging*/
+  "include": [
+    "packages/core/src/**/*.ts",
+    "packages/backend/src/**/*.ts",
+    "packages/scripts/src/**/*.ts"
+  ],
   "exclude": ["**/__mocks__/*", "**/*.test.ts*", "**/*.test.js*"],
   "compilerOptions": {
     "target": "ES2016" /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017', 'ES2018', 'ES2019', 'ES2020', or 'ESNEXT'. */,
@@ -13,7 +17,7 @@
     "declarationMap": true /* Generates a sourcemap for each corresponding '.d.ts' file. */,
     "sourceMap": true /* Generates corresponding '.map' file. */,
     // "outFile": "./",                             /* Concatenate and emit output to single file. */
-    "outDir": "./build" /* Redirect output structure to the directory. */,
+    "outDir": "build/node/packages" /* Redirect output structure to the directory. */,
     "rootDir": "packages/" /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */,
     "composite": true /* Enable project compilation */,
     // "tsBuildInfoFile": "./buildca/che" /* Specify file to store incremental compilation information */,
@@ -44,12 +48,14 @@
     /* Module Resolution Options */
     // "moduleResolution": "node" /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */,
     // "baseUrl": "./packages" /* Base directory to resolve non-absolute module names. */,
+    "baseUrl": "./" /* Base directory to resolve non-absolute module names. */,
     "paths": {
       /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
       /* include all packages so cross-imports work */
       "@core/*": ["./packages/core/src/*"],
       "@web/*": ["./packages/web/src/*"],
-      "@backend/*": ["./packages/backend/src/*"]
+      "@backend/*": ["./packages/backend/src/*"],
+      "@scripts/*": ["./packages/scripts/src/*"]
     },
     // "rootDirs": [],                              /* List of root folders whose combined content represents the structure of the project at runtime. */
     // "typeRoots": [],                             /* List of folders to include type definitions from. */

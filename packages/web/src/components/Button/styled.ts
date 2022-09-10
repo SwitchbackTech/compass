@@ -1,10 +1,10 @@
 import styled from "styled-components";
-import { ColorNames, InvertedColorNames } from "@web/common/types/styles";
+import { ColorNames, InvertedColorNames } from "@core/constants/colors";
 import {
   getBrighterColor,
   getColor,
   getInvertedColor,
-} from "@web/common/utils/colors";
+} from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 
 export interface Props {

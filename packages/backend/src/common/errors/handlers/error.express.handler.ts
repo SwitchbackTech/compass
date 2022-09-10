@@ -1,8 +1,8 @@
 import express from "express";
 import { BaseError } from "@core/errors/errors.base";
+import { IS_DEV } from "@backend/common/constants/env.constants";
 
 import { errorHandler } from "./error.handler";
-import { isDev } from "../../helpers/common.helpers";
 
 /*
 const invalidPathHandler = (
@@ -17,7 +17,23 @@ const invalidPathHandler = (
 };
 */
 
-export const handleExpressError = (res: express.Response, err: Error) => {
+interface Info_Error {
+  name?: string;
+  message: string;
+  stack?: string;
+}
+
+interface CompassError extends Error {
+  name: string;
+  result?: string;
+  stack?: string;
+  status?: number;
+}
+
+export const handleExpressError = (
+  res: express.Response,
+  err: CompassError
+) => {
   errorHandler.log(err);
 
   res.header("Content-Type", "application/json");
@@ -25,12 +41,16 @@ export const handleExpressError = (res: express.Response, err: Error) => {
     res.status(err.statusCode).send(err);
   } else {
     //TODO convert this object into one that has same keys as BaseError (?)
-    const errInfo = { name: err.name, message: err.message };
-    if (isDev()) {
-      //@ts-ignore
+    const errInfo: Info_Error = {
+      name: err.result,
+      message: err.message,
+      stack: undefined,
+    };
+
+    if (IS_DEV) {
       errInfo.stack = err.stack;
     }
-    //@ts-ignore
+
     res.status(err.status || 500).send(errInfo);
   }
 

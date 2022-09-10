@@ -12,8 +12,7 @@ class ErrorHandler {
   }
 
   public log(error: Error): void {
-    //TODO parse Error before logging (?)
-    logger.error(error);
+    logger.error(JSON.stringify(error));
   }
 
   exitAfterProgrammerError(): void {

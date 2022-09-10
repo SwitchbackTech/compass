@@ -1,6 +1,6 @@
 import styled from "styled-components";
-import { ColorNames } from "@web/common/types/styles";
-import { getColor } from "@web/common/utils/colors";
+import { ColorNames } from "@core/constants/colors";
+import { getColor } from "@core/util/color.utils";
 import { EVENT_WIDTH_MINIMUM } from "@web/common/constants/grid.constants";
 import {
   GRID_PADDING_BOTTOM,

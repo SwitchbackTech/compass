@@ -1,45 +1,59 @@
 //@ts-nocheck
-import express from "express";
-import { v4 as uuidv4 } from "uuid";
-import { ReqBody, Res } from "@core/types/express.types";
-import { Status } from "@core/errors/status.codes";
-import { BaseError } from "@core/errors/errors.base";
-import { Logger } from "@core/logger/winston.logger";
+import { SessionRequest } from "supertokens-node/framework/express";
+import { SReqBody, Res } from "@core/types/express.types";
 import { Schema_Event, Params_DeleteMany } from "@core/types/event.types";
-import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import { Collections } from "@backend/common/constants/collections";
-import mongoService from "@backend/common/services/mongo.service";
-import { getGcal } from "@backend/auth/services/google.auth.service";
-import syncService from "@backend/sync/services/sync.service";
+import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
+import { deleteAllSyncData } from "@backend/sync/services/sync.service.helpers";
 import eventService from "@backend/event/services/event.service";
-import { Result_Watch_Stop_All } from "@core/types/sync.types";
 
 const logger = Logger("app:event.controller");
-class EventController {
-  create = async (req: ReqBody<Schema_Event>, res: Res) => {
-    const userId = res.locals.user.id;
 
-    if (req.body instanceof Array) {
-      const response = await eventService.createMany(userId, req.body);
+class EventController {
+  create = async (req: SReqBody<Schema_Event>, res: Res) => {
+    const userId = req.session?.getUserId();
+
+    try {
+      if (req.body instanceof Array) {
+        const response = await eventService.createMany(req.body);
+        //@ts-ignore
+        res.promise(Promise.resolve(response));
+      } else {
+        const response = await eventService.create(userId, req.body);
+        //@ts-ignore
+        res.promise(Promise.resolve(response));
+      }
+    } catch (e) {
+      logger.error(e);
+      const _e = e as BaseError;
+      if (_e.statusCode === Status.GONE) {
+        await deleteAllSyncData(userId);
+      }
       //@ts-ignore
-      res.promise(Promise.resolve(response));
-    } else {
-      const response = await eventService.create(userId, req.body);
-      //@ts-ignore
-      res.promise(Promise.resolve(response));
+      res.promise(e);
     }
   };
 
-  delete = async (req: express.Request, res: Res) => {
-    const userId = res.locals.user.id;
-    //@ts-ignore
-    const eventId: string = req.params.id;
-    const deleteResponse = await eventService.deleteById(userId, eventId);
-    //@ts-ignore
-    res.promise(Promise.resolve(deleteResponse));
+  delete = async (req: SessionRequest, res: Res) => {
+    const userId = req.session?.getUserId();
+    try {
+      const eventId: string = req.params.id;
+      const deleteResponse = await eventService.deleteById(userId, eventId);
+      //@ts-ignore
+      res.promise(Promise.resolve(deleteResponse));
+    } catch (e) {
+      logger.error(e);
+      const _e = e as BaseError;
+      if (_e.statusCode === Status.GONE) {
+        await deleteAllSyncData(userId);
+      }
+      //@ts-ignore
+      res.promise(e);
+    }
   };
 
-  deleteAllByUser = async (req: express.Request, res: Res) => {
+  deleteAllByUser = async (req: SessionRequest, res: Res) => {
     // const userMakingRequest = res.locals.user.id;
     // if (userMakingRequest !== userToRemove) {
     //check if user is an app admin?
@@ -51,21 +65,73 @@ class EventController {
     res.promise(Promise.resolve(deleteAllRes));
   };
 
-  deleteMany = async (
-    // req: ReqBody<{ key: string; ids: string[] }>,
-    req: ReqBody<Params_DeleteMany>,
-    res: Res
-  ) => {
-    const userId = res.locals.user.id;
+  deleteMany = async (req: SReqBody<Params_DeleteMany>, res: Res) => {
+    const userId = req.session?.getUserId();
     //TODO validate body
     const deleteResponse = await eventService.deleteMany(userId, req.body);
     //@ts-ignore
     res.promise(Promise.resolve(deleteResponse));
   };
 
-  import = async (req: express.Request, res: Res) => {
+  readById = async (req: SessionRequest, res: Res) => {
+    const userId = req.session?.getUserId();
+    //@ts-ignore
+    const eventId: string = req.params.id;
+    const response = await eventService.readById(userId, eventId);
+    res.promise(Promise.resolve(response));
+  };
+
+  readAll = async (req: SessionRequest, res: Res) => {
+    const userId = req.session?.getUserId();
+    const usersEvents = await eventService.readAll(userId, req.query);
+    res.promise(Promise.resolve(usersEvents));
+  };
+
+  update = async (req: SReqBody<Schema_Event>, res: Res) => {
+    const userId = req.session?.getUserId() as string;
     try {
-      const userId: string = res.locals.user.id;
+      const event = req.body;
+      const eventId: string = req.params.id;
+
+      const response = await eventService.updateById(userId, eventId, event);
+      //@ts-ignore
+      res.promise(Promise.resolve(response));
+    } catch (e) {
+      logger.error(e);
+      const _e = e as BaseError;
+      if (_e.statusCode === Status.GONE) {
+        await deleteAllSyncData(userId);
+      }
+      res.promise(e);
+    }
+  };
+
+  updateMany = async (req: SReqBody<Schema_Event[]>, res: Res) => {
+    try {
+      const userId = req.session?.getUserId();
+      const events = req.body;
+      const response = await eventService.updateMany(userId, events);
+      //@ts-ignore
+      res.promise(Promise.resolve(response));
+    } catch (e) {
+      //@ts-ignore
+      res.promise(e);
+    }
+  };
+}
+
+export default new EventController();
+
+/*
+start of a convenience method for how to wipe and 
+reimport resources (events, calendarlists, settings)
+after receiving a 410 GONE error from google's notification
+
+  reimport = async (req: express.Request, res: Res) => {
+    try {
+      //TODO: only call this when getting 410
+      // gone error from gcal
+      const userId: string = req.session?.getUserId();
 
       const userExists = await mongoService.recordExists(Collections.USER, {
         _id: mongoService.objectId(userId),
@@ -90,31 +156,19 @@ class EventController {
         }
       }
 
-      const gcal = await getGcal(userId);
+      const gcal = await getGcalOLD(userId);
 
       const importEventsResult = await eventService.import(userId, gcal);
 
-      const syncTokenUpdateResult = await syncService.updateNextSyncToken(
+      const syncTokenUpdateResult = await syncService.updateSyncToken(
         userId,
+        "events",
         importEventsResult.nextSyncToken
       );
 
-      // TODO remove 'primary-' after supporting multiple channels/user
-      const channelId = `primary-${uuidv4()}`;
+      const { watchResult, syncUpdate } =
+        await syncService.startWatchingCalendar(gcal, userId, GCAL_PRIMARY);
 
-      const watchResult = await syncService.startWatchingChannel(
-        gcal,
-        userId,
-        GCAL_PRIMARY,
-        channelId
-      );
-
-      const syncUpdate = await syncService.updateSyncData(
-        userId,
-        channelId,
-        watchResult.resourceId,
-        watchResult.expiration
-      );
       const syncUpdateSummary =
         //@ts-ignore
         syncUpdate.ok === 1 && syncUpdate.lastErrorObject.updatedExisting
@@ -123,10 +177,11 @@ class EventController {
 
       const fullResults = {
         events: importEventsResult,
-        sync: {
+        sync: {import { syncService } from '@backend/sync/services/sync.service';
+
           watch: watchResult,
           nextSyncToken: syncTokenUpdateResult,
-          syncDataUpdate: syncUpdateSummary,
+          syncDataUpdate: syncUpdate,
         },
       };
       //@ts-ignore
@@ -136,44 +191,4 @@ class EventController {
       res.promise(Promise.reject(e));
     }
   };
-
-  readById = async (req: express.Request, res: Res) => {
-    const userId = res.locals.user.id;
-    //@ts-ignore
-    const eventId: string = req.params.id;
-    const response = await eventService.readById(userId, eventId);
-    res.promise(Promise.resolve(response));
-  };
-
-  readAll = async (req: express.Request, res: Res) => {
-    const userId = res.locals.user.id;
-    const usersEvents = await eventService.readAll(userId, req.query);
-    //@ts-ignore
-    res.promise(Promise.resolve(usersEvents));
-  };
-
-  update = async (req: ReqBody<Schema_Event>, res: Res) => {
-    const userId = res.locals.user.id;
-    const event = req.body;
-    //@ts-ignore
-    const eventId: string = req.params.id;
-    const response = await eventService.updateById(userId, eventId, event);
-    //@ts-ignore
-    res.promise(Promise.resolve(response));
-  };
-
-  updateMany = async (req: ReqBody<Schema_Event[]>, res: Res) => {
-    try {
-      const userId = res.locals.user.id;
-      const events = req.body;
-      const response = await eventService.updateMany(userId, events);
-      //@ts-ignore
-      res.promise(Promise.resolve(response));
-    } catch (e) {
-      //@ts-ignore
-      res.promise(Promise.reject(e));
-    }
-  };
-}
-
-export default new EventController();
+*/

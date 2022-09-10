@@ -1,13 +1,10 @@
-/* DB collection names*/
-import { isDev } from "../helpers/common.helpers";
-
-const useDevCollections = isDev();
+import { IS_DEV } from "@backend/common/constants/env.constants";
 
 export const Collections = {
-  CALENDARLIST: useDevCollections ? "_dev.calendarlist" : "calendarlist",
-  WATCHLOG_GCAL: useDevCollections ? "_dev.watch.gcal" : "watch.gcal",
-  EVENT: useDevCollections ? "_dev.event" : "event",
-  OAUTH: useDevCollections ? "_dev.oauth" : "oauth",
-  PRIORITY: useDevCollections ? "_dev.priority" : "priority",
-  USER: useDevCollections ? "_dev.user" : "user",
+  CALENDARLIST: IS_DEV ? "_dev.calendarlist" : "calendarlist",
+  EVENT: IS_DEV ? "_dev.event" : "event",
+  OAUTH: IS_DEV ? "_dev.oauth" : "oauth",
+  PRIORITY: IS_DEV ? "_dev.priority" : "priority",
+  SYNC: IS_DEV ? "_dev.sync" : "sync",
+  USER: IS_DEV ? "_dev.user" : "user",
 };

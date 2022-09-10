@@ -1,8 +1,7 @@
 import * as winston from "winston";
 import * as expressWinston from "express-winston";
-import { MB_50 } from "@core/core.constants";
-
-import { isDev } from "../helpers/common.helpers";
+import { MB_50 } from "@core/constants/core.constants";
+import { IS_DEV } from "@backend/common/constants/env.constants";
 
 const configExpressLogger = () => {
   const loggerOptions: expressWinston.LoggerOptions = {
@@ -28,7 +27,7 @@ const configExpressLogger = () => {
     ),
   };
 
-  if (!isDev()) {
+  if (IS_DEV) {
     loggerOptions.meta = false;
     if (typeof global.it === "function") {
       // not sure if this should be changed

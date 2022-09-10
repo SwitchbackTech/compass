@@ -13,7 +13,7 @@ import {
   Params_Events,
   Schema_Event,
 } from "@core/types/event.types";
-import { Priorities } from "@core/core.constants";
+import { Priorities } from "@core/constants/core.constants";
 
 import { Schema_GridEvent } from "../types/web.event.types";
 
@@ -60,11 +60,7 @@ export const getDefaultEvent = (
 // meant for temporary testing, will be replaced
 export const handleErrorTemp = (error: Error) => {
   if (error.message.slice(-3) === "401") {
-    alert(
-      "Shucks, you gotta log in again (cuz security).\nClick this button to get started"
-    );
-    localStorage.clear();
-    window.location.reload();
+    // SuperTokensWrapper will handle these
     return;
   }
   alert(error);

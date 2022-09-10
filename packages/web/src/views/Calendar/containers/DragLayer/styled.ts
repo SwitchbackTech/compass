@@ -1,8 +1,8 @@
 import styled from "styled-components";
 import type { XYCoord } from "react-dnd";
 import type { CSSProperties } from "react";
-import { Priority } from "@core/core.constants";
-import { hoverColorsByPriority } from "@web/common/utils/colors";
+import { Priority } from "@core/constants/core.constants";
+import { hoverColorsByPriority } from "@core/util/color.utils";
 import { ZIndex } from "@web/common/constants/web.constants";
 
 import { snapToGrid } from "./snap.grid";

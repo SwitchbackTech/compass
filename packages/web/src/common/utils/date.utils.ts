@@ -4,14 +4,14 @@ import {
   HOURS_AM_SHORT_FORMAT,
   YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/dates";
-import { ColorNames } from "@web/common/types/styles";
-import { getColor } from "@web/common/utils/colors";
+import { ColorNames } from "@core/constants/colors";
+import { getColor } from "@core/util/color.utils";
 
 import { roundToNext } from ".";
 import { GRID_TIME_STEP } from "../constants/grid.constants";
 
 export const getAmPmTimes = () => {
-  console.log("getting times"); //++
+  /* console.log("getting times"); //++ */
   return getTimes().map((time) =>
     dayjs(`2000-00-00 ${time}`, YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT)
       .format(HOURS_AM_FORMAT)

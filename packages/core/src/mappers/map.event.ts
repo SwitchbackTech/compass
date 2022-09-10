@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { BaseError } from "@core/errors/errors.base";
-import { Origin, Priorities } from "@core/core.constants";
+import { Origin, Priorities, Priority } from "@core/constants/core.constants";
 import { isAllDay, notCancelled } from "@core/util/event.util";
 import { Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
@@ -9,7 +9,7 @@ export namespace MapEvent {
   export const toCompass = (
     userId: string,
     events: gSchema$Event[],
-    origin: Origin
+    origin?: Origin
   ): Schema_Event[] => {
     const mapped = events
       .filter(notCancelled)
@@ -44,7 +44,7 @@ export namespace MapEvent {
 const _toCompass = (
   userId: string,
   gEvent: gSchema$Event,
-  origin: Origin
+  origin?: Origin
 ): Schema_Event => {
   if (!gEvent.id) {
     throw new BaseError(
@@ -54,7 +54,10 @@ const _toCompass = (
       false
     );
   }
-  //TODO validate that event has either date or dateTime values
+  const _origin =
+    origin !== undefined
+      ? origin
+      : gEvent.extendedProperties?.private?.["origin"] || Origin.UNSURE;
 
   const gEventId = gEvent.id ? gEvent.id : "uh oh";
   const title = gEvent.summary ? gEvent.summary : "untitled";
@@ -81,12 +84,14 @@ const _toCompass = (
     _origIsTimesShown !== undefined ? JSON.parse(_origIsTimesShown) : true;
   const _origPriority = gEvent.extendedProperties?.private?.["priority"];
   const _priority =
-    _origPriority === undefined ? Priorities.UNASSIGNED : _origPriority;
+    _origPriority === undefined
+      ? Priorities.UNASSIGNED
+      : (_origPriority as Priority);
 
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
     user: userId,
-    origin: origin,
+    origin: _origin as Origin,
     title: title,
     description: description,
     priorities: [],
@@ -98,8 +103,8 @@ const _toCompass = (
     startDate: _isAllDay ? _start.date : _start.dateTime,
     // @ts-ignore
     endDate: _isAllDay ? _end.date : _end.dateTime,
-    // @ts-ignore
     priority: _priority,
+    updatedAt: new Date(),
   };
 
   return compassEvent;

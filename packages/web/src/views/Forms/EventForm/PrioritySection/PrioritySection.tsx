@@ -1,6 +1,6 @@
 import React from "react";
-import { Priorities, Priority } from "@core/core.constants";
-import { colorNameByPriority } from "@web/common/styles/colors";
+import { Priorities, Priority } from "@core/constants/core.constants";
+import { colorNameByPriority } from "@core/constants/colors";
 import { JustifyContent } from "@web/components/Flex/styled";
 import { Button } from "@web/components/Button";
 

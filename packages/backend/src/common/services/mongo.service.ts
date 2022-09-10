@@ -1,32 +1,37 @@
-//@ts-nocheck
-import { Db, MongoClient, ObjectId } from "mongodb";
+import { Collection, Db, MongoClient, ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
+import { Schema_Sync } from "@core/types/sync.types";
+import { Schema_User } from "@core/types/user.types";
+import { Schema_Event } from "@core/types/event.types";
+
+import { ENV } from "../constants/env.constants";
+import { Collections } from "../constants/collections";
 
 const logger = Logger("app:mongo.service");
 
-const uri = process.env["MONGO_URI"] || "mongodb://localhost:27017/";
-const dbName = process.env["DB_NAME"] || "test";
-
 class MongoService {
   private count = 0;
-  private options = {
-    useNewUrlParser: true,
-  };
   public client: MongoClient | undefined;
   public db!: Db;
+
+  // collections
+  public event!: Collection<Schema_Event>;
+  public sync!: Collection<Schema_Sync>;
+  public user!: Collection<Schema_User>;
 
   constructor() {
     this._connect();
   }
-
   _connect = () => {
-    logger.debug("Attempting MongoDB connection");
-    MongoClient.connect(uri, this.options)
+    MongoClient.connect(ENV.MONGO_URI)
       .then((clientInstance) => {
-        logger.debug(`Connected to '${dbName}' database`);
         this.client = clientInstance;
-        this.db = this.client.db(dbName);
-        this.db["ObjectId"] = ObjectId;
+        this.db = this.client.db(ENV.DB);
+        logger.debug(`Connected to database: '${this.db.namespace}'`);
+
+        this.event = this.db.collection<Schema_Event>(Collections.EVENT);
+        this.sync = this.db.collection<Schema_Sync>(Collections.SYNC);
+        this.user = this.db.collection<Schema_User>(Collections.USER);
       })
       .catch((err) => {
         const retrySeconds = 5;
@@ -39,6 +44,8 @@ class MongoService {
       });
   };
 
+  isConnected = () => this.client !== undefined;
+
   objectId = (id: string): ObjectId => {
     return new ObjectId(id);
   };
@@ -47,28 +54,6 @@ class MongoService {
     const r = await this.db.collection(collection).findOne(filter);
     return r !== null;
   };
-
-  /* Commented cuz TS has trouble inferring DTO type
-  findOneAndUpdate = async (
-    collection: string,
-    id: string,
-    userId: string,
-    payload: object
-  ) => {
-    const response = await this.db
-      .collection(collection)
-      .findOneAndUpdate(
-        { _id: this.objectId(id), user: userId },
-        { $set: payload },
-        { returnDocument: "after" }
-      );
-    if (response.value === null || response.ok === 0) {
-      logger.error("update failed");
-      return new BaseError("Update Failed", "Ensure id is correct", 400, true);
-    }
-    return response.value;
-  };
-  */
 }
 
 export default new MongoService();

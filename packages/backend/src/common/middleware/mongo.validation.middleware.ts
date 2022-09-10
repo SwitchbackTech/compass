@@ -1,27 +1,20 @@
 import express from "express";
 import { ObjectId } from "mongodb";
-import { BaseError } from "@core/errors/errors.base";
+import { SessionRequest } from "supertokens-node/framework/express";
 
-export const validateIds = (
-  req: express.Request,
+import { error, DbError } from "../errors/types/backend.errors";
+
+export const validateIdParam = (
+  req: SessionRequest,
   res: express.Response,
   next: express.NextFunction
 ) => {
-  const idsToCheck = [res.locals["user"]["id"]];
-  //@ts-ignore
-  if (req.params.id !== undefined) idsToCheck.push(req.params.id);
+  const idParam = req.params["id"] as string;
 
-  idsToCheck.forEach((i: string | ObjectId) => {
-    if (!ObjectId.isValid(i)) {
-      const err = new BaseError(
-        "Bad ID",
-        `${i} is an invalid id (ObjectId or string)`,
-        400,
-        true
-      );
-      next(err);
-    }
-  });
+  if (!ObjectId.isValid(idParam)) {
+    const err = error(DbError.InvalidId, "Request Failed");
+    res.status(err.statusCode).json({ error: err });
+  }
 
   next();
 };

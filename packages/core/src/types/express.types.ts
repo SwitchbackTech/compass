@@ -1,3 +1,8 @@
+import { SessionRequest } from "supertokens-node/framework/express";
+
+export interface SReqBody<T> extends SessionRequest {
+  body: T;
+}
 export interface ReqBody<T> extends Express.Request {
   body: T;
 }
@@ -13,12 +18,9 @@ export interface Res extends Express.Response {
 }
 
 export interface ResP<T> extends Express.Response {
-    promise: T; 
+  promise: T;
 }
 
-
 export interface Res_Promise extends Express.Response {
-    promise: (
-      p: Promise<unknown> | (() => unknown)
-    ) => Express.Response
+  promise: (p: Promise<unknown> | (() => unknown)) => Express.Response;
 }

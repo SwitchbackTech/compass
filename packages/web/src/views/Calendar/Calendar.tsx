@@ -1,8 +1,5 @@
 import React from "react";
 import dayjs from "dayjs";
-import { Navigate } from "react-router-dom";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { useToken } from "@web/common/hooks/useToken";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { DragLayer } from "@web/views/Calendar/containers/DragLayer";
 
@@ -19,9 +16,12 @@ import { useGridLayout } from "./hooks/grid/useGridLayout";
 import { usePreferences } from "./hooks/usePreferences";
 import { Sidebar } from "./components/Sidebar";
 
+export const Calendar = () => {
+  return <CalendarView />;
+};
+
 export const CalendarView = () => {
   const prefs = usePreferences();
-  const { token } = useToken();
 
   const { today, todayIndex } = useToday();
   const weekProps = useWeek(today);
@@ -46,10 +46,6 @@ export const CalendarView = () => {
   const rootProps: RootProps = {
     component: { today: today },
   };
-
-  if (!token) {
-    return <Navigate to={ROOT_ROUTES.LOGIN} />;
-  }
 
   return (
     <Styled id="cal">

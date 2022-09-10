@@ -1,8 +1,8 @@
 import styled from "styled-components";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
-import { ColorNames } from "@web/common/types/styles";
-import { getColor } from "@web/common/utils/colors";
+import { ColorNames } from "@core/constants/colors";
+import { getColor } from "@core/util/color.utils";
 
 export interface Props {
   monthsCount?: number;

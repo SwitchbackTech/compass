@@ -1,8 +1,8 @@
 import styled from "styled-components";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { ColorNames } from "@web/common/types/styles";
-import { getColor } from "@web/common/utils/colors";
-import { linearGradient } from "@web/common/styles/colors";
+import { ColorNames } from "@core/constants/colors";
+import { getColor } from "@core/util/color.utils";
+import { linearGradient } from "@core/constants/colors";
 
 interface StyledNowLineProps {
   width: number;
