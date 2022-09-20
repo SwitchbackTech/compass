@@ -21,10 +21,8 @@ export const useShortcuts = (
   useEffect(() => {
     const _getStart = () => {
       if (isCurrentWeek) {
-        // return today; //++
         return dayjs();
       } else {
-        // return startOfSelectedWeek.hour(today.hour()); //++
         return startOfSelectedWeek.hour(dayjs().hour());
       }
     };

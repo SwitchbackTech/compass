@@ -7,10 +7,6 @@ import {
   FLEX_EQUAL,
 } from "@web/common/constants/grid.constants";
 
-//++
-// describe("Day after tmrw calculation", () => {
-//   expect(getDayAfterTmrwPercent(7, 1).toEqual());
-// });
 describe("getFlexBasis", () => {
   test("past week: all same", () => {
     const july10 = dayjs("2022-07-10");

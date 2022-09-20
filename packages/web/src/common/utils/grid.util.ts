@@ -406,14 +406,6 @@ export const getLeftPosition = (
 ) => {
   const left = getAbsoluteLeftPosition(category, startIndex, widths);
 
-  //++
-  // if (
-  //   category === Category.ThisToFutureWeek ||
-  //   category == Category.ThisWeekOnly
-  // ) {
-
-  // }
-
   return left;
 };
 
@@ -469,7 +461,6 @@ export const getWidthBuffer = (startIndex: number) =>
   startIndex * (DIVIDER_GRID * 2);
 
 export const getWidthInPixels = (
-  //++
   percent: number, //eg 21.4 for 21.4%
   windowWidth: number
 ) => {

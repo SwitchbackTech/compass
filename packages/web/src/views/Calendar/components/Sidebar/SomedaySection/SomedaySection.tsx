@@ -17,7 +17,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
-import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { ColorNames } from "@core/constants/colors";
 

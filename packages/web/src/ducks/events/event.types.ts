@@ -2,7 +2,6 @@ import { Action } from "redux";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   Response_HttpPaginatedSuccess,
   Filters_Pagination,

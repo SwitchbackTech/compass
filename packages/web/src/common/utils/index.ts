@@ -21,7 +21,7 @@ export const headers = (token?: string) => {
 export const isDrafting = () =>
   document.getElementsByName("Event Form").length === 1;
 
-//++ refactor to a way that doesn't require checking DOM
+// refactor to a way that doesn't require checking DOM
 export const isDraftingSomeday = () =>
   document.getElementById(ID_SIDEBAR_FORM) !== null;
 export const roundToNearest = (x: number, roundBy: number) =>

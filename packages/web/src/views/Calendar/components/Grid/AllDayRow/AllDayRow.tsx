@@ -27,12 +27,12 @@ import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
-import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
 import { getDefaultEvent } from "@web/common/utils/event.util";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 import { StyledEvent } from "../../Event/styled";
 import { StyledAllDayColumns, StyledGridCol } from "../Columns/styled";
@@ -71,9 +71,6 @@ export const AllDayRow: FC<Props> = ({
   }, [rowsCount]);
 
   const convertSomedayToAllDay = (_id: string, x: number, y: number) => {
-    // console.log(`weekstart: ${_startOfView.current.format("M-D")}`);
-    // console.log(`weekstart: ${component.startOfSelectedWeekDay.format("M-D")}`);
-    // console.log(`weekstart: ${viewStart.format("M-D")}`);
     const _start = dateCalcs.getDateByXY(
       x - SIDEBAR_OPEN_WIDTH,
       y,
@@ -89,7 +86,6 @@ export const AllDayRow: FC<Props> = ({
       startDate: start,
       endDate: end,
     };
-    console.log(`dropped at: ${_start.format("M-D")}`); //++
     dispatch(
       getFutureEventsSlice.actions.convert({
         _id,
