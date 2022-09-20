@@ -58,14 +58,6 @@ export const draftSlice = createSlice({
   initialState: initialDraft as State_DraftEvent,
   reducers: {
     discard: (state) => initialDraft,
-    // discard: (state) => {
-    //   state.event = null;
-    //   state.status = null;
-    // },
-    // edit: (state, action: Action_DraftEvent) => { //++
-    // Object.assign always mutates its first argument
-    // Object.assign(state, action.payload);
-    // },
     start: (state, action: Action_DraftEvent) => {
       const { activity, event, eventType } = action.payload;
       state.event = event;

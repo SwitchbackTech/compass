@@ -3,7 +3,7 @@ import type { XYCoord } from "react-dnd";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
-import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEvent/styled";
 import {
   GRID_X_START,

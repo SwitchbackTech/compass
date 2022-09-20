@@ -48,7 +48,6 @@ export const MainGrid: FC<Props> = ({
 
   const { component } = weekProps;
   const { isCurrentWeek, startOfSelectedWeekDay, week, weekDays } = component;
-  // const { isDrafting, draftId } = useSelector(selectDraftId); //++
 
   const convertSomedayToTimed = (_id: string, x: number, y: number) => {
     const _start = dateCalcs.getDateByXY(

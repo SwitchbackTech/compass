@@ -111,7 +111,6 @@ const copyToVM = async (packages: string[], vmInfo: VmInfo) => {
 };
 
 const copyConfigFilesToBuild = (vmInfo: VmInfo) => {
-  // shell.cp(`${COMPASS_ROOT_DEV}/lerna.json`, COMPASS_BUILD_DEV); //++
   const NODE_BUILD = `${COMPASS_BUILD_DEV}/node`;
 
   const envName = vmInfo.destination === "production" ? ".prod.env" : ".env";

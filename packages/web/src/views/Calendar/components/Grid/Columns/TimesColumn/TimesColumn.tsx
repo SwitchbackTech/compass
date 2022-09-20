@@ -12,7 +12,6 @@ export const TimesColumn = () => {
 
   useEffect(() => {
     const _colors = getColorsByHour(currentHour);
-    // console.log("getting hour colors..."); //++
     setColors(_colors);
   }, [currentHour]);
 

@@ -14,7 +14,6 @@ export interface Props {
   viewStart: WeekProps["component"]["startOfSelectedWeekDay"];
 }
 
-// export const DragLayer: FC<Props> = ({
 export const DragLayer: FC<Props> = memo(function DragLayer({
   dateCalcs,
   measurements,

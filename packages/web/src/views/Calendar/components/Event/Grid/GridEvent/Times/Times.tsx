@@ -3,7 +3,7 @@ import debounce from "lodash/debounce";
 import { useDispatch } from "react-redux";
 import { Text } from "@web/components/Text";
 import { editEventSlice } from "@web/ducks/events/event.slice";
-import { Schema_GridEvent } from "@web/views/Calendar/weekViewHooks/types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { getTimesLabel } from "@web/common/utils/date.utils";
 

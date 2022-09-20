@@ -51,9 +51,6 @@ export const useDateCalcs = (
 
     if (isOverAllDayRow) return date;
 
-    // const clickY = y - gridYOffset; //++
-    // const relativeY = y - allDayRowBottom;
-    // const minutes = getMinuteByY(relativeY);
     const minutes = getMinuteByY(y);
     date = date.add(minutes, "minutes");
 
@@ -94,25 +91,6 @@ export const useDateCalcs = (
     const decimalMinute = (gridY / _measurements.current.hourHeight) * 60;
     const roundedMinute = roundToNearest(decimalMinute, GRID_TIME_STEP);
     const finalMinute = Math.max(0, roundedMinute); // prevents negative number when clicking all-day row
-    //++
-    // console.log(`
-    // ----
-    // gridY: ${gridY}
-    //   ${y} - ${mainGridTop} + ${scrollTop}
-    //   y - mainGridTop + scrollTop
-    // minute: ${finalMinute}
-    // `);
-
-    // const hourOfDay = gridY / mainGridRowHeight;
-    // const minuteOfDay = Math.round(hourOfDay * 60);
-    // const minutesOnGrid = Math.round(
-    //   ((y + scrollTop) / hourlyCellHeight) * 60
-    // );
-    // const minute = roundByNumber(
-    //   minutesOnGrid - GRID_TIME_STEP / 2,
-    //   GRID_TIME_STEP
-    // );
-
     return finalMinute;
   };
 

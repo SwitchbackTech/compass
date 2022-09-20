@@ -9,7 +9,6 @@ export const useWeek = (today: Dayjs) => {
   const dispatch = useDispatch();
 
   const [week, setWeek] = useState(today.week());
-  // ++ const [viewStart, setViewStart] = useState(today.week(week).startOf("week"));
 
   const dayjsBasedOnWeekDay = today.week(week);
   const endOfSelectedWeekDay = today.week(week).endOf("week");
@@ -47,22 +46,3 @@ export const useWeek = (today: Dayjs) => {
 };
 
 export type WeekProps = ReturnType<typeof useWeek>;
-
-/* 
-  //++
-  // const getOverflowPercent = () => {
-  //   if (weekProps.component.week < today.week()) {
-  //     return 100;
-  //   }
-  //   const _currentWidths = [...columnWidths.current];
-  //   const todayIndex = today.get("day");
-
-  //   const daysBeforeToday = _currentWidths.splice(0, todayIndex);
-  //   const daysBeforeTodayPercent = sum(daysBeforeToday);
-
-  //   return daysBeforeTodayPercent;
-  // };
-
-  // const getWidthByIndex = (i: number) =>
-  //   isCurrentWeek ? columnWidths.current[i] : columnWidths.pastFuture;
-*/
