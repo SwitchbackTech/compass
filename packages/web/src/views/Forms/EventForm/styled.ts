@@ -2,7 +2,7 @@ import styled from "styled-components";
 import { Priorities } from "@core/constants/core.constants";
 import { colorNameByPriority } from "@core/constants/colors";
 import { InvertedColorNames } from "@core/constants/colors";
-import { EVENT_WIDTH_MINIMUM } from "@web/common/constants/grid.constants";
+import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import {
   ANIMATION_TIME_3_MS,
   ZIndex,

@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import { ColorNames } from "@core/constants/colors";
 import { getColor } from "@core/util/color.utils";
-import { EVENT_WIDTH_MINIMUM } from "@web/common/constants/grid.constants";
+import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import {
   GRID_PADDING_BOTTOM,
   SCROLLBAR_WIDTH,

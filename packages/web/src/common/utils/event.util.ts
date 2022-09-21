@@ -7,7 +7,7 @@ import isBetween from "dayjs/plugin/isBetween";
 import {
   YEAR_MONTH_DAY_COMPACT_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
-} from "@web/common/constants/dates";
+} from "@web/common/constants/date.constants";
 import {
   Categories_Event,
   Params_Events,

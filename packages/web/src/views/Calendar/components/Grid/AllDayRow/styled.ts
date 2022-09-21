@@ -9,7 +9,7 @@ import {
   GRID_Y_START,
   GRID_PADDING_BOTTOM,
 } from "@web/views/Calendar/layout.constants";
-import { GRID_TIME_STEP } from "@web/common/constants/grid.constants";
+import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
 export interface AllDayRowProps {
   rowsCount: number;

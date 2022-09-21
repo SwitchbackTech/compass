@@ -2,21 +2,12 @@ import dayjs, { Dayjs } from "dayjs";
 import {
   HOURS_AM_FORMAT,
   HOURS_AM_SHORT_FORMAT,
-  YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
-} from "@web/common/constants/dates";
+} from "@web/common/constants/date.constants";
 import { ColorNames } from "@core/constants/colors";
 import { getColor } from "@core/util/color.utils";
+import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
 import { roundToNext } from ".";
-import { GRID_TIME_STEP } from "../constants/grid.constants";
-
-export const getAmPmTimes = () => {
-  return getTimes().map((time) =>
-    dayjs(`2000-00-00 ${time}`, YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT)
-      .format(HOURS_AM_FORMAT)
-      .toLowerCase()
-  );
-};
 
 export const getColorsByHour = (currentHour: number) => {
   const colors: string[] = [];

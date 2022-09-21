@@ -2,7 +2,7 @@ import {
   getColumnWidthPercentages,
   getRelativePercentages,
 } from "@web/common/utils/grid.util";
-import { FLEX_TODAY, FLEX_TMRW } from "@web/common/constants/grid.constants";
+import { FLEX_TODAY, FLEX_TMRW } from "@web/views/Calendar/layout.constants";
 
 import { runStandardChecks } from "./column.helpers";
 

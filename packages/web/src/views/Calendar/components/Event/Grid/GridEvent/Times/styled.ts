@@ -1,5 +1,5 @@
 import styled, { css } from "styled-components";
-import { EVENT_WIDTH_MINIMUM } from "@web/common/constants/grid.constants";
+import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 
 interface Props {
   isHovered: boolean;

@@ -1,6 +1,6 @@
 import { sortLowToHigh, sum } from "@web/common/utils/index";
 import { WidthPercentages } from "@web/common/types/util.types";
-import { FLEX_TODAY, FLEX_EQUAL } from "@web/common/constants/grid.constants";
+import { FLEX_TODAY, FLEX_EQUAL } from "@web/views/Calendar/layout.constants";
 
 export const runStandardChecks = (
   todayIndex: number,
