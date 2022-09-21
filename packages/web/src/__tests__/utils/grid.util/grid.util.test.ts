@@ -5,7 +5,7 @@ import {
   FLEX_TMRW,
   AFTER_TMRW_MULTIPLE,
   FLEX_EQUAL,
-} from "@web/common/constants/grid.constants";
+} from "@web/views/Calendar/layout.constants";
 
 describe("getFlexBasis", () => {
   test("past week: all same", () => {

@@ -10,7 +10,7 @@ import {
   FLEX_TMRW,
   FLEX_TODAY,
   AFTER_TMRW_MULTIPLE,
-} from "@web/common/constants/grid.constants";
+} from "@web/views/Calendar/layout.constants";
 import { AssignResult, WidthPercentages } from "@web/common/types/util.types";
 import { Category } from "@web/ducks/events/event.types";
 import {

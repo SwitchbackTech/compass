@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { ColorNames } from "@core/constants/colors";
-import { EVENT_WIDTH_MINIMUM } from "@web/common/constants/grid.constants";
+import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import { Flex } from "@web/components/Flex";
 import { getColor } from "@core/util/color.utils";
 import { Text } from "@web/components/Text";

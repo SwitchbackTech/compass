@@ -20,7 +20,7 @@ import {
   Schema_GridEvent,
   Status_DraftEvent,
 } from "@web/common/types/web.event.types";
-import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/dates";
+import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/date.constants";
 import { getX, removeGridFields } from "@web/common/utils/grid.util";
 import { isDraftingSomeday } from "@web/common/utils";
 

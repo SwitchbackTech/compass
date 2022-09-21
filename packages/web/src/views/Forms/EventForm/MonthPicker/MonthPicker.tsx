@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { Text } from "@web/components/Text";
 import { DatePicker } from "@web/components/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
-import { MONTH_YEAR_COMPACT_FORMAT } from "@web/common/constants/dates";
+import { MONTH_YEAR_COMPACT_FORMAT } from "@web/common/constants/date.constants";
 import { toUTCOffset } from "@web/common/utils/date.utils";
 
 import { StyledDateFlex } from "../DateTimeSection/styled";

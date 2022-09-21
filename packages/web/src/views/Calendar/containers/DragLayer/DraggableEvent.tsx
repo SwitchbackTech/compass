@@ -11,8 +11,11 @@ import {
   SIDEBAR_OPEN_WIDTH,
   SIDEBAR_X_START,
 } from "@web/views/Calendar/layout.constants";
-import { DAY_COMPACT, DAY_HOUR_MIN_M } from "@web/common/constants/dates";
-import { EVENT_ALLDAY_HEIGHT } from "@web/common/constants/grid.constants";
+import {
+  DAY_COMPACT,
+  DAY_HOUR_MIN_M,
+} from "@web/common/constants/date.constants";
+import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getWidthBuffer } from "@web/common/utils/grid.util";
 

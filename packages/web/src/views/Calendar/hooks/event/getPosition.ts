@@ -5,13 +5,13 @@ import {
   getEventCategory,
   getLeftPosition,
 } from "@web/common/utils/grid.util";
-import { HOURS_AM_FORMAT } from "@web/common/constants/dates";
+import { HOURS_AM_FORMAT } from "@web/common/constants/date.constants";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   DRAFT_PADDING_BOTTOM,
   EVENT_ALLDAY_HEIGHT,
-} from "@web/common/constants/grid.constants";
+} from "@web/views/Calendar/layout.constants";
 import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 

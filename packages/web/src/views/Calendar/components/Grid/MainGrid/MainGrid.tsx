@@ -10,7 +10,6 @@ import { Ref_Grid } from "@web/views/Calendar/components/Grid/grid.types";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getDefaultEvent } from "@web/common/utils/event.util";
-import { DRAFT_DURATION_MIN } from "@web/common/constants/grid.constants";
 import { getX } from "@web/common/utils/grid.util";
 import { useDispatch } from "react-redux";
 import {
@@ -18,7 +17,10 @@ import {
   getFutureEventsSlice,
 } from "@web/ducks/events/event.slice";
 import { DragItem, DropResult } from "@web/common/types/dnd.types";
-import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
+import {
+  DRAFT_DURATION_MIN,
+  SIDEBAR_OPEN_WIDTH,
+} from "@web/views/Calendar/layout.constants";
 
 import { Columns } from "../Columns";
 import { GridRows } from "./GridRows";

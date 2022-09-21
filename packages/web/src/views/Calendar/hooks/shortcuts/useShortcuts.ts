@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux";
 import { Categories_Event } from "@core/types/event.types";
 import { isDrafting, roundToNext } from "@web/common/utils";
 import { draftSlice } from "@web/ducks/events/event.slice";
-import { GRID_TIME_STEP } from "@web/common/constants/grid.constants";
+import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 
