@@ -16,7 +16,6 @@
     "helmet": "^5.0.2",
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.1.4",
-    "shortid": "^2.2.16",
     "supertokens-node": "^11.0.1",
     "tslib": "^2.4.0"
   },
@@ -30,7 +29,6 @@
     "@types/jsonwebtoken": "^8.5.5",
     "@types/module-alias": "^2.0.1",
     "@types/node": "^17.0.23",
-    "@types/shortid": "0.0.29",
     "alias-hq": "^5.3.2",
     "tsconfig-paths": "^3.12.0"
   }

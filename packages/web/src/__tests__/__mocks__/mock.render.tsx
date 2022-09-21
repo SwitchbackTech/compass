@@ -23,6 +23,7 @@ const customRender = (
   } = {}
 ) => {
   sagaMiddleware.run(sagas);
+
   const AllTheProviders = ({ children }) => {
     return (
       <DndProvider backend={HTML5Backend}>
