@@ -10,11 +10,11 @@
     "@compass/core": "1.0.0",
     "commander": "^9.0.0",
     "dotenv": "^16.0.1",
-    "inquirer": "^8.1.2",
+    "inquirer": "^9.1.2",
     "shelljs": "^0.8.5"
   },
   "devDependencies": {
-    "@types/inquirer": "^8.2.1",
+    "@types/inquirer": "^9.0.1",
     "@types/node": "^18.0.6",
     "@types/shelljs": "^0.8.11",
     "ts-node-dev": "^2.0.0",
