@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import React, { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import Session from "supertokens-auth-react/recipe/session";
@@ -16,7 +17,7 @@ export const LoginView = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  const antiCsrfToken = useRef(self.crypto.randomUUID()).current;
+  const antiCsrfToken = useRef(uuidv4()).current;
 
   useEffect(() => {
     const checkSession = async () => {
@@ -101,6 +102,8 @@ export const LoginView = () => {
           </p>
 
           <div
+            role="button"
+            name="Sign Up"
             onClick={() => {
               login();
             }}

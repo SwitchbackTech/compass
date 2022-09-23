@@ -88,23 +88,23 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
         <Text colorName={ColorNames.WHITE_1} role="heading" size={27}>
           Someday
         </Text>
-        <StyledAddEventButton
-          onClick={() => {
-            if (somedayEvents.length >= SOMEDAY_EVENTS_LIMIT) {
-              alert(`
+        <div role="button" title="Add Someday event">
+          <StyledAddEventButton
+            onClick={() => {
+              if (somedayEvents.length >= SOMEDAY_EVENTS_LIMIT) {
+                alert(`
                 Sorry, you can only have ${SOMEDAY_EVENTS_LIMIT} Someday events for now.
                 `);
-              return;
-            }
-            setIsEventFormOpen((open) => !open);
-          }}
-          ref={setPopperRef}
-          role="button"
-          size={25}
-          title="Add Someday event"
-        >
-          +
-        </StyledAddEventButton>
+                return;
+              }
+              setIsEventFormOpen((open) => !open);
+            }}
+            ref={setPopperRef}
+            size={25}
+          >
+            +
+          </StyledAddEventButton>
+        </div>
         <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
           {isEventFormOpen && (
             <div ref={formRef}>

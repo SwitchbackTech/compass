@@ -63,8 +63,8 @@ export const handleErrorTemp = (error: Error) => {
     // SuperTokensWrapper will handle these
     return;
   }
-  alert(error);
   console.log(error);
+  alert(error);
 };
 
 export const getWeekDayLabel = (day: Dayjs | Date) => {

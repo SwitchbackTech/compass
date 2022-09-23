@@ -71,33 +71,3 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     </div>
   );
 };
-
-/* old draft 
-  // const { draftState, draftHelpers } = useDraft(
-  //   dateCalcs,
-  //   weekProps,
-  //   isSidebarOpen
-  // );
-  // const isDrafting = draftState.draft;
-  // const { draft, isDragging } = draftState;
-
-  // const draftHelpersMemo = useMemo(() => draftHelpers, []);
-  // const isDraggingMemo = useMemo(() => isDragging, []);
-  // const draftIdMemo = useMemo(() => draft?._id || null, []);
-  // const draftMemo = useMemo(() => draft, []);
-
-*/
-
-/* old
- const editTimedEventOld = (event: Schema_GridEvent) => {
-    console.log("editing main grid event ...");
-    dispatch(
-      draftSlice.actions.start({
-        event,
-        eventType: Categories_Event.TIMED,
-        activity: "dragging",
-      })
-    );
-  };
-
-*/

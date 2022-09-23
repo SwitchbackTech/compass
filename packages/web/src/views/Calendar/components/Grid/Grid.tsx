@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { FC } from "react";
 import { Dayjs } from "dayjs";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -27,8 +27,7 @@ export const Grid: FC<Props> = ({
   today,
   weekProps,
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-
+  // const [isLoading, setIsLoading] = useState(false);
   // selectIsEventProcessing,
   // const isProcessing = useSelector(selectIsProcessing);
 

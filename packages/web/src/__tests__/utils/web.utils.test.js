@@ -28,17 +28,17 @@ describe("getHourLabels", () => {
 
 describe("getColorsByHour", () => {
   it("has 23 intervals", () => {
-    const colors = getColorsByHour(dayjs());
+    const colors = getColorsByHour(dayjs().hour());
     expect(colors).toHaveLength(23);
   });
 
   it("uses two colors", () => {
-    const colors = getColorsByHour(dayjs());
+    const colors = getColorsByHour(dayjs().hour());
     expect(new Set(colors).size).toBe(2);
   });
 
   it("only higlights one hour", () => {
-    const colors = getColorsByHour(dayjs());
+    const colors = getColorsByHour(dayjs().hour());
     const uniqueColors = Array.from(new Set(colors));
 
     const color1 = colors.filter((c) => c === uniqueColors[0]);
@@ -60,8 +60,8 @@ describe("getColorsByHour", () => {
   });
 
   it("changes at the top of the hour", () => {
-    const day1 = dayjs("2022-04-04T23:59:59.000Z");
-    const day2 = dayjs("2022-04-05T00:00:00.000Z");
+    const day1 = dayjs("2022-04-04T23:59:59.000Z").hour();
+    const day2 = dayjs("2022-04-05T00:00:00.000Z").hour();
     const day1Colors = getColorsByHour(day1);
     const day2Colors = getColorsByHour(day2);
 

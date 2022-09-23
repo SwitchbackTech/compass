@@ -65,7 +65,7 @@ const _GridEvent = (
       allDay={event.isAllDay || false}
       className={isDraft ? "active" : null}
       // duration={+durationHours || 1} //++
-      height={position.height}
+      height={position.height || 0}
       isDragging={isDragging}
       isInPast={isInPast}
       isPlaceholder={isPlaceholder}
@@ -81,7 +81,7 @@ const _GridEvent = (
       role="button"
       tabindex="0"
       top={position.top}
-      width={position.width}
+      width={position.width || 0}
     >
       <Flex
         alignItems={AlignItems.FLEX_START}

@@ -158,6 +158,7 @@ export const AllDayRow: FC<Props> = ({
             editAllDayEvent(event);
           }}
           priority={event.priority}
+          role="button"
           top={position.top}
           width={position.width}
         >

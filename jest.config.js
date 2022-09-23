@@ -125,10 +125,18 @@ module.exports = {
         "^.+\\.(css|less)$":
           "<rootDir>/packages/web/src/__tests__/__mocks__/css.stub.js",
         "\\.(svg)$": "<rootDir>/packages/web/src/__tests__/__mocks__/svg.js",
+        "^uuid$": "uuid",
       },
-
-      setupFilesAfterEnv: ["<rootDir>/packages/web/jest.setup.js"],
+      setupFiles: ["<rootDir>/packages/web/src/__tests__/jest/jest.env.js"],
+      setupFilesAfterEnv: [
+        "<rootDir>/packages/web/src/__tests__/jest/jest.setup.js",
+      ],
       testEnvironment: "jsdom",
+      //++
+      // testEnvironmentOptions: {},
+      // This option sets the URL for the jsdom environment. It is reflected in properties such as location.href
+      // testURL: "http://localhost:3000/api",
+
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
       transformIgnorePatterns: [
         //https://github.com/react-dnd/react-dnd/issues/3443
@@ -223,9 +231,6 @@ module.exports = {
 
   // This option allows use of a custom test runner
   // testRunner: "jest-circus/runner",
-
-  // This option sets the URL for the jsdom environment. It is reflected in properties such as location.href
-  // testURL: "http://localhost",
 
   // Setting this value to "fake" allows the use of fake timers for functions such as "setTimeout"
   // timers: "real",
