@@ -127,16 +127,11 @@ module.exports = {
         "\\.(svg)$": "<rootDir>/packages/web/src/__tests__/__mocks__/svg.js",
         "^uuid$": "uuid",
       },
-      setupFiles: ["<rootDir>/packages/web/src/__tests__/jest/jest.env.js"],
+      setupFiles: ["<rootDir>/packages/web/src/__tests__/jest/jest.web.env.js"],
       setupFilesAfterEnv: [
-        "<rootDir>/packages/web/src/__tests__/jest/jest.setup.js",
+        "<rootDir>/packages/web/src/__tests__/jest/jest.web.setup.js",
       ],
       testEnvironment: "jsdom",
-      //++
-      // testEnvironmentOptions: {},
-      // This option sets the URL for the jsdom environment. It is reflected in properties such as location.href
-      // testURL: "http://localhost:3000/api",
-
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
       transformIgnorePatterns: [
         //https://github.com/react-dnd/react-dnd/issues/3443
@@ -150,14 +145,18 @@ module.exports = {
         "^@backend/auth/(.*)$": "<rootDir>/packages/backend/src/auth/$1",
         "^@backend/calendar/(.*)$":
           "<rootDir>/packages/backend/src/calendar/$1",
+        "^@backend/common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
         "^@backend/dev/(.*)$": "<rootDir>/packages/backend/src/dev/$1",
         "^@backend/event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
-        "^@backend/common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
         "^@backend/priority/(.*)$":
           "<rootDir>/packages/backend/src/priority/$1",
         "^@backend/sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
         "^@backend/user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
       },
+
+      setupFiles: [
+        "<rootDir>/packages/backend/src/__tests__/jest/jest.backend.env.js",
+      ],
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],
     },

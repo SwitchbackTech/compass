@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { getGcal } from "@backend/auth/services/google.auth.service";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
 
 const port = 2999;
 const testCredentials = {
@@ -13,7 +13,7 @@ const testCredentials = {
 
 describe("Google Auth Service", () => {
   it("auths existing compass user", async () => {
-    const gcalClient = await getGcal("62dc6053943c292c57abbcb9");
+    const gcalClient = await getGcalClient("62dc6053943c292c57abbcb9");
     const f = 1;
   });
   it("refreshes access token", async () => {
