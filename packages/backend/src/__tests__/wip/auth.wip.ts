@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { google } from "googleapis";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 

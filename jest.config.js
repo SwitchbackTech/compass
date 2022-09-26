@@ -127,8 +127,10 @@ module.exports = {
         "\\.(svg)$": "<rootDir>/packages/web/src/__tests__/__mocks__/svg.js",
         "^uuid$": "uuid",
       },
-      setupFiles: ["<rootDir>/packages/web/src/__tests__/web.env.js"],
-      setupFilesAfterEnv: ["<rootDir>/packages/web/src/__tests__/web.setup.js"],
+      setupFiles: ["<rootDir>/packages/web/src/__tests__/web.test.init.js"],
+      setupFilesAfterEnv: [
+        "<rootDir>/packages/web/src/__tests__/web.test.start.js",
+      ],
       testEnvironment: "jsdom",
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
       transformIgnorePatterns: [
@@ -153,7 +155,7 @@ module.exports = {
       },
 
       setupFiles: [
-        "<rootDir>/packages/backend/src/__tests__/jest/jest.backend.env.js",
+        "<rootDir>/packages/backend/src/__tests__/backend.test.init.js",
       ],
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],

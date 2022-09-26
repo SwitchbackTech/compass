@@ -23,7 +23,3 @@ jobs:
       - name: Run tests
         run: |
           yarn test
-
-      - name: Compile and Compress into Distributables
-        run: |
-          yarn build
