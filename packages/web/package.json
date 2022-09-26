@@ -10,7 +10,7 @@
     "@react-oauth/google": "^0.2.6",
     "@reduxjs/toolkit": "^1.6.1",
     "@svgr/webpack": "^6.2.1",
-    "axios": "^0.26.0",
+    "axios": "^0.27.2",
     "classnames": "^2.3.1",
     "css-loader": "^6.3.0",
     "dayjs": "^1.10.7",
