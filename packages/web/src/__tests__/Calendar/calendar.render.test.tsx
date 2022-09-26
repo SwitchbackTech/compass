@@ -1,26 +1,11 @@
 import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
-import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
-import { CompassRoot } from "@web/routers/index";
 import { getWeekDayLabel } from "@web/common/utils/event.util";
-import { LocalStorage } from "@web/common/constants/web.constants";
 import { CalendarView } from "@web/views/Calendar";
 
-describe("Routing", () => {
-  it("goes to login page when local storage token missing", () => {
-    localStorage.removeItem(LocalStorage.ACCESS_TOKEN);
-
-    render(CompassRoot);
-    expect(
-      screen.getByRole("button", { name: /sign in/i })
-    ).toBeInTheDocument();
-
-    // re-add for other tests
-    localStorage.setItem(LocalStorage.ACCESS_TOKEN, "secretTokenValue");
-  });
-});
+import { render } from "../__mocks__/mock.render";
 
 describe("Scroll", () => {
   // separate from other tests to preserve

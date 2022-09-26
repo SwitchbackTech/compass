@@ -35,6 +35,10 @@ export interface Status_Drag {
 interface Status_Resize {
   hasMoved: boolean;
 }
+// simple offset to give space for the times label
+//  - getting diff (in pixels) between top of event and e.clientY
+//    would be more accurate
+const Y_BUFFER = 15;
 
 export const useDraft = (
   dateCalcs: DateCalcs,
@@ -140,13 +144,9 @@ export const useDraft = (
           "minutes"
         );
 
-        // simple offset to give space for the times label
-        //  - getting diff (in pixels) between top of event and e.clientY
-        //    would be more accurate
-        const yBuffer = 15;
         setDragStatus({
           initialMinutesDifference: initialDiffMin,
-          initialYOffset: yBuffer,
+          initialYOffset: Y_BUFFER,
         });
 
         return { ..._draft, isOpen: false };
@@ -416,7 +416,7 @@ export const useDraft = (
   const updateTimesDuringDrag = (e: MouseEvent) => {
     setDraft((_draft) => {
       const x = getX(e, isSidebarOpen);
-      const y = e.clientY - dragStatus.initialYOffset;
+      const y = e.clientY - dragStatus?.initialYOffset || Y_BUFFER;
 
       const _initialStart = dateCalcs.getDateByXY(
         x,

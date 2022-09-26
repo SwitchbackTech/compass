@@ -17,7 +17,6 @@ export const useGridLayout = (week: number) => {
   const [colWidths, setColWidths] = useState<number[]>([]);
 
   useEffect(() => {
-    // console.log("remeasuring cuz week change...");
     _measureMainGrid();
     _measureAllDayRow();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,7 +46,6 @@ export const useGridLayout = (week: number) => {
   }, []);
 
   const allDayRef = useCallback((node: HTMLDivElement) => {
-    // console.log("in allDayRef...");
     if (node !== null) {
       _measureAllDayRow(node);
       _measureColWidths(node);
@@ -68,12 +66,10 @@ export const useGridLayout = (week: number) => {
 
   const _measureAllDayRow = (node?: HTMLDivElement) => {
     if (node) {
-      // console.log("measuring allday by NODE");
       const allDayRect = node.getBoundingClientRect();
       setAllDayMeasurements(allDayRect);
       return;
     }
-    // console.log("measuring allday by SELECTOR");
     const allDayRect = getElemById(ID_GRID_ALLDAY_ROW).getBoundingClientRect();
     setAllDayMeasurements(allDayRect);
   };
@@ -95,12 +91,10 @@ export const useGridLayout = (week: number) => {
 
   const _measureMainGrid = (node?: HTMLDivElement) => {
     if (node) {
-      // console.log("measuring main via NODE...");
       const mainRect = node.getBoundingClientRect();
       setMainMeasurements(mainRect);
       return;
     }
-    // console.log("measuring main via SELECTOR ...");
     const mainRect = getElemById(ID_GRID_MAIN).getBoundingClientRect();
     setMainMeasurements(mainRect);
   };
@@ -108,7 +102,6 @@ export const useGridLayout = (week: number) => {
   const remeasure = (elem: MeasureableElement) => {
     switch (elem) {
       case "mainGrid": {
-        // console.log("remeasuring main...");
         _measureMainGrid();
         break;
       }

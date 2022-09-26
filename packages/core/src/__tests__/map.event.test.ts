@@ -1,6 +1,6 @@
-import { Origin, Priorities } from "../../core.constants";
-import { gcalEvents } from "../../__mocks__/events/gcal/gcal.event";
-import { MapEvent } from "../map.event";
+import { Origin, Priorities } from "../constants/core.constants";
+import { gcalEvents } from "../__mocks__/events/gcal/gcal.event";
+import { MapEvent } from "../mappers/map.event";
 
 describe("toGcal", () => {
   const validGcalDates = [

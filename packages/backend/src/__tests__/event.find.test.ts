@@ -1,7 +1,7 @@
 import { MongoClient } from "mongodb";
-import { getReadAllFilter } from "../common/middleware/event/services/event.service.helpers";
-import { mockEventSetJan22 } from "@core/__mocks__/events/events.22jan";
-import { mockEventSetMar22 } from "@core/__mocks__/events/events.22mar";
+import { getReadAllFilter } from "../event/services/event.service.helpers";
+import { mockEventSetJan22 } from "../../../core/src/__mocks__/events/events.22jan";
+import { mockEventSetMar22 } from "../../../core/src/__mocks__/events/events.22mar";
 
 /* 
 Keep in mind:

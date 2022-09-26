@@ -1,62 +1,40 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import { UserEvent } from "@testing-library/user-event/dist/types/setup/setup";
 import userEvent from "@testing-library/user-event";
-import {
-  MARCH_1,
-  MULTI_WEEK,
-  TY_TIM,
-} from "@core/__mocks__/events/events.misc";
+import { CLIMB, MULTI_WEEK, TY_TIM } from "@core/__mocks__/events/events.misc";
 import { CalendarView } from "@web/views/Calendar";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 
 describe("Event Form", () => {
-  it.todo("only allows 1 form to be open at a time"); // currently allows concurrent someday and grid forms
-
   it("opens when clicking events", async () => {
     const user = userEvent.setup();
 
-    await waitFor(() => {
-      render(<CalendarView />, { state: preloadedState });
-    });
+    render(<CalendarView />, { state: preloadedState });
+
     expect(screen.queryByRole("form")).not.toBeInTheDocument();
 
-    /* all-day event */
-    await act(async () => {
-      await user.click(screen.getByRole("button", { name: /Mar 1/i }));
-    });
-    await _confirmCorrectEventFormIsOpen(MARCH_1.title);
-
     /* timed event */
-    await act(async () => {
-      await user.click(screen.getByRole("button", { name: /Ty & Tim/i }));
-    });
+    await user.click(screen.getByRole("button", { name: /Ty & Tim/i }));
     await _confirmCorrectEventFormIsOpen(TY_TIM.title);
 
     /* multi-week event */
-    await act(async () => {
-      await user.click(
-        screen.getByRole("button", { name: /multiweek event/i })
-      );
-    });
+    await _clickHeading(user);
+    await user.click(screen.getByRole("button", { name: /multiweek event/i }));
     await _confirmCorrectEventFormIsOpen(MULTI_WEEK.title);
 
-    /* someday event */
-    await act(async () => {
-      await user.click(screen.getByRole("button", { name: /Takeover world/i }));
-    });
+    //   /* someday event */
+    await _clickHeading(user);
+    await user.click(screen.getByRole("button", { name: /takeover world/i }));
 
-    // using testid because multiple forms currently allowed
-    // converted to _confirmCorrect...() once ^ is fixed
-    await waitFor(() => {
-      expect(
-        within(screen.getByTestId("somedayForm")).getByText("Takeover world")
-      ).toBeInTheDocument();
-    });
+    expect(
+      within(screen.getByTestId("somedayForm")).getByText("Takeover world")
+    ).toBeInTheDocument();
   }, 10000);
 
-  it("closes when clicking outside or pressing ESC", async () => {
+  it("closes when clicking outside", async () => {
     /*
         attempt at ESC-ing
         opt: 
@@ -72,13 +50,9 @@ describe("Event Form", () => {
     const user = userEvent.setup();
     render(<CalendarView />, { state: preloadedState });
 
-    await act(async () => {
-      await user.click(screen.getByRole("button", { name: MARCH_1.title }));
-    });
+    await user.click(screen.getByRole("button", { name: CLIMB.title }));
 
-    await act(async () => {
-      await user.click(screen.getByRole("heading", { level: 1 }));
-    });
+    await _clickHeading(user);
 
     await waitFor(() => {
       expect(screen.queryByRole("form")).not.toBeInTheDocument();
@@ -87,21 +61,15 @@ describe("Event Form", () => {
 
   it("deletes event after clicking trash icon", async () => {
     const user = userEvent.setup();
-    await waitFor(() => {
-      render(<CalendarView />, { state: preloadedState });
-    });
+    render(<CalendarView />, { state: preloadedState });
 
-    await act(async () => {
-      await user.click(screen.getByTitle("Climb")); // open event
-    });
+    await user.click(screen.getByRole("button", { name: CLIMB.title }));
 
-    await act(async () => {
-      await user.click(
-        screen.getByRole("button", {
-          name: /delete event/i,
-        })
-      );
-    });
+    await user.click(
+      screen.getByRole("button", {
+        name: /delete event/i,
+      })
+    );
 
     await waitFor(() => {
       expect(
@@ -117,29 +85,16 @@ describe("Event Form", () => {
       const user = userEvent.setup();
       render(<CalendarView />, { state: preloadedState });
 
-      await act(async () => {
-        await user.click(
-          screen.getByRole("button", {
-            // accept any times because times will be different if
-            // CI server in different timezone than you
-            name: /climb (\d|\d\d):\d\d(a|p)m - (\d|\d\d):00(a|p)m/i,
-          })
-        );
-      });
-      const startDatePicker = await waitFor(() => {
-        screen.getAllByRole("tab", {
-          name: /mar 01/i,
-        })[0];
-      });
+      await user.click(
+        screen.getByRole("button", {
+          name: /climb/i,
+        })
+      );
 
-      await act(async () => {
-        await user.click(startDatePicker); // picker should open
-      });
+      await user.click(screen.getAllByRole("tab", { name: /mar 01/i })[0]); // picker should open
 
-      await act(async () => {
-        // picker should close
-        await user.click(screen.getByRole("form"));
-      });
+      // picker should close
+      await user.click(screen.getByRole("form"));
 
       // looks for the date input that appears when editing
       // (instead of date picker, because sidebar month picker still present)
@@ -157,6 +112,10 @@ describe("Event Form", () => {
 /***********
  * Helpers *
  ***********/
+const _clickHeading = async (user: UserEvent) => {
+  await user.click(screen.getByRole("heading", { level: 1 }));
+};
+
 const _confirmCorrectEventFormIsOpen = async (eventName: string) => {
   await waitFor(() => {
     expect(

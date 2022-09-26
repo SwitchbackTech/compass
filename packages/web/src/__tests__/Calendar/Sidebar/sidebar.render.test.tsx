@@ -29,12 +29,6 @@ describe("Sidebar: Display without State", () => {
       screen.getByRole("dialog", { name: /month widget/i })
     ).toBeInTheDocument();
   });
-
-  // skip this until it's easier to test if sidebar is actually
-  // open or collapsed. Currently that's done by altering CSS's
-  // width. But the elements are still on the DOM, so you can't
-  // simply assert that they're present on the DOM
-  it.todo("collapses sidebar after clicking toggle button");
 });
 
 describe("Sidebar: Display with State", () => {

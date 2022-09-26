@@ -1,15 +1,10 @@
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
-import { LocalStorage } from "@web/common/constants/web.constants";
 import {
-  mockLocalStorage,
   clearLocalStorageMock,
   mockScroll,
 } from "@web/__tests__/utils/test.util";
 
 beforeAll(() => {
-  mockLocalStorage();
-  // eslint-disable-next-line no-undef
-  localStorage.setItem(LocalStorage.TOKEN, "secretTokenValue");
   mockScroll();
   server.listen();
 });

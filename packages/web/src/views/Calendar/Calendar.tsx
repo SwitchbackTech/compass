@@ -1,5 +1,4 @@
 import React from "react";
-import dayjs from "dayjs";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { DragLayer } from "@web/views/Calendar/containers/DragLayer";
 
@@ -54,13 +53,7 @@ export const CalendarView = () => {
         measurements={measurements}
         viewStart={weekProps.component.startOfSelectedWeekDay}
       />
-      <Sidebar
-        // onTransitionEnd={() =>
-        //   setResize({ height: window.innerHeight, width: window.innerWidth })
-        // }
-        prefs={prefs}
-        weekProps={weekProps}
-      />
+      <Sidebar prefs={prefs} weekProps={weekProps} />
       <StyledCalendar direction={FlexDirections.COLUMN}>
         <Header rootProps={rootProps} today={today} weekProps={weekProps} />
 

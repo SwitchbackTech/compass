@@ -1,12 +1,17 @@
 import React from "react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import { LoginView } from "@web/views/Login";
 
+// wip cuz .png breaks
+// see if these work after converting png to custom button
+
+import { render } from "../__mocks__/mock.render";
 describe("Login", () => {
   it("displays oauth and feedback buttons", async () => {
     render(<LoginView />);
+
     const gOauthButton = screen.getByRole("button", {
       name: /sign up/i,
     });

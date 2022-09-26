@@ -1,15 +1,16 @@
-import React from "react";
+import React, { ReactElement } from "react";
 import { Provider } from "react-redux";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { configureStore } from "@reduxjs/toolkit";
-import { render } from "@testing-library/react";
+import { render, RenderOptions } from "@testing-library/react";
 import { sagas } from "@web/store/sagas";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { reducers } from "@web/store/reducers";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
 
 const customRender = (
-  ui: JSX.Element,
+  ui: ReactElement,
   {
     state,
     store = configureStore({
@@ -27,17 +28,17 @@ const customRender = (
   const AllTheProviders = ({ children }) => {
     return (
       <DndProvider backend={HTML5Backend}>
-        <Provider store={store}>{children}</Provider>;
+        <GoogleOAuthProvider clientId="anyClientId">
+          <Provider store={store}>{children}</Provider>
+        </GoogleOAuthProvider>
       </DndProvider>
     );
   };
 
-  // wraps each test component with our providers by
-  // extending React's default render
-  return render(ui, { wrapper: AllTheProviders, ...renderOptions });
+  const options: RenderOptions = { ...renderOptions };
+  // wraps test component with providers
+  return render(ui, { wrapper: AllTheProviders, ...options });
 };
 
-// re-export everything
 export * from "@testing-library/react";
-// override render method
 export { customRender as render };

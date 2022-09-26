@@ -125,9 +125,12 @@ module.exports = {
         "^.+\\.(css|less)$":
           "<rootDir>/packages/web/src/__tests__/__mocks__/css.stub.js",
         "\\.(svg)$": "<rootDir>/packages/web/src/__tests__/__mocks__/svg.js",
+        "^uuid$": "uuid",
       },
-
-      setupFilesAfterEnv: ["<rootDir>/packages/web/jest.setup.js"],
+      setupFiles: ["<rootDir>/packages/web/src/__tests__/web.test.init.js"],
+      setupFilesAfterEnv: [
+        "<rootDir>/packages/web/src/__tests__/web.test.start.js",
+      ],
       testEnvironment: "jsdom",
       testMatch: ["<rootDir>/packages/web/**/?(*.)+(spec|test).[tj]s?(x)"],
       transformIgnorePatterns: [
@@ -142,14 +145,18 @@ module.exports = {
         "^@backend/auth/(.*)$": "<rootDir>/packages/backend/src/auth/$1",
         "^@backend/calendar/(.*)$":
           "<rootDir>/packages/backend/src/calendar/$1",
+        "^@backend/common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
         "^@backend/dev/(.*)$": "<rootDir>/packages/backend/src/dev/$1",
         "^@backend/event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
-        "^@backend/common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
         "^@backend/priority/(.*)$":
           "<rootDir>/packages/backend/src/priority/$1",
         "^@backend/sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
         "^@backend/user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
       },
+
+      setupFiles: [
+        "<rootDir>/packages/backend/src/__tests__/backend.test.init.js",
+      ],
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],
     },
@@ -223,9 +230,6 @@ module.exports = {
 
   // This option allows use of a custom test runner
   // testRunner: "jest-circus/runner",
-
-  // This option sets the URL for the jsdom environment. It is reflected in properties such as location.href
-  // testURL: "http://localhost",
 
   // Setting this value to "fake" allows the use of fake timers for functions such as "setTimeout"
   // timers: "real",

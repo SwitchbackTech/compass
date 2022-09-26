@@ -1,9 +1,9 @@
 import React from "react";
 import { rest } from "msw";
 import "@testing-library/jest-dom";
-import { act, screen, waitFor, within } from "@testing-library/react";
-import { LEARN_CHINESE } from "@core/__mocks__/events/events.misc";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { LEARN_CHINESE } from "@core/__mocks__/events/events.misc";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
@@ -18,37 +18,20 @@ describe("Sidebar: Interactions", () => {
     );
 
     const user = userEvent.setup();
-    await waitFor(() => {
-      render(<CalendarView />, { state: preloadedState });
-    });
+    render(<CalendarView />, { state: preloadedState });
 
-    // await waitFor(() => {
-    //   expect(screen.getByRole("complementary")).toBeInTheDocument();
-    // });
+    await user.click(screen.getByText(/\+/i));
 
+    const formTitle = screen.getByRole("input");
+    await user.type(formTitle, LEARN_CHINESE.title);
+
+    //shows preview while typing
     const sidebar = screen.getByRole("complementary");
+    expect(
+      within(sidebar).getByDisplayValue(LEARN_CHINESE.title)
+    ).toBeInTheDocument();
 
-    await act(async () => {
-      await user.click(
-        within(sidebar).getByRole("button", {
-          name: /add someday event/i,
-        })
-      );
-    });
-
-    await act(async () => {
-      await user.type(
-        screen.getByRole("input", { name: /title/i }),
-        LEARN_CHINESE.title
-      );
-    });
-
-    // TODO: shows preview while typing
-    // expect(within(sidebar).getByDisplayValue("learn")).toBeInTheDocument();
-
-    await act(async () => {
-      await user.click(screen.getByText(/save/i));
-    });
+    await user.click(screen.getByText(/save/i));
 
     await waitFor(() => {
       expect(
@@ -56,9 +39,4 @@ describe("Sidebar: Interactions", () => {
       ).toBeInTheDocument();
     });
   }, 10000);
-  describe("Drag & Drop", () => {
-    it.todo("moves event from sidebar to grid after drop");
-
-    it.todo("displays times preview while dragging");
-  });
 });
