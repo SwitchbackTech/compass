@@ -13,7 +13,7 @@ export const getAlphaColor = (colorName: ColorNames, opacity: number) => {
 
 export const getBrighterColor = (colorName: ColorNames) => {
   // assumes that the higher the numbers are, the brighter the colors
-  return colors[getNeighbourKey(colorName, colors, 1) as ColorNames];
+  return colors[getNeighbourKey(colorName, colors, 1)] as string;
 };
 
 export const getColor = (colorName: ColorNames) => colors[colorName];
@@ -45,8 +45,8 @@ export const getNeighbourKey = (key = "", obj = {}, diff = 1): string => {
 };
 
 export const hoverColorsByPriority = {
-  [Priorities.UNASSIGNED]: getColor(ColorNames.GREY_5_BRIGHT),
-  [Priorities.WORK]: getColor(ColorNames.GREY_3_BRIGHT),
-  [Priorities.RELATIONS]: getColor(ColorNames.TEAL_4),
-  [Priorities.SELF]: getColor(ColorNames.BLUE_3_BRIGHT),
+  [Priorities.UNASSIGNED]: "#F0FFFF",
+  [Priorities.WORK]: "#80B8E1",
+  [Priorities.RELATIONS]: "#86D2ED",
+  [Priorities.SELF]: "#8EB1FF",
 };

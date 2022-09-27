@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Priorities, Priority } from "@core/constants/core.constants";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { Text } from "@web/components/Text";
 import {
   AlignItems,

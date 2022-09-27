@@ -1,17 +1,28 @@
 import React from "react";
+import { colorNameByPriority } from "@core/constants/colors";
+import { Priority } from "@core/constants/core.constants";
+import { SaveBtn } from "@web/components/Button";
+import { getBrighterColor } from "@core/util/color.utils";
 
-import { StyledSubmitButton, StyledSubmitRow } from "../styled";
+import { StyledSubmitRow } from "../styled";
 
 interface Props {
   onSubmit: () => void;
+  priority: Priority;
 }
 
-export const SaveSection: React.FC<Props> = ({ onSubmit: _onSubmit }) => {
+export const SaveSection: React.FC<Props> = ({
+  onSubmit: _onSubmit,
+  priority,
+}) => {
+  const colorName = colorNameByPriority[priority];
+  const color = getBrighterColor(colorName);
+
   return (
     <StyledSubmitRow>
-      <StyledSubmitButton bordered={true} onClick={_onSubmit}>
+      <SaveBtn background={color} minWidth={110} onClick={_onSubmit}>
         Save
-      </StyledSubmitButton>
+      </SaveBtn>
     </StyledSubmitRow>
   );
 };

@@ -4,7 +4,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import dayjs from "dayjs";
 import classNames from "classnames";
 import { Text } from "@web/components/Text";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Flex } from "@web/components/Flex";
 import { Input } from "@web/components/Input";
@@ -109,7 +109,7 @@ export const DatePicker: React.FC<Props> = ({
       customInput={
         <Input
           onBlurCapture={onInputBlur}
-          background={ColorNames.DARK_3}
+          background={ColorNames.GREY_3}
           colorName={ColorNames.WHITE_1}
         />
       }

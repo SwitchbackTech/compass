@@ -3,7 +3,8 @@ import {
   HOURS_AM_FORMAT,
   HOURS_AM_SHORT_FORMAT,
 } from "@web/common/constants/date.constants";
-import { ColorNames } from "@core/constants/colors";
+// import { ColorNames } from "@core/types/color.types";
+import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 

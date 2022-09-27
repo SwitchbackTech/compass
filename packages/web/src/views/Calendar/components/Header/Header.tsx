@@ -1,6 +1,6 @@
 import React, { FC } from "react";
 import { Dayjs } from "dayjs";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { getAlphaColor, getColor } from "@core/util/color.utils";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
@@ -36,15 +36,15 @@ export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
 
           <SpaceCharacter />
 
-          <Text colorName={ColorNames.DARK_5} size={40}>
+          <Text colorName={ColorNames.WHITE_1} size={40}>
             {weekProps.component.dayjsBasedOnWeekDay.format("YYYY")}
           </Text>
         </div>
 
         <StyledNavigationButtons>
           <ArrowNavigationButton
+            colorName={ColorNames.WHITE_2}
             cursor="pointer"
-            colorName={ColorNames.DARK_5}
             onClick={() =>
               weekProps.state.setWeek((actualWeek) => actualWeek - 1)
             }
@@ -56,7 +56,7 @@ export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
           </ArrowNavigationButton>
 
           <ArrowNavigationButton
-            colorName={ColorNames.DARK_5}
+            colorName={ColorNames.GREY_5}
             cursor="pointer"
             onClick={() =>
               weekProps.state.setWeek((actualWeek) => +actualWeek + 1)

@@ -1,4 +1,4 @@
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { Text } from "@web/components/Text";
 import { Dayjs } from "dayjs";
 import React, { useState } from "react";

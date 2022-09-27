@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
 
 export interface Props {
@@ -10,7 +10,7 @@ export interface Props {
 
 const _dayHoverStyles = `
   background-color: ${getColor(ColorNames.BLUE_5)};
-  color: ${getColor(ColorNames.DARK_2)};
+  color: ${getColor(ColorNames.BLUE_2)};
 `;
 
 export const ChangeDayButtonsStyledFlex = styled(Flex)`
@@ -33,7 +33,7 @@ export const MonthContainerStyled = styled(Flex)`
 `;
 
 export const Styled = styled.div<Props>`
-  background-color: ${getColor(ColorNames.DARK_3)};
+  background-color: ${getColor(ColorNames.GREY_3)};
   border: none;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   font-weight: 500;

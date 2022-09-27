@@ -179,21 +179,6 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   const onSubmitForm = () => {
-    // const startDateString = dayjs(selectedStartDate).format(
-    //   YEAR_MONTH_DAY_FORMAT
-    // );
-
-    // const endDateString = dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT);
-    // const startDate = event?.isAllDay
-    //   ? startDateString
-    //   : `${startDateString} ${startTime?.value || ""}`;
-    // const endDate = event?.isAllDay
-    //   ? endDateString
-    //   : `${endDateString} ${endTime?.value || ""}`;
-
-    // const startDateString = dayjs(selectedStartDate).format();
-    // const endDateString = dayjs(selectedEndDate).format();
-
     const { startDate, endDate } = getFinalDates();
 
     if (dayjs(startDate).isAfter(dayjs(endDate))) {
@@ -295,7 +280,7 @@ export const EventForm: React.FC<FormProps> = ({
         value={event.description || ""}
       />
 
-      <SaveSection onSubmit={onSubmitForm} />
+      <SaveSection priority={priority} onSubmit={onSubmitForm} />
     </StyledEventForm>
   );
 };

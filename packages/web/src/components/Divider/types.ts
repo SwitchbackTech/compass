@@ -1,4 +1,4 @@
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 
 export interface Props {
   toggled?: boolean;

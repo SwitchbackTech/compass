@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
 import { linearGradient } from "@core/constants/colors";
 

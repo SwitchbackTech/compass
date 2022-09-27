@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import {
@@ -28,9 +28,9 @@ export const StyledMainGrid = styled.div`
   }
   ::-webkit-scrollbar-thumb {
     border-radius: 7px;
-    background: ${getColor(ColorNames.DARK_3)};
+    background: ${getColor(ColorNames.GREY_3)};
     &:hover {
-      background: ${getColor(ColorNames.DARK_4)};
+      background: ${getColor(ColorNames.GREY_4)};
       transition: background-color 0.2s;
     }
   }

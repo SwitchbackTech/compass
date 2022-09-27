@@ -1,6 +1,5 @@
 import styled from "styled-components";
-import { ColorNames } from "@core/constants/colors";
-import { getColor } from "@core/util/color.utils";
+import { BASE_COLORS } from "@core/constants/colors";
 import { Flex } from "@web/components/Flex";
 
 import { PAGE_TOP_PADDING, PAGE_X_PADDING } from "./layout.constants";
@@ -14,6 +13,6 @@ export const Styled = styled(Flex)`
 export const StyledCalendar = styled(Flex)`
   flex-grow: 1;
   height: 100%;
-  background: ${getColor(ColorNames.DARK_2)};
+  background: ${BASE_COLORS.DEEP_BLUE};
   padding: ${PAGE_TOP_PADDING}px ${PAGE_X_PADDING}px 0 ${PAGE_X_PADDING}px;
 `;

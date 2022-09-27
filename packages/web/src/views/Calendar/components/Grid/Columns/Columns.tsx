@@ -3,7 +3,7 @@ import { Dayjs } from "dayjs";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/date.constants";
 import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 
 import { StyledGridCols, StyledGridCol } from "./styled";
 import { TimesColumn } from "./TimesColumn";
@@ -22,7 +22,7 @@ export const Columns: FC<Props> = ({
   weekDays,
 }) => {
   const todayIndex = today.day();
-  const pastDayColor = `${getColor(ColorNames.DARK_3)}30`;
+  const pastDayColor = `${getColor(ColorNames.GREY_3)}30`;
 
   const _getColumnColor = (dayIndex: number) => {
     const isPastDay = todayIndex > dayIndex;

@@ -6,7 +6,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { Text } from "@web/components/Text";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import googleSignInBtn from "@web/assets/png/googleSignInBtn.png";
