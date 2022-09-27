@@ -46,6 +46,7 @@ export const useDraftForm = (onClickOut: () => void) => {
           offset: [0, 10],
         },
       },
+      // { name: "eventListeners", options: { scroll: true } }, //++
     ],
   });
   const popperStyles = {

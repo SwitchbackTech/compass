@@ -20,7 +20,13 @@ export const SaveSection: React.FC<Props> = ({
 
   return (
     <StyledSubmitRow>
-      <SaveBtn background={color} minWidth={110} onClick={_onSubmit}>
+      <SaveBtn
+        background={color}
+        minWidth={110}
+        onClick={_onSubmit}
+        role="tab"
+        tabIndex={0}
+      >
         Save
       </SaveBtn>
     </StyledSubmitRow>

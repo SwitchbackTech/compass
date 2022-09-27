@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import React, { useEffect, useState } from "react";
+import React, { KeyboardEvent, useCallback, useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
@@ -77,6 +77,38 @@ export const EventForm: React.FC<FormProps> = ({
   /********
    * Effect
    *********/
+
+  const keyDownHandler = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.which === Key.Shift) {
+        toggleShiftKeyPressed(true);
+      }
+
+      if (e.which === Key.Escape) {
+        setTimeout(_onClose);
+        return;
+      }
+    },
+    [_onClose]
+  );
+  const keyUpHandler = useCallback((e: KeyboardEvent) => {
+    if (e.which === Key.Shift) {
+      toggleShiftKeyPressed(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log("in key[updown] effect");
+    window.addEventListener("keydown", keyDownHandler);
+    window.addEventListener("keyup", keyUpHandler);
+
+    return () => {
+      window.removeEventListener("keydown", keyDownHandler);
+      window.addEventListener("keyup", keyUpHandler);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     setEvent(event || {});
     setStartTime(initialStartTime || undefined);
@@ -84,36 +116,7 @@ export const EventForm: React.FC<FormProps> = ({
     setSelectedStartDate(initialStartDate);
     setSelectedEndDate(initialEndDate);
     setIsFormOpen(true);
-
-    //++ separate these effects
-    const keyDownHandler = (e: KeyboardEvent) => {
-      if (e.which === Key.Shift) {
-        toggleShiftKeyPressed(true);
-      }
-
-      if (e.which === Key.Escape) {
-        // console.log("esc, exiting early");
-        setTimeout(onClose);
-        return;
-        // onClose();
-        // return;
-      }
-    };
-
-    const keyUpHandler = (e: KeyboardEvent) => {
-      if (e.which === Key.Shift) {
-        toggleShiftKeyPressed(false);
-      }
-    };
-
-    document.addEventListener("keydown", keyDownHandler);
-    document.addEventListener("keyup", keyUpHandler);
-
-    return () => {
-      document.removeEventListener("keydown", keyDownHandler);
-      document.removeEventListener("keyup", keyUpHandler);
-    };
-  }, []); //use exhaustive ++
+  }, []);
 
   /*********
    * Handlers
@@ -127,7 +130,6 @@ export const EventForm: React.FC<FormProps> = ({
   const onClose = () => {
     setIsFormOpen(false);
 
-    // _onClose();
     setTimeout(() => {
       _onClose();
     }, 120);
@@ -137,20 +139,6 @@ export const EventForm: React.FC<FormProps> = ({
     onDelete(event._id);
     onClose();
   };
-
-  // const getDateStrWithTimes = (field: "start" | "end") => {
-  //   if (field === "start") {
-  //     return dayjs(selectedStartDate)
-  //       .hour(parseInt(startTime.value.slice(0, 2)))
-  //       .minute(parseInt(startTime.value.slice(3, 5)))
-  //       .format();
-  //   } else if (field === "end") {
-  //     dayjs(selectedEndDate)
-  //       .hour(parseInt(endTime.value.slice(0, 2)))
-  //       .minute(parseInt(endTime.value.slice(3, 5)))
-  //       .format();
-  //   }
-  // };
 
   const addTimesToDates = () => {
     const startDate = dayjs(selectedStartDate)
@@ -175,6 +163,12 @@ export const EventForm: React.FC<FormProps> = ({
     } else {
       const { startDate, endDate } = addTimesToDates();
       return { startDate, endDate };
+    }
+  };
+
+  const ignoreDelete = (e: KeyboardEvent) => {
+    if (e.which === Key.Backspace) {
+      e.stopPropagation();
     }
   };
 
@@ -207,9 +201,24 @@ export const EventForm: React.FC<FormProps> = ({
     setEvent(newEvent);
   };
 
-  const submitFormWithKeyboard: React.KeyboardEventHandler<
-    HTMLTextAreaElement
-  > = (e) => {
+  const submitFormWithKeyboard: React.KeyboardEventHandler<HTMLFormElement> = (
+    e
+  ) => {
+    if (e.which === Key.Backspace || e.which == Key.Delete) {
+      const isDraft = !event._id;
+      if (isDraft) {
+        onClose();
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `Delete ${event.title || "this event"}?`
+      );
+      if (confirmed) {
+        onDeleteForm();
+        return;
+      }
+    }
     const shouldIgnore = isShiftKeyPressed || e.which !== Key.Enter;
     if (shouldIgnore) {
       return;
@@ -226,6 +235,7 @@ export const EventForm: React.FC<FormProps> = ({
       {...props}
       isOpen={isFormOpen}
       name="Event Form"
+      onKeyDown={submitFormWithKeyboard}
       onMouseUp={(e) => {
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
@@ -249,8 +259,8 @@ export const EventForm: React.FC<FormProps> = ({
         autoFocus
         placeholder="Title"
         onChange={onChangeEventTextField("title")}
-        // onKeyUp={submitFormWithKeyboard}
-        onKeyDown={submitFormWithKeyboard}
+        onKeyDown={ignoreDelete}
+        // onKeyDown={(e) => ignoreDelete(e)}
         role="textarea"
         name="Event Title"
         value={title}
@@ -276,6 +286,7 @@ export const EventForm: React.FC<FormProps> = ({
 
       <StyledDescriptionField
         onChange={onChangeEventTextField("description")}
+        onKeyDown={ignoreDelete}
         placeholder="Description"
         value={event.description || ""}
       />
@@ -284,3 +295,20 @@ export const EventForm: React.FC<FormProps> = ({
     </StyledEventForm>
   );
 };
+
+/* //++
+  // const getDateStrWithTimes = (field: "start" | "end") => {
+  //   if (field === "start") {
+  //     return dayjs(selectedStartDate)
+  //       .hour(parseInt(startTime.value.slice(0, 2)))
+  //       .minute(parseInt(startTime.value.slice(3, 5)))
+  //       .format();
+  //   } else if (field === "end") {
+  //     dayjs(selectedEndDate)
+  //       .hour(parseInt(endTime.value.slice(0, 2)))
+  //       .minute(parseInt(endTime.value.slice(3, 5)))
+  //       .format();
+  //   }
+  // };
+
+*/

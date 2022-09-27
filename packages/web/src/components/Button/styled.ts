@@ -58,6 +58,10 @@ export const StyledSaveBtn = styled(PalletteBtn)<CustomProps>`
   color: ${({ color }) => color};
   min-width: ${({ minWidth }) => minWidth}px;
 
+  &:focus {
+    /* border-width: ${({ bordered }) => (bordered ? 2 : 1)}px; */
+    border: 2px solid ${BASE_COLORS.DEEP_BLUE};
+  }
   &:hover {
     filter: brightness(120%);
   }

@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { Priorities } from "@core/constants/core.constants";
 import { colorNameByPriority } from "@core/constants/colors";
-import { InvertedColorNames } from "@core/constants/colors";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import {
   ANIMATION_TIME_3_MS,
@@ -11,6 +10,7 @@ import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
 import { getColor, getInvertedColor } from "@core/util/color.utils";
 import { Button } from "@web/components/Button";
+import { InvertedColorNames } from "@core/types/color.types";
 
 import { StyledFormProps } from "./types";
 
@@ -43,6 +43,7 @@ export const StyledEventForm = styled.form<StyledFormProps>`
 export const StyledDescriptionField = styled(Textarea)`
   background: transparent;
   width: calc(100% - 20px) !important;
+  max-height: 180px;
   font-size: 20px;
   position: relative;
 `;
@@ -60,6 +61,7 @@ export const StyledSubmitButton = styled(Button)`
 export const StyledSubmitRow = styled(Flex)`
   align-items: right;
   justify-content: end;
+  padding-top: 18px;
 `;
 
 export const StyledTitleField = styled(Textarea)`

@@ -3,6 +3,7 @@ import { Colors, ColorNames } from "@core/types/color.types";
 
 export const BASE_COLORS = {
   DEEP_BLUE: "#1C3142",
+  ONYX_GREY: "#1D2932",
 };
 
 export const colors: Colors = {
@@ -52,11 +53,10 @@ export const GRID_LINE_OPACITY_PERCENT = 48;
 
 export const invertedColors = {
   // priority colors (colorNameByPriority)
-  [ColorNames.GREY_4]: "#1D2932",
-  [ColorNames.BLUE_7]: "#1D2932",
-  [ColorNames.BLUE_5]: "#1C3142",
-  [ColorNames.TEAL_2]: "#1C3142",
-
+  [ColorNames.GREY_4]: BASE_COLORS.ONYX_GREY,
+  [ColorNames.BLUE_7]: BASE_COLORS.ONYX_GREY,
+  [ColorNames.BLUE_5]: BASE_COLORS.DEEP_BLUE,
+  [ColorNames.TEAL_2]: BASE_COLORS.DEEP_BLUE,
   // other
   [ColorNames.WHITE_1]: colors.white_3,
   [ColorNames.YELLOW_2]: colors.yellow_3,
