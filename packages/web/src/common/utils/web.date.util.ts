@@ -1,14 +1,17 @@
 import dayjs, { Dayjs } from "dayjs";
+import { SelectOption } from "@web/common/types/components";
 import {
   HOURS_AM_FORMAT,
   HOURS_AM_SHORT_FORMAT,
+  YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
 } from "@web/common/constants/date.constants";
-// import { ColorNames } from "@core/types/color.types";
+import { Option_Time } from "@web/common/types/util.types";
 import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
 import { roundToNext } from ".";
+import { ACCEPTED_TIMES } from "../constants/web.constants";
 
 export const getColorsByHour = (currentHour: number) => {
   const colors: string[] = [];
@@ -29,6 +32,17 @@ export const getColorsByHour = (currentHour: number) => {
   });
 
   return colors;
+};
+
+export const getDurationLabel = (start: string, end: string) => {
+  const _start = dayjs(
+    `2000-00-00 ${start}`,
+    YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
+  );
+
+  const _end = dayjs(`2000-00-00 ${end}`, YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
+
+  return _end.diff(_start, "minutes");
 };
 
 export const getNextIntervalTimes = () => {
@@ -60,6 +74,78 @@ export const getTimes = () =>
       // eslint-disable-next-line no-bitwise
       return `0${~~(i / 4)}:0${60 * ((i / 4) % 1)}`.replace(/\d(\d\d)/g, "$1");
     });
+
+export const getTimeOptions = (): Option_Time[] => {
+  const options = ACCEPTED_TIMES.map((value) => {
+    const day = dayjs(
+      `2000-00-00 ${value}`,
+      YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
+    );
+
+    const label = day.format(HOURS_AM_FORMAT).replace(":00", "");
+
+    return {
+      value,
+      label,
+    };
+  });
+  //++filter current time?
+  return options;
+};
+
+export const getEndTimeOptions = (): Option_Time[] => {
+  const options = ACCEPTED_TIMES.map((value) => {
+    const day = dayjs(
+      `2000-00-00 ${value}`,
+      YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
+    );
+
+    const label = day.format(HOURS_AM_FORMAT).replace(":00", "");
+
+    return {
+      value,
+      label: `${label} 18h 10m`,
+    };
+  });
+  //++filter current time?
+  return options;
+};
+
+//++ remove once done
+export const getSortedTimes = (
+  option: SelectOption<string> | undefined,
+  method: "isAfter" | "isBefore"
+) => {
+  const options = ACCEPTED_TIMES.map((value) => {
+    const day = dayjs(
+      `2000-00-00 ${value}`,
+      YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
+    );
+
+    return {
+      value,
+      label: day.format(HOURS_AM_FORMAT),
+    };
+  });
+
+  if (!option) return options;
+
+  const collocativeMoment = dayjs(
+    `2000-00-00 ${option.value}`,
+    YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
+  );
+
+  return options.filter((time) => {
+    const timeMoment = dayjs(
+      `2000-00-00 ${time.value}`,
+      YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
+    );
+    return (
+      // timeMoment[method](collocativeMoment) ||
+      !timeMoment.isSame(collocativeMoment)
+    );
+  });
+};
 
 export const getTimesLabel = (startDate: string, endDate: string) => {
   const start = _getTimeLabel(startDate);

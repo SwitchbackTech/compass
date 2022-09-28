@@ -1,4 +1,4 @@
-import { ColorNames, InvertedColorNames } from "@core/constants/colors";
+import { ColorNames, InvertedColorNames } from "@core/types/color.types";
 import { getColor, getInvertedColor } from "@core/util/color.utils";
 
 export interface BackgroundProps {
@@ -6,6 +6,7 @@ export interface BackgroundProps {
 }
 
 export interface ColorProps {
+  color?: string;
   colorName?: ColorNames;
 }
 

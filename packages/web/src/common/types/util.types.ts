@@ -2,6 +2,11 @@ export interface AssignResult {
   fits: boolean;
   rowNum?: number;
 }
+
+export interface Option_Time {
+  label: string;
+  value: string;
+}
 export interface WidthPercentages {
   current: number[];
   pastFuture: number[];

@@ -1,37 +1,40 @@
 import styled from "styled-components";
-
-import { Divider } from "@web/components/Divider";
 import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
+import { Divider } from "@web/components/Divider";
+import { FORM_TIME_SIZE } from "@web/views/Forms/EventForm/styled";
+import { BASE_COLORS } from "@core/constants/colors";
+import { getColor } from "@core/util/color.utils";
+import { ColorNames } from "@core/types/color.types";
 
 export interface Props {
+  bgColor?: string;
   open?: boolean;
 }
 
-export const Styled = styled.div<Props>`
-  min-width: 100px;
+export const StyledTimePicker = styled.div<Props>`
+  font-size: ${FORM_TIME_SIZE}px;
+  min-width: 90px;
   position: relative;
 
   & span[aria-live="polite"] {
     display: none;
   }
 
-  /* & > div {
-    height: 100%;
-  } */
-
   & .timepicker {
     &__control {
-      color: white;
       border: none;
-      background: #516371;
+      ${({ bgColor }) => bgColor && `background: ${bgColor}`};
       box-shadow: none;
       border-radius: 0;
       min-height: 100%;
+      &:hover {
+        filter: brightness(87%);
+      }
     }
 
-    &__input {
-      color: white;
-    }
+    /* &__input {
+       color: white;
+     } */
 
     &__value-container {
       height: 100%;
@@ -43,28 +46,40 @@ export const Styled = styled.div<Props>`
     }
 
     &__single-value {
-      color: white;
+      color: ${BASE_COLORS.DEEP_BLUE};
     }
 
     &__menu {
-      background: #516371;
+      background: ${({ bgColor }) => bgColor};
+      filter: brightness(87%);
       border-radius: 2px;
+      min-width: 150px;
 
       &-list {
+        font-size: ${FORM_TIME_SIZE - 3}px;
         padding: 0;
         ${({ open }) => !open && "max-height: 0;"}
         transition: ${ANIMATION_TIME_3_MS};
+
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: ${getColor(ColorNames.GREY_3)};
+          border-radius: 3px;
+          &:hover {
+            background: ${getColor(ColorNames.GREY_2)};
+            transition: background-color 0.2s;
+          }
+        }
       }
-    }
 
-    &__option {
-      color: white;
-      font-size: 16px;
-      font-weight: 600;
-
-      &--is-focused,
-      &--is-selected {
-        background: #8293a1;
+      &__option {
+        &--is-focused,
+        &--is-selected {
+          background: ${({ bgColor }) => bgColor};
+          filter: brightness(140%);
+        }
       }
     }
   }

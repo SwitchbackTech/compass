@@ -51,7 +51,7 @@ export const useDraftForm = (onClickOut: () => void) => {
   });
   const popperStyles = {
     ...styles.popper,
-    zIndex: ZIndex.LAYER_2,
+    zIndex: ZIndex.LAYER_3,
   };
 
   useOnClickOutside(formRef, (e: MouseEvent) => {

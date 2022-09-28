@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { Text } from "@web/components/Text";
-import { getHourLabels, getColorsByHour } from "@web/common/utils/date.utils";
+import {
+  getHourLabels,
+  getColorsByHour,
+} from "@web/common/utils/web.date.util";
 
 import { StyledDayTimes, StyledTimesLabel } from "./styled";
 

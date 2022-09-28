@@ -26,6 +26,7 @@ export const SaveSection: React.FC<Props> = ({
         onClick={_onSubmit}
         role="tab"
         tabIndex={0}
+        title="Save event"
       >
         Save
       </SaveBtn>

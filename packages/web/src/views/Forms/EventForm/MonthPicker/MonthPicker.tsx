@@ -4,7 +4,7 @@ import { Text } from "@web/components/Text";
 import { DatePicker } from "@web/components/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
 import { MONTH_YEAR_COMPACT_FORMAT } from "@web/common/constants/date.constants";
-import { toUTCOffset } from "@web/common/utils/date.utils";
+import { toUTCOffset } from "@web/common/utils/web.date.util";
 
 import { StyledDateFlex } from "../DateTimeSection/styled";
 import { SetEventFormField } from "../types";

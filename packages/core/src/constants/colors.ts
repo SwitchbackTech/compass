@@ -4,6 +4,8 @@ import { Colors, ColorNames } from "@core/types/color.types";
 export const BASE_COLORS = {
   DEEP_BLUE: "#1C3142",
   ONYX_GREY: "#1D2932",
+  SLATE_GREY: "#BDCFDC",
+  LIGHT_GREY: "#8293A1",
 };
 
 export const colors: Colors = {
@@ -19,7 +21,7 @@ export const colors: Colors = {
   [ColorNames.GREY_1]: "#1D2932",
   [ColorNames.GREY_2]: "#395264",
   [ColorNames.GREY_3]: "#516371",
-  [ColorNames.GREY_4]: "#8293A1",
+  [ColorNames.GREY_4]: BASE_COLORS.LIGHT_GREY,
   [ColorNames.GREY_4]: "#A3B1BB",
   [ColorNames.GREY_5]: "#BDCFDC",
 

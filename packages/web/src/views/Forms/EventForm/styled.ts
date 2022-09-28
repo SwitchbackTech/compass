@@ -14,6 +14,8 @@ import { InvertedColorNames } from "@core/types/color.types";
 
 import { StyledFormProps } from "./types";
 
+export const FORM_TIME_SIZE = 17;
+
 export const StyledEventForm = styled.form<StyledFormProps>`
   ${({ isOpen }) =>
     isOpen
@@ -37,7 +39,7 @@ export const StyledEventForm = styled.form<StyledFormProps>`
       ] as InvertedColorNames
     )};
   transition: ${ANIMATION_TIME_3_MS};
-  z-index: ${ZIndex.LAYER_2};
+  z-index: ${ZIndex.LAYER_1};
 `;
 
 export const StyledDescriptionField = styled(Textarea)`

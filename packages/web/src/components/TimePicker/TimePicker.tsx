@@ -1,29 +1,29 @@
 import React, { useState } from "react";
-import ReactSelect, { NamedProps as ReactSelectProps } from "react-select";
-import { getTimes } from "@web/common/utils/date.utils";
+import ReactSelect, { Props as RSProps } from "react-select";
 import { SelectOption } from "@web/common/types/components";
+import { Option_Time } from "@web/common/types/util.types";
 
-import { Styled, StyledDivider } from "./styled";
+import { StyledTimePicker, StyledDivider } from "./styled";
 
-export interface Props extends Omit<ReactSelectProps, "value"> {
-  calssName?: string;
+export interface Props extends Omit<RSProps, "value"> {
+  bgColor: string;
+  options?: Option_Time[];
   selectClassName?: string;
   value?: SelectOption<string>;
   // step?: number;
 }
-
 export const TimePicker: React.FC<Props> = ({
-  className,
-  selectClassName,
+  bgColor,
+  options,
   onFocus: _onFocus,
   onBlur: _onBlur,
   onMenuClose = () => {},
   onMenuOpen = () => {},
+  selectClassName,
   ...props
 }) => {
   const [isFocused, toggleIsFocused] = useState(false);
   const [isMenuOpened, toggleMenu] = useState(false);
-  const options = getTimes().map((value) => ({ value, label: value }));
 
   const onFocus = (e: React.FocusEvent<HTMLElement>) => {
     if (_onFocus) _onFocus(e);
@@ -36,7 +36,7 @@ export const TimePicker: React.FC<Props> = ({
   };
 
   return (
-    <Styled open={isMenuOpened}>
+    <StyledTimePicker bgColor={bgColor} open={isMenuOpened}>
       <ReactSelect
         onMenuOpen={() => {
           setTimeout(() => toggleMenu(true));
@@ -58,6 +58,6 @@ export const TimePicker: React.FC<Props> = ({
         isOptionSelected={(option) => option.value === props?.value?.value}
       />
       {isFocused && <StyledDivider width="calc(100% - 26px)" />}
-    </Styled>
+    </StyledTimePicker>
   );
 };

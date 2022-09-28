@@ -1,7 +1,9 @@
 import dayjs from "dayjs";
 import React, { KeyboardEvent, useCallback, useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
+import { getColor } from "@core/util/color.utils";
 import { Priorities } from "@core/constants/core.constants";
+import { colorNameByPriority } from "@core/constants/colors";
 import { Schema_Event } from "@core/types/event.types";
 import { DeleteIcon } from "@web/components/Icons";
 import { SelectOption } from "@web/common/types/components";
@@ -98,7 +100,6 @@ export const EventForm: React.FC<FormProps> = ({
   }, []);
 
   useEffect(() => {
-    console.log("in key[updown] effect");
     window.addEventListener("keydown", keyDownHandler);
     window.addEventListener("keyup", keyUpHandler);
 
@@ -260,7 +261,6 @@ export const EventForm: React.FC<FormProps> = ({
         placeholder="Title"
         onChange={onChangeEventTextField("title")}
         onKeyDown={ignoreDelete}
-        // onKeyDown={(e) => ignoreDelete(e)}
         role="textarea"
         name="Event Title"
         value={title}
@@ -273,6 +273,7 @@ export const EventForm: React.FC<FormProps> = ({
         isAllDay={event.isAllDay}
         isEndDatePickerShown={isEndDatePickerOpen}
         isStartDatePickerShown={isStartDatePickerOpen}
+        pickerBgColor={getColor(colorNameByPriority[priority])}
         selectedEndDate={selectedEndDate}
         selectedStartDate={selectedStartDate}
         setEndTime={setEndTime}

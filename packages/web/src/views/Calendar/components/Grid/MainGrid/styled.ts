@@ -36,11 +36,6 @@ export const StyledMainGrid = styled.div`
   }
 `;
 
-// export interface PrevDaysOverflowProps {
-//   width: number;
-// }
-
-// export const StyledPrevDaysOverflow = styled.div<PrevDaysOverflowProps>`
 export const StyledPrevDaysOverflow = styled(Flex)`
   background: ${getColor(ColorNames.WHITE_1)};
   flex-basis: 100%;
