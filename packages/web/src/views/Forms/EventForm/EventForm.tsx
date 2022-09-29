@@ -12,6 +12,7 @@ import {
   HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
 } from "@web/common/constants/date.constants";
+import { getTimeOptionByValue } from "@web/common/utils/web.date.util";
 
 import { FormProps } from "./types";
 import { DateTimeSection } from "./DateTimeSection";
@@ -42,9 +43,7 @@ export const EventForm: React.FC<FormProps> = ({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
-  const [startTime, setStartTime] = useState<
-    SelectOption<string> | undefined
-  >();
+  const [startTime, setStartTime] = useState<SelectOption<string>>();
   const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>();
   const [selectedStartDate, setSelectedStartDate] = useState<
     Date | undefined
@@ -53,24 +52,12 @@ export const EventForm: React.FC<FormProps> = ({
   /******************
    * Date Calculations
    ******************/
-  const calculatedInitialStartTimeDayJs =
-    event?.startDate && dayjs(event.startDate);
-  const calculatedInitialEndTimeDayJs =
-    event?.startDate && dayjs(event.endDate);
+  const _initialEndTime = event?.startDate && dayjs(event.endDate);
 
-  const initialStartTime = calculatedInitialStartTimeDayJs && {
-    value: calculatedInitialStartTimeDayJs.format(HOURS_MINUTES_FORMAT),
-    label: calculatedInitialStartTimeDayJs.format(HOURS_AM_FORMAT),
+  const initialEndTime = _initialEndTime && {
+    value: _initialEndTime.format(HOURS_MINUTES_FORMAT),
+    label: _initialEndTime.format(HOURS_AM_FORMAT),
   };
-
-  const initialEndTime = calculatedInitialEndTimeDayJs && {
-    value: calculatedInitialEndTimeDayJs.format(HOURS_MINUTES_FORMAT),
-    label: calculatedInitialEndTimeDayJs.format(HOURS_AM_FORMAT),
-  };
-
-  const initialStartDate = event?.startDate
-    ? dayjs(event?.startDate).toDate()
-    : new Date();
 
   const initialEndDate = event?.endDate
     ? dayjs(event.endDate).toDate()
@@ -111,11 +98,19 @@ export const EventForm: React.FC<FormProps> = ({
   }, []);
 
   useEffect(() => {
+    const _start = event?.startDate ? dayjs(event.startDate) : dayjs();
+    const _startTime = getTimeOptionByValue(_start);
+    const _startDate = _start.toDate();
+
+    const _end = event?.endDate ? dayjs(event.endDate) : dayjs();
+    const _endTime = getTimeOptionByValue(_end);
+    const _endDate = _end.toDate();
+
     setEvent(event || {});
-    setStartTime(initialStartTime || undefined);
-    setEndTime(initialEndTime || undefined);
-    setSelectedStartDate(initialStartDate);
-    setSelectedEndDate(initialEndDate);
+    setStartTime(_startTime);
+    setEndTime(_endTime);
+    setSelectedStartDate(_startDate);
+    setSelectedEndDate(_endDate);
     setIsFormOpen(true);
   }, []);
 
@@ -296,20 +291,3 @@ export const EventForm: React.FC<FormProps> = ({
     </StyledEventForm>
   );
 };
-
-/* //++
-  // const getDateStrWithTimes = (field: "start" | "end") => {
-  //   if (field === "start") {
-  //     return dayjs(selectedStartDate)
-  //       .hour(parseInt(startTime.value.slice(0, 2)))
-  //       .minute(parseInt(startTime.value.slice(3, 5)))
-  //       .format();
-  //   } else if (field === "end") {
-  //     dayjs(selectedEndDate)
-  //       .hour(parseInt(endTime.value.slice(0, 2)))
-  //       .minute(parseInt(endTime.value.slice(3, 5)))
-  //       .format();
-  //   }
-  // };
-
-*/

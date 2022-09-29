@@ -75,21 +75,28 @@ export const getTimes = () =>
       return `0${~~(i / 4)}:0${60 * ((i / 4) % 1)}`.replace(/\d(\d\d)/g, "$1");
     });
 
+export const getTimeLabel = (value: string) => value.replace(":00", "");
+
+export const getTimeOptionByValue = (date: Dayjs): Option_Time => {
+  const value = dayjs(date).format(HOURS_AM_FORMAT);
+  const label = getTimeLabel(value);
+
+  return {
+    label,
+    value,
+  };
+};
+
 export const getTimeOptions = (): Option_Time[] => {
   const options = ACCEPTED_TIMES.map((value) => {
-    const day = dayjs(
-      `2000-00-00 ${value}`,
-      YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-    );
-
-    const label = day.format(HOURS_AM_FORMAT).replace(":00", "");
+    const label = getTimeLabel(value);
 
     return {
-      value,
       label,
+      value,
     };
   });
-  //++filter current time?
+
   return options;
 };
 

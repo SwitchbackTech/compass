@@ -4,7 +4,7 @@ import {
   getColorsByHour,
   getHourLabels,
   toUTCOffset,
-} from "@web/common/utils/date.utils";
+} from "@web/common/utils/web.date.util";
 import { arraysAreEqual } from "@web/__tests__/utils/test.util";
 
 describe("headers", () => {

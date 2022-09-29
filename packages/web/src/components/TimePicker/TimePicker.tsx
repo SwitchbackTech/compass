@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ReactSelect, { Props as RSProps } from "react-select";
+import { Key } from "ts-keycode-enum";
 import { SelectOption } from "@web/common/types/components";
 import { Option_Time } from "@web/common/types/util.types";
 
@@ -9,55 +10,70 @@ export interface Props extends Omit<RSProps, "value"> {
   bgColor: string;
   options?: Option_Time[];
   selectClassName?: string;
-  value?: SelectOption<string>;
-  // step?: number;
+  defaultOption: SelectOption<string>;
 }
 export const TimePicker: React.FC<Props> = ({
   bgColor,
   options,
-  onFocus: _onFocus,
-  onBlur: _onBlur,
-  onMenuClose = () => {},
-  onMenuOpen = () => {},
   selectClassName,
+  defaultOption,
   ...props
 }) => {
   const [isFocused, toggleIsFocused] = useState(false);
   const [isMenuOpened, toggleMenu] = useState(false);
 
-  const onFocus = (e: React.FocusEvent<HTMLElement>) => {
-    if (_onFocus) _onFocus(e);
-    toggleIsFocused(true);
-  };
-
-  const onBlur = (e: React.FocusEvent<HTMLElement>) => {
-    if (_onBlur) _onBlur(e);
-    toggleIsFocused(false);
-  };
+  const TIMEPICKER = "timepicker";
+  let scrollTimer: number;
 
   return (
-    <StyledTimePicker bgColor={bgColor} open={isMenuOpened}>
+    <StyledTimePicker bgColor={bgColor} isOpen={isMenuOpened}>
       <ReactSelect
+        {...props}
+        className={selectClassName}
+        classNamePrefix={TIMEPICKER}
+        defaultValue={defaultOption}
+        maxMenuHeight={4 * 41}
+        noOptionsMessage={() => "No matches. Typo?"}
+        onBlur={() => toggleIsFocused(false)}
+        onFocus={() => toggleIsFocused(true)}
+        onInputChange={() => console.log("input changed")}
+        onKeyDown={(e) => {
+          if (e.which === Key.Enter || e.which === Key.Backspace) {
+            e.stopPropagation();
+          }
+          if (e.which === Key.Escape) {
+            toggleMenu(false);
+            e.stopPropagation();
+          }
+        }}
         onMenuOpen={() => {
-          setTimeout(() => toggleMenu(true));
-          onMenuOpen();
+          scrollTimer = window.setTimeout(() => {
+            const defaultOpt = document.getElementsByClassName(
+              `${TIMEPICKER}__option--is-selected`
+            )[0];
+            if (defaultOpt) {
+              console.log(defaultOpt);
+              defaultOpt.scrollIntoView();
+            }
+          }, 15);
+          toggleMenu(true);
         }}
         onMenuClose={() => {
           toggleMenu(false);
-          onMenuClose();
+          clearTimeout(scrollTimer);
         }}
-        tabSelectsValue={false}
-        noOptionsMessage={() => null}
-        classNamePrefix="timepicker"
+        openMenuOnFocus={true}
         options={options}
-        {...props}
-        className={selectClassName}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        maxMenuHeight={4 * 41}
-        isOptionSelected={(option) => option.value === props?.value?.value}
+        tabSelectsValue={false}
       />
-      {isFocused && <StyledDivider width="calc(100% - 26px)" />}
+      {isFocused && <StyledDivider width="calc(100% - 16px)" />}
     </StyledTimePicker>
   );
 };
+
+//++
+// const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+//   // if (_onBlur) _onBlur(e);
+//   console.log("blurred");
+//   toggleIsFocused(false);
+// };

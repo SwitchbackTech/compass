@@ -5,11 +5,9 @@ import { Key } from "ts-keycode-enum";
 import { Text } from "@web/components/Text";
 import { SelectOption } from "@web/common/types/components";
 import { roundToNext } from "@web/common/utils";
-import { ColorNames } from "@core/types/color.types";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
 import { DatePicker } from "@web/components/DatePicker";
-import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import {
   HOURS_MINUTES_FORMAT,
   HOURS_AM_FORMAT,
@@ -18,18 +16,16 @@ import {
 } from "@web/common/constants/date.constants";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import {
-  getDurationLabel,
-  getEndTimeOptions,
   getSortedTimes,
   getTimeOptions,
 } from "@web/common/utils/web.date.util";
-import { FORM_TIME_SIZE } from "@web/views/Forms/EventForm/styled";
+import { ControlProps } from "react-select";
 
 import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
 
 dayjs.extend(customParseFormat);
 
-export interface RelatedTargetElement extends EventTarget {
+interface RelatedTargetElement extends EventTarget {
   id?: string;
 }
 export interface Props {
@@ -46,7 +42,7 @@ export interface Props {
   setSelectedEndDate: (value: Date) => void;
   setSelectedStartDate: (value: Date) => void;
   setStartTime: (value: SelectOption<string>) => void;
-  startTime?: SelectOption<string>;
+  startTime: SelectOption<string>;
 }
 
 export const DateTimeSection: FC<Props> = ({
@@ -65,11 +61,12 @@ export const DateTimeSection: FC<Props> = ({
   startTime,
   endTime,
 }) => {
-  const [autoFocusedTimePicker, setAutoFocusedTimePicker] = useState("");
-  const [isStartTimePickerOpen, setIsStartTimePickerOpen] = useState(false);
-  const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
+  const [autoFocusedTimePicker, setAutoFocusedTimePicker] = useState<
+    "start" | "end" | ""
+  >("");
 
-  const endOptions = getEndTimeOptions();
+  console.log("startTime:", startTime);
+  if (!startTime) return;
   const timeOptions = getTimeOptions();
 
   const closeEndDatePicker = () => {
@@ -88,10 +85,10 @@ export const DateTimeSection: FC<Props> = ({
     toggleStartDatePicker(true);
   };
 
-  const closeAllTimePickers = () => {
-    setIsStartTimePickerOpen(false);
-    setIsEndTimePickerOpen(false);
-  };
+  // const closeAllTimePickers = () => {
+  //   setIsStartTimePickerOpen(false);
+  //   setIsEndTimePickerOpen(false);
+  // };
 
   const onEndDatePickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.which !== Key.Tab) return;
@@ -118,11 +115,12 @@ export const DateTimeSection: FC<Props> = ({
     }
   };
 
-  const onEndTimePickerOpen = () => {
-    setIsStartTimePickerOpen(true);
-    setIsEndTimePickerOpen(true);
-    setAutoFocusedTimePicker("end");
-  };
+  //++
+  // const onEndTimePickerOpen = () => {
+  //   setIsStartTimePickerOpen(true);
+  //   setIsEndTimePickerOpen(true);
+  //   setAutoFocusedTimePicker("end");
+  // };
 
   const onSelectEndDate = (date: Date | null | [Date | null, Date | null]) => {
     setSelectedEndDate(date as Date);
@@ -133,7 +131,7 @@ export const DateTimeSection: FC<Props> = ({
     if (!value) return;
 
     setEndTime(value);
-    closeAllTimePickers();
+    // closeAllTimePickers(); //++
   };
 
   const onSelectStartDate = (
@@ -144,9 +142,11 @@ export const DateTimeSection: FC<Props> = ({
   };
 
   const onSelectStartTime = (value: SelectOption<string> | null) => {
+    if (!value) console.log("no value!!"); //++
     if (!value) return;
 
-    const endTimeOption = getSortedTimes(value, "isAfter").find((option) => {
+    console.log("selected:", value);
+    const endTimeOption = timeOptions.find((option) => {
       const optionMoment = dayjs(
         `2000-00-00 ${option.value}`,
         YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
@@ -159,11 +159,12 @@ export const DateTimeSection: FC<Props> = ({
 
       return optionMoment.isSame(startTimeMomentAdded);
     });
+    console.log("endTimeOption", endTimeOption);
 
     setEndTime(endTime || endTimeOption || value);
     setStartTime(value);
-    setAutoFocusedTimePicker("end");
-    setIsEndTimePickerOpen(true);
+    // setAutoFocusedTimePicker("end"); //++
+    // setIsEndTimePickerOpen(true);
   };
 
   const onStartTimePickerOpen = () => {
@@ -177,9 +178,9 @@ export const DateTimeSection: FC<Props> = ({
     }
 
     const roundedUpMinutes = roundToNext(dayjs().minute(), GRID_TIME_STEP);
-    const startTimeDayjs = dayjs().set("minute", roundedUpMinutes);
-    const value = startTimeDayjs.format(HOURS_MINUTES_FORMAT);
-    const label = startTimeDayjs.format(HOURS_AM_FORMAT);
+    const _start = dayjs().set("minute", roundedUpMinutes);
+    const value = _start.format(HOURS_MINUTES_FORMAT);
+    const label = _start.format(HOURS_AM_FORMAT);
 
     setStartTime({ value, label });
 
@@ -201,8 +202,21 @@ export const DateTimeSection: FC<Props> = ({
     )
       return;
 
-    closeAllTimePickers();
+    // closeAllTimePickers();
   };
+
+  //++
+  // const Menu = (props: MenuProps<false>) => {
+  //   const handleScroll = () => {
+  //     console.log("scrolling");
+  //   };
+
+  //   return (
+  //     <components.Menu {...props} innerProps={{ onScroll: handleScroll }}>
+  //       {props.children}
+  //     </components.Menu>
+  //   );
+  // };
 
   return (
     <StyledDateTimeFlex role="tablist" alignItems={AlignItems.CENTER}>
@@ -282,12 +296,13 @@ export const DateTimeSection: FC<Props> = ({
           <TimePicker
             autoFocus={autoFocusedTimePicker === "start"}
             bgColor={pickerBgColor}
+            defaultOption={startTime}
             inputId="startTimePicker"
-            onBlur={onTimePickerBlur}
+            // onBlur={onTimePickerBlur}
             onChange={onSelectStartTime}
             openMenuOnFocus
             options={timeOptions}
-            value={startTime}
+            // components={{Control}}
           />
           -
           <TimePicker
@@ -298,7 +313,7 @@ export const DateTimeSection: FC<Props> = ({
             onChange={onSelectEndTime}
             openMenuOnFocus
             options={timeOptions}
-            value={endTime}
+            defaultOption={endTime}
           />
         </StyledTimeFlex>
       )}

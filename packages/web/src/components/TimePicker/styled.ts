@@ -8,7 +8,7 @@ import { ColorNames } from "@core/types/color.types";
 
 export interface Props {
   bgColor?: string;
-  open?: boolean;
+  isOpen?: boolean;
 }
 
 export const StyledTimePicker = styled.div<Props>`
@@ -58,7 +58,7 @@ export const StyledTimePicker = styled.div<Props>`
       &-list {
         font-size: ${FORM_TIME_SIZE - 3}px;
         padding: 0;
-        ${({ open }) => !open && "max-height: 0;"}
+        ${({ isOpen: open }) => !open && "max-height: 0;"}
         transition: ${ANIMATION_TIME_3_MS};
 
         ::-webkit-scrollbar {

@@ -1,15 +1,14 @@
-import { getTimeOptions, getTimesLabel } from "@web/common/utils/web.date.util";
-import { HOURS_AM_FORMAT } from "@web/common/constants/date.constants";
+import { getTimesLabel } from "@web/common/utils/web.date.util";
 
 const meridians = (label: string) =>
-  (label.match(/am/g) || label.match(/pm/g) || []).length;
+  (label.match(/am/gi) || label.match(/pm/gi) || []).length;
 
 describe("Time Options", () => {
-  it.todo("excludes passed interval", () => {
-    const f = getTimeOptions();
-    const y = 1;
-  });
-  it.todo("");
+  // it.todo("excludes passed interval", () => {
+  //   const f = getTimeOptions();
+  //   const y = 1;
+  // });
+  // it.todo("");
 });
 describe("Time Labels", () => {
   it("removes minutes and am/pm when possible", () => {
@@ -31,8 +30,8 @@ describe("Time Labels", () => {
       "2022-07-06T01:00:00-05:00",
       "2022-07-06T18:00:00-05:00"
     );
-    expect(label.includes("am")).toBe(true);
-    expect(label.includes("pm")).toBe(true);
+    expect(label.includes("AM")).toBe(true);
+    expect(label.includes("PM")).toBe(true);
   });
   it("preserves minutes when needed", () => {
     const label = getTimesLabel(
