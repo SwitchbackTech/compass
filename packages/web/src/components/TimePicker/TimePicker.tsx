@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { ChangeEvent, useState } from "react";
 import ReactSelect, { Props as RSProps } from "react-select";
 import { Key } from "ts-keycode-enum";
 import { SelectOption } from "@web/common/types/components";
@@ -8,15 +8,18 @@ import { StyledTimePicker, StyledDivider } from "./styled";
 
 export interface Props extends Omit<RSProps, "value"> {
   bgColor: string;
+  onChange: (option: SelectOption<string>) => void;
   options?: Option_Time[];
   selectClassName?: string;
-  defaultOption: SelectOption<string>;
+  value: SelectOption<string>;
 }
+
 export const TimePicker: React.FC<Props> = ({
   bgColor,
+  value,
+  onChange: _onChange,
   options,
   selectClassName,
-  defaultOption,
   ...props
 }) => {
   const [isFocused, toggleIsFocused] = useState(false);
@@ -31,12 +34,12 @@ export const TimePicker: React.FC<Props> = ({
         {...props}
         className={selectClassName}
         classNamePrefix={TIMEPICKER}
-        defaultValue={defaultOption}
+        value={value}
         maxMenuHeight={4 * 41}
-        noOptionsMessage={() => "No matches. Typo?"}
+        noOptionsMessage={() => "Nothin'. Typo?"}
         onBlur={() => toggleIsFocused(false)}
         onFocus={() => toggleIsFocused(true)}
-        onInputChange={() => console.log("input changed")}
+        onChange={_onChange}
         onKeyDown={(e) => {
           if (e.which === Key.Enter || e.which === Key.Backspace) {
             e.stopPropagation();
@@ -52,7 +55,6 @@ export const TimePicker: React.FC<Props> = ({
               `${TIMEPICKER}__option--is-selected`
             )[0];
             if (defaultOpt) {
-              console.log(defaultOpt);
               defaultOpt.scrollIntoView();
             }
           }, 15);

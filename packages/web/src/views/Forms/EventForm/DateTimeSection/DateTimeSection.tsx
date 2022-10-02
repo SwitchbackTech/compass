@@ -11,20 +11,20 @@ import { DatePicker } from "@web/components/DatePicker";
 import {
   HOURS_MINUTES_FORMAT,
   HOURS_AM_FORMAT,
-  YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
   MONTH_DAY_COMPACT_FORMAT,
 } from "@web/common/constants/date.constants";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import {
-  getSortedTimes,
+  getTimeOptionByValue,
   getTimeOptions,
+  shouldAdjustComplimentTime,
 } from "@web/common/utils/web.date.util";
-import { ControlProps } from "react-select";
 
 import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
 
 dayjs.extend(customParseFormat);
 
+//++
 interface RelatedTargetElement extends EventTarget {
   id?: string;
 }
@@ -65,9 +65,43 @@ export const DateTimeSection: FC<Props> = ({
     "start" | "end" | ""
   >("");
 
-  console.log("startTime:", startTime);
   if (!startTime) return;
   const timeOptions = getTimeOptions();
+
+  const adjustComplimentIfNeeded = (
+    changed: "start" | "end",
+    value: string
+  ) => {
+    const start = changed === "start" ? value : startTime.value;
+    const end = changed === "end" ? value : endTime.value;
+
+    const { shouldAdjust, adjustment, compliment } = shouldAdjustComplimentTime(
+      changed,
+      {
+        oldStart: startTime.value,
+        start,
+        oldEnd: endTime.value,
+        end,
+      }
+    );
+
+    if (shouldAdjust) {
+      if (changed === "start") {
+        const _correctedEnd = compliment.add(adjustment, "minutes");
+        const correctedEnd = getTimeOptionByValue(_correctedEnd);
+        console.log("corrected end:", correctedEnd);
+        setEndTime(correctedEnd);
+        return;
+      }
+
+      if (changed === "end") {
+        const _correctedStart = compliment.subtract(adjustment, "minutes");
+        const correctedStart = getTimeOptionByValue(_correctedStart);
+        console.log(`corrected start (-${adjustment}):`, correctedStart.value);
+        setStartTime(correctedStart);
+      }
+    }
+  };
 
   const closeEndDatePicker = () => {
     toggleEndDatePicker(false);
@@ -85,6 +119,7 @@ export const DateTimeSection: FC<Props> = ({
     toggleStartDatePicker(true);
   };
 
+  //++
   // const closeAllTimePickers = () => {
   //   setIsStartTimePickerOpen(false);
   //   setIsEndTimePickerOpen(false);
@@ -127,11 +162,9 @@ export const DateTimeSection: FC<Props> = ({
     toggleEndDatePicker(false);
   };
 
-  const onSelectEndTime = (value: SelectOption<string> | null) => {
-    if (!value) return;
-
-    setEndTime(value);
-    // closeAllTimePickers(); //++
+  const onSelectEndTime = (option: SelectOption<string>) => {
+    setEndTime(option);
+    adjustComplimentIfNeeded("end", option.value);
   };
 
   const onSelectStartDate = (
@@ -141,28 +174,10 @@ export const DateTimeSection: FC<Props> = ({
     toggleStartDatePicker(false);
   };
 
-  const onSelectStartTime = (value: SelectOption<string> | null) => {
-    if (!value) console.log("no value!!"); //++
-    if (!value) return;
+  const onSelectStartTime = (option: SelectOption<string>) => {
+    setStartTime(option);
+    adjustComplimentIfNeeded("start", option.value);
 
-    console.log("selected:", value);
-    const endTimeOption = timeOptions.find((option) => {
-      const optionMoment = dayjs(
-        `2000-00-00 ${option.value}`,
-        YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-      );
-      const startTimeMoment = dayjs(
-        `2000-00-00 ${value.value}`,
-        YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-      );
-      const startTimeMomentAdded = startTimeMoment.add(30, "minute");
-
-      return optionMoment.isSame(startTimeMomentAdded);
-    });
-    console.log("endTimeOption", endTimeOption);
-
-    setEndTime(endTime || endTimeOption || value);
-    setStartTime(value);
     // setAutoFocusedTimePicker("end"); //++
     // setIsEndTimePickerOpen(true);
   };
@@ -188,35 +203,6 @@ export const DateTimeSection: FC<Props> = ({
       setIsEndTimePickerOpen(true);
     }
   };
-
-  const onTimePickerBlur = (e: React.FocusEvent<HTMLElement>) => {
-    const relatedTarget = e.relatedTarget as RelatedTargetElement;
-
-    if (relatedTarget?.id === "startTimePicker") {
-      setIsEndTimePickerOpen(true);
-    }
-
-    if (
-      relatedTarget?.id === "endTimePicker" ||
-      relatedTarget?.id === "startTimePicker"
-    )
-      return;
-
-    // closeAllTimePickers();
-  };
-
-  //++
-  // const Menu = (props: MenuProps<false>) => {
-  //   const handleScroll = () => {
-  //     console.log("scrolling");
-  //   };
-
-  //   return (
-  //     <components.Menu {...props} innerProps={{ onScroll: handleScroll }}>
-  //       {props.children}
-  //     </components.Menu>
-  //   );
-  // };
 
   return (
     <StyledDateTimeFlex role="tablist" alignItems={AlignItems.CENTER}>
@@ -296,27 +282,67 @@ export const DateTimeSection: FC<Props> = ({
           <TimePicker
             autoFocus={autoFocusedTimePicker === "start"}
             bgColor={pickerBgColor}
-            defaultOption={startTime}
+            value={startTime}
             inputId="startTimePicker"
-            // onBlur={onTimePickerBlur}
             onChange={onSelectStartTime}
             openMenuOnFocus
             options={timeOptions}
-            // components={{Control}}
           />
           -
           <TimePicker
             autoFocus={autoFocusedTimePicker === "end"}
             bgColor={pickerBgColor}
+            value={endTime}
             inputId="endTimePicker"
-            onBlur={onTimePickerBlur}
             onChange={onSelectEndTime}
             openMenuOnFocus
             options={timeOptions}
-            defaultOption={endTime}
           />
         </StyledTimeFlex>
       )}
     </StyledDateTimeFlex>
   );
 };
+
+//++
+// const Menu = (props: MenuProps<false>) => {
+//   const handleScroll = () => {
+//     console.log("scrolling");
+//   };
+
+//   return (
+//     <components.Menu {...props} innerProps={{ onScroll: handleScroll }}>
+//       {props.children}
+//     </components.Menu>
+//   );
+// };
+
+/*
+  const onTimePickerBlur = (e: React.FocusEvent<HTMLElement>) => {
+    const relatedTarget = e.relatedTarget as RelatedTargetElement;
+
+    if (relatedTarget?.id === "startTimePicker") {
+      setIsEndTimePickerOpen(true);
+    }
+
+    if (
+      relatedTarget?.id === "endTimePicker" ||
+      relatedTarget?.id === "startTimePicker"
+    )
+      return;
+
+    // closeAllTimePickers();
+  };
+*/
+/*
+const findOption = () => {
+  const endOption = timeOptions.find((option) => {
+    const optionMoment = dayjs(`2000-00-00 ${option.value}`, YMDHM_FORMAT);
+    const start = dayjs(`2000-00-00 ${value.value}`, YMDHM_FORMAT);
+    const startTimeMomentAdded = start.add(30, "minute");
+
+    return optionMoment.isSame(startTimeMomentAdded);
+  });
+};
+
+*/

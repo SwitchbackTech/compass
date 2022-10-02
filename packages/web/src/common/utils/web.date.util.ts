@@ -1,9 +1,9 @@
 import dayjs, { Dayjs } from "dayjs";
-import { SelectOption } from "@web/common/types/components";
 import {
   HOURS_AM_FORMAT,
   HOURS_AM_SHORT_FORMAT,
-  YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
+  YMDHM_FORMAT,
+  YMDHAM_FORMAT,
 } from "@web/common/constants/date.constants";
 import { Option_Time } from "@web/common/types/util.types";
 import { ColorNames } from "@core/types/color.types";
@@ -12,6 +12,54 @@ import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
 import { roundToNext } from ".";
 import { ACCEPTED_TIMES } from "../constants/web.constants";
+
+export const shouldAdjustComplimentTime = (
+  changed: "start" | "end",
+  vals: { oldStart: string; oldEnd: string; start: string; end: string }
+) => {
+  let shouldAdjust: boolean;
+  let duration: number;
+  let step: number;
+  let compliment: Dayjs;
+
+  const { oldStart, oldEnd, start, end } = vals;
+
+  const _start = dayjs(`2000-01-01 ${start}`, YMDHAM_FORMAT);
+  const _end = dayjs(`2000-01-01 ${end}`, YMDHAM_FORMAT);
+  const isSame = _start.isSame(_end);
+
+  if (changed === "start") {
+    shouldAdjust = _start.isAfter(_end) || isSame;
+
+    if (shouldAdjust) {
+      const _oldStart = dayjs(`2000-01-01 ${oldStart}`, YMDHAM_FORMAT);
+      const _oldEnd = dayjs(`2000-01-01 ${oldEnd}`, YMDHAM_FORMAT);
+      duration = Math.abs(_oldStart.diff(_oldEnd, "minutes"));
+
+      step = Math.abs(_start.diff(_end, "minutes"));
+
+      compliment = dayjs(`2000-01-01 ${end}`, YMDHAM_FORMAT);
+    }
+  }
+
+  if (changed === "end") {
+    shouldAdjust = _end.isBefore(_start) || isSame;
+
+    if (shouldAdjust) {
+      const _oldStart = dayjs(`2000-01-01 ${oldStart}`, YMDHAM_FORMAT);
+      const _oldEnd = dayjs(`2000-01-01 ${oldEnd}`, YMDHAM_FORMAT);
+      duration = Math.abs(_oldStart.diff(_oldEnd, "minutes"));
+
+      step = Math.abs(_start.diff(_end, "minutes"));
+
+      compliment = dayjs(`2000-01-01 ${start}`, YMDHAM_FORMAT);
+    }
+  }
+
+  const adjustment = duration + step;
+
+  return { shouldAdjust, adjustment, compliment };
+};
 
 export const getColorsByHour = (currentHour: number) => {
   const colors: string[] = [];
@@ -35,14 +83,25 @@ export const getColorsByHour = (currentHour: number) => {
 };
 
 export const getDurationLabel = (start: string, end: string) => {
-  const _start = dayjs(
-    `2000-00-00 ${start}`,
-    YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-  );
+  const _start = dayjs(`2000-00-00 ${start}`, YMDHM_FORMAT);
 
-  const _end = dayjs(`2000-00-00 ${end}`, YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT);
+  const _end = dayjs(`2000-00-00 ${end}`, YMDHM_FORMAT);
 
   return _end.diff(_start, "minutes");
+};
+
+export const getEndTimeOptions = (): Option_Time[] => {
+  const options = ACCEPTED_TIMES.map((value) => {
+    const day = dayjs(`2000-00-00 ${value}`, YMDHM_FORMAT);
+
+    const label = day.format(HOURS_AM_FORMAT).replace(":00", "");
+
+    return {
+      value,
+      label: `${label} 18h 10m`,
+    };
+  });
+  return options;
 };
 
 export const getNextIntervalTimes = () => {
@@ -67,14 +126,6 @@ export const getHourLabels = () => {
   });
 };
 
-export const getTimes = () =>
-  Array(24 * 4)
-    .fill(0)
-    .map((_, i) => {
-      // eslint-disable-next-line no-bitwise
-      return `0${~~(i / 4)}:0${60 * ((i / 4) % 1)}`.replace(/\d(\d\d)/g, "$1");
-    });
-
 export const getTimeLabel = (value: string) => value.replace(":00", "");
 
 export const getTimeOptionByValue = (date: Dayjs): Option_Time => {
@@ -98,60 +149,6 @@ export const getTimeOptions = (): Option_Time[] => {
   });
 
   return options;
-};
-
-export const getEndTimeOptions = (): Option_Time[] => {
-  const options = ACCEPTED_TIMES.map((value) => {
-    const day = dayjs(
-      `2000-00-00 ${value}`,
-      YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-    );
-
-    const label = day.format(HOURS_AM_FORMAT).replace(":00", "");
-
-    return {
-      value,
-      label: `${label} 18h 10m`,
-    };
-  });
-  //++filter current time?
-  return options;
-};
-
-//++ remove once done
-export const getSortedTimes = (
-  option: SelectOption<string> | undefined,
-  method: "isAfter" | "isBefore"
-) => {
-  const options = ACCEPTED_TIMES.map((value) => {
-    const day = dayjs(
-      `2000-00-00 ${value}`,
-      YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-    );
-
-    return {
-      value,
-      label: day.format(HOURS_AM_FORMAT),
-    };
-  });
-
-  if (!option) return options;
-
-  const collocativeMoment = dayjs(
-    `2000-00-00 ${option.value}`,
-    YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-  );
-
-  return options.filter((time) => {
-    const timeMoment = dayjs(
-      `2000-00-00 ${time.value}`,
-      YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-    );
-    return (
-      // timeMoment[method](collocativeMoment) ||
-      !timeMoment.isSame(collocativeMoment)
-    );
-  });
 };
 
 export const getTimesLabel = (startDate: string, endDate: string) => {
@@ -186,3 +183,13 @@ const _getTimeLabel = (date: string) => {
   const orig = dayjs(date).format(HOURS_AM_FORMAT);
   return orig.replace(":00", "");
 };
+
+/*
+export const getTimes = () =>
+  Array(24 * 4)
+    .fill(0)
+    .map((_, i) => {
+      // eslint-disable-next-line no-bitwise
+      return `0${~~(i / 4)}:0${60 * ((i / 4) % 1)}`.replace(/\d(\d\d)/g, "$1");
+    });
+*/

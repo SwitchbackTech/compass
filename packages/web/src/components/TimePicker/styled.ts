@@ -21,6 +21,15 @@ export const StyledTimePicker = styled.div<Props>`
   }
 
   & .timepicker {
+    &__option {
+      &--is-selected,
+      &--is-focused {
+        background-color: ${({ bgColor }) => bgColor};
+        color: black;
+        filter: brightness(140%);
+      }
+    }
+
     &__control {
       border: none;
       ${({ bgColor }) => bgColor && `background: ${bgColor}`};
@@ -31,11 +40,6 @@ export const StyledTimePicker = styled.div<Props>`
         filter: brightness(87%);
       }
     }
-
-    /* &__input {
-       color: white;
-     } */
-
     &__value-container {
       height: 100%;
       padding: 0px 8px;
@@ -71,14 +75,6 @@ export const StyledTimePicker = styled.div<Props>`
             background: ${getColor(ColorNames.GREY_2)};
             transition: background-color 0.2s;
           }
-        }
-      }
-
-      &__option {
-        &--is-focused,
-        &--is-selected {
-          background: ${({ bgColor }) => bgColor};
-          filter: brightness(140%);
         }
       }
     }
