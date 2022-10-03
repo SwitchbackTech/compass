@@ -25,8 +25,9 @@ import {
   StyledHeaderFlex,
   StyledSidebarOverflow,
 } from "./styled";
-import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
+// import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 import { SomedaySection } from "./SomedaySection";
+import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 
 /* imports from the old someday section*/
 // import {
@@ -40,19 +41,13 @@ import { SomedaySection } from "./SomedaySection";
 // import { YEAR_MONTH_FORMAT } from "@web/common/constants/dates";
 // import { SomedayEventsFutureContainer } from "@web/views/Calendar/containers/SomedayContainer/SomedayCategories";
 
-const DATEPICKER_HEIGHT = 346;
+const DATEPICKER_HEIGHT = 326;
 
 export interface PriorityFilter {
   [Priorities.RELATIONS]?: boolean;
   [Priorities.WORK]?: boolean;
   [Priorities.SELF]?: boolean;
 }
-
-const priorityNameByKey = {
-  [Priorities.WORK]: "Work",
-  [Priorities.RELATIONS]: "Relationships",
-  [Priorities.SELF]: "Self",
-};
 
 interface Props {
   prefs: Preferences;

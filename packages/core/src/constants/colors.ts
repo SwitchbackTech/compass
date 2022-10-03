@@ -18,7 +18,7 @@ export const colors: Colors = {
   [ColorNames.BLUE_7]: "#6796B8",
   [ColorNames.BLUE_8]: "#94c5e9",
 
-  [ColorNames.GREY_1]: "#1D2932",
+  [ColorNames.GREY_1]: BASE_COLORS.ONYX_GREY,
   [ColorNames.GREY_2]: "#395264",
   [ColorNames.GREY_3]: "#516371",
   [ColorNames.GREY_4]: BASE_COLORS.LIGHT_GREY,

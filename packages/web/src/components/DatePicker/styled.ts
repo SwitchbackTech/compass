@@ -8,9 +8,8 @@ export interface Props {
   monthsCount?: number;
 }
 
-const _dayHoverStyles = `
-  background-color: ${getColor(ColorNames.BLUE_5)};
-  color: ${getColor(ColorNames.BLUE_2)};
+const _hoverStyle = `
+  background-color: ${getColor(ColorNames.BLUE_4)};
 `;
 
 export const ChangeDayButtonsStyledFlex = styled(Flex)`
@@ -19,7 +18,7 @@ export const ChangeDayButtonsStyledFlex = styled(Flex)`
     border-radius: 50%;
 
     &:hover {
-      ${_dayHoverStyles}
+      ${_hoverStyle}
     }
 
     &:first-child {
@@ -29,12 +28,13 @@ export const ChangeDayButtonsStyledFlex = styled(Flex)`
 `;
 
 export const MonthContainerStyled = styled(Flex)`
-  padding-right: 20px;
+  width: 97px;
 `;
 
 export const Styled = styled.div<Props>`
   background-color: ${getColor(ColorNames.GREY_3)};
   border: none;
+  border-radius: 2px;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   font-weight: 500;
   font-size: 12px;
@@ -44,7 +44,7 @@ export const Styled = styled.div<Props>`
     &__month-container {
       width: 100%;
       padding: 0 15px 15px 15px;
-      height: 346px;
+      height: 300px;
       display: flex;
       flex-direction: column;
     }
@@ -65,8 +65,10 @@ export const Styled = styled.div<Props>`
     }
 
     &__header {
+      align-items: left;
       background: unset;
       border-bottom: none;
+      padding: 8px 0 0 2px;
     }
 
     &__day-name {
@@ -83,7 +85,7 @@ export const Styled = styled.div<Props>`
       margin: 0;
 
       &:hover {
-        ${_dayHoverStyles}
+        ${_hoverStyle}
       }
 
       &-names {
@@ -95,15 +97,14 @@ export const Styled = styled.div<Props>`
       }
 
       &--selected {
-        color: ${getColor(ColorNames.WHITE_2)};
-        background-color: ${getColor(ColorNames.TEAL_2)};
+        background-color: ${getColor(ColorNames.BLUE_5)};
         border-radius: 50%;
       }
 
       &--today {
         font-weight: normal;
-        background-color: ${getColor(ColorNames.BLUE_2)}b2;
-        color: ${getColor(ColorNames.WHITE_2)};
+        background-color: ${getColor(ColorNames.GREY_1)};
+        color: ${getColor(ColorNames.GREY_4)};
       }
 
       &--outside-month {
@@ -118,7 +119,7 @@ export const Styled = styled.div<Props>`
     overflow: hidden;
 
     &--open {
-      height: ${({ monthsCount = 1 }) => monthsCount * 346}px;
+      height: ${({ monthsCount = 1 }) => monthsCount * 300}px;
     }
 
     &--animation {
@@ -128,7 +129,7 @@ export const Styled = styled.div<Props>`
 `;
 
 export const StyledHeaderFlex = styled(Flex)`
-  padding: 10px 20px 8px 20px;
+  padding: 0 5px 5px 8px;
 `;
 
 export const TodayStyledText = styled(Text)`
@@ -136,6 +137,6 @@ export const TodayStyledText = styled(Text)`
   padding: 0px 6px;
 
   &:hover {
-    ${_dayHoverStyles}
+    ${_hoverStyle}
   }
 `;

@@ -13,6 +13,14 @@ import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { roundToNext } from ".";
 import { ACCEPTED_TIMES } from "../constants/web.constants";
 
+export const dateIsValid = (date: string) => {
+  const notNaN = !Number.isNaN(new Date(date).getTime());
+
+  const isValid = notNaN;
+
+  return isValid;
+};
+
 export const shouldAdjustComplimentTime = (
   changed: "start" | "end",
   vals: { oldStart: string; oldEnd: string; start: string; end: string }
@@ -80,6 +88,10 @@ export const getColorsByHour = (currentHour: number) => {
   });
 
   return colors;
+};
+
+export const getDayjsByTimeValue = (timeValue: string) => {
+  return dayjs(`2000-01-01 ${timeValue}`, YMDHAM_FORMAT);
 };
 
 export const getDurationLabel = (start: string, end: string) => {

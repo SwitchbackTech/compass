@@ -1,6 +1,6 @@
-import React, { ChangeEvent, useState } from "react";
+import React, { useState } from "react";
 import ReactSelect, { Props as RSProps } from "react-select";
-import { Key } from "ts-keycode-enum";
+import { Key } from "ts-key-enum";
 import { SelectOption } from "@web/common/types/components";
 import { Option_Time } from "@web/common/types/util.types";
 
@@ -16,14 +16,14 @@ export interface Props extends Omit<RSProps, "value"> {
 
 export const TimePicker: React.FC<Props> = ({
   bgColor,
-  value,
   onChange: _onChange,
   options,
   selectClassName,
+  value,
   ...props
 }) => {
-  const [isFocused, toggleIsFocused] = useState(false);
-  const [isMenuOpened, toggleMenu] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isMenuOpened, setIsMenuOpen] = useState(false);
 
   const TIMEPICKER = "timepicker";
   let scrollTimer: number;
@@ -37,15 +37,26 @@ export const TimePicker: React.FC<Props> = ({
         value={value}
         maxMenuHeight={4 * 41}
         noOptionsMessage={() => "Nothin'. Typo?"}
-        onBlur={() => toggleIsFocused(false)}
-        onFocus={() => toggleIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        onFocus={() => {
+          console.log("focused");
+          setIsFocused(true);
+        }}
         onChange={_onChange}
         onKeyDown={(e) => {
-          if (e.which === Key.Enter || e.which === Key.Backspace) {
+          const key = e.key;
+
+          if (key === Key.Enter || key === Key.Backspace) {
             e.stopPropagation();
           }
-          if (e.which === Key.Escape) {
-            toggleMenu(false);
+
+          if (key === Key.Shift) {
+            console.log("stopping shift");
+            e.stopPropagation();
+          }
+
+          if (key === Key.Escape) {
+            setIsMenuOpen(false);
             e.stopPropagation();
           }
         }}
@@ -58,10 +69,11 @@ export const TimePicker: React.FC<Props> = ({
               defaultOpt.scrollIntoView();
             }
           }, 15);
-          toggleMenu(true);
+
+          setIsMenuOpen(true);
         }}
         onMenuClose={() => {
-          toggleMenu(false);
+          setIsMenuOpen(false);
           clearTimeout(scrollTimer);
         }}
         openMenuOnFocus={true}
@@ -72,10 +84,3 @@ export const TimePicker: React.FC<Props> = ({
     </StyledTimePicker>
   );
 };
-
-//++
-// const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-//   // if (_onBlur) _onBlur(e);
-//   console.log("blurred");
-//   toggleIsFocused(false);
-// };

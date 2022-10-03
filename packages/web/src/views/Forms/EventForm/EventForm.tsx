@@ -11,8 +11,12 @@ import {
   HOURS_MINUTES_FORMAT,
   HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
+  YMDHAM_FORMAT,
 } from "@web/common/constants/date.constants";
-import { getTimeOptionByValue } from "@web/common/utils/web.date.util";
+import {
+  getDayjsByTimeValue,
+  getTimeOptionByValue,
+} from "@web/common/utils/web.date.util";
 
 import { FormProps } from "./types";
 import { DateTimeSection } from "./DateTimeSection";
@@ -39,7 +43,7 @@ export const EventForm: React.FC<FormProps> = ({
    * State
    ********/
   const [endTime, setEndTime] = useState<SelectOption<string> | undefined>();
-  const [isShiftKeyPressed, toggleShiftKeyPressed] = useState(false);
+  const [isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
@@ -70,7 +74,7 @@ export const EventForm: React.FC<FormProps> = ({
   const keyDownHandler = useCallback(
     (e: KeyboardEvent) => {
       if (e.which === Key.Shift) {
-        toggleShiftKeyPressed(true);
+        setIsShiftKeyPressed(true);
       }
 
       if (e.which === Key.Escape) {
@@ -82,7 +86,7 @@ export const EventForm: React.FC<FormProps> = ({
   );
   const keyUpHandler = useCallback((e: KeyboardEvent) => {
     if (e.which === Key.Shift) {
-      toggleShiftKeyPressed(false);
+      setIsShiftKeyPressed(false);
     }
   }, []);
 
@@ -137,16 +141,25 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   const addTimesToDates = () => {
+    const start = getDayjsByTimeValue(startTime.value);
     const startDate = dayjs(selectedStartDate)
-      .hour(parseInt(startTime.value.slice(0, 2)))
-      .minute(parseInt(startTime.value.slice(3, 5)))
+      .hour(start.hour())
+      .minute(start.minute())
       .format();
 
-    const endDate = dayjs(selectedEndDate)
-      .hour(parseInt(endTime.value.slice(0, 2)))
-      .minute(parseInt(endTime.value.slice(3, 5)))
+    const end = getDayjsByTimeValue(endTime.value);
+    const endDate = dayjs(selectedStartDate)
+      .hour(end.hour())
+      .minute(end.minute())
       .format();
 
+    console.log(`
+    startDate: ${startDate} 
+    startTime: ${startTime.value}
+
+    endDate: ${endDate}
+    endTime: ${endTime.value}
+    `);
     return { startDate, endDate };
   };
 
@@ -172,9 +185,10 @@ export const EventForm: React.FC<FormProps> = ({
     const { startDate, endDate } = getFinalDates();
 
     if (dayjs(startDate).isAfter(dayjs(endDate))) {
-      alert("uff-dah, looks like you got the start & end dates mixed up");
+      alert("uff-dah, looks like you got the start & end times mixed up");
       return;
     }
+    // }
 
     const finalEvent = {
       ...event,
@@ -183,6 +197,7 @@ export const EventForm: React.FC<FormProps> = ({
       endDate,
     };
 
+    console.log(`${finalEvent.startDate} -> \n\t ${finalEvent.endDate}`);
     onSubmit(finalEvent);
 
     onClose();
@@ -215,8 +230,12 @@ export const EventForm: React.FC<FormProps> = ({
         return;
       }
     }
-    const shouldIgnore = isShiftKeyPressed || e.which !== Key.Enter;
+
+    const shouldIgnore = isShiftKeyPressed || e.key !== "Enter";
     if (shouldIgnore) {
+      //++
+      // const reson = isShiftKeyPressed ? "shift key down" : "not Enter";
+      // console.log("ignoring cuz", reson);
       return;
     }
 
@@ -233,13 +252,12 @@ export const EventForm: React.FC<FormProps> = ({
       name="Event Form"
       onKeyDown={submitFormWithKeyboard}
       onMouseUp={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
         }
-        if (isEndDatePickerOpen) {
-          setIsEndDatePickerOpen(false);
-        }
-        e.stopPropagation();
       }}
       onMouseDown={(e) => {
         e.stopPropagation();
@@ -267,7 +285,7 @@ export const EventForm: React.FC<FormProps> = ({
         endTime={endTime}
         isAllDay={event.isAllDay}
         isEndDatePickerShown={isEndDatePickerOpen}
-        isStartDatePickerShown={isStartDatePickerOpen}
+        isStartDatePickerOpen={isStartDatePickerOpen}
         pickerBgColor={getColor(colorNameByPriority[priority])}
         selectedEndDate={selectedEndDate}
         selectedStartDate={selectedStartDate}

@@ -46,7 +46,6 @@ export const ToggleableMonthWidget: React.FC<Props> = ({
           selected={selectedDate}
           defaultOpen
           animationOnToggle={false}
-          isShown={true}
           inline
           calendarClassName="sidebarDatePicker"
           withTodayButton={false}

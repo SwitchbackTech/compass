@@ -70,6 +70,7 @@
     "jest-environment-jsdom": "^29.0.3",
     "jest-styled-components": "^7.0.5",
     "msw": "^0.39.2",
+    "ts-key-enum": "^2.0.12",
     "typescript-plugin-css-modules": "^3.4.0",
     "webpack": "^5.53.0",
     "webpack-bundle-analyzer": "^4.5.0",
