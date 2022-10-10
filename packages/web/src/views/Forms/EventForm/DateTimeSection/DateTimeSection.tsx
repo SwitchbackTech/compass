@@ -26,7 +26,7 @@ export interface Props {
   isAllDay: boolean;
   isEndDatePickerShown: boolean;
   isStartDatePickerOpen: boolean;
-  pickerBgColor?: string;
+  bgColor?: string;
   selectedEndDate?: Date;
   selectedStartDate?: Date;
   setEndTime: (value: SelectOption<string>) => void;
@@ -42,7 +42,7 @@ export const DateTimeSection: FC<Props> = ({
   isAllDay,
   isEndDatePickerShown,
   isStartDatePickerOpen,
-  pickerBgColor,
+  bgColor,
   selectedEndDate,
   selectedStartDate,
   setIsStartDatePickerOpen,
@@ -186,17 +186,15 @@ export const DateTimeSection: FC<Props> = ({
           }}
         >
           <DatePicker
-            // autoFocus={isStartDatePickerOpen}
+            bgColor={bgColor}
             isOpen={isStartDatePickerOpen}
             onCalendarClose={() => {
               closeStartDatePicker;
             }}
             onCalendarOpen={() => {
-              console.log("calopen");
               setIsStartDatePickerOpen(true);
             }}
             onClickOutside={() => {
-              console.log("clickout");
               closeStartDatePicker;
             }}
             onChange={() => null}
@@ -250,7 +248,7 @@ export const DateTimeSection: FC<Props> = ({
       {!isAllDay && (
         <StyledTimeFlex alignItems={AlignItems.CENTER}>
           <TimePicker
-            bgColor={pickerBgColor}
+            bgColor={bgColor}
             value={startTime}
             inputId="startTimePicker"
             onChange={onSelectStartTime}
@@ -259,7 +257,7 @@ export const DateTimeSection: FC<Props> = ({
           />
           -
           <TimePicker
-            bgColor={pickerBgColor}
+            bgColor={bgColor}
             value={endTime}
             inputId="endTimePicker"
             onChange={onSelectEndTime}

@@ -4,13 +4,14 @@ import React, {
   HTMLAttributes,
   Ref,
 } from "react";
+import { ColorNames } from "@core/types/color.types";
 import {
   ClassNamedComponent,
   UnderlinedInput,
 } from "@web/common/types/components";
 import { FocusableUnderlineLayout } from "@web/components/FocusableUnderlinedComponent";
 
-import { Styled, Props as StyledProps } from "./styled";
+import { StyledInput, Props as StyledProps } from "./styled";
 
 export interface Props
   extends ClassNamedComponent,
@@ -18,6 +19,7 @@ export interface Props
     StyledProps,
     HTMLAttributes<HTMLInputElement> {
   autoFocus?: boolean;
+  bgColor?: string;
 }
 
 const InputComponent: ForwardRefRenderFunction<HTMLInputElement, Props> = (
@@ -25,7 +27,7 @@ const InputComponent: ForwardRefRenderFunction<HTMLInputElement, Props> = (
   ref: Ref<HTMLInputElement>
 ) => (
   <FocusableUnderlineLayout
-    Component={Styled}
+    Component={StyledInput}
     ref={ref}
     withUnderline={withUnderline}
     {...props}

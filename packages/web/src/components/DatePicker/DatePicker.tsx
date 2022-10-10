@@ -18,6 +18,7 @@ import {
 } from "./styled";
 
 export interface Props extends ReactDatePickerProps {
+  bgColor: string;
   defaultOpen?: boolean;
   onInputBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   isOpen?: boolean;
@@ -32,6 +33,7 @@ export interface CalendarRef extends HTMLDivElement {
 export const DatePicker: React.FC<Props> = ({
   animationOnToggle = true,
   autoFocus: _autoFocus = false,
+  bgColor,
   defaultOpen = false,
   calendarClassName,
   isOpen = true,
@@ -61,6 +63,7 @@ export const DatePicker: React.FC<Props> = ({
     }
   }, [_autoFocus]);
 
+  //++
   // useEffect(() => {
   //   _showDatePicker(defaultOpen);
   // }, [defaultOpen]);
@@ -81,9 +84,11 @@ export const DatePicker: React.FC<Props> = ({
       )}
       customInput={
         <Input
+          bgColor={bgColor}
+          colorName={ColorNames.TEAL_1}
           onBlurCapture={onInputBlur}
-          background={ColorNames.GREY_3}
-          colorName={ColorNames.WHITE_1}
+          // background={ColorNames.GREY_3} //++
+          // colorName={ColorNames.WHITE_1} //++
         />
       }
       dateFormat={"M-d-yyyy"}

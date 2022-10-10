@@ -1,8 +1,8 @@
-import { ColorNames, InvertedColorNames } from "@core/types/color.types";
-import { getColor, getInvertedColor } from "@core/util/color.utils";
+import { ColorNames } from "@core/types/color.types";
+import { getColor } from "@core/util/color.utils";
 
 export interface BackgroundProps {
-  background?: ColorNames;
+  bgColor?: string;
 }
 
 export interface ColorProps {
@@ -10,19 +10,13 @@ export interface ColorProps {
   colorName?: ColorNames;
 }
 
-export type ColorNameAndBackgroundProps = ColorProps & BackgroundProps;
+export type InputProps = ColorProps & BackgroundProps;
 
-export const getInputCommonStyles = ({
-  background,
-  colorName,
-}: ColorNameAndBackgroundProps) => `
-  background: ${getColor(background)};
-  color: ${
-    colorName
-      ? getColor(colorName)
-      : getInvertedColor(background as unknown as InvertedColorNames)
-  };
+// background: ${getColor(bgColor)};
+export const inputBaseStyles = ({ bgColor, colorName }: InputProps) => `
+  background: ${bgColor};
+  
   ::placeholder {
     color: ${getColor(colorName)}
   }
-`;
+  `;

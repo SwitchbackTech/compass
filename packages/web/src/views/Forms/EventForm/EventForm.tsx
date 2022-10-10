@@ -282,11 +282,11 @@ export const EventForm: React.FC<FormProps> = ({
       <PrioritySection onSetEventField={onSetEventField} priority={priority} />
 
       <DateTimeSection
+        bgColor={getColor(colorNameByPriority[priority])}
         endTime={endTime}
         isAllDay={event.isAllDay}
         isEndDatePickerShown={isEndDatePickerOpen}
         isStartDatePickerOpen={isStartDatePickerOpen}
-        pickerBgColor={getColor(colorNameByPriority[priority])}
         selectedEndDate={selectedEndDate}
         selectedStartDate={selectedStartDate}
         setEndTime={setEndTime}
