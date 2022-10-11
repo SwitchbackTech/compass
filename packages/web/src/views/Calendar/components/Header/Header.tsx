@@ -36,7 +36,7 @@ export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
 
           <SpaceCharacter />
 
-          <Text colorName={ColorNames.WHITE_1} size={40}>
+          <Text colorName={ColorNames.GREY_4} size={38}>
             {weekProps.component.dayjsBasedOnWeekDay.format("YYYY")}
           </Text>
         </div>

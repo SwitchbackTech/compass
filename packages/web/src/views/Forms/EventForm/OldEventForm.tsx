@@ -271,7 +271,7 @@ export const OldEventForm: React.FC<FormProps> = ({
       <DateTimeSection
         endTime={endTime}
         isAllDay={event.isAllDay}
-        isEndDatePickerShown={isEndDatePickerOpen}
+        isEndDatePickerOpen={isEndDatePickerOpen}
         isStartDatePickerOpen={isStartDatePickerOpen}
         selectedEndDate={selectedEndDate}
         selectedStartDate={selectedStartDate}

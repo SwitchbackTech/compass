@@ -11,7 +11,6 @@ import {
   HOURS_MINUTES_FORMAT,
   HOURS_AM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
-  YMDHAM_FORMAT,
 } from "@web/common/constants/date.constants";
 import {
   getDayjsByTimeValue,
@@ -285,7 +284,7 @@ export const EventForm: React.FC<FormProps> = ({
         bgColor={getColor(colorNameByPriority[priority])}
         endTime={endTime}
         isAllDay={event.isAllDay}
-        isEndDatePickerShown={isEndDatePickerOpen}
+        isEndDatePickerOpen={isEndDatePickerOpen}
         isStartDatePickerOpen={isStartDatePickerOpen}
         selectedEndDate={selectedEndDate}
         selectedStartDate={selectedStartDate}

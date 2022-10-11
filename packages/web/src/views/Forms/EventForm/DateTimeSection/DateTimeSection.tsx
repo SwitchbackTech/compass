@@ -1,6 +1,7 @@
 import React, { FC } from "react";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
+import { Key } from "ts-key-enum";
 import { Text } from "@web/components/Text";
 import { SelectOption } from "@web/common/types/components";
 import { AlignItems } from "@web/components/Flex/styled";
@@ -24,7 +25,7 @@ dayjs.extend(customParseFormat);
 export interface Props {
   endTime?: SelectOption<string>;
   isAllDay: boolean;
-  isEndDatePickerShown: boolean;
+  isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
   bgColor?: string;
   selectedEndDate?: Date;
@@ -40,13 +41,13 @@ export interface Props {
 
 export const DateTimeSection: FC<Props> = ({
   isAllDay,
-  isEndDatePickerShown,
+  isEndDatePickerOpen,
   isStartDatePickerOpen,
   bgColor,
   selectedEndDate,
   selectedStartDate,
   setIsStartDatePickerOpen,
-  setIsEndDatePickerOpen: _setIsEndDatePickerOpen,
+  setIsEndDatePickerOpen,
   setStartTime,
   setEndTime,
   setSelectedEndDate,
@@ -95,29 +96,28 @@ export const DateTimeSection: FC<Props> = ({
   };
 
   const closeEndDatePicker = () => {
-    _setIsEndDatePickerOpen(false);
+    setIsEndDatePickerOpen(false);
   };
 
   const closeStartDatePicker = () => {
     setIsStartDatePickerOpen(false);
   };
 
-  const openEndDatePicker = () => {
-    _setIsEndDatePickerOpen(true);
-  };
-
   const onPickerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     switch (e.key) {
-      case "Backspace": {
+      case Key.Backspace: {
         e.stopPropagation();
         break;
       }
-      case "Enter": {
+      case Key.Enter: {
         e.stopPropagation();
         const input = e.target as HTMLInputElement;
         const val = input.value;
 
-        if (!dateIsValid(val)) {
+        const isFinalDate = val !== undefined;
+
+        if (!dateIsValid(val) && isFinalDate) {
+          console.log(input);
           alert(`Sorry, IDK what to do with '${val}'
           Make sure it's in '${MONTH_DAY_YEAR}' and try again`);
           return;
@@ -126,16 +126,16 @@ export const DateTimeSection: FC<Props> = ({
         onSelectStartDate(start);
         break;
       }
-      case "Escape": {
+      case Key.Escape: {
         if (isStartDatePickerOpen) {
           e.stopPropagation();
           closeStartDatePicker();
         }
         break;
       }
-      case "Tab": {
+      case Key.Tab: {
         if (isStartDatePickerOpen) {
-          console.log("closing cuz tab");
+          console.log("closing cuz tab"); //++
           setIsStartDatePickerOpen(false);
         }
         break;
@@ -148,7 +148,7 @@ export const DateTimeSection: FC<Props> = ({
 
   const onSelectEndDate = (date: Date | null | [Date | null, Date | null]) => {
     setSelectedEndDate(date as Date);
-    _setIsEndDatePickerOpen(false);
+    setIsEndDatePickerOpen(false);
   };
 
   const onSelectEndTime = (option: SelectOption<string>) => {
@@ -170,7 +170,7 @@ export const DateTimeSection: FC<Props> = ({
   };
 
   return (
-    <StyledDateTimeFlex role="tablist" alignItems={AlignItems.CENTER}>
+    <StyledDateTimeFlex alignItems={AlignItems.CENTER} role="tablist">
       <StyledDateFlex alignItems={AlignItems.CENTER}>
         <div
           onFocus={() => {
@@ -187,6 +187,7 @@ export const DateTimeSection: FC<Props> = ({
         >
           <DatePicker
             bgColor={bgColor}
+            calendarClassName="startDatePicker"
             isOpen={isStartDatePickerOpen}
             onCalendarClose={() => {
               closeStartDatePicker;
@@ -204,44 +205,42 @@ export const DateTimeSection: FC<Props> = ({
             onKeyDown={onPickerKeyDown}
             onSelect={onSelectStartDate}
             selected={selectedStartDate}
+            title="Pick Start Date"
           />
         </div>
       </StyledDateFlex>
 
       {isAllDay && (
         <StyledDateFlex alignItems={AlignItems.CENTER}>
-          {isEndDatePickerShown ? (
-            <div
-              onMouseUp={(e) => {
-                e.stopPropagation();
+          <div
+            onFocus={() => {
+              if (!isEndDatePickerOpen) {
+                setIsEndDatePickerOpen(true);
+              }
+            }}
+            onMouseUp={(e) => {
+              e.stopPropagation();
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <DatePicker
+              bgColor={bgColor}
+              calendarClassName="endDatePicker"
+              isOpen={isEndDatePickerOpen}
+              onCalendarClose={() => {
+                closeEndDatePicker;
               }}
-              onMouseDown={(e) => {
-                e.stopPropagation();
+              onClickOutside={() => {
+                closeEndDatePicker();
               }}
-            >
-              <DatePicker
-                onCalendarClose={() => {
-                  closeEndDatePicker;
-                }}
-                onClickOutside={() => {
-                  closeEndDatePicker();
-                }}
-                onChange={() => null}
-                onSelect={onSelectEndDate}
-                selected={selectedEndDate}
-              />
-            </div>
-          ) : (
-            <Text
-              onClick={openEndDatePicker}
-              onFocus={() => isEndDatePickerShown && openEndDatePicker}
-              role="tab"
-              tabIndex={0}
-              withUnderline
-            >
-              {dayjs(selectedEndDate).format(MONTH_DAY_COMPACT_FORMAT)}
-            </Text>
-          )}
+              onChange={() => null}
+              onSelect={onSelectEndDate}
+              selected={selectedEndDate}
+              title="Pick End Date"
+            />
+          </div>
         </StyledDateFlex>
       )}
 

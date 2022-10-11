@@ -35,18 +35,6 @@ describe("Event Form", () => {
   }, 10000);
 
   it("closes when clicking outside", async () => {
-    /*
-        attempt at ESC-ing
-        opt: 
-          user.keyboard ...
-        opt (wasnt working initially):
-          fireEvent.keyDown(screen.getByText(/today/i), {
-            key: "Escape",
-            code: "Escape",
-            charCode: 27,
-          });
-        */
-
     const user = userEvent.setup();
     render(<CalendarView />, { state: preloadedState });
 
@@ -81,9 +69,9 @@ describe("Event Form", () => {
   }, 10000);
 
   describe("DatePicker", () => {
-    it("closes when clicking outside of form, while keeping form open", async () => {
+    it("dialog is not open by default", async () => {
       const user = userEvent.setup();
-      render(<CalendarView />, { state: preloadedState });
+      const { container } = render(<CalendarView />, { state: preloadedState });
 
       await user.click(
         screen.getByRole("button", {
@@ -91,20 +79,9 @@ describe("Event Form", () => {
         })
       );
 
-      await user.click(screen.getAllByRole("tab", { name: /mar 01/i })[0]); // picker should open
-
-      // picker should close
-      await user.click(screen.getByRole("form"));
-
-      // looks for the date input that appears when editing
-      // (instead of date picker, because sidebar month picker still present)
-      const tablist = screen.getByRole("tablist");
-      expect(within(tablist).queryByRole("textbox")).not.toBeInTheDocument();
-
-      // form is still open
-      await waitFor(() => {
-        expect(screen.getByRole("form")).toBeInTheDocument();
-      });
+      expect(container.getElementsByClassName("startDatePicker")).toHaveLength(
+        0
+      );
     });
   });
 });

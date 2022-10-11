@@ -94,13 +94,6 @@ export const DatePicker: React.FC<Props> = ({
       dateFormat={"M-d-yyyy"}
       formatWeekDay={(day) => day[0]}
       open={isOpen}
-      onSelect={(date, event: React.SyntheticEvent<Event> | undefined) => {
-        onSelect(date, event);
-
-        // if (shouldCloseOnSelect) {
-        //   setIsOpen(false);
-        // }
-      }}
       onCalendarOpen={() => {
         // _showDatePicker(true);
         onCalendarOpen();
@@ -111,10 +104,17 @@ export const DatePicker: React.FC<Props> = ({
         onCalendarClose();
       }}
       onClickOutside={() => {
-        console.log("clicked out");
+        // console.log("clicked out");
         // setIsOpen(false);
         // _showDatePicker(false);
         onCalendarClose();
+      }}
+      onSelect={(date, event: React.SyntheticEvent<Event> | undefined) => {
+        console.log(event);
+        onSelect(date, event);
+        // if (shouldCloseOnSelect) {
+        //   setIsOpen(false);
+        // }
       }}
       portalId="root"
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -134,8 +134,9 @@ export const DatePicker: React.FC<Props> = ({
 
         return (
           <StyledHeaderFlex
-            justifyContent={JustifyContent.LEFT}
             alignItems={AlignItems.CENTER}
+            justifyContent={JustifyContent.LEFT}
+            title="Custom header"
           >
             <MonthContainerStyled>
               <Text colorName={ColorNames.WHITE_1} size={17}>
