@@ -2,15 +2,11 @@ import React, { FC } from "react";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { Key } from "ts-key-enum";
-import { Text } from "@web/components/Text";
 import { SelectOption } from "@web/common/types/components";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
 import { DatePicker } from "@web/components/DatePicker";
-import {
-  MONTH_DAY_COMPACT_FORMAT,
-  MONTH_DAY_YEAR,
-} from "@web/common/constants/date.constants";
+import { MONTH_DAY_YEAR } from "@web/common/constants/date.constants";
 import {
   dateIsValid,
   getTimeOptionByValue,
@@ -115,13 +111,12 @@ export const DateTimeSection: FC<Props> = ({
         const val = input.value;
 
         const isFinalDate = val !== undefined;
-
         if (!dateIsValid(val) && isFinalDate) {
-          console.log(input);
           alert(`Sorry, IDK what to do with '${val}'
           Make sure it's in '${MONTH_DAY_YEAR}' and try again`);
           return;
         }
+
         const start = getDateFromInput(val);
         onSelectStartDate(start);
         break;

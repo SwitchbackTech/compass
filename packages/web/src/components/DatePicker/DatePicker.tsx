@@ -136,7 +136,6 @@ export const DatePicker: React.FC<Props> = ({
           <StyledHeaderFlex
             alignItems={AlignItems.CENTER}
             justifyContent={JustifyContent.LEFT}
-            title="Custom header"
           >
             <MonthContainerStyled>
               <Text colorName={ColorNames.WHITE_1} size={17}>

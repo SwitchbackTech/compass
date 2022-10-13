@@ -44,10 +44,15 @@ export const StyledEventForm = styled.form<StyledFormProps>`
 
 export const StyledDescriptionField = styled(Textarea)`
   background: transparent;
-  width: calc(100% - 20px) !important;
-  max-height: 180px;
+  border: hidden;
   font-size: 20px;
+  max-height: 180px;
   position: relative;
+  width: calc(100% - 20px) !important;
+
+  &:hover {
+    filter: brightness(90%);
+  }
 `;
 
 export const StyledIconRow = styled(Flex)`
@@ -68,7 +73,9 @@ export const StyledSubmitRow = styled(Flex)`
 
 export const StyledTitleField = styled(Textarea)`
   background: transparent;
-  /* padding: 10px 0; */
   height: 40px;
   font-size: 35px;
+  &:hover {
+    filter: brightness(90%);
+  }
 `;
