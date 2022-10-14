@@ -12,7 +12,6 @@ export interface ColorProps {
 
 export type InputProps = ColorProps & BackgroundProps;
 
-// background: ${getColor(bgColor)};
 export const inputBaseStyles = ({ bgColor, colorName }: InputProps) => `
   background: ${bgColor};
   

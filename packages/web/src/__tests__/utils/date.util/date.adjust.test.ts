@@ -1,11 +1,52 @@
 import {
-  getTimesLabel,
+  shouldAdjustComplimentDate,
   shouldAdjustComplimentTime,
-  shouldAdjustComplimentaryTime,
 } from "@web/common/utils/web.date.util";
 
-const meridians = (label: string) =>
-  (label.match(/am/gi) || label.match(/pm/gi) || []).length;
+describe("Dates", () => {
+  it("recognizes date adjustment after changing start", () => {
+    const impossibleStart = shouldAdjustComplimentDate("start", {
+      start: new Date("2022-06-06"),
+      end: new Date("2022-06-04"),
+    });
+    expect(impossibleStart.shouldAdjust).toBe(true);
+    expect(impossibleStart.compliment).toEqual(new Date("2022-06-06"));
+
+    const sameStartAsEnd = shouldAdjustComplimentDate("start", {
+      start: new Date("2022-11-11"),
+      end: new Date("2022-11-11"),
+    });
+    expect(sameStartAsEnd.shouldAdjust).toBe(false);
+
+    const noAdjustment = shouldAdjustComplimentDate("start", {
+      start: new Date("2022-10-10"),
+      end: new Date("2022-11-11"),
+    });
+
+    expect(noAdjustment.shouldAdjust).toBe(false);
+  });
+  it("recognizes date adjustment after changing end", () => {
+    const impossibleEnd = shouldAdjustComplimentDate("end", {
+      start: new Date("2022-02-02"),
+      end: new Date("2022-01-01"),
+    });
+    expect(impossibleEnd.shouldAdjust).toBe(true);
+    expect(impossibleEnd.compliment).toEqual(new Date("2022-01-01"));
+
+    const sameStartAsEnd = shouldAdjustComplimentDate("end", {
+      start: new Date("2022-05-05"),
+      end: new Date("2022-05-05"),
+    });
+    expect(sameStartAsEnd.shouldAdjust).toBe(false);
+
+    const noAdjustment = shouldAdjustComplimentDate("end", {
+      start: new Date("2022-04-04"),
+      end: new Date("2022-04-05"),
+    });
+
+    expect(noAdjustment.shouldAdjust).toBe(false);
+  });
+});
 
 describe("Time Options", () => {
   it("recognizes adjustment needed after changing start", () => {
@@ -74,37 +115,5 @@ describe("Time Options", () => {
     });
 
     expect(noAdjustment.shouldAdjust).toBe(false);
-  });
-});
-describe("Time Labels", () => {
-  it("removes minutes and am/pm when possible", () => {
-    const morningLabel = getTimesLabel(
-      "2022-07-06T06:00:00-05:00",
-      "2022-07-06T07:00:00-05:00"
-    );
-    expect(meridians(morningLabel)).toBe(1);
-
-    const eveningLabel = getTimesLabel(
-      "2022-07-06T20:00:00-05:00",
-      "2022-07-06T23:00:00-05:00"
-    );
-    expect(meridians(eveningLabel)).toBe(1);
-  });
-
-  it("preserves am/pm when needed", () => {
-    const label = getTimesLabel(
-      "2022-07-06T01:00:00-05:00",
-      "2022-07-06T18:00:00-05:00"
-    );
-    expect(label.includes("AM")).toBe(true);
-    expect(label.includes("PM")).toBe(true);
-  });
-  it("preserves minutes when needed", () => {
-    const label = getTimesLabel(
-      "2022-07-06T09:45:00-05:00",
-      "2022-07-06T19:15:00-05:00"
-    );
-    expect(label.includes(":45")).toBe(true);
-    expect(label.includes(":15")).toBe(true);
   });
 });

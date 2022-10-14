@@ -8,13 +8,8 @@ import { Schema_Event } from "@core/types/event.types";
 import { DeleteIcon } from "@web/components/Icons";
 import { SelectOption } from "@web/common/types/components";
 import {
-  HOURS_MINUTES_FORMAT,
-  HOURS_AM_FORMAT,
-  YEAR_MONTH_DAY_FORMAT,
-} from "@web/common/constants/date.constants";
-import {
-  getDayjsByTimeValue,
   getTimeOptionByValue,
+  mapToBackend,
 } from "@web/common/utils/web.date.util";
 
 import { FormProps } from "./types";
@@ -52,20 +47,6 @@ export const EventForm: React.FC<FormProps> = ({
     Date | undefined
   >();
 
-  /******************
-   * Date Calculations
-   ******************/
-  const _initialEndTime = event?.startDate && dayjs(event.endDate);
-
-  const initialEndTime = _initialEndTime && {
-    value: _initialEndTime.format(HOURS_MINUTES_FORMAT),
-    label: _initialEndTime.format(HOURS_AM_FORMAT),
-  };
-
-  const initialEndDate = event?.endDate
-    ? dayjs(event.endDate).toDate()
-    : new Date();
-
   /********
    * Effect
    *********/
@@ -83,6 +64,7 @@ export const EventForm: React.FC<FormProps> = ({
     },
     [_onClose]
   );
+
   const keyUpHandler = useCallback((e: KeyboardEvent) => {
     if (e.which === Key.Shift) {
       setIsShiftKeyPressed(false);
@@ -101,21 +83,41 @@ export const EventForm: React.FC<FormProps> = ({
   }, []);
 
   useEffect(() => {
-    const _start = event?.startDate ? dayjs(event.startDate) : dayjs();
-    const _startTime = getTimeOptionByValue(_start);
-    const _startDate = _start.toDate();
-
-    const _end = event?.endDate ? dayjs(event.endDate) : dayjs();
-    const _endTime = getTimeOptionByValue(_end);
-    const _endDate = _end.toDate();
+    const dt = getDefaultDateTimes(event);
 
     setEvent(event || {});
-    setStartTime(_startTime);
-    setEndTime(_endTime);
-    setSelectedStartDate(_startDate);
-    setSelectedEndDate(_endDate);
+    setStartTime(dt.startTime);
+    setEndTime(dt.endTime);
+    setSelectedStartDate(dt.startDate);
+    setSelectedEndDate(dt.endDate);
     setIsFormOpen(true);
   }, []);
+
+  const getDefaultDateTimes = (event: Schema_Event) => {
+    const start = event?.startDate ? dayjs(event.startDate) : dayjs();
+    const startTime = getTimeOptionByValue(start);
+    const startDate = start.toDate();
+
+    const { endDate, endTime } = getDefaultEndDateTimes(event);
+
+    return { startDate, startTime, endDate, endTime };
+  };
+
+  const getDefaultEndDateTimes = (event: Schema_Event) => {
+    const end = event?.endDate ? dayjs(event.endDate) : dayjs();
+    const endTime = getTimeOptionByValue(end);
+
+    if (event.isAllDay) {
+      const isMultiDay = !dayjs(event.startDate).isSame(end);
+      if (isMultiDay) {
+        const userFriendlyEnd = end.add(-1, "day").toDate();
+
+        return { endDate: userFriendlyEnd, endTime };
+      }
+    }
+
+    return { endDate: end.toDate(), endTime };
+  };
 
   /*********
    * Handlers
@@ -139,41 +141,6 @@ export const EventForm: React.FC<FormProps> = ({
     onClose();
   };
 
-  const addTimesToDates = () => {
-    const start = getDayjsByTimeValue(startTime.value);
-    const startDate = dayjs(selectedStartDate)
-      .hour(start.hour())
-      .minute(start.minute())
-      .format();
-
-    const end = getDayjsByTimeValue(endTime.value);
-    const endDate = dayjs(selectedStartDate)
-      .hour(end.hour())
-      .minute(end.minute())
-      .format();
-
-    console.log(`
-    startDate: ${startDate} 
-    startTime: ${startTime.value}
-
-    endDate: ${endDate}
-    endTime: ${endTime.value}
-    `);
-    return { startDate, endDate };
-  };
-
-  const getFinalDates = () => {
-    if (event?.isAllDay) {
-      return {
-        startDate: dayjs(selectedStartDate).format(YEAR_MONTH_DAY_FORMAT),
-        endDate: dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT),
-      };
-    } else {
-      const { startDate, endDate } = addTimesToDates();
-      return { startDate, endDate };
-    }
-  };
-
   const ignoreDelete = (e: KeyboardEvent) => {
     if (e.which === Key.Backspace) {
       e.stopPropagation();
@@ -181,13 +148,20 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   const onSubmitForm = () => {
-    const { startDate, endDate } = getFinalDates();
+    const selectedDateTimes = {
+      startDate: selectedStartDate,
+      startTime,
+      endDate: selectedEndDate,
+      endTime,
+      isAllDay: event.isAllDay,
+    };
+
+    const { startDate, endDate } = mapToBackend(selectedDateTimes);
 
     if (dayjs(startDate).isAfter(dayjs(endDate))) {
       alert("uff-dah, looks like you got the start & end times mixed up");
       return;
     }
-    // }
 
     const finalEvent = {
       ...event,
@@ -196,7 +170,6 @@ export const EventForm: React.FC<FormProps> = ({
       endDate,
     };
 
-    console.log(`${finalEvent.startDate} -> \n\t ${finalEvent.endDate}`);
     onSubmit(finalEvent);
 
     onClose();
@@ -257,6 +230,10 @@ export const EventForm: React.FC<FormProps> = ({
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
         }
+
+        if (isEndDatePickerOpen) {
+          setIsEndDatePickerOpen(false);
+        }
       }}
       onMouseDown={(e) => {
         e.stopPropagation();
@@ -308,3 +285,18 @@ export const EventForm: React.FC<FormProps> = ({
     </StyledEventForm>
   );
 };
+
+//++
+/******************
+   * Date Calculations
+  const _initialEndTime = event?.startDate && dayjs(event.endDate);
+
+  const initialEndTime = _initialEndTime && {
+    value: _initialEndTime.format(HOURS_MINUTES_FORMAT),
+    label: _initialEndTime.format(HOURS_AM_FORMAT),
+  };
+
+  const initialEndDate = event?.endDate
+    ? dayjs(event.endDate).toDate()
+    : new Date();
+*/

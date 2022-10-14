@@ -110,11 +110,7 @@ export const DatePicker: React.FC<Props> = ({
         onCalendarClose();
       }}
       onSelect={(date, event: React.SyntheticEvent<Event> | undefined) => {
-        console.log(event);
         onSelect(date, event);
-        // if (shouldCloseOnSelect) {
-        //   setIsOpen(false);
-        // }
       }}
       portalId="root"
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

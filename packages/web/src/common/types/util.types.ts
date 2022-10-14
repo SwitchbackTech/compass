@@ -7,6 +7,17 @@ export interface Option_Time {
   label: string;
   value: string;
 }
+export interface Params_DateChange {
+  start: Date;
+  end: Date;
+}
+export interface Params_TimeChange {
+  oldStart: string;
+  oldEnd: string;
+  start: string;
+  end: string;
+}
+
 export interface WidthPercentages {
   current: number[];
   pastFuture: number[];

@@ -19,8 +19,7 @@ export const _confirm = async (question: string, _default = true) => {
       default: _default,
     },
   ];
-  return;
-  prompt(q)
+  return prompt(q)
     .then((a: { confirm: boolean }) => a.confirm)
     .catch((e) => {
       console.log(e);
@@ -60,8 +59,7 @@ export const getListAnswer = async (question: string, choices: string[]) => {
       choices,
     },
   ];
-  return;
-  prompt(q)
+  return prompt(q)
     .then((a: { answer: string }) => a.answer)
     .catch((e) => {
       console.log(e);
@@ -78,8 +76,7 @@ export const getPckgsTo = async (verb: "build" | "update") => {
       choices: ALL_PACKAGES,
     },
   ];
-  return;
-  prompt(q)
+  return prompt(q)
     .then((a: { packages: string[] }) => a.packages)
     .catch((e) => {
       console.log(e);

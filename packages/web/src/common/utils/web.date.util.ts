@@ -4,14 +4,20 @@ import {
   HOURS_AM_SHORT_FORMAT,
   YMDHM_FORMAT,
   YMDHAM_FORMAT,
+  YEAR_MONTH_DAY_FORMAT,
 } from "@web/common/constants/date.constants";
-import { Option_Time } from "@web/common/types/util.types";
+import {
+  Option_Time,
+  Params_DateChange,
+  Params_TimeChange,
+} from "@web/common/types/util.types";
 import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
 import { roundToNext } from ".";
 import { ACCEPTED_TIMES } from "../constants/web.constants";
+import { Schema_SelectedDates } from "../types/web.event.types";
 
 export const dateIsValid = (date: string) => {
   const notNaN = !Number.isNaN(new Date(date).getTime());
@@ -19,54 +25,6 @@ export const dateIsValid = (date: string) => {
   const isValid = notNaN;
 
   return isValid;
-};
-
-export const shouldAdjustComplimentTime = (
-  changed: "start" | "end",
-  vals: { oldStart: string; oldEnd: string; start: string; end: string }
-) => {
-  let shouldAdjust: boolean;
-  let duration: number;
-  let step: number;
-  let compliment: Dayjs;
-
-  const { oldStart, oldEnd, start, end } = vals;
-
-  const _start = dayjs(`2000-01-01 ${start}`, YMDHAM_FORMAT);
-  const _end = dayjs(`2000-01-01 ${end}`, YMDHAM_FORMAT);
-  const isSame = _start.isSame(_end);
-
-  if (changed === "start") {
-    shouldAdjust = _start.isAfter(_end) || isSame;
-
-    if (shouldAdjust) {
-      const _oldStart = dayjs(`2000-01-01 ${oldStart}`, YMDHAM_FORMAT);
-      const _oldEnd = dayjs(`2000-01-01 ${oldEnd}`, YMDHAM_FORMAT);
-      duration = Math.abs(_oldStart.diff(_oldEnd, "minutes"));
-
-      step = Math.abs(_start.diff(_end, "minutes"));
-
-      compliment = dayjs(`2000-01-01 ${end}`, YMDHAM_FORMAT);
-    }
-  }
-
-  if (changed === "end") {
-    shouldAdjust = _end.isBefore(_start) || isSame;
-
-    if (shouldAdjust) {
-      const _oldStart = dayjs(`2000-01-01 ${oldStart}`, YMDHAM_FORMAT);
-      const _oldEnd = dayjs(`2000-01-01 ${oldEnd}`, YMDHAM_FORMAT);
-      duration = Math.abs(_oldStart.diff(_oldEnd, "minutes"));
-
-      step = Math.abs(_start.diff(_end, "minutes"));
-
-      compliment = dayjs(`2000-01-01 ${start}`, YMDHAM_FORMAT);
-    }
-  }
-
-  const adjustment = duration + step;
-
-  return { shouldAdjust, adjustment, compliment };
 };
 
 export const getColorsByHour = (currentHour: number) => {
@@ -173,6 +131,98 @@ export const getTimesLabel = (startDate: string, endDate: string) => {
   return label;
 };
 
+export const mapToBackend = (s: Schema_SelectedDates) => {
+  if (s.isAllDay) {
+    const adjustedEnd = dayjs(s.endDate).add(1, "day");
+
+    return {
+      startDate: dayjs(s.startDate).format(YEAR_MONTH_DAY_FORMAT),
+      endDate: adjustedEnd.format(YEAR_MONTH_DAY_FORMAT),
+    };
+  }
+
+  const { startDate, endDate } = _addTimesToDates(s);
+
+  return { startDate, endDate };
+};
+
+export const shouldAdjustComplimentDate = (
+  changed: "start" | "end",
+  vals: Params_DateChange
+) => {
+  let shouldAdjust: boolean;
+  let compliment: Date;
+
+  const { start, end } = vals;
+  const _start = dayjs(start);
+  const _end = dayjs(end);
+
+  if (changed === "start") {
+    shouldAdjust = _start.isAfter(_end);
+    if (shouldAdjust) {
+      compliment = start;
+    }
+  }
+
+  if (changed === "end") {
+    shouldAdjust = _end.isBefore(_start);
+
+    if (shouldAdjust) {
+      compliment = end;
+    }
+  }
+
+  return { shouldAdjust, compliment };
+};
+
+export const shouldAdjustComplimentTime = (
+  changed: "start" | "end",
+  vals: Params_TimeChange
+) => {
+  let shouldAdjust: boolean;
+  let duration: number;
+  let step: number;
+  let compliment: Dayjs;
+
+  const { oldStart, oldEnd, start, end } = vals;
+
+  const _start = dayjs(`2000-01-01 ${start}`, YMDHAM_FORMAT);
+  const _end = dayjs(`2000-01-01 ${end}`, YMDHAM_FORMAT);
+  const isSame = _start.isSame(_end);
+
+  if (changed === "start") {
+    shouldAdjust = _start.isAfter(_end) || isSame;
+
+    if (shouldAdjust) {
+      const _oldStart = dayjs(`2000-01-01 ${oldStart}`, YMDHAM_FORMAT);
+      const _oldEnd = dayjs(`2000-01-01 ${oldEnd}`, YMDHAM_FORMAT);
+      duration = Math.abs(_oldStart.diff(_oldEnd, "minutes"));
+
+      step = Math.abs(_start.diff(_end, "minutes"));
+
+      compliment = dayjs(`2000-01-01 ${end}`, YMDHAM_FORMAT);
+    }
+  }
+
+  if (changed === "end") {
+    shouldAdjust = _end.isBefore(_start) || isSame;
+
+    if (shouldAdjust) {
+      const _oldStart = dayjs(`2000-01-01 ${oldStart}`, YMDHAM_FORMAT);
+      const _oldEnd = dayjs(`2000-01-01 ${oldEnd}`, YMDHAM_FORMAT);
+      duration = Math.abs(_oldStart.diff(_oldEnd, "minutes"));
+
+      step = Math.abs(_start.diff(_end, "minutes"));
+
+      compliment = dayjs(`2000-01-01 ${start}`, YMDHAM_FORMAT);
+    }
+  }
+
+  const adjustment = duration + step;
+
+  return { shouldAdjust, adjustment, compliment };
+};
+
 // uses inferred timezone and shortened string to
 // convert to a string format that the backend/gcal/mongo accepts:
 // '2022-02-04 12:15' -> '2022-02-04T12:15:00-06:00'
@@ -180,6 +230,29 @@ export const toUTCOffset = (date: string | Dayjs | Date) => {
   if (typeof date === "string" || date instanceof Date) {
     return dayjs(date).format();
   } else return date.format(); // then already a DayJs object
+};
+
+const _addTimesToDates = (dt: SelectedDateTimes) => {
+  const start = getDayjsByTimeValue(dt.startTime.value);
+  const startDate = dayjs(dt.startDate)
+    .hour(start.hour())
+    .minute(start.minute())
+    .format();
+
+  const end = getDayjsByTimeValue(dt.endTime.value);
+  const endDate = dayjs(dt.startDate)
+    .hour(end.hour())
+    .minute(end.minute())
+    .format();
+
+  console.log(`
+    startDate: ${startDate} 
+    startTime: ${dt.startTime.value}
+
+    endDate: ${endDate}
+    endTime: ${dt.endTime.value}
+    `);
+  return { startDate, endDate };
 };
 
 const _cleanStartMeridiem = (start: string, end: string) => {
