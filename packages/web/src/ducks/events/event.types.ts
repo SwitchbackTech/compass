@@ -1,11 +1,11 @@
 import { Action } from "redux";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Response_HttpPaginatedSuccess,
   Filters_Pagination,
-} from "@web/common/types/apiTypes";
+} from "@web/common/types/api.types";
 
 export interface Action_ConvertSomedayEvent extends Action {
   payload: Payload_ConvertSomedayEvent;

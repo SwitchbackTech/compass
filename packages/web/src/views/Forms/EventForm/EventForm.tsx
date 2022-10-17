@@ -1,12 +1,12 @@
 import dayjs from "dayjs";
 import React, { KeyboardEvent, useCallback, useEffect, useState } from "react";
-import { Key } from "ts-keycode-enum";
+import { Key } from "ts-key-enum";
 import { getColor } from "@core/util/color.utils";
 import { Priorities } from "@core/constants/core.constants";
 import { colorNameByPriority } from "@core/constants/colors";
 import { Schema_Event } from "@core/types/event.types";
 import { DeleteIcon } from "@web/components/Icons";
-import { SelectOption } from "@web/common/types/components";
+import { SelectOption } from "@web/common/types/component.types";
 import {
   getTimeOptionByValue,
   mapToBackend,
@@ -53,11 +53,11 @@ export const EventForm: React.FC<FormProps> = ({
 
   const keyDownHandler = useCallback(
     (e: KeyboardEvent) => {
-      if (e.which === Key.Shift) {
+      if (e.key === Key.Shift) {
         setIsShiftKeyPressed(true);
       }
 
-      if (e.which === Key.Escape) {
+      if (e.key === Key.Escape) {
         setTimeout(_onClose);
         return;
       }
@@ -66,7 +66,7 @@ export const EventForm: React.FC<FormProps> = ({
   );
 
   const keyUpHandler = useCallback((e: KeyboardEvent) => {
-    if (e.which === Key.Shift) {
+    if (e.key === Key.Shift) {
       setIsShiftKeyPressed(false);
     }
   }, []);
@@ -142,7 +142,7 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   const ignoreDelete = (e: KeyboardEvent) => {
-    if (e.which === Key.Backspace) {
+    if (e.key === Key.Backspace) {
       e.stopPropagation();
     }
   };
@@ -187,7 +187,7 @@ export const EventForm: React.FC<FormProps> = ({
   const submitFormWithKeyboard: React.KeyboardEventHandler<HTMLFormElement> = (
     e
   ) => {
-    if (e.which === Key.Backspace || e.which == Key.Delete) {
+    if (e.key === Key.Backspace || e.key == Key.Delete) {
       const isDraft = !event._id;
       if (isDraft) {
         onClose();
@@ -203,11 +203,8 @@ export const EventForm: React.FC<FormProps> = ({
       }
     }
 
-    const shouldIgnore = isShiftKeyPressed || e.key !== "Enter";
+    const shouldIgnore = isShiftKeyPressed || e.key !== Key.Enter;
     if (shouldIgnore) {
-      //++
-      // const reson = isShiftKeyPressed ? "shift key down" : "not Enter";
-      // console.log("ignoring cuz", reson);
       return;
     }
 
@@ -285,18 +282,3 @@ export const EventForm: React.FC<FormProps> = ({
     </StyledEventForm>
   );
 };
-
-//++
-/******************
-   * Date Calculations
-  const _initialEndTime = event?.startDate && dayjs(event.endDate);
-
-  const initialEndTime = _initialEndTime && {
-    value: _initialEndTime.format(HOURS_MINUTES_FORMAT),
-    label: _initialEndTime.format(HOURS_AM_FORMAT),
-  };
-
-  const initialEndDate = event?.endDate
-    ? dayjs(event.endDate).toDate()
-    : new Date();
-*/

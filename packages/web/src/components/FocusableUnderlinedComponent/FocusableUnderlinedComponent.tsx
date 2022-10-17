@@ -3,7 +3,7 @@ import { Divider } from "@web/components/Divider";
 import {
   ClassNamedComponent,
   UnderlinedInput,
-} from "@web/common/types/components";
+} from "@web/common/types/component.types";
 
 export type Props<T extends ClassNamedComponent> = T &
   UnderlinedInput & {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import ReactSelect, { Props as RSProps } from "react-select";
 import { Key } from "ts-key-enum";
-import { SelectOption } from "@web/common/types/components";
+import { SelectOption } from "@web/common/types/component.types";
 import { Option_Time } from "@web/common/types/util.types";
 
 import { StyledTimePicker, StyledDivider } from "./styled";
@@ -39,7 +39,6 @@ export const TimePicker: React.FC<Props> = ({
         noOptionsMessage={() => "Nothin'. Typo?"}
         onBlur={() => setIsFocused(false)}
         onFocus={() => {
-          console.log("focused");
           setIsFocused(true);
         }}
         onChange={_onChange}
@@ -51,7 +50,6 @@ export const TimePicker: React.FC<Props> = ({
           }
 
           if (key === Key.Shift) {
-            console.log("stopping shift");
             e.stopPropagation();
           }
 

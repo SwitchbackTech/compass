@@ -64,7 +64,6 @@ const _GridEvent = (
     <StyledEvent
       allDay={event.isAllDay || false}
       className={isDraft ? "active" : null}
-      // duration={+durationHours || 1} //++
       height={position.height || 0}
       isDragging={isDragging}
       isInPast={isInPast}

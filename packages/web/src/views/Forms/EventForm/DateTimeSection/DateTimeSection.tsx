@@ -2,7 +2,7 @@ import React, { FC } from "react";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { Key } from "ts-key-enum";
-import { SelectOption } from "@web/common/types/components";
+import { SelectOption } from "@web/common/types/component.types";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
 import { DatePicker } from "@web/components/DatePicker";

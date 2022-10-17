@@ -5,8 +5,8 @@ import { createSlice } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
 import { RootState } from "@web/store";
 import { createAsyncSlice } from "@web/common/store/helpers";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
-import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Status_DraftEvent } from "@web/common/types/web.event.types";
 
 import {
