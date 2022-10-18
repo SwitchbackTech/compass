@@ -84,7 +84,6 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
         alignItems={AlignItems.CENTER}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        {/* <ToggleArrow isToggled={isToggled} onToggle={onToggle} /> */}
         <Text colorName={ColorNames.WHITE_1} role="heading" size={27}>
           Someday
         </Text>
@@ -122,35 +121,6 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
             </div>
           )}
         </div>
-        {/* <StyledPaginationFlex
-          justifyContent={JustifyContent.SPACE_BETWEEN}
-          alignItems={AlignItems.CENTER}
-        >
-          <StyledArrowButton
-            disabled={!offset}
-            justifyContent={JustifyContent.CENTER}
-            alignItems={AlignItems.CENTER}
-            onClick={() =>
-              setOffset((currentOffset) =>
-                pageSize <= currentOffset ? currentOffset - pageSize : 0
-              )
-            }
-          >
-            <ArrowLeftIcon />
-          </StyledArrowButton>
-
-          <StyledArrowButton
-            disabled={!showNextPageButton}
-            justifyContent={JustifyContent.CENTER}
-            alignItems={AlignItems.CENTER}
-            onClick={() =>
-              showNextPageButton &&
-              setOffset((currentOffset) => currentOffset + pageSize)
-            }
-          >
-            <ArrowLeftIcon transform="rotate(180)" />
-          </StyledArrowButton>
-        </StyledPaginationFlex> */}
       </StyledHeader>
       <StyledList>
         {somedayEvents.map((event: Schema_Event) => (
@@ -165,85 +135,3 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
     </Styled>
   );
 };
-
-/* priority filter stuff
-  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
-  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>({
-    relationships: true,
-    self: true,
-    work: true,
-  });
-
-
-
-  const onChangePriorityFilter =
-    (name: keyof PriorityFilter) => (value: boolean) => {
-      setPriorityFilter((filter) => ({ ...filter, [name]: value }));
-    };
-
-  const onFilterButtonBlur = (e: React.FocusEvent) => {
-    const relatedTarget = e.relatedTarget as Element;
-    if (relatedTarget && relatedTarget.id === "priority-sort-popover") {
-      return;
-    }
-
-    setIsFilterPopoverOpen(false);
-  };
-
-
-      const renderPriorityFilter = (priorityKey: Priority) => (
-        <StyledPriorityFilterItem key={priorityKey} alignItems={AlignItems.CENTER}>
-          <StyledCheckBox
-            isChecked={priorityFilter[priorityKey]}
-            onChange={onChangePriorityFilter(priorityKey)}
-            color={getColor(colorNameByPriority[priorityKey])}
-          />
-          {priorityNameByKey[priorityKey]}
-        </StyledPriorityFilterItem>
-      );
-
-          <Popover
-            isOpen={isFilterPopoverOpen}
-            positions={["bottom"]}
-            align="end"
-            content={
-              <div
-                onBlur={onFilterButtonBlur}
-                tabIndex={0}
-                role="button"
-                id="priority-sort-popover"
-              >
-                <StyledFiltersPopoverContent>
-                  {Object.keys(priorityFilter).map((priority) =>
-                    renderPriorityFilter(priority as Priorities)
-                  )}
-                </StyledFiltersPopoverContent>
-              </div>
-            }
-          >
-            <StyledPriorityFilterButton
-              role="button"
-              tabIndex={0}
-              onFocus={() => setIsFilterPopoverOpen(true)}
-              onBlur={onFilterButtonBlur}
-            >
-            <StrawberryMenuIcon />
-            </StyledPriorityFilterButton>
-          </Popover> 
-*/
-
-/* <OldStyledSomedaySection
-          shouldSetTopMargin={isCurrentMonthToggled}
-          flex={getEventsSectionFlex("future")}
-          startDate={dayjs().format(YEAR_MONTH_FORMAT)}
-          isToggled={isFutureToggled}
-          onToggle={() => setIsFutureToggled((toggle) => !toggle)}
-          title=""
-          priorities={
-            Object.keys(priorityFilter).filter(
-              (key) => priorityFilter[key as Priorities]
-            ) as Priorities[]
-          }
-          EventsListContainer={SomedayEventsFutureContainer}
-          sectionType="future"
-        /> */
