@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { DragItem, DropResult } from "@web/common/types/dnd.types";
 import { Ref_Callback } from "@web/common/types/util.types";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
 import {
   ID_ALLDAY_COLUMNS,

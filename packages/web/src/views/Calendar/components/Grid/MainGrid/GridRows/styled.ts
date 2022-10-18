@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { Flex } from "@web/components/Flex";
 import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
 import { DIVIDER_GRID } from "@web/views/Calendar/layout.constants";

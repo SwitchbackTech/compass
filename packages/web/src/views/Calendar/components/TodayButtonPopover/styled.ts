@@ -1,4 +1,4 @@
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { getAlphaColor } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";

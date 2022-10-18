@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { Priorities } from "@core/constants/core.constants";
 import { colorNameByPriority } from "@core/constants/colors";
-import { InvertedColorNames } from "@core/constants/colors";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import {
   ANIMATION_TIME_3_MS,
@@ -11,8 +10,11 @@ import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
 import { getColor, getInvertedColor } from "@core/util/color.utils";
 import { Button } from "@web/components/Button";
+import { InvertedColorNames } from "@core/types/color.types";
 
 import { StyledFormProps } from "./types";
+
+export const FORM_TIME_SIZE = 17;
 
 export const StyledEventForm = styled.form<StyledFormProps>`
   ${({ isOpen }) =>
@@ -37,14 +39,20 @@ export const StyledEventForm = styled.form<StyledFormProps>`
       ] as InvertedColorNames
     )};
   transition: ${ANIMATION_TIME_3_MS};
-  z-index: ${ZIndex.LAYER_2};
+  z-index: ${ZIndex.LAYER_1};
 `;
 
 export const StyledDescriptionField = styled(Textarea)`
   background: transparent;
-  width: calc(100% - 20px) !important;
+  border: hidden;
   font-size: 20px;
+  max-height: 180px;
   position: relative;
+  width: calc(100% - 20px) !important;
+
+  &:hover {
+    filter: brightness(90%);
+  }
 `;
 
 export const StyledIconRow = styled(Flex)`
@@ -60,11 +68,14 @@ export const StyledSubmitButton = styled(Button)`
 export const StyledSubmitRow = styled(Flex)`
   align-items: right;
   justify-content: end;
+  padding-top: 18px;
 `;
 
 export const StyledTitleField = styled(Textarea)`
   background: transparent;
-  /* padding: 10px 0; */
   height: 40px;
   font-size: 35px;
+  &:hover {
+    filter: brightness(90%);
+  }
 `;

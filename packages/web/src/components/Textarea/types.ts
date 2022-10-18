@@ -1,5 +1,5 @@
 import { TextareaAutosizeProps } from "react-textarea-autosize";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import {
   ClassNamedComponent,
   UnderlinedInput,

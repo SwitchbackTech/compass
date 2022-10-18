@@ -46,11 +46,12 @@ export const useDraftForm = (onClickOut: () => void) => {
           offset: [0, 10],
         },
       },
+      // { name: "eventListeners", options: { scroll: true } }, //++
     ],
   });
   const popperStyles = {
     ...styles.popper,
-    zIndex: ZIndex.LAYER_2,
+    zIndex: ZIndex.LAYER_3,
   };
 
   useOnClickOutside(formRef, (e: MouseEvent) => {

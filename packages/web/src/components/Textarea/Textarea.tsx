@@ -14,8 +14,8 @@ const Component: ForwardRefRenderFunction<HTMLTextAreaElement, Props> = (
   { withUnderline = true, ...props }: Props,
   parentRef: ForwardedRef<HTMLTextAreaElement>
 ) => {
-  const ref = (parentRef ||
-    useRef<HTMLTextAreaElement>(null)) as RefObject<HTMLTextAreaElement>;
+  const newRef = useRef<HTMLTextAreaElement>(null);
+  const ref = (parentRef || newRef) as RefObject<HTMLTextAreaElement>;
 
   return (
     <FocusableUnderlineLayout

@@ -33,7 +33,9 @@ export const getDefaultEvent = (
         isSomeday: false,
         priority: Priorities.UNASSIGNED,
         startDate,
-        endDate: dayjs(startDate).add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
+        endDate: startDate,
+        //++
+        // endDate: dayjs(startDate).add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
       };
     case Categories_Event.SOMEDAY:
       return {

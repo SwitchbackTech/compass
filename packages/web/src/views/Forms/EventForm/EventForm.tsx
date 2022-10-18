@@ -1,15 +1,16 @@
 import dayjs from "dayjs";
-import React, { useEffect, useState } from "react";
+import React, { KeyboardEvent, useCallback, useEffect, useState } from "react";
 import { Key } from "ts-keycode-enum";
+import { getColor } from "@core/util/color.utils";
 import { Priorities } from "@core/constants/core.constants";
+import { colorNameByPriority } from "@core/constants/colors";
 import { Schema_Event } from "@core/types/event.types";
 import { DeleteIcon } from "@web/components/Icons";
 import { SelectOption } from "@web/common/types/components";
 import {
-  HOURS_MINUTES_FORMAT,
-  HOURS_AM_FORMAT,
-  YEAR_MONTH_DAY_FORMAT,
-} from "@web/common/constants/date.constants";
+  getTimeOptionByValue,
+  mapToBackend,
+} from "@web/common/utils/web.date.util";
 
 import { FormProps } from "./types";
 import { DateTimeSection } from "./DateTimeSection";
@@ -36,84 +37,87 @@ export const EventForm: React.FC<FormProps> = ({
    * State
    ********/
   const [endTime, setEndTime] = useState<SelectOption<string> | undefined>();
-  const [isShiftKeyPressed, toggleShiftKeyPressed] = useState(false);
+  const [isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
-  const [startTime, setStartTime] = useState<
-    SelectOption<string> | undefined
-  >();
+  const [startTime, setStartTime] = useState<SelectOption<string>>();
   const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>();
   const [selectedStartDate, setSelectedStartDate] = useState<
     Date | undefined
   >();
 
-  /******************
-   * Date Calculations
-   ******************/
-  const calculatedInitialStartTimeDayJs =
-    event?.startDate && dayjs(event.startDate);
-  const calculatedInitialEndTimeDayJs =
-    event?.startDate && dayjs(event.endDate);
-
-  const initialStartTime = calculatedInitialStartTimeDayJs && {
-    value: calculatedInitialStartTimeDayJs.format(HOURS_MINUTES_FORMAT),
-    label: calculatedInitialStartTimeDayJs.format(HOURS_AM_FORMAT),
-  };
-
-  const initialEndTime = calculatedInitialEndTimeDayJs && {
-    value: calculatedInitialEndTimeDayJs.format(HOURS_MINUTES_FORMAT),
-    label: calculatedInitialEndTimeDayJs.format(HOURS_AM_FORMAT),
-  };
-
-  const initialStartDate = event?.startDate
-    ? dayjs(event?.startDate).toDate()
-    : new Date();
-
-  const initialEndDate = event?.endDate
-    ? dayjs(event.endDate).toDate()
-    : new Date();
-
   /********
    * Effect
    *********/
-  useEffect(() => {
-    setEvent(event || {});
-    setStartTime(initialStartTime || undefined);
-    setEndTime(initialEndTime || undefined);
-    setSelectedStartDate(initialStartDate);
-    setSelectedEndDate(initialEndDate);
-    setIsFormOpen(true);
 
-    //++ separate these effects
-    const keyDownHandler = (e: KeyboardEvent) => {
+  const keyDownHandler = useCallback(
+    (e: KeyboardEvent) => {
       if (e.which === Key.Shift) {
-        toggleShiftKeyPressed(true);
+        setIsShiftKeyPressed(true);
       }
 
       if (e.which === Key.Escape) {
-        // console.log("esc, exiting early");
-        setTimeout(onClose);
+        setTimeout(_onClose);
         return;
-        // onClose();
-        // return;
       }
-    };
+    },
+    [_onClose]
+  );
 
-    const keyUpHandler = (e: KeyboardEvent) => {
-      if (e.which === Key.Shift) {
-        toggleShiftKeyPressed(false);
-      }
-    };
+  const keyUpHandler = useCallback((e: KeyboardEvent) => {
+    if (e.which === Key.Shift) {
+      setIsShiftKeyPressed(false);
+    }
+  }, []);
 
-    document.addEventListener("keydown", keyDownHandler);
-    document.addEventListener("keyup", keyUpHandler);
+  useEffect(() => {
+    window.addEventListener("keydown", keyDownHandler);
+    window.addEventListener("keyup", keyUpHandler);
 
     return () => {
-      document.removeEventListener("keydown", keyDownHandler);
-      document.removeEventListener("keyup", keyUpHandler);
+      window.removeEventListener("keydown", keyDownHandler);
+      window.addEventListener("keyup", keyUpHandler);
     };
-  }, []); //use exhaustive ++
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const dt = getDefaultDateTimes(event);
+
+    setEvent(event || {});
+    setStartTime(dt.startTime);
+    setEndTime(dt.endTime);
+    setSelectedStartDate(dt.startDate);
+    setSelectedEndDate(dt.endDate);
+    setIsFormOpen(true);
+  }, []);
+
+  const getDefaultDateTimes = (event: Schema_Event) => {
+    const start = event?.startDate ? dayjs(event.startDate) : dayjs();
+    const startTime = getTimeOptionByValue(start);
+    const startDate = start.toDate();
+
+    const { endDate, endTime } = getDefaultEndDateTimes(event);
+
+    return { startDate, startTime, endDate, endTime };
+  };
+
+  const getDefaultEndDateTimes = (event: Schema_Event) => {
+    const end = event?.endDate ? dayjs(event.endDate) : dayjs();
+    const endTime = getTimeOptionByValue(end);
+
+    if (event.isAllDay) {
+      const isMultiDay = !dayjs(event.startDate).isSame(end);
+      if (isMultiDay) {
+        const userFriendlyEnd = end.add(-1, "day").toDate();
+
+        return { endDate: userFriendlyEnd, endTime };
+      }
+    }
+
+    return { endDate: end.toDate(), endTime };
+  };
 
   /*********
    * Handlers
@@ -127,7 +131,6 @@ export const EventForm: React.FC<FormProps> = ({
   const onClose = () => {
     setIsFormOpen(false);
 
-    // _onClose();
     setTimeout(() => {
       _onClose();
     }, 120);
@@ -138,66 +141,25 @@ export const EventForm: React.FC<FormProps> = ({
     onClose();
   };
 
-  // const getDateStrWithTimes = (field: "start" | "end") => {
-  //   if (field === "start") {
-  //     return dayjs(selectedStartDate)
-  //       .hour(parseInt(startTime.value.slice(0, 2)))
-  //       .minute(parseInt(startTime.value.slice(3, 5)))
-  //       .format();
-  //   } else if (field === "end") {
-  //     dayjs(selectedEndDate)
-  //       .hour(parseInt(endTime.value.slice(0, 2)))
-  //       .minute(parseInt(endTime.value.slice(3, 5)))
-  //       .format();
-  //   }
-  // };
-
-  const addTimesToDates = () => {
-    const startDate = dayjs(selectedStartDate)
-      .hour(parseInt(startTime.value.slice(0, 2)))
-      .minute(parseInt(startTime.value.slice(3, 5)))
-      .format();
-
-    const endDate = dayjs(selectedEndDate)
-      .hour(parseInt(endTime.value.slice(0, 2)))
-      .minute(parseInt(endTime.value.slice(3, 5)))
-      .format();
-
-    return { startDate, endDate };
-  };
-
-  const getFinalDates = () => {
-    if (event?.isAllDay) {
-      return {
-        startDate: dayjs(selectedStartDate).format(YEAR_MONTH_DAY_FORMAT),
-        endDate: dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT),
-      };
-    } else {
-      const { startDate, endDate } = addTimesToDates();
-      return { startDate, endDate };
+  const ignoreDelete = (e: KeyboardEvent) => {
+    if (e.which === Key.Backspace) {
+      e.stopPropagation();
     }
   };
 
   const onSubmitForm = () => {
-    // const startDateString = dayjs(selectedStartDate).format(
-    //   YEAR_MONTH_DAY_FORMAT
-    // );
+    const selectedDateTimes = {
+      startDate: selectedStartDate,
+      startTime,
+      endDate: selectedEndDate,
+      endTime,
+      isAllDay: event.isAllDay,
+    };
 
-    // const endDateString = dayjs(selectedEndDate).format(YEAR_MONTH_DAY_FORMAT);
-    // const startDate = event?.isAllDay
-    //   ? startDateString
-    //   : `${startDateString} ${startTime?.value || ""}`;
-    // const endDate = event?.isAllDay
-    //   ? endDateString
-    //   : `${endDateString} ${endTime?.value || ""}`;
-
-    // const startDateString = dayjs(selectedStartDate).format();
-    // const endDateString = dayjs(selectedEndDate).format();
-
-    const { startDate, endDate } = getFinalDates();
+    const { startDate, endDate } = mapToBackend(selectedDateTimes);
 
     if (dayjs(startDate).isAfter(dayjs(endDate))) {
-      alert("uff-dah, looks like you got the start & end dates mixed up");
+      alert("uff-dah, looks like you got the start & end times mixed up");
       return;
     }
 
@@ -222,11 +184,30 @@ export const EventForm: React.FC<FormProps> = ({
     setEvent(newEvent);
   };
 
-  const submitFormWithKeyboard: React.KeyboardEventHandler<
-    HTMLTextAreaElement
-  > = (e) => {
-    const shouldIgnore = isShiftKeyPressed || e.which !== Key.Enter;
+  const submitFormWithKeyboard: React.KeyboardEventHandler<HTMLFormElement> = (
+    e
+  ) => {
+    if (e.which === Key.Backspace || e.which == Key.Delete) {
+      const isDraft = !event._id;
+      if (isDraft) {
+        onClose();
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `Delete ${event.title || "this event"}?`
+      );
+      if (confirmed) {
+        onDeleteForm();
+        return;
+      }
+    }
+
+    const shouldIgnore = isShiftKeyPressed || e.key !== "Enter";
     if (shouldIgnore) {
+      //++
+      // const reson = isShiftKeyPressed ? "shift key down" : "not Enter";
+      // console.log("ignoring cuz", reson);
       return;
     }
 
@@ -241,14 +222,18 @@ export const EventForm: React.FC<FormProps> = ({
       {...props}
       isOpen={isFormOpen}
       name="Event Form"
+      onKeyDown={submitFormWithKeyboard}
       onMouseUp={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
         }
+
         if (isEndDatePickerOpen) {
           setIsEndDatePickerOpen(false);
         }
-        e.stopPropagation();
       }}
       onMouseDown={(e) => {
         e.stopPropagation();
@@ -264,8 +249,7 @@ export const EventForm: React.FC<FormProps> = ({
         autoFocus
         placeholder="Title"
         onChange={onChangeEventTextField("title")}
-        // onKeyUp={submitFormWithKeyboard}
-        onKeyDown={submitFormWithKeyboard}
+        onKeyDown={ignoreDelete}
         role="textarea"
         name="Event Title"
         value={title}
@@ -274,10 +258,11 @@ export const EventForm: React.FC<FormProps> = ({
       <PrioritySection onSetEventField={onSetEventField} priority={priority} />
 
       <DateTimeSection
+        bgColor={getColor(colorNameByPriority[priority])}
         endTime={endTime}
         isAllDay={event.isAllDay}
-        isEndDatePickerShown={isEndDatePickerOpen}
-        isStartDatePickerShown={isStartDatePickerOpen}
+        isEndDatePickerOpen={isEndDatePickerOpen}
+        isStartDatePickerOpen={isStartDatePickerOpen}
         selectedEndDate={selectedEndDate}
         selectedStartDate={selectedStartDate}
         setEndTime={setEndTime}
@@ -291,11 +276,27 @@ export const EventForm: React.FC<FormProps> = ({
 
       <StyledDescriptionField
         onChange={onChangeEventTextField("description")}
+        onKeyDown={ignoreDelete}
         placeholder="Description"
         value={event.description || ""}
       />
 
-      <SaveSection onSubmit={onSubmitForm} />
+      <SaveSection priority={priority} onSubmit={onSubmitForm} />
     </StyledEventForm>
   );
 };
+
+//++
+/******************
+   * Date Calculations
+  const _initialEndTime = event?.startDate && dayjs(event.endDate);
+
+  const initialEndTime = _initialEndTime && {
+    value: _initialEndTime.format(HOURS_MINUTES_FORMAT),
+    label: _initialEndTime.format(HOURS_AM_FORMAT),
+  };
+
+  const initialEndDate = event?.endDate
+    ? dayjs(event.endDate).toDate()
+    : new Date();
+*/

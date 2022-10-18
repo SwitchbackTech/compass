@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Dayjs } from "dayjs";
-import { toUTCOffset } from "@web/common/utils/date.utils";
+import { toUTCOffset } from "@web/common/utils/web.date.util";
 import { getWeekEventsSlice } from "@web/ducks/events/event.slice";
 import { Category_View } from "@web/views/Calendar/calendarView.types";
 

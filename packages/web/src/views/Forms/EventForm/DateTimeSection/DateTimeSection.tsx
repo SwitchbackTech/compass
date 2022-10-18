@@ -1,69 +1,30 @@
-import React, { useState } from "react";
+import React, { FC } from "react";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import { Key } from "ts-keycode-enum";
-import { Text } from "@web/components/Text";
+import { Key } from "ts-key-enum";
 import { SelectOption } from "@web/common/types/components";
-import { roundToNext } from "@web/common/utils";
-import { getTimes } from "@web/common/utils/date.utils";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
 import { DatePicker } from "@web/components/DatePicker";
-import { SpaceCharacter } from "@web/components/SpaceCharacter";
+import { MONTH_DAY_YEAR } from "@web/common/constants/date.constants";
 import {
-  HOURS_MINUTES_FORMAT,
-  HOURS_AM_FORMAT,
-  YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT,
-  MONTH_DAY_COMPACT_FORMAT,
-} from "@web/common/constants/date.constants";
-import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
+  dateIsValid,
+  getTimeOptionByValue,
+  getTimeOptions,
+  shouldAdjustComplimentDate,
+  shouldAdjustComplimentTime,
+} from "@web/common/utils/web.date.util";
 
 import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
 
 dayjs.extend(customParseFormat);
 
-const getTimepickerFilteredOptions = (
-  option: SelectOption<string> | undefined,
-  method: "isAfter" | "isBefore"
-) => {
-  const options = getTimes().map((value) => {
-    const day = dayjs(
-      `2000-00-00 ${value}`,
-      YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-    );
-
-    return {
-      value,
-      label: day.format(HOURS_AM_FORMAT),
-    };
-  });
-
-  if (!option) return options;
-
-  const collocativeMoment = dayjs(
-    `2000-00-00 ${option.value}`,
-    YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-  );
-
-  return options.filter((time) => {
-    const timeMoment = dayjs(
-      `2000-00-00 ${time.value}`,
-      YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-    );
-    return (
-      timeMoment[method](collocativeMoment) ||
-      timeMoment.isSame(collocativeMoment)
-    );
-  });
-};
-export interface RelatedTargetElement extends EventTarget {
-  id?: string;
-}
 export interface Props {
   endTime?: SelectOption<string>;
   isAllDay: boolean;
-  isEndDatePickerShown: boolean;
-  isStartDatePickerShown: boolean;
+  isEndDatePickerOpen: boolean;
+  isStartDatePickerOpen: boolean;
+  bgColor?: string;
   selectedEndDate?: Date;
   selectedStartDate?: Date;
   setEndTime: (value: SelectOption<string>) => void;
@@ -72,17 +33,18 @@ export interface Props {
   setSelectedEndDate: (value: Date) => void;
   setSelectedStartDate: (value: Date) => void;
   setStartTime: (value: SelectOption<string>) => void;
-  startTime?: SelectOption<string>;
+  startTime: SelectOption<string>;
 }
 
-export const DateTimeSection: React.FC<Props> = ({
+export const DateTimeSection: FC<Props> = ({
   isAllDay,
-  isEndDatePickerShown,
-  isStartDatePickerShown,
+  isEndDatePickerOpen,
+  isStartDatePickerOpen,
+  bgColor,
   selectedEndDate,
   selectedStartDate,
-  setIsStartDatePickerOpen: toggleStartDatePicker,
-  setIsEndDatePickerOpen: toggleEndDatePicker,
+  setIsStartDatePickerOpen,
+  setIsEndDatePickerOpen,
   setStartTime,
   setEndTime,
   setSelectedEndDate,
@@ -90,115 +52,257 @@ export const DateTimeSection: React.FC<Props> = ({
   startTime,
   endTime,
 }) => {
-  const [autoFocusedTimePicker, setAutoFocusedTimePicker] = useState("");
-  const [isStartTimePickerOpen, setIsStartTimePickerOpen] = useState(false);
-  const [isEndTimePickerOpen, setIsEndTimePickerOpen] = useState(false);
+  const timeOptions = getTimeOptions();
 
-  const startTimePickerOptions = getTimepickerFilteredOptions(
-    endTime,
-    "isBefore"
-  );
-
-  const endTimePickerOptions = getTimepickerFilteredOptions(
-    startTime,
-    "isAfter"
-  );
-
-  const closeEndDatePicker = () => {
-    toggleEndDatePicker(false);
-  };
-
-  const closeStartDatePicker = () => {
-    toggleEndDatePicker(false);
-  };
-
-  const openEndDatePicker = () => {
-    toggleEndDatePicker(true);
-  };
-
-  const openStartDatePicker = () => {
-    toggleStartDatePicker(true);
-  };
-
-  const closeAllTimePickers = () => {
-    setIsStartTimePickerOpen(false);
-    setIsEndTimePickerOpen(false);
-  };
-
-  const onEndDatePickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.which !== Key.Tab) return;
-
-    isStartDatePickerShown && toggleStartDatePicker(false);
-
-    if (isEndDatePickerShown) {
-      closeEndDatePicker();
-    } else {
-      openEndDatePicker();
-    }
-  };
-
-  const onStartDatePickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.which !== Key.Tab) return;
-
-    isEndDatePickerShown && toggleEndDatePicker(false);
-
-    if (isStartDatePickerShown) {
-      toggleStartDatePicker(false);
-      toggleEndDatePicker(true);
-    } else {
-      toggleStartDatePicker(true);
-    }
-  };
-
-  const onEndTimePickerOpen = () => {
-    setIsStartTimePickerOpen(true);
-    setIsEndTimePickerOpen(true);
-    setAutoFocusedTimePicker("end");
-  };
-
-  const onSelectEndDate = (date: Date | null | [Date | null, Date | null]) => {
-    setSelectedEndDate(date as Date);
-    toggleEndDatePicker(false);
-  };
-
-  const onSelectEndTime = (value: SelectOption<string> | null) => {
-    if (!value) return;
-
-    setEndTime(value);
-    closeAllTimePickers();
-  };
-
-  const onSelectStartDate = (
-    date: Date | null | [Date | null, Date | null]
+  const adjustComplimentDateIfNeeded = (
+    changed: "start" | "end",
+    value: Date
   ) => {
-    setSelectedStartDate(date as Date);
-    toggleStartDatePicker(false);
+    const start = changed === "start" ? value : selectedStartDate;
+    const end = changed === "end" ? value : selectedEndDate;
+
+    const { shouldAdjust, compliment } = shouldAdjustComplimentDate(changed, {
+      start,
+      end,
+    });
+
+    if (shouldAdjust) {
+      if (changed === "start") {
+        setSelectedEndDate(compliment);
+        return;
+      }
+
+      if (changed === "end") {
+        setSelectedStartDate(compliment);
+      }
+    }
   };
 
-  const onSelectStartTime = (value: SelectOption<string> | null) => {
-    if (!value) return;
+  const adjustComplimentTimeIfNeeded = (
+    changed: "start" | "end",
+    value: string
+  ) => {
+    const start = changed === "start" ? value : startTime.value;
+    const end = changed === "end" ? value : endTime.value;
 
-    const endTimeOption = getTimepickerFilteredOptions(value, "isAfter").find(
-      (option) => {
-        const optionMoment = dayjs(
-          `2000-00-00 ${option.value}`,
-          YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-        );
-        const startTimeMoment = dayjs(
-          `2000-00-00 ${value.value}`,
-          YEAR_MONTH_DAY_HOURS_MINUTES_FORMAT
-        );
-        const startTimeMomentAdded = startTimeMoment.add(30, "minute");
-
-        return optionMoment.isSame(startTimeMomentAdded);
+    const { shouldAdjust, adjustment, compliment } = shouldAdjustComplimentTime(
+      changed,
+      {
+        oldStart: startTime.value,
+        start,
+        oldEnd: endTime.value,
+        end,
       }
     );
 
-    setEndTime(endTime || endTimeOption || value);
-    setStartTime(value);
-    setAutoFocusedTimePicker("end");
-    setIsEndTimePickerOpen(true);
+    if (shouldAdjust) {
+      if (changed === "start") {
+        const _correctedEnd = compliment.add(adjustment, "minutes");
+        const correctedEnd = getTimeOptionByValue(_correctedEnd);
+        setEndTime(correctedEnd);
+        return;
+      }
+
+      if (changed === "end") {
+        const _correctedStart = compliment.subtract(adjustment, "minutes");
+        const correctedStart = getTimeOptionByValue(_correctedStart);
+        setStartTime(correctedStart);
+      }
+    }
   };
+
+  const getDateFromInput = (val: string) => {
+    const date = dayjs(val, MONTH_DAY_YEAR).toDate();
+    return date;
+  };
+
+  const closeEndDatePicker = () => {
+    setIsEndDatePickerOpen(false);
+  };
+
+  const closeStartDatePicker = () => {
+    setIsStartDatePickerOpen(false);
+  };
+
+  const openEndDatePicker = () => {
+    if (isStartDatePickerOpen) {
+      setIsStartDatePickerOpen(false);
+    }
+    if (!isEndDatePickerOpen) {
+      setIsEndDatePickerOpen(true);
+    }
+  };
+
+  const openStartDatePicker = () => {
+    if (isEndDatePickerOpen) {
+      setIsEndDatePickerOpen(false);
+    }
+    if (!isStartDatePickerOpen) {
+      setIsStartDatePickerOpen(true);
+    }
+  };
+
+  const onPickerKeyDown = (
+    picker: "start" | "end",
+    e: React.KeyboardEvent<HTMLDivElement>
+  ) => {
+    switch (e.key) {
+      case Key.Backspace: {
+        e.stopPropagation();
+        break;
+      }
+      case Key.Enter: {
+        e.stopPropagation();
+        const input = e.target as HTMLInputElement;
+        const val = input.value;
+        const isInvalid = val !== undefined && !dateIsValid(val);
+
+        if (isInvalid) {
+          alert(`Sorry, IDK what to do with a ${picker} date of '${val}'
+          Make sure it's in '${MONTH_DAY_YEAR}' and try again`);
+          return;
+        }
+
+        const date = getDateFromInput(val);
+
+        if (picker === "start") {
+          onSelectStartDate(date);
+        }
+
+        if (picker === "end") {
+          onSelectEndDate(date);
+        }
+
+        break;
+      }
+      case Key.Escape: {
+        if (isStartDatePickerOpen) {
+          e.stopPropagation();
+          closeStartDatePicker();
+        }
+        if (isEndDatePickerOpen) {
+          e.stopPropagation();
+          closeEndDatePicker();
+        }
+        break;
+      }
+      case Key.Tab: {
+        if (isStartDatePickerOpen) {
+          setIsStartDatePickerOpen(false);
+        }
+        if (isEndDatePickerOpen) {
+          setIsEndDatePickerOpen(false);
+        }
+        break;
+      }
+      default: {
+        return;
+      }
+    }
+  };
+
+  const onSelectEndDate = (end: Date) => {
+    setSelectedEndDate(end);
+    setIsEndDatePickerOpen(false);
+    adjustComplimentDateIfNeeded("end", end);
+  };
+
+  const onSelectEndTime = (option: SelectOption<string>) => {
+    setEndTime(option);
+    adjustComplimentTimeIfNeeded("end", option.value);
+  };
+
+  const onSelectStartDate = (start: Date) => {
+    setSelectedStartDate(start);
+    setIsStartDatePickerOpen(false);
+    adjustComplimentDateIfNeeded("start", start);
+  };
+
+  const onSelectStartTime = (option: SelectOption<string>) => {
+    setStartTime(option);
+    adjustComplimentTimeIfNeeded("start", option.value);
+  };
+
+  const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+  };
+
+  return (
+    <StyledDateTimeFlex alignItems={AlignItems.CENTER} role="tablist">
+      <StyledDateFlex alignItems={AlignItems.CENTER}>
+        <div
+          onFocus={openStartDatePicker}
+          onMouseUp={stopPropagation}
+          onMouseDown={stopPropagation}
+        >
+          <DatePicker
+            bgColor={bgColor}
+            calendarClassName="startDatePicker"
+            isOpen={isStartDatePickerOpen}
+            onCalendarClose={closeStartDatePicker}
+            onCalendarOpen={() => {
+              setIsStartDatePickerOpen(true);
+            }}
+            onChange={() => null}
+            onInputClick={() => setIsStartDatePickerOpen(true)}
+            onKeyDown={(e) => onPickerKeyDown("start", e)}
+            onSelect={onSelectStartDate}
+            selected={selectedStartDate}
+            title="Pick Start Date"
+          />
+        </div>
+      </StyledDateFlex>
+
+      {isAllDay && (
+        <StyledDateFlex alignItems={AlignItems.CENTER}>
+          <div
+            onFocus={openEndDatePicker}
+            onMouseUp={stopPropagation}
+            onMouseDown={stopPropagation}
+          >
+            <DatePicker
+              bgColor={bgColor}
+              calendarClassName="endDatePicker"
+              isOpen={isEndDatePickerOpen}
+              onCalendarClose={closeEndDatePicker}
+              onCalendarOpen={() => setIsEndDatePickerOpen(true)}
+              onChange={() => null}
+              onInputClick={() => setIsEndDatePickerOpen(true)}
+              onKeyDown={(e) => onPickerKeyDown("end", e)}
+              onSelect={onSelectEndDate}
+              selected={selectedEndDate}
+              title="Pick End Date"
+            />
+          </div>
+        </StyledDateFlex>
+      )}
+
+      {!isAllDay && (
+        <StyledTimeFlex alignItems={AlignItems.CENTER}>
+          <TimePicker
+            bgColor={bgColor}
+            value={startTime}
+            inputId="startTimePicker"
+            onChange={onSelectStartTime}
+            openMenuOnFocus={true}
+            options={timeOptions}
+          />
+          -
+          <TimePicker
+            bgColor={bgColor}
+            value={endTime}
+            inputId="endTimePicker"
+            onChange={onSelectEndTime}
+            openMenuOnFocus
+            options={timeOptions}
+          />
+        </StyledTimeFlex>
+      )}
+    </StyledDateTimeFlex>
+  );
+};
+
+/*
 
   const onStartTimePickerOpen = () => {
     setIsStartTimePickerOpen(true);
@@ -211,9 +315,9 @@ export const DateTimeSection: React.FC<Props> = ({
     }
 
     const roundedUpMinutes = roundToNext(dayjs().minute(), GRID_TIME_STEP);
-    const startTimeDayjs = dayjs().set("minute", roundedUpMinutes);
-    const value = startTimeDayjs.format(HOURS_MINUTES_FORMAT);
-    const label = startTimeDayjs.format(HOURS_AM_FORMAT);
+    const _start = dayjs().set("minute", roundedUpMinutes);
+    const value = _start.format(HOURS_MINUTES_FORMAT);
+    const label = _start.format(HOURS_AM_FORMAT);
 
     setStartTime({ value, label });
 
@@ -221,147 +325,15 @@ export const DateTimeSection: React.FC<Props> = ({
       setIsEndTimePickerOpen(true);
     }
   };
+*/
+/*
+  const findOption = () => {
+    const endOption = timeOptions.find((_option) => {
+      const option = dayjs(`2000-00-00 ${_option.value}`, YMDHAM_FORMAT);
+      const start = dayjs(`2000-00-00 ${startTime.value}`, YMDHAM_FORMAT);
+      const startTimeAdded = start.add(30, "minute");
 
-  const onTimePickerBlur = (e: React.FocusEvent<HTMLElement>) => {
-    const relatedTarget = e.relatedTarget as RelatedTargetElement;
-
-    if (relatedTarget?.id === "startTimePicker") {
-      setIsEndTimePickerOpen(true);
-    }
-
-    if (
-      relatedTarget?.id === "endTimePicker" ||
-      relatedTarget?.id === "startTimePicker"
-    )
-      return;
-
-    closeAllTimePickers();
+      return option.isSame(startTimeAdded);
+    });
   };
-
-  return (
-    <StyledDateTimeFlex role="tablist" alignItems={AlignItems.CENTER}>
-      <StyledDateFlex alignItems={AlignItems.CENTER}>
-        {isStartDatePickerShown ? (
-          <div
-            onMouseUp={(e) => {
-              e.stopPropagation();
-            }}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-            }}
-          >
-            <DatePicker
-              autoFocus
-              defaultOpen
-              onCalendarClose={closeStartDatePicker}
-              onClickOutside={closeStartDatePicker}
-              onChange={() => null}
-              onKeyDown={onStartDatePickerKeyDown}
-              onSelect={onSelectStartDate}
-              selected={selectedStartDate}
-            />
-          </div>
-        ) : (
-          <Text
-            onClick={openStartDatePicker}
-            onFocus={() => isStartDatePickerShown && openStartDatePicker()}
-            onKeyDown={onStartDatePickerKeyDown}
-            role="tab"
-            tabIndex={0}
-            withUnderline
-          >
-            {dayjs(selectedStartDate).format(MONTH_DAY_COMPACT_FORMAT)}
-          </Text>
-        )}
-      </StyledDateFlex>
-
-      <StyledDateFlex alignItems={AlignItems.CENTER}>
-        {isEndDatePickerShown ? (
-          <div
-            onMouseUp={(e) => {
-              e.stopPropagation();
-            }}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-            }}
-          >
-            <DatePicker
-              autoFocus
-              defaultOpen
-              onCalendarClose={closeEndDatePicker}
-              onClickOutside={closeEndDatePicker}
-              onChange={() => null}
-              onKeyDown={onEndDatePickerKeyDown}
-              onSelect={onSelectEndDate}
-              selected={selectedEndDate}
-            />
-          </div>
-        ) : (
-          <Text
-            onClick={openEndDatePicker}
-            onFocus={() => isEndDatePickerShown && openEndDatePicker}
-            role="tab"
-            tabIndex={0}
-            withUnderline
-          >
-            {dayjs(selectedEndDate).format(MONTH_DAY_COMPACT_FORMAT)}
-          </Text>
-        )}
-      </StyledDateFlex>
-
-      {!isAllDay && (
-        <StyledTimeFlex alignItems={AlignItems.CENTER}>
-          {isStartTimePickerOpen ? (
-            <TimePicker
-              autoFocus={autoFocusedTimePicker === "start"}
-              inputId="startTimePicker"
-              onBlur={onTimePickerBlur}
-              onChange={onSelectStartTime}
-              openMenuOnFocus
-              options={startTimePickerOptions}
-              value={startTime}
-            />
-          ) : (
-            <Text
-              role="tab"
-              tabIndex={0}
-              onClick={onStartTimePickerOpen}
-              onFocus={onStartTimePickerOpen}
-              withUnderline
-            >
-              {startTime?.label}
-            </Text>
-          )}
-
-          {isEndTimePickerOpen ? (
-            <>
-              <SpaceCharacter />-<SpaceCharacter />
-              <TimePicker
-                autoFocus={autoFocusedTimePicker === "end"}
-                inputId="endTimePicker"
-                onBlur={onTimePickerBlur}
-                onChange={onSelectEndTime}
-                openMenuOnFocus
-                options={endTimePickerOptions}
-                value={endTime}
-              />
-            </>
-          ) : (
-            <>
-              <SpaceCharacter />-<SpaceCharacter />
-              <Text
-                onFocus={onEndTimePickerOpen}
-                onClick={onEndTimePickerOpen}
-                role="tab"
-                tabIndex={0}
-                withUnderline
-              >
-                {endTime?.label}
-              </Text>
-            </>
-          )}
-        </StyledTimeFlex>
-      )}
-    </StyledDateTimeFlex>
-  );
-};
+  */

@@ -19,7 +19,7 @@ import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
 import { DraggableSomedayEvent } from "../EventsList/SomedayEvent/DraggableSomedayEvent";

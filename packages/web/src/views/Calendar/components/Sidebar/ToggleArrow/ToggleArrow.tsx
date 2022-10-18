@@ -1,7 +1,7 @@
 import React from "react";
 import { ArrowDownFilledIcon } from "@web/assets/svg";
 import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 
 export interface Props {
   isToggled?: boolean;

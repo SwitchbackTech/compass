@@ -1,3 +1,3 @@
-import { Styled } from "./styled";
+import { StyledText } from "./styled";
 
-export const Text = Styled;
+export const Text = StyledText;

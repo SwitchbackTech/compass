@@ -1,17 +1,12 @@
 import styled from "styled-components";
-import { ColorNames, InvertedColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import {
   getBrighterColor,
   getColor,
   getInvertedColor,
 } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
-
-export interface Props {
-  color?: ColorNames;
-  bordered?: boolean;
-  border?: string;
-}
+import { BASE_COLORS } from "@core/constants/colors";
 
 export const StyledFeedbackBtnContainer = styled(Flex)`
   position: absolute;
@@ -19,28 +14,55 @@ export const StyledFeedbackBtnContainer = styled(Flex)`
   right: 8%;
 `;
 
-export const Styled = styled.div<Props>`
+const Btn = styled.div`
   align-items: center;
-  background: ${({ color }) => getColor(color)};
-  color: ${({ color }) => getInvertedColor(color)};
+  border-radius: 2px;
   display: flex;
-  min-width: 158px;
-  padding: 0 8px;
-  /* height: 36px; */
-  /* font-weight: 100; */
   justify-content: center;
   cursor: pointer;
-  border-radius: 3px;
-  border: ${({ bordered, color = InvertedColorNames.BLUE_3, border }) =>
-    border ||
-    (bordered && `2px solid ${getInvertedColor(color as InvertedColorNames)}`)};
+`;
+
+interface PalletteProps {
+  color?: ColorNames | string;
+  bordered?: boolean;
+  border?: string;
+}
+
+export const PalletteBtn = styled(Btn)<PalletteProps>`
+  background: ${({ color }) => getColor(color)};
+  color: ${({ color }) => getInvertedColor(color)};
+  min-width: 158px;
+  padding: 0 8px;
+  border: ${({ border, bordered }) =>
+    border || (bordered && `2px solid ${BASE_COLORS.DEEP_BLUE}`)};
 
   &:focus {
     border-width: ${({ bordered }) => (bordered ? 2 : 1)}px;
   }
 
   &:hover {
-    background: ${({ color }) => getBrighterColor(color)};
-    transition: background-color 0.2s;
+    background: ${({ color }) => getInvertedColor(color)};
+    color: ${({ color }) => getBrighterColor(color)};
+    transition: background-color 0.5s;
+    transition: color 0.55s;
+  }
+`;
+interface CustomProps {
+  background: string;
+  color?: string;
+  minWidth: number;
+}
+
+export const StyledSaveBtn = styled(PalletteBtn)<CustomProps>`
+  background: ${({ background }) => background};
+  color: ${({ color }) => color};
+  min-width: ${({ minWidth }) => minWidth}px;
+
+  &:focus {
+    /* border-width: ${({ bordered }) => (bordered ? 2 : 1)}px; */
+    border: 2px solid ${BASE_COLORS.DEEP_BLUE};
+  }
+  &:hover {
+    filter: brightness(120%);
   }
 `;

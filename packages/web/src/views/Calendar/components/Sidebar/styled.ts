@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import { SidebarCollapseIcon, SidebarOpenIcon } from "@web/assets/svg";
 import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { CheckBox } from "@web/components/CheckBox";
 import { Flex } from "@web/components/Flex";
 import {
@@ -15,7 +15,7 @@ export interface Props {
 }
 
 export const Styled = styled.div<Props>`
-  background: ${getColor(ColorNames.DARK_3)};
+  background: ${getColor(ColorNames.GREY_3)};
   height: 100%;
   overflow: hidden;
   position: relative;
@@ -27,7 +27,7 @@ export const Styled = styled.div<Props>`
 export const StyledSidebarOverflow = styled.div<Props>`
   position: absolute;
   background: ${({ isToggled }) =>
-    isToggled ? getColor(ColorNames.DARK_3) : getColor(ColorNames.DARK_2)};
+    isToggled ? getColor(ColorNames.GREY_3) : getColor(ColorNames.BLUE_2)};
   width: ${({ isToggled }) => (isToggled ? 0 : "100%")};
   height: 100%;
   right: 0;

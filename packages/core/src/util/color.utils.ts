@@ -1,10 +1,6 @@
 import { Priorities } from "@core/constants/core.constants";
-import {
-  colors,
-  ColorNames,
-  invertedColors,
-  InvertedColorNames,
-} from "@core/constants/colors";
+import { colors, invertedColors } from "@core/constants/colors";
+import { ColorNames, InvertedColorNames } from "@core/types/color.types";
 
 export const getAlphaColor = (colorName: ColorNames, opacity: number) => {
   const _opacity = Math.round(Math.min(Math.max(opacity || 1, 0), 1) * 255);
@@ -13,7 +9,8 @@ export const getAlphaColor = (colorName: ColorNames, opacity: number) => {
 
 export const getBrighterColor = (colorName: ColorNames) => {
   // assumes that the higher the numbers are, the brighter the colors
-  return colors[getNeighbourKey(colorName, colors, 1) as ColorNames];
+  //@ts-ignore
+  return colors[getNeighbourKey(colorName, colors, 1)] as string;
 };
 
 export const getColor = (colorName: ColorNames) => colors[colorName];
@@ -23,19 +20,21 @@ export const getDarkerColor = (colorName: ColorNames) => {
 };
 
 export const getInvertedColor = (colorName: InvertedColorNames) => {
-  return invertedColors[colorName];
+  //@ts-ignore
+  return invertedColors[colorName] as string;
 };
 
-export const getNeighbourKey = (key = "", obj = {}, diff = 1): string => {
+export const getNeighbourKey = (key = "", obj = {}, diff = 1) => {
   const splitKeys = key.split("_");
-  if (splitKeys.length < 1) {
+  if (splitKeys === undefined || splitKeys.length < 1) {
     throw new Error(
       'You should provide object with keys "ANYTHING_KEY_NUMBER" where NUMBER is number'
     );
   }
 
+  const prev = splitKeys.length - 1;
   //@ts-ignore
-  const index = +splitKeys[splitKeys.length - 1];
+  const index = +splitKeys[prev];
   const propName = splitKeys.filter((value) => value !== `${index}`).join("_");
 
   const neighbourIndex = index + diff;
@@ -45,8 +44,8 @@ export const getNeighbourKey = (key = "", obj = {}, diff = 1): string => {
 };
 
 export const hoverColorsByPriority = {
-  [Priorities.UNASSIGNED]: getColor(ColorNames.GREY_5_BRIGHT),
-  [Priorities.WORK]: getColor(ColorNames.GREY_3_BRIGHT),
-  [Priorities.RELATIONS]: getColor(ColorNames.TEAL_4),
-  [Priorities.SELF]: getColor(ColorNames.BLUE_3_BRIGHT),
+  [Priorities.UNASSIGNED]: "#F0FFFF",
+  [Priorities.WORK]: "#80B8E1",
+  [Priorities.RELATIONS]: "#86D2ED",
+  [Priorities.SELF]: "#8EB1FF",
 };

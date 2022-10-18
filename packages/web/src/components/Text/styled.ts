@@ -12,7 +12,7 @@ export interface Props extends BackgroundProps, ColorProps {
   zIndex?: number;
 }
 
-export const Styled = styled.span<Props>`
+export const StyledText = styled.span<Props>`
   ${({ colorName }) => colorName && `color ${getColor(colorName)};`}
   ${({ cursor }) => cursor && `cursor: ${cursor};`}
   font-weight: ${({ fontWeight = "normal" }) => fontWeight};

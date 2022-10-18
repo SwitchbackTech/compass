@@ -1,4 +1,5 @@
 import pkg from "inquirer";
+const { prompt } = pkg;
 import shell from "shelljs";
 
 import {
@@ -8,7 +9,6 @@ import {
   HOME_TY,
 } from "./cli.constants";
 import { Category_VM, VmInfo } from "./cli.types";
-const { prompt } = pkg;
 
 export const _confirm = async (question: string, _default = true) => {
   const q = [

@@ -184,14 +184,6 @@ export const useDraft = (
         return;
       }
 
-      // setDraft((_draft) => {
-      //   return {
-      //     ..._draft,
-      //     isOpen: shouldOpenForm,
-      //     priority: _draft?.priority || Priorities.UNASSIGNED,
-      //   };
-      // });
-
       shouldSubmit && submit();
     };
 

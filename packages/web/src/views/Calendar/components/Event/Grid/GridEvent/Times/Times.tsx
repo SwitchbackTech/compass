@@ -5,7 +5,7 @@ import { Text } from "@web/components/Text";
 import { editEventSlice } from "@web/ducks/events/event.slice";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { getTimesLabel } from "@web/common/utils/date.utils";
+import { getTimesLabel } from "@web/common/utils/web.date.util";
 
 import { StyledTimes, StyledTimesPlaceholder } from "./styled";
 

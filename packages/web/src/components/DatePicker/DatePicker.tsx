@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import ReactDatePicker, { ReactDatePickerProps } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import dayjs from "dayjs";
 import classNames from "classnames";
 import { Text } from "@web/components/Text";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Flex } from "@web/components/Flex";
 import { Input } from "@web/components/Input";
@@ -18,11 +18,12 @@ import {
 } from "./styled";
 
 export interface Props extends ReactDatePickerProps {
+  bgColor: string;
   defaultOpen?: boolean;
   onInputBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  isOpen?: boolean;
   animationOnToggle?: boolean;
   withTodayButton?: boolean;
-  isShown?: boolean;
 }
 
 export interface CalendarRef extends HTMLDivElement {
@@ -32,87 +33,90 @@ export interface CalendarRef extends HTMLDivElement {
 export const DatePicker: React.FC<Props> = ({
   animationOnToggle = true,
   autoFocus: _autoFocus = false,
+  bgColor,
   defaultOpen = false,
   calendarClassName,
+  isOpen = true,
   onSelect = () => null,
   onInputBlur,
   onCalendarClose = () => null,
   onCalendarOpen = () => null,
-  isShown: propsIsShown = false,
   shouldCloseOnSelect = true,
   withTodayButton = true,
   ...props
 }) => {
-  const [_isShown, setIsShown] = useState(propsIsShown);
+  // const [isOpen, setIsOpen] = useState(_isOpen);
   const datepickerRef = useRef<CalendarRef>(null);
-  const isShown = _isShown || propsIsShown;
 
-  const _showDatePicker = (show: boolean) => {
-    setTimeout(() => {
-      setIsShown(show);
-    });
-  };
+  // const _showDatePicker = (show: boolean) => {
+  //   setTimeout(() => {
+  //     setIsOpen(show);
+  //   });
+  // };
 
   useEffect(() => {
-    if (!_autoFocus) return;
-
-    setTimeout(() => {
-      datepickerRef.current?.input.click();
-      datepickerRef.current?.input.focus();
-    });
+    if (_autoFocus) {
+      setTimeout(() => {
+        datepickerRef.current?.input.click();
+        datepickerRef.current?.input.focus();
+      });
+    }
   }, [_autoFocus]);
 
-  useEffect(() => {
-    _showDatePicker(defaultOpen);
-  }, [defaultOpen]);
+  //++
+  // useEffect(() => {
+  //   _showDatePicker(defaultOpen);
+  // }, [defaultOpen]);
+
+  // console.log("open?", isOpen);
 
   return (
     <ReactDatePicker
-      open
-      shouldCloseOnSelect={shouldCloseOnSelect}
-      portalId="root"
+      calendarClassName={classNames("calendar", calendarClassName, {
+        "calendar--open": isOpen,
+        "calendar--animation": animationOnToggle,
+      })}
       calendarContainer={(containerProps) => (
         <Styled
           {...containerProps}
           monthsCount={(props.monthsShown || 0) + 1}
         />
       )}
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      ref={datepickerRef as any}
-      onSelect={(date, event: React.SyntheticEvent<Event> | undefined) => {
-        onSelect(date, event);
-
-        if (shouldCloseOnSelect) {
-          setIsShown(false);
-        }
-      }}
-      calendarClassName={classNames("calendar", calendarClassName, {
-        "calendar--open": isShown,
-        "calendar--animation": animationOnToggle,
-      })}
+      customInput={
+        <Input
+          bgColor={bgColor}
+          colorName={ColorNames.TEAL_1}
+          onBlurCapture={onInputBlur}
+          // background={ColorNames.GREY_3} //++
+          // colorName={ColorNames.WHITE_1} //++
+        />
+      }
+      dateFormat={"M-d-yyyy"}
+      formatWeekDay={(day) => day[0]}
+      open={isOpen}
       onCalendarOpen={() => {
-        _showDatePicker(true);
+        // _showDatePicker(true);
         onCalendarOpen();
       }}
       onCalendarClose={() => {
-        setIsShown(false);
-        _showDatePicker(false);
+        // setIsOpen(false);
+        // _showDatePicker(false);
         onCalendarClose();
       }}
       onClickOutside={() => {
-        setIsShown(false);
-        _showDatePicker(false);
+        // console.log("clicked out");
+        // setIsOpen(false);
+        // _showDatePicker(false);
         onCalendarClose();
       }}
+      onSelect={(date, event: React.SyntheticEvent<Event> | undefined) => {
+        onSelect(date, event);
+      }}
+      portalId="root"
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      ref={datepickerRef as any}
+      // shouldCloseOnSelect={shouldCloseOnSelect} //++
       showPopperArrow={false}
-      formatWeekDay={(day) => day[0]}
-      customInput={
-        <Input
-          onBlurCapture={onInputBlur}
-          background={ColorNames.DARK_3}
-          colorName={ColorNames.WHITE_1}
-        />
-      }
       renderCustomHeader={({
         monthDate,
         increaseMonth,
@@ -126,11 +130,11 @@ export const DatePicker: React.FC<Props> = ({
 
         return (
           <StyledHeaderFlex
-            justifyContent={JustifyContent.LEFT}
             alignItems={AlignItems.CENTER}
+            justifyContent={JustifyContent.LEFT}
           >
             <MonthContainerStyled>
-              <Text colorName={ColorNames.WHITE_1} size={25}>
+              <Text colorName={ColorNames.WHITE_1} size={17}>
                 {formattedSelectedMonth}
               </Text>
             </MonthContainerStyled>

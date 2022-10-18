@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { ColorNames } from "@core/constants/colors";
+import { ColorNames } from "@core/types/color.types";
 import { Flex } from "@web/components/Flex";
 import { getColor } from "@core/util/color.utils";
 import {
