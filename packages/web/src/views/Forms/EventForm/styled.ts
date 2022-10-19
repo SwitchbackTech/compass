@@ -1,7 +1,10 @@
 import styled from "styled-components";
 import { Priorities } from "@core/constants/core.constants";
 import { colorNameByPriority } from "@core/constants/colors";
-import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
+import {
+  EVENT_WIDTH_MINIMUM,
+  SIDEBAR_OPEN_WIDTH,
+} from "@web/views/Calendar/layout.constants";
 import {
   ANIMATION_TIME_3_MS,
   ZIndex,
@@ -10,34 +13,40 @@ import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
 import { getColor, getInvertedColor } from "@core/util/color.utils";
 import { Button } from "@web/components/Button";
-import { InvertedColorNames } from "@core/types/color.types";
+import { ColorNames, InvertedColorNames } from "@core/types/color.types";
 
 import { StyledFormProps } from "./types";
 
 export const FORM_TIME_SIZE = 17;
 
-export const StyledEventForm = styled.form<StyledFormProps>`
-  ${({ isOpen }) =>
-    isOpen
-      ? `
-      min-height: 255px;
-      padding: 18px 20px;
-        `
-      : ``}
+interface SomedayFormProps extends StyledFormProps {
+  x?: number;
+  y?: number;
+}
 
-  /* overflow: visible; */
+export const StyledEventForm = styled.form<SomedayFormProps>`
+  /* top: ${({ x }) => (x ? x : 0)}; */
+  /* left: ${({ y }) => (y ? y : 0)}; */
+  /* position: absolute; */
+  /* position: fixed; */
+  width: 585px;
+
+  //other //++
+  /* min-height: 255px; */
+  padding: 18px 20px;
+  background: ${({ priority }) =>
+    getColor(
+      colorNameByPriority[priority || Priorities.UNASSIGNED] as ColorNames
+    )};
   box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.25);
   border-radius: 4px;
-  width: 585px;
-  font-size: 20px;
-  background: ${({ priority }) =>
-    getColor(colorNameByPriority[priority || Priorities.UNASSIGNED])};
   color: ${({ priority }) =>
     getInvertedColor(
       colorNameByPriority[
         priority || Priorities.UNASSIGNED
       ] as InvertedColorNames
     )};
+  font-size: 20px;
   transition: ${ANIMATION_TIME_3_MS};
   z-index: ${ZIndex.LAYER_1};
 `;

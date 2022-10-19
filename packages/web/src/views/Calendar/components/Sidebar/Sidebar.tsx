@@ -13,7 +13,7 @@ import {
   Styled,
   StyledTopSectionFlex,
   StyledBottomSection,
-  renderStyledSidebarToggleIcon,
+  getSidebarToggleIcon,
   StyledSidebarOverflow,
 } from "./styled";
 import { SomedaySection } from "./SomedaySection";
@@ -25,16 +25,15 @@ interface Props {
 }
 
 export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
-  props
+  props: Props
 ) => {
   const dispatch = useDispatch();
+
   useEffect(() => {
     dispatch(getFutureEventsSlice.actions.request());
   }, [dispatch]);
 
-  const StyledSidebarToggleIcon = renderStyledSidebarToggleIcon(
-    props.prefs.isSidebarOpen
-  );
+  const SidebarToggleIcon = getSidebarToggleIcon(props.prefs.isSidebarOpen);
 
   return (
     <Styled
@@ -43,11 +42,13 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
       role="complementary"
     >
       <StyledSidebarOverflow isToggled={props.prefs.isSidebarOpen} />
-      <StyledSidebarToggleIcon
-        cursor="pointer"
-        onClick={props.prefs.toggleSidebar}
-        title="Toggle Sidebar"
-      />
+
+      <div role="button" title="Toggle Sidebar">
+        <SidebarToggleIcon
+          cursor="pointer"
+          onClick={props.prefs.toggleSidebar}
+        />
+      </div>
 
       <StyledTopSectionFlex
         direction={FlexDirections.COLUMN}

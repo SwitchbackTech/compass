@@ -2,6 +2,7 @@ import React, { FC } from "react";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { Key } from "ts-key-enum";
+import { Categories_Event } from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
@@ -20,8 +21,8 @@ import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
 dayjs.extend(customParseFormat);
 
 export interface Props {
+  category: Categories_Event;
   endTime?: SelectOption<string>;
-  isAllDay: boolean;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
   bgColor?: string;
@@ -37,7 +38,7 @@ export interface Props {
 }
 
 export const DateTimeSection: FC<Props> = ({
-  isAllDay,
+  category,
   isEndDatePickerOpen,
   isStartDatePickerOpen,
   bgColor,
@@ -229,55 +230,57 @@ export const DateTimeSection: FC<Props> = ({
 
   return (
     <StyledDateTimeFlex alignItems={AlignItems.CENTER} role="tablist">
-      <StyledDateFlex alignItems={AlignItems.CENTER}>
-        <div
-          onFocus={openStartDatePicker}
-          onMouseUp={stopPropagation}
-          onMouseDown={stopPropagation}
-        >
-          <DatePicker
-            bgColor={bgColor}
-            calendarClassName="startDatePicker"
-            isOpen={isStartDatePickerOpen}
-            onCalendarClose={closeStartDatePicker}
-            onCalendarOpen={() => {
-              setIsStartDatePickerOpen(true);
-            }}
-            onChange={() => null}
-            onInputClick={() => setIsStartDatePickerOpen(true)}
-            onKeyDown={(e) => onPickerKeyDown("start", e)}
-            onSelect={onSelectStartDate}
-            selected={selectedStartDate}
-            title="Pick Start Date"
-          />
-        </div>
-      </StyledDateFlex>
+      {category === Categories_Event.ALLDAY && (
+        <>
+          <StyledDateFlex alignItems={AlignItems.CENTER}>
+            <div
+              onFocus={openStartDatePicker}
+              onMouseUp={stopPropagation}
+              onMouseDown={stopPropagation}
+            >
+              <DatePicker
+                bgColor={bgColor}
+                calendarClassName="startDatePicker"
+                isOpen={isStartDatePickerOpen}
+                onCalendarClose={closeStartDatePicker}
+                onCalendarOpen={() => {
+                  setIsStartDatePickerOpen(true);
+                }}
+                onChange={() => null}
+                onInputClick={() => setIsStartDatePickerOpen(true)}
+                onKeyDown={(e) => onPickerKeyDown("start", e)}
+                onSelect={onSelectStartDate}
+                selected={selectedStartDate}
+                title="Pick Start Date"
+              />
+            </div>
+          </StyledDateFlex>
 
-      {isAllDay && (
-        <StyledDateFlex alignItems={AlignItems.CENTER}>
-          <div
-            onFocus={openEndDatePicker}
-            onMouseUp={stopPropagation}
-            onMouseDown={stopPropagation}
-          >
-            <DatePicker
-              bgColor={bgColor}
-              calendarClassName="endDatePicker"
-              isOpen={isEndDatePickerOpen}
-              onCalendarClose={closeEndDatePicker}
-              onCalendarOpen={() => setIsEndDatePickerOpen(true)}
-              onChange={() => null}
-              onInputClick={() => setIsEndDatePickerOpen(true)}
-              onKeyDown={(e) => onPickerKeyDown("end", e)}
-              onSelect={onSelectEndDate}
-              selected={selectedEndDate}
-              title="Pick End Date"
-            />
-          </div>
-        </StyledDateFlex>
+          <StyledDateFlex alignItems={AlignItems.CENTER}>
+            <div
+              onFocus={openEndDatePicker}
+              onMouseUp={stopPropagation}
+              onMouseDown={stopPropagation}
+            >
+              <DatePicker
+                bgColor={bgColor}
+                calendarClassName="endDatePicker"
+                isOpen={isEndDatePickerOpen}
+                onCalendarClose={closeEndDatePicker}
+                onCalendarOpen={() => setIsEndDatePickerOpen(true)}
+                onChange={() => null}
+                onInputClick={() => setIsEndDatePickerOpen(true)}
+                onKeyDown={(e) => onPickerKeyDown("end", e)}
+                onSelect={onSelectEndDate}
+                selected={selectedEndDate}
+                title="Pick End Date"
+              />
+            </div>
+          </StyledDateFlex>
+        </>
       )}
 
-      {!isAllDay && (
+      {category === Categories_Event.TIMED && (
         <StyledTimeFlex alignItems={AlignItems.CENTER}>
           <TimePicker
             bgColor={bgColor}

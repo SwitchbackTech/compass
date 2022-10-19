@@ -232,7 +232,7 @@ export const toUTCOffset = (date: string | Dayjs | Date) => {
   } else return date.format(); // then already a DayJs object
 };
 
-const _addTimesToDates = (dt: SelectedDateTimes) => {
+const _addTimesToDates = (dt: Schema_SelectedDates) => {
   const start = getDayjsByTimeValue(dt.startTime.value);
   const startDate = dayjs(dt.startDate)
     .hour(start.hour())

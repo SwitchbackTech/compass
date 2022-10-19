@@ -1,30 +1,22 @@
-import { ZIndex } from "@web/common/constants/web.constants";
-import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { useRef, useState } from "react";
 import { usePopper } from "react-popper";
+import { ZIndex } from "@web/common/constants/web.constants";
+import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
+import { Categories_Event } from "@core/types/event.types";
 
-export const useDraftForm = (onClickOut: () => void) => {
+export const useDraftForm = (
+  category: Categories_Event,
+  onClickOut: () => void
+) => {
   const formRef = useRef<HTMLDivElement>(null);
   const [referenceElement, setReferenceElement] = useState<HTMLElement>(null);
   const [popperElement, setPopperElement] = useState<HTMLElement>(null);
 
-  //  | 'auto'
-  // | 'auto-start'
-  // | 'auto-end'
-  // | 'top'
-  // | 'top-start'
-  // | 'top-end'
-  // | 'bottom'
-  // | 'bottom-start'
-  // | 'bottom-end'
-  // | 'right'
-  // | 'right-start'
-  // | 'right-end'
-  // | 'left'
-  // | 'left-start'
-  // | 'left-end';
+  const isSomeday = category === Categories_Event.SOMEDAY;
+  const placement = isSomeday ? "right" : "auto-start";
+
   const { attributes, styles } = usePopper(referenceElement, popperElement, {
-    placement: "auto-start",
+    placement,
     strategy: "fixed",
     modifiers: [
       {
@@ -48,6 +40,7 @@ export const useDraftForm = (onClickOut: () => void) => {
       },
     ],
   });
+
   const popperStyles = {
     ...styles.popper,
     zIndex: ZIndex.LAYER_3,

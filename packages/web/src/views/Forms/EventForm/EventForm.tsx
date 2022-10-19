@@ -1,18 +1,25 @@
 import dayjs from "dayjs";
-import React, { KeyboardEvent, useCallback, useEffect, useState } from "react";
+import React, {
+  KeyboardEvent,
+  KeyboardEventHandler,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { Key } from "ts-key-enum";
 import { getColor } from "@core/util/color.utils";
 import { Priorities } from "@core/constants/core.constants";
 import { colorNameByPriority } from "@core/constants/colors";
 import { Schema_Event } from "@core/types/event.types";
 import { DeleteIcon } from "@web/components/Icons";
+import { getCategory } from "@web/common/utils/event.util";
 import { SelectOption } from "@web/common/types/component.types";
 import {
   getTimeOptionByValue,
   mapToBackend,
 } from "@web/common/utils/web.date.util";
 
-import { FormProps } from "./types";
+import { FormProps, SetEventFormField } from "./types";
 import { DateTimeSection } from "./DateTimeSection";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
@@ -32,6 +39,7 @@ export const EventForm: React.FC<FormProps> = ({
   ...props
 }) => {
   const { priority, title } = event || {};
+  const category = getCategory(event);
 
   /********
    * State
@@ -93,6 +101,9 @@ export const EventForm: React.FC<FormProps> = ({
     setIsFormOpen(true);
   }, []);
 
+  /***********
+   * Helpers
+   **********/
   const getDefaultDateTimes = (event: Schema_Event) => {
     const start = event?.startDate ? dayjs(event.startDate) : dayjs();
     const startTime = getTimeOptionByValue(start);
@@ -119,7 +130,7 @@ export const EventForm: React.FC<FormProps> = ({
     return { endDate: end.toDate(), endTime };
   };
 
-  /*********
+  /***********
    * Handlers
    **********/
   const onChangeEventTextField =
@@ -175,18 +186,12 @@ export const EventForm: React.FC<FormProps> = ({
     onClose();
   };
 
-  // $$ TODO make it easy for someday event form to use this
-  const onSetEventField = <FieldName extends keyof Schema_Event>(
-    fieldName: FieldName,
-    value: Schema_Event[FieldName]
-  ) => {
-    const newEvent = { ...event, [fieldName]: value };
+  const onSetEventField: SetEventFormField = (field, value) => {
+    const newEvent = { ...event, [field]: value };
     setEvent(newEvent);
   };
 
-  const submitFormWithKeyboard: React.KeyboardEventHandler<HTMLFormElement> = (
-    e
-  ) => {
+  const onFormKeyDown: KeyboardEventHandler<HTMLFormElement> = (e) => {
     if (e.key === Key.Backspace || e.key == Key.Delete) {
       const isDraft = !event._id;
       if (isDraft) {
@@ -219,7 +224,7 @@ export const EventForm: React.FC<FormProps> = ({
       {...props}
       isOpen={isFormOpen}
       name="Event Form"
-      onKeyDown={submitFormWithKeyboard}
+      onKeyDown={onFormKeyDown}
       onMouseUp={(e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -256,8 +261,8 @@ export const EventForm: React.FC<FormProps> = ({
 
       <DateTimeSection
         bgColor={getColor(colorNameByPriority[priority])}
+        category={category}
         endTime={endTime}
-        isAllDay={event.isAllDay}
         isEndDatePickerOpen={isEndDatePickerOpen}
         isStartDatePickerOpen={isStartDatePickerOpen}
         selectedEndDate={selectedEndDate}

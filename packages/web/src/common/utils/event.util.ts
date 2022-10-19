@@ -4,10 +4,7 @@ import dayjs, { Dayjs } from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isBetween from "dayjs/plugin/isBetween";
-import {
-  YEAR_MONTH_DAY_COMPACT_FORMAT,
-  YEAR_MONTH_DAY_FORMAT,
-} from "@web/common/constants/date.constants";
+import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@web/common/constants/date.constants";
 import {
   Categories_Event,
   Params_Events,
@@ -20,6 +17,16 @@ import { Schema_GridEvent } from "../types/web.event.types";
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isBetween);
+
+export const getCategory = (event: Schema_Event) => {
+  if (event?.isAllDay) {
+    return Categories_Event.ALLDAY;
+  }
+  if (event?.isSomeday) {
+    return Categories_Event.SOMEDAY;
+  }
+  return Categories_Event.TIMED;
+};
 
 export const getDefaultEvent = (
   draftType: Categories_Event,
@@ -38,6 +45,7 @@ export const getDefaultEvent = (
     case Categories_Event.SOMEDAY:
       return {
         isAllDay: false,
+        isOpen: true, //++
         isSomeday: true,
         priority: Priorities.UNASSIGNED,
       };
@@ -64,7 +72,7 @@ export const handleErrorTemp = (error: Error) => {
     return;
   }
   console.log(error);
-  alert(error);
+  // alert(error); //++
 };
 
 export const getWeekDayLabel = (day: Dayjs | Date) => {

@@ -60,6 +60,7 @@ export const draftSlice = createSlice({
     discard: (state) => initialDraft,
     start: (state, action: Action_DraftEvent) => {
       const { activity, event, eventType } = action.payload;
+
       state.event = event;
       state.status = {
         ...state.status,

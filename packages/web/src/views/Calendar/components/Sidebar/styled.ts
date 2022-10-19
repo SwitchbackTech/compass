@@ -62,7 +62,7 @@ const StyledCollapseIcon = styled(SidebarCollapseIcon)`
   }
 `;
 
-export const renderStyledSidebarToggleIcon = (isToggled: boolean) => {
+export const getSidebarToggleIcon = (isToggled: boolean) => {
   if (isToggled) {
     return StyledCollapseIcon;
   } else {

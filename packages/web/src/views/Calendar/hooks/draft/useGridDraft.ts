@@ -3,28 +3,24 @@ import { Key } from "ts-keycode-enum";
 import { MouseEvent, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Schema_Event } from "@core/types/event.types";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Priorities } from "@core/constants/core.constants";
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import {
   selectDraft,
   selectDraftStatus,
 } from "@web/ducks/events/event.selectors";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import {
-  draftSlice,
-  createEventSlice,
-  deleteEventSlice,
-  editEventSlice,
-} from "@web/ducks/events/event.slice";
+import { draftSlice, deleteEventSlice } from "@web/ducks/events/event.slice";
 import {
   Schema_GridEvent,
   Status_DraftEvent,
 } from "@web/common/types/web.event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/date.constants";
-import { getX, removeGridFields } from "@web/common/utils/grid.util";
+import { getX } from "@web/common/utils/grid.util";
 import { isDraftingSomeday } from "@web/common/utils";
 
 import { WeekProps } from "../useWeek";
+import { useDraftUtils } from "./useDraftUtils";
 
 export interface Status_Drag {
   hasMoved?: boolean;
@@ -40,12 +36,14 @@ interface Status_Resize {
 //    would be more accurate
 const Y_BUFFER = 15;
 
-export const useDraft = (
+export const useGridDraft = (
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
   isSidebarOpen: boolean
 ) => {
   const dispatch = useDispatch();
+
+  const draftUtil = useDraftUtils();
 
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -84,11 +82,15 @@ export const useDraft = (
   }, [dateBeingChanged, isResizing]);
 
   useEffect(() => {
-    // if (isDrafting && !draft?.isOpen) {
+    const isStaleDraft = !isDrafting && draft?.isOpen;
+    if (isStaleDraft) {
+      setDraft(null);
+      return;
+    }
+  }, [isDrafting, draft?.isOpen]);
+
+  useEffect(() => {
     if (isDrafting) {
-      // if (isDrafting && (!isResizing || !isDragging)) {
-      // const isFromShortcut = !activity && !draft?.isOpen;
-      // if (isFromShortcut) {
       if (activity === "createShortcut") {
         const defaultDraft = getDefaultEvent(
           reduxDraftType,
@@ -156,15 +158,22 @@ export const useDraft = (
 
   useEffect(() => {
     const handleMouseUp = (e: MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
       if (!draft) {
+        // console.log("returning no draft");
+        // e.preventDefault();
+        // e.stopPropagation();
+        if (reduxDraft) {
+          console.log("closing redux draft");
+          dispatch(draftSlice.actions.discard());
+        }
         return;
       }
 
+      e.preventDefault();
+      e.stopPropagation();
+
+      // console.log("curr draft:", draft);
       const isNew = !draft._id;
-      // const isMoving = isResizing || isDragging;
       const hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved;
       const clickedOnExisting = !isNew && !hasMoved;
       const shouldOpenForm = (isNew || clickedOnExisting) && !draft.isOpen;
@@ -208,10 +217,8 @@ export const useDraft = (
   }); // reminder: this is running every render - not ideal
 
   useEffect(() => {
-    // const timedGrid = document.getElementById(ID_GRID_MAIN);
     // const timedGrid = document.getElemById(ID_GRID_MAIN);
 
-    // console.log("initing mousemove handler...");
     const mouseMoveHandler = (e: MouseEvent) => {
       if (isResizing && !draft.isAllDay) {
         resize(e);
@@ -223,7 +230,6 @@ export const useDraft = (
     // timedGrid.addEventListener("mousemove", mouseMoveHandler);
     document.addEventListener("mousemove", mouseMoveHandler);
     return () => {
-      // timedGrid.removeEventListener("mousemove", mouseMoveHandler);
       document.removeEventListener("mousemove", mouseMoveHandler);
     };
   }); // reminder: this is running every render - not ideal
@@ -239,7 +245,6 @@ export const useDraft = (
     if (draft) {
       setDraft(null);
     }
-
     if (reduxDraft) {
       dispatch(draftSlice.actions.discard());
     }
@@ -370,39 +375,15 @@ export const useDraft = (
   };
 
   const submit = (draft?: Schema_GridEvent) => {
-    const event = prepareEvent(draft);
+    draftUtil.submit(draft);
 
-    const isExisting = event._id;
-    if (isExisting) {
-      dispatch(
-        editEventSlice.actions.request({
-          _id: event._id,
-          event,
-        })
-      );
-    } else {
-      dispatch(createEventSlice.actions.request(event));
-    }
-
-    const startWeek = dayjs(event.startDate).week();
+    // workaround for event not showing up upon first render
+    const startWeek = dayjs(draft.startDate).week();
     if (startWeek !== weekProps.component.week) {
-      // workaround for event not showing up upon first render
       weekProps.state.setWeek(startWeek - 1);
     }
 
     discard();
-  };
-
-  const prepareEvent = (originalEvent?: Schema_GridEvent) => {
-    let eventToClean: Schema_GridEvent = { ...originalEvent };
-    if (!originalEvent) {
-      eventToClean = { ...draft };
-    }
-
-    const _event = removeGridFields(eventToClean);
-    const event = { ..._event, origin: Origin.COMPASS } as Schema_Event;
-
-    return event;
   };
 
   const updateTimesDuringDrag = (e: MouseEvent) => {
@@ -457,36 +438,5 @@ export const useDraft = (
   };
 };
 
-export type Hook_Draft = ReturnType<typeof useDraft>;
+export type Hook_Draft = ReturnType<typeof useGridDraft>;
 export type Helpers_Draft = Hook_Draft["draftHelpers"];
-
-/* idk, was by shortcut stuff ++
-
-//   setDraftStatus((status) => {
-//     setDraft((_draft) => {
-//       if (!_draft) return _draft;
-
-//       const hasMoved = status?.name === "dragging" && status.hasMoved;
-//       const shouldSubmit = hasMoved || status?.name === "resizing";
-
-//       setDraftStatus(null);
-
-//       if (shouldSubmit) {
-//         console.log("submitting [todo]");
-//         return null; // resets
-//       }
-
-//       return {
-//         ..._draft,
-//         isOpen: true,
-//         priority: _draft?.priority || Priorities.UNASSIGNED,
-//       };
-//     });
-
-//     return status;
-//   });
-
-//   return;
-// };
-
-*/

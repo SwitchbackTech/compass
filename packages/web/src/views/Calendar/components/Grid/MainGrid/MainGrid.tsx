@@ -11,7 +11,7 @@ import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   draftSlice,
   getFutureEventsSlice,
@@ -21,6 +21,7 @@ import {
   DRAFT_DURATION_MIN,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
+import { selectDraftId } from "@web/ducks/events/event.selectors";
 
 import { Columns } from "../Columns";
 import { GridRows } from "./GridRows";
@@ -50,6 +51,7 @@ export const MainGrid: FC<Props> = ({
 
   const { component } = weekProps;
   const { isCurrentWeek, startOfSelectedWeekDay, week, weekDays } = component;
+  const { isDrafting } = useSelector(selectDraftId);
 
   const convertSomedayToTimed = (_id: string, x: number, y: number) => {
     const _start = dateCalcs.getDateByXY(
@@ -77,8 +79,16 @@ export const MainGrid: FC<Props> = ({
   };
 
   const startDraft = (e: MouseEvent) => {
+    if (isDrafting) {
+      console.log("draftin!!");
+      dispatch(draftSlice.actions.discard());
+      return;
+    }
     e.stopPropagation();
     e.preventDefault();
+
+    // check if drafting from sidebar
+    console.log("starting draft");
 
     const x = getX(e, isSidebarOpen);
     const _start = dateCalcs.getDateByXY(

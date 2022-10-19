@@ -76,9 +76,8 @@ export interface Payload_DeleteEvent {
   _id: string;
 }
 
-//++remove / update
 export interface Payload_DraftEvent {
-  event: Schema_Event;
+  event?: Schema_Event;
   eventType: Categories_Event;
   activity?: "createShortcut" | "dragging" | "resizing";
 }

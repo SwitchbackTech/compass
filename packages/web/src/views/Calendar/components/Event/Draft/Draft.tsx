@@ -1,6 +1,7 @@
 import React, { FC, MouseEvent, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useDraft } from "@web/views/Calendar/hooks/draft/useDraft";
+import { useGridDraft } from "@web/views/Calendar/hooks/draft/useGridDraft";
+import { useDraftForm } from "@web/views/Calendar/hooks/draft/useDraftForm";
 import { EventForm } from "@web/views/Forms/EventForm";
 import {
   ID_GRID_EVENTS_ALLDAY,
@@ -9,9 +10,10 @@ import {
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { useDraftForm } from "@web/views/Calendar/hooks/draft/useDraftForm";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid.util";
+import { getCategory } from "@web/common/utils/event.util";
+import { Categories_Event } from "@core/types/event.types";
 
 import { GridEvent } from "../Grid";
 
@@ -34,7 +36,7 @@ export const Draft: FC<Props> = ({
     setIsLoadingDOM(false);
   }, []);
 
-  const { draftState, draftHelpers } = useDraft(
+  const { draftState, draftHelpers } = useGridDraft(
     dateCalcs,
     weekProps,
     isSidebarOpen
@@ -43,11 +45,21 @@ export const Draft: FC<Props> = ({
   const isDrafting = draftState.draft !== null;
   const { draft, isDragging } = draftState;
 
+  const getContainer = () => {
+    if (draft.isAllDay) {
+      return getElemById(ID_GRID_EVENTS_ALLDAY);
+    }
+
+    return getElemById(ID_GRID_EVENTS_TIMED);
+  };
+
   const onClickOut = () => {
     if (draft.isOpen) {
       draftHelpers.discard();
     }
   };
+
+  const category = getCategory(draft);
 
   const {
     attributes,
@@ -55,17 +67,18 @@ export const Draft: FC<Props> = ({
     popperStyles,
     setPopperElement,
     setReferenceElement,
-  } = useDraftForm(onClickOut);
+  } = useDraftForm(category, onClickOut);
 
-  const gridContainer = draft?.isAllDay
-    ? getElemById(ID_GRID_EVENTS_ALLDAY)
-    : getElemById(ID_GRID_EVENTS_TIMED);
+  if (isLoadingDOM || !draft) return null;
 
-  if (isLoadingDOM) return null;
+  const container = getContainer();
+
+  const isGridEvent =
+    category === Categories_Event.ALLDAY || category === Categories_Event.TIMED;
 
   return createPortal(
     <>
-      {isDrafting && (
+      {isDrafting && isGridEvent && (
         <>
           <GridEvent
             event={draft}
@@ -114,7 +127,7 @@ export const Draft: FC<Props> = ({
         </>
       )}
     </>,
-    gridContainer
+    container
   );
 };
 
@@ -124,11 +137,4 @@ export const Draft: FC<Props> = ({
   //   const draftIdMemo = useMemo(() => draft?._id || null, []);
   //   const draftMemo = useMemo(() => draft, []);
   // const { component } = weekProps;
-
-  // const position = useEventPosition(
-  //   draft,
-  //   component.startOfSelectedWeekDay,
-  //   component.endOfSelectedWeekDay,
-  //   measurements
-  // );
 */

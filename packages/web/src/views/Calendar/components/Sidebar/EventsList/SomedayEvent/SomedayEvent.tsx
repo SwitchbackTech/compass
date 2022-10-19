@@ -1,76 +1,72 @@
-import React, { useRef, useState } from "react";
-import { usePopper } from "react-popper";
-import { useDispatch } from "react-redux";
+import React, { Dispatch, MouseEvent, SetStateAction } from "react";
+import { useFloating } from "@floating-ui/react-dom";
+import { FloatingPortal } from "@floating-ui/react-dom-interactions";
 import { Schema_Event } from "@core/types/event.types";
-import { ZIndex } from "@web/common/constants/web.constants";
-import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { Text } from "@web/components/Text";
-import { editEventSlice } from "@web/ducks/events/event.slice";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
+import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 
 import { StyledEventOrPlaceholder } from "./styled";
 
 export interface Props {
   event: Schema_Event;
+  isDrafting: boolean;
   isDragging: boolean;
+  onClose: () => void;
+  onSubmit: () => void;
+  setEvent: Dispatch<SetStateAction<Schema_GridEvent>>;
 }
 
-export const SomedayEvent = ({ event: _event, isDragging }: Props) => {
-  const dispatch = useDispatch();
-  const formRef = useRef<HTMLDivElement>(null);
-
-  const [isEventFormOpen, setIsEventFormOpen] = useState(false);
-  const [event, setEvent] = useState(_event);
-
-  const [popperRef, setPopperRef] = useState<HTMLElement>(null);
-  const [popperElement, setPopperElement] = useState<HTMLElement>(null);
-
-  useOnClickOutside(formRef, () => setIsEventFormOpen(false));
-
-  const { styles, attributes } = usePopper(popperRef, popperElement, {
-    placement: "right",
-    strategy: "fixed",
-    modifiers: [
-      {
-        name: "offset",
-        options: {
-          offset: [0, 20],
-        },
-      },
-    ],
+export const SomedayEvent = ({
+  event,
+  isDrafting,
+  isDragging,
+  onClose,
+  onSubmit,
+  setEvent,
+}: Props) => {
+  const { x, y, reference, floating, strategy } = useFloating({
+    strategy: "absolute",
+    placement: "right-start",
   });
-  const popperStyles = { ...styles.popper, zIndex: ZIndex.LAYER_3 };
 
-  const onSubmit = () => {
-    dispatch(editEventSlice.actions.request({ _id: event._id, event }));
-    setIsEventFormOpen(false);
+  const startDrafting = (e: MouseEvent) => {
+    e.stopPropagation();
+    setEvent(event);
   };
 
   return (
     <>
-      <div ref={setPopperRef}>
-        <StyledEventOrPlaceholder
-          isDragging={isDragging}
-          onClick={() => setIsEventFormOpen(true)}
-          priority={event.priority}
-          role="button"
-        >
-          <Text size={15}>{event.title}</Text>
-        </StyledEventOrPlaceholder>
-      </div>
-      <div ref={setPopperElement} style={popperStyles} {...attributes.popper}>
-        {isEventFormOpen && (
-          <div ref={formRef}>
+      <StyledEventOrPlaceholder
+        isDragging={isDragging}
+        isDrafting={isDrafting}
+        onClick={startDrafting}
+        priority={event.priority}
+        role="button"
+        ref={reference}
+      >
+        <Text size={15}>{event.title}</Text>
+      </StyledEventOrPlaceholder>
+
+      <FloatingPortal>
+        {isDrafting && !isDragging && (
+          <StyledFloatContainer
+            ref={floating}
+            strategy={strategy}
+            top={y ?? 40}
+            left={SIDEBAR_OPEN_WIDTH}
+          >
             <SomedayEventForm
               event={event}
-              isOpen={isEventFormOpen}
+              onClose={onClose}
               onSubmit={onSubmit}
-              onClose={() => setIsEventFormOpen(false)}
               setEvent={setEvent}
             />
-          </div>
+          </StyledFloatContainer>
         )}
-      </div>
+      </FloatingPortal>
     </>
   );
 };

@@ -55,6 +55,7 @@ const _GridEvent = (
   );
 
   let finalEvent = event;
+
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
   if (isInPast) {
     finalEvent = { ...event, isTimesShown: false };

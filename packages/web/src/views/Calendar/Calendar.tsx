@@ -14,6 +14,7 @@ import { Styled, StyledCalendar } from "./styled";
 import { useGridLayout } from "./hooks/grid/useGridLayout";
 import { usePreferences } from "./hooks/usePreferences";
 import { Sidebar } from "./components/Sidebar";
+import { Draft } from "./components/Event/Draft";
 
 export const Calendar = () => {
   return <CalendarView />;
@@ -22,13 +23,11 @@ export const Calendar = () => {
 export const CalendarView = () => {
   const prefs = usePreferences();
 
-  const { today, todayIndex } = useToday();
+  const { today } = useToday();
+
   const weekProps = useWeek(today);
 
   const { gridRefs, measurements } = useGridLayout(weekProps.component.week);
-
-  // const today = dayjs("2022-06-11");
-  // const todayIndex = today.get("day");
 
   const dateCalcs = useDateCalcs(measurements, gridRefs.gridScrollRef);
 
@@ -53,10 +52,18 @@ export const CalendarView = () => {
         measurements={measurements}
         viewStart={weekProps.component.startOfSelectedWeekDay}
       />
-      <Sidebar prefs={prefs} weekProps={weekProps} />
-      <StyledCalendar direction={FlexDirections.COLUMN}>
-        <Header rootProps={rootProps} today={today} weekProps={weekProps} />
 
+      <Draft
+        dateCalcs={dateCalcs}
+        isSidebarOpen={prefs.isSidebarOpen}
+        measurements={measurements}
+        weekProps={weekProps}
+      />
+
+      <Sidebar prefs={prefs} weekProps={weekProps} />
+
+      <StyledCalendar direction={FlexDirections.COLUMN} id="mainSection">
+        <Header rootProps={rootProps} today={today} weekProps={weekProps} />
         <Grid
           dateCalcs={dateCalcs}
           isSidebarOpen={prefs.isSidebarOpen}
