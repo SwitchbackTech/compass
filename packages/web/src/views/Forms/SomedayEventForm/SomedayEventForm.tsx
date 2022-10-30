@@ -1,4 +1,4 @@
-import React, { KeyboardEventHandler, useState } from "react";
+import React, { KeyboardEventHandler, MouseEvent, useState } from "react";
 import { Key } from "ts-key-enum";
 import { useDispatch } from "react-redux";
 import { DeleteIcon } from "@web/components/Icons";
@@ -38,10 +38,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   };
 
   const onDelete = () => {
-    if (event._id === undefined) {
-      return;
+    if (event._id) {
+      dispatch(getFutureEventsSlice.actions.delete({ _id: event._id }));
     }
-    dispatch(getFutureEventsSlice.actions.delete({ _id: event._id }));
 
     _onClose();
   };
@@ -69,26 +68,24 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     }
   };
 
+  const stopPropagation = (e: MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <StyledEventForm
       {...props}
       data-testid="somedayForm"
       id={ID_SIDEBAR_FORM}
       isOpen={true}
-      onClick={(e) => {
-        console.log("stoppingprop3");
-        e.stopPropagation();
-      }}
+      onClick={stopPropagation}
       onKeyDown={onKeyDown}
-      onMouseDown={(e) => {
-        console.log("stoping prop");
-        e.stopPropagation();
-      }}
+      onMouseDown={stopPropagation}
       onMouseUp={(e) => {
         if (isPickerOpen) {
+          console.log("!!closing picker");
           setIsPickerOpen(false);
         }
-        console.log("stoping prop2");
         e.stopPropagation();
       }}
       priority={event.priority}

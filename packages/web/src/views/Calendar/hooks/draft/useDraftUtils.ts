@@ -26,7 +26,7 @@ export const useDraftUtils = () => {
     return event;
   };
 
-  const submit = (draft?: Schema_GridEvent) => {
+  const submit = (draft: Schema_GridEvent) => {
     const event = prepareEvent(draft);
 
     const isExisting = event._id;

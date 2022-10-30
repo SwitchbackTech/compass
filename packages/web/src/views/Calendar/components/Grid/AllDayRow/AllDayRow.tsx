@@ -11,6 +11,7 @@ import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_ALLDAY_ROW,
   ID_GRID_EVENTS_ALLDAY,
+  ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/date.constants";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
@@ -22,6 +23,7 @@ import {
 import {
   selectAllDayEvents,
   selectDraftId,
+  selectDraftStatus,
 } from "@web/ducks/events/event.selectors";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
@@ -32,7 +34,11 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
 import { getDefaultEvent } from "@web/common/utils/event.util";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Schema_GridEvent,
+  Status_DraftEvent,
+} from "@web/common/types/web.event.types";
+import { isDrafting } from "@web/common/utils";
 
 import { StyledEvent } from "../../Event/styled";
 import { StyledAllDayColumns, StyledGridCol } from "../Columns/styled";
@@ -64,9 +70,12 @@ export const AllDayRow: FC<Props> = ({
   const _rowVals = allDayEvents.map((e: Schema_GridEvent) => e.row);
   const rowsCount = _rowVals.length === 0 ? 1 : Math.max(..._rowVals);
   const { isDrafting, draftId } = useSelector(selectDraftId);
+  const { eventType: draftType } = useSelector(
+    selectDraftStatus
+  ) as Status_DraftEvent;
 
   useEffect(() => {
-    measurements.remeasure("mainGrid");
+    measurements.remeasure(ID_GRID_MAIN);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowsCount]);
 
@@ -113,9 +122,7 @@ export const AllDayRow: FC<Props> = ({
     dispatch(draftSlice.actions.startDragging({ event }));
   };
 
-  const draftNewEvent = (e: MouseEvent) => {
-    if (isDrafting) return; // prevents multiple forms
-
+  const startAlldayDraft = (e: MouseEvent) => {
     const x = getX(e, isSidebarOpen);
     const startDate = dateCalcs.getDateStrByXY(
       x,
@@ -133,6 +140,29 @@ export const AllDayRow: FC<Props> = ({
     );
   };
 
+  const onMouseDown = (e: MouseEvent) => {
+    const isDraftingSomeday =
+      isDrafting && draftType === Categories_Event.SOMEDAY;
+    const isDraftingAllday =
+      isDrafting && draftType === Categories_Event.ALLDAY;
+
+    if (isDraftingSomeday) {
+      console.log("already drafting someday ...");
+      return;
+    }
+
+    // if (isDraftingAllday) {
+    if (isDrafting) {
+      console.log("already drafting ...");
+      e.stopPropagation();
+      dispatch(draftSlice.actions.discard());
+      return;
+    }
+
+    console.log("starting new all day...");
+    startAlldayDraft(e);
+  };
+
   const renderAllDayEvents = () => {
     const _allDayEvents = allDayEvents.map((event: Schema_Event, i: number) => {
       const position = getPosition(
@@ -142,6 +172,7 @@ export const AllDayRow: FC<Props> = ({
         measurements,
         false
       );
+
       return (
         <StyledEvent
           allDay={event.isAllDay}
@@ -183,7 +214,7 @@ export const AllDayRow: FC<Props> = ({
       id={ID_GRID_ALLDAY_ROW}
       ref={drop}
       rowsCount={rowsCount}
-      onMouseDown={draftNewEvent}
+      onMouseDown={onMouseDown}
     >
       <StyledAllDayColumns id={ID_ALLDAY_COLUMNS} ref={allDayRef}>
         {weekDays.map((day) => (

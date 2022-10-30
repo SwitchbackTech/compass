@@ -1,11 +1,10 @@
 import React from "react";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { DragLayer } from "@web/views/Calendar/containers/DragLayer";
+import { ID_MAIN } from "@web/common/constants/web.constants";
 
 import { Grid } from "./components/Grid/";
 import { useScroll } from "./hooks/grid/useScroll";
-import { useDateCalcs } from "./hooks/grid/useDateCalcs";
-import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
 import { useToday } from "./hooks/useToday";
 import { useWeek } from "./hooks/useWeek";
 import { Header } from "./components/Header";
@@ -13,6 +12,8 @@ import { RootProps } from "./calendarView.types";
 import { Styled, StyledCalendar } from "./styled";
 import { useGridLayout } from "./hooks/grid/useGridLayout";
 import { usePreferences } from "./hooks/usePreferences";
+import { useDateCalcs } from "./hooks/grid/useDateCalcs";
+import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
 import { Sidebar } from "./components/Sidebar";
 import { Draft } from "./components/Event/Draft";
 
@@ -62,7 +63,7 @@ export const CalendarView = () => {
 
       <Sidebar prefs={prefs} weekProps={weekProps} />
 
-      <StyledCalendar direction={FlexDirections.COLUMN} id="mainSection">
+      <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
         <Header rootProps={rootProps} today={today} weekProps={weekProps} />
         <Grid
           dateCalcs={dateCalcs}

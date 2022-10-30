@@ -1,4 +1,4 @@
-import React, { FC, MouseEvent, useRef, useState } from "react";
+import React, { FC, MouseEvent, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { SOMEDAY_EVENTS_LIMIT } from "@core/constants/core.constants";
 import { ColorNames } from "@core/types/color.types";
@@ -6,6 +6,7 @@ import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Text } from "@web/components/Text";
 import {
   selectDraftId,
+  selectDraftStatus,
   selectIsGetFutureEventsProcessing,
   selectSomedayEvents,
 } from "@web/ducks/events/event.selectors";
@@ -13,7 +14,10 @@ import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { getDefaultEvent } from "@web/common/utils/event.util";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Schema_GridEvent,
+  Status_DraftEvent,
+} from "@web/common/types/web.event.types";
 import { useDraftUtils } from "@web/views/Calendar/hooks/draft/useDraftUtils";
 import { draftSlice } from "@web/ducks/events/event.slice";
 
@@ -28,74 +32,82 @@ interface Props {
 export const SomedaySection: FC<Props> = ({ flex }) => {
   const dispatch = useDispatch();
 
+  const somedayRef = useRef();
+
   const isProcessing = useSelector(selectIsGetFutureEventsProcessing);
   const somedayEvents = useSelector(selectSomedayEvents);
   const { isDrafting: isDraftingRedux } = useSelector(selectDraftId);
-
-  const draftUtil = useDraftUtils();
+  const { eventType: draftType } = useSelector(
+    selectDraftStatus
+  ) as Status_DraftEvent;
 
   const [isDrafting, setIsDrafting] = useState(false);
   const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
+  const [isDraftingExisting, setIsDraftingExisting] = useState(false);
 
-  const somedayRef = useRef();
+  const draftUtil = useDraftUtils();
 
-  // useOnClickOutside(somedayRef, (e: MouseEvent) => {
-  //   console.log("clicked out");
-  //   if (isDrafting) {
-  //     e.stopPropagation();
-  //     e.preventDefault();
+  //++ memo-ize
+  const existingIds = somedayEvents.map((se) => se._id);
+  const isNewDraft =
+    isDrafting &&
+    isDraftingRedux &&
+    draftType === Categories_Event.SOMEDAY &&
+    !existingIds.includes(draft?._id);
 
-  //     console.log("clicked out, closing drafts");
-  //     setIsDrafting(false);
-  //     setDraft(null);
+  useEffect(() => {
+    setIsDraftingExisting(existingIds.includes(draft?._id));
+  }, [existingIds, draft]);
 
-  //     dispatch(draftSlice.actions.discard());
-  //   }
-  // });
+  useEffect(() => {
+    if (!isDraftingRedux) {
+      setIsDrafting(false);
+      setDraft(null);
+    }
+  }, [isDraftingRedux]);
 
-  const onClose = () => {
+  useEffect(() => {
+    if (isDraftingExisting) {
+      dispatch(
+        draftSlice.actions.start({
+          eventType: Categories_Event.SOMEDAY,
+        })
+      );
+    }
+  }, [dispatch, isDraftingExisting]);
+
+  const close = () => {
     setIsDrafting(false);
     setDraft(null);
+
+    if (isDraftingRedux && draftType === Categories_Event.SOMEDAY) {
+      dispatch(draftSlice.actions.discard());
+    }
   };
 
   const onSubmit = () => {
     draftUtil.submit(draft);
 
-    onClose();
+    dispatch(draftSlice.actions.discard());
+
+    close();
   };
 
   const onSectionClick = (e: MouseEvent) => {
-    e.stopPropagation();
+    // console.log("clicked someday section");
+    // e.stopPropagation();
+    // e.preventDefault();
 
     if (isDraftingRedux) {
-      console.log("closing redux draft");
       dispatch(draftSlice.actions.discard());
-      // return;
-    }
-
-    if (isDrafting) {
-      console.log("clsoing local draft");
-      onClose();
       return;
     }
 
-    dispatch(
-      draftSlice.actions.start({
-        eventType: Categories_Event.SOMEDAY,
-        // event,
-      })
-    );
-
-    if (isDrafting || draft) {
-      setDraft(null);
-      setIsDrafting(false);
+    if (isDrafting && draft) {
+      console.log("clsoing someday local draft");
+      close();
       return;
     }
-
-    //   const isNotAlreadyDrafting = !isDraftingRedux && !isDrafting;
-    //   if (isNotAlreadyDrafting) {
-    //     setIsDrafting(true);
-    //   }
 
     const isAtLimit = somedayEvents.length >= SOMEDAY_EVENTS_LIMIT;
     if (isAtLimit) {
@@ -104,6 +116,12 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
       );
       return;
     }
+
+    dispatch(
+      draftSlice.actions.start({
+        eventType: Categories_Event.SOMEDAY,
+      })
+    );
 
     const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY);
     setDraft(somedayDefault);
@@ -133,21 +151,24 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
           <DraggableSomedayEvent
             event={draft?._id === event?._id ? draft : event}
             id={event._id}
-            isDrafting={draft?._id === event?._id}
+            isDrafting={
+              isDraftingExisting && isDraftingRedux && draft?._id === event?._id
+              // isDraftingExisting && draft?._id === event?._id
+            }
             key={event._id}
-            onClose={onClose}
+            onClose={close}
             onSubmit={onSubmit}
             setEvent={setDraft}
           />
         ))}
 
-        {isDrafting && (
+        {isNewDraft && (
           <DraggableSomedayEvent
             event={draft}
             id={"somedayDraft"}
-            isDrafting={true}
+            isDrafting={isNewDraft && isDraftingRedux}
             key={"somedayKey"}
-            onClose={onClose}
+            onClose={close}
             onSubmit={onSubmit}
             setEvent={setDraft}
           />

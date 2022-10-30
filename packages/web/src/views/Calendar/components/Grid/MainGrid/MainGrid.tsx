@@ -21,7 +21,11 @@ import {
   DRAFT_DURATION_MIN,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { selectDraftId } from "@web/ducks/events/event.selectors";
+import {
+  selectDraftId,
+  selectDraftStatus,
+} from "@web/ducks/events/event.selectors";
+import { Status_DraftEvent } from "@web/common/types/web.event.types";
 
 import { Columns } from "../Columns";
 import { GridRows } from "./GridRows";
@@ -52,6 +56,9 @@ export const MainGrid: FC<Props> = ({
   const { component } = weekProps;
   const { isCurrentWeek, startOfSelectedWeekDay, week, weekDays } = component;
   const { isDrafting } = useSelector(selectDraftId);
+  const { eventType: draftType } = useSelector(
+    selectDraftStatus
+  ) as Status_DraftEvent;
 
   const convertSomedayToTimed = (_id: string, x: number, y: number) => {
     const _start = dateCalcs.getDateByXY(
@@ -78,18 +85,24 @@ export const MainGrid: FC<Props> = ({
     );
   };
 
-  const startDraft = (e: MouseEvent) => {
-    if (isDrafting) {
-      console.log("draftin!!");
+  const onMouseDown = (e: MouseEvent) => {
+    const isSomedayDraftOpen =
+      isDrafting && draftType === Categories_Event.SOMEDAY;
+    const isDraftingAllday =
+      isDrafting && draftType === Categories_Event.ALLDAY;
+
+    if (isSomedayDraftOpen || isDraftingAllday) {
+      console.log("not starting grid draft cuz: already drafting ...");
+      // e.stopPropagation();
+      e.stopPropagation();
       dispatch(draftSlice.actions.discard());
       return;
     }
-    e.stopPropagation();
-    e.preventDefault();
 
-    // check if drafting from sidebar
-    console.log("starting draft");
+    startTimedDraft(e);
+  };
 
+  const startTimedDraft = (e: MouseEvent) => {
     const x = getX(e, isSidebarOpen);
     const _start = dateCalcs.getDateByXY(
       x,
@@ -123,7 +136,7 @@ export const MainGrid: FC<Props> = ({
   return (
     <StyledMainGrid
       id={ID_GRID_MAIN}
-      onMouseDown={startDraft}
+      onMouseDown={onMouseDown}
       ref={mergeRefs([drop, mainGridRef, scrollRef])}
     >
       <Columns

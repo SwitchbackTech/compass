@@ -46,12 +46,13 @@ export const useDraftForm = (
     zIndex: ZIndex.LAYER_3,
   };
 
-  useOnClickOutside(formRef, (e: MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+  // useOnClickOutside(formRef, (e: MouseEvent) => {
+  //   e.stopPropagation();
+  //   e.preventDefault();
 
-    onClickOut();
-  });
+  //   // console.log("clicked out of form"); //++
+  //   onClickOut();
+  // });
 
   return {
     attributes,

@@ -1,8 +1,7 @@
+import { MouseEvent, useCallback, useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
-import { Key } from "ts-keycode-enum";
-import { MouseEvent, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Schema_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Priorities } from "@core/constants/core.constants";
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import {
@@ -16,11 +15,15 @@ import {
   Status_DraftEvent,
 } from "@web/common/types/web.event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/date.constants";
-import { getX } from "@web/common/utils/grid.util";
-import { isDraftingSomeday } from "@web/common/utils";
+import { getElemById, getX } from "@web/common/utils/grid.util";
+import {
+  ID_GRID_ALLDAY_ROW,
+  ID_GRID_MAIN,
+} from "@web/common/constants/web.constants";
 
 import { WeekProps } from "../useWeek";
 import { useDraftUtils } from "./useDraftUtils";
+import { useEventListener } from "../mouse/useEventListener";
 
 export interface Status_Drag {
   hasMoved?: boolean;
@@ -84,12 +87,23 @@ export const useGridDraft = (
   useEffect(() => {
     const isStaleDraft = !isDrafting && draft?.isOpen;
     if (isStaleDraft) {
+      console.log("stale event");
       setDraft(null);
       return;
     }
   }, [isDrafting, draft?.isOpen]);
 
-  useEffect(() => {
+  const discard = useCallback(() => {
+    if (draft) {
+      setDraft(null);
+    }
+
+    if (reduxDraft || reduxDraftType) {
+      dispatch(draftSlice.actions.discard());
+    }
+  }, [dispatch, draft, reduxDraft, reduxDraftType]);
+
+  const handleChange = useCallback(() => {
     if (isDrafting) {
       if (activity === "createShortcut") {
         const defaultDraft = getDefaultEvent(
@@ -139,6 +153,10 @@ export const useGridDraft = (
   ]);
 
   useEffect(() => {
+    handleChange();
+  }, [handleChange]);
+
+  useEffect(() => {
     if (isDragging) {
       setDraft((_draft) => {
         const initialDiffMin = dayjs(_draft.endDate).diff(
@@ -156,98 +174,23 @@ export const useGridDraft = (
     }
   }, [isDragging]);
 
-  useEffect(() => {
-    const handleMouseUp = (e: MouseEvent) => {
-      if (!draft) {
-        // console.log("returning no draft");
-        // e.preventDefault();
-        // e.stopPropagation();
-        if (reduxDraft) {
-          console.log("closing redux draft");
-          dispatch(draftSlice.actions.discard());
-        }
-        return;
-      }
+  const submit = useCallback(() => {
+    draftUtil.submit(draft);
 
-      e.preventDefault();
-      e.stopPropagation();
+    // workaround for event not showing up upon first render
+    const startWeek = dayjs(draft.startDate).week();
+    if (startWeek !== weekProps.component.week) {
+      weekProps.state.setWeek(startWeek - 1);
+    }
 
-      // console.log("curr draft:", draft);
-      const isNew = !draft._id;
-      const hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved;
-      const clickedOnExisting = !isNew && !hasMoved;
-      const shouldOpenForm = (isNew || clickedOnExisting) && !draft.isOpen;
-      const shouldSubmit = !draft.isOpen;
-
-      if (isResizing) {
-        stopResizing();
-      }
-      if (isDragging) {
-        stopDragging();
-      }
-
-      if (shouldOpenForm) {
-        setDraft((_draft) => {
-          return { ..._draft, isOpen: true };
-        });
-        return;
-      }
-
-      shouldSubmit && submit();
-    };
-
-    const shortCutHandler = (e: KeyboardEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (e.which === Key.C) {
-        if (isDraftingSomeday()) {
-          return;
-        }
-        setDraft({ ...draft, isOpen: true });
-      }
-    };
-
-    document.addEventListener("mouseup", handleMouseUp);
-    document.addEventListener("keyup", shortCutHandler);
-    return () => {
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener("keyup", shortCutHandler);
-    };
-  }); // reminder: this is running every render - not ideal
-
-  useEffect(() => {
-    // const timedGrid = document.getElemById(ID_GRID_MAIN);
-
-    const mouseMoveHandler = (e: MouseEvent) => {
-      if (isResizing && !draft.isAllDay) {
-        resize(e);
-      } else if (isDragging) {
-        drag(e);
-      }
-      // }
-    };
-    // timedGrid.addEventListener("mousemove", mouseMoveHandler);
-    document.addEventListener("mousemove", mouseMoveHandler);
-    return () => {
-      document.removeEventListener("mousemove", mouseMoveHandler);
-    };
-  }); // reminder: this is running every render - not ideal
+    discard();
+  }, []);
 
   const deleteEvent = () => {
     if (draft._id) {
       dispatch(deleteEventSlice.actions.request({ _id: draft._id }));
     }
     discard();
-  };
-
-  const discard = () => {
-    if (draft) {
-      setDraft(null);
-    }
-    if (reduxDraft) {
-      dispatch(draftSlice.actions.discard());
-    }
   };
 
   const drag = (e: MouseEvent) => {
@@ -374,18 +317,6 @@ export const useGridDraft = (
     setDateBeingChanged("endDate");
   };
 
-  const submit = (draft?: Schema_GridEvent) => {
-    draftUtil.submit(draft);
-
-    // workaround for event not showing up upon first render
-    const startWeek = dayjs(draft.startDate).week();
-    if (startWeek !== weekProps.component.week) {
-      weekProps.state.setWeek(startWeek - 1);
-    }
-
-    discard();
-  };
-
   const updateTimesDuringDrag = (e: MouseEvent) => {
     setDraft((_draft) => {
       const x = getX(e, isSidebarOpen);
@@ -418,6 +349,108 @@ export const useGridDraft = (
     });
   };
 
+  const _onAllDayRowMouseUp = useCallback(
+    (e: MouseEvent) => {
+      if (isDragging) {
+        stopDragging();
+      }
+
+      if (isDrafting && reduxDraftType === Categories_Event.SOMEDAY) {
+        e.stopPropagation();
+        discard();
+        return;
+      }
+
+      const shouldOpenForm = !draft?.isOpen;
+      // if (!draft._id && shouldOpenForm) {
+      if (shouldOpenForm) {
+        setDraft((_draft) => {
+          return { ..._draft, isOpen: true };
+        });
+      }
+    },
+    [discard, draft?.isOpen, isDrafting, isDragging, reduxDraftType]
+  );
+
+  const _onMainGridMouseUp = useCallback(
+    (e: MouseEvent) => {
+      console.log("maingrid up");
+      // if (!draft) {
+      if (!draft || !isDrafting) {
+        // e.stopPropagation();
+        console.log("skipping mouse action, cuz no draft");
+        return;
+      }
+
+      if (isDrafting && reduxDraft === Categories_Event.ALLDAY) {
+        discard();
+        return;
+      }
+
+      if (isDrafting && reduxDraftType === Categories_Event.SOMEDAY) {
+        e.stopPropagation();
+        discard();
+        return;
+      }
+
+      if (isResizing) {
+        console.log("stopping resize");
+        stopResizing();
+      }
+      if (isDragging) {
+        console.log("stopping drag [main]");
+        stopDragging();
+      }
+
+      const isNew = !draft._id;
+      const hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved;
+      const clickedOnExisting = !isNew && !hasMoved;
+      const shouldOpenForm = (isNew || clickedOnExisting) && !draft.isOpen;
+      const shouldSubmit = !draft.isOpen;
+
+      if (shouldOpenForm) {
+        console.log("opening form...");
+        setDraft((_draft) => {
+          return { ..._draft, isOpen: true };
+        });
+        return;
+      }
+
+      shouldSubmit && submit();
+    },
+    [
+      discard,
+      draft,
+      dragStatus?.hasMoved,
+      isDrafting,
+      isDragging,
+      isResizing,
+      reduxDraft,
+      reduxDraftType,
+      resizeStatus?.hasMoved,
+      submit,
+    ]
+  );
+
+  const _onMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (isResizing && !draft.isAllDay) {
+        resize(e);
+      } else if (isDragging) {
+        drag(e);
+      }
+    },
+    [draft?.isAllDay, isDragging, isResizing]
+  );
+
+  useEventListener("mousemove", _onMouseMove);
+  useEventListener("mouseup", _onMainGridMouseUp, getElemById(ID_GRID_MAIN));
+  useEventListener(
+    "mouseup",
+    _onAllDayRowMouseUp,
+    getElemById(ID_GRID_ALLDAY_ROW)
+  );
+
   return {
     draftState: {
       draft,
@@ -438,5 +471,6 @@ export const useGridDraft = (
   };
 };
 
-export type Hook_Draft = ReturnType<typeof useGridDraft>;
-export type Helpers_Draft = Hook_Draft["draftHelpers"];
+//++
+// export type Hook_Draft = ReturnType<typeof useGridDraft>;
+// export type Helpers_Draft = Hook_Draft["draftHelpers"];

@@ -96,6 +96,7 @@ export const useShortcuts = (
 /**********************
  * Delete once above works fully ++
  **********************/
+//++
 /*
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {

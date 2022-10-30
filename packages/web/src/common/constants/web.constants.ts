@@ -6,6 +6,7 @@ export const ID_ALLDAY_COLUMNS = "allDayColumns";
 export const ID_GRID_EVENTS_ALLDAY = "allDayEvents";
 export const ID_GRID_EVENTS_TIMED = "timedEvents";
 export const ID_GRID_MAIN = "mainGrid";
+export const ID_MAIN = "mainSection";
 export const ID_SIDEBAR = "sidebar";
 export const ID_SIDEBAR_FORM = "sidebarForm";
 

@@ -1,4 +1,4 @@
-import React, { FC, MouseEvent, useEffect, useState } from "react";
+import React, { FC, MouseEvent, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useGridDraft } from "@web/views/Calendar/hooks/draft/useGridDraft";
 import { useDraftForm } from "@web/views/Calendar/hooks/draft/useDraftForm";
@@ -14,6 +14,8 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid.util";
 import { getCategory } from "@web/common/utils/event.util";
 import { Categories_Event } from "@core/types/event.types";
+import { useSelector } from "react-redux";
+import { selectDraftId } from "@web/ducks/events/event.selectors";
 
 import { GridEvent } from "../Grid";
 
@@ -41,9 +43,13 @@ export const Draft: FC<Props> = ({
     weekProps,
     isSidebarOpen
   );
-
-  const isDrafting = draftState.draft !== null;
   const { draft, isDragging } = draftState;
+
+  const { isDrafting } = useSelector(selectDraftId);
+
+  // const isDraftingFr = useMemo(() => {
+  //   isDrafting && draftState.draft !== null;
+  // }, [draftState.draft, isDrafting]);
 
   const getContainer = () => {
     if (draft.isAllDay) {
@@ -55,6 +61,7 @@ export const Draft: FC<Props> = ({
 
   const onClickOut = () => {
     if (draft.isOpen) {
+      console.log("closing Draft cuz clicked out");
       draftHelpers.discard();
     }
   };
