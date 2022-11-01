@@ -25,21 +25,12 @@ interface SomedayFormProps extends StyledFormProps {
 }
 
 export const StyledEventForm = styled.form<SomedayFormProps>`
-  /* top: ${({ x }) => (x ? x : 0)}; */
-  /* left: ${({ y }) => (y ? y : 0)}; */
-  /* position: absolute; */
-  /* position: fixed; */
-  width: 585px;
-
-  //other //++
-  /* min-height: 255px; */
-  padding: 18px 20px;
   background: ${({ priority }) =>
     getColor(
       colorNameByPriority[priority || Priorities.UNASSIGNED] as ColorNames
     )};
-  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.25);
   border-radius: 4px;
+  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.25);
   color: ${({ priority }) =>
     getInvertedColor(
       colorNameByPriority[
@@ -47,7 +38,9 @@ export const StyledEventForm = styled.form<SomedayFormProps>`
       ] as InvertedColorNames
     )};
   font-size: 20px;
+  padding: 18px 20px;
   transition: ${ANIMATION_TIME_3_MS};
+  width: 585px;
   z-index: ${ZIndex.LAYER_1};
 `;
 

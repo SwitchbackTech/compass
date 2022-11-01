@@ -1,7 +1,13 @@
-import React, { FC, MouseEvent, useEffect, useMemo, useState } from "react";
+import React, { FC, MouseEvent, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useGridDraft } from "@web/views/Calendar/hooks/draft/useGridDraft";
-import { useDraftForm } from "@web/views/Calendar/hooks/draft/useDraftForm";
+import {
+  autoUpdate,
+  useFloating,
+  flip,
+  offset,
+  shift,
+} from "@floating-ui/react-dom";
 import { EventForm } from "@web/views/Forms/EventForm";
 import {
   ID_GRID_EVENTS_ALLDAY,
@@ -16,6 +22,7 @@ import { getCategory } from "@web/common/utils/event.util";
 import { Categories_Event } from "@core/types/event.types";
 import { useSelector } from "react-redux";
 import { selectDraftId } from "@web/ducks/events/event.selectors";
+import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 
 import { GridEvent } from "../Grid";
 
@@ -47,11 +54,9 @@ export const Draft: FC<Props> = ({
 
   const { isDrafting } = useSelector(selectDraftId);
 
-  // const isDraftingFr = useMemo(() => {
-  //   isDrafting && draftState.draft !== null;
-  // }, [draftState.draft, isDrafting]);
-
   const getContainer = () => {
+    if (!draft) return null;
+
     if (draft.isAllDay) {
       return getElemById(ID_GRID_EVENTS_ALLDAY);
     }
@@ -59,27 +64,33 @@ export const Draft: FC<Props> = ({
     return getElemById(ID_GRID_EVENTS_TIMED);
   };
 
-  const onClickOut = () => {
-    if (draft.isOpen) {
-      console.log("closing Draft cuz clicked out");
-      draftHelpers.discard();
-    }
-  };
-
-  const category = getCategory(draft);
-
-  const {
-    attributes,
-    formRef,
-    popperStyles,
-    setPopperElement,
-    setReferenceElement,
-  } = useDraftForm(category, onClickOut);
+  const { x, y, reference, floating, strategy } = useFloating({
+    strategy: "fixed",
+    middleware: [
+      flip({
+        fallbackPlacements: [
+          "right-start",
+          "right",
+          "left-start",
+          "left",
+          "top-start",
+          "bottom-start",
+          "top",
+          "bottom",
+        ],
+        fallbackStrategy: "bestFit",
+      }),
+      offset(7),
+      shift(),
+    ],
+    placement: "right-start",
+    whileElementsMounted: autoUpdate,
+  });
 
   if (isLoadingDOM || !draft) return null;
 
   const container = getContainer();
-
+  const category = getCategory(draft);
   const isGridEvent =
     category === Categories_Event.ALLDAY || category === Categories_Event.TIMED;
 
@@ -110,17 +121,18 @@ export const Draft: FC<Props> = ({
               draftHelpers.setDateBeingChanged(dateToChange);
               draftHelpers.setIsResizing(true);
             }}
-            ref={setReferenceElement}
+            ref={reference}
             weekProps={weekProps}
           />
 
-          <div
-            ref={setPopperElement}
-            style={popperStyles}
-            {...attributes.popper}
-          >
+          <div>
             {draft?.isOpen && (
-              <div ref={formRef}>
+              <StyledFloatContainer
+                ref={floating}
+                strategy={strategy}
+                top={y ?? 0}
+                left={x ?? 0}
+              >
                 <EventForm
                   event={draft}
                   onClose={draftHelpers.discard}
@@ -128,7 +140,7 @@ export const Draft: FC<Props> = ({
                   onSubmit={draftHelpers.submit}
                   setEvent={draftHelpers.setDraft}
                 />
-              </div>
+              </StyledFloatContainer>
             )}
           </div>
         </>
