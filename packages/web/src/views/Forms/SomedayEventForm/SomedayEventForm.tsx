@@ -5,7 +5,6 @@ import { DeleteIcon } from "@web/components/Icons";
 import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
 import { getFutureEventsSlice } from "@web/ducks/events/event.slice";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
-import { MonthPicker } from "@web/views/Forms/EventForm/MonthPicker";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 import {
@@ -107,13 +106,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       <PrioritySection
         onSetEventField={onSetEventField}
         priority={event.priority}
-      />
-
-      <MonthPicker
-        isPickerOpen={isPickerOpen}
-        onSetEventField={onSetEventField}
-        setIsPickerOpen={setIsPickerOpen}
-        startMonth={event.startDate}
       />
 
       <StyledDescriptionField
