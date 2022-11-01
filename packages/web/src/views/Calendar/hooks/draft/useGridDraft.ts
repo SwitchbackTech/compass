@@ -184,7 +184,7 @@ export const useGridDraft = (
     }
 
     discard();
-  }, []);
+  }, [discard, draft, draftUtil, weekProps.component.week, weekProps.state]);
 
   const deleteEvent = () => {
     if (draft._id) {
@@ -434,13 +434,13 @@ export const useGridDraft = (
 
   const _onMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (isResizing && !draft.isAllDay) {
+      if (isResizing && !draft?.isAllDay) {
         resize(e);
       } else if (isDragging) {
         drag(e);
       }
     },
-    [draft?.isAllDay, isDragging, isResizing]
+    [draft?.isAllDay, drag, isDragging, isResizing, resize]
   );
 
   useEventListener("mousemove", _onMouseMove);
