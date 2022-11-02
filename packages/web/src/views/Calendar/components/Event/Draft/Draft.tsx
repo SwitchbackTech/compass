@@ -45,7 +45,7 @@ export const Draft: FC<Props> = ({
     setIsLoadingDOM(false);
   }, []);
 
-  const { draftState, draftHelpers } = useGridDraft(
+  const { draftState, draftUtil } = useGridDraft(
     dateCalcs,
     weekProps,
     isSidebarOpen
@@ -109,7 +109,7 @@ export const Draft: FC<Props> = ({
             onEventMouseDown={(event: Schema_GridEvent, e: MouseEvent) => {
               e.stopPropagation();
               e.preventDefault();
-              draftHelpers.setIsDragging(true);
+              draftUtil.setIsDragging(true);
             }}
             onScalerMouseDown={(
               event: Schema_GridEvent,
@@ -118,8 +118,8 @@ export const Draft: FC<Props> = ({
             ) => {
               e.stopPropagation();
               e.preventDefault();
-              draftHelpers.setDateBeingChanged(dateToChange);
-              draftHelpers.setIsResizing(true);
+              draftUtil.setDateBeingChanged(dateToChange);
+              draftUtil.setIsResizing(true);
             }}
             ref={reference}
             weekProps={weekProps}
@@ -135,10 +135,12 @@ export const Draft: FC<Props> = ({
               >
                 <EventForm
                   event={draft}
-                  onClose={draftHelpers.discard}
-                  onDelete={draftHelpers.deleteEvent}
-                  onSubmit={draftHelpers.submit}
-                  setEvent={draftHelpers.setDraft}
+                  onClose={draftUtil.discard}
+                  onDelete={draftUtil.deleteEvent}
+                  onSubmit={(_draft: Schema_GridEvent) =>
+                    draftUtil.submit(_draft)
+                  }
+                  setEvent={draftUtil.setDraft}
                 />
               </StyledFloatContainer>
             )}

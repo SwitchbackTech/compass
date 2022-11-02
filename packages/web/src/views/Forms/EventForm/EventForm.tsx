@@ -91,6 +91,16 @@ export const EventForm: React.FC<FormProps> = ({
   }, []);
 
   useEffect(() => {
+    const getDefaultDateTimes = (event: Schema_Event) => {
+      const start = event?.startDate ? dayjs(event.startDate) : dayjs();
+      const startTime = getTimeOptionByValue(start);
+      const startDate = start.toDate();
+
+      const { endDate, endTime } = getDefaultEndDateTimes(event);
+
+      return { startDate, startTime, endDate, endTime };
+    };
+
     const dt = getDefaultDateTimes(event);
 
     setEvent(event || {});
@@ -99,20 +109,11 @@ export const EventForm: React.FC<FormProps> = ({
     setSelectedStartDate(dt.startDate);
     setSelectedEndDate(dt.endDate);
     setIsFormOpen(true);
-  }, []);
+  }, [event, setEvent]);
 
   /***********
    * Helpers
    **********/
-  const getDefaultDateTimes = (event: Schema_Event) => {
-    const start = event?.startDate ? dayjs(event.startDate) : dayjs();
-    const startTime = getTimeOptionByValue(start);
-    const startDate = start.toDate();
-
-    const { endDate, endTime } = getDefaultEndDateTimes(event);
-
-    return { startDate, startTime, endDate, endTime };
-  };
 
   const getDefaultEndDateTimes = (event: Schema_Event) => {
     const end = event?.endDate ? dayjs(event.endDate) : dayjs();
@@ -188,6 +189,7 @@ export const EventForm: React.FC<FormProps> = ({
 
   const onSetEventField: SetEventFormField = (field, value) => {
     const newEvent = { ...event, [field]: value };
+    console.log("setting after update");
     setEvent(newEvent);
   };
 

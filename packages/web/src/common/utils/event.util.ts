@@ -10,9 +10,10 @@ import {
   Params_Events,
   Schema_Event,
 } from "@core/types/event.types";
-import { Priorities } from "@core/constants/core.constants";
+import { Origin, Priorities } from "@core/constants/core.constants";
 
 import { Schema_GridEvent } from "../types/web.event.types";
+import { removeGridFields } from "./grid.util";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -63,6 +64,13 @@ export const getDefaultEvent = (
   }
 };
 
+export const getWeekDayLabel = (day: Dayjs | Date) => {
+  if (day instanceof Date) {
+    return dayjs(day).format(YEAR_MONTH_DAY_COMPACT_FORMAT);
+  }
+  return day.format(YEAR_MONTH_DAY_COMPACT_FORMAT);
+};
+
 // rudimentary handling of errors
 // meant for temporary testing, will be replaced
 export const handleErrorTemp = (error: Error) => {
@@ -74,13 +82,20 @@ export const handleErrorTemp = (error: Error) => {
   alert(error);
 };
 
-export const getWeekDayLabel = (day: Dayjs | Date) => {
-  if (day instanceof Date) {
-    return dayjs(day).format(YEAR_MONTH_DAY_COMPACT_FORMAT);
+export const prepareEvent = (
+  draft: Schema_GridEvent,
+  original?: Schema_GridEvent
+) => {
+  let eventToClean: Schema_GridEvent = { ...original };
+  if (!original) {
+    eventToClean = { ...draft };
   }
-  return day.format(YEAR_MONTH_DAY_COMPACT_FORMAT);
-};
 
+  const _event = removeGridFields(eventToClean);
+  const event = { ..._event, origin: Origin.COMPASS } as Schema_Event;
+
+  return event;
+};
 /*
 -------------------------------------------------------------------------------
 Demo of using pagination and group ordering. 

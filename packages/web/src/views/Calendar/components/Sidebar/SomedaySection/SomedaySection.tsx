@@ -12,13 +12,16 @@ import {
 } from "@web/ducks/events/event.selectors";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { getDefaultEvent } from "@web/common/utils/event.util";
+import { getDefaultEvent, prepareEvent } from "@web/common/utils/event.util";
 import {
   Schema_GridEvent,
   Status_DraftEvent,
 } from "@web/common/types/web.event.types";
-import { useDraftUtils } from "@web/views/Calendar/hooks/draft/useDraftUtils";
-import { draftSlice } from "@web/ducks/events/event.slice";
+import {
+  createEventSlice,
+  draftSlice,
+  editEventSlice,
+} from "@web/ducks/events/event.slice";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
 import { DraggableSomedayEvent } from "../EventsList/SomedayEvent/DraggableSomedayEvent";
@@ -44,8 +47,6 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
   const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
 
-  const draftUtil = useDraftUtils();
-
   //++ memo-ize
   const existingIds = somedayEvents.map((se) => se._id);
   const isNewDraft =
@@ -59,11 +60,11 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
   }, [existingIds, draft]);
 
   useEffect(() => {
-    if (!isDraftingRedux) {
+    if (!isDraftingRedux || draftType !== Categories_Event.SOMEDAY) {
       setIsDrafting(false);
       setDraft(null);
     }
-  }, [isDraftingRedux]);
+  }, [draftType, isDraftingRedux]);
 
   useEffect(() => {
     if (isDraftingExisting) {
@@ -85,9 +86,19 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
   };
 
   const onSubmit = () => {
-    draftUtil.submit(draft);
+    const event = prepareEvent(draft);
 
-    dispatch(draftSlice.actions.discard());
+    const isExisting = event._id;
+    if (isExisting) {
+      dispatch(
+        editEventSlice.actions.request({
+          _id: event._id,
+          event,
+        })
+      );
+    } else {
+      dispatch(createEventSlice.actions.request(event));
+    }
 
     close();
   };

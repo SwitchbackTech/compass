@@ -14,6 +14,7 @@ import {
   Action_DraftEvent,
   Action_Draft_Drag,
   Action_Draft_Resize,
+  Action_Draft_Swap,
   Action_EditEvent,
   Action_InsertEvents,
   Action_TimezoneChange,
@@ -82,13 +83,24 @@ export const draftSlice = createSlice({
         },
       };
     },
-    startDragging: (state, action: Action_Draft_Drag) => {
+
+    startDragging: (state, action) => {
       const { event } = action.payload;
       state.event = event;
       state.status = {
         ...state.status,
         activity: "dragging",
         isDrafting: true,
+      };
+    },
+
+    swap: (state, action: Action_Draft_Swap) => {
+      const { category, event } = action.payload;
+      state.event = event;
+      state.status = {
+        ...initialDraft.status,
+        isDrafting: true,
+        eventType: category,
       };
     },
   },

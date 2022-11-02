@@ -86,12 +86,14 @@ export const MainGrid: FC<Props> = ({
   };
 
   const onMouseDown = (e: MouseEvent) => {
-    const isSomedayDraftOpen =
-      isDrafting && draftType === Categories_Event.SOMEDAY;
-    const isDraftingAllday =
-      isDrafting && draftType === Categories_Event.ALLDAY;
+    //++
+    // const isSomedayDraftOpen =
+    //   isDrafting && draftType === Categories_Event.SOMEDAY;
+    // const isDraftingAllday =
+    //   isDrafting && draftType === Categories_Event.ALLDAY;
 
-    if (isSomedayDraftOpen || isDraftingAllday) {
+    // if (isSomedayDraftOpen || isDraftingAllday) {
+    if (isDrafting) {
       dispatch(draftSlice.actions.discard());
       return;
     }

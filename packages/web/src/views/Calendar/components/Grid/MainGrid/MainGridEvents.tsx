@@ -1,4 +1,4 @@
-import React from "react";
+import React, { MouseEvent } from "react";
 import {
   selectDraftId,
   selectGridEvents,
@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { draftSlice } from "@web/ducks/events/event.slice";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
 
@@ -22,6 +23,18 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
   const timedEvents = useSelector(selectGridEvents);
   const { draftId, isDrafting } = useSelector(selectDraftId);
+
+  const onMouseDown = (e: MouseEvent, event: Schema_Event) => {
+    e.stopPropagation();
+    if (isDrafting) {
+      dispatch(
+        draftSlice.actions.swap({ event, category: Categories_Event.TIMED })
+      );
+      return;
+    }
+
+    editTimedEvent(event);
+  };
 
   const resizeTimedEvent = (
     event: Schema_GridEvent,
@@ -51,9 +64,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
             key={`initial-${event._id}`}
             measurements={measurements}
             onEventMouseDown={(event, e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              editTimedEvent(event);
+              onMouseDown(e, event);
             }}
             onScalerMouseDown={(
               event,

@@ -1,11 +1,14 @@
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import {
   clearLocalStorageMock,
+  mockResizeObserver,
   mockScroll,
 } from "@web/__tests__/utils/test.util";
 
 beforeAll(() => {
   mockScroll();
+  mockResizeObserver();
+
   server.listen();
 });
 
