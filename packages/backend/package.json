@@ -28,7 +28,7 @@
     "@types/jest": "^29.0.0",
     "@types/jsonwebtoken": "^8.5.5",
     "@types/module-alias": "^2.0.1",
-    "@types/node": "^17.0.23",
+    "@types/node": "^18.11.9",
     "alias-hq": "^5.3.2",
     "tsconfig-paths": "^3.12.0"
   }
