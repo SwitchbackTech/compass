@@ -14597,10 +14597,10 @@ secure-electron-license-keys@^1.1.1:
     arg "^5.0.2"
     esm "^3.2.25"
 
-secure-electron-store@^3.0.1:
-  version "3.0.4"
-  resolved "https://registry.yarnpkg.com/secure-electron-store/-/secure-electron-store-3.0.4.tgz#7112da144a327f32790369393569815c2b29b018"
-  integrity sha512-pzYOKB3ZNmoxhREx7CepNMdxFm5VPYx2uenYLiZw9xqweSsXPocGm4LMjVFe4v7w3VTxXV9Ka6fhfZcnoACiag==
+secure-electron-store@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/secure-electron-store/-/secure-electron-store-4.0.2.tgz#d529e1dad90e9ad394e14163a1a8400770ea251b"
+  integrity sha512-sWYpmnxso8duEYJvsiS3Ev4cdqozbvTYorsaZ0Yl33YEOqo8p0H8p3ZrteLvnchH52JdYHqFWGGxadAo137zZw==
   dependencies:
     "@msgpack/msgpack" "^2.7.2"
     process "^0.11.10"
