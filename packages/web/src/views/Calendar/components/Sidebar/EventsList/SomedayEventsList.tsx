@@ -26,7 +26,6 @@ export const SomedayEventsList: React.FC<Props> = ({
 }) => {
   useEffect(() => {
     // So here should be debounced fetching - so not every pixel resizing will cause refetching
-    // console.log("getting events ...");
     getEvents();
     // console.log(eventIds);
   }, [offset, priorities.length, pageSize]);

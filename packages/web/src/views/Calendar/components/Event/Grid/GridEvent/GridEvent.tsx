@@ -71,8 +71,6 @@ const _GridEvent = (
       isPlaceholder={isPlaceholder}
       isResizing={isResizing}
       left={position.left}
-      // lineClamp={event.isAllDay ? 1 : getLineClamp(durationHours)}
-      // lineClamp={1}
       onMouseDown={(e) => {
         onEventMouseDown(event, e);
       }}
@@ -112,3 +110,8 @@ const _GridEvent = (
 
 export const GridEvent = forwardRef(_GridEvent);
 export const GridEventMemo = memo(GridEvent);
+
+/*
+      // lineClamp={event.isAllDay ? 1 : getLineClamp(durationHours)}
+      // lineClamp={1}
+*/

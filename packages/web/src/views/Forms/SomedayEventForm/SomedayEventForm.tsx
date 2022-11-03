@@ -82,7 +82,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       onMouseDown={stopPropagation}
       onMouseUp={(e) => {
         if (isPickerOpen) {
-          console.log("!!closing picker");
           setIsPickerOpen(false);
         }
         e.stopPropagation();

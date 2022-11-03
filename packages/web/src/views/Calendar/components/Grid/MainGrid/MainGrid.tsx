@@ -92,9 +92,6 @@ export const MainGrid: FC<Props> = ({
       isDrafting && draftType === Categories_Event.ALLDAY;
 
     if (isSomedayDraftOpen || isDraftingAllday) {
-      console.log("not starting grid draft cuz: already drafting ...");
-      // e.stopPropagation();
-      e.stopPropagation();
       dispatch(draftSlice.actions.discard());
       return;
     }

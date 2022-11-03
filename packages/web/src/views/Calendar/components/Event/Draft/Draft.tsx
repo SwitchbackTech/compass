@@ -149,11 +149,3 @@ export const Draft: FC<Props> = ({
     container
   );
 };
-
-/*
-  //   const draftHelpersMemo = useMemo(() => draftHelpers, []);
-  //   const isDraggingMemo = useMemo(() => isDragging, []);
-  //   const draftIdMemo = useMemo(() => draft?._id || null, []);
-  //   const draftMemo = useMemo(() => draft, []);
-  // const { component } = weekProps;
-*/

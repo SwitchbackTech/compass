@@ -1,4 +1,4 @@
-import React, { FC, MouseEvent, useEffect, useRef, useState } from "react";
+import React, { FC, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { SOMEDAY_EVENTS_LIMIT } from "@core/constants/core.constants";
 import { ColorNames } from "@core/types/color.types";
@@ -12,7 +12,6 @@ import {
 } from "@web/ducks/events/event.selectors";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { useOnClickOutside } from "@web/common/hooks/useOnClickOutside";
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import {
   Schema_GridEvent,
@@ -93,18 +92,13 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
     close();
   };
 
-  const onSectionClick = (e: MouseEvent) => {
-    // console.log("clicked someday section");
-    // e.stopPropagation();
-    // e.preventDefault();
-
+  const onSectionClick = () => {
     if (isDraftingRedux) {
       dispatch(draftSlice.actions.discard());
       return;
     }
 
     if (isDrafting && draft) {
-      console.log("clsoing someday local draft");
       close();
       return;
     }
@@ -153,7 +147,6 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
             id={event._id}
             isDrafting={
               isDraftingExisting && isDraftingRedux && draft?._id === event?._id
-              // isDraftingExisting && draft?._id === event?._id
             }
             key={event._id}
             onClose={close}

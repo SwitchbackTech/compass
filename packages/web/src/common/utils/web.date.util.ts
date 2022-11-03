@@ -245,13 +245,6 @@ const _addTimesToDates = (dt: Schema_SelectedDates) => {
     .minute(end.minute())
     .format();
 
-  console.log(`
-    startDate: ${startDate} 
-    startTime: ${dt.startTime.value}
-
-    endDate: ${endDate}
-    endTime: ${dt.endTime.value}
-    `);
   return { startDate, endDate };
 };
 

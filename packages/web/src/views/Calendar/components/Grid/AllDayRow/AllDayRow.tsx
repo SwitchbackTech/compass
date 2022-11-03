@@ -38,7 +38,6 @@ import {
   Schema_GridEvent,
   Status_DraftEvent,
 } from "@web/common/types/web.event.types";
-import { isDrafting } from "@web/common/utils";
 
 import { StyledEvent } from "../../Event/styled";
 import { StyledAllDayColumns, StyledGridCol } from "../Columns/styled";
@@ -141,25 +140,13 @@ export const AllDayRow: FC<Props> = ({
   };
 
   const onMouseDown = (e: MouseEvent) => {
-    const isDraftingSomeday =
-      isDrafting && draftType === Categories_Event.SOMEDAY;
-    const isDraftingAllday =
-      isDrafting && draftType === Categories_Event.ALLDAY;
-
-    if (isDraftingSomeday) {
-      console.log("already drafting someday ...");
-      return;
-    }
-
-    // if (isDraftingAllday) {
     if (isDrafting) {
-      console.log("already drafting ...");
-      e.stopPropagation();
-      dispatch(draftSlice.actions.discard());
+      if (draftType !== Categories_Event.SOMEDAY) {
+        dispatch(draftSlice.actions.discard());
+      }
       return;
     }
 
-    console.log("starting new all day...");
     startAlldayDraft(e);
   };
 
@@ -230,12 +217,3 @@ export const AllDayRow: FC<Props> = ({
     </StyledAllDayRow>
   );
 };
-
-/*
-++ remove
-  // const _startOfView = useRef(component.startOfSelectedWeekDay);
-
-  // useLayoutEffect(() => {
-  //   _startOfView.current = component.startOfSelectedWeekDay;
-  // }, [component]);
-*/

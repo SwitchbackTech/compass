@@ -16,10 +16,7 @@ import {
 } from "@web/common/types/web.event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/date.constants";
 import { getElemById, getX } from "@web/common/utils/grid.util";
-import {
-  ID_GRID_ALLDAY_ROW,
-  ID_GRID_MAIN,
-} from "@web/common/constants/web.constants";
+import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 
 import { WeekProps } from "../useWeek";
 import { useDraftUtils } from "./useDraftUtils";
@@ -87,7 +84,6 @@ export const useGridDraft = (
   useEffect(() => {
     const isStaleDraft = !isDrafting && draft?.isOpen;
     if (isStaleDraft) {
-      console.log("stale event");
       setDraft(null);
       return;
     }
@@ -184,7 +180,7 @@ export const useGridDraft = (
     }
 
     discard();
-  }, [discard, draft, draftUtil, weekProps.component.week, weekProps.state]);
+  }, []);
 
   const deleteEvent = () => {
     if (draft._id) {
@@ -193,118 +189,198 @@ export const useGridDraft = (
     discard();
   };
 
-  const drag = (e: MouseEvent) => {
-    if (!isDragging) {
-      console.error("trying to drag before setting isDragging");
-      return;
-    }
-    const x = getX(e, isSidebarOpen);
+  const drag = useCallback(
+    (e: MouseEvent) => {
+      const updateTimesDuringDrag = (e: MouseEvent) => {
+        setDraft((_draft) => {
+          const x = getX(e, isSidebarOpen);
+          const y = e.clientY - dragStatus?.initialYOffset || Y_BUFFER;
 
-    const currTime = dateCalcs.getDateStrByXY(
-      x,
-      e.clientY,
-      weekProps.component.startOfSelectedWeekDay
-    );
-    const hasMoved = currTime !== draft.startDate;
+          const _initialStart = dateCalcs.getDateByXY(
+            x,
+            y,
+            weekProps.component.startOfSelectedWeekDay
+          );
 
-    if (!dragStatus?.hasMoved && hasMoved) {
-      setDragStatus((_status) => ({
-        ..._status,
-        hasMoved: true,
-      }));
-    }
+          const startDate = _draft?.isAllDay
+            ? _initialStart.format(YEAR_MONTH_DAY_FORMAT)
+            : _initialStart.format();
 
-    updateTimesDuringDrag(e);
-  };
+          const _end = _initialStart.add(
+            dragStatus?.initialMinutesDifference || 0,
+            "minutes"
+          );
+          const endDate = _draft.isAllDay
+            ? _end.format(YEAR_MONTH_DAY_FORMAT)
+            : _end.format();
 
-  const flipIfNeeded = (currTime: Dayjs) => {
-    let startDate = draft.startDate;
-    let endDate = draft.endDate;
-
-    let dateKey = dateBeingChanged;
-    const oppositeKey =
-      dateBeingChanged === "startDate" ? "endDate" : "startDate";
-    const opposite = dayjs(draft[oppositeKey]);
-
-    const comparisonKeyword =
-      dateBeingChanged === "startDate" ? "after" : "before";
-
-    if (comparisonKeyword === "after") {
-      // if (currTime.isSame(opposite) || currTime.isAfter(opposite)) {
-      if (currTime.isAfter(opposite)) {
-        dateKey = oppositeKey;
-        startDate = draft.endDate;
-        setDateBeingChanged(dateKey);
-      }
-    }
-
-    if (comparisonKeyword === "before") {
-      if (currTime.isBefore(opposite)) {
-        // if (currTime.isSame(opposite) || currTime.isBefore(opposite)) {
-        dateKey = oppositeKey;
-        endDate = draft.startDate;
-        setDateBeingChanged(dateKey);
-      }
-    }
-
-    setDraft((_draft) => {
-      return {
-        ..._draft,
-        isOpen: false,
-        endDate,
-        startDate,
-        priority: draft.priority,
-        [dateKey]: currTime.format(),
+          return {
+            ..._draft,
+            startDate,
+            endDate,
+            priority: _draft?.priority || Priorities.UNASSIGNED,
+          };
+        });
       };
-    });
-  };
+      if (!isDragging) {
+        console.error("trying to drag before setting isDragging");
+        return;
+      }
+      const x = getX(e, isSidebarOpen);
 
-  const isValidMovement = (currTime: Dayjs) => {
-    const noChange = draft[dateBeingChanged] === currTime.format();
-    if (noChange) return false;
+      const currTime = dateCalcs.getDateStrByXY(
+        x,
+        e.clientY,
+        weekProps.component.startOfSelectedWeekDay
+      );
+      const hasMoved = currTime !== draft.startDate;
 
-    const diffDay = currTime.day() !== dayjs(draft.startDate).day();
-    if (diffDay) return false;
+      if (!dragStatus?.hasMoved && hasMoved) {
+        setDragStatus((_status) => ({
+          ..._status,
+          hasMoved: true,
+        }));
+      }
 
-    const sameStart = currTime.format() === draft.startDate;
-    if (sameStart) return false;
+      updateTimesDuringDrag(e);
+    },
+    [
+      dateCalcs,
+      draft?.startDate,
+      dragStatus?.hasMoved,
+      dragStatus?.initialMinutesDifference,
+      dragStatus?.initialYOffset,
+      isDragging,
+      isSidebarOpen,
+      weekProps.component.startOfSelectedWeekDay,
+    ]
+  );
 
-    return true;
-  };
+  const isValidMovement = useCallback(
+    (currTime: Dayjs) => {
+      const noChange = draft[dateBeingChanged] === currTime.format();
+      if (noChange) return false;
 
-  const resize = (e: MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+      const diffDay = currTime.day() !== dayjs(draft.startDate).day();
+      if (diffDay) return false;
 
-    if (!isResizing) return;
+      const sameStart = currTime.format() === draft.startDate;
+      if (sameStart) return false;
 
-    const x = getX(e, isSidebarOpen);
-    const currTime = dateCalcs.getDateByXY(
-      x,
-      e.clientY,
-      weekProps.component.startOfSelectedWeekDay
-    );
+      return true;
+    },
+    [dateBeingChanged, draft]
+  );
 
-    if (!isValidMovement(currTime)) {
-      return;
-    }
+  const getNextAction = useCallback(
+    (category: Categories_Event) => {
+      let shouldSubmit: boolean;
+      let hasMoved: boolean;
+      const isNew = !draft._id;
 
-    flipIfNeeded(currTime);
+      if (category === Categories_Event.TIMED) {
+        hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved;
+        shouldSubmit = !draft.isOpen;
+      } else if (category === Categories_Event.ALLDAY) {
+        hasMoved = dragStatus?.hasMoved;
+        shouldSubmit = hasMoved;
+      }
 
-    const origTime = dayjs(draft[dateBeingChanged]);
-    const diffMin = currTime.diff(origTime, "minute");
-    const updatedTime = origTime.add(diffMin, "minutes").format();
+      const clickedOnExisting = !isNew && !hasMoved;
+      const shouldOpenForm = (isNew || clickedOnExisting) && !draft.isOpen;
 
-    const hasMoved = diffMin !== 0;
+      return { shouldOpenForm, shouldSubmit };
+    },
+    [draft?._id, draft?.isOpen, dragStatus?.hasMoved, resizeStatus?.hasMoved]
+  );
 
-    if (!resizeStatus?.hasMoved && hasMoved) {
-      setResizeStatus({ hasMoved: true });
-    }
+  const resize = useCallback(
+    (e: MouseEvent) => {
+      const flipIfNeeded = (currTime: Dayjs) => {
+        let startDate = draft.startDate;
+        let endDate = draft.endDate;
 
-    setDraft((_draft) => {
-      return { ..._draft, [dateBeingChanged]: updatedTime };
-    });
-  };
+        let dateKey = dateBeingChanged;
+        const oppositeKey =
+          dateBeingChanged === "startDate" ? "endDate" : "startDate";
+        const opposite = dayjs(draft[oppositeKey]);
+
+        const comparisonKeyword =
+          dateBeingChanged === "startDate" ? "after" : "before";
+
+        if (comparisonKeyword === "after") {
+          // if (currTime.isSame(opposite) || currTime.isAfter(opposite)) {
+          if (currTime.isAfter(opposite)) {
+            dateKey = oppositeKey;
+            startDate = draft.endDate;
+            setDateBeingChanged(dateKey);
+          }
+        }
+
+        if (comparisonKeyword === "before") {
+          if (currTime.isBefore(opposite)) {
+            // if (currTime.isSame(opposite) || currTime.isBefore(opposite)) {
+            dateKey = oppositeKey;
+            endDate = draft.startDate;
+            setDateBeingChanged(dateKey);
+          }
+        }
+
+        setDraft((_draft) => {
+          return {
+            ..._draft,
+            isOpen: false,
+            endDate,
+            startDate,
+            priority: draft.priority,
+            [dateKey]: currTime.format(),
+          };
+        });
+      };
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!isResizing) return;
+
+      const x = getX(e, isSidebarOpen);
+      const currTime = dateCalcs.getDateByXY(
+        x,
+        e.clientY,
+        weekProps.component.startOfSelectedWeekDay
+      );
+
+      if (!isValidMovement(currTime)) {
+        return;
+      }
+
+      flipIfNeeded(currTime);
+
+      const origTime = dayjs(draft[dateBeingChanged]);
+      const diffMin = currTime.diff(origTime, "minute");
+      const updatedTime = origTime.add(diffMin, "minutes").format();
+
+      const hasMoved = diffMin !== 0;
+
+      if (!resizeStatus?.hasMoved && hasMoved) {
+        setResizeStatus({ hasMoved: true });
+      }
+
+      setDraft((_draft) => {
+        return { ..._draft, [dateBeingChanged]: updatedTime };
+      });
+    },
+    [
+      dateBeingChanged,
+      dateCalcs,
+      draft,
+      isResizing,
+      isSidebarOpen,
+      isValidMovement,
+      resizeStatus?.hasMoved,
+      weekProps.component.startOfSelectedWeekDay,
+    ]
+  );
 
   const stopDragging = () => {
     setIsDragging(false);
@@ -317,68 +393,45 @@ export const useGridDraft = (
     setDateBeingChanged("endDate");
   };
 
-  const updateTimesDuringDrag = (e: MouseEvent) => {
-    setDraft((_draft) => {
-      const x = getX(e, isSidebarOpen);
-      const y = e.clientY - dragStatus?.initialYOffset || Y_BUFFER;
+  const _onAllDayRowMouseUp = useCallback(() => {
+    if (isDragging) {
+      stopDragging();
+    }
 
-      const _initialStart = dateCalcs.getDateByXY(
-        x,
-        y,
-        weekProps.component.startOfSelectedWeekDay
-      );
+    if (!draft || !isDrafting) {
+      return;
+    }
 
-      const startDate = _draft?.isAllDay
-        ? _initialStart.format(YEAR_MONTH_DAY_FORMAT)
-        : _initialStart.format();
+    if (isDrafting && reduxDraftType === Categories_Event.SOMEDAY) {
+      discard();
+      return;
+    }
 
-      const _end = _initialStart.add(
-        dragStatus?.initialMinutesDifference || 0,
-        "minutes"
-      );
-      const endDate = _draft.isAllDay
-        ? _end.format(YEAR_MONTH_DAY_FORMAT)
-        : _end.format();
+    const { shouldSubmit, shouldOpenForm } = getNextAction(
+      Categories_Event.ALLDAY
+    );
 
-      return {
-        ..._draft,
-        startDate,
-        endDate,
-        priority: _draft?.priority || Priorities.UNASSIGNED,
-      };
-    });
-  };
+    if (shouldOpenForm) {
+      setDraft((_draft) => {
+        return { ..._draft, isOpen: true };
+      });
+      return;
+    }
 
-  const _onAllDayRowMouseUp = useCallback(
-    (e: MouseEvent) => {
-      if (isDragging) {
-        stopDragging();
-      }
-
-      if (isDrafting && reduxDraftType === Categories_Event.SOMEDAY) {
-        e.stopPropagation();
-        discard();
-        return;
-      }
-
-      const shouldOpenForm = !draft?.isOpen;
-      // if (!draft._id && shouldOpenForm) {
-      if (shouldOpenForm) {
-        setDraft((_draft) => {
-          return { ..._draft, isOpen: true };
-        });
-      }
-    },
-    [discard, draft?.isOpen, isDrafting, isDragging, reduxDraftType]
-  );
+    shouldSubmit && submit();
+  }, [
+    isDragging,
+    draft,
+    isDrafting,
+    reduxDraftType,
+    getNextAction,
+    submit,
+    discard,
+  ]);
 
   const _onMainGridMouseUp = useCallback(
     (e: MouseEvent) => {
-      console.log("maingrid up");
-      // if (!draft) {
       if (!draft || !isDrafting) {
-        // e.stopPropagation();
-        console.log("skipping mouse action, cuz no draft");
         return;
       }
 
@@ -394,22 +447,17 @@ export const useGridDraft = (
       }
 
       if (isResizing) {
-        console.log("stopping resize");
         stopResizing();
       }
+
       if (isDragging) {
-        console.log("stopping drag [main]");
         stopDragging();
       }
 
-      const isNew = !draft._id;
-      const hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved;
-      const clickedOnExisting = !isNew && !hasMoved;
-      const shouldOpenForm = (isNew || clickedOnExisting) && !draft.isOpen;
-      const shouldSubmit = !draft.isOpen;
-
+      const { shouldSubmit, shouldOpenForm } = getNextAction(
+        Categories_Event.TIMED
+      );
       if (shouldOpenForm) {
-        console.log("opening form...");
         setDraft((_draft) => {
           return { ..._draft, isOpen: true };
         });
@@ -421,35 +469,28 @@ export const useGridDraft = (
     [
       discard,
       draft,
-      dragStatus?.hasMoved,
+      getNextAction,
       isDrafting,
       isDragging,
       isResizing,
-      reduxDraft,
       reduxDraftType,
-      resizeStatus?.hasMoved,
       submit,
     ]
   );
 
   const _onMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (isResizing && !draft?.isAllDay) {
+      if (isResizing && !draft.isAllDay) {
         resize(e);
       } else if (isDragging) {
         drag(e);
       }
     },
-    [draft?.isAllDay, drag, isDragging, isResizing, resize]
+    [draft?.isAllDay, isDragging, isResizing]
   );
 
   useEventListener("mousemove", _onMouseMove);
   useEventListener("mouseup", _onMainGridMouseUp, getElemById(ID_GRID_MAIN));
-  useEventListener(
-    "mouseup",
-    _onAllDayRowMouseUp,
-    getElemById(ID_GRID_ALLDAY_ROW)
-  );
 
   return {
     draftState: {
@@ -460,17 +501,11 @@ export const useGridDraft = (
     draftHelpers: {
       deleteEvent,
       discard,
-      resize,
       setDateBeingChanged,
       setIsDragging,
       setIsResizing,
       setDraft,
-      stopResizing,
       submit,
     },
   };
 };
-
-//++
-// export type Hook_Draft = ReturnType<typeof useGridDraft>;
-// export type Helpers_Draft = Hook_Draft["draftHelpers"];

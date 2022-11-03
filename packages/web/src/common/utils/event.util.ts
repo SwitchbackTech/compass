@@ -45,7 +45,6 @@ export const getDefaultEvent = (
     case Categories_Event.SOMEDAY:
       return {
         isAllDay: false,
-        isOpen: true, //++
         isSomeday: true,
         priority: Priorities.UNASSIGNED,
       };
@@ -72,7 +71,7 @@ export const handleErrorTemp = (error: Error) => {
     return;
   }
   console.log(error);
-  // alert(error); //++
+  alert(error);
 };
 
 export const getWeekDayLabel = (day: Dayjs | Date) => {
