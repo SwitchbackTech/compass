@@ -2,10 +2,10 @@ import { call, put, takeLatest, select } from "@redux-saga/core/effects";
 import { normalize } from "normalizr";
 import dayjs from "dayjs";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/date.constants";
 import { EventApi } from "@web/ducks/events/event.api";
-import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
+import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { selectEventById } from "@web/ducks/events/event.selectors";
 import {
   handleErrorTemp,

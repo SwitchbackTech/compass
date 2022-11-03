@@ -1,11 +1,12 @@
 import { Action } from "redux";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Response_HttpPaginatedSuccess,
   Filters_Pagination,
-} from "@web/common/types/apiTypes";
+} from "@web/common/types/api.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export interface Action_ConvertSomedayEvent extends Action {
   payload: Payload_ConvertSomedayEvent;
@@ -28,6 +29,10 @@ export interface Action_Draft_Drag extends Action {
 }
 export interface Action_Draft_Resize extends Action {
   payload: Payload_Draft_Resize;
+}
+
+export interface Action_Draft_Swap extends Action {
+  payload: Payload_Draft_Swap;
 }
 
 export interface Action_EditEvent extends Action {
@@ -76,9 +81,8 @@ export interface Payload_DeleteEvent {
   _id: string;
 }
 
-//++remove / update
 export interface Payload_DraftEvent {
-  event: Schema_Event;
+  event?: Schema_Event;
   eventType: Categories_Event;
   activity?: "createShortcut" | "dragging" | "resizing";
 }
@@ -89,6 +93,11 @@ export interface Payload_Draft_Drag {
 export interface Payload_Draft_Resize {
   event: Schema_Event;
   dateToChange: "startDate" | "endDate";
+}
+
+export interface Payload_Draft_Swap {
+  event: Schema_GridEvent;
+  category: Categories_Event;
 }
 export interface Payload_EditEvent {
   _id: string;

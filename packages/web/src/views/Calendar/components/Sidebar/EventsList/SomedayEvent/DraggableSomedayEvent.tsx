@@ -1,20 +1,30 @@
-import React, { FC, memo, useEffect } from "react";
+import React, { Dispatch, FC, SetStateAction, useEffect } from "react";
 import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 import { Schema_Event } from "@core/types/event.types";
 import { DragItem } from "@web/common/types/dnd.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 import { SomedayEvent } from "./SomedayEvent";
 
-// $$ remove title and id if you don't need
+//++ remove title and id if you don't need
 export interface Props {
   id: string;
-  title: string;
+  isDrafting: boolean;
   event: Schema_Event;
+  onClose: () => void;
+  onSubmit: () => void;
+  setEvent: Dispatch<SetStateAction<Schema_GridEvent>>;
 }
 
 // export const DraggableSomedayEvent: FC<Props> = memo(
-export const DraggableSomedayEvent: FC<Props> = ({ event }) => {
+export const DraggableSomedayEvent: FC<Props> = ({
+  event,
+  isDrafting,
+  onClose,
+  onSubmit,
+  setEvent,
+}) => {
   const [{ isDragging }, drag, preview] = useDrag(
     () => ({
       type: DragItem.EVENT_SOMEDAY,
@@ -35,7 +45,14 @@ export const DraggableSomedayEvent: FC<Props> = ({ event }) => {
 
   return (
     <div ref={drag}>
-      <SomedayEvent event={event} isDragging={isDragging} />
+      <SomedayEvent
+        event={event}
+        isDrafting={isDrafting}
+        isDragging={isDragging}
+        onClose={onClose}
+        onSubmit={onSubmit}
+        setEvent={setEvent}
+      />
     </div>
   );
 };

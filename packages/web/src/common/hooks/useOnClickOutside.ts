@@ -20,10 +20,9 @@ export const useOnClickOutside = (ref, handler) => {
       };
     },
     // Add ref and handler to effect dependencies
-    // It's worth noting that because passed in handler is a new
-    // function on every render that will cause this effect
-    // callback/cleanup to run every render. It's not a big deal
-    // but to optimize you can wrap handler in useCallback before
+    // Because passed in handler, this effect
+    // callback/cleanup to run every render.
+    // To optimize, wrap handler in useCallback before
     // passing it into this hook.
     [ref, handler]
   );

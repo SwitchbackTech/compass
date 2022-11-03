@@ -26,7 +26,7 @@ describe("Sidebar: Display without State", () => {
 
     // Month Widget
     expect(
-      screen.getByRole("dialog", { name: /month widget/i })
+      screen.getByRole("dialog", { name: /month overview/i })
     ).toBeInTheDocument();
   });
 });

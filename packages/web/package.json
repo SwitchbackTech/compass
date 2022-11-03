@@ -6,6 +6,8 @@
   "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
     "@compass/core": "1.0.0",
+    "@floating-ui/react-dom": "^1.0.0",
+    "@floating-ui/react-dom-interactions": "^0.10.2",
     "@popperjs/core": "^2.11.5",
     "@react-oauth/google": "^0.2.6",
     "@reduxjs/toolkit": "^1.6.1",
@@ -27,7 +29,6 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.1.0",
     "react-merge-refs": "^1.1.0",
-    "react-popper": "^2.2.5",
     "react-redux": "^7.2.5",
     "react-router-dom": "^6.2.2",
     "react-select": "^5.2.2",

@@ -4,22 +4,30 @@ import dayjs, { Dayjs } from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isBetween from "dayjs/plugin/isBetween";
-import {
-  YEAR_MONTH_DAY_COMPACT_FORMAT,
-  YEAR_MONTH_DAY_FORMAT,
-} from "@web/common/constants/date.constants";
+import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@web/common/constants/date.constants";
 import {
   Categories_Event,
   Params_Events,
   Schema_Event,
 } from "@core/types/event.types";
-import { Priorities } from "@core/constants/core.constants";
+import { Origin, Priorities } from "@core/constants/core.constants";
 
 import { Schema_GridEvent } from "../types/web.event.types";
+import { removeGridFields } from "./grid.util";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isBetween);
+
+export const getCategory = (event: Schema_Event) => {
+  if (event?.isAllDay) {
+    return Categories_Event.ALLDAY;
+  }
+  if (event?.isSomeday) {
+    return Categories_Event.SOMEDAY;
+  }
+  return Categories_Event.TIMED;
+};
 
 export const getDefaultEvent = (
   draftType: Categories_Event,
@@ -34,8 +42,6 @@ export const getDefaultEvent = (
         priority: Priorities.UNASSIGNED,
         startDate,
         endDate: startDate,
-        //++
-        // endDate: dayjs(startDate).add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
       };
     case Categories_Event.SOMEDAY:
       return {
@@ -58,6 +64,13 @@ export const getDefaultEvent = (
   }
 };
 
+export const getWeekDayLabel = (day: Dayjs | Date) => {
+  if (day instanceof Date) {
+    return dayjs(day).format(YEAR_MONTH_DAY_COMPACT_FORMAT);
+  }
+  return day.format(YEAR_MONTH_DAY_COMPACT_FORMAT);
+};
+
 // rudimentary handling of errors
 // meant for temporary testing, will be replaced
 export const handleErrorTemp = (error: Error) => {
@@ -69,13 +82,20 @@ export const handleErrorTemp = (error: Error) => {
   alert(error);
 };
 
-export const getWeekDayLabel = (day: Dayjs | Date) => {
-  if (day instanceof Date) {
-    return dayjs(day).format(YEAR_MONTH_DAY_COMPACT_FORMAT);
+export const prepareEvent = (
+  draft: Schema_GridEvent,
+  original?: Schema_GridEvent
+) => {
+  let eventToClean: Schema_GridEvent = { ...original };
+  if (!original) {
+    eventToClean = { ...draft };
   }
-  return day.format(YEAR_MONTH_DAY_COMPACT_FORMAT);
-};
 
+  const _event = removeGridFields(eventToClean);
+  const event = { ..._event, origin: Origin.COMPASS } as Schema_Event;
+
+  return event;
+};
 /*
 -------------------------------------------------------------------------------
 Demo of using pagination and group ordering. 

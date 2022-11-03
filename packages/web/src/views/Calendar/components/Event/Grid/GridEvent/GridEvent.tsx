@@ -55,6 +55,7 @@ const _GridEvent = (
   );
 
   let finalEvent = event;
+
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
   if (isInPast) {
     finalEvent = { ...event, isTimesShown: false };
@@ -64,15 +65,12 @@ const _GridEvent = (
     <StyledEvent
       allDay={event.isAllDay || false}
       className={isDraft ? "active" : null}
-      // duration={+durationHours || 1} //++
       height={position.height || 0}
       isDragging={isDragging}
       isInPast={isInPast}
       isPlaceholder={isPlaceholder}
       isResizing={isResizing}
       left={position.left}
-      // lineClamp={event.isAllDay ? 1 : getLineClamp(durationHours)}
-      // lineClamp={1}
       onMouseDown={(e) => {
         onEventMouseDown(event, e);
       }}
@@ -112,3 +110,8 @@ const _GridEvent = (
 
 export const GridEvent = forwardRef(_GridEvent);
 export const GridEventMemo = memo(GridEvent);
+
+/*
+      // lineClamp={event.isAllDay ? 1 : getLineClamp(durationHours)}
+      // lineClamp={1}
+*/

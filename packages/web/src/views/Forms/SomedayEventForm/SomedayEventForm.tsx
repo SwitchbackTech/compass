@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { Key } from "ts-keycode-enum";
+import React, { KeyboardEventHandler, MouseEvent, useState } from "react";
+import { Key } from "ts-key-enum";
 import { useDispatch } from "react-redux";
 import { DeleteIcon } from "@web/components/Icons";
+import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
 import { getFutureEventsSlice } from "@web/ducks/events/event.slice";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
-import { MonthPicker } from "@web/views/Forms/EventForm/MonthPicker";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 import {
@@ -13,7 +13,6 @@ import {
   StyledIconRow,
   StyledTitleField,
 } from "@web/views/Forms/EventForm/styled";
-import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
@@ -22,8 +21,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   setEvent,
   ...props
 }) => {
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const dispatch = useDispatch();
+
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
@@ -31,47 +31,55 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       onSetEventField(fieldName, e.target.value);
     };
 
-  // $$ TODO DRY with EventForm's version
   const onSetEventField: SetEventFormField = (field, value) => {
     const newEvent = { ...event, [field]: value };
     setEvent(newEvent);
   };
 
   const onDelete = () => {
-    if (event._id === undefined) {
-      return; // event was never created, so no need to dispatch delete
+    if (event._id) {
+      dispatch(getFutureEventsSlice.actions.delete({ _id: event._id }));
     }
-    dispatch(getFutureEventsSlice.actions.delete({ _id: event._id }));
 
     _onClose();
   };
 
-  const keyHandler: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
-    // prevents triggering other shortcuts
+  const onKeyDown: KeyboardEventHandler<HTMLFormElement> = (e) => {
     e.stopPropagation();
 
-    if (e.which === Key.Escape) {
-      _onClose();
+    switch (e.key) {
+      case Key.Escape: {
+        _onClose();
+        break;
+      }
+      case Key.Tab: {
+        isPickerOpen && setIsPickerOpen(false);
+        break;
+      }
+      case Key.Enter: {
+        if (e.metaKey) {
+          onSubmit(event);
+        }
+        break;
+      }
+      default:
+        return;
     }
+  };
 
-    if (e.which === Key.Tab) {
-      isPickerOpen && setIsPickerOpen(false);
-    }
-
-    if (e.which === Key.Enter && e.metaKey) {
-      onSubmit(event);
-    }
+  const stopPropagation = (e: MouseEvent) => {
+    e.stopPropagation();
   };
 
   return (
     <StyledEventForm
       {...props}
+      data-testid="somedayForm"
       id={ID_SIDEBAR_FORM}
       isOpen={true}
-      onKeyDown={keyHandler}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-      }}
+      onClick={stopPropagation}
+      onKeyDown={onKeyDown}
+      onMouseDown={stopPropagation}
       onMouseUp={(e) => {
         if (isPickerOpen) {
           setIsPickerOpen(false);
@@ -80,7 +88,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       }}
       priority={event.priority}
       role="form"
-      data-testid="somedayForm"
     >
       <StyledIconRow>
         <DeleteIcon onDelete={onDelete} title="Delete Someday Event" />
@@ -100,38 +107,13 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         priority={event.priority}
       />
 
-      <MonthPicker
-        isPickerOpen={isPickerOpen}
-        onSetEventField={onSetEventField}
-        setIsPickerOpen={setIsPickerOpen}
-        startMonth={event.startDate}
-      />
-
       <StyledDescriptionField
         onChange={onChangeEventTextField("description")}
         placeholder="Description"
         value={event.description || ""}
       />
 
-      <SaveSection onSubmit={onSubmit} />
+      <SaveSection priority={event.priority} onSubmit={onSubmit} />
     </StyledEventForm>
   );
 };
-
-/*
-// useEffect(() => {
-  //   const keyDownHandler = (e: KeyboardEvent) => {
-  //     console.log(e.which);
-  //     if (e.which === Key.Escape) {
-  //       _onClose();
-  //     }
-  //   };
-
-  //   document.addEventListener("keydown", keyDownHandler);
-
-  //   return () => {
-  //     document.removeEventListener("keydown", keyDownHandler);
-  //   };
-  // }, [_onClose]);
-
-*/

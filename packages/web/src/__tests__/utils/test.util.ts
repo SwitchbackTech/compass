@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 interface Spies {
   [key: string]: jest.SpyInstance;
 }
@@ -22,6 +21,14 @@ export const mockLocalStorage = () => {
     const mock = jest.fn(localStorage[fn]);
     spies[fn] = jest.spyOn(Storage.prototype, fn).mockImplementation(mock);
   });
+};
+
+export const mockResizeObserver = () => {
+  global.ResizeObserver = jest.fn().mockImplementation(() => ({
+    observe: jest.fn(),
+    unobserve: jest.fn(),
+    disconnect: jest.fn(),
+  }));
 };
 
 export const mockScroll = () => {

@@ -5,8 +5,8 @@ import { createSlice } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
 import { RootState } from "@web/store";
 import { createAsyncSlice } from "@web/common/store/helpers";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entities";
-import { Response_HttpPaginatedSuccess } from "@web/common/types/apiTypes";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Status_DraftEvent } from "@web/common/types/web.event.types";
 
 import {
@@ -14,6 +14,7 @@ import {
   Action_DraftEvent,
   Action_Draft_Drag,
   Action_Draft_Resize,
+  Action_Draft_Swap,
   Action_EditEvent,
   Action_InsertEvents,
   Action_TimezoneChange,
@@ -60,6 +61,7 @@ export const draftSlice = createSlice({
     discard: (state) => initialDraft,
     start: (state, action: Action_DraftEvent) => {
       const { activity, event, eventType } = action.payload;
+
       state.event = event;
       state.status = {
         ...state.status,
@@ -81,13 +83,24 @@ export const draftSlice = createSlice({
         },
       };
     },
-    startDragging: (state, action: Action_Draft_Drag) => {
+
+    startDragging: (state, action) => {
       const { event } = action.payload;
       state.event = event;
       state.status = {
         ...state.status,
         activity: "dragging",
         isDrafting: true,
+      };
+    },
+
+    swap: (state, action: Action_Draft_Swap) => {
+      const { category, event } = action.payload;
+      state.event = event;
+      state.status = {
+        ...initialDraft.status,
+        isDrafting: true,
+        eventType: category,
       };
     },
   },

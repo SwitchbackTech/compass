@@ -1,5 +1,5 @@
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { SelectOption } from "@web/common/types/components";
+import { SelectOption } from "@web/common/types/component.types";
 
 export interface Schema_GridEvent extends Schema_Event {
   isOpen?: boolean;

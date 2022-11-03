@@ -19,7 +19,6 @@ import {
 
 export interface Props extends ReactDatePickerProps {
   bgColor: string;
-  defaultOpen?: boolean;
   onInputBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   isOpen?: boolean;
   animationOnToggle?: boolean;
@@ -34,25 +33,16 @@ export const DatePicker: React.FC<Props> = ({
   animationOnToggle = true,
   autoFocus: _autoFocus = false,
   bgColor,
-  defaultOpen = false,
   calendarClassName,
   isOpen = true,
   onSelect = () => null,
   onInputBlur,
   onCalendarClose = () => null,
   onCalendarOpen = () => null,
-  shouldCloseOnSelect = true,
   withTodayButton = true,
   ...props
 }) => {
-  // const [isOpen, setIsOpen] = useState(_isOpen);
   const datepickerRef = useRef<CalendarRef>(null);
-
-  // const _showDatePicker = (show: boolean) => {
-  //   setTimeout(() => {
-  //     setIsOpen(show);
-  //   });
-  // };
 
   useEffect(() => {
     if (_autoFocus) {
@@ -62,13 +52,6 @@ export const DatePicker: React.FC<Props> = ({
       });
     }
   }, [_autoFocus]);
-
-  //++
-  // useEffect(() => {
-  //   _showDatePicker(defaultOpen);
-  // }, [defaultOpen]);
-
-  // console.log("open?", isOpen);
 
   return (
     <ReactDatePicker
@@ -87,26 +70,18 @@ export const DatePicker: React.FC<Props> = ({
           bgColor={bgColor}
           colorName={ColorNames.TEAL_1}
           onBlurCapture={onInputBlur}
-          // background={ColorNames.GREY_3} //++
-          // colorName={ColorNames.WHITE_1} //++
         />
       }
       dateFormat={"M-d-yyyy"}
       formatWeekDay={(day) => day[0]}
       open={isOpen}
       onCalendarOpen={() => {
-        // _showDatePicker(true);
         onCalendarOpen();
       }}
       onCalendarClose={() => {
-        // setIsOpen(false);
-        // _showDatePicker(false);
         onCalendarClose();
       }}
       onClickOutside={() => {
-        // console.log("clicked out");
-        // setIsOpen(false);
-        // _showDatePicker(false);
         onCalendarClose();
       }}
       onSelect={(date, event: React.SyntheticEvent<Event> | undefined) => {
@@ -115,7 +90,6 @@ export const DatePicker: React.FC<Props> = ({
       portalId="root"
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       ref={datepickerRef as any}
-      // shouldCloseOnSelect={shouldCloseOnSelect} //++
       showPopperArrow={false}
       renderCustomHeader={({
         monthDate,

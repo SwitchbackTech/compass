@@ -11,6 +11,7 @@ import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_ALLDAY_ROW,
   ID_GRID_EVENTS_ALLDAY,
+  ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/date.constants";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
@@ -66,7 +67,7 @@ export const AllDayRow: FC<Props> = ({
   const { isDrafting, draftId } = useSelector(selectDraftId);
 
   useEffect(() => {
-    measurements.remeasure("mainGrid");
+    measurements.remeasure(ID_GRID_MAIN);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowsCount]);
 
@@ -113,9 +114,7 @@ export const AllDayRow: FC<Props> = ({
     dispatch(draftSlice.actions.startDragging({ event }));
   };
 
-  const draftNewEvent = (e: MouseEvent) => {
-    if (isDrafting) return; // prevents multiple forms
-
+  const startAlldayDraft = (e: MouseEvent) => {
     const x = getX(e, isSidebarOpen);
     const startDate = dateCalcs.getDateStrByXY(
       x,
@@ -133,6 +132,28 @@ export const AllDayRow: FC<Props> = ({
     );
   };
 
+  const onEventMouseDown = (e: MouseEvent, event: Schema_Event) => {
+    e.stopPropagation();
+
+    if (isDrafting) {
+      dispatch(
+        draftSlice.actions.swap({ event, category: Categories_Event.ALLDAY })
+      );
+      return;
+    }
+
+    editAllDayEvent(event);
+  };
+
+  const onSectionMouseDown = (e: MouseEvent) => {
+    if (isDrafting) {
+      dispatch(draftSlice.actions.discard());
+      return;
+    }
+
+    startAlldayDraft(e);
+  };
+
   const renderAllDayEvents = () => {
     const _allDayEvents = allDayEvents.map((event: Schema_Event, i: number) => {
       const position = getPosition(
@@ -142,6 +163,7 @@ export const AllDayRow: FC<Props> = ({
         measurements,
         false
       );
+
       return (
         <StyledEvent
           allDay={event.isAllDay}
@@ -152,11 +174,7 @@ export const AllDayRow: FC<Props> = ({
           isResizing={false}
           key={`${event.title}-${i}`}
           left={position.left}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            editAllDayEvent(event);
-          }}
+          onMouseDown={(e) => onEventMouseDown(e, event)}
           priority={event.priority}
           role="button"
           top={position.top}
@@ -183,7 +201,7 @@ export const AllDayRow: FC<Props> = ({
       id={ID_GRID_ALLDAY_ROW}
       ref={drop}
       rowsCount={rowsCount}
-      onMouseDown={draftNewEvent}
+      onMouseDown={onSectionMouseDown}
     >
       <StyledAllDayColumns id={ID_ALLDAY_COLUMNS} ref={allDayRef}>
         {weekDays.map((day) => (
@@ -199,12 +217,3 @@ export const AllDayRow: FC<Props> = ({
     </StyledAllDayRow>
   );
 };
-
-/*
-++ remove
-  // const _startOfView = useRef(component.startOfSelectedWeekDay);
-
-  // useLayoutEffect(() => {
-  //   _startOfView.current = component.startOfSelectedWeekDay;
-  // }, [component]);
-*/

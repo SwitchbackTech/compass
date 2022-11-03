@@ -232,7 +232,7 @@ export const toUTCOffset = (date: string | Dayjs | Date) => {
   } else return date.format(); // then already a DayJs object
 };
 
-const _addTimesToDates = (dt: SelectedDateTimes) => {
+const _addTimesToDates = (dt: Schema_SelectedDates) => {
   const start = getDayjsByTimeValue(dt.startTime.value);
   const startDate = dayjs(dt.startDate)
     .hour(start.hour())
@@ -245,13 +245,6 @@ const _addTimesToDates = (dt: SelectedDateTimes) => {
     .minute(end.minute())
     .format();
 
-  console.log(`
-    startDate: ${startDate} 
-    startTime: ${dt.startTime.value}
-
-    endDate: ${endDate}
-    endTime: ${dt.endTime.value}
-    `);
   return { startDate, endDate };
 };
 

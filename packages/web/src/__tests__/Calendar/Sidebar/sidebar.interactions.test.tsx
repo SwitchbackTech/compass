@@ -27,9 +27,7 @@ describe("Sidebar: Interactions", () => {
 
     //shows preview while typing
     const sidebar = screen.getByRole("complementary");
-    expect(
-      within(sidebar).getByDisplayValue(LEARN_CHINESE.title)
-    ).toBeInTheDocument();
+    expect(within(sidebar).getByText(LEARN_CHINESE.title)).toBeInTheDocument();
 
     await user.click(screen.getByText(/save/i));
 

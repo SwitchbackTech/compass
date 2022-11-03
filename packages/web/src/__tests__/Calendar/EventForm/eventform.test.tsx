@@ -25,13 +25,13 @@ describe("Event Form", () => {
     await user.click(screen.getByRole("button", { name: /multiweek event/i }));
     await _confirmCorrectEventFormIsOpen(MULTI_WEEK.title);
 
-    //   /* someday event */
-    await _clickHeading(user);
-    await user.click(screen.getByRole("button", { name: /takeover world/i }));
+    // //   /* someday event */
+    // await _clickHeading(user);
+    // await user.click(screen.getByRole("button", { name: /takeover world/i }));
 
-    expect(
-      within(screen.getByTestId("somedayForm")).getByText("Takeover world")
-    ).toBeInTheDocument();
+    // expect(
+    //   within(screen.getByTestId("somedayForm")).getByText("Takeover world")
+    // ).toBeInTheDocument();
   }, 10000);
 
   it("closes when clicking outside", async () => {

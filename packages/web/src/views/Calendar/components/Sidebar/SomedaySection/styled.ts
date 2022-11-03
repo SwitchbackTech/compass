@@ -25,7 +25,6 @@ export const StyledHeaderTitle = styled(Text)`
 `;
 
 export const StyledAddEventButton = styled(Text)`
-  line-height: 18px;
   margin-right: 30px;
   cursor: pointer;
 `;
