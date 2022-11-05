@@ -32,15 +32,16 @@ export const CalendarView = () => {
 
   const dateCalcs = useDateCalcs(measurements, gridRefs.gridScrollRef);
 
+  const scrollUtil = useScroll(gridRefs.gridScrollRef);
+
   useShortcuts(
     today,
     dateCalcs,
     weekProps.component.isCurrentWeek,
     weekProps.component.startOfSelectedWeekDay,
-    weekProps.state.setWeek
+    weekProps.state.setWeek,
+    scrollUtil
   );
-
-  useScroll(gridRefs.gridScrollRef);
 
   const rootProps: RootProps = {
     component: { today: today },
@@ -64,7 +65,13 @@ export const CalendarView = () => {
       <Sidebar prefs={prefs} weekProps={weekProps} />
 
       <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
-        <Header rootProps={rootProps} today={today} weekProps={weekProps} />
+        <Header
+          rootProps={rootProps}
+          scrollUtil={scrollUtil}
+          today={today}
+          weekProps={weekProps}
+        />
+
         <Grid
           dateCalcs={dateCalcs}
           isSidebarOpen={prefs.isSidebarOpen}

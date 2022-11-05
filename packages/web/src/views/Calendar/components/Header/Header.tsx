@@ -13,6 +13,7 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { selectDraftId } from "@web/ducks/events/event.selectors";
 import { draftSlice } from "@web/ducks/events/event.slice";
 import { useDispatch, useSelector } from "react-redux";
+import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 
 import {
   StyledHeaderFlex,
@@ -24,19 +25,33 @@ import {
 
 interface Props {
   rootProps: RootProps;
+  scrollUtil: Util_Scroll;
   today: Dayjs;
   weekProps: WeekProps;
 }
 
-export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
+export const Header: FC<Props> = ({
+  rootProps,
+  scrollUtil,
+  today,
+  weekProps,
+}) => {
   const dispatch = useDispatch();
   const { isDrafting } = useSelector(selectDraftId);
+  const { scrollToNow } = scrollUtil;
 
   const onSectionClick = () => {
     if (isDrafting) {
       dispatch(draftSlice.actions.discard());
       return;
     }
+  };
+
+  const onTodayClick = () => {
+    if (weekProps.component.week !== today.week()) {
+      weekProps.state.setWeek(today.week());
+    }
+    scrollToNow();
   };
 
   return (
@@ -56,16 +71,16 @@ export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
 
         <StyledNavigationButtons>
           <TodayButtonPopover
-            onClick={() => weekProps.state.setWeek(today.week())}
+            onClick={onTodayClick}
             today={today}
             weekInFocus={weekProps.component.week}
           />
           <ArrowNavigationButton
             colorName={ColorNames.WHITE_2}
             cursor="pointer"
-            onClick={() =>
-              weekProps.state.setWeek((actualWeek) => actualWeek - 1)
-            }
+            onClick={() => {
+              weekProps.state.setWeek((actualWeek) => actualWeek - 1);
+            }}
             role="navigation"
             size={35}
             title="previous week"

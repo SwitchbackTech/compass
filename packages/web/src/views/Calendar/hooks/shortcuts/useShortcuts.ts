@@ -8,13 +8,15 @@ import { draftSlice } from "@web/ducks/events/event.slice";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
 import { DateCalcs } from "../grid/useDateCalcs";
+import { Util_Scroll } from "../grid/useScroll";
 
 export const useShortcuts = (
   today: Dayjs,
   dateCalcs: DateCalcs,
   isCurrentWeek: boolean,
   startOfSelectedWeek: Dayjs,
-  setWeek: React.Dispatch<React.SetStateAction<number>>
+  setWeek: React.Dispatch<React.SetStateAction<number>>,
+  scrollUtil: Util_Scroll
 ) => {
   const dispatch = useDispatch();
 
@@ -60,6 +62,7 @@ export const useShortcuts = (
       const handlersByKey = {
         [Key.C]: () => _createDraft(),
         [Key.T]: () => {
+          scrollUtil.scrollToNow();
           _discardDraft();
           setWeek(today.week());
         },
@@ -90,7 +93,15 @@ export const useShortcuts = (
     return () => {
       document.removeEventListener("keydown", keyDownHandler);
     };
-  }, [dateCalcs, dispatch, today, isCurrentWeek, startOfSelectedWeek, setWeek]);
+  }, [
+    dateCalcs,
+    dispatch,
+    today,
+    isCurrentWeek,
+    startOfSelectedWeek,
+    setWeek,
+    scrollUtil,
+  ]);
 };
 
 /**********************
