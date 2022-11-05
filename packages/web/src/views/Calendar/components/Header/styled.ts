@@ -1,6 +1,9 @@
 import styled from "styled-components";
 import { ColorNames } from "@core/types/color.types";
-import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
+import {
+  EVENT_WIDTH_MINIMUM,
+  PAGE_X_PADDING,
+} from "@web/views/Calendar/layout.constants";
 import { Flex } from "@web/components/Flex";
 import { getColor } from "@core/util/color.utils";
 import { Text } from "@web/components/Text";
@@ -11,12 +14,12 @@ import {
 } from "@web/views/Calendar/layout.constants";
 
 export const ArrowNavigationButton = styled(Text)`
-  user-select: none;
-  display: flex;
   align-items: center;
+  display: flex;
   justify-content: center;
-  width: 30px;
   height: 30px;
+  user-select: none;
+  width: 30px;
 
   &:hover {
     border-radius: 50%;
@@ -29,13 +32,19 @@ export const ArrowNavigationButton = styled(Text)`
 `;
 
 export const StyledHeaderFlex = styled(Flex)`
+  /* align-items: start; */
   font-size: 40px;
+  justify-content: space-between;
   margin-left: ${GRID_MARGIN_LEFT}px;
   height: ${HEADER_HEIGHT}px;
+  /* width: calc(100% - ${PAGE_X_PADDING * 2}px); */
+  width: 100%;
 `;
 
 export const StyledNavigationButtons = styled(Flex)`
-  margin-left: 40px;
+  justify-content: space-between;
+  margin-right: 50px;
+  width: 160px;
 `;
 
 export const StyledWeekDaysFlex = styled(Flex)`
@@ -46,7 +55,6 @@ export const StyledWeekDaysFlex = styled(Flex)`
 
 interface WeekDayFlexProps {
   color: string;
-  // width: number;
 }
 
 export const StyledWeekDayFlex = styled(Flex)<WeekDayFlexProps>`

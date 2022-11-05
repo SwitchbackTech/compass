@@ -42,7 +42,7 @@ export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
   return (
     <>
       <StyledHeaderFlex alignItems={AlignItems.CENTER} onClick={onSectionClick}>
-        <div role="heading" aria-level={1}>
+        <div aria-level={1} role="heading">
           <Text colorName={ColorNames.WHITE_1} size={40}>
             {weekProps.component.dayjsBasedOnWeekDay.format("MMMM")}
           </Text>
@@ -55,6 +55,11 @@ export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
         </div>
 
         <StyledNavigationButtons>
+          <TodayButtonPopover
+            onClick={() => weekProps.state.setWeek(today.week())}
+            today={today}
+            weekInFocus={weekProps.component.week}
+          />
           <ArrowNavigationButton
             colorName={ColorNames.WHITE_2}
             cursor="pointer"
@@ -80,12 +85,6 @@ export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
           >
             {">"}
           </ArrowNavigationButton>
-
-          <TodayButtonPopover
-            onClick={() => weekProps.state.setWeek(today.week())}
-            today={today}
-            weekInFocus={weekProps.component.week}
-          />
         </StyledNavigationButtons>
       </StyledHeaderFlex>
 
