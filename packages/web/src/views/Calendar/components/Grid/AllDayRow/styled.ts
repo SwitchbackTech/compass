@@ -28,7 +28,6 @@ const gridWidth = `100% - ${SCROLLBAR_WIDTH}px`;
 
 export const StyledAllDayRow = styled(Flex)<AllDayRowProps>`
   border-bottom: ${allDayRowDivider};
-  /* height: 64px; */
   height: ${({ rowsCount }) =>
     `calc(${allDayRowHeight} * 2 + ${
       rowsCount * 2 || 1

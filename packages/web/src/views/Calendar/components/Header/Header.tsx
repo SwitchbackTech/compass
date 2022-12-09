@@ -13,6 +13,7 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { selectDraftId } from "@web/ducks/events/event.selectors";
 import { draftSlice } from "@web/ducks/events/event.slice";
 import { useDispatch, useSelector } from "react-redux";
+import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 
 import {
   StyledHeaderFlex,
@@ -24,13 +25,20 @@ import {
 
 interface Props {
   rootProps: RootProps;
+  scrollUtil: Util_Scroll;
   today: Dayjs;
   weekProps: WeekProps;
 }
 
-export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
+export const Header: FC<Props> = ({
+  rootProps,
+  scrollUtil,
+  today,
+  weekProps,
+}) => {
   const dispatch = useDispatch();
   const { isDrafting } = useSelector(selectDraftId);
+  const { scrollToNow } = scrollUtil;
 
   const onSectionClick = () => {
     if (isDrafting) {
@@ -39,10 +47,17 @@ export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
     }
   };
 
+  const onTodayClick = () => {
+    if (weekProps.component.week !== today.week()) {
+      weekProps.state.setWeek(today.week());
+    }
+    scrollToNow();
+  };
+
   return (
     <>
       <StyledHeaderFlex alignItems={AlignItems.CENTER} onClick={onSectionClick}>
-        <div role="heading" aria-level={1}>
+        <div aria-level={1} role="heading">
           <Text colorName={ColorNames.WHITE_1} size={40}>
             {weekProps.component.dayjsBasedOnWeekDay.format("MMMM")}
           </Text>
@@ -55,12 +70,17 @@ export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
         </div>
 
         <StyledNavigationButtons>
+          <TodayButtonPopover
+            onClick={onTodayClick}
+            today={today}
+            weekInFocus={weekProps.component.week}
+          />
           <ArrowNavigationButton
             colorName={ColorNames.WHITE_2}
             cursor="pointer"
-            onClick={() =>
-              weekProps.state.setWeek((actualWeek) => actualWeek - 1)
-            }
+            onClick={() => {
+              weekProps.state.setWeek((actualWeek) => actualWeek - 1);
+            }}
             role="navigation"
             size={35}
             title="previous week"
@@ -80,12 +100,6 @@ export const Header: FC<Props> = ({ rootProps, today, weekProps }) => {
           >
             {">"}
           </ArrowNavigationButton>
-
-          <TodayButtonPopover
-            onClick={() => weekProps.state.setWeek(today.week())}
-            today={today}
-            weekInFocus={weekProps.component.week}
-          />
         </StyledNavigationButtons>
       </StyledHeaderFlex>
 

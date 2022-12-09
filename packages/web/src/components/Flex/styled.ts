@@ -34,9 +34,9 @@ export interface Props {
 }
 
 export const Styled = styled.div<Props>`
-  display: flex;
-  flex-wrap: ${({ flexWrap }) => flexWrap || "nowrap"};
-  flex-direction: ${({ direction }) => direction || "row"};
   align-items: ${({ alignItems }) => alignItems || "start"};
+  display: flex;
+  flex-direction: ${({ direction }) => direction || "row"};
+  flex-wrap: ${({ flexWrap }) => flexWrap || "nowrap"};
   justify-content: ${({ justifyContent }) => justifyContent || "start"};
 `;

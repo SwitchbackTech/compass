@@ -32,16 +32,14 @@ it("displays alert upon server error", async () => {
 });
 
 describe("Calendar Interactions", () => {
-  describe("Now Line + Today Button", () => {
-    it("appear/disappear when viewing future or past week", async () => {
+  describe("Now Line", () => {
+    it("appears/disappears when viewing future or past week", async () => {
       const user = userEvent.setup();
       render(<CalendarView />);
 
       /* current week */
-      const todayBtn = screen.queryByText(/today/i);
       const nowLine = screen.queryByRole("separator", { name: /now line/i });
 
-      expect(todayBtn).not.toBeInTheDocument();
       expect(nowLine).toBeInTheDocument();
 
       /* future week */
@@ -51,7 +49,6 @@ describe("Calendar Interactions", () => {
         })
       );
 
-      expect(screen.getByText(/today/i)).toBeInTheDocument();
       expect(nowLine).not.toBeInTheDocument();
 
       /* past week */
@@ -63,7 +60,6 @@ describe("Calendar Interactions", () => {
         })
       );
 
-      expect(screen.getByText(/today/i)).toBeInTheDocument();
       expect(nowLine).not.toBeInTheDocument();
     });
   });
