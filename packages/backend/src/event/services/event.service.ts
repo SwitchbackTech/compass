@@ -239,7 +239,7 @@ class EventService {
     if ("_id" in event) {
       delete event._id; // mongo doesn't allow changing this field directly
     }
-    const _event = { ...event, lastUpdatedAt: new Date() };
+    const _event = { ...event, updatedAt: new Date() };
 
     const response = await mongoService.db
       .collection(Collections.EVENT)

@@ -23,17 +23,17 @@ import {
   getCalendarInfo,
   importEvents,
   importEventsByCalendar,
-  prepareEventSyncChannels,
+  prepEventSyncChannels,
   startWatchingGcalsById,
   deleteAllSyncData,
-  prepareMaintenance,
-  refreshSync,
+  prepSyncMaintenance,
   pruneSync,
+  refreshSync,
 } from "./sync.service.helpers";
 import {
   deleteWatchData,
   getSync,
-  isWatchingEvents,
+  isWatchingEventsByGcalId,
   updateSyncFor,
   updateRefreshedAtFor,
   updateSyncTokenFor,
@@ -89,7 +89,7 @@ class SyncService {
   importIncremental = async (userId: string, gcal?: gCalendar) => {
     if (!gcal) gcal = await getGcalClient(userId);
 
-    const sync = await prepareEventSyncChannels(userId, gcal);
+    const sync = await prepEventSyncChannels(userId, gcal);
 
     const importEvents = assembleEventImports(userId, gcal, sync.google.events);
 
@@ -125,14 +125,15 @@ class SyncService {
   };
 
   runSyncMaintenance = async () => {
-    const { toPrune, toRefresh } = await prepareMaintenance();
+    const { ignored, toPrune, toRefresh } = await prepSyncMaintenance();
 
     const prunes = await pruneSync(toPrune);
     const refreshes = await refreshSync(toRefresh);
 
     return {
-      prunes,
-      refreshes,
+      ignored: ignored.length,
+      pruned: prunes.length,
+      refreshed: refreshes.length,
     };
   };
 
@@ -143,7 +144,10 @@ class SyncService {
   ) => {
     if (!gcal) gcal = await getGcalClient(userId);
 
-    const alreadyWatching = await isWatchingEvents(userId, params.gCalendarId);
+    const alreadyWatching = await isWatchingEventsByGcalId(
+      userId,
+      params.gCalendarId
+    );
     if (alreadyWatching) {
       throw error(SyncError.CalendarWatchExists, "Skipped Start Watch");
     }
@@ -240,7 +244,8 @@ class SyncService {
     const sync = await getSync({ userId });
 
     if (!sync || !sync.google.events) {
-      throw error(SyncError.NoWatchesForUser, "Ignored Stop Request");
+      // throw error(SyncError.NoWatchesForUser, "Ignored Stop Request");
+      return [];
     }
 
     logger.debug(`Stopping all gcal event watches for user: ${userId}`);

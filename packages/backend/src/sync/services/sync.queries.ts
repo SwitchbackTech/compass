@@ -6,7 +6,11 @@ import {
 import mongoService from "@backend/common/services/mongo.service";
 import { Origin } from "@core/constants/core.constants";
 import { Schema_CalendarList } from "@core/types/calendar.types";
-import { Payload_Resource_Events, Resource_Sync } from "@core/types/sync.types";
+import {
+  Payload_Resource_Events,
+  Resource_Sync,
+  Schema_Sync,
+} from "@core/types/sync.types";
 
 /**
  * Helper funcs that predominately query the DB
@@ -85,7 +89,10 @@ export const hasUpdatedCompassEventRecently = async (
   return recentChanges > 0;
 };
 
-export const isWatchingEvents = async (userId: string, gCalendarId: string) => {
+export const isWatchingEventsByGcalId = async (
+  userId: string,
+  gCalendarId: string
+) => {
   const sync = await mongoService.sync.countDocuments({
     user: userId,
     "google.events.gCalendarId": gCalendarId,
@@ -96,6 +103,15 @@ export const isWatchingEvents = async (userId: string, gCalendarId: string) => {
   const hasSyncFields = sync === 1;
 
   return hasSyncFields;
+};
+
+export const isWatchingEvents = (sync: Schema_Sync) => {
+  for (const es of sync.google.events) {
+    if (es.channelId && es.expiration) {
+      return true;
+    }
+  }
+  return false;
 };
 
 export const updateSyncFor = async (
