@@ -127,6 +127,8 @@ start of a convenience method for how to wipe and
 reimport resources (events, calendarlists, settings)
 after receiving a 410 GONE error from google's notification
 
+
+
   reimport = async (req: express.Request, res: Res) => {
     try {
       //TODO: only call this when getting 410
@@ -191,4 +193,22 @@ after receiving a 410 GONE error from google's notification
       res.promise(Promise.reject(e));
     }
   };
+
+export interface Result_Watch_Start {
+  channel: gSchema$Channel;
+  saveForDev?: "success" | "failed";
+  syncUpdate: ModifyResult;
+}
+
+export interface Result_Watch_Stop {
+  stopWatching: {
+    result: string;
+    channelId?: string;
+    resourceId?: string;
+    debug?: object;
+  };
+  deleteWatch: Result_Watch_Delete;
+}
+
+
 */
