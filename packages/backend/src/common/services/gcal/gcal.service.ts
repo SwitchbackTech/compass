@@ -65,17 +65,24 @@ class GCalService {
   }
 
   async updateEvent(gcal: gCalendar, gEventId: string, event: gSchema$Event) {
-    try {
-      const response = await gcal.events.update({
-        calendarId: GCAL_PRIMARY,
-        eventId: gEventId,
-        requestBody: event,
-      });
-      return response.data;
-    } catch (e) {
-      handleGcalError("Failed to Update gEvent", e as GaxiosError);
-      return;
-    }
+    const response = await gcal.events.update({
+      calendarId: GCAL_PRIMARY,
+      eventId: gEventId,
+      requestBody: event,
+    });
+    return response.data;
+
+    // try {
+    //   const response = await gcal.events.update({
+    //     calendarId: GCAL_PRIMARY,
+    //     eventId: gEventId,
+    //     requestBody: event,
+    //   });
+    //   return response.data;
+    // } catch (e) {
+    //   handleGcalError("Failed to Update gEvent", e as GaxiosError);
+    //   return;
+    // }
   }
 
   watchEvents = async (

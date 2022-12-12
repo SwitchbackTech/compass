@@ -74,6 +74,7 @@ export const getWeekDayLabel = (day: Dayjs | Date) => {
 // rudimentary handling of errors
 // meant for temporary testing, will be replaced
 export const handleErrorTemp = (error: Error) => {
+  // console.log(JSON.stringify(error)); //++
   if (error.message.slice(-3) === "401") {
     // SuperTokensWrapper will handle these
     return;

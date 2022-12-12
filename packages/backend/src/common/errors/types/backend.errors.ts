@@ -131,7 +131,7 @@ export const GcalError = {
 
 export const SyncError = {
   AccessRevoked: {
-    description: "Access revoked (syncToken gone)",
+    description: "User revoked access to their 3rd-party calendar (GCal)",
     status: Status.GONE,
     isOperational: true,
   },

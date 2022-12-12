@@ -97,12 +97,20 @@ class EventController {
       //@ts-ignore
       res.promise(Promise.resolve(response));
     } catch (e) {
-      logger.error(e);
-      const _e = e as BaseError;
-      if (_e.statusCode === Status.GONE) {
-        await deleteAllSyncData(userId);
-      }
-      res.promise(e);
+      // const _e = e as BaseError;
+
+      // if (_e.statusCode === Status.GONE) {
+      //   logger.warn(
+      //     `Deleting sync data for user because ${_e.name}: ${userId}`
+      //   );
+      //   await deleteAllSyncData(userId);
+      // } else {
+      //   logger.error(e);
+      // }
+
+      // res.promise(Promise.reject({ ...e, e.config: { ...e.config, userId } }));
+      //@ts-ignore
+      res.promise(Promise.reject(e));
     }
   };
 

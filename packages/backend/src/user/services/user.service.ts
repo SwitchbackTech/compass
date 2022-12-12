@@ -13,6 +13,11 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import syncService from "@backend/sync/services/sync.service";
 import { startWatchingGcalsById } from "@backend/sync/services/sync.service.helpers";
 import { createSync } from "@backend/sync/services/sync.queries";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
+import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import eventService from "@backend/event/services/event.service";
+import { BaseError } from "@core/errors/errors.base";
+import { Summary_Delete } from "@scripts/commands/delete";
 
 const logger = Logger("app:user.service");
 
@@ -57,6 +62,47 @@ class UserService {
     }
 
     return userId;
+  };
+
+  deleteCompassDataForUser = async (userId: string, gcalAccess = true) => {
+    const summary: Summary_Delete = {};
+
+    try {
+      const priorities = await priorityService.deleteAllByUser(userId);
+      summary.priorities = priorities.deletedCount;
+
+      const calendars = await calendarService.deleteAllByUser(userId);
+      summary.calendarlist = calendars.deletedCount;
+
+      const events = await eventService.deleteAllByUser(userId);
+      summary.events = events.deletedCount;
+
+      if (gcalAccess) {
+        const watches = await syncService.stopWatches(userId);
+        summary.eventWatches = watches.length;
+      }
+
+      initSupertokens();
+      const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
+        userId
+      );
+      summary.sessions = sessionsRevoked;
+
+      const syncs = await syncService.deleteAllByUser(userId);
+      summary.syncs = syncs.deletedCount;
+
+      const _user = await this.deleteUser(userId);
+      summary.user = _user.deletedCount;
+      return summary;
+    } catch (e) {
+      const _e = e as BaseError;
+      console.log("Stopped early because:", _e.description || _e);
+
+      const _user = await this.deleteUser(userId);
+      summary.user = _user.deletedCount;
+
+      return summary;
+    }
   };
 
   deleteUser = async (userId: string) => {

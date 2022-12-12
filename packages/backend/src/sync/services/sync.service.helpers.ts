@@ -20,6 +20,7 @@ import { EventError } from "@backend/common/errors/types/backend.errors";
 import eventService from "@backend/event/services/event.service";
 import mongoService from "@backend/common/services/mongo.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
+import { WithId } from "mongodb";
 
 import syncService from "./sync.service";
 import {
@@ -56,29 +57,14 @@ export const assembleEventImports = (
   return syncEvents;
 };
 
-const checkEventSyncs = (sync: Schema_Sync) => {
-  const syncsToRefresh: Payload_Sync_Events[] = [];
-
-  sync.google.events.map((s) => {
-    const expiry = s.expiration;
-    if (syncExpired(expiry) || syncExpiresSoon(expiry)) {
-      syncsToRefresh.push(s);
-    }
-  });
-
-  return syncsToRefresh;
-};
-
 export const deleteAllSyncData = async (userId: string) => {
   await mongoService.sync.deleteOne({ user: userId });
 };
 
-export const getCalendarInfo = async (resourceId: string) => {
-  const sync = await getSync({ resourceId });
-  if (!sync) {
-    throw error(SyncError.NoSyncRecordForUser, "Sync Failed");
-  }
-
+export const getCalendarInfo = (
+  sync: WithId<Schema_Sync>,
+  resourceId: string
+) => {
   const matches = sync.google.events.filter((g) => {
     return g.resourceId === resourceId;
   });
@@ -95,6 +81,19 @@ export const getCalendarInfo = async (resourceId: string) => {
     gCalendarId,
     nextSyncToken,
   };
+};
+
+const getSyncsToRefresh = (sync: Schema_Sync) => {
+  const syncsToRefresh: Payload_Sync_Events[] = [];
+
+  sync.google.events.map((s) => {
+    const expiry = s.expiration;
+    if (syncExpired(expiry) || syncExpiresSoon(expiry)) {
+      syncsToRefresh.push(s);
+    }
+  });
+
+  return syncsToRefresh;
 };
 
 export const importEvents = async (
@@ -272,17 +271,14 @@ export const prepSyncMaintenance = async () => {
 
     const isUserActive = await hasUpdatedCompassEventRecently(userId, deadline);
     if (isUserActive) {
-      const syncsToRefresh = checkEventSyncs(sync);
-      if (syncsToRefresh.length > 0) {
-        toRefresh.push({ userId, payloads: syncsToRefresh });
-      }
+      const syncsToRefresh = getSyncsToRefresh(sync);
+      const shouldRefresh = syncsToRefresh.length > 0;
+      shouldRefresh
+        ? toRefresh.push({ userId, payloads: syncsToRefresh })
+        : ignored.push(userId);
     } else {
       const hasActiveSyncs = isWatchingEvents(sync);
-      if (hasActiveSyncs) {
-        toPrune.push(sync.user);
-      } else {
-        ignored.push(sync.user);
-      }
+      hasActiveSyncs ? toPrune.push(sync.user) : ignored.push(userId);
     }
   }
 

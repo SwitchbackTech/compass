@@ -130,7 +130,8 @@ export function* editEventSaga({ payload }: Action_EditEvent) {
     yield call(EventApi.edit, payload._id, payload.event);
     yield put(editEventSlice.actions.success());
   } catch (error) {
-    handleErrorTemp(error);
+    // handleErrorTemp(error); //++
+    console.log("edit event saga error:", error);
     yield put(editEventSlice.actions.error());
   }
 }

@@ -164,9 +164,7 @@ export const logExpirationReminder = (min: number) => {
   logger.debug(`REMINDER: Channel will expire in ${min} minutes (${label})`);
 };
 
-export const syncExpired = (expiry?: string) => {
-  if (!expiry) return true;
-
+export const syncExpired = (expiry: string) => {
   const expiration = new Date(parseInt(expiry)).getTime();
   const now = new Date().getTime();
 

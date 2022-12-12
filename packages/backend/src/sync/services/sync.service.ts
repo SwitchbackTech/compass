@@ -25,7 +25,6 @@ import {
   importEventsByCalendar,
   prepEventSyncChannels,
   startWatchingGcalsById,
-  deleteAllSyncData,
   prepSyncMaintenance,
   pruneSync,
   refreshSync,
@@ -50,23 +49,33 @@ class SyncService {
   };
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    if (payload.resourceState !== "exists") {
+    logger.debug(JSON.stringify(payload, null, 2));
+
+    const { channelId, expiration, resourceId, resourceState } = payload;
+    if (resourceState !== "exists") {
       logger.info("sync initialized");
       return "initialized";
     }
 
-    logger.debug(JSON.stringify(payload, null, 2));
+    const sync = await getSync({ resourceId });
+    if (!sync) {
+      logger.debug(
+        `Ignored notification becasuse no sync for this resourceId: ${resourceId}`
+      );
+      return "ignored";
+    }
 
-    const { userId, gCalendarId, nextSyncToken } = await getCalendarInfo(
-      payload.resourceId
+    const { userId, gCalendarId, nextSyncToken } = getCalendarInfo(
+      sync,
+      resourceId
     );
 
     const syncInfo = {
-      channelId: payload.channelId,
-      expiration: payload.expiration,
+      channelId,
+      expiration,
       gCalendarId,
       nextSyncToken,
-      resourceId: payload.resourceId,
+      resourceId,
     };
 
     const response = await importEventsByCalendar(userId, syncInfo);
@@ -129,6 +138,12 @@ class SyncService {
 
     const prunes = await pruneSync(toPrune);
     const refreshes = await refreshSync(toRefresh);
+
+    logger.debug(`Sync results:
+      ignored: ${ignored.toString()} 
+      pruned: ${prunes.map((p) => p.user).toString()}
+      refreshed: ${refreshes.map((r) => r.user).toString()}
+    `);
 
     return {
       ignored: ignored.length,
@@ -225,9 +240,9 @@ class SyncService {
 
       const noAccess = isAccessRevoked(_e);
       if (noAccess) {
-        logger.warn("Access revoked, cleaning data ...");
-        await deleteAllSyncData(userId);
-        throw error(SyncError.AccessRevoked, msg);
+        // can't stop, cuz can't init gcal client anymore
+        logger.warn("Access revoked, ignored stop watch request");
+        return;
       }
 
       if (_e.code === "404" || code === 404) {
@@ -244,6 +259,7 @@ class SyncService {
     const sync = await getSync({ userId });
 
     if (!sync || !sync.google.events) {
+      //++
       // throw error(SyncError.NoWatchesForUser, "Ignored Stop Request");
       return [];
     }
