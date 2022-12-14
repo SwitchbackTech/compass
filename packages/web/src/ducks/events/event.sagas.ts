@@ -8,7 +8,7 @@ import { EventApi } from "@web/ducks/events/event.api";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { selectEventById } from "@web/ducks/events/event.selectors";
 import {
-  handleErrorTemp,
+  handleError,
   normalizedEventsSchema,
 } from "@web/common/utils/event.util";
 
@@ -65,7 +65,7 @@ function* convertSomedayEventSaga({ payload }: Action_ConvertSomedayEvent) {
     yield put(getFutureEventsSlice.actions.success());
   } catch (error) {
     yield put(getFutureEventsSlice.actions.error());
-    handleErrorTemp(error);
+    handleError(error as Error);
   }
 }
 
@@ -92,8 +92,8 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
     );
     yield put(createEventSlice.actions.success());
   } catch (error) {
-    handleErrorTemp(error);
     yield put(createEventSlice.actions.error());
+    handleError(error as Error);
   }
 }
 
@@ -104,8 +104,8 @@ export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
     yield call(EventApi.delete, payload._id);
     yield put(deleteEventSlice.actions.success());
   } catch (error) {
-    handleErrorTemp(error);
     yield put(deleteEventSlice.actions.error());
+    handleError(error as Error);
   }
 }
 
@@ -118,8 +118,8 @@ export function* deleteSomedayEventSaga({ payload }: Action_DeleteEvent) {
 
     yield call(EventApi.delete, payload._id);
   } catch (error) {
-    handleErrorTemp(error);
     yield put(getFutureEventsSlice.actions.error());
+    handleError(error as Error);
     yield put(getFutureEventsSlice.actions.request());
   }
 }
@@ -130,8 +130,8 @@ export function* editEventSaga({ payload }: Action_EditEvent) {
     yield call(EventApi.edit, payload._id, payload.event);
     yield put(editEventSlice.actions.success());
   } catch (error) {
-    handleErrorTemp(error);
     yield put(editEventSlice.actions.error());
+    handleError(error as Error);
   }
 }
 
@@ -147,8 +147,8 @@ function* getCurrentMonthEventsSaga({ payload }: Action_GetPaginatedEvents) {
 
     yield put(getCurrentMonthEventsSlice.actions.success(data));
   } catch (error) {
-    handleErrorTemp(error);
     yield put(getCurrentMonthEventsSlice.actions.error());
+    handleError(error as Error);
   }
 }
 
@@ -176,7 +176,7 @@ function* getEventsSaga(
       data: normalizedEvents.result as Payload_NormalizedAsyncAction,
     };
   } catch (error) {
-    handleErrorTemp(error);
+    handleError(error as Error);
   }
 }
 
@@ -231,7 +231,7 @@ function* getWeekEventsSaga({ payload }: Action_GetWeekEvents) {
     yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error());
-    handleErrorTemp(error);
+    handleError(error as Error);
   }
 }
 

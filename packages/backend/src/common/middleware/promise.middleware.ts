@@ -55,12 +55,12 @@ type P = Promise<unknown> | (() => unknown);
 
 export function promiseMiddleware() {
   return (
-    req: express.Request,
+    // req: express.Request,
+    req: SessionRequest,
     // res: express.Response,
     res: Res_Promise,
     next: express.NextFunction
   ) => {
-    // res.promise = (p) => {
     res.promise = (p: P) => {
       //function or promise
       let promiseToResolve: Promise<unknown> | (() => any);

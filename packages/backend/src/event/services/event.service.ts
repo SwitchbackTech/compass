@@ -168,29 +168,22 @@ class EventService {
     userId: string,
     query: Query_Event
   ): Promise<Schema_Event[] | BaseError> {
-    try {
-      const filter = getReadAllFilter(userId, query);
+    const filter = getReadAllFilter(userId, query);
 
-      // (temporarily) limit number of results
-      // to speed up development
-      if (query.someday) {
-        const response = (await mongoService.db
-          .collection(Collections.EVENT)
-          .find(filter)
-          .limit(SOMEDAY_EVENTS_LIMIT)
-          .sort({ startDate: 1 })
-          .toArray()) as unknown as Schema_Event[];
-        return response;
-      } else {
-        const response = (await mongoService.db
-          .collection(Collections.EVENT)
-          .find(filter)
-          .toArray()) as unknown as Schema_Event[];
-        return response;
-      }
-    } catch (e) {
-      logger.error(e);
-      return new BaseError("Read Failed", JSON.stringify(e), 500, true);
+    if (query.someday) {
+      const response = (await mongoService.db
+        .collection(Collections.EVENT)
+        .find(filter)
+        .limit(SOMEDAY_EVENTS_LIMIT)
+        .sort({ startDate: 1 })
+        .toArray()) as unknown as Schema_Event[];
+      return response;
+    } else {
+      const response = (await mongoService.db
+        .collection(Collections.EVENT)
+        .find(filter)
+        .toArray()) as unknown as Schema_Event[];
+      return response;
     }
   }
 
@@ -239,7 +232,7 @@ class EventService {
     if ("_id" in event) {
       delete event._id; // mongo doesn't allow changing this field directly
     }
-    const _event = { ...event, lastUpdatedAt: new Date() };
+    const _event = { ...event, updatedAt: new Date() };
 
     const response = await mongoService.db
       .collection(Collections.EVENT)

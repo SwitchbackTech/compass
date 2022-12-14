@@ -50,7 +50,7 @@ app.use(helmet());
 app.use(expressLogger);
 app.use(express.json());
 // app.use(catchUndefinedSyncErrors);
-app.use(catchSyncErrors); // might need to move down
+app.use(catchSyncErrors);
 
 const routes: Array<CommonRoutesConfig> = [];
 routes.push(new AuthRoutes(app));

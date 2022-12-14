@@ -23,17 +23,16 @@ import {
   getCalendarInfo,
   importEvents,
   importEventsByCalendar,
-  prepareEventSyncChannels,
+  prepEventSyncChannels,
   startWatchingGcalsById,
-  deleteAllSyncData,
-  prepareMaintenance,
-  refreshSync,
+  prepSyncMaintenance,
   pruneSync,
+  refreshSync,
 } from "./sync.service.helpers";
 import {
   deleteWatchData,
   getSync,
-  isWatchingEvents,
+  isWatchingEventsByGcalId,
   updateSyncFor,
   updateRefreshedAtFor,
   updateSyncTokenFor,
@@ -50,23 +49,32 @@ class SyncService {
   };
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    if (payload.resourceState !== "exists") {
-      logger.info("sync initialized");
+    const { channelId, expiration, resourceId, resourceState } = payload;
+    if (resourceState !== "exists") {
+      logger.info(`sync initialized for channelId: ${channelId}`);
       return "initialized";
     }
 
-    logger.debug(JSON.stringify(payload, null, 2));
+    const sync = await getSync({ resourceId });
+    if (!sync) {
+      logger.debug(
+        `Ignored notification becasuse no sync for this resourceId: ${resourceId}`
+      );
+      return "ignored";
+    }
 
-    const { userId, gCalendarId, nextSyncToken } = await getCalendarInfo(
-      payload.resourceId
+    logger.debug(JSON.stringify(payload, null, 2));
+    const { userId, gCalendarId, nextSyncToken } = getCalendarInfo(
+      sync,
+      resourceId
     );
 
     const syncInfo = {
-      channelId: payload.channelId,
-      expiration: payload.expiration,
+      channelId,
+      expiration,
       gCalendarId,
       nextSyncToken,
-      resourceId: payload.resourceId,
+      resourceId,
     };
 
     const response = await importEventsByCalendar(userId, syncInfo);
@@ -89,7 +97,7 @@ class SyncService {
   importIncremental = async (userId: string, gcal?: gCalendar) => {
     if (!gcal) gcal = await getGcalClient(userId);
 
-    const sync = await prepareEventSyncChannels(userId, gcal);
+    const sync = await prepEventSyncChannels(userId, gcal);
 
     const importEvents = assembleEventImports(userId, gcal, sync.google.events);
 
@@ -125,14 +133,21 @@ class SyncService {
   };
 
   runSyncMaintenance = async () => {
-    const { toPrune, toRefresh } = await prepareMaintenance();
+    const { ignored, toPrune, toRefresh } = await prepSyncMaintenance();
 
     const prunes = await pruneSync(toPrune);
     const refreshes = await refreshSync(toRefresh);
 
+    logger.debug(`Sync results:
+      ignored: ${ignored.toString()} 
+      pruned: ${prunes.map((p) => p.user).toString()}
+      refreshed: ${refreshes.map((r) => r.user).toString()}
+    `);
+
     return {
-      prunes,
-      refreshes,
+      ignored: ignored.length,
+      pruned: prunes.length,
+      refreshed: refreshes.length,
     };
   };
 
@@ -143,7 +158,10 @@ class SyncService {
   ) => {
     if (!gcal) gcal = await getGcalClient(userId);
 
-    const alreadyWatching = await isWatchingEvents(userId, params.gCalendarId);
+    const alreadyWatching = await isWatchingEventsByGcalId(
+      userId,
+      params.gCalendarId
+    );
     if (alreadyWatching) {
       throw error(SyncError.CalendarWatchExists, "Skipped Start Watch");
     }
@@ -221,9 +239,9 @@ class SyncService {
 
       const noAccess = isAccessRevoked(_e);
       if (noAccess) {
-        logger.warn("Access revoked, cleaning data ...");
-        await deleteAllSyncData(userId);
-        throw error(SyncError.AccessRevoked, msg);
+        // can't stop, cuz can't init gcal client anymore
+        logger.warn("Access revoked, ignored stop watch request");
+        return;
       }
 
       if (_e.code === "404" || code === 404) {
@@ -240,7 +258,7 @@ class SyncService {
     const sync = await getSync({ userId });
 
     if (!sync || !sync.google.events) {
-      throw error(SyncError.NoWatchesForUser, "Ignored Stop Request");
+      return [];
     }
 
     logger.debug(`Stopping all gcal event watches for user: ${userId}`);
@@ -271,82 +289,3 @@ class SyncService {
 }
 
 export default new SyncService();
-
-/* //--
-OLDhandleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    try {
-      const result = {
-        params: undefined,
-        init: undefined,
-        watch: undefined,
-        prep: undefined,
-        events: undefined,
-      };
-
-      // There is new data to sync from GCal //
-      if (payload.resourceState === "exists") {
-        const { channelPrepResult, userId, gcal, nextSyncToken } =
-          await OLDprepareSyncChannels(payload);
-
-        result.watch = channelPrepResult;
-
-        const params: Params_Sync_Gcal = {
-          ...payload,
-          userId: userId,
-          nextSyncToken,
-          // TODO use non-hard-coded calendarId once supporting non-'primary' calendars
-          calendarId: GCAL_PRIMARY,
-        };
-        result.params = params;
-
-        const prepResult = await OLDprepareUpdate(gcal, params);
-        result.prep = prepResult;
-
-        if (prepResult.operations.length > 0)
-          result.events = await mongoService.db
-            .collection(Collections.EVENT)
-            .bulkWrite(prepResult.operations);
-      }
-
-      // syncFileLogger.debug(JSON.stringify(result, null, 2));
-      syncFileLogger.debug(result);
-      return result;
-    } catch (e) {
-      logger.error(e);
-      syncFileLogger.error(e);
-      return new BaseError("Sync Failed", e, Status.INTERNAL_SERVER, false);
-    }
-  };
-
-  updateNextSyncToken = async (userId: string, nextSyncToken: string) => {
-    const msg = `Failed to update the nextSyncToken for calendar record of user: ${userId}`;
-    const err = new BaseError("Update Failed", msg, 500, true);
-
-    try {
-      // updates the primary calendar's nextSyncToken
-      // query will need to be updated once supporting non-primary calendars
-      const result = await mongoService.db
-        .collection(Collections.CALENDARLIST)
-        .findOneAndUpdate(
-          { user: userId, "google.items.primary": true },
-          {
-            $set: {
-              "google.items.$.sync.nextSyncToken": nextSyncToken,
-              updatedAt: new Date(),
-            },
-          },
-          { returnDocument: "after" }
-        );
-
-      if (result.value !== null) {
-        return { status: `updated to: ${nextSyncToken}` };
-      } else {
-        logger.error(msg);
-        return { status: "Failed to update properly", debugResult: result };
-      }
-    } catch (e) {
-      logger.error(e);
-      throw err;
-    }
-  };
-  */

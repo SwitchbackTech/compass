@@ -11,6 +11,7 @@ import {
   Schema_Event,
 } from "@core/types/event.types";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { Status } from "@core/errors/status.codes";
 
 import { Schema_GridEvent } from "../types/web.event.types";
 import { removeGridFields } from "./grid.util";
@@ -71,13 +72,13 @@ export const getWeekDayLabel = (day: Dayjs | Date) => {
   return day.format(YEAR_MONTH_DAY_COMPACT_FORMAT);
 };
 
-// rudimentary handling of errors
-// meant for temporary testing, will be replaced
-export const handleErrorTemp = (error: Error) => {
-  if (error.message.slice(-3) === "401") {
+export const handleError = (error: Error) => {
+  const messageCode = parseInt(error.message.slice(-3));
+  if (messageCode === Status.UNAUTHORIZED) {
     // SuperTokensWrapper will handle these
     return;
   }
+
   console.log(error);
   alert(error);
 };

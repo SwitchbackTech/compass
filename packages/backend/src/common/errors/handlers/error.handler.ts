@@ -12,8 +12,11 @@ class ErrorHandler {
   }
 
   public log(error: Error): void {
-    logger.error(JSON.stringify(error));
+    const msg = JSON.stringify(error);
+    logger.error(msg);
   }
+
+  public logger = logger;
 
   exitAfterProgrammerError(): void {
     logger.error(

@@ -1,14 +1,7 @@
 import pkg from "inquirer";
 const { prompt } = pkg;
-import { BaseError } from "@core/errors/errors.base";
-import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
-import eventService from "@backend/event/services/event.service";
-import priorityService from "@backend/priority/services/priority.service";
 import { findCompassUsersBy } from "@backend/user/queries/user.queries";
-import calendarService from "@backend/calendar/services/calendar.service";
 import userService from "@backend/user/services/user.service";
-import syncService from "@backend/sync/services/sync.service";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
 
 export interface Summary_Delete {
   calendarlist?: number;
@@ -19,45 +12,6 @@ export interface Summary_Delete {
   user?: number;
   sessions?: number;
 }
-
-const deleteCompassDataForUser = async (userId: string) => {
-  const summary: Summary_Delete = {};
-
-  try {
-    const priorities = await priorityService.deleteAllByUser(userId);
-    summary.priorities = priorities.deletedCount;
-
-    const calendars = await calendarService.deleteAllByUser(userId);
-    summary.calendarlist = calendars.deletedCount;
-
-    const events = await eventService.deleteAllByUser(userId);
-    summary.events = events.deletedCount;
-
-    const watches = await syncService.stopWatches(userId);
-    summary.eventWatches = watches.length;
-
-    initSupertokens();
-    const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
-      userId
-    );
-    summary.sessions = sessionsRevoked;
-
-    const syncs = await syncService.deleteAllByUser(userId);
-    summary.syncs = syncs.deletedCount;
-
-    const _user = await userService.deleteUser(userId);
-    summary.user = _user.deletedCount;
-    return summary;
-  } catch (e) {
-    const _e = e as BaseError;
-    console.log("Stopped early because:", _e.description || _e);
-
-    const _user = await userService.deleteUser(userId);
-    summary.user = _user.deletedCount;
-
-    return summary;
-  }
-};
 
 export const deleteCompassDataForMatchingUsers = async (user: string) => {
   // userService.mongoService.client?.once("connection", () => {
@@ -75,7 +29,7 @@ export const deleteCompassDataForMatchingUsers = async (user: string) => {
   const totalSummary: Summary_Delete[] = [];
   for (const user of users) {
     const userId = user?._id.toString();
-    const summary = await deleteCompassDataForUser(userId);
+    const summary = await userService.deleteCompassDataForUser(userId);
     totalSummary.push(summary);
   }
 

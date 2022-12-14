@@ -81,27 +81,6 @@ export const getActiveDeadline = () => {
   return deadline;
 };
 
-export const syncExpired = (expiry?: string) => {
-  if (!expiry) return true;
-
-  const expiration = new Date(parseInt(expiry)).getTime();
-  const now = new Date().getTime();
-
-  const expired = now > expiration;
-  return expired;
-};
-
-export const syncExpiresSoon = (expiry: string) => {
-  const bufferDays = 3;
-  const MIN_IN_DAY = 1440;
-
-  const expiration = new Date(parseInt(expiry)).getTime();
-  const deadline = minutesFromNow(MIN_IN_DAY * bufferDays, "ms");
-
-  const expiresSoon = expiration < deadline;
-  return expiresSoon;
-};
-
 export const findCalendarId = (resourceId: string, sync: Schema_Sync) => {
   const matches = sync.google.events.filter((g) => {
     return g.resourceId === resourceId;
@@ -183,4 +162,23 @@ export const logExpirationReminder = (min: number) => {
 
   const label = hours > 24 ? `${days} days` : `${hours} hours`;
   logger.debug(`REMINDER: Channel will expire in ${min} minutes (${label})`);
+};
+
+export const syncExpired = (expiry: string) => {
+  const expiration = new Date(parseInt(expiry)).getTime();
+  const now = new Date().getTime();
+
+  const expired = now > expiration;
+  return expired;
+};
+
+export const syncExpiresSoon = (expiry: string) => {
+  const bufferDays = 3;
+  const MIN_IN_DAY = 1440;
+
+  const expiration = new Date(parseInt(expiry)).getTime();
+  const deadline = minutesFromNow(MIN_IN_DAY * bufferDays, "ms");
+
+  const expiresSoon = expiration < deadline;
+  return expiresSoon;
 };

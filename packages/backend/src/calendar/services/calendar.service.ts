@@ -4,7 +4,6 @@ import { Schema_CalendarList } from "@core/types/calendar.types";
 
 class CalendarService {
   async create(calendarList: Schema_CalendarList) {
-    //--
     // if (calendarList instanceof Array) {
     //   return await mongoService.db
     //     .collection(Collections.CALENDARLIST)
