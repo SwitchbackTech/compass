@@ -49,11 +49,9 @@ class SyncService {
   };
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    logger.debug(JSON.stringify(payload, null, 2));
-
     const { channelId, expiration, resourceId, resourceState } = payload;
     if (resourceState !== "exists") {
-      logger.info("sync initialized");
+      logger.info(`sync initialized for channelId: ${channelId}`);
       return "initialized";
     }
 
@@ -65,6 +63,7 @@ class SyncService {
       return "ignored";
     }
 
+    logger.debug(JSON.stringify(payload, null, 2));
     const { userId, gCalendarId, nextSyncToken } = getCalendarInfo(
       sync,
       resourceId
@@ -259,8 +258,6 @@ class SyncService {
     const sync = await getSync({ userId });
 
     if (!sync || !sync.google.events) {
-      //++
-      // throw error(SyncError.NoWatchesForUser, "Ignored Stop Request");
       return [];
     }
 

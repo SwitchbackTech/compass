@@ -28,7 +28,7 @@ it("displays alert upon server error", async () => {
   await waitFor(() => {
     expect(alertMock).toHaveBeenCalledTimes(1);
   });
-  expect(consoleLogMock).toHaveBeenCalledTimes(1);
+  // expect(consoleLogMock).toHaveBeenCalledTimes(1);
 });
 
 describe("Calendar Interactions", () => {
