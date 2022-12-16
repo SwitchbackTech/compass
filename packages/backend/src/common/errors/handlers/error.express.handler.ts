@@ -50,7 +50,7 @@ export const handleExpressError = async (res: Response, err: CompassError) => {
 
       await userService.deleteCompassDataForUser(userId, false);
 
-      res.status(Status.GONE).send("User revoked access");
+      res.status(Status.GONE).send("User revoked access, deleted all data");
       return;
     }
 
