@@ -6,8 +6,9 @@ build.zip
 .eslintcache
 .idea/
 .vscode/
-globalConfig.json
 electron/localization/locales/en/translation.missing.json
+globalConfig.json
+sendgrid.env
 
 # wildcards
 *.env*

@@ -46,7 +46,7 @@ export const handleExpressError = async (res: Response, err: CompassError) => {
     if (isGoogleError && isAccessRevoked(err)) {
       //@ts-ignore
       const userId = res.req.session?.getUserId() as string;
-      errorHandler.logger.warn(`User revoked access, cleaning data: ${userId}`);
+      console.warn(`User revoked access, cleaning data: ${userId}`);
 
       await userService.deleteCompassDataForUser(userId, false);
 

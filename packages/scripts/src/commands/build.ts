@@ -103,7 +103,7 @@ const copyToVM = async (packages: string[], vmInfo: VmInfo) => {
 
   console.log("copying latest bash scripts to VM ...");
   shell.exec(
-    `gcloud compute scp ${COMPASS_ROOT_DEV}/packages/scripts/src/prod/* ${vmPath}`
+    `gcloud compute scp ${COMPASS_ROOT_DEV}/packages/scripts/src/prod/local/* ${vmPath}`
   );
 
   console.log("Done copying artifact(s) to VM");

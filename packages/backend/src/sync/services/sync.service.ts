@@ -14,7 +14,6 @@ import {
   SyncError,
 } from "@backend/common/errors/types/backend.errors";
 import { getCalendarsToSync } from "@backend/auth/services/auth.utils";
-import { isAccessRevoked } from "@backend/common/services/gcal/gcal.utils";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 
