@@ -64,7 +64,7 @@
     "@types/react-router-dom": "^5.1.9",
     "@types/react-select": "^5.0.1",
     "@types/styled-components": "^5.1.14",
-    "babel-jest": "^27.3.0",
+    "babel-jest": "^29.3.1",
     "babel-plugin-styled-components": "^2.0.2",
     "eslint-plugin-jest-dom": "^4.0.1",
     "jest": "^29.0.3",
