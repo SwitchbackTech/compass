@@ -14,7 +14,6 @@ import {
   SyncError,
 } from "@backend/common/errors/types/backend.errors";
 import { getCalendarsToSync } from "@backend/auth/services/auth.utils";
-import { isAccessRevoked } from "@backend/common/services/gcal/gcal.utils";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 
@@ -235,22 +234,15 @@ class SyncService {
       const _e = e as GaxiosError;
       const code = (_e.code as unknown as number) || 0;
 
-      const msg = "Stop Ignored, Sync Deleted";
-
-      const noAccess = isAccessRevoked(_e);
-      if (noAccess) {
-        // can't stop, cuz can't init gcal client anymore
-        logger.warn("Access revoked, ignored stop watch request");
-        return;
-      }
-
       if (_e.code === "404" || code === 404) {
         await deleteWatchData(userId, "events", channelId);
-        throw error(SyncError.ChannelDoesNotExist, msg);
+        logger.warn(
+          "Channel no longer exists. Corresponding sync record deleted"
+        );
+        return {};
       }
 
-      logger.error(e);
-      throw error(GenericError.NotSure, "Stop Failed");
+      throw e;
     }
   };
 

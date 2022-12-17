@@ -16,8 +16,6 @@ class ErrorHandler {
     logger.error(msg);
   }
 
-  public logger = logger;
-
   exitAfterProgrammerError(): void {
     logger.error(
       "Programmer error occured. Exiting to prevent app instability"

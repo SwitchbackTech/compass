@@ -140,11 +140,6 @@ export const SyncError = {
     status: Status.BAD_REQUEST,
     isOperational: true,
   },
-  ChannelDoesNotExist: {
-    description: "Channel does not exist",
-    status: Status.GONE,
-    isOperational: true,
-  },
   NoGCalendarId: {
     description: "No gCalendarId",
     status: Status.NO_CONTENT,

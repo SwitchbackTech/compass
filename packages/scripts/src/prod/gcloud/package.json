@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "start": "functions-framework --target=runSyncMaintenance"
+  },
+  "dependencies": {
+    "@sendgrid/mail": "^7.7.0",
+    "axios": "^1.2.1"
+  }
+}
