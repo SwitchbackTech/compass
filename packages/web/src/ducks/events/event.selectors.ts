@@ -65,8 +65,8 @@ export const selectIsProcessing = (state: RootState) =>
   isProcessing(state.events.createEvent) ||
   isProcessing(state.events.getWeekEvents);
 
-export const selectIsGetFutureEventsProcessing = (state: RootState) =>
-  isProcessing(state.events.getFutureEvents);
+export const selectIsGetSomedayEventsProcessing = (state: RootState) =>
+  isProcessing(state.events.getSomedayEvents);
 
 export const selectPaginatedEventsBySectionType = (
   state: RootState,
@@ -81,20 +81,18 @@ export const selectPaginatedEventsBySectionType = (
 
 export const selectSomedayEvents = (state: RootState) => {
   const entities = state.events.entities.value || {};
-  const somedayIds = state.events.getFutureEvents.value || [];
+  const somedayIds = state.events.getSomedayEvents.value || [];
 
   if (somedayIds.length === 0 || Object.keys(entities).length === 0) {
     return [];
   }
 
-  const somedayEvents: Schema_Event[] = somedayIds.data.map(
-    (_id: string) => entities[_id]
-  );
+  const somedayEvents = somedayIds.data.map((_id: string) => entities[_id]);
   return somedayEvents;
 };
 
 export const selectSomedayEventsCount = (state: RootState): number => {
-  return state.events["getFutureEvents"].value?.data?.length + 1 || 0;
+  return state.events["getSomedayEvents"].value?.data?.length + 1 || 0;
 };
 
 /*********************

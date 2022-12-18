@@ -11,10 +11,8 @@ describe("Sidebar: Display without State", () => {
       render(<CalendarView />);
     });
 
-    // Someday title
-    expect(
-      screen.getByRole("heading", { name: /someday/i })
-    ).toBeInTheDocument();
+    // Indented to match someday title (MM.DD-DD)
+    expect(screen.getByRole("heading", { name: /-/i })).toBeInTheDocument();
 
     // Add button
     expect(screen.getByText(/\+/i)).toBeInTheDocument();

@@ -18,7 +18,7 @@ import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { getX } from "@web/common/utils/grid.util";
 import {
   draftSlice,
-  getFutureEventsSlice,
+  getSomedayEventsSlice,
 } from "@web/ducks/events/event.slice";
 import {
   selectAllDayEvents,
@@ -88,7 +88,7 @@ export const AllDayRow: FC<Props> = ({
       endDate: end,
     };
     dispatch(
-      getFutureEventsSlice.actions.convert({
+      getSomedayEventsSlice.actions.convert({
         _id,
         updatedFields,
       })

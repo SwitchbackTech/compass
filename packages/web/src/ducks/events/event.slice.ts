@@ -12,7 +12,6 @@ import { Status_DraftEvent } from "@web/common/types/web.event.types";
 import {
   Action_DeleteEvent,
   Action_DraftEvent,
-  Action_Draft_Drag,
   Action_Draft_Resize,
   Action_Draft_Swap,
   Action_EditEvent,
@@ -21,7 +20,7 @@ import {
   Entities_Event,
   Payload_EditEvent,
   Payload_GetPaginatedEvents,
-  Payload_GetWeekEvents,
+  Payload_GetEvents,
 } from "./event.types";
 
 const changeTimezones = produce((draft, newTimeZone) => {
@@ -138,11 +137,11 @@ export const getCurrentMonthEventsSlice = createAsyncSlice<
   name: "getCurrentMonthEvents",
 });
 
-export const getFutureEventsSlice = createAsyncSlice<
+export const getSomedayEventsSlice = createAsyncSlice<
   Payload_GetPaginatedEvents,
   Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
 >({
-  name: "getFutureEvents",
+  name: "getSomedayEvents",
   reducers: {
     convert: (state, action) => {},
     delete: (state: RootState, action: Action_DeleteEvent) => {
@@ -162,7 +161,7 @@ export const getFutureEventsSlice = createAsyncSlice<
 });
 
 export const getWeekEventsSlice = createAsyncSlice<
-  Payload_GetWeekEvents,
+  Payload_GetEvents,
   Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
 >({
   name: "getWeekEvents",
@@ -190,6 +189,6 @@ export const eventsReducer = combineReducers({
   editEvent: editEventSlice.reducer,
   entities: eventsEntitiesSlice.reducer,
   getCurrentMonthEvents: getCurrentMonthEventsSlice.reducer,
-  getFutureEvents: getFutureEventsSlice.reducer,
+  getSomedayEvents: getSomedayEventsSlice.reducer,
   getWeekEvents: getWeekEventsSlice.reducer,
 });

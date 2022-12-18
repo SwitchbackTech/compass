@@ -131,6 +131,13 @@ export const getTimesLabel = (startDate: string, endDate: string) => {
   return label;
 };
 
+export const getWeekRangeDates = (weekStart: Dayjs, weekEnd: Dayjs) => {
+  return {
+    startDate: weekStart.format(YEAR_MONTH_DAY_FORMAT),
+    endDate: weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+  };
+};
+
 export const getWeekRangeLabel = (weekStart: Dayjs, weekEnd: Dayjs) => {
   const start = weekStart.format("M.D");
   const end = weekEnd.format("D");

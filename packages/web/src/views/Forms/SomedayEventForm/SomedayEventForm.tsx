@@ -3,7 +3,7 @@ import { Key } from "ts-key-enum";
 import { useDispatch } from "react-redux";
 import { DeleteIcon } from "@web/components/Icons";
 import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
-import { getFutureEventsSlice } from "@web/ducks/events/event.slice";
+import { getSomedayEventsSlice } from "@web/ducks/events/event.slice";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
@@ -38,7 +38,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
   const onDelete = () => {
     if (event._id) {
-      dispatch(getFutureEventsSlice.actions.delete({ _id: event._id }));
+      dispatch(getSomedayEventsSlice.actions.delete({ _id: event._id }));
     }
 
     _onClose();

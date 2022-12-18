@@ -14,7 +14,7 @@ import { getX } from "@web/common/utils/grid.util";
 import { useDispatch, useSelector } from "react-redux";
 import {
   draftSlice,
-  getFutureEventsSlice,
+  getSomedayEventsSlice,
 } from "@web/ducks/events/event.slice";
 import { DragItem, DropResult } from "@web/common/types/dnd.types";
 import {
@@ -78,7 +78,7 @@ export const MainGrid: FC<Props> = ({
     };
 
     dispatch(
-      getFutureEventsSlice.actions.convert({
+      getSomedayEventsSlice.actions.convert({
         _id,
         updatedFields,
       })

@@ -18,7 +18,7 @@ import {
   editEventSlice,
   eventsEntitiesSlice,
   getCurrentMonthEventsSlice,
-  getFutureEventsSlice,
+  getSomedayEventsSlice,
   getWeekEventsSlice,
 } from "./event.slice";
 import {
@@ -28,7 +28,7 @@ import {
   Response_GetEventsSaga,
   Response_GetEventsSuccess,
   Action_GetPaginatedEvents,
-  Action_GetWeekEvents,
+  Action_GetEvents,
   Response_CreateEventSaga,
   Action_DeleteEvent,
   Entities_Event,
@@ -57,14 +57,20 @@ function* convertSomedayEventSaga({ payload }: Action_ConvertSomedayEvent) {
       eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
     );
 
-    const futureEvents: Response_GetEventsSaga = (yield select((state) =>
-      selectPaginatedEventsBySectionType(state, "future")
+    const somedayEvents: Response_GetEventsSaga = (yield select((state) =>
+      selectPaginatedEventsBySectionType(state, "someday")
     )) as Response_GetEventsSaga;
 
-    yield put(getFutureEventsSlice.actions.request(futureEvents));
-    yield put(getFutureEventsSlice.actions.success());
+    const remainingSomedayEvents = somedayEvents.data.filter(
+      (id) => id !== _id
+    );
+    yield put(
+      getSomedayEventsSlice.actions.success({
+        data: remainingSomedayEvents,
+      })
+    );
   } catch (error) {
-    yield put(getFutureEventsSlice.actions.error());
+    yield put(getSomedayEventsSlice.actions.error());
     handleError(error as Error);
   }
 }
@@ -82,7 +88,7 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
     );
 
     if (payload.isSomeday) {
-      yield put(getFutureEventsSlice.actions.insert(res.data._id));
+      yield put(getSomedayEventsSlice.actions.insert(res.data._id));
     } else {
       yield put(getWeekEventsSlice.actions.insert(res.data._id));
     }
@@ -118,9 +124,9 @@ export function* deleteSomedayEventSaga({ payload }: Action_DeleteEvent) {
 
     yield call(EventApi.delete, payload._id);
   } catch (error) {
-    yield put(getFutureEventsSlice.actions.error());
+    yield put(getSomedayEventsSlice.actions.error());
     handleError(error as Error);
-    yield put(getFutureEventsSlice.actions.request());
+    yield put(getSomedayEventsSlice.actions.request());
   }
 }
 
@@ -190,8 +196,8 @@ function* getEverySectionEvents() {
   )) as Response_GetEventsSaga;
   */
 
-  const futureEvents: Response_GetEventsSaga = (yield select((state) =>
-    selectPaginatedEventsBySectionType(state, "future")
+  const somedayEvents: Response_GetEventsSaga = (yield select((state) =>
+    selectPaginatedEventsBySectionType(state, "someday")
   )) as Response_GetEventsSaga;
 
   const weekEvents: Response_GetEventsSaga = (yield select((state) =>
@@ -199,14 +205,16 @@ function* getEverySectionEvents() {
   )) as Response_GetEventsSaga;
 
   // yield put(getCurrentMonthEventsSlice.actions.request(currentMonthEvents));
-  yield put(getFutureEventsSlice.actions.request(futureEvents));
+  yield put(getSomedayEventsSlice.actions.request(somedayEvents));
   yield put(getWeekEventsSlice.actions.request(weekEvents));
 }
 
-export function* getSomedayEventsSaga() {
+export function* getSomedayEventsSaga({ payload }: Action_GetEvents) {
   try {
     const res: Response_GetEventsSuccess = (yield call(EventApi.get, {
       someday: true,
+      startDate: payload.startDate,
+      endDate: payload.endDate,
     })) as Response_GetEventsSuccess;
 
     const normalizedEvents = normalize<Schema_Event>(res.data, [
@@ -219,13 +227,13 @@ export function* getSomedayEventsSaga() {
     const data = {
       data: normalizedEvents.result as Payload_NormalizedAsyncAction,
     };
-    yield put(getFutureEventsSlice.actions.success(data));
+    yield put(getSomedayEventsSlice.actions.success(data));
   } catch (error) {
-    yield put(getFutureEventsSlice.actions.error());
+    yield put(getSomedayEventsSlice.actions.error());
   }
 }
 
-function* getWeekEventsSaga({ payload }: Action_GetWeekEvents) {
+function* getWeekEventsSaga({ payload }: Action_GetEvents) {
   try {
     const data: Response_GetEventsSaga = yield call(getEventsSaga, payload);
     yield put(getWeekEventsSlice.actions.success(data));
@@ -245,11 +253,14 @@ export function* eventsSagas() {
     getCurrentMonthEventsSaga
   );
   yield takeLatest(
-    getFutureEventsSlice.actions.convert,
+    getSomedayEventsSlice.actions.convert,
     convertSomedayEventSaga
   );
-  yield takeLatest(getFutureEventsSlice.actions.request, getSomedayEventsSaga);
-  yield takeLatest(getFutureEventsSlice.actions.delete, deleteSomedayEventSaga);
+  yield takeLatest(getSomedayEventsSlice.actions.request, getSomedayEventsSaga);
+  yield takeLatest(
+    getSomedayEventsSlice.actions.delete,
+    deleteSomedayEventSaga
+  );
   yield takeLatest(createEventSlice.actions.request, createEventSaga);
   yield takeLatest(editEventSlice.actions.request, editEventSaga);
   yield takeLatest(deleteEventSlice.actions.request, deleteEventSaga);

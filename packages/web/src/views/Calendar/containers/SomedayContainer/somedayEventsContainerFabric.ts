@@ -5,7 +5,7 @@ import { selectEventIdsBySectionType } from "@web/ducks/events/event.selectors";
 import { RootState } from "@web/store";
 import {
   getCurrentMonthEventsSlice,
-  getFutureEventsSlice,
+  getSomedayEventsSlice,
 } from "@web/ducks/events/event.slice";
 import {
   Payload_GetPaginatedEvents,
@@ -22,7 +22,7 @@ export const somedayEventsContainerFabric = (
   ) => {
     const actionBySectionType = {
       currentMonth: getCurrentMonthEventsSlice.actions.request,
-      future: getFutureEventsSlice.actions.request,
+      future: getSomedayEventsSlice.actions.request,
     };
 
     dispatch(actionBySectionType[sectionType](params));
