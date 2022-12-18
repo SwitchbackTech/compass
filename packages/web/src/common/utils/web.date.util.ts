@@ -131,6 +131,13 @@ export const getTimesLabel = (startDate: string, endDate: string) => {
   return label;
 };
 
+export const getWeekRangeLabel = (weekStart: Dayjs, weekEnd: Dayjs) => {
+  const start = weekStart.format("M.D");
+  const end = weekEnd.format("D");
+  const label = start + " - " + end;
+  return label;
+};
+
 export const mapToBackend = (s: Schema_SelectedDates) => {
   if (s.isAllDay) {
     const adjustedEnd = dayjs(s.endDate).add(1, "day");

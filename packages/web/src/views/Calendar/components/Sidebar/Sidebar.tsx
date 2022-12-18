@@ -54,7 +54,13 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         direction={FlexDirections.COLUMN}
         height={`calc(100% - ${SIDEBAR_MONTH_HEIGHT + 2}px)`}
       >
-        <SomedaySection flex={1} />
+        <SomedaySection
+          flex={1}
+          weekRange={{
+            weekStart: props.weekProps.component.startOfSelectedWeekDay,
+            weekEnd: props.weekProps.component.endOfSelectedWeekDay,
+          }}
+        />
       </StyledTopSectionFlex>
 
       <Divider

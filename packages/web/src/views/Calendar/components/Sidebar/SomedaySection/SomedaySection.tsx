@@ -1,4 +1,5 @@
-import React, { FC, useEffect, useRef, useState } from "react";
+import React, { FC, useEffect, useMemo, useRef, useState } from "react";
+import { Dayjs } from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
 import { SOMEDAY_EVENTS_LIMIT } from "@core/constants/core.constants";
 import { ColorNames } from "@core/types/color.types";
@@ -22,6 +23,7 @@ import {
   draftSlice,
   editEventSlice,
 } from "@web/ducks/events/event.slice";
+import { getWeekRangeLabel } from "@web/common/utils/web.date.util";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
 import { DraggableSomedayEvent } from "../EventsList/SomedayEvent/DraggableSomedayEvent";
@@ -29,9 +31,10 @@ import { StyledList } from "../EventsList/styled";
 
 interface Props {
   flex?: number;
+  weekRange: { weekStart: Dayjs; weekEnd: Dayjs };
 }
 
-export const SomedaySection: FC<Props> = ({ flex }) => {
+export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
   const dispatch = useDispatch();
 
   const somedayRef = useRef();
@@ -47,7 +50,12 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
   const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
 
-  //++ memo-ize
+  const weekLabel = useMemo(
+    () => getWeekRangeLabel(weekRange.weekStart, weekRange.weekEnd),
+    [weekRange]
+  );
+
+  // memo-ize
   const existingIds = somedayEvents.map((se) => se._id);
   const isNewDraft =
     isDrafting &&
@@ -141,8 +149,8 @@ export const SomedaySection: FC<Props> = ({ flex }) => {
         alignItems={AlignItems.CENTER}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        <Text colorName={ColorNames.WHITE_1} role="heading" size={27}>
-          Someday
+        <Text colorName={ColorNames.WHITE_1} role="heading" size={22}>
+          {weekLabel}
         </Text>
         <div role="button" title="Add Someday event">
           <StyledAddEventButton onClick={onSectionClick} size={27}>
