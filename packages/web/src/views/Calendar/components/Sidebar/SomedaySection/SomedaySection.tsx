@@ -133,7 +133,7 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
     const isAtLimit = somedayEvents.length >= SOMEDAY_WEEKLY_LIMIT;
     if (isAtLimit) {
       alert(
-        `Sorry, you can only have ${SOMEDAY_WEEKLY_LIMIT} Someday events per week.`
+        `Sorry, you can only have ${SOMEDAY_WEEKLY_LIMIT} unscheduled events per week.`
       );
       return;
     }
