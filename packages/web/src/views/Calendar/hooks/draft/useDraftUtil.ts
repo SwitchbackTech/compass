@@ -365,7 +365,6 @@ export const useDraftUtil = (
 
   const submit = (draft: Schema_GridEvent) => {
     const event = prepareEvent(draft);
-
     const isExisting = event._id;
     if (isExisting) {
       dispatch(

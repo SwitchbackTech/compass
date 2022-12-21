@@ -1,4 +1,4 @@
-import { SOMEDAY_EVENTS_LIMIT } from "@core/constants/core.constants";
+import { SOMEDAY_WEEKLY_LIMIT } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -174,7 +174,7 @@ class EventService {
       const response = (await mongoService.db
         .collection(Collections.EVENT)
         .find(filter)
-        .limit(SOMEDAY_EVENTS_LIMIT)
+        .limit(SOMEDAY_WEEKLY_LIMIT)
         .sort({ startDate: 1 })
         .toArray()) as unknown as Schema_Event[];
       return response;

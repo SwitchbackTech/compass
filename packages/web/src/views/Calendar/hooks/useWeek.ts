@@ -27,7 +27,7 @@ export const useWeek = (today: Dayjs) => {
       })
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [week]);
+  }, [dispatch, week]);
 
   const weekProps = {
     component: {

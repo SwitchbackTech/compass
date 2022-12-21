@@ -38,8 +38,8 @@ export interface Action_Draft_Swap extends Action {
 export interface Action_EditEvent extends Action {
   payload: Payload_EditEvent;
 }
-export interface Action_GetWeekEvents extends Action {
-  payload: Payload_GetWeekEvents;
+export interface Action_GetEvents extends Action {
+  payload: Payload_GetEvents;
 }
 export interface Action_GetPaginatedEvents extends Action {
   payload: Payload_GetPaginatedEvents;
@@ -108,7 +108,7 @@ export interface Payload_GetPaginatedEvents extends Filters_Pagination {
   priorities: Priorities[];
 }
 
-export interface Payload_GetWeekEvents {
+export interface Payload_GetEvents {
   startDate: string;
   endDate: string;
 }
@@ -123,7 +123,7 @@ export type Response_GetEventsSaga =
     Payload_GetPaginatedEvents;
 
 export type Response_GetEventsSuccess<T = Schema_Event[]> =
-  Response_HttpPaginatedSuccess<T> & Payload_GetWeekEvents;
+  Response_HttpPaginatedSuccess<T> & Payload_GetEvents;
 
 export type SectionType_Sidebar = "future" | "currentMonth";
 

@@ -5,7 +5,7 @@ export const MB_50 = 50000000; // in bytes
 export const MS_IN_HR = 2.7777777777778e-7;
 export const PORT_DEFAULT_API = 3000;
 export const PORT_DEFAULT_WEB = 9080;
-export const SOMEDAY_EVENTS_LIMIT = 9;
+export const SOMEDAY_WEEKLY_LIMIT = 9;
 
 export enum NodeEnv {
   Development = "development",

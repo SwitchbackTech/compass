@@ -13,7 +13,9 @@ const EventApi = {
   },
   get: (params: Params_Events) => {
     if (params.someday) {
-      return CompassApi.get(`/event?someday=true`);
+      return CompassApi.get(
+        `/event?someday=true&start=${params.startDate}&end=${params.endDate}`
+      );
     } else {
       return CompassApi.get(
         `/event?start=${params.startDate}&end=${params.endDate}`

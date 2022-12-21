@@ -10,7 +10,7 @@ import {
 
 export const preloadedState = {
   events: {
-    getFutureEvents: {
+    getSomedayEvents: {
       value: {
         data: [EUROPE_TRIP._id],
       },
