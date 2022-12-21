@@ -20,7 +20,7 @@
     "tslib": "^2.4.0"
   },
   "devDependencies": {
-    "@shelf/jest-mongodb": "^2.2.0",
+    "@shelf/jest-mongodb": "^4.1.4",
     "@types/cors": "^2.8.12",
     "@types/debug": "^4.1.7",
     "@types/express": "^4.17.13",
