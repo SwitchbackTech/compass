@@ -14,6 +14,15 @@ exports.runSyncMaintenance = (req, res) => {
   const domain = req.query.domain;
   const prefix = domain.includes("localhost") ? "http" : "https";
 
+  let label;
+  if (domain === "***REMOVED***") {
+    label = "staging";
+  } else if (domain === "app.compasscalendar.com") {
+    label = "production";
+  } else {
+    label = "unknown (hmm)";
+  }
+
   const config = {
     method: "post",
     url: `${prefix}://${domain}/api/sync/maintain-all`,
@@ -33,7 +42,7 @@ exports.runSyncMaintenance = (req, res) => {
 
       await sendEmail({
         ...msg,
-        subject: "Sync Maintenace: SUCCESS",
+        subject: "SUCCESS: " + label + " maintenance",
         text: JSON.stringify(response.data),
       });
 
@@ -43,7 +52,7 @@ exports.runSyncMaintenance = (req, res) => {
       console.log(error);
       await sendEmail({
         ...msg,
-        subject: "Sync Maintenance: FAILED",
+        subject: "FAILED: " + label + " maintenance",
         text: JSON.stringify(error),
       });
       res.send(error);

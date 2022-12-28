@@ -34,7 +34,6 @@ import {
 import {
   getSync,
   hasUpdatedCompassEventRecently,
-  isWatchingEvents,
   updateSyncTimeBy,
   updateSyncTokenFor,
 } from "./sync.queries";
@@ -88,12 +87,23 @@ const getSyncsToRefresh = (sync: Schema_Sync) => {
 
   sync.google.events.map((s) => {
     const expiry = s.expiration;
-    if (syncExpired(expiry) || syncExpiresSoon(expiry)) {
+
+    if (!syncExpired(expiry) && syncExpiresSoon(expiry)) {
       syncsToRefresh.push(s);
     }
   });
 
   return syncsToRefresh;
+};
+
+export const hasActiveSync = (sync: Schema_Sync) => {
+  for (const es of sync.google.events) {
+    const hasSyncFields = es.channelId && es.expiration;
+    if (hasSyncFields && !syncExpired(es.expiration)) {
+      return true;
+    }
+  }
+  return false;
 };
 
 export const importEvents = async (
@@ -272,13 +282,14 @@ export const prepSyncMaintenance = async () => {
     const isUserActive = await hasUpdatedCompassEventRecently(userId, deadline);
     if (isUserActive) {
       const syncsToRefresh = getSyncsToRefresh(sync);
-      const shouldRefresh = syncsToRefresh.length > 0;
-      shouldRefresh
-        ? toRefresh.push({ userId, payloads: syncsToRefresh })
-        : ignored.push(userId);
+
+      if (syncsToRefresh.length > 0) {
+        toRefresh.push({ userId, payloads: syncsToRefresh });
+      } else {
+        ignored.push(userId);
+      }
     } else {
-      const hasActiveSyncs = isWatchingEvents(sync);
-      hasActiveSyncs ? toPrune.push(sync.user) : ignored.push(userId);
+      hasActiveSync(sync) ? toPrune.push(sync.user) : ignored.push(userId);
     }
   }
 
