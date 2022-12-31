@@ -32,9 +32,10 @@ export const LoginView = () => {
   }, []);
 
   const SCOPES_REQUIRED = [
-    "profile",
+    // "profile",
     "email",
-    "https://www.googleapis.com/auth/calendar",
+    "https://www.googleapis.com/auth/calendar.readonly",
+    "https://www.googleapis.com/auth/calendar.events",
   ];
 
   const isMissingPermissions = (scope: string) => {
