@@ -25,7 +25,7 @@ const buildPackages = async (pckgs: string[], vmInfo: VmInfo) => {
 
   if (pckgs.includes("web")) {
     buildWeb(vmInfo);
-    await copyToVM(pckgs, vmInfo);
+    copyToVM(pckgs, vmInfo);
   }
 };
 
@@ -38,14 +38,6 @@ const buildNodePckgs = async (vmInfo: VmInfo) => {
     if (code !== 0) {
       console.log("Exiting because of compilation errors");
       process.exit(code);
-      // _confirm(
-      //   "Compilation errors. Use old build and continue anyway? (default: no)",
-      //   false
-      // )
-      //   .then((ignoreErrors) => {
-      //     if (!ignoreErrors) process.exit(code);
-      //   })
-      //   .catch(() => process.exit());
     }
 
     console.log("Compiled node pckgs");
@@ -78,14 +70,7 @@ const buildWeb = (vmInfo: VmInfo) => {
   zipWeb();
 };
 
-const copyToVM = async (packages: string[], vmInfo: VmInfo) => {
-  const confirmed = await _confirm("Copy artifact(s) to VM? (default y)");
-
-  if (!confirmed) {
-    console.log("OK, not copying to VM");
-    return;
-  }
-
+const copyToVM = (packages: string[], vmInfo: VmInfo) => {
   const { destination, domain } = vmInfo;
   const vmPath = destination === "staging" ? SSH_TY_STAGING : SSH_TY_PROD;
 

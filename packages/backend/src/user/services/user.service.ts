@@ -5,19 +5,17 @@ import { colorNameByPriority } from "@core/constants/colors";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
+import { BaseError } from "@core/errors/errors.base";
+import { Summary_Delete } from "@scripts/commands/delete";
 import { AuthError, error } from "@backend/common/errors/types/backend.errors";
-import { getCalendarsToSync } from "@backend/auth/services/auth.utils";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
+import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import { initSync } from "@backend/sync/services/sync.service.helpers";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import syncService from "@backend/sync/services/sync.service";
-import { startWatchingGcalsById } from "@backend/sync/services/sync.service.helpers";
-import { createSync } from "@backend/sync/services/sync.queries";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
-import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import eventService from "@backend/event/services/event.service";
-import { BaseError } from "@core/errors/errors.base";
-import { Summary_Delete } from "@scripts/commands/delete";
 
 const logger = Logger("app:user.service");
 
@@ -115,19 +113,6 @@ class UserService {
     return response;
   };
 
-  initCalendars = async (gcal: gCalendar, userId: string) => {
-    const { cCalendarList, gCalendarIds, nextSyncToken } =
-      await getCalendarsToSync(userId, gcal);
-
-    await createSync(userId, cCalendarList, nextSyncToken);
-
-    await calendarService.create(cCalendarList);
-
-    await startWatchingGcalsById(userId, gCalendarIds, gcal);
-
-    return gCalendarIds;
-  };
-
   initUserData = async (
     gUser: TokenPayload,
     gcalClient: gCalendar,
@@ -136,7 +121,7 @@ class UserService {
     const userId = await this.createUser(gUser, gRefreshToken);
     await this.createDefaultPriorities(userId);
 
-    const gCalendarIds = await this.initCalendars(gcalClient, userId);
+    const gCalendarIds = await initSync(gcalClient, userId);
 
     await syncService.importFull(gcalClient, gCalendarIds, userId);
 

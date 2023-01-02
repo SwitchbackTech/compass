@@ -26,7 +26,7 @@ export const createSync = async (
       calendarlist: [
         {
           gCalendarId,
-          nextSyncToken: nextSyncToken,
+          nextSyncToken,
           lastSyncedAt: new Date(),
         },
       ],
@@ -35,6 +35,10 @@ export const createSync = async (
   });
 
   return result;
+};
+
+export const deleteAllSyncData = async (userId: string) => {
+  await mongoService.sync.deleteOne({ user: userId });
 };
 
 export const deleteWatchData = async (
@@ -55,12 +59,17 @@ export const deleteWatchData = async (
 
 export const getSync = async (params: {
   userId?: string;
+  gCalendarId?: string;
   resourceId?: string;
 }) => {
   let filter = {};
 
   if (params.userId) {
     filter = { user: params.userId };
+  }
+
+  if (params.gCalendarId) {
+    filter = { ...filter, "google.events.gCalendarId": params.gCalendarId };
   }
 
   if (params.resourceId) {
@@ -105,7 +114,6 @@ export const updateSyncFor = async (
   resource: Resource_Sync,
   userId: string,
   data: Payload_Resource_Events
-  //   data: Payload_Resource_Events | Payload_Resource_Events_TokenOptional
 ) => {
   if (resource !== "events") {
     throw error(GenericError.NotImplemented, "Sync Update Failed");
@@ -130,19 +138,19 @@ export const updateSyncFor = async (
   const syncExists = matches === 1;
 
   if (syncExists) {
-    const updateRes = await mongoService.sync.updateOne(
+    const updateResult = await mongoService.sync.updateOne(
       { user: userId, "google.events.gCalendarId": data.gCalendarId },
       { $set: { "google.events.$": syncData } }
     );
-    return updateRes;
+    return updateResult;
   }
 
-  const createRes = await mongoService.sync.updateOne(
+  const createResult = await mongoService.sync.updateOne(
     { user: userId },
     { $push: { "google.events": syncData } }
   );
 
-  return createRes;
+  return createResult;
 };
 
 export const updateRefreshedAtFor = async (
@@ -186,8 +194,8 @@ export const updateSyncTokenFor = async (
       },
       {
         $set: {
-          "google.calendarlist.$.nextSyncToken": nextSyncToken,
-          "google.calendarlist.$.lastSyncedAt": new Date(),
+          "google.calendarlist.0.nextSyncToken": nextSyncToken,
+          "google.calendarlist.0.lastSyncedAt": new Date(),
         },
       },
       { returnDocument: "after", upsert: true }

@@ -64,7 +64,7 @@ class GcalSyncController {
       const userId = req.session?.getUserId() as string;
       const calendarId = req.body.calendarId;
 
-      const watchResult = await syncService.startWatchingGcal(userId, {
+      const watchResult = await syncService.watchGcalEvents(userId, {
         gCalendarId: calendarId,
       });
 

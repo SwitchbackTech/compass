@@ -67,7 +67,7 @@ export const LoginView = () => {
 
       if (error) {
         alert(
-          "An error occured on Compass' backend while logging you in. Please let Ty know"
+          "An error occured on Compass' backend while logging you in. Please let Ty know:\n ***REMOVED***"
         );
         console.log(error);
         setIsAuthenticating(false);

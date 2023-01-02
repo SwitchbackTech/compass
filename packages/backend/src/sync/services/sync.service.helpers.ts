@@ -1,4 +1,9 @@
-import { gCalendar, gParamsEventsList } from "@core/types/gcal";
+import { WithId } from "mongodb";
+import {
+  gCalendar,
+  gSchema$CalendarList,
+  gParamsEventsList,
+} from "@core/types/gcal";
 import { Logger } from "@core/logger/winston.logger";
 import {
   Payload_Sync_Events,
@@ -7,20 +12,24 @@ import {
 } from "@core/types/sync.types";
 import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
+import { MapCalendarList } from "@core/mappers/map.calendarlist";
+import { Schema_CalendarList } from "@core/types/calendar.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
+import { yearsAgo } from "@backend/common/helpers/common.helpers";
+import { EventError } from "@backend/common/errors/types/backend.errors";
+import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import {
   error,
   GenericError,
+  GcalError,
   SyncError,
 } from "@backend/common/errors/types/backend.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
-import { yearsAgo } from "@backend/common/helpers/common.helpers";
-import { EventError } from "@backend/common/errors/types/backend.errors";
 import eventService from "@backend/event/services/event.service";
 import mongoService from "@backend/common/services/mongo.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
-import { WithId } from "mongodb";
+import calendarService from "@backend/calendar/services/calendar.service";
 
 import syncService from "./sync.service";
 import {
@@ -32,6 +41,7 @@ import {
   syncExpiresSoon,
 } from "./sync.utils";
 import {
+  createSync,
   getSync,
   hasUpdatedCompassEventRecently,
   updateSyncTimeBy,
@@ -47,17 +57,30 @@ const logger = Logger("app:sync.service.helpers");
 export const assembleEventImports = (
   userId: string,
   gcal: gCalendar,
-  eventSyncs: Schema_Sync["google"]["events"]
+  eventSyncPayloads: Schema_Sync["google"]["events"]
 ) => {
-  const syncEvents = eventSyncs.map((eventSync) =>
+  const syncEvents = eventSyncPayloads.map((eventSync) =>
     importEventsByCalendar(userId, eventSync, gcal)
   );
 
   return syncEvents;
 };
 
-export const deleteAllSyncData = async (userId: string) => {
-  await mongoService.sync.deleteOne({ user: userId });
+const assembleEventWatchPayloads = (
+  sync: Schema_Sync,
+  gCalendarIds: string[]
+) => {
+  const watchPayloads = gCalendarIds.map((gCalId) => {
+    const match = sync?.google.events.find((es) => es.gCalendarId === gCalId);
+    const eventNextSyncToken = match?.nextSyncToken;
+    if (eventNextSyncToken) {
+      return { gCalId, nextSyncToken: eventNextSyncToken };
+    }
+
+    return { gCalId };
+  });
+
+  return watchPayloads;
 };
 
 export const getCalendarInfo = (
@@ -82,6 +105,34 @@ export const getCalendarInfo = (
   };
 };
 
+export const getCalendarsToSync = async (userId: string, gcal: gCalendar) => {
+  const { items, nextSyncToken: calListNextSyncToken } =
+    await gcalService.getCalendarlist(gcal);
+
+  if (!calListNextSyncToken) {
+    throw error(GcalError.NoSyncToken, "Failed to get Calendar(list)s to sync");
+  }
+
+  const gCalendarList = items as gSchema$CalendarListEntry[];
+
+  const primaryGcal = gCalendarList.filter((c) => {
+    return c.primary === true;
+  })[0] as gSchema$CalendarList;
+
+  const _ccalList = MapCalendarList.toCompass(primaryGcal);
+  const cCalendarList = { ..._ccalList, user: userId } as Schema_CalendarList;
+
+  const gCalendarIds = cCalendarList.google.items.map(
+    (gcal) => gcal.id
+  ) as string[];
+
+  return {
+    cCalendarList,
+    gCalendarIds,
+    calListNextSyncToken,
+  };
+};
+
 const getSyncsToRefresh = (sync: Schema_Sync) => {
   const syncsToRefresh: Payload_Sync_Events[] = [];
 
@@ -96,7 +147,42 @@ const getSyncsToRefresh = (sync: Schema_Sync) => {
   return syncsToRefresh;
 };
 
-export const hasActiveSync = (sync: Schema_Sync) => {
+const getSyncToken = (
+  pageToken: string | null | undefined,
+  syncToken: string | null | undefined
+) => {
+  if (pageToken !== undefined && pageToken !== null) {
+    return pageToken;
+  }
+
+  if (syncToken === undefined || syncToken === null) {
+    throw error(
+      GenericError.DeveloperError,
+      "Failed to get correct sync token"
+    );
+  }
+
+  return syncToken;
+};
+
+const getUpdatedEvents = async (
+  gcal: gCalendar,
+  gCalendarId: string,
+  syncToken: string
+) => {
+  const response = await gcalService.getEvents(gcal, {
+    calendarId: gCalendarId,
+    syncToken,
+  });
+
+  if (!response) {
+    throw error(SyncError.NoEventChanges, "Import Ignored");
+  }
+
+  return response.data;
+};
+
+export const hasAnyActiveEventSync = (sync: Schema_Sync) => {
   for (const es of sync.google.events) {
     const hasSyncFields = es.channelId && es.expiration;
     if (hasSyncFields && !syncExpired(es.expiration)) {
@@ -118,8 +204,6 @@ export const importEvents = async (
   const numYears = 1;
   const xYearsAgo = yearsAgo(numYears);
 
-  // always fetches once, then continues until
-  // there are no more events
   do {
     const params: gParamsEventsList = {
       calendarId,
@@ -171,94 +255,76 @@ export const importEventsByCalendar = async (
     },
   };
 
-  const updatedEvents = await prepEventImport(userId, gcal, syncInfo);
-  if (updatedEvents.length === 0) {
-    return noChanges;
-  }
+  let nextSyncToken: string | null | undefined = syncInfo.nextSyncToken;
+  let nextPageToken: string | null | undefined = undefined;
+  let deleted = 0;
+  let updated = 0;
 
-  const { toDelete, toUpdate } = categorizeGcalEvents(updatedEvents);
-  const summary = getSummary(toUpdate, toDelete);
-  logger.debug(summary);
+  do {
+    const syncToken = getSyncToken(nextPageToken, nextSyncToken);
 
-  const ops = assembleEventOperations(userId, toDelete, toUpdate);
+    const response = await getUpdatedEvents(gcal, gCalendarId, syncToken);
+    const updatedEvents = response.items || [];
 
-  if (Object.keys(ops).length === 0) {
-    logger.warning("No detected changes");
-    return noChanges;
-  }
+    if (updatedEvents.length === 0) {
+      return noChanges;
+    }
 
-  const { result } = await mongoService.db
-    .collection(Collections.EVENT)
-    .bulkWrite(ops);
+    const { toDelete, toUpdate } = categorizeGcalEvents(updatedEvents);
+    const summary = getSummary(toUpdate, toDelete);
+    logger.debug(summary);
 
-  if (result.ok) {
-    await updateSyncTimeBy("gCalendarId", gCalendarId, userId);
-  }
+    const ops = assembleEventOperations(userId, toDelete, toUpdate);
+
+    if (Object.keys(ops).length === 0) {
+      logger.warning("No detected changes");
+      return noChanges;
+    }
+
+    const { result } = await mongoService.db
+      .collection(Collections.EVENT)
+      .bulkWrite(ops);
+
+    if (!result.ok) {
+      throw error(
+        GenericError.NotSure,
+        "Events not updated after notification"
+      );
+    }
+
+    updated += result.nInserted + result.nUpserted + result.nModified;
+    deleted += result.nRemoved;
+
+    nextSyncToken = response.nextSyncToken;
+    nextPageToken = response.nextPageToken;
+  } while (nextPageToken !== undefined);
+
+  await updateSyncTimeBy("gCalendarId", gCalendarId, userId);
+  await updateSyncTokenIfNeededFor("events", userId, gCalendarId, {
+    prev: syncInfo.nextSyncToken as string,
+    curr: nextSyncToken as string,
+  });
 
   return {
     calendar: gCalendarId,
     result: {
-      updated: result.nInserted + result.nUpserted + result.nModified,
-      deleted: result.nRemoved,
+      updated,
+      deleted,
     },
   };
 };
 
-const prepEventImport = async (
-  userId: string,
-  gcal: gCalendar,
-  eventSync: Payload_Sync_Events
-) => {
-  const { gCalendarId, nextSyncToken } = eventSync;
+export const initSync = async (gcal: gCalendar, userId: string) => {
+  const { cCalendarList, gCalendarIds, calListNextSyncToken } =
+    await getCalendarsToSync(userId, gcal);
 
-  const response = await gcalService.getEvents(gcal, {
-    calendarId: gCalendarId,
-    syncToken: nextSyncToken,
-  });
+  await createSync(userId, cCalendarList, calListNextSyncToken);
 
-  if (!response) {
-    throw error(SyncError.NoEventChanges, "Import Ignored");
-  }
+  await calendarService.create(cCalendarList);
 
-  const { data } = response;
+  await watchEventsByGcalIds(userId, gCalendarIds, gcal);
 
-  if (!data.nextSyncToken) {
-    logger.error("pageToken:", data.nextPageToken);
-    logger.error("do sth with this:");
-    logger.error(JSON.stringify(data));
-    throw error(
-      GenericError.NotImplemented,
-      "Event Import Failed: no sync token in get event response (pagination not supported yet)"
-    );
-  }
-
-  if (nextSyncToken) {
-    await updateSyncTokenIfNeeded(
-      nextSyncToken,
-      data.nextSyncToken,
-      userId,
-      gCalendarId
-    );
-  }
-
-  return data.items || [];
-};
-
-export const prepEventSyncChannels = async (
-  userId: string,
-  gcal: gCalendar
-) => {
-  const sync = await getSync({ userId });
-
-  if (!sync || sync.google.events.length === 0) {
-    await syncService.startWatchingGcals(userId, gcal);
-
-    const newSync = getSync({ userId }) as unknown as Schema_Sync;
-
-    return newSync;
-  }
-
-  return sync;
+  return gCalendarIds;
 };
 
 export const prepSyncMaintenance = async () => {
@@ -289,7 +355,9 @@ export const prepSyncMaintenance = async () => {
         ignored.push(userId);
       }
     } else {
-      hasActiveSync(sync) ? toPrune.push(sync.user) : ignored.push(userId);
+      hasAnyActiveEventSync(sync)
+        ? toPrune.push(sync.user)
+        : ignored.push(userId);
     }
   }
 
@@ -298,6 +366,37 @@ export const prepSyncMaintenance = async () => {
     toPrune,
     toRefresh,
   };
+};
+
+export const prepIncrementalImport = async (
+  userId: string,
+  gcal: gCalendar
+) => {
+  const sync = await getSync({ userId });
+  const { gCalendarIds, calListNextSyncToken } = await getCalendarsToSync(
+    userId,
+    gcal
+  );
+
+  const noRefreshNeeded =
+    sync !== null &&
+    sync.google.events.length > 0 &&
+    hasAnyActiveEventSync(sync) &&
+    sync.google.calendarlist.length === gCalendarIds.length;
+  if (noRefreshNeeded) {
+    return sync.google.events;
+  }
+
+  await updateSyncTokenFor("calendarlist", userId, calListNextSyncToken);
+
+  const eventWatchPayloads = assembleEventWatchPayloads(
+    sync as Schema_Sync,
+    gCalendarIds
+  );
+  await syncService.watchGcalEventsById(userId, eventWatchPayloads, gcal);
+  const newSync = (await getSync({ userId })) as Schema_Sync;
+
+  return newSync.google.events;
 };
 
 export const pruneSync = async (toPrune: string[]) => {
@@ -341,26 +440,29 @@ export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
   return refreshes;
 };
 
-export const startWatchingGcalsById = async (
+export const watchEventsByGcalIds = async (
   userId: string,
   gCalendarIds: string[],
   gcal: gCalendar
 ) => {
-  const eventWatches = gCalendarIds.map((gCalId) =>
-    syncService.startWatchingGcal(userId, { gCalendarId: gCalId }, gcal)
+  const watchGcalEvents = gCalendarIds.map((gCalendarId) =>
+    syncService.watchGcalEvents(userId, { gCalendarId }, gcal)
   );
 
-  await Promise.all(eventWatches);
+  await Promise.all(watchGcalEvents);
 };
 
-const updateSyncTokenIfNeeded = async (
-  prev: string,
-  curr: string,
+const updateSyncTokenIfNeededFor = async (
+  resource: "events" | "calendarlist",
   userId: string,
-  gCalendarId: string
+  gCalendarId: string,
+  vals: {
+    prev: string;
+    curr: string;
+  }
 ) => {
-  if (prev !== curr) {
-    await updateSyncTokenFor("events", userId, curr, gCalendarId);
+  if (vals.prev !== vals.curr) {
+    await updateSyncTokenFor(resource, userId, vals.curr, gCalendarId);
   }
 };
 

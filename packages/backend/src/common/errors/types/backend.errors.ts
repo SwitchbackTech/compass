@@ -89,6 +89,11 @@ export const GenericError = {
     status: Status.UNSURE,
     isOperational: true,
   },
+  DeveloperError: {
+    description: "Developer made a logic error",
+    status: Status.INTERNAL_SERVER,
+    isOperational: true,
+  },
 };
 
 export const GcalError = {
