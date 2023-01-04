@@ -1,25 +1,12 @@
+import { GaxiosError } from "googleapis-common";
 import { Response } from "express";
 import { BaseError } from "@core/errors/errors.base";
 import { IS_DEV } from "@backend/common/constants/env.constants";
 import { isAccessRevoked } from "@backend/common/services/gcal/gcal.utils";
-import { GaxiosError } from "googleapis-common";
 import { Status } from "@core/errors/status.codes";
 import userService from "@backend/user/services/user.service";
 
 import { errorHandler } from "./error.handler";
-
-/*
-const invalidPathHandler = (
-  //@ts-ignore
-  req: express.Request,
-  res: express.Request,
-  next: express.NextFunction
-) => {
-  //@ts-ignore
-  res.redirect("/error");
-  next();
-};
-*/
 
 interface Info_Error {
   name?: string;

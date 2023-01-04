@@ -6,6 +6,7 @@ import {
   GCAL_NOTIFICATION_TOKEN,
 } from "@backend/common/constants/backend.constants";
 import { error, GcalError } from "@backend/common/errors/types/backend.errors";
+import { Params_WatchEvents } from "@core/types/sync.types";
 
 class GCalService {
   async createEvent(gcal: gCalendar, event: gSchema$Event) {
@@ -56,15 +57,7 @@ class GCalService {
     return response.data;
   }
 
-  watchEvents = async (
-    gcal: gCalendar,
-    params: {
-      gCalendarId: string;
-      channelId: string;
-      expiration: string;
-      nextSyncToken?: string;
-    }
-  ) => {
+  watchEvents = async (gcal: gCalendar, params: Params_WatchEvents) => {
     const { data } = await gcal.events.watch({
       calendarId: params.gCalendarId,
       requestBody: {

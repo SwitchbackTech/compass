@@ -20,16 +20,16 @@ describe("headers", () => {
 
 describe("getHourLabels", () => {
   it("has 23 intervals)", () => {
-    // not 24 to prevent duplicates from 11pm-midnight
+    // 23 to prevent duplicates from 11pm-midnight
     const dayTimes = getHourLabels();
     expect(dayTimes).toHaveLength(23);
   });
 });
 
 describe("getColorsByHour", () => {
-  it("has 23 intervals", () => {
+  it("has 24 intervals", () => {
     const colors = getColorsByHour(dayjs().hour());
-    expect(colors).toHaveLength(23);
+    expect(colors).toHaveLength(24);
   });
 
   it("uses two colors", () => {
@@ -45,7 +45,7 @@ describe("getColorsByHour", () => {
     const color2 = colors.filter((c) => c === uniqueColors[1]);
     const colorTotals = [color1.length, color2.length];
 
-    expect(colorTotals).toContain(22);
+    expect(colorTotals).toContain(23);
     expect(colorTotals).toContain(1);
   });
 

@@ -30,9 +30,8 @@ export const dateIsValid = (date: string) => {
 export const getColorsByHour = (currentHour: number) => {
   const colors: string[] = [];
 
-  [...(new Array(23) as number[])].map((_, index) => {
-    // + 1 cuz comparing labels (23 intervals) vs hours in day (24)
-    const isCurrentHour = currentHour === index + 1;
+  [...(new Array(24) as number[])].map((_, index) => {
+    const isCurrentHour = currentHour - 1 === index;
     const color = isCurrentHour
       ? getColor(ColorNames.TEAL_3)
       : `${getColor(ColorNames.WHITE_4)}80`;

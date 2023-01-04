@@ -89,6 +89,11 @@ export const GenericError = {
     status: Status.UNSURE,
     isOperational: true,
   },
+  DeveloperError: {
+    description: "Developer made a logic error",
+    status: Status.INTERNAL_SERVER,
+    isOperational: true,
+  },
 };
 
 export const GcalError = {
@@ -168,14 +173,6 @@ export const SyncError = {
   NoWatchesForUser: {
     description: "No active watches for user",
     status: Status.GONE,
-    isOperational: true,
-  },
-};
-
-export const UserError = {
-  NoUser: {
-    description: "User does not exist",
-    status: Status.NOT_FOUND,
     isOperational: true,
   },
 };

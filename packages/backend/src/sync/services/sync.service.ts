@@ -4,6 +4,7 @@ import { gCalendar } from "@core/types/gcal";
 import {
   Payload_Sync_Notif,
   Payload_Sync_Events,
+  Params_WatchEvents,
 } from "@core/types/sync.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Logger } from "@core/logger/winston.logger";
@@ -13,7 +14,6 @@ import {
   GenericError,
   SyncError,
 } from "@backend/common/errors/types/backend.errors";
-import { getCalendarsToSync } from "@backend/auth/services/auth.utils";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 
@@ -22,8 +22,7 @@ import {
   getCalendarInfo,
   importEvents,
   importEventsByCalendar,
-  prepEventSyncChannels,
-  startWatchingGcalsById,
+  prepIncrementalImport,
   prepSyncMaintenance,
   pruneSync,
   refreshSync,
@@ -96,9 +95,9 @@ class SyncService {
   importIncremental = async (userId: string, gcal?: gCalendar) => {
     if (!gcal) gcal = await getGcalClient(userId);
 
-    const sync = await prepEventSyncChannels(userId, gcal);
+    const eventSyncPayloads = await prepIncrementalImport(userId, gcal);
 
-    const importEvents = assembleEventImports(userId, gcal, sync.google.events);
+    const importEvents = assembleEventImports(userId, gcal, eventSyncPayloads);
 
     const result = await Promise.all(importEvents);
 
@@ -117,7 +116,7 @@ class SyncService {
       await this.stopWatch(userId, payload.channelId, payload.resourceId, gcal);
     }
 
-    const watchResult = await this.startWatchingGcal(
+    const watchResult = await this.watchGcalEvents(
       userId,
       {
         gCalendarId: payload.gCalendarId,
@@ -148,59 +147,6 @@ class SyncService {
       pruned: prunes.length,
       refreshed: refreshes.length,
     };
-  };
-
-  startWatchingGcal = async (
-    userId: string,
-    params: { gCalendarId: string; nextSyncToken?: string },
-    gcal?: gCalendar
-  ) => {
-    if (!gcal) gcal = await getGcalClient(userId);
-
-    const alreadyWatching = await isWatchingEventsByGcalId(
-      userId,
-      params.gCalendarId
-    );
-    if (alreadyWatching) {
-      throw error(SyncError.CalendarWatchExists, "Skipped Start Watch");
-    }
-
-    const channelId = uuidv4();
-    const expiration = getChannelExpiration();
-    const watchParams = {
-      gCalendarId: params.gCalendarId,
-      channelId: channelId,
-      expiration,
-      nextSyncToken: params.nextSyncToken,
-    };
-
-    const { watch } = await gcalService.watchEvents(gcal, watchParams);
-    const { resourceId } = watch;
-
-    if (!resourceId) {
-      throw error(SyncError.NoResourceId, "Calendar Watch Failed");
-    }
-
-    const sync = await updateSyncFor("events", userId, {
-      gCalendarId: params.gCalendarId,
-      channelId,
-      resourceId,
-      expiration,
-      nextSyncToken: params.nextSyncToken,
-    });
-
-    return sync;
-  };
-
-  startWatchingGcals = async (userId: string, gcal: gCalendar) => {
-    const { gCalendarIds, nextSyncToken } = await getCalendarsToSync(
-      userId,
-      gcal
-    );
-
-    await updateSyncTokenFor("calendarlist", userId, nextSyncToken);
-
-    await startWatchingGcalsById(userId, gCalendarIds, gcal);
   };
 
   stopWatch = async (
@@ -277,6 +223,68 @@ class SyncService {
     }
 
     return stopped;
+  };
+
+  watchGcalEvents = async (
+    userId: string,
+    params: { gCalendarId: string; nextSyncToken?: string },
+    gcal?: gCalendar
+  ) => {
+    if (!gcal) gcal = await getGcalClient(userId);
+
+    const alreadyWatching = await isWatchingEventsByGcalId(
+      userId,
+      params.gCalendarId
+    );
+    if (alreadyWatching) {
+      throw error(SyncError.CalendarWatchExists, "Skipped Start Watch");
+    }
+
+    const channelId = uuidv4();
+    const expiration = getChannelExpiration();
+    let watchParams: Params_WatchEvents = {
+      gCalendarId: params.gCalendarId,
+      channelId: channelId,
+      expiration,
+    };
+
+    if (params.nextSyncToken) {
+      watchParams = { ...watchParams, nextSyncToken: params.nextSyncToken };
+    }
+
+    const { watch } = await gcalService.watchEvents(gcal, watchParams);
+    const { resourceId } = watch;
+
+    if (!resourceId) {
+      throw error(SyncError.NoResourceId, "Calendar Watch Failed");
+    }
+
+    const sync = await updateSyncFor("events", userId, {
+      gCalendarId: params.gCalendarId,
+      channelId,
+      resourceId,
+      expiration,
+      nextSyncToken: params.nextSyncToken,
+    });
+
+    return sync;
+  };
+
+  watchGcalEventsById = async (
+    userId: string,
+    watchParams: { gCalId: string; nextSyncToken?: string }[],
+    gcal: gCalendar
+  ) => {
+    const eventWatches = watchParams.map(async (gInfo) => {
+      await this.watchGcalEvents(
+        userId,
+        { gCalendarId: gInfo.gCalId, nextSyncToken: gInfo.nextSyncToken },
+        gcal
+      );
+      await updateRefreshedAtFor("events", userId, gInfo.gCalId);
+    });
+
+    await Promise.all(eventWatches);
   };
 }
 

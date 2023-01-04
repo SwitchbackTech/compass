@@ -7,12 +7,6 @@ class SyncController {
     const result = await syncService.runSyncMaintenance();
     //@ts-ignore
     res.promise(Promise.resolve(result));
-    //++ skipped catch so express.handler can process it
-    //   try {
-    //   } catch (e) {
-    //     //@ts-ignore
-    //     res.promise(Promise.resolve({ error: e }));
-    //   }
   };
 }
 

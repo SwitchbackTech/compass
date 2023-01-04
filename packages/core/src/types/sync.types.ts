@@ -6,7 +6,12 @@ export interface Params_Sync_Gcal extends Payload_Sync_Notif {
   userId: string;
   calendarId?: string;
 }
-
+export interface Params_WatchEvents {
+  gCalendarId: string;
+  channelId: string;
+  expiration: string;
+  nextSyncToken?: string;
+}
 export interface Payload_Resource_Events {
   gCalendarId: string;
   channelId: string;
@@ -79,6 +84,5 @@ export interface Schema_Sync {
       lastSyncedAt: Date;
     }[];
     events: Payload_Sync_Events[];
-    // settings: Payload_Sync;
   };
 }
