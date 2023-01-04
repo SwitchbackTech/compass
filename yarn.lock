@@ -7885,10 +7885,10 @@ i18n@^0.15.1:
     math-interval-parser "^2.0.1"
     mustache "^4.2.0"
 
-i18next-electron-fs-backend@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/i18next-electron-fs-backend/-/i18next-electron-fs-backend-2.0.0.tgz#6961fba7b7d055f4c9d5634af0a9ea9adc52f372"
-  integrity sha512-aPTERbMkzRvPr3//w3CE1UsGo+GT34a/ukNo+9cK3nArMY376iOZsndmJfOMXbGBq/O7Nrg0i+xLjKNlyKacgg==
+i18next-electron-fs-backend@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/i18next-electron-fs-backend/-/i18next-electron-fs-backend-3.0.0.tgz#94470d1fef83c35c939fafb7c3616c45a524585f"
+  integrity sha512-XAljvZm3OEtHwpPhlazucPCqPze83MGJqX79l0AaLOHZX0YrnIcD7KwWqL+oZNEV7Np4MMDVooTegYBLF3Hjog==
   dependencies:
     lodash.clonedeep "^4.5.0"
     lodash.merge "^4.6.2"
