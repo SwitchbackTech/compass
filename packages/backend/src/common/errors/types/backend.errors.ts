@@ -176,11 +176,3 @@ export const SyncError = {
     isOperational: true,
   },
 };
-
-export const UserError = {
-  NoUser: {
-    description: "User does not exist",
-    status: Status.NOT_FOUND,
-    isOperational: true,
-  },
-};

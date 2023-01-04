@@ -5,12 +5,15 @@ import { BaseError } from "@core/errors/errors.base";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import { error, UserError } from "@backend/common/errors/types/backend.errors";
+import { error, SyncError } from "@backend/common/errors/types/backend.errors";
+
+import compassAuthService from "./compass.auth.service";
 
 export const getGcalClient = async (userId: string) => {
   const user = await findCompassUserBy("_id", userId);
   if (!user) {
-    throw error(UserError.NoUser, "gCal Auth Failed");
+    await compassAuthService.revokeSessionsByUser(userId);
+    throw error(SyncError.AccessRevoked, "Session revoked & request ignored");
   }
 
   const gAuthClient = new GoogleAuthService();

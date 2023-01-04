@@ -1,12 +1,16 @@
 import express, { Response } from "express";
+import { GaxiosError } from "googleapis-common";
 import { Payload_Sync_Notif } from "@core/types/sync.types";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { SReqBody } from "@core/types/express.types";
 import { Logger } from "@core/logger/winston.logger";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
+import { isAccessRevoked } from "@backend/common/services/gcal/gcal.utils";
+import userService from "@backend/user/services/user.service";
 
 import syncService from "../services/sync.service";
+import { getSync } from "../services/sync.queries";
 
 const logger = Logger("app:sync.gcal");
 class GcalSyncController {
@@ -24,17 +28,28 @@ class GcalSyncController {
       // @ts-ignore
       res.promise(Promise.resolve(response));
     } catch (e) {
-      const _e = e as BaseError;
-      if (_e.statusCode === Status.GONE) {
-        logger.info(`User revoked access
-          - first time this happens: delete all user data (TODO)
-            - currently just delete sync
-          - subsequent: do nothing, waiting it out until watch expires (${
-            req.headers["x-goog-channel-expiration"] as string
-          })
-        `);
-        // const userId = (infer from resourceId/channelId)
-        // await deleteAllSyncData(userId);
+      const isGoogleError = e instanceof GaxiosError;
+
+      const resourceId = req.headers["x-goog-resource-id"] as string;
+
+      if (isGoogleError && isAccessRevoked(e)) {
+        const sync = await getSync({ resourceId });
+        const userExists = sync !== null;
+        if (userExists) {
+          console.warn(
+            `User revoked access, cleaning data for resourceId: ${resourceId}`
+          );
+          await userService.deleteCompassDataForUser(sync.user, false);
+          res.status(Status.GONE).send("User revoked access, deleted all data");
+          return;
+        }
+
+        const msg = `Ignored update due to revoked access for resourceId: ${resourceId}
+        `;
+        console.warn(msg);
+
+        res.status(Status.GONE).send(msg);
+        return;
       } else {
         logger.error(e);
       }
