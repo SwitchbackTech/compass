@@ -32,7 +32,6 @@ export const LoginView = () => {
   }, []);
 
   const SCOPES_REQUIRED = [
-    //++ "profile",
     "email",
     "https://www.googleapis.com/auth/calendar.readonly",
     "https://www.googleapis.com/auth/calendar.events",
