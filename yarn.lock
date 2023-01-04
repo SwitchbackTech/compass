@@ -1471,26 +1471,21 @@
   resolved "https://registry.yarnpkg.com/@google-cloud/projectify/-/projectify-3.0.0.tgz#302b25f55f674854dce65c2532d98919b118a408"
   integrity sha512-HRkZsNmjScY6Li8/kb70wjGlDDyLkVk3KvoEo9uIoxSjYLJasGiCch9+PqRVDOCGUFvEIqyogl+BeqILL4OJHA==
 
-"@google-cloud/promisify@^2.0.0":
-  version "2.0.4"
-  resolved "https://registry.yarnpkg.com/@google-cloud/promisify/-/promisify-2.0.4.tgz#9d8705ecb2baa41b6b2673f3a8e9b7b7e1abc52a"
-  integrity sha512-j8yRSSqswWi1QqUGKVEKOG03Q7qOoZP6/h2zN2YO+F5h2+DHU0bSrHCK9Y7lo2DI9fBd8qGAw795sf+3Jva4yA==
-
 "@google-cloud/promisify@^3.0.0":
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/@google-cloud/promisify/-/promisify-3.0.1.tgz#8d724fb280f47d1ff99953aee0c1669b25238c2e"
   integrity sha512-z1CjRjtQyBOYL+5Qr9DdYIfrdLBe746jRTYfaYU6MeXkqp7UfYs/jX16lFFVzZ7PGEJvqZNqYUEtb1mvDww4pA==
 
 "@google-cloud/translate@^7.0.2":
-  version "7.0.2"
-  resolved "https://registry.yarnpkg.com/@google-cloud/translate/-/translate-7.0.2.tgz#f9c09e3f3c1392df0e0d7af317977e9aaa62a08d"
-  integrity sha512-/3jkebIziZGm8xJd6Wmd6IXFQv9R9P36C6OT6rMaoCTSj2v2/uJVecpF4FHaJyw0muCzuehEMKuzOe5bLZiWqg==
+  version "7.0.5"
+  resolved "https://registry.yarnpkg.com/@google-cloud/translate/-/translate-7.0.5.tgz#356d55ca84813244af82b2e6d618e7a762ed8804"
+  integrity sha512-Wjn6ihetpvd3l0KjlhpNEsouOs1UqZD3LNYFyN6de3wfMIRSWa4AIywwRoOqs7BACMnN/Ty1NzMpBKkrVmoNfg==
   dependencies:
     "@google-cloud/common" "^4.0.0"
-    "@google-cloud/promisify" "^2.0.0"
+    "@google-cloud/promisify" "^3.0.0"
     arrify "^2.0.0"
     extend "^3.0.2"
-    google-gax "^3.3.0"
+    google-gax "^3.5.2"
     is-html "^2.0.0"
 
 "@grpc/grpc-js@~1.7.0":
@@ -7437,10 +7432,10 @@ google-auth-library@^8.0.2:
     jws "^4.0.0"
     lru-cache "^6.0.0"
 
-google-gax@^3.3.0:
-  version "3.5.1"
-  resolved "https://registry.yarnpkg.com/google-gax/-/google-gax-3.5.1.tgz#97959e431804e42aa54374a0aa477de84afbdfb2"
-  integrity sha512-lFw8StOfu3lqADD7BDLcM+XNnHWTCr1XsMZiaNxq/51eb74p3ZZ2faXqHn3PdWDVTv4bLQ7GT+vd0ocgoH+apQ==
+google-gax@^3.5.2:
+  version "3.5.2"
+  resolved "https://registry.yarnpkg.com/google-gax/-/google-gax-3.5.2.tgz#7c3ad61dbf366a55527b803caead276668b160d8"
+  integrity sha512-AyP53w0gHcWlzxm+jSgqCR3Xu4Ld7EpSjhtNBnNhzwwWaIUyphH9kBGNIEH+i4UGkTUXOY29K/Re8EiAvkBRGw==
   dependencies:
     "@grpc/grpc-js" "~1.7.0"
     "@grpc/proto-loader" "^0.7.0"
@@ -7453,7 +7448,7 @@ google-gax@^3.3.0:
     node-fetch "^2.6.1"
     object-hash "^3.0.0"
     proto3-json-serializer "^1.0.0"
-    protobufjs "7.1.1"
+    protobufjs "7.1.2"
     protobufjs-cli "1.0.2"
     retry-request "^5.0.0"
 
@@ -11218,10 +11213,10 @@ protobufjs-cli@1.0.2:
     tmp "^0.2.1"
     uglify-js "^3.7.7"
 
-protobufjs@7.1.1:
-  version "7.1.1"
-  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.1.1.tgz#0117befb4b0f5a49d028e93f2ca62c3c1f5e7c65"
-  integrity sha512-d0nMQqS/aT3lfV8bKi9Gbg73vPd2LcDdTDOu6RE/M+h9DY8g1EmDzk3ADPccthEWfTBjkR2oxNdx9Gs8YubT+g==
+protobufjs@7.1.2:
+  version "7.1.2"
+  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.1.2.tgz#a0cf6aeaf82f5625bffcf5a38b7cd2a7de05890c"
+  integrity sha512-4ZPTPkXCdel3+L81yw3dG6+Kq3umdWKh7Dc7GW/CpNk4SX3hK58iPCWeCyhVTDrbkNeKrYNZ7EojM5WDaEWTLQ==
   dependencies:
     "@protobufjs/aspromise" "^1.1.2"
     "@protobufjs/base64" "^1.1.2"
