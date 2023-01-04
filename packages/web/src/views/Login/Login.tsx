@@ -11,7 +11,7 @@ import { Text } from "@web/components/Text";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import googleSignInBtn from "@web/assets/png/googleSignInBtn.png";
 
-import { StyledLogin } from "./styled";
+import { GoogleBtnWrapper, StyledLogin } from "./styled";
 
 export const LoginView = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -93,23 +93,28 @@ export const LoginView = () => {
         >
           {isAuthenticating && <AbsoluteOverflowLoader />}
           <Text colorName={ColorNames.WHITE_2} size={30}>
-            Connect your Google Calendar
+            Welcome to Compass,
           </Text>
-          <p>
-            <Text colorName={ColorNames.WHITE_3} size={15}>
-              Compass syncs with your primary Google Calendar
-            </Text>
-          </p>
+          <Text colorName={ColorNames.WHITE_2} size={23}>
+            the calm calendar
+          </Text>
 
-          <div
+          <GoogleBtnWrapper
             role="button"
-            name="Sign Up"
             onClick={() => {
               login();
             }}
           >
-            <img src={googleSignInBtn} alt="Sign In With Google" />
-          </div>
+            <img
+              src={googleSignInBtn}
+              alt="Continue With Google"
+              aria-label="Continue With Google"
+            />
+          </GoogleBtnWrapper>
+
+          <Text colorName={ColorNames.WHITE_3} size={15}>
+            Compass imports events from your primary Google Calendar
+          </Text>
         </StyledLogin>
       )}
     </>

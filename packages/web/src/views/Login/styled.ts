@@ -11,4 +11,13 @@ export const StyledLogin = styled(Flex)`
   right: 0;
   text-align: center;
   top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+`;
+
+export const GoogleBtnWrapper = styled.div`
+  padding: 60px;
 `;
