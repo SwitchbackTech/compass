@@ -7,7 +7,7 @@ import {
   SSH_TY_PROD,
   SSH_TY_STAGING,
 } from "../common/cli.constants";
-import { getVmInfo, getPckgsTo, _confirm } from "../common/cli.utils";
+import { getVmInfo, getPckgsTo } from "../common/cli.utils";
 
 // old way of building project-specific packages
 // "tsc:backend": "rm -rf packages/backend/build && yarn tsc --project packages/backend/tsconfig.json",
@@ -54,12 +54,12 @@ const buildWeb = (vmInfo: VmInfo) => {
   console.log("Getting API baseUrl ...");
   const { baseUrl, destination } = vmInfo;
 
-  const gClientIdTest =
+  const gClientIdStag =
     "***REMOVED***";
   const gClientIdProd =
     "***REMOVED***";
 
-  const gClientId = destination === "staging" ? gClientIdTest : gClientIdProd;
+  const gClientId = destination === "staging" ? gClientIdStag : gClientIdProd;
 
   console.log("Compiling web files...");
   shell.exec(
