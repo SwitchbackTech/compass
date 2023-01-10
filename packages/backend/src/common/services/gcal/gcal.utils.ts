@@ -1,10 +1,5 @@
 import { gSchema$Event } from "@core/types/gcal";
 import { GaxiosError } from "googleapis-common";
-import {
-  error,
-  genericError,
-  SyncError,
-} from "@backend/common/errors/types/backend.errors";
 
 const cancelled = (e: gSchema$Event) => {
   /* 
@@ -25,17 +20,12 @@ export const cancelledEventsIds = (events: gSchema$Event[]) => {
   return cancelledIds;
 };
 
-export const handleGcalError = (result: string, e: GaxiosError) => {
-  if (isAccessRevoked(e)) {
-    throw error(SyncError.AccessRevoked, result);
-  }
-  throw genericError(e, result);
-};
+export const isAccessRevoked = (e: GaxiosError | Error) => {
+  const isGoogleError = e instanceof GaxiosError;
 
-export const isAccessRevoked = (e: GaxiosError) => {
   const is400 = "code" in e && e.code === "400";
   const hasInvalidMsg = "message" in e && e.message === "invalid_grant";
   const isInvalid = is400 && hasInvalidMsg;
 
-  return isInvalid;
+  return isGoogleError && isInvalid;
 };

@@ -1,5 +1,4 @@
 import express, { Response } from "express";
-import { GaxiosError } from "googleapis-common";
 import { Payload_Sync_Notif } from "@core/types/sync.types";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { SReqBody } from "@core/types/express.types";
@@ -28,11 +27,9 @@ class GcalSyncController {
       // @ts-ignore
       res.promise(Promise.resolve(response));
     } catch (e) {
-      const isGoogleError = e instanceof GaxiosError;
-
       const resourceId = req.headers["x-goog-resource-id"] as string;
 
-      if (isGoogleError && isAccessRevoked(e)) {
+      if (isAccessRevoked(e as Error)) {
         const sync = await getSync({ resourceId });
         const userExists = sync !== null;
         if (userExists) {
@@ -51,6 +48,7 @@ class GcalSyncController {
         res.status(Status.GONE).send(msg);
         return;
       } else {
+        logger.error("Not sure how to handle this error:");
         logger.error(e);
       }
       // @ts-ignore
@@ -88,7 +86,6 @@ class GcalSyncController {
     } catch (e) {
       logger.error(e);
       // @ts-ignore
-      // res.promise(Promise.reject({ error: e }));
       res.promise(Promise.reject(e));
     }
   };

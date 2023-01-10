@@ -1,4 +1,3 @@
-import { GaxiosError } from "googleapis-common";
 import { Response } from "express";
 import { BaseError } from "@core/errors/errors.base";
 import { IS_DEV } from "@backend/common/constants/env.constants";
@@ -28,9 +27,7 @@ export const handleExpressError = async (res: Response, err: CompassError) => {
     errorHandler.log(err);
     res.status(err.statusCode).send(err);
   } else {
-    const isGoogleError = err instanceof GaxiosError;
-
-    if (isGoogleError && isAccessRevoked(err)) {
+    if (isAccessRevoked(err)) {
       //@ts-ignore
       const userId = res.req.session?.getUserId() as string;
       console.warn(`User revoked access, cleaning data: ${userId}`);

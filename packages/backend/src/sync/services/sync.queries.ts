@@ -76,6 +76,13 @@ export const getSync = async (params: {
     filter = { ...filter, "google.events.resourceId": params.resourceId };
   }
 
+  if (Object.keys(filter).length === 0) {
+    // prevents Mongo from returning the first
+    // sync record in the DB and Compass
+    // operating on the wrong user's sync
+    error(GenericError.DeveloperError, "Sync record could not be retrieved");
+  }
+
   const sync = await mongoService.sync.findOne(filter);
 
   return sync;
