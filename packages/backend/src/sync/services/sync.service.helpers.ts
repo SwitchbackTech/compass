@@ -30,6 +30,8 @@ import eventService from "@backend/event/services/event.service";
 import mongoService from "@backend/common/services/mongo.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { isAccessRevoked } from "@backend/common/services/gcal/gcal.utils";
+import userService from "@backend/user/services/user.service";
 
 import syncService from "./sync.service";
 import {
@@ -401,14 +403,26 @@ export const prepIncrementalImport = async (
 
 export const pruneSync = async (toPrune: string[]) => {
   const _prunes = toPrune.map(async (u) => {
-    const _stopped = await syncService.stopWatches(u);
-    const stopResult = _getStoppedSummary(_stopped);
+    let deletedUserData = false;
+    let stopped: { channelId: string; resourceId: string }[] = [];
+
+    try {
+      stopped = await syncService.stopWatches(u);
+    } catch (e) {
+      if (isAccessRevoked(e as Error)) {
+        await userService.deleteCompassDataForUser(u, false);
+        deletedUserData = true;
+      } else {
+        logger.warn("Unexpected error during prune:", e);
+        throw e;
+      }
+    }
 
     const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
       u
     );
 
-    return { user: u, stops: stopResult, sessionsRevoked };
+    return { user: u, results: stopped, sessionsRevoked, deletedUserData };
   });
 
   const pruneResult = await Promise.all(_prunes);
@@ -417,23 +431,38 @@ export const pruneSync = async (toPrune: string[]) => {
 
 export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
   const _refreshes = toRefresh.map(async (r) => {
-    const gcal = await getGcalClient(r.userId);
+    let deletedUserData = false;
 
-    const refreshesByUser = r.payloads.map(async (syncPayload) => {
-      const _refresh = await syncService.refreshWatch(
-        r.userId,
-        syncPayload,
-        gcal
-      );
-      return {
-        gcalendarId: syncPayload.gCalendarId,
-        success: _refresh.acknowledged && _refresh.modifiedCount === 1,
-      };
-    });
+    try {
+      const gcal = await getGcalClient(r.userId);
 
-    const refreshes = await Promise.all(refreshesByUser);
+      const refreshesByUser = r.payloads.map(async (syncPayload) => {
+        const _refresh = await syncService.refreshWatch(
+          r.userId,
+          syncPayload,
+          gcal
+        );
+        return {
+          gcalendarId: syncPayload.gCalendarId,
+          success: _refresh.acknowledged && _refresh.modifiedCount === 1,
+        };
+      });
 
-    return { user: r.userId, results: refreshes };
+      const refreshes = await Promise.all(refreshesByUser);
+      return { user: r.userId, results: refreshes, deletedUserData };
+    } catch (e) {
+      if (isAccessRevoked(e as Error)) {
+        await userService.deleteCompassDataForUser(r.userId, false);
+        deletedUserData = true;
+      } else {
+        logger.warn(
+          `Unexpected error during refresh for user: ${r.userId}:\n`,
+          e
+        );
+        throw e;
+      }
+      return { user: r.userId, results: [], deletedUserData };
+    }
   });
 
   const refreshes = await Promise.all(_refreshes);
@@ -464,15 +493,4 @@ const updateSyncTokenIfNeededFor = async (
   if (vals.prev !== vals.curr) {
     await updateSyncTokenFor(resource, userId, vals.curr, gCalendarId);
   }
-};
-
-const _getStoppedSummary = (
-  stopped: { channelId: string; resourceId: string }[]
-) => {
-  const stoppedCount = stopped.length;
-
-  if (stoppedCount === 0) return "ignored";
-  if (stoppedCount > 0) return `success (${stopped.length})`;
-
-  return "programming error";
 };

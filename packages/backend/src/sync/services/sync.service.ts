@@ -133,19 +133,30 @@ class SyncService {
   runSyncMaintenance = async () => {
     const { ignored, toPrune, toRefresh } = await prepSyncMaintenance();
 
-    const prunes = await pruneSync(toPrune);
-    const refreshes = await refreshSync(toRefresh);
+    const pruneResult = await pruneSync(toPrune);
+    const pruned = pruneResult.filter((p) => !p.deletedUserData);
+    const deletedDuringPrune = pruneResult.filter((p) => p.deletedUserData);
 
-    logger.debug(`Sync results:
+    const refreshResult = await refreshSync(toRefresh);
+    const refreshed = refreshResult.filter((r) => !r.deletedUserData);
+    const deletedDuringRefresh = refreshResult.filter((r) => r.deletedUserData);
+
+    logger.debug(`Sync Maintenance Results:
       ignored: ${ignored.toString()} 
-      pruned: ${prunes.map((p) => p.user).toString()}
-      refreshed: ${refreshes.map((r) => r.user).toString()}
+      pruned: ${pruned.map((p) => p.user).toString()}
+      refreshed: ${refreshed.map((r) => r.user).toString()}
+
+      deletedDuringPrune: ${deletedDuringPrune.map((r) => r.user).toString()}
+      deletedDuringRefresh: ${deletedDuringRefresh
+        .map((r) => r.user)
+        .toString()}
     `);
 
     return {
       ignored: ignored.length,
-      pruned: prunes.length,
-      refreshed: refreshes.length,
+      pruned: pruned.length,
+      refreshed: refreshed.length,
+      deleted: deletedDuringPrune.length + deletedDuringRefresh.length,
     };
   };
 

@@ -4,6 +4,8 @@ import shell from "shelljs";
 import {
   COMPASS_BUILD_DEV,
   COMPASS_ROOT_DEV,
+  PROJECT_PRODUCTION,
+  PROJECT_STAGING,
   SSH_TY_PROD,
   SSH_TY_STAGING,
 } from "../common/cli.constants";
@@ -72,7 +74,11 @@ const buildWeb = (vmInfo: VmInfo) => {
 
 const copyToVM = (packages: string[], vmInfo: VmInfo) => {
   const { destination, domain } = vmInfo;
-  const vmPath = destination === "staging" ? SSH_TY_STAGING : SSH_TY_PROD;
+  const isStaging = destination === "staging";
+  const vmPath = isStaging ? SSH_TY_STAGING : SSH_TY_PROD;
+  const project = isStaging ? PROJECT_STAGING : PROJECT_PRODUCTION;
+
+  shell.exec(`gcloud config set project ${project}`);
 
   if (packages.includes("nodePckgs")) {
     console.log(`copying node artifact to ${destination} (${domain}) ...`);
