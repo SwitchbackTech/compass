@@ -1,4 +1,8 @@
-import { SOMEDAY_WEEKLY_LIMIT } from "@core/constants/core.constants";
+import {
+  Origin,
+  Priorities,
+  SOMEDAY_WEEKLY_LIMIT,
+} from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -8,6 +12,7 @@ import {
   Params_DeleteMany,
   Result_DeleteMany,
 } from "@core/types/event.types";
+import { getCurrentWeekRangeDates } from "@core/util/date.utils";
 import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { error, EventError } from "@backend/common/errors/types/backend.errors";
@@ -55,6 +60,27 @@ class EventService {
         true
       );
     }
+  }
+
+  async createDefaultSomeday(userId: string) {
+    const { startDate, endDate } = getCurrentWeekRangeDates();
+
+    const defaultSomedayEvent: Schema_Event = {
+      isAllDay: false,
+      isSomeday: true,
+      priority: Priorities.UNASSIGNED,
+      origin: Origin.COMPASS,
+      startDate,
+      endDate,
+      title: "⭐ That one thing...",
+      description: `... that you wanna do this week, but aren't sure when.\
+        \nKeep it here for safekeeping, then drag it over to the calendar once you're ready to commit times.\
+        \n\nThese sidebar events are:\
+        \n-filtered by the calendar week you're on\
+        \n-limited to ${SOMEDAY_WEEKLY_LIMIT} per week`,
+    };
+
+    return await this.create(userId, defaultSomedayEvent);
   }
 
   async createMany(events: Schema_Event[]) {

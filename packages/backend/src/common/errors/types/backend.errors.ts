@@ -176,3 +176,11 @@ export const SyncError = {
     isOperational: true,
   },
 };
+
+export const UserError = {
+  UserNotFound: {
+    description: "User not found",
+    status: Status.NOT_FOUND,
+    isOperational: true,
+  },
+};

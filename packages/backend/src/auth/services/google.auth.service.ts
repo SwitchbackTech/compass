@@ -1,19 +1,23 @@
 import { google } from "googleapis";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
+import { Logger } from "@core/logger/winston.logger";
 import { Status } from "@core/errors/status.codes";
 import { BaseError } from "@core/errors/errors.base";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import { error, SyncError } from "@backend/common/errors/types/backend.errors";
+import { error, UserError } from "@backend/common/errors/types/backend.errors";
 
 import compassAuthService from "./compass.auth.service";
+
+const logger = Logger("app:google.auth.service");
 
 export const getGcalClient = async (userId: string) => {
   const user = await findCompassUserBy("_id", userId);
   if (!user) {
+    logger.error(`Couldn't find user with this id: ${userId}`);
     await compassAuthService.revokeSessionsByUser(userId);
-    throw error(SyncError.AccessRevoked, "Session revoked & request ignored");
+    throw error(UserError.UserNotFound, "Session revoked & request ignored");
   }
 
   const gAuthClient = new GoogleAuthService();

@@ -3,7 +3,7 @@ import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import weekPlugin from "dayjs/plugin/weekOfYear";
-import { HOURS_AM_FORMAT } from "@web/common/constants/date.constants";
+import { HOURS_AM_FORMAT } from "@core/constants/date.constants";
 import { roundToNearest } from "@web/common/utils";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";

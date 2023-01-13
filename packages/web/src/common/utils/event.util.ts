@@ -4,7 +4,7 @@ import dayjs, { Dayjs } from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isBetween from "dayjs/plugin/isBetween";
-import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@web/common/constants/date.constants";
+import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import {
   Categories_Event,
   Params_Events,

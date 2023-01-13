@@ -39,6 +39,13 @@ import { getChannelExpiration } from "./sync.utils";
 
 const logger = Logger("app:sync.service");
 class SyncService {
+  deleteAllByGcalendarId = async (gCalendarId: string) => {
+    const delRes = await mongoService.db
+      .collection(Collections.SYNC)
+      .deleteMany({ "google.events.gCalendarId": gCalendarId });
+    return delRes;
+  };
+
   deleteAllByUser = async (userId: string) => {
     const delRes = await mongoService.db
       .collection(Collections.SYNC)

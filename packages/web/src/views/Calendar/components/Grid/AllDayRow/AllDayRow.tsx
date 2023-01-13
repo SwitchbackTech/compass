@@ -13,7 +13,7 @@ import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/date.constants";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { getX } from "@web/common/utils/grid.util";
 import {

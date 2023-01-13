@@ -2,6 +2,7 @@ import React, { FC, useEffect, useMemo, useRef, useState } from "react";
 import { Dayjs } from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
 import { SOMEDAY_WEEKLY_LIMIT } from "@core/constants/core.constants";
+import { getWeekRangeDates } from "@core/util/date.utils";
 import { ColorNames } from "@core/types/color.types";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Text } from "@web/components/Text";
@@ -23,10 +24,7 @@ import {
   draftSlice,
   editEventSlice,
 } from "@web/ducks/events/event.slice";
-import {
-  getWeekRangeDates,
-  getWeekRangeLabel,
-} from "@web/common/utils/web.date.util";
+import { getWeekRangeLabel } from "@web/common/utils/web.date.util";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
 import { DraggableSomedayEvent } from "../EventsList/SomedayEvent/DraggableSomedayEvent";
