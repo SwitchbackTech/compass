@@ -14,15 +14,10 @@ export interface Summary_Delete {
 }
 
 export const deleteCompassDataForMatchingUsers = async (user: string) => {
-  // userService.mongoService.client?.once("connection", () => {
-  //   console.log("**!!\n\nconnected");
-  // });
-  // await connectToDb();
-
   console.log(`Deleting Compass data for users matching: ${user}`);
 
-  const isGmail = user.includes("@gmail.com");
-  const idKeyword = isGmail ? "email" : "_id";
+  const isEmail = user.includes("@");
+  const idKeyword = isEmail ? "email" : "_id";
 
   const users = await findCompassUsersBy(idKeyword, user);
 

@@ -1,7 +1,5 @@
 import { TokenPayload } from "google-auth-library";
 import { mapUserToCompass } from "@core/mappers/map.user";
-import { Priorities } from "@core/constants/core.constants";
-import { colorNameByPriority } from "@core/constants/colors";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
@@ -20,31 +18,6 @@ import eventService from "@backend/event/services/event.service";
 const logger = Logger("app:user.service");
 
 class UserService {
-  createDefaultPriorities = async (userId: string) => {
-    return priorityService.create(userId, [
-      {
-        color: colorNameByPriority.unassigned,
-        name: Priorities.UNASSIGNED,
-        user: userId,
-      },
-      {
-        color: colorNameByPriority.self,
-        name: Priorities.SELF,
-        user: userId,
-      },
-      {
-        color: colorNameByPriority.work,
-        name: Priorities.WORK,
-        user: userId,
-      },
-      {
-        color: colorNameByPriority.relationships,
-        name: Priorities.RELATIONS,
-        user: userId,
-      },
-    ]);
-  };
-
   createUser = async (
     gUser: UserInfo_Google["gUser"],
     gRefreshToken: string
@@ -80,14 +53,14 @@ class UserService {
         summary.eventWatches = watches.length;
       }
 
+      const syncs = await syncService.deleteAllByGcalendarId(userId);
+      summary.syncs = syncs.deletedCount;
+
       initSupertokens();
       const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
         userId
       );
       summary.sessions = sessionsRevoked;
-
-      const syncs = await syncService.deleteAllByUser(userId);
-      summary.syncs = syncs.deletedCount;
 
       const _user = await this.deleteUser(userId);
       summary.user = _user.deletedCount;
@@ -119,11 +92,14 @@ class UserService {
     gRefreshToken: string
   ) => {
     const userId = await this.createUser(gUser, gRefreshToken);
-    await this.createDefaultPriorities(userId);
 
     const gCalendarIds = await initSync(gcalClient, userId);
 
     await syncService.importFull(gcalClient, gCalendarIds, userId);
+
+    await priorityService.createDefaultPriorities(userId);
+
+    await eventService.createDefaultSomeday(userId);
 
     return userId;
   };
