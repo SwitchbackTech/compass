@@ -1,6 +1,6 @@
 import React, { FC } from "react";
 import { Dayjs } from "dayjs";
-import { YEAR_MONTH_DAY_FORMAT } from "@web/common/constants/date.constants";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { getColor } from "@core/util/color.utils";
 import { ColorNames } from "@core/types/color.types";

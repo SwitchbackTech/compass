@@ -1,11 +1,11 @@
 import dayjs, { Dayjs } from "dayjs";
 import { MS_IN_HR } from "@core/constants/core.constants";
+import { HOURS_AM_FORMAT } from "@core/constants/date.constants";
 import {
   getAllDayEventWidth,
   getEventCategory,
   getLeftPosition,
 } from "@web/common/utils/grid.util";
-import { HOURS_AM_FORMAT } from "@web/common/constants/date.constants";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {

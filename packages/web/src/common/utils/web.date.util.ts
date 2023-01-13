@@ -5,14 +5,14 @@ import {
   YMDHM_FORMAT,
   YMDHAM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
-} from "@web/common/constants/date.constants";
+} from "@core/constants/date.constants";
+import { ColorNames } from "@core/types/color.types";
+import { getColor } from "@core/util/color.utils";
 import {
   Option_Time,
   Params_DateChange,
   Params_TimeChange,
 } from "@web/common/types/util.types";
-import { ColorNames } from "@core/types/color.types";
-import { getColor } from "@core/util/color.utils";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
 import { roundToNext } from ".";
@@ -128,13 +128,6 @@ export const getTimesLabel = (startDate: string, endDate: string) => {
   const label = `${startMinimal} - ${end}`;
 
   return label;
-};
-
-export const getWeekRangeDates = (weekStart: Dayjs, weekEnd: Dayjs) => {
-  return {
-    startDate: weekStart.format(YEAR_MONTH_DAY_FORMAT),
-    endDate: weekEnd.format(YEAR_MONTH_DAY_FORMAT),
-  };
 };
 
 export const getWeekRangeLabel = (weekStart: Dayjs, weekEnd: Dayjs) => {
