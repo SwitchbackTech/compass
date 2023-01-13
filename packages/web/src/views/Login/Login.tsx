@@ -16,6 +16,7 @@ import { GoogleBtnWrapper, StyledLogin } from "./styled";
 export const LoginView = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isVerifiedTester, setIsVerifiedTester] = useState(false);
 
   const antiCsrfToken = useRef(uuidv4()).current;
 
@@ -30,6 +31,16 @@ export const LoginView = () => {
       console.log(e);
     });
   }, []);
+
+  const checkPw = () => {
+    const answer = document.getElementById("password").value;
+    console.log(answer);
+    if (answer === "somedaymaybe") {
+      setIsVerifiedTester(true);
+    } else {
+      alert("sorry, that's not it");
+    }
+  };
 
   const SCOPES_REQUIRED = [
     "email",
@@ -92,6 +103,7 @@ export const LoginView = () => {
           direction={FlexDirections.COLUMN}
         >
           {isAuthenticating && <AbsoluteOverflowLoader />}
+
           <Text colorName={ColorNames.WHITE_2} size={30}>
             Welcome to Compass,
           </Text>
@@ -99,22 +111,48 @@ export const LoginView = () => {
             the calm calendar
           </Text>
 
-          <GoogleBtnWrapper
-            role="button"
-            onClick={() => {
-              login();
-            }}
-          >
-            <img
-              src={googleSignInBtn}
-              alt="Continue With Google"
-              aria-label="Continue With Google"
-            />
-          </GoogleBtnWrapper>
+          {isVerifiedTester ? (
+            <>
+              <Text colorName={ColorNames.WHITE_3} size={18}>
+                Almost there! Now let's import events from your Google Calendar*
+              </Text>
 
-          <Text colorName={ColorNames.WHITE_3} size={15}>
-            Compass imports events from your primary Google Calendar
-          </Text>
+              <Text colorName={ColorNames.WHITE_3} size={15}>
+                Compass currently only gets events from the *primary* calendar
+              </Text>
+              <GoogleBtnWrapper
+                role="button"
+                onClick={() => {
+                  login();
+                }}
+              >
+                <img
+                  src={googleSignInBtn}
+                  alt="Continue With Google"
+                  aria-label="Continue With Google"
+                />
+              </GoogleBtnWrapper>
+            </>
+          ) : (
+            <>
+              <div style={{ paddingTop: 30 }} />
+              <Text colorName={ColorNames.WHITE_2} size={16}>
+                Access is currently limited to people on the waitlist.
+              </Text>
+              <Text colorName={ColorNames.WHITE_2} size={16}>
+                If you know the password, enter it below
+              </Text>
+              <Text colorName={ColorNames.WHITE_2} size={16}>
+                If you're already on the waitlist but don't know the pw, keep an
+                eye out for an email from ***REMOVED*** within the next few
+                weeks
+              </Text>
+              <form onSubmit={checkPw}>
+                <input id="password" name="password" />
+                <button>open sesame</button>
+              </form>
+            </>
+          )}
         </StyledLogin>
       )}
     </>
