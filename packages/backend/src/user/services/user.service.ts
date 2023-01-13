@@ -53,7 +53,7 @@ class UserService {
         summary.eventWatches = watches.length;
       }
 
-      const syncs = await syncService.deleteAllByGcalendarId(userId);
+      const syncs = await syncService.deleteAllByUser(userId);
       summary.syncs = syncs.deletedCount;
 
       initSupertokens();

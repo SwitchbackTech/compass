@@ -18,6 +18,8 @@ CompassApi.interceptors.response.use(
       alert("Signing out, cuz you revoked access to Compass");
       await signOut();
       window.location = `#${ROOT_ROUTES.LOGIN}`;
+    } else {
+      console.log(error);
     }
     return Promise.reject(error);
   }
