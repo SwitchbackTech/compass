@@ -17,7 +17,10 @@ export const getGcalClient = async (userId: string) => {
   if (!user) {
     logger.error(`Couldn't find user with this id: ${userId}`);
     await compassAuthService.revokeSessionsByUser(userId);
-    throw error(UserError.UserNotFound, "Session revoked & request ignored");
+    throw error(
+      UserError.UserNotFound,
+      "Revoked session & gave up on gcal auth"
+    );
   }
 
   const gAuthClient = new GoogleAuthService();
