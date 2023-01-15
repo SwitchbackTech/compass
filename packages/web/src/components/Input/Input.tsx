@@ -4,7 +4,6 @@ import React, {
   HTMLAttributes,
   Ref,
 } from "react";
-import { ColorNames } from "@core/types/color.types";
 import {
   ClassNamedComponent,
   UnderlinedInput,

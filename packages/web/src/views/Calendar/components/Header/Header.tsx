@@ -5,7 +5,7 @@ import { getAlphaColor, getColor } from "@core/util/color.utils";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
-import { TodayButtonPopover } from "@web/views/Calendar/components/TodayButtonPopover";
+import { TodayButton } from "@web/views/Calendar/components/TodayButton";
 import { getWeekDayLabel } from "@web/common/utils/event.util";
 import { WEEK_DAYS_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
@@ -14,6 +14,7 @@ import { selectDraftId } from "@web/ducks/events/event.selectors";
 import { draftSlice } from "@web/ducks/events/event.slice";
 import { useDispatch, useSelector } from "react-redux";
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 import {
   StyledHeaderFlex,
@@ -70,36 +71,46 @@ export const Header: FC<Props> = ({
         </div>
 
         <StyledNavigationButtons>
-          <TodayButtonPopover
-            onClick={onTodayClick}
-            today={today}
-            weekInFocus={weekProps.component.week}
-          />
-          <ArrowNavigationButton
-            colorName={ColorNames.WHITE_2}
-            cursor="pointer"
+          <TooltipWrapper onClick={onTodayClick} shortcut="T">
+            <TodayButton />
+          </TooltipWrapper>
+
+          <TooltipWrapper
             onClick={() => {
               weekProps.state.setWeek((actualWeek) => actualWeek - 1);
             }}
-            role="navigation"
-            size={35}
-            title="previous week"
+            shortcut="P"
           >
-            {"<"}
-          </ArrowNavigationButton>
+            <ArrowNavigationButton
+              colorName={ColorNames.WHITE_2}
+              cursor="pointer"
+              // onClick={() => {
+              //   weekProps.state.setWeek((actualWeek) => actualWeek - 1);
+              // }}
+              role="navigation"
+              size={35}
+              title="previous week"
+            >
+              {"<"}
+            </ArrowNavigationButton>
+          </TooltipWrapper>
 
-          <ArrowNavigationButton
-            colorName={ColorNames.GREY_5}
-            cursor="pointer"
+          <TooltipWrapper
             onClick={() =>
               weekProps.state.setWeek((actualWeek) => +actualWeek + 1)
             }
-            role="navigation"
-            size={35}
-            title="next week"
+            shortcut="N"
           >
-            {">"}
-          </ArrowNavigationButton>
+            <ArrowNavigationButton
+              colorName={ColorNames.GREY_5}
+              cursor="pointer"
+              role="navigation"
+              size={35}
+              title="next week"
+            >
+              {">"}
+            </ArrowNavigationButton>
+          </TooltipWrapper>
         </StyledNavigationButtons>
       </StyledHeaderFlex>
 

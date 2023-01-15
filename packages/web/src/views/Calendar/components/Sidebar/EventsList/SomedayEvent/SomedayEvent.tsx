@@ -1,12 +1,12 @@
 import React, { Dispatch, MouseEvent, SetStateAction } from "react";
 import { useFloating } from "@floating-ui/react-dom";
-import { FloatingPortal } from "@floating-ui/react-dom-interactions";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { Text } from "@web/components/Text";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
+import { FloatingPortal } from "@floating-ui/react";
 
 import { StyledEventOrPlaceholder } from "./styled";
 
@@ -27,7 +27,7 @@ export const SomedayEvent = ({
   onSubmit,
   setEvent,
 }: Props) => {
-  const { x, y, reference, floating, strategy } = useFloating({
+  const { y, reference, floating, strategy } = useFloating({
     strategy: "absolute",
     placement: "right-start",
   });
