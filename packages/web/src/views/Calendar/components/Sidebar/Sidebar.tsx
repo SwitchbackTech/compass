@@ -9,6 +9,7 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Preferences } from "@web/views/Calendar/hooks/usePreferences";
 import { SIDEBAR_MONTH_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 import {
   Styled,

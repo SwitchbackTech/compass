@@ -93,8 +93,8 @@ export const useDraftUtil = (
       if (activity === "createShortcut") {
         const defaultDraft = getDefaultEvent(
           reduxDraftType,
-          reduxDraft.startDate,
-          reduxDraft.endDate
+          reduxDraft?.startDate,
+          reduxDraft?.endDate
         );
         setDraft({ ...defaultDraft, isOpen: true });
         return;
@@ -214,8 +214,6 @@ export const useDraftUtil = (
         });
       };
       if (!isDragging) {
-        //++
-        console.error("trying to drag before setting isDragging");
         return;
       }
       const x = getX(e, isSidebarOpen);

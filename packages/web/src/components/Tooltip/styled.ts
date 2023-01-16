@@ -4,7 +4,7 @@ import { getColor } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 import { BASE_COLORS } from "@core/constants/colors";
 
-export const StyledTooltip = styled(Flex)`
+export const StyledShortcutTip = styled(Flex)`
   background-color: ${BASE_COLORS.LIGHT_GREY};
   border: 2px solid ${getColor(ColorNames.GREY_2)};
   border-radius: 3px;

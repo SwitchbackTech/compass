@@ -5,8 +5,11 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@web/components/Tooltip";
+import { AlignItems } from "@web/components/Flex/styled";
 
-import { StyledTooltip } from "./styled";
+import { StyledShortcutTip } from "./styled";
+import { Flex } from "../Flex";
+import { TooltipDescription } from "./Description";
 
 export interface Props {
   children: ReactNode;
@@ -34,8 +37,14 @@ export const TooltipWrapper: React.FC<Props> = ({
         {children}
       </TooltipTrigger>
       <TooltipContent className="Tooltip">
-        {description && <Text size={9}>{description}</Text>}
-        <StyledTooltip>{shortcut && <Text>{shortcut}</Text>}</StyledTooltip>
+        <Flex alignItems={AlignItems.CENTER}>
+          {description && <TooltipDescription description={description} />}
+          {shortcut && (
+            <StyledShortcutTip>
+              <Text size={12}>{shortcut}</Text>
+            </StyledShortcutTip>
+          )}
+        </Flex>
       </TooltipContent>
     </Tooltip>
   );

@@ -79,14 +79,11 @@ export const Header: FC<Props> = ({
             onClick={() => {
               weekProps.state.setWeek((actualWeek) => actualWeek - 1);
             }}
-            shortcut="P"
+            shortcut="J"
           >
             <ArrowNavigationButton
               colorName={ColorNames.WHITE_2}
               cursor="pointer"
-              // onClick={() => {
-              //   weekProps.state.setWeek((actualWeek) => actualWeek - 1);
-              // }}
               role="navigation"
               size={35}
               title="previous week"
@@ -99,7 +96,7 @@ export const Header: FC<Props> = ({
             onClick={() =>
               weekProps.state.setWeek((actualWeek) => +actualWeek + 1)
             }
-            shortcut="N"
+            shortcut="K"
           >
             <ArrowNavigationButton
               colorName={ColorNames.GREY_5}

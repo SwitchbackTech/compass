@@ -10,7 +10,7 @@ import { useMergeRefs, FloatingPortal } from "@floating-ui/react";
 
 import { TooltipOptions } from "./types";
 import { TooltipContext, useTooltip, useTooltipContext } from "./useTooltip";
-import { StyledTooltip } from "./styled";
+import { StyledShortcutTip } from "./styled";
 
 export function Tooltip({
   children,
@@ -72,7 +72,7 @@ export const TooltipContent = forwardRef<
   return (
     <FloatingPortal>
       {context.open && (
-        <StyledTooltip
+        <StyledShortcutTip
           ref={ref}
           style={{
             position: context.strategy,
