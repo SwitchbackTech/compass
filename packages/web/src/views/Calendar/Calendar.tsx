@@ -40,7 +40,8 @@ export const CalendarView = () => {
     weekProps.component.isCurrentWeek,
     weekProps.component.startOfSelectedWeekDay,
     weekProps.state.setWeek,
-    scrollUtil
+    scrollUtil,
+    prefs.toggleSidebar
   );
 
   const rootProps: RootProps = {

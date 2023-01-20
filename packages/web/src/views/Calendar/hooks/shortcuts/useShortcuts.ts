@@ -16,7 +16,8 @@ export const useShortcuts = (
   isCurrentWeek: boolean,
   startOfSelectedWeek: Dayjs,
   setWeek: React.Dispatch<React.SetStateAction<number>>,
-  scrollUtil: Util_Scroll
+  scrollUtil: Util_Scroll,
+  toggleSidebar: () => void
 ) => {
   const dispatch = useDispatch();
 
@@ -29,7 +30,16 @@ export const useShortcuts = (
       }
     };
 
-    const _createDraft = () => {
+    const _createSomedayDraft = () => {
+      dispatch(
+        draftSlice.actions.start({
+          eventType: Categories_Event.SOMEDAY,
+          // activity: "createShortcut",
+        })
+      );
+    };
+
+    const _createTimedDraft = () => {
       const currentMinute = dayjs().minute();
       const nextMinuteInterval = roundToNext(currentMinute, GRID_TIME_STEP);
 
@@ -60,26 +70,22 @@ export const useShortcuts = (
       if (isDrafting()) return;
 
       const handlersByKey = {
-        [Key.C]: () => _createDraft(),
+        [Key.OpenBracket]: () => toggleSidebar(),
+        [Key.C]: () => _createTimedDraft(),
         [Key.T]: () => {
           scrollUtil.scrollToNow();
           _discardDraft();
           setWeek(today.week());
         },
-        [Key.N]: () => {
-          _discardDraft();
-          setWeek((weekInView) => weekInView + 1);
-        },
-        [Key.P]: () => {
+        [Key.J]: () => {
           _discardDraft();
           setWeek((weekInView) => weekInView - 1);
         },
-        // [Key.S]: () =>
-        //   dispatch(
-        //     draftEventSlice.actions.start({
-        //       eventType: Categories_Event.SOMEDAY,
-        //     })
-        //   ),
+        [Key.K]: () => {
+          _discardDraft();
+          setWeek((weekInView) => weekInView + 1);
+        },
+        [Key.S]: () => _createSomedayDraft(),
       } as { [key: number]: () => void };
 
       const handler = handlersByKey[e.which];
@@ -101,6 +107,7 @@ export const useShortcuts = (
     startOfSelectedWeek,
     setWeek,
     scrollUtil,
+    toggleSidebar,
   ]);
 };
 

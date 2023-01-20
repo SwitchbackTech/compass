@@ -1,4 +1,11 @@
-import React, { FC, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Dayjs } from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
 import { SOMEDAY_WEEKLY_LIMIT } from "@core/constants/core.constants";
@@ -25,6 +32,7 @@ import {
   editEventSlice,
 } from "@web/ducks/events/event.slice";
 import { getWeekRangeLabel } from "@web/common/utils/web.date.util";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
 import { DraggableSomedayEvent } from "../EventsList/SomedayEvent/DraggableSomedayEvent";
@@ -41,7 +49,7 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
   const somedayRef = useRef();
 
   const isProcessing = useSelector(selectIsGetSomedayEventsProcessing);
-  const somedayEvents = useSelector(selectSomedayEvents);
+  const somedayEvents = useSelector(selectSomedayEvents) as Schema_Event[];
   const { isDrafting: isDraftingRedux } = useSelector(selectDraftId);
   const { eventType: draftType } = useSelector(
     selectDraftStatus
@@ -64,6 +72,11 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
     draftType === Categories_Event.SOMEDAY &&
     !existingIds.includes(draft?._id);
 
+  const SOMEDAY_WEEK_LIMIT_MSG = `Sorry, you can only have ${SOMEDAY_WEEKLY_LIMIT} unscheduled events per week.`;
+  const _isAtLimit = useCallback(() => {
+    return somedayEvents.length >= SOMEDAY_WEEKLY_LIMIT;
+  }, [somedayEvents]);
+
   useEffect(() => {
     setIsDraftingExisting(existingIds.includes(draft?._id));
   }, [existingIds, draft]);
@@ -84,6 +97,36 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
       );
     }
   }, [dispatch, isDraftingExisting]);
+
+  const handleSomedayShortcut = useCallback(() => {
+    if (
+      isDraftingRedux &&
+      draftType === Categories_Event.SOMEDAY &&
+      !isDraftingExisting
+    ) {
+      if (_isAtLimit()) {
+        alert(SOMEDAY_WEEK_LIMIT_MSG);
+        return;
+      }
+      createDefaultSomeday();
+    }
+  }, [
+    draftType,
+    _isAtLimit,
+    isDraftingExisting,
+    isDraftingRedux,
+    SOMEDAY_WEEK_LIMIT_MSG,
+  ]);
+
+  useEffect(() => {
+    handleSomedayShortcut();
+  }, [handleSomedayShortcut]);
+
+  const createDefaultSomeday = () => {
+    const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY);
+    setDraft(somedayDefault);
+    setIsDrafting(true);
+  };
 
   const close = () => {
     setIsDrafting(false);
@@ -128,11 +171,8 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
       return;
     }
 
-    const isAtLimit = somedayEvents.length >= SOMEDAY_WEEKLY_LIMIT;
-    if (isAtLimit) {
-      alert(
-        `Sorry, you can only have ${SOMEDAY_WEEKLY_LIMIT} unscheduled events per week.`
-      );
+    if (_isAtLimit()) {
+      alert(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
 
@@ -142,9 +182,7 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
       })
     );
 
-    const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY);
-    setDraft(somedayDefault);
-    setIsDrafting(true);
+    createDefaultSomeday();
   };
 
   return (
@@ -158,10 +196,17 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
         <Text colorName={ColorNames.WHITE_1} role="heading" size={22}>
           {weekLabel}
         </Text>
-        <div role="button" title="Add Someday event">
-          <StyledAddEventButton onClick={onSectionClick} size={27}>
-            +
-          </StyledAddEventButton>
+
+        <div onClick={(e) => e.stopPropagation()}>
+          <TooltipWrapper
+            description="Add to this week"
+            onClick={onSectionClick}
+            shortcut="S"
+          >
+            <div role="button">
+              <StyledAddEventButton size={25}>+</StyledAddEventButton>
+            </div>
+          </TooltipWrapper>
         </div>
       </StyledHeader>
 

@@ -7,7 +7,7 @@ import {
   flip,
   offset,
   shift,
-} from "@floating-ui/react-dom";
+} from "@floating-ui/react";
 import { EventForm } from "@web/views/Forms/EventForm";
 import {
   ID_GRID_EVENTS_ALLDAY,

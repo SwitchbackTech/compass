@@ -26,8 +26,7 @@ export const useWeek = (today: Dayjs) => {
         endDate: toUTCOffset(endOfSelectedWeekDay),
       })
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, week]);
+  }, [dispatch, endOfSelectedWeekDay, startOfSelectedWeekDay, week]);
 
   const weekProps = {
     component: {
