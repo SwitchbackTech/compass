@@ -23,7 +23,9 @@ class MongoService {
     this._connect();
   }
   _connect = () => {
-    MongoClient.connect(ENV.MONGO_URI)
+    MongoClient.connect(ENV.MONGO_URI, {
+      serverApi: { strict: true, version: "1" },
+    })
       .then((clientInstance) => {
         this.client = clientInstance;
         this.db = this.client.db(ENV.DB);
