@@ -15,7 +15,7 @@
     "googleapis": "^109.0.1",
     "helmet": "^6.0.0",
     "jsonwebtoken": "^9.0.0",
-    "mongodb": "^4.1.4",
+    "mongodb": "4.13",
     "supertokens-node": "^12.1.4",
     "tslib": "^2.4.0"
   },
