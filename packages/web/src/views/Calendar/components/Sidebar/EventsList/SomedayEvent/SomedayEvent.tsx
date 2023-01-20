@@ -1,5 +1,5 @@
 import React, { Dispatch, MouseEvent, SetStateAction } from "react";
-import { useFloating } from "@floating-ui/react-dom";
+import { useFloating } from "@floating-ui/react";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
