@@ -16,7 +16,8 @@ export const useShortcuts = (
   isCurrentWeek: boolean,
   startOfSelectedWeek: Dayjs,
   setWeek: React.Dispatch<React.SetStateAction<number>>,
-  scrollUtil: Util_Scroll
+  scrollUtil: Util_Scroll,
+  toggleSidebar: () => void
 ) => {
   const dispatch = useDispatch();
 
@@ -69,6 +70,7 @@ export const useShortcuts = (
       if (isDrafting()) return;
 
       const handlersByKey = {
+        [Key.OpenBracket]: () => toggleSidebar(),
         [Key.C]: () => _createTimedDraft(),
         [Key.T]: () => {
           scrollUtil.scrollToNow();
@@ -105,6 +107,7 @@ export const useShortcuts = (
     startOfSelectedWeek,
     setWeek,
     scrollUtil,
+    toggleSidebar,
   ]);
 };
 

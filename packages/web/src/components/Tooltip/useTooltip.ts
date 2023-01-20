@@ -43,9 +43,8 @@ export function useTooltip({
   const context = data.context;
 
   const hover = useHover(context, {
-    delay: 110,
+    delay: 120,
     enabled: true,
-    //++  enabled: controlledOpen == null,
   });
   const focus = useFocus(context, {
     enabled: controlledOpen == null,

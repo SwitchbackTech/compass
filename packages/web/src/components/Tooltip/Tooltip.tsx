@@ -7,6 +7,7 @@ import {
   ReactNode,
 } from "react";
 import { useMergeRefs, FloatingPortal } from "@floating-ui/react";
+import { ZIndex } from "@web/common/constants/web.constants";
 
 import { TooltipOptions } from "./types";
 import { TooltipContext, useTooltip, useTooltipContext } from "./useTooltip";
@@ -53,7 +54,6 @@ export const TooltipTrigger = forwardRef<
     <div
       ref={ref}
       role="button"
-      // The user can style the trigger based on the state
       data-state={context.open ? "open" : "closed"}
       {...context.getReferenceProps(props)}
     >
@@ -75,10 +75,11 @@ export const TooltipContent = forwardRef<
         <StyledShortcutTip
           ref={ref}
           style={{
+            left: context.x ?? 0,
             position: context.strategy,
             top: context.y ?? 0,
-            left: context.x ?? 0,
             visibility: context.x == null ? "hidden" : "visible",
+            zIndex: ZIndex.LAYER_1,
             ...props.style,
           }}
           {...context.getFloatingProps(props)}

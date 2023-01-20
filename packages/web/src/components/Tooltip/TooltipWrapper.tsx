@@ -36,6 +36,7 @@ export const TooltipWrapper: React.FC<Props> = ({
       >
         {children}
       </TooltipTrigger>
+
       <TooltipContent className="Tooltip">
         <Flex alignItems={AlignItems.CENTER}>
           {description && <TooltipDescription description={description} />}

@@ -71,7 +71,11 @@ export const Header: FC<Props> = ({
         </div>
 
         <StyledNavigationButtons>
-          <TooltipWrapper onClick={onTodayClick} shortcut="T">
+          <TooltipWrapper
+            description={today.format("dddd, MMMM D")}
+            onClick={onTodayClick}
+            shortcut="T"
+          >
             <TodayButton />
           </TooltipWrapper>
 

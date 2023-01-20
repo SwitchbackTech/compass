@@ -31,20 +31,17 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
 ) => {
   const dispatch = useDispatch();
 
+  const weekStart = props.weekProps.component.startOfSelectedWeekDay;
+  const weekEnd = props.weekProps.component.endOfSelectedWeekDay;
+
   useEffect(() => {
     dispatch(
       getSomedayEventsSlice.actions.request({
-        startDate: toUTCOffset(
-          props.weekProps.component.startOfSelectedWeekDay
-        ),
-        endDate: toUTCOffset(props.weekProps.component.endOfSelectedWeekDay),
+        startDate: toUTCOffset(weekStart),
+        endDate: toUTCOffset(weekEnd),
       })
     );
-  }, [
-    dispatch,
-    props.weekProps.component.endOfSelectedWeekDay,
-    props.weekProps.component.startOfSelectedWeekDay,
-  ]);
+  }, [dispatch, weekStart, weekEnd]);
 
   const SidebarToggleIcon = getSidebarToggleIcon(props.prefs.isSidebarOpen);
 
@@ -56,24 +53,22 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
     >
       <StyledSidebarOverflow isToggled={props.prefs.isSidebarOpen} />
 
-      <div role="button" title="Toggle Sidebar">
-        <SidebarToggleIcon
-          cursor="pointer"
-          onClick={props.prefs.toggleSidebar}
-        />
-      </div>
-
+      <TooltipWrapper
+        description={`${
+          props.prefs.isSidebarOpen ? "Collapse" : "Open"
+        } sidebar`}
+        onClick={props.prefs.toggleSidebar}
+        shortcut="["
+      >
+        <div role="button">
+          <SidebarToggleIcon cursor="pointer" />
+        </div>
+      </TooltipWrapper>
       <StyledTopSectionFlex
         direction={FlexDirections.COLUMN}
         height={`calc(100% - ${SIDEBAR_MONTH_HEIGHT + 2}px)`}
       >
-        <SomedaySection
-          flex={1}
-          weekRange={{
-            weekStart: props.weekProps.component.startOfSelectedWeekDay,
-            weekEnd: props.weekProps.component.endOfSelectedWeekDay,
-          }}
-        />
+        <SomedaySection flex={1} weekRange={{ weekStart, weekEnd }} />
       </StyledTopSectionFlex>
 
       <Divider
