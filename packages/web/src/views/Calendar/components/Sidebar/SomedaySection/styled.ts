@@ -25,8 +25,12 @@ export const StyledHeaderTitle = styled(Text)`
 `;
 
 export const StyledAddEventButton = styled(Text)`
-  margin-right: 30px;
   cursor: pointer;
+  margin-right: 30px;
+  &:hover {
+    filter: brightness(160%);
+    transition: filter 0.35s ease-out;
+  }
 `;
 
 export const StyledPaginationFlex = styled(Flex)`
