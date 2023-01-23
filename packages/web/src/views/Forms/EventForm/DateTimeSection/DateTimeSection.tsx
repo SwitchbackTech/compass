@@ -252,6 +252,7 @@ export const DateTimeSection: FC<Props> = ({
                 onSelect={onSelectStartDate}
                 selected={selectedStartDate}
                 title="Pick Start Date"
+                view="picker"
               />
             </div>
           </StyledDateFlex>
@@ -274,6 +275,7 @@ export const DateTimeSection: FC<Props> = ({
                 onSelect={onSelectEndDate}
                 selected={selectedEndDate}
                 title="Pick End Date"
+                view="picker"
               />
             </div>
           </StyledDateFlex>

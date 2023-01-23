@@ -83,6 +83,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           isToggled={true}
           monthsShown={1}
           setWeek={props.weekProps.state.setWeek}
+          isCurrentWeek={props.weekProps.component.isCurrentWeek}
         />
       </StyledBottomSection>
     </Styled>
