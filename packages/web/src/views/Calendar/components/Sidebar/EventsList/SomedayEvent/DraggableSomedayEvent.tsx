@@ -7,7 +7,6 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 import { SomedayEvent } from "./SomedayEvent";
 
-//++ remove title and id if you don't need
 export interface Props {
   id: string;
   isDrafting: boolean;
@@ -28,14 +27,20 @@ export const DraggableSomedayEvent: FC<Props> = ({
   const [{ isDragging }, drag, preview] = useDrag(
     () => ({
       type: DragItem.EVENT_SOMEDAY,
-      // only includes props needed for drag & drop
-      item: { _id: event._id, title: event.title, priority: event.priority },
+      // only includes props that a user could change
+      // while drafting
+      item: {
+        _id: event._id,
+        description: event.description,
+        title: event.title,
+        priority: event.priority,
+      },
 
       collect: (monitor) => ({
         isDragging: monitor.isDragging(),
       }),
     }),
-    [event._id]
+    [event._id, event.description, event.title, event.priority]
   );
 
   useEffect(() => {

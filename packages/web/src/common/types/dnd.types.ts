@@ -1,3 +1,5 @@
+import { Schema_Event } from "@core/types/event.types";
+
 export enum DragItem {
   EVENT_SOMEDAY = "event_someday",
   EVENT_DATE = "event_date",
@@ -5,6 +7,8 @@ export enum DragItem {
 }
 
 export interface DropResult {
-  _id: string;
-  title: string;
+  _id: Schema_Event["_id"];
+  description: Schema_Event["description"];
+  priority: Schema_Event["priority"];
+  title: Schema_Event["title"];
 }

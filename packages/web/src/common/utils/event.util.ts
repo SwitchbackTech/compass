@@ -15,6 +15,7 @@ import { Status } from "@core/errors/status.codes";
 
 import { Schema_GridEvent } from "../types/web.event.types";
 import { removeGridFields } from "./grid.util";
+import { DropResult } from "../types/dnd.types";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -94,6 +95,26 @@ export const prepareEvent = (
 
   const _event = removeGridFields(eventToClean);
   const event = { ..._event, origin: Origin.COMPASS } as Schema_Event;
+
+  return event;
+};
+
+export const prepareEventAfterDraftDrop = (
+  category: Categories_Event,
+  dropItem: DropResult,
+  dates: { startDate: string; endDate: string }
+) => {
+  const baseEvent = getDefaultEvent(category);
+
+  const event: Schema_Event = {
+    ...baseEvent,
+    description: dropItem.description,
+    endDate: dates.endDate,
+    origin: Origin.COMPASS,
+    priority: dropItem.priority,
+    title: dropItem.title,
+    startDate: dates.startDate,
+  };
 
   return event;
 };
