@@ -58,7 +58,12 @@ export const MainGrid: FC<Props> = ({
   const dispatch = useDispatch();
 
   const { component } = weekProps;
-  const { isCurrentWeek, startOfSelectedWeekDay, week, weekDays } = component;
+  const {
+    isCurrentWeek,
+    startOfView: startOfSelectedWeekDay,
+    week,
+    weekDays,
+  } = component;
   const { isDrafting } = useSelector(selectDraftId);
   const { eventType: draftType } = useSelector(
     selectDraftStatus
@@ -127,11 +132,7 @@ export const MainGrid: FC<Props> = ({
 
   const startTimedDraft = (e: MouseEvent) => {
     const x = getX(e, isSidebarOpen);
-    const _start = dateCalcs.getDateByXY(
-      x,
-      e.clientY,
-      component.startOfSelectedWeekDay
-    );
+    const _start = dateCalcs.getDateByXY(x, e.clientY, component.startOfView);
     const startDate = _start.format();
     const endDate = _start.add(DRAFT_DURATION_MIN, "minutes").format();
 

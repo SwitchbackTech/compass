@@ -4,6 +4,7 @@ import weekPlugin from "dayjs/plugin/weekOfYear";
 import { DatePicker } from "@web/components/DatePicker";
 import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 import { Props as ToggleArrowProps } from "../ToggleArrow/ToggleArrow";
 import { Styled, StyledMonthName } from "./styled";
@@ -12,13 +13,14 @@ dayjs.extend(weekPlugin);
 export interface Props extends Omit<ToggleArrowProps, "onToggle"> {
   isCurrentWeek: boolean;
   monthsShown?: number;
-  setWeek: React.Dispatch<React.SetStateAction<number>>;
+  setStartOfView: WeekProps["state"]["setStartOfView"];
+  weekStart: WeekProps["component"]["startOfView"];
 }
 
 export const ToggleableMonthWidget: React.FC<Props> = ({
   isCurrentWeek,
   monthsShown,
-  setWeek,
+  setStartOfView,
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
@@ -42,9 +44,8 @@ export const ToggleableMonthWidget: React.FC<Props> = ({
           isOpen={true}
           monthsShown={monthsShown}
           onChange={(date) => {
-            const week = dayjs(date).week();
-            setWeek(week);
             setSelectedDate(date);
+            setStartOfView(dayjs(date).startOf("week"));
           }}
           selected={selectedDate}
           shouldCloseOnSelect={false}

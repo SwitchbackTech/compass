@@ -9,13 +9,14 @@ import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
+import { WeekProps } from "../useWeek";
 
 export const useShortcuts = (
   today: Dayjs,
   dateCalcs: DateCalcs,
   isCurrentWeek: boolean,
   startOfSelectedWeek: Dayjs,
-  setWeek: React.Dispatch<React.SetStateAction<number>>,
+  util: WeekProps["util"],
   scrollUtil: Util_Scroll,
   toggleSidebar: () => void
 ) => {
@@ -75,15 +76,15 @@ export const useShortcuts = (
         [Key.T]: () => {
           scrollUtil.scrollToNow();
           _discardDraft();
-          setWeek(today.week());
+          util.goToToday();
         },
         [Key.J]: () => {
           _discardDraft();
-          setWeek((weekInView) => weekInView - 1);
+          util.decrementWeek();
         },
         [Key.K]: () => {
           _discardDraft();
-          setWeek((weekInView) => weekInView + 1);
+          util.incrementWeek();
         },
         [Key.S]: () => _createSomedayDraft(),
       } as { [key: number]: () => void };
@@ -105,9 +106,9 @@ export const useShortcuts = (
     today,
     isCurrentWeek,
     startOfSelectedWeek,
-    setWeek,
     scrollUtil,
     toggleSidebar,
+    util,
   ]);
 };
 
@@ -116,31 +117,6 @@ export const useShortcuts = (
  **********************/
 //++
 /*
-  useEffect(() => {
-    const keyDownHandler = (e: KeyboardEvent) => {
-      eventHandlers.setEditingEvent((editingEvent) => {
-        if (editingEvent) return editingEvent;
-
-        const handlersByKey = {
-          [Key.C]: () =>
-            eventHandlers.setEditingEvent({
-              isAllDay: true,
-              isOpen: true,
-            } as Schema_GridEvent),
-          [Key.T]: () => weekProps.handlers.setWeek(today.week()),
-          [Key.N]: () => weekProps.handlers.setWeek((week) => week + 1),
-          [Key.P]: () => weekProps.handlers.setWeek((week) => week - 1),
-        } as { [key: number]: () => void };
-
-        const handler = handlersByKey[e.which];
-        if (!handler) return editingEvent;
-
-        setTimeout(handler);
-
-        return editingEvent;
-      });
-    };
-
     const mouseUpHandler = (e: MouseEvent) => {
       setTimeout(() => {
         eventHandlers.onEventsGridRelease(e as unknown as React.MouseEvent);

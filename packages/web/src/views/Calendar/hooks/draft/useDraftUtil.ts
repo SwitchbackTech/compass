@@ -190,7 +190,7 @@ export const useDraftUtil = (
           const _initialStart = dateCalcs.getDateByXY(
             x,
             y,
-            weekProps.component.startOfSelectedWeekDay
+            weekProps.component.startOfView
           );
 
           const startDate = _draft?.isAllDay
@@ -221,7 +221,7 @@ export const useDraftUtil = (
       const currTime = dateCalcs.getDateStrByXY(
         x,
         e.clientY,
-        weekProps.component.startOfSelectedWeekDay
+        weekProps.component.startOfView
       );
       const hasMoved = currTime !== draft.startDate;
 
@@ -242,7 +242,7 @@ export const useDraftUtil = (
       dragStatus?.initialYOffset,
       isDragging,
       isSidebarOpen,
-      weekProps.component.startOfSelectedWeekDay,
+      weekProps.component.startOfView,
     ]
   );
 
@@ -315,7 +315,7 @@ export const useDraftUtil = (
       const currTime = dateCalcs.getDateByXY(
         x,
         e.clientY,
-        weekProps.component.startOfSelectedWeekDay
+        weekProps.component.startOfView
       );
 
       if (!isValidMovement(currTime)) {
@@ -346,7 +346,7 @@ export const useDraftUtil = (
       isSidebarOpen,
       isValidMovement,
       resizeStatus?.hasMoved,
-      weekProps.component.startOfSelectedWeekDay,
+      weekProps.component.startOfView,
     ]
   );
 

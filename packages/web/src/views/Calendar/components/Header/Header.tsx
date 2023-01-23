@@ -49,8 +49,8 @@ export const Header: FC<Props> = ({
   };
 
   const onTodayClick = () => {
-    if (weekProps.component.week !== today.week()) {
-      weekProps.state.setWeek(today.week());
+    if (!weekProps.component.isCurrentWeek) {
+      weekProps.util.goToToday();
     }
     scrollToNow();
   };
@@ -60,13 +60,13 @@ export const Header: FC<Props> = ({
       <StyledHeaderFlex alignItems={AlignItems.CENTER} onClick={onSectionClick}>
         <div aria-level={1} role="heading">
           <Text colorName={ColorNames.WHITE_1} size={40}>
-            {weekProps.component.dayjsBasedOnWeekDay.format("MMMM")}
+            {weekProps.component.startOfView.format("MMMM")}
           </Text>
 
           <SpaceCharacter />
 
           <Text colorName={ColorNames.GREY_4} size={38}>
-            {weekProps.component.dayjsBasedOnWeekDay.format("YYYY")}
+            {weekProps.component.startOfView.format("YYYY")}
           </Text>
         </div>
 
@@ -80,9 +80,7 @@ export const Header: FC<Props> = ({
           </TooltipWrapper>
 
           <TooltipWrapper
-            onClick={() => {
-              weekProps.state.setWeek((actualWeek) => actualWeek - 1);
-            }}
+            onClick={() => weekProps.util.decrementWeek()}
             shortcut="J"
           >
             <ArrowNavigationButton
@@ -97,9 +95,7 @@ export const Header: FC<Props> = ({
           </TooltipWrapper>
 
           <TooltipWrapper
-            onClick={() =>
-              weekProps.state.setWeek((actualWeek) => +actualWeek + 1)
-            }
+            onClick={() => weekProps.util.incrementWeek()}
             shortcut="K"
           >
             <ArrowNavigationButton
@@ -128,8 +124,7 @@ export const Header: FC<Props> = ({
           let dayNumberToDisplay = day.format("D");
 
           dayNumberToDisplay =
-            day.format("MM") !==
-              weekProps.component.startOfSelectedWeekDay.format("MM") &&
+            day.format("MM") !== weekProps.component.startOfView.format("MM") &&
             day.format("D") === "1"
               ? day.format("MMM D")
               : dayNumberToDisplay;

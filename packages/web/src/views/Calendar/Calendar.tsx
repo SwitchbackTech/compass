@@ -38,8 +38,8 @@ export const CalendarView = () => {
     today,
     dateCalcs,
     weekProps.component.isCurrentWeek,
-    weekProps.component.startOfSelectedWeekDay,
-    weekProps.state.setWeek,
+    weekProps.component.startOfView,
+    weekProps.util,
     scrollUtil,
     prefs.toggleSidebar
   );
@@ -53,7 +53,7 @@ export const CalendarView = () => {
       <DragLayer
         dateCalcs={dateCalcs}
         measurements={measurements}
-        viewStart={weekProps.component.startOfSelectedWeekDay}
+        viewStart={weekProps.component.startOfView}
       />
 
       <Draft

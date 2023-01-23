@@ -31,8 +31,8 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
 ) => {
   const dispatch = useDispatch();
 
-  const weekStart = props.weekProps.component.startOfSelectedWeekDay;
-  const weekEnd = props.weekProps.component.endOfSelectedWeekDay;
+  const weekStart = props.weekProps.component.startOfView;
+  const weekEnd = props.weekProps.component.endOfView;
 
   useEffect(() => {
     dispatch(
@@ -82,8 +82,9 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         <ToggleableMonthWidget
           isToggled={true}
           monthsShown={1}
-          setWeek={props.weekProps.state.setWeek}
+          setStartOfView={props.weekProps.state.setStartOfView}
           isCurrentWeek={props.weekProps.component.isCurrentWeek}
+          weekStart={weekStart}
         />
       </StyledBottomSection>
     </Styled>

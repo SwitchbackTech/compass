@@ -60,8 +60,11 @@ export const AllDayRow: FC<Props> = ({
 }) => {
   const dispatch = useDispatch();
 
-  const { startOfSelectedWeekDay, endOfSelectedWeekDay, weekDays } =
-    weekProps.component;
+  const {
+    startOfView: startOfSelectedWeekDay,
+    endOfView: endOfSelectedWeekDay,
+    weekDays,
+  } = weekProps.component;
 
   const border = `1px solid ${getColor(ColorNames.WHITE_2)}`;
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Dayjs } from "dayjs";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
@@ -8,38 +8,51 @@ import { Category_View } from "@web/views/Calendar/calendarView.types";
 export const useWeek = (today: Dayjs) => {
   const dispatch = useDispatch();
 
-  const [week, setWeek] = useState(today.week());
+  const origStart = useMemo(() => today.startOf("week"), [today]);
+  const [start, setStartOfView] = useState(origStart);
+  const end = useMemo(() => start.endOf("week"), [start]);
+  const week = useMemo(() => start.week(), [start]);
 
-  const dayjsBasedOnWeekDay = today.week(week);
-  const endOfSelectedWeekDay = today.week(week).endOf("week");
-  const isCurrentWeek = today.week() === week;
-  const startOfSelectedWeekDay = today.week(week).startOf("week");
+  const isCurrentWeek = today.week() === start.week();
 
   const weekDays = [...(new Array(7) as number[])].map((_, index) => {
-    return startOfSelectedWeekDay.add(index, "day");
+    return start.add(index, "day");
   });
 
   useEffect(() => {
     dispatch(
       getWeekEventsSlice.actions.request({
-        startDate: toUTCOffset(startOfSelectedWeekDay),
-        endDate: toUTCOffset(endOfSelectedWeekDay),
+        startDate: toUTCOffset(start),
+        endDate: toUTCOffset(end),
       })
     );
-  }, [dispatch, endOfSelectedWeekDay, startOfSelectedWeekDay, week]);
+  }, [dispatch, end, start]);
+
+  const decrementWeek = () => {
+    setStartOfView(start.subtract(7, "day"));
+  };
+
+  const goToToday = () => {
+    if (today.week() !== start.week()) {
+      setStartOfView(today.startOf("week"));
+    }
+  };
+
+  const incrementWeek = () => {
+    setStartOfView(start.add(7, "day"));
+  };
 
   const weekProps = {
     component: {
-      dayjsBasedOnWeekDay,
       category: (isCurrentWeek ? "current" : "pastFuture") as Category_View,
-      endOfSelectedWeekDay,
+      endOfView: end,
       isCurrentWeek,
-      startOfSelectedWeekDay,
+      startOfView: start,
       week,
       weekDays,
     },
-    state: { setWeek },
-    util: {},
+    state: { setStartOfView },
+    util: { decrementWeek, goToToday, incrementWeek },
   };
   return weekProps;
 };
