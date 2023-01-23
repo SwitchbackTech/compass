@@ -29,7 +29,7 @@
     "@types/jsonwebtoken": "^9.0.1",
     "@types/module-alias": "^2.0.1",
     "@types/node": "^18.11.9",
-    "alias-hq": "^5.3.2",
+    "alias-hq": "^6.1.0",
     "tsconfig-paths": "^4.1.2"
   }
 }
