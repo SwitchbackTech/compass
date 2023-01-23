@@ -4085,10 +4085,10 @@ ajv@^8.0.0, ajv@^8.0.1, ajv@^8.11.0, ajv@^8.8.0:
     require-from-string "^2.0.2"
     uri-js "^4.2.2"
 
-alias-hq@^5.3.2:
-  version "5.4.0"
-  resolved "https://registry.yarnpkg.com/alias-hq/-/alias-hq-5.4.0.tgz#9f185149d8d95d995fa3917b8748ef14ab126a30"
-  integrity sha512-AEMlBK//mAF0zIIHf0tWuCnSPqEz97rGQR/2crkoPzo+N42A5njofn/rQ0IHzaPvkvrZDL0gD/FZQwu9Scjmyg==
+alias-hq@^6.1.0:
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/alias-hq/-/alias-hq-6.1.0.tgz#a67ee75329a7247426d45164d6a6aed71490ada8"
+  integrity sha512-fIUQ1mMV/NLVgoWYZz2eimZF7Hj+TMYAzxnDF6/txoEYC9M5HVeR0hBl212BwESw9OFqgk0meUfmOeel/UjWLw==
   dependencies:
     colors "^1.4.0"
     glob "^7.1.6"
