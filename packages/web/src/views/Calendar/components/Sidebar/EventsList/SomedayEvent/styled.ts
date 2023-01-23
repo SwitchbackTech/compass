@@ -27,6 +27,7 @@ export const StyledEventOrPlaceholder = styled.div<Props>`
     getInvertedColor(
       colorNameByPriority[priority] as unknown as InvertedColorNames
     )};
+
   height: ${SOMEDAY_EVENT_HEIGHT}px;
   margin-bottom: 2px;
   opacity: ${({ isDragging }) => isDragging && 0.5};
@@ -40,6 +41,7 @@ export const StyledEventOrPlaceholder = styled.div<Props>`
       getInvertedColor(
         colorNameByPriority[priority] as unknown as InvertedColorNames
       )};
+    cursor: pointer;
   }
 
   & span {

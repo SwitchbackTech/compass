@@ -3,20 +3,21 @@ import dayjs from "dayjs";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { DragItem, DropResult } from "@web/common/types/dnd.types";
-import { Ref_Callback } from "@web/common/types/util.types";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
+import { DragItem, DropResult } from "@web/common/types/dnd.types";
+import { Ref_Callback } from "@web/common/types/util.types";
 import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_ALLDAY_ROW,
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { getX } from "@web/common/utils/grid.util";
 import {
+  createEventSlice,
   draftSlice,
   getSomedayEventsSlice,
 } from "@web/ducks/events/event.slice";
@@ -32,7 +33,10 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
-import { getDefaultEvent } from "@web/common/utils/event.util";
+import {
+  getDefaultEvent,
+  prepareEventAfterDraftDrop,
+} from "@web/common/utils/event.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 import { StyledEvent } from "../../Event/styled";
@@ -71,22 +75,32 @@ export const AllDayRow: FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowsCount]);
 
-  const convertSomedayToAllDay = (_id: string, x: number, y: number) => {
-    const _start = dateCalcs.getDateByXY(
-      x - SIDEBAR_OPEN_WIDTH,
-      y,
-      startOfSelectedWeekDay
+  const convertSomedayDraftToAllDay = (
+    dropItem: DropResult,
+    dates: { startDate: string; endDate: string }
+  ) => {
+    const event = prepareEventAfterDraftDrop(
+      Categories_Event.ALLDAY,
+      dropItem,
+      dates
     );
-    const start = _start.format(YEAR_MONTH_DAY_FORMAT);
-    const end = _start.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
 
+    dispatch(createEventSlice.actions.request(event));
+    dispatch(draftSlice.actions.discard());
+  };
+
+  const convertSomedayEventToAllDay = (
+    _id: string,
+    dates: { startDate: string; endDate: string }
+  ) => {
     const updatedFields: Schema_Event = {
       isAllDay: true,
       isSomeday: false,
       isTimesShown: false,
-      startDate: start,
-      endDate: end,
+      startDate: dates.startDate,
+      endDate: dates.endDate,
     };
+
     dispatch(
       getSomedayEventsSlice.actions.convert({
         _id,
@@ -100,7 +114,13 @@ export const AllDayRow: FC<Props> = ({
       accept: DragItem.EVENT_SOMEDAY,
       drop: (item: DropResult, monitor) => {
         const { x, y } = monitor.getClientOffset();
-        convertSomedayToAllDay(item._id, x, y);
+        const dates = getDates(x, y);
+
+        if (item._id) {
+          convertSomedayEventToAllDay(item._id, dates);
+        } else {
+          convertSomedayDraftToAllDay(item, dates);
+        }
       },
       collect: (monitor) => ({
         canDrop: monitor.canDrop(),
@@ -112,6 +132,17 @@ export const AllDayRow: FC<Props> = ({
 
   const editAllDayEvent = (event: Schema_Event) => {
     dispatch(draftSlice.actions.startDragging({ event }));
+  };
+
+  const getDates = (x: number, y: number) => {
+    const _start = dateCalcs.getDateByXY(
+      x - SIDEBAR_OPEN_WIDTH,
+      y,
+      startOfSelectedWeekDay
+    );
+    const startDate = _start.format(YEAR_MONTH_DAY_FORMAT);
+    const endDate = _start.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
+    return { startDate, endDate };
   };
 
   const startAlldayDraft = (e: MouseEvent) => {

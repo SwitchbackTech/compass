@@ -36,14 +36,15 @@ import {
 import { selectPaginatedEventsBySectionType } from "./event.selectors";
 
 /*
- * Converts Someday event into a regular, timed event
+ * Converts Someday event into a timed event
  */
 function* convertSomedayEventSaga({ payload }: Action_ConvertSomedayEvent) {
   try {
-    const currEvent = (yield select((state) =>
-      selectEventById(state, payload._id)
-    )) as Response_GetEventsSaga;
     const { _id, updatedFields } = payload;
+
+    const currEvent = (yield select((state) =>
+      selectEventById(state, _id)
+    )) as Response_GetEventsSaga;
     const updatedEvent = { ...currEvent, ...updatedFields };
 
     const res = yield call(EventApi.edit, _id, updatedEvent);

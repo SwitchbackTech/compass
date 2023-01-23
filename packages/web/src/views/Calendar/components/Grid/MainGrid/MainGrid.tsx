@@ -9,10 +9,14 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Ref_Grid } from "@web/views/Calendar/components/Grid/grid.types";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { getDefaultEvent } from "@web/common/utils/event.util";
+import {
+  getDefaultEvent,
+  prepareEventAfterDraftDrop,
+} from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  createEventSlice,
   draftSlice,
   getSomedayEventsSlice,
 } from "@web/ducks/events/event.slice";
@@ -60,7 +64,7 @@ export const MainGrid: FC<Props> = ({
     selectDraftStatus
   ) as Status_DraftEvent;
 
-  const convertSomedayToTimed = (_id: string, x: number, y: number) => {
+  const getDates = (x: number, y: number) => {
     const _start = dateCalcs.getDateByXY(
       x - SIDEBAR_OPEN_WIDTH,
       y,
@@ -68,13 +72,33 @@ export const MainGrid: FC<Props> = ({
     );
     const startDate = _start.format();
     const endDate = _start.add(1, "hour").format();
+    return { startDate, endDate };
+  };
 
+  const convertSomedayDraftToTimed = (
+    dropItem: DropResult,
+    dates: { startDate: string; endDate: string }
+  ) => {
+    const event = prepareEventAfterDraftDrop(
+      Categories_Event.TIMED,
+      dropItem,
+      dates
+    );
+
+    dispatch(createEventSlice.actions.request(event));
+    dispatch(draftSlice.actions.discard());
+  };
+
+  const convertSomedayEventToTimed = (
+    _id: string,
+    dates: { startDate: string; endDate: string }
+  ) => {
     const updatedFields: Schema_Event = {
       isAllDay: false,
       isSomeday: false,
       isTimesShown: true,
-      startDate,
-      endDate,
+      startDate: dates.startDate,
+      endDate: dates.endDate,
     };
 
     dispatch(
@@ -122,7 +146,13 @@ export const MainGrid: FC<Props> = ({
       accept: DragItem.EVENT_SOMEDAY,
       drop: (item: DropResult, monitor) => {
         const { x, y } = monitor.getClientOffset();
-        convertSomedayToTimed(item._id, x, y);
+        const dates = getDates(x, y);
+
+        if (item._id) {
+          convertSomedayEventToTimed(item._id, dates);
+        } else {
+          convertSomedayDraftToTimed(item, dates);
+        }
       },
       collect: (monitor) => ({
         canDrop: monitor.canDrop(),
