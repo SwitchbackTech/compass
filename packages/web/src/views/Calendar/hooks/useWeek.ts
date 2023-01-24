@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Dayjs } from "dayjs";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
-import { getWeekEventsSlice } from "@web/ducks/events/event.slice";
+import {
+  getSomedayEventsSlice,
+  getWeekEventsSlice,
+} from "@web/ducks/events/event.slice";
 import { Category_View } from "@web/views/Calendar/calendarView.types";
 
 export const useWeek = (today: Dayjs) => {
@@ -26,7 +29,14 @@ export const useWeek = (today: Dayjs) => {
         endDate: toUTCOffset(end),
       })
     );
-  }, [dispatch, end, start]);
+
+    dispatch(
+      getSomedayEventsSlice.actions.request({
+        startDate: toUTCOffset(start),
+        endDate: toUTCOffset(end),
+      })
+    );
+  }, [end, dispatch, start]);
 
   const decrementWeek = () => {
     setStartOfView(start.subtract(7, "day"));

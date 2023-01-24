@@ -65,9 +65,6 @@ export const MainGrid: FC<Props> = ({
     weekDays,
   } = component;
   const { isDrafting } = useSelector(selectDraftId);
-  const { eventType: draftType } = useSelector(
-    selectDraftStatus
-  ) as Status_DraftEvent;
 
   const getDates = (x: number, y: number) => {
     const _start = dateCalcs.getDateByXY(
@@ -115,13 +112,6 @@ export const MainGrid: FC<Props> = ({
   };
 
   const onMouseDown = (e: MouseEvent) => {
-    //++
-    // const isSomedayDraftOpen =
-    //   isDrafting && draftType === Categories_Event.SOMEDAY;
-    // const isDraftingAllday =
-    //   isDrafting && draftType === Categories_Event.ALLDAY;
-
-    // if (isSomedayDraftOpen || isDraftingAllday) {
     if (isDrafting) {
       dispatch(draftSlice.actions.discard());
       return;
