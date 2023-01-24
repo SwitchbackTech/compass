@@ -2087,19 +2087,19 @@
   dependencies:
     "@floating-ui/core" "^1.0.5"
 
-"@floating-ui/react-dom@^1.2.0":
+"@floating-ui/react-dom@^1.2.1":
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/@floating-ui/react-dom/-/react-dom-1.2.1.tgz#7386c33fa07b0eb2b2a8b3ec9910d70a156f81ef"
   integrity sha512-YCLlqibZtgUhxUpxkSp1oekvYgH/jI4KdZEJv85E62twlZHN43xdlQNe6JcF4ROD3/Zu6juNHN+aOygN+6yZjg==
   dependencies:
     "@floating-ui/dom" "^1.1.0"
 
-"@floating-ui/react@^0.17.0":
-  version "0.17.0"
-  resolved "https://registry.yarnpkg.com/@floating-ui/react/-/react-0.17.0.tgz#f3a2fcb5c198df6cdc0aedac56bd3b2a6c0bb089"
-  integrity sha512-LYlTmiB1O2TmeNub1agGYJrO7Qkw1B0Q53aElN5dgZDO5v3yzYJmrGm/xmfD+0T03yEECzPKdwlSFCEPWKMLEQ==
+"@floating-ui/react@^0.18.1":
+  version "0.18.1"
+  resolved "https://registry.yarnpkg.com/@floating-ui/react/-/react-0.18.1.tgz#3a5ea19d22239f6c8d0250121488969680435473"
+  integrity sha512-Uqntjem19/3ghAwKSaMU/719P/riiox13rkAzMhCthmAAhTzvvmNka52L5s9Gi/cjAfNNR5/RjkD0YKqTecWzQ==
   dependencies:
-    "@floating-ui/react-dom" "^1.2.0"
+    "@floating-ui/react-dom" "^1.2.1"
     aria-hidden "^1.1.3"
     tabbable "^6.0.1"
 
