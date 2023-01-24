@@ -2,6 +2,7 @@ import React, { FC } from "react";
 import { Dayjs } from "dayjs";
 import { ColorNames } from "@core/types/color.types";
 import { getAlphaColor, getColor } from "@core/util/color.utils";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
@@ -12,7 +13,6 @@ import { RootProps } from "@web/views/Calendar/calendarView.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { selectDraftId } from "@web/ducks/events/event.selectors";
 import { draftSlice } from "@web/ducks/events/event.slice";
-import { useDispatch, useSelector } from "react-redux";
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
@@ -37,8 +37,8 @@ export const Header: FC<Props> = ({
   today,
   weekProps,
 }) => {
-  const dispatch = useDispatch();
-  const { isDrafting } = useSelector(selectDraftId);
+  const dispatch = useAppDispatch();
+  const { isDrafting } = useAppSelector(selectDraftId);
   const { scrollToNow } = scrollUtil;
 
   const onSectionClick = () => {

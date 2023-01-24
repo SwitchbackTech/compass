@@ -7,11 +7,11 @@ import React, {
   useState,
 } from "react";
 import { Dayjs } from "dayjs";
-import { useDispatch, useSelector } from "react-redux";
 import { SOMEDAY_WEEKLY_LIMIT } from "@core/constants/core.constants";
 import { getWeekRangeDates } from "@core/util/date.utils";
 import { ColorNames } from "@core/types/color.types";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Text } from "@web/components/Text";
 import {
   selectDraftId,
@@ -22,10 +22,7 @@ import {
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { getDefaultEvent, prepareEvent } from "@web/common/utils/event.util";
-import {
-  Schema_GridEvent,
-  Status_DraftEvent,
-} from "@web/common/types/web.event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   createEventSlice,
   draftSlice,
@@ -44,16 +41,14 @@ interface Props {
 }
 
 export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const somedayRef = useRef();
 
-  const isProcessing = useSelector(selectIsGetSomedayEventsProcessing);
-  const somedayEvents = useSelector(selectSomedayEvents) as Schema_Event[];
-  const { isDrafting: isDraftingRedux } = useSelector(selectDraftId);
-  const { eventType: draftType } = useSelector(
-    selectDraftStatus
-  ) as Status_DraftEvent;
+  const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
+  const somedayEvents = useAppSelector(selectSomedayEvents);
+  const { isDrafting: isDraftingRedux } = useAppSelector(selectDraftId);
+  const { eventType: draftType } = useAppSelector(selectDraftStatus);
 
   const [isDrafting, setIsDrafting] = useState(false);
   const [draft, setDraft] = useState<Schema_GridEvent | null>(null);

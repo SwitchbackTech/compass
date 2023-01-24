@@ -3,7 +3,6 @@ import dayjs from "dayjs";
 import produce from "immer";
 import { createSlice } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
-import { RootState } from "@web/store";
 import { createAsyncSlice } from "@web/common/store/helpers";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
@@ -143,8 +142,9 @@ export const getSomedayEventsSlice = createAsyncSlice<
 >({
   name: "getSomedayEvents",
   reducers: {
-    convert: (state, action) => {},
-    delete: (state: RootState, action: Action_DeleteEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    convert: () => {},
+    delete: (state, action: Action_DeleteEvent) => {
       state.value.data = state.value.data.filter(
         (i: string) => i !== action.payload._id
       );
@@ -166,7 +166,7 @@ export const getWeekEventsSlice = createAsyncSlice<
 >({
   name: "getWeekEvents",
   reducers: {
-    delete: (state: RootState, action: Action_DeleteEvent) => {
+    delete: (state, action: Action_DeleteEvent) => {
       state.value.data = state.value.data.filter(
         (i: string) => i !== action.payload._id
       );

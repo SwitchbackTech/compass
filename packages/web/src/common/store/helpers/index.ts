@@ -23,9 +23,9 @@ export interface _AsyncState<SuccessPayload, ErrorPayload> {
 }
 
 export interface _CreateSliceOptions<State> {
-  reducers?: ValidateSliceCaseReducers<State, SliceCaseReducers<State>>;
   initialState?: State;
   name: string;
+  reducers?: ValidateSliceCaseReducers<State, SliceCaseReducers<State>>;
 }
 
 export const createAsyncSlice = <

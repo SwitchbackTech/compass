@@ -1,11 +1,11 @@
 import React, { FC, MouseEvent, useEffect } from "react";
 import dayjs from "dayjs";
 import { useDrop } from "react-dnd";
-import { useDispatch, useSelector } from "react-redux";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { DragItem, DropResult } from "@web/common/types/dnd.types";
 import { Ref_Callback } from "@web/common/types/util.types";
 import {
@@ -58,7 +58,7 @@ export const AllDayRow: FC<Props> = ({
   measurements,
   weekProps,
 }) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const {
     startOfView: startOfSelectedWeekDay,
@@ -68,10 +68,10 @@ export const AllDayRow: FC<Props> = ({
 
   const border = `1px solid ${getColor(ColorNames.WHITE_2)}`;
 
-  const allDayEvents = useSelector(selectAllDayEvents);
+  const allDayEvents = useAppSelector(selectAllDayEvents);
   const _rowVals = allDayEvents.map((e: Schema_GridEvent) => e.row);
   const rowsCount = _rowVals.length === 0 ? 1 : Math.max(..._rowVals);
-  const { isDrafting, draftId } = useSelector(selectDraftId);
+  const { isDrafting, draftId } = useAppSelector(selectDraftId);
 
   useEffect(() => {
     measurements.remeasure(ID_GRID_MAIN);

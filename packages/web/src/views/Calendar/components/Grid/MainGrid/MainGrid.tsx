@@ -2,6 +2,7 @@ import React, { FC, MouseEvent } from "react";
 import { useDrop } from "react-dnd";
 import mergeRefs from "react-merge-refs";
 import { Dayjs } from "dayjs";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Ref_Callback } from "@web/common/types/util.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
@@ -14,7 +15,6 @@ import {
   prepareEventAfterDraftDrop,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
-import { useDispatch, useSelector } from "react-redux";
 import {
   createEventSlice,
   draftSlice,
@@ -25,11 +25,7 @@ import {
   DRAFT_DURATION_MIN,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import {
-  selectDraftId,
-  selectDraftStatus,
-} from "@web/ducks/events/event.selectors";
-import { Status_DraftEvent } from "@web/common/types/web.event.types";
+import { selectDraftId } from "@web/ducks/events/event.selectors";
 
 import { Columns } from "../Columns";
 import { GridRows } from "./GridRows";
@@ -55,7 +51,7 @@ export const MainGrid: FC<Props> = ({
   scrollRef,
   weekProps,
 }) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const { component } = weekProps;
   const {
@@ -64,7 +60,7 @@ export const MainGrid: FC<Props> = ({
     week,
     weekDays,
   } = component;
-  const { isDrafting } = useSelector(selectDraftId);
+  const { isDrafting } = useAppSelector(selectDraftId);
 
   const getDates = (x: number, y: number) => {
     const _start = dateCalcs.getDateByXY(

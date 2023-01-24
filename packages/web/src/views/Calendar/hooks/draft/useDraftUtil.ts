@@ -1,12 +1,9 @@
 import { MouseEvent } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import {
-  Schema_GridEvent,
-  Status_DraftEvent,
-} from "@web/common/types/web.event.types";
+import { useAppDispatch } from "@web/store/store.hooks";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getX } from "@web/common/utils/grid.util";
 import {
   editEventSlice,
@@ -43,15 +40,15 @@ export const useDraftUtil = (
   weekProps: WeekProps,
   isSidebarOpen: boolean
 ) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
-  const reduxDraft = useSelector(selectDraft) as Schema_Event;
+  const reduxDraft = useSelector(selectDraft);
   const {
     activity,
     dateToResize,
     eventType: reduxDraftType,
     isDrafting,
-  } = useSelector(selectDraftStatus) as Status_DraftEvent;
+  } = useSelector(selectDraftStatus);
 
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
