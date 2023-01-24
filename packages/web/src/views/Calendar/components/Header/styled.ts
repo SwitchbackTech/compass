@@ -23,7 +23,8 @@ export const ArrowNavigationButton = styled(Text)`
 
   &:hover {
     border-radius: 50%;
-    color: ${getColor(ColorNames.WHITE_1)};
+    filter: brightness(160%);
+    transition: filter 0.35s ease-out;
   }
 
   &:first-child {

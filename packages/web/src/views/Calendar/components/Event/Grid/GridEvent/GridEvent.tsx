@@ -48,8 +48,8 @@ const _GridEvent = (
   const { component } = weekProps;
   const position = getPosition(
     event,
-    component.startOfSelectedWeekDay,
-    component.endOfSelectedWeekDay,
+    component.startOfView,
+    component.endOfView,
     measurements,
     false
   );

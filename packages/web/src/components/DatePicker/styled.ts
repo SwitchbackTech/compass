@@ -1,15 +1,12 @@
 import styled from "styled-components";
+import { getColor } from "@core/util/color.utils";
+import { ColorNames } from "@core/types/color.types";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
-import { ColorNames } from "@core/types/color.types";
-import { getColor } from "@core/util/color.utils";
-
-export interface Props {
-  monthsCount?: number;
-}
+import { SIDEBAR_MONTH_HEIGHT } from "@web/views/Calendar/layout.constants";
 
 const _hoverStyle = `
-  background-color: ${getColor(ColorNames.BLUE_4)};
+  background-color: ${getColor(ColorNames.BLUE_5)};
 `;
 
 export const ChangeDayButtonsStyledFlex = styled(Flex)`
@@ -31,7 +28,10 @@ export const MonthContainerStyled = styled(Flex)`
   width: 97px;
 `;
 
-export const Styled = styled.div<Props>`
+export const StyledDatePicker = styled.div<{
+  monthsCount?: number;
+  view: "widget" | "picker";
+}>`
   background-color: ${getColor(ColorNames.GREY_3)};
   border: none;
   border-radius: 2px;
@@ -43,8 +43,8 @@ export const Styled = styled.div<Props>`
   & .react-datepicker {
     &__month-container {
       width: 100%;
-      padding: 0 15px 15px 15px;
-      height: 300px;
+      padding: 0 15px 0 15px;
+      height: 285px;
       display: flex;
       flex-direction: column;
     }
@@ -57,11 +57,17 @@ export const Styled = styled.div<Props>`
     }
 
     &__week {
+      align-items: center;
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      width: 100%;
       flex-basis: calc(100% / 6);
+      width: 100%;
+
+      &:hover {
+        ${({ view }) =>
+          view === "widget" &&
+          `background-color: ${getColor(ColorNames.GREY_2)}`};
+      }
     }
 
     &__header {
@@ -98,13 +104,12 @@ export const Styled = styled.div<Props>`
 
       &--selected {
         background-color: ${getColor(ColorNames.BLUE_5)};
-        border-radius: 50%;
       }
 
       &--today {
-        font-weight: normal;
         background-color: ${getColor(ColorNames.GREY_1)};
         color: ${getColor(ColorNames.GREY_4)};
+        font-weight: normal;
       }
 
       &--outside-month {
@@ -119,7 +124,7 @@ export const Styled = styled.div<Props>`
     overflow: hidden;
 
     &--open {
-      height: ${({ monthsCount = 1 }) => monthsCount * 300}px;
+      height: ${({ monthsCount = 1 }) => monthsCount * SIDEBAR_MONTH_HEIGHT}px;
     }
 
     &--animation {

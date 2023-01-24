@@ -1,14 +1,11 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { ColorNames } from "@core/types/color.types";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { getAlphaColor } from "@core/util/color.utils";
 import { Divider } from "@web/components/Divider";
-import { useDispatch } from "react-redux";
-import { getSomedayEventsSlice } from "@web/ducks/events/event.slice";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Preferences } from "@web/views/Calendar/hooks/usePreferences";
 import { SIDEBAR_MONTH_HEIGHT } from "@web/views/Calendar/layout.constants";
-import { toUTCOffset } from "@web/common/utils/web.date.util";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 import {
@@ -29,19 +26,8 @@ interface Props {
 export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
   props: Props
 ) => {
-  const dispatch = useDispatch();
-
-  const weekStart = props.weekProps.component.startOfSelectedWeekDay;
-  const weekEnd = props.weekProps.component.endOfSelectedWeekDay;
-
-  useEffect(() => {
-    dispatch(
-      getSomedayEventsSlice.actions.request({
-        startDate: toUTCOffset(weekStart),
-        endDate: toUTCOffset(weekEnd),
-      })
-    );
-  }, [dispatch, weekStart, weekEnd]);
+  const weekStart = props.weekProps.component.startOfView;
+  const weekEnd = props.weekProps.component.endOfView;
 
   const SidebarToggleIcon = getSidebarToggleIcon(props.prefs.isSidebarOpen);
 
@@ -82,7 +68,9 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         <ToggleableMonthWidget
           isToggled={true}
           monthsShown={1}
-          setWeek={props.weekProps.state.setWeek}
+          setStartOfView={props.weekProps.state.setStartOfView}
+          isCurrentWeek={props.weekProps.component.isCurrentWeek}
+          weekStart={weekStart}
         />
       </StyledBottomSection>
     </Styled>

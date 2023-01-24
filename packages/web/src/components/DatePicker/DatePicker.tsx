@@ -12,16 +12,17 @@ import { Input } from "@web/components/Input";
 import {
   ChangeDayButtonsStyledFlex,
   MonthContainerStyled,
-  Styled,
+  StyledDatePicker,
   StyledHeaderFlex,
   TodayStyledText,
 } from "./styled";
 
 export interface Props extends ReactDatePickerProps {
-  bgColor: string;
-  onInputBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  isOpen?: boolean;
   animationOnToggle?: boolean;
+  bgColor: string;
+  isOpen?: boolean;
+  onInputBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  view: "widget" | "picker";
   withTodayButton?: boolean;
 }
 
@@ -39,6 +40,7 @@ export const DatePicker: React.FC<Props> = ({
   onInputBlur,
   onCalendarClose = () => null,
   onCalendarOpen = () => null,
+  view,
   withTodayButton = true,
   ...props
 }) => {
@@ -60,9 +62,10 @@ export const DatePicker: React.FC<Props> = ({
         "calendar--animation": animationOnToggle,
       })}
       calendarContainer={(containerProps) => (
-        <Styled
+        <StyledDatePicker
           {...containerProps}
           monthsCount={(props.monthsShown || 0) + 1}
+          view={view}
         />
       )}
       customInput={
