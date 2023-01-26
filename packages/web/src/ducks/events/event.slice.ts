@@ -106,6 +106,10 @@ export const draftSlice = createSlice({
 
 export const editEventSlice = createAsyncSlice<Payload_EditEvent>({
   name: "editEvent",
+  initialState: {},
+  reducers: {
+    migrate: () => {},
+  },
 });
 
 export const eventsEntitiesSlice = createSlice({
@@ -156,6 +160,14 @@ export const getSomedayEventsSlice = createAsyncSlice<
       } else {
         state.value.data.push(action.payload);
       }
+    },
+    remove: (state, action: Action_DeleteEvent) => {
+      // same as 'delete', but duplicating to
+      // prevent migrate saga from deleting event
+      // from DB
+      state.value.data = state.value.data.filter(
+        (i: string) => i !== action.payload._id
+      );
     },
   },
 });

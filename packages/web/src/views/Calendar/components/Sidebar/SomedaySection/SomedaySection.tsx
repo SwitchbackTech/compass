@@ -60,7 +60,8 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
   );
 
   // memo-ize
-  const existingIds = somedayEvents.map((se) => se._id);
+  console.log(somedayEvents);
+  const existingIds = somedayEvents?.map((se) => se._id);
   const isNewDraft =
     isDrafting &&
     isDraftingRedux &&

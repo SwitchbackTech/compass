@@ -118,9 +118,6 @@ export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
 
 export function* deleteSomedayEventSaga({ payload }: Action_DeleteEvent) {
   try {
-    // doesn't call futureEventsSlice..delete, because that
-    // is (somehow) automatically called in response to entity slice
-    // delete
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
     yield call(EventApi.delete, payload._id);
@@ -221,6 +218,21 @@ function* getWeekEventsSaga({ payload }: Action_GetEvents) {
   }
 }
 
+function* migrateEventSaga({ payload }: Action_EditEvent) {
+  try {
+    yield put(eventsEntitiesSlice.actions.edit(payload));
+    yield call(EventApi.edit, payload._id, payload.event);
+
+    // dispatch(getSomedayEventsSlice.actions.delete({ _id: event._id }));
+    // yield put(getSomedayEventsSlice.actions.delete(payload));
+    yield put(getSomedayEventsSlice.actions.remove(payload));
+    yield put(editEventSlice.actions.success());
+  } catch (error) {
+    yield put(editEventSlice.actions.error());
+    handleError(error as Error);
+  }
+}
+
 /************
  * Assemble
  ***********/
@@ -241,5 +253,6 @@ export function* eventsSagas() {
   );
   yield takeLatest(createEventSlice.actions.request, createEventSaga);
   yield takeLatest(editEventSlice.actions.request, editEventSaga);
+  yield takeLatest(editEventSlice.actions.migrate, migrateEventSaga);
   yield takeLatest(deleteEventSlice.actions.request, deleteEventSaga);
 }
