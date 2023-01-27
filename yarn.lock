@@ -7330,9 +7330,9 @@ expect@^29.0.0, expect@^29.3.1:
     jest-util "^29.3.1"
 
 express-validator@^6.12.2:
-  version "6.14.2"
-  resolved "https://registry.yarnpkg.com/express-validator/-/express-validator-6.14.2.tgz#6147893f7bec0e14162c3a88b3653121afc4678f"
-  integrity sha512-8XfAUrQ6Y7dIIuy9KcUPCfG/uCbvREctrxf5EeeME+ulanJ4iiW71lWmm9r4YcKKYOCBMan0WpVg7FtHu4Z4Wg==
+  version "6.14.3"
+  resolved "https://registry.yarnpkg.com/express-validator/-/express-validator-6.14.3.tgz#50787258c1250ffb0e7a697f05e9f16aa2fd8084"
+  integrity sha512-c4b9NMdhskfcLbH/FchsSfCt4Vb14gKzcotG9zLS+VoOJDox57aGhCL+kmAu7cl+ytaSed+HD5jdJhel8DQsdg==
   dependencies:
     lodash "^4.17.21"
     validator "^13.7.0"
