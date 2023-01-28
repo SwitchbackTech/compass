@@ -370,6 +370,28 @@ export const prepSyncMaintenance = async () => {
   };
 };
 
+export const prepSyncMaintenanceForUser = async (userId: string) => {
+  const sync = await getSync({ userId });
+  if (!sync) {
+    return "not found";
+  }
+
+  const deadline = getActiveDeadline();
+  const isUserActive = await hasUpdatedCompassEventRecently(userId, deadline);
+  if (isUserActive) {
+    const syncsToRefresh = getSyncsToRefresh(sync);
+
+    if (syncsToRefresh.length > 0) {
+      return "refresh";
+    } else {
+      return "ignore";
+    }
+  } else {
+    const action = hasAnyActiveEventSync(sync) ? "prune" : "ignore";
+    return action;
+  }
+};
+
 export const prepIncrementalImport = async (
   userId: string,
   gcal: gCalendar

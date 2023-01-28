@@ -21,6 +21,13 @@ export class SyncRoutes extends CommonRoutesConfig {
       ]);
 
     this.app
+      .route(`/api/sync/maintain/:userId`)
+      .post([
+        authMiddleware.verifyIsFromCompass,
+        syncController.maintainForUser,
+      ]);
+
+    this.app
       .route(`/api/sync/maintain-all`)
       .post([authMiddleware.verifyIsFromCompass, syncController.maintain]);
 

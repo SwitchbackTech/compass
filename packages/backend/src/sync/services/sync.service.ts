@@ -24,6 +24,7 @@ import {
   importEventsByCalendar,
   prepIncrementalImport,
   prepSyncMaintenance,
+  prepSyncMaintenanceForUser,
   pruneSync,
   refreshSync,
 } from "./sync.service.helpers";
@@ -165,6 +166,25 @@ class SyncService {
       refreshed: refreshed.length,
       deleted: deletedDuringPrune.length + deletedDuringRefresh.length,
     };
+  };
+
+  runSyncMaintenanceForUser = async (userId: string) => {
+    const action = await prepSyncMaintenanceForUser(userId);
+
+    switch (action) {
+      case "not found": {
+        return { result: "not found" };
+      }
+      case "ignore": {
+        return { result: "ignored" };
+      }
+      case "prune": {
+        return { result: "pruned" };
+      }
+      case "refresh": {
+        return { result: "refreshed" };
+      }
+    }
   };
 
   stopWatch = async (
