@@ -36,7 +36,7 @@ describe("Sidebar: Display with State", () => {
     await waitFor(() => {
       expect(
         within(screen.getByRole("complementary")).getByRole("button", {
-          name: /^europe trip$/i,
+          name: /^europe trip >$/i,
         })
       ).toBeInTheDocument();
     });

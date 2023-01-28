@@ -50,14 +50,14 @@ export const SomedayEvent = ({
         ref={reference}
       >
         <Text size={15}>{event.title}</Text>
-        <button
+        <span
           onClick={(e) => {
             e.stopPropagation();
             onMigrate(event, "forward");
           }}
         >
           {">"}
-        </button>
+        </span>
       </StyledEventOrPlaceholder>
 
       <FloatingPortal>
