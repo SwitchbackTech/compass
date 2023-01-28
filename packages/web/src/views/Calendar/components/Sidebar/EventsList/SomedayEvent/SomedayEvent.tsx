@@ -2,15 +2,11 @@ import React, { Dispatch, MouseEvent, SetStateAction } from "react";
 import { FloatingPortal } from "@floating-ui/react";
 import { useFloating } from "@floating-ui/react";
 import { Schema_Event } from "@core/types/event.types";
-import { useAppDispatch } from "@web/store/store.hooks";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { Text } from "@web/components/Text";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { editEventSlice } from "@web/ducks/events/event.slice";
-import dayjs from "dayjs";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 
 import { StyledEventOrPlaceholder } from "./styled";
 
@@ -19,6 +15,8 @@ export interface Props {
   isDrafting: boolean;
   isDragging: boolean;
   onClose: () => void;
+  onDraft: (event: Schema_Event) => void;
+  onMigrate: (event: Schema_Event, location: "forward" | "back") => void;
   onSubmit: () => void;
   setEvent: Dispatch<SetStateAction<Schema_GridEvent>>;
 }
@@ -28,48 +26,25 @@ export const SomedayEvent = ({
   isDrafting,
   isDragging,
   onClose,
+  onDraft,
+  onMigrate,
   onSubmit,
   setEvent,
 }: Props) => {
-  const dispatch = useAppDispatch();
-
   const { y, reference, floating, strategy } = useFloating({
     strategy: "absolute",
     placement: "right-start",
   });
-
-  const migrate = (location: "forward" | "back") => {
-    const diff = location === "forward" ? 7 : -7;
-
-    const startDate = dayjs(event.startDate)
-      .add(diff, "days")
-      .format(YEAR_MONTH_DAY_FORMAT);
-
-    const endDate = dayjs(event.endDate)
-      .add(diff, "days")
-      .format(YEAR_MONTH_DAY_FORMAT);
-
-    const _event = { ...event, startDate, endDate };
-
-    dispatch(
-      editEventSlice.actions.migrate({
-        _id: _event._id,
-        event: _event,
-      })
-    );
-  };
-
-  const startDrafting = (e: MouseEvent) => {
-    e.stopPropagation();
-    setEvent(event);
-  };
 
   return (
     <>
       <StyledEventOrPlaceholder
         isDragging={isDragging}
         isDrafting={isDrafting}
-        onClick={startDrafting}
+        onClick={(e: MouseEvent) => {
+          e.stopPropagation();
+          onDraft(event);
+        }}
         priority={event.priority}
         role="button"
         ref={reference}
@@ -78,7 +53,7 @@ export const SomedayEvent = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            migrate("forward");
+            onMigrate(event, "forward");
           }}
         >
           {">"}

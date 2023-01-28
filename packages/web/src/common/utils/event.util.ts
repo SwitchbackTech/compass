@@ -49,6 +49,7 @@ export const getDefaultEvent = (
       return {
         isAllDay: false,
         isSomeday: true,
+        origin: Origin.COMPASS,
         priority: Priorities.UNASSIGNED,
       };
     case Categories_Event.TIMED: {

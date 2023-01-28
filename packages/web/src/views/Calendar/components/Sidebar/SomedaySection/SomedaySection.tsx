@@ -6,8 +6,9 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { SOMEDAY_WEEKLY_LIMIT } from "@core/constants/core.constants";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { getWeekRangeDates } from "@core/util/date.utils";
 import { ColorNames } from "@core/types/color.types";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
@@ -60,7 +61,6 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
   );
 
   // memo-ize
-  console.log(somedayEvents);
   const existingIds = somedayEvents?.map((se) => se._id);
   const isNewDraft =
     isDrafting &&
@@ -72,6 +72,25 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
   const _isAtLimit = useCallback(() => {
     return somedayEvents.length >= SOMEDAY_WEEKLY_LIMIT;
   }, [somedayEvents]);
+
+  const createDefaultSomeday = useCallback(() => {
+    const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY);
+    setDraft({
+      ...somedayDefault,
+      startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+    });
+    setIsDrafting(true);
+  }, [weekRange.weekEnd, weekRange.weekStart]);
+
+  const close = () => {
+    setIsDrafting(false);
+    setDraft(null);
+
+    if (isDraftingRedux && draftType === Categories_Event.SOMEDAY) {
+      dispatch(draftSlice.actions.discard());
+    }
+  };
 
   useEffect(() => {
     setIsDraftingExisting(existingIds.includes(draft?._id));
@@ -107,10 +126,11 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
       createDefaultSomeday();
     }
   }, [
+    createDefaultSomeday,
     draftType,
-    _isAtLimit,
     isDraftingExisting,
     isDraftingRedux,
+    _isAtLimit,
     SOMEDAY_WEEK_LIMIT_MSG,
   ]);
 
@@ -118,19 +138,40 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
     handleSomedayShortcut();
   }, [handleSomedayShortcut]);
 
-  const createDefaultSomeday = () => {
-    const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY);
-    setDraft(somedayDefault);
-    setIsDrafting(true);
+  const onDraft = (event: Schema_Event) => {
+    setDraft({
+      ...event,
+      startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+    });
   };
 
-  const close = () => {
-    setIsDrafting(false);
-    setDraft(null);
+  const onMigrate = (event: Schema_Event, location: "forward" | "back") => {
+    const diff = location === "forward" ? 7 : -7;
 
-    if (isDraftingRedux && draftType === Categories_Event.SOMEDAY) {
-      dispatch(draftSlice.actions.discard());
+    const startDate = dayjs(event.startDate)
+      .add(diff, "days")
+      .format(YEAR_MONTH_DAY_FORMAT);
+
+    const endDate = dayjs(event.endDate)
+      .add(diff, "days")
+      .format(YEAR_MONTH_DAY_FORMAT);
+
+    const _event = { ...event, startDate, endDate };
+
+    const isExisting = _event._id;
+    if (isExisting) {
+      dispatch(
+        editEventSlice.actions.migrate({
+          _id: _event._id,
+          event: _event,
+        })
+      );
+    } else {
+      dispatch(createEventSlice.actions.request(_event));
     }
+
+    close();
   };
 
   const onSubmit = () => {
@@ -216,6 +257,8 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
             }
             key={event._id}
             onClose={close}
+            onDraft={onDraft}
+            onMigrate={onMigrate}
             onSubmit={onSubmit}
             setEvent={setDraft}
           />
@@ -228,6 +271,8 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
             isDrafting={isNewDraft && isDraftingRedux}
             key={"somedayKey"}
             onClose={close}
+            onDraft={onDraft}
+            onMigrate={onMigrate}
             onSubmit={onSubmit}
             setEvent={setDraft}
           />
