@@ -9,6 +9,8 @@ import mongoService from "@backend/common/services/mongo.service";
 
 import { analyzeWeb } from "./commands/analyze";
 import { runBuild } from "./commands/build";
+import { copyToVM } from "./commands/scp";
+import { getPckgsTo, getVmInfo } from "./common/cli.utils";
 
 mongoService;
 
@@ -22,6 +24,7 @@ const runScript = async () => {
   const program = new Command();
   program.option("-a, --analyze", "analyzes prod builds");
   program.option("-b, --build", "builds packages");
+  program.option("-c, --scp", "copies existing builds to VM");
   program.option("-d, --delete", "deletes users data from compass database");
   program.option("-f, --force", "forces operation, no cautionary prompts");
   program.option("-u, --user <id>", "specifies which user to run script for");
@@ -41,6 +44,12 @@ const runScript = async () => {
     }
     case options["build"]: {
       await runBuild();
+      break;
+    }
+    case options["scp"]: {
+      const pckgs = await getPckgsTo("scp");
+      const vmInfo = await getVmInfo();
+      copyToVM(pckgs, vmInfo);
       break;
     }
     case options["delete"]: {
