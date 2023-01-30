@@ -47,6 +47,10 @@ const runScript = async () => {
       break;
     }
     case options["scp"]: {
+      console.log(
+        "TODO - update .envs in build first -- might be re-using old one"
+      );
+      process.exit(1);
       const pckgs = await getPckgsTo("scp");
       const vmInfo = await getVmInfo();
       copyToVM(pckgs, vmInfo);

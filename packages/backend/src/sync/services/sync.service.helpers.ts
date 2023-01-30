@@ -41,14 +41,14 @@ import {
   getSummary,
   syncExpired,
   syncExpiresSoon,
-} from "./sync.utils";
+} from "../util/sync.utils";
 import {
   createSync,
   getSync,
   hasUpdatedCompassEventRecently,
   updateSyncTimeBy,
   updateSyncTokenFor,
-} from "./sync.queries";
+} from "../util/sync.queries";
 
 /**
  * Helper funcs that include multiple operations (not just DB queries)
@@ -373,7 +373,7 @@ export const prepSyncMaintenance = async () => {
 export const prepSyncMaintenanceForUser = async (userId: string) => {
   const sync = await getSync({ userId });
   if (!sync) {
-    return "not found";
+    return { action: "ignore", reason: "no sync" };
   }
 
   const deadline = getActiveDeadline();
@@ -382,13 +382,22 @@ export const prepSyncMaintenanceForUser = async (userId: string) => {
     const syncsToRefresh = getSyncsToRefresh(sync);
 
     if (syncsToRefresh.length > 0) {
-      return "refresh";
+      return {
+        action: "refresh",
+        reason: "Active user + expiring soon",
+        payload: syncsToRefresh,
+      };
     } else {
-      return "ignore";
+      return {
+        action: "ignore",
+        reason: "Active user + not passing refresh checks",
+      };
     }
   } else {
-    const action = hasAnyActiveEventSync(sync) ? "prune" : "ignore";
-    return action;
+    const result = hasAnyActiveEventSync(sync)
+      ? { action: "prune", reason: "Inactive user + active sync" }
+      : { action: "ignore", reason: "Inactive user + no active syncs" };
+    return result;
   }
 };
 
@@ -417,7 +426,11 @@ export const prepIncrementalImport = async (
     sync as Schema_Sync,
     gCalendarIds
   );
-  await syncService.watchGcalEventsById(userId, eventWatchPayloads, gcal);
+  await syncService.startWatchingGcalEventsById(
+    userId,
+    eventWatchPayloads,
+    gcal
+  );
   const newSync = (await getSync({ userId })) as Schema_Sync;
 
   return newSync.google.events;
@@ -497,7 +510,7 @@ export const watchEventsByGcalIds = async (
   gcal: gCalendar
 ) => {
   const watchGcalEvents = gCalendarIds.map((gCalendarId) =>
-    syncService.watchGcalEvents(userId, { gCalendarId }, gcal)
+    syncService.startWatchingGcalEvents(userId, { gCalendarId }, gcal)
   );
 
   await Promise.all(watchGcalEvents);

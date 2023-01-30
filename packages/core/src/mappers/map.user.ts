@@ -8,29 +8,24 @@ export const mapUserToCompass = (
   gUser: UserInfo_Google["gUser"],
   gRefreshToken: string
 ): Schema_User => {
-  if (
-    !gUser.email ||
-    !gUser.name ||
-    !gUser.given_name ||
-    !gUser.family_name ||
-    !gUser.picture ||
-    !gUser.locale ||
-    !gRefreshToken
-  ) {
+  if (!gUser.email || !gRefreshToken) {
     throw new BaseError(
-      "Missing UserInfo",
-      `Required user props missing from ${JSON.stringify(gUser)}`,
-      Status.BAD_REQUEST,
+      `Failed to Map Google User to Compass. \ngUser: ${JSON.stringify({
+        ...gUser,
+        gRefreshToken,
+      })}`,
+      "Missing Required GUser Field",
+      Status.NOT_FOUND,
       true
     );
   }
 
   return {
     email: gUser.email,
-    name: gUser.name,
-    firstName: gUser.given_name,
-    lastName: gUser.family_name,
-    locale: gUser.locale,
+    name: gUser.name || "Mystery Person",
+    firstName: gUser.given_name || "Mystery",
+    lastName: gUser.family_name || "Person",
+    locale: gUser.locale || "not provided",
     google: {
       googleId: gUser.sub,
       picture: gUser.picture || "not provided",

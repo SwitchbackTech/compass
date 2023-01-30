@@ -29,7 +29,7 @@ class UserService {
 
     const userId = createUserRes.insertedId.toString();
     if (!userId) {
-      throw error(AuthError.UserCreateFailed, "Failed to create Compass user");
+      throw error(AuthError.NoUserId, "Failed to create Compass user");
     }
 
     return userId;
