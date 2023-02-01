@@ -7,6 +7,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
     "@compass/core": "1.0.0",
+    "chalk": "4.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "express": "^4.17.1",
@@ -16,6 +17,7 @@
     "helmet": "^6.0.0",
     "jsonwebtoken": "^9.0.0",
     "mongodb": "4.13",
+    "morgan": "^1.10.0",
     "supertokens-node": "^12.1.4",
     "tslib": "^2.4.0"
   },
@@ -28,6 +30,7 @@
     "@types/jest": "^29.0.0",
     "@types/jsonwebtoken": "^9.0.1",
     "@types/module-alias": "^2.0.1",
+    "@types/morgan": "^1.9.4",
     "@types/node": "^18.11.9",
     "alias-hq": "^6.1.0",
     "tsconfig-paths": "^4.1.2"
