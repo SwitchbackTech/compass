@@ -1,7 +1,7 @@
 //@ts-nocheck
 import express from "express";
 import { SessionRequest } from "supertokens-node/framework/express";
-import { Res } from "@core/types/express.types";
+import { Res } from "@backend/common/types/express.types";
 import { PriorityReq } from "@core/types/priority.types";
 
 import priorityService from "../services/priority.service";

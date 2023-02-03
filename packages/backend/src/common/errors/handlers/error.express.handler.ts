@@ -1,58 +1,128 @@
-import { Response } from "express";
+import { GaxiosError } from "googleapis-common";
 import { BaseError } from "@core/errors/errors.base";
-import { IS_DEV } from "@backend/common/constants/env.constants";
-import { isAccessRevoked } from "@backend/common/services/gcal/gcal.utils";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
+import { IS_DEV } from "@backend/common/constants/env.constants";
+import { UserError } from "@backend/common/constants/error.constants";
+import { CompassError, Info_Error } from "@backend/common/types/error.types";
+import { SessionResponse } from "@backend/common/types/express.types";
+import {
+  isAccessRevoked,
+  isFullSyncRequired,
+  isGoogleError,
+  isInvalidValue,
+} from "@backend/common/services/gcal/gcal.utils";
 import userService from "@backend/user/services/user.service";
+import { getSyncByToken } from "@backend/sync/util/sync.queries";
 
 import { errorHandler } from "./error.handler";
 
-interface Info_Error {
-  name?: string;
-  message: string;
-  stack?: string;
-}
+const logger = Logger("app:express.handler");
 
-interface CompassError extends Error {
-  name: string;
-  result?: string;
-  stack?: string;
-  status?: number;
-}
+const assembleErrorInfo = (e: CompassError) => {
+  const errInfo: Info_Error = {
+    name: e.result,
+    message: e.message,
+    stack: undefined,
+  };
 
-export const handleExpressError = async (res: Response, err: CompassError) => {
+  if (IS_DEV) {
+    errInfo.stack = e.stack;
+  }
+};
+
+const parseUserId = async (res: SessionResponse, e: Error) => {
+  if (res.req?.session) {
+    return res.req.session.getUserId();
+  }
+
+  if (e instanceof GaxiosError) {
+    if ("syncToken" in e.config.params) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const syncToken = e.config.params.syncToken as string;
+      const sync = await getSyncByToken(syncToken);
+
+      if (sync) {
+        return sync.user;
+      }
+    }
+  }
+
+  return null;
+};
+
+export const handleExpressError = async (
+  res: SessionResponse,
+  e: CompassError
+) => {
   res.header("Content-Type", "application/json");
 
-  if (err instanceof BaseError) {
-    errorHandler.log(err);
-    res.status(err.statusCode).send(err);
+  if (e instanceof BaseError) {
+    errorHandler.log(e);
+    res.status(e.statusCode).send(e);
   } else {
-    if (isAccessRevoked(err)) {
-      //@ts-ignore
-      const userId = res.req.session?.getUserId() as string;
-      console.warn(`User revoked access, cleaning data: ${userId}`);
-
-      await userService.deleteCompassDataForUser(userId, false);
-
-      res.status(Status.GONE).send("User revoked access, deleted all data");
+    const userId = await parseUserId(res, e);
+    if (!userId) {
+      logger.error(
+        "Express error occured, but couldnt handle due to missing userId"
+      );
+      logger.debug(res);
+      res.status(Status.UNSURE).send(UserError.MissingUserIdField);
       return;
     }
 
-    //TODO convert this object into one that has same keys as BaseError (?)
-    const errInfo: Info_Error = {
-      name: err.result,
-      message: err.message,
-      stack: undefined,
-    };
-
-    if (IS_DEV) {
-      errInfo.stack = err.stack;
+    if (isGoogleError(e)) {
+      await handleGoogleError(userId, res, e as GaxiosError);
+    } else {
+      const errInfo = assembleErrorInfo(e);
+      res.status(e.status || Status.INTERNAL_SERVER).send(errInfo);
     }
-
-    res.status(err.status || 500).send(errInfo);
   }
 
-  if (!errorHandler.isOperational(err)) {
+  if (!errorHandler.isOperational(e)) {
     errorHandler.exitAfterProgrammerError();
   }
 };
+
+const handleGoogleError = async (
+  userId: string,
+  res: SessionResponse,
+  e: GaxiosError
+) => {
+  if (isAccessRevoked(e)) {
+    logger.warn(`User revoked access, cleaning data: ${userId}`);
+
+    await userService.deleteCompassDataForUser(userId, false);
+
+    res.status(Status.GONE).send("User revoked access, deleted all data");
+    return;
+  }
+
+  if (isFullSyncRequired(e)) {
+    const result = await userService.reSyncGoogleData(userId);
+
+    res.status(Status.OK).send(result);
+    return;
+  }
+
+  if (isInvalidValue(e)) {
+    logger.error(
+      `${userId} (user) has an invalid value. Check params:\n`,
+      e.config.params
+    );
+
+    res.status(Status.BAD_REQUEST).send({ error: UserError.InvalidValue });
+    return;
+  }
+};
+
+/*
+const isMissingSession = async (req: Request, res: SessionResponse) => {
+  try {
+    await Session.getSession(req, res);
+    return false;
+  } catch (e) {
+    return true;
+  }
+};
+*/

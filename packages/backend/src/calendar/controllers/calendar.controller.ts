@@ -1,10 +1,11 @@
 import { SessionRequest } from "supertokens-node/framework/express";
-import { Res, SReqBody } from "@core/types/express.types";
+import { Res, SReqBody } from "@backend/common/types/express.types";
 import { Schema_CalendarList } from "@core/types/calendar.types";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
-import { AuthError, error } from "@backend/common/errors/types/backend.errors";
+import { AuthError } from "@backend/common/constants/error.constants";
 
 class CalendarController {
   create = async (req: SReqBody<Schema_CalendarList>, res: Res) => {

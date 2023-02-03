@@ -1,5 +1,5 @@
 import { SessionRequest } from "supertokens-node/framework/express";
-import { SReqBody, Res } from "@core/types/express.types";
+import { SReqBody, Res } from "@backend/common/types/express.types";
 import { Schema_Event, Params_DeleteMany } from "@core/types/event.types";
 import eventService from "@backend/event/services/event.service";
 

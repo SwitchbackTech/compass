@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { SessionRequest } from "supertokens-node/framework/express";
-import { SReqBody } from "@core/types/express.types";
+import { SReqBody } from "@backend/common/types/express.types";
 import { BaseError } from "@core/errors/errors.base";
 
 import syncService from "../services/sync.service";
@@ -8,16 +8,16 @@ import { getSync } from "../util/sync.queries";
 
 class SyncDebugController {
   importIncremental = async (req: SessionRequest, res: Response) => {
-    try {
-      const userId = req.session?.getUserId() as string;
-      const result = await syncService.importIncremental(userId);
-
-      // @ts-ignore
-      res.promise(Promise.resolve(result));
-    } catch (e) {
-      // @ts-ignore
-      res.promise(e);
+    const userId = req.params["userId"];
+    if (!userId) {
+      //@ts-ignore
+      res.promise(Promise.reject({ error: "no userId param" }));
+      return;
     }
+    const result = await syncService.importIncremental(userId);
+
+    // @ts-ignore
+    res.promise(Promise.resolve(result));
   };
 
   maintainByUser = async (req: Request, res: Response) => {

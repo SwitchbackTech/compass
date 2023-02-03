@@ -1,16 +1,15 @@
 import { Response, Request, NextFunction } from "express";
 import { Status } from "@core/errors/status.codes";
-import { SReqBody } from "@core/types/express.types";
+import { SReqBody } from "@backend/common/types/express.types";
 import {
   AuthError,
-  error,
   GcalError,
-} from "@backend/common/errors/types/backend.errors";
+} from "@backend/common/constants/error.constants";
 import { IS_DEV } from "@backend/common/constants/env.constants";
 import { hasGoogleHeaders } from "@backend/sync/util/sync.utils";
 import { GCAL_NOTIFICATION_TOKEN } from "@backend/common/constants/backend.constants";
-
-import { COMPASS_SYNC_TOKEN } from "../../common/constants/backend.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { COMPASS_SYNC_TOKEN } from "@backend/common/constants/backend.constants";
 
 class AuthMiddleware {
   verifyIsDev = (_req: Request, res: Response, next: NextFunction) => {

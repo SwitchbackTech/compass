@@ -2,14 +2,15 @@ import { Origin } from "@core/constants/core.constants";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { Payload_Resource_Events, Resource_Sync } from "@core/types/sync.types";
 import {
-  error,
   GenericError,
   SyncError,
-} from "@backend/common/errors/types/backend.errors";
+} from "@backend/common/constants/error.constants";
 import mongoService from "@backend/common/services/mongo.service";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { getPrimaryGcalId } from "@backend/common/services/gcal/gcal.utils";
 
 /**
- * Helper funcs that predominately query the DB
+ * Helper funcs that predominately query/update the DB
  */
 
 export const createSync = async (
@@ -17,8 +18,7 @@ export const createSync = async (
   calendarList: Schema_CalendarList,
   nextSyncToken: string
 ) => {
-  const primaryGCal = calendarList.google.items[0];
-  const gCalendarId = primaryGCal!.id as string;
+  const gCalendarId = getPrimaryGcalId(calendarList);
 
   const result = await mongoService.sync.insertOne({
     user: userId,
@@ -33,6 +33,37 @@ export const createSync = async (
       events: [],
     },
   });
+
+  return result;
+};
+
+export const reInitSyncByIntegration = async (
+  integration: "google",
+  userId: string,
+  calendarList: Schema_CalendarList,
+  calListSyncToken: string
+) => {
+  const gCalendarId = getPrimaryGcalId(calendarList);
+
+  const result = await mongoService.sync.updateOne(
+    {
+      user: userId,
+    },
+    {
+      $set: {
+        [integration]: {
+          calendarlist: [
+            {
+              gCalendarId,
+              nextSyncToken: calListSyncToken,
+              lastSyncedAt: new Date(),
+            },
+          ],
+          events: [],
+        },
+      },
+    }
+  );
 
   return result;
 };
@@ -86,6 +117,22 @@ export const getSync = async (params: {
   const sync = await mongoService.sync.findOne(filter);
 
   return sync;
+};
+
+export const getSyncByToken = async (syncToken: string) => {
+  const resources = ["calendarlist", "events"];
+
+  for (const r of resources) {
+    const match = await mongoService.sync.findOne({
+      [`google.${r}.nextSyncToken`]: syncToken,
+    });
+
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
 };
 
 export const hasUpdatedCompassEventRecently = async (

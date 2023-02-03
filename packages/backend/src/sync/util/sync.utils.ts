@@ -112,7 +112,8 @@ export const getChannelExpiration = () => {
 
 export const getSummary = (
   eventsToUpdate: gSchema$Event[],
-  eventsToDelete: string[]
+  eventsToDelete: string[],
+  resourceId: string
 ) => {
   let updateSummary = "";
   let deleteSummary = "";
@@ -140,6 +141,8 @@ export const getSummary = (
   let summary = "";
   if (updateSummary !== "") summary += updateSummary;
   if (deleteSummary !== "") summary += deleteSummary;
+
+  summary += ` | ${resourceId}`;
 
   return summary;
 };

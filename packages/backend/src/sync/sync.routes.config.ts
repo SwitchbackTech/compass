@@ -31,7 +31,7 @@ export class SyncRoutes extends CommonRoutesConfig {
       .post([authMiddleware.verifyIsFromCompass, syncController.maintain]);
 
     this.app
-      .route([`/api/sync/stop-all`])
+      .route(`/api/sync/stop-all`)
       .post([verifySession(), syncDebugController.stopAllChannelWatches]);
 
     /***************
@@ -39,7 +39,7 @@ export class SyncRoutes extends CommonRoutesConfig {
      ***************/
 
     this.app
-      .route(`${SYNC_DEBUG}/import-incremental`)
+      .route(`${SYNC_DEBUG}/import-incremental/:userId`)
       .post([
         authMiddleware.verifyIsFromCompass,
         syncDebugController.importIncremental,

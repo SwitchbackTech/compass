@@ -1,39 +1,11 @@
-// @ts-nocheck
 import express from "express";
-import { Res_Promise } from "@core/types/express.types";
-import { BaseError } from "@core/errors/errors.base";
+import { SessionRequest } from "supertokens-node/framework/express";
+import { Res_Promise } from "@backend/common/types/express.types";
 import { Logger } from "@core/logger/winston.logger";
 
 import { handleExpressError } from "../errors/handlers/error.express.handler";
 
 const logger = Logger("app:promise.middleware");
-
-export const catchUndefinedSyncErrors = (
-  // err not provided, so create one
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
-  const baseErr: BaseError = new BaseError(
-    "Some Bad Sync Err Happened",
-    `${req}`,
-    500,
-    false
-  );
-  //@ts-ignore
-  res.promise(Promise.reject(baseErr));
-};
-
-export const catchSyncErrors = (
-  // sync errors thrown by 3rd party libraries or by this app
-  err: Error,
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) => {
-  //@ts-ignore
-  res.promise(Promise.reject(err));
-};
 
 const sendResponse = (res: express.Response, data: Record<string, unknown>) => {
   if (data === null) {
@@ -55,9 +27,7 @@ type P = Promise<unknown> | (() => unknown);
 
 export function promiseMiddleware() {
   return (
-    // req: express.Request,
-    req: SessionRequest,
-    // res: express.Response,
+    _req: express.Request | SessionRequest,
     res: Res_Promise,
     next: express.NextFunction
   ) => {
@@ -74,12 +44,44 @@ export function promiseMiddleware() {
         promiseToResolve = Promise.resolve(p);
       }
 
-      //@ts-ignore
-      return promiseToResolve
-        .then((data) => sendResponse(res, data))
-        .catch((e) => handleExpressError(res, e));
+      return (
+        promiseToResolve
+          //@ts-ignore
+          .then((data) => sendResponse(res, data))
+          //@ts-ignore
+          .catch((e) => handleExpressError(res, e))
+      );
     };
 
     return next();
   };
 }
+
+//++
+// export const catchUndefinedSyncErrors = (
+//   // err not provided, so create one
+//   req: express.Request,
+//   res: express.Response,
+//   next: express.NextFunction
+// ) => {
+//   const baseErr: BaseError = new BaseError(
+//     "Some Bad Sync Err Happened",
+//     `${req}`,
+//     500,
+//     false
+//   );
+//   //@ts-ignore
+//   res.promise(Promise.reject(baseErr));
+// };
+
+//++
+// export const catchSyncErrors = (
+//   req: express.Request,
+//   err: Error,
+//   res: express.Response,
+//   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+//   next: express.NextFunction
+// ) => {
+//   //@ts-ignore
+//   res.promise(Promise.reject(err));
+// };

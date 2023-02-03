@@ -1,6 +1,7 @@
 import { Credentials } from "google-auth-library";
 import GoogleAuthService from "@backend/auth/services/google.auth.service";
-import { error, AuthError } from "@backend/common/errors/types/backend.errors";
+import { AuthError } from "@backend/common/constants/error.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
 
 export const initGoogleClient = async (
   gAuthClient: GoogleAuthService,

@@ -65,6 +65,7 @@ export const LoginView = () => {
         alert("Nice try, hacker");
         return;
       }
+
       if (isMissingPermissions(scope)) {
         alert("Missing permissions, please try again");
         return;
@@ -72,19 +73,12 @@ export const LoginView = () => {
 
       setIsAuthenticating(true);
 
-      const { error } = await AuthApi.loginOrSignup(code);
-
-      if (error) {
-        alert(
-          "An error occured on Compass' backend while logging you in. Please let Ty know:\n ***REMOVED***"
-        );
-        console.log(error);
+      try {
+        await AuthApi.loginOrSignup(code);
+        setIsAuthenticated(true);
+      } catch (e) {
         setIsAuthenticating(false);
-        return;
       }
-
-      setIsAuthenticating(false);
-      setIsAuthenticated(true);
     },
     onError: (error) => {
       alert(`Login failed because: ${error.error}`);

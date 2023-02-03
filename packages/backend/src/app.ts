@@ -23,10 +23,7 @@ import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import { ENV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { httpLoggingMiddleware } from "@backend/common/middleware/http.logger.middleware";
-import {
-  catchSyncErrors,
-  promiseMiddleware,
-} from "@backend/common/middleware/promise.middleware";
+import { promiseMiddleware } from "@backend/common/middleware/promise.middleware";
 import {
   supertokensCors,
   supertokensErrorHandler,
@@ -49,8 +46,7 @@ app.use(corsWhitelist);
 app.use(helmet());
 app.use(httpLoggingMiddleware);
 app.use(express.json());
-// app.use(catchUndefinedSyncErrors);
-app.use(catchSyncErrors);
+//++ app.use(catchSyncErrors);
 
 const routes: Array<CommonRoutesConfig> = [];
 routes.push(new AuthRoutes(app));

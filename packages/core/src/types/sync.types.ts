@@ -54,15 +54,6 @@ export interface Result_Notif_Gcal {
   prep?: Result_Sync_Prep_Gcal;
   sync?: Result_Sync_Gcal;
 }
-export interface Result_Watch_Delete {
-  result: string;
-}
-
-export interface Result_Watch_Stop_All {
-  summary: string;
-  watches?: string[];
-  message?: string;
-}
 
 export interface Result_Sync_Gcal {
   syncToken?: object;
@@ -74,6 +65,14 @@ export interface Result_Sync_Prep_Gcal {
   operations: AnyBulkWriteOperation[];
   errors: BaseError[];
 }
+export interface Result_Watch_Delete {
+  result: string;
+}
+
+export type Result_Watch_Stop = {
+  channelId: string;
+  resourceId: string;
+}[];
 
 export interface Schema_Sync {
   user: string;
