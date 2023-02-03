@@ -1,4 +1,5 @@
 import React, { Dispatch, MouseEvent, SetStateAction } from "react";
+import { FloatingPortal } from "@floating-ui/react";
 import { useFloating } from "@floating-ui/react";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -6,7 +7,6 @@ import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { Text } from "@web/components/Text";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { FloatingPortal } from "@floating-ui/react";
 
 import { StyledEventOrPlaceholder } from "./styled";
 
@@ -15,6 +15,8 @@ export interface Props {
   isDrafting: boolean;
   isDragging: boolean;
   onClose: () => void;
+  onDraft: (event: Schema_Event) => void;
+  onMigrate: (event: Schema_Event, location: "forward" | "back") => void;
   onSubmit: () => void;
   setEvent: Dispatch<SetStateAction<Schema_GridEvent>>;
 }
@@ -24,6 +26,8 @@ export const SomedayEvent = ({
   isDrafting,
   isDragging,
   onClose,
+  onDraft,
+  onMigrate,
   onSubmit,
   setEvent,
 }: Props) => {
@@ -32,22 +36,28 @@ export const SomedayEvent = ({
     placement: "right-start",
   });
 
-  const startDrafting = (e: MouseEvent) => {
-    e.stopPropagation();
-    setEvent(event);
-  };
-
   return (
     <>
       <StyledEventOrPlaceholder
         isDragging={isDragging}
         isDrafting={isDrafting}
-        onClick={startDrafting}
+        onClick={(e: MouseEvent) => {
+          e.stopPropagation();
+          onDraft(event);
+        }}
         priority={event.priority}
         role="button"
         ref={reference}
       >
         <Text size={15}>{event.title}</Text>
+        <span
+          onClick={(e) => {
+            e.stopPropagation();
+            onMigrate(event, "forward");
+          }}
+        >
+          {">"}
+        </span>
       </StyledEventOrPlaceholder>
 
       <FloatingPortal>

@@ -1,6 +1,6 @@
 import React, { KeyboardEventHandler, MouseEvent, useState } from "react";
 import { Key } from "ts-key-enum";
-import { useDispatch } from "react-redux";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { DeleteIcon } from "@web/components/Icons";
 import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
 import { getSomedayEventsSlice } from "@web/ducks/events/event.slice";
@@ -21,7 +21,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   setEvent,
   ...props
 }) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 

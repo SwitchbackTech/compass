@@ -7,7 +7,7 @@ import {
   GcalError,
 } from "@backend/common/errors/types/backend.errors";
 import { IS_DEV } from "@backend/common/constants/env.constants";
-import { hasGoogleHeaders } from "@backend/sync/services/sync.utils";
+import { hasGoogleHeaders } from "@backend/sync/util/sync.utils";
 import { GCAL_NOTIFICATION_TOKEN } from "@backend/common/constants/backend.constants";
 
 import { COMPASS_SYNC_TOKEN } from "../../common/constants/backend.constants";

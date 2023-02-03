@@ -83,12 +83,12 @@ export const selectSomedayEvents = (state: RootState) => {
   const entities = state.events.entities.value || {};
   const somedayIds = state.events.getSomedayEvents.value || [];
 
-  if (somedayIds.length === 0 || Object.keys(entities).length === 0) {
+  if (Object.keys(entities).length === 0 || somedayIds.length === 0) {
     return [];
   }
 
   const somedayEvents = somedayIds.data.map((_id: string) => entities[_id]);
-  return somedayEvents;
+  return somedayEvents as Schema_Event[];
 };
 
 export const selectSomedayEventsCount = (state: RootState): number => {

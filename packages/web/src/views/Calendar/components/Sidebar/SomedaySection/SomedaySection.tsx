@@ -6,12 +6,13 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Dayjs } from "dayjs";
-import { useDispatch, useSelector } from "react-redux";
+import dayjs, { Dayjs } from "dayjs";
 import { SOMEDAY_WEEKLY_LIMIT } from "@core/constants/core.constants";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { getWeekRangeDates } from "@core/util/date.utils";
 import { ColorNames } from "@core/types/color.types";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Text } from "@web/components/Text";
 import {
   selectDraftId,
@@ -22,10 +23,7 @@ import {
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { getDefaultEvent, prepareEvent } from "@web/common/utils/event.util";
-import {
-  Schema_GridEvent,
-  Status_DraftEvent,
-} from "@web/common/types/web.event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   createEventSlice,
   draftSlice,
@@ -44,16 +42,14 @@ interface Props {
 }
 
 export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const somedayRef = useRef();
 
-  const isProcessing = useSelector(selectIsGetSomedayEventsProcessing);
-  const somedayEvents = useSelector(selectSomedayEvents) as Schema_Event[];
-  const { isDrafting: isDraftingRedux } = useSelector(selectDraftId);
-  const { eventType: draftType } = useSelector(
-    selectDraftStatus
-  ) as Status_DraftEvent;
+  const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
+  const somedayEvents = useAppSelector(selectSomedayEvents);
+  const { isDrafting: isDraftingRedux } = useAppSelector(selectDraftId);
+  const { eventType: draftType } = useAppSelector(selectDraftStatus);
 
   const [isDrafting, setIsDrafting] = useState(false);
   const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
@@ -65,7 +61,7 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
   );
 
   // memo-ize
-  const existingIds = somedayEvents.map((se) => se._id);
+  const existingIds = somedayEvents?.map((se) => se._id);
   const isNewDraft =
     isDrafting &&
     isDraftingRedux &&
@@ -76,6 +72,25 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
   const _isAtLimit = useCallback(() => {
     return somedayEvents.length >= SOMEDAY_WEEKLY_LIMIT;
   }, [somedayEvents]);
+
+  const createDefaultSomeday = useCallback(() => {
+    const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY);
+    setDraft({
+      ...somedayDefault,
+      startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+    });
+    setIsDrafting(true);
+  }, [weekRange.weekEnd, weekRange.weekStart]);
+
+  const close = () => {
+    setIsDrafting(false);
+    setDraft(null);
+
+    if (isDraftingRedux && draftType === Categories_Event.SOMEDAY) {
+      dispatch(draftSlice.actions.discard());
+    }
+  };
 
   useEffect(() => {
     setIsDraftingExisting(existingIds.includes(draft?._id));
@@ -111,10 +126,11 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
       createDefaultSomeday();
     }
   }, [
+    createDefaultSomeday,
     draftType,
-    _isAtLimit,
     isDraftingExisting,
     isDraftingRedux,
+    _isAtLimit,
     SOMEDAY_WEEK_LIMIT_MSG,
   ]);
 
@@ -122,19 +138,40 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
     handleSomedayShortcut();
   }, [handleSomedayShortcut]);
 
-  const createDefaultSomeday = () => {
-    const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY);
-    setDraft(somedayDefault);
-    setIsDrafting(true);
+  const onDraft = (event: Schema_Event) => {
+    setDraft({
+      ...event,
+      startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+    });
   };
 
-  const close = () => {
-    setIsDrafting(false);
-    setDraft(null);
+  const onMigrate = (event: Schema_Event, location: "forward" | "back") => {
+    const diff = location === "forward" ? 7 : -7;
 
-    if (isDraftingRedux && draftType === Categories_Event.SOMEDAY) {
-      dispatch(draftSlice.actions.discard());
+    const startDate = dayjs(event.startDate)
+      .add(diff, "days")
+      .format(YEAR_MONTH_DAY_FORMAT);
+
+    const endDate = dayjs(event.endDate)
+      .add(diff, "days")
+      .format(YEAR_MONTH_DAY_FORMAT);
+
+    const _event = { ...event, startDate, endDate };
+
+    const isExisting = _event._id;
+    if (isExisting) {
+      dispatch(
+        editEventSlice.actions.migrate({
+          _id: _event._id,
+          event: _event,
+        })
+      );
+    } else {
+      dispatch(createEventSlice.actions.request(_event));
     }
+
+    close();
   };
 
   const onSubmit = () => {
@@ -220,6 +257,8 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
             }
             key={event._id}
             onClose={close}
+            onDraft={onDraft}
+            onMigrate={onMigrate}
             onSubmit={onSubmit}
             setEvent={setDraft}
           />
@@ -232,6 +271,8 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
             isDrafting={isNewDraft && isDraftingRedux}
             key={"somedayKey"}
             onClose={close}
+            onDraft={onDraft}
+            onMigrate={onMigrate}
             onSubmit={onSubmit}
             setEvent={setDraft}
           />

@@ -12,6 +12,8 @@ export interface Props {
   isDrafting: boolean;
   event: Schema_Event;
   onClose: () => void;
+  onDraft: (event: Schema_Event) => void;
+  onMigrate: (event: Schema_Event, location: "forward" | "back") => void;
   onSubmit: () => void;
   setEvent: Dispatch<SetStateAction<Schema_GridEvent>>;
 }
@@ -21,6 +23,8 @@ export const DraggableSomedayEvent: FC<Props> = ({
   event,
   isDrafting,
   onClose,
+  onDraft,
+  onMigrate,
   onSubmit,
   setEvent,
 }) => {
@@ -55,6 +59,8 @@ export const DraggableSomedayEvent: FC<Props> = ({
         isDrafting={isDrafting}
         isDragging={isDragging}
         onClose={onClose}
+        onDraft={onDraft}
+        onMigrate={onMigrate}
         onSubmit={onSubmit}
         setEvent={setEvent}
       />

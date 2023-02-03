@@ -33,7 +33,7 @@ describe("Sidebar: Interactions", () => {
 
     await waitFor(() => {
       expect(
-        within(sidebar).getByRole("button", { name: /^learn chinese$/i })
+        within(sidebar).getByRole("button", { name: /^learn chinese >$/i })
       ).toBeInTheDocument();
     });
   }, 10000);

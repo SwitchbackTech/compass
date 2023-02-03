@@ -45,7 +45,7 @@ export const AuthError = {
     status: Status.BAD_REQUEST,
     isOperational: true,
   },
-  UserCreateFailed: {
+  NoUserId: {
     description: "Compass user was not created",
     status: Status.INTERNAL_SERVER,
     isOperational: false,
@@ -178,6 +178,11 @@ export const SyncError = {
 };
 
 export const UserError = {
+  MissingGoogleUserField: {
+    description: "Email field is missing from the Google user object",
+    status: Status.NOT_FOUND,
+    isOperational: true,
+  },
   UserNotFound: {
     description: "User not found",
     status: Status.NOT_FOUND,

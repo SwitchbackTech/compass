@@ -1,1 +1,0 @@
-export { SomedayEventsList } from "./SomedayEventsList";

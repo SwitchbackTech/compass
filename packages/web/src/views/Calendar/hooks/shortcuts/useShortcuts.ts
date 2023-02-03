@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Key } from "ts-keycode-enum";
 import dayjs, { Dayjs } from "dayjs";
-import { useDispatch } from "react-redux";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { Categories_Event } from "@core/types/event.types";
 import { isDrafting, roundToNext } from "@web/common/utils";
 import { draftSlice } from "@web/ducks/events/event.slice";
@@ -20,7 +20,7 @@ export const useShortcuts = (
   scrollUtil: Util_Scroll,
   toggleSidebar: () => void
 ) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const _getStart = () => {

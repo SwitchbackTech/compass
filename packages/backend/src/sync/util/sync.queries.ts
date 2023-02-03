@@ -1,12 +1,12 @@
+import { Origin } from "@core/constants/core.constants";
+import { Schema_CalendarList } from "@core/types/calendar.types";
+import { Payload_Resource_Events, Resource_Sync } from "@core/types/sync.types";
 import {
   error,
   GenericError,
   SyncError,
 } from "@backend/common/errors/types/backend.errors";
 import mongoService from "@backend/common/services/mongo.service";
-import { Origin } from "@core/constants/core.constants";
-import { Schema_CalendarList } from "@core/types/calendar.types";
-import { Payload_Resource_Events, Resource_Sync } from "@core/types/sync.types";
 
 /**
  * Helper funcs that predominately query the DB

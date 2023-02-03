@@ -67,7 +67,7 @@ export const getListAnswer = async (question: string, choices: string[]) => {
     });
 };
 
-export const getPckgsTo = async (verb: "build" | "update") => {
+export const getPckgsTo = async (verb: "build" | "scp") => {
   const q = [
     {
       type: "checkbox",

@@ -26,7 +26,7 @@ export const Grid: FC<Props> = ({
 }) => {
   // const [isLoading, setIsLoading] = useState(false);
   // selectIsEventProcessing,
-  // const isProcessing = useSelector(selectIsProcessing);
+  // const isProcessing = useAppSelector(selectIsProcessing);
 
   const { allDayRef, gridScrollRef, mainGridRef } = gridRefs;
 

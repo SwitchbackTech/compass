@@ -22,7 +22,7 @@ import { SyncRoutes } from "@backend/sync/sync.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import { ENV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
-import expressLogger from "@backend/common/logger/express.logger";
+import { httpLoggingMiddleware } from "@backend/common/middleware/http.logger.middleware";
 import {
   catchSyncErrors,
   promiseMiddleware,
@@ -47,7 +47,7 @@ app.use(supertokensCors());
 app.use(supertokensMiddleware());
 app.use(corsWhitelist);
 app.use(helmet());
-app.use(expressLogger);
+app.use(httpLoggingMiddleware);
 app.use(express.json());
 // app.use(catchUndefinedSyncErrors);
 app.use(catchSyncErrors);

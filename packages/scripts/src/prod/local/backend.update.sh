@@ -13,7 +13,10 @@ rm nodePckgs.zip
 
 echo starting backend ...
 cd /compass/build/node # same dir as .env
-pm2 start packages/backend/src/app.js --name backend --update-env
+
+# FORCE_COLOR allows colorized chalk output
+# See: https://github.com/Unitech/pm2/issues/1719#issuecomment-389852140
+FORCE_COLOR=1 pm2 start packages/backend/src/app.js --name backend --update-env
 
 echo synchronizing pm2 ...
 pm2 save

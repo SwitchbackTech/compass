@@ -10,6 +10,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { Schema_Sync } from "@core/types/sync.types";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
 import { ENV } from "@backend/common/constants/env.constants";
+import { SYNC_BUFFER_DAYS } from "@backend/common/constants/backend.constants";
 
 const logger = Logger("app:sync.helpers");
 
@@ -173,11 +174,10 @@ export const syncExpired = (expiry: string) => {
 };
 
 export const syncExpiresSoon = (expiry: string) => {
-  const bufferDays = 3;
   const MIN_IN_DAY = 1440;
+  const deadline = minutesFromNow(MIN_IN_DAY * SYNC_BUFFER_DAYS, "ms");
 
   const expiration = new Date(parseInt(expiry)).getTime();
-  const deadline = minutesFromNow(MIN_IN_DAY * bufferDays, "ms");
 
   const expiresSoon = expiration < deadline;
   return expiresSoon;

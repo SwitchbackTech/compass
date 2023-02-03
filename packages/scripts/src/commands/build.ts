@@ -1,15 +1,9 @@
 import { VmInfo } from "@scripts/common/cli.types";
 import shell from "shelljs";
 
-import {
-  COMPASS_BUILD_DEV,
-  COMPASS_ROOT_DEV,
-  PROJECT_PRODUCTION,
-  PROJECT_STAGING,
-  SSH_TY_PROD,
-  SSH_TY_STAGING,
-} from "../common/cli.constants";
+import { COMPASS_BUILD_DEV, COMPASS_ROOT_DEV } from "../common/cli.constants";
 import { getVmInfo, getPckgsTo } from "../common/cli.utils";
+import { copyToVM } from "./scp";
 
 // old way of building project-specific packages
 // "tsc:backend": "rm -rf packages/backend/build && yarn tsc --project packages/backend/tsconfig.json",
@@ -72,35 +66,6 @@ const buildWeb = (vmInfo: VmInfo) => {
   zipWeb();
 };
 
-const copyToVM = (packages: string[], vmInfo: VmInfo) => {
-  const { destination, domain } = vmInfo;
-  const isStaging = destination === "staging";
-  const vmPath = isStaging ? SSH_TY_STAGING : SSH_TY_PROD;
-  const project = isStaging ? PROJECT_STAGING : PROJECT_PRODUCTION;
-
-  shell.exec(`gcloud config set project ${project}`);
-
-  if (packages.includes("nodePckgs")) {
-    console.log(`copying node artifact to ${destination} (${domain}) ...`);
-    shell.exec(
-      `gcloud compute scp ${COMPASS_BUILD_DEV}/nodePckgs.zip ${vmPath}`
-    );
-  }
-
-  if (packages.includes("web")) {
-    console.log(`copying web artifact to ${destination} (${domain}) ...`);
-    shell.exec(`gcloud compute scp ${COMPASS_BUILD_DEV}/web.zip ${vmPath}`);
-  }
-
-  console.log("copying latest bash scripts to VM ...");
-  shell.exec(
-    `gcloud compute scp ${COMPASS_ROOT_DEV}/packages/scripts/src/prod/local/* ${vmPath}`
-  );
-
-  console.log("Done copying artifact(s) to VM");
-  process.exit(0);
-};
-
 const copyConfigFilesToBuild = (vmInfo: VmInfo) => {
   const NODE_BUILD = `${COMPASS_BUILD_DEV}/node`;
 
@@ -125,11 +90,11 @@ const copyConfigFilesToBuild = (vmInfo: VmInfo) => {
   );
 };
 
-const installProdDependencies = async (vmInfo: VmInfo) => {
+const installProdDependencies = (vmInfo: VmInfo) => {
   console.log("installing prod dependencies for node pckgs ...");
 
   shell.cd(`${COMPASS_BUILD_DEV}/node`);
-  shell.exec("yarn install --production", async function (code: number) {
+  shell.exec("yarn install --production", function (code: number) {
     if (code !== 0) {
       console.log("exiting cuz error during compiliation");
       process.exit(code);
@@ -137,7 +102,7 @@ const installProdDependencies = async (vmInfo: VmInfo) => {
 
     zipNode();
 
-    await copyToVM(["nodePckgs"], vmInfo);
+    copyToVM(["nodePckgs"], vmInfo);
   });
 };
 

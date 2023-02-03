@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import debounce from "lodash/debounce";
-import { useDispatch } from "react-redux";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { Text } from "@web/components/Text";
 import { editEventSlice } from "@web/ducks/events/event.slice";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -13,7 +13,7 @@ interface Props {
   event: Schema_GridEvent;
 }
 export const Times: React.FC<Props> = ({ event }) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [isHovered, setIsHovered] = useState(false);
   const [isTimesShown, setIsTimesShown] = useState(event.isTimesShown);
 

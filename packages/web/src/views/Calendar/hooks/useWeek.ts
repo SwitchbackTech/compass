@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { Dayjs } from "dayjs";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
 import {
@@ -9,7 +9,7 @@ import {
 import { Category_View } from "@web/views/Calendar/calendarView.types";
 
 export const useWeek = (today: Dayjs) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const origStart = useMemo(() => today.startOf("week"), [today]);
   const [start, setStartOfView] = useState(origStart);

@@ -1,6 +1,5 @@
 import React, { FC, MouseEvent, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useGridDraft } from "@web/views/Calendar/hooks/draft/useGridDraft";
 import {
   autoUpdate,
   useFloating,
@@ -8,6 +7,8 @@ import {
   offset,
   shift,
 } from "@floating-ui/react";
+import { useAppSelector } from "@web/store/store.hooks";
+import { useGridDraft } from "@web/views/Calendar/hooks/draft/useGridDraft";
 import { EventForm } from "@web/views/Forms/EventForm";
 import {
   ID_GRID_EVENTS_ALLDAY,
@@ -20,7 +21,6 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid.util";
 import { getCategory } from "@web/common/utils/event.util";
 import { Categories_Event } from "@core/types/event.types";
-import { useSelector } from "react-redux";
 import { selectDraftId } from "@web/ducks/events/event.selectors";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 
@@ -52,7 +52,7 @@ export const Draft: FC<Props> = ({
   );
   const { draft, isDragging } = draftState;
 
-  const { isDrafting } = useSelector(selectDraftId);
+  const { isDrafting } = useAppSelector(selectDraftId);
 
   const getContainer = () => {
     if (!draft) return null;

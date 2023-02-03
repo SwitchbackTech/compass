@@ -34,7 +34,6 @@ export const LoginView = () => {
 
   const checkPw = () => {
     const answer = document.getElementById("password").value;
-    console.log(answer);
     if (answer === "somedaymaybe") {
       setIsVerifiedTester(true);
     } else {
