@@ -4,11 +4,11 @@ import { useFloating } from "@floating-ui/react";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
-import { Text } from "@web/components/Text";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 
 import { StyledEventOrPlaceholder } from "./styled";
+import { SomedayEventRow } from "./SomedayEventRow";
 
 export interface Props {
   event: Schema_Event;
@@ -49,15 +49,7 @@ export const SomedayEvent = ({
         role="button"
         ref={reference}
       >
-        <Text size={15}>{event.title}</Text>
-        <span
-          onClick={(e) => {
-            e.stopPropagation();
-            onMigrate(event, "forward");
-          }}
-        >
-          {">"}
-        </span>
+        <SomedayEventRow event={event} onMigrate={onMigrate} />
       </StyledEventOrPlaceholder>
 
       <FloatingPortal>

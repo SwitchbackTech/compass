@@ -1,11 +1,9 @@
 import styled from "styled-components";
-import { ColorNames } from "@core/types/color.types";
 import {
   EVENT_WIDTH_MINIMUM,
   PAGE_X_PADDING,
 } from "@web/views/Calendar/layout.constants";
 import { Flex } from "@web/components/Flex";
-import { getColor } from "@core/util/color.utils";
 import { Text } from "@web/components/Text";
 import {
   HEADER_HEIGHT,

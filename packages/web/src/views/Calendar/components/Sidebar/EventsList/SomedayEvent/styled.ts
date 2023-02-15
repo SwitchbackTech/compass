@@ -5,7 +5,7 @@ import {
   getInvertedColor,
   hoverColorsByPriority,
 } from "@core/util/color.utils";
-import { colorNameByPriority } from "@core/constants/colors";
+import { BASE_COLORS, colorNameByPriority } from "@core/constants/colors";
 import { InvertedColorNames } from "@core/types/color.types";
 
 export interface Props {
@@ -53,5 +53,20 @@ export const StyledEventOrPlaceholder = styled.div<Props>`
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 1;
     }
+  }
+`;
+
+export const StyledMigrateArrow = styled.span`
+  padding-right: 7px;
+  color: #44484b;
+
+  &:hover {
+    border-radius: 50%;
+    background: ${BASE_COLORS.ONYX_GREY};
+    color: white;
+    padding-right: 7px;
+    padding-left: 7px;
+    text-align: center;
+    transition: background-color 0.4s;
   }
 `;

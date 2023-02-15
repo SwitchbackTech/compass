@@ -3,7 +3,7 @@ import { rest } from "msw";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { LEARN_CHINESE } from "@core/__mocks__/events/events.misc";
+import { EUROPE_TRIP, LEARN_CHINESE } from "@core/__mocks__/events/events.misc";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
@@ -37,4 +37,32 @@ describe("Sidebar: Interactions", () => {
       ).toBeInTheDocument();
     });
   }, 10000);
+
+  it("removes from current week after migrating", async () => {
+    server.use(
+      rest.put(
+        `${ENV_WEB.API_BASEURL}/event/${EUROPE_TRIP._id}`,
+        (_, res, ctx) => {
+          return res(ctx.json(EUROPE_TRIP));
+        }
+      )
+    );
+    const user = userEvent.setup();
+    render(<CalendarView />, { state: preloadedState });
+
+    const somedayEvt = screen.getByRole("button", {
+      name: /europe trip >/i,
+    });
+    expect(somedayEvt).toBeInTheDocument();
+
+    await user.click(
+      within(somedayEvt).getByRole("button", {
+        name: ">",
+      })
+    );
+
+    await waitFor(() => {
+      expect(somedayEvt).not.toBeInTheDocument();
+    });
+  });
 });

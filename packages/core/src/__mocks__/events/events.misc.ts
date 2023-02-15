@@ -40,7 +40,6 @@ export const EUROPE_TRIP: Schema_Event = {
   title: "Europe Trip",
   description: "Italy, Germany",
   isSomeday: true,
-  // startDate: "2022-05-02",
   priority: Priorities.SELF,
 };
 export const LEARN_CHINESE: Schema_Event = {
