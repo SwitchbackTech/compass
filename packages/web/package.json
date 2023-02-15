@@ -41,7 +41,7 @@
     "styled-theming": "^2.2.0",
     "supertokens-auth-react": "^0.24.1",
     "ts-keycode-enum": "^1.0.6",
-    "uuid": "^8.3.2"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.15.5",
