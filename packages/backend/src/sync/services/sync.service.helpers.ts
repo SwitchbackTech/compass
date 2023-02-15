@@ -8,6 +8,7 @@ import { Logger } from "@core/logger/winston.logger";
 import {
   Payload_Sync_Events,
   Payload_Sync_Refresh,
+  Result_Watch_Stop,
   Schema_Sync,
 } from "@core/types/sync.types";
 import { Origin } from "@core/constants/core.constants";
@@ -17,20 +18,20 @@ import { Schema_CalendarList } from "@core/types/calendar.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.helpers";
-import { EventError } from "@backend/common/errors/types/backend.errors";
+import { EventError } from "@backend/common/constants/error.constants";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import {
-  error,
   GenericError,
   GcalError,
   SyncError,
-} from "@backend/common/errors/types/backend.errors";
+} from "@backend/common/constants/error.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
-import eventService from "@backend/event/services/event.service";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
+import { isAccessRevoked } from "@backend/common/services/gcal/gcal.utils";
+import eventService from "@backend/event/services/event.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
-import { isAccessRevoked } from "@backend/common/services/gcal/gcal.utils";
 import userService from "@backend/user/services/user.service";
 
 import syncService from "./sync.service";
@@ -273,7 +274,7 @@ export const importEventsByCalendar = async (
     }
 
     const { toDelete, toUpdate } = categorizeGcalEvents(updatedEvents);
-    const summary = getSummary(toUpdate, toDelete);
+    const summary = getSummary(toUpdate, toDelete, syncInfo.resourceId);
     logger.debug(summary);
 
     const ops = assembleEventOperations(userId, toDelete, toUpdate);
@@ -390,7 +391,7 @@ export const prepSyncMaintenanceForUser = async (userId: string) => {
     } else {
       return {
         action: "ignore",
-        reason: "Active user + not passing refresh checks",
+        reason: "Active user + not expired/expiring soon",
       };
     }
   } else {
@@ -439,8 +440,7 @@ export const prepIncrementalImport = async (
 export const pruneSync = async (toPrune: string[]) => {
   const _prunes = toPrune.map(async (u) => {
     let deletedUserData = false;
-    let stopped: { channelId: string; resourceId: string }[] = [];
-
+    let stopped: Result_Watch_Stop = [];
     try {
       stopped = await syncService.stopWatches(u);
     } catch (e) {
@@ -513,7 +513,8 @@ export const watchEventsByGcalIds = async (
     syncService.startWatchingGcalEvents(userId, { gCalendarId }, gcal)
   );
 
-  await Promise.all(watchGcalEvents);
+  const results = await Promise.all(watchGcalEvents);
+  return results;
 };
 
 const updateSyncTokenIfNeededFor = async (

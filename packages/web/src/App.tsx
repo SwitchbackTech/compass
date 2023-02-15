@@ -22,7 +22,6 @@ SuperTokens.init({
     websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
     apiBasePath: "/api",
   },
-  // enableDebugLogs: true,
   recipeList: [Session.init()],
 });
 
@@ -33,8 +32,9 @@ export const App = () => {
     <React.StrictMode>
       <SuperTokensWrapper
         onSessionExpired={() => {
-          alert("Login required (cuz security)");
+          alert("Login required, cuz security 😇");
           window.location = `#${ROOT_ROUTES.LOGIN}`;
+          // window.location.reload();
         }}
       >
         <DndProvider backend={HTML5Backend}>

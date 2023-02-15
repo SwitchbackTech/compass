@@ -1,8 +1,8 @@
 import express from "express";
 import { ObjectId } from "mongodb";
 import { SessionRequest } from "supertokens-node/framework/express";
-
-import { error, DbError } from "../errors/types/backend.errors";
+import { DbError } from "@backend/common/constants/error.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
 
 export const validateIdParam = (
   req: SessionRequest,

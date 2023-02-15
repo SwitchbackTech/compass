@@ -1,7 +1,6 @@
 import dayjs from "dayjs";
 import { gcalEvents } from "../../../core/src/__mocks__/events/gcal/gcal.event";
 import { cancelledEventsIds } from "../common/services/gcal/gcal.utils";
-import { SYNC_BUFFER_DAYS } from "../common/constants/backend.constants";
 import {
   categorizeGcalEvents,
   syncExpired,

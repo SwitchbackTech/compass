@@ -1,24 +1,25 @@
 import { Response } from "express";
+import { WithId } from "mongodb";
 import { GaxiosError } from "gaxios";
 import { TokenPayload } from "google-auth-library";
 import { SessionRequest } from "supertokens-node/framework/express";
 import Session from "supertokens-node/recipe/session";
-import { ReqBody, Res_Promise, SReqBody } from "@core/types/express.types";
+import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
 import { Result_Auth_Compass, UserInfo_Compass } from "@core/types/auth.types";
+import {
+  ReqBody,
+  Res_Promise,
+  SReqBody,
+} from "@backend/common/types/express.types";
+import { GcalError } from "@backend/common/constants/error.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import GoogleAuthService from "@backend/auth/services/google.auth.service";
 import userService from "@backend/user/services/user.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import {
-  error,
-  GcalError,
-  genericError,
-} from "@backend/common/errors/types/backend.errors";
 import syncService from "@backend/sync/services/sync.service";
-import { WithId } from "mongodb";
-import { Logger } from "@core/logger/winston.logger";
 
 import { initGoogleClient } from "../services/auth.utils";
 
@@ -94,21 +95,17 @@ class AuthController {
       //@ts-ignore
       res.promise(Promise.resolve(result));
     } catch (e) {
-      logger.error(e);
       if (isCodeInvalid(e as GaxiosError)) {
-        const gError = error(GcalError.CodeInvalid, "gAPI Auth Failed");
+        const invalidCodeErr = error(GcalError.CodeInvalid, "gAPI Auth Failed");
+        logger.error(invalidCodeErr);
 
         //@ts-ignore
-        res.promise(Promise.resolve({ error: gError }));
+        res.promise(Promise.resolve({ error: invalidCodeErr }));
         return;
       }
 
       //@ts-ignore
-      res.promise(
-        Promise.resolve({
-          error: genericError(e, "Auth Failed"),
-        })
-      );
+      res.promise(Promise.reject(e));
     }
   };
 

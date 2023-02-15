@@ -4,18 +4,32 @@ import { UserInfo_Google } from "@core/types/auth.types";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
 import { BaseError } from "@core/errors/errors.base";
+import { CompassError } from "@backend/common/types/error.types";
 import { Summary_Delete } from "@scripts/commands/delete";
-import { AuthError, error } from "@backend/common/errors/types/backend.errors";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import { AuthError } from "@backend/common/constants/error.constants";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
-import { initSync } from "@backend/sync/services/sync.service.helpers";
+import {
+  getCalendarsToSync,
+  initSync,
+  watchEventsByGcalIds,
+} from "@backend/sync/services/sync.service.helpers";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import syncService from "@backend/sync/services/sync.service";
 import eventService from "@backend/event/services/event.service";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { Summary_Resync } from "@backend/common/types/sync.types";
+import { reInitSyncByIntegration } from "@backend/sync/util/sync.queries";
 
 const logger = Logger("app:user.service");
+
+export enum Result_Resync {
+  SUCCESS = "success",
+  FAILED = "failed",
+}
 
 class UserService {
   createUser = async (
@@ -104,6 +118,22 @@ class UserService {
     return userId;
   };
 
+  reSyncGoogleData = async (userId: string) => {
+    logger.warn(`Re-syncing google data for user: ${userId}`);
+    const summary: Summary_Resync = { _delete: {}, recreate: {}, revoke: {} };
+
+    try {
+      summary._delete = await this._deleteBeforeReSyncingGoogle(userId);
+      summary.recreate = await this._reSyncGoogle(userId);
+      summary.revoke = await compassAuthService.revokeSessionsByUser(userId);
+
+      return { result: Result_Resync.SUCCESS, summary };
+    } catch (e) {
+      const _e = e as CompassError;
+      return { result: Result_Resync.FAILED, summary, error: _e };
+    }
+  };
+
   saveTimeFor = async (label: "lastLoggedInAt", userId: string) => {
     const res = await mongoService.user.findOneAndUpdate(
       { _id: mongoService.objectId(userId) },
@@ -111,6 +141,55 @@ class UserService {
     );
 
     return res;
+  };
+
+  _deleteBeforeReSyncingGoogle = async (
+    userId: string
+  ): Promise<Summary_Resync["_delete"]> => {
+    const calendarlist = await calendarService.deleteByIntegrateion(
+      "google",
+      userId
+    );
+
+    const events = await eventService.deleteByIntegration("google", userId);
+
+    const eventWatches = await syncService.stopWatches(userId);
+
+    const sync = await syncService.deleteByIntegration("google", userId);
+
+    return {
+      calendarlist,
+      events,
+      eventWatches,
+      sync,
+    };
+  };
+
+  _reSyncGoogle = async (
+    userId: string
+  ): Promise<Summary_Resync["recreate"]> => {
+    const gcal = await getGcalClient(userId);
+    const { cCalendarList, gCalendarIds, calListNextSyncToken } =
+      await getCalendarsToSync(userId, gcal);
+
+    const calendarlist = await calendarService.add(
+      "google",
+      cCalendarList,
+      userId
+    );
+
+    const sync = await reInitSyncByIntegration(
+      "google",
+      userId,
+      cCalendarList,
+      calListNextSyncToken
+    );
+
+    const eventWatches = await watchEventsByGcalIds(userId, gCalendarIds, gcal);
+
+    await syncService.importFull(gcal, gCalendarIds, userId);
+
+    return { calendarlist, eventWatches, events: "success", sync };
   };
 }
 

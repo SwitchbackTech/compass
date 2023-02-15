@@ -1,5 +1,6 @@
 import { gSchema$Event } from "@core/types/gcal";
 import { GaxiosError } from "googleapis-common";
+import { Schema_CalendarList } from "@core/types/calendar.types";
 
 const cancelled = (e: gSchema$Event) => {
   /* 
@@ -20,12 +21,35 @@ export const cancelledEventsIds = (events: gSchema$Event[]) => {
   return cancelledIds;
 };
 
-export const isAccessRevoked = (e: GaxiosError | Error) => {
-  const isGoogleError = e instanceof GaxiosError;
+export const getPrimaryGcalId = (calendarList: Schema_CalendarList) => {
+  const primaryGCal = calendarList.google.items[0];
+  const gCalendarId = primaryGCal!.id as string;
 
+  return gCalendarId;
+};
+
+export const isAccessRevoked = (e: GaxiosError | Error) => {
   const is400 = "code" in e && e.code === "400";
   const hasInvalidMsg = "message" in e && e.message === "invalid_grant";
   const isInvalid = is400 && hasInvalidMsg;
 
-  return isGoogleError && isInvalid;
+  return isGoogleError(e) && isInvalid;
+};
+
+export const isGoogleError = (e: GaxiosError | Error) => {
+  return e instanceof GaxiosError;
+};
+
+export const isFullSyncRequired = (e: GaxiosError | Error) => {
+  const isFromGoogle = e instanceof GaxiosError;
+
+  if (isFromGoogle && e.code && parseInt(e?.code) === 410) {
+    return true;
+  }
+
+  return false;
+};
+
+export const isInvalidValue = (e: GaxiosError) => {
+  return e.message === "Invalid Value";
 };

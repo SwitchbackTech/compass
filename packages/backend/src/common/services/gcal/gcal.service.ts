@@ -1,12 +1,13 @@
 import { gSchema$Event, gParamsEventsList, gCalendar } from "@core/types/gcal";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
+import { Params_WatchEvents } from "@core/types/sync.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
   GCAL_PRIMARY,
   GCAL_NOTIFICATION_TOKEN,
 } from "@backend/common/constants/backend.constants";
-import { error, GcalError } from "@backend/common/errors/types/backend.errors";
-import { Params_WatchEvents } from "@core/types/sync.types";
+import { GcalError } from "@backend/common/constants/error.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
 
 class GCalService {
   async createEvent(gcal: gCalendar, event: gSchema$Event) {

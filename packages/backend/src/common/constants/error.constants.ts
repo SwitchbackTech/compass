@@ -1,33 +1,4 @@
-import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-
-interface ErrorMetadata {
-  description: string;
-  isOperational: boolean;
-  status: number;
-}
-
-export const error = (cause: ErrorMetadata, result: string) => {
-  return new BaseError(
-    result,
-    cause.description,
-    cause.status,
-    cause.isOperational
-  );
-};
-
-export const genericError = (
-  e: unknown,
-  result: string,
-  status = Status.INTERNAL_SERVER,
-  isOperational = true
-) => {
-  const _e = e as Error;
-  const name = _e.name || "GenericName";
-  const description = `${name}: ${_e.message || "GenericMsg"}`;
-  const cause = { description, isOperational, status };
-  return error(cause, result);
-};
 
 export const AuthError = {
   DevOnly: {
@@ -64,6 +35,11 @@ export const EventError = {
   Gone: {
     description: "Resource is gone",
     status: Status.GONE,
+    isOperational: true,
+  },
+  NoMatchingEvent: {
+    description: "Invalid event id (most likely)",
+    status: Status.REDUX_REFRESH_NEEDED,
     isOperational: true,
   },
   MissingGevents: {
@@ -170,17 +146,22 @@ export const SyncError = {
     status: Status.BAD_REQUEST,
     isOperational: true,
   },
-  NoWatchesForUser: {
-    description: "No active watches for user",
-    status: Status.GONE,
-    isOperational: true,
-  },
 };
 
 export const UserError = {
+  InvalidValue: {
+    description: "User has an invalid value",
+    status: Status.BAD_REQUEST,
+    isOperational: true,
+  },
   MissingGoogleUserField: {
     description: "Email field is missing from the Google user object",
     status: Status.NOT_FOUND,
+    isOperational: true,
+  },
+  MissingUserIdField: {
+    description: "Failed to access the userId",
+    status: Status.BAD_REQUEST,
     isOperational: true,
   },
   UserNotFound: {

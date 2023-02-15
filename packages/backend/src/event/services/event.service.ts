@@ -15,10 +15,14 @@ import {
 import { getCurrentWeekRangeDates } from "@core/util/date.utils";
 import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
-import { error, EventError } from "@backend/common/errors/types/backend.errors";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import {
+  EventError,
+  GenericError,
+} from "@backend/common/constants/error.constants";
 
 import { getReadAllFilter } from "./event.service.helpers";
 
@@ -190,6 +194,25 @@ class EventService {
     return result;
   }
 
+  deleteByIntegration = async (integration: "google", userId: string) => {
+    if (integration !== "google") {
+      error(
+        GenericError.NotImplemented,
+        `Failed to delete events for integration`
+      );
+    }
+
+    const key = "gEventId";
+    const response = await mongoService.db
+      .collection(Collections.EVENT)
+      .deleteMany({
+        user: userId,
+        isSomeday: false,
+        [key]: { $exists: true },
+      });
+    return response;
+  };
+
   async readAll(
     userId: string,
     query: Query_Event
@@ -269,8 +292,8 @@ class EventService {
       );
 
     if (response.value === null || !response.ok) {
-      logger.error("Update failed");
-      throw new BaseError("Update Failed", "Ensure id is correct", 400, true);
+      // force page refresh, which will let Redux use latest ids
+      throw error(EventError.NoMatchingEvent, "Prompt Redux refresh");
     }
     const updatedEvent = response.value as unknown as Schema_Event;
 

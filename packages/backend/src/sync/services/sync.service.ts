@@ -6,16 +6,16 @@ import {
   Payload_Sync_Events,
   Params_WatchEvents,
 } from "@core/types/sync.types";
-import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Logger } from "@core/logger/winston.logger";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import {
-  error,
   GenericError,
   SyncError,
-} from "@backend/common/errors/types/backend.errors";
+} from "@backend/common/constants/error.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 import {
@@ -55,6 +55,14 @@ class SyncService {
     return delRes;
   };
 
+  deleteByIntegration = async (integration: "google", userId: string) => {
+    const response = await mongoService.db
+      .collection(Collections.SYNC)
+      .updateOne({ user: userId }, { $unset: { [integration]: "" } });
+
+    return response;
+  };
+
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
     const { channelId, expiration, resourceId, resourceState } = payload;
     if (resourceState !== "exists") {
@@ -70,7 +78,6 @@ class SyncService {
       return "ignored";
     }
 
-    logger.debug(JSON.stringify(payload, null, 2));
     const { userId, gCalendarId, nextSyncToken } = getCalendarInfo(
       sync,
       resourceId
@@ -172,10 +179,9 @@ class SyncService {
   runMaintenanceByUser = async (userId: string, params: { dry: boolean }) => {
     const user = await findCompassUserBy("_id", userId);
     const _result = await prepSyncMaintenanceForUser(userId);
-    const result = { ..._result, user: user?.email || "no found" };
+    const result = { ..._result, user: user?.email || "Not found" };
 
-    const { dry } = params;
-    if (dry) {
+    if (params.dry) {
       return result;
     }
 
@@ -191,7 +197,7 @@ class SyncService {
         if (!result.payload) {
           return {
             ...result,
-            result: { error: "didn't refresh because payloads not included" },
+            result: { error: "Didn't refresh because payloads not included" },
           };
         }
         const refreshResult = await refreshSync([
@@ -200,7 +206,7 @@ class SyncService {
         return { ...result, result: refreshResult };
       }
       default: {
-        return { ...result, error: "no matching case" };
+        return { ...result, error: "No maintenance action" };
       }
     }
   };
