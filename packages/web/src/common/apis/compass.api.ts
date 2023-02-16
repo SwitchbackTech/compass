@@ -25,7 +25,7 @@ CompassApi.interceptors.response.use(
 
     // supertokens handles these
     if (status === Status.UNAUTHORIZED) {
-      return;
+      return Promise.resolve();
     }
 
     if (status === Status.GONE) {
