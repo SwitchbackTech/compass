@@ -91,7 +91,7 @@ const _GridEvent = (
         </Text>
         {!event.isAllDay && (
           <>
-            <Times event={finalEvent} />
+            <Times event={finalEvent} isDrafting={isDragging || isResizing} />
             <StyledEventScaler
               top="-1px"
               onMouseDown={(e) => onScalerMouseDown(event, e, "startDate")}
