@@ -91,16 +91,26 @@ const _GridEvent = (
         </Text>
         {!event.isAllDay && (
           <>
-            <Times event={finalEvent} isDrafting={isDragging || isResizing} />
-            <StyledEventScaler
-              top="-1px"
-              onMouseDown={(e) => onScalerMouseDown(event, e, "startDate")}
+            <Times
+              event={finalEvent}
+              isDrafting={isDragging || isResizing}
+              isPlaceholder={isPlaceholder}
             />
+            {!isDraft && !isPlaceholder && !isDragging && (
+              <>
+                <StyledEventScaler
+                  isDragging={isDragging}
+                  onMouseDown={(e) => onScalerMouseDown(event, e, "startDate")}
+                  top="-1px"
+                />
 
-            <StyledEventScaler
-              bottom="-1px"
-              onMouseDown={(e) => onScalerMouseDown(event, e, "endDate")}
-            />
+                <StyledEventScaler
+                  bottom="-1px"
+                  isDragging={isDragging}
+                  onMouseDown={(e) => onScalerMouseDown(event, e, "endDate")}
+                />
+              </>
+            )}
           </>
         )}
       </Flex>

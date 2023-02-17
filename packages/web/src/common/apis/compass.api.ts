@@ -21,21 +21,22 @@ CompassApi.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-    const status = error.response.status;
+    const status = error?.response?.status;
 
-    // supertokens handles these
-    if (status === Status.UNAUTHORIZED) {
-      return Promise.resolve();
+    if (error?.message === "try refresh token") {
+      return;
     }
-
-    if (status === Status.GONE) {
-      await _signOut("Signing out, cuz you revoked access to Compass ✌");
-    } else if (status === Status.REDUX_REFRESH_NEEDED) {
-      await _signOut("Login required, cuz security 😇");
-    } else {
-      alert("Something broke. Please let Tyler know: ***REMOVED***");
-      console.log(error);
-      return Promise.reject(error);
+    if (status !== Status.UNAUTHORIZED) {
+      // supertokens handles these
+      if (status === Status.GONE) {
+        await _signOut("Signing out, cuz you revoked access to Compass ✌");
+      } else if (status === Status.REDUX_REFRESH_NEEDED) {
+        await _signOut("Login required, cuz security 😇");
+      } else {
+        alert("Something broke. Please let Tyler know: ***REMOVED***");
+        console.log(error);
+        return Promise.reject(error);
+      }
     }
   }
 );

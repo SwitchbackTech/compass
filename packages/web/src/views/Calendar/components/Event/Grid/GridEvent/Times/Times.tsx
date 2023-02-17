@@ -12,15 +12,20 @@ import { StyledTimes, StyledTimesPlaceholder } from "./styled";
 interface Props {
   event: Schema_GridEvent;
   isDrafting: boolean;
+  isPlaceholder: boolean;
 }
-export const Times: React.FC<Props> = ({ event, isDrafting }) => {
+export const Times: React.FC<Props> = ({
+  event,
+  isDrafting,
+  isPlaceholder,
+}) => {
   const dispatch = useAppDispatch();
 
   const [isHovered, setIsHovered] = useState(false);
   const [isTimesShown, setIsTimesShown] = useState(event.isTimesShown);
 
   const SIZE = 10;
-  const shouldRevealBox = !isTimesShown && !isDrafting;
+  const shouldRevealBox = isPlaceholder && !isTimesShown && !isDrafting;
 
   const toggleTimes = (e: React.MouseEvent) => {
     e.stopPropagation();

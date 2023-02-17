@@ -12,13 +12,14 @@ interface StyledEventProps {
   isInPast: boolean;
   isPlaceholder: boolean;
   left: number;
+  // pastDimness: number;
   priority: Priority;
   top: number;
   width: number;
 }
 
+const pastDimness = 0.65;
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
-  const pastDimness = 0.65;
   const getBgColor = () => {
     if (props.isResizing || props.isDragging) {
       return hoverColorsByPriority[props.priority];
@@ -28,16 +29,8 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
     return origColor;
   };
 
-  const getCursor = () => {
-    // handles when over placeholder upon resizing up
-    if (props.isResizing || props.isPlaceholder) return "ns-resize";
-    if (props.isDragging) return "grabbing";
-    return "pointer";
-  };
-
   return {
     backgroundColor: getBgColor(),
-    cursor: getCursor(),
     left: props.left,
     height: props.height,
     isInPast: props.isInPast,
@@ -53,9 +46,9 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
 })<StyledEventProps>`
   background-color: ${(props) => props.backgroundColor};
   border-radius: 2px;
-  cursor: ${(props) => props.cursor};
+  ${(props) => props.isDragging && `cursor: grabbing`}
   filter: brightness(
-    ${({ isInPast, pastDimness }) => (isInPast ? pastDimness : null)}
+    ${({ isInPast }) => (isInPast ? pastDimness : null)}
   );
   height: ${({ height }) => height}px;
   left: ${(props) => props.left}px;
@@ -74,10 +67,10 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   &:hover {
     background-color: ${(props) => props.hoverColor};
     filter: brightness(
-        ${({ isPlaceholder, pastDimness }) =>
-          isPlaceholder ? pastDimness : null}
+        ${({ isPlaceholder }) => (isPlaceholder ? pastDimness : null)}
       )
-      drop-shadow(2px 4px 4px black);
+      ${({ isPlaceholder }) =>
+        !isPlaceholder && `drop-shadow(2px 4px 4px black)`};
     transition: background-color 0.35s linear;
   }
 
@@ -100,8 +93,9 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
 `;
 
 export interface ScalerProps {
-  top?: string;
   bottom?: string;
+  isDragging: boolean;
+  top?: string;
 }
 
 export const StyledEventScaler = styled.div.attrs<ScalerProps>((props) => {
@@ -117,5 +111,5 @@ export const StyledEventScaler = styled.div.attrs<ScalerProps>((props) => {
   left: 0;
   top: ${(props) => props.top};
   bottom: ${(props) => props.bottom};
-  cursor: ns-resize;
+  ${(props) => !props.isDragging && `cursor: ns-resize`};
 `;

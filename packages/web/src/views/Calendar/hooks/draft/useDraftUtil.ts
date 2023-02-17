@@ -22,18 +22,13 @@ import {
 import { DateCalcs } from "../grid/useDateCalcs";
 import { WeekProps } from "../useWeek";
 export interface Status_Drag {
+  durationMin: number;
   hasMoved?: boolean;
-  initialMinutesDifference?: number;
-  initialYOffset?: number;
 }
 
 interface Status_Resize {
   hasMoved: boolean;
 }
-// simple offset to give space for the times label
-//  - getting diff (in pixels) between top of event and e.clientY
-//    would be more accurate
-const Y_BUFFER = 15;
 
 export const useDraftUtil = (
   dateCalcs: DateCalcs,
@@ -53,7 +48,7 @@ export const useDraftUtil = (
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
-  const [dragStatus, setDragStatus] = useState<Status_Drag | null>(null);
+  const [dragStatus, setDragStatus] = useState<Status_Drag | null>();
   const [resizeStatus, setResizeStatus] = useState<Status_Resize | null>(null);
   const [dateBeingChanged, setDateBeingChanged] = useState<
     "startDate" | "endDate" | null
@@ -97,25 +92,6 @@ export const useDraftUtil = (
         return;
       }
 
-      // const shouldResetDraft = draft?.isOpen;
-      // if (shouldResetDraft) {
-      //   console.log("resettitng draft...");
-      //   setDraft(null);
-      //   setIsResizing(false);
-      //   setIsDragging(false);
-      //   setDragStatus(null);
-      //   setResizeStatus(null);
-      //   setDateBeingChanged(null);
-
-      //++
-      // if (reduxDraft) {
-      //   dispatch(draftSlice.actions.discard());
-      // }
-      // return;
-      // }
-
-      // console.log("setting to false");
-      // setDraft({ ...reduxDraft, isOpen: false });
       setDraft(reduxDraft);
 
       if (activity === "dragging") {
@@ -145,20 +121,19 @@ export const useDraftUtil = (
   useEffect(() => {
     if (isDragging) {
       setDraft((_draft) => {
-        const initialDiffMin = dayjs(_draft.endDate).diff(
+        const durationMin = dayjs(_draft.endDate).diff(
           _draft.startDate,
           "minutes"
         );
 
         setDragStatus({
-          initialMinutesDifference: initialDiffMin,
-          initialYOffset: Y_BUFFER,
+          durationMin,
         });
 
         return { ..._draft, isOpen: false };
       });
     }
-  }, [isDragging]);
+  }, [dateCalcs, isDragging]);
 
   const deleteEvent = () => {
     if (draft._id) {
@@ -182,11 +157,9 @@ export const useDraftUtil = (
       const updateTimesDuringDrag = (e: MouseEvent) => {
         setDraft((_draft) => {
           const x = getX(e, isSidebarOpen);
-          const y = e.clientY - dragStatus?.initialYOffset || Y_BUFFER;
-
           const _initialStart = dateCalcs.getDateByXY(
             x,
-            y,
+            e.clientY,
             weekProps.component.startOfView
           );
 
@@ -195,9 +168,10 @@ export const useDraftUtil = (
             : _initialStart.format();
 
           const _end = _initialStart.add(
-            dragStatus?.initialMinutesDifference || 0,
+            dragStatus?.durationMin || 0,
             "minutes"
           );
+
           const endDate = _draft.isAllDay
             ? _end.format(YEAR_MONTH_DAY_FORMAT)
             : _end.format();
@@ -210,11 +184,12 @@ export const useDraftUtil = (
           };
         });
       };
+
       if (!isDragging) {
         return;
       }
-      const x = getX(e, isSidebarOpen);
 
+      const x = getX(e, isSidebarOpen);
       const currTime = dateCalcs.getDateStrByXY(
         x,
         e.clientY,
@@ -232,14 +207,13 @@ export const useDraftUtil = (
       updateTimesDuringDrag(e);
     },
     [
-      dateCalcs,
-      draft?.startDate,
-      dragStatus?.hasMoved,
-      dragStatus?.initialMinutesDifference,
-      dragStatus?.initialYOffset,
       isDragging,
       isSidebarOpen,
+      dateCalcs,
       weekProps.component.startOfView,
+      draft?.startDate,
+      dragStatus?.hasMoved,
+      dragStatus?.durationMin,
     ]
   );
 
