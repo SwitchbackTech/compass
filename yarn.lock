@@ -2143,9 +2143,9 @@
   integrity sha512-z1CjRjtQyBOYL+5Qr9DdYIfrdLBe746jRTYfaYU6MeXkqp7UfYs/jX16lFFVzZ7PGEJvqZNqYUEtb1mvDww4pA==
 
 "@google-cloud/translate@^7.0.2":
-  version "7.0.5"
-  resolved "https://registry.yarnpkg.com/@google-cloud/translate/-/translate-7.0.5.tgz#356d55ca84813244af82b2e6d618e7a762ed8804"
-  integrity sha512-Wjn6ihetpvd3l0KjlhpNEsouOs1UqZD3LNYFyN6de3wfMIRSWa4AIywwRoOqs7BACMnN/Ty1NzMpBKkrVmoNfg==
+  version "7.1.1"
+  resolved "https://registry.yarnpkg.com/@google-cloud/translate/-/translate-7.1.1.tgz#8cddbc709c5ca1e57bbea4c60d8f667d5d0104e6"
+  integrity sha512-Fl8pXjnEe0hVY6qOzx9eIXQq8Av+lNqRZrwwvhhC2DnrFf5FfKtoGWZE3UNv6Qdt2t3x0RHW/QeleXr/9vNxBA==
   dependencies:
     "@google-cloud/common" "^4.0.0"
     "@google-cloud/promisify" "^3.0.0"
