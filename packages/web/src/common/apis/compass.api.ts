@@ -1,5 +1,5 @@
 import axios, { AxiosError } from "axios";
-import Session, { signOut } from "supertokens-auth-react/recipe/session";
+import { signOut } from "supertokens-auth-react/recipe/session";
 import { Status } from "@core/errors/status.codes";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 
@@ -23,9 +23,15 @@ CompassApi.interceptors.response.use(
   async (error: AxiosError) => {
     const status = error?.response?.status;
 
-    if (error?.message === "try refresh token") {
-      return;
+    //__
+    // if (error?.message === "try refresh token") {
+    //   console.log("got refresh err"); //++)
+    //   return;
+    // }
+    if (status === Status.UNAUTHORIZED) {
+      return Promise.reject(error);
     }
+
     if (status !== Status.UNAUTHORIZED) {
       // supertokens handles these
       if (status === Status.GONE) {
@@ -33,12 +39,10 @@ CompassApi.interceptors.response.use(
       } else if (status === Status.REDUX_REFRESH_NEEDED) {
         await _signOut("Login required, cuz security 😇");
       } else {
-        alert("Something broke. Please let Tyler know: ***REMOVED***");
+        alert("Something broke. Please let Tyler know: tyler@switchback.tech");
         console.log(error);
         return Promise.reject(error);
       }
     }
   }
 );
-
-Session.addAxiosInterceptors(CompassApi);

@@ -1,5 +1,6 @@
 export const ROOT_ROUTES = {
-  ROOT: "/",
+  API: "/api",
   LOGIN: "/login",
   LOGOUT: "/logout",
+  ROOT: "/",
 };
