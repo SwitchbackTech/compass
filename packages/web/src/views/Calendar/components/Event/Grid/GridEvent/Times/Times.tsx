@@ -11,13 +11,21 @@ import { StyledTimes, StyledTimesPlaceholder } from "./styled";
 
 interface Props {
   event: Schema_GridEvent;
+  isDrafting: boolean;
+  isPlaceholder: boolean;
 }
-export const Times: React.FC<Props> = ({ event }) => {
+export const Times: React.FC<Props> = ({
+  event,
+  isDrafting,
+  isPlaceholder,
+}) => {
   const dispatch = useAppDispatch();
+
   const [isHovered, setIsHovered] = useState(false);
   const [isTimesShown, setIsTimesShown] = useState(event.isTimesShown);
 
   const SIZE = 10;
+  const shouldRevealBox = isPlaceholder && !isTimesShown && !isDrafting;
 
   const toggleTimes = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -39,7 +47,10 @@ export const Times: React.FC<Props> = ({ event }) => {
       onMouseLeave={debounce(() => setIsHovered(false), 300)}
     >
       {isTimesShown ? (
-        <StyledTimes isHovered={isHovered} onMouseDown={toggleTimes}>
+        <StyledTimes
+          revealBox={isHovered && !isDrafting}
+          onMouseDown={toggleTimes}
+        >
           <Text
             lineHeight={SIZE}
             role="textbox"
@@ -51,8 +62,8 @@ export const Times: React.FC<Props> = ({ event }) => {
           </Text>
         </StyledTimes>
       ) : (
-        <StyledTimes isHovered={isHovered}>
-          {isHovered && !isTimesShown ? (
+        <StyledTimes revealBox={shouldRevealBox}>
+          {isHovered && shouldRevealBox ? (
             <Text
               lineHeight={SIZE}
               onMouseDown={toggleTimes}

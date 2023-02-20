@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Key } from "ts-keycode-enum";
 import dayjs, { Dayjs } from "dayjs";
 import { useAppDispatch } from "@web/store/store.hooks";
@@ -6,6 +7,7 @@ import { Categories_Event } from "@core/types/event.types";
 import { isDrafting, roundToNext } from "@web/common/utils";
 import { draftSlice } from "@web/ducks/events/event.slice";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
@@ -21,6 +23,7 @@ export const useShortcuts = (
   toggleSidebar: () => void
 ) => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const _getStart = () => {
@@ -35,7 +38,6 @@ export const useShortcuts = (
       dispatch(
         draftSlice.actions.start({
           eventType: Categories_Event.SOMEDAY,
-          // activity: "createShortcut",
         })
       );
     };
@@ -87,6 +89,9 @@ export const useShortcuts = (
           util.incrementWeek();
         },
         [Key.S]: () => _createSomedayDraft(),
+        [Key.Z]: () => {
+          navigate(ROOT_ROUTES.LOGOUT);
+        },
       } as { [key: number]: () => void };
 
       const handler = handlersByKey[e.which];
@@ -105,34 +110,10 @@ export const useShortcuts = (
     dispatch,
     today,
     isCurrentWeek,
+    navigate,
     startOfSelectedWeek,
     scrollUtil,
     toggleSidebar,
     util,
   ]);
 };
-
-/**********************
- * Delete once above works fully ++
- **********************/
-//++
-/*
-    const mouseUpHandler = (e: MouseEvent) => {
-      setTimeout(() => {
-        eventHandlers.onEventsGridRelease(e as unknown as React.MouseEvent);
-      });
-    };
-
-    const contextMenuHandler = (e: MouseEvent) => e.preventDefault();
-
-    document.addEventListener("keydown", keyDownHandler);
-    document.addEventListener("mouseup", mouseUpHandler);
-    document.addEventListener("contextmenu", contextMenuHandler);
-
-    return () => {
-      document.addEventListener("contextmenu", contextMenuHandler);
-      document.removeEventListener("keydown", keyDownHandler);
-      document.removeEventListener("mouseup", mouseUpHandler);
-    };
-  }, [today, eventHandlers, weekProps.handlers]);
-  */

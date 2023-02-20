@@ -75,13 +75,16 @@ export const getWeekDayLabel = (day: Dayjs | Date) => {
 };
 
 export const handleError = (error: Error) => {
+  console.log(error.message);
+  console.log(error.stack);
+  console.log(error);
+
   const messageCode = parseInt(error.message.slice(-3));
   if (messageCode === Status.UNAUTHORIZED) {
     // SuperTokensWrapper will handle these
     return;
   }
 
-  console.log(error);
   alert(error);
 };
 

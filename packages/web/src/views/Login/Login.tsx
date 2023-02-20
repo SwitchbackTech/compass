@@ -137,8 +137,8 @@ export const LoginView = () => {
               </Text>
               <Text colorName={ColorNames.WHITE_2} size={16}>
                 If you're already on the waitlist but don't know the pw, keep an
-                eye out for an email from ***REMOVED*** within the next few
-                weeks
+                eye out for an email from tyler@switchback.tech within the next
+                few weeks
               </Text>
               <form onSubmit={checkPw}>
                 <input id="password" name="password" />

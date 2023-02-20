@@ -8,6 +8,7 @@ import { render, RenderOptions } from "@testing-library/react";
 import { sagas } from "@web/store/sagas";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { reducers } from "@web/store/reducers";
+import { BrowserRouter } from "react-router-dom";
 
 const customRender = (
   ui: ReactElement,
@@ -29,7 +30,9 @@ const customRender = (
     return (
       <DndProvider backend={HTML5Backend}>
         <GoogleOAuthProvider clientId="anyClientId">
-          <Provider store={store}>{children}</Provider>
+          <BrowserRouter>
+            <Provider store={store}>{children}</Provider>
+          </BrowserRouter>
         </GoogleOAuthProvider>
       </DndProvider>
     );

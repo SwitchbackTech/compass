@@ -12,9 +12,10 @@ export const initSupertokens = () => {
   supertokens.init({
     appInfo: {
       appName: APP_NAME,
-      apiDomain: `http://localhost:${PORT_DEFAULT_API}`,
-      websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
       apiBasePath: "/api",
+      apiDomain: `http://localhost:${PORT_DEFAULT_API}`,
+      websiteBasePath: "/login",
+      websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
     },
     supertokens: {
       connectionURI: ENV.SUPERTOKENS_URI,
@@ -28,7 +29,11 @@ export const initSupertokens = () => {
 export const supertokensCors = () =>
   cors({
     origin: `http://localhost:${PORT_DEFAULT_WEB}`,
-    allowedHeaders: ["content-type", ...supertokens.getAllCORSHeaders()],
+    allowedHeaders: [
+      "content-type",
+      "st-auth-mode",
+      ...supertokens.getAllCORSHeaders(),
+    ],
     credentials: true,
   });
 

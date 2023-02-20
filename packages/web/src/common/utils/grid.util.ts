@@ -470,6 +470,14 @@ export const getWidthInPixels = (
   return Math.floor(widthInPixels);
 };
 
+/*
+origY: 0
+mousePos: 10
+
+
+
+*/
+
 // ++
 // export const getWidths = (
 //   isCurrentWeek: boolean,
@@ -492,6 +500,32 @@ export const getWidthInPixels = (
 //       ) as number[]);
 // };
 
+/*
+          startDate = 12am
+          clientY = 12:30am
+
+          {drag down 30 min}
+          
+          startDate:12:30am
+          clientY = 1am
+            
+            ^orig diff = 30min
+            newStart = startByY(clientY) - diff
+
+          */
+//  const durationMin =
+//             dateCalcs.getMinuteByY(e.clientY) -
+//             dayjs(_draft.startDate).minute();
+
+// const y = getYWhileDragging(e.clientY, durationMin);
+// const _yOffset = Math.abs(
+//   minuteByCursor - dateCalcs.getYByDate(_draft.startDate)
+// );
+// const minuteByCursor = dateCalcs.getMinuteByY(e.clientY);
+// const _end = _initialStart.add(
+//   dragStatus?.initialMinutesDifference || 0,
+//   "minutes"
+// );
 export const getX = (e: MouseEvent, isSidebarOpen: boolean) => {
   const xOffset = isSidebarOpen ? SIDEBAR_OPEN_WIDTH : SIDEBAR_CLOSED_WIDTH;
   const x = e.clientX - xOffset;

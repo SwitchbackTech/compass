@@ -9,7 +9,7 @@ const dotenvResult = dotenv.config();
 if (dotenvResult.error) {
   throw dotenvResult.error;
 }
-import express from "express";
+import express, { Application } from "express";
 import * as http from "http";
 import helmet from "helmet";
 import corsWhitelist from "@backend/common/middleware/cors.middleware";
@@ -19,7 +19,10 @@ import { AuthRoutes } from "@backend/auth/auth.routes.config";
 import { EventRoutes } from "@backend/event/event.routes.config";
 import { PriorityRoutes } from "@backend/priority/priority.routes.config";
 import { SyncRoutes } from "@backend/sync/sync.routes.config";
-import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
+import {
+  CalendarRoutes,
+  RootRoutes,
+} from "@backend/calendar/calendar.routes.config";
 import { ENV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { httpLoggingMiddleware } from "@backend/common/middleware/http.logger.middleware";
@@ -35,7 +38,8 @@ const logger = Logger("app:root");
 mongoService;
 
 /* Express Configuration */
-const app: express.Application = express();
+const app: Application = express();
+
 // initialize middleware before routes, because
 // some routes depend on them
 //@ts-ignore
@@ -46,16 +50,16 @@ app.use(corsWhitelist);
 app.use(helmet());
 app.use(httpLoggingMiddleware);
 app.use(express.json());
-//++ app.use(catchSyncErrors);
 
 const routes: Array<CommonRoutesConfig> = [];
+routes.push(new RootRoutes(app));
 routes.push(new AuthRoutes(app));
 routes.push(new PriorityRoutes(app));
 routes.push(new EventRoutes(app));
 routes.push(new SyncRoutes(app));
 routes.push(new CalendarRoutes(app));
 
-app.use(supertokensErrorHandler()); // Keep this after all routes
+app.use(supertokensErrorHandler()); // Keep this after routes
 
 /* Express Start */
 const server: http.Server = http.createServer(app);

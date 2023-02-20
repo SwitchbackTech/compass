@@ -124,7 +124,8 @@ module.exports = {
         "^@web/views/(.*)$": "<rootDir>/packages/web/src/views/$1",
         "^.+\\.(css|less)$":
           "<rootDir>/packages/web/src/__tests__/__mocks__/css.stub.js",
-        "\\.(svg)$": "<rootDir>/packages/web/src/__tests__/__mocks__/svg.js",
+        "\\.(svg)$":
+          "<rootDir>/packages/web/src/__tests__/__mocks__/svg.stub.js",
         "^uuid$": "uuid",
       },
       setupFiles: ["<rootDir>/packages/web/src/__tests__/web.test.init.js"],

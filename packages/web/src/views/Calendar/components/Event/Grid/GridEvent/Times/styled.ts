@@ -2,15 +2,14 @@ import styled, { css } from "styled-components";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 
 interface Props {
-  isHovered: boolean;
+  revealBox: boolean;
 }
 
 export const StyledTimes = styled.div<Props>`
-  transition: box-shadow 0.25s linear;
-
-  ${({ isHovered }) =>
-    isHovered &&
+  ${({ revealBox }) =>
+    revealBox &&
     css`
+      transition: box-shadow 0.25s linear;
       &:hover {
         box-shadow: 0px 0px 0px 2px black;
       }

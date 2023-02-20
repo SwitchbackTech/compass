@@ -11,8 +11,8 @@ export const Styled = styled(Flex)`
 `;
 
 export const StyledCalendar = styled(Flex)`
+  background: ${BASE_COLORS.DEEP_BLUE};
   flex-grow: 1;
   height: 100%;
-  background: ${BASE_COLORS.DEEP_BLUE};
   padding: ${PAGE_TOP_PADDING}px ${PAGE_X_PADDING}px 0 ${PAGE_X_PADDING}px;
 `;
