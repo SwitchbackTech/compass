@@ -155,6 +155,8 @@ export const useDraftUtil = (
   const drag = useCallback(
     (e: MouseEvent) => {
       const updateTimesDuringDrag = (e: MouseEvent) => {
+        e.preventDefault();
+
         setDraft((_draft) => {
           const x = getX(e, isSidebarOpen);
           const _initialStart = dateCalcs.getDateByXY(
