@@ -66,6 +66,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
 
   &:hover {
     background-color: ${(props) => props.hoverColor};
+    cursor: default;
     filter: brightness(
         ${({ isPlaceholder }) => (isPlaceholder ? pastDimness : null)}
       )
