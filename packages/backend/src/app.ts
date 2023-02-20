@@ -40,9 +40,6 @@ mongoService;
 /* Express Configuration */
 const app: Application = express();
 
-//++
-// app.use(express.static(path.join(__dirname, "../../build/web/index.html")));
-
 // initialize middleware before routes, because
 // some routes depend on them
 //@ts-ignore

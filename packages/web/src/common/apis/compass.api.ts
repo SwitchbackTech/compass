@@ -23,11 +23,6 @@ CompassApi.interceptors.response.use(
   async (error: AxiosError) => {
     const status = error?.response?.status;
 
-    //__
-    // if (error?.message === "try refresh token") {
-    //   console.log("got refresh err"); //++)
-    //   return;
-    // }
     if (status === Status.UNAUTHORIZED) {
       return Promise.reject(error);
     }

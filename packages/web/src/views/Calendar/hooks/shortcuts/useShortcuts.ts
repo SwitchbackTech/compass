@@ -117,28 +117,3 @@ export const useShortcuts = (
     util,
   ]);
 };
-
-/**********************
- * Delete once above works fully ++
- **********************/
-//++
-/*
-    const mouseUpHandler = (e: MouseEvent) => {
-      setTimeout(() => {
-        eventHandlers.onEventsGridRelease(e as unknown as React.MouseEvent);
-      });
-    };
-
-    const contextMenuHandler = (e: MouseEvent) => e.preventDefault();
-
-    document.addEventListener("keydown", keyDownHandler);
-    document.addEventListener("mouseup", mouseUpHandler);
-    document.addEventListener("contextmenu", contextMenuHandler);
-
-    return () => {
-      document.addEventListener("contextmenu", contextMenuHandler);
-      document.removeEventListener("keydown", keyDownHandler);
-      document.removeEventListener("mouseup", mouseUpHandler);
-    };
-  }, [today, eventHandlers, weekProps.handlers]);
-  */
