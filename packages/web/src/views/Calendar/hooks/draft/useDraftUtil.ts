@@ -13,7 +13,10 @@ import {
 } from "@web/ducks/events/event.slice";
 import { useCallback, useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
-import { getDefaultEvent, prepareEvent } from "@web/common/utils/event.util";
+import {
+  getDefaultEvent,
+  prepEvtBeforeSubmit,
+} from "@web/common/utils/event.util";
 import {
   selectDraft,
   selectDraftStatus,
@@ -333,7 +336,7 @@ export const useDraftUtil = (
   };
 
   const submit = (draft: Schema_GridEvent) => {
-    const event = prepareEvent(draft);
+    const event = prepEvtBeforeSubmit(draft);
     const isExisting = event._id;
     if (isExisting) {
       dispatch(

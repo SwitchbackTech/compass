@@ -21,6 +21,23 @@ dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isBetween);
 
+export const adjustIsTimesShown = (
+  event: Schema_Event,
+  isInPast: boolean,
+  isCurrentWeek: boolean
+) => {
+  if (isCurrentWeek) {
+    return isInPast
+      ? { ...event, isTimesShown: false }
+      : { ...event, isTimesShown: true };
+  }
+  if (isInPast) {
+    return { ...event, isTimesShown: false };
+  }
+
+  return "isTimesShown" in event ? event : { ...event, isTimesShown: true };
+};
+
 export const getCategory = (event: Schema_Event) => {
   if (event?.isAllDay) {
     return Categories_Event.ALLDAY;
@@ -88,22 +105,7 @@ export const handleError = (error: Error) => {
   alert(error);
 };
 
-export const prepareEvent = (
-  draft: Schema_GridEvent,
-  original?: Schema_GridEvent
-) => {
-  let eventToClean: Schema_GridEvent = { ...original };
-  if (!original) {
-    eventToClean = { ...draft };
-  }
-
-  const _event = removeGridFields(eventToClean);
-  const event = { ..._event, origin: Origin.COMPASS } as Schema_Event;
-
-  return event;
-};
-
-export const prepareEventAfterDraftDrop = (
+export const prepEvtAfterDraftDrop = (
   category: Categories_Event,
   dropItem: DropResult,
   dates: { startDate: string; endDate: string }
@@ -122,6 +124,22 @@ export const prepareEventAfterDraftDrop = (
 
   return event;
 };
+
+export const prepEvtBeforeSubmit = (
+  draft: Schema_GridEvent,
+  original?: Schema_GridEvent
+) => {
+  let eventToClean: Schema_GridEvent = { ...original };
+  if (!original) {
+    eventToClean = { ...draft };
+  }
+
+  const _event = removeGridFields(eventToClean);
+  const event = { ..._event, origin: Origin.COMPASS } as Schema_Event;
+
+  return event;
+};
+
 /*
 -------------------------------------------------------------------------------
 Demo of using pagination and group ordering. 
