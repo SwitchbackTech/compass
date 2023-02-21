@@ -1,5 +1,6 @@
 import { MouseEvent } from "react";
 import { useSelector } from "react-redux";
+import dayjs, { Dayjs } from "dayjs";
 import { Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { useAppDispatch } from "@web/store/store.hooks";
@@ -12,7 +13,6 @@ import {
   draftSlice,
 } from "@web/ducks/events/event.slice";
 import { useCallback, useEffect, useState } from "react";
-import dayjs, { Dayjs } from "dayjs";
 import {
   getDefaultEvent,
   prepEvtBeforeSubmit,
@@ -21,6 +21,7 @@ import {
   selectDraft,
   selectDraftStatus,
 } from "@web/ducks/events/event.selectors";
+import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { WeekProps } from "../useWeek";
@@ -222,7 +223,9 @@ export const useDraftUtil = (
 
   const isValidMovement = useCallback(
     (currTime: Dayjs) => {
-      const noChange = draft[dateBeingChanged] === currTime.format();
+      const _currTime = currTime.format();
+
+      const noChange = draft[dateBeingChanged] === _currTime;
       if (noChange) return false;
 
       const diffDay = currTime.day() !== dayjs(draft.startDate).day();
@@ -250,21 +253,24 @@ export const useDraftUtil = (
         const comparisonKeyword =
           dateBeingChanged === "startDate" ? "after" : "before";
 
+        const isSame = currTime.isSame(opposite);
+
         if (comparisonKeyword === "after") {
-          // if (currTime.isSame(opposite) || currTime.isAfter(opposite)) {
           if (currTime.isAfter(opposite)) {
             dateKey = oppositeKey;
             startDate = draft.endDate;
             setDateBeingChanged(dateKey);
+          } else if (isSame) {
+            setDateBeingChanged(oppositeKey);
+            endDate = dayjs(endDate).add(GRID_TIME_STEP, "minutes").format();
           }
-        }
-
-        if (comparisonKeyword === "before") {
+        } else if (comparisonKeyword === "before") {
           if (currTime.isBefore(opposite)) {
-            // if (currTime.isSame(opposite) || currTime.isBefore(opposite)) {
-            dateKey = oppositeKey;
-            endDate = draft.startDate;
-            setDateBeingChanged(dateKey);
+            setDateBeingChanged(oppositeKey);
+            startDate = dayjs(startDate)
+              .subtract(GRID_TIME_STEP, "minutes")
+              .format();
+            endDate = dayjs(startDate).add(GRID_TIME_STEP, "minutes").format();
           }
         }
 
@@ -275,7 +281,7 @@ export const useDraftUtil = (
             endDate,
             startDate,
             priority: draft.priority,
-            [dateKey]: currTime.format(),
+            // [dateKey]: currTime.format(),
           };
         });
       };
