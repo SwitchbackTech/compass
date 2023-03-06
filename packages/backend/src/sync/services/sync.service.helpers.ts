@@ -284,7 +284,7 @@ export const importEventsByCalendar = async (
       return noChanges;
     }
 
-    const { result } = await mongoService.db
+    const result = await mongoService.db
       .collection(Collections.EVENT)
       .bulkWrite(ops);
 
