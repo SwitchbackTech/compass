@@ -12,7 +12,7 @@ import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import {
   getDefaultEvent,
-  prepareEventAfterDraftDrop,
+  prepEvtAfterDraftDrop,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import {
@@ -77,7 +77,7 @@ export const MainGrid: FC<Props> = ({
     dropItem: DropResult,
     dates: { startDate: string; endDate: string }
   ) => {
-    const event = prepareEventAfterDraftDrop(
+    const event = prepEvtAfterDraftDrop(
       Categories_Event.TIMED,
       dropItem,
       dates

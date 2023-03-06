@@ -35,7 +35,7 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
 import {
   getDefaultEvent,
-  prepareEventAfterDraftDrop,
+  prepEvtAfterDraftDrop,
 } from "@web/common/utils/event.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
@@ -82,7 +82,7 @@ export const AllDayRow: FC<Props> = ({
     dropItem: DropResult,
     dates: { startDate: string; endDate: string }
   ) => {
-    const event = prepareEventAfterDraftDrop(
+    const event = prepEvtAfterDraftDrop(
       Categories_Event.ALLDAY,
       dropItem,
       dates

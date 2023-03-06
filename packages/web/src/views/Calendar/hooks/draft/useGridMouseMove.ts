@@ -16,6 +16,7 @@ export const useGridMouseMove = (
       if (isResizing && !draft?.isAllDay) {
         resize(e);
       } else if (isDragging) {
+        e.preventDefault();
         drag(e);
       }
     },

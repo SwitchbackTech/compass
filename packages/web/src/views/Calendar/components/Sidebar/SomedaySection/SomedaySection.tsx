@@ -22,7 +22,10 @@ import {
 } from "@web/ducks/events/event.selectors";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { getDefaultEvent, prepareEvent } from "@web/common/utils/event.util";
+import {
+  getDefaultEvent,
+  prepEvtBeforeSubmit,
+} from "@web/common/utils/event.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   createEventSlice,
@@ -175,7 +178,7 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
   };
 
   const onSubmit = () => {
-    const _event = prepareEvent(draft);
+    const _event = prepEvtBeforeSubmit(draft);
     const { startDate, endDate } = getWeekRangeDates(
       weekRange.weekStart,
       weekRange.weekEnd

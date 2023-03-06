@@ -1,24 +1,27 @@
 import styled from "styled-components";
 import { Priority } from "@core/constants/core.constants";
-import { ZIndex } from "@web/common/constants/web.constants";
 import { getColor, hoverColorsByPriority } from "@core/util/color.utils";
 import { colorNameByPriority } from "@core/constants/colors";
+import { ZIndex } from "@web/common/constants/web.constants";
 
 interface StyledEventProps {
   allDay: boolean;
+  backgroundColor: string;
   height: number;
+  hoverColor: string;
   isDragging: boolean;
   isResizing: boolean;
   isInPast: boolean;
   isPlaceholder: boolean;
   left: number;
-  // pastDimness: number;
+  opacity: number;
   priority: Priority;
   top: number;
   width: number;
 }
 
-const pastDimness = 0.65;
+const DIM = 0.65;
+
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   const getBgColor = () => {
     if (props.isResizing || props.isDragging) {
@@ -38,7 +41,6 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
       ? null
       : hoverColorsByPriority[props.priority],
     opacity: props.isPlaceholder ? 0.5 : null,
-    pastDimness,
     ref: props.ref,
     top: props.top,
     width: props.width,
@@ -48,7 +50,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   border-radius: 2px;
   ${(props) => props.isDragging && `cursor: grabbing`}
   filter: brightness(
-    ${({ isInPast }) => (isInPast ? pastDimness : null)}
+    ${({ isInPast }) => (isInPast ? DIM : null)}
   );
   height: ${({ height }) => height}px;
   left: ${(props) => props.left}px;
@@ -56,28 +58,29 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   overflow: hidden;
   padding: 1px;
   position: absolute;
-  /* text-rendering: geometricPrecision; */
   top: ${(props) => props.top}px;
 
   user-select: none;
-  /* white-space: pre-line; */
   width: ${(props) => props.width}px;
   z-index: ${ZIndex.LAYER_1};
 
   &:hover {
-    background-color: ${(props) => props.hoverColor};
-    filter: brightness(
-        ${({ isPlaceholder }) => (isPlaceholder ? pastDimness : null)}
-      )
-      ${({ isPlaceholder }) =>
-        !isPlaceholder && `drop-shadow(2px 4px 4px black)`};
+    cursor: default;
     transition: background-color 0.35s linear;
+
+    ${({ isPlaceholder, isResizing, hoverColor }) =>
+      !isPlaceholder &&
+      !isResizing &&
+      `
+      background-color: ${hoverColor};
+      drop-shadow(2px 4px 4px black);
+      filter: brigthness(0.65); 
+      `};
   }
 
   &.active {
-    background-color: ${(props) => props.hoverColor};
-    filter: ${({ isPlaceholder }) =>
-      isPlaceholder ? null : "drop-shadow(2px 4px 4px black)"};
+    filter: drop-shadow(2px 4px 4px black);
+    background-color: ${({ hoverColor }) => hoverColor};
   }
 
   & span {
@@ -87,7 +90,6 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
       text-overflow: ellipsis;
       word-break: break-all;
       -webkit-box-orient: vertical;
-      /* -webkit-line-clamp: ${(props) => props.lineClamp}; */
     }
   }
 `;

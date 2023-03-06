@@ -5,6 +5,33 @@ import {
   getLeftPosition,
 } from "@web/common/utils/grid.util";
 import { widthMinusPadding } from "@web/common/utils/grid.util";
+import { adjustIsTimesShown } from "@web/common/utils/event.util";
+
+describe("adjustIsTimesShown", () => {
+  it("hides times for evt in past week", () => {
+    const event = adjustIsTimesShown({}, true, false);
+    expect(event.isTimesShown).toBe(false);
+  });
+  it("hides times for event on previous day of current week", () => {
+    const event = adjustIsTimesShown({}, true, true);
+    expect(event.isTimesShown).toBe(false);
+  });
+  it("keeps isTimesShown false if it was originally", () => {
+    const futureEvt = adjustIsTimesShown({ isTimesShown: false }, true, true);
+    expect(futureEvt.isTimesShown).toBe(false);
+
+    const pastEvt = adjustIsTimesShown({ isTimesShown: false }, false, false);
+    expect(pastEvt.isTimesShown).toBe(false);
+  });
+  it("shows times for event in future week", () => {
+    const event = adjustIsTimesShown({}, false, false);
+    expect(event.isTimesShown).toBe(true);
+  });
+  it("shows times when future day of current week", () => {
+    const event = adjustIsTimesShown({}, false, true);
+    expect(event.isTimesShown).toBe(true);
+  });
+});
 
 describe("getAllDayEventWidth", () => {
   it("is never wider than 1 week", () => {

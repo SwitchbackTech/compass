@@ -11,6 +11,7 @@ import {
   FlexWrap,
 } from "@web/components/Flex/styled";
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
+import { adjustIsTimesShown } from "@web/common/utils/event.util";
 
 import { StyledEvent, StyledEventScaler } from "../../styled";
 import { Times } from "./Times";
@@ -33,7 +34,7 @@ interface Props {
 
 const _GridEvent = (
   {
-    event,
+    event: _event,
     isDraft,
     isDragging,
     isPlaceholder,
@@ -46,6 +47,12 @@ const _GridEvent = (
   ref: ForwardedRef<HTMLButtonElement>
 ) => {
   const { component } = weekProps;
+
+  const isInPast = dayjs().isAfter(dayjs(_event.endDate));
+  const event = isDraft
+    ? _event
+    : adjustIsTimesShown(_event, isInPast, component.isCurrentWeek);
+
   const position = getPosition(
     event,
     component.startOfView,
@@ -53,13 +60,6 @@ const _GridEvent = (
     measurements,
     false
   );
-
-  let finalEvent = event;
-
-  const isInPast = dayjs().isAfter(dayjs(event.endDate));
-  if (isInPast) {
-    finalEvent = { ...event, isTimesShown: false };
-  }
 
   return (
     <StyledEvent
@@ -92,11 +92,11 @@ const _GridEvent = (
         {!event.isAllDay && (
           <>
             <Times
-              event={finalEvent}
+              event={event}
               isDrafting={isDragging || isResizing}
               isPlaceholder={isPlaceholder}
             />
-            {!isDraft && !isPlaceholder && !isDragging && (
+            {!isPlaceholder && !isDragging && (
               <>
                 <StyledEventScaler
                   isDragging={isDragging}
@@ -120,8 +120,3 @@ const _GridEvent = (
 
 export const GridEvent = forwardRef(_GridEvent);
 export const GridEventMemo = memo(GridEvent);
-
-/*
-      // lineClamp={event.isAllDay ? 1 : getLineClamp(durationHours)}
-      // lineClamp={1}
-*/
