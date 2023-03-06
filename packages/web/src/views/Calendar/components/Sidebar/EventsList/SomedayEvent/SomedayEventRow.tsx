@@ -25,8 +25,8 @@ export const SomedayEventRow = ({ event, onMigrate }: Props) => {
           e.stopPropagation();
           onMigrate(event, "forward");
         }}
-        title="Migrate to next week"
         role="button"
+        title="Migrate to next week"
       >
         {">"}
       </StyledMigrateArrow>

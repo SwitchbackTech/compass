@@ -23,6 +23,7 @@ import { getCategory } from "@web/common/utils/event.util";
 import { Categories_Event } from "@core/types/event.types";
 import { selectDraftId } from "@web/ducks/events/event.selectors";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 
 import { GridEvent } from "../Grid";
 
@@ -94,6 +95,13 @@ export const Draft: FC<Props> = ({
   const isGridEvent =
     category === Categories_Event.ALLDAY || category === Categories_Event.TIMED;
 
+  const onConvert = () => {
+    const start = weekProps.component.startOfView.format(YEAR_MONTH_DAY_FORMAT);
+    const end = weekProps.component.endOfView.format(YEAR_MONTH_DAY_FORMAT);
+
+    draftUtil.convert(start, end);
+  };
+
   return createPortal(
     <>
       {isDrafting && isGridEvent && (
@@ -136,6 +144,7 @@ export const Draft: FC<Props> = ({
                 <EventForm
                   event={draft}
                   onClose={draftUtil.discard}
+                  onConvert={onConvert}
                   onDelete={draftUtil.deleteEvent}
                   onSubmit={(_draft: Schema_GridEvent) =>
                     draftUtil.submit(_draft)

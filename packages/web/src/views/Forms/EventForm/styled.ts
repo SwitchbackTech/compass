@@ -58,6 +58,8 @@ export const StyledDescriptionField = styled(Textarea)`
 `;
 
 export const StyledIconRow = styled(Flex)`
+  align-items: center;
+  gap: 30px;
   justify-content: end;
 `;
 

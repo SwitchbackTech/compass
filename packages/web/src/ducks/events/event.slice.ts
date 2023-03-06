@@ -178,6 +178,8 @@ export const getWeekEventsSlice = createAsyncSlice<
 >({
   name: "getWeekEvents",
   reducers: {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    convert: () => {},
     delete: (state, action: Action_DeleteEvent) => {
       state.value.data = state.value.data.filter(
         (i: string) => i !== action.payload._id

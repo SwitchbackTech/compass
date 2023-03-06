@@ -7,7 +7,10 @@ import React, {
   useState,
 } from "react";
 import dayjs, { Dayjs } from "dayjs";
-import { SOMEDAY_WEEKLY_LIMIT } from "@core/constants/core.constants";
+import {
+  SOMEDAY_WEEKLY_LIMIT,
+  SOMEDAY_WEEK_LIMIT_MSG,
+} from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { getWeekRangeDates } from "@core/util/date.utils";
 import { ColorNames } from "@core/types/color.types";
@@ -71,7 +74,6 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
     draftType === Categories_Event.SOMEDAY &&
     !existingIds.includes(draft?._id);
 
-  const SOMEDAY_WEEK_LIMIT_MSG = `Sorry, you can only have ${SOMEDAY_WEEKLY_LIMIT} unscheduled events per week.`;
   const _isAtLimit = useCallback(() => {
     return somedayEvents.length >= SOMEDAY_WEEKLY_LIMIT;
   }, [somedayEvents]);
@@ -134,7 +136,6 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
     isDraftingExisting,
     isDraftingRedux,
     _isAtLimit,
-    SOMEDAY_WEEK_LIMIT_MSG,
   ]);
 
   useEffect(() => {
