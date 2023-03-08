@@ -1,16 +1,20 @@
 import { MouseEvent } from "react";
-import { useSelector } from "react-redux";
 import dayjs, { Dayjs } from "dayjs";
-import { Priorities } from "@core/constants/core.constants";
+import {
+  Priorities,
+  SOMEDAY_WEEKLY_LIMIT,
+  SOMEDAY_WEEK_LIMIT_MSG,
+} from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { getX } from "@web/common/utils/grid.util";
+import { getX, removeGridFields } from "@web/common/utils/grid.util";
 import {
   editEventSlice,
   createEventSlice,
   deleteEventSlice,
   draftSlice,
+  getWeekEventsSlice,
 } from "@web/ducks/events/event.slice";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -20,6 +24,7 @@ import {
 import {
   selectDraft,
   selectDraftStatus,
+  selectSomedayEventsCount,
 } from "@web/ducks/events/event.selectors";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
@@ -41,13 +46,18 @@ export const useDraftUtil = (
 ) => {
   const dispatch = useAppDispatch();
 
-  const reduxDraft = useSelector(selectDraft);
+  const reduxDraft = useAppSelector(selectDraft);
   const {
     activity,
     dateToResize,
     eventType: reduxDraftType,
     isDrafting,
-  } = useSelector(selectDraftStatus);
+  } = useAppSelector(selectDraftStatus);
+  const somedayEventsCount = useAppSelector(selectSomedayEventsCount);
+
+  const _isAtLimit = useCallback(() => {
+    return somedayEventsCount >= SOMEDAY_WEEKLY_LIMIT;
+  }, [somedayEventsCount]);
 
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -138,6 +148,25 @@ export const useDraftUtil = (
       });
     }
   }, [dateCalcs, isDragging]);
+
+  const convert = (start: string, end: string) => {
+    if (_isAtLimit()) {
+      alert(SOMEDAY_WEEK_LIMIT_MSG);
+      return;
+    }
+    const _draft = {
+      ...draft,
+      isAllDay: false,
+      isSomeday: true,
+      startDate: start,
+      endDate: end,
+    };
+    const event = removeGridFields(_draft);
+
+    dispatch(getWeekEventsSlice.actions.convert({ event }));
+
+    discard();
+  };
 
   const deleteEvent = () => {
     if (draft._id) {
@@ -370,6 +399,7 @@ export const useDraftUtil = (
       resizeStatus,
     },
     draftUtil: {
+      convert,
       deleteEvent,
       discard,
       drag,

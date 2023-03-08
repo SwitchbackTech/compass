@@ -10,8 +10,12 @@ interface Props {
 
 export const DeleteIcon: React.FC<Props> = ({ onDelete, title }) => {
   return (
-    <div onClick={onDelete} role="button" title={title}>
-      <StyledTrashIcon hovercolor={getColor(ColorNames.GREY_5)} />
-    </div>
+    <StyledTrashIcon
+      hovercolor={getColor(ColorNames.GREY_5)}
+      //@ts-ignore
+      onClick={onDelete}
+      role="button"
+      title={title}
+    />
   );
 };

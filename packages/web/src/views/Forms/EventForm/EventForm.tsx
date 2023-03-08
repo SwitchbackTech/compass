@@ -18,6 +18,7 @@ import {
   getTimeOptionByValue,
   mapToBackend,
 } from "@web/common/utils/web.date.util";
+import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEvent/styled";
 
 import { FormProps, SetEventFormField } from "./types";
 import { DateTimeSection } from "./DateTimeSection";
@@ -33,6 +34,7 @@ import {
 export const EventForm: React.FC<FormProps> = ({
   event,
   onClose: _onClose,
+  onConvert,
   onDelete,
   onSubmit,
   setEvent,
@@ -40,6 +42,7 @@ export const EventForm: React.FC<FormProps> = ({
 }) => {
   const { priority, title } = event || {};
   const category = getCategory(event);
+  const isDraft = !event._id;
 
   /********
    * State
@@ -195,7 +198,6 @@ export const EventForm: React.FC<FormProps> = ({
 
   const onFormKeyDown: KeyboardEventHandler<HTMLFormElement> = (e) => {
     if (e.key === Key.Backspace || e.key == Key.Delete) {
-      const isDraft = !event._id;
       if (isDraft) {
         onClose();
         return;
@@ -246,6 +248,18 @@ export const EventForm: React.FC<FormProps> = ({
       role="form"
     >
       <StyledIconRow>
+        {!isDraft && (
+          <StyledMigrateArrowInForm
+            onClick={(e) => {
+              e.stopPropagation();
+              onConvert();
+            }}
+            role="button"
+            title="Move to sidebar"
+          >
+            {"<"}
+          </StyledMigrateArrowInForm>
+        )}
         <DeleteIcon onDelete={onDeleteForm} title="Delete Event" />
       </StyledIconRow>
 

@@ -23,6 +23,7 @@ import {
 } from "../event.slice";
 import {
   Action_ConvertSomedayEvent,
+  Action_ConvertTimedEvent,
   Action_CreateEvent,
   Action_EditEvent,
   Response_GetEventsSaga,
@@ -35,10 +36,7 @@ import {
 } from "../event.types";
 import { selectPaginatedEventsBySectionType } from "../event.selectors";
 
-/*
- * Converts Someday event into a timed event
- */
-function* convertSomedayEventSaga({ payload }: Action_ConvertSomedayEvent) {
+function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
   try {
     const { _id, updatedFields } = payload;
 
@@ -76,7 +74,40 @@ function* convertSomedayEventSaga({ payload }: Action_ConvertSomedayEvent) {
   }
 }
 
-function* createEventSaga({ payload }: Action_CreateEvent) {
+function* convertTimedEvent({ payload }: Action_ConvertTimedEvent) {
+  try {
+    const { event } = payload;
+
+    const res = yield call(EventApi.edit, event._id, event);
+    const _event = res.data as Schema_Event;
+
+    yield put(getSomedayEventsSlice.actions.insert(_event._id));
+
+    const normalizedEvent = normalize<Schema_Event>(
+      _event,
+      normalizedEventsSchema()
+    );
+    yield put(
+      eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
+    );
+
+    const timedEvents = (yield select((state) =>
+      selectPaginatedEventsBySectionType(state, "week")
+    )) as Response_GetEventsSaga;
+
+    const remainingTimedEvents = timedEvents.data.filter(
+      (id) => id !== event._id
+    );
+    yield put(
+      getWeekEventsSlice.actions.success({ data: remainingTimedEvents })
+    );
+  } catch (error) {
+    yield put(getWeekEventsSlice.actions.error());
+    handleError(error as Error);
+  }
+}
+
+function* createEvent({ payload }: Action_CreateEvent) {
   try {
     const res = (yield call(
       EventApi.create,
@@ -104,7 +135,7 @@ function* createEventSaga({ payload }: Action_CreateEvent) {
   }
 }
 
-export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
+export function* deleteEvent({ payload }: Action_DeleteEvent) {
   try {
     yield put(getWeekEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
@@ -116,7 +147,7 @@ export function* deleteEventSaga({ payload }: Action_DeleteEvent) {
   }
 }
 
-export function* deleteSomedayEventSaga({ payload }: Action_DeleteEvent) {
+export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
@@ -128,7 +159,7 @@ export function* deleteSomedayEventSaga({ payload }: Action_DeleteEvent) {
   }
 }
 
-export function* editEventSaga({ payload }: Action_EditEvent) {
+export function* editEvent({ payload }: Action_EditEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.edit(payload));
     yield call(EventApi.edit, payload._id, payload.event);
@@ -139,11 +170,11 @@ export function* editEventSaga({ payload }: Action_EditEvent) {
   }
 }
 
-function* getCurrentMonthEventsSaga({ payload }: Action_GetPaginatedEvents) {
+function* getCurrentMonthEvents({ payload }: Action_GetPaginatedEvents) {
   try {
     const startDate = dayjs().startOf("month").format(YEAR_MONTH_DAY_FORMAT);
     const endDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
-    const data: Response_GetEventsSaga = (yield call(getEventsSaga, {
+    const data: Response_GetEventsSaga = (yield call(getEvents, {
       ...payload,
       startDate,
       endDate,
@@ -156,7 +187,7 @@ function* getCurrentMonthEventsSaga({ payload }: Action_GetPaginatedEvents) {
   }
 }
 
-function* getEventsSaga(
+function* getEvents(
   payload: Params_Events | Response_HttpPaginatedSuccess<Entities_Event>
 ) {
   try {
@@ -184,7 +215,7 @@ function* getEventsSaga(
   }
 }
 
-export function* getSomedayEventsSaga({ payload }: Action_GetEvents) {
+export function* getSomedayEvents({ payload }: Action_GetEvents) {
   try {
     const res: Response_GetEventsSuccess = (yield call(EventApi.get, {
       someday: true,
@@ -208,9 +239,9 @@ export function* getSomedayEventsSaga({ payload }: Action_GetEvents) {
   }
 }
 
-function* getWeekEventsSaga({ payload }: Action_GetEvents) {
+function* getWeekEvents({ payload }: Action_GetEvents) {
   try {
-    const data: Response_GetEventsSaga = yield call(getEventsSaga, payload);
+    const data: Response_GetEventsSaga = yield call(getEvents, payload);
     yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error());
@@ -218,13 +249,11 @@ function* getWeekEventsSaga({ payload }: Action_GetEvents) {
   }
 }
 
-function* migrateEventSaga({ payload }: Action_EditEvent) {
+function* migrateEvent({ payload }: Action_EditEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.edit(payload));
     yield call(EventApi.edit, payload._id, payload.event);
 
-    // dispatch(getSomedayEventsSlice.actions.delete({ _id: event._id }));
-    // yield put(getSomedayEventsSlice.actions.delete(payload));
     yield put(getSomedayEventsSlice.actions.remove(payload));
     yield put(editEventSlice.actions.success());
   } catch (error) {
@@ -237,22 +266,17 @@ function* migrateEventSaga({ payload }: Action_EditEvent) {
  * Assemble
  ***********/
 export function* eventsSagas() {
-  yield takeLatest(getWeekEventsSlice.actions.request, getWeekEventsSaga);
+  yield takeLatest(getWeekEventsSlice.actions.request, getWeekEvents);
+  yield takeLatest(getWeekEventsSlice.actions.convert, convertTimedEvent);
   yield takeLatest(
     getCurrentMonthEventsSlice.actions.request,
-    getCurrentMonthEventsSaga
+    getCurrentMonthEvents
   );
-  yield takeLatest(
-    getSomedayEventsSlice.actions.convert,
-    convertSomedayEventSaga
-  );
-  yield takeLatest(getSomedayEventsSlice.actions.request, getSomedayEventsSaga);
-  yield takeLatest(
-    getSomedayEventsSlice.actions.delete,
-    deleteSomedayEventSaga
-  );
-  yield takeLatest(createEventSlice.actions.request, createEventSaga);
-  yield takeLatest(editEventSlice.actions.request, editEventSaga);
-  yield takeLatest(editEventSlice.actions.migrate, migrateEventSaga);
-  yield takeLatest(deleteEventSlice.actions.request, deleteEventSaga);
+  yield takeLatest(getSomedayEventsSlice.actions.convert, convertSomedayEvent);
+  yield takeLatest(getSomedayEventsSlice.actions.request, getSomedayEvents);
+  yield takeLatest(getSomedayEventsSlice.actions.delete, deleteSomedayEvent);
+  yield takeLatest(createEventSlice.actions.request, createEvent);
+  yield takeLatest(editEventSlice.actions.request, editEvent);
+  yield takeLatest(editEventSlice.actions.migrate, migrateEvent);
+  yield takeLatest(deleteEventSlice.actions.request, deleteEvent);
 }

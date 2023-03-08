@@ -12,6 +12,10 @@ export interface Action_ConvertSomedayEvent extends Action {
   payload: Payload_ConvertSomedayEvent;
 }
 
+export interface Action_ConvertTimedEvent extends Action {
+  payload: Payload_ConvertTimedEvent;
+}
+
 export interface Action_CreateEvent extends Action {
   payload: Schema_Event;
 }
@@ -72,43 +76,47 @@ export interface Entities_Event {
   [key: string]: Schema_Event;
 }
 
-export interface Payload_ConvertSomedayEvent {
+interface Payload_ConvertSomedayEvent {
   _id: string;
   updatedFields: Schema_Event;
 }
 
-export interface Payload_DeleteEvent {
+interface Payload_ConvertTimedEvent {
+  event: Schema_Event;
+}
+
+interface Payload_DeleteEvent {
   _id: string;
 }
 
-export interface Payload_DraftEvent {
+interface Payload_DraftEvent {
   event?: Schema_Event;
   eventType: Categories_Event;
   activity?: "createShortcut" | "dragging" | "resizing";
 }
 
-export interface Payload_Draft_Drag {
+interface Payload_Draft_Drag {
   event: Schema_Event;
 }
-export interface Payload_Draft_Resize {
+interface Payload_Draft_Resize {
   event: Schema_Event;
   dateToChange: "startDate" | "endDate";
 }
 
-export interface Payload_Draft_Swap {
+interface Payload_Draft_Swap {
   event: Schema_GridEvent;
   category: Categories_Event;
 }
-export interface Payload_EditEvent {
+interface Payload_EditEvent {
   _id: string;
   event: Schema_Event;
 }
 
-export interface Payload_GetPaginatedEvents extends Filters_Pagination {
+interface Payload_GetPaginatedEvents extends Filters_Pagination {
   priorities: Priorities[];
 }
 
-export interface Payload_GetEvents {
+interface Payload_GetEvents {
   startDate: string;
   endDate: string;
 }

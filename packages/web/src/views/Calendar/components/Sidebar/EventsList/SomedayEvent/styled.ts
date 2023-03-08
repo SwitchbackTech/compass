@@ -58,15 +58,19 @@ export const StyledEventOrPlaceholder = styled.div<Props>`
 
 export const StyledMigrateArrow = styled.span`
   padding-right: 7px;
-  color: #44484b;
 
   &:hover {
     border-radius: 50%;
     background: ${BASE_COLORS.ONYX_GREY};
     color: white;
+    cursor: pointer;
     padding-right: 7px;
     padding-left: 7px;
     text-align: center;
     transition: background-color 0.4s;
   }
+`;
+
+export const StyledMigrateArrowInForm = styled(StyledMigrateArrow)`
+  font-size: 27px;
 `;

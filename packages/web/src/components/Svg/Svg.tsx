@@ -14,6 +14,7 @@ const svgStyles = ({ color, hovercolor }: SvgStylesProps) => {
 
     &:hover path {
       stroke: ${hovercolor || "white"};
+      transition: stroke 0.2s;
     }
   `;
 };
