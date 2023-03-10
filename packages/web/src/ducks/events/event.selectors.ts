@@ -92,7 +92,7 @@ export const selectSomedayEvents = (state: RootState) => {
 };
 
 export const selectSomedayEventsCount = (state: RootState): number => {
-  return state.events["getSomedayEvents"].value?.data?.length + 1 || 0;
+  return state.events["getSomedayEvents"].value?.data?.length || 0;
 };
 
 /*********************
