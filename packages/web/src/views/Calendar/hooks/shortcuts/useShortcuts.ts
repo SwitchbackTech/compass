@@ -1,13 +1,18 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Key } from "ts-keycode-enum";
 import dayjs, { Dayjs } from "dayjs";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Categories_Event } from "@core/types/event.types";
 import { isDrafting, roundToNext } from "@web/common/utils";
 import { draftSlice } from "@web/ducks/events/event.slice";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import {
+  SOMEDAY_WEEKLY_LIMIT,
+  SOMEDAY_WEEK_LIMIT_MSG,
+} from "@core/constants/core.constants";
+import { selectSomedayEventsCount } from "@web/ducks/events/event.selectors";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
@@ -25,6 +30,12 @@ export const useShortcuts = (
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
+  const somedayEventsCount = useAppSelector(selectSomedayEventsCount);
+
+  const _isAtLimit = useCallback(() => {
+    return somedayEventsCount >= SOMEDAY_WEEKLY_LIMIT;
+  }, [somedayEventsCount]);
+
   useEffect(() => {
     const _getStart = () => {
       if (isCurrentWeek) {
@@ -35,6 +46,11 @@ export const useShortcuts = (
     };
 
     const _createSomedayDraft = () => {
+      if (_isAtLimit()) {
+        alert(SOMEDAY_WEEK_LIMIT_MSG);
+        return;
+      }
+
       dispatch(
         draftSlice.actions.start({
           eventType: Categories_Event.SOMEDAY,
@@ -115,5 +131,6 @@ export const useShortcuts = (
     scrollUtil,
     toggleSidebar,
     util,
+    _isAtLimit,
   ]);
 };
