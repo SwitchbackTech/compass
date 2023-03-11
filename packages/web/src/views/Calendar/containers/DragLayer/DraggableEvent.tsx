@@ -25,11 +25,10 @@ export interface Props {
   dateCalcs: DateCalcs;
   event: Schema_GridEvent;
   measurements: Measurements_Grid;
-  startOfView: WeekProps["component"]["startOfSelectedWeekDay"];
+  startOfView: WeekProps["component"]["startOfView"];
 }
 
 export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
-  // export const DraggableEvent: FC<Props> = ({
   coordinates,
   dateCalcs,
   event,
@@ -61,7 +60,8 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
   };
 
   const _getWidth = () => {
-    if (!isOverGrid) return SIDEBAR_OPEN_WIDTH - SIDEBAR_OPEN_WIDTH / 2; // keeping shorter width feels less abrupt upon change
+    // if (!isOverGrid) return SIDEBAR_OPEN_WIDTH / 2; // keeping shorter width feels less abrupt upon change
+    if (!isOverGrid) return 275; //++ convert to constant
     if (isOverMainGrid) {
       const buffer = getWidthBuffer(dayIndex) + 20;
       return measurements.colWidths[dayIndex] - buffer;
@@ -107,5 +107,4 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
       )}
     </StyledDraggableEvent>
   );
-  // };
 });

@@ -1,6 +1,6 @@
 import React, { FC, memo } from "react";
 import { useDragLayer } from "react-dnd";
-import { DragItem, DropResult } from "@web/common/types/dnd.types";
+import { Category_DragItem, DropResult } from "@web/common/types/dnd.types";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 
@@ -11,7 +11,7 @@ import { WeekProps } from "../../hooks/useWeek";
 export interface Props {
   dateCalcs: DateCalcs;
   measurements: Measurements_Grid;
-  viewStart: WeekProps["component"]["startOfSelectedWeekDay"];
+  viewStart: WeekProps["component"]["startOfView"];
 }
 
 export const DragLayer: FC<Props> = memo(function DragLayer({
@@ -31,7 +31,7 @@ export const DragLayer: FC<Props> = memo(function DragLayer({
 
   function renderItem() {
     switch (itemType) {
-      case DragItem.EVENT_SOMEDAY:
+      case Category_DragItem.EVENT_SOMEDAY:
         return (
           <DraggableEvent
             coordinates={currentOffset}

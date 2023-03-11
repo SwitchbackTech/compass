@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { ReactSortable } from "react-sortablejs";
 import dayjs, { Dayjs } from "dayjs";
 import {
   SOMEDAY_WEEKLY_LIMIT,
@@ -37,6 +38,7 @@ import {
 } from "@web/ducks/events/event.slice";
 import { getWeekRangeLabel } from "@web/common/utils/web.date.util";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { DragItem_Someday } from "@web/common/types/dnd.types";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
 import { DraggableSomedayEvent } from "../EventsList/SomedayEvent/DraggableSomedayEvent";
@@ -53,21 +55,32 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
   const somedayRef = useRef();
 
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
-  const somedayEvents = useAppSelector(selectSomedayEvents);
+  const _somedayEvents = useAppSelector(selectSomedayEvents);
+
   const { isDrafting: isDraftingRedux } = useAppSelector(selectDraftId);
   const { eventType: draftType } = useAppSelector(selectDraftStatus);
 
-  const [isDrafting, setIsDrafting] = useState(false);
   const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
+  const [isDrafting, setIsDrafting] = useState(false);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
+  const [somedayEvents, setSomedayEvents] = useState(_somedayEvents);
+
+  useEffect(() => {
+    // setSomedayEvents(_somedayEvents.sort((a, b) => a.order - b.order));
+    const somedayEventsWithSortableId = _somedayEvents.map((e) => ({
+      ...e,
+      id: e._id,
+    }));
+    setSomedayEvents(somedayEventsWithSortableId);
+    // setSomedayEvents(_somedayEvents);
+  }, [_somedayEvents]);
 
   const weekLabel = useMemo(
     () => getWeekRangeLabel(weekRange.weekStart, weekRange.weekEnd),
     [weekRange]
   );
 
-  // memo-ize
-  const existingIds = somedayEvents?.map((se) => se._id);
+  const existingIds = somedayEvents?.map((se) => se?._id);
   const isNewDraft =
     isDrafting &&
     isDraftingRedux &&
@@ -252,21 +265,29 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
       </StyledHeader>
 
       <StyledList>
-        {somedayEvents.map((event: Schema_Event) => (
-          <DraggableSomedayEvent
-            event={draft?._id === event?._id ? draft : event}
-            id={event._id}
-            isDrafting={
-              isDraftingExisting && isDraftingRedux && draft?._id === event?._id
-            }
-            key={event._id}
-            onClose={close}
-            onDraft={onDraft}
-            onMigrate={onMigrate}
-            onSubmit={onSubmit}
-            setEvent={setDraft}
-          />
-        ))}
+        <ReactSortable
+          animation={120}
+          list={somedayEvents}
+          setList={setSomedayEvents}
+        >
+          {somedayEvents.map((event: Schema_Event) => (
+            <DraggableSomedayEvent
+              event={draft?._id === event?._id ? draft : event}
+              id={event._id}
+              isDrafting={
+                isDraftingExisting &&
+                isDraftingRedux &&
+                draft?._id === event?._id
+              }
+              key={event._id}
+              onClose={close}
+              onDraft={onDraft}
+              onMigrate={onMigrate}
+              onSubmit={onSubmit}
+              setEvent={setDraft}
+            />
+          ))}
+        </ReactSortable>
 
         {isNewDraft && (
           <DraggableSomedayEvent

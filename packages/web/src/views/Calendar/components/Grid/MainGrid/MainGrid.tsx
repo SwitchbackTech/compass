@@ -20,7 +20,7 @@ import {
   draftSlice,
   getSomedayEventsSlice,
 } from "@web/ducks/events/event.slice";
-import { DragItem, DropResult } from "@web/common/types/dnd.types";
+import { Category_DragItem, DropResult } from "@web/common/types/dnd.types";
 import {
   DRAFT_DURATION_MIN,
   SIDEBAR_OPEN_WIDTH,
@@ -130,7 +130,7 @@ export const MainGrid: FC<Props> = ({
 
   const [{ canDrop, isOver }, drop] = useDrop(
     () => ({
-      accept: DragItem.EVENT_SOMEDAY,
+      accept: Category_DragItem.EVENT_SOMEDAY,
       drop: (item: DropResult, monitor) => {
         const { x, y } = monitor.getClientOffset();
         const dates = getDates(x, y);

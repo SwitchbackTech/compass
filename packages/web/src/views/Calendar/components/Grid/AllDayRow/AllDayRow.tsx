@@ -6,7 +6,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { DragItem, DropResult } from "@web/common/types/dnd.types";
+import { Category_DragItem, DropResult } from "@web/common/types/dnd.types";
 import { Ref_Callback } from "@web/common/types/util.types";
 import {
   ID_ALLDAY_COLUMNS,
@@ -114,7 +114,7 @@ export const AllDayRow: FC<Props> = ({
 
   const [{ canDrop, isOver }, drop] = useDrop(
     () => ({
-      accept: DragItem.EVENT_SOMEDAY,
+      accept: Category_DragItem.EVENT_SOMEDAY,
       drop: (item: DropResult, monitor) => {
         const { x, y } = monitor.getClientOffset();
         const dates = getDates(x, y);
