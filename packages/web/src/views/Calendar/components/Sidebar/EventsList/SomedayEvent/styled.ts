@@ -6,29 +6,38 @@ import {
   hoverColorsByPriority,
 } from "@core/util/color.utils";
 import { BASE_COLORS, colorNameByPriority } from "@core/constants/colors";
-import { InvertedColorNames } from "@core/types/color.types";
+import { ColorNames, InvertedColorNames } from "@core/types/color.types";
+import { DroppableProps } from "@hello-pangea/dnd";
 
-export interface Props {
+export interface Props extends DroppableProps {
   priority: Priorities;
   isDrafting: boolean;
   isDragging?: boolean;
+  isFocused: boolean;
 }
 
 export const SOMEDAY_EVENT_HEIGHT = 32;
 
-export const StyledEventOrPlaceholder = styled.div<Props>`
-  background: ${({ isDrafting, priority }) =>
-    isDrafting
-      ? hoverColorsByPriority[priority]
-      : getColor(colorNameByPriority[priority])};
+export const StyledSomedayEvent = styled.div<Props>`
+  background: ${({ isDrafting, isDragging, priority }) => {
+    if (isDrafting) {
+      return hoverColorsByPriority[priority];
+    }
+    if (isDragging) return "lightgreen";
+
+    return getColor(colorNameByPriority[priority]);
+  }};
   border-radius: 2px;
   color: ${({ priority }) =>
     getInvertedColor(
       colorNameByPriority[priority] as unknown as InvertedColorNames
     )};
   height: ${SOMEDAY_EVENT_HEIGHT}px;
+  filter: brightness(
+    ${({ isDragging, isFocused }) =>
+      isFocused && !isDragging ? "160%" : "100%"}
+  );
   margin-bottom: 2px;
-  opacity: ${({ isDragging }) => (isDragging ? 0 : 1)};
   padding: 5px;
   transition: background-color 0.2s, box-shadow 0.2s;
   width: 100%;

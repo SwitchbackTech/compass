@@ -45,6 +45,9 @@ export const LogoutView = () => {
     <StyledLogin
       alignItems={AlignItems.CENTER}
       direction={FlexDirections.COLUMN}
+      onFocus={() => {
+        console.log("focus");
+      }}
     >
       {isLoggingOut && <AbsoluteOverflowLoader />}
       <button onClick={() => void logout()}>Signout</button>

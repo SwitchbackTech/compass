@@ -50,20 +50,19 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           <SidebarToggleIcon cursor="pointer" />
         </div>
       </TooltipWrapper>
+
       <StyledTopSectionFlex
         direction={FlexDirections.COLUMN}
         height={`calc(100% - ${SIDEBAR_MONTH_HEIGHT + 2}px)`}
       >
         <SomedaySection flex={1} weekRange={{ weekStart, weekEnd }} />
       </StyledTopSectionFlex>
-
       <Divider
         color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
         role="separator"
         title="sidebar divider"
         withAnimation={false}
       />
-
       <StyledBottomSection height={String(SIDEBAR_MONTH_HEIGHT)}>
         <ToggleableMonthWidget
           isToggled={true}
