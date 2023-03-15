@@ -13,6 +13,7 @@ export interface Props extends DroppableProps {
   priority: Priorities;
   isDrafting: boolean;
   isDragging?: boolean;
+  isSorting: boolean;
   isFocused: boolean;
 }
 
@@ -38,6 +39,10 @@ export const StyledSomedayEvent = styled.div<Props>`
       isFocused && !isDragging ? "160%" : "100%"}
   );
   margin-bottom: 2px;
+  opacity: ${({ isDragging, isSorting }) => {
+    if (isDragging && !isSorting) return 0.5;
+    return 1;
+  }};
   padding: 5px;
   transition: background-color 0.2s, box-shadow 0.2s;
   width: 100%;

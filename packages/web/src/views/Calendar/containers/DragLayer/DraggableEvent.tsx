@@ -38,6 +38,8 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
   const { x, y } = coordinates;
   const { allDayRow, colWidths } = measurements;
 
+  console.log("draggable event");
+
   /* Helpers */
   const _getHeight = () => {
     if (isOverAllDayRow) return EVENT_ALLDAY_HEIGHT;

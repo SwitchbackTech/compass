@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import dayjs from "dayjs";
 import { DropResult } from "@hello-pangea/dnd";
 import {
@@ -65,9 +65,8 @@ export const useSomedayEvents = (weekRange: Range_Week) => {
     [weekRange]
   );
 
-  // const existingIds = somedayEvents?.map((se) => se?._id);
-  // const existingIds = hardSomedayEvents.columns[0].taskIds
-  const existingIds = [];
+  const existingIds = somedayEvents.columns["column-1"].eventIds;
+
   const isNewDraft =
     isDrafting &&
     isDraftingRedux &&
@@ -172,6 +171,12 @@ export const useSomedayEvents = (weekRange: Range_Week) => {
     };
 
     setSomedayEvents(newState);
+    setIsDrafting(false);
+  };
+
+  const onDragStart = () => {
+    console.log("starting ...");
+    setIsDrafting(true);
   };
 
   const onDraft = (event: Schema_Event) => {
@@ -234,13 +239,15 @@ export const useSomedayEvents = (weekRange: Range_Week) => {
   };
 
   const onSectionClick = () => {
+    console.log("clicked sect");
+    console.log(isDrafting);
     if (isDraftingRedux) {
       dispatch(draftSlice.actions.discard());
       return;
     }
 
-    if (isDrafting && draft) {
-      close();
+    if (isDrafting) {
+      draft && close();
       return;
     }
 
@@ -260,16 +267,23 @@ export const useSomedayEvents = (weekRange: Range_Week) => {
 
   const somedayEventsProps = {
     state: {
+      draft,
       isProcessing,
       somedayEvents,
-      isDrafting,
-      draft,
-      setDraft,
+      isDrafting: isDraftingRedux && isNewDraft,
+      isNewDraft,
       weekLabel,
     },
     util: {
+      close,
+      onDraft,
       onDragEnd,
+      onDragStart,
+      onMigrate,
       onSectionClick,
+      onSubmit,
+      setDraft,
+      setIsDrafting,
     },
   };
 

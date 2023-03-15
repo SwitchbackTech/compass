@@ -53,5 +53,4 @@ export const DragLayer: FC<Props> = memo(function DragLayer({
       </div>
     </div>
   );
-  // };
 });

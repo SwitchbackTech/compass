@@ -17,6 +17,7 @@ import {
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
   onClose: _onClose,
+  onConvert,
   onSubmit,
   setEvent,
   ...props

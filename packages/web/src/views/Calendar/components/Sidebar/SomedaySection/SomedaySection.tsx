@@ -8,7 +8,6 @@ import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { Range_Week } from "@web/common/types/util.types";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
-import { DraggableSomedayEvent } from "../EventsList/SomedayEvent/DraggableSomedayEvent";
 import { StyledList } from "../EventsList/styled";
 import { WeekEventsColumn } from "./WeekEventsColumn";
 import { useSomedayEvents } from "./hooks/useSomedayEvents";
@@ -22,19 +21,17 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
   const somedayRef = useRef();
 
   const { state, util } = useSomedayEvents(weekRange);
-  const { isProcessing, weekLabel, somedayEvents } = state;
 
   return (
-    //++ <Styled flex={flex} onClick={onSectionClick} ref={somedayRef}>
-    <Styled flex={flex} ref={somedayRef}>
-      {isProcessing && <AbsoluteOverflowLoader />}
+    <Styled flex={flex} onClick={util.onSectionClick} ref={somedayRef}>
+      {state.isProcessing && <AbsoluteOverflowLoader />}
 
       <StyledHeader
         alignItems={AlignItems.CENTER}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
         <Text colorName={ColorNames.WHITE_1} role="heading" size={22}>
-          {weekLabel}
+          {state.weekLabel}
         </Text>
 
         <div onClick={(e) => e.stopPropagation()}>
@@ -50,35 +47,28 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
         </div>
       </StyledHeader>
 
-      <DragDropContext onDragEnd={util.onDragEnd}>
+      <DragDropContext
+        onDragEnd={util.onDragEnd}
+        onDragStart={util.onDragStart}
+      >
         <StyledList>
-          {somedayEvents.columnOrder.map((columnId) => {
-            const column = somedayEvents.columns[columnId];
+          {state.somedayEvents.columnOrder.map((columnId) => {
+            const column = state.somedayEvents.columns[columnId];
             const weekEvents = column.eventIds.map(
-              (eventId) => somedayEvents.events[eventId]
+              (eventId) => state.somedayEvents.events[eventId]
             );
 
             return (
               <WeekEventsColumn
                 column={column}
+                draft={state.draft}
                 events={weekEvents}
+                isDrafting={state.isDrafting}
                 key={columnId}
+                util={util}
               />
             );
           })}
-          {/* {isNewDraft && (
-            <DraggableSomedayEvent
-              event={draft}
-              id={"somedayDraft"}
-              isDrafting={isNewDraft && isDraftingRedux}
-              key={"somedayKey"}
-              onClose={close}
-              onDraft={onDraft}
-              onMigrate={onMigrate}
-              onSubmit={onSubmit}
-              setEvent={setDraft}
-            />
-          )} */}
         </StyledList>
       </DragDropContext>
     </Styled>

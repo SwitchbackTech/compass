@@ -12,12 +12,14 @@ interface Props {
   onMigrate: (event: Schema_Event, location: "forward" | "back") => void;
 }
 
-export const SomedayEventRow = ({ event, onMigrate }: Props) => {
+export const SomedayEventRectangle = ({ event, onMigrate }: Props) => {
   return (
     <Flex
       alignItems={AlignItems.FLEX_START}
       direction={FlexDirections.ROW}
       justifyContent={JustifyContent.SPACE_BETWEEN}
+      onClick={() => console.log("in SER")}
+      onMouseUp={() => console.log("in SER mouseup")}
     >
       <Text size={15}>{event.title}</Text>
       <StyledMigrateArrow
