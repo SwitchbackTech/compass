@@ -1,26 +1,23 @@
 import React, { FC, useRef } from "react";
-import { DragDropContext } from "@hello-pangea/dnd";
 import { ColorNames } from "@core/types/color.types";
 import { Text } from "@web/components/Text";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { Range_Week } from "@web/common/types/util.types";
+import { ID_SOMEDAY_EVENTS } from "@web/common/constants/web.constants";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
-import { StyledList } from "../EventsList/styled";
-import { WeekEventsColumn } from "./WeekEventsColumn";
-import { useSomedayEvents } from "./hooks/useSomedayEvents";
+import { SomedayEventsProps } from "./hooks/useSomedayEvents";
 
 interface Props {
   flex?: number;
-  weekRange: Range_Week;
+  somedayProps: SomedayEventsProps;
 }
 
-export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
-  const somedayRef = useRef();
+export const SomedaySection: FC<Props> = ({ flex, somedayProps }) => {
+  const { state, util } = somedayProps;
 
-  const { state, util } = useSomedayEvents(weekRange);
+  const somedayRef = useRef();
 
   return (
     <Styled flex={flex} onClick={util.onSectionClick} ref={somedayRef}>
@@ -47,30 +44,7 @@ export const SomedaySection: FC<Props> = ({ flex, weekRange }) => {
         </div>
       </StyledHeader>
 
-      <DragDropContext
-        onDragEnd={util.onDragEnd}
-        onDragStart={util.onDragStart}
-      >
-        <StyledList>
-          {state.somedayEvents.columnOrder.map((columnId) => {
-            const column = state.somedayEvents.columns[columnId];
-            const weekEvents = column.eventIds.map(
-              (eventId) => state.somedayEvents.events[eventId]
-            );
-
-            return (
-              <WeekEventsColumn
-                column={column}
-                draft={state.draft}
-                events={weekEvents}
-                isDrafting={state.isDrafting}
-                key={columnId}
-                util={util}
-              />
-            );
-          })}
-        </StyledList>
-      </DragDropContext>
+      <div id={ID_SOMEDAY_EVENTS}></div>
     </Styled>
   );
 };

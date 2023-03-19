@@ -1,24 +1,27 @@
 import React, { FC, useEffect } from "react";
-import { Draggable } from "@hello-pangea/dnd";
-import { useDrag } from "react-dnd";
-import { getEmptyImage } from "react-dnd-html5-backend";
 import { Schema_Event } from "@core/types/event.types";
 import { Category_DragItem } from "@web/common/types/dnd.types";
-import { ID_NEW_DRAFT } from "@web/common/constants/web.constants";
+import { useDrag } from "react-dnd";
+import { getEmptyImage } from "react-dnd-html5-backend";
+import { Draggable } from "@hello-pangea/dnd";
 
-import { SomedayEvent } from "../SomedayEvent";
 import { SomedayEventsProps } from "../../../SomedaySection/hooks/useSomedayEvents";
+import { SomedayEventRectangle } from "../SomedayEventRectangle";
+import { NewStyledSomedayEvent } from "../newStyled";
+import { NewSomedayEvent } from "../NewSomedayEvent";
 
 export interface Props {
   draftId: string;
   event: Schema_Event;
   index: number;
+  isOverGrid: boolean;
   util: SomedayEventsProps["util"];
 }
 
-export const DraggableSomedayEvent: FC<Props> = ({
+export const NewDraggableSomedayEvent: FC<Props> = ({
   draftId,
   event,
+  isOverGrid,
   index,
   util,
 }) => {
@@ -44,37 +47,39 @@ export const DraggableSomedayEvent: FC<Props> = ({
   );
 
   useEffect(() => {
-    // preview(getEmptyImage(), { captureDraggingState: true });
-    preview(getEmptyImage());
+    preview(getEmptyImage(), { captureDraggingState: true });
   }, [preview]);
 
+  // if (isOverGrid) {
+  //   console.log("returning null");
+  //   return null;
+  // }
+
   return (
-    <div
-      onClick={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-      }}
-      ref={drag}
-    >
+    <div ref={drag}>
       <Draggable
-        draggableId={event._id || draftId}
+        // draggableId={event._id || draftId}
+        draggableId={event._id}
         index={index}
+        isDragDisabled={isOverGrid}
         key={event._id}
       >
         {(provided, snapshot) => {
           return (
-            <SomedayEvent
-              // isDragging={snapshot.isDragging || isDragging}
-              isDragging={isDragging}
-              event={event}
-              isDrafting={draftId === ID_NEW_DRAFT || draftId === event._id}
-              onClose={util.close}
-              onDraft={util.onDraft}
-              onMigrate={util.onMigrate}
-              onSubmit={util.onSubmit}
-              provided={provided}
-              setEvent={util.setDraft}
-            />
+            <>
+              <NewSomedayEvent
+                event={event}
+                isDragging={isDragging || snapshot.isDragging}
+                isDrafting={false}
+                isOverGrid={isOverGrid}
+                onClose={util.close}
+                onDraft={util.onDraft}
+                onMigrate={util.onMigrate}
+                onSubmit={util.onSubmit}
+                provided={provided}
+                setEvent={util.setDraft}
+              />
+            </>
           );
         }}
       </Draggable>

@@ -9,6 +9,7 @@ export const ID_GRID_MAIN = "mainGrid";
 export const ID_MAIN = "mainSection";
 export const ID_NEW_DRAFT = "newDraft";
 export const ID_SIDEBAR = "sidebar";
+export const ID_SOMEDAY_EVENTS = "ID_SOMEDAY_EVENTS";
 export const ID_SIDEBAR_FORM = "sidebarForm";
 
 export enum ZIndex {

@@ -26,7 +26,6 @@ export interface Props {
   event: Schema_Event;
   isDrafting: boolean;
   isDragging: boolean;
-  isSorting: boolean;
   onClose: () => void;
   onDraft: (event: Schema_Event) => void;
   onMigrate: (event: Schema_Event, location: "forward" | "back") => void;
@@ -39,8 +38,7 @@ export interface Props {
 export const SomedayEvent = ({
   event,
   isDrafting,
-  // isDragging,
-  isSorting,
+  isDragging,
   onClose,
   onDraft,
   onMigrate,
@@ -55,7 +53,7 @@ export const SomedayEvent = ({
 
   const [isFocused, setIsFocused] = useState(false);
 
-  const [{ isDragging }, drag, preview] = useDrag(
+  const [{ isDragging: isDraggingv2 }, drag, preview] = useDrag(
     () => ({
       type: Category_DragItem.EVENT_SOMEDAY,
       // only includes props that a user could change
@@ -76,26 +74,20 @@ export const SomedayEvent = ({
     [event._id, event.description, event.priority, event.order, event.title]
   );
 
-  console.log(isSorting, isDragging);
   useEffect(() => {
     // preview(getEmptyImage(), { captureDraggingState: true });
     preview(getEmptyImage());
   }, [preview]);
 
-  if (isDragging && isSorting) {
-    alert("hm");
-  }
-  // console.log(!isDragging, isSorting);
-
   return (
     <>
-      <div ref={drag}>
+      {/* <div ref={drag}> */}
+      <div>
         <StyledSomedayEvent
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           isDragging={isDragging}
           isDrafting={isDrafting}
-          isSorting={isSorting}
           isFocused={isFocused}
           onBlur={() => setIsFocused(false)}
           onClick={(e: MouseEvent) => {

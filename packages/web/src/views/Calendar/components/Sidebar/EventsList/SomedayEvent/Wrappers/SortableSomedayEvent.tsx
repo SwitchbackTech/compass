@@ -13,9 +13,9 @@ interface Props {
 }
 
 export const SortableSomedayEvent: FC<Props> = ({
-  index,
   draftId,
   event,
+  index,
   util,
 }) => {
   return (
@@ -23,8 +23,8 @@ export const SortableSomedayEvent: FC<Props> = ({
       {(provided, snapshot) => {
         return (
           <SomedayEvent
-            // {...provided.dragHandleProps}
-            // {...provided.dragHandleProps}
+            {...provided.dragHandleProps}
+            {...provided.dragHandleProps}
             isDragging={snapshot.isDragging}
             event={event}
             isDrafting={draftId === event._id}

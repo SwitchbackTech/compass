@@ -17,9 +17,11 @@ import {
 } from "./styled";
 import { SomedaySection } from "./SomedaySection";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
+import { SomedayEventsProps } from "./SomedaySection/hooks/useSomedayEvents";
 
 interface Props {
   prefs: Preferences;
+  somedayProps: SomedayEventsProps;
   weekProps: WeekProps;
 }
 
@@ -55,7 +57,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         direction={FlexDirections.COLUMN}
         height={`calc(100% - ${SIDEBAR_MONTH_HEIGHT + 2}px)`}
       >
-        <SomedaySection flex={1} weekRange={{ weekStart, weekEnd }} />
+        <SomedaySection flex={1} somedayProps={props.somedayProps} />
       </StyledTopSectionFlex>
       <Divider
         color={getAlphaColor(ColorNames.WHITE_4, 0.5)}

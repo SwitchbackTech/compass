@@ -18,8 +18,10 @@ export const SomedayEventRectangle = ({ event, onMigrate }: Props) => {
       alignItems={AlignItems.FLEX_START}
       direction={FlexDirections.ROW}
       justifyContent={JustifyContent.SPACE_BETWEEN}
-      onClick={() => console.log("in SER")}
-      onMouseUp={() => console.log("in SER mouseup")}
+      onClick={(e) => {
+        e.stopPropagation();
+        console.log("stopped prop [SER]");
+      }}
     >
       <Text size={15}>{event.title}</Text>
       <StyledMigrateArrow

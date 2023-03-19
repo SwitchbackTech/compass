@@ -26,13 +26,18 @@ import {
 } from "@web/ducks/events/event.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Range_Week } from "@web/common/types/util.types";
+import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 
+import { useMousePosition } from "./useMousePosition";
 import {
   Schema_SomedayEventsColumn,
   hardSomedayEvents,
-} from "../tempHardSomedayData";
+} from "../tempData/tempHardSomedayData";
 
-export const useSomedayEvents = (weekRange: Range_Week) => {
+export const useSomedayEvents = (
+  measurements: Measurements_Grid,
+  weekRange: Range_Week
+) => {
   const dispatch = useAppDispatch();
 
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
@@ -47,6 +52,10 @@ export const useSomedayEvents = (weekRange: Range_Week) => {
   const [isDrafting, setIsDrafting] = useState(false);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
 
+  const { isOverGrid, mouseCoords } = useMousePosition(
+    isDrafting,
+    measurements
+  );
   /*
   const [somedayEvents, setSomedayEvents] = useState(_somedayEvents);
   useEffect(() => {
@@ -142,6 +151,8 @@ export const useSomedayEvents = (weekRange: Range_Week) => {
   }, [handleSomedayShortcut]);
 
   const onDragEnd = (result: DropResult) => {
+    setIsDrafting(false);
+
     const { destination, source, draggableId } = result;
 
     if (!destination) return;
@@ -171,11 +182,9 @@ export const useSomedayEvents = (weekRange: Range_Week) => {
     };
 
     setSomedayEvents(newState);
-    setIsDrafting(false);
   };
 
   const onDragStart = () => {
-    console.log("starting ...");
     setIsDrafting(true);
   };
 
@@ -271,7 +280,9 @@ export const useSomedayEvents = (weekRange: Range_Week) => {
       isProcessing,
       somedayEvents,
       isDrafting: isDraftingRedux && isNewDraft,
+      isOverGrid,
       isNewDraft,
+      mouseCoords,
       weekLabel,
     },
     util: {

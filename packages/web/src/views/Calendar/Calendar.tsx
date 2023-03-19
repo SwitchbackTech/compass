@@ -20,6 +20,7 @@ import { useDateCalcs } from "./hooks/grid/useDateCalcs";
 import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
 import { Sidebar } from "./components/Sidebar";
 import { Draft } from "./components/Event/Draft";
+import { useSomedayEvents } from "./components/Sidebar/SomedaySection/hooks/useSomedayEvents";
 
 export const Calendar = () => {
   const sessionContext = Session.useSessionContext();
@@ -44,9 +45,14 @@ export const CalendarView = () => {
 
   const { gridRefs, measurements } = useGridLayout(weekProps.component.week);
 
-  const dateCalcs = useDateCalcs(measurements, gridRefs.gridScrollRef);
-
   const scrollUtil = useScroll(gridRefs.gridScrollRef);
+
+  const somedayProps = useSomedayEvents(measurements, {
+    weekStart: weekProps.component.startOfView,
+    weekEnd: weekProps.component.endOfView,
+  });
+
+  const dateCalcs = useDateCalcs(measurements, gridRefs.gridScrollRef);
 
   useShortcuts(
     today,
@@ -67,6 +73,7 @@ export const CalendarView = () => {
       <DragLayer
         dateCalcs={dateCalcs}
         measurements={measurements}
+        somedayProps={somedayProps}
         viewStart={weekProps.component.startOfView}
       />
 
@@ -77,7 +84,11 @@ export const CalendarView = () => {
         weekProps={weekProps}
       />
 
-      <Sidebar prefs={prefs} weekProps={weekProps} />
+      <Sidebar
+        prefs={prefs}
+        somedayProps={somedayProps}
+        weekProps={weekProps}
+      />
 
       <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
         <Header
