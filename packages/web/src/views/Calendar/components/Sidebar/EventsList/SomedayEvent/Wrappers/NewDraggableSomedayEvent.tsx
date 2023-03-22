@@ -4,10 +4,8 @@ import { Category_DragItem } from "@web/common/types/dnd.types";
 import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 import { Draggable } from "@hello-pangea/dnd";
+import { SomedayEventsProps } from "@web/views/Calendar/components/Sidebar/SomedaySection/hooks/useSomedayEvents";
 
-import { SomedayEventsProps } from "../../../SomedaySection/hooks/useSomedayEvents";
-import { SomedayEventRectangle } from "../SomedayEventRectangle";
-import { NewStyledSomedayEvent } from "../newStyled";
 import { NewSomedayEvent } from "../NewSomedayEvent";
 
 export interface Props {
@@ -19,7 +17,6 @@ export interface Props {
 }
 
 export const NewDraggableSomedayEvent: FC<Props> = ({
-  draftId,
   event,
   isOverGrid,
   index,
@@ -50,15 +47,9 @@ export const NewDraggableSomedayEvent: FC<Props> = ({
     preview(getEmptyImage(), { captureDraggingState: true });
   }, [preview]);
 
-  // if (isOverGrid) {
-  //   console.log("returning null");
-  //   return null;
-  // }
-
   return (
     <div ref={drag}>
       <Draggable
-        // draggableId={event._id || draftId}
         draggableId={event._id}
         index={index}
         isDragDisabled={isOverGrid}

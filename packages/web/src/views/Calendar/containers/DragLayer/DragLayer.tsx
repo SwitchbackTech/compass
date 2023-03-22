@@ -1,15 +1,14 @@
 import React, { FC, memo, useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { getElemById } from "@web/common/utils/grid.util";
-import { createPortal } from "react-dom";
 import { ID_SOMEDAY_EVENTS } from "@web/common/constants/web.constants";
-
-import { WeekProps } from "../../hooks/useWeek";
-import { SomedayEventsProps } from "../../components/Sidebar/SomedaySection/hooks/useSomedayEvents";
-import { StyledList } from "../../components/Sidebar/EventsList/styled";
-import { WeekEventsColumn } from "../../components/Sidebar/SomedaySection/WeekColumn/WeekEventsColumn";
+import { SomedayEventsProps } from "@web/views/Calendar/components/Sidebar/SomedaySection/hooks/useSomedayEvents";
+import { StyledList } from "@web/views/Calendar/components/Sidebar/EventsList/styled";
+import { WeekEventsColumn } from "@web/views/Calendar/components/Sidebar/SomedaySection/WeekColumn/WeekEventsColumn";
 
 export interface Props {
   dateCalcs: DateCalcs;
@@ -34,7 +33,6 @@ export const DragLayer: FC<Props> = memo(function DragLayer({
 
   const getDraft = useCallback(
     (draftId: string) => {
-      // console.log(draftId, state.somedayEvents.events[draftId]);
       return state.somedayEvents.events[draftId];
     },
     [state.somedayEvents.events]

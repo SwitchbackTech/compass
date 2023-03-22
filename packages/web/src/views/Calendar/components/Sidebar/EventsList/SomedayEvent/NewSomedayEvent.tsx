@@ -1,13 +1,7 @@
 import React, { Dispatch, SetStateAction } from "react";
-import { DroppableProvided, DraggableProvided } from "@hello-pangea/dnd";
-import { FloatingPortal } from "@floating-ui/react";
-import { useFloating } from "@floating-ui/react";
+import { DraggableProvided } from "@hello-pangea/dnd";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
-import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
-import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { Category_DragItem } from "@web/common/types/dnd.types";
 
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
 import { NewStyledSomedayEvent } from "./newStyled";

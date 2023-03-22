@@ -7,7 +7,6 @@ import {
 } from "@core/util/color.utils";
 import { colorNameByPriority } from "@core/constants/colors";
 import { InvertedColorNames } from "@core/types/color.types";
-import { DroppableProps } from "@hello-pangea/dnd";
 
 // export interface Props extends DroppableProps {
 export interface Props {

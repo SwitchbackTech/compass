@@ -11,7 +11,6 @@ import {
   SIDEBAR_OPEN_WIDTH,
   GRID_X_START,
 } from "@web/views/Calendar/layout.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 import { NewDraggableSomedayEvent } from "../../EventsList/SomedayEvent/Wrappers/NewDraggableSomedayEvent";
 import { SomedayEventsProps } from "../hooks/useSomedayEvents";
@@ -20,7 +19,6 @@ import { WeekColProps } from "./weekColumn.types";
 export const WeekEvents: FC<{
   events: WeekColProps["events"];
   dateCalcs: DateCalcs;
-  draft: Schema_GridEvent;
   draftId: string;
   isOverGrid: boolean;
   measurements: Measurements_Grid;
@@ -30,7 +28,6 @@ export const WeekEvents: FC<{
 }> = memo(
   ({
     dateCalcs,
-    draft,
     draftId,
     events,
     isOverGrid,
