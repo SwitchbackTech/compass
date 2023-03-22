@@ -1,4 +1,4 @@
-import React, { FC, memo, useCallback, useEffect, useState } from "react";
+import React, { FC, memo, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
@@ -31,15 +31,7 @@ export const DragLayer: FC<Props> = memo(function DragLayer({
 
   const { state, util } = somedayProps;
 
-  const getDraft = useCallback(
-    (draftId: string) => {
-      return state.somedayEvents.events[draftId];
-    },
-    [state.somedayEvents.events]
-  );
-
   if (isLoadingDOM) return null;
-
   return createPortal(
     <DragDropContext onDragEnd={util.onDragEnd} onDragStart={util.onDragStart}>
       <StyledList>
@@ -50,13 +42,12 @@ export const DragLayer: FC<Props> = memo(function DragLayer({
           );
 
           return (
-            <div id="weekCol" key={`${columnId}-wrapper`}>
+            <div key={`${columnId}-wrapper`}>
               <WeekEventsColumn
                 column={column}
                 dateCalcs={dateCalcs}
                 draft={state.draft}
                 events={weekEvents}
-                getDraft={getDraft}
                 isOverGrid={state.isOverGrid}
                 key={columnId}
                 measurements={measurements}

@@ -9,7 +9,6 @@ import { SomedayEventsProps } from "@web/views/Calendar/components/Sidebar/Somed
 import { NewSomedayEvent } from "../NewSomedayEvent";
 
 export interface Props {
-  draftId: string;
   event: Schema_Event;
   index: number;
   isOverGrid: boolean;

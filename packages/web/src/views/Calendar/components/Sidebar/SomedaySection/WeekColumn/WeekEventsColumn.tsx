@@ -9,7 +9,6 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
   dateCalcs,
   draft,
   events,
-  getDraft,
   isOverGrid,
   measurements,
   mouseCoords,
@@ -19,14 +18,13 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
   return (
     <>
       <Droppable droppableId={column.id}>
-        {(provided, snapshot) => {
+        {(provided) => {
           return (
             <>
               <div ref={provided.innerRef} {...provided.droppableProps}>
                 <WeekEvents
                   dateCalcs={dateCalcs}
                   draftId={draft?._id}
-                  draft={getDraft(snapshot.draggingOverWith)}
                   events={events}
                   isOverGrid={isOverGrid}
                   measurements={measurements}

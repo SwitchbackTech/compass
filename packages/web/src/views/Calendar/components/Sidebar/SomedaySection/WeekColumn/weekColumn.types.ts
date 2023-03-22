@@ -13,8 +13,6 @@ export interface WeekColProps {
   dateCalcs: DateCalcs;
   draft: Schema_Event;
   events: Schema_Event[];
-  // events: Schema_SomedayEventsColumn["events"]; //++
-  getDraft: (draftId: string) => Schema_Event;
   isOverGrid: boolean;
   measurements: Measurements_Grid;
   mouseCoords: { x: number; y: number };
