@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React, { Dispatch, SetStateAction, useState } from "react";
 import { DraggableProvided } from "@hello-pangea/dnd";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -35,6 +35,7 @@ export const NewSomedayEvent = ({
   //   strategy: "absolute",
   //   placement: "right-start",
   // });
+  const [isFocused, setIsFocused] = useState(false);
 
   return (
     <NewStyledSomedayEvent
@@ -43,8 +44,10 @@ export const NewSomedayEvent = ({
       isDragging={isDragging}
       isDrafting={isDrafting}
       isOverGrid={isOverGrid}
-      isFocused={false}
+      isFocused={isFocused}
       onClick={() => console.log("clicked")}
+      onBlur={() => setIsFocused(false)}
+      onFocus={() => setIsFocused(true)}
       priority={event.priority}
       role="button"
       ref={provided.innerRef}

@@ -2,8 +2,13 @@ import styled from "styled-components";
 import type { XYCoord } from "react-dnd";
 import type { CSSProperties } from "react";
 import { Priority } from "@core/constants/core.constants";
-import { hoverColorsByPriority } from "@core/util/color.utils";
+import {
+  getInvertedColor,
+  hoverColorsByPriority,
+} from "@core/util/color.utils";
 import { ZIndex } from "@web/common/constants/web.constants";
+import { colorNameByPriority } from "@core/constants/colors";
+import { InvertedColorNames } from "@core/types/color.types";
 
 import { snapToGrid } from "./snap.grid";
 
@@ -56,6 +61,9 @@ export const StyledDraggableEvent = styled.div.attrs<StyledEventProps>(
   (props) => {
     return {
       backgroundColor: hoverColorsByPriority[props.priority],
+      color: getInvertedColor(
+        colorNameByPriority[props.priority] as unknown as InvertedColorNames
+      ),
       height: props.height,
       hoverColor: hoverColorsByPriority[props.priority],
       isOverGrid: props.isOverGrid,
@@ -64,6 +72,7 @@ export const StyledDraggableEvent = styled.div.attrs<StyledEventProps>(
   }
 )<StyledEventProps>`
   background-color: ${(props) => props.backgroundColor};
+  color: ${(props) => props.color};
   border-radius: 3px;
   box-shadow: 0 0 0 0 transparent;
   height: ${({ height }) => height}px;

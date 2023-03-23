@@ -23,7 +23,6 @@ export interface Props {
   measurements: Measurements_Grid;
   mouseCoords: { x: number; y: number };
   startOfView: WeekProps["component"]["startOfView"];
-  // util: SomedayEventsProps["util"];
 }
 
 export const NewDraggableEvent: FC<Props> = memo(function DraggableEvent({
@@ -38,8 +37,6 @@ export const NewDraggableEvent: FC<Props> = memo(function DraggableEvent({
   startOfView,
 }) {
   const { colWidths } = measurements;
-
-  // return <h1>hamnu</h1>;
 
   /* Helpers */
   const _getHeight = () => {

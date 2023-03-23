@@ -20,11 +20,11 @@ export interface Props {
 export const SOMEDAY_EVENT_HEIGHT = 32;
 
 export const NewStyledSomedayEvent = styled.div<Props>`
-  background: ${({ isDrafting, isDragging, priority }) => {
+  background: ${({ isDrafting, isDragging, isFocused, priority }) => {
     if (isDrafting) {
       return hoverColorsByPriority[priority];
     }
-    if (isDragging) return "lightgreen";
+    if (isDragging && isFocused) return "lightgreen";
 
     return getColor(colorNameByPriority[priority]);
   }};
