@@ -52,6 +52,11 @@ export const useSomedayEvents = (
   const [isDrafting, setIsDrafting] = useState(false);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
 
+  //++ try to combine into the regular drafts after basics working
+  const [draggingDraft, setDraggingDraft] = useState<Schema_GridEvent | null>(
+    null
+  );
+
   const { isOverGrid, mouseCoords } = useMousePosition(
     isDrafting,
     measurements
@@ -152,6 +157,7 @@ export const useSomedayEvents = (
 
   const onDragEnd = (result: DropResult) => {
     setIsDrafting(false);
+    setDraggingDraft(null);
 
     const { destination, source, draggableId } = result;
 
@@ -184,7 +190,8 @@ export const useSomedayEvents = (
     setSomedayEvents(newState);
   };
 
-  const onDragStart = () => {
+  const onDragStart = (props: { draggableId: string }) => {
+    setDraggingDraft(somedayEvents.events[props.draggableId]);
     setIsDrafting(true);
   };
 
@@ -277,6 +284,7 @@ export const useSomedayEvents = (
   const somedayEventsProps = {
     state: {
       draft,
+      draggingDraft,
       isProcessing,
       somedayEvents,
       isDrafting: isDraftingRedux && isNewDraft,

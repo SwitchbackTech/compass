@@ -5,9 +5,9 @@ import { getEmptyImage } from "react-dnd-html5-backend";
 import { Schema_Event } from "@core/types/event.types";
 import { Category_DragItem } from "@web/common/types/dnd.types";
 import { ID_NEW_DRAFT } from "@web/common/constants/web.constants";
+import { SomedayEventsProps } from "@web/views/Calendar/components/Sidebar/SomedaySection/hooks/useSomedayEvents";
 
 import { SomedayEvent } from "../SomedayEvent";
-import { SomedayEventsProps } from "../../../SomedaySection/hooks/useSomedayEvents";
 
 export interface Props {
   draftId: string;
@@ -56,17 +56,14 @@ export const DraggableSomedayEvent: FC<Props> = ({
       }}
       ref={drag}
     >
-      <Draggable
-        draggableId={event._id || draftId}
-        index={index}
-        key={event._id}
-      >
+      <Draggable draggableId={event._id} index={index} key={event._id}>
         {(provided, snapshot) => {
           return (
             <SomedayEvent
               // isDragging={snapshot.isDragging || isDragging}
               isDragging={isDragging}
               event={event}
+              //++this this is cuz of the form -- remove if not needed
               isDrafting={draftId === ID_NEW_DRAFT || draftId === event._id}
               onClose={util.close}
               onDraft={util.onDraft}
