@@ -1,7 +1,6 @@
 import {
   autoUpdate,
   flip,
-  FloatingPortal,
   offset,
   shift,
   useFloating,
@@ -48,3 +47,5 @@ export const useEventForm = (event: "grid" | "sidebar") => {
     strategy,
   };
 };
+
+export type EventFormProps = ReturnType<typeof useEventForm>;

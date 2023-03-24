@@ -24,3 +24,5 @@ export const useGridDraft = (
     draftUtil,
   };
 };
+
+export type GridDraftProps = ReturnType<typeof useGridDraft>;
