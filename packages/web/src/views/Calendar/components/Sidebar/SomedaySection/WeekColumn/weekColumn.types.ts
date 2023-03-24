@@ -3,7 +3,7 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
-import { SomedayEventsProps } from "../hooks/useSomedayEvents";
+import { SomedayEventsProps } from "../../../../hooks/draft/useSidebarDraft";
 
 export interface WeekColProps {
   column: {

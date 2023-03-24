@@ -14,7 +14,7 @@ import {
 import { Schema_Event } from "@core/types/event.types";
 
 import { NewDraggableSomedayEvent } from "../../EventsList/SomedayEvent/Wrappers/NewDraggableSomedayEvent";
-import { SomedayEventsProps } from "../hooks/useSomedayEvents";
+import { SomedayEventsProps } from "../../../../hooks/draft/useSidebarDraft";
 import { WeekColProps } from "./weekColumn.types";
 
 export const WeekEvents: FC<{

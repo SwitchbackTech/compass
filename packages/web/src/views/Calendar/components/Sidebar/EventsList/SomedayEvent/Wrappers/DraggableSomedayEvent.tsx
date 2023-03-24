@@ -5,7 +5,7 @@ import { getEmptyImage } from "react-dnd-html5-backend";
 import { Schema_Event } from "@core/types/event.types";
 import { Category_DragItem } from "@web/common/types/dnd.types";
 import { ID_NEW_DRAFT } from "@web/common/constants/web.constants";
-import { SomedayEventsProps } from "@web/views/Calendar/components/Sidebar/SomedaySection/hooks/useSomedayEvents";
+import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/useSidebarDraft";
 
 import { SomedayEvent } from "../SomedayEvent";
 

@@ -32,7 +32,7 @@ import { useMousePosition } from "./useMousePosition";
 import {
   Schema_SomedayEventsColumn,
   hardSomedayEvents,
-} from "../tempData/tempHardSomedayData";
+} from "../../components/Sidebar/SomedaySection/tempData/tempHardSomedayData";
 
 export const useSomedayEvents = (
   measurements: Measurements_Grid,
@@ -52,7 +52,6 @@ export const useSomedayEvents = (
   const [isDrafting, setIsDrafting] = useState(false);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
 
-  //++ try to combine into the regular drafts after basics working
   const [draggingDraft, setDraggingDraft] = useState<Schema_GridEvent | null>(
     null
   );

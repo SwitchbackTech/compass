@@ -3,7 +3,7 @@ import { Draggable } from "@hello-pangea/dnd";
 import { Schema_Event } from "@core/types/event.types";
 
 import { SomedayEvent } from "..";
-import { SomedayEventsProps } from "../../../SomedaySection/hooks/useSomedayEvents";
+import { SomedayEventsProps } from "../../../../../hooks/draft/useSidebarDraft";
 
 interface Props {
   index: number;

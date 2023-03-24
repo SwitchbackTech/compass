@@ -10,7 +10,10 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
-import { SomedayEventsProps, useSomedayEvents } from "./hooks/useSomedayEvents";
+import {
+  SomedayEventsProps,
+  useSomedayEvents,
+} from "../../../hooks/draft/useSidebarDraft";
 import { StyledList } from "../EventsList/styled";
 import { WeekEventsColumn } from "./WeekColumn/WeekEventsColumn";
 
