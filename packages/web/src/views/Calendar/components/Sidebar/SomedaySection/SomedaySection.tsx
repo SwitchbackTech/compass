@@ -4,17 +4,35 @@ import { Text } from "@web/components/Text";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { ID_SOMEDAY_EVENTS } from "@web/common/constants/web.constants";
+import { DragDropContext } from "@hello-pangea/dnd";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
-import { SomedayEventsProps } from "./hooks/useSomedayEvents";
+import { SomedayEventsProps, useSomedayEvents } from "./hooks/useSomedayEvents";
+import { StyledList } from "../EventsList/styled";
+import { WeekEventsColumn } from "./WeekColumn/WeekEventsColumn";
 
 interface Props {
+  dateCalcs: DateCalcs;
   flex?: number;
-  somedayProps: SomedayEventsProps;
+  measurements: Measurements_Grid;
+  viewStart: WeekProps["component"]["startOfView"];
+  viewEnd: WeekProps["component"]["endOfView"];
 }
 
-export const SomedaySection: FC<Props> = ({ flex, somedayProps }) => {
+export const SomedaySection: FC<Props> = ({
+  dateCalcs,
+  flex,
+  measurements,
+  viewEnd,
+  viewStart,
+}) => {
+  const somedayProps = useSomedayEvents(measurements, {
+    weekStart: viewStart,
+    weekEnd: viewEnd,
+  });
   const { state, util } = somedayProps;
 
   const somedayRef = useRef();
@@ -44,7 +62,39 @@ export const SomedaySection: FC<Props> = ({ flex, somedayProps }) => {
         </div>
       </StyledHeader>
 
-      <div id={ID_SOMEDAY_EVENTS}></div>
+      <DragDropContext
+        onDragEnd={util.onDragEnd}
+        onDragStart={util.onDragStart}
+      >
+        <StyledList>
+          {state.somedayEvents.columnOrder.map((columnId) => {
+            const column = state.somedayEvents.columns[columnId];
+            const weekEvents = column.eventIds.map(
+              (eventId) => state.somedayEvents.events[eventId]
+            );
+
+            return (
+              <div key={`${columnId}-wrapper`}>
+                <WeekEventsColumn
+                  column={column}
+                  dateCalcs={dateCalcs}
+                  draftId={state.draft?._id}
+                  draggingDraft={state.draggingDraft}
+                  events={weekEvents}
+                  // isDrafting={state.isDrafting}
+                  isDrafting={state.isDraftingSomeday}
+                  isOverGrid={state.isOverGrid}
+                  key={columnId}
+                  measurements={measurements}
+                  mouseCoords={somedayProps.state.mouseCoords}
+                  util={util}
+                  viewStart={viewStart}
+                />
+              </div>
+            );
+          })}
+        </StyledList>
+      </DragDropContext>
     </Styled>
   );
 };

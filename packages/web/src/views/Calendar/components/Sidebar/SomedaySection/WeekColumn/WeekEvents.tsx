@@ -2,8 +2,8 @@ import React, { FC, memo } from "react";
 import {
   layerStyles,
   getItemStyles,
-} from "@web/views/Calendar/containers/DragLayer/styled";
-import { NewDraggableEvent } from "@web/views/Calendar/containers/DragLayer/NewDraggableEvent";
+} from "@web/views/Calendar/containers/Drag/styled";
+import { NewDraggableEvent } from "@web/views/Calendar/containers/Drag/NewDraggableEvent";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";

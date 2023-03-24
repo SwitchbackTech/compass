@@ -2,7 +2,6 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import Session from "supertokens-auth-react/recipe/session";
 import { FlexDirections } from "@web/components/Flex/styled";
-import { DragLayer } from "@web/views/Calendar/containers/DragLayer";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -20,7 +19,6 @@ import { useDateCalcs } from "./hooks/grid/useDateCalcs";
 import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
 import { Sidebar } from "./components/Sidebar";
 import { Draft } from "./components/Event/Draft";
-import { useSomedayEvents } from "./components/Sidebar/SomedaySection/hooks/useSomedayEvents";
 
 export const Calendar = () => {
   const sessionContext = Session.useSessionContext();
@@ -47,11 +45,6 @@ export const CalendarView = () => {
 
   const scrollUtil = useScroll(gridRefs.gridScrollRef);
 
-  const somedayProps = useSomedayEvents(measurements, {
-    weekStart: weekProps.component.startOfView,
-    weekEnd: weekProps.component.endOfView,
-  });
-
   const dateCalcs = useDateCalcs(measurements, gridRefs.gridScrollRef);
 
   useShortcuts(
@@ -70,13 +63,6 @@ export const CalendarView = () => {
 
   return (
     <Styled id="cal">
-      <DragLayer
-        dateCalcs={dateCalcs}
-        measurements={measurements}
-        somedayProps={somedayProps}
-        viewStart={weekProps.component.startOfView}
-      />
-
       <Draft
         dateCalcs={dateCalcs}
         isSidebarOpen={prefs.isSidebarOpen}
@@ -85,8 +71,9 @@ export const CalendarView = () => {
       />
 
       <Sidebar
+        dateCalcs={dateCalcs}
         prefs={prefs}
-        somedayProps={somedayProps}
+        measurements={measurements}
         weekProps={weekProps}
       />
 

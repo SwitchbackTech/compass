@@ -7,6 +7,8 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Preferences } from "@web/views/Calendar/hooks/usePreferences";
 import { SIDEBAR_MONTH_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 
 import {
   Styled,
@@ -17,11 +19,11 @@ import {
 } from "./styled";
 import { SomedaySection } from "./SomedaySection";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
-import { SomedayEventsProps } from "./SomedaySection/hooks/useSomedayEvents";
 
 interface Props {
+  dateCalcs: DateCalcs;
   prefs: Preferences;
-  somedayProps: SomedayEventsProps;
+  measurements: Measurements_Grid;
   weekProps: WeekProps;
 }
 
@@ -57,7 +59,13 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         direction={FlexDirections.COLUMN}
         height={`calc(100% - ${SIDEBAR_MONTH_HEIGHT + 2}px)`}
       >
-        <SomedaySection flex={1} somedayProps={props.somedayProps} />
+        <SomedaySection
+          dateCalcs={props.dateCalcs}
+          flex={1}
+          measurements={props.measurements}
+          viewStart={weekStart}
+          viewEnd={weekEnd}
+        />
       </StyledTopSectionFlex>
       <Divider
         color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
