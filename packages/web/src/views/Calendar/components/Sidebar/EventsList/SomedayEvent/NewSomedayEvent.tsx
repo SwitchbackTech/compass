@@ -2,10 +2,11 @@ import React, { Dispatch, SetStateAction, useState } from "react";
 import { DraggableProvided } from "@hello-pangea/dnd";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { FloatingPortal, useFloating } from "@floating-ui/react";
+import { FloatingPortal } from "@floating-ui/react";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
+import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 
 import { NewStyledSomedayEvent } from "./newStyled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
@@ -35,10 +36,8 @@ export const NewSomedayEvent = ({
   provided,
   setEvent,
 }: Props) => {
-  const { y, reference, floating, strategy } = useFloating({
-    strategy: "absolute",
-    placement: "right-start",
-  });
+  const { y, reference, floating, strategy } = useEventForm("sidebar");
+
   const [isFocused, setIsFocused] = useState(false);
   isDrafting && console.log("drafting: ", event._id);
 

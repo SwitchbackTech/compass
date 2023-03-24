@@ -1,12 +1,7 @@
 import React, { FC, MouseEvent, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  autoUpdate,
-  useFloating,
-  flip,
-  offset,
-  shift,
-} from "@floating-ui/react";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { Categories_Event } from "@core/types/event.types";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useGridDraft } from "@web/views/Calendar/hooks/draft/useGridDraft";
 import { EventForm } from "@web/views/Forms/EventForm";
@@ -20,10 +15,9 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid.util";
 import { getCategory } from "@web/common/utils/event.util";
-import { Categories_Event } from "@core/types/event.types";
 import { selectDraftId } from "@web/ducks/events/event.selectors";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 
 import { GridEvent } from "../Grid";
 
@@ -65,28 +59,7 @@ export const Draft: FC<Props> = ({
     return getElemById(ID_GRID_EVENTS_TIMED);
   };
 
-  const { x, y, reference, floating, strategy } = useFloating({
-    strategy: "fixed",
-    middleware: [
-      flip({
-        fallbackPlacements: [
-          "right-start",
-          "right",
-          "left-start",
-          "left",
-          "top-start",
-          "bottom-start",
-          "top",
-          "bottom",
-        ],
-        fallbackStrategy: "bestFit",
-      }),
-      offset(7),
-      shift(),
-    ],
-    placement: "right-start",
-    whileElementsMounted: autoUpdate,
-  });
+  const { x, y, reference, floating, strategy } = useEventForm("grid");
 
   if (isLoadingDOM || !draft) return null;
 
