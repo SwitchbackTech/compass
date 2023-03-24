@@ -81,7 +81,6 @@ export const SomedaySection: FC<Props> = ({
                   draftId={state.draft?._id}
                   draggingDraft={state.draggingDraft}
                   events={weekEvents}
-                  // isDrafting={state.isDrafting}
                   isDrafting={state.isDraftingSomeday}
                   isOverGrid={state.isOverGrid}
                   key={columnId}

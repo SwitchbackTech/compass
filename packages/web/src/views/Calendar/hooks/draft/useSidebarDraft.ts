@@ -55,9 +55,10 @@ export const useSomedayEvents = (
   const [draggingDraft, setDraggingDraft] = useState<Schema_GridEvent | null>(
     null
   );
+  const isDragging = draggingDraft !== null;
 
   const { isOverGrid, mouseCoords } = useMousePosition(
-    isDrafting,
+    isDragging,
     measurements
   );
   /*

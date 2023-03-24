@@ -17,6 +17,7 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
   util,
   viewStart,
 }) => {
+  console.log("rendering weekEvents...");
   return (
     <>
       <Droppable droppableId={column.id}>

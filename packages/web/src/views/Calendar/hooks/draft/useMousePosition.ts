@@ -16,21 +16,21 @@ export const useMousePosition = (
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        const x = e.clientX;
-        const y = e.clientY;
+      const x = e.clientX;
+      const y = e.clientY;
 
-        const isPastSidebar = x > SIDEBAR_X_START;
-        const isOverAllDayRow =
-          isPastSidebar && y < allDayRow.bottom && y > allDayRow.top;
-        const isOverMainGrid =
-          isPastSidebar && !isOverAllDayRow && y > GRID_Y_START;
-        const isOverGrid = isOverAllDayRow || isOverMainGrid;
+      const isPastSidebar = x > SIDEBAR_X_START;
+      const isOverAllDayRow =
+        isPastSidebar && y < allDayRow.bottom && y > allDayRow.top;
+      const isOverMainGrid =
+        isPastSidebar && !isOverAllDayRow && y > GRID_Y_START;
+      const isOverGrid = isOverAllDayRow || isOverMainGrid;
 
-        setIsOverGrid(isOverGrid);
-        setMouseCoords({ x, y });
-      }
+      setIsOverGrid(isOverGrid);
+      setMouseCoords({ x, y });
     };
+
+    if (!isDragging) return;
 
     window.addEventListener("mousemove", handleMouseMove);
 

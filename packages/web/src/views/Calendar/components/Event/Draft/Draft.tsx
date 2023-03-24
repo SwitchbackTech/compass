@@ -43,7 +43,7 @@ export const Draft: FC<Props> = ({
 
   const formProps = useEventForm("grid");
 
-  if (isLoadingDOM || !draft) return null;
+  if (isLoadingDOM || !draft || !isDrafting) return null;
 
   const container = getDraftContainer(draft.isAllDay);
   const category = getCategory(draft);
@@ -52,7 +52,7 @@ export const Draft: FC<Props> = ({
 
   return createPortal(
     <>
-      {isDrafting && isGridEvent && (
+      {isGridEvent && (
         <GridDraft
           draft={draft}
           draftUtil={draftUtil}
