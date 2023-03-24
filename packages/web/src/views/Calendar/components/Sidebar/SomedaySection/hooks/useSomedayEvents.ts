@@ -81,23 +81,19 @@ export const useSomedayEvents = (
 
   const existingIds = somedayEvents.columns["column-1"].eventIds;
 
-  const isNewDraft =
-    isDrafting &&
-    isDraftingRedux &&
-    draftType === Categories_Event.SOMEDAY &&
-    !existingIds.includes(draft?._id);
-
   const _isAtLimit = useCallback(() => {
     return Array(somedayEvents.events).length >= SOMEDAY_WEEKLY_LIMIT;
   }, [somedayEvents]);
 
   const createDefaultSomeday = useCallback(() => {
     const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY);
+
     setDraft({
       ...somedayDefault,
       startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
       endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
     });
+
     setIsDrafting(true);
   }, [weekRange.weekEnd, weekRange.weekStart]);
 
@@ -196,6 +192,7 @@ export const useSomedayEvents = (
   };
 
   const onDraft = (event: Schema_Event) => {
+    setIsDrafting(true);
     setDraft({
       ...event,
       startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
@@ -255,8 +252,6 @@ export const useSomedayEvents = (
   };
 
   const onSectionClick = () => {
-    console.log("clicked sect");
-    console.log(isDrafting);
     if (isDraftingRedux) {
       dispatch(draftSlice.actions.discard());
       return;
@@ -287,9 +282,8 @@ export const useSomedayEvents = (
       draggingDraft,
       isProcessing,
       somedayEvents,
-      isDrafting: isDraftingRedux && isNewDraft,
+      isDraftingSomeday: isDrafting,
       isOverGrid,
-      isNewDraft,
       mouseCoords,
       weekLabel,
     },
@@ -310,3 +304,12 @@ export const useSomedayEvents = (
 };
 
 export type SomedayEventsProps = ReturnType<typeof useSomedayEvents>;
+
+//++
+
+// isDrafting: isDraftingRedux && isNewDraft,
+// const isNewDraft =
+//   isDrafting &&
+//   isDraftingRedux &&
+//   draftType === Categories_Event.SOMEDAY &&
+//   !existingIds.includes(draft?._id);

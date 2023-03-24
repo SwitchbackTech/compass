@@ -46,8 +46,11 @@ export const DragLayer: FC<Props> = memo(function DragLayer({
               <WeekEventsColumn
                 column={column}
                 dateCalcs={dateCalcs}
+                draftId={state.draft?._id}
                 draggingDraft={state.draggingDraft}
                 events={weekEvents}
+                // isDrafting={state.isDrafting}
+                isDrafting={state.isDraftingSomeday}
                 isOverGrid={state.isOverGrid}
                 key={columnId}
                 measurements={measurements}

@@ -1,13 +1,13 @@
 import React, { FC, memo } from "react";
 import { DAY_COMPACT, DAY_HOUR_MIN_M } from "@core/constants/date.constants";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { getWidthBuffer } from "@web/common/utils/grid.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEvent/styled";
 import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { getWidthBuffer } from "@web/common/utils/grid.util";
 
 import { StyledDraggableEvent } from "./styled";
 import { WeekProps } from "../../hooks/useWeek";

@@ -11,8 +11,10 @@ export interface WeekColProps {
     title: string;
   };
   dateCalcs: DateCalcs;
+  draftId: string;
   draggingDraft: Schema_Event;
   events: Schema_Event[];
+  isDrafting: boolean;
   isOverGrid: boolean;
   measurements: Measurements_Grid;
   mouseCoords: { x: number; y: number };

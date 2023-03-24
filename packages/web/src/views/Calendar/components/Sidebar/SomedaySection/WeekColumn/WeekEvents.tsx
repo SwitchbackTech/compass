@@ -20,7 +20,9 @@ import { WeekColProps } from "./weekColumn.types";
 export const WeekEvents: FC<{
   events: WeekColProps["events"];
   dateCalcs: DateCalcs;
+  draftId: string;
   draggingDraft: Schema_Event;
+  isDrafting: boolean;
   isOverGrid: boolean;
   measurements: Measurements_Grid;
   mouseCoords: { x: number; y: number };
@@ -29,8 +31,10 @@ export const WeekEvents: FC<{
 }> = memo(
   ({
     dateCalcs,
+    draftId,
     draggingDraft,
     events,
+    isDrafting,
     isOverGrid,
     measurements,
     mouseCoords,
@@ -65,6 +69,8 @@ export const WeekEvents: FC<{
           <NewDraggableSomedayEvent
             event={event}
             index={index}
+            isDrafting={isDrafting}
+            draftId={draftId}
             isOverGrid={isOverGrid}
             key={event._id}
             util={util}

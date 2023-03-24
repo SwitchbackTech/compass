@@ -7,8 +7,10 @@ import { WeekColProps } from "./weekColumn.types";
 export const WeekEventsColumn: FC<WeekColProps> = ({
   column,
   dateCalcs,
+  draftId,
   draggingDraft,
   events,
+  isDrafting,
   isOverGrid,
   measurements,
   mouseCoords,
@@ -24,8 +26,10 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
               <div ref={provided.innerRef} {...provided.droppableProps}>
                 <WeekEvents
                   dateCalcs={dateCalcs}
+                  draftId={draftId}
                   draggingDraft={draggingDraft}
                   events={events}
+                  isDrafting={isDrafting}
                   isOverGrid={isOverGrid}
                   measurements={measurements}
                   mouseCoords={mouseCoords}
