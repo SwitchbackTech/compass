@@ -53,9 +53,8 @@ export const NewDraggableSomedayEvent: FC<Props> = ({
   return (
     <div ref={drag}>
       <Draggable
-        draggableId={event._id}
+        draggableId={event._id || "draftSomedayEvent"}
         index={index}
-        // isDragDisabled={isOverGrid} //++
         key={event._id}
       >
         {(provided, snapshot) => {

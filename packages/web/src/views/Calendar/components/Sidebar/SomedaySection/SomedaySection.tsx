@@ -79,13 +79,13 @@ export const SomedaySection: FC<Props> = ({
                   column={column}
                   dateCalcs={dateCalcs}
                   draftId={state.draft?._id}
-                  draggingDraft={state.draggingDraft}
+                  draft={state.draft}
                   events={weekEvents}
                   isDrafting={state.isDraftingSomeday}
                   isOverGrid={state.isOverGrid}
                   key={columnId}
                   measurements={measurements}
-                  mouseCoords={somedayProps.state.mouseCoords}
+                  mouseCoords={state.mouseCoords}
                   util={util}
                   viewStart={viewStart}
                 />

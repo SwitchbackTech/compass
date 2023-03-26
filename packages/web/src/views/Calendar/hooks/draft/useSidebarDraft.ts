@@ -52,10 +52,7 @@ export const useSomedayEvents = (
   const [isDrafting, setIsDrafting] = useState(false);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
 
-  const [draggingDraft, setDraggingDraft] = useState<Schema_GridEvent | null>(
-    null
-  );
-  const isDragging = draggingDraft !== null;
+  const isDragging = draft !== null;
 
   const { isOverGrid, mouseCoords } = useMousePosition(
     isDragging,
@@ -151,9 +148,18 @@ export const useSomedayEvents = (
     handleSomedayShortcut();
   }, [handleSomedayShortcut]);
 
+  const onDraft = (event: Schema_Event) => {
+    setIsDrafting(true);
+    setDraft({
+      ...event,
+      startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+    });
+  };
+
   const onDragEnd = (result: DropResult) => {
     setIsDrafting(false);
-    setDraggingDraft(null);
+    setDraft(null);
 
     const { destination, source, draggableId } = result;
 
@@ -187,17 +193,8 @@ export const useSomedayEvents = (
   };
 
   const onDragStart = (props: { draggableId: string }) => {
-    setDraggingDraft(somedayEvents.events[props.draggableId]);
+    setDraft(somedayEvents.events[props.draggableId]);
     setIsDrafting(true);
-  };
-
-  const onDraft = (event: Schema_Event) => {
-    setIsDrafting(true);
-    setDraft({
-      ...event,
-      startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
-      endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
-    });
   };
 
   const onMigrate = (event: Schema_Event, location: "forward" | "back") => {
@@ -267,11 +264,12 @@ export const useSomedayEvents = (
       return;
     }
 
-    dispatch(
-      draftSlice.actions.start({
-        eventType: Categories_Event.SOMEDAY,
-      })
-    );
+    console.log("todo: start drafting in sidebar");
+    // dispatch(
+    //   draftSlice.actions.start({
+    //     eventType: Categories_Event.SOMEDAY,
+    //   })
+    // );
 
     createDefaultSomeday();
   };
@@ -279,10 +277,9 @@ export const useSomedayEvents = (
   const somedayEventsProps = {
     state: {
       draft,
-      draggingDraft,
       isProcessing,
       somedayEvents,
-      isDraftingSomeday: isDrafting,
+      isDraftingSomeday: isDrafting && draft !== null,
       isOverGrid,
       mouseCoords,
       weekLabel,

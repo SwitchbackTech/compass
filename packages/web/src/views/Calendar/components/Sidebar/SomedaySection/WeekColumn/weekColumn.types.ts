@@ -2,6 +2,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 import { SomedayEventsProps } from "../../../../hooks/draft/useSidebarDraft";
 
@@ -11,8 +12,8 @@ export interface WeekColProps {
     title: string;
   };
   dateCalcs: DateCalcs;
+  draft: Schema_GridEvent;
   draftId: string;
-  draggingDraft: Schema_Event;
   events: Schema_Event[];
   isDrafting: boolean;
   isOverGrid: boolean;

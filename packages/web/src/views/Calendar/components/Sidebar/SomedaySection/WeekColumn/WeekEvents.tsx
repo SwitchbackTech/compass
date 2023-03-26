@@ -21,7 +21,7 @@ export const WeekEvents: FC<{
   events: WeekColProps["events"];
   dateCalcs: DateCalcs;
   draftId: string;
-  draggingDraft: Schema_Event;
+  draft: Schema_Event;
   isDrafting: boolean;
   isOverGrid: boolean;
   measurements: Measurements_Grid;
@@ -32,7 +32,7 @@ export const WeekEvents: FC<{
   ({
     dateCalcs,
     draftId,
-    draggingDraft,
+    draft,
     events,
     isDrafting,
     isOverGrid,
@@ -53,7 +53,7 @@ export const WeekEvents: FC<{
               <NewDraggableEvent
                 dateCalcs={dateCalcs}
                 dayIndex={dayIndex}
-                event={draggingDraft}
+                event={draft}
                 isOverAllDayRow={false}
                 isOverGrid={true}
                 isOverMainGrid={true}
@@ -68,9 +68,9 @@ export const WeekEvents: FC<{
         {events.map((event, index: number) => (
           <NewDraggableSomedayEvent
             event={event}
+            draftId={draftId}
             index={index}
             isDrafting={isDrafting}
-            draftId={draftId}
             isOverGrid={isOverGrid}
             key={event._id}
             util={util}

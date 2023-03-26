@@ -39,7 +39,6 @@ export const NewSomedayEvent = ({
   const { y, reference, floating, strategy } = useEventForm("sidebar");
 
   const [isFocused, setIsFocused] = useState(false);
-  isDrafting && console.log("drafting: ", event._id);
 
   return (
     <>

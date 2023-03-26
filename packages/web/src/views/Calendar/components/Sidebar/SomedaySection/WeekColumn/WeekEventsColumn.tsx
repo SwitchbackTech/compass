@@ -3,12 +3,13 @@ import { Droppable } from "@hello-pangea/dnd";
 
 import { WeekEvents } from "./WeekEvents";
 import { WeekColProps } from "./weekColumn.types";
+import { NewDraggableSomedayEvent } from "../../EventsList/SomedayEvent/Wrappers/NewDraggableSomedayEvent";
 
 export const WeekEventsColumn: FC<WeekColProps> = ({
   column,
   dateCalcs,
+  draft,
   draftId,
-  draggingDraft,
   events,
   isDrafting,
   isOverGrid,
@@ -17,7 +18,6 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
   util,
   viewStart,
 }) => {
-  console.log("rendering weekEvents...");
   return (
     <>
       <Droppable droppableId={column.id}>
@@ -28,7 +28,7 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
                 <WeekEvents
                   dateCalcs={dateCalcs}
                   draftId={draftId}
-                  draggingDraft={draggingDraft}
+                  draft={draft}
                   events={events}
                   isDrafting={isDrafting}
                   isOverGrid={isOverGrid}
@@ -40,15 +40,16 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
                 {provided.placeholder}
               </div>
 
-              {/* {isDrafting && draft && (
-                <DraggableSomedayEvent
-                  draftId={ID_NEW_DRAFT}
+              {isDrafting && (
+                <NewDraggableSomedayEvent
+                  draftId={"somedayDraft"}
                   event={draft}
-                  index={5}
-                  key={ID_NEW_DRAFT}
+                  isDrafting={true}
+                  isOverGrid={isOverGrid}
+                  index={events.length + 1}
                   util={util}
                 />
-              )} */}
+              )}
             </>
           );
         }}

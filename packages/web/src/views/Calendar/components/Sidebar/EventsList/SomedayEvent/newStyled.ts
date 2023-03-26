@@ -8,7 +8,6 @@ import {
 import { colorNameByPriority } from "@core/constants/colors";
 import { InvertedColorNames } from "@core/types/color.types";
 
-// export interface Props extends DroppableProps {
 export interface Props {
   priority: Priorities;
   isDrafting: boolean;
@@ -39,12 +38,10 @@ export const NewStyledSomedayEvent = styled.div<Props>`
       isFocused && !isDragging ? "160%" : "100%"}
   );
   margin-bottom: 2px;
-
   opacity: ${({ isDragging, isOverGrid }) => {
     if (isDragging && isOverGrid) return 0;
     return 1;
   }};
-
   padding: 5px;
   transition: background-color 0.2s, box-shadow 0.2s;
   width: 100%;
