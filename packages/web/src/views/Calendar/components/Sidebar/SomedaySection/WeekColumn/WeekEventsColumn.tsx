@@ -1,9 +1,10 @@
 import React, { FC } from "react";
 import { Droppable } from "@hello-pangea/dnd";
+import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 
 import { WeekEvents } from "./WeekEvents";
 import { WeekColProps } from "./weekColumn.types";
-import { NewDraggableSomedayEvent } from "../../EventsList/SomedayEvent/Wrappers/NewDraggableSomedayEvent";
+import { DraggableSomedayEvent } from "../../EventsList/SomedayEvent/Wrappers/DraggableSomedayEvent";
 
 export const WeekEventsColumn: FC<WeekColProps> = ({
   column,
@@ -11,13 +12,17 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
   draft,
   draftId,
   events,
-  isDrafting,
+  isDraftingExisting,
+  isDraftingNew,
   isOverGrid,
   measurements,
   mouseCoords,
   util,
   viewStart,
 }) => {
+  const _isDrafting = isDraftingExisting || isDraftingNew;
+  const shouldPreview = _isDrafting && isOverGrid && !draft.isOpen;
+
   return (
     <>
       <Droppable droppableId={column.id}>
@@ -30,19 +35,20 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
                   draftId={draftId}
                   draft={draft}
                   events={events}
-                  isDrafting={isDrafting}
+                  isDrafting={isDraftingExisting}
                   isOverGrid={isOverGrid}
                   measurements={measurements}
                   mouseCoords={mouseCoords}
+                  shouldPreview={shouldPreview}
                   viewStart={viewStart}
                   util={util}
                 />
                 {provided.placeholder}
               </div>
 
-              {isDrafting && (
-                <NewDraggableSomedayEvent
-                  draftId={"somedayDraft"}
+              {isDraftingNew && (
+                <DraggableSomedayEvent
+                  draftId={ID_SOMEDAY_DRAFT}
                   event={draft}
                   isDrafting={true}
                   isOverGrid={isOverGrid}

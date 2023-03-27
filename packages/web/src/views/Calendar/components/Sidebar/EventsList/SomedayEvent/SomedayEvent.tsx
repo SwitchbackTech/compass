@@ -1,37 +1,25 @@
-import React, {
-  Dispatch,
-  ForwardedRef,
-  forwardRef,
-  MouseEvent,
-  SetStateAction,
-  useEffect,
-  useState,
-} from "react";
-import { DroppableProvided, DraggableProvided } from "@hello-pangea/dnd";
-import { FloatingPortal } from "@floating-ui/react";
-import { useFloating } from "@floating-ui/react";
-import { Schema_Event } from "@core/types/event.types";
+import React, { Dispatch, SetStateAction, useState } from "react";
+import { DraggableProvided } from "@hello-pangea/dnd";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { FloatingPortal } from "@floating-ui/react";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { Category_DragItem } from "@web/common/types/dnd.types";
-import { useDrag } from "react-dnd";
-import { getEmptyImage } from "react-dnd-html5-backend";
+import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 
+import { NewStyledSomedayEvent } from "./newStyled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
-import { StyledSomedayEvent } from "./styled";
 
 export interface Props {
-  event: Schema_Event;
+  event: Schema_GridEvent;
   isDrafting: boolean;
   isDragging: boolean;
+  isOverGrid: boolean;
   onClose: () => void;
-  onDraft: (event: Schema_Event) => void;
-  onMigrate: (event: Schema_Event, location: "forward" | "back") => void;
+  onDraft: (event: Schema_GridEvent) => void;
+  onMigrate: (event: Schema_GridEvent, location: "forward" | "back") => void;
   onSubmit: () => void;
   provided: DraggableProvided;
-  // provided: DroppableProvided;
   setEvent: Dispatch<SetStateAction<Schema_GridEvent>>;
 }
 
@@ -39,6 +27,7 @@ export const SomedayEvent = ({
   event,
   isDrafting,
   isDragging,
+  isOverGrid,
   onClose,
   onDraft,
   onMigrate,
@@ -46,71 +35,42 @@ export const SomedayEvent = ({
   provided,
   setEvent,
 }: Props) => {
-  const { y, reference, floating, strategy } = useFloating({
-    strategy: "absolute",
-    placement: "right-start",
-  });
+  const { y, reference, floating, strategy } = useEventForm("sidebar");
 
   const [isFocused, setIsFocused] = useState(false);
 
-  const [{ isDragging: isDraggingv2 }, drag, preview] = useDrag(
-    () => ({
-      type: Category_DragItem.EVENT_SOMEDAY,
-      // only includes props that a user could change
-      // while drafting
-      item: () => {
-        return {
-          _id: event._id,
-          description: event.description,
-          priority: event.priority,
-          order: event.order,
-          title: event.title,
-        };
-      },
-      collect: (monitor) => ({
-        isDragging: monitor.isDragging(),
-      }),
-    }),
-    [event._id, event.description, event.priority, event.order, event.title]
-  );
-
-  useEffect(() => {
-    // preview(getEmptyImage(), { captureDraggingState: true });
-    preview(getEmptyImage());
-  }, [preview]);
+  // isDrafting && console.log(event);
+  // console.log(event.isOpen);
+  // console.log(event);
 
   return (
     <>
-      {/* <div ref={drag}> */}
-      <div>
-        <StyledSomedayEvent
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          isDragging={isDragging}
-          isDrafting={isDrafting}
-          isFocused={isFocused}
-          onBlur={() => setIsFocused(false)}
-          onClick={(e: MouseEvent) => {
-            console.log("in SE");
-            e.stopPropagation();
-            onDraft(event);
-          }}
-          onMouseUp={() => console.log("inMouseUp SSE")}
-          onFocus={() => setIsFocused(true)}
-          priority={event.priority}
-          role="button"
-          // ref={ref}
-          ref={provided.innerRef}
-        >
-          {/* <SomedayEventRectangle event={event} onMigrate={onMigrate} /> */}
-          <div ref={reference}>
-            <SomedayEventRectangle event={event} onMigrate={onMigrate} />
-          </div>
-        </StyledSomedayEvent>
-      </div>
+      <NewStyledSomedayEvent
+        {...provided.draggableProps}
+        {...provided.dragHandleProps}
+        isDragging={isDragging}
+        isDrafting={isDrafting}
+        isOverGrid={isOverGrid}
+        isFocused={isFocused}
+        onClick={(e: MouseEvent) => {
+          console.log("clicked");
+          e.stopPropagation();
+          onDraft(event);
+        }}
+        onBlur={() => setIsFocused(false)}
+        onFocus={() => setIsFocused(true)}
+        priority={event.priority}
+        role="button"
+        ref={provided.innerRef}
+      >
+        <div ref={reference}>
+          <SomedayEventRectangle event={event} onMigrate={onMigrate} />
+        </div>
+      </NewStyledSomedayEvent>
 
       <FloatingPortal>
-        {isDrafting && !isDragging && (
+        {/* {isDrafting && !isDragging && event.isOpen && ( */}
+        {event.isOpen && (
           <StyledFloatContainer
             ref={floating}
             strategy={strategy}
@@ -130,7 +90,3 @@ export const SomedayEvent = ({
     </>
   );
 };
-
-//++
-// export const SomedayEvent = forwardRef(_SomedayEvent);
-// export const SomedayEvent = _SomedayEvent;

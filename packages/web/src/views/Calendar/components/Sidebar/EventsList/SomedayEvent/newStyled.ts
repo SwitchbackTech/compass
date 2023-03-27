@@ -7,8 +7,10 @@ import {
 } from "@core/util/color.utils";
 import { colorNameByPriority } from "@core/constants/colors";
 import { InvertedColorNames } from "@core/types/color.types";
+import { DraggableProvided, DroppableProvided } from "@hello-pangea/dnd";
 
-export interface Props {
+// export interface Props extends DraggableProvided {
+export interface Props extends DroppableProvided {
   priority: Priorities;
   isDrafting: boolean;
   isDragging?: boolean;

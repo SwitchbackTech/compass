@@ -8,9 +8,9 @@ import { DragDropContext } from "@hello-pangea/dnd";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { useSomedayEvents } from "@web/views/Calendar/hooks/draft/useSidebarDraft";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
-import { useSomedayEvents } from "../../../hooks/draft/useSidebarDraft";
 import { StyledList } from "../EventsList/styled";
 import { WeekEventsColumn } from "./WeekColumn/WeekEventsColumn";
 
@@ -81,7 +81,8 @@ export const SomedaySection: FC<Props> = ({
                   draftId={state.draft?._id}
                   draft={state.draft}
                   events={weekEvents}
-                  isDrafting={state.isDraftingSomeday}
+                  isDraftingExisting={state.isDraftingExisting}
+                  isDraftingNew={state.isDraftingNew}
                   isOverGrid={state.isOverGrid}
                   key={columnId}
                   measurements={measurements}

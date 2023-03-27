@@ -15,7 +15,8 @@ export interface WeekColProps {
   draft: Schema_GridEvent;
   draftId: string;
   events: Schema_Event[];
-  isDrafting: boolean;
+  isDraftingExisting: boolean;
+  isDraftingNew: boolean;
   isOverGrid: boolean;
   measurements: Measurements_Grid;
   mouseCoords: { x: number; y: number };

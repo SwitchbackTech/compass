@@ -1,9 +1,4 @@
 import React, { FC, memo } from "react";
-import {
-  layerStyles,
-  getItemStyles,
-} from "@web/views/Calendar/containers/Drag/styled";
-import { NewDraggableEvent } from "@web/views/Calendar/containers/Drag/NewDraggableEvent";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -11,9 +6,14 @@ import {
   SIDEBAR_OPEN_WIDTH,
   GRID_X_START,
 } from "@web/views/Calendar/layout.constants";
-import { Schema_Event } from "@core/types/event.types";
+import {
+  layerStyles,
+  getItemStyles,
+} from "@web/views/Calendar/containers/Drag/styled";
+import { DraggableEvent } from "@web/views/Calendar/containers/Drag/DraggableEvent";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
-import { NewDraggableSomedayEvent } from "../../EventsList/SomedayEvent/Wrappers/NewDraggableSomedayEvent";
+import { DraggableSomedayEvent } from "../../EventsList/SomedayEvent/Wrappers/DraggableSomedayEvent";
 import { SomedayEventsProps } from "../../../../hooks/draft/useSidebarDraft";
 import { WeekColProps } from "./weekColumn.types";
 
@@ -21,11 +21,12 @@ export const WeekEvents: FC<{
   events: WeekColProps["events"];
   dateCalcs: DateCalcs;
   draftId: string;
-  draft: Schema_Event;
+  draft: Schema_GridEvent;
   isDrafting: boolean;
   isOverGrid: boolean;
   measurements: Measurements_Grid;
   mouseCoords: { x: number; y: number };
+  shouldPreview: boolean;
   viewStart: WeekProps["component"]["startOfView"];
   util: SomedayEventsProps["util"];
 }> = memo(
@@ -36,6 +37,7 @@ export const WeekEvents: FC<{
     events,
     isDrafting,
     isOverGrid,
+    shouldPreview,
     measurements,
     mouseCoords,
     util,
@@ -47,16 +49,18 @@ export const WeekEvents: FC<{
 
     return (
       <>
-        {isOverGrid && (
+        {shouldPreview && (
           <div style={layerStyles}>
             <div style={getItemStyles({ x: 0, y: 0 }, { x, y })}>
-              <NewDraggableEvent
+              <DraggableEvent
                 dateCalcs={dateCalcs}
                 dayIndex={dayIndex}
                 event={draft}
                 isOverAllDayRow={false}
-                isOverGrid={true}
-                isOverMainGrid={true}
+                // isOverGrid={true}
+                // isOverMainGrid={true}
+                isOverGrid={isOverGrid}
+                isOverMainGrid={isOverGrid}
                 measurements={measurements}
                 mouseCoords={mouseCoords}
                 startOfView={viewStart}
@@ -66,7 +70,7 @@ export const WeekEvents: FC<{
         )}
 
         {events.map((event, index: number) => (
-          <NewDraggableSomedayEvent
+          <DraggableSomedayEvent
             event={event}
             draftId={draftId}
             index={index}

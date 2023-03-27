@@ -52,7 +52,8 @@ export const useSomedayEvents = (
   const [isDrafting, setIsDrafting] = useState(false);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
 
-  const isDragging = draft !== null;
+  // const isDragging = draft !== null; //++
+  const isDragging = isDrafting && isDraftingRedux && draft !== null;
 
   const { isOverGrid, mouseCoords } = useMousePosition(
     isDragging,
@@ -89,6 +90,7 @@ export const useSomedayEvents = (
       ...somedayDefault,
       startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
       endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+      isOpen: true,
     });
 
     setIsDrafting(true);
@@ -149,9 +151,11 @@ export const useSomedayEvents = (
   }, [handleSomedayShortcut]);
 
   const onDraft = (event: Schema_Event) => {
+    console.log("ondraft");
     setIsDrafting(true);
     setDraft({
       ...event,
+      isOpen: true,
       startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
       endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
     });
@@ -161,7 +165,7 @@ export const useSomedayEvents = (
     setIsDrafting(false);
     setDraft(null);
 
-    const { destination, source, draggableId } = result;
+    const { destination, source } = result;
 
     if (!destination) return;
 
@@ -171,29 +175,11 @@ export const useSomedayEvents = (
 
     if (noChange) return;
 
-    const column = somedayEvents.columns[source.droppableId];
-    const newEventIds = Array.from(column.eventIds);
-    newEventIds.splice(source.index, 1);
-    newEventIds.splice(destination.index, 0, draggableId);
-
-    const newColumn = {
-      ...column,
-      eventIds: newEventIds,
-    };
-
-    const newState = {
-      ...somedayEvents,
-      columns: {
-        ...somedayEvents.columns,
-        [newColumn.id]: newColumn,
-      },
-    };
-
-    setSomedayEvents(newState);
+    reorder(result);
   };
 
   const onDragStart = (props: { draggableId: string }) => {
-    setDraft(somedayEvents.events[props.draggableId]);
+    setDraft({ ...somedayEvents.events[props.draggableId], isOpen: false });
     setIsDrafting(true);
   };
 
@@ -249,6 +235,7 @@ export const useSomedayEvents = (
   };
 
   const onSectionClick = () => {
+    console.log("clicked section");
     if (isDraftingRedux) {
       dispatch(draftSlice.actions.discard());
       return;
@@ -264,14 +251,37 @@ export const useSomedayEvents = (
       return;
     }
 
-    console.log("todo: start drafting in sidebar");
-    // dispatch(
-    //   draftSlice.actions.start({
-    //     eventType: Categories_Event.SOMEDAY,
-    //   })
-    // );
+    dispatch(
+      draftSlice.actions.start({
+        eventType: Categories_Event.SOMEDAY,
+      })
+    );
 
     createDefaultSomeday();
+  };
+
+  const reorder = (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    const column = somedayEvents.columns[source.droppableId];
+    const newEventIds = Array.from(column.eventIds);
+    newEventIds.splice(source.index, 1);
+    newEventIds.splice(destination.index, 0, draggableId);
+
+    const newColumn = {
+      ...column,
+      eventIds: newEventIds,
+    };
+
+    const newState = {
+      ...somedayEvents,
+      columns: {
+        ...somedayEvents.columns,
+        [newColumn.id]: newColumn,
+      },
+    };
+
+    setSomedayEvents(newState);
   };
 
   const somedayEventsProps = {
@@ -279,7 +289,13 @@ export const useSomedayEvents = (
       draft,
       isProcessing,
       somedayEvents,
-      isDraftingSomeday: isDrafting && draft !== null,
+      isDraftingExisting:
+        isDrafting &&
+        draft !== null &&
+        isDraftingRedux &&
+        draftType === Categories_Event.SOMEDAY,
+      isDraftingNew:
+        isDrafting && !isDraftingExisting && !existingIds.includes(draft?._id),
       isOverGrid,
       mouseCoords,
       weekLabel,
@@ -301,12 +317,3 @@ export const useSomedayEvents = (
 };
 
 export type SomedayEventsProps = ReturnType<typeof useSomedayEvents>;
-
-//++
-
-// isDrafting: isDraftingRedux && isNewDraft,
-// const isNewDraft =
-//   isDrafting &&
-//   isDraftingRedux &&
-//   draftType === Categories_Event.SOMEDAY &&
-//   !existingIds.includes(draft?._id);
