@@ -76,6 +76,7 @@ class SyncController {
       //@ts-ignore
       res.promise(Promise.resolve(result));
     } catch (e) {
+      logger.error(e);
       //@ts-ignore
       res.promise(e);
     }

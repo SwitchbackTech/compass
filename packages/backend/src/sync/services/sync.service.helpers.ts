@@ -186,6 +186,8 @@ const getUpdatedEvents = async (
 };
 
 export const hasAnyActiveEventSync = (sync: Schema_Sync) => {
+  if (sync.google?.events === undefined) return false;
+
   for (const es of sync.google.events) {
     const hasSyncFields = es.channelId && es.expiration;
     if (hasSyncFields && !syncExpired(es.expiration)) {
