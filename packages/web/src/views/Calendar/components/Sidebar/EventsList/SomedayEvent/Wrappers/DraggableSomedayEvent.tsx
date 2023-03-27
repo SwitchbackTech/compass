@@ -30,7 +30,11 @@ export const DraggableSomedayEvent: FC<Props> = ({
     (isDrafting && draftId === event._id) || draftId === ID_SOMEDAY_DRAFT;
   // _isDrafting && console.log("drafting", event);
 
-  // console.log(draftId);
+  if (event.title === "9") {
+    if (_isDrafting) {
+      console.log(event);
+    }
+  }
 
   return (
     <div>

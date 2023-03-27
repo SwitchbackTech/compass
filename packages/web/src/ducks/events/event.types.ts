@@ -107,16 +107,16 @@ interface Payload_Draft_Swap {
   event: Schema_GridEvent;
   category: Categories_Event;
 }
-interface Payload_EditEvent {
+export interface Payload_EditEvent {
   _id: string;
   event: Schema_Event;
 }
 
-interface Payload_GetPaginatedEvents extends Filters_Pagination {
+export interface Payload_GetPaginatedEvents extends Filters_Pagination {
   priorities: Priorities[];
 }
 
-interface Payload_GetEvents {
+export interface Payload_GetEvents {
   startDate: string;
   endDate: string;
 }

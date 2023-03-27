@@ -39,10 +39,7 @@ export const SomedayEvent = ({
 
   const [isFocused, setIsFocused] = useState(false);
 
-  // isDrafting && console.log(event);
-  // console.log(event.isOpen);
-  // console.log(event);
-
+  event?.isOpen && console.log("open:", event?.title);
   if (event === undefined)
     return (
       <div
@@ -81,7 +78,7 @@ export const SomedayEvent = ({
 
       <FloatingPortal>
         {/* {isDrafting && !isDragging && event.isOpen && ( */}
-        {event.isOpen && (
+        {(isDrafting || event.isOpen) && (
           <StyledFloatContainer
             ref={floating}
             strategy={strategy}

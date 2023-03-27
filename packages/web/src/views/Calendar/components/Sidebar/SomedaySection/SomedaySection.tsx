@@ -5,6 +5,8 @@ import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { DragDropContext } from "@hello-pangea/dnd";
+import { useAppSelector } from "@web/store/store.hooks";
+import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/event.selectors";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -29,6 +31,8 @@ export const SomedaySection: FC<Props> = ({
   viewEnd,
   viewStart,
 }) => {
+  const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
+
   const somedayProps = useSomedayEvents(measurements, {
     weekStart: viewStart,
     weekEnd: viewEnd,
@@ -39,7 +43,7 @@ export const SomedaySection: FC<Props> = ({
 
   return (
     <Styled flex={flex} onClick={util.onSectionClick} ref={somedayRef}>
-      {state.isProcessing && <AbsoluteOverflowLoader />}
+      {isProcessing && <AbsoluteOverflowLoader />}
 
       <StyledHeader
         alignItems={AlignItems.CENTER}

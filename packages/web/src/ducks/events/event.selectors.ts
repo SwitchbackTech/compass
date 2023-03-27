@@ -3,6 +3,11 @@ import { Schema_Event } from "@core/types/event.types";
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
 import { assignEventsToRow } from "@web/common/utils/grid.util";
+import { hardSomedayEvents } from "@web/views/Calendar/components/Sidebar/SomedaySection/tempData/tempHardSomedayData";
+import { COLUMN_WEEK } from "@web/common/constants/web.constants";
+import { normalize } from "normalizr";
+import { normalizedEventsSchema } from "@web/common/utils/event.util";
+import { Schema_SomedayEventsColumn } from "@web/common/types/web.event.types";
 
 import { SectionType } from "./event.types";
 
@@ -81,14 +86,28 @@ export const selectPaginatedEventsBySectionType = (
 
 export const selectSomedayEvents = (state: RootState) => {
   const entities = state.events.entities.value || {};
-  const somedayIds = state.events.getSomedayEvents.value || [];
+  const somedayIds = state.events.getSomedayEvents.value?.data || [];
 
-  if (Object.keys(entities).length === 0 || somedayIds.length === 0) {
-    return [];
-  }
+  const events = {};
+  somedayIds.forEach((i) => {
+    const event = entities[i];
+    if (event) {
+      events[i] = event;
+    }
+  });
 
-  const somedayEvents = somedayIds.data.map((_id: string) => entities[_id]);
-  return somedayEvents as Schema_Event[];
+  const data: Schema_SomedayEventsColumn = {
+    columns: {
+      [`${COLUMN_WEEK}`]: {
+        id: `${COLUMN_WEEK}`,
+        eventIds: somedayIds,
+      },
+    },
+    columnOrder: [`${COLUMN_WEEK}`],
+    events,
+  };
+
+  return data;
 };
 
 export const selectSomedayEventsCount = (state: RootState): number => {

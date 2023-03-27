@@ -16,7 +16,18 @@ export interface Schema_SelectedDates {
   endTime: SelectOption<string>;
   isAllDay: boolean;
 }
-
+export interface Schema_SomedayEventsColumn {
+  columns: {
+    [key: string]: {
+      id: string;
+      eventIds: string[];
+    };
+  };
+  columnOrder: string[];
+  events: {
+    [key: string]: Schema_Event;
+  };
+}
 export interface Status_DraftEvent {
   activity: string | null;
   eventType: Categories_Event | null;

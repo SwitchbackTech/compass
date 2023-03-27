@@ -84,6 +84,7 @@ export const WeekEvents: FC<{
           />
         ))}
 
+        {/** //++ move back to WeekEventsColumn(?) */}
         {isDraftingNew && (
           <DraggableSomedayEvent
             draftId={ID_SOMEDAY_DRAFT}

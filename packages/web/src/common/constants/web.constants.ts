@@ -1,4 +1,7 @@
 export const ANIMATION_TIME_3_MS = "0.3s";
+
+export const COLUMN_WEEK = "weekEvents";
+
 export const GOOGLE = "google";
 
 export const ID_ALLDAY_COLUMNS = "allDayColumns";

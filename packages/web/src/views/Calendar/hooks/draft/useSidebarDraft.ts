@@ -15,9 +15,9 @@ import {
 } from "@web/common/utils/event.util";
 import { getWeekRangeLabel } from "@web/common/utils/web.date.util";
 import {
-  selectIsGetSomedayEventsProcessing,
   selectDraftId,
   selectDraftStatus,
+  selectSomedayEvents,
 } from "@web/ducks/events/event.selectors";
 import {
   draftSlice,
@@ -27,13 +27,12 @@ import {
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Range_Week } from "@web/common/types/util.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
+import {
+  COLUMN_WEEK,
+  ID_SOMEDAY_DRAFT,
+} from "@web/common/constants/web.constants";
 
 import { useMousePosition } from "./useMousePosition";
-import {
-  Schema_SomedayEventsColumn,
-  hardSomedayEvents,
-} from "../../components/Sidebar/SomedaySection/tempData/tempHardSomedayData";
 
 export const useSomedayEvents = (
   measurements: Measurements_Grid,
@@ -41,9 +40,11 @@ export const useSomedayEvents = (
 ) => {
   const dispatch = useAppDispatch();
 
-  const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
-  const [somedayEvents, setSomedayEvents] =
-    useState<Schema_SomedayEventsColumn>(hardSomedayEvents);
+  const _somedayEvents = useAppSelector(selectSomedayEvents);
+  const [somedayEvents, setSomedayEvents] = useState(_somedayEvents);
+  useEffect(() => {
+    setSomedayEvents(_somedayEvents);
+  }, [_somedayEvents]);
 
   const { isDrafting: isDraftingRedux } = useAppSelector(selectDraftId);
   const { eventType: draftType } = useAppSelector(selectDraftStatus);
@@ -66,11 +67,11 @@ export const useSomedayEvents = (
     [weekRange]
   );
 
-  const existingIds = somedayEvents.columns["column-1"].eventIds;
+  const existingIds = somedayEvents.columns[COLUMN_WEEK].eventIds;
 
   const _isAtLimit = useCallback(() => {
-    return Array(somedayEvents.events).length >= SOMEDAY_WEEKLY_LIMIT;
-  }, [somedayEvents]);
+    return existingIds.length >= SOMEDAY_WEEKLY_LIMIT;
+  }, [existingIds]);
 
   const createDefaultSomeday = useCallback(() => {
     const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY);
@@ -84,15 +85,6 @@ export const useSomedayEvents = (
 
     setIsDrafting(true);
   }, [weekRange.weekEnd, weekRange.weekStart]);
-
-  const close = () => {
-    setIsDrafting(false);
-    setDraft(null);
-
-    if (isDraftingRedux && draftType === Categories_Event.SOMEDAY) {
-      dispatch(draftSlice.actions.discard());
-    }
-  };
 
   useEffect(() => {
     setIsDraftingExisting(existingIds.includes(draft?._id));
@@ -140,15 +132,34 @@ export const useSomedayEvents = (
     handleSomedayTrigger();
   }, [handleSomedayTrigger]);
 
+  const close = () => {
+    setIsDrafting(false);
+    setDraft(null);
+
+    if (isDraftingRedux && draftType === Categories_Event.SOMEDAY) {
+      dispatch(draftSlice.actions.discard());
+    }
+  };
+
   const onDraft = (event: Schema_Event) => {
-    console.log("ondraft");
+    // const newState = {
+    //   ...somedayEvents,
+    //   events: {
+    //     ...somedayEvents.events,
+    //     [event._id]: { ...event, isOpen: true },
+    //   },
+    // };
+    // setSomedayEvents(newState);
+    // console.log(newState.events[event._id]);
+
     setIsDrafting(true);
     setDraft({
       ...event,
       isOpen: true,
-      startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
-      endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+      // startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
+      // endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
     });
+    console.log(draft);
   };
 
   const onDragEnd = (result: DropResult) => {
@@ -242,11 +253,6 @@ export const useSomedayEvents = (
   };
 
   const onSectionClick = () => {
-    // console.log(draft);
-    // if (draft) {
-    //   console.log("draft exists");
-    //   return;
-    // }
     if (isDraftingRedux) {
       console.log("discarding after sect click");
       console.log(draft);
@@ -302,7 +308,6 @@ export const useSomedayEvents = (
   const somedayEventsProps = {
     state: {
       draft,
-      isProcessing,
       somedayEvents,
       isDraftingExisting:
         isDrafting &&
@@ -334,8 +339,6 @@ export const useSomedayEvents = (
 export type SomedayEventsProps = ReturnType<typeof useSomedayEvents>;
 
 /*
-  // const _somedayEvents = useAppSelector(selectSomedayEvents);
-  const [somedayEvents, setSomedayEvents] = useState(_somedayEvents);
   useEffect(() => {
     // setSomedayEvents(_somedayEvents.sort((a, b) => a.order - b.order));
     const somedayEventsWithSortableId = _somedayEvents.map((e) => ({
