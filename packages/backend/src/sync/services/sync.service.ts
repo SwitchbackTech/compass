@@ -158,7 +158,7 @@ class SyncService {
     const deletedDuringRefresh = refreshResult.filter((r) => r.deletedUserData);
 
     logger.debug(`Sync Maintenance Results:
-      ignored: ${ignored.toString()} 
+      ignored: ${ignored.length} 
       pruned: ${pruned.map((p) => p.user).toString()}
       refreshed: ${refreshed.map((r) => r.user).toString()}
 
