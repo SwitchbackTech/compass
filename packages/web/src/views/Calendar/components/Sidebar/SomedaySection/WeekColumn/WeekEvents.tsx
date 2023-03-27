@@ -12,6 +12,7 @@ import {
 } from "@web/views/Calendar/containers/Drag/styled";
 import { DraggableEvent } from "@web/views/Calendar/containers/Drag/DraggableEvent";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 
 import { DraggableSomedayEvent } from "../../EventsList/SomedayEvent/Wrappers/DraggableSomedayEvent";
 import { SomedayEventsProps } from "../../../../hooks/draft/useSidebarDraft";
@@ -23,6 +24,7 @@ export const WeekEvents: FC<{
   draftId: string;
   draft: Schema_GridEvent;
   isDrafting: boolean;
+  isDraftingNew: boolean;
   isOverGrid: boolean;
   measurements: Measurements_Grid;
   mouseCoords: { x: number; y: number };
@@ -36,6 +38,7 @@ export const WeekEvents: FC<{
     draft,
     events,
     isDrafting,
+    isDraftingNew,
     isOverGrid,
     shouldPreview,
     measurements,
@@ -76,10 +79,22 @@ export const WeekEvents: FC<{
             index={index}
             isDrafting={isDrafting}
             isOverGrid={isOverGrid}
-            key={event._id}
+            key={event?._id || "draft"}
             util={util}
           />
         ))}
+
+        {isDraftingNew && (
+          <DraggableSomedayEvent
+            draftId={ID_SOMEDAY_DRAFT}
+            event={draft}
+            index={events.length}
+            isDrafting={true}
+            isOverGrid={isOverGrid}
+            key={ID_SOMEDAY_DRAFT}
+            util={util}
+          />
+        )}
       </>
     );
   }

@@ -37,6 +37,7 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
                   draft={draft}
                   events={events}
                   isDrafting={isDraftingExisting}
+                  isDraftingNew={isDraftingNew}
                   isOverGrid={isOverGrid}
                   measurements={measurements}
                   mouseCoords={mouseCoords}
@@ -47,7 +48,7 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
                 {provided.placeholder}
               </div>
 
-              {isDraftingNew && (
+              {/* {isDraftingNew && (
                 <DraggableSomedayEvent
                   draftId={ID_SOMEDAY_DRAFT}
                   event={draft}
@@ -58,7 +59,7 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
                   key={ID_SOMEDAY_DRAFT}
                   util={util}
                 />
-              )}
+              )} */}
             </>
           );
         }}

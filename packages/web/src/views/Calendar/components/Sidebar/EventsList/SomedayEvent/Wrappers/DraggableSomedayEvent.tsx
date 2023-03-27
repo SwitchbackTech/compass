@@ -30,12 +30,15 @@ export const DraggableSomedayEvent: FC<Props> = ({
     (isDrafting && draftId === event._id) || draftId === ID_SOMEDAY_DRAFT;
   // _isDrafting && console.log("drafting", event);
 
+  // console.log(draftId);
+
   return (
     <div>
       <Draggable
-        draggableId={event._id || ID_SOMEDAY_DRAFT}
+        draggableId={event?._id || draftId}
         index={index}
-        key={event._id}
+        key={event?._id || draftId}
+        isDragDisabled={draftId === ID_SOMEDAY_DRAFT}
       >
         {(provided, snapshot) => {
           return (

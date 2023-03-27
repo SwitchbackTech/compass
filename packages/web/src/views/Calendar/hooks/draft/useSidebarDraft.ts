@@ -27,6 +27,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Range_Week } from "@web/common/types/util.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 
 import { useMousePosition } from "./useMousePosition";
 import {
@@ -76,8 +77,8 @@ export const useSomedayEvents = (
 
     setDraft({
       ...somedayDefault,
-      startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
       endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+      startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
       isOpen: true,
     });
 
@@ -151,7 +152,11 @@ export const useSomedayEvents = (
   };
 
   const onDragEnd = (result: DropResult) => {
-    close();
+    const reorderedDraft = result.draggableId === ID_SOMEDAY_DRAFT;
+    if (reorderedDraft && !isDraftingExisting) {
+      console.log("TODO: add draft to state");
+      return;
+    }
 
     const { destination, source } = result;
 
@@ -237,6 +242,11 @@ export const useSomedayEvents = (
   };
 
   const onSectionClick = () => {
+    // console.log(draft);
+    // if (draft) {
+    //   console.log("draft exists");
+    //   return;
+    // }
     if (isDraftingRedux) {
       console.log("discarding after sect click");
       console.log(draft);

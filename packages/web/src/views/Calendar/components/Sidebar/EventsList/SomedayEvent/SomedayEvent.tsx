@@ -43,6 +43,17 @@ export const SomedayEvent = ({
   // console.log(event.isOpen);
   // console.log(event);
 
+  if (event === undefined)
+    return (
+      <div
+        {...provided.draggableProps}
+        {...provided.dragHandleProps}
+        ref={provided.innerRef}
+      >
+        <h1>idk</h1>
+      </div>
+    );
+
   return (
     <>
       <NewStyledSomedayEvent
