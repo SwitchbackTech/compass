@@ -22,6 +22,7 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
 }) => {
   const _isDrafting = isDraftingExisting || isDraftingNew;
   const shouldPreview = _isDrafting && isOverGrid && !draft.isOpen;
+  // isDraftingNew && console.log("drafting new...", draft, draftId);
 
   return (
     <>
@@ -50,9 +51,11 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
                 <DraggableSomedayEvent
                   draftId={ID_SOMEDAY_DRAFT}
                   event={draft}
+                  // index={events.length + 1}
+                  index={events.length}
                   isDrafting={true}
                   isOverGrid={isOverGrid}
-                  index={events.length + 1}
+                  key={ID_SOMEDAY_DRAFT}
                   util={util}
                 />
               )}

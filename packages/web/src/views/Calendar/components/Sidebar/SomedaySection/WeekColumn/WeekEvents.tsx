@@ -71,8 +71,8 @@ export const WeekEvents: FC<{
 
         {events.map((event, index: number) => (
           <DraggableSomedayEvent
-            event={event}
             draftId={draftId}
+            event={event}
             index={index}
             isDrafting={isDrafting}
             isOverGrid={isOverGrid}

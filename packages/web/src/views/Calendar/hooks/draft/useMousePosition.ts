@@ -7,6 +7,7 @@ import {
 
 export const useMousePosition = (
   isDragging: boolean,
+  isFormOpen: boolean,
   measurements: Measurements_Grid
 ) => {
   const [isOverGrid, setIsOverGrid] = useState(false);
@@ -30,14 +31,14 @@ export const useMousePosition = (
       setMouseCoords({ x, y });
     };
 
-    if (!isDragging) return;
+    if (!isDragging || isFormOpen) return;
 
     window.addEventListener("mousemove", handleMouseMove);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
     };
-  }, [allDayRow?.bottom, allDayRow?.top, isDragging]);
+  }, [allDayRow?.bottom, allDayRow?.top, isDragging, isFormOpen]);
 
   return { isOverGrid, mouseCoords };
 };

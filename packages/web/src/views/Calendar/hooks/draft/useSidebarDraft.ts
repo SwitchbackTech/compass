@@ -41,7 +41,6 @@ export const useSomedayEvents = (
   const dispatch = useAppDispatch();
 
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
-  // const _somedayEvents = useAppSelector(selectSomedayEvents);
   const [somedayEvents, setSomedayEvents] =
     useState<Schema_SomedayEventsColumn>(hardSomedayEvents);
 
@@ -57,20 +56,9 @@ export const useSomedayEvents = (
 
   const { isOverGrid, mouseCoords } = useMousePosition(
     isDragging,
+    draft?.isOpen,
     measurements
   );
-  /*
-  const [somedayEvents, setSomedayEvents] = useState(_somedayEvents);
-  useEffect(() => {
-    // setSomedayEvents(_somedayEvents.sort((a, b) => a.order - b.order));
-    const somedayEventsWithSortableId = _somedayEvents.map((e) => ({
-      ...e,
-      id: e._id,
-    }));
-    setSomedayEvents(somedayEventsWithSortableId);
-    // setSomedayEvents(_somedayEvents);
-  }, [_somedayEvents]);
-  */
 
   const weekLabel = useMemo(
     () => getWeekRangeLabel(weekRange.weekStart, weekRange.weekEnd),
@@ -126,7 +114,7 @@ export const useSomedayEvents = (
     }
   }, [dispatch, isDraftingExisting]);
 
-  const handleSomedayShortcut = useCallback(() => {
+  const handleSomedayTrigger = useCallback(() => {
     if (
       isDraftingRedux &&
       draftType === Categories_Event.SOMEDAY &&
@@ -136,6 +124,7 @@ export const useSomedayEvents = (
         alert(SOMEDAY_WEEK_LIMIT_MSG);
         return;
       }
+      console.log("creating default someday..."); //++
       createDefaultSomeday();
     }
   }, [
@@ -147,8 +136,8 @@ export const useSomedayEvents = (
   ]);
 
   useEffect(() => {
-    handleSomedayShortcut();
-  }, [handleSomedayShortcut]);
+    handleSomedayTrigger();
+  }, [handleSomedayTrigger]);
 
   const onDraft = (event: Schema_Event) => {
     console.log("ondraft");
@@ -162,8 +151,7 @@ export const useSomedayEvents = (
   };
 
   const onDragEnd = (result: DropResult) => {
-    setIsDrafting(false);
-    setDraft(null);
+    close();
 
     const { destination, source } = result;
 
@@ -179,7 +167,21 @@ export const useSomedayEvents = (
   };
 
   const onDragStart = (props: { draggableId: string }) => {
-    setDraft({ ...somedayEvents.events[props.draggableId], isOpen: false });
+    const existingEvent = somedayEvents.events[props.draggableId];
+    const isExisting = existingEvent !== undefined;
+
+    let _draft: Schema_GridEvent;
+    if (isExisting) {
+      _draft = {
+        ...existingEvent,
+        isOpen: false,
+      };
+    } else {
+      const defaultSomeday = getDefaultEvent(Categories_Event.SOMEDAY);
+      _draft = { ...defaultSomeday, isOpen: false };
+    }
+
+    setDraft(_draft);
     setIsDrafting(true);
   };
 
@@ -235,13 +237,15 @@ export const useSomedayEvents = (
   };
 
   const onSectionClick = () => {
-    console.log("clicked section");
     if (isDraftingRedux) {
+      console.log("discarding after sect click");
+      console.log(draft);
       dispatch(draftSlice.actions.discard());
       return;
     }
 
     if (isDrafting) {
+      console.log("closing after sect click");
       draft && close();
       return;
     }
@@ -251,6 +255,7 @@ export const useSomedayEvents = (
       return;
     }
 
+    console.log("creating new after sect click...");
     dispatch(
       draftSlice.actions.start({
         eventType: Categories_Event.SOMEDAY,
@@ -317,3 +322,17 @@ export const useSomedayEvents = (
 };
 
 export type SomedayEventsProps = ReturnType<typeof useSomedayEvents>;
+
+/*
+  // const _somedayEvents = useAppSelector(selectSomedayEvents);
+  const [somedayEvents, setSomedayEvents] = useState(_somedayEvents);
+  useEffect(() => {
+    // setSomedayEvents(_somedayEvents.sort((a, b) => a.order - b.order));
+    const somedayEventsWithSortableId = _somedayEvents.map((e) => ({
+      ...e,
+      id: e._id,
+    }));
+    setSomedayEvents(somedayEventsWithSortableId);
+    // setSomedayEvents(_somedayEvents);
+  }, [_somedayEvents]);
+  */

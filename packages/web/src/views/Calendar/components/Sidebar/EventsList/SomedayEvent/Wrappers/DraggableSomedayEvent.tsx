@@ -26,37 +26,11 @@ export const DraggableSomedayEvent: FC<Props> = ({
   index,
   util,
 }) => {
-  // const [{ isDragging }, drag, preview] = useDrag(
-  //   () => ({
-  //     type: Category_DragItem.EVENT_SOMEDAY,
-  //     // only includes props that a user could change
-  //     // while drafting
-  //     item: () => {
-  //       return {
-  //         _id: event._id,
-  //         description: event.description,
-  //         priority: event.priority,
-  //         order: event.order,
-  //         title: event.title,
-  //       };
-  //     },
-  //     collect: (monitor) => ({
-  //       isDragging: monitor.isDragging(),
-  //     }),
-  //   }),
-  //   [event._id, event.description, event.priority, event.order, event.title]
-  // );
-
-  // useEffect(() => {
-  //   preview(getEmptyImage(), { captureDraggingState: true });
-  // }, [preview]);
-
   const _isDrafting =
     (isDrafting && draftId === event._id) || draftId === ID_SOMEDAY_DRAFT;
-  _isDrafting && console.log("drafting");
+  // _isDrafting && console.log("drafting", event);
 
   return (
-    // <div ref={drag}>
     <div>
       <Draggable
         draggableId={event._id || ID_SOMEDAY_DRAFT}
@@ -86,3 +60,31 @@ export const DraggableSomedayEvent: FC<Props> = ({
     </div>
   );
 };
+
+//++
+
+// <div ref={drag}>
+// const [{ isDragging }, drag, preview] = useDrag(
+//   () => ({
+//     type: Category_DragItem.EVENT_SOMEDAY,
+//     // only includes props that a user could change
+//     // while drafting
+//     item: () => {
+//       return {
+//         _id: event._id,
+//         description: event.description,
+//         priority: event.priority,
+//         order: event.order,
+//         title: event.title,
+//       };
+//     },
+//     collect: (monitor) => ({
+//       isDragging: monitor.isDragging(),
+//     }),
+//   }),
+//   [event._id, event.description, event.priority, event.order, event.title]
+// );
+
+// useEffect(() => {
+//   preview(getEmptyImage(), { captureDraggingState: true });
+// }, [preview]);
