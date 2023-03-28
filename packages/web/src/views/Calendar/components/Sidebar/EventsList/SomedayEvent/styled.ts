@@ -6,24 +6,45 @@ import {
   hoverColorsByPriority,
 } from "@core/util/color.utils";
 import { BASE_COLORS, colorNameByPriority } from "@core/constants/colors";
-import { ColorNames, InvertedColorNames } from "@core/types/color.types";
-import { DroppableProps } from "@hello-pangea/dnd";
+import { InvertedColorNames } from "@core/types/color.types";
+import { DroppableProvided } from "@hello-pangea/dnd";
 
-export interface Props extends DroppableProps {
+export interface Props extends DroppableProvided {
   priority: Priorities;
   isDrafting: boolean;
   isDragging?: boolean;
+  isOverGrid: boolean;
   isFocused: boolean;
 }
 
 export const SOMEDAY_EVENT_HEIGHT = 32;
 
-export const StyledSomedayEvent = styled.div<Props>`
-  background: ${({ isDrafting, isDragging, priority }) => {
+export const StyledMigrateArrow = styled.span`
+  padding-right: 7px;
+
+  &:hover {
+    border-radius: 50%;
+    background: ${BASE_COLORS.ONYX_GREY};
+    color: white;
+    cursor: pointer;
+    padding-right: 7px;
+    padding-left: 7px;
+    text-align: center;
+    transition: background-color 0.4s;
+  }
+`;
+
+export const StyledMigrateArrowInForm = styled(StyledMigrateArrow)`
+  font-size: 27px;
+`;
+export const NewStyledSomedayEvent = styled.div<Props>`
+  background: ${({ isDrafting, isDragging, isFocused, priority }) => {
     if (isDrafting) {
+      if (isDragging) {
+        return "lightgreen";
+      }
       return hoverColorsByPriority[priority];
     }
-    if (isDragging) return "lightgreen";
 
     return getColor(colorNameByPriority[priority]);
   }};
@@ -38,8 +59,8 @@ export const StyledSomedayEvent = styled.div<Props>`
       isFocused && !isDragging ? "160%" : "100%"}
   );
   margin-bottom: 2px;
-  opacity: ${({ isDragging }) => {
-    if (isDragging) return 0.5;
+  opacity: ${({ isDragging, isOverGrid }) => {
+    if (isDragging && isOverGrid) return 0;
     return 1;
   }};
   padding: 5px;
@@ -65,23 +86,4 @@ export const StyledSomedayEvent = styled.div<Props>`
       -webkit-line-clamp: 1;
     }
   }
-`;
-
-export const StyledMigrateArrow = styled.span`
-  padding-right: 7px;
-
-  &:hover {
-    border-radius: 50%;
-    background: ${BASE_COLORS.ONYX_GREY};
-    color: white;
-    cursor: pointer;
-    padding-right: 7px;
-    padding-left: 7px;
-    text-align: center;
-    transition: background-color 0.4s;
-  }
-`;
-
-export const StyledMigrateArrowInForm = styled(StyledMigrateArrow)`
-  font-size: 27px;
 `;

@@ -57,7 +57,7 @@ interface StyledEventProps {
   width: number;
 }
 
-export const StyledDraggableEvent = styled.div.attrs<StyledEventProps>(
+export const StyledGridEventPreview = styled.div.attrs<StyledEventProps>(
   (props) => {
     return {
       backgroundColor: hoverColorsByPriority[props.priority],

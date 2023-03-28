@@ -1,9 +1,6 @@
-import React, { FC, useEffect } from "react";
-import { useDrag } from "react-dnd";
-import { getEmptyImage } from "react-dnd-html5-backend";
+import React, { FC } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Schema_Event } from "@core/types/event.types";
-import { Category_DragItem } from "@web/common/types/dnd.types";
 import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/useSidebarDraft";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 
@@ -26,15 +23,8 @@ export const DraggableSomedayEvent: FC<Props> = ({
   index,
   util,
 }) => {
-  const _isDrafting =
+  const isDraftingThisEvent =
     (isDrafting && draftId === event._id) || draftId === ID_SOMEDAY_DRAFT;
-  // _isDrafting && console.log("drafting", event);
-
-  if (event.title === "9") {
-    if (_isDrafting) {
-      console.log(event);
-    }
-  }
 
   return (
     <div>
@@ -51,7 +41,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
                 event={event}
                 // isDragging={isDragging || snapshot.isDragging}
                 isDragging={snapshot.isDragging}
-                isDrafting={_isDrafting}
+                isDrafting={isDraftingThisEvent}
                 isOverGrid={isOverGrid}
                 onClose={util.close}
                 onDraft={util.onDraft}
@@ -69,7 +59,6 @@ export const DraggableSomedayEvent: FC<Props> = ({
 };
 
 //++
-
 // <div ref={drag}>
 // const [{ isDragging }, drag, preview] = useDrag(
 //   () => ({

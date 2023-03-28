@@ -8,10 +8,10 @@ import { Text } from "@web/components/Text";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEvent/styled";
 import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 
-import { StyledDraggableEvent } from "./styled";
-import { WeekProps } from "../../hooks/useWeek";
-import { DateCalcs } from "../../hooks/grid/useDateCalcs";
+import { getItemStyles, layerStyles, StyledGridEventPreview } from "./styled";
 
 export interface Props {
   dateCalcs: DateCalcs;
@@ -25,7 +25,7 @@ export interface Props {
   startOfView: WeekProps["component"]["startOfView"];
 }
 
-export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
+export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
   dateCalcs,
   dayIndex,
   event,
@@ -37,6 +37,7 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
   startOfView,
 }) {
   const { colWidths } = measurements;
+  const { x, y } = mouseCoords;
 
   /* Helpers */
   const _getHeight = () => {
@@ -50,7 +51,7 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
   };
 
   const _getTimePreview = () => {
-    const minutes = dateCalcs.getMinuteByY(mouseCoords.y);
+    const minutes = dateCalcs.getMinuteByY(y);
     const format = isOverAllDayRow ? DAY_COMPACT : DAY_HOUR_MIN_M;
     const timePreview = startOfView
       .add(dayIndex, "day")
@@ -75,27 +76,31 @@ export const DraggableEvent: FC<Props> = memo(function DraggableEvent({
   const width = _getWidth();
 
   return (
-    <StyledDraggableEvent
-      className={"active"}
-      duration={1}
-      height={height}
-      isOverGrid={true}
-      priority={event.priority}
-      role="button"
-      tabIndex={0}
-      width={width}
-    >
-      <Flex alignItems={AlignItems.CENTER} flexWrap={FlexWrap.WRAP}>
-        <Text size={12} role="textbox">
-          {event.title}
-        </Text>
-      </Flex>
+    <div style={layerStyles}>
+      <div style={getItemStyles({ x: 0, y: 0 }, { x, y })}>
+        <StyledGridEventPreview
+          className={"active"}
+          duration={1}
+          height={height}
+          isOverGrid={true}
+          priority={event.priority}
+          role="button"
+          tabIndex={0}
+          width={width}
+        >
+          <Flex alignItems={AlignItems.CENTER} flexWrap={FlexWrap.WRAP}>
+            <Text size={12} role="textbox">
+              {event.title}
+            </Text>
+          </Flex>
 
-      {isOverGrid && (
-        <Flex flexWrap={FlexWrap.WRAP}>
-          <Text size={10}>{_getTimePreview()}</Text>
-        </Flex>
-      )}
-    </StyledDraggableEvent>
+          {isOverGrid && (
+            <Flex flexWrap={FlexWrap.WRAP}>
+              <Text size={10}>{_getTimePreview()}</Text>
+            </Flex>
+          )}
+        </StyledGridEventPreview>
+      </div>
+    </div>
   );
 });

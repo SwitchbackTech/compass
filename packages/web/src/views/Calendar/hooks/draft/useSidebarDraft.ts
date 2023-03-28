@@ -152,6 +152,7 @@ export const useSomedayEvents = (
     // setSomedayEvents(newState);
     // console.log(newState.events[event._id]);
 
+    console.log("onDraft");
     setIsDrafting(true);
     setDraft({
       ...event,
@@ -159,7 +160,6 @@ export const useSomedayEvents = (
       // startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
       // endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
     });
-    console.log(draft);
   };
 
   const onDragEnd = (result: DropResult) => {
@@ -171,18 +171,28 @@ export const useSomedayEvents = (
 
     const { destination, source } = result;
 
-    if (!destination) return;
+    if (!destination) {
+      close();
+      return;
+    }
 
     const noChange =
       destination.droppableId === source.droppableId &&
       destination.index === source.index;
 
-    if (noChange) return;
+    noChange && console.log("no change, closing");
+    if (noChange) {
+      close();
+      return;
+    }
 
     reorder(result);
+    console.log("closing after reorder");
+    close();
   };
 
   const onDragStart = (props: { draggableId: string }) => {
+    console.log("starting drag...");
     const existingEvent = somedayEvents.events[props.draggableId];
     const isExisting = existingEvent !== undefined;
 
@@ -255,7 +265,6 @@ export const useSomedayEvents = (
   const onSectionClick = () => {
     if (isDraftingRedux) {
       console.log("discarding after sect click");
-      console.log(draft);
       dispatch(draftSlice.actions.discard());
       return;
     }

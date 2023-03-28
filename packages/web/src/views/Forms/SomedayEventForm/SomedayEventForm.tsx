@@ -32,11 +32,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       onSetEventField(fieldName, e.target.value);
     };
 
-  const onSetEventField: SetEventFormField = (field, value) => {
-    const newEvent = { ...event, [field]: value };
-    setEvent(newEvent);
-  };
-
   const onDelete = () => {
     if (event._id) {
       dispatch(getSomedayEventsSlice.actions.delete({ _id: event._id }));
@@ -66,6 +61,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       default:
         return;
     }
+  };
+
+  const onSetEventField: SetEventFormField = (field, value) => {
+    const newEvent = { ...event, [field]: value };
+    setEvent(newEvent);
   };
 
   const stopPropagation = (e: MouseEvent) => {

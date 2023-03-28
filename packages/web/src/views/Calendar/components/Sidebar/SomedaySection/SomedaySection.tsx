@@ -1,20 +1,25 @@
 import React, { FC, useRef } from "react";
+import { DragDropContext } from "@hello-pangea/dnd";
 import { ColorNames } from "@core/types/color.types";
 import { Text } from "@web/components/Text";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { DragDropContext } from "@hello-pangea/dnd";
 import { useAppSelector } from "@web/store/store.hooks";
 import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/event.selectors";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useSomedayEvents } from "@web/views/Calendar/hooks/draft/useSidebarDraft";
+import {
+  SIDEBAR_OPEN_WIDTH,
+  GRID_X_START,
+} from "@web/views/Calendar/layout.constants";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
 import { StyledList } from "../EventsList/styled";
 import { WeekEventsColumn } from "./WeekColumn/WeekEventsColumn";
+import { GridEventPreview } from "../../Event/Grid/GridEventPreview/GridEventPreview";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -40,6 +45,12 @@ export const SomedaySection: FC<Props> = ({
   const { state, util } = somedayProps;
 
   const somedayRef = useRef();
+
+  const _isDrafting = state.isDraftingExisting || state.isDraftingNew;
+  const shouldPreview = _isDrafting && state.isOverGrid && !state.draft.isOpen;
+
+  const gridX = state.mouseCoords.x - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
+  const dayIndex = dateCalcs.getDayNumberByX(gridX);
 
   return (
     <Styled flex={flex} onClick={util.onSectionClick} ref={somedayRef}>
@@ -70,6 +81,21 @@ export const SomedaySection: FC<Props> = ({
         onDragEnd={util.onDragEnd}
         onDragStart={util.onDragStart}
       >
+        {shouldPreview && (
+          <GridEventPreview
+            dateCalcs={dateCalcs}
+            dayIndex={dayIndex}
+            event={state.draft}
+            isOverAllDayRow={false}
+            // isOverGrid={true}
+            // isOverMainGrid={true}
+            isOverGrid={state.isOverGrid}
+            isOverMainGrid={state.isOverGrid}
+            measurements={measurements}
+            mouseCoords={state.mouseCoords}
+            startOfView={viewStart}
+          />
+        )}
         <StyledList>
           {state.somedayEvents.columnOrder.map((columnId) => {
             const column = state.somedayEvents.columns[columnId];
@@ -81,7 +107,6 @@ export const SomedaySection: FC<Props> = ({
               <div key={`${columnId}-wrapper`}>
                 <WeekEventsColumn
                   column={column}
-                  dateCalcs={dateCalcs}
                   draftId={state.draft?._id}
                   draft={state.draft}
                   events={weekEvents}
@@ -89,10 +114,7 @@ export const SomedaySection: FC<Props> = ({
                   isDraftingNew={state.isDraftingNew}
                   isOverGrid={state.isOverGrid}
                   key={columnId}
-                  measurements={measurements}
-                  mouseCoords={state.mouseCoords}
                   util={util}
-                  viewStart={viewStart}
                 />
               </div>
             );

@@ -7,7 +7,7 @@ import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 
-import { NewStyledSomedayEvent } from "./newStyled";
+import { NewStyledSomedayEvent } from "./styled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
 
 export interface Props {
@@ -39,17 +39,7 @@ export const SomedayEvent = ({
 
   const [isFocused, setIsFocused] = useState(false);
 
-  event?.isOpen && console.log("open:", event?.title);
-  if (event === undefined)
-    return (
-      <div
-        {...provided.draggableProps}
-        {...provided.dragHandleProps}
-        ref={provided.innerRef}
-      >
-        <h1>idk</h1>
-      </div>
-    );
+  const shouldOpenForm = event?.isOpen || (isDrafting && !isDragging);
 
   return (
     <>
@@ -61,7 +51,6 @@ export const SomedayEvent = ({
         isOverGrid={isOverGrid}
         isFocused={isFocused}
         onClick={(e: MouseEvent) => {
-          console.log("clicked");
           e.stopPropagation();
           onDraft(event);
         }}
@@ -77,8 +66,7 @@ export const SomedayEvent = ({
       </NewStyledSomedayEvent>
 
       <FloatingPortal>
-        {/* {isDrafting && !isDragging && event.isOpen && ( */}
-        {(isDrafting || event.isOpen) && (
+        {shouldOpenForm && (
           <StyledFloatContainer
             ref={floating}
             strategy={strategy}
