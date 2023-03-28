@@ -38,8 +38,9 @@ export const DraggableSomedayEvent: FC<Props> = ({
           return (
             <>
               <SomedayEvent
+                //++ need to pass the draft if needed
                 event={event}
-                // isDragging={isDragging || snapshot.isDragging}
+                //++ isDragging={isDragging || snapshot.isDragging}
                 isDragging={snapshot.isDragging}
                 isDrafting={isDraftingThisEvent}
                 isOverGrid={isOverGrid}

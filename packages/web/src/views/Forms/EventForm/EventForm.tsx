@@ -265,9 +265,9 @@ export const EventForm: React.FC<FormProps> = ({
 
       <StyledTitleField
         autoFocus
-        placeholder="Title"
         onChange={onChangeEventTextField("title")}
         onKeyDown={ignoreDelete}
+        placeholder="Title"
         role="textarea"
         name="Event Title"
         value={title}

@@ -7,7 +7,6 @@ export interface WeekColProps {
     id: string;
   };
   draft: Schema_GridEvent;
-  draftId: string;
   events: Schema_Event[];
   isDraftingExisting: boolean;
   isDraftingNew: boolean;

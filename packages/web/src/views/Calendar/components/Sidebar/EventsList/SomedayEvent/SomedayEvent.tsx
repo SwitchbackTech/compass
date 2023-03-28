@@ -1,5 +1,7 @@
-import React, { Dispatch, SetStateAction, useState } from "react";
+import { Key } from "ts-key-enum";
+import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { DraggableProvided } from "@hello-pangea/dnd";
+import { Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { FloatingPortal } from "@floating-ui/react";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
@@ -18,7 +20,7 @@ export interface Props {
   onClose: () => void;
   onDraft: (event: Schema_GridEvent) => void;
   onMigrate: (event: Schema_GridEvent, location: "forward" | "back") => void;
-  onSubmit: () => void;
+  onSubmit: (event?: Schema_Event) => void;
   provided: DraggableProvided;
   setEvent: Dispatch<SetStateAction<Schema_GridEvent>>;
 }
@@ -39,7 +41,32 @@ export const SomedayEvent = ({
 
   const [isFocused, setIsFocused] = useState(false);
 
-  const shouldOpenForm = event?.isOpen || (isDrafting && !isDragging);
+  const initialFormOpen = event?.isOpen || (isDrafting && !isDragging);
+  const [shouldOpenForm, setShouldOpenForm] = useState(initialFormOpen);
+
+  useEffect(() => {
+    setShouldOpenForm(event?.isOpen || (isDrafting && !isDragging));
+  }, [event?.isOpen, isDrafting, isDragging]);
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    switch (e.key) {
+      case Key.Escape: {
+        if (isFocused) {
+          setIsFocused(false);
+        }
+        break;
+      }
+
+      case Key.Enter: {
+        if (!shouldOpenForm) {
+          onDraft(event);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  };
 
   return (
     <>
@@ -50,12 +77,13 @@ export const SomedayEvent = ({
         isDrafting={isDrafting}
         isOverGrid={isOverGrid}
         isFocused={isFocused}
+        onBlur={() => setIsFocused(false)}
         onClick={(e: MouseEvent) => {
           e.stopPropagation();
           onDraft(event);
         }}
-        onBlur={() => setIsFocused(false)}
         onFocus={() => setIsFocused(true)}
+        onKeyDown={onKeyDown}
         priority={event.priority}
         role="button"
         ref={provided.innerRef}
@@ -75,8 +103,13 @@ export const SomedayEvent = ({
           >
             <SomedayEventForm
               event={event}
-              onClose={onClose}
-              onConvert={() => console.log("converting [not rly]...")}
+              onClose={() => {
+                setShouldOpenForm(false);
+                onClose();
+              }}
+              onConvert={() =>
+                console.log("TODO: convert someday event to grid event")
+              }
               onSubmit={onSubmit}
               setEvent={setEvent}
             />

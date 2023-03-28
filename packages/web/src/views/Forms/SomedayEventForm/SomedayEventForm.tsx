@@ -1,4 +1,4 @@
-import React, { KeyboardEventHandler, MouseEvent, useState } from "react";
+import React, { MouseEvent } from "react";
 import { Key } from "ts-key-enum";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { DeleteIcon } from "@web/components/Icons";
@@ -24,7 +24,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 }) => {
   const dispatch = useAppDispatch();
 
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const { priority, title } = event || {};
 
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
@@ -40,21 +40,17 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     _onClose();
   };
 
-  const onKeyDown: KeyboardEventHandler<HTMLFormElement> = (e) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
     e.stopPropagation();
-
     switch (e.key) {
       case Key.Escape: {
         _onClose();
         break;
       }
-      case Key.Tab: {
-        isPickerOpen && setIsPickerOpen(false);
-        break;
-      }
       case Key.Enter: {
         if (e.metaKey) {
           onSubmit(event);
+          return;
         }
         break;
       }
@@ -82,12 +78,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       onKeyDown={onKeyDown}
       onMouseDown={stopPropagation}
       onMouseUp={(e) => {
-        if (isPickerOpen) {
-          setIsPickerOpen(false);
-        }
         e.stopPropagation();
       }}
-      priority={event.priority}
+      priority={priority}
       role="form"
     >
       <StyledIconRow>
@@ -100,13 +93,10 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         placeholder="Title"
         role="input"
         title="title"
-        value={event.title}
+        value={title}
       />
 
-      <PrioritySection
-        onSetEventField={onSetEventField}
-        priority={event.priority}
-      />
+      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
 
       <StyledDescriptionField
         onChange={onChangeEventTextField("description")}
@@ -114,7 +104,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         value={event.description || ""}
       />
 
-      <SaveSection priority={event.priority} onSubmit={onSubmit} />
+      <SaveSection priority={priority} onSubmit={onSubmit} />
     </StyledEventForm>
   );
 };
