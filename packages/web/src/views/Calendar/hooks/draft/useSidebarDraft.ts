@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import dayjs from "dayjs";
-import { DropResult } from "@hello-pangea/dnd";
 import {
   SOMEDAY_WEEKLY_LIMIT,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -9,8 +8,10 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { getWeekRangeDates } from "@core/util/date.utils";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { DropResult_ReactDND } from "@web/common/types/dnd.types";
 import {
   getDefaultEvent,
+  prepEvtAfterDraftDrop,
   prepEvtBeforeSubmit,
 } from "@web/common/utils/event.util";
 import { getWeekRangeLabel } from "@web/common/utils/web.date.util";
@@ -142,6 +143,21 @@ export const useSomedayEvents = (
     if (isDraftingRedux && draftType === Categories_Event.SOMEDAY) {
       dispatch(draftSlice.actions.discard());
     }
+  };
+
+  // call this when enabling DND for drafts
+  const convertSomedayDraftToTimed = (
+    dropItem: DropResult_ReactDND,
+    dates: { startDate: string; endDate: string }
+  ) => {
+    const event = prepEvtAfterDraftDrop(
+      Categories_Event.TIMED,
+      dropItem,
+      dates
+    );
+
+    dispatch(createEventSlice.actions.request(event));
+    dispatch(draftSlice.actions.discard());
   };
 
   const convertSomedayEventToTimed = (

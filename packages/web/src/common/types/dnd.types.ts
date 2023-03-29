@@ -14,7 +14,7 @@ export interface DragItem_Someday {
   title: Schema_Event["title"];
 }
 
-export interface DropResult {
+export interface DropResult_ReactDND {
   _id: Schema_Event["_id"];
   description: Schema_Event["description"];
   priority: Schema_Event["priority"];
