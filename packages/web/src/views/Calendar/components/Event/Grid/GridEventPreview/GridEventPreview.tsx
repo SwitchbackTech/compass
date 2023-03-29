@@ -40,7 +40,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
   const { x, y } = mouseCoords;
 
   /* Helpers */
-  const _getHeight = () => {
+  const getHeight = () => {
     if (isOverAllDayRow) return EVENT_ALLDAY_HEIGHT;
 
     const height = isOverMainGrid
@@ -50,7 +50,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
     return height;
   };
 
-  const _getTimePreview = () => {
+  const getTimePreview = () => {
     const minutes = dateCalcs.getMinuteByY(y);
     const format = isOverAllDayRow ? DAY_COMPACT : DAY_HOUR_MIN_M;
     const timePreview = startOfView
@@ -60,7 +60,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
     return timePreview;
   };
 
-  const _getWidth = () => {
+  const getWidth = () => {
     // if (!isOverGrid) return SIDEBAR_OPEN_WIDTH / 2; // keeping shorter width feels less abrupt upon change
     // if (!isOverGrid) return 275; //++ convert to constant
     if (isOverMainGrid) {
@@ -72,8 +72,8 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
   };
 
   /* Size */
-  const height = _getHeight();
-  const width = _getWidth();
+  const height = getHeight();
+  const width = getWidth();
 
   return (
     <div style={layerStyles}>
@@ -96,7 +96,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
 
           {isOverGrid && (
             <Flex flexWrap={FlexWrap.WRAP}>
-              <Text size={10}>{_getTimePreview()}</Text>
+              <Text size={10}>{getTimePreview()}</Text>
             </Flex>
           )}
         </StyledGridEventPreview>

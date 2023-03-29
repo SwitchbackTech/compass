@@ -23,19 +23,23 @@ import {
   draftSlice,
   editEventSlice,
   createEventSlice,
+  getSomedayEventsSlice,
 } from "@web/ducks/events/event.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Range_Week } from "@web/common/types/util.types";
+import { getX } from "@web/common/utils/grid.util";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import {
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
 
+import { DateCalcs } from "../grid/useDateCalcs";
 import { useMousePosition } from "./useMousePosition";
 
 export const useSomedayEvents = (
   measurements: Measurements_Grid,
+  dateCalcs: DateCalcs,
   weekRange: Range_Week
 ) => {
   const dispatch = useAppDispatch();
@@ -53,7 +57,6 @@ export const useSomedayEvents = (
   const [isDrafting, setIsDrafting] = useState(false);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
 
-  // const isDragging = draft !== null; //++
   const isDragging = isDrafting && isDraftingRedux && draft !== null;
 
   const { isOverGrid, mouseCoords } = useMousePosition(
@@ -141,7 +144,46 @@ export const useSomedayEvents = (
     }
   };
 
+  const convertSomedayEventToTimed = (
+    _id: string,
+    dates: { startDate: string; endDate: string }
+  ) => {
+    const updatedFields: Schema_Event = {
+      isAllDay: false,
+      isSomeday: false,
+      isTimesShown: true,
+      startDate: dates.startDate,
+      endDate: dates.endDate,
+    };
+
+    dispatch(
+      getSomedayEventsSlice.actions.convert({
+        _id,
+        updatedFields,
+      })
+    );
+  };
+
+  const getDatesAfterGridDrop = (
+    target: "mainGrid" | "alldayRow",
+    mouseCoords: { x: number; y: number }
+  ) => {
+    if (target === "mainGrid") {
+      const x = getX(mouseCoords.x, true);
+      const _start = dateCalcs.getDateByXY(
+        x,
+        mouseCoords.y,
+        weekRange.weekStart
+      );
+      const startDate = _start.format();
+      const endDate = _start.add(1, "hour").format();
+
+      return { startDate, endDate };
+    }
+  };
+
   const onDraft = (event: Schema_Event) => {
+    //++
     // const newState = {
     //   ...somedayEvents,
     //   events: {
@@ -163,15 +205,21 @@ export const useSomedayEvents = (
   };
 
   const onDragEnd = (result: DropResult) => {
-    const reorderedDraft = result.draggableId === ID_SOMEDAY_DRAFT;
+    const { destination, draggableId, source } = result;
+
+    const reorderedDraft = draggableId === ID_SOMEDAY_DRAFT;
     if (reorderedDraft && !isDraftingExisting) {
       console.log("TODO: add draft to state");
       return;
     }
 
-    const { destination, source } = result;
-
     if (!destination) {
+      if (isOverGrid) {
+        //++ check for maingrid/allday
+        const dates = getDatesAfterGridDrop("mainGrid", mouseCoords);
+        convertSomedayEventToTimed(result.draggableId, dates);
+      }
+
       close();
       return;
     }

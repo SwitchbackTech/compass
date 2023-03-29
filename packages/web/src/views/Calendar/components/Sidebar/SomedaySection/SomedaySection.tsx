@@ -38,7 +38,7 @@ export const SomedaySection: FC<Props> = ({
 }) => {
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
 
-  const somedayProps = useSomedayEvents(measurements, {
+  const somedayProps = useSomedayEvents(measurements, dateCalcs, {
     weekStart: viewStart,
     weekEnd: viewEnd,
   });

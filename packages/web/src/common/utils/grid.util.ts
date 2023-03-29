@@ -470,65 +470,11 @@ export const getWidthInPixels = (
   return Math.floor(widthInPixels);
 };
 
-/*
-origY: 0
-mousePos: 10
-
-
-
-*/
-
-// ++
-// export const getWidths = (
-//   isCurrentWeek: boolean,
-//   isSidebarOpen: boolean,
-//   columnWidths: WidthPixels
-// ) => {
-//   const _daysInView = 7;
-//   if (isSidebarOpen) {
-//     return isCurrentWeek
-//       ? columnWidths.current.sidebarOpen
-//       : (new Array(_daysInView).fill(
-//           columnWidths.pastFuture.sidebarOpen
-//         ) as number[]);
-//   }
-
-//   return isCurrentWeek
-//     ? columnWidths.current.sidebarClosed
-//     : (new Array(_daysInView).fill(
-//         columnWidths.pastFuture.sidebarClosed
-//       ) as number[]);
-// };
-
-/*
-          startDate = 12am
-          clientY = 12:30am
-
-          {drag down 30 min}
-          
-          startDate:12:30am
-          clientY = 1am
-            
-            ^orig diff = 30min
-            newStart = startByY(clientY) - diff
-
-          */
-//  const durationMin =
-//             dateCalcs.getMinuteByY(e.clientY) -
-//             dayjs(_draft.startDate).minute();
-
-// const y = getYWhileDragging(e.clientY, durationMin);
-// const _yOffset = Math.abs(
-//   minuteByCursor - dateCalcs.getYByDate(_draft.startDate)
-// );
-// const minuteByCursor = dateCalcs.getMinuteByY(e.clientY);
-// const _end = _initialStart.add(
-//   dragStatus?.initialMinutesDifference || 0,
-//   "minutes"
-// );
-export const getX = (e: MouseEvent, isSidebarOpen: boolean) => {
+export const getX = (e: MouseEvent | number, isSidebarOpen: boolean) => {
   const xOffset = isSidebarOpen ? SIDEBAR_OPEN_WIDTH : SIDEBAR_CLOSED_WIDTH;
-  const x = e.clientX - xOffset;
+
+  const origX = typeof e === "number" ? e : e.clientX;
+  const x = origX - xOffset;
   return x;
 };
 
@@ -648,3 +594,61 @@ const _sumEventWidths = (
   const eventWidth = eventWidths.reduce((accum, value) => accum + value, 0);
   return eventWidth;
 };
+
+/*
+//++
+origY: 0
+mousePos: 10
+
+
+
+*/
+
+// ++
+// export const getWidths = (
+//   isCurrentWeek: boolean,
+//   isSidebarOpen: boolean,
+//   columnWidths: WidthPixels
+// ) => {
+//   const _daysInView = 7;
+//   if (isSidebarOpen) {
+//     return isCurrentWeek
+//       ? columnWidths.current.sidebarOpen
+//       : (new Array(_daysInView).fill(
+//           columnWidths.pastFuture.sidebarOpen
+//         ) as number[]);
+//   }
+
+//   return isCurrentWeek
+//     ? columnWidths.current.sidebarClosed
+//     : (new Array(_daysInView).fill(
+//         columnWidths.pastFuture.sidebarClosed
+//       ) as number[]);
+// };
+
+/*
+          startDate = 12am
+          clientY = 12:30am
+
+          {drag down 30 min}
+          
+          startDate:12:30am
+          clientY = 1am
+            
+            ^orig diff = 30min
+            newStart = startByY(clientY) - diff
+
+          */
+//  const durationMin =
+//             dateCalcs.getMinuteByY(e.clientY) -
+//             dayjs(_draft.startDate).minute();
+
+// const y = getYWhileDragging(e.clientY, durationMin);
+// const _yOffset = Math.abs(
+//   minuteByCursor - dateCalcs.getYByDate(_draft.startDate)
+// );
+// const minuteByCursor = dateCalcs.getMinuteByY(e.clientY);
+// const _end = _initialStart.add(
+//   dragStatus?.initialMinutesDifference || 0,
+//   "minutes"
+// );

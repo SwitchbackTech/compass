@@ -2,10 +2,15 @@ import React, { FC, MouseEvent } from "react";
 import { useDrop } from "react-dnd";
 import mergeRefs from "react-merge-refs";
 import { Dayjs } from "dayjs";
+import { Categories_Event } from "@core/types/event.types";
+import {
+  DRAFT_DURATION_MIN,
+  SIDEBAR_OPEN_WIDTH,
+} from "@web/views/Calendar/layout.constants";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Ref_Callback } from "@web/common/types/util.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { selectDraftId } from "@web/ducks/events/event.selectors";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Ref_Grid } from "@web/views/Calendar/components/Grid/grid.types";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
@@ -15,17 +20,8 @@ import {
   prepEvtAfterDraftDrop,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
-import {
-  createEventSlice,
-  draftSlice,
-  getSomedayEventsSlice,
-} from "@web/ducks/events/event.slice";
+import { createEventSlice, draftSlice } from "@web/ducks/events/event.slice";
 import { Category_DragItem, DropResult } from "@web/common/types/dnd.types";
-import {
-  DRAFT_DURATION_MIN,
-  SIDEBAR_OPEN_WIDTH,
-} from "@web/views/Calendar/layout.constants";
-import { selectDraftId } from "@web/ducks/events/event.selectors";
 
 import { Columns } from "../Columns";
 import { GridRows } from "./GridRows";
@@ -87,26 +83,6 @@ export const MainGrid: FC<Props> = ({
     dispatch(draftSlice.actions.discard());
   };
 
-  const convertSomedayEventToTimed = (
-    _id: string,
-    dates: { startDate: string; endDate: string }
-  ) => {
-    const updatedFields: Schema_Event = {
-      isAllDay: false,
-      isSomeday: false,
-      isTimesShown: true,
-      startDate: dates.startDate,
-      endDate: dates.endDate,
-    };
-
-    dispatch(
-      getSomedayEventsSlice.actions.convert({
-        _id,
-        updatedFields,
-      })
-    );
-  };
-
   const onMouseDown = (e: MouseEvent) => {
     if (isDrafting) {
       dispatch(draftSlice.actions.discard());
@@ -136,7 +112,7 @@ export const MainGrid: FC<Props> = ({
         const dates = getDates(x, y);
 
         if (item._id) {
-          convertSomedayEventToTimed(item._id, dates);
+          console.log("logic moved to useSidebarDraft");
         } else {
           convertSomedayDraftToTimed(item, dates);
         }
@@ -153,7 +129,8 @@ export const MainGrid: FC<Props> = ({
     <StyledMainGrid
       id={ID_GRID_MAIN}
       onMouseDown={onMouseDown}
-      ref={mergeRefs([drop, mainGridRef, scrollRef])}
+      //++ ref={mergeRefs([drop, mainGridRef, scrollRef])}
+      ref={mergeRefs([mainGridRef, scrollRef])}
     >
       <Columns
         isCurrentWeek={isCurrentWeek}
