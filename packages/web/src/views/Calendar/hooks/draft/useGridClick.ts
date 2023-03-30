@@ -54,7 +54,6 @@ export const useGridClick = (
     }
 
     if (!draft || !isDrafting) {
-      console.log("nothing, returning...");
       return;
     }
 

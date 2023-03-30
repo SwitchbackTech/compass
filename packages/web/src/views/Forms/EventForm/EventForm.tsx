@@ -192,7 +192,6 @@ export const EventForm: React.FC<FormProps> = ({
 
   const onSetEventField: SetEventFormField = (field, value) => {
     const newEvent = { ...event, [field]: value };
-    console.log("setting after update");
     setEvent(newEvent);
   };
 

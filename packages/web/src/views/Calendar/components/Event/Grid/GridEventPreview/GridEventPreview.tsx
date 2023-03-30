@@ -10,6 +10,7 @@ import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { SpaceCharacter } from "@web/components/SpaceCharacter";
 
 import { getItemStyles, layerStyles, StyledGridEventPreview } from "./styled";
 
@@ -18,7 +19,6 @@ export interface Props {
   dayIndex: number;
   event: Schema_GridEvent;
   isOverAllDayRow: boolean;
-  isOverGrid: boolean;
   isOverMainGrid: boolean;
   measurements: Measurements_Grid;
   mouseCoords: { x: number; y: number };
@@ -30,7 +30,6 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
   dayIndex,
   event,
   isOverAllDayRow,
-  isOverGrid,
   isOverMainGrid,
   measurements,
   mouseCoords,
@@ -61,8 +60,6 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
   };
 
   const getWidth = () => {
-    // if (!isOverGrid) return SIDEBAR_OPEN_WIDTH / 2; // keeping shorter width feels less abrupt upon change
-    // if (!isOverGrid) return 275; //++ convert to constant
     if (isOverMainGrid) {
       const buffer = getWidthBuffer(dayIndex) + 20;
       return measurements.colWidths[dayIndex] - buffer;
@@ -82,7 +79,6 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
           className={"active"}
           duration={1}
           height={height}
-          isOverGrid={true}
           priority={event.priority}
           role="button"
           tabIndex={0}
@@ -92,13 +88,14 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
             <Text size={12} role="textbox">
               {event.title}
             </Text>
-          </Flex>
 
-          {isOverGrid && (
-            <Flex flexWrap={FlexWrap.WRAP}>
-              <Text size={10}>{getTimePreview()}</Text>
-            </Flex>
-          )}
+            {isOverMainGrid && (
+              <>
+                <SpaceCharacter />
+                <Text size={10}>{getTimePreview()}</Text>
+              </>
+            )}
+          </Flex>
         </StyledGridEventPreview>
       </div>
     </div>

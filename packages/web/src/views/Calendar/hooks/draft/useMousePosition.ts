@@ -11,6 +11,9 @@ export const useMousePosition = (
   measurements: Measurements_Grid
 ) => {
   const [isOverGrid, setIsOverGrid] = useState(false);
+  const [isOverMainGrid, setIsOverMainGrid] = useState(false);
+  const [isOverAllDayRow, setIsOverAllDayRow] = useState(false);
+
   const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 });
 
   const { allDayRow } = measurements;
@@ -21,13 +24,18 @@ export const useMousePosition = (
       const y = e.clientY;
 
       const isPastSidebar = x > SIDEBAR_X_START;
+
       const isOverAllDayRow =
         isPastSidebar && y < allDayRow.bottom && y > allDayRow.top;
+
       const isOverMainGrid =
         isPastSidebar && !isOverAllDayRow && y > GRID_Y_START;
+
       const isOverGrid = isOverAllDayRow || isOverMainGrid;
 
       setIsOverGrid(isOverGrid);
+      setIsOverAllDayRow(isOverAllDayRow);
+      setIsOverMainGrid(isOverMainGrid);
       setMouseCoords({ x, y });
     };
 
@@ -40,5 +48,5 @@ export const useMousePosition = (
     };
   }, [allDayRow?.bottom, allDayRow?.top, isDragging, isFormOpen]);
 
-  return { isOverGrid, mouseCoords };
+  return { isOverAllDayRow, isOverGrid, isOverMainGrid, mouseCoords };
 };

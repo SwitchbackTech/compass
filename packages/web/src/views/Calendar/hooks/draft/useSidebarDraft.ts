@@ -34,6 +34,7 @@ import {
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
+import { DropResult } from "@hello-pangea/dnd";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { useMousePosition } from "./useMousePosition";
@@ -60,11 +61,8 @@ export const useSomedayEvents = (
 
   const isDragging = isDrafting && isDraftingRedux && draft !== null;
 
-  const { isOverGrid, mouseCoords } = useMousePosition(
-    isDragging,
-    draft?.isOpen,
-    measurements
-  );
+  const { isOverAllDayRow, isOverGrid, isOverMainGrid, mouseCoords } =
+    useMousePosition(isDragging, draft?.isOpen, measurements);
 
   const weekLabel = useMemo(
     () => getWeekRangeLabel(weekRange.weekStart, weekRange.weekEnd),
@@ -160,6 +158,40 @@ export const useSomedayEvents = (
     dispatch(draftSlice.actions.discard());
   };
 
+  const convertSomedayDraftToAllDay = (
+    dropItem: DropResult_ReactDND,
+    dates: { startDate: string; endDate: string }
+  ) => {
+    const event = prepEvtAfterDraftDrop(
+      Categories_Event.ALLDAY,
+      dropItem,
+      dates
+    );
+
+    dispatch(createEventSlice.actions.request(event));
+    dispatch(draftSlice.actions.discard());
+  };
+
+  const convertSomedayEventToAllDay = (
+    _id: string,
+    dates: { startDate: string; endDate: string }
+  ) => {
+    const updatedFields: Schema_Event = {
+      isAllDay: true,
+      isSomeday: false,
+      isTimesShown: false,
+      startDate: dates.startDate,
+      endDate: dates.endDate,
+    };
+
+    dispatch(
+      getSomedayEventsSlice.actions.convert({
+        _id,
+        updatedFields,
+      })
+    );
+  };
+
   const convertSomedayEventToTimed = (
     _id: string,
     dates: { startDate: string; endDate: string }
@@ -184,15 +216,21 @@ export const useSomedayEvents = (
     target: "mainGrid" | "alldayRow",
     mouseCoords: { x: number; y: number }
   ) => {
+    const x = getX(mouseCoords.x, true);
+    const y = mouseCoords.y;
+
     if (target === "mainGrid") {
-      const x = getX(mouseCoords.x, true);
-      const _start = dateCalcs.getDateByXY(
-        x,
-        mouseCoords.y,
-        weekRange.weekStart
-      );
+      const _start = dateCalcs.getDateByXY(x, y, weekRange.weekStart);
       const startDate = _start.format();
       const endDate = _start.add(1, "hour").format();
+
+      return { startDate, endDate };
+    }
+
+    if (target === "alldayRow") {
+      const _start = dateCalcs.getDateByXY(x, y, weekRange.weekStart);
+      const startDate = _start.format(YEAR_MONTH_DAY_FORMAT);
+      const endDate = _start.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
 
       return { startDate, endDate };
     }
@@ -223,36 +261,41 @@ export const useSomedayEvents = (
   const onDragEnd = (result: DropResult) => {
     const { destination, draggableId, source } = result;
 
-    const reorderedDraft = draggableId === ID_SOMEDAY_DRAFT;
-    if (reorderedDraft && !isDraftingExisting) {
-      console.log("TODO: add draft to state");
-      return;
-    }
-
-    if (!destination) {
-      if (isOverGrid) {
-        //++ check for maingrid/allday
-        const dates = getDatesAfterGridDrop("mainGrid", mouseCoords);
-        convertSomedayEventToTimed(result.draggableId, dates);
+    const droppedOnSidebar = destination !== null;
+    if (droppedOnSidebar) {
+      const reorderedDraft = draggableId === ID_SOMEDAY_DRAFT;
+      if (reorderedDraft && !isDraftingExisting) {
+        console.log("Tried reordering a draft. TODO: add draft to state");
+        return;
       }
 
+      const noChange =
+        destination.droppableId === source.droppableId &&
+        destination.index === source.index;
+
+      noChange && console.log("no change, closing");
+      if (noChange) {
+        close();
+        return;
+      }
+
+      reorder(result);
+      console.log("closing after reorder");
       close();
-      return;
     }
 
-    const noChange =
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index;
-
-    noChange && console.log("no change, closing");
-    if (noChange) {
-      close();
-      return;
+    if (isOverMainGrid) {
+      const dates = getDatesAfterGridDrop("mainGrid", mouseCoords);
+      convertSomedayEventToTimed(draggableId, dates);
     }
 
-    reorder(result);
-    console.log("closing after reorder");
+    if (isOverAllDayRow) {
+      const dates = getDatesAfterGridDrop("alldayRow", mouseCoords);
+      convertSomedayEventToAllDay(draggableId, dates);
+    }
+
     close();
+    return;
   };
 
   const onDragStart = (props: { draggableId: string }) => {
@@ -389,7 +432,9 @@ export const useSomedayEvents = (
         draftType === Categories_Event.SOMEDAY,
       isDraftingNew:
         isDrafting && !isDraftingExisting && !existingIds.includes(draft?._id),
+      isOverAllDayRow,
       isOverGrid,
+      isOverMainGrid,
       mouseCoords,
       weekLabel,
     },

@@ -10,8 +10,8 @@ interface StyledEventProps {
   height: number;
   hoverColor: string;
   isDragging: boolean;
-  isResizing: boolean;
   isInPast: boolean;
+  isResizing: boolean;
   isPlaceholder: boolean;
   left: number;
   opacity: number;
