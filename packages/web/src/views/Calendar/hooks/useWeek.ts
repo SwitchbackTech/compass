@@ -2,10 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Dayjs } from "dayjs";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
-import {
-  getSomedayEventsSlice,
-  getWeekEventsSlice,
-} from "@web/ducks/events/event.slice";
+import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
+import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { Category_View } from "@web/views/Calendar/calendarView.types";
 
 export const useWeek = (today: Dayjs) => {

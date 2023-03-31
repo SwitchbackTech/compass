@@ -2,8 +2,6 @@ import React, { FC, MouseEvent, useEffect } from "react";
 import dayjs from "dayjs";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { ColorNames } from "@core/types/color.types";
-import { getColor } from "@core/util/color.utils";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Ref_Callback } from "@web/common/types/util.types";
 import {
@@ -13,11 +11,8 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { getX } from "@web/common/utils/grid.util";
-import { draftSlice } from "@web/ducks/events/event.slice";
-import {
-  selectAllDayEvents,
-  selectDraftId,
-} from "@web/ducks/events/event.selectors";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
@@ -28,6 +23,7 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 
 import { StyledEvent } from "../../Event/styled";
 import { StyledAllDayColumns, StyledGridCol } from "../Columns/styled";

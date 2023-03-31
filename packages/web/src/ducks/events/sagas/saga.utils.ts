@@ -1,8 +1,9 @@
 import { put, select } from "@redux-saga/core/effects";
 
-import { getSomedayEventsSlice, getWeekEventsSlice } from "../event.slice";
+import { getWeekEventsSlice } from "../slices/week.slice";
 import { Response_GetEventsSaga } from "../event.types";
-import { selectPaginatedEventsBySectionType } from "../event.selectors";
+import { selectPaginatedEventsBySectionType } from "../selectors/util.selectors";
+import { getSomedayEventsSlice } from "../slices/someday.slice";
 
 /*
  * gets data from state, categorized by time frame (week, month, future)

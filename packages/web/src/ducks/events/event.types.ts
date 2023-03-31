@@ -1,12 +1,11 @@
 import { Action } from "redux";
 import { Priorities } from "@core/constants/core.constants";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { Payload_Order, Schema_Event } from "@core/types/event.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Response_HttpPaginatedSuccess,
   Filters_Pagination,
 } from "@web/common/types/api.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export interface Action_ConvertSomedayEvent extends Action {
   payload: Payload_ConvertSomedayEvent;
@@ -22,21 +21,6 @@ export interface Action_CreateEvent extends Action {
 
 export interface Action_DeleteEvent extends Action {
   payload: Payload_DeleteEvent;
-}
-
-export interface Action_DraftEvent extends Action {
-  payload: Payload_DraftEvent;
-}
-
-export interface Action_Draft_Drag extends Action {
-  payload: Payload_Draft_Drag;
-}
-export interface Action_Draft_Resize extends Action {
-  payload: Payload_Draft_Resize;
-}
-
-export interface Action_Draft_Swap extends Action {
-  payload: Payload_Draft_Swap;
 }
 
 export interface Action_EditEvent extends Action {
@@ -89,24 +73,6 @@ interface Payload_DeleteEvent {
   _id: string;
 }
 
-interface Payload_DraftEvent {
-  event?: Schema_Event;
-  eventType: Categories_Event;
-  activity?: "createShortcut" | "dragging" | "resizing";
-}
-
-interface Payload_Draft_Drag {
-  event: Schema_Event;
-}
-interface Payload_Draft_Resize {
-  event: Schema_Event;
-  dateToChange: "startDate" | "endDate";
-}
-
-interface Payload_Draft_Swap {
-  event: Schema_GridEvent;
-  category: Categories_Event;
-}
 export interface Payload_EditEvent {
   _id: string;
   event: Schema_Event;
@@ -132,7 +98,3 @@ export type Response_GetEventsSaga =
 
 export type Response_GetEventsSuccess<T = Schema_Event[]> =
   Response_HttpPaginatedSuccess<T> & Payload_GetEvents;
-
-export type SectionType_Sidebar = "future" | "currentMonth";
-
-export type SectionType = SectionType_Sidebar | "week";

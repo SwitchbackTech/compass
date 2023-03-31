@@ -42,7 +42,7 @@ export const createAsyncSlice = <
     value: null,
   };
 
-  const initialReducers = {
+  const reducers = {
     request: (state, _action: PayloadAction<Draft<RequestPayload>>) => {
       state.isProcessing = true;
       state.isSuccess = false;
@@ -59,9 +59,14 @@ export const createAsyncSlice = <
       state.isSuccess = false;
       state.error = action.payload;
     },
-
     ...options.reducers,
   };
+
+  const actionKeys = Object.keys(reducers);
+  const actionNames = actionKeys.reduce((result, name) => {
+    result[name] = `async/${options.name}/${name}`;
+    return result;
+  }, {});
 
   return {
     ...createSlice({
@@ -71,16 +76,9 @@ export const createAsyncSlice = <
         ...options.initialState,
       },
       name: `async/${options.name}`,
-      reducers: {
-        ...initialReducers,
-        ...options.reducers,
-      },
+      reducers,
     }),
-    actionNames: {
-      error: `async/${options.name}/error`,
-      request: `async/${options.name}/request`,
-      success: `async/${options.name}/success`,
-    },
+    actionNames,
   };
 };
 

@@ -18,14 +18,19 @@ export class EventRoutes extends CommonRoutesConfig {
       .post(eventController.create);
 
     this.app
-      .route(`/api/event/updateMany`)
-      .all(verifySession())
-      .post(eventController.updateMany);
-
-    this.app
       .route(`/api/event/deleteMany`)
       .all(verifySession())
       .delete(eventController.deleteMany);
+
+    this.app
+      .route(`/api/event/reorder`)
+      .all(verifySession())
+      .put(eventController.reorder);
+
+    this.app
+      .route(`/api/event/updateMany`)
+      .all(verifySession())
+      .post(eventController.updateMany);
 
     /* 
     careful: this one's dangerous 

@@ -1,6 +1,10 @@
 import { SessionRequest } from "supertokens-node/framework/express";
 import { SReqBody, Res } from "@backend/common/types/express.types";
-import { Schema_Event, Params_DeleteMany } from "@core/types/event.types";
+import {
+  Schema_Event,
+  Params_DeleteMany,
+  Payload_Order,
+} from "@core/types/event.types";
 import eventService from "@backend/event/services/event.service";
 
 class EventController {
@@ -82,6 +86,19 @@ class EventController {
       const usersEvents = await eventService.readAll(userId, req.query);
       //@ts-ignore
       res.promise(Promise.resolve(usersEvents));
+    } catch (e) {
+      //@ts-ignore
+      res.promise(Promise.reject(e));
+    }
+  };
+
+  reorder = async (req: SReqBody<Payload_Order[]>, res: Res) => {
+    try {
+      const userId = req.session?.getUserId() as string;
+      const newOrder = req.body;
+      const result = await eventService.reorder(userId, newOrder);
+      //@ts-ignore
+      res.promise(Promise.resolve(result));
     } catch (e) {
       //@ts-ignore
       res.promise(Promise.reject(e));

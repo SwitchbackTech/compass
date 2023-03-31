@@ -6,14 +6,14 @@ import { DRAFT_DURATION_MIN } from "@web/views/Calendar/layout.constants";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Ref_Callback } from "@web/common/types/util.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { selectDraftId } from "@web/ducks/events/event.selectors";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Ref_Grid } from "@web/views/Calendar/components/Grid/grid.types";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
-import { draftSlice } from "@web/ducks/events/event.slice";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 
 import { Columns } from "../Columns";
 import { GridRows } from "./GridRows";

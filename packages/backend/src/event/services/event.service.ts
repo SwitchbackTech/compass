@@ -11,6 +11,7 @@ import {
   Query_Event,
   Params_DeleteMany,
   Result_DeleteMany,
+  Payload_Order,
 } from "@core/types/event.types";
 import { getCurrentWeekRangeDates } from "@core/util/date.utils";
 import { Logger } from "@core/logger/winston.logger";
@@ -25,6 +26,7 @@ import {
 } from "@backend/common/constants/error.constants";
 
 import { getReadAllFilter } from "./event.service.helpers";
+import { reorderEvents } from "../queries/event.queries";
 
 const logger = Logger("app:event.service");
 
@@ -256,6 +258,16 @@ class EventService {
 
     return event;
   }
+
+  reorder = async (userId: string, order: Payload_Order[]) => {
+    if (order.length <= 0) {
+      throw error(GenericError.BadRequest, "No events to reorder");
+    }
+
+    const result = await reorderEvents(userId, order);
+
+    return result;
+  };
 
   async updateById(
     userId: string,

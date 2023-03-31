@@ -18,14 +18,8 @@ import { getWeekRangeLabel } from "@web/common/utils/web.date.util";
 import {
   selectDraftId,
   selectDraftStatus,
-  selectSomedayEvents,
-} from "@web/ducks/events/event.selectors";
-import {
-  draftSlice,
-  editEventSlice,
-  createEventSlice,
-  getSomedayEventsSlice,
-} from "@web/ducks/events/event.slice";
+} from "@web/ducks/events/selectors/draft.selectors";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Range_Week } from "@web/common/types/util.types";
 import { getX } from "@web/common/utils/grid.util";
@@ -35,6 +29,12 @@ import {
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
 import { DropResult } from "@hello-pangea/dnd";
+import { selectSomedayEvents } from "@web/ducks/events/selectors/someday.selectors";
+import {
+  createEventSlice,
+  editEventSlice,
+} from "@web/ducks/events/slices/event.slice";
+import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { useMousePosition } from "./useMousePosition";
@@ -119,7 +119,6 @@ export const useSomedayEvents = (
         alert(SOMEDAY_WEEK_LIMIT_MSG);
         return;
       }
-      console.log("creating default someday..."); //++
       createDefaultSomeday();
     }
   }, [
@@ -212,7 +211,7 @@ export const useSomedayEvents = (
     );
   };
 
-  const getDatesAfterGridDrop = (
+  const getDatesAfterDroppingOn = (
     target: "mainGrid" | "alldayRow",
     mouseCoords: { x: number; y: number }
   ) => {
@@ -273,33 +272,28 @@ export const useSomedayEvents = (
         destination.droppableId === source.droppableId &&
         destination.index === source.index;
 
-      noChange && console.log("no change, closing");
       if (noChange) {
         close();
         return;
       }
 
       reorder(result);
-      console.log("closing after reorder");
-      close();
-    }
+    } else {
+      if (isOverMainGrid) {
+        const dates = getDatesAfterDroppingOn("mainGrid", mouseCoords);
+        convertSomedayEventToTimed(draggableId, dates);
+      }
 
-    if (isOverMainGrid) {
-      const dates = getDatesAfterGridDrop("mainGrid", mouseCoords);
-      convertSomedayEventToTimed(draggableId, dates);
-    }
-
-    if (isOverAllDayRow) {
-      const dates = getDatesAfterGridDrop("alldayRow", mouseCoords);
-      convertSomedayEventToAllDay(draggableId, dates);
+      if (isOverAllDayRow) {
+        const dates = getDatesAfterDroppingOn("alldayRow", mouseCoords);
+        convertSomedayEventToAllDay(draggableId, dates);
+      }
     }
 
     close();
-    return;
   };
 
   const onDragStart = (props: { draggableId: string }) => {
-    console.log("starting drag...");
     const existingEvent = somedayEvents.events[props.draggableId];
     const isExisting = existingEvent !== undefined;
 
@@ -371,13 +365,13 @@ export const useSomedayEvents = (
 
   const onSectionClick = () => {
     if (isDraftingRedux) {
-      console.log("discarding after sect click");
+      console.log("discarding after sect click"); //++
       dispatch(draftSlice.actions.discard());
       return;
     }
 
     if (isDrafting) {
-      console.log("closing after sect click");
+      console.log("closing after sect click"); //++
       draft && close();
       return;
     }
@@ -387,7 +381,7 @@ export const useSomedayEvents = (
       return;
     }
 
-    console.log("creating new after sect click...");
+    console.log("creating new after sect click..."); //++
     dispatch(
       draftSlice.actions.start({
         eventType: Categories_Event.SOMEDAY,
@@ -404,7 +398,6 @@ export const useSomedayEvents = (
     const newEventIds = Array.from(column.eventIds);
     newEventIds.splice(source.index, 1);
     newEventIds.splice(destination.index, 0, draggableId);
-
     const newColumn = {
       ...column,
       eventIds: newEventIds,
@@ -419,6 +412,12 @@ export const useSomedayEvents = (
     };
 
     setSomedayEvents(newState);
+
+    const newOrder = newEventIds.map((_id, index) => {
+      return { _id, order: index };
+    });
+    console.log(newOrder);
+    dispatch(getSomedayEventsSlice.actions.reorder(newOrder));
   };
 
   const somedayEventsProps = {
@@ -455,15 +454,3 @@ export const useSomedayEvents = (
 };
 
 export type SomedayEventsProps = ReturnType<typeof useSomedayEvents>;
-
-/*
-  useEffect(() => {
-    // setSomedayEvents(_somedayEvents.sort((a, b) => a.order - b.order));
-    const somedayEventsWithSortableId = _somedayEvents.map((e) => ({
-      ...e,
-      id: e._id,
-    }));
-    setSomedayEvents(somedayEventsWithSortableId);
-    // setSomedayEvents(_somedayEvents);
-  }, [_somedayEvents]);
-  */

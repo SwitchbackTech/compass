@@ -6,7 +6,8 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-import { selectEventById } from "@web/ducks/events/event.selectors";
+import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
+import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
 import {
   handleError,
   normalizedEventsSchema,
@@ -18,23 +19,24 @@ import {
   editEventSlice,
   eventsEntitiesSlice,
   getCurrentMonthEventsSlice,
-  getSomedayEventsSlice,
-  getWeekEventsSlice,
-} from "../event.slice";
+} from "../slices/event.slice";
+import { getWeekEventsSlice } from "../slices/week.slice";
 import {
   Action_ConvertSomedayEvent,
   Action_ConvertTimedEvent,
   Action_CreateEvent,
+  Action_DeleteEvent,
   Action_EditEvent,
   Response_GetEventsSaga,
   Response_GetEventsSuccess,
   Action_GetPaginatedEvents,
   Action_GetEvents,
   Response_CreateEventSaga,
-  Action_DeleteEvent,
   Entities_Event,
+  Action_Reorder,
 } from "../event.types";
-import { selectPaginatedEventsBySectionType } from "../event.selectors";
+import { getSomedayEventsSlice } from "../slices/someday.slice";
+import { Action_Someday_Reorder } from "../types/someday.slice.types";
 
 function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
   try {
@@ -262,6 +264,17 @@ function* migrateEvent({ payload }: Action_EditEvent) {
   }
 }
 
+function* reorderSomedayEvents({ payload }: Action_Someday_Reorder) {
+  try {
+    yield call(EventApi.reorder, payload);
+
+    yield put(getSomedayEventsSlice.actions.success());
+  } catch (error) {
+    yield put(getSomedayEventsSlice.actions.error());
+    handleError(error as Error);
+  }
+}
+
 /************
  * Assemble
  ***********/
@@ -275,6 +288,7 @@ export function* eventsSagas() {
   yield takeLatest(getSomedayEventsSlice.actions.convert, convertSomedayEvent);
   yield takeLatest(getSomedayEventsSlice.actions.request, getSomedayEvents);
   yield takeLatest(getSomedayEventsSlice.actions.delete, deleteSomedayEvent);
+  yield takeLatest(getSomedayEventsSlice.actions.reorder, reorderSomedayEvents);
   yield takeLatest(createEventSlice.actions.request, createEvent);
   yield takeLatest(editEventSlice.actions.request, editEvent);
   yield takeLatest(editEventSlice.actions.migrate, migrateEvent);

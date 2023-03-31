@@ -11,8 +11,8 @@ import { getWeekDayLabel } from "@web/common/utils/event.util";
 import { WEEK_DAYS_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { selectDraftId } from "@web/ducks/events/event.selectors";
-import { draftSlice } from "@web/ducks/events/event.slice";
+import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 

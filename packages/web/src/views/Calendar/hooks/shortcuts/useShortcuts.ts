@@ -5,14 +5,14 @@ import dayjs, { Dayjs } from "dayjs";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Categories_Event } from "@core/types/event.types";
 import { isDrafting, roundToNext } from "@web/common/utils";
-import { draftSlice } from "@web/ducks/events/event.slice";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   SOMEDAY_WEEKLY_LIMIT,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
-import { selectSomedayEventsCount } from "@web/ducks/events/event.selectors";
+import { selectSomedayEventsCount } from "@web/ducks/events/selectors/someday.selectors";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";

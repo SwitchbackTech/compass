@@ -22,6 +22,11 @@ export interface Params_Events {
   priorities?: Priorities[]; // TODO use ids instead of words
 }
 
+export interface Payload_Order {
+  _id: string;
+  order: number;
+}
+
 export interface Result_DeleteMany {
   deletedCount: number;
   errors: any[];

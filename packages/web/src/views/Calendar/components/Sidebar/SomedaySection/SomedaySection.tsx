@@ -1,12 +1,12 @@
 import React, { FC, useRef } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { ColorNames } from "@core/types/color.types";
+import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
 import { Text } from "@web/components/Text";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { useAppSelector } from "@web/store/store.hooks";
-import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/event.selectors";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
