@@ -19,7 +19,6 @@ export const useGridClick = (
     isDrafting,
     isDragging,
     isResizing,
-    reduxDraft,
     reduxDraftType,
     resizeStatus,
   } = draftState;
@@ -85,7 +84,7 @@ export const useGridClick = (
         return;
       }
 
-      if (isDrafting && reduxDraft === Categories_Event.ALLDAY) {
+      if (isDrafting && reduxDraftType === Categories_Event.ALLDAY) {
         discard();
         return;
       }
@@ -123,7 +122,6 @@ export const useGridClick = (
       isDrafting,
       isDragging,
       isResizing,
-      reduxDraft,
       reduxDraftType,
       setDraft,
       stopDragging,
@@ -137,5 +135,6 @@ export const useGridClick = (
     _onAllDayRowMouseUp,
     getElemById(ID_GRID_ALLDAY_ROW)
   );
-  useEventListener("mouseup", _onMainGridMouseUp, getElemById(ID_GRID_MAIN));
+  const mainGrid = getElemById(ID_GRID_MAIN);
+  useEventListener("mouseup", _onMainGridMouseUp, mainGrid);
 };

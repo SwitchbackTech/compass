@@ -1,29 +1,38 @@
-import { useRef, useEffect } from "react";
+import { MouseEvent, useRef, useEffect } from "react";
 
-export const useEventListener = (eventName, handler, element = window) => {
-  // Create a ref that stores handler
-  const savedHandler = useRef();
+export const useEventListener = (
+  eventName: "mouseup" | "mousemove",
+  handler: (e: MouseEvent) => void,
+  element = window
+) => {
+  const savedHandler = useRef<(e: MouseEvent) => void>();
   // Update ref.current value if handler changes.
   // This allows our effect below to always get latest handler ...
   // ... without us needing to pass it in effect deps array ...
   // ... and potentially cause effect to re-run every render.
+
   useEffect(() => {
     savedHandler.current = handler;
-  }, [handler]);
-  useEffect(
-    () => {
-      const isSupported = element && element.addEventListener;
+  }, [eventName, handler]);
 
-      if (!isSupported) return;
+  useEffect(() => {
+    const isSupported = element && element.addEventListener;
 
-      const eventListener = (event) => savedHandler.current(event);
+    if (!isSupported) return;
 
-      element.addEventListener(eventName, eventListener);
+    const listener = (event: MouseEvent) => savedHandler.current(event);
 
-      return () => {
-        element.removeEventListener(eventName, eventListener);
-      };
-    },
-    [eventName, element] // Re-run if eventName or element changes
-  );
+    if (element === null) {
+      console.log("element is null");
+      return;
+    }
+    element.addEventListener(eventName, listener);
+
+    return () => {
+      element.removeEventListener(eventName, listener);
+    };
+    //++ removing 'element' passes some eventform tests
+    // but fails to capture onmouseup events from useGridClick
+    // }, [element, eventName]);
+  }, [element, eventName]);
 };
