@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import dayjs from "dayjs";
+import { DropResult } from "@hello-pangea/dnd";
 import {
   SOMEDAY_WEEKLY_LIMIT,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -28,7 +29,6 @@ import {
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
-import { DropResult } from "@hello-pangea/dnd";
 import { selectSomedayEvents } from "@web/ducks/events/selectors/someday.selectors";
 import {
   createEventSlice,
