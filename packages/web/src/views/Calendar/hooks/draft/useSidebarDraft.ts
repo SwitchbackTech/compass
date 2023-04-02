@@ -236,24 +236,10 @@ export const useSomedayEvents = (
   };
 
   const onDraft = (event: Schema_Event) => {
-    //++
-    // const newState = {
-    //   ...somedayEvents,
-    //   events: {
-    //     ...somedayEvents.events,
-    //     [event._id]: { ...event, isOpen: true },
-    //   },
-    // };
-    // setSomedayEvents(newState);
-    // console.log(newState.events[event._id]);
-
-    console.log("onDraft");
     setIsDrafting(true);
     setDraft({
       ...event,
       isOpen: true,
-      // startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
-      // endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
     });
   };
 
@@ -369,13 +355,11 @@ export const useSomedayEvents = (
 
   const onSectionClick = () => {
     if (isDraftingRedux) {
-      console.log("discarding after sect click"); //++
       dispatch(draftSlice.actions.discard());
       return;
     }
 
     if (isDrafting) {
-      console.log("closing after sect click"); //++
       draft && close();
       return;
     }
@@ -385,7 +369,6 @@ export const useSomedayEvents = (
       return;
     }
 
-    console.log("creating new after sect click..."); //++
     dispatch(
       draftSlice.actions.start({
         eventType: Categories_Event.SOMEDAY,

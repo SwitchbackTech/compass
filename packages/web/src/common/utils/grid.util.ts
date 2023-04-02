@@ -595,15 +595,6 @@ const _sumEventWidths = (
   return eventWidth;
 };
 
-/*
-//++
-origY: 0
-mousePos: 10
-
-
-
-*/
-
 // ++
 // export const getWidths = (
 //   isCurrentWeek: boolean,

@@ -12,7 +12,7 @@ export const CompassApi = axios.create({
 const _signOut = async (msg: string) => {
   alert(msg);
   await signOut();
-  window.location = `#${ROOT_ROUTES.LOGIN}`; //++ remove hash (?)
+  window.location = ROOT_ROUTES.LOGIN;
   window.location.reload();
 };
 
