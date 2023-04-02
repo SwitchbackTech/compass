@@ -38,9 +38,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
           return (
             <>
               <SomedayEvent
-                //++ need to pass the draft if needed
                 event={event}
-                //++ isDragging={isDragging || snapshot.isDragging}
                 isDragging={snapshot.isDragging}
                 isDrafting={isDraftingThisEvent}
                 isOverGrid={isOverGrid}
@@ -58,30 +56,3 @@ export const DraggableSomedayEvent: FC<Props> = ({
     </div>
   );
 };
-
-//++
-// <div ref={drag}>
-// const [{ isDragging }, drag, preview] = useDrag(
-//   () => ({
-//     type: Category_DragItem.EVENT_SOMEDAY,
-//     // only includes props that a user could change
-//     // while drafting
-//     item: () => {
-//       return {
-//         _id: event._id,
-//         description: event.description,
-//         priority: event.priority,
-//         order: event.order,
-//         title: event.title,
-//       };
-//     },
-//     collect: (monitor) => ({
-//       isDragging: monitor.isDragging(),
-//     }),
-//   }),
-//   [event._id, event.description, event.priority, event.order, event.title]
-// );
-
-// useEffect(() => {
-//   preview(getEmptyImage(), { captureDraggingState: true });
-// }, [preview]);
