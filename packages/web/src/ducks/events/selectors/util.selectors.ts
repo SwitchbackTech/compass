@@ -1,7 +1,7 @@
 import { isProcessing, isSuccess } from "@web/common/store/helpers";
 import { RootState } from "@web/store";
 
-type SectionType_Sidebar = "future" | "currentMonth";
+type SectionType_Sidebar = "someday" | "currentMonth";
 
 export type SectionType = SectionType_Sidebar | "week";
 

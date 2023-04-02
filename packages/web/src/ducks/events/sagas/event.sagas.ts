@@ -3,9 +3,10 @@ import { normalize } from "normalizr";
 import dayjs from "dayjs";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { RootState } from "@web/store";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
-import { EventApi } from "@web/ducks/events/event.api";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
+import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
 import {
@@ -33,7 +34,6 @@ import {
   Action_GetEvents,
   Response_CreateEventSaga,
   Entities_Event,
-  Action_Reorder,
 } from "../event.types";
 import { getSomedayEventsSlice } from "../slices/someday.slice";
 import { Action_Someday_Reorder } from "../types/someday.slice.types";
@@ -42,24 +42,26 @@ function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
   try {
     const { _id, updatedFields } = payload;
 
-    const currEvent = (yield select((state) =>
+    const currEvent = (yield select((state: RootState) =>
       selectEventById(state, _id)
     )) as Response_GetEventsSaga;
     const updatedEvent = { ...currEvent, ...updatedFields };
+    delete updatedEvent.order;
 
     const res = yield call(EventApi.edit, _id, updatedEvent);
-    yield put(getWeekEventsSlice.actions.insert(res.data._id));
+    const event = res.data as Schema_Event;
+    yield put(getWeekEventsSlice.actions.insert(event._id));
 
     const normalizedEvent = normalize<Schema_Event>(
-      res.data,
+      event,
       normalizedEventsSchema()
     );
     yield put(
       eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
     );
 
-    const somedayEvents: Response_GetEventsSaga = (yield select((state) =>
-      selectPaginatedEventsBySectionType(state, "someday")
+    const somedayEvents: Response_GetEventsSaga = (yield select(
+      (state: RootState) => selectPaginatedEventsBySectionType(state, "someday")
     )) as Response_GetEventsSaga;
 
     const remainingSomedayEvents = somedayEvents.data.filter(
@@ -78,22 +80,20 @@ function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
 
 function* convertTimedEvent({ payload }: Action_ConvertTimedEvent) {
   try {
-    const { event } = payload;
+    const res = yield call(EventApi.edit, payload.event._id, payload.event);
+    const event = res.data as Schema_Event;
 
-    const res = yield call(EventApi.edit, event._id, event);
-    const _event = res.data as Schema_Event;
-
-    yield put(getSomedayEventsSlice.actions.insert(_event._id));
+    yield put(getSomedayEventsSlice.actions.insert(event._id));
 
     const normalizedEvent = normalize<Schema_Event>(
-      _event,
+      event,
       normalizedEventsSchema()
     );
     yield put(
       eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
     );
 
-    const timedEvents = (yield select((state) =>
+    const timedEvents = (yield select((state: RootState) =>
       selectPaginatedEventsBySectionType(state, "week")
     )) as Response_GetEventsSaga;
 
@@ -267,8 +267,6 @@ function* migrateEvent({ payload }: Action_EditEvent) {
 function* reorderSomedayEvents({ payload }: Action_Someday_Reorder) {
   try {
     yield call(EventApi.reorder, payload);
-
-    yield put(getSomedayEventsSlice.actions.success());
   } catch (error) {
     yield put(getSomedayEventsSlice.actions.error());
     handleError(error as Error);

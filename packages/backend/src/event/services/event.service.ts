@@ -269,11 +269,7 @@ class EventService {
     return result;
   };
 
-  async updateById(
-    userId: string,
-    eventId: string,
-    event: Schema_Event
-  ): Promise<Schema_Event | BaseError> {
+  async updateById(userId: string, eventId: string, event: Schema_Event) {
     /* Part I: Gcal */
     const updateGcal = !event.isSomeday;
     if (updateGcal) {

@@ -161,7 +161,8 @@ export const useDraftUtil = (
       startDate: start,
       endDate: end,
     };
-    const event = removeGridFields(_draft);
+    const _event = removeGridFields(_draft);
+    const event = { ..._event, order: somedayEventsCount };
 
     dispatch(getWeekEventsSlice.actions.convert({ event }));
 

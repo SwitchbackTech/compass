@@ -357,7 +357,11 @@ export const useSomedayEvents = (
         })
       );
     } else {
-      dispatch(createEventSlice.actions.request(event));
+      const eventWithOrder = {
+        ...event,
+        order: existingIds.length,
+      };
+      dispatch(createEventSlice.actions.request(eventWithOrder));
     }
 
     close();
@@ -416,7 +420,6 @@ export const useSomedayEvents = (
     const newOrder = newEventIds.map((_id, index) => {
       return { _id, order: index };
     });
-    console.log(newOrder);
     dispatch(getSomedayEventsSlice.actions.reorder(newOrder));
   };
 
