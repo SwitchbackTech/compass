@@ -37,11 +37,6 @@ export const EventError = {
     status: Status.GONE,
     isOperational: true,
   },
-  NoMatchingEvent: {
-    description: "Invalid event id (most likely)",
-    status: Status.REDUX_REFRESH_NEEDED,
-    isOperational: true,
-  },
   MissingGevents: {
     description: "# of created events !== # saved in DB",
     status: Status.INTERNAL_SERVER,
@@ -52,9 +47,24 @@ export const EventError = {
     status: Status.NO_CONTENT,
     isOperational: true,
   },
+  NoMatchingEvent: {
+    description: "Invalid event id (most likely)",
+    status: Status.REDUX_REFRESH_NEEDED,
+    isOperational: true,
+  },
 };
 
 export const GenericError = {
+  BadRequest: {
+    description: "Request is malformed",
+    status: Status.BAD_REQUEST,
+    isOperational: true,
+  },
+  DeveloperError: {
+    description: "Developer made a logic error",
+    status: Status.INTERNAL_SERVER,
+    isOperational: true,
+  },
   NotImplemented: {
     description: "not implemented yet",
     status: Status.UNSURE,
@@ -63,11 +73,6 @@ export const GenericError = {
   NotSure: {
     description: "Not sure why error occured. See logs",
     status: Status.UNSURE,
-    isOperational: true,
-  },
-  DeveloperError: {
-    description: "Developer made a logic error",
-    status: Status.INTERNAL_SERVER,
     isOperational: true,
   },
 };

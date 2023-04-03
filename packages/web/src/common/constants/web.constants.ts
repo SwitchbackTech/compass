@@ -1,13 +1,18 @@
 export const ANIMATION_TIME_3_MS = "0.3s";
+
+export const COLUMN_WEEK = "weekEvents";
+
 export const GOOGLE = "google";
 
-export const ID_GRID_ALLDAY_ROW = "allDayRow";
 export const ID_ALLDAY_COLUMNS = "allDayColumns";
+export const ID_GRID_ALLDAY_ROW = "allDayRow";
 export const ID_GRID_EVENTS_ALLDAY = "allDayEvents";
 export const ID_GRID_EVENTS_TIMED = "timedEvents";
 export const ID_GRID_MAIN = "mainGrid";
 export const ID_MAIN = "mainSection";
 export const ID_SIDEBAR = "sidebar";
+export const ID_SOMEDAY_DRAFT = "somedayDraft";
+export const ID_SOMEDAY_EVENTS = "ID_SOMEDAY_EVENTS";
 export const ID_SIDEBAR_FORM = "sidebarForm";
 
 export enum ZIndex {

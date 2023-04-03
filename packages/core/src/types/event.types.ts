@@ -22,6 +22,11 @@ export interface Params_Events {
   priorities?: Priorities[]; // TODO use ids instead of words
 }
 
+export interface Payload_Order {
+  _id: string;
+  order: number;
+}
+
 export interface Result_DeleteMany {
   deletedCount: number;
   errors: any[];
@@ -36,9 +41,9 @@ export interface Schema_Event {
   isSomeday?: boolean;
   isTimesShown?: boolean;
   gEventId?: string;
+  order?: number;
   origin?: Origin;
   priority?: Priority;
-  // priorities?: string[]; // the eventual structure, with ids as strs
   startDate?: string;
   title?: string;
   updatedAt?: Date;

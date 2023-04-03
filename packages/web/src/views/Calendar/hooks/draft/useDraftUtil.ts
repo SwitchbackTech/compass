@@ -13,9 +13,9 @@ import {
   editEventSlice,
   createEventSlice,
   deleteEventSlice,
-  draftSlice,
-  getWeekEventsSlice,
-} from "@web/ducks/events/event.slice";
+} from "@web/ducks/events/slices/event.slice";
+import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useCallback, useEffect, useState } from "react";
 import {
   getDefaultEvent,
@@ -24,9 +24,9 @@ import {
 import {
   selectDraft,
   selectDraftStatus,
-  selectSomedayEventsCount,
-} from "@web/ducks/events/event.selectors";
+} from "@web/ducks/events/selectors/draft.selectors";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
+import { selectSomedayEventsCount } from "@web/ducks/events/selectors/someday.selectors";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { WeekProps } from "../useWeek";
@@ -161,7 +161,8 @@ export const useDraftUtil = (
       startDate: start,
       endDate: end,
     };
-    const event = removeGridFields(_draft);
+    const _event = removeGridFields(_draft);
+    const event = { ..._event, order: somedayEventsCount };
 
     dispatch(getWeekEventsSlice.actions.convert({ event }));
 

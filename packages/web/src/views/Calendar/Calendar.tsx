@@ -2,7 +2,6 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import Session from "supertokens-auth-react/recipe/session";
 import { FlexDirections } from "@web/components/Flex/styled";
-import { DragLayer } from "@web/views/Calendar/containers/DragLayer";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -44,9 +43,9 @@ export const CalendarView = () => {
 
   const { gridRefs, measurements } = useGridLayout(weekProps.component.week);
 
-  const dateCalcs = useDateCalcs(measurements, gridRefs.gridScrollRef);
-
   const scrollUtil = useScroll(gridRefs.gridScrollRef);
+
+  const dateCalcs = useDateCalcs(measurements, gridRefs.gridScrollRef);
 
   useShortcuts(
     today,
@@ -64,12 +63,6 @@ export const CalendarView = () => {
 
   return (
     <Styled id="cal">
-      <DragLayer
-        dateCalcs={dateCalcs}
-        measurements={measurements}
-        viewStart={weekProps.component.startOfView}
-      />
-
       <Draft
         dateCalcs={dateCalcs}
         isSidebarOpen={prefs.isSidebarOpen}
@@ -77,7 +70,12 @@ export const CalendarView = () => {
         weekProps={weekProps}
       />
 
-      <Sidebar prefs={prefs} weekProps={weekProps} />
+      <Sidebar
+        dateCalcs={dateCalcs}
+        prefs={prefs}
+        measurements={measurements}
+        weekProps={weekProps}
+      />
 
       <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
         <Header

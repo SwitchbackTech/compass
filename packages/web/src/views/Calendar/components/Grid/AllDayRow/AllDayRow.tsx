@@ -1,12 +1,8 @@
 import React, { FC, MouseEvent, useEffect } from "react";
 import dayjs from "dayjs";
-import { useDrop } from "react-dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { ColorNames } from "@core/types/color.types";
-import { getColor } from "@core/util/color.utils";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { DragItem, DropResult } from "@web/common/types/dnd.types";
 import { Ref_Callback } from "@web/common/types/util.types";
 import {
   ID_ALLDAY_COLUMNS,
@@ -14,17 +10,9 @@ import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { getX } from "@web/common/utils/grid.util";
-import {
-  createEventSlice,
-  draftSlice,
-  getSomedayEventsSlice,
-} from "@web/ducks/events/event.slice";
-import {
-  selectAllDayEvents,
-  selectDraftId,
-} from "@web/ducks/events/event.selectors";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
@@ -33,11 +21,9 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
-import {
-  getDefaultEvent,
-  prepEvtAfterDraftDrop,
-} from "@web/common/utils/event.util";
+import { getDefaultEvent } from "@web/common/utils/event.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 
 import { StyledEvent } from "../../Event/styled";
 import { StyledAllDayColumns, StyledGridCol } from "../Columns/styled";
@@ -66,8 +52,6 @@ export const AllDayRow: FC<Props> = ({
     weekDays,
   } = weekProps.component;
 
-  const border = `1px solid ${getColor(ColorNames.WHITE_2)}`;
-
   const allDayEvents = useAppSelector(selectAllDayEvents);
   const _rowVals = allDayEvents.map((e: Schema_GridEvent) => e.row);
   const rowsCount = _rowVals.length === 0 ? 1 : Math.max(..._rowVals);
@@ -78,74 +62,8 @@ export const AllDayRow: FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowsCount]);
 
-  const convertSomedayDraftToAllDay = (
-    dropItem: DropResult,
-    dates: { startDate: string; endDate: string }
-  ) => {
-    const event = prepEvtAfterDraftDrop(
-      Categories_Event.ALLDAY,
-      dropItem,
-      dates
-    );
-
-    dispatch(createEventSlice.actions.request(event));
-    dispatch(draftSlice.actions.discard());
-  };
-
-  const convertSomedayEventToAllDay = (
-    _id: string,
-    dates: { startDate: string; endDate: string }
-  ) => {
-    const updatedFields: Schema_Event = {
-      isAllDay: true,
-      isSomeday: false,
-      isTimesShown: false,
-      startDate: dates.startDate,
-      endDate: dates.endDate,
-    };
-
-    dispatch(
-      getSomedayEventsSlice.actions.convert({
-        _id,
-        updatedFields,
-      })
-    );
-  };
-
-  const [{ canDrop, isOver }, drop] = useDrop(
-    () => ({
-      accept: DragItem.EVENT_SOMEDAY,
-      drop: (item: DropResult, monitor) => {
-        const { x, y } = monitor.getClientOffset();
-        const dates = getDates(x, y);
-
-        if (item._id) {
-          convertSomedayEventToAllDay(item._id, dates);
-        } else {
-          convertSomedayDraftToAllDay(item, dates);
-        }
-      },
-      collect: (monitor) => ({
-        canDrop: monitor.canDrop(),
-        isOver: monitor.isOver(),
-      }),
-    }),
-    [startOfSelectedWeekDay]
-  );
-
   const editAllDayEvent = (event: Schema_Event) => {
     dispatch(draftSlice.actions.startDragging({ event }));
-  };
-
-  const getDates = (x: number, y: number) => {
-    const _start = dateCalcs.getDateByXY(
-      x - SIDEBAR_OPEN_WIDTH,
-      y,
-      startOfSelectedWeekDay
-    );
-    const startDate = _start.format(YEAR_MONTH_DAY_FORMAT);
-    const endDate = _start.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
-    return { startDate, endDate };
   };
 
   const startAlldayDraft = (e: MouseEvent) => {
@@ -233,7 +151,6 @@ export const AllDayRow: FC<Props> = ({
   return (
     <StyledAllDayRow
       id={ID_GRID_ALLDAY_ROW}
-      ref={drop}
       rowsCount={rowsCount}
       onMouseDown={onSectionMouseDown}
     >
@@ -242,10 +159,7 @@ export const AllDayRow: FC<Props> = ({
           <StyledGridCol color={null} key={day.format(YEAR_MONTH_DAY_FORMAT)} />
         ))}
       </StyledAllDayColumns>
-      <StyledEvents
-        id={ID_GRID_EVENTS_ALLDAY}
-        style={{ borderTop: isOver && canDrop ? border : "" }}
-      >
+      <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>
         {renderAllDayEvents()}
       </StyledEvents>
     </StyledAllDayRow>

@@ -1,4 +1,8 @@
-import { Params_Events, Schema_Event } from "@core/types/event.types";
+import {
+  Params_Events,
+  Payload_Order,
+  Schema_Event,
+} from "@core/types/event.types";
 import { CompassApi } from "@web/common/apis/compass.api";
 
 const EventApi = {
@@ -21,6 +25,9 @@ const EventApi = {
         `/event?start=${params.startDate}&end=${params.endDate}`
       );
     }
+  },
+  reorder: (order: Payload_Order[]) => {
+    return CompassApi.put(`/event/reorder`, order);
   },
 };
 

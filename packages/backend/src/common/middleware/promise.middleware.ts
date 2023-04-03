@@ -56,32 +56,3 @@ export function promiseMiddleware() {
     return next();
   };
 }
-
-//++
-// export const catchUndefinedSyncErrors = (
-//   // err not provided, so create one
-//   req: express.Request,
-//   res: express.Response,
-//   next: express.NextFunction
-// ) => {
-//   const baseErr: BaseError = new BaseError(
-//     "Some Bad Sync Err Happened",
-//     `${req}`,
-//     500,
-//     false
-//   );
-//   //@ts-ignore
-//   res.promise(Promise.reject(baseErr));
-// };
-
-//++
-// export const catchSyncErrors = (
-//   req: express.Request,
-//   err: Error,
-//   res: express.Response,
-//   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-//   next: express.NextFunction
-// ) => {
-//   //@ts-ignore
-//   res.promise(Promise.reject(err));
-// };

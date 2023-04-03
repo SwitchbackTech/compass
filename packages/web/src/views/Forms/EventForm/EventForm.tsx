@@ -192,7 +192,6 @@ export const EventForm: React.FC<FormProps> = ({
 
   const onSetEventField: SetEventFormField = (field, value) => {
     const newEvent = { ...event, [field]: value };
-    console.log("setting after update");
     setEvent(newEvent);
   };
 
@@ -265,9 +264,9 @@ export const EventForm: React.FC<FormProps> = ({
 
       <StyledTitleField
         autoFocus
-        placeholder="Title"
         onChange={onChangeEventTextField("title")}
         onKeyDown={ignoreDelete}
+        placeholder="Title"
         role="textarea"
         name="Event Title"
         value={title}

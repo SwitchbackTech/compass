@@ -12,7 +12,7 @@ export const CompassApi = axios.create({
 const _signOut = async (msg: string) => {
   alert(msg);
   await signOut();
-  window.location = `#${ROOT_ROUTES.LOGIN}`;
+  window.location = ROOT_ROUTES.LOGIN;
   window.location.reload();
 };
 
@@ -30,7 +30,7 @@ CompassApi.interceptors.response.use(
     if (status !== Status.UNAUTHORIZED) {
       // supertokens handles these
       if (status === Status.GONE) {
-        await _signOut("Signing out, cuz you revoked access to Compass ✌");
+        await _signOut("Login required, cuz security");
       } else if (status === Status.REDUX_REFRESH_NEEDED) {
         await _signOut("Login required, cuz security 😇");
       } else {

@@ -1,9 +1,9 @@
-import React, { KeyboardEventHandler, MouseEvent, useState } from "react";
+import React, { MouseEvent } from "react";
 import { Key } from "ts-key-enum";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { DeleteIcon } from "@web/components/Icons";
 import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
-import { getSomedayEventsSlice } from "@web/ducks/events/event.slice";
+import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
@@ -17,24 +17,20 @@ import {
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
   onClose: _onClose,
+  onConvert,
   onSubmit,
   setEvent,
   ...props
 }) => {
   const dispatch = useAppDispatch();
 
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const { priority, title } = event || {};
 
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       onSetEventField(fieldName, e.target.value);
     };
-
-  const onSetEventField: SetEventFormField = (field, value) => {
-    const newEvent = { ...event, [field]: value };
-    setEvent(newEvent);
-  };
 
   const onDelete = () => {
     if (event._id) {
@@ -44,27 +40,28 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     _onClose();
   };
 
-  const onKeyDown: KeyboardEventHandler<HTMLFormElement> = (e) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
     e.stopPropagation();
-
     switch (e.key) {
       case Key.Escape: {
         _onClose();
         break;
       }
-      case Key.Tab: {
-        isPickerOpen && setIsPickerOpen(false);
-        break;
-      }
       case Key.Enter: {
         if (e.metaKey) {
           onSubmit(event);
+          return;
         }
         break;
       }
       default:
         return;
     }
+  };
+
+  const onSetEventField: SetEventFormField = (field, value) => {
+    const newEvent = { ...event, [field]: value };
+    setEvent(newEvent);
   };
 
   const stopPropagation = (e: MouseEvent) => {
@@ -81,12 +78,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       onKeyDown={onKeyDown}
       onMouseDown={stopPropagation}
       onMouseUp={(e) => {
-        if (isPickerOpen) {
-          setIsPickerOpen(false);
-        }
         e.stopPropagation();
       }}
-      priority={event.priority}
+      priority={priority}
       role="form"
     >
       <StyledIconRow>
@@ -99,13 +93,10 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         placeholder="Title"
         role="input"
         title="title"
-        value={event.title}
+        value={title}
       />
 
-      <PrioritySection
-        onSetEventField={onSetEventField}
-        priority={event.priority}
-      />
+      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
 
       <StyledDescriptionField
         onChange={onChangeEventTextField("description")}
@@ -113,7 +104,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         value={event.description || ""}
       />
 
-      <SaveSection priority={event.priority} onSubmit={onSubmit} />
+      <SaveSection priority={priority} onSubmit={onSubmit} />
     </StyledEventForm>
   );
 };

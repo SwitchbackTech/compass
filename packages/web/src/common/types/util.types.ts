@@ -1,3 +1,5 @@
+import { Dayjs } from "dayjs";
+
 export interface AssignResult {
   fits: boolean;
   rowNum?: number;
@@ -16,6 +18,11 @@ export interface Params_TimeChange {
   oldEnd: string;
   start: string;
   end: string;
+}
+
+export interface Range_Week {
+  weekStart: Dayjs;
+  weekEnd: Dayjs;
 }
 
 export interface WidthPercentages {

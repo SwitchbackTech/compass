@@ -12,7 +12,7 @@ interface Props {
   onMigrate: (event: Schema_Event, location: "forward" | "back") => void;
 }
 
-export const SomedayEventRow = ({ event, onMigrate }: Props) => {
+export const SomedayEventRectangle = ({ event, onMigrate }: Props) => {
   return (
     <Flex
       alignItems={AlignItems.FLEX_START}

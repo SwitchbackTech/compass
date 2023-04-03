@@ -7,6 +7,8 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Preferences } from "@web/views/Calendar/hooks/usePreferences";
 import { SIDEBAR_MONTH_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 
 import {
   Styled,
@@ -19,7 +21,9 @@ import { SomedaySection } from "./SomedaySection";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 
 interface Props {
+  dateCalcs: DateCalcs;
   prefs: Preferences;
+  measurements: Measurements_Grid;
   weekProps: WeekProps;
 }
 
@@ -50,20 +54,25 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           <SidebarToggleIcon cursor="pointer" />
         </div>
       </TooltipWrapper>
+
       <StyledTopSectionFlex
         direction={FlexDirections.COLUMN}
         height={`calc(100% - ${SIDEBAR_MONTH_HEIGHT + 2}px)`}
       >
-        <SomedaySection flex={1} weekRange={{ weekStart, weekEnd }} />
+        <SomedaySection
+          dateCalcs={props.dateCalcs}
+          flex={1}
+          measurements={props.measurements}
+          viewStart={weekStart}
+          viewEnd={weekEnd}
+        />
       </StyledTopSectionFlex>
-
       <Divider
         color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
         role="separator"
         title="sidebar divider"
         withAnimation={false}
       />
-
       <StyledBottomSection height={String(SIDEBAR_MONTH_HEIGHT)}>
         <ToggleableMonthWidget
           isToggled={true}
