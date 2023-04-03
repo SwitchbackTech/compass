@@ -73,7 +73,7 @@
     "msw": "^1.0.1",
     "ts-key-enum": "^2.0.12",
     "typescript-plugin-css-modules": "^4.1.1",
-    "webpack": "^5.53.0",
+    "webpack": "^5.76.0",
     "webpack-bundle-analyzer": "^4.5.0",
     "webpack-cli": "^5.0.1",
     "webpack-dev-server": "^4.2.1"
