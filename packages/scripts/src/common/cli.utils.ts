@@ -31,11 +31,13 @@ export const fileExists = (file: string) => {
   return shell.test("-e", file);
 };
 
-export const getVmInfo = async (): Promise<VmInfo> => {
-  const destination = (await getListAnswer("Select VM to use:", [
-    "staging",
-    "production",
-  ])) as Category_VM;
+export const getVmInfo = async (environment?: Category_VM): Promise<VmInfo> => {
+  const destination = environment
+    ? environment
+    : ((await getListAnswer("Select VM to use:", [
+        "staging",
+        "production",
+      ])) as Category_VM);
 
   const stagingDomain = "***REMOVED***";
   const productionDomain = "app.compasscalendar.com";

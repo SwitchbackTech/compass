@@ -19,14 +19,11 @@ import { AuthRoutes } from "@backend/auth/auth.routes.config";
 import { EventRoutes } from "@backend/event/event.routes.config";
 import { PriorityRoutes } from "@backend/priority/priority.routes.config";
 import { SyncRoutes } from "@backend/sync/sync.routes.config";
-import {
-  CalendarRoutes,
-  RootRoutes,
-} from "@backend/calendar/calendar.routes.config";
+import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import { ENV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { httpLoggingMiddleware } from "@backend/common/middleware/http.logger.middleware";
-import { promiseMiddleware } from "@backend/common/middleware/promise.middleware";
+import { requestMiddleware } from "@backend/common/middleware/promise.middleware";
 import {
   supertokensCors,
   supertokensErrorHandler,
@@ -43,7 +40,7 @@ const app: Application = express();
 // initialize middleware before routes, because
 // some routes depend on them
 //@ts-ignore
-app.use(promiseMiddleware());
+app.use(requestMiddleware());
 app.use(supertokensCors());
 app.use(supertokensMiddleware());
 app.use(corsWhitelist);
@@ -52,7 +49,6 @@ app.use(httpLoggingMiddleware);
 app.use(express.json());
 
 const routes: Array<CommonRoutesConfig> = [];
-routes.push(new RootRoutes(app));
 routes.push(new AuthRoutes(app));
 routes.push(new PriorityRoutes(app));
 routes.push(new EventRoutes(app));

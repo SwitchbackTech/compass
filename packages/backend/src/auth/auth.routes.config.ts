@@ -20,8 +20,13 @@ export class AuthRoutes extends CommonRoutesConfig {
     this.app
       .route(`/api/auth/session`)
       .all(authMiddleware.verifyIsDev)
+      //@ts-ignore
       .post(authController.createSession)
-      .get([verifySession(), authController.getUserIdFromSession]);
+      .get([
+        verifySession(),
+        //@ts-ignore
+        authController.getUserIdFromSession,
+      ]);
 
     this.app
       .route(`/api/auth/session/revoke`)
@@ -31,8 +36,9 @@ export class AuthRoutes extends CommonRoutesConfig {
     /**
      * Google calls this route after successful oauth
      */
-    this.app.post(`/api/oauth/google`, [
+    this.app.route(`/api/oauth/google`).post([
       authMiddleware.verifyGoogleOauthCode,
+      //@ts-ignore
       authController.loginOrSignup,
     ]);
 

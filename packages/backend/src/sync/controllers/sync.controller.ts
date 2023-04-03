@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request } from "express";
 import { Payload_Sync_Notif } from "@core/types/sync.types";
 import { Logger } from "@core/logger/winston.logger";
 import { Status } from "@core/errors/status.codes";
@@ -8,13 +8,14 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import userService from "@backend/user/services/user.service";
 import { UserError } from "@backend/common/constants/error.constants";
+import { Res_Promise } from "@backend/common/types/express.types";
 
 import { getSync } from "../util/sync.queries";
 import syncService from "../services/sync.service";
 
 const logger = Logger("app:sync.controller");
 class SyncController {
-  handleGoogleNotification = async (req: Request, res: Response) => {
+  handleGoogleNotification = async (req: Request, res: Res_Promise) => {
     try {
       const syncPayload = {
         channelId: req.headers["x-goog-channel-id"],
@@ -25,8 +26,7 @@ class SyncController {
 
       const response = await syncService.handleGcalNotification(syncPayload);
 
-      // @ts-ignore
-      res.promise(Promise.resolve(response));
+      res.promise(response);
     } catch (e) {
       const resourceId = req.headers["x-goog-resource-id"] as string;
       const sync = await getSync({ resourceId });
@@ -65,19 +65,16 @@ class SyncController {
 
       logger.error("Not sure how to handle this error:");
       logger.error(e);
-      // @ts-ignore
       res.promise(e);
     }
   };
 
-  maintain = async (_req: Request, res: Response) => {
+  maintain = async (_req: Request, res: Res_Promise) => {
     try {
       const result = await syncService.runMaintenance();
-      //@ts-ignore
-      res.promise(Promise.resolve(result));
+      res.promise(result);
     } catch (e) {
       logger.error(e);
-      //@ts-ignore
       res.promise(e);
     }
   };

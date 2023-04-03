@@ -33,7 +33,7 @@ const isCodeInvalid = (e: GaxiosError | Error) => {
 };
 
 class AuthController {
-  createSession = async (req: ReqBody<UserInfo_Compass>, res: Response) => {
+  createSession = async (req: ReqBody<UserInfo_Compass>, res: Res_Promise) => {
     const { cUserId, email } = req.body;
 
     if (cUserId) {
@@ -44,32 +44,24 @@ class AuthController {
       const user = await findCompassUserBy("email", email);
 
       if (!user) {
-        //@ts-ignore
-        res.promise(Promise.resolve({ error: "user doesn't exist" }));
+        res.promise({ error: "user doesn't exist" });
         return;
       }
       await Session.createNewSession(res, user._id.toString(), {}, {});
     }
 
-    //@ts-ignore
-    res.promise(
-      Promise.resolve({
-        message: `user session created for ${JSON.stringify(req.body)}`,
-      })
-    );
+    res.promise({
+      message: `user session created for ${JSON.stringify(req.body)}`,
+    });
   };
 
-  getUserIdFromSession = (req: SessionRequest, res: Response) => {
+  getUserIdFromSession = (req: SessionRequest, res: Res_Promise) => {
     const userId = req.session?.getUserId();
 
-    //@ts-ignore
-    res.promise(Promise.resolve({ userId }));
+    res.promise({ userId });
   };
 
-  loginOrSignup = async (
-    req: SReqBody<{ code: string }>,
-    res: Res_Promise | Response
-  ) => {
+  loginOrSignup = async (req: SReqBody<{ code: string }>, res: Res_Promise) => {
     try {
       const { code } = req.body;
 
@@ -92,19 +84,16 @@ class AuthController {
 
       const result: Result_Auth_Compass = { cUserId };
 
-      //@ts-ignore
-      res.promise(Promise.resolve(result));
+      res.promise(result);
     } catch (e) {
       if (isCodeInvalid(e as GaxiosError)) {
         const invalidCodeErr = error(GcalError.CodeInvalid, "gAPI Auth Failed");
         logger.error(invalidCodeErr);
 
-        //@ts-ignore
-        res.promise(Promise.resolve({ error: invalidCodeErr }));
+        res.promise({ error: invalidCodeErr });
         return;
       }
 
-      //@ts-ignore
       res.promise(Promise.reject(e));
     }
   };

@@ -1,4 +1,5 @@
 {
+  "author": "Switchback LLC <hello@switchback.tech>",
   "name": "@compass/web",
   "version": "1.0.0",
   "main": "src/App.ts",

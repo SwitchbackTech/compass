@@ -1,13 +1,9 @@
-import { VmInfo } from "@scripts/common/cli.types";
+import { Category_VM, VmInfo } from "@scripts/common/cli.types";
 import shell from "shelljs";
 
 import { COMPASS_BUILD_DEV, COMPASS_ROOT_DEV } from "../common/cli.constants";
 import { getVmInfo, getPckgsTo } from "../common/cli.utils";
 import { copyToVM } from "./scp";
-
-// old way of building project-specific packages
-// "tsc:backend": "rm -rf packages/backend/build && yarn tsc --project packages/backend/tsconfig.json",
-// "tsc:core": "rm -rf packages/core/build && yarn tsc --project packages/core/tsconfig.json",
 
 const buildPackages = async (pckgs: string[], vmInfo: VmInfo) => {
   if (pckgs.length === 0) {
@@ -109,7 +105,11 @@ const installProdDependencies = (vmInfo: VmInfo) => {
 const removeOldBuildFor = (pckg: "nodePckgs" | "web") => {
   if (pckg === "nodePckgs") {
     console.log("Removing old node build ...");
-    shell.rm("-rf", ["build/node", "build/nodePckgs.zip"]);
+    shell.rm("-rf", [
+      "build/tsconfig.tsbuildinfo",
+      "build/node",
+      "build/nodePckgs.zip",
+    ]);
   }
   if (pckg === "web") {
     console.log("Removing old web build ...");
@@ -117,9 +117,12 @@ const removeOldBuildFor = (pckg: "nodePckgs" | "web") => {
   }
 };
 
-export const runBuild = async () => {
-  const pckgs = await getPckgsTo("build");
-  const vmInfo = await getVmInfo();
+export const runBuild = async (
+  packages?: string[],
+  environment?: Category_VM
+) => {
+  const pckgs = packages || (await getPckgsTo("build"));
+  const vmInfo = await getVmInfo(environment);
   await buildPackages(pckgs, vmInfo);
 };
 

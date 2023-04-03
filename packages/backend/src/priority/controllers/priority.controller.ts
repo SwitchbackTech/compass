@@ -1,54 +1,50 @@
 //@ts-nocheck
 import express from "express";
 import { SessionRequest } from "supertokens-node/framework/express";
-import { Res } from "@backend/common/types/express.types";
+import { Res, Res_Promise } from "@backend/common/types/express.types";
 import { PriorityReq } from "@core/types/priority.types";
 
 import priorityService from "../services/priority.service";
 
 class PriorityController {
-  create = async (req: SReqBody<PriorityReq>, res: Res) => {
+  create = async (req: SReqBody<PriorityReq>, res: Res_Promise) => {
     const userId = req.session?.getUserId();
     const data = req.body;
     const createRes = await priorityService.create(userId, data);
-    //@ts-ignore
-    res.promise(Promise.resolve(createRes));
+    res.promise(createRes);
   };
 
-  delete = async (req: SessionRequest, res: express.Response) => {
-    const userId = req.session?.getUserId();
+  delete = async (req: SessionRequest, res: Res_Promise) => {
+    const userId = req.session?.getUserId() as string;
     const priorityId: string = req.params.id;
     const deleteResponse = await priorityService.deleteById(priorityId, userId);
-    //@ts-ignore
-    res.promise(Promise.resolve(deleteResponse));
+
+    res.promise(deleteResponse);
   };
 
-  readAll = async (req: SessionRequest, res: express.Response) => {
+  readAll = async (req: SessionRequest, res: Res_Promise) => {
     const userId = req.session?.getUserId();
     const priorities = await priorityService.list(userId);
-    res.promise(Promise.resolve(priorities));
+    res.promise(priorities);
   };
 
-  readById = async (req: SessionRequest, res: express.Response) => {
+  readById = async (req: SessionRequest, res: Res_Promise) => {
     const userId = req.session?.getUserId();
     const priority = await priorityService.readById(userId, req.params.id);
-    res.promise(Promise.resolve(priority));
+    res.promise(priority);
   };
 
-  update = async (req: SessionRequest, res: express.Response) => {
-    const userId = req.session?.getUserId();
-    //@ts-ignore
+  update = async (req: SessionRequest, res: Res_Promise) => {
+    const userId = req.session?.getUserId() as string;
     const priorityId: string = req.params.id;
-    //@ts-ignore
     const priority: PriorityReq = req.body;
-    //@ts-ignore
     const response = await priorityService.updateById(
       priorityId,
       priority,
       userId
     );
-    //@ts-ignore
-    res.promise(Promise.resolve(response));
+
+    res.promise(response);
   };
 }
 
