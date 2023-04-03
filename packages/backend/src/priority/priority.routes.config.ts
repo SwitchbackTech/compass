@@ -14,14 +14,19 @@ export class PriorityRoutes extends CommonRoutesConfig {
     this.app
       .route(`/api/priority`)
       .all(verifySession())
+      //@ts-ignore
       .get(PriorityController.readAll)
+      //@ts-ignore
       .post(PriorityController.create);
 
     this.app
       .route(`/api/priority/:id`)
       .all([verifySession(), validateIdParam])
+      //@ts-ignore
       .get(PriorityController.readById)
+      //@ts-ignore
       .put(PriorityController.update)
+      //@ts-ignore
       .delete(PriorityController.delete);
 
     return this.app;

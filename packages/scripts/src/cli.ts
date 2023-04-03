@@ -26,7 +26,14 @@ const runScript = async () => {
   program.option("-b, --build", "builds packages");
   program.option("-c, --scp", "copies existing builds to VM");
   program.option("-d, --delete", "deletes users data from compass database");
+  program.option(
+    "-e --environment <environment>, specify environment (`Category_VM` value)"
+  );
   program.option("-f, --force", "forces operation, no cautionary prompts");
+  program.option(
+    "-p, --packages [pkgs...]",
+    "specifies which packages to build"
+  );
   program.option("-u, --user <id>", "specifies which user to run script for");
 
   program.parse(process.argv);
@@ -43,7 +50,7 @@ const runScript = async () => {
       break;
     }
     case options["build"]: {
-      await runBuild();
+      await runBuild(options["packages"], options["environment"]);
       break;
     }
     case options["scp"]: {
