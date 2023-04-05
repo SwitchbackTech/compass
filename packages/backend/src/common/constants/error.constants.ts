@@ -31,6 +31,14 @@ export const DbError = {
   },
 };
 
+export const EmailerError = {
+  AddToListFailed: {
+    description: "Failed to add email to list",
+    status: Status.UNSURE,
+    isOperational: true,
+  },
+};
+
 export const EventError = {
   Gone: {
     description: "Resource is gone",

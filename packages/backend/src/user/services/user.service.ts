@@ -15,11 +15,12 @@ import {
   initSync,
   watchEventsByGcalIds,
 } from "@backend/sync/services/sync.service.helpers";
+import calendarService from "@backend/calendar/services/calendar.service";
+import emailService from "./email.service";
+import eventService from "@backend/event/services/event.service";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
-import calendarService from "@backend/calendar/services/calendar.service";
 import syncService from "@backend/sync/services/sync.service";
-import eventService from "@backend/event/services/event.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { Summary_Resync } from "@backend/common/types/sync.types";
 import { reInitSyncByIntegration } from "@backend/sync/util/sync.queries";
@@ -46,7 +47,11 @@ class UserService {
       throw error(AuthError.NoUserId, "Failed to create Compass user");
     }
 
-    return userId;
+    return {
+      email: compassUser.email,
+      firstName: compassUser.firstName,
+      userId,
+    };
   };
 
   deleteCompassDataForUser = async (userId: string, gcalAccess = true) => {
@@ -105,7 +110,12 @@ class UserService {
     gcalClient: gCalendar,
     gRefreshToken: string
   ) => {
-    const userId = await this.createUser(gUser, gRefreshToken);
+    const { email, firstName, userId } = await this.createUser(
+      gUser,
+      gRefreshToken
+    );
+
+    await emailService.addToEmailList(email, firstName);
 
     const gCalendarIds = await initSync(gcalClient, userId);
 
