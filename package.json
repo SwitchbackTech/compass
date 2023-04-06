@@ -55,7 +55,7 @@
     "@typescript-eslint/parser": "^5.0.0",
     "babel-loader": "^9.1.0",
     "buffer": "^6.0.3",
-    "concurrently": "^7.0.0",
+    "concurrently": "^8.0.1",
     "cross-env": "^7.0.3",
     "crypto-browserify": "^3.12.0",
     "eslint": "^8.2.0",
