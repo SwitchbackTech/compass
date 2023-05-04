@@ -13347,10 +13347,10 @@ sumchecker@^3.0.1:
   dependencies:
     debug "^4.1.0"
 
-supertokens-auth-react@^0.31.1:
-  version "0.31.3"
-  resolved "https://registry.yarnpkg.com/supertokens-auth-react/-/supertokens-auth-react-0.31.3.tgz#ff04a8a9e34e5873a6b898e93fe363337cd84d3d"
-  integrity sha512-LBMqieKSweYv2+PbzppOwMYT67VW/HfJdb4kS3GTI0emNzwndxxYkRCnFiTroND08C9t3LLdMt5SUxXW+0X8Jw==
+supertokens-auth-react@^0.32.1:
+  version "0.32.1"
+  resolved "https://registry.yarnpkg.com/supertokens-auth-react/-/supertokens-auth-react-0.32.1.tgz#6929f08243f17e063e19838902247bccecf9f059"
+  integrity sha512-RdGurkuoBZQOhski2LZ/3WZ3zMPSm/VVs8ItmNO2OqiMC2yFsXLL27f9mUSK6SZIVnijt03B0nV2Vy4PM7lEVg==
   dependencies:
     intl-tel-input "^17.0.19"
     prop-types "^15.7.2"
