@@ -20,6 +20,7 @@ export interface Props extends DroppableProvided {
 export const SOMEDAY_EVENT_HEIGHT = 32;
 
 export const StyledMigrateArrow = styled.span`
+  padding-left: 7px;
   padding-right: 7px;
 
   &:hover {
