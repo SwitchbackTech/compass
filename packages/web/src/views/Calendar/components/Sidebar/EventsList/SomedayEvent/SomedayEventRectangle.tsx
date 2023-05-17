@@ -14,22 +14,37 @@ interface Props {
 
 export const SomedayEventRectangle = ({ event, onMigrate }: Props) => {
   return (
-    <Flex
-      alignItems={AlignItems.FLEX_START}
-      direction={FlexDirections.ROW}
-      justifyContent={JustifyContent.SPACE_BETWEEN}
-    >
-      <Text size={15}>{event.title}</Text>
-      <StyledMigrateArrow
-        onClick={(e) => {
-          e.stopPropagation();
-          onMigrate(event, "forward");
-        }}
-        role="button"
-        title="Migrate to next week"
+    <>
+      <Flex
+        alignItems={AlignItems.CENTER}
+        direction={FlexDirections.ROW}
+        justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        {">"}
-      </StyledMigrateArrow>
-    </Flex>
+        <Text size={15}>{event.title}</Text>
+
+        <Flex>
+          <StyledMigrateArrow
+            onClick={(e) => {
+              e.stopPropagation();
+              onMigrate(event, "back");
+            }}
+            role="button"
+            title="Migrate to previous week"
+          >
+            {"<"}
+          </StyledMigrateArrow>
+          <StyledMigrateArrow
+            onClick={(e) => {
+              e.stopPropagation();
+              onMigrate(event, "forward");
+            }}
+            role="button"
+            title="Migrate to next week"
+          >
+            {">"}
+          </StyledMigrateArrow>
+        </Flex>
+      </Flex>
+    </>
   );
 };
