@@ -1,11 +1,10 @@
-import React from "react";
+import React, { FC } from "react";
 import { ColorNames } from "@core/types/color.types";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { getAlphaColor } from "@core/util/color.utils";
 import { Divider } from "@web/components/Divider";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Preferences } from "@web/views/Calendar/hooks/usePreferences";
-import { SIDEBAR_MONTH_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
@@ -13,11 +12,12 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import {
   Styled,
   StyledTopSectionFlex,
-  StyledBottomSection,
+  StyledBottomRow,
   getSidebarToggleIcon,
   StyledSidebarOverflow,
 } from "./styled";
 import { SomedaySection } from "./SomedaySection";
+import { SidebarIconRow } from "./SidebarIconRow/SidebarIconRow";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 
 interface Props {
@@ -27,27 +27,26 @@ interface Props {
   weekProps: WeekProps;
 }
 
-export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
+export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
   props: Props
 ) => {
+  const { prefs } = props;
   const weekStart = props.weekProps.component.startOfView;
   const weekEnd = props.weekProps.component.endOfView;
 
-  const SidebarToggleIcon = getSidebarToggleIcon(props.prefs.isSidebarOpen);
+  const SidebarToggleIcon = getSidebarToggleIcon(props.prefs.isLeftSidebarOpen);
 
   return (
     <Styled
       id="sidebar"
-      isToggled={props.prefs.isSidebarOpen}
+      isToggled={prefs.isLeftSidebarOpen}
       role="complementary"
     >
-      <StyledSidebarOverflow isToggled={props.prefs.isSidebarOpen} />
+      <StyledSidebarOverflow isToggled={prefs.isLeftSidebarOpen} />
 
       <TooltipWrapper
-        description={`${
-          props.prefs.isSidebarOpen ? "Collapse" : "Open"
-        } sidebar`}
-        onClick={props.prefs.toggleSidebar}
+        description={`${prefs.isLeftSidebarOpen ? "Collapse" : "Open"} sidebar`}
+        onClick={() => prefs.toggleSidebar("left")}
         shortcut="["
       >
         <div role="button">
@@ -57,7 +56,7 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
 
       <StyledTopSectionFlex
         direction={FlexDirections.COLUMN}
-        height={`calc(100% - ${SIDEBAR_MONTH_HEIGHT + 2}px)`}
+        // height={`calc(100% - ${SIDEBAR_MONTH_HEIGHT + 2}px)`}
       >
         <SomedaySection
           dateCalcs={props.dateCalcs}
@@ -73,15 +72,15 @@ export const Sidebar: React.FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         title="sidebar divider"
         withAnimation={false}
       />
-      <StyledBottomSection height={String(SIDEBAR_MONTH_HEIGHT)}>
+      {props.prefs.isMonthWidgetOpen && (
         <ToggleableMonthWidget
-          isToggled={true}
           monthsShown={1}
           setStartOfView={props.weekProps.state.setStartOfView}
           isCurrentWeek={props.weekProps.component.isCurrentWeek}
-          weekStart={weekStart}
+          weekStart={props.weekProps.component.startOfView}
         />
-      </StyledBottomSection>
+      )}
+      <SidebarIconRow prefs={prefs} />
     </Styled>
   );
 };

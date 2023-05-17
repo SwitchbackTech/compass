@@ -1,11 +1,25 @@
 import { useState } from "react";
 
 export const usePreferences = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isMonthWidgetOpen, setIsMonthWidgetOpen] = useState(false);
 
-  const toggleSidebar = () => setIsSidebarOpen((open) => !open);
+  const toggleMonthWidget = () => {
+    setIsMonthWidgetOpen((open) => !open);
+  };
 
-  return { isSidebarOpen, toggleSidebar };
+  const toggleSidebar = (target: "left") => {
+    if (target === "left") {
+      setIsLeftSidebarOpen((open) => !open);
+    }
+  };
+
+  return {
+    isLeftSidebarOpen,
+    isMonthWidgetOpen,
+    toggleMonthWidget,
+    toggleSidebar,
+  };
 };
 
 export type Preferences = ReturnType<typeof usePreferences>;

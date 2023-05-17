@@ -22,8 +22,12 @@ export const Styled = styled.div<SidebarProps>`
     isToggled ? SIDEBAR_OPEN_WIDTH : SIDEBAR_CLOSED_WIDTH}px;
 `;
 
-export const StyledBottomSection = styled.div<SectionProps>`
-  height: ${({ height }) => height}px;
+export const StyledBottomRow = styled.div<SectionProps>`
+  bottom: 0;
+  border-top: 1px solid #7a858d;
+  padding: 10px 20px;
+  position: absolute;
+  width: 100%;
 `;
 
 export const StyledCheckBox = styled(CheckBox)`
@@ -101,8 +105,9 @@ export const StyledSidebarOverflow = styled.div<SidebarProps>`
 `;
 
 export const StyledTopSectionFlex = styled(Flex)<SectionProps>`
-  padding: 34px 38px 0 14px;
-  height: ${({ height }) => height};
+  padding: 34px 38px 25px 14px;
+  /* height: ${({ height }) => height}; */
+  min-height: 47%;
   overflow: hidden;
 `;
 

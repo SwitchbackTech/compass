@@ -17,6 +17,7 @@ import { selectSomedayEventsCount } from "@web/ducks/events/selectors/someday.se
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
 import { WeekProps } from "../useWeek";
+import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 
 export const useShortcuts = (
   today: Dayjs,
@@ -25,7 +26,7 @@ export const useShortcuts = (
   startOfSelectedWeek: Dayjs,
   util: WeekProps["util"],
   scrollUtil: Util_Scroll,
-  toggleSidebar: () => void
+  toggleSidebar: (target: "left" | "right") => void
 ) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -89,7 +90,9 @@ export const useShortcuts = (
       if (isDrafting()) return;
 
       const handlersByKey = {
-        [Key.OpenBracket]: () => toggleSidebar(),
+        [Key.OpenBracket]: () => toggleSidebar("left"),
+        [Key.ClosedBracket]: () =>
+          dispatch(settingsSlice.actions.toggleRightSidebar()),
         [Key.C]: () => _createTimedDraft(),
         [Key.T]: () => {
           scrollUtil.scrollToNow();

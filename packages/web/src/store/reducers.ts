@@ -1,3 +1,4 @@
+import { combineReducers } from "redux";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import {
   createEventSlice,
@@ -8,9 +9,9 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
-import { combineReducers } from "redux";
+import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 
-export const eventsReducer = combineReducers({
+const eventsReducer = combineReducers({
   createEvent: createEventSlice.reducer,
   draft: draftSlice.reducer,
   deleteEvent: deleteEventSlice.reducer,
@@ -23,4 +24,5 @@ export const eventsReducer = combineReducers({
 
 export const reducers = {
   events: eventsReducer,
+  settings: settingsSlice.reducer,
 };

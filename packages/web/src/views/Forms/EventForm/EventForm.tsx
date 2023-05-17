@@ -18,7 +18,7 @@ import {
   getTimeOptionByValue,
   mapToBackend,
 } from "@web/common/utils/web.date.util";
-import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/EventsList/SomedayEvent/styled";
+import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/LeftSidebar/EventsList/SomedayEvent/styled";
 
 import { FormProps, SetEventFormField } from "./types";
 import { DateTimeSection } from "./DateTimeSection";

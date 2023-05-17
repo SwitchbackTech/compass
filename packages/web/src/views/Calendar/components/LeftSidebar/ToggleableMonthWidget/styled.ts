@@ -17,6 +17,7 @@ export const StyledToggleArrow = styled(ToggleArrow)`
   position: absolute;
   left: 20px;
   top: 30px;
+  transition: position 4.9s;
   z-index: ${ZIndex.LAYER_2};
 `;
 
