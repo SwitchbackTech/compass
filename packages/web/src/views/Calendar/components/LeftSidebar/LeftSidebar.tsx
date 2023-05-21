@@ -11,10 +11,11 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 
 import {
   Styled,
-  StyledTopSectionFlex,
+  StyledSomedaySection,
   StyledBottomRow,
   getSidebarToggleIcon,
   StyledSidebarOverflow,
+  StyledBottomSectionFlex,
 } from "./styled";
 import { SomedaySection } from "./SomedaySection";
 import { SidebarIconRow } from "./SidebarIconRow/SidebarIconRow";
@@ -43,7 +44,6 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
       role="complementary"
     >
       <StyledSidebarOverflow isToggled={prefs.isLeftSidebarOpen} />
-
       <TooltipWrapper
         description={`${prefs.isLeftSidebarOpen ? "Collapse" : "Open"} sidebar`}
         onClick={() => prefs.toggleSidebar("left")}
@@ -54,7 +54,7 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         </div>
       </TooltipWrapper>
 
-      <StyledTopSectionFlex
+      <StyledSomedaySection
         direction={FlexDirections.COLUMN}
         // height={`calc(100% - ${SIDEBAR_MONTH_HEIGHT + 2}px)`}
       >
@@ -65,13 +65,7 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           viewStart={weekStart}
           viewEnd={weekEnd}
         />
-      </StyledTopSectionFlex>
-      <Divider
-        color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
-        role="separator"
-        title="sidebar divider"
-        withAnimation={false}
-      />
+      </StyledSomedaySection>
       {props.prefs.isMonthWidgetOpen && (
         <ToggleableMonthWidget
           monthsShown={1}

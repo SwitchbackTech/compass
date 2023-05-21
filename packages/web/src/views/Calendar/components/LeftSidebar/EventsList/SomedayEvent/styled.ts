@@ -66,7 +66,7 @@ export const NewStyledSomedayEvent = styled.div<Props>`
   }};
   padding: 5px;
   transition: background-color 0.2s, box-shadow 0.2s;
-  width: 100%;
+  width: 298px;
 
   &:hover {
     background: ${({ priority }) => hoverColorsByPriority[priority]};

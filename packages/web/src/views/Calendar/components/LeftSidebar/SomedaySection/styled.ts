@@ -1,7 +1,7 @@
 import styled from "styled-components";
-import { Flex } from "@web/components/Flex";
 import { getColor } from "@core/util/color.utils";
 import { ColorNames } from "@core/types/color.types";
+import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
 
 export interface Props {
@@ -17,7 +17,7 @@ export const Styled = styled.div<Props>`
 `;
 
 export const StyledHeader = styled(Flex)`
-  margin-bottom: 20px;
+  margin: 10px 30px 20px 20px;
 `;
 
 export const StyledHeaderTitle = styled(Text)`

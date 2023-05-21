@@ -46,7 +46,7 @@ export const useShortcuts = (
       }
     };
 
-    const _createSomedayDraft = () => {
+    const _createWeekDraft = () => {
       if (_isAtLimit()) {
         alert(SOMEDAY_WEEK_LIMIT_MSG);
         return;
@@ -107,7 +107,8 @@ export const useShortcuts = (
           _discardDraft();
           util.incrementWeek();
         },
-        [Key.S]: () => _createSomedayDraft(),
+        [Key.M]: () => console.log("adding to month.."),
+        [Key.W]: () => _createWeekDraft(),
         [Key.Z]: () => {
           navigate(ROOT_ROUTES.LOGOUT);
         },

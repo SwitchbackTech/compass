@@ -1,5 +1,4 @@
 import React, { FC, useRef } from "react";
-import { DragDropContext } from "@hello-pangea/dnd";
 import { ColorNames } from "@core/types/color.types";
 import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
 import { Text } from "@web/components/Text";
@@ -11,15 +10,12 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useSomedayEvents } from "@web/views/Calendar/hooks/draft/useSidebarDraft";
-import {
-  SIDEBAR_OPEN_WIDTH,
-  GRID_X_START,
-} from "@web/views/Calendar/layout.constants";
 
 import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
-import { StyledList } from "../EventsList/styled";
-import { WeekEventsColumn } from "./WeekColumn/WeekEventsColumn";
-import { GridEventPreview } from "../../Event/Grid/GridEventPreview/GridEventPreview";
+import { WeekSection } from "./WeekSection/WeekSection";
+import { MonthSection } from "./MonthSection";
+import { Divider } from "@web/components/Divider";
+import { getAlphaColor } from "@core/util/color.utils";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -46,12 +42,6 @@ export const SomedaySection: FC<Props> = ({
 
   const somedayRef = useRef();
 
-  const _isDrafting = state.isDraftingExisting || state.isDraftingNew;
-  const shouldPreview = _isDrafting && state.isOverGrid && !state.draft.isOpen;
-
-  const gridX = state.mouseCoords.x - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
-  const dayIndex = dateCalcs.getDayNumberByX(gridX);
-
   return (
     <Styled flex={flex} onClick={util.onSectionClick} ref={somedayRef}>
       {isProcessing && <AbsoluteOverflowLoader />}
@@ -66,7 +56,7 @@ export const SomedaySection: FC<Props> = ({
 
         <div onClick={(e) => e.stopPropagation()}>
           <TooltipWrapper
-            description="Add to this week"
+            description="Add to week"
             onClick={util.onSectionClick}
             shortcut="S"
           >
@@ -77,46 +67,26 @@ export const SomedaySection: FC<Props> = ({
         </div>
       </StyledHeader>
 
-      <DragDropContext
-        onDragEnd={util.onDragEnd}
-        onDragStart={util.onDragStart}
-      >
-        {shouldPreview && (
-          <GridEventPreview
-            dateCalcs={dateCalcs}
-            dayIndex={dayIndex}
-            event={state.draft}
-            isOverAllDayRow={state.isOverAllDayRow}
-            isOverMainGrid={state.isOverGrid}
-            measurements={measurements}
-            mouseCoords={state.mouseCoords}
-            startOfView={viewStart}
-          />
-        )}
-        <StyledList>
-          {state.somedayEvents.columnOrder.map((columnId) => {
-            const column = state.somedayEvents.columns[columnId];
-            const weekEvents = column.eventIds.map(
-              (eventId) => state.somedayEvents.events[eventId]
-            );
+      <WeekSection
+        dateCalcs={dateCalcs}
+        measurements={measurements}
+        somedayProps={somedayProps}
+        viewStart={viewStart}
+      />
 
-            return (
-              <div key={`${columnId}-wrapper`}>
-                <WeekEventsColumn
-                  column={column}
-                  draft={state.draft}
-                  events={weekEvents}
-                  isDraftingExisting={state.isDraftingExisting}
-                  isDraftingNew={state.isDraftingNew}
-                  isOverGrid={state.isOverGrid}
-                  key={columnId}
-                  util={util}
-                />
-              </div>
-            );
-          })}
-        </StyledList>
-      </DragDropContext>
+      <Divider
+        color={getAlphaColor(ColorNames.WHITE_4, 0.3)}
+        role="separator"
+        title="sidebar divider"
+        withAnimation={false}
+      />
+
+      <MonthSection
+        dateCalcs={dateCalcs}
+        measurements={measurements}
+        somedayProps={somedayProps}
+        viewStart={viewStart}
+      />
     </Styled>
   );
 };

@@ -3,7 +3,7 @@ import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/useSidebarDraft";
 
-import { DraggableSomedayEvent } from "../../EventsList/SomedayEvent/Wrappers/DraggableSomedayEvent";
+import { DraggableSomedayEvent } from "../../../EventsList/SomedayEvent/Wrappers/DraggableSomedayEvent";
 import { WeekColProps } from "./weekColumn.types";
 
 export const WeekEvents: FC<{

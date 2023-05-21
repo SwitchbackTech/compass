@@ -24,6 +24,7 @@ export const colors: Colors = {
   [ColorNames.GREY_4]: BASE_COLORS.LIGHT_GREY,
   [ColorNames.GREY_4]: "#A3B1BB",
   [ColorNames.GREY_5]: "#BDCFDC",
+  [ColorNames.GREY_6]: "#7A858D",
 
   [ColorNames.TEAL_1]: "#4b94a0",
   [ColorNames.TEAL_2]: "#4c96b3",

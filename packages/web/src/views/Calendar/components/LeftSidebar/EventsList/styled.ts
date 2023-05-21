@@ -5,7 +5,10 @@ export const Styled = styled.div`
   width: 100%;
 `;
 
-export const StyledList = styled.div`
+export const StyledWeekSection = styled.div`
   height: 100%;
+  min-height: 400px;
   overflow: auto;
+  padding-bottom: 20px;
+  padding-left: 20px;
 `;

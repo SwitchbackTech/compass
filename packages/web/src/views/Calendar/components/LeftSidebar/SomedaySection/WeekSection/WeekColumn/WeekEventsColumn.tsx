@@ -2,7 +2,7 @@ import React, { FC } from "react";
 import { Droppable } from "@hello-pangea/dnd";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 
-import { DraggableSomedayEvent } from "../../EventsList/SomedayEvent/Wrappers/DraggableSomedayEvent";
+import { DraggableSomedayEvent } from "../../../EventsList/SomedayEvent/Wrappers/DraggableSomedayEvent";
 import { WeekColProps } from "./weekColumn.types";
 import { WeekEvents } from "./WeekEvents";
 

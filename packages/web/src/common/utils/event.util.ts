@@ -10,7 +10,7 @@ import { Status } from "@core/errors/status.codes";
 
 import { Schema_GridEvent } from "../types/web.event.types";
 import { removeGridFields } from "./grid.util";
-import { DropResult } from "../types/dnd.types";
+import { DropResult } from "@hello-pangea/dnd";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -77,6 +77,10 @@ export const getDefaultEvent = (
     default:
       return null;
   }
+};
+
+export const getMonthListLabel = (start: Dayjs) => {
+  return start.format("MMMM");
 };
 
 export const getWeekDayLabel = (day: Dayjs | Date) => {

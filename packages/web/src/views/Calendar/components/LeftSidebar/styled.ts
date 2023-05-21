@@ -12,6 +12,14 @@ import { ZIndex } from "@web/common/constants/web.constants";
 
 import { SidebarProps, SectionProps } from "./sidebar.types";
 
+export const getSidebarToggleIcon = (isToggled: boolean) => {
+  if (isToggled) {
+    return StyledCollapseIcon;
+  } else {
+    return StyledOpenIcon;
+  }
+};
+
 export const Styled = styled.div<SidebarProps>`
   background: ${getColor(ColorNames.GREY_3)};
   height: 100%;
@@ -24,7 +32,9 @@ export const Styled = styled.div<SidebarProps>`
 
 export const StyledBottomRow = styled.div<SectionProps>`
   bottom: 0;
-  border-top: 1px solid #7a858d;
+  border-top: 1px solid ${getColor(ColorNames.GREY_6)};
+  /* height: 100%; */
+  height: 40px;
   padding: 10px 20px;
   position: absolute;
   width: 100%;
@@ -41,7 +51,7 @@ export const StyledDividerWrapper = styled.div`
 
 const StyledCollapseIcon = styled(SidebarCollapseIcon)`
   cursor: pointer;
-  color: #7a858d;
+  color: ${getColor(ColorNames.GREY_6)};
   position: absolute;
   right: 7px;
   top: 42px;
@@ -66,7 +76,7 @@ export const StyledFiltersPopoverContent = styled.div`
 // $$ make this into variable or dynamic so you don't have to duplicate styles
 const StyledOpenIcon = styled(SidebarOpenIcon)`
   cursor: pointer;
-  color: #7a858d;
+  color: ${getColor(ColorNames.GREY_6)};
   position: absolute;
   right: 7px;
   top: 42px;
@@ -104,17 +114,11 @@ export const StyledSidebarOverflow = styled.div<SidebarProps>`
   z-index: ${ZIndex.LAYER_1};
 `;
 
-export const StyledTopSectionFlex = styled(Flex)<SectionProps>`
-  padding: 34px 38px 25px 14px;
-  /* height: ${({ height }) => height}; */
-  min-height: 47%;
+export const StyledSomedaySection = styled(Flex)<SectionProps>`
   overflow: hidden;
+  padding-top: 24px;
 `;
 
-export const getSidebarToggleIcon = (isToggled: boolean) => {
-  if (isToggled) {
-    return StyledCollapseIcon;
-  } else {
-    return StyledOpenIcon;
-  }
-};
+export const StyledBottomSectionFlex = styled(Flex)`
+  padding: 34px 38px 25px 14px;
+`;
