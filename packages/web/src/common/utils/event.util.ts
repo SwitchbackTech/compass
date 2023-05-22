@@ -38,7 +38,7 @@ export const getCategory = (event: Schema_Event) => {
     return Categories_Event.ALLDAY;
   }
   if (event?.isSomeday) {
-    return Categories_Event.SOMEDAY;
+    return Categories_Event.SOMEDAY_WEEK;
   }
   return Categories_Event.TIMED;
 };
@@ -57,7 +57,7 @@ export const getDefaultEvent = (
         startDate,
         endDate: startDate,
       };
-    case Categories_Event.SOMEDAY:
+    case Categories_Event.SOMEDAY_WEEK || Categories_Event.SOMEDAY_MONTH:
       return {
         isAllDay: false,
         isSomeday: true,

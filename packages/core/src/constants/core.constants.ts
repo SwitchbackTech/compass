@@ -5,8 +5,10 @@ export const MB_50 = 50000000; // in bytes
 export const MS_IN_HR = 2.7777777777778e-7;
 export const PORT_DEFAULT_API = 3000;
 export const PORT_DEFAULT_WEB = 9080;
+export const SOMEDAY_MONTHLY_LIMIT = 9;
 export const SOMEDAY_WEEKLY_LIMIT = 9;
 export const SOMEDAY_WEEK_LIMIT_MSG = `Sorry, you can only have ${SOMEDAY_WEEKLY_LIMIT} unscheduled events per week.`;
+export const SOMEDAY_MONTH_LIMIT_MSG = `Sorry, you can only have ${SOMEDAY_MONTHLY_LIMIT} unscheduled events per month.`;
 export const SYNC_DEBUG = "/api/sync/debug";
 
 export enum NodeEnv {

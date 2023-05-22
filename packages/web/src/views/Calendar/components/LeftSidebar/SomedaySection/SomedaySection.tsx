@@ -1,21 +1,27 @@
-import React, { FC, useRef } from "react";
+import React, { FC, useMemo, useRef } from "react";
+import { getAlphaColor } from "@core/util/color.utils";
 import { ColorNames } from "@core/types/color.types";
 import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
 import { Text } from "@web/components/Text";
+import { getWeekRangeLabel } from "@web/common/utils/web.date.util";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { Divider } from "@web/components/Divider";
 import { useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { useSomedayEvents } from "@web/views/Calendar/hooks/draft/useSidebarDraft";
+import { useSidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 
-import { Styled, StyledAddEventButton, StyledHeader } from "./styled";
+import {
+  Styled,
+  StyledAddEventButton,
+  StyledSidebarHeader,
+  StyledSidebarTopHeader,
+} from "./styled";
 import { WeekSection } from "./WeekSection/WeekSection";
 import { MonthSection } from "./MonthSection";
-import { Divider } from "@web/components/Divider";
-import { getAlphaColor } from "@core/util/color.utils";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -34,43 +40,44 @@ export const SomedaySection: FC<Props> = ({
 }) => {
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
 
-  const somedayProps = useSomedayEvents(measurements, dateCalcs, {
-    weekStart: viewStart,
-    weekEnd: viewEnd,
-  });
-  const { state, util } = somedayProps;
+  const weekRange = { weekStart: viewStart, weekEnd: viewEnd };
+  const sidebarProps = useSidebar(measurements, dateCalcs, weekRange);
 
   const somedayRef = useRef();
+  const weekLabel = useMemo(
+    () => getWeekRangeLabel(viewStart, viewEnd),
+    [weekRange]
+  );
 
   return (
-    <Styled flex={flex} onClick={util.onSectionClick} ref={somedayRef}>
+    <Styled flex={flex} ref={somedayRef}>
       {isProcessing && <AbsoluteOverflowLoader />}
 
-      <StyledHeader
+      <StyledSidebarTopHeader
         alignItems={AlignItems.CENTER}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
         <Text colorName={ColorNames.WHITE_1} role="heading" size={22}>
-          {state.weekLabel}
+          {weekLabel}
         </Text>
 
         <div onClick={(e) => e.stopPropagation()}>
           <TooltipWrapper
             description="Add to week"
-            onClick={util.onSectionClick}
-            shortcut="S"
+            onClick={() => sidebarProps.util.onSectionClick("week")}
+            shortcut="W"
           >
             <div role="button">
               <StyledAddEventButton size={25}>+</StyledAddEventButton>
             </div>
           </TooltipWrapper>
         </div>
-      </StyledHeader>
+      </StyledSidebarTopHeader>
 
       <WeekSection
         dateCalcs={dateCalcs}
         measurements={measurements}
-        somedayProps={somedayProps}
+        somedayProps={sidebarProps}
         viewStart={viewStart}
       />
 
@@ -84,7 +91,7 @@ export const SomedaySection: FC<Props> = ({
       <MonthSection
         dateCalcs={dateCalcs}
         measurements={measurements}
-        somedayProps={somedayProps}
+        somedayProps={sidebarProps}
         viewStart={viewStart}
       />
     </Styled>

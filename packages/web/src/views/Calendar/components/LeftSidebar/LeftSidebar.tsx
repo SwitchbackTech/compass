@@ -44,6 +44,7 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
       role="complementary"
     >
       <StyledSidebarOverflow isToggled={prefs.isLeftSidebarOpen} />
+
       <TooltipWrapper
         description={`${prefs.isLeftSidebarOpen ? "Collapse" : "Open"} sidebar`}
         onClick={() => prefs.toggleSidebar("left")}
@@ -54,18 +55,14 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         </div>
       </TooltipWrapper>
 
-      <StyledSomedaySection
-        direction={FlexDirections.COLUMN}
-        // height={`calc(100% - ${SIDEBAR_MONTH_HEIGHT + 2}px)`}
-      >
-        <SomedaySection
-          dateCalcs={props.dateCalcs}
-          flex={1}
-          measurements={props.measurements}
-          viewStart={weekStart}
-          viewEnd={weekEnd}
-        />
-      </StyledSomedaySection>
+      <SomedaySection
+        dateCalcs={props.dateCalcs}
+        flex={1}
+        measurements={props.measurements}
+        viewStart={weekStart}
+        viewEnd={weekEnd}
+      />
+
       {props.prefs.isMonthWidgetOpen && (
         <ToggleableMonthWidget
           monthsShown={1}
@@ -74,6 +71,7 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
           weekStart={props.weekProps.component.startOfView}
         />
       )}
+
       <SidebarIconRow prefs={prefs} />
     </Styled>
   );

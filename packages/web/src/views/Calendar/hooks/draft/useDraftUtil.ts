@@ -2,7 +2,6 @@ import { MouseEvent } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import {
   Priorities,
-  SOMEDAY_WEEKLY_LIMIT,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
@@ -26,7 +25,10 @@ import {
   selectDraftStatus,
 } from "@web/ducks/events/selectors/draft.selectors";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
-import { selectSomedayEventsCount } from "@web/ducks/events/selectors/someday.selectors";
+import {
+  selectIsAtWeeklyLimit,
+  selectSomedayEventsCount,
+} from "@web/ducks/events/selectors/someday.selectors";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { WeekProps } from "../useWeek";
@@ -55,9 +57,7 @@ export const useDraftUtil = (
   } = useAppSelector(selectDraftStatus);
   const somedayEventsCount = useAppSelector(selectSomedayEventsCount);
 
-  const _isAtLimit = useCallback(() => {
-    return somedayEventsCount >= SOMEDAY_WEEKLY_LIMIT;
-  }, [somedayEventsCount]);
+  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
 
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -150,7 +150,7 @@ export const useDraftUtil = (
   }, [dateCalcs, isDragging]);
 
   const convert = (start: string, end: string) => {
-    if (_isAtLimit()) {
+    if (isAtWeeklyLimit) {
       alert(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }

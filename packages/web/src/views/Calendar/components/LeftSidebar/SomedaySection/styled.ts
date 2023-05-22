@@ -9,19 +9,10 @@ export interface Props {
 }
 
 export const Styled = styled.div<Props>`
-  margin-bottom: 5px;
   color: ${getColor(ColorNames.WHITE_1)};
   flex: ${({ flex }) => flex};
+  margin-bottom: 5px;
   width: 100%;
-  max-height: calc(100% - 46px);
-`;
-
-export const StyledHeader = styled(Flex)`
-  margin: 10px 30px 20px 20px;
-`;
-
-export const StyledHeaderTitle = styled(Text)`
-  margin: 0 10px;
 `;
 
 export const StyledAddEventButton = styled(Text)`
@@ -31,6 +22,18 @@ export const StyledAddEventButton = styled(Text)`
     filter: brightness(160%);
     transition: filter 0.35s ease-out;
   }
+`;
+
+export const StyledSidebarHeader = styled(Flex)`
+  margin: 10px 5px 20px 20px;
+`;
+
+export const StyledSidebarTopHeader = styled(StyledSidebarHeader)`
+  padding-top: 25px;
+`;
+
+export const StyledHeaderTitle = styled(Text)`
+  margin: 0 10px;
 `;
 
 export const StyledPaginationFlex = styled(Flex)`

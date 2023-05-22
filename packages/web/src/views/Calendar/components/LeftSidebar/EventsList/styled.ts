@@ -5,8 +5,7 @@ export const Styled = styled.div`
   width: 100%;
 `;
 
-export const StyledWeekSection = styled.div`
-  height: 100%;
+export const StyledSidebarList = styled.div`
   min-height: 400px;
   overflow: auto;
   padding-bottom: 20px;

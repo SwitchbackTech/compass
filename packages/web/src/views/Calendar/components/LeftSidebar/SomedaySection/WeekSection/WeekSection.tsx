@@ -6,10 +6,11 @@ import {
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/useSidebarDraft";
+import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GridEventPreview } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/GridEventPreview";
-import { StyledWeekSection } from "../../EventsList/styled";
+
+import { StyledSidebarList } from "../../EventsList/styled";
 import { WeekEventsColumn } from "./WeekColumn/WeekEventsColumn";
 
 interface Props {
@@ -26,14 +27,12 @@ export const WeekSection: FC<Props> = ({
   viewStart,
 }) => {
   const { state, util } = somedayProps;
-  const _isDrafting = state.isDraftingExisting || state.isDraftingNew;
-  const shouldPreview = _isDrafting && state.isOverGrid && !state.draft.isOpen;
   const gridX = state.mouseCoords.x - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
   const dayIndex = dateCalcs.getDayNumberByX(gridX);
 
   return (
     <DragDropContext onDragEnd={util.onDragEnd} onDragStart={util.onDragStart}>
-      {shouldPreview && (
+      {state.shouldPreviewOnGrid && (
         <GridEventPreview
           dateCalcs={dateCalcs}
           dayIndex={dayIndex}
@@ -45,7 +44,7 @@ export const WeekSection: FC<Props> = ({
           startOfView={viewStart}
         />
       )}
-      <StyledWeekSection>
+      <StyledSidebarList onClick={() => util.onSectionClick("week")}>
         {state.somedayEvents.columnOrder.map((columnId) => {
           const column = state.somedayEvents.columns[columnId];
           const weekEvents = column.eventIds.map(
@@ -59,7 +58,8 @@ export const WeekSection: FC<Props> = ({
                 draft={state.draft}
                 events={weekEvents}
                 isDraftingExisting={state.isDraftingExisting}
-                isDraftingNew={state.isDraftingNew}
+                // isDraftingNew={state.isDraftingWeeklySomeday} //++
+                isDraftingNew={state.isDraftingNewWeekly}
                 isOverGrid={state.isOverGrid}
                 key={columnId}
                 util={util}
@@ -67,7 +67,7 @@ export const WeekSection: FC<Props> = ({
             </div>
           );
         })}
-      </StyledWeekSection>
+      </StyledSidebarList>
     </DragDropContext>
   );
 };
