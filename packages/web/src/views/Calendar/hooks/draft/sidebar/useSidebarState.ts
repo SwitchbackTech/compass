@@ -22,6 +22,7 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   useEffect(() => {
     setSomedayEvents(_somedayEvents);
   }, [_somedayEvents]);
+  console.log(somedayEvents);
 
   const { eventType: draftType } = useAppSelector(selectDraftStatus);
   const { isDrafting: isDraftingRedux } = useAppSelector(selectDraftId);
@@ -36,20 +37,16 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   const { isOverAllDayRow, isOverGrid, isOverMainGrid, mouseCoords } =
     useMousePosition(isDragging, draft?.isOpen, measurements);
 
-  const existingIds = somedayEvents.columns[COLUMN_WEEK].eventIds;
+  const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK].eventIds;
 
-  const _isDrafting = isDrafting && isDraftingRedux && draft !== null;
+  // const _isDrafting = isDrafting && isDraftingRedux && draft !== null; //++
 
-  const isDraftingMonthlySomeday =
-    _isDrafting && draftType === Categories_Event.SOMEDAY_MONTH;
-
-  // const isDraftingNew =
-  // isDrafting && !isDraftingExisting && !existingIds.includes(draft?._id);
   const _isDraftingNew = isDrafting && !isDraftingExisting;
+
   const isDraftingNewWeekly =
     _isDraftingNew &&
     draftType === Categories_Event.SOMEDAY_WEEK &&
-    !existingIds.includes(draft?._id);
+    !somedayWeekIds.includes(draft?._id);
 
   const _isDraftingRedux = isDraftingExisting || _isDraftingNew;
   const shouldPreviewOnGrid =
@@ -58,11 +55,10 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   return {
     draft,
     draftType,
-    existingIds,
+    somedayWeekIds,
     isAtMonthlyLimit,
     isAtWeeklyLimit,
     isDraftingExisting,
-    isDraftingMonthlySomeday,
     isDraftingNewWeekly,
     isDraftingRedux,
     isOverAllDayRow,
@@ -70,11 +66,11 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
     isOverMainGrid,
     mouseCoords,
     shouldPreviewOnGrid,
-    somedayEvents,
+    somedayEvents: somedayEvents,
     setDraft,
     setIsDrafting,
     setIsDraftingExisting,
-    setSomedayEvents,
+    setSomedayWeekEvents: setSomedayEvents,
   };
 };
 

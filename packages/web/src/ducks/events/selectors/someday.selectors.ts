@@ -1,6 +1,6 @@
 import { createSelector } from "reselect";
 import { SOMEDAY_WEEKLY_LIMIT } from "@core/constants/core.constants";
-import { COLUMN_WEEK } from "@web/common/constants/web.constants";
+import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { isProcessing } from "@web/common/store/helpers";
 import { Schema_SomedayEventsColumn } from "@web/common/types/web.event.types";
 import { RootState } from "@web/store";
@@ -41,6 +41,10 @@ export const selectSomedayEvents = createSelector(
       columns: {
         [`${COLUMN_WEEK}`]: {
           id: `${COLUMN_WEEK}`,
+          eventIds: sortedIds,
+        },
+        [`${COLUMN_MONTH}`]: {
+          id: `${COLUMN_MONTH}`,
           eventIds: sortedIds,
         },
       },

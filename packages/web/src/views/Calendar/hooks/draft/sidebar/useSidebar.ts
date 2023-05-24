@@ -17,10 +17,9 @@ export const useSidebar = (
 
   const _state = {
     draft: state.draft,
+    existingIds: state.somedayWeekIds,
     isDraftingExisting: state.isDraftingExisting,
-    // isDraftingNew: state.isDraftingNew,
     isDraftingNewWeekly: state.isDraftingNewWeekly,
-    isDraftingWeeklySomeday: state.isDraftingExisting,
     isOverAllDayRow: state.isOverAllDayRow,
     isOverGrid: state.isOverGrid,
     isOverMainGrid: state.isOverMainGrid,

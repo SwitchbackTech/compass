@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Key } from "ts-keycode-enum";
 import dayjs, { Dayjs } from "dayjs";
@@ -16,11 +16,11 @@ import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
+import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
 import { WeekProps } from "../useWeek";
-import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 
 export const useShortcuts = (
   today: Dayjs,
@@ -138,12 +138,13 @@ export const useShortcuts = (
     dateCalcs,
     dispatch,
     today,
+    isAtMonthlyLimit,
+    isAtWeeklyLimit,
     isCurrentWeek,
     navigate,
     startOfSelectedWeek,
     scrollUtil,
     toggleSidebar,
     util,
-    isAtWeeklyLimit,
   ]);
 };

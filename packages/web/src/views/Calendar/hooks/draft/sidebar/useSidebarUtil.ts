@@ -263,7 +263,7 @@ export const useSidebarUtil = (
     } else {
       const eventWithOrder = {
         ...event,
-        order: state.existingIds.length,
+        order: state.somedayWeekIds.length,
       };
       dispatch(createEventSlice.actions.request(eventWithOrder));
     }
@@ -322,7 +322,7 @@ export const useSidebarUtil = (
       },
     };
 
-    state.setSomedayEvents(newState);
+    state.setSomedayWeekEvents(newState);
 
     const newOrder = newEventIds.map((_id, index) => {
       return { _id, order: index };

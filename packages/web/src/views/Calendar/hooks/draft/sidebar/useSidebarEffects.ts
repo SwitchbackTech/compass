@@ -4,25 +4,19 @@ import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
 
 import { State_Sidebar } from "./useSidebarState";
 import { Util_Sidebar } from "./useSidebarUtil";
 
 export const useSidebarEffects = (state: State_Sidebar, util: Util_Sidebar) => {
-  const dispatch = useAppDispatch();
-
   const {
     draft,
     draftType,
-    existingIds,
+    somedayWeekIds: existingIds,
     isAtWeeklyLimit,
     isAtMonthlyLimit,
-    // isDraftingNew,
     isDraftingNewWeekly,
     isDraftingRedux,
-    isDraftingWeeklySomeday,
     setDraft,
     setIsDrafting,
     setIsDraftingExisting,
@@ -44,33 +38,8 @@ export const useSidebarEffects = (state: State_Sidebar, util: Util_Sidebar) => {
     }
   }, [draftType, isDraftingRedux, setDraft, setIsDrafting]);
 
-  // useEffect(() => {
-  //   // if (isDraftingNew) {
-  //   if (isDraftingNewWeekly) {
-  //     console.log("should be drafting [effect]");
-  //     dispatch(
-  //       draftSlice.actions.start({
-  //         eventType: draftType,
-  //       })
-  //     );
-  //   }
-  // }, [dispatch, draftType, isDraftingNewWeekly]);
-  // }, [dispatch, isDraftingNewWeekly]);
-
-  //++
-  // useEffect(() => {
-  //   if (isDraftingWeeklySomeday) {
-  //     console.log("should be drafting [effect]");
-  //     dispatch(
-  //       draftSlice.actions.start({
-  //         eventType: Categories_Event.SOMEDAY_WEEK,
-  //       })
-  //     );
-  //   }
-  // }, [dispatch, isDraftingWeeklySomeday]);
-
   const handleSomedayTrigger = useCallback(() => {
-    const isNewDraft = isDraftingRedux && !isDraftingWeeklySomeday;
+    const isNewDraft = isDraftingRedux && !isDraftingNewWeekly;
     if (!isNewDraft) return;
 
     if (draftType === Categories_Event.SOMEDAY_WEEK) {
@@ -87,12 +56,12 @@ export const useSidebarEffects = (state: State_Sidebar, util: Util_Sidebar) => {
 
     createDefaultSomeday();
   }, [
-    createDefaultSomeday,
-    draftType,
-    isDraftingWeeklySomeday,
     isDraftingRedux,
-    isAtMonthlyLimit,
+    isDraftingNewWeekly,
+    draftType,
+    createDefaultSomeday,
     isAtWeeklyLimit,
+    isAtMonthlyLimit,
   ]);
 
   useEffect(() => {

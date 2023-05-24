@@ -58,7 +58,6 @@ export const WeekSection: FC<Props> = ({
                 draft={state.draft}
                 events={weekEvents}
                 isDraftingExisting={state.isDraftingExisting}
-                // isDraftingNew={state.isDraftingWeeklySomeday} //++
                 isDraftingNew={state.isDraftingNewWeekly}
                 isOverGrid={state.isOverGrid}
                 key={columnId}
