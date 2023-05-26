@@ -14,12 +14,7 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useSidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 
-import {
-  Styled,
-  StyledAddEventButton,
-  StyledSidebarHeader,
-  StyledSidebarTopHeader,
-} from "./styled";
+import { Styled, StyledAddEventButton, StyledSidebarTopHeader } from "./styled";
 import { WeekSection } from "./WeekSection/WeekSection";
 import { MonthSection } from "./MonthSection";
 

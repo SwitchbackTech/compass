@@ -9,6 +9,7 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GridEventPreview } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/GridEventPreview";
+import { COLUMN_WEEK } from "@web/common/constants/web.constants";
 
 import { StyledSidebarList } from "../../EventsList/styled";
 import { WeekEventsColumn } from "./WeekColumn/WeekEventsColumn";
@@ -30,6 +31,10 @@ export const WeekSection: FC<Props> = ({
   const gridX = state.mouseCoords.x - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
   const dayIndex = dateCalcs.getDayNumberByX(gridX);
 
+  const column = state.somedayEvents.columns[COLUMN_WEEK];
+  const weekEvents = column.eventIds.map(
+    (eventId) => state.somedayEvents.events[eventId]
+  );
   return (
     <DragDropContext onDragEnd={util.onDragEnd} onDragStart={util.onDragStart}>
       {state.shouldPreviewOnGrid && (
@@ -45,11 +50,26 @@ export const WeekSection: FC<Props> = ({
         />
       )}
       <StyledSidebarList onClick={() => util.onSectionClick("week")}>
+        <div key={`${COLUMN_WEEK}-wrapper`}>
+          <WeekEventsColumn
+            column={column}
+            draft={state.draft}
+            events={weekEvents}
+            isDraftingExisting={state.isDraftingExisting}
+            isDraftingNew={state.isDraftingNewWeekly}
+            isOverGrid={state.isOverGrid}
+            key={COLUMN_WEEK}
+            util={util}
+          />
+        </div>
+      </StyledSidebarList>
+      {/* <StyledSidebarList onClick={() => util.onSectionClick("week")}>
         {state.somedayEvents.columnOrder.map((columnId) => {
           const column = state.somedayEvents.columns[columnId];
           const weekEvents = column.eventIds.map(
             (eventId) => state.somedayEvents.events[eventId]
           );
+          console.log(column, weekEvents);
 
           return (
             <div key={`${columnId}-wrapper`}>
@@ -66,7 +86,7 @@ export const WeekSection: FC<Props> = ({
             </div>
           );
         })}
-      </StyledSidebarList>
+      </StyledSidebarList> */}
     </DragDropContext>
   );
 };

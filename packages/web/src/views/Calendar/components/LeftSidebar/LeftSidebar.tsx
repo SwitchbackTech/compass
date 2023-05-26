@@ -1,22 +1,11 @@
 import React, { FC } from "react";
-import { ColorNames } from "@core/types/color.types";
-import { FlexDirections } from "@web/components/Flex/styled";
-import { getAlphaColor } from "@core/util/color.utils";
-import { Divider } from "@web/components/Divider";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Preferences } from "@web/views/Calendar/hooks/usePreferences";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 
-import {
-  Styled,
-  StyledSomedaySection,
-  StyledBottomRow,
-  getSidebarToggleIcon,
-  StyledSidebarOverflow,
-  StyledBottomSectionFlex,
-} from "./styled";
+import { Styled, getSidebarToggleIcon, StyledSidebarOverflow } from "./styled";
 import { SomedaySection } from "./SomedaySection";
 import { SidebarIconRow } from "./SidebarIconRow/SidebarIconRow";
 import { ToggleableMonthWidget } from "./ToggleableMonthWidget";

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
@@ -13,16 +13,32 @@ import {
   selectIsAtWeeklyLimit,
   selectSomedayEvents,
 } from "@web/ducks/events/selectors/someday.selectors";
+import { categorizeSomedayEvents } from "@web/common/utils/event.util";
+import { Range_Week } from "@web/common/types/util.types";
 
 import { useMousePosition } from "../useMousePosition";
 
-export const useSidebarState = (measurements: Measurements_Grid) => {
+export const useSidebarState = (
+  measurements: Measurements_Grid,
+  weekRange: Range_Week
+) => {
+  const startDate = weekRange.weekStart;
+  const endDate = weekRange.weekEnd;
+
   const _somedayEvents = useAppSelector(selectSomedayEvents);
-  const [somedayEvents, setSomedayEvents] = useState(_somedayEvents);
+
+  const categorizedEvents = useMemo(() => {
+    return categorizeSomedayEvents(_somedayEvents, {
+      startDate,
+      endDate,
+    });
+  }, [_somedayEvents, startDate, endDate]);
+
+  const [somedayEvents, setSomedayEvents] = useState(categorizedEvents);
+
   useEffect(() => {
-    setSomedayEvents(_somedayEvents);
-  }, [_somedayEvents]);
-  console.log(somedayEvents);
+    setSomedayEvents(categorizedEvents);
+  }, [categorizedEvents]);
 
   const { eventType: draftType } = useAppSelector(selectDraftStatus);
   const { isDrafting: isDraftingRedux } = useAppSelector(selectDraftId);
@@ -66,7 +82,7 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
     isOverMainGrid,
     mouseCoords,
     shouldPreviewOnGrid,
-    somedayEvents: somedayEvents,
+    somedayEvents,
     setDraft,
     setIsDrafting,
     setIsDraftingExisting,

@@ -11,7 +11,7 @@ export const useSidebar = (
   dateCalcs: DateCalcs,
   weekRange: Range_Week
 ) => {
-  const state = useSidebarState(measurements);
+  const state = useSidebarState(measurements, weekRange);
   const util = useSidebarUtil(dateCalcs, state, weekRange);
   useSidebarEffects(state, util);
 

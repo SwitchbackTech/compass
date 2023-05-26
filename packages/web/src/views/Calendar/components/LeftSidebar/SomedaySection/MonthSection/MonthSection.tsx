@@ -6,9 +6,11 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { Text } from "@web/components/Text";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
-import { StyledAddEventButton, StyledSidebarHeader } from "../styled";
 import { getMonthListLabel } from "@web/common/utils/event.util";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { COLUMN_MONTH } from "@web/common/constants/web.constants";
+
+import { StyledAddEventButton, StyledSidebarHeader } from "../styled";
 import { StyledSidebarList } from "../../EventsList/styled";
 
 interface Props {
@@ -24,6 +26,9 @@ export const MonthSection: FC<Props> = ({
   somedayProps,
   viewStart,
 }) => {
+  const monthEvents = somedayProps.state.somedayEvents.columns[
+    COLUMN_MONTH
+  ].eventIds.map((eventId) => somedayProps.state.somedayEvents.events[eventId]);
   const monthLabel = getMonthListLabel(viewStart);
 
   return (
@@ -48,7 +53,9 @@ export const MonthSection: FC<Props> = ({
         </div>
       </StyledSidebarHeader>
       <StyledSidebarList onClick={() => console.log("clicked")}>
-        <p>list</p>
+        {monthEvents.map((event) => (
+          <div key={event._id}>{event.title}</div>
+        ))}
       </StyledSidebarList>
     </>
   );
