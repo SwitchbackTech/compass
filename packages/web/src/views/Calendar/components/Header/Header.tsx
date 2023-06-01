@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import { Dayjs } from "dayjs";
 import { ColorNames } from "@core/types/color.types";
 import { getAlphaColor, getColor } from "@core/util/color.utils";
@@ -13,15 +13,22 @@ import { RootProps } from "@web/views/Calendar/calendarView.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { selectIsRightSidebarOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { HamburgerIcon } from "@web/components/Icons/HamburgerIcon";
 
 import {
-  StyledHeaderFlex,
+  StyledHeaderRow,
   StyledNavigationButtons,
   ArrowNavigationButton,
   StyledWeekDaysFlex,
   StyledWeekDayFlex,
+  StyledLeftGroup,
+  StyledRightGroup,
+  StyledHeaderLabel,
+  StyledNavigationArrows,
 } from "./styled";
 
 interface Props {
@@ -38,7 +45,10 @@ export const Header: FC<Props> = ({
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
+
   const { isDrafting } = useAppSelector(selectDraftId);
+  const isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
+
   const { scrollToNow } = scrollUtil;
 
   const onSectionClick = () => {
@@ -57,59 +67,78 @@ export const Header: FC<Props> = ({
 
   return (
     <>
-      <StyledHeaderFlex alignItems={AlignItems.CENTER} onClick={onSectionClick}>
-        <div aria-level={1} role="heading">
-          <Text colorName={ColorNames.WHITE_1} size={40}>
-            {weekProps.component.startOfView.format("MMMM")}
-          </Text>
+      <StyledHeaderRow
+        alignItems={AlignItems.FLEX_START}
+        onClick={onSectionClick}
+      >
+        <StyledLeftGroup>
+          <StyledHeaderLabel aria-level={1} role="heading">
+            <Text colorName={ColorNames.WHITE_1} size={40}>
+              {weekProps.component.startOfView.format("MMMM")}
+            </Text>
 
-          <SpaceCharacter />
+            <SpaceCharacter />
 
-          <Text colorName={ColorNames.GREY_4} size={38}>
-            {weekProps.component.startOfView.format("YYYY")}
-          </Text>
-        </div>
+            <Text colorName={ColorNames.GREY_4} size={38}>
+              {weekProps.component.startOfView.format("YYYY")}
+            </Text>
+          </StyledHeaderLabel>
 
-        <StyledNavigationButtons>
-          <TooltipWrapper
-            description={today.format("dddd, MMMM D")}
-            onClick={onTodayClick}
-            shortcut="T"
-          >
-            <TodayButton />
-          </TooltipWrapper>
-
-          <TooltipWrapper
-            onClick={() => weekProps.util.decrementWeek()}
-            shortcut="J"
-          >
-            <ArrowNavigationButton
-              colorName={ColorNames.WHITE_2}
-              cursor="pointer"
-              role="navigation"
-              size={35}
-              title="previous week"
+          <StyledNavigationButtons>
+            <TooltipWrapper
+              description={today.format("dddd, MMMM D")}
+              onClick={onTodayClick}
+              shortcut="T"
             >
-              {"<"}
-            </ArrowNavigationButton>
-          </TooltipWrapper>
+              <TodayButton />
+            </TooltipWrapper>
 
+            <StyledNavigationArrows>
+              <TooltipWrapper
+                onClick={() => weekProps.util.decrementWeek()}
+                shortcut="J"
+              >
+                <ArrowNavigationButton
+                  colorName={ColorNames.GREY_4}
+                  cursor="pointer"
+                  role="navigation"
+                  size={35}
+                  title="previous week"
+                >
+                  {"<"}
+                </ArrowNavigationButton>
+              </TooltipWrapper>
+
+              <TooltipWrapper
+                onClick={() => weekProps.util.incrementWeek()}
+                shortcut="K"
+              >
+                <ArrowNavigationButton
+                  colorName={ColorNames.GREY_4}
+                  cursor="pointer"
+                  role="navigation"
+                  size={35}
+                  title="next week"
+                >
+                  {">"}
+                </ArrowNavigationButton>
+              </TooltipWrapper>
+            </StyledNavigationArrows>
+          </StyledNavigationButtons>
+        </StyledLeftGroup>
+
+        <StyledRightGroup>
           <TooltipWrapper
-            onClick={() => weekProps.util.incrementWeek()}
-            shortcut="K"
+            description={`${isRightSidebarOpen ? "Collapse" : "Open"} settings`}
+            onClick={() => {
+              dispatch(settingsSlice.actions.toggleRightSidebar());
+            }}
+            shortcut="]"
           >
-            <ArrowNavigationButton
-              colorName={ColorNames.GREY_5}
-              cursor="pointer"
-              role="navigation"
-              size={35}
-              title="next week"
-            >
-              {">"}
-            </ArrowNavigationButton>
+            <HamburgerIcon />
           </TooltipWrapper>
-        </StyledNavigationButtons>
-      </StyledHeaderFlex>
+        </StyledRightGroup>
+      </StyledHeaderRow>
 
       <StyledWeekDaysFlex>
         {weekProps.component.weekDays.map((day, i) => {

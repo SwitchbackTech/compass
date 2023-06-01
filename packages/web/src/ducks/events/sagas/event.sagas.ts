@@ -219,7 +219,7 @@ function* getEvents(
 
 export function* getSomedayEvents({ payload }: Action_GetEvents) {
   try {
-    const res: Response_GetEventsSuccess = (yield call(EventApi.get, {
+    const res = (yield call(EventApi.get, {
       someday: true,
       startDate: payload.startDate,
       endDate: payload.endDate,

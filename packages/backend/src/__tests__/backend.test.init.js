@@ -11,3 +11,6 @@ process.env.CLIENT_SECRET = "googleSecret";
 process.env.CHANNEL_EXPIRATION_MIN = 5;
 process.env.SUPERTOKENS_URI = "sTUri";
 process.env.SUPERTOKENS_KEY = "sTKey";
+process.env.EMAILER_API_KEY = "emailerApiKey";
+process.env.EMAILER_API_SECRET = "emailerApiSecret";
+process.env.EMAILER_LIST_ID = 1234567;

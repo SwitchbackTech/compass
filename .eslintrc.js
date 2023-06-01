@@ -7,7 +7,7 @@ module.exports = {
     "@typescript-eslint",
     "import",
     "jest",
-    "jest-dom", // eventually move this to web-only eslint config
+    "jest-dom",
     "prettier",
     "react",
     "react-hooks",

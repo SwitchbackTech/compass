@@ -89,7 +89,7 @@ export const useGridClick = (
         return;
       }
 
-      if (isDrafting && reduxDraftType === Categories_Event.SOMEDAY) {
+      if (isDrafting && reduxDraftType === Categories_Event.SOMEDAY_WEEK) {
         e.stopPropagation();
         discard();
         return;

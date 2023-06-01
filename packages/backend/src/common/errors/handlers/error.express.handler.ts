@@ -91,6 +91,9 @@ const handleGoogleError = async (
 ) => {
   if (isAccessRevoked(e)) {
     logger.warn(`User revoked access, cleaning data: ${userId}`);
+    logger.debug("no really, currently debugging");
+    logger.debug(JSON.stringify(e));
+    return;
 
     await userService.deleteCompassDataForUser(userId, false);
 

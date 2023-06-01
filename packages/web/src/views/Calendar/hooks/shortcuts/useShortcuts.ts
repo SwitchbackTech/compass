@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Key } from "ts-keycode-enum";
 import dayjs, { Dayjs } from "dayjs";
@@ -9,10 +9,14 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
-  SOMEDAY_WEEKLY_LIMIT,
+  SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
-import { selectSomedayEventsCount } from "@web/ducks/events/selectors/someday.selectors";
+import {
+  selectIsAtMonthlyLimit,
+  selectIsAtWeeklyLimit,
+} from "@web/ducks/events/selectors/someday.selectors";
+import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
@@ -25,16 +29,13 @@ export const useShortcuts = (
   startOfSelectedWeek: Dayjs,
   util: WeekProps["util"],
   scrollUtil: Util_Scroll,
-  toggleSidebar: () => void
+  toggleSidebar: (target: "left" | "right") => void
 ) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const somedayEventsCount = useAppSelector(selectSomedayEventsCount);
-
-  const _isAtLimit = useCallback(() => {
-    return somedayEventsCount >= SOMEDAY_WEEKLY_LIMIT;
-  }, [somedayEventsCount]);
+  const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
+  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
 
   useEffect(() => {
     const _getStart = () => {
@@ -45,15 +46,24 @@ export const useShortcuts = (
       }
     };
 
-    const _createSomedayDraft = () => {
-      if (_isAtLimit()) {
+    const _createSomedayDraft = (type: "week" | "month") => {
+      if (type === "week" && isAtWeeklyLimit) {
         alert(SOMEDAY_WEEK_LIMIT_MSG);
         return;
       }
+      if (type === "month" && isAtMonthlyLimit) {
+        alert(SOMEDAY_MONTH_LIMIT_MSG);
+        return;
+      }
+
+      const eventType =
+        type === "week"
+          ? Categories_Event.SOMEDAY_WEEK
+          : Categories_Event.SOMEDAY_MONTH;
 
       dispatch(
         draftSlice.actions.start({
-          eventType: Categories_Event.SOMEDAY,
+          eventType,
         })
       );
     };
@@ -89,7 +99,9 @@ export const useShortcuts = (
       if (isDrafting()) return;
 
       const handlersByKey = {
-        [Key.OpenBracket]: () => toggleSidebar(),
+        [Key.OpenBracket]: () => toggleSidebar("left"),
+        [Key.ClosedBracket]: () =>
+          dispatch(settingsSlice.actions.toggleRightSidebar()),
         [Key.C]: () => _createTimedDraft(),
         [Key.T]: () => {
           scrollUtil.scrollToNow();
@@ -104,7 +116,8 @@ export const useShortcuts = (
           _discardDraft();
           util.incrementWeek();
         },
-        [Key.S]: () => _createSomedayDraft(),
+        [Key.M]: () => _createSomedayDraft("month"),
+        [Key.W]: () => _createSomedayDraft("week"),
         [Key.Z]: () => {
           navigate(ROOT_ROUTES.LOGOUT);
         },
@@ -125,12 +138,13 @@ export const useShortcuts = (
     dateCalcs,
     dispatch,
     today,
+    isAtMonthlyLimit,
+    isAtWeeklyLimit,
     isCurrentWeek,
     navigate,
     startOfSelectedWeek,
     scrollUtil,
     toggleSidebar,
     util,
-    _isAtLimit,
   ]);
 };

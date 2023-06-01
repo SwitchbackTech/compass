@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
@@ -20,6 +20,9 @@ export const useWeek = (today: Dayjs) => {
     return start.add(index, "day");
   });
 
+  const tempStart = dayjs("2023-05-01");
+  const tempEnd = dayjs("2023-05-31");
+
   useEffect(() => {
     dispatch(
       getWeekEventsSlice.actions.request({
@@ -30,11 +33,11 @@ export const useWeek = (today: Dayjs) => {
 
     dispatch(
       getSomedayEventsSlice.actions.request({
-        startDate: toUTCOffset(start),
-        endDate: toUTCOffset(end),
+        startDate: toUTCOffset(tempStart),
+        endDate: toUTCOffset(tempEnd),
       })
     );
-  }, [end, dispatch, start]);
+  }, [end, start, tempEnd, dispatch, tempStart]);
 
   const decrementWeek = () => {
     setStartOfView(start.subtract(7, "day"));

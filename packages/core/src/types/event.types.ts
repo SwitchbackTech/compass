@@ -4,7 +4,8 @@ import { Origin, Priority, Priorities } from "@core/constants/core.constants";
 export enum Categories_Event {
   ALLDAY = "allday",
   TIMED = "timed",
-  SOMEDAY = "someday",
+  SOMEDAY_WEEK = "sidebarWeek",
+  SOMEDAY_MONTH = "sidebarMonth",
 }
 
 export interface Params_DeleteMany {

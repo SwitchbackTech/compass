@@ -7,10 +7,14 @@ import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
+import { DropResult } from "@hello-pangea/dnd";
 
-import { Schema_GridEvent } from "../types/web.event.types";
+import {
+  Schema_GridEvent,
+  Schema_SomedayEventsColumn,
+} from "../types/web.event.types";
 import { removeGridFields } from "./grid.util";
-import { DropResult } from "../types/dnd.types";
+import { COLUMN_WEEK, COLUMN_MONTH } from "../constants/web.constants";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -33,12 +37,73 @@ export const adjustIsTimesShown = (
   return "isTimesShown" in event ? event : { ...event, isTimesShown: true };
 };
 
+export const categorizeSomedayEvents = (
+  somedayEvents: Schema_SomedayEventsColumn["events"],
+  dates: { startDate: Dayjs; endDate: Dayjs }
+): Schema_SomedayEventsColumn => {
+  const sortedEvents = Object.values(somedayEvents).sort(
+    (a, b) => a.order - b.order
+  );
+  const weekIds: string[] = [];
+  const monthIds: string[] = [];
+
+  sortedEvents.forEach((e) => {
+    const eventStart = dayjs(e.startDate);
+    const isWeek = eventStart.isBetween(
+      dates.startDate,
+      dates.endDate,
+      null,
+      "[]"
+    );
+    if (isWeek) {
+      weekIds.push(e._id);
+      return;
+    }
+
+    const monthStartDate = dates.startDate.startOf("month");
+    const monthEndDate = dates.startDate.endOf("month");
+    const isMonthButNotWeek =
+      !isWeek && eventStart.isBetween(monthStartDate, monthEndDate, null, "[]");
+
+    if (isMonthButNotWeek) {
+      monthIds.push(e._id);
+    }
+  });
+
+  const sortedData: Schema_SomedayEventsColumn = {
+    columns: {
+      [`${COLUMN_WEEK}`]: {
+        id: `${COLUMN_WEEK}`,
+        eventIds: weekIds,
+      },
+      [`${COLUMN_MONTH}`]: {
+        id: `${COLUMN_MONTH}`,
+        eventIds: monthIds,
+      },
+    },
+    columnOrder: [COLUMN_WEEK, COLUMN_MONTH],
+    events: somedayEvents,
+  };
+  return sortedData;
+};
+
+//++
+// const sortedWeekIds = weekIds
+//   .map((id) => somedayEvents[id])
+//   .sort((a, b) => a.order - b.order)
+//   .map((e) => e._id);
+
+// const sortedMonthIds = monthIds
+//   .map((id) => somedayEvents[id])
+//   .sort((a, b) => a.order - b.order)
+//   .map((e) => e._id);
+
 export const getCategory = (event: Schema_Event) => {
   if (event?.isAllDay) {
     return Categories_Event.ALLDAY;
   }
   if (event?.isSomeday) {
-    return Categories_Event.SOMEDAY;
+    return Categories_Event.SOMEDAY_WEEK;
   }
   return Categories_Event.TIMED;
 };
@@ -57,7 +122,7 @@ export const getDefaultEvent = (
         startDate,
         endDate: startDate,
       };
-    case Categories_Event.SOMEDAY:
+    case Categories_Event.SOMEDAY_WEEK || Categories_Event.SOMEDAY_MONTH:
       return {
         isAllDay: false,
         isSomeday: true,
@@ -77,6 +142,10 @@ export const getDefaultEvent = (
     default:
       return null;
   }
+};
+
+export const getMonthListLabel = (start: Dayjs) => {
+  return start.format("MMMM");
 };
 
 export const getWeekDayLabel = (day: Dayjs | Date) => {

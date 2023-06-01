@@ -5,6 +5,7 @@ import {
 } from "@web/views/Calendar/layout.constants";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
+import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import {
   HEADER_HEIGHT,
   GRID_MARGIN_LEFT,
@@ -30,20 +31,35 @@ export const ArrowNavigationButton = styled(Text)`
   }
 `;
 
-export const StyledHeaderFlex = styled(Flex)`
-  /* align-items: start; */
+export const StyledHeaderLabel = styled.div`
+  padding-right: 60px;
+`;
+
+export const StyledLeftGroup = styled(Flex)`
+  align-items: ${AlignItems.CENTER};
+`;
+
+export const StyledHeaderRow = styled(Flex)`
+  align-items: ${AlignItems.CENTER};
   font-size: 40px;
-  justify-content: space-between;
+  justify-content: ${JustifyContent.SPACE_BETWEEN};
   margin-left: ${GRID_MARGIN_LEFT}px;
   height: ${HEADER_HEIGHT}px;
-  /* width: calc(100% - ${PAGE_X_PADDING * 2}px); */
   width: 100%;
+`;
+
+export const StyledNavigationArrows = styled(Flex)`
+  padding-left: 20px;
 `;
 
 export const StyledNavigationButtons = styled(Flex)`
   justify-content: space-between;
   margin-right: 50px;
-  width: 160px;
+  padding-left: 20px;
+`;
+
+export const StyledRightGroup = styled(Flex)`
+  padding-right: ${PAGE_X_PADDING * 2}px;
 `;
 
 export const StyledWeekDaysFlex = styled(Flex)`

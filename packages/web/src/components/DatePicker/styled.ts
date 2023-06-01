@@ -124,7 +124,7 @@ export const StyledDatePicker = styled.div<{
     overflow: hidden;
 
     &--open {
-      height: ${({ monthsCount = 1 }) => monthsCount * SIDEBAR_MONTH_HEIGHT}px;
+      height: ${SIDEBAR_MONTH_HEIGHT}px;
     }
 
     &--animation {

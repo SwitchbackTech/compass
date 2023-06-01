@@ -4,9 +4,16 @@ import { getColor } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 
 export const StyledTodayButton = styled(Flex)`
-  color: ${getColor(ColorNames.WHITE_1)};
+  align-items: center;
+  border: 1px solid ${getColor(ColorNames.GREY_4)};
+  border-radius: 4px;
+  color: ${getColor(ColorNames.GREY_4)};
+  /* color: #4e516a; */
   cursor: pointer;
-  font-size: 19px;
+  display: flex;
+  font-size: 17px;
+  min-width: 80px;
+  padding: 0 10px;
 
   &:hover {
     filter: brightness(160%);
