@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useAppSelector } from "@web/store/store.hooks";
-import { COLUMN_WEEK } from "@web/common/constants/web.constants";
+import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import {
   selectDraftId,
   selectDraftStatus,
@@ -53,18 +53,26 @@ export const useSidebarState = (
   const { isOverAllDayRow, isOverGrid, isOverMainGrid, mouseCoords } =
     useMousePosition(isDragging, draft?.isOpen, measurements);
 
+  //refactor
   const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK].eventIds;
+  //++
+  // const somedayMonthIds = somedayEvents.columns[COLUMN_MONTH].eventIds;
+  // draft !== null && console.log("draft:", draft?._id);
+  // let draftType: Categories_Event | null;
+  // if (somedayWeekIds.includes(draft?._id)) {
+  //   draftType = Categories_Event.SOMEDAY_WEEK;
+  // } else if (somedayMonthIds.includes(draft?._id)) {
+  //   draftType = Categories_Event.SOMEDAY_MONTH;
+  // } else {
+  //   console.log("not found in ids:", draft);
+  //   draftType === null;
+  // }
 
   // const _isDrafting = isDrafting && isDraftingRedux && draft !== null; //++
 
-  const _isDraftingNew = isDrafting && !isDraftingExisting;
-
-  const isDraftingNewWeekly =
-    _isDraftingNew &&
-    draftType === Categories_Event.SOMEDAY_WEEK &&
-    !somedayWeekIds.includes(draft?._id);
-
-  const _isDraftingRedux = isDraftingExisting || _isDraftingNew;
+  const isDraftingNew =
+    isDrafting && !isDraftingExisting && !somedayWeekIds.includes(draft?._id);
+  const _isDraftingRedux = isDraftingExisting || isDraftingNew;
   const shouldPreviewOnGrid =
     draft !== null && _isDraftingRedux && isOverGrid && !draft?.isOpen;
 
@@ -74,8 +82,8 @@ export const useSidebarState = (
     somedayWeekIds,
     isAtMonthlyLimit,
     isAtWeeklyLimit,
+    isDraftingNew,
     isDraftingExisting,
-    isDraftingNewWeekly,
     isDraftingRedux,
     isOverAllDayRow,
     isOverGrid,

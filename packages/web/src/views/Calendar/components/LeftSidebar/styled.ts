@@ -9,9 +9,9 @@ import {
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
+import { FlexDirections } from "@web/components/Flex/styled";
 
 import { SidebarProps, SectionProps } from "./sidebar.types";
-import { FlexDirections } from "@web/components/Flex/styled";
 
 export const getSidebarToggleIcon = (isToggled: boolean) => {
   if (isToggled) {
@@ -20,6 +20,18 @@ export const getSidebarToggleIcon = (isToggled: boolean) => {
     return StyledOpenIcon;
   }
 };
+
+// export const Styled = styled.div`
+//   position: relative;
+//   width: 100%;
+// `;
+
+export const StyledSidebarList = styled.div`
+  min-height: 400px;
+  overflow: auto;
+  padding-bottom: 20px;
+  padding-left: 20px;
+`;
 
 export const Styled = styled(Flex)<SidebarProps>`
   background: ${getColor(ColorNames.GREY_3)};

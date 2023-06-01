@@ -37,10 +37,11 @@ export const useSidebarUtil = (
     state.setIsDrafting(false);
     state.setDraft(null);
 
-    if (
-      state.isDraftingRedux &&
-      state.draftType === Categories_Event.SOMEDAY_WEEK //++
-    ) {
+    const isSomeday =
+      state.draftType === Categories_Event.SOMEDAY_WEEK ||
+      state.draftType == Categories_Event.SOMEDAY_MONTH;
+
+    if (state.isDraftingRedux && isSomeday) {
       dispatch(draftSlice.actions.discard());
     }
   };
@@ -165,7 +166,7 @@ export const useSidebarUtil = (
     const droppedOnSidebar = destination !== null;
     if (droppedOnSidebar) {
       const reorderedDraft = draggableId === ID_SOMEDAY_DRAFT;
-      if (reorderedDraft && !state.isDraftingNewWeekly) {
+      if (reorderedDraft && !state.isDraftingNew) {
         console.log("Tried reordering a draft. TODO: add draft to state");
         return;
       }
@@ -271,31 +272,30 @@ export const useSidebarUtil = (
     close();
   };
 
-  const onSectionClick = (section: "week" | "month") => {
+  const onSectionClick = (
+    // section: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH
+    section: Categories_Event
+  ) => {
     if (state.isDraftingRedux) {
       dispatch(draftSlice.actions.discard());
       return;
     }
 
     if (state.isDraftingExisting) {
-      console.log("closing");
       state.draft && close();
       return;
     }
 
-    const isAtLimit = section === "week" ? state.isAtWeeklyLimit : false;
+    const isAtLimit =
+      section === Categories_Event.SOMEDAY_WEEK ? state.isAtWeeklyLimit : false; //++
     if (isAtLimit) {
       alert(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
 
-    const eventType =
-      section === "week"
-        ? Categories_Event.SOMEDAY_WEEK
-        : Categories_Event.SOMEDAY_MONTH;
     dispatch(
       draftSlice.actions.start({
-        eventType,
+        eventType: section,
       })
     );
 

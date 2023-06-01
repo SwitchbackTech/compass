@@ -1,16 +1,28 @@
 import React, { FC } from "react";
 import { Droppable } from "@hello-pangea/dnd";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
+import { Schema_Event } from "@core/types/event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 
-import { DraggableSomedayEvent } from "../../../EventsList/SomedayEvent/Wrappers/DraggableSomedayEvent";
-import { WeekColProps } from "./weekColumn.types";
-import { WeekEvents } from "./WeekEvents";
+import { DraggableSomedayEvent } from "./Wrappers/DraggableSomedayEvent";
+import { DraggableSomedayEvents } from "./Wrappers/DraggableSomedayEvents";
 
-export const WeekEventsColumn: FC<WeekColProps> = ({
+export interface Props {
+  column: {
+    id: string;
+  };
+  draft: Schema_GridEvent;
+  events: Schema_Event[];
+  isDraftingNew: boolean;
+  isOverGrid: boolean;
+  util: SomedayEventsProps["util"];
+}
+
+export const SomedayEventsColumn: FC<Props> = ({
   column,
   draft,
   events,
-  isDraftingExisting,
   isDraftingNew,
   isOverGrid,
   util,
@@ -22,10 +34,9 @@ export const WeekEventsColumn: FC<WeekColProps> = ({
           return (
             <>
               <div ref={provided.innerRef} {...provided.droppableProps}>
-                <WeekEvents
+                <DraggableSomedayEvents
                   draft={draft}
                   events={events}
-                  isDrafting={isDraftingExisting}
                   isOverGrid={isOverGrid}
                   util={util}
                 />
