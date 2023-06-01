@@ -14,7 +14,7 @@
     "express-validator": "^6.12.2",
     "express-winston": "^4.2.0",
     "googleapis": "^112.0.0",
-    "helmet": "^6.0.0",
+    "helmet": "^7.0.0",
     "jsonwebtoken": "^9.0.0",
     "mongodb": "5.5",
     "morgan": "^1.10.0",
