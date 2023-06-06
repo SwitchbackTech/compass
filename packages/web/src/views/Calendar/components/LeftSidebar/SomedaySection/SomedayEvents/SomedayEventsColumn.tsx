@@ -1,7 +1,7 @@
 import React, { FC } from "react";
 import { Droppable } from "@hello-pangea/dnd";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 
@@ -9,6 +9,7 @@ import { DraggableSomedayEvent } from "./Wrappers/DraggableSomedayEvent";
 import { DraggableSomedayEvents } from "./Wrappers/DraggableSomedayEvents";
 
 export interface Props {
+  category: Categories_Event;
   column: {
     id: string;
   };
@@ -20,6 +21,7 @@ export interface Props {
 }
 
 export const SomedayEventsColumn: FC<Props> = ({
+  category,
   column,
   draft,
   events,
@@ -35,6 +37,7 @@ export const SomedayEventsColumn: FC<Props> = ({
             <>
               <div ref={provided.innerRef} {...provided.droppableProps}>
                 <DraggableSomedayEvents
+                  category={category}
                   draft={draft}
                   events={events}
                   isOverGrid={isOverGrid}
@@ -45,6 +48,7 @@ export const SomedayEventsColumn: FC<Props> = ({
 
               {isDraftingNew && (
                 <DraggableSomedayEvent
+                  category={category}
                   draftId={ID_SOMEDAY_DRAFT}
                   event={draft}
                   index={events.length}

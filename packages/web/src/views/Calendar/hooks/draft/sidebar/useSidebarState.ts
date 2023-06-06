@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
-import { Categories_Event } from "@core/types/event.types";
+import { useState, useEffect } from "react";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -8,32 +7,12 @@ import {
   selectDraftId,
   selectDraftStatus,
 } from "@web/ducks/events/selectors/draft.selectors";
-import {
-  selectIsAtMonthlyLimit,
-  selectIsAtWeeklyLimit,
-  selectSomedayEvents,
-} from "@web/ducks/events/selectors/someday.selectors";
-import { categorizeSomedayEvents } from "@web/common/utils/event.util";
-import { Range_Week } from "@web/common/types/util.types";
+import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
 
 import { useMousePosition } from "../useMousePosition";
 
-export const useSidebarState = (
-  measurements: Measurements_Grid,
-  weekRange: Range_Week
-) => {
-  const startDate = weekRange.weekStart;
-  const endDate = weekRange.weekEnd;
-
-  const _somedayEvents = useAppSelector(selectSomedayEvents);
-
-  const categorizedEvents = useMemo(() => {
-    return categorizeSomedayEvents(_somedayEvents, {
-      startDate,
-      endDate,
-    });
-  }, [_somedayEvents, startDate, endDate]);
-
+export const useSidebarState = (measurements: Measurements_Grid) => {
+  const categorizedEvents = useAppSelector(selectCategorizedEvents);
   const [somedayEvents, setSomedayEvents] = useState(categorizedEvents);
 
   useEffect(() => {
@@ -42,8 +21,6 @@ export const useSidebarState = (
 
   const { eventType: draftType } = useAppSelector(selectDraftStatus);
   const { isDrafting: isDraftingRedux } = useAppSelector(selectDraftId);
-  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
-  const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
 
   const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
   const [isDrafting, setIsDrafting] = useState(false);
@@ -53,23 +30,7 @@ export const useSidebarState = (
   const { isOverAllDayRow, isOverGrid, isOverMainGrid, mouseCoords } =
     useMousePosition(isDragging, draft?.isOpen, measurements);
 
-  //refactor
   const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK].eventIds;
-  //++
-  // const somedayMonthIds = somedayEvents.columns[COLUMN_MONTH].eventIds;
-  // draft !== null && console.log("draft:", draft?._id);
-  // let draftType: Categories_Event | null;
-  // if (somedayWeekIds.includes(draft?._id)) {
-  //   draftType = Categories_Event.SOMEDAY_WEEK;
-  // } else if (somedayMonthIds.includes(draft?._id)) {
-  //   draftType = Categories_Event.SOMEDAY_MONTH;
-  // } else {
-  //   console.log("not found in ids:", draft);
-  //   draftType === null;
-  // }
-
-  // const _isDrafting = isDrafting && isDraftingRedux && draft !== null; //++
-
   const isDraftingNew =
     isDrafting && !isDraftingExisting && !somedayWeekIds.includes(draft?._id);
   const _isDraftingRedux = isDraftingExisting || isDraftingNew;
@@ -80,8 +41,6 @@ export const useSidebarState = (
     draft,
     draftType,
     somedayWeekIds,
-    isAtMonthlyLimit,
-    isAtWeeklyLimit,
     isDraftingNew,
     isDraftingExisting,
     isDraftingRedux,

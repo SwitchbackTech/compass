@@ -1,7 +1,7 @@
 import { Key } from "ts-key-enum";
 import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { DraggableProvided } from "@hello-pangea/dnd";
-import { Schema_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { FloatingPortal } from "@floating-ui/react";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
@@ -13,6 +13,7 @@ import { NewStyledSomedayEvent } from "./styled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
 
 export interface Props {
+  category: Categories_Event;
   event: Schema_GridEvent;
   isDrafting: boolean;
   isDragging: boolean;
@@ -26,6 +27,7 @@ export interface Props {
 }
 
 export const SomedayEvent = ({
+  category,
   event,
   isDrafting,
   isDragging,
@@ -37,7 +39,9 @@ export const SomedayEvent = ({
   provided,
   setEvent,
 }: Props) => {
-  const { y, reference, floating, strategy } = useEventForm("sidebar");
+  const formType =
+    category === Categories_Event.SOMEDAY_WEEK ? "sidebarWeek" : "sidebarMonth";
+  const { y, reference, floating, strategy } = useEventForm(formType);
 
   const [isFocused, setIsFocused] = useState(false);
 

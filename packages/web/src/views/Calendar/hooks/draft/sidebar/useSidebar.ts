@@ -1,4 +1,3 @@
-import { Range_Week } from "@web/common/types/util.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
@@ -8,11 +7,10 @@ import { useSidebarState } from "./useSidebarState";
 
 export const useSidebar = (
   measurements: Measurements_Grid,
-  dateCalcs: DateCalcs,
-  weekRange: Range_Week
+  dateCalcs: DateCalcs
 ) => {
-  const state = useSidebarState(measurements, weekRange);
-  const util = useSidebarUtil(dateCalcs, state, weekRange);
+  const state = useSidebarState(measurements);
+  const util = useSidebarUtil(dateCalcs, state);
   useSidebarEffects(state, util);
 
   const _state = {

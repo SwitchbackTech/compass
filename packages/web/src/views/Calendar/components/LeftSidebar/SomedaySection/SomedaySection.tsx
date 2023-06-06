@@ -32,8 +32,7 @@ export const SomedaySection: FC<Props> = ({
 }) => {
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
 
-  const weekRange = { weekStart: viewStart, weekEnd: viewEnd };
-  const sidebarProps = useSidebar(measurements, dateCalcs, weekRange);
+  const sidebarProps = useSidebar(measurements, dateCalcs);
 
   const somedayRef = useRef();
   const weekLabel = useMemo(

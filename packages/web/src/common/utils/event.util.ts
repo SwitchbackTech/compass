@@ -87,17 +87,6 @@ export const categorizeSomedayEvents = (
   return sortedData;
 };
 
-//++
-// const sortedWeekIds = weekIds
-//   .map((id) => somedayEvents[id])
-//   .sort((a, b) => a.order - b.order)
-//   .map((e) => e._id);
-
-// const sortedMonthIds = monthIds
-//   .map((id) => somedayEvents[id])
-//   .sort((a, b) => a.order - b.order)
-//   .map((e) => e._id);
-
 export const getCategory = (event: Schema_Event) => {
   if (event?.isAllDay) {
     return Categories_Event.ALLDAY;

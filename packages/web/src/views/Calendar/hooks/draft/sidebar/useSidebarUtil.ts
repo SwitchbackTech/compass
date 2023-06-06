@@ -20,18 +20,21 @@ import {
   editEventSlice,
 } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
-import { Range_Week } from "@web/common/types/util.types";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { selectIsAtWeeklyLimit } from "@web/ducks/events/selectors/someday.selectors";
+import { selectDatesInView } from "@web/ducks/settings/selectors/settings.selectors";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
 
-export const useSidebarUtil = (
-  dateCalcs: DateCalcs,
-  state: State_Sidebar,
-  weekRange: Range_Week
-) => {
+export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   const dispatch = useAppDispatch();
+
+  const { start, end } = useAppSelector(selectDatesInView);
+  const viewStart = dayjs(start);
+  const viewEnd = dayjs(end);
+
+  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
 
   const close = () => {
     state.setIsDrafting(false);
@@ -120,13 +123,13 @@ export const useSidebarUtil = (
 
     state.setDraft({
       ...somedayDefault,
-      endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
-      startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: viewEnd.format(YEAR_MONTH_DAY_FORMAT),
+      startDate: viewStart.format(YEAR_MONTH_DAY_FORMAT),
       isOpen: true,
     });
 
     state.setIsDrafting(true);
-  }, [weekRange.weekEnd, weekRange.weekStart]);
+  }, [viewStart, viewEnd]);
 
   const getDatesAfterDroppingOn = (
     target: "mainGrid" | "alldayRow",
@@ -136,7 +139,7 @@ export const useSidebarUtil = (
     const y = mouseCoords.y;
 
     if (target === "mainGrid") {
-      const _start = dateCalcs.getDateByXY(x, y, weekRange.weekStart);
+      const _start = dateCalcs.getDateByXY(x, y, viewStart);
       const startDate = _start.format();
       const endDate = _start.add(1, "hour").format();
 
@@ -144,7 +147,7 @@ export const useSidebarUtil = (
     }
 
     if (target === "alldayRow") {
-      const _start = dateCalcs.getDateByXY(x, y, weekRange.weekStart);
+      const _start = dateCalcs.getDateByXY(x, y, viewStart);
       const startDate = _start.format(YEAR_MONTH_DAY_FORMAT);
       const endDate = _start.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
 
@@ -247,10 +250,7 @@ export const useSidebarUtil = (
 
   const onSubmit = () => {
     const _event = prepEvtBeforeSubmit(state.draft);
-    const { startDate, endDate } = getWeekRangeDates(
-      weekRange.weekStart,
-      weekRange.weekEnd
-    );
+    const { startDate, endDate } = getWeekRangeDates(viewStart, viewEnd);
     const event = { ..._event, startDate, endDate };
 
     const isExisting = event._id;
@@ -272,10 +272,7 @@ export const useSidebarUtil = (
     close();
   };
 
-  const onSectionClick = (
-    // section: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH
-    section: Categories_Event
-  ) => {
+  const onSectionClick = (section: Categories_Event) => {
     if (state.isDraftingRedux) {
       dispatch(draftSlice.actions.discard());
       return;
@@ -286,8 +283,9 @@ export const useSidebarUtil = (
       return;
     }
 
+    console.log(section, isAtWeeklyLimit);
     const isAtLimit =
-      section === Categories_Event.SOMEDAY_WEEK ? state.isAtWeeklyLimit : false; //++
+      section === Categories_Event.SOMEDAY_WEEK ? isAtWeeklyLimit : false; //++
     if (isAtLimit) {
       alert(SOMEDAY_WEEK_LIMIT_MSG);
       return;

@@ -61,6 +61,7 @@ export const SomedayEvents: FC<Props> = ({
       <StyledSidebarList onClick={() => util.onSectionClick(category)}>
         <div key={`${category}-wrapper`}>
           <SomedayEventsColumn
+            category={category}
             column={column}
             draft={state.draft}
             events={events}
