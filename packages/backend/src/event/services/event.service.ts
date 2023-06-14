@@ -1,6 +1,7 @@
 import {
   Origin,
   Priorities,
+  SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
@@ -225,7 +226,7 @@ class EventService {
       const response = (await mongoService.db
         .collection(Collections.EVENT)
         .find(filter)
-        .limit(SOMEDAY_WEEKLY_LIMIT)
+        .limit(SOMEDAY_WEEKLY_LIMIT + SOMEDAY_MONTHLY_LIMIT)
         .sort({ startDate: 1 })
         .toArray()) as unknown as Schema_Event[];
       return response;

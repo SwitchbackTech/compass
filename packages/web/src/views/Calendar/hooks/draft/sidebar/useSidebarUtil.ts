@@ -1,6 +1,9 @@
 import { useCallback } from "react";
 import dayjs from "dayjs";
-import { SOMEDAY_WEEK_LIMIT_MSG } from "@core/constants/core.constants";
+import {
+  SOMEDAY_MONTH_LIMIT_MSG,
+  SOMEDAY_WEEK_LIMIT_MSG,
+} from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { getWeekRangeDates } from "@core/util/date.utils";
@@ -21,7 +24,10 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { selectIsAtWeeklyLimit } from "@web/ducks/events/selectors/someday.selectors";
+import {
+  selectIsAtMonthlyLimit,
+  selectIsAtWeeklyLimit,
+} from "@web/ducks/events/selectors/someday.selectors";
 import { selectDatesInView } from "@web/ducks/settings/selectors/settings.selectors";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
@@ -35,6 +41,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   const viewEnd = dayjs(end);
 
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+  const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
 
   const close = () => {
     state.setIsDrafting(false);
@@ -283,11 +290,13 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
       return;
     }
 
-    console.log(section, isAtWeeklyLimit);
-    const isAtLimit =
-      section === Categories_Event.SOMEDAY_WEEK ? isAtWeeklyLimit : false; //++
-    if (isAtLimit) {
+    if (section === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
       alert(SOMEDAY_WEEK_LIMIT_MSG);
+      return;
+    }
+
+    if (section === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
+      alert(SOMEDAY_MONTH_LIMIT_MSG);
       return;
     }
 

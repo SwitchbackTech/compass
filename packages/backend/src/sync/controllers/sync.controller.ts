@@ -3,7 +3,7 @@ import { Payload_Sync_Notif } from "@core/types/sync.types";
 import { Logger } from "@core/logger/winston.logger";
 import { Status } from "@core/errors/status.codes";
 import {
-  isAccessRevoked,
+  isGoogleTokenExpired,
   isFullSyncRequired,
 } from "@backend/common/services/gcal/gcal.utils";
 import userService from "@backend/user/services/user.service";
@@ -41,7 +41,7 @@ class SyncController {
 
       const userId = sync.user;
 
-      if (isAccessRevoked(e as Error)) {
+      if (isGoogleTokenExpired(e as Error)) {
         console.warn(`Cleaning data after this user revoked access: ${userId}`);
         await userService.deleteCompassDataForUser(sync.user, false);
         res.status(Status.GONE).send("User revoked access, deleted all data");

@@ -40,7 +40,9 @@ export const MonthSection: FC<Props> = ({
         <div onClick={(e) => e.stopPropagation()}>
           <TooltipWrapper
             description="Add to month"
-            onClick={() => console.log("clicked")}
+            onClick={() =>
+              somedayProps.util.onSectionClick(Categories_Event.SOMEDAY_MONTH)
+            }
             shortcut="M"
           >
             <div role="button">

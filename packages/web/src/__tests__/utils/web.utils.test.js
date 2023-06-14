@@ -7,6 +7,15 @@ import {
 } from "@web/common/utils/web.date.util";
 import { arraysAreEqual } from "@web/__tests__/utils/test.util";
 
+const getColorTotals = (colors) => {
+  const uniqueColors = Array.from(new Set(colors));
+
+  const color1 = colors.filter((c) => c === uniqueColors[0]);
+  const color2 = colors.filter((c) => c === uniqueColors[1]);
+  const colorTotals = [color1.length, color2.length];
+  return colorTotals;
+};
+
 describe("headers", () => {
   it("uses Bearer token", () => {
     const emptyCall = headers();
@@ -33,20 +42,21 @@ describe("getColorsByHour", () => {
   });
 
   it("uses two colors", () => {
-    const colors = getColorsByHour(dayjs().hour());
+    const colors = getColorsByHour(20);
     expect(new Set(colors).size).toBe(2);
   });
 
-  it("only higlights one hour", () => {
-    const colors = getColorsByHour(dayjs().hour());
-    const uniqueColors = Array.from(new Set(colors));
-
-    const color1 = colors.filter((c) => c === uniqueColors[0]);
-    const color2 = colors.filter((c) => c === uniqueColors[1]);
-    const colorTotals = [color1.length, color2.length];
-
+  it("only higlights one hour (noon)", () => {
+    const colors = getColorsByHour(12);
+    const colorTotals = getColorTotals(colors);
     expect(colorTotals).toContain(23);
     expect(colorTotals).toContain(1);
+  });
+
+  it("doesn't highlight any when midnight hour", () => {
+    const colors = getColorsByHour(0);
+    const colorTotals = getColorTotals(colors);
+    expect(colorTotals).toEqual([24, 0]);
   });
 
   it("returns same order for minute 0 to 59", () => {

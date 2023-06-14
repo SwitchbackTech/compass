@@ -30,7 +30,6 @@ export const selectSomedayEvents = createSelector(
         somedayEvents[id] = event;
       }
     });
-
     return somedayEvents;
   }
 );
@@ -98,10 +97,3 @@ export const selectIsAtMonthlyLimit = createSelector(
   (somedayEvents) =>
     somedayEvents.columns[COLUMN_MONTH].eventIds.length >= SOMEDAY_MONTHLY_LIMIT
 );
-
-//++
-export const _selectIsAtWeeklyLimit = (state: RootState) => {
-  const somedayIds = state.events.getSomedayEvents.value?.data || [];
-  console.log(somedayIds);
-  return somedayIds.length >= SOMEDAY_WEEKLY_LIMIT;
-};

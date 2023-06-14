@@ -21,16 +21,23 @@ export const getSidebarToggleIcon = (isToggled: boolean) => {
   }
 };
 
-// export const Styled = styled.div`
-//   position: relative;
-//   width: 100%;
-// `;
-
 export const StyledSidebarList = styled.div`
-  min-height: 400px;
+  height: 400px;
   overflow: auto;
   padding-bottom: 20px;
   padding-left: 20px;
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: ${getColor(ColorNames.GREY_2)};
+    border-radius: 3px;
+    &:hover {
+      background: ${getColor(ColorNames.GREY_1)};
+      transition: background-color 0.2s;
+    }
+  }
 `;
 
 export const Styled = styled(Flex)<SidebarProps>`

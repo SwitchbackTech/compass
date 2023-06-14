@@ -28,7 +28,7 @@ import {
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
-import { isAccessRevoked } from "@backend/common/services/gcal/gcal.utils";
+import { isGoogleTokenExpired } from "@backend/common/services/gcal/gcal.utils";
 import eventService from "@backend/event/services/event.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -446,7 +446,7 @@ export const pruneSync = async (toPrune: string[]) => {
     try {
       stopped = await syncService.stopWatches(u);
     } catch (e) {
-      if (isAccessRevoked(e as Error)) {
+      if (isGoogleTokenExpired(e as Error)) {
         await userService.deleteCompassDataForUser(u, false);
         deletedUserData = true;
       } else {
@@ -488,7 +488,7 @@ export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
       const refreshes = await Promise.all(refreshesByUser);
       return { user: r.userId, results: refreshes, deletedUserData };
     } catch (e) {
-      if (isAccessRevoked(e as Error)) {
+      if (isGoogleTokenExpired(e as Error)) {
         await userService.deleteCompassDataForUser(r.userId, false);
         deletedUserData = true;
       } else {
