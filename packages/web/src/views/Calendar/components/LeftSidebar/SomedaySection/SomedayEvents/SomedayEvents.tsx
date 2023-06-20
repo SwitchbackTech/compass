@@ -38,7 +38,7 @@ export const SomedayEvents: FC<Props> = ({
     category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH;
   const column = state.somedayEvents.columns[colName];
   const events = column.eventIds.map(
-    (eventId) => state.somedayEvents.events[eventId]
+    (eventId: string) => state.somedayEvents.events[eventId]
   );
 
   const isDraftingNew = state.isDraftingNew && state.draftType === category;

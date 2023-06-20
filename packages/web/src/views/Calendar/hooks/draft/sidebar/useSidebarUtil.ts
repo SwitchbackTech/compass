@@ -5,8 +5,12 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { getWeekRangeDates } from "@core/util/date.utils";
+import {
+  Categories_Event,
+  Direction_Migrate,
+  Schema_Event,
+} from "@core/types/event.types";
+import { getMigrationDates, getWeekRangeDates } from "@core/util/date.utils";
 import { DropResult } from "@hello-pangea/dnd";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
@@ -227,23 +231,22 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
     state.setIsDrafting(true);
   };
 
-  const onMigrate = (event: Schema_Event, location: "forward" | "back") => {
-    const diff = location === "forward" ? 7 : -7;
-
-    const startDate = dayjs(event.startDate)
-      .add(diff, "days")
-      .format(YEAR_MONTH_DAY_FORMAT);
-
-    const endDate = dayjs(event.endDate)
-      .add(diff, "days")
-      .format(YEAR_MONTH_DAY_FORMAT);
-
-    const _event = { ...event, startDate, endDate };
+  const onMigrate = (
+    event: Schema_Event,
+    category: Categories_Event,
+    direction: Direction_Migrate
+  ) => {
+    const _event = _updateEventAfterMigration(event, category, direction);
 
     const isExisting = _event._id;
     if (isExisting) {
+      if (category === Categories_Event.SOMEDAY_WEEK) {
+        // convertWeeklyToMonthly(_event);
+      }
+
       dispatch(
-        editEventSlice.actions.migrate({
+        // editEventSlice.actions.migrate({
+        editEventSlice.actions.request({
           _id: _event._id,
           event: _event,
         })
@@ -309,6 +312,41 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
     createDefaultSomeday();
   };
 
+  const convertWeeklyToMonthly = (event: Schema_Event) => {
+    const weekIds = state.somedayEvents.columns.weekEvents.eventIds;
+    const monthIds = state.somedayEvents.columns.monthEvents.eventIds;
+
+    const weekEventIndex = weekIds.indexOf(event._id);
+
+    if (weekEventIndex !== -1) {
+      weekIds.splice(weekEventIndex, 1);
+
+      if (!monthIds.includes(event._id)) {
+        monthIds.push(event._id);
+      }
+
+      // state.somedayEvents.events[event._id] = event;
+
+      //++
+      // const newState = {
+      //   ...state.somedayEvents,
+      //   columns: {
+      //     ...state.somedayEvents.columns,
+      //     weekEvents: {
+      //       ...state.somedayEvents.columns.weekEvents,
+      //       eventIds: weekIds,
+      //     },
+      //     monthEvents: {
+      //       ...state.somedayEvents.columns.monthEvents,
+      //       eventIds: monthIds,
+      //     },
+      //   },
+      // };
+
+      // state.setSomedayEvents(newState);
+    }
+  };
+
   const reorder = (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
@@ -329,12 +367,28 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
       },
     };
 
-    state.setSomedayWeekEvents(newState);
+    state.setSomedayEvents(newState);
 
     const newOrder = newEventIds.map((_id, index) => {
       return { _id, order: index };
     });
     dispatch(getSomedayEventsSlice.actions.reorder(newOrder));
+  };
+
+  const _updateEventAfterMigration = (
+    event: Schema_Event,
+    category: Categories_Event,
+    direction: Direction_Migrate
+  ) => {
+    const origDates = { startDate: event.startDate, endDate: event.endDate };
+    const { startDate, endDate } = getMigrationDates(
+      origDates,
+      category,
+      direction
+    );
+
+    const newEvent = { ...event, startDate, endDate };
+    return newEvent;
   };
 
   return {

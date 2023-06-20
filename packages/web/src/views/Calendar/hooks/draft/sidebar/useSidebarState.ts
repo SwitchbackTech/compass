@@ -53,7 +53,7 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
     setDraft,
     setIsDrafting,
     setIsDraftingExisting,
-    setSomedayWeekEvents: setSomedayEvents,
+    setSomedayEvents,
   };
 };
 

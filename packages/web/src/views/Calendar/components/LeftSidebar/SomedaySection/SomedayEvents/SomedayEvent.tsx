@@ -93,7 +93,11 @@ export const SomedayEvent = ({
         ref={provided.innerRef}
       >
         <div ref={reference}>
-          <SomedayEventRectangle event={event} onMigrate={onMigrate} />
+          <SomedayEventRectangle
+            category={category}
+            event={event}
+            onMigrate={onMigrate}
+          />
         </div>
       </NewStyledSomedayEvent>
 

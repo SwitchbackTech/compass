@@ -13,11 +13,13 @@ export const getSomedayEventsSlice = createAsyncSlice<
     convert: (state, action) => {
       return;
     },
+
     delete: (state, action: Action_DeleteEvent) => {
       state.value.data = state.value.data.filter(
         (i: string) => i !== action.payload._id
       );
     },
+
     insert: (state, action: { payload: string }) => {
       // payload is the event id
       if (state.value === null || state.value === undefined) {
@@ -26,6 +28,7 @@ export const getSomedayEventsSlice = createAsyncSlice<
         state.value.data.push(action.payload);
       }
     },
+
     reorder: (state, action) => {
       return;
     },
