@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useAppSelector } from "@web/store/store.hooks";
-import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
+import { COLUMN_WEEK } from "@web/common/constants/web.constants";
 import {
   selectDraftId,
   selectDraftStatus,

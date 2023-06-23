@@ -10,7 +10,6 @@ import {
   Direction_Migrate,
   Schema_Event,
 } from "@core/types/event.types";
-import { getMigrationDates, getWeekRangeDates } from "@core/util/date.utils";
 import { DropResult } from "@hello-pangea/dnd";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
@@ -33,6 +32,10 @@ import {
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
 import { selectDatesInView } from "@web/ducks/settings/selectors/settings.selectors";
+import {
+  getDatesByCategory,
+  getMigrationDates,
+} from "@web/common/utils/web.date.util";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
@@ -253,9 +256,14 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
     close();
   };
 
-  const onSubmit = () => {
+  const onSubmit = (category: Categories_Event) => {
     const _event = prepEvtBeforeSubmit(state.draft);
-    const { startDate, endDate } = getWeekRangeDates(viewStart, viewEnd);
+
+    const { startDate, endDate } = getDatesByCategory(
+      category,
+      viewStart,
+      viewEnd
+    );
     const event = { ..._event, startDate, endDate };
 
     const isExisting = event._id;

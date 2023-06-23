@@ -1,5 +1,5 @@
-import { getMigrationDates } from "@core/util/date.utils";
 import { Categories_Event } from "@core/types/event.types";
+import { getMigrationDates } from "@web/common/utils/web.date.util";
 
 describe("Migrate: Week Event", () => {
   it("migrates week event: forward", () => {
