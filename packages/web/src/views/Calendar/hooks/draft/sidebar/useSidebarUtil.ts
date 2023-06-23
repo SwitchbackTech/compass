@@ -240,12 +240,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
 
     const isExisting = _event._id;
     if (isExisting) {
-      if (category === Categories_Event.SOMEDAY_WEEK) {
-        // convertWeeklyToMonthly(_event);
-      }
-
       dispatch(
-        // editEventSlice.actions.migrate({
         editEventSlice.actions.request({
           _id: _event._id,
           event: _event,
@@ -310,41 +305,6 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
     );
 
     createDefaultSomeday();
-  };
-
-  const convertWeeklyToMonthly = (event: Schema_Event) => {
-    const weekIds = state.somedayEvents.columns.weekEvents.eventIds;
-    const monthIds = state.somedayEvents.columns.monthEvents.eventIds;
-
-    const weekEventIndex = weekIds.indexOf(event._id);
-
-    if (weekEventIndex !== -1) {
-      weekIds.splice(weekEventIndex, 1);
-
-      if (!monthIds.includes(event._id)) {
-        monthIds.push(event._id);
-      }
-
-      // state.somedayEvents.events[event._id] = event;
-
-      //++
-      // const newState = {
-      //   ...state.somedayEvents,
-      //   columns: {
-      //     ...state.somedayEvents.columns,
-      //     weekEvents: {
-      //       ...state.somedayEvents.columns.weekEvents,
-      //       eventIds: weekIds,
-      //     },
-      //     monthEvents: {
-      //       ...state.somedayEvents.columns.monthEvents,
-      //       eventIds: monthIds,
-      //     },
-      //   },
-      // };
-
-      // state.setSomedayEvents(newState);
-    }
   };
 
   const reorder = (result: DropResult) => {

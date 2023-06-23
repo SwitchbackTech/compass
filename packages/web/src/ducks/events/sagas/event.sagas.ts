@@ -251,20 +251,6 @@ function* getWeekEvents({ payload }: Action_GetEvents) {
   }
 }
 
-function* migrateEvent({ payload }: Action_EditEvent) {
-  try {
-    yield put(eventsEntitiesSlice.actions.edit(payload));
-    yield call(EventApi.edit, payload._id, payload.event);
-
-    //++ remove after sure you don't need this
-    // yield put(getSomedayEventsSlice.actions.remove(payload));
-    yield put(editEventSlice.actions.success());
-  } catch (error) {
-    yield put(editEventSlice.actions.error());
-    handleError(error as Error);
-  }
-}
-
 function* reorderSomedayEvents({ payload }: Action_Someday_Reorder) {
   try {
     yield call(EventApi.reorder, payload);
@@ -290,6 +276,5 @@ export function* eventsSagas() {
   yield takeLatest(getSomedayEventsSlice.actions.reorder, reorderSomedayEvents);
   yield takeLatest(createEventSlice.actions.request, createEvent);
   yield takeLatest(editEventSlice.actions.request, editEvent);
-  yield takeLatest(editEventSlice.actions.migrate, migrateEvent);
   yield takeLatest(deleteEventSlice.actions.request, deleteEvent);
 }
