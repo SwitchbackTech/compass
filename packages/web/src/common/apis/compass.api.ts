@@ -5,6 +5,8 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 
 import { ROOT_ROUTES } from "../constants/routes";
 
+const LOGIN_REQUIRED_MSG = "Login required, cuz security 😇";
+
 export const CompassApi = axios.create({
   baseURL: ENV_WEB.API_BASEURL,
 });
@@ -24,20 +26,18 @@ CompassApi.interceptors.response.use(
     const status = error?.response?.status;
 
     if (status === Status.UNAUTHORIZED) {
+      alert(LOGIN_REQUIRED_MSG);
       return Promise.reject(error);
     }
 
-    if (status !== Status.UNAUTHORIZED) {
-      // supertokens handles these
-      if (status === Status.GONE) {
-        await _signOut("Login required, cuz security");
-      } else if (status === Status.REDUX_REFRESH_NEEDED) {
-        await _signOut("Login required, cuz security 😇");
-      } else {
-        alert("Something broke. Please let Tyler know: tyler@switchback.tech");
-        console.log(error);
-        return Promise.reject(error);
-      }
+    if (status === Status.GONE || status === Status.REDUX_REFRESH_NEEDED) {
+      await _signOut(LOGIN_REQUIRED_MSG);
+    } else {
+      alert(
+        "Hmm, something's off.\nPlease let Tyler know: tyler@switchback.tech"
+      );
+      console.log(error);
+      return Promise.reject(error);
     }
   }
 );

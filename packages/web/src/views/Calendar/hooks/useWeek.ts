@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import dayjs, { Dayjs } from "dayjs";
+import { Dayjs } from "dayjs";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
+import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { Category_View } from "@web/views/Calendar/calendarView.types";
 
 export const useWeek = (today: Dayjs) => {
@@ -12,6 +13,7 @@ export const useWeek = (today: Dayjs) => {
   const origStart = useMemo(() => today.startOf("week"), [today]);
   const [start, setStartOfView] = useState(origStart);
   const end = useMemo(() => start.endOf("week"), [start]);
+
   const week = useMemo(() => start.week(), [start]);
 
   const isCurrentWeek = today.week() === start.week();
@@ -20,8 +22,8 @@ export const useWeek = (today: Dayjs) => {
     return start.add(index, "day");
   });
 
-  const tempStart = dayjs("2023-05-01");
-  const tempEnd = dayjs("2023-05-31");
+  const monthStart = start.startOf("month");
+  const monthEnd = start.endOf("month");
 
   useEffect(() => {
     dispatch(
@@ -33,11 +35,20 @@ export const useWeek = (today: Dayjs) => {
 
     dispatch(
       getSomedayEventsSlice.actions.request({
-        startDate: toUTCOffset(tempStart),
-        endDate: toUTCOffset(tempEnd),
+        startDate: toUTCOffset(monthStart),
+        endDate: toUTCOffset(monthEnd),
       })
     );
-  }, [end, start, tempEnd, dispatch, tempStart]);
+  }, [dispatch, end, monthEnd, monthStart, start]);
+
+  useEffect(() => {
+    dispatch(
+      settingsSlice.actions.updateDates({
+        start: start.format(),
+        end: end.format(),
+      })
+    );
+  }, [dispatch, end, start]);
 
   const decrementWeek = () => {
     setStartOfView(start.subtract(7, "day"));

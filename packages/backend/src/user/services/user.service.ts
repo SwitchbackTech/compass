@@ -15,15 +15,16 @@ import {
   initSync,
   watchEventsByGcalIds,
 } from "@backend/sync/services/sync.service.helpers";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { Summary_Resync } from "@backend/common/types/sync.types";
+import { reInitSyncByIntegration } from "@backend/sync/util/sync.queries";
 import calendarService from "@backend/calendar/services/calendar.service";
-import emailService from "./email.service";
 import eventService from "@backend/event/services/event.service";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
 import syncService from "@backend/sync/services/sync.service";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import { Summary_Resync } from "@backend/common/types/sync.types";
-import { reInitSyncByIntegration } from "@backend/sync/util/sync.queries";
+
+import emailService from "./email.service";
 
 const logger = Logger("app:user.service");
 

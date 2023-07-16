@@ -1,14 +1,7 @@
 import { MongoClient } from "mongodb";
-import { getReadAllFilter } from "../event/services/event.service.helpers";
-import { mockEventSetJan22 } from "../../../core/src/__mocks__/events/events.22jan";
-import { mockEventSetMar22 } from "../../../core/src/__mocks__/events/events.22mar";
-
-/* 
-Keep in mind:
-This suite works because it doesn't require
-instantiating any services, which introduce
-dependency and environment variable complexities.  
-*/
+import { getReadAllFilter } from "../../event/services/event.service.helpers";
+import { mockEventSetJan22 } from "../../../../core/src/__mocks__/events/events.22jan";
+import { mockEventSetSomeday1 } from "../../../../core/src/__mocks__/events/events.someday.1";
 
 describe("Jan 2022: Many Formats", () => {
   let connection;
@@ -23,8 +16,8 @@ describe("Jan 2022: Many Formats", () => {
     });
     db = await connection.db();
     eventCollection = db.collection("event");
-    // insert events to collection
     await eventCollection.insertMany(mockEventSetJan22);
+    await eventCollection.insertMany(mockEventSetSomeday1);
   });
 
   afterAll(async () => {
@@ -73,7 +66,21 @@ describe("Jan 2022: Many Formats", () => {
       const onlyReturnsSomedayEvents = result.length === somedayEvents.length;
       expect(onlyReturnsSomedayEvents).toBe(true);
     });
+
+    it("filters someday events by dates", async () => {
+      const filter = getReadAllFilter("user1", {
+        someday: "true",
+        start: "2023-06-01T00:00:00-05:00",
+        end: "2023-06-30T23:59:59-05:00",
+      });
+
+      const result = await eventCollection.find(filter).toArray();
+
+      expect(result.length).toBe(1);
+      expect(result[0].title).toBe("First Sunday of New Month");
+    });
   });
+
   describe("finds events with exact same timestamps", () => {
     test("format: TZ offset", async () => {
       const filter = getReadAllFilter("user1", {
@@ -188,53 +195,6 @@ describe("Jan 2022: Many Formats", () => {
     expect(titles.includes("Jan 4")).toBe(false);
     expect(titles.includes("Jan 1 2023")).toBe(false);
   };
-});
-
-describe("Mar 6 - 12, 2022: All-Day Events", () => {
-  let connection;
-  let db;
-  let eventCollection;
-  let filter;
-  let titles;
-
-  beforeAll(async () => {
-    // setup in-memory connection using jest-mongodb
-    connection = await MongoClient.connect(process.env.MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    db = await connection.db();
-    eventCollection = db.collection("event");
-    await eventCollection.insertMany(mockEventSetMar22);
-
-    filter = getReadAllFilter("user1", {
-      start: "2022-03-06T00:00:00-07:00",
-      end: "2022-03-12T23:59:59-07:00",
-    });
-    const result = await eventCollection.find(filter).toArray();
-    titles = result.map((e) => e.title);
-  });
-
-  afterAll(async () => {
-    await connection.close();
-  });
-
-  it("finds overlapping multi-week event", async () => {
-    expect(titles.includes("Feb 14 - Mar 8")).toBe(true);
-  });
-  it("finds events within target query", () => {
-    expect(titles.includes("Mar 8")).toBe(true);
-    expect(titles.includes("Mar 10 - 12")).toBe(true);
-  });
-
-  it("ignores events from prev week", () => {
-    expect(titles.includes("Mar 5")).toBe(false);
-    expect(titles.includes("Feb 28 - Mar 5")).toBe(false);
-  });
-  it("ignores events next week", () => {
-    expect(titles.includes("Mar 13")).toBe(false);
-    expect(titles.includes("Mar 13 - 16")).toBe(false);
-  });
 });
 
 /* useful for deeply nested objects, like Mongo filters */

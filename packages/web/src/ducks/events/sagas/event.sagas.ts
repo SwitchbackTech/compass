@@ -243,23 +243,10 @@ export function* getSomedayEvents({ payload }: Action_GetEvents) {
 
 function* getWeekEvents({ payload }: Action_GetEvents) {
   try {
-    const data: Response_GetEventsSaga = yield call(getEvents, payload);
+    const data = (yield call(getEvents, payload)) as Response_GetEventsSaga;
     yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error());
-    handleError(error as Error);
-  }
-}
-
-function* migrateEvent({ payload }: Action_EditEvent) {
-  try {
-    yield put(eventsEntitiesSlice.actions.edit(payload));
-    yield call(EventApi.edit, payload._id, payload.event);
-
-    yield put(getSomedayEventsSlice.actions.remove(payload));
-    yield put(editEventSlice.actions.success());
-  } catch (error) {
-    yield put(editEventSlice.actions.error());
     handleError(error as Error);
   }
 }
@@ -289,6 +276,5 @@ export function* eventsSagas() {
   yield takeLatest(getSomedayEventsSlice.actions.reorder, reorderSomedayEvents);
   yield takeLatest(createEventSlice.actions.request, createEvent);
   yield takeLatest(editEventSlice.actions.request, editEvent);
-  yield takeLatest(editEventSlice.actions.migrate, migrateEvent);
   yield takeLatest(deleteEventSlice.actions.request, deleteEvent);
 }

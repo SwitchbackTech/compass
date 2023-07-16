@@ -1,6 +1,69 @@
 import { Filter } from "mongodb";
 import { Query_Event } from "@core/types/event.types";
 
+const getDateFilters = (isSomeday: boolean, start: string, end: string) => {
+  const { inBetweenStart, inBetweenEnd, overlapping } = getDateFilterOptions(
+    start,
+    end
+  );
+
+  // omitting inBetweenEnd allows finding somedays
+  // that span two months (05-28 to 06-04)
+  const overLapOrBetween = isSomeday
+    ? [inBetweenStart, overlapping]
+    : [inBetweenStart, inBetweenEnd, overlapping];
+
+  const dateFilters = {
+    $or: overLapOrBetween,
+  };
+
+  return dateFilters;
+};
+
+const getDateFilterOptions = (start: string, end: string) => {
+  // includes overlaps (starts before AND ends after dates)
+  const overlapping = {
+    startDate: {
+      $lte: start,
+    },
+    endDate: {
+      $gte: end,
+    },
+  };
+
+  const inBetweenStart = {
+    $and: [
+      {
+        startDate: {
+          $gte: start,
+        },
+      },
+      {
+        startDate: {
+          $lte: end,
+        },
+      },
+    ],
+  };
+
+  const inBetweenEnd = {
+    $and: [
+      {
+        endDate: {
+          $gte: start,
+        },
+      },
+      {
+        endDate: {
+          $lte: end,
+        },
+      },
+    ],
+  };
+
+  return { overlapping, inBetweenStart, inBetweenEnd };
+};
+
 export const getReadAllFilter = (
   userId: string,
   query: Query_Event
@@ -21,52 +84,10 @@ export const getReadAllFilter = (
   }
 
   if (start && end) {
-    // include inbetween events:
-    //  start OR end date are between the date range in query
-    const inBetweenOrOverlappingEvents = {
-      $or: [
-        {
-          $and: [
-            {
-              startDate: {
-                $gte: start,
-              },
-            },
-            {
-              startDate: {
-                $lte: end,
-              },
-            },
-          ],
-        },
-        {
-          $and: [
-            {
-              endDate: {
-                $gte: start,
-              },
-            },
-            {
-              endDate: {
-                $lte: end,
-              },
-            },
-          ],
-        },
-        // include overlaps:
-        //   starts before AND ends after dates
-        {
-          startDate: {
-            $lte: start,
-          },
-          endDate: {
-            $gte: end,
-          },
-        },
-      ],
-    };
+    const isSomeday = someday === "true";
+    const dateFilters = getDateFilters(isSomeday, start, end);
 
-    filter = { ...filter, ...inBetweenOrOverlappingEvents };
+    filter = { ...filter, ...dateFilters };
   }
 
   return filter;

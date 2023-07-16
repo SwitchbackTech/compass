@@ -1,5 +1,6 @@
 import React, { FC } from "react";
 import { ColorNames } from "@core/types/color.types";
+import { Categories_Event } from "@core/types/event.types";
 import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
@@ -8,10 +9,9 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { getMonthListLabel } from "@web/common/utils/event.util";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { COLUMN_MONTH } from "@web/common/constants/web.constants";
 
 import { StyledAddEventButton, StyledSidebarHeader } from "../styled";
-import { StyledSidebarList } from "../../EventsList/styled";
+import { SomedayEvents } from "../SomedayEvents";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -26,9 +26,6 @@ export const MonthSection: FC<Props> = ({
   somedayProps,
   viewStart,
 }) => {
-  const monthEvents = somedayProps.state.somedayEvents.columns[
-    COLUMN_MONTH
-  ].eventIds.map((eventId) => somedayProps.state.somedayEvents.events[eventId]);
   const monthLabel = getMonthListLabel(viewStart);
 
   return (
@@ -43,7 +40,9 @@ export const MonthSection: FC<Props> = ({
         <div onClick={(e) => e.stopPropagation()}>
           <TooltipWrapper
             description="Add to month"
-            onClick={() => console.log("clicked")}
+            onClick={() =>
+              somedayProps.util.onSectionClick(Categories_Event.SOMEDAY_MONTH)
+            }
             shortcut="M"
           >
             <div role="button">
@@ -52,11 +51,14 @@ export const MonthSection: FC<Props> = ({
           </TooltipWrapper>
         </div>
       </StyledSidebarHeader>
-      <StyledSidebarList onClick={() => console.log("clicked")}>
-        {monthEvents.map((event) => (
-          <div key={event._id}>{event.title}</div>
-        ))}
-      </StyledSidebarList>
+
+      <SomedayEvents
+        category={Categories_Event.SOMEDAY_MONTH}
+        dateCalcs={dateCalcs}
+        measurements={measurements}
+        somedayProps={somedayProps}
+        viewStart={viewStart}
+      />
     </>
   );
 };

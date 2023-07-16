@@ -1,0 +1,42 @@
+export const mockEventSetSomeday1 = [
+  {
+    _id: "id1",
+    user: "user1",
+    title: "Multi-Month",
+    startDate: "2023-05-28",
+    endDate: "2023-06-03",
+    isSomeday: true,
+  },
+  {
+    _id: "id2",
+    user: "user1",
+    title: "First Sunday of New Month",
+    startDate: "2023-06-04",
+    endDate: "2023-06-04",
+    isSomeday: true,
+  },
+  {
+    _id: "id3",
+    user: "user1",
+    title: "Distant Future",
+    startDate: "2025-01-01",
+    endDate: "2023-01-06",
+    isSomeday: true,
+  },
+  {
+    _id: "id4",
+    user: "user1",
+    title: "Distant Past",
+    startDate: "1999-01-01",
+    endDate: "1999-01-06",
+    isSomeday: true,
+  },
+  {
+    _id: "id5",
+    user: "user1",
+    title: "Regular Event",
+    startDate: "2023-06-05T10:30:00-02:00",
+    endDate: "2023-06-05T11:30:00-02:00",
+    isSomeday: false,
+  },
+];

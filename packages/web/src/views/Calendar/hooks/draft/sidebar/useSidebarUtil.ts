@@ -1,9 +1,15 @@
 import { useCallback } from "react";
 import dayjs from "dayjs";
-import { SOMEDAY_WEEK_LIMIT_MSG } from "@core/constants/core.constants";
+import {
+  SOMEDAY_MONTH_LIMIT_MSG,
+  SOMEDAY_WEEK_LIMIT_MSG,
+} from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { getWeekRangeDates } from "@core/util/date.utils";
+import {
+  Categories_Event,
+  Direction_Migrate,
+  Schema_Event,
+} from "@core/types/event.types";
 import { DropResult } from "@hello-pangea/dnd";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
@@ -20,27 +26,39 @@ import {
   editEventSlice,
 } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
-import { Range_Week } from "@web/common/types/util.types";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  selectIsAtMonthlyLimit,
+  selectIsAtWeeklyLimit,
+} from "@web/ducks/events/selectors/someday.selectors";
+import { selectDatesInView } from "@web/ducks/settings/selectors/settings.selectors";
+import {
+  getDatesByCategory,
+  getMigrationDates,
+} from "@web/common/utils/web.date.util";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
 
-export const useSidebarUtil = (
-  dateCalcs: DateCalcs,
-  state: State_Sidebar,
-  weekRange: Range_Week
-) => {
+export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   const dispatch = useAppDispatch();
+
+  const { start, end } = useAppSelector(selectDatesInView);
+  const viewStart = dayjs(start);
+  const viewEnd = dayjs(end);
+
+  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+  const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
 
   const close = () => {
     state.setIsDrafting(false);
     state.setDraft(null);
 
-    if (
-      state.isDraftingRedux &&
-      state.draftType === Categories_Event.SOMEDAY_WEEK //++
-    ) {
+    const isSomeday =
+      state.draftType === Categories_Event.SOMEDAY_WEEK ||
+      state.draftType == Categories_Event.SOMEDAY_MONTH;
+
+    if (state.isDraftingRedux && isSomeday) {
       dispatch(draftSlice.actions.discard());
     }
   };
@@ -119,13 +137,13 @@ export const useSidebarUtil = (
 
     state.setDraft({
       ...somedayDefault,
-      endDate: weekRange.weekEnd.format(YEAR_MONTH_DAY_FORMAT),
-      startDate: weekRange.weekStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: viewEnd.format(YEAR_MONTH_DAY_FORMAT),
+      startDate: viewStart.format(YEAR_MONTH_DAY_FORMAT),
       isOpen: true,
     });
 
     state.setIsDrafting(true);
-  }, [weekRange.weekEnd, weekRange.weekStart]);
+  }, [viewStart, viewEnd]);
 
   const getDatesAfterDroppingOn = (
     target: "mainGrid" | "alldayRow",
@@ -135,7 +153,7 @@ export const useSidebarUtil = (
     const y = mouseCoords.y;
 
     if (target === "mainGrid") {
-      const _start = dateCalcs.getDateByXY(x, y, weekRange.weekStart);
+      const _start = dateCalcs.getDateByXY(x, y, viewStart);
       const startDate = _start.format();
       const endDate = _start.add(1, "hour").format();
 
@@ -143,7 +161,7 @@ export const useSidebarUtil = (
     }
 
     if (target === "alldayRow") {
-      const _start = dateCalcs.getDateByXY(x, y, weekRange.weekStart);
+      const _start = dateCalcs.getDateByXY(x, y, viewStart);
       const startDate = _start.format(YEAR_MONTH_DAY_FORMAT);
       const endDate = _start.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
 
@@ -165,7 +183,7 @@ export const useSidebarUtil = (
     const droppedOnSidebar = destination !== null;
     if (droppedOnSidebar) {
       const reorderedDraft = draggableId === ID_SOMEDAY_DRAFT;
-      if (reorderedDraft && !state.isDraftingNewWeekly) {
+      if (reorderedDraft && !state.isDraftingNew) {
         console.log("Tried reordering a draft. TODO: add draft to state");
         return;
       }
@@ -216,23 +234,17 @@ export const useSidebarUtil = (
     state.setIsDrafting(true);
   };
 
-  const onMigrate = (event: Schema_Event, location: "forward" | "back") => {
-    const diff = location === "forward" ? 7 : -7;
-
-    const startDate = dayjs(event.startDate)
-      .add(diff, "days")
-      .format(YEAR_MONTH_DAY_FORMAT);
-
-    const endDate = dayjs(event.endDate)
-      .add(diff, "days")
-      .format(YEAR_MONTH_DAY_FORMAT);
-
-    const _event = { ...event, startDate, endDate };
+  const onMigrate = (
+    event: Schema_Event,
+    category: Categories_Event,
+    direction: Direction_Migrate
+  ) => {
+    const _event = _updateEventAfterMigration(event, category, direction);
 
     const isExisting = _event._id;
     if (isExisting) {
       dispatch(
-        editEventSlice.actions.migrate({
+        editEventSlice.actions.request({
           _id: _event._id,
           event: _event,
         })
@@ -244,11 +256,13 @@ export const useSidebarUtil = (
     close();
   };
 
-  const onSubmit = () => {
+  const onSubmit = (category: Categories_Event) => {
     const _event = prepEvtBeforeSubmit(state.draft);
-    const { startDate, endDate } = getWeekRangeDates(
-      weekRange.weekStart,
-      weekRange.weekEnd
+
+    const { startDate, endDate } = getDatesByCategory(
+      category,
+      viewStart,
+      viewEnd
     );
     const event = { ..._event, startDate, endDate };
 
@@ -271,31 +285,30 @@ export const useSidebarUtil = (
     close();
   };
 
-  const onSectionClick = (section: "week" | "month") => {
+  const onSectionClick = (section: Categories_Event) => {
     if (state.isDraftingRedux) {
       dispatch(draftSlice.actions.discard());
       return;
     }
 
     if (state.isDraftingExisting) {
-      console.log("closing");
       state.draft && close();
       return;
     }
 
-    const isAtLimit = section === "week" ? state.isAtWeeklyLimit : false;
-    if (isAtLimit) {
+    if (section === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
       alert(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
 
-    const eventType =
-      section === "week"
-        ? Categories_Event.SOMEDAY_WEEK
-        : Categories_Event.SOMEDAY_MONTH;
+    if (section === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
+      alert(SOMEDAY_MONTH_LIMIT_MSG);
+      return;
+    }
+
     dispatch(
       draftSlice.actions.start({
-        eventType,
+        eventType: section,
       })
     );
 
@@ -322,12 +335,28 @@ export const useSidebarUtil = (
       },
     };
 
-    state.setSomedayWeekEvents(newState);
+    state.setSomedayEvents(newState);
 
     const newOrder = newEventIds.map((_id, index) => {
       return { _id, order: index };
     });
     dispatch(getSomedayEventsSlice.actions.reorder(newOrder));
+  };
+
+  const _updateEventAfterMigration = (
+    event: Schema_Event,
+    category: Categories_Event,
+    direction: Direction_Migrate
+  ) => {
+    const origDates = { startDate: event.startDate, endDate: event.endDate };
+    const { startDate, endDate } = getMigrationDates(
+      origDates,
+      category,
+      direction
+    );
+
+    const newEvent = { ...event, startDate, endDate };
+    return newEvent;
   };
 
   return {

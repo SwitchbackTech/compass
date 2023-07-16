@@ -8,6 +8,8 @@ export enum Categories_Event {
   SOMEDAY_MONTH = "sidebarMonth",
 }
 
+export type Direction_Migrate = "forward" | "back";
+
 export interface Params_DeleteMany {
   key: string;
   ids: string[];

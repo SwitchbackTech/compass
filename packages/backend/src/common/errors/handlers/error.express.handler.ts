@@ -7,13 +7,14 @@ import { UserError } from "@backend/common/constants/error.constants";
 import { CompassError, Info_Error } from "@backend/common/types/error.types";
 import { SessionResponse } from "@backend/common/types/express.types";
 import {
-  isAccessRevoked,
+  isGoogleTokenExpired,
   isFullSyncRequired,
   isGoogleError,
   isInvalidValue,
 } from "@backend/common/services/gcal/gcal.utils";
-import userService from "@backend/user/services/user.service";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
+import userService from "@backend/user/services/user.service";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 
 import { errorHandler } from "./error.handler";
 
@@ -89,9 +90,16 @@ const handleGoogleError = async (
   res: SessionResponse,
   e: GaxiosError
 ) => {
-  if (isAccessRevoked(e)) {
+  if (isGoogleTokenExpired(e)) {
+    const revokeResult = await compassAuthService.revokeSessionsByUser(userId);
+    res.status(Status.UNAUTHORIZED).send(revokeResult);
+    return;
+  }
+
+  const isAccessRevoked = false;
+  if (isAccessRevoked) {
     logger.warn(`User revoked access, cleaning data: ${userId}`);
-    logger.debug("no really, currently debugging");
+    logger.debug("\t(not really, currently debugging)");
     logger.debug(JSON.stringify(e));
     return;
 
@@ -118,14 +126,3 @@ const handleGoogleError = async (
     return;
   }
 };
-
-/*
-const isMissingSession = async (req: Request, res: SessionResponse) => {
-  try {
-    await Session.getSession(req, res);
-    return false;
-  } catch (e) {
-    return true;
-  }
-};
-*/

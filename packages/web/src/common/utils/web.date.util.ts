@@ -14,6 +14,7 @@ import {
   Params_TimeChange,
 } from "@web/common/types/util.types";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
+import { Categories_Event, Direction_Migrate } from "@core/types/event.types";
 
 import { roundToNext } from ".";
 import { ACCEPTED_TIMES } from "../constants/web.constants";
@@ -71,6 +72,42 @@ export const getEndTimeOptions = (): Option_Time[] => {
     };
   });
   return options;
+};
+
+export const getMigrationDates = (
+  origDates: { startDate: string; endDate: string },
+  category: Categories_Event,
+  direction: Direction_Migrate
+) => {
+  const dates =
+    category === Categories_Event.SOMEDAY_WEEK
+      ? _getWeeklyMigrationDates(origDates, direction)
+      : _getMonthlyMigrationDates(origDates, direction);
+
+  return {
+    startDate: dates.startDate.format(YEAR_MONTH_DAY_FORMAT),
+    endDate: dates.endDate.format(YEAR_MONTH_DAY_FORMAT),
+  };
+};
+
+export const getDatesByCategory = (
+  category: Categories_Event,
+  weekStart: Dayjs,
+  weekEnd: Dayjs
+) => {
+  if (category === Categories_Event.SOMEDAY_WEEK) {
+    return {
+      startDate: weekStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+    };
+  }
+
+  const { startDate, endDate } = _getNextWeekInSameMonth(weekStart);
+
+  return {
+    startDate: startDate.format(YEAR_MONTH_DAY_FORMAT),
+    endDate: endDate.format(YEAR_MONTH_DAY_FORMAT),
+  };
 };
 
 export const getNextIntervalTimes = () => {
@@ -263,17 +300,70 @@ const _cleanStartMeridiem = (start: string, end: string) => {
   return start;
 };
 
+const _getNextWeekInSameMonth = (weekStart: Dayjs) => {
+  let startDate: Dayjs;
+
+  const startOfMonth = weekStart.startOf("month");
+  const nextWeek = weekStart.add(1, "week");
+  const nextWeekStartOfMonth = nextWeek.startOf("month");
+
+  if (nextWeekStartOfMonth.isSame(startOfMonth, "month")) {
+    startDate = nextWeek;
+  } else {
+    startDate = weekStart.subtract(1, "week");
+  }
+
+  const endDate = startDate.add(6, "days");
+
+  return { startDate, endDate };
+};
+
 const _getTimeLabel = (date: string) => {
   const orig = dayjs(date).format(HOURS_AM_FORMAT);
   return orig.replace(":00", "");
 };
 
-/*
-export const getTimes = () =>
-  Array(24 * 4)
-    .fill(0)
-    .map((_, i) => {
-      // eslint-disable-next-line no-bitwise
-      return `0${~~(i / 4)}:0${60 * ((i / 4) % 1)}`.replace(/\d(\d\d)/g, "$1");
-    });
-*/
+const _getMonthlyMigrationDates = (
+  origDates: { startDate: string; endDate: string },
+  direction: Direction_Migrate
+) => {
+  const WEEK_START = 0;
+  let startDate: Dayjs;
+
+  if (direction === "forward") {
+    const nextMonth = dayjs(origDates.startDate)
+      .startOf("month")
+      .add(1, "month");
+    const buffer = 7; //ensures it's in the next month
+    const firstXOfNextMonth = nextMonth.day(WEEK_START + buffer);
+    startDate = firstXOfNextMonth;
+  } else {
+    const prevMonth = dayjs(origDates.startDate)
+      .startOf("month")
+      .subtract(1, "month");
+    const lastDayOfMonth = prevMonth.endOf("month");
+    const lastXOfMonth = lastDayOfMonth.day(WEEK_START);
+
+    if (lastDayOfMonth.date() < lastXOfMonth.date()) {
+      lastXOfMonth.subtract(7, "days");
+    }
+
+    startDate = lastXOfMonth;
+  }
+
+  const endDate = startDate.add(6, "days");
+
+  return { startDate, endDate };
+};
+
+const _getWeeklyMigrationDates = (
+  origDates: { startDate: string; endDate: string },
+  direction: Direction_Migrate
+) => {
+  const diff = direction === "forward" ? 7 : -7;
+
+  const startDate = dayjs(origDates.startDate).add(diff, "days");
+  const endDate = dayjs(origDates.endDate).add(diff, "days");
+
+  return { startDate, endDate };
+};

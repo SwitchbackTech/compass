@@ -15,10 +15,13 @@ import {
 } from "@backend/common/types/express.types";
 import { GcalError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import {
+  findCompassUserBy,
+  updateGoogleRefreshToken,
+} from "@backend/user/queries/user.queries";
 import GoogleAuthService from "@backend/auth/services/google.auth.service";
 import userService from "@backend/user/services/user.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import syncService from "@backend/sync/services/sync.service";
 
 import { initGoogleClient } from "../services/auth.utils";
@@ -77,7 +80,7 @@ class AuthController {
       const user = await findCompassUserBy("google.googleId", gUser.sub);
 
       const { cUserId } = user
-        ? await this.login(gcalClient, user)
+        ? await this.login(user, gcalClient, gRefreshToken)
         : await this.signup(gUser, gcalClient, gRefreshToken);
 
       await Session.createNewSession(res, cUserId);
@@ -98,8 +101,16 @@ class AuthController {
     }
   };
 
-  login = async (gcal: gCalendar, user: WithId<Schema_User>) => {
+  login = async (
+    user: WithId<Schema_User>,
+    gcal: gCalendar,
+    gRefreshToken: string
+  ) => {
     const cUserId = user._id.toString();
+
+    if (gRefreshToken !== user.google.gRefreshToken) {
+      await updateGoogleRefreshToken(cUserId, gRefreshToken);
+    }
 
     await syncService.importIncremental(cUserId, gcal);
 

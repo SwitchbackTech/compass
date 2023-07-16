@@ -1,12 +1,13 @@
 import React, { FC } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { Schema_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 
 import { SomedayEvent } from "../SomedayEvent";
 
 export interface Props {
+  category: Categories_Event;
   draftId: string;
   event: Schema_Event;
   index: number;
@@ -16,6 +17,7 @@ export interface Props {
 }
 
 export const DraggableSomedayEvent: FC<Props> = ({
+  category,
   draftId,
   event,
   isDrafting,
@@ -38,6 +40,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
           return (
             <>
               <SomedayEvent
+                category={category}
                 event={event}
                 isDragging={snapshot.isDragging}
                 isDrafting={isDraftingThisEvent}
@@ -45,7 +48,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
                 onClose={util.close}
                 onDraft={util.onDraft}
                 onMigrate={util.onMigrate}
-                onSubmit={util.onSubmit}
+                onSubmit={() => util.onSubmit(category)}
                 provided={provided}
                 setEvent={util.setDraft}
               />

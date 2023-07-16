@@ -3,11 +3,11 @@ import dayjs, { Dayjs } from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isBetween from "dayjs/plugin/isBetween";
+import { DropResult } from "@hello-pangea/dnd";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
-import { DropResult } from "@hello-pangea/dnd";
 
 import {
   Schema_GridEvent,
@@ -86,17 +86,6 @@ export const categorizeSomedayEvents = (
   };
   return sortedData;
 };
-
-//++
-// const sortedWeekIds = weekIds
-//   .map((id) => somedayEvents[id])
-//   .sort((a, b) => a.order - b.order)
-//   .map((e) => e._id);
-
-// const sortedMonthIds = monthIds
-//   .map((id) => somedayEvents[id])
-//   .sort((a, b) => a.order - b.order)
-//   .map((e) => e._id);
 
 export const getCategory = (event: Schema_Event) => {
   if (event?.isAllDay) {

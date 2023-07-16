@@ -7,11 +7,14 @@ import {
   UseFloatingProps,
 } from "@floating-ui/react";
 
-export const useEventForm = (event: "grid" | "sidebar") => {
+export const useEventForm = (
+  eventType: "grid" | "sidebarWeek" | "sidebarMonth"
+) => {
   let options: Partial<UseFloatingProps>;
 
-  if (event === "sidebar") {
-    options = { strategy: "absolute", placement: "right-start" };
+  if (eventType === "sidebarWeek" || eventType === "sidebarMonth") {
+    const placement = eventType === "sidebarWeek" ? "right-start" : "right";
+    options = { strategy: "absolute", placement };
   } else {
     options = {
       strategy: "fixed",

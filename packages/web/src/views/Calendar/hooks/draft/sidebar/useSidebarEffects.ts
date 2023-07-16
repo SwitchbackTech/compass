@@ -4,6 +4,11 @@ import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
+import { useAppSelector } from "@web/store/store.hooks";
+import {
+  selectIsAtMonthlyLimit,
+  selectIsAtWeeklyLimit,
+} from "@web/ducks/events/selectors/someday.selectors";
 
 import { State_Sidebar } from "./useSidebarState";
 import { Util_Sidebar } from "./useSidebarUtil";
@@ -12,16 +17,17 @@ export const useSidebarEffects = (state: State_Sidebar, util: Util_Sidebar) => {
   const {
     draft,
     draftType,
-    somedayWeekIds: existingIds,
-    isAtWeeklyLimit,
-    isAtMonthlyLimit,
-    isDraftingNewWeekly,
+    isDraftingNew,
     isDraftingRedux,
+    somedayWeekIds: existingIds,
     setDraft,
     setIsDrafting,
     setIsDraftingExisting,
   } = state;
   const { createDefaultSomeday } = util;
+
+  const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
+  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
 
   useEffect(() => {
     setIsDraftingExisting(existingIds.includes(draft?._id));
@@ -39,7 +45,7 @@ export const useSidebarEffects = (state: State_Sidebar, util: Util_Sidebar) => {
   }, [draftType, isDraftingRedux, setDraft, setIsDrafting]);
 
   const handleSomedayTrigger = useCallback(() => {
-    const isNewDraft = isDraftingRedux && !isDraftingNewWeekly;
+    const isNewDraft = isDraftingRedux && !isDraftingNew;
     if (!isNewDraft) return;
 
     if (draftType === Categories_Event.SOMEDAY_WEEK) {
@@ -56,10 +62,10 @@ export const useSidebarEffects = (state: State_Sidebar, util: Util_Sidebar) => {
 
     createDefaultSomeday();
   }, [
-    isDraftingRedux,
-    isDraftingNewWeekly,
     draftType,
     createDefaultSomeday,
+    isDraftingNew,
+    isDraftingRedux,
     isAtWeeklyLimit,
     isAtMonthlyLimit,
   ]);
