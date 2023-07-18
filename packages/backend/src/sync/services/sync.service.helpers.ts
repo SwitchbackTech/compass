@@ -17,7 +17,7 @@ import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
-import { yearsAgo } from "@backend/common/helpers/common.helpers";
+import { yearsAgo } from "@backend/common/helpers/common.util";
 import { EventError } from "@backend/common/constants/error.constants";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import {

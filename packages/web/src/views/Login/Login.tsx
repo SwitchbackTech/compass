@@ -91,7 +91,7 @@ export const LoginView = () => {
             Welcome to Compass,
           </Text>
           <Text colorName={ColorNames.WHITE_2} size={23}>
-            the calm calendar
+            the weekly planner for minimalists
           </Text>
 
           <Text colorName={ColorNames.WHITE_3} size={18}>

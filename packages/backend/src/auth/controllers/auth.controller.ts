@@ -40,7 +40,7 @@ class AuthController {
     const { cUserId, email } = req.body;
 
     if (cUserId) {
-      await Session.createNewSession(res, cUserId, {}, {});
+      await Session.createNewSession(req, res, cUserId, {}, {});
     }
 
     if (email) {
@@ -50,7 +50,7 @@ class AuthController {
         res.promise({ error: "user doesn't exist" });
         return;
       }
-      await Session.createNewSession(res, user._id.toString(), {}, {});
+      await Session.createNewSession(req, res, user._id.toString(), {}, {});
     }
 
     res.promise({
@@ -83,7 +83,7 @@ class AuthController {
         ? await this.login(user, gcalClient, gRefreshToken)
         : await this.signup(gUser, gcalClient, gRefreshToken);
 
-      await Session.createNewSession(res, cUserId);
+      await Session.createNewSession(req, res, cUserId);
 
       const result: Result_Auth_Compass = { cUserId };
 
