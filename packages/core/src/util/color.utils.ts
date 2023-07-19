@@ -1,5 +1,5 @@
 import { Priorities } from "@core/constants/core.constants";
-import { colors, invertedColors } from "@core/constants/colors";
+import { ColorHex, colors, invertedColors } from "@core/constants/colors";
 import { ColorNames, InvertedColorNames } from "@core/types/color.types";
 
 export const getAlphaColor = (colorName: ColorNames, opacity: number) => {
@@ -13,7 +13,8 @@ export const getBrighterColor = (colorName: ColorNames) => {
   return colors[getNeighbourKey(colorName, colors, 1)] as string;
 };
 
-export const getColor = (colorName: ColorNames) => colors[colorName];
+export const getColor = (colorName: ColorNames) =>
+  colors[colorName] as ColorHex;
 
 export const getDarkerColor = (colorName: ColorNames) => {
   return colors[getNeighbourKey(colorName, colors, -1) as ColorNames];

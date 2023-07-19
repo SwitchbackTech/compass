@@ -47,6 +47,7 @@ export interface Schema_Event {
   order?: number;
   origin?: Origin;
   priority?: Priority;
+  recurrence?: string[];
   startDate?: string;
   title?: string;
   updatedAt?: Date;

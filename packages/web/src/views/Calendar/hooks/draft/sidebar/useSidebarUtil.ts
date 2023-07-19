@@ -355,7 +355,8 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
       direction
     );
 
-    const newEvent = { ...event, startDate, endDate };
+    const newEvent = { ...event, startDate, endDate, isOpen: false };
+    console.log(newEvent);
     return newEvent;
   };
 

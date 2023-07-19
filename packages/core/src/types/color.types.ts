@@ -2,6 +2,8 @@ export type Colors = {
   [key in ColorNames]: string;
 };
 
+export type ColorName = keyof typeof ColorNames;
+
 export enum ColorNames {
   BLUE_1 = "blue_1",
   BLUE_2 = "blue_2",

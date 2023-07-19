@@ -1,6 +1,8 @@
 import { Priorities } from "@core/constants/core.constants";
 import { Colors, ColorNames } from "@core/types/color.types";
 
+export type ColorHex = keyof typeof colors;
+
 export const BASE_COLORS = {
   DEEP_BLUE: "#1C3142",
   ONYX_GREY: "#1D2932",

@@ -13,7 +13,9 @@ describe("Event Recurrence: Standard", () => {
 
     const result = getRecurrenceText(rule);
 
-    expect(result).toEqual("RFD");
+    expect(result).toEqual(
+      "every 5 weeks on Monday, Friday until December 31, 2012"
+    );
   });
   test.todo("supports weekly recurrence");
   test.todo("supports monthly recurrence");

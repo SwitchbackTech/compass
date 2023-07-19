@@ -43,9 +43,11 @@ export const selectCategorizedEvents = createSelector(
   (somedayEvents, dates) => {
     const start = dayjs(dates.start);
     const end = dayjs(dates.end);
+
     const sortedEvents = Object.values(somedayEvents).sort(
       (a, b) => a.order - b.order
     );
+
     const weekIds = [];
     const monthIds = [];
 
@@ -54,6 +56,11 @@ export const selectCategorizedEvents = createSelector(
       const isWeek = eventStart.isBetween(start, end, null, "[]");
       if (isWeek) {
         weekIds.push(e._id);
+        return;
+      }
+
+      // omits recurring events from month list
+      if (e?.recurrence?.length > 0) {
         return;
       }
 

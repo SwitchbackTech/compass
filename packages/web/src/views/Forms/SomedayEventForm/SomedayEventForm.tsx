@@ -13,6 +13,10 @@ import {
   StyledIconRow,
   StyledTitleField,
 } from "@web/views/Forms/EventForm/styled";
+import { colorNameByPriority } from "@core/constants/colors";
+import { getColor } from "@core/util/color.utils";
+
+import { RepeatSection } from "../EventForm/RepeatSection";
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
@@ -25,6 +29,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const dispatch = useAppDispatch();
 
   const { priority, title } = event || {};
+  const bgColor = getColor(colorNameByPriority[priority]);
 
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
@@ -97,6 +102,12 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       />
 
       <PrioritySection onSetEventField={onSetEventField} priority={priority} />
+
+      <RepeatSection
+        bgColor={bgColor}
+        recurrence={event.recurrence}
+        onSetEventField={onSetEventField}
+      />
 
       <StyledDescriptionField
         onChange={onChangeEventTextField("description")}

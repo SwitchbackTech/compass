@@ -1,19 +1,16 @@
 import styled from "styled-components";
 import { Priorities } from "@core/constants/core.constants";
 import { colorNameByPriority } from "@core/constants/colors";
-import {
-  EVENT_WIDTH_MINIMUM,
-  SIDEBAR_OPEN_WIDTH,
-} from "@web/views/Calendar/layout.constants";
+import { ColorNames, InvertedColorNames } from "@core/types/color.types";
+import { getColor, getInvertedColor } from "@core/util/color.utils";
+import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import {
   ANIMATION_TIME_3_MS,
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
-import { getColor, getInvertedColor } from "@core/util/color.utils";
 import { Button } from "@web/components/Button";
-import { ColorNames, InvertedColorNames } from "@core/types/color.types";
 
 import { StyledFormProps } from "./types";
 

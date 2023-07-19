@@ -6,7 +6,7 @@ import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
 import { Util_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarUtil";
 
-import { StyledMigrateArrow } from "./styled";
+import { StyledMigrateArrow, StyledRecurrenceText } from "./styled";
 
 interface Props {
   category: Categories_Event;
@@ -20,6 +20,7 @@ export const SomedayEventRectangle = ({
   onMigrate,
 }: Props) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
+  const canMigrate = event.recurrence?.length === 0;
 
   return (
     <>
@@ -30,28 +31,42 @@ export const SomedayEventRectangle = ({
       >
         <Text size={15}>{event.title}</Text>
 
-        <Flex>
-          <StyledMigrateArrow
-            onClick={(e) => {
-              e.stopPropagation();
-              onMigrate(event, category, "back");
-            }}
-            role="button"
-            title={`Migrate to previous ${target}`}
-          >
-            {"<"}
-          </StyledMigrateArrow>
-          <StyledMigrateArrow
-            onClick={(e) => {
-              e.stopPropagation();
-              onMigrate(event, category, "forward");
-            }}
-            role="button"
-            title={`Migrate to next ${target}`}
-          >
-            {">"}
-          </StyledMigrateArrow>
-        </Flex>
+        {canMigrate ? (
+          <Flex>
+            <StyledMigrateArrow
+              onClick={(e) => {
+                e.stopPropagation();
+                onMigrate(event, category, "back");
+              }}
+              role="button"
+              title={`Migrate to previous ${target}`}
+            >
+              {"<"}
+            </StyledMigrateArrow>
+            <StyledMigrateArrow
+              onClick={(e) => {
+                e.stopPropagation();
+                onMigrate(event, category, "forward");
+              }}
+              role="button"
+              title={`Migrate to next ${target}`}
+            >
+              {">"}
+            </StyledMigrateArrow>
+          </Flex>
+        ) : (
+          <Flex>
+            <StyledRecurrenceText
+              onClick={(e) => {
+                e.stopPropagation();
+                alert("Can't migrate recurring events (yet)");
+              }}
+              title="Can't migrate recurring events (yet)"
+            >
+              ☝️
+            </StyledRecurrenceText>
+          </Flex>
+        )}
       </Flex>
     </>
   );

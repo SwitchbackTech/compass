@@ -34,7 +34,7 @@
     "react-merge-refs": "^1.1.0",
     "react-redux": "^7.2.5",
     "react-router-dom": "^6.8.1",
-    "react-select": "^5.2.2",
+    "react-select": "^5.7.4",
     "react-textarea-autosize": "^8.3.3",
     "redux": "^4.1.1",
     "redux-saga": "^1.1.3",
