@@ -275,9 +275,14 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
         })
       );
     } else {
+      const order =
+        category === Categories_Event.SOMEDAY_WEEK
+          ? state.somedayWeekIds.length
+          : state.somedayMonthIds.length;
+
       const eventWithOrder = {
         ...event,
-        order: state.somedayWeekIds.length,
+        order,
       };
       dispatch(createEventSlice.actions.request(eventWithOrder));
     }
@@ -288,11 +293,13 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   const onSectionClick = (section: Categories_Event) => {
     if (state.isDraftingRedux) {
       dispatch(draftSlice.actions.discard());
+      console.log("discarded redux, exited");
       return;
     }
 
     if (state.isDraftingExisting) {
       state.draft && close();
+      console.log("closed existing, exited");
       return;
     }
 
