@@ -1,6 +1,6 @@
 import React, { FC, useState } from "react";
 import { ColorHex } from "@core/constants/colors";
-import { RRULE } from "@web/common/constants/web.constants";
+import { RRULE } from "@core/constants/core.constants";
 
 import { StyledRepeatContainer, StyledRepeatText } from "./styled";
 import { RepeatDialog } from "./RepeatDialog";

@@ -15,6 +15,14 @@ export const getCurrentWeekRangeDates = () => {
   };
 };
 
+export const isSameMonth = (start: string, end: string) => {
+  const _start = dayjs(start);
+  const _end = dayjs(end);
+
+  const isSameMonth = _start.format("M") === _end.format("M");
+  return isSameMonth;
+};
+
 export const minutesFromNow = (numMin: number, format: string) => {
   if (format === "ms") {
     const MS_IN_MIN = 60000;

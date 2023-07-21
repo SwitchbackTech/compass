@@ -8,6 +8,7 @@ import {
 } from "@core/constants/date.constants";
 import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
+import { RRULE } from "@core/constants/core.constants";
 import {
   Option_Time,
   Params_DateChange,
@@ -17,11 +18,7 @@ import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { Categories_Event, Direction_Migrate } from "@core/types/event.types";
 
 import { roundToNext } from ".";
-import {
-  ACCEPTED_TIMES,
-  OPTIONS_RECURRENCE,
-  RRULE,
-} from "../constants/web.constants";
+import { ACCEPTED_TIMES, OPTIONS_RECURRENCE } from "../constants/web.constants";
 import {
   Recurrence_Selection,
   Schema_SelectedDates,

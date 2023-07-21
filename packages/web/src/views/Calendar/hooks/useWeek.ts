@@ -6,6 +6,7 @@ import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { Category_View } from "@web/views/Calendar/calendarView.types";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 
 export const useWeek = (today: Dayjs) => {
   const dispatch = useAppDispatch();
@@ -35,8 +36,8 @@ export const useWeek = (today: Dayjs) => {
 
     dispatch(
       getSomedayEventsSlice.actions.request({
-        startDate: toUTCOffset(monthStart),
-        endDate: toUTCOffset(monthEnd),
+        startDate: monthStart.format(YEAR_MONTH_DAY_FORMAT),
+        endDate: monthEnd.format(YEAR_MONTH_DAY_FORMAT),
       })
     );
   }, [dispatch, end, monthEnd, monthStart, start]);

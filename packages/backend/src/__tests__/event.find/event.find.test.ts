@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-import { getReadAllFilter } from "../../event/services/event.service.helpers";
+import { getReadAllFilter } from "../../event/services/event.service.util";
 import { mockEventSetJan22 } from "../../../../core/src/__mocks__/events/events.22jan";
 import { mockEventSetSomeday1 } from "../../../../core/src/__mocks__/events/events.someday.1";
 
@@ -45,40 +45,9 @@ describe("Jan 2022: Many Formats", () => {
       start,
       end,
     });
-    const flatFilter = flatten(filter, {});
+    const flatFilter = _flatten(filter, {});
     expect(flatFilter["$lte"]).not.toEqual(new Date(start).toISOString());
     expect(flatFilter["$gte"]).not.toEqual(new Date(end).toISOString());
-  });
-  describe("Someday Events", () => {
-    it("excludes someday events by default", async () => {
-      const filter = getReadAllFilter("user1", {}); // no someday query
-      const result = await eventCollection.find(filter).toArray();
-
-      const somedayEvents = result.filter((e) => e.isSomeday === true);
-
-      expect(somedayEvents).toHaveLength(0);
-    });
-    it("returns someday events (exclusive) when someday query provided", async () => {
-      const filter = getReadAllFilter("user1", { someday: "true" });
-      const result = await eventCollection.find(filter).toArray();
-
-      const somedayEvents = result.filter((e) => e.isSomeday === true);
-      const onlyReturnsSomedayEvents = result.length === somedayEvents.length;
-      expect(onlyReturnsSomedayEvents).toBe(true);
-    });
-
-    it("filters someday events by dates", async () => {
-      const filter = getReadAllFilter("user1", {
-        someday: "true",
-        start: "2023-06-01T00:00:00-05:00",
-        end: "2023-06-30T23:59:59-05:00",
-      });
-
-      const result = await eventCollection.find(filter).toArray();
-
-      expect(result.length).toBe(1);
-      expect(result[0].title).toBe("First Sunday of New Month");
-    });
   });
 
   describe("finds events with exact same timestamps", () => {
@@ -125,7 +94,7 @@ describe("Jan 2022: Many Formats", () => {
       });
 
       const result = await eventCollection.find(filter).toArray();
-      jan1ToJan3Assertions(result);
+      _jan1ToJan3Assertions(result);
     });
   });
 
@@ -136,7 +105,7 @@ describe("Jan 2022: Many Formats", () => {
     });
 
     const result = await eventCollection.find(filter).toArray();
-    jan1ToJan3Assertions(result);
+    _jan1ToJan3Assertions(result);
   });
 
   it("finds events within week range: TZ offset", async () => {
@@ -177,31 +146,141 @@ describe("Jan 2022: Many Formats", () => {
     expect(titles.includes("Jan 1 2022 - Jan 1 2023 (times)")).toBe(true);
   });
 
-  const jan1ToJan3Assertions = (result: []) => {
-    const titles = result.map((e) => e.title);
+  describe("Someday Events", () => {
+    it("excludes someday events by default", async () => {
+      const filter = getReadAllFilter("user1", {}); // no someday query
+      const result = await eventCollection.find(filter).toArray();
 
-    expect(titles.includes("Dec 31 - Jan 1")).toBe(true);
-    expect(titles.includes("Dec 31 - Feb 2")).toBe(true);
-    expect(titles.includes("Jan 1")).toBe(true);
-    expect(titles.includes("Jan 1 - Jan 3")).toBe(true);
-    expect(titles.includes("Jan 1 - Jan 3 (times)")).toBe(true);
-    expect(titles.includes("Jan 2")).toBe(true);
-    expect(titles.includes("Jan 3")).toBe(true);
-    expect(titles.includes("Jan 3 - Feb 3")).toBe(true);
+      const somedayEvents = result.filter((e) => e.isSomeday === true);
 
-    expect(titles.includes("Jan 1 2021")).toBe(false);
-    expect(titles.includes("Jan 1 2021 (times)")).toBe(false);
-    expect(titles.includes("Dec 31")).toBe(false);
-    expect(titles.includes("Jan 4")).toBe(false);
-    expect(titles.includes("Jan 1 2023")).toBe(false);
-  };
+      expect(somedayEvents).toHaveLength(0);
+    });
+    it("only returns someday events (not timed) when someday query provided", async () => {
+      const filter = getReadAllFilter("user1", { someday: "true" });
+      const result = await eventCollection.find(filter).toArray();
+
+      const somedayEvents = result.filter((e) => e.isSomeday === true);
+      const onlyReturnsSomedayEvents = result.length === somedayEvents.length;
+      expect(onlyReturnsSomedayEvents).toBe(true);
+    });
+    it("returns someday events when providing YYYY-MM-DD: week", async () => {
+      const filter = getReadAllFilter("user1", {
+        someday: "true",
+        start: "2023-10-01",
+        end: "2023-10-07",
+      });
+
+      const result = await eventCollection.find(filter).toArray();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].title).toBe("Beginning of Month");
+    });
+    it("honors TZ offset: week", async () => {
+      const filter = getReadAllFilter("user1", {
+        someday: "true",
+        start: "2023-09-30T23:59:59-05:00",
+        end: "2023-10-08T23:59:59-05:00",
+      });
+
+      const result = await eventCollection.find(filter).toArray();
+      expect(result).toHaveLength(1);
+      expect(result[0].title).toBe("Beginning of Month");
+
+      const filterOneSecLater = getReadAllFilter("user1", {
+        someday: "true",
+        start: "2023-10-01T00:00:00-05:00",
+        end: "2023-10-08T23:59:59-05:00",
+      });
+
+      const result2 = await eventCollection.find(filterOneSecLater).toArray();
+      expect(result2).toHaveLength(0);
+    });
+    it("returns someday events when providing hour-min-sec: month", async () => {
+      const filter = getReadAllFilter("user1", {
+        someday: "true",
+        start: "2023-06-01",
+        end: "2023-06-30",
+      });
+
+      const result = await eventCollection.find(filter).toArray();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].title).toBe("First Sunday of New Month");
+    });
+
+    describe("Multi-Month Events", () => {
+      it("finds events that span 2 months: YMD", async () => {
+        const filter = getReadAllFilter("user1", {
+          someday: "true",
+          start: "2023-05-28",
+          end: "2023-06-03",
+        });
+
+        const result = await eventCollection.find(filter).toArray();
+        expect(result).toHaveLength(2);
+        expect(result[0].title).toBe("Multi-Month 1");
+        expect(result[1].title).toBe("Multi-Month 2");
+      });
+      it("finds events that span 2 months: HMS", async () => {
+        const filter = getReadAllFilter("user1", {
+          someday: "true",
+          start: "2023-05-28T00:00:00-05:00",
+          end: "2023-06-03T23:59:59-05:00",
+        });
+
+        const result = await eventCollection.find(filter).toArray();
+        expect(result).toHaveLength(1);
+        expect(result[0].title).toBe("Multi-Month 1");
+      });
+      it("finds events that span 4 months", async () => {
+        const filterYMD = getReadAllFilter("user1", {
+          someday: "true",
+          start: "2023-01-28",
+          end: "2023-03-27",
+        });
+
+        const result = await eventCollection.find(filterYMD).toArray();
+        expect(result).toHaveLength(1);
+        expect(result[0].title).toBe("Multi-Month 2");
+
+        const filterHMS = getReadAllFilter("user1", {
+          someday: "true",
+          start: "2023-01-28T00:00:00-05:00",
+          end: "2023-03-27T23:59:59-05:00",
+        });
+
+        const resultHMS = await eventCollection.find(filterHMS).toArray();
+        expect(resultHMS).toHaveLength(1);
+        expect(result[0].title).toBe("Multi-Month 2");
+      });
+    });
+  });
 });
 
+const _jan1ToJan3Assertions = (result: []) => {
+  const titles = result.map((e) => e.title);
+
+  expect(titles.includes("Dec 31 - Jan 1")).toBe(true);
+  expect(titles.includes("Dec 31 - Feb 2")).toBe(true);
+  expect(titles.includes("Jan 1")).toBe(true);
+  expect(titles.includes("Jan 1 - Jan 3")).toBe(true);
+  expect(titles.includes("Jan 1 - Jan 3 (times)")).toBe(true);
+  expect(titles.includes("Jan 2")).toBe(true);
+  expect(titles.includes("Jan 3")).toBe(true);
+  expect(titles.includes("Jan 3 - Feb 3")).toBe(true);
+
+  expect(titles.includes("Jan 1 2021")).toBe(false);
+  expect(titles.includes("Jan 1 2021 (times)")).toBe(false);
+  expect(titles.includes("Dec 31")).toBe(false);
+  expect(titles.includes("Jan 4")).toBe(false);
+  expect(titles.includes("Jan 1 2023")).toBe(false);
+};
+
 /* useful for deeply nested objects, like Mongo filters */
-const flatten = (obj: object, out: object) => {
+const _flatten = (obj: object, out: object) => {
   Object.keys(obj).forEach((key) => {
     if (typeof obj[key] == "object") {
-      out = flatten(obj[key], out); // recursively call for nesteds
+      out = _flatten(obj[key], out); // recursively call for nesteds
     } else {
       out[key] = obj[key]; // direct assign for values
     }

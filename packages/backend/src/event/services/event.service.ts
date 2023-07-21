@@ -26,50 +26,47 @@ import {
   GenericError,
 } from "@backend/common/constants/error.constants";
 
-import { getReadAllFilter } from "./event.service.helpers";
+import {
+  assembleRecurringEvents,
+  getCreateParams,
+  getReadAllFilter,
+} from "./event.service.util";
 import { reorderEvents } from "../queries/event.queries";
 
 const logger = Logger("app:event.service");
 
 class EventService {
-  async create(userId: string, event: Schema_Event) {
-    const _event = {
-      ...event,
-      _id: undefined,
-      updatedAt: new Date(),
-      user: userId,
-    };
-    const syncToGcal = !event.isSomeday;
+  create = async (userId: string, event: Schema_Event) => {
+    const { _event, isRecurring, syncToGcal } = getCreateParams(userId, event);
 
-    // must update gcal's data before Compass's (see Sync docs for explanation)
+    // must update gcal's data before Compass's
+    //  (see Sync docs for explanation)
     if (syncToGcal) {
       const gEvent = await this._createGcalEvent(userId, event);
       _event.gEventId = gEvent.id as string;
     }
 
     /* Save to Compass */
-    const response = await mongoService.db
-      .collection(Collections.EVENT)
-      .insertOne(_event);
+    let eventId: string;
 
-    if (response.acknowledged) {
-      const _id = response.insertedId.toString();
-      const eventWithId: Schema_Event = {
-        ..._event,
-        _id,
-      };
-      return eventWithId;
+    if (isRecurring) {
+      eventId = await this._createRecurringEvents(_event);
     } else {
-      throw new BaseError(
-        "Create Failed",
-        response.toString(),
-        Status.INTERNAL_SERVER,
-        true
-      );
-    }
-  }
+      const response = await mongoService.db
+        .collection(Collections.EVENT)
+        .insertOne(_event);
 
-  async createDefaultSomeday(userId: string) {
+      eventId = response.insertedId.toString();
+    }
+
+    const eventWithId: Schema_Event = {
+      ..._event,
+      _id: eventId,
+    };
+    return eventWithId;
+  };
+
+  createDefaultSomeday = async (userId: string) => {
     const { startDate, endDate } = getCurrentWeekRangeDates();
 
     const defaultSomedayEvent: Schema_Event = {
@@ -88,9 +85,9 @@ class EventService {
     };
 
     return await this.create(userId, defaultSomedayEvent);
-  }
+  };
 
-  async createMany(events: Schema_Event[]) {
+  createMany = async (events: Schema_Event[]) => {
     const parsedEvents = events.map((e) => {
       const cleanedEvent = {
         ...e,
@@ -109,21 +106,21 @@ class EventService {
         `Only ${response.insertedCount}/${events.length} saved`
       );
     }
-  }
+  };
 
   /* 
   Deletes all of a user's events 
   REMINDER: this should only delete a user's *Compass* events --
             don't ever delete their events in gcal or any other 3rd party calendar
   */
-  async deleteAllByUser(userId: string) {
+  deleteAllByUser = async (userId: string) => {
     const response = await mongoService.db
       .collection(Collections.EVENT)
       .deleteMany({ user: userId });
     return response;
-  }
+  };
 
-  async deleteById(userId: string, id: string) {
+  deleteById = async (userId: string, id: string) => {
     /* 
     Part I: Validate
     */
@@ -177,12 +174,12 @@ class EventService {
       .deleteOne(filter);
 
     return response;
-  }
+  };
 
-  async deleteMany(
+  deleteMany = async (
     userId: string,
     params: Params_DeleteMany
-  ): Promise<Result_DeleteMany> {
+  ): Promise<Result_DeleteMany> => {
     const errors = [];
     const response = await mongoService.db
       .collection(Collections.EVENT)
@@ -195,7 +192,7 @@ class EventService {
     }
     const result = { deletedCount: response.deletedCount, errors: errors };
     return result;
-  }
+  };
 
   deleteByIntegration = async (integration: "google", userId: string) => {
     if (integration !== "google") {
@@ -216,10 +213,10 @@ class EventService {
     return response;
   };
 
-  async readAll(
+  readAll = async (
     userId: string,
     query: Query_Event
-  ): Promise<Schema_Event[] | BaseError> {
+  ): Promise<Schema_Event[] | BaseError> => {
     const filter = getReadAllFilter(userId, query);
 
     if (query.someday) {
@@ -237,9 +234,9 @@ class EventService {
         .toArray()) as unknown as Schema_Event[];
       return response;
     }
-  }
+  };
 
-  async readById(userId: string, eventId: string) {
+  readById = async (userId: string, eventId: string) => {
     const filter = {
       _id: mongoService.objectId(eventId),
       user: userId,
@@ -258,7 +255,7 @@ class EventService {
     }
 
     return event;
-  }
+  };
 
   reorder = async (userId: string, order: Payload_Order[]) => {
     if (order.length <= 0) {
@@ -270,7 +267,7 @@ class EventService {
     return result;
   };
 
-  async updateById(userId: string, eventId: string, event: Schema_Event) {
+  updateById = async (userId: string, eventId: string, event: Schema_Event) => {
     /* Part I: Gcal */
     const updateGcal = !event.isSomeday;
     if (updateGcal) {
@@ -307,18 +304,18 @@ class EventService {
     const updatedEvent = response.value as unknown as Schema_Event;
 
     return updatedEvent;
-  }
+  };
 
-  async updateMany(userId: string, events: Schema_Event[]) {
+  updateMany = async (userId: string, events: Schema_Event[]) => {
     logger.error("not done implementing this operation");
     console.log(userId, events);
     return Promise.resolve(["not implemented"]);
-  }
+  };
 
   /**********
    * Helpers
    *  (that have too many dependencies
-   *  to put in event.service.helpers)
+   *  to put in event.service.util)
    *********/
 
   _createGcalEvent = async (userId: string, event: Schema_Event) => {
@@ -328,6 +325,21 @@ class EventService {
     const gEvent = await gcalService.createEvent(gcal, _gEvent);
 
     return gEvent;
+  };
+
+  _createRecurringEvents = async (event: Schema_Event) => {
+    const recurringEvents = assembleRecurringEvents(event);
+
+    const { insertedIds } = await mongoService.db
+      .collection(Collections.EVENT)
+      .insertMany(recurringEvents);
+
+    if (insertedIds[0] === undefined) {
+      throw error(GenericError.BadRequest, "Failed to create recurring events");
+    }
+
+    const eventId = insertedIds[0].toString();
+    return eventId;
   };
 }
 
