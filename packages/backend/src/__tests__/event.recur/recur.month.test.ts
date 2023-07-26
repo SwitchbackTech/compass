@@ -3,16 +3,16 @@ import {
   RRULE,
   RRULE_COUNT_MONTHS,
 } from "../../../../core/src/constants/core.constants";
-import { assembleRecurringEvents } from "../../event/services/event.service.util";
+import { assembleEventAndRecurrences } from "../../event/services/event.service.util";
 
 describe("Event Recurrence: Month", () => {
   it("uses expected # of instances", () => {
-    const rEvents = assembleRecurringEvents({
+    const rEvents = assembleEventAndRecurrences({
       startDate: "2023-08-20",
       endDate: "2023-08-26",
-      recurrence: [RRULE.MONTH],
+      recurrence: { rule: [RRULE.MONTH] },
     });
-    expect(rEvents).toHaveLength(RRULE_COUNT_MONTHS);
+    expect(rEvents).toHaveLength(RRULE_COUNT_MONTHS + 1);
   });
 
   it("maps RRULE string to object: month", () => {

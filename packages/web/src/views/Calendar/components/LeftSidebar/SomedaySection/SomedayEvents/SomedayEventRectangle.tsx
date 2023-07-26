@@ -60,9 +60,9 @@ export const SomedayEventRectangle = ({
             <StyledRecurrenceText
               onClick={(e) => {
                 e.stopPropagation();
-                alert("Can't migrate recurring events (yet)");
+                alert("Can't migrate recurring events");
               }}
-              title="Can't migrate recurring events (yet)"
+              title="Can't migrate recurring events"
             >
               ☝️
             </StyledRecurrenceText>

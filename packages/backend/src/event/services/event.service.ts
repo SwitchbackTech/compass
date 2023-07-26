@@ -27,7 +27,7 @@ import {
 } from "@backend/common/constants/error.constants";
 
 import {
-  assembleRecurringEvents,
+  assembleEventAndRecurrences,
   getCreateParams,
   getReadAllFilter,
 } from "./event.service.util";
@@ -150,8 +150,14 @@ class EventService {
       await gcalService.deleteEvent(gcal, gEventId);
     }
 
+    //++
     // check if recurrence
     // if so, delete all instances
+    // const isRecurring = _event.recurrence?.rule?.length ?? 0 > 0;
+    const isRecurring = _event.recurrence !== undefined;
+    if (isRecurring) {
+      console.log("deleting future instances ....");
+    }
 
     const response = await mongoService.db
       .collection(Collections.EVENT)
@@ -312,7 +318,7 @@ class EventService {
   };
 
   _createRecurringEvents = async (event: Schema_Event) => {
-    const recurringEvents = assembleRecurringEvents(event);
+    const recurringEvents = assembleEventAndRecurrences(event);
 
     const { insertedIds } = await mongoService.db
       .collection(Collections.EVENT)

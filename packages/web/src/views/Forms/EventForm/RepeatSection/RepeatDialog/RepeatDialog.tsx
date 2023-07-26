@@ -1,7 +1,6 @@
 import React, { FC } from "react";
 import Select from "react-select";
 import { ColorHex } from "@core/constants/colors";
-import { SetEventFormField } from "@web/views/Forms/EventForm/types";
 import { Recurrence_Selection } from "@web/common/types/web.event.types";
 import {
   getRecurrenceOption,
@@ -17,14 +16,14 @@ import {
 interface Props {
   bgColor: ColorHex;
   rrule?: string[];
-  onSetEventField: SetEventFormField;
+  onChangeRecurrence: (rule: string[]) => void;
   setIsRepeat: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const RepeatDialog: FC<Props> = ({
   bgColor,
   rrule,
-  onSetEventField,
+  onChangeRecurrence,
   setIsRepeat,
 }) => {
   const options = [
@@ -41,7 +40,7 @@ export const RepeatDialog: FC<Props> = ({
 
   const onRepeatTextClick = () => {
     if (rrule.length > 0) {
-      onSetEventField("recurrence", []);
+      onChangeRecurrence([]);
     }
 
     setIsRepeat(false);
@@ -60,7 +59,7 @@ export const RepeatDialog: FC<Props> = ({
           options={options}
           onChange={(selection) => {
             const rrule = getRecurrenceRule(selection.value);
-            onSetEventField("recurrence", rrule);
+            onChangeRecurrence(rrule);
           }}
           styles={{
             control: (baseStyles, state) => ({

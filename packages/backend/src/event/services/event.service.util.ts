@@ -2,7 +2,7 @@ import { RRule } from "rrule";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import tz from "dayjs/plugin/timezone";
-import { Filter } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { isSameMonth } from "@core/util/date.utils";
 import { Query_Event, Schema_Event } from "@core/types/event.types";
 import { RRULE } from "@core/constants/core.constants";
@@ -13,7 +13,7 @@ import { GenericError } from "@backend/common/constants/error.constants";
 dayjs.extend(tz);
 dayjs.extend(utc);
 
-export const assembleRecurringEvents = (event: Schema_Event) => {
+export const assembleEventAndRecurrences = (event: Schema_Event) => {
   if (
     !event.recurrence ||
     !event.recurrence.rule ||
@@ -140,20 +140,15 @@ const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
   if (!orig.startDate || !orig.endDate) {
     throw error(GenericError.DeveloperError, "Failed to generate events");
   }
-
-  const nextStart = _getNextSunday(orig.startDate)
-    .utc()
-    .format("YYYYMMDDThhmmss");
-
-  const _rule = `DTSTART=${nextStart}Z\n${rule}`;
-  const fullRule = RRule.fromString(_rule);
+  const fullRule = _getRule(rule, orig.startDate);
   const _dates = fullRule.all();
   //++ add when adding TZ
   // const timezone = "America/Chicago";
   // const dates = _dates.map((date) => dayjs.utc(date).tz(timezone));
   const dates = _dates;
+  const _id = new ObjectId();
 
-  const events = dates.map((date) => {
+  const instances = dates.map((date) => {
     const start = dayjs.utc(date);
     const end = start.add(6, "day");
 
@@ -162,10 +157,18 @@ const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
       _id: undefined,
       startDate: start.format(YEAR_MONTH_DAY_FORMAT),
       endDate: end.format(YEAR_MONTH_DAY_FORMAT),
+      recurrence: {
+        rule,
+        eventId: _id.toString(),
+      },
     };
 
     return event;
   });
+
+  const base = { ...orig, _id };
+  delete base.recurrence;
+  const events = [base, ...instances];
 
   return events;
 };
@@ -185,4 +188,12 @@ const _getNextSunday = (startDate: string) => {
 
   const nextSunday = date.add(daysUntilNextSunday, "day");
   return nextSunday;
+};
+
+const _getRule = (rule: RRULE, startDate: string) => {
+  const nextStart = _getNextSunday(startDate).utc().format("YYYYMMDDThhmmss");
+
+  const _rule = `DTSTART=${nextStart}Z\n${rule}`;
+  const fullRule = RRule.fromString(_rule);
+  return fullRule;
 };

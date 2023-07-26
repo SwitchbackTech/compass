@@ -31,7 +31,9 @@ export const RepeatSection: FC<Props> = ({
         <RepeatDialog
           bgColor={bgColor}
           rrule={recurrence?.rule}
-          onSetEventField={onSetEventField}
+          onChangeRecurrence={(rrule) =>
+            onSetEventField("recurrence", { ...recurrence, rule: rrule })
+          }
           setIsRepeat={setIsRepeat}
         />
       ) : (
