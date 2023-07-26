@@ -1,6 +1,7 @@
 import React, { FC, useState } from "react";
 import { ColorHex } from "@core/constants/colors";
 import { RRULE } from "@core/constants/core.constants";
+import { Schema_Event } from "@core/types/event.types";
 
 import { StyledRepeatContainer, StyledRepeatText } from "./styled";
 import { RepeatDialog } from "./RepeatDialog";
@@ -8,7 +9,7 @@ import { SetEventFormField } from "../types";
 
 interface Props {
   bgColor: ColorHex;
-  recurrence?: string[];
+  recurrence: Schema_Event["recurrence"];
   onSetEventField: SetEventFormField;
 }
 
@@ -17,11 +18,11 @@ export const RepeatSection: FC<Props> = ({
   recurrence,
   onSetEventField,
 }) => {
-  const [isRepeat, setIsRepeat] = useState(recurrence?.length > 0);
+  const [isRepeat, setIsRepeat] = useState(recurrence?.rule.length > 0);
 
   const onRepeatTextClick = () => {
     setIsRepeat(!isRepeat);
-    onSetEventField("recurrence", [RRULE.WEEK]);
+    onSetEventField("recurrence", { ...recurrence, rule: [RRULE.WEEK] });
   };
 
   return (
@@ -29,7 +30,7 @@ export const RepeatSection: FC<Props> = ({
       {isRepeat ? (
         <RepeatDialog
           bgColor={bgColor}
-          rrule={recurrence}
+          rrule={recurrence?.rule}
           onSetEventField={onSetEventField}
           setIsRepeat={setIsRepeat}
         />

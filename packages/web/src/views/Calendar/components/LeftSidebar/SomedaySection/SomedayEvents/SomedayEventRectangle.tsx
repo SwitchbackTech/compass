@@ -20,7 +20,8 @@ export const SomedayEventRectangle = ({
   onMigrate,
 }: Props) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
-  const canMigrate = event.recurrence?.length === 0;
+  const canMigrate =
+    !event.recurrence?.rule || event.recurrence?.rule.length === 0;
 
   return (
     <>

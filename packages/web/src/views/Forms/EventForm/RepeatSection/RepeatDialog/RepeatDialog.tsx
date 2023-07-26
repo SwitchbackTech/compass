@@ -79,6 +79,10 @@ export const RepeatDialog: FC<Props> = ({
               backgroundColor: bgColor,
               fontSize,
             }),
+            option: (baseStyles, state) => ({
+              ...baseStyles,
+              color: state.isDisabled ? "#505050" : "black",
+            }),
           }}
         />
       </StyledSelectContainer>

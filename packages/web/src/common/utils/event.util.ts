@@ -181,12 +181,9 @@ export const prepEvtAfterDraftDrop = (
 export const prepEvtBeforeSubmit = (draft: Schema_GridEvent) => {
   const _event = removeGridFields({ ...draft });
 
-  const recurrence = _event.recurrence || [];
-
   const event = {
     ..._event,
     origin: Origin.COMPASS,
-    recurrence,
   } as Schema_Event;
 
   return event;

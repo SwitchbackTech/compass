@@ -60,7 +60,7 @@ export const selectCategorizedEvents = createSelector(
       }
 
       // omits recurring events from month list
-      if (e?.recurrence?.length > 0) {
+      if (e?.recurrence?.rule.length > 0) {
         return;
       }
 

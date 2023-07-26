@@ -14,14 +14,18 @@ dayjs.extend(tz);
 dayjs.extend(utc);
 
 export const assembleRecurringEvents = (event: Schema_Event) => {
-  if (!event.recurrence || !event.recurrence[0]) {
+  if (
+    !event.recurrence ||
+    !event.recurrence.rule ||
+    !event.recurrence.rule[0]
+  ) {
     throw error(
       GenericError.DeveloperError,
       "Failed to assemble recurring events"
     );
   }
 
-  const recurrence = event.recurrence[0] as RRULE;
+  const recurrence = event.recurrence.rule[0] as RRULE;
   const events = _generateEvents(recurrence, event);
 
   return events;
@@ -36,7 +40,7 @@ export const getCreateParams = (userId: string, event: Schema_Event) => {
   };
 
   const syncToGcal = !event.isSomeday;
-  const isRecurring = event?.recurrence?.length ?? 0 > 0;
+  const isRecurring = event?.recurrence?.rule.length ?? 0 > 0;
 
   return { _event, isRecurring, syncToGcal };
 };

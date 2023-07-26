@@ -74,7 +74,7 @@ export const GenericError = {
     isOperational: true,
   },
   NotImplemented: {
-    description: "not implemented yet",
+    description: "Not implemented yet",
     status: Status.UNSURE,
     isOperational: true,
   },

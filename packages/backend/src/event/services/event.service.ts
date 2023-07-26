@@ -121,32 +121,18 @@ class EventService {
   };
 
   deleteById = async (userId: string, id: string) => {
-    /* 
-    Part I: Validate
-    */
     if (id === "undefined") {
-      throw new BaseError(
-        "Delete Failed",
-        "no id provided ('undefined')",
-        Status.BAD_REQUEST,
-        true
-      );
+      throw error(EventError.NoMatchingEvent, "Failed to delete event");
     }
 
     const filter = { _id: mongoService.objectId(id), user: userId };
 
-    //get event so you can see the googleId
     const event = await mongoService.db
       .collection(Collections.EVENT)
       .findOne(filter);
 
     if (!event) {
-      throw new BaseError(
-        "Delete Failed",
-        `Could not find event with id: ${id}`,
-        Status.BAD_REQUEST,
-        true
-      );
+      throw error(EventError.NoMatchingEvent, "Failed to delete event");
     }
 
     const deleteFromGcal = !event["isSomeday"];
@@ -155,20 +141,18 @@ class EventService {
 
     if (deleteFromGcal) {
       if (gEventId === undefined) {
-        throw new BaseError(
-          "Delete Failed",
-          `GoogleEvent id cannot be null`,
-          Status.BAD_REQUEST,
-          true
+        throw error(
+          EventError.NoMatchingEvent,
+          "Failed to delete Google event"
         );
       }
       const gcal = await getGcalClient(userId);
       await gcalService.deleteEvent(gcal, gEventId);
     }
 
-    /* 
-      Part II: Delete
-      */
+    // check if recurrence
+    // if so, delete all instances
+
     const response = await mongoService.db
       .collection(Collections.EVENT)
       .deleteOne(filter);
