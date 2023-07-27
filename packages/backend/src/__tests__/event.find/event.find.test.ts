@@ -15,9 +15,12 @@ describe("Jan 2022: Many Formats", () => {
       useUnifiedTopology: true,
     });
     db = await connection.db();
-    eventCollection = db.collection("event");
-    await eventCollection.insertMany(mockEventSetJan22);
-    await eventCollection.insertMany(mockEventSetSomeday1);
+    eventCollection = db.collection("event.find.test");
+
+    await eventCollection.insertMany([
+      ...mockEventSetJan22,
+      ...mockEventSetSomeday1,
+    ]);
   });
 
   afterAll(async () => {

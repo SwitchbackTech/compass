@@ -45,6 +45,43 @@ export const getCreateParams = (userId: string, event: Schema_Event) => {
   return { _event, isRecurring, syncToGcal };
 };
 
+export const getDeleteByIdFilter = (event: Schema_Event): Filter<object> => {
+  if (!event._id) {
+    throw error(
+      GenericError.BadRequest,
+      "Failed to get Delete Filter (missing id)"
+    );
+  }
+  const _id = new ObjectId(event._id);
+  const filter = { user: event.user };
+  const isRecurring = event.recurrence?.rule;
+
+  if (!isRecurring) {
+    return { ...filter, _id };
+  }
+
+  if (!event.recurrence || !event.recurrence.eventId) {
+    throw error(
+      GenericError.DeveloperError,
+      "Failed to get Delete Filter (missing recurrence id"
+    );
+  }
+
+  const baseOrFutureInstance = {
+    ...filter,
+    $or: [
+      { _id },
+      {
+        "recurrence.eventId": event.recurrence.eventId,
+        startDate: { $gt: event.startDate },
+        endDate: { $gt: event.endDate },
+      },
+    ],
+  };
+
+  return baseOrFutureInstance;
+};
+
 export const getReadAllFilter = (
   userId: string,
   query: Query_Event
@@ -158,7 +195,7 @@ const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
       startDate: start.format(YEAR_MONTH_DAY_FORMAT),
       endDate: end.format(YEAR_MONTH_DAY_FORMAT),
       recurrence: {
-        rule,
+        rule: [rule],
         eventId: _id.toString(),
       },
     };

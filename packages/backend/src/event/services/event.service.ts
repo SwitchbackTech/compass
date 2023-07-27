@@ -29,6 +29,7 @@ import {
 import {
   assembleEventAndRecurrences,
   getCreateParams,
+  getDeleteByIdFilter,
   getReadAllFilter,
 } from "./event.service.util";
 import { reorderEvents } from "../queries/event.queries";
@@ -150,19 +151,7 @@ class EventService {
       await gcalService.deleteEvent(gcal, gEventId);
     }
 
-    //++
-    // check if recurrence
-    // if so, delete all instances
-    // const isRecurring = _event.recurrence?.rule?.length ?? 0 > 0;
-    const isRecurring = _event.recurrence !== undefined;
-    if (isRecurring) {
-      console.log("deleting future instances ....");
-    }
-
-    const response = await mongoService.db
-      .collection(Collections.EVENT)
-      .deleteOne(filter);
-
+    const response = await _deleteFromCompass(_event);
     return response;
   };
 
@@ -334,3 +323,19 @@ class EventService {
 }
 
 export default new EventService();
+
+const _deleteFromCompass = async (event: Schema_Event) => {
+  const isRecurring = event.recurrence !== undefined;
+
+  if (!event.user || !event._id) {
+    throw error(GenericError.BadRequest, "Failed to delete event(s)");
+  }
+
+  const filter = getDeleteByIdFilter(event);
+
+  const response = isRecurring
+    ? await mongoService.db.collection(Collections.EVENT).deleteMany(filter)
+    : await mongoService.db.collection(Collections.EVENT).deleteOne(filter);
+
+  return response;
+};

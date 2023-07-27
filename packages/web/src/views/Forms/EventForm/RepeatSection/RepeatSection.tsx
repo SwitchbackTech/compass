@@ -9,18 +9,26 @@ import { SetEventFormField } from "../types";
 
 interface Props {
   bgColor: ColorHex;
-  recurrence: Schema_Event["recurrence"];
+  isExisting: boolean;
   onSetEventField: SetEventFormField;
+  recurrence: Schema_Event["recurrence"];
 }
 
 export const RepeatSection: FC<Props> = ({
   bgColor,
-  recurrence,
+  isExisting,
   onSetEventField,
+  recurrence,
 }) => {
   const [isRepeat, setIsRepeat] = useState(recurrence?.rule.length > 0);
 
   const onRepeatTextClick = () => {
+    if (isExisting) {
+      alert(
+        "Can't make an existing event repeat (yet)\nPlease create a new event to add repeat😇"
+      );
+      return;
+    }
     setIsRepeat(!isRepeat);
     onSetEventField("recurrence", { ...recurrence, rule: [RRULE.WEEK] });
   };

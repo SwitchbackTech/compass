@@ -105,8 +105,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
       <RepeatSection
         bgColor={bgColor}
-        recurrence={event.recurrence}
+        isExisting={event._id !== undefined}
         onSetEventField={onSetEventField}
+        recurrence={event.recurrence}
       />
 
       <StyledDescriptionField
