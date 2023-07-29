@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { FC } from "react";
 import { Dayjs } from "dayjs";
 import { ColorNames } from "@core/types/color.types";
 import { getAlphaColor, getColor } from "@core/util/color.utils";
@@ -141,7 +141,7 @@ export const Header: FC<Props> = ({
       </StyledHeaderRow>
 
       <StyledWeekDaysFlex>
-        {weekProps.component.weekDays.map((day, i) => {
+        {weekProps.component.weekDays.map((day) => {
           const isDayInCurrentWeek = today.week() === weekProps.component.week;
           const isToday =
             isDayInCurrentWeek && today.format("DD") === day.format("DD");
@@ -169,7 +169,6 @@ export const Header: FC<Props> = ({
               alignItems={AlignItems.FLEX_END}
               title={getWeekDayLabel(day)}
               color={weekDayTextColor}
-              // width={weekProps.util.getWidthByIndex(i)}
             >
               <Text lineHeight={WEEK_DAYS_HEIGHT} size={WEEK_DAYS_HEIGHT}>
                 {dayNumberToDisplay}

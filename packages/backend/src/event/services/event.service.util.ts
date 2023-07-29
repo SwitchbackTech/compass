@@ -40,7 +40,9 @@ export const getCreateParams = (userId: string, event: Schema_Event) => {
   };
 
   const syncToGcal = !event.isSomeday;
-  const isRecurring = event?.recurrence?.rule.length ?? 0 > 0;
+  const isRecurring = !event?.recurrence?.rule
+    ? false
+    : event.recurrence.rule.length > 0;
 
   return { _event, isRecurring, syncToGcal };
 };
@@ -177,6 +179,7 @@ const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
   if (!orig.startDate || !orig.endDate) {
     throw error(GenericError.DeveloperError, "Failed to generate events");
   }
+
   const fullRule = _getRule(rule, orig.startDate);
   const _dates = fullRule.all();
   //++ add when adding TZ
@@ -186,7 +189,11 @@ const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
   const _id = new ObjectId();
 
   const instances = dates.map((date) => {
-    const start = dayjs.utc(date);
+    const _start =
+      rule === RRULE.MONTH
+        ? _getPrevSunday(dayjs(date).format(YEAR_MONTH_DAY_FORMAT))
+        : date;
+    const start = dayjs.utc(_start);
     const end = start.add(6, "day");
 
     const event = {
@@ -200,6 +207,7 @@ const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
       },
     };
 
+    delete event.order;
     return event;
   });
 
@@ -208,6 +216,29 @@ const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
   const events = [base, ...instances];
 
   return events;
+};
+
+const _getNextStart = (rule: RRULE, startDate: string) => {
+  switch (rule) {
+    case RRULE.WEEK:
+      return _getNextSunday(startDate);
+      break;
+    case RRULE.MONTH:
+      return _getNextMonth(startDate);
+      break;
+    default:
+      throw error(GenericError.DeveloperError, "Failed to get next start");
+  }
+};
+
+const _getNextMonth = (startDate: string) => {
+  const date = dayjs(startDate, YEAR_MONTH_DAY_FORMAT)
+    .hour(0)
+    .minute(0)
+    .second(0);
+
+  const firstOfNextMonth = date.add(1, "month").date(1);
+  return firstOfNextMonth;
 };
 
 const _getNextSunday = (startDate: string) => {
@@ -227,8 +258,20 @@ const _getNextSunday = (startDate: string) => {
   return nextSunday;
 };
 
+const _getPrevSunday = (startDate: string) => {
+  const date = dayjs(startDate, YEAR_MONTH_DAY_FORMAT);
+
+  const dayOfWeek = date.day();
+  const diff = dayOfWeek === 0 ? 7 : dayOfWeek;
+
+  const prevSun = date.subtract(diff, "days");
+  return prevSun;
+};
+
 const _getRule = (rule: RRULE, startDate: string) => {
-  const nextStart = _getNextSunday(startDate).utc().format("YYYYMMDDThhmmss");
+  const nextStart = _getNextStart(rule, startDate)
+    .utc()
+    .format("YYYYMMDDThhmmss");
 
   const _rule = `DTSTART=${nextStart}Z\n${rule}`;
   const fullRule = RRule.fromString(_rule);

@@ -7,8 +7,6 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 
 import { Styled, getSidebarToggleIcon, StyledSidebarOverflow } from "./styled";
 import { SomedaySection } from "./SomedaySection";
-import { SidebarIconRow } from "./SidebarIconRow/SidebarIconRow";
-import { ToggleableMonthWidget } from "./ToggleableMonthWidget";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -52,16 +50,7 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         viewEnd={weekEnd}
       />
 
-      {props.prefs.isMonthWidgetOpen && (
-        <ToggleableMonthWidget
-          monthsShown={1}
-          setStartOfView={props.weekProps.state.setStartOfView}
-          isCurrentWeek={props.weekProps.component.isCurrentWeek}
-          weekStart={props.weekProps.component.startOfView}
-        />
-      )}
-
-      <SidebarIconRow prefs={prefs} />
+      {/* <SidebarIconRow prefs={prefs} /> */}
     </Styled>
   );
 };

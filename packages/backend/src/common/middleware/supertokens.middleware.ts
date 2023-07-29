@@ -1,5 +1,6 @@
 import cors from "cors";
-import supertokens from "supertokens-node";
+import SuperTokens from "supertokens-node";
+import Dashboard from "supertokens-node/recipe/dashboard";
 import Session from "supertokens-node/recipe/session";
 import {
   APP_NAME,
@@ -9,7 +10,7 @@ import {
 import { ENV } from "@backend/common/constants/env.constants";
 
 export const initSupertokens = () => {
-  supertokens.init({
+  SuperTokens.init({
     appInfo: {
       appName: APP_NAME,
       apiBasePath: "/api",
@@ -22,7 +23,7 @@ export const initSupertokens = () => {
       apiKey: ENV.SUPERTOKENS_KEY,
     },
     framework: "express",
-    recipeList: [Session.init()],
+    recipeList: [Dashboard.init(), Session.init()],
   });
 };
 
@@ -32,13 +33,12 @@ export const supertokensCors = () =>
     allowedHeaders: [
       "content-type",
       "st-auth-mode",
-      ...supertokens.getAllCORSHeaders(),
+      ...SuperTokens.getAllCORSHeaders(),
     ],
     credentials: true,
   });
 
 initSupertokens();
-// renaming for readability
 export {
   errorHandler as supertokensErrorHandler,
   middleware as supertokensMiddleware,

@@ -55,7 +55,11 @@ export const RepeatDialog: FC<Props> = ({
       <StyledSelectContainer>
         <Select
           defaultValue={defaultValue}
-          isOptionDisabled={(opt) => opt.value !== Recurrence_Selection.WEEK}
+          isOptionDisabled={(opt) =>
+            ![Recurrence_Selection.WEEK, Recurrence_Selection.MONTH].includes(
+              opt.value
+            )
+          }
           options={options}
           onChange={(selection) => {
             const rrule = getRecurrenceRule(selection.value);
