@@ -64,6 +64,13 @@ export const getDatesByCategory = (
     };
   }
 
+  if (category === Categories_Event.SOMEDAY_MONTH) {
+    return {
+      startDate: weekStart.startOf("month").format(YEAR_MONTH_DAY_FORMAT),
+      endDate: weekStart.endOf("month").format(YEAR_MONTH_DAY_FORMAT),
+    };
+  }
+
   const { startDate, endDate } = _getNextWeekInSameMonth(weekStart);
 
   return {

@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { createSelector } from "reselect";
 import {
+  RRULE,
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
@@ -59,8 +60,8 @@ export const selectCategorizedEvents = createSelector(
         return;
       }
 
-      // omits recurring events from month list
-      if (e?.recurrence?.rule.length > 0) {
+      const isFutureWeekThisMonth = e?.recurrence?.rule.includes(RRULE.WEEK);
+      if (isFutureWeekThisMonth) {
         return;
       }
 

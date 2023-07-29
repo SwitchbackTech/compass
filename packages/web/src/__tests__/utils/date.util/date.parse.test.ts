@@ -3,7 +3,7 @@ import { Categories_Event } from "@core/types/event.types";
 import { getDatesByCategory } from "@web/common/utils/web.date.util";
 
 describe("Date Categories: Month", () => {
-  it("returns future week if same month", () => {
+  it("uses first and last of month: case1", () => {
     const dates = getDatesByCategory(
       Categories_Event.SOMEDAY_MONTH,
       dayjs("2023-06-04"),
@@ -11,12 +11,12 @@ describe("Date Categories: Month", () => {
     );
 
     expect(dates).toEqual({
-      startDate: "2023-06-11",
-      endDate: "2023-06-17",
+      startDate: "2023-06-01",
+      endDate: "2023-06-30",
     });
   });
 
-  it("returns past week if next week goes into next month", () => {
+  it("returns first & last of month based on start date", () => {
     const dates = getDatesByCategory(
       Categories_Event.SOMEDAY_MONTH,
       dayjs("2023-06-25"),
@@ -24,8 +24,8 @@ describe("Date Categories: Month", () => {
     );
 
     expect(dates).toEqual({
-      startDate: "2023-06-18",
-      endDate: "2023-06-24",
+      startDate: "2023-06-01",
+      endDate: "2023-06-30",
     });
   });
 });

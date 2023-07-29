@@ -1,5 +1,9 @@
 import React, { MouseEvent } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
+import { colorNameByPriority } from "@core/constants/colors";
+import { getColor } from "@core/util/color.utils";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { DeleteIcon } from "@web/components/Icons";
 import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
@@ -13,8 +17,6 @@ import {
   StyledIconRow,
   StyledTitleField,
 } from "@web/views/Forms/EventForm/styled";
-import { colorNameByPriority } from "@core/constants/colors";
-import { getColor } from "@core/util/color.utils";
 
 import { RepeatSection } from "../EventForm/RepeatSection";
 
@@ -38,6 +40,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     };
 
   const onDelete = () => {
+    toast("Deleted ...");
     if (event._id) {
       dispatch(getSomedayEventsSlice.actions.delete({ _id: event._id }));
     }
@@ -73,6 +76,12 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     e.stopPropagation();
   };
 
+  const notify = (e) => {
+    stopPropagation(e);
+    e.preventDefault();
+    toast("Wow so easy !");
+  };
+
   return (
     <StyledEventForm
       {...props}
@@ -88,6 +97,8 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       priority={priority}
       role="form"
     >
+      {/* <button onClick={notify}>Notify !</button> */}
+
       <StyledIconRow>
         <DeleteIcon onDelete={onDelete} title="Delete Someday Event" />
       </StyledIconRow>
@@ -117,6 +128,18 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       />
 
       <SaveSection priority={priority} onSubmit={onSubmit} />
+      <ToastContainer
+        position="top-center"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </StyledEventForm>
   );
 };

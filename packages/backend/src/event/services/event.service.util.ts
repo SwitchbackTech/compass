@@ -1,5 +1,5 @@
 import { RRule } from "rrule";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import tz from "dayjs/plugin/timezone";
 import { Filter, ObjectId } from "mongodb";
@@ -65,7 +65,7 @@ export const getDeleteByIdFilter = (event: Schema_Event): Filter<object> => {
   if (!event.recurrence || !event.recurrence.eventId) {
     throw error(
       GenericError.DeveloperError,
-      "Failed to get Delete Filter (missing recurrence id"
+      "Failed to get Delete Filter (missing recurrence id)"
     );
   }
 
@@ -175,12 +175,35 @@ const _getDateFilterOptions = (start: string, end: string) => {
   return { overlapping, inBetweenStart, inBetweenEnd };
 };
 
+const _getDates = (rule: RRULE, nextInstance: Date) => {
+  let start: Dayjs = dayjs.utc(nextInstance);
+  let end: Dayjs;
+
+  if (rule === RRULE.WEEK) {
+    start = dayjs.utc(nextInstance);
+    end = start.add(6, "day");
+  } else if (rule === RRULE.MONTH) {
+    start = start.startOf("month");
+    end = start.endOf("month");
+  } else {
+    throw error(
+      GenericError.DeveloperError,
+      "Failed to get dates (rule not supported yet)"
+    );
+  }
+
+  return {
+    startDate: start.format(YEAR_MONTH_DAY_FORMAT),
+    endDate: end.format(YEAR_MONTH_DAY_FORMAT),
+  };
+};
+
 const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
   if (!orig.startDate || !orig.endDate) {
     throw error(GenericError.DeveloperError, "Failed to generate events");
   }
 
-  const fullRule = _getRule(rule, orig.startDate);
+  const fullRule = _getRule(rule, orig.startDate, orig.endDate);
   const _dates = fullRule.all();
   //++ add when adding TZ
   // const timezone = "America/Chicago";
@@ -189,18 +212,13 @@ const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
   const _id = new ObjectId();
 
   const instances = dates.map((date) => {
-    const _start =
-      rule === RRULE.MONTH
-        ? _getPrevSunday(dayjs(date).format(YEAR_MONTH_DAY_FORMAT))
-        : date;
-    const start = dayjs.utc(_start);
-    const end = start.add(6, "day");
+    const { startDate, endDate } = _getDates(rule, date);
 
     const event = {
       ...orig,
       _id: undefined,
-      startDate: start.format(YEAR_MONTH_DAY_FORMAT),
-      endDate: end.format(YEAR_MONTH_DAY_FORMAT),
+      startDate,
+      endDate,
       recurrence: {
         rule: [rule],
         eventId: _id.toString(),
@@ -211,31 +229,31 @@ const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
     return event;
   });
 
-  const base = { ...orig, _id };
-  delete base.recurrence;
+  const base = {
+    ...orig,
+    _id,
+    recurrence: { rule: [rule], eventId: _id.toString() },
+  };
   const events = [base, ...instances];
 
   return events;
 };
 
-const _getNextStart = (rule: RRULE, startDate: string) => {
+const _getNextStart = (rule: RRULE, startDate: string, endDate: string) => {
   switch (rule) {
     case RRULE.WEEK:
       return _getNextSunday(startDate);
       break;
     case RRULE.MONTH:
-      return _getNextMonth(startDate);
+      return _getNextMonth(endDate);
       break;
     default:
       throw error(GenericError.DeveloperError, "Failed to get next start");
   }
 };
 
-const _getNextMonth = (startDate: string) => {
-  const date = dayjs(startDate, YEAR_MONTH_DAY_FORMAT)
-    .hour(0)
-    .minute(0)
-    .second(0);
+const _getNextMonth = (target: string) => {
+  const date = dayjs(target, YEAR_MONTH_DAY_FORMAT).hour(0).minute(0).second(0);
 
   const firstOfNextMonth = date.add(1, "month").date(1);
   return firstOfNextMonth;
@@ -258,6 +276,7 @@ const _getNextSunday = (startDate: string) => {
   return nextSunday;
 };
 
+//++ delete if unused
 const _getPrevSunday = (startDate: string) => {
   const date = dayjs(startDate, YEAR_MONTH_DAY_FORMAT);
 
@@ -268,8 +287,8 @@ const _getPrevSunday = (startDate: string) => {
   return prevSun;
 };
 
-const _getRule = (rule: RRULE, startDate: string) => {
-  const nextStart = _getNextStart(rule, startDate)
+const _getRule = (rule: RRULE, startDate: string, endDate: string) => {
+  const nextStart = _getNextStart(rule, startDate, endDate)
     .utc()
     .format("YYYYMMDDThhmmss");
 

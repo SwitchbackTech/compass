@@ -18,7 +18,7 @@ describe("maps RRULE string to object:", () => {
   });
 });
 
-describe("omits recurrence object from base event", () => {
+describe("includes recurrence object in base event", () => {
   it("works for week events", () => {
     const events = assembleEventAndRecurrences({
       startDate: "2023-10-01",
@@ -28,7 +28,7 @@ describe("omits recurrence object from base event", () => {
       },
     });
 
-    _noRecurrenceInBase(events);
+    _includesRecurrenceInBase(events);
   });
   it("works for month events", () => {
     const events = assembleEventAndRecurrences({
@@ -38,7 +38,7 @@ describe("omits recurrence object from base event", () => {
         rule: [RRULE.MONTH],
       },
     });
-    _noRecurrenceInBase(events);
+    _includesRecurrenceInBase(events);
   });
 });
 
@@ -184,8 +184,8 @@ const _haveSharedValues = (events: Schema_Event[]) => {
   return false;
 };
 
-const _noRecurrenceInBase = (events: Schema_Event[]) => {
-  expect(events[0].recurrence).toBeUndefined();
+const _includesRecurrenceInBase = (events: Schema_Event[]) => {
+  expect(events[0].recurrence).not.toBeUndefined();
   expect(events[1].recurrence).not.toBeUndefined();
 };
 
