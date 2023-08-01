@@ -1,5 +1,5 @@
 import React, { MouseEvent } from "react";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
 import { colorNameByPriority } from "@core/constants/colors";
@@ -40,9 +40,16 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     };
 
   const onDelete = () => {
-    toast("Deleted ...");
     if (event._id) {
       dispatch(getSomedayEventsSlice.actions.delete({ _id: event._id }));
+
+      const isRecurrence = event?.recurrence?.rule?.length > 0;
+      const title = event.title || "event";
+      const recurTitle = event.title ? `"${event.title}"s` : "events";
+      const eventTitle = isRecurrence
+        ? `Deleted all future ${recurTitle}`
+        : `Deleted ${title}`;
+      toast(eventTitle);
     }
 
     _onClose();
@@ -76,12 +83,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     e.stopPropagation();
   };
 
-  const notify = (e) => {
-    stopPropagation(e);
-    e.preventDefault();
-    toast("Wow so easy !");
-  };
-
   return (
     <StyledEventForm
       {...props}
@@ -97,8 +98,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       priority={priority}
       role="form"
     >
-      {/* <button onClick={notify}>Notify !</button> */}
-
       <StyledIconRow>
         <DeleteIcon onDelete={onDelete} title="Delete Someday Event" />
       </StyledIconRow>
@@ -116,7 +115,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
       <RepeatSection
         bgColor={bgColor}
-        isExisting={event._id !== undefined}
         onSetEventField={onSetEventField}
         recurrence={event.recurrence}
       />
@@ -128,18 +126,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       />
 
       <SaveSection priority={priority} onSubmit={onSubmit} />
-      <ToastContainer
-        position="top-center"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
     </StyledEventForm>
   );
 };

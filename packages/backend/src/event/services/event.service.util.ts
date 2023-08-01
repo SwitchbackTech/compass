@@ -276,17 +276,6 @@ const _getNextSunday = (startDate: string) => {
   return nextSunday;
 };
 
-//++ delete if unused
-const _getPrevSunday = (startDate: string) => {
-  const date = dayjs(startDate, YEAR_MONTH_DAY_FORMAT);
-
-  const dayOfWeek = date.day();
-  const diff = dayOfWeek === 0 ? 7 : dayOfWeek;
-
-  const prevSun = date.subtract(diff, "days");
-  return prevSun;
-};
-
 const _getRule = (rule: RRULE, startDate: string, endDate: string) => {
   const nextStart = _getNextStart(rule, startDate, endDate)
     .utc()

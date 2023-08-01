@@ -225,7 +225,6 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
       };
     } else {
       console.log("REMINDER: update for monthly"); //++
-
       const defaultSomeday = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
       _draft = { ...defaultSomeday, isOpen: false };
     }
@@ -268,6 +267,8 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
 
     const isExisting = event._id;
     if (isExisting) {
+      console.log(state.draft);
+      console.log(state.somedayEvents);
       dispatch(
         editEventSlice.actions.request({
           _id: event._id,
@@ -293,13 +294,11 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   const onSectionClick = (section: Categories_Event) => {
     if (state.isDraftingRedux) {
       dispatch(draftSlice.actions.discard());
-      console.log("discarded redux, exited");
       return;
     }
 
     if (state.isDraftingExisting) {
       state.draft && close();
-      console.log("closed existing, exited");
       return;
     }
 
@@ -363,7 +362,6 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
     );
 
     const newEvent = { ...event, startDate, endDate, isOpen: false };
-    console.log(newEvent);
     return newEvent;
   };
 

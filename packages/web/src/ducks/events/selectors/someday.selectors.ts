@@ -56,8 +56,11 @@ export const selectCategorizedEvents = createSelector(
       const eventStart = dayjs(e.startDate);
       const isWeek = eventStart.isBetween(start, end, null, "[]");
       if (isWeek) {
-        weekIds.push(e._id);
-        return;
+        const isMonthRepeat = e?.recurrence?.rule.includes(RRULE.MONTH);
+        if (!isMonthRepeat) {
+          weekIds.push(e._id);
+          return;
+        }
       }
 
       const isFutureWeekThisMonth = e?.recurrence?.rule.includes(RRULE.WEEK);
@@ -65,13 +68,11 @@ export const selectCategorizedEvents = createSelector(
         return;
       }
 
-      const monthStartDate = start.startOf("month");
-      const monthEndDate = start.endOf("month");
-      const isMonthButNotWeek =
-        !isWeek &&
-        eventStart.isBetween(monthStartDate, monthEndDate, null, "[]");
+      const monthStart = start.startOf("month");
+      const monthEnd = start.endOf("month");
+      const isMonth = eventStart.isBetween(monthStart, monthEnd, null, "[]");
 
-      if (isMonthButNotWeek) {
+      if (isMonth) {
         monthIds.push(e._id);
       }
     });
