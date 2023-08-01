@@ -25,7 +25,7 @@ export const assembleEventAndRecurrences = (event: Schema_Event) => {
     );
   }
 
-  const recurrence = event.recurrence.rule[0] as RRULE;
+  const recurrence = event.recurrence.rule[0];
   const events = _generateEvents(recurrence, event);
 
   return events;
@@ -175,7 +175,7 @@ const _getDateFilterOptions = (start: string, end: string) => {
   return { overlapping, inBetweenStart, inBetweenEnd };
 };
 
-const _getDates = (rule: RRULE, nextInstance: Date) => {
+const _getDates = (rule: string, nextInstance: Date) => {
   let start: Dayjs = dayjs.utc(nextInstance);
   let end: Dayjs;
 
@@ -198,7 +198,7 @@ const _getDates = (rule: RRULE, nextInstance: Date) => {
   };
 };
 
-const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
+const _generateEvents = (rule: string, orig: Schema_Event) => {
   if (!orig.startDate || !orig.endDate) {
     throw error(GenericError.DeveloperError, "Failed to generate events");
   }
@@ -239,7 +239,7 @@ const _generateEvents = (rule: RRULE, orig: Schema_Event) => {
   return events;
 };
 
-const _getNextStart = (rule: RRULE, startDate: string, endDate: string) => {
+const _getNextStart = (rule: string, startDate: string, endDate: string) => {
   switch (rule) {
     case RRULE.WEEK:
       return _getNextSunday(startDate);
@@ -276,7 +276,7 @@ const _getNextSunday = (startDate: string) => {
   return nextSunday;
 };
 
-const _getRule = (rule: RRULE, startDate: string, endDate: string) => {
+const _getRule = (rule: string, startDate: string, endDate: string) => {
   const nextStart = _getNextStart(rule, startDate, endDate)
     .utc()
     .format("YYYYMMDDThhmmss");

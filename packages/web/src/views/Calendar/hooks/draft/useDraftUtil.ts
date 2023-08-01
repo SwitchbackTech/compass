@@ -27,7 +27,7 @@ import {
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import {
   selectIsAtWeeklyLimit,
-  selectSomedayEventsCount,
+  selectSomedayWeekCount,
 } from "@web/ducks/events/selectors/someday.selectors";
 
 import { DateCalcs } from "../grid/useDateCalcs";
@@ -55,7 +55,7 @@ export const useDraftUtil = (
     eventType: reduxDraftType,
     isDrafting,
   } = useAppSelector(selectDraftStatus);
-  const somedayEventsCount = useAppSelector(selectSomedayEventsCount);
+  const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
 
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
 
@@ -162,7 +162,7 @@ export const useDraftUtil = (
       endDate: end,
     };
     const _event = removeGridFields(_draft);
-    const event = { ..._event, order: somedayEventsCount };
+    const event = { ..._event, order: somedayWeekCount };
 
     dispatch(getWeekEventsSlice.actions.convert({ event }));
 

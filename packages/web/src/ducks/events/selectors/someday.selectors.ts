@@ -35,10 +35,6 @@ export const selectSomedayEvents = createSelector(
   }
 );
 
-export const selectSomedayEventsCount = (state: RootState): number => {
-  return state.events.getSomedayEvents.value?.data?.length || 0;
-};
-
 export const selectCategorizedEvents = createSelector(
   [selectSomedayEvents, selectDatesInView],
   (somedayEvents, dates) => {
@@ -105,4 +101,9 @@ export const selectIsAtMonthlyLimit = createSelector(
   selectCategorizedEvents,
   (somedayEvents) =>
     somedayEvents.columns[COLUMN_MONTH].eventIds.length >= SOMEDAY_MONTHLY_LIMIT
+);
+
+export const selectSomedayWeekCount = createSelector(
+  selectCategorizedEvents,
+  (somedayEvents) => somedayEvents.columns[COLUMN_WEEK].eventIds.length
 );

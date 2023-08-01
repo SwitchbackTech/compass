@@ -47,6 +47,7 @@ function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
     )) as Response_GetEventsSaga;
     const updatedEvent = { ...currEvent, ...updatedFields };
     delete updatedEvent.order;
+    //++ delete recurrence
 
     const res = yield call(EventApi.edit, _id, updatedEvent);
     const event = res.data as Schema_Event;
