@@ -357,15 +357,17 @@ const _updateEvent = async (
   event: Schema_Event,
   eventId: string
 ) => {
+  const _event = { ...event };
+
   if ("_id" in event) {
-    delete event._id; // mongo doesn't allow changing this field directly
+    delete _event._id; // mongo doesn't allow changing this field directly
   }
 
   const response = await mongoService.db
     .collection(Collections.EVENT)
     .findOneAndReplace(
       { _id: mongoService.objectId(eventId), user: userId },
-      event,
+      _event,
       { returnDocument: "after" }
     );
 

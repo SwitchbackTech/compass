@@ -247,7 +247,7 @@ export const EventForm: React.FC<FormProps> = ({
       role="form"
     >
       <StyledIconRow>
-        {/* //++ {!isDraft && (
+        {!isDraft && (
           <StyledMigrateArrowInForm
             onClick={(e) => {
               e.stopPropagation();
@@ -258,7 +258,7 @@ export const EventForm: React.FC<FormProps> = ({
           >
             {"<"}
           </StyledMigrateArrowInForm>
-        )} */}
+        )}
         <DeleteIcon onDelete={onDeleteForm} title="Delete Event" />
       </StyledIconRow>
 
