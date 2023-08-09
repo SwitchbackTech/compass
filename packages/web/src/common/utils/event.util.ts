@@ -178,6 +178,16 @@ export const prepEvtAfterDraftDrop = (
   return event;
 };
 
+export const prepEvtBeforeConvertToSomeday = (draft: Schema_GridEvent) => {
+  const event = removeGridFields(draft);
+
+  if (event.recurrence) {
+    delete event.recurrence;
+  }
+
+  return event;
+};
+
 export const prepEvtBeforeSubmit = (draft: Schema_GridEvent) => {
   const _event = removeGridFields({ ...draft });
 

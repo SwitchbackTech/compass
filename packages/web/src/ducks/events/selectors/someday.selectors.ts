@@ -52,14 +52,14 @@ export const selectCategorizedEvents = createSelector(
       const eventStart = dayjs(e.startDate);
       const isWeek = eventStart.isBetween(start, end, null, "[]");
       if (isWeek) {
-        const isMonthRepeat = e?.recurrence?.rule.includes(RRULE.MONTH);
+        const isMonthRepeat = e?.recurrence?.rule?.includes(RRULE.MONTH);
         if (!isMonthRepeat) {
           weekIds.push(e._id);
           return;
         }
       }
 
-      const isFutureWeekThisMonth = e?.recurrence?.rule.includes(RRULE.WEEK);
+      const isFutureWeekThisMonth = e?.recurrence?.rule?.includes(RRULE.WEEK);
       if (isFutureWeekThisMonth) {
         return;
       }

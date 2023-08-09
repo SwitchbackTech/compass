@@ -124,6 +124,8 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
       endDate: dates.endDate,
     };
 
+    //++ delete recurrence fields
+
     dispatch(
       getSomedayEventsSlice.actions.convert({
         _id,
@@ -267,12 +269,17 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
 
     const isExisting = event._id;
     if (isExisting) {
-      console.log(state.draft);
-      console.log(state.somedayEvents);
+      const isRecurring = event.recurrence?.rule;
+      const wasRecurring = event.recurrence?.rule === null;
+      wasRecurring && console.log("ha, was recurring!!");
+
+      // const finalEvent = wasRecurring ? {...event} //++
+
       dispatch(
         editEventSlice.actions.request({
           _id: event._id,
           event,
+          applyTo: isRecurring || wasRecurring ? "all" : null,
         })
       );
     } else {

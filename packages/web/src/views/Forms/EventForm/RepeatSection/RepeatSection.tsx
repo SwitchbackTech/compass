@@ -18,11 +18,17 @@ export const RepeatSection: FC<Props> = ({
   onSetEventField,
   recurrence,
 }) => {
-  const [isRepeat, setIsRepeat] = useState(recurrence?.rule.length > 0);
+  const [isRepeat, setIsRepeat] = useState(recurrence?.rule?.length > 0);
 
-  const onRepeatTextClick = () => {
-    setIsRepeat(!isRepeat);
-    onSetEventField("recurrence", { ...recurrence, rule: [RRULE.WEEK] });
+  const toggleRecurrence = () => {
+    if (isRepeat) {
+      console.log("setting to null ...");
+      onSetEventField("recurrence", null);
+      setIsRepeat(false);
+    } else {
+      onSetEventField("recurrence", { ...recurrence, rule: [RRULE.WEEK] });
+      setIsRepeat(true);
+    }
   };
 
   return (
@@ -30,16 +36,21 @@ export const RepeatSection: FC<Props> = ({
       {isRepeat ? (
         <RepeatDialog
           bgColor={bgColor}
-          rrule={recurrence?.rule}
-          onChangeRecurrence={(rrule) =>
-            onSetEventField("recurrence", { ...recurrence, rule: rrule })
-          }
+          onChangeRecurrence={(rule) => {
+            if (rule === null) {
+              // onSetEventField("recurrence", null);
+              onSetEventField("recurrence", { ...recurrence, rule: null });
+            } else {
+              onSetEventField("recurrence", { ...recurrence, rule });
+            }
+          }}
+          recurrence={recurrence}
           setIsRepeat={setIsRepeat}
         />
       ) : (
         <StyledRepeatText
-          hasRepeat={isRepeat}
-          onClick={onRepeatTextClick}
+          hasRepeat={false}
+          onClick={toggleRecurrence}
           tabIndex={0}
         >
           Does not repeat

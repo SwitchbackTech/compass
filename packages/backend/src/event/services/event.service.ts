@@ -13,9 +13,9 @@ import {
   Params_DeleteMany,
   Result_DeleteMany,
   Payload_Order,
+  Query_Event_Update,
 } from "@core/types/event.types";
 import { getCurrentWeekRangeDates } from "@core/util/date.utils";
-import { Logger } from "@core/logger/winston.logger";
 import { Collections } from "@backend/common/constants/collections";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import gcalService from "@backend/common/services/gcal/gcal.service";
@@ -32,15 +32,18 @@ import {
   getDeleteByIdFilter,
   getReadAllFilter,
 } from "./event.service.util";
-import { reorderEvents } from "../queries/event.queries";
-
-const logger = Logger("app:event.service");
+import {
+  deleteRecurringEvents,
+  reorderEvents,
+  updateEvent,
+  updateFutureInstances,
+} from "../queries/event.queries";
 
 class EventService {
   create = async (userId: string, event: Schema_Event) => {
     const { _event, isRecurring, syncToGcal } = getCreateParams(userId, event);
 
-    // must update gcal's data before Compass's
+    //  must update gcal's data before Compass's
     //  (see Sync docs for explanation)
     if (syncToGcal) {
       const gEvent = await _createGcalEvent(userId, event);
@@ -246,7 +249,12 @@ class EventService {
     return result;
   };
 
-  updateById = async (userId: string, eventId: string, event: Schema_Event) => {
+  updateById = async (
+    userId: string,
+    eventId: string,
+    event: Schema_Event,
+    query: Query_Event_Update
+  ) => {
     const shouldUpdateGcal = !event.isSomeday;
     const _baseEvent = shouldUpdateGcal
       ? await _updateGcal(userId, event)
@@ -254,28 +262,37 @@ class EventService {
 
     const _event = { ..._baseEvent, updatedAt: new Date() };
 
-    const wasRecurring =
-      _event.recurrence?.eventId && event?.recurrence?.rule?.length === 0;
-    const isRecurring = _event.recurrence !== undefined;
-    if (wasRecurring) {
-      await _deleteRecurringEvents(
-        userId,
-        _event.recurrence?.eventId as string
-      );
-      await this.create(userId, _event);
-    } else if (isRecurring) {
-      await _updateRecurringEvents(userId, _event);
+    //++ refactor out conditionals
+    if (query?.applyTo === "future") {
+      await updateEvent(userId, _event, eventId);
+      await updateFutureInstances(userId, _event);
+    } else if (query?.applyTo === "all") {
+      const hasInstances = event?.recurrence?.eventId !== undefined;
+      if (hasInstances) {
+        await deleteRecurringEvents(
+          userId,
+          event.recurrence?.eventId as string
+        );
+
+        const shouldRemoveRecur =
+          event.recurrence?.eventId && event.recurrence.rule === null;
+        if (shouldRemoveRecur) {
+          const eventWithoutRecur = { ...event };
+          delete eventWithoutRecur.recurrence;
+          const newBaseEvent = await this.create(userId, eventWithoutRecur);
+          return newBaseEvent;
+        }
+      } else {
+        await this.deleteById(userId, eventId);
+      }
+
+      const newBaseEvent = await this.create(userId, _event);
+      return newBaseEvent;
     } else {
-      await _updateEvent(userId, _event, eventId);
+      await updateEvent(userId, _event, eventId);
     }
 
     return _event;
-  };
-
-  updateMany = async (userId: string, events: Schema_Event[]) => {
-    logger.error("not implemented operation");
-    console.log(userId, events);
-    return Promise.resolve(["not implemented"]);
   };
 }
 
@@ -327,16 +344,6 @@ const _deleteFromCompass = async (event: Schema_Event) => {
   return response;
 };
 
-const _deleteRecurringEvents = async (userId: string, baseId: string) => {
-  await mongoService.db.collection(Collections.EVENT).deleteMany({
-    user: userId,
-    $or: [
-      { _id: mongoService.objectId(baseId) },
-      { "recurrence.eventId": baseId },
-    ],
-  });
-};
-
 const _updateGcal = async (userId: string, event: Schema_Event) => {
   const wasSomedayEvent = event.gEventId === undefined;
 
@@ -352,37 +359,13 @@ const _updateGcal = async (userId: string, event: Schema_Event) => {
   return event;
 };
 
-const _updateEvent = async (
-  userId: string,
-  event: Schema_Event,
-  eventId: string
-) => {
-  const _event = { ...event };
-
-  if ("_id" in event) {
-    delete _event._id; // mongo doesn't allow changing this field directly
-  }
-
-  const response = await mongoService.db
-    .collection(Collections.EVENT)
-    .findOneAndReplace(
-      { _id: mongoService.objectId(eventId), user: userId },
-      _event,
-      { returnDocument: "after" }
-    );
-
-  if (response.value === null || !response.ok) {
-    throw error(EventError.NoMatchingEvent, "Prompt Redux refresh");
-  }
-  return response;
-};
-
+//++
 const _updateRecurringEvents = async (userId: string, event: Schema_Event) => {
   const baseId = event.recurrence?.eventId;
   const hasInstances = baseId !== undefined;
 
   if (hasInstances) {
-    await _deleteRecurringEvents(userId, baseId);
+    await deleteRecurringEvents(userId, baseId);
   } else {
     await mongoService.db.collection(Collections.EVENT).deleteOne({
       user: userId,

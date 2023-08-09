@@ -96,19 +96,12 @@ class EventController {
       const event = req.body;
       const eventId = req.params["id"] as string;
 
-      const response = await eventService.updateById(userId, eventId, event);
-      res.promise(response);
-    } catch (e) {
-      res.promise(Promise.reject(e));
-    }
-  };
-
-  updateMany = async (req: SReqBody<Schema_Event[]>, res: Res_Promise) => {
-    try {
-      const userId = req.session?.getUserId() as string;
-      const events = req.body;
-      const response = await eventService.updateMany(userId, events);
-
+      const response = await eventService.updateById(
+        userId,
+        eventId,
+        event,
+        req.query
+      );
       res.promise(response);
     } catch (e) {
       res.promise(Promise.reject(e));

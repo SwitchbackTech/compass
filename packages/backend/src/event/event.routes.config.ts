@@ -31,15 +31,10 @@ export class EventRoutes extends CommonRoutesConfig {
       //@ts-ignore
       .put(eventController.reorder);
 
-    this.app
-      .route(`/api/event/updateMany`)
-      .all(verifySession())
-      //@ts-ignore
-      .post(eventController.updateMany);
+    // this.app.route(`/api/event/updateMany`).all(verifySession());
+    //@ts-ignore
+    // .post(eventController.updateMany);
 
-    /*
-    careful: this one's dangerous
-    */
     this.app
       .route(`/api/event/delete-all/:userId`)
       .all([verifySession(), authMiddleware.verifyIsDev])

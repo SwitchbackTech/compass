@@ -1,4 +1,4 @@
-import React, { MouseEvent } from "react";
+import React, { MouseEvent, useRef } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
@@ -33,6 +33,29 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const { priority, title } = event || {};
   const bgColor = getColor(colorNameByPriority[priority]);
 
+  const origRecurrence = useRef(event?.recurrence).current;
+  // console.log("orig recurrence:", origRecurrence); //++
+
+  const _onSubmit = () => {
+    const hasInstances = origRecurrence?.eventId !== undefined;
+    const removedRecurrence =
+      hasInstances && event.recurrence?.rule?.length === 0;
+
+    if (removedRecurrence) {
+      // const cleanedEvent = { ...event };
+      // delete cleanedEvent.recurrence;
+      // console.log("using", cleanedEvent);
+      console.log("trying to remove recurrence from state ...");
+      // onSetEventField("recurrence", null);
+      onSetEventField("recurrence", { ...event.recurrence, rule: null });
+    }
+    if (event?.recurrence !== origRecurrence) {
+      console.log("recurrence changed");
+    }
+
+    onSubmit(event);
+  };
+
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -64,7 +87,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       }
       case Key.Enter: {
         if (e.metaKey) {
-          onSubmit(event);
+          _onSubmit();
           return;
         }
         break;
@@ -76,6 +99,13 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
   const onSetEventField: SetEventFormField = (field, value) => {
     const newEvent = { ...event, [field]: value };
+
+    if (value === null) {
+      console.log("deleting field cuz null:", field, value);
+      delete newEvent[field];
+      console.log("newEvent after deleting field", newEvent);
+    }
+
     setEvent(newEvent);
   };
 
@@ -125,7 +155,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         value={event.description || ""}
       />
 
-      <SaveSection priority={priority} onSubmit={onSubmit} />
+      <SaveSection priority={priority} onSubmit={_onSubmit} />
     </StyledEventForm>
   );
 };

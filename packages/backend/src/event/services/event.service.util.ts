@@ -205,9 +205,6 @@ const _generateEvents = (rule: string, orig: Schema_Event) => {
 
   const fullRule = _getRule(rule, orig.startDate, orig.endDate);
   const _dates = fullRule.all();
-  //++ add when adding TZ
-  // const timezone = "America/Chicago";
-  // const dates = _dates.map((date) => dayjs.utc(date).tz(timezone));
   const dates = _dates;
   const _id = new ObjectId();
 

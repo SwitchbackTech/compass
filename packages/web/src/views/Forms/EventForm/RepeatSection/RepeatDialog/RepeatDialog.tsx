@@ -6,6 +6,7 @@ import {
   getRecurrenceOption,
   getRecurrenceRule,
 } from "@web/common/utils/web.date.util";
+import { Schema_Event } from "@core/types/event.types";
 
 import {
   StyledRepeatRow,
@@ -15,14 +16,14 @@ import {
 
 interface Props {
   bgColor: ColorHex;
-  rrule?: string[];
-  onChangeRecurrence: (rule: string[]) => void;
+  recurrence: Schema_Event["recurrence"];
+  onChangeRecurrence: (rule: string[] | null) => void;
   setIsRepeat: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const RepeatDialog: FC<Props> = ({
   bgColor,
-  rrule,
+  recurrence,
   onChangeRecurrence,
   setIsRepeat,
 }) => {
@@ -34,14 +35,24 @@ export const RepeatDialog: FC<Props> = ({
   ];
 
   const defaultValue =
-    rrule?.length > 0 ? getRecurrenceOption(rrule[0]) : options[0];
+    recurrence?.rule?.length > 0
+      ? getRecurrenceOption(recurrence.rule[0])
+      : options[0];
 
   const fontSize = "13px";
 
   const onRepeatTextClick = () => {
-    if (rrule.length > 0) {
-      onChangeRecurrence([]);
-    }
+    onChangeRecurrence(null);
+    //++
+    // const hasInstances =
+    //   recurrence?.rule?.length === 0 && recurrence?.eventId !== null;
+    // if (hasInstances) {
+    //   console.log("setting to null");
+    //   onChangeRecurrence(null);
+    // } else {
+    //   console.log("setting to []");
+    //   onChangeRecurrence([]);
+    // }
 
     setIsRepeat(false);
   };
@@ -49,7 +60,7 @@ export const RepeatDialog: FC<Props> = ({
   return (
     <StyledRepeatRow>
       <StyledRepeatText hasRepeat={true} onClick={onRepeatTextClick}>
-        Repeats every
+        🔁 Repeats every
       </StyledRepeatText>
 
       <StyledSelectContainer>
