@@ -271,9 +271,6 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
     if (isExisting) {
       const isRecurring = event.recurrence?.rule;
       const wasRecurring = event.recurrence?.rule === null;
-      wasRecurring && console.log("ha, was recurring!!");
-
-      // const finalEvent = wasRecurring ? {...event} //++
 
       dispatch(
         editEventSlice.actions.request({

@@ -11,15 +11,13 @@ import {
 
 type Ids_Event = "_id" | "gEventId";
 
-export const deleteRecurringEvents = async (userId: string, baseId: string) => {
+export const deleteInstances = async (userId: string, baseId: string) => {
   const response = await mongoService.db
     .collection(Collections.EVENT)
     .deleteMany({
       user: userId,
-      $or: [
-        { _id: mongoService.objectId(baseId) },
-        { "recurrence.eventId": baseId },
-      ],
+      _id: { $ne: mongoService.objectId(baseId) },
+      "recurrence.eventId": baseId,
     });
 
   return response;
@@ -52,8 +50,8 @@ export const reorderEvents = async (userId: string, order: Payload_Order[]) => {
 
 export const updateEvent = async (
   userId: string,
-  event: Schema_Event,
-  eventId: string
+  eventId: string,
+  event: Schema_Event
 ) => {
   const _event = { ...event };
 
@@ -72,7 +70,7 @@ export const updateEvent = async (
   if (response.value === null || !response.ok) {
     throw error(EventError.NoMatchingEvent, "Prompt Redux refresh");
   }
-  return response;
+  return response.value;
 };
 
 export const updateFutureInstances = async (

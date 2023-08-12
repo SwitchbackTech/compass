@@ -4,7 +4,11 @@ import utc from "dayjs/plugin/utc";
 import tz from "dayjs/plugin/timezone";
 import { Filter, ObjectId } from "mongodb";
 import { isSameMonth } from "@core/util/date.utils";
-import { Query_Event, Schema_Event } from "@core/types/event.types";
+import {
+  Query_Event,
+  Query_Event_Update,
+  Schema_Event,
+} from "@core/types/event.types";
 import { RRULE } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
@@ -13,7 +17,7 @@ import { GenericError } from "@backend/common/constants/error.constants";
 dayjs.extend(tz);
 dayjs.extend(utc);
 
-export const assembleEventAndRecurrences = (event: Schema_Event) => {
+export const assembleInstances = (event: Schema_Event, baseId?: string) => {
   if (
     !event.recurrence ||
     !event.recurrence.rule ||
@@ -25,8 +29,8 @@ export const assembleEventAndRecurrences = (event: Schema_Event) => {
     );
   }
 
-  const recurrence = event.recurrence.rule[0];
-  const events = _generateEvents(recurrence, event);
+  const rule = event.recurrence.rule[0];
+  const events = _generateInstances(rule, event, baseId);
 
   return events;
 };
@@ -110,6 +114,36 @@ export const getReadAllFilter = (
   }
 
   return filter;
+};
+
+export const getUpdateAction = (
+  event: Schema_Event,
+  query: Query_Event_Update
+) => {
+  const hasInstances = event?.recurrence?.eventId !== undefined;
+  const hasRule = event?.recurrence?.rule && event.recurrence.rule.length > 0;
+
+  if (query?.applyTo === "future") {
+    if (hasInstances) {
+      return "UPDATE_ALL";
+    }
+  }
+
+  if (query?.applyTo === "all") {
+    if (!hasInstances) {
+      if (hasRule) {
+        return "CREATE_INSTANCES";
+      }
+      return "DELETE_INSTANCES_ALL";
+    } else {
+      if (event?.recurrence?.rule === null) {
+        return "DELETE_INSTANCES_ALL";
+      }
+      return "UPDATE_ALL";
+    }
+  }
+
+  return "UPDATE";
 };
 
 const _getDateFilters = (isSomeday: boolean, start: string, end: string) => {
@@ -198,15 +232,20 @@ const _getDates = (rule: string, nextInstance: Date) => {
   };
 };
 
-const _generateEvents = (rule: string, orig: Schema_Event) => {
+const _generateInstances = (
+  rule: string,
+  orig: Schema_Event,
+  baseId?: string
+) => {
   if (!orig.startDate || !orig.endDate) {
     throw error(GenericError.DeveloperError, "Failed to generate events");
   }
 
+  const _id = baseId ? baseId : new ObjectId().toString();
+
   const fullRule = _getRule(rule, orig.startDate, orig.endDate);
   const _dates = fullRule.all();
   const dates = _dates;
-  const _id = new ObjectId();
 
   const instances = dates.map((date) => {
     const { startDate, endDate } = _getDates(rule, date);
@@ -218,7 +257,7 @@ const _generateEvents = (rule: string, orig: Schema_Event) => {
       endDate,
       recurrence: {
         rule: [rule],
-        eventId: _id.toString(),
+        eventId: _id,
       },
     };
 
@@ -228,10 +267,11 @@ const _generateEvents = (rule: string, orig: Schema_Event) => {
 
   const base = {
     ...orig,
-    _id,
-    recurrence: { rule: [rule], eventId: _id.toString() },
+    _id: new ObjectId(_id),
+    recurrence: { rule: [rule], eventId: _id },
   };
-  const events = [base, ...instances];
+  const includeBase = baseId === undefined;
+  const events = includeBase ? [base, ...instances] : [...instances];
 
   return events;
 };

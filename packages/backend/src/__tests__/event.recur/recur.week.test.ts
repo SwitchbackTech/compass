@@ -1,10 +1,10 @@
 import dayjs from "dayjs";
 import { RRULE } from "../../../../core/src/constants/core.constants";
-import { assembleEventAndRecurrences } from "../../event/services/event.service.util";
+import { assembleInstances } from "../../event/services/event.service.util";
 
 describe("Weekly Recurrence: Basics", () => {
   it("uses sunday & saturday as start/end dates", () => {
-    const rEvents = assembleEventAndRecurrences({
+    const rEvents = assembleInstances({
       startDate: "2023-07-21",
       endDate: "2023-07-22",
       recurrence: {
@@ -25,7 +25,7 @@ describe("Weekly Recurrence: Basics", () => {
 
 describe("Weekly Recurrence: Cases", () => {
   it("uses correct dates: case 1", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-01-08",
       endDate: "2023-01-14",
       recurrence: { rule: [RRULE.WEEK] },

@@ -123,6 +123,7 @@ function* createEvent({ payload }: Action_CreateEvent) {
       res.data,
       normalizedEventsSchema()
     );
+    console.log(normalizedEvent);
 
     if (payload.isSomeday) {
       yield put(getSomedayEventsSlice.actions.insert(res.data._id));
@@ -170,7 +171,7 @@ export function* editEvent({ payload }: Action_EditEvent) {
     yield call(EventApi.edit, payload._id, payload.event, {
       applyTo: payload.applyTo,
     });
-    //m: need to use latest eventId (with no recur)
+    //++ m: need to use latest eventId (with no recur)
     yield put(editEventSlice.actions.success());
   } catch (error) {
     yield put(editEventSlice.actions.error());

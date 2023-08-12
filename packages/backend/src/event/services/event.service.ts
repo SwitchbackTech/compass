@@ -27,16 +27,16 @@ import {
 } from "@backend/common/constants/error.constants";
 
 import {
-  assembleEventAndRecurrences,
+  assembleInstances,
   getCreateParams,
   getDeleteByIdFilter,
   getReadAllFilter,
+  getUpdateAction,
 } from "./event.service.util";
 import {
-  deleteRecurringEvents,
+  deleteInstances,
   reorderEvents,
   updateEvent,
-  updateFutureInstances,
 } from "../queries/event.queries";
 
 class EventService {
@@ -54,7 +54,7 @@ class EventService {
     let eventId: string;
 
     if (isRecurring) {
-      eventId = await _createRecurringEvents(_event);
+      eventId = await _createInstances(_event);
     } else {
       const response = await mongoService.db
         .collection(Collections.EVENT)
@@ -67,6 +67,14 @@ class EventService {
       ..._event,
       _id: eventId,
     };
+
+    if (isRecurring) {
+      return {
+        ...eventWithId,
+        recurrence: { eventId, rule: _event.recurrence?.rule },
+      };
+    }
+
     return eventWithId;
   };
 
@@ -255,44 +263,55 @@ class EventService {
     event: Schema_Event,
     query: Query_Event_Update
   ) => {
-    const shouldUpdateGcal = !event.isSomeday;
-    const _baseEvent = shouldUpdateGcal
-      ? await _updateGcal(userId, event)
-      : event;
+    const updateGcal = !event.isSomeday;
+    const action = getUpdateAction(event, query);
+    const _baseEvent = updateGcal ? await _updateGcal(userId, event) : event;
 
     const _event = { ..._baseEvent, updatedAt: new Date() };
+    const baseId = _event.recurrence?.eventId as string;
 
-    //++ refactor out conditionals
-    if (query?.applyTo === "future") {
-      await updateEvent(userId, _event, eventId);
-      await updateFutureInstances(userId, _event);
-    } else if (query?.applyTo === "all") {
-      const hasInstances = event?.recurrence?.eventId !== undefined;
-      if (hasInstances) {
-        await deleteRecurringEvents(
-          userId,
-          event.recurrence?.eventId as string
-        );
+    switch (action) {
+      case "CREATE_INSTANCES": {
+        await _createInstances(_event, eventId);
 
-        const shouldRemoveRecur =
-          event.recurrence?.eventId && event.recurrence.rule === null;
-        if (shouldRemoveRecur) {
-          const eventWithoutRecur = { ...event };
-          delete eventWithoutRecur.recurrence;
-          const newBaseEvent = await this.create(userId, eventWithoutRecur);
-          return newBaseEvent;
-        }
-      } else {
-        await this.deleteById(userId, eventId);
+        const eventWithRecur = {
+          ..._event,
+          recurrence: {
+            eventId,
+            rule: _event?.recurrence?.rule,
+          },
+        };
+        await updateEvent(userId, eventId, eventWithRecur);
+        return _event;
+        break;
       }
+      case "DELETE_INSTANCES_ALL": {
+        const eventWithoutRecur = _removeRecurrence(_event);
 
-      const newBaseEvent = await this.create(userId, _event);
-      return newBaseEvent;
-    } else {
-      await updateEvent(userId, _event, eventId);
+        await updateEvent(userId, eventId, eventWithoutRecur);
+        await deleteInstances(userId, baseId);
+
+        return eventWithoutRecur;
+        break;
+      }
+      case "UPDATE": {
+        await updateEvent(userId, eventId, _event);
+        return _event;
+        break;
+      }
+      case "UPDATE_ALL": {
+        await deleteInstances(userId, baseId);
+        await updateEvent(userId, baseId, _event);
+        await _createInstances(_event, eventId);
+
+        return _event;
+        break;
+      }
+      default: {
+        return error(GenericError.DeveloperError, "Failed to update event");
+        break;
+      }
     }
-
-    return _event;
   };
 }
 
@@ -313,12 +332,12 @@ const _createGcalEvent = async (userId: string, event: Schema_Event) => {
   return gEvent;
 };
 
-const _createRecurringEvents = async (event: Schema_Event) => {
-  const recurringEvents = assembleEventAndRecurrences(event);
+const _createInstances = async (event: Schema_Event, baseId?: string) => {
+  const instances = assembleInstances(event, baseId);
 
   const { insertedIds } = await mongoService.db
     .collection(Collections.EVENT)
-    .insertMany(recurringEvents);
+    .insertMany(instances);
 
   if (insertedIds[0] === undefined) {
     throw error(GenericError.BadRequest, "Failed to create recurring events");
@@ -344,6 +363,13 @@ const _deleteFromCompass = async (event: Schema_Event) => {
   return response;
 };
 
+const _removeRecurrence = (event: Schema_Event) => {
+  const eventWithoutRecur = { ...event };
+  delete eventWithoutRecur.recurrence;
+
+  return eventWithoutRecur;
+};
+
 const _updateGcal = async (userId: string, event: Schema_Event) => {
   const wasSomedayEvent = event.gEventId === undefined;
 
@@ -357,22 +383,4 @@ const _updateGcal = async (userId: string, event: Schema_Event) => {
   }
 
   return event;
-};
-
-//++
-const _updateRecurringEvents = async (userId: string, event: Schema_Event) => {
-  const baseId = event.recurrence?.eventId;
-  const hasInstances = baseId !== undefined;
-
-  if (hasInstances) {
-    await deleteRecurringEvents(userId, baseId);
-  } else {
-    await mongoService.db.collection(Collections.EVENT).deleteOne({
-      user: userId,
-      _id: mongoService.objectId(event._id as string),
-    });
-  }
-
-  const response = await _createRecurringEvents(event);
-  return response;
 };

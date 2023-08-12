@@ -5,7 +5,7 @@ import {
   RRULE_COUNT_WEEKS,
 } from "../../../../core/src/constants/core.constants";
 import { Schema_Event } from "../../../../core/src/types/event.types";
-import { assembleEventAndRecurrences } from "../../event/services/event.service.util";
+import { assembleInstances } from "../../event/services/event.service.util";
 
 describe("maps RRULE string to object:", () => {
   it("works for week recurrence", () => {
@@ -20,7 +20,7 @@ describe("maps RRULE string to object:", () => {
 
 describe("includes recurrence object in base event", () => {
   it("works for week events", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-10-01",
       endDate: "2023-10-07",
       recurrence: {
@@ -31,7 +31,7 @@ describe("includes recurrence object in base event", () => {
     _includesRecurrenceInBase(events);
   });
   it("works for month events", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-12-31",
       endDate: "2024-01-06",
       recurrence: {
@@ -44,7 +44,7 @@ describe("includes recurrence object in base event", () => {
 
 describe("only predefines the _id for the original event", () => {
   it("works for week events", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-09-10",
       endDate: "2023-09-16",
       recurrence: {
@@ -55,7 +55,7 @@ describe("only predefines the _id for the original event", () => {
     _onlyOrigHasId(events);
   });
   it("works for month events", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-09-10",
       endDate: "2023-09-16",
       recurrence: {
@@ -69,7 +69,7 @@ describe("only predefines the _id for the original event", () => {
 
 describe("returns the original event first", () => {
   it("works for week events", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-11-05",
       endDate: "2024-11-11",
       recurrence: {
@@ -80,7 +80,7 @@ describe("returns the original event first", () => {
     expect(events[0].startDate).toBe("2023-11-05");
   });
   it("works for month events", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-11-05",
       endDate: "2024-11-11",
       recurrence: {
@@ -94,7 +94,7 @@ describe("returns the original event first", () => {
 
 describe("recurrences use base events id in recurrence field", () => {
   it("works for week events", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-11-26",
       endDate: "2023-12-02",
       recurrence: {
@@ -104,7 +104,7 @@ describe("recurrences use base events id in recurrence field", () => {
     _childrenUseBaseEventsId(events);
   });
   it("works for month events", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-11-26",
       endDate: "2023-12-02",
       recurrence: {
@@ -117,7 +117,7 @@ describe("recurrences use base events id in recurrence field", () => {
 
 describe("uses expected # of instances", () => {
   it("works for week events", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-12-31",
       endDate: "2024-01-06",
       recurrence: {
@@ -127,7 +127,7 @@ describe("uses expected # of instances", () => {
     expect(events).toHaveLength(RRULE_COUNT_WEEKS + 1);
   });
   it("uses expected # of instances", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-08-20",
       endDate: "2023-08-26",
       recurrence: { rule: [RRULE.MONTH] },
@@ -138,7 +138,7 @@ describe("uses expected # of instances", () => {
 
 describe("uses unique dates", () => {
   it("works for week events", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-04-09",
       endDate: "2023-04-15",
       recurrence: { rule: [RRULE.WEEK] },
@@ -146,7 +146,7 @@ describe("uses unique dates", () => {
     _usesUniqueDates(events);
   });
   it("works for month events", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-04-09",
       endDate: "2023-04-15",
       recurrence: { rule: [RRULE.MONTH] },

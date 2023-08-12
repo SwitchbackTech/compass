@@ -1,13 +1,10 @@
 import { RRule } from "rrule";
-import {
-  RRULE,
-  RRULE_COUNT_MONTHS,
-} from "../../../../core/src/constants/core.constants";
-import { assembleEventAndRecurrences } from "../../event/services/event.service.util";
+import { RRULE } from "../../../../core/src/constants/core.constants";
+import { assembleInstances } from "../../event/services/event.service.util";
 
 describe("Event Recurrence: Month", () => {
   it("uses first and last of month", () => {
-    const events = assembleEventAndRecurrences({
+    const events = assembleInstances({
       startDate: "2023-10-01",
       endDate: "2023-10-31",
       recurrence: {
