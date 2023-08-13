@@ -10,7 +10,8 @@ export const areDatesUnique = (events: Schema_Event[]) => {
 };
 
 export const childrenUseBaseEventsId = (events: Schema_Event[]) => {
-  const parentId = events[0]._id.toString();
+  const base = events[0]?._id?.toString() as string;
+  const parentId = base;
   const childrenIds = events.slice(1).map((e) => e.recurrence?.eventId);
   const allSameId = childrenIds.every((id) => id === parentId);
 
@@ -29,14 +30,20 @@ export const haveSharedValues = (events: Schema_Event[]) => {
   return false;
 };
 export const includesRecurrenceInBase = (events: Schema_Event[]) => {
-  expect(events[0].recurrence).not.toBeUndefined();
-  expect(events[1].recurrence).not.toBeUndefined();
+  const first = events[0] as Schema_Event;
+  const second = events[1] as Schema_Event;
+  expect(first.recurrence).not.toBeUndefined();
+  expect(second.recurrence).not.toBeUndefined();
 };
 
 export const onlyOrigHasId = (events: Schema_Event[]) => {
-  expect(events[0]._id).not.toBeUndefined();
-  expect(events[1]._id).toBeUndefined();
-  expect(events[events.length - 1]._id).toBeUndefined();
+  const first = events[0] as Schema_Event;
+  const second = events[1] as Schema_Event;
+  const last = events[events.length - 1] as Schema_Event;
+
+  expect(first._id).not.toBeUndefined();
+  expect(second._id).toBeUndefined();
+  expect(last._id).toBeUndefined();
 };
 
 export const usesUniqueDates = (events: Schema_Event[]) => {

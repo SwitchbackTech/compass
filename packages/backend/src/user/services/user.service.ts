@@ -124,7 +124,7 @@ class UserService {
 
     await priorityService.createDefaultPriorities(userId);
 
-    await eventService.createDefaultSomeday(userId);
+    await eventService.createDefaultSomedays(userId);
 
     return userId;
   };

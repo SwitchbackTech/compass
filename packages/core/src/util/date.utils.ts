@@ -4,14 +4,24 @@ import weekOfYear from "dayjs/plugin/weekOfYear";
 
 dayjs.extend(weekOfYear);
 
-export const getCurrentWeekRangeDates = () => {
+export const getCurrentRangeDates = () => {
   const now = dayjs();
+
   const weekStart = now.startOf("week");
   const weekEnd = now.endOf("week");
 
+  const monthStart = now.startOf("month");
+  const monthEnd = now.endOf("month");
+
   return {
-    startDate: weekStart.format(YEAR_MONTH_DAY_FORMAT),
-    endDate: weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+    week: {
+      startDate: weekStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+    },
+    month: {
+      startDate: monthStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: monthEnd.format(YEAR_MONTH_DAY_FORMAT),
+    },
   };
 };
 
