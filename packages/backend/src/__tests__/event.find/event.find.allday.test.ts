@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-import { getReadAllFilter } from "../../event/services/event.service.helpers";
+import { getReadAllFilter } from "../../event/services/event.service.util";
 import { mockEventSetMar22 } from "../../../../core/src/__mocks__/events/events.22mar";
 
 describe("Mar 6 - 12, 2022: All-Day Events", () => {

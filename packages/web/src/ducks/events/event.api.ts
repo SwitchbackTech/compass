@@ -1,4 +1,5 @@
 import {
+  Categories_Recur,
   Params_Events,
   Payload_Order,
   Schema_Event,
@@ -12,7 +13,15 @@ const EventApi = {
   delete: (_id: string) => {
     return CompassApi.delete(`/event/${_id}`);
   },
-  edit: (_id: string, event: Schema_Event) => {
+  edit: (
+    _id: string,
+    event: Schema_Event,
+    params: { applyTo?: Categories_Recur }
+  ) => {
+    if (params?.applyTo) {
+      return CompassApi.put(`/event/${_id}?applyTo=${params.applyTo}`, event);
+    }
+
     return CompassApi.put(`/event/${_id}`, event);
   },
   get: (params: Params_Events) => {

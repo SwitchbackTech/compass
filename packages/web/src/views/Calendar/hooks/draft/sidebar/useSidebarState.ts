@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useAppSelector } from "@web/store/store.hooks";
-import { COLUMN_WEEK } from "@web/common/constants/web.constants";
+import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import {
   selectDraftId,
   selectDraftStatus,
@@ -30,9 +30,14 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   const { isOverAllDayRow, isOverGrid, isOverMainGrid, mouseCoords } =
     useMousePosition(isDragging, draft?.isOpen, measurements);
 
-  const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK].eventIds;
+  const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK]
+    .eventIds as string[];
+  const somedayMonthIds = somedayEvents.columns[COLUMN_MONTH]
+    .eventIds as string[];
+  const somedayIds = [...somedayWeekIds, ...somedayMonthIds];
+
   const isDraftingNew =
-    isDrafting && !isDraftingExisting && !somedayWeekIds.includes(draft?._id);
+    isDrafting && !isDraftingExisting && !somedayIds.includes(draft?._id);
   const _isDraftingRedux = isDraftingExisting || isDraftingNew;
   const shouldPreviewOnGrid =
     draft !== null && _isDraftingRedux && isOverGrid && !draft?.isOpen;
@@ -40,6 +45,8 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   return {
     draft,
     draftType,
+    somedayIds,
+    somedayMonthIds,
     somedayWeekIds,
     isDraftingNew,
     isDraftingExisting,

@@ -1,10 +1,18 @@
 export const mockEventSetSomeday1 = [
   {
-    _id: "id1",
+    _id: "id1a",
     user: "user1",
-    title: "Multi-Month",
+    title: "Multi-Month 1",
     startDate: "2023-05-28",
     endDate: "2023-06-03",
+    isSomeday: true,
+  },
+  {
+    _id: "id1b",
+    user: "user1",
+    title: "Multi-Month 2",
+    startDate: "2023-01-28",
+    endDate: "2023-05-28",
     isSomeday: true,
   },
   {
@@ -34,9 +42,9 @@ export const mockEventSetSomeday1 = [
   {
     _id: "id5",
     user: "user1",
-    title: "Regular Event",
-    startDate: "2023-06-05T10:30:00-02:00",
-    endDate: "2023-06-05T11:30:00-02:00",
-    isSomeday: false,
+    title: "Beginning of Month",
+    startDate: "2023-10-01",
+    endDate: "2023-10-07",
+    isSomeday: true,
   },
 ];

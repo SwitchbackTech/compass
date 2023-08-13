@@ -7,7 +7,7 @@ import {
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { getX, removeGridFields } from "@web/common/utils/grid.util";
+import { getX } from "@web/common/utils/grid.util";
 import {
   editEventSlice,
   createEventSlice,
@@ -18,6 +18,7 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useCallback, useEffect, useState } from "react";
 import {
   getDefaultEvent,
+  prepEvtBeforeConvertToSomeday,
   prepEvtBeforeSubmit,
 } from "@web/common/utils/event.util";
 import {
@@ -27,7 +28,7 @@ import {
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import {
   selectIsAtWeeklyLimit,
-  selectSomedayEventsCount,
+  selectSomedayWeekCount,
 } from "@web/ducks/events/selectors/someday.selectors";
 
 import { DateCalcs } from "../grid/useDateCalcs";
@@ -55,7 +56,7 @@ export const useDraftUtil = (
     eventType: reduxDraftType,
     isDrafting,
   } = useAppSelector(selectDraftStatus);
-  const somedayEventsCount = useAppSelector(selectSomedayEventsCount);
+  const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
 
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
 
@@ -154,16 +155,16 @@ export const useDraftUtil = (
       alert(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
+
     const _draft = {
       ...draft,
       isAllDay: false,
       isSomeday: true,
       startDate: start,
       endDate: end,
+      order: somedayWeekCount,
     };
-    const _event = removeGridFields(_draft);
-    const event = { ..._event, order: somedayEventsCount };
-
+    const event = prepEvtBeforeConvertToSomeday(_draft);
     dispatch(getWeekEventsSlice.actions.convert({ event }));
 
     discard();
@@ -373,7 +374,9 @@ export const useDraftUtil = (
 
   const submit = (draft: Schema_GridEvent) => {
     const event = prepEvtBeforeSubmit(draft);
+
     const isExisting = event._id;
+    // include param for how to handle recurrences
     if (isExisting) {
       dispatch(
         editEventSlice.actions.request({

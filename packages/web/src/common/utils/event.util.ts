@@ -178,17 +178,23 @@ export const prepEvtAfterDraftDrop = (
   return event;
 };
 
-export const prepEvtBeforeSubmit = (
-  draft: Schema_GridEvent,
-  original?: Schema_GridEvent
-) => {
-  let eventToClean: Schema_GridEvent = { ...original };
-  if (!original) {
-    eventToClean = { ...draft };
+export const prepEvtBeforeConvertToSomeday = (draft: Schema_GridEvent) => {
+  const event = removeGridFields(draft);
+
+  if (event.recurrence) {
+    delete event.recurrence;
   }
 
-  const _event = removeGridFields(eventToClean);
-  const event = { ..._event, origin: Origin.COMPASS } as Schema_Event;
+  return event;
+};
+
+export const prepEvtBeforeSubmit = (draft: Schema_GridEvent) => {
+  const _event = removeGridFields({ ...draft });
+
+  const event = {
+    ..._event,
+    origin: Origin.COMPASS,
+  } as Schema_Event;
 
   return event;
 };

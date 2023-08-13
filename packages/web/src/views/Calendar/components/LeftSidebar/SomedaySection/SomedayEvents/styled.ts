@@ -35,9 +35,24 @@ export const StyledMigrateArrow = styled.span`
   }
 `;
 
+export const StyledRecurrenceText = styled.span`
+  border: 1px solid ${BASE_COLORS.ONYX_GREY};
+  border-radius: 2px;
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  width: 43px;
+
+  &:hover {
+    opacity: 1;
+    transition: border ease-in 0.2s;
+  }
+`;
+
 export const StyledMigrateArrowInForm = styled(StyledMigrateArrow)`
   font-size: 27px;
 `;
+
 export const NewStyledSomedayEvent = styled.div<Props>`
   background: ${({ isDrafting, isDragging, isFocused, priority }) => {
     if (isDrafting) {

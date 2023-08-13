@@ -5094,10 +5094,10 @@ brorand@^1.0.1, brorand@^1.1.0:
   resolved "https://registry.yarnpkg.com/brorand/-/brorand-1.1.0.tgz#12c25efe40a45e3c323eb8675a0a0ce57b22371f"
   integrity sha512-cKV8tMCEpQs4hK/ik71d6LrPOnpkpGBR0wzxqr68g2m/LB2GxVYQroAjMJZRVM1Y4BCjCKc3vAamxSzOY2RP+w==
 
-browser-tabs-lock@^1.2.14:
-  version "1.2.15"
-  resolved "https://registry.yarnpkg.com/browser-tabs-lock/-/browser-tabs-lock-1.2.15.tgz#d5012e652e2a0cb4eba471b0a2300c2fa5d92788"
-  integrity sha512-J8K9vdivK0Di+b8SBdE7EZxDr88TnATing7XoLw6+nFkXMQ6sVBh92K3NQvZlZU91AIkFRi0w3sztk5Z+vsswA==
+browser-tabs-lock@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/browser-tabs-lock/-/browser-tabs-lock-1.3.0.tgz#4c0381b47b55cd29feaaea5846b7bb97aac76053"
+  integrity sha512-g6nHaobTiT0eMZ7jh16YpD2kcjAp+PInbiVq3M1x6KKaEIVhT4v9oURNIpZLOZ3LQbQ3XYfNhMAb/9hzNLIWrw==
   dependencies:
     lodash ">=4.17.21"
 
@@ -5639,6 +5639,11 @@ cloudevents@^6.0.0:
     process "^0.11.10"
     util "^0.12.4"
     uuid "^8.3.2"
+
+clsx@^1.1.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/clsx/-/clsx-1.2.1.tgz#0ddc4a20a549b59c93a4116bb26f5294ca17dc12"
+  integrity sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==
 
 co@^4.6.0:
   version "4.6.0"
@@ -12094,10 +12099,25 @@ react-router@6.9.0:
   dependencies:
     "@remix-run/router" "1.4.0"
 
-react-select@*, react-select@^5.2.2:
+react-select@*:
   version "5.7.2"
   resolved "https://registry.yarnpkg.com/react-select/-/react-select-5.7.2.tgz#ccd40071b9429277983bf15526e7a5773a060e09"
   integrity sha512-cTlJkQ8YjV6T/js8wW0owTzht0hHGABh29vjLscY4HfZGkv7hc3FFTmRp9NzY/Ib1uQ36GieAKEjxpHdpCFpcA==
+  dependencies:
+    "@babel/runtime" "^7.12.0"
+    "@emotion/cache" "^11.4.0"
+    "@emotion/react" "^11.8.1"
+    "@floating-ui/dom" "^1.0.1"
+    "@types/react-transition-group" "^4.4.0"
+    memoize-one "^6.0.0"
+    prop-types "^15.6.0"
+    react-transition-group "^4.3.0"
+    use-isomorphic-layout-effect "^1.1.2"
+
+react-select@^5.7.4:
+  version "5.7.4"
+  resolved "https://registry.yarnpkg.com/react-select/-/react-select-5.7.4.tgz#d8cad96e7bc9d6c8e2709bdda8f4363c5dd7ea7d"
+  integrity sha512-NhuE56X+p9QDFh4BgeygHFIvJJszO1i1KSkg/JPcIJrbovyRtI+GuOEa4XzFCEpZRAEoEI8u/cAHK+jG/PgUzQ==
   dependencies:
     "@babel/runtime" "^7.12.0"
     "@emotion/cache" "^11.4.0"
@@ -12117,6 +12137,13 @@ react-textarea-autosize@^8.3.3:
     "@babel/runtime" "^7.20.13"
     use-composed-ref "^1.3.0"
     use-latest "^1.2.1"
+
+react-toastify@^9.1.3:
+  version "9.1.3"
+  resolved "https://registry.yarnpkg.com/react-toastify/-/react-toastify-9.1.3.tgz#1e798d260d606f50e0fab5ee31daaae1d628c5ff"
+  integrity sha512-fPfb8ghtn/XMxw3LkxQBk3IyagNpF/LIKjOBflbexr2AWxAH1MJgvnESwEwBn9liLFXgTKWgBSdZpw9m4OTHTg==
+  dependencies:
+    clsx "^1.1.1"
 
 react-transition-group@^4.3.0:
   version "4.4.5"
@@ -12561,6 +12588,13 @@ roarr@^2.15.3:
     json-stringify-safe "^5.0.1"
     semver-compare "^1.0.0"
     sprintf-js "^1.1.2"
+
+rrule@^2.7.2:
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/rrule/-/rrule-2.7.2.tgz#cb899cb21bbe6c71b587107956604173b69f9143"
+  integrity sha512-NkBsEEB6FIZOZ3T8frvEBOB243dm46SPufpDckY/Ap/YH24V1zLeMmDY8OA10lk452NdrF621+ynDThE7FQU2A==
+  dependencies:
+    tslib "^2.4.0"
 
 run-async@^2.4.0:
   version "2.4.1"
@@ -13495,20 +13529,20 @@ supertokens-node@^14.1.3:
     supertokens-js-override "^0.0.4"
     twilio "^4.7.2"
 
-supertokens-web-js@^0.5.0:
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/supertokens-web-js/-/supertokens-web-js-0.5.0.tgz#bb51e18dd692b281e73b9904055a5757305ffd8c"
-  integrity sha512-qlpgWLnHBor98k5wY97vzG7ouVOb/eeWOCKgaid055MUVPQr2gTEDrlKJN9I+Z4Vj6Dmblg1vC/cUbR/cx1TGw==
+supertokens-web-js@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/supertokens-web-js/-/supertokens-web-js-0.6.0.tgz#df0add6513a0f26f98d76713fe874309eae84963"
+  integrity sha512-2KOgWNGanh+/zpdaFQgiA9dQa6T9wA6LcoB6m1BTZ7JIqR3mYmpLD5uu8ERtISNAGUjcXziON/Fp5ZnlBByCcw==
   dependencies:
     supertokens-js-override "0.0.4"
-    supertokens-website "^16.0.0"
+    supertokens-website "^17.0.0"
 
-supertokens-website@^16.0.0:
-  version "16.0.3"
-  resolved "https://registry.yarnpkg.com/supertokens-website/-/supertokens-website-16.0.3.tgz#721f6fdf54f1c036fabc4e9f449432fa8cdc189f"
-  integrity sha512-AnBy+UyFGWD1m1Oa0GBiRUEl5jFYAurxA4CjbZk6n4YxhDKaZBUe2xW5ajp+tW4b0Lj3+e00Xqt0YLsVZrtRYw==
+supertokens-website@^17.0.0:
+  version "17.0.1"
+  resolved "https://registry.yarnpkg.com/supertokens-website/-/supertokens-website-17.0.1.tgz#2064da40e5712d8d36784b12420720a1f5a66324"
+  integrity sha512-RCBPIj4A5mVdiYEL6ArvFrZcQ8ByENe3FJEpBXIP0SB++kLuV54zU8lfL99kHcc9kbOHTdUjpWxrwEpvlTTPUQ==
   dependencies:
-    browser-tabs-lock "^1.2.14"
+    browser-tabs-lock "^1.3.0"
     supertokens-js-override "^0.0.4"
 
 supports-color@^5.3.0, supports-color@^5.5.0:

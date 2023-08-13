@@ -1,9 +1,9 @@
 import { Key } from "ts-key-enum";
 import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { DraggableProvided } from "@hello-pangea/dnd";
+import { FloatingPortal } from "@floating-ui/react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { FloatingPortal } from "@floating-ui/react";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";

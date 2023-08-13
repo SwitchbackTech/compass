@@ -1,7 +1,6 @@
 import { invalidSyncTokenError } from "./__mocks__/error.invalidSyncToken";
 import { invalidValueError } from "./__mocks__/error.google.invalidValue";
 import { invalidGrant400Error } from "./__mocks__/error.google.invalidGrant";
-import { GaxiosError } from "gaxios";
 import {
   isFullSyncRequired,
   isGoogleTokenExpired,

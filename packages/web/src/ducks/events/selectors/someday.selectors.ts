@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { createSelector } from "reselect";
 import {
+  RRULE,
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
@@ -34,18 +35,16 @@ export const selectSomedayEvents = createSelector(
   }
 );
 
-export const selectSomedayEventsCount = (state: RootState): number => {
-  return state.events.getSomedayEvents.value?.data?.length || 0;
-};
-
 export const selectCategorizedEvents = createSelector(
   [selectSomedayEvents, selectDatesInView],
   (somedayEvents, dates) => {
     const start = dayjs(dates.start);
     const end = dayjs(dates.end);
+
     const sortedEvents = Object.values(somedayEvents).sort(
       (a, b) => a.order - b.order
     );
+
     const weekIds = [];
     const monthIds = [];
 
@@ -53,17 +52,23 @@ export const selectCategorizedEvents = createSelector(
       const eventStart = dayjs(e.startDate);
       const isWeek = eventStart.isBetween(start, end, null, "[]");
       if (isWeek) {
-        weekIds.push(e._id);
+        const isMonthRepeat = e?.recurrence?.rule?.includes(RRULE.MONTH);
+        if (!isMonthRepeat) {
+          weekIds.push(e._id);
+          return;
+        }
+      }
+
+      const isFutureWeekThisMonth = e?.recurrence?.rule?.includes(RRULE.WEEK);
+      if (isFutureWeekThisMonth) {
         return;
       }
 
-      const monthStartDate = start.startOf("month");
-      const monthEndDate = start.endOf("month");
-      const isMonthButNotWeek =
-        !isWeek &&
-        eventStart.isBetween(monthStartDate, monthEndDate, null, "[]");
+      const monthStart = start.startOf("month");
+      const monthEnd = start.endOf("month");
+      const isMonth = eventStart.isBetween(monthStart, monthEnd, null, "[]");
 
-      if (isMonthButNotWeek) {
+      if (isMonth) {
         monthIds.push(e._id);
       }
     });
@@ -96,4 +101,9 @@ export const selectIsAtMonthlyLimit = createSelector(
   selectCategorizedEvents,
   (somedayEvents) =>
     somedayEvents.columns[COLUMN_MONTH].eventIds.length >= SOMEDAY_MONTHLY_LIMIT
+);
+
+export const selectSomedayWeekCount = createSelector(
+  selectCategorizedEvents,
+  (somedayEvents) => somedayEvents.columns[COLUMN_WEEK].eventIds.length
 );

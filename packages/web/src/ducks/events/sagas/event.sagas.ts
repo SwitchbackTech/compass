@@ -45,8 +45,11 @@ function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
     const currEvent = (yield select((state: RootState) =>
       selectEventById(state, _id)
     )) as Response_GetEventsSaga;
+
+    //++ call prepEvtBeforeConvertToSomedayt
     const updatedEvent = { ...currEvent, ...updatedFields };
     delete updatedEvent.order;
+    delete updatedEvent.recurrence;
 
     const res = yield call(EventApi.edit, _id, updatedEvent);
     const event = res.data as Schema_Event;
@@ -120,6 +123,7 @@ function* createEvent({ payload }: Action_CreateEvent) {
       res.data,
       normalizedEventsSchema()
     );
+    console.log(normalizedEvent);
 
     if (payload.isSomeday) {
       yield put(getSomedayEventsSlice.actions.insert(res.data._id));
@@ -164,7 +168,9 @@ export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
 export function* editEvent({ payload }: Action_EditEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.edit(payload));
-    yield call(EventApi.edit, payload._id, payload.event);
+    yield call(EventApi.edit, payload._id, payload.event, {
+      applyTo: payload.applyTo,
+    });
     yield put(editEventSlice.actions.success());
   } catch (error) {
     yield put(editEventSlice.actions.error());

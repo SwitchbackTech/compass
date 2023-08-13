@@ -1,6 +1,6 @@
 import { Action } from "redux";
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { Categories_Recur, Schema_Event } from "@core/types/event.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Response_HttpPaginatedSuccess,
@@ -74,6 +74,7 @@ interface Payload_DeleteEvent {
 }
 
 export interface Payload_EditEvent {
+  applyTo?: Categories_Recur;
   _id: string;
   event: Schema_Event;
 }

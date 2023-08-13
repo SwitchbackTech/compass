@@ -224,8 +224,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
         isOpen: false,
       };
     } else {
-      console.log("REMINDER: update for monthly"); //++
-
+      console.log("REMINDER: update for monthly");
       const defaultSomeday = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
       _draft = { ...defaultSomeday, isOpen: false };
     }
@@ -268,16 +267,25 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
 
     const isExisting = event._id;
     if (isExisting) {
+      const isRecurring = event.recurrence?.rule;
+      const wasRecurring = event.recurrence?.rule === null;
+
       dispatch(
         editEventSlice.actions.request({
           _id: event._id,
           event,
+          applyTo: isRecurring || wasRecurring ? "all" : null,
         })
       );
     } else {
+      const order =
+        category === Categories_Event.SOMEDAY_WEEK
+          ? state.somedayWeekIds.length
+          : state.somedayMonthIds.length;
+
       const eventWithOrder = {
         ...event,
-        order: state.somedayWeekIds.length,
+        order,
       };
       dispatch(createEventSlice.actions.request(eventWithOrder));
     }
@@ -355,7 +363,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
       direction
     );
 
-    const newEvent = { ...event, startDate, endDate };
+    const newEvent = { ...event, startDate, endDate, isOpen: false };
     return newEvent;
   };
 

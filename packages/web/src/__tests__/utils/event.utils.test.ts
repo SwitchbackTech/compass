@@ -5,11 +5,7 @@ import {
   getLeftPosition,
 } from "@web/common/utils/grid.util";
 import { widthMinusPadding } from "@web/common/utils/grid.util";
-import { getHourLabels } from "@web/common/utils/web.date.util";
-import {
-  adjustIsTimesShown,
-  getMonthListLabel,
-} from "@web/common/utils/event.util";
+import { adjustIsTimesShown } from "@web/common/utils/event.util";
 
 describe("adjustIsTimesShown", () => {
   it("hides times for evt in past week", () => {

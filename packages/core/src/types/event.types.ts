@@ -8,6 +8,8 @@ export enum Categories_Event {
   SOMEDAY_MONTH = "sidebarMonth",
 }
 
+export type Categories_Recur = "all" | "future";
+
 export type Direction_Migrate = "forward" | "back";
 
 export interface Params_DeleteMany {
@@ -47,6 +49,10 @@ export interface Schema_Event {
   order?: number;
   origin?: Origin;
   priority?: Priority;
+  recurrence?: {
+    rule?: string[];
+    eventId?: string;
+  };
   startDate?: string;
   title?: string;
   updatedAt?: Date;
@@ -58,4 +64,8 @@ export interface Query_Event extends Query {
   someday?: string;
   start?: string;
   priorities?: string; // example: 'p1,p2,p3'
+}
+
+export interface Query_Event_Update extends Query {
+  applyTo?: Categories_Recur;
 }

@@ -12,6 +12,7 @@ import { sagaMiddleware } from "@web/common/store/middlewares";
 import { sagas } from "@web/store/sagas";
 import { GlobalStyle } from "@web/components/GlobalStyle";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { ToastContainer } from "react-toastify";
 
 import { RootRouter } from "./routers";
 import { store } from "./store";
@@ -38,6 +39,18 @@ export const App = () => {
             <SuperTokensWrapper>
               <GlobalStyle />
               <RootRouter />
+              <ToastContainer
+                position="bottom-left"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+              />
             </SuperTokensWrapper>
           </GoogleOAuthProvider>
         </Provider>

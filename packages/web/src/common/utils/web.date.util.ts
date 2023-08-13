@@ -8,6 +8,7 @@ import {
 } from "@core/constants/date.constants";
 import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
+import { RRULE } from "@core/constants/core.constants";
 import {
   Option_Time,
   Params_DateChange,
@@ -17,8 +18,11 @@ import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { Categories_Event, Direction_Migrate } from "@core/types/event.types";
 
 import { roundToNext } from ".";
-import { ACCEPTED_TIMES } from "../constants/web.constants";
-import { Schema_SelectedDates } from "../types/web.event.types";
+import { ACCEPTED_TIMES, OPTIONS_RECURRENCE } from "../constants/web.constants";
+import {
+  Recurrence_Selection,
+  Schema_SelectedDates,
+} from "../types/web.event.types";
 
 export const dateIsValid = (date: string) => {
   const notNaN = !Number.isNaN(new Date(date).getTime());
@@ -48,6 +52,33 @@ export const getColorsByHour = (currentHour: number) => {
   return colors;
 };
 
+export const getDatesByCategory = (
+  category: Categories_Event,
+  weekStart: Dayjs,
+  weekEnd: Dayjs
+) => {
+  if (category === Categories_Event.SOMEDAY_WEEK) {
+    return {
+      startDate: weekStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: weekEnd.format(YEAR_MONTH_DAY_FORMAT),
+    };
+  }
+
+  if (category === Categories_Event.SOMEDAY_MONTH) {
+    return {
+      startDate: weekStart.startOf("month").format(YEAR_MONTH_DAY_FORMAT),
+      endDate: weekStart.endOf("month").format(YEAR_MONTH_DAY_FORMAT),
+    };
+  }
+
+  const { startDate, endDate } = _getNextWeekInSameMonth(weekStart);
+
+  return {
+    startDate: startDate.format(YEAR_MONTH_DAY_FORMAT),
+    endDate: endDate.format(YEAR_MONTH_DAY_FORMAT),
+  };
+};
+
 export const getDayjsByTimeValue = (timeValue: string) => {
   return dayjs(`2000-01-01 ${timeValue}`, YMDHAM_FORMAT);
 };
@@ -74,6 +105,17 @@ export const getEndTimeOptions = (): Option_Time[] => {
   return options;
 };
 
+export const getHourLabels = () => {
+  const day = dayjs();
+
+  return [...(new Array(23) as number[])].map((_, index) => {
+    return day
+      .startOf("day")
+      .add(index + 1, "hour")
+      .format(HOURS_AM_SHORT_FORMAT);
+  });
+};
+
 export const getMigrationDates = (
   origDates: { startDate: string; endDate: string },
   category: Categories_Event,
@@ -90,26 +132,6 @@ export const getMigrationDates = (
   };
 };
 
-export const getDatesByCategory = (
-  category: Categories_Event,
-  weekStart: Dayjs,
-  weekEnd: Dayjs
-) => {
-  if (category === Categories_Event.SOMEDAY_WEEK) {
-    return {
-      startDate: weekStart.format(YEAR_MONTH_DAY_FORMAT),
-      endDate: weekEnd.format(YEAR_MONTH_DAY_FORMAT),
-    };
-  }
-
-  const { startDate, endDate } = _getNextWeekInSameMonth(weekStart);
-
-  return {
-    startDate: startDate.format(YEAR_MONTH_DAY_FORMAT),
-    endDate: endDate.format(YEAR_MONTH_DAY_FORMAT),
-  };
-};
-
 export const getNextIntervalTimes = () => {
   const currentMinute = dayjs().minute();
   const nextInterval = roundToNext(currentMinute, GRID_TIME_STEP);
@@ -121,15 +143,42 @@ export const getNextIntervalTimes = () => {
   return { startDate, endDate };
 };
 
-export const getHourLabels = () => {
-  const day = dayjs();
+export const getRecurrenceRule = (selection: Recurrence_Selection) => {
+  switch (selection) {
+    case Recurrence_Selection.WEEK:
+      return [RRULE.WEEK];
+      break;
+    case Recurrence_Selection.WEEKS_2:
+      return [RRULE.WEEKS_2];
+      break;
+    case Recurrence_Selection.WEEKS_3:
+      return [RRULE.WEEKS_3];
+      break;
+    case Recurrence_Selection.MONTH:
+      return [RRULE.MONTH];
+      break;
+    default:
+      throw Error("Invalid selection");
+  }
+};
 
-  return [...(new Array(23) as number[])].map((_, index) => {
-    return day
-      .startOf("day")
-      .add(index + 1, "hour")
-      .format(HOURS_AM_SHORT_FORMAT);
-  });
+export const getRecurrenceOption = (rrule: string) => {
+  switch (rrule) {
+    case RRULE.WEEK:
+      return OPTIONS_RECURRENCE.WEEK;
+      break;
+    case RRULE.WEEKS_2:
+      return OPTIONS_RECURRENCE.WEEKS_2;
+      break;
+    case RRULE.WEEKS_3:
+      return OPTIONS_RECURRENCE.WEEKS_3;
+      break;
+    case RRULE.MONTH:
+      return OPTIONS_RECURRENCE.MONTH;
+      break;
+    default:
+      throw Error(`Invalid RRule: ${rrule.toString()}`);
+  }
 };
 
 export const getTimeLabel = (value: string) => value.replace(":00", "");

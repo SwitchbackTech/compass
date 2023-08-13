@@ -19,7 +19,7 @@ export const useSidebarEffects = (state: State_Sidebar, util: Util_Sidebar) => {
     draftType,
     isDraftingNew,
     isDraftingRedux,
-    somedayWeekIds: existingIds,
+    somedayIds,
     setDraft,
     setIsDrafting,
     setIsDraftingExisting,
@@ -30,8 +30,8 @@ export const useSidebarEffects = (state: State_Sidebar, util: Util_Sidebar) => {
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
 
   useEffect(() => {
-    setIsDraftingExisting(existingIds.includes(draft?._id));
-  }, [draft, existingIds, setIsDraftingExisting]);
+    setIsDraftingExisting(somedayIds.includes(draft?._id));
+  }, [draft, somedayIds, setIsDraftingExisting]);
 
   useEffect(() => {
     if (
