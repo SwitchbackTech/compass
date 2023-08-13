@@ -1,4 +1,3 @@
-import { RRule } from "rrule";
 import { RRULE } from "../../../../core/src/constants/core.constants";
 import { assembleInstances } from "../../event/services/event.service.util";
 

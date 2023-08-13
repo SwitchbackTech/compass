@@ -43,17 +43,6 @@ export const RepeatDialog: FC<Props> = ({
 
   const onRepeatTextClick = () => {
     onChangeRecurrence(null);
-    //++
-    // const hasInstances =
-    //   recurrence?.rule?.length === 0 && recurrence?.eventId !== null;
-    // if (hasInstances) {
-    //   console.log("setting to null");
-    //   onChangeRecurrence(null);
-    // } else {
-    //   console.log("setting to []");
-    //   onChangeRecurrence([]);
-    // }
-
     setIsRepeat(false);
   };
 

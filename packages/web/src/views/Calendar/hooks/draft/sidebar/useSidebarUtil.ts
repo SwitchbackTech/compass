@@ -124,8 +124,6 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
       endDate: dates.endDate,
     };
 
-    //++ delete recurrence fields
-
     dispatch(
       getSomedayEventsSlice.actions.convert({
         _id,
@@ -226,7 +224,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
         isOpen: false,
       };
     } else {
-      console.log("REMINDER: update for monthly"); //++
+      console.log("REMINDER: update for monthly");
       const defaultSomeday = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
       _draft = { ...defaultSomeday, isOpen: false };
     }

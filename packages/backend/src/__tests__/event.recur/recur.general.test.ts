@@ -4,8 +4,13 @@ import {
   RRULE_COUNT_MONTHS,
   RRULE_COUNT_WEEKS,
 } from "../../../../core/src/constants/core.constants";
-import { Schema_Event } from "../../../../core/src/types/event.types";
 import { assembleInstances } from "../../event/services/event.service.util";
+import {
+  childrenUseBaseEventsId,
+  includesRecurrenceInBase,
+  onlyOrigHasId,
+  usesUniqueDates,
+} from "./recur.util";
 
 describe("maps RRULE string to object:", () => {
   it("works for week recurrence", () => {
@@ -28,7 +33,7 @@ describe("includes recurrence object in base event", () => {
       },
     });
 
-    _includesRecurrenceInBase(events);
+    includesRecurrenceInBase(events);
   });
   it("works for month events", () => {
     const events = assembleInstances({
@@ -38,7 +43,7 @@ describe("includes recurrence object in base event", () => {
         rule: [RRULE.MONTH],
       },
     });
-    _includesRecurrenceInBase(events);
+    includesRecurrenceInBase(events);
   });
 });
 
@@ -52,7 +57,7 @@ describe("only predefines the _id for the original event", () => {
       },
     });
 
-    _onlyOrigHasId(events);
+    onlyOrigHasId(events);
   });
   it("works for month events", () => {
     const events = assembleInstances({
@@ -63,7 +68,7 @@ describe("only predefines the _id for the original event", () => {
       },
     });
 
-    _onlyOrigHasId(events);
+    onlyOrigHasId(events);
   });
 });
 
@@ -101,7 +106,7 @@ describe("recurrences use base events id in recurrence field", () => {
         rule: [RRULE.WEEK],
       },
     });
-    _childrenUseBaseEventsId(events);
+    childrenUseBaseEventsId(events);
   });
   it("works for month events", () => {
     const events = assembleInstances({
@@ -111,7 +116,7 @@ describe("recurrences use base events id in recurrence field", () => {
         rule: [RRULE.MONTH],
       },
     });
-    _childrenUseBaseEventsId(events);
+    childrenUseBaseEventsId(events);
   });
 });
 
@@ -143,7 +148,7 @@ describe("uses unique dates", () => {
       endDate: "2023-04-15",
       recurrence: { rule: [RRULE.WEEK] },
     });
-    _usesUniqueDates(events);
+    usesUniqueDates(events);
   });
   it("works for month events", () => {
     const events = assembleInstances({
@@ -151,53 +156,6 @@ describe("uses unique dates", () => {
       endDate: "2023-04-15",
       recurrence: { rule: [RRULE.MONTH] },
     });
-    _usesUniqueDates(events);
+    usesUniqueDates(events);
   });
 });
-
-const _areDatesUnique = (events: Schema_Event[]) => {
-  const starts = new Set(events.map((e) => e.startDate));
-  const ends = new Set(events.map((e) => e.endDate));
-
-  const areDatesUnique =
-    starts.size === events.length && ends.size === events.length;
-  return areDatesUnique;
-};
-
-const _childrenUseBaseEventsId = (events: Schema_Event[]) => {
-  const parentId = events[0]._id.toString();
-  const childrenIds = events.slice(1).map((e) => e.recurrence?.eventId);
-  const allSameId = childrenIds.every((id) => id === parentId);
-
-  expect(allSameId).toBe(true);
-};
-
-const _haveSharedValues = (events: Schema_Event[]) => {
-  const starts = new Set(events.map((e) => e.startDate));
-  const ends = new Set(events.map((e) => e.endDate));
-
-  for (const value of starts) {
-    if (ends.has(value)) {
-      return true;
-    }
-  }
-  return false;
-};
-
-const _includesRecurrenceInBase = (events: Schema_Event[]) => {
-  expect(events[0].recurrence).not.toBeUndefined();
-  expect(events[1].recurrence).not.toBeUndefined();
-};
-
-const _onlyOrigHasId = (events: Schema_Event[]) => {
-  expect(events[0]._id).not.toBeUndefined();
-  expect(events[1]._id).toBeUndefined();
-  expect(events[events.length - 1]._id).toBeUndefined();
-};
-
-const _usesUniqueDates = (events: Schema_Event[]) => {
-  const isUnique = _areDatesUnique(events) === true;
-  const noRepeats = _haveSharedValues(events) === false;
-
-  return isUnique && noRepeats;
-};

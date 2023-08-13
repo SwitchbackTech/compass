@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { RRULE } from "../../../../core/src/constants/core.constants";
 import { assembleInstances } from "../../event/services/event.service.util";
+import { areDatesUnique, haveSharedValues } from "./recur.util";
 
 describe("Weekly Recurrence: Basics", () => {
   it("uses sunday & saturday as start/end dates", () => {
@@ -37,16 +38,14 @@ describe("Weekly Recurrence: Cases", () => {
     expect(events[2].startDate).toBe("2023-01-22");
     expect(events[2].endDate).toBe("2023-01-28");
   });
+  it("uses correct dates: case 3: DST (11.5)", () => {
+    const events = assembleInstances({
+      startDate: "2023-07-23",
+      endDate: "2023-07-29",
+      recurrence: { rule: [RRULE.WEEK] },
+    });
 
-  //++
-  // it("uses correct dates: case 3: DST (11.5)", () => {
-  //   const events = assembleRecurringEvents({
-  //     startDate: "2023-07-23",
-  //     endDate: "2023-07-29",
-  //     recurrence: [RRULE.WEEK],
-  //   });
-
-  //   expect(_areDatesUnique(events)).toBe(true);
-  //   expect(_haveSharedValues(events)).toBe(false);
-  // });
+    expect(areDatesUnique(events)).toBe(true);
+    expect(haveSharedValues(events)).toBe(false);
+  });
 });

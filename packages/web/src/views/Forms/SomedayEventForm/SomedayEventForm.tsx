@@ -34,7 +34,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const bgColor = getColor(colorNameByPriority[priority]);
 
   const origRecurrence = useRef(event?.recurrence).current;
-  // console.log("orig recurrence:", origRecurrence); //++
 
   const _onSubmit = () => {
     const hasInstances = origRecurrence?.eventId !== undefined;
@@ -42,15 +41,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       hasInstances && event.recurrence?.rule?.length === 0;
 
     if (removedRecurrence) {
-      // const cleanedEvent = { ...event };
-      // delete cleanedEvent.recurrence;
-      // console.log("using", cleanedEvent);
-      console.log("trying to remove recurrence from state ...");
-      // onSetEventField("recurrence", null);
       onSetEventField("recurrence", { ...event.recurrence, rule: null });
-    }
-    if (event?.recurrence !== origRecurrence) {
-      console.log("recurrence changed");
     }
 
     onSubmit(event);
@@ -101,9 +92,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     const newEvent = { ...event, [field]: value };
 
     if (value === null) {
-      console.log("deleting field cuz null:", field, value);
       delete newEvent[field];
-      console.log("newEvent after deleting field", newEvent);
     }
 
     setEvent(newEvent);
