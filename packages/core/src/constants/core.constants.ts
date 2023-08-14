@@ -41,7 +41,7 @@ export enum Priorities {
   RELATIONS = "relationships",
 }
 
-export const RRULE_COUNT_WEEKS = 14;
+export const RRULE_COUNT_WEEKS = 12;
 export const RRULE_COUNT_MONTHS = 3;
 export const RRULE_WEEK_START = "SU";
 

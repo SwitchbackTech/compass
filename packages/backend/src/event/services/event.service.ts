@@ -1,6 +1,9 @@
 import {
   Origin,
   Priorities,
+  RRULE,
+  RRULE_COUNT_MONTHS,
+  RRULE_COUNT_WEEKS,
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
@@ -15,7 +18,7 @@ import {
   Payload_Order,
   Query_Event_Update,
 } from "@core/types/event.types";
-import { getCurrentWeekRangeDates } from "@core/util/date.utils";
+import { getCurrentRangeDates } from "@core/util/date.utils";
 import { Collections } from "@backend/common/constants/collections";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import gcalService from "@backend/common/services/gcal/gcal.service";
@@ -78,17 +81,17 @@ class EventService {
     return eventWithId;
   };
 
-  createDefaultSomeday = async (userId: string) => {
-    const { startDate, endDate } = getCurrentWeekRangeDates();
+  createDefaultSomedays = async (userId: string) => {
+    const { week, month } = getCurrentRangeDates();
 
-    const defaultSomedayEvent: Schema_Event = {
+    const defaultWeekly: Schema_Event = {
+      title: "⭐ That one thing...",
       isAllDay: false,
       isSomeday: true,
+      startDate: week.startDate,
+      endDate: week.endDate,
       priority: Priorities.UNASSIGNED,
       origin: Origin.COMPASS,
-      startDate,
-      endDate,
-      title: "⭐ That one thing...",
       description: `... that you wanna do this week, but aren't sure when.\
         \nKeep it here for safekeeping, then drag it over to the calendar once you're ready to commit times.\
         \n\nThese sidebar events are:\
@@ -96,7 +99,41 @@ class EventService {
         \n-limited to ${SOMEDAY_WEEKLY_LIMIT} per week`,
     };
 
-    return await this.create(userId, defaultSomedayEvent);
+    const weeklyRepeat: Schema_Event = {
+      title: "🪴 Water plants",
+      isAllDay: false,
+      isSomeday: true,
+      startDate: week.startDate,
+      endDate: week.endDate,
+      origin: Origin.COMPASS,
+      priority: Priorities.SELF,
+      description: `This event happens every week.\
+        \n\nRather than repeating forever, however, it'll stop after ${
+          RRULE_COUNT_WEEKS / RRULE_COUNT_MONTHS
+        } months.\
+        \n\nThis encourages frequent re-prioritizing, rather than running on autopilot indefinitely.`,
+      recurrence: {
+        rule: [RRULE.WEEK],
+      },
+    };
+
+    const monthlyRepeat: Schema_Event = {
+      isAllDay: false,
+      isSomeday: true,
+      origin: Origin.COMPASS,
+      priority: Priorities.RELATIONS,
+      startDate: month.startDate,
+      endDate: month.endDate,
+      title: "🎲 Schedule game night",
+      recurrence: {
+        rule: [RRULE.MONTH],
+      },
+      description: `This one repeats once a month for ${RRULE_COUNT_MONTHS} months`,
+    };
+
+    await this.create(userId, weeklyRepeat);
+    await this.create(userId, monthlyRepeat);
+    return await this.create(userId, defaultWeekly);
   };
 
   createMany = async (events: Schema_Event[]) => {

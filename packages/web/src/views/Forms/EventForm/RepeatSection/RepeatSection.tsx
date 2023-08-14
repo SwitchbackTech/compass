@@ -38,7 +38,6 @@ export const RepeatSection: FC<Props> = ({
           bgColor={bgColor}
           onChangeRecurrence={(rule) => {
             if (rule === null) {
-              // onSetEventField("recurrence", null);
               onSetEventField("recurrence", { ...recurrence, rule: null });
             } else {
               onSetEventField("recurrence", { ...recurrence, rule });
