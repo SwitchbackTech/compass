@@ -20,6 +20,7 @@ import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
 import { LeftSidebar } from "./components/LeftSidebar";
 import { RightSidebar } from "./components/RightSidebar";
 import { Draft } from "./components/Event/Draft";
+import { Dedication } from "./components/Dedication";
 
 export const Calendar = () => {
   const sessionContext = Session.useSessionContext();
@@ -64,6 +65,8 @@ export const CalendarView = () => {
 
   return (
     <Styled id="cal">
+      <Dedication />
+
       <Draft
         dateCalcs={dateCalcs}
         isSidebarOpen={prefs.isLeftSidebarOpen}
