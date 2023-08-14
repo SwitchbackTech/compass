@@ -111,6 +111,8 @@ module.exports = {
     {
       displayName: "web",
       moduleNameMapper: {
+        "\\.(jpg|jpeg|png|gif)$":
+          "<rootDir>/packages/web/src/__tests__/__mocks__/file.stub.js",
         "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
         "^@web/__tests__/(.*)$": "<rootDir>/packages/web/src/__tests__/$1",
         "^@web/assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
