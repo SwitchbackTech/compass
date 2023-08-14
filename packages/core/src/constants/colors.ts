@@ -23,7 +23,6 @@ export const colors: Colors = {
   [ColorNames.GREY_1]: BASE_COLORS.ONYX_GREY,
   [ColorNames.GREY_2]: "#395264",
   [ColorNames.GREY_3]: "#516371",
-  [ColorNames.GREY_4]: BASE_COLORS.LIGHT_GREY,
   [ColorNames.GREY_4]: "#A3B1BB",
   [ColorNames.GREY_5]: "#BDCFDC",
   [ColorNames.GREY_6]: "#7A858D",
