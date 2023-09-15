@@ -49,7 +49,7 @@
   "devDependencies": {
     "@doyensec/electronegativity": "^1.9.1",
     "@google-cloud/translate": "^7.0.2",
-    "electron": "^22.0.0",
+    "electron": "^26.2.1",
     "electron-builder": "^24.6.3",
     "electron-debug": "^3.2.0",
     "spectron": "^19.0.0"
