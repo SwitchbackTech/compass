@@ -2374,13 +2374,13 @@
     teeny-request "^8.0.0"
 
 "@google-cloud/functions-framework@^3.1.2":
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/@google-cloud/functions-framework/-/functions-framework-3.2.0.tgz#4f8e35c8f5f1c6b4aa0388e9cfbac5789eaa2186"
-  integrity sha512-eFafD4xocXmt3KM1z2X3lARvT2zLuXcw1V+T6xGoOAPfXQDduK77bKpkJx44QCAXh2c8qHYIT6dlSJWu5n5Lmg==
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/@google-cloud/functions-framework/-/functions-framework-3.3.0.tgz#9e4563e36ad8644aee1bb5dceaa715bd1ca6759d"
+  integrity sha512-+4O1dX5VNRK1W1NyAia7zy5jLf88ytuz39/1kVUUaNiOf76YbMZKV0YjZwfk7uEwRrC6l2wynK1G+q8Gb5DeVw==
   dependencies:
     "@types/express" "4.17.17"
     body-parser "^1.18.3"
-    cloudevents "^6.0.0"
+    cloudevents "^7.0.0"
     express "^4.16.4"
     minimist "^1.2.7"
     on-finished "^2.3.0"
@@ -5689,13 +5689,14 @@ clone@^1.0.2:
   resolved "https://registry.yarnpkg.com/clone/-/clone-1.0.4.tgz#da309cc263df15994c688ca902179ca3c7cd7c7e"
   integrity sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==
 
-cloudevents@^6.0.0:
-  version "6.0.4"
-  resolved "https://registry.yarnpkg.com/cloudevents/-/cloudevents-6.0.4.tgz#eea28e8cc518e7ae2533170745a0f2dbcd34789d"
-  integrity sha512-Vay81bTsutFkZxHnM2K0rev95d0x7aTZ3G+Bmm8/GnIzsVtGfeBkLcXFD4czZ08RoOn6POKl+rIXaBS+Xn+jIA==
+cloudevents@^7.0.0:
+  version "7.0.2"
+  resolved "https://registry.yarnpkg.com/cloudevents/-/cloudevents-7.0.2.tgz#367b22bb6399ab15a6b18347e6ce5ccecdc87849"
+  integrity sha512-WiOqWsNkMZmMMZ6xa3kzx/MA+8+V+c5eGkStZIcik+Px2xCobmzcacw1EOGyfhODaQKkIv8TxXOOLzV69oXFqA==
   dependencies:
     ajv "^8.11.0"
     ajv-formats "^2.1.1"
+    json-bigint "^1.0.0"
     process "^0.11.10"
     util "^0.12.4"
     uuid "^8.3.2"
