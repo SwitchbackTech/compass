@@ -1,5 +1,7 @@
-import { Category_VM, VmInfo } from "@scripts/common/cli.types";
+import dotenv from "dotenv";
+import path from "path";
 import shell from "shelljs";
+import { Category_VM, VmInfo } from "@scripts/common/cli.types";
 
 import { COMPASS_BUILD_DEV, COMPASS_ROOT_DEV } from "../common/cli.constants";
 import { getVmInfo, getPckgsTo } from "../common/cli.utils";
@@ -46,12 +48,11 @@ const buildWeb = (vmInfo: VmInfo) => {
   console.log("Getting API baseUrl ...");
   const { baseUrl, destination } = vmInfo;
 
-  const gClientIdStag =
-    "***REMOVED***";
-  const gClientIdProd =
-    "***REMOVED***";
+  const envFile = destination === "staging" ? ".env" : ".env.prod";
+  const envPath = path.join(__dirname, "..", "..", "..", "backend", envFile);
+  dotenv.config({ path: envPath });
 
-  const gClientId = destination === "staging" ? gClientIdStag : gClientIdProd;
+  const gClientId = process.env["CLIENT_ID"] as string;
 
   console.log("Compiling web files...");
   shell.exec(

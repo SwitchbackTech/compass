@@ -1,9 +1,8 @@
 {
   "name": "compass-desktop",
   "description": "desktop client. Not working yet",
-  "author": "Switchback Tech LLC <hello@switchback.tech>",
+  "author": "Tyler Dane, Switchback LLC <hello@switchback.tech>",
   "version": "2.0.0",
-  "license": "SEE LICENSE IN LICENSE",
   "private": true,
   "build": {
     "productName": "Compass Calendar",

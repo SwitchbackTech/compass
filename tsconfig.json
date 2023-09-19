@@ -4,7 +4,8 @@
   "include": [
     "packages/core/src/**/*.ts",
     "packages/backend/src/**/*.ts",
-    "packages/scripts/src/**/*.ts"
+    "packages/scripts/src/**/*.ts",
+    "packages/scripts/src/commands/dev.js"
   ],
   "exclude": ["**/__mocks__/*", "**/*.test.ts*", "**/*.test.js*"],
   "compilerOptions": {

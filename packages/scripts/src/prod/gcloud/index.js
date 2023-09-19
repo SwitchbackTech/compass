@@ -32,8 +32,8 @@ exports.runSyncMaintenance = (req, res) => {
   };
 
   const msg = {
-    to: "hello@switchback.tech",
-    from: "***REMOVED***",
+    to: process.env.EMAIL_TO,
+    from: process.env.EMAIL_FROM,
   };
 
   axios(config)
