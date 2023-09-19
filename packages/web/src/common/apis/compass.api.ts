@@ -33,9 +33,7 @@ CompassApi.interceptors.response.use(
     if (status === Status.GONE || status === Status.REDUX_REFRESH_NEEDED) {
       await _signOut(LOGIN_REQUIRED_MSG);
     } else {
-      alert(
-        "Hmm, something's off.\nPlease let Tyler know: tyler@switchback.tech"
-      );
+      alert("Hmm, something's off.");
       console.log(error);
       return Promise.reject(error);
     }

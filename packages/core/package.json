@@ -1,9 +1,8 @@
 {
   "name": "@compass/core",
   "description": "common core module shared across packages",
-  "author": "Switchback Tech LLC <hello@switchback.tech>",
+  "author": "Switchback LLC <hello@switchback.tech>",
   "version": "1.0.0",
-  "license": "SEE LICENSE IN LICENSE",
   "private": true,
   "main": "",
   "scripts": {

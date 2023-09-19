@@ -9,6 +9,7 @@ build.zip
 electron/localization/locales/en/translation.missing.json
 globalConfig.json
 sendgrid.env
+credentials.txt
 
 # wildcards
 *.env*

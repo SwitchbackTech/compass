@@ -7,10 +7,10 @@ dotenv.config({
 import { Command } from "commander";
 import mongoService from "@backend/common/services/mongo.service";
 
+import { getPckgsTo, getVmInfo } from "./common/cli.utils";
 import { analyzeWeb } from "./commands/analyze";
 import { runBuild } from "./commands/build";
 import { copyToVM } from "./commands/scp";
-import { getPckgsTo, getVmInfo } from "./common/cli.utils";
 
 mongoService;
 
@@ -66,6 +66,7 @@ const runScript = async () => {
     case options["delete"]: {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
       const { startDeleteFlow } = require("./commands/delete");
+
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       startDeleteFlow(
         options["user"] as string | null,
@@ -82,37 +83,3 @@ runScript().catch((err) => {
   console.log(err);
   process.exit(1);
 });
-// const connectToDb = async () => {
-//   let isReady = false;
-
-//   mongoService.client?.once("connection", () => {
-//     console.log("!!\n\nconnected");
-//   });
-//   const checkDB = () => {
-//     const connected = mongoService.isConnected();
-//     if (connected) {
-//       isReady = true;
-//     }
-//   };
-
-//   const wait = () => {
-//     console.log("waiting ...");
-//     setTimeout(() => {
-//       checkDB();
-//       if (isReady) {
-//         console.log("running func after waiting..");
-//       } else wait();
-//     }, 2000);
-//   };
-
-//   checkDB();
-
-//   if (isReady) {
-//     console.log("running func...");
-//     return Promise.resolve();
-//   } else {
-//     wait();
-//     checkDB();
-//     if (isReady) return Promise.resolve();
-//   }
-// };

@@ -54,11 +54,7 @@ export const RightSidebar: FC<Props> = (props) => {
           title="right sidebar divider"
           withAnimation={false}
         />
-        <p>Found a bug or want to share an idea?</p>
-        <a href="mailto:tyler@switchback.tech?subject=Compass%20Feedback">
-          Let Tyler know️
-        </a>
-        <span> 📨</span>
+
         <Divider
           color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
           role="separator"
