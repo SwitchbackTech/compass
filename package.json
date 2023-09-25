@@ -1,7 +1,7 @@
 {
-  "author": "Switchback LLC <hello@switchback.tech>",
-  "name": "compass-calendar",
-  "description": "calendar monorepo root",
+  "name": "compass",
+  "description": "Compass Monorepo",
+  "license": "MIT",
   "version": "1.0.0",
   "private": true,
   "browserslist": "last 2 Chrome versions",

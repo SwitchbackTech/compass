@@ -1,6 +1,7 @@
 {
-  "author": "Tyler Dane, Switchback LLC <hello@switchback.tech>",
   "name": "@compass/web",
+  "description": "Compass Web App",
+  "license": "MIT",
   "version": "1.0.0",
   "main": "src/App.ts",
   "typings": "declaration.d.ts",

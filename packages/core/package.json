@@ -1,7 +1,7 @@
 {
   "name": "@compass/core",
-  "description": "common core module shared across packages",
-  "author": "Switchback LLC <hello@switchback.tech>",
+  "description": "Core module shared across packages",
+  "license": "MIT",
   "version": "1.0.0",
   "private": true,
   "main": "",

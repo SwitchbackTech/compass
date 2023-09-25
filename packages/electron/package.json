@@ -1,7 +1,7 @@
 {
   "name": "compass-desktop",
-  "description": "desktop client. Not working yet",
-  "author": "Tyler Dane, Switchback LLC <hello@switchback.tech>",
+  "description": "Desktop client. Not working yet",
+  "license": "MIT",
   "version": "2.0.0",
   "private": true,
   "build": {
