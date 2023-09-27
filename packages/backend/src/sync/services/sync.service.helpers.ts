@@ -25,6 +25,7 @@ import {
   GcalError,
   SyncError,
 } from "@backend/common/constants/error.constants";
+import { ENV } from "@backend/common/constants/env.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
@@ -408,11 +409,18 @@ export const prepIncrementalImport = async (
   userId: string,
   gcal: gCalendar
 ) => {
-  const sync = await getSync({ userId });
   const { gCalendarIds, calListNextSyncToken } = await getCalendarsToSync(
     userId,
     gcal
   );
+
+  const sync = await getSync({ userId });
+  if (!sync) {
+    throw error(
+      SyncError.NoSyncRecordForUser,
+      "Prepping for incremental import failed"
+    );
+  }
 
   const noRefreshNeeded =
     sync !== null &&
@@ -423,8 +431,18 @@ export const prepIncrementalImport = async (
     return sync.google.events;
   }
 
-  await updateSyncTokenFor("calendarlist", userId, calListNextSyncToken);
+  const isNotUsingHTTPS =
+    ENV.BASEURL !== undefined && !ENV.BASEURL.includes("https");
+  if (isNotUsingHTTPS) {
+    logger.warn(
+      `Reminder: Skipping gcal watch because BASEURL does not use HTTPS: '${
+        ENV.BASEURL || ""
+      }'`
+    );
+    return sync.google.events;
+  }
 
+  await updateSyncTokenFor("calendarlist", userId, calListNextSyncToken);
   const eventWatchPayloads = assembleEventWatchPayloads(
     sync as Schema_Sync,
     gCalendarIds

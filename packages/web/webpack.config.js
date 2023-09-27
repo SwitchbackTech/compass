@@ -12,13 +12,19 @@ module.exports = (env, argv) => {
   const GLOBAL_SCSS = resolvePath("src/common/styles/index.scss");
 
   const ANALYZE_BUNDLE = env.analyze;
-  const API_BASEURL = env.API_BASEURL;
-  const API_BASEURL_SYNC = env.API_BASEURL_SYNC;
+  const API_BASEURL =
+    env.API_BASEURL === "undefined"
+      ? `http://localhost:${env.API_PORT}}`
+      : env.API_BASEURL;
+
   const IS_DEV = argv.mode === "development";
   const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
 
-  if (!argv.mode || !API_BASEURL || !API_BASEURL_SYNC || !GOOGLE_CLIENT_ID) {
-    console.error("oopsies, you didn't include an required env variable");
+  if (!argv.mode || GOOGLE_CLIENT_ID === "undefined") {
+    console.error(`Oopsies, you're missing a required parameter.
+      Make sure you include all required environment variables in the .env file.
+      Reference: https://docs.compasscalendar.com/docs/getting-started/Configuration/env\n
+    `);
     return;
   }
 
@@ -34,7 +40,6 @@ module.exports = (env, argv) => {
   const _plugins = [
     new DefinePlugin({
       "process.env.API_BASEURL": JSON.stringify(API_BASEURL),
-      "process.env.API_BASEURL_SYNC": JSON.stringify(API_BASEURL_SYNC),
       "process.env.GOOGLE_CLIENT_ID": JSON.stringify(GOOGLE_CLIENT_ID),
     }),
     new HtmlWebpackPlugin({

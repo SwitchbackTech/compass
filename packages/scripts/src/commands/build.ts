@@ -2,10 +2,11 @@ import dotenv from "dotenv";
 import path from "path";
 import shell from "shelljs";
 import { Category_VM, VmInfo } from "@scripts/common/cli.types";
-
-import { COMPASS_BUILD_DEV, COMPASS_ROOT_DEV } from "../common/cli.constants";
-import { getVmInfo, getPckgsTo } from "../common/cli.utils";
-import { copyToVM } from "./scp";
+import {
+  COMPASS_BUILD_DEV,
+  COMPASS_ROOT_DEV,
+} from "@scripts/common/cli.constants";
+import { getVmInfo, getPckgsTo } from "@scripts/common/cli.utils";
 
 const buildPackages = async (pckgs: string[], vmInfo: VmInfo) => {
   if (pckgs.length === 0) {
@@ -19,7 +20,6 @@ const buildPackages = async (pckgs: string[], vmInfo: VmInfo) => {
 
   if (pckgs.includes("web")) {
     buildWeb(vmInfo);
-    copyToVM(pckgs, vmInfo);
   }
 };
 
@@ -28,6 +28,7 @@ const buildNodePckgs = async (vmInfo: VmInfo) => {
   removeOldBuildFor("nodePckgs");
 
   console.log("Compiling node packages ...");
+  // eslint-disable-next-line @typescript-eslint/require-await
   shell.exec("yarn tsc --project tsconfig.json", async function (code: number) {
     if (code !== 0) {
       console.log("Exiting because of compilation errors");
@@ -38,7 +39,7 @@ const buildNodePckgs = async (vmInfo: VmInfo) => {
 
     copyConfigFilesToBuild(vmInfo);
 
-    installProdDependencies(vmInfo);
+    installProdDependencies();
   });
 };
 
@@ -56,7 +57,7 @@ const buildWeb = (vmInfo: VmInfo) => {
 
   console.log("Compiling web files...");
   shell.exec(
-    `webpack --mode=production --env API_BASEURL=${baseUrl} API_BASEURL_SYNC=${baseUrl} GOOGLE_CLIENT_ID=${gClientId}`
+    `webpack --mode=production --env API_BASEURL=${baseUrl} GOOGLE_CLIENT_ID=${gClientId}`
   );
 
   shell.cd(COMPASS_ROOT_DEV);
@@ -68,13 +69,13 @@ const copyConfigFilesToBuild = (vmInfo: VmInfo) => {
 
   const envName = vmInfo.destination === "production" ? ".prod.env" : ".env";
 
-  console.log("copying root configs to build ...");
+  console.log("Copying root configs to build ...");
   shell.cp(
     `${COMPASS_ROOT_DEV}/packages/backend/${envName}`,
     `${NODE_BUILD}/.env`
   );
 
-  console.log("copying package configs to build ...");
+  console.log("Copying package configs to build ...");
   shell.cp(`${COMPASS_ROOT_DEV}/package.json`, `${NODE_BUILD}/package.json`);
 
   shell.cp(
@@ -87,8 +88,8 @@ const copyConfigFilesToBuild = (vmInfo: VmInfo) => {
   );
 };
 
-const installProdDependencies = (vmInfo: VmInfo) => {
-  console.log("installing prod dependencies for node pckgs ...");
+const installProdDependencies = () => {
+  console.log("Installing prod dependencies for node pckgs ...");
 
   shell.cd(`${COMPASS_BUILD_DEV}/node`);
   shell.exec("yarn install --production", function (code: number) {
@@ -98,8 +99,6 @@ const installProdDependencies = (vmInfo: VmInfo) => {
     }
 
     zipNode();
-
-    copyToVM(["nodePckgs"], vmInfo);
   });
 };
 
@@ -112,6 +111,7 @@ const removeOldBuildFor = (pckg: "nodePckgs" | "web") => {
       "build/nodePckgs.zip",
     ]);
   }
+
   if (pckg === "web") {
     console.log("Removing old web build ...");
     shell.rm("-rf", ["build/web", "build/web.zip"]);
