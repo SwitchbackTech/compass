@@ -24,15 +24,10 @@ export const Grid: FC<Props> = ({
   today,
   weekProps,
 }) => {
-  // const [isLoading, setIsLoading] = useState(false);
-  // selectIsEventProcessing,
-  // const isProcessing = useAppSelector(selectIsProcessing);
-
   const { allDayRef, gridScrollRef, mainGridRef } = gridRefs;
 
   return (
     <>
-      {/* {isProcessing && <AbsoluteOverflowLoader />} */}
       <AllDayRow
         allDayRef={allDayRef}
         dateCalcs={dateCalcs}

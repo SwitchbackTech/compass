@@ -10,7 +10,7 @@ import { getVmInfo, getPckgsTo } from "@scripts/common/cli.utils";
 
 const buildPackages = async (pckgs: string[], vmInfo: VmInfo) => {
   if (pckgs.length === 0) {
-    console.log("ya gotta select a package to build");
+    console.log("Ya gotta select a package to build");
     process.exit(1);
   }
 

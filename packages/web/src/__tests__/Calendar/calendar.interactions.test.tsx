@@ -26,11 +26,9 @@ it("displays alert upon server error", async () => {
   render(<CalendarView />);
 
   await waitFor(() => {
-    //++ replace with ....toHaveBeenCalledTimes() after fixing
-    // expect(alertMock).toHaveBeenCalledTimes(1);
     expect(alertMock).toHaveBeenCalled();
   });
-  // expect(consoleLogMock).toHaveBeenCalledTimes(1);
+  expect(consoleLogMock).toHaveBeenCalled();
 });
 
 describe("Calendar Interactions", () => {

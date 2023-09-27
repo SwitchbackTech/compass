@@ -20,23 +20,15 @@ export const useDateCalcs = (
   measurements: Measurements_Grid,
   scrollRef: Ref_Grid
 ) => {
-  // const { allDayRow, colWidths, mainGrid, hourHeight } = measurements;
-
-  // const _measurements = useRef(measurements);
   const _measurements = useRef(measurements);
-  // const _measurements: { current: Measurements_Grid } = useRef();
 
   useLayoutEffect(() => {
-    // console.log("updating measRef [dateCalcs]");
     _measurements.current = measurements;
   }, [measurements]);
 
   const getDateByX = (x: number, firstDayInView: Dayjs) => {
     const gridX = x - GRID_X_START;
     const dayIndex = getDayNumberByX(gridX);
-    // const dayIndex = getDayNumberByX(x);
-    // console.log(`${gridX} = ${dayIndex}`);
-
     const date = firstDayInView.add(dayIndex, "day");
 
     return date;

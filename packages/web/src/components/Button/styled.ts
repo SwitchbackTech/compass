@@ -5,8 +5,8 @@ import {
   getColor,
   getInvertedColor,
 } from "@core/util/color.utils";
-import { Flex } from "@web/components/Flex";
 import { BASE_COLORS } from "@core/constants/colors";
+import { Flex } from "@web/components/Flex";
 
 export const StyledFeedbackBtnContainer = styled(Flex)`
   position: absolute;
@@ -59,7 +59,6 @@ export const StyledSaveBtn = styled(PalletteBtn)<CustomProps>`
   min-width: ${({ minWidth }) => minWidth}px;
 
   &:focus {
-    /* border-width: ${({ bordered }) => (bordered ? 2 : 1)}px; */
     border: 2px solid ${BASE_COLORS.DEEP_BLUE};
   }
   &:hover {

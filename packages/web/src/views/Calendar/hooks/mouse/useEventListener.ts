@@ -31,7 +31,7 @@ export const useEventListener = (
     return () => {
       element.removeEventListener(eventName, listener);
     };
-    //++ removing 'element' passes some eventform tests
+    // removing 'element' passes some eventform tests
     // but fails to capture onmouseup events from useGridClick
     // }, [element, eventName]);
   }, [element, eventName]);

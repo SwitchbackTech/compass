@@ -132,12 +132,3 @@ export const ACCEPTED_TIMES = [
   "11:30 PM",
   "11:45 PM",
 ];
-/*
-export const getTimes = () =>
-  Array(24 * 4)
-    .fill(0)
-    .map((_, i) => {
-      // eslint-disable-next-line no-bitwise
-      return `0${~~(i / 4)}:0${60 * ((i / 4) % 1)}`.replace(/\d(\d\d)/g, "$1");
-    });
-*/

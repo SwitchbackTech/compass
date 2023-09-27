@@ -1,5 +1,4 @@
 import styled, { keyframes } from "styled-components";
-
 import { Flex } from "@web/components/Flex";
 
 export const Styled = styled(Flex)`

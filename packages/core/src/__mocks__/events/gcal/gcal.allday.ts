@@ -10,11 +10,11 @@ export const allday = [
     updated: "2022-02-27T02:57:28.950Z",
     summary: "Feb 22",
     creator: {
-      email: "***REMOVED***",
+      email: "foo@gmail.com",
       self: true,
     },
     organizer: {
-      email: "***REMOVED***",
+      email: "foo@gmail.com",
       self: true,
     },
     start: {

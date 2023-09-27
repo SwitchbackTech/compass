@@ -125,7 +125,7 @@ export const gcalCalendarList = {
     {
       kind: "calendar#calendarListEntry",
       etag: '"1616105848842000"',
-      id: "***REMOVED***",
+      id: "bar@gmail.com",
       summary: "Commitments",
       timeZone: "America/Chicago",
       summaryOverride: "Commitments",
@@ -142,7 +142,7 @@ export const gcalCalendarList = {
     {
       kind: "calendar#calendarListEntry",
       etag: '"1638246533138000"',
-      id: "***REMOVED***",
+      id: "foo@gmail.com",
       summary: "Switchback",
       timeZone: "America/Chicago",
       colorId: "16",
@@ -158,7 +158,7 @@ export const gcalCalendarList = {
     {
       kind: "calendar#calendarListEntry",
       etag: '"1640113725386000"',
-      id: "***REMOVED***@gmail.com",
+      id: "foo@gmail.com",
       summary: "*Miscellaneous*",
       timeZone: "America/Chicago",
       colorId: "14",

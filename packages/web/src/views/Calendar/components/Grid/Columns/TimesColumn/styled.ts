@@ -1,6 +1,5 @@
 import styled from "styled-components";
-import { Colors, ColorNames } from "@core/constants/colors";
-import { getColor } from "@core/util/color.utils";
+import { Colors } from "@core/types/color.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 
 interface Props {

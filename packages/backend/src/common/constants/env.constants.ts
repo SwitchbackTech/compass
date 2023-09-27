@@ -25,6 +25,8 @@ export const ENV = {
   PORT: process.env["PORT"] || PORT_DEFAULT_API,
   SUPERTOKENS_URI: process.env["SUPERTOKENS_URI"] || _error,
   SUPERTOKENS_KEY: process.env["SUPERTOKENS_KEY"] || _error,
+  TOKEN_GCAL_NOTIFICATION: process.env["TOKEN_GCAL_NOTIFICATION"] || _error,
+  TOKEN_COMPASS_SYNC: process.env["TOKEN_COMPASS_SYNC"] || _error,
 };
 
 if (Object.values(ENV).includes(_error)) {

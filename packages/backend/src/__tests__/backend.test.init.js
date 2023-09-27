@@ -14,3 +14,5 @@ process.env.SUPERTOKENS_KEY = "sTKey";
 process.env.EMAILER_API_KEY = "emailerApiKey";
 process.env.EMAILER_API_SECRET = "emailerApiSecret";
 process.env.EMAILER_LIST_ID = 1234567;
+process.env.TOKEN_GCAL_NOTIFICATION = "secretToken1";
+process.env.TOKEN_COMPASS_SYNC = "secretToken2";

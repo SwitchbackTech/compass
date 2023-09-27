@@ -2,7 +2,7 @@ export const recurring = [
   {
     kind: "calendar#events",
     etag: '"p324b50evgebo00o"',
-    summary: "***REMOVED***@gmail.com",
+    summary: "foo@gmail.com",
     updated: "2023-07-18T00:45:38.805Z",
     timeZone: "America/Chicago",
     accessRole: "owner",
@@ -25,11 +25,11 @@ export const recurring = [
         updated: "2023-07-17T16:10:09.069Z",
         summary: "Walk Snickers",
         creator: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         organizer: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         start: {
@@ -59,11 +59,11 @@ export const recurring = [
         updated: "2023-07-17T16:12:24.016Z",
         summary: "Walk Snickers | Daily",
         creator: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         organizer: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         start: {
@@ -97,11 +97,11 @@ export const recurring = [
         updated: "2023-07-18T00:45:38.805Z",
         summary: "Walk Snickers | Edited This Event Only",
         creator: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         organizer: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         start: {
@@ -135,11 +135,11 @@ export const recurring = [
         updated: "2023-07-17T16:12:46.633Z",
         summary: "Write Newsletter | Weekly on Mon",
         creator: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         organizer: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         start: {
@@ -169,11 +169,11 @@ export const recurring = [
         updated: "2023-07-17T16:13:32.225Z",
         summary: "Clean Car | Monthly on 3rd Mon",
         creator: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         organizer: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         start: {
@@ -203,11 +203,11 @@ export const recurring = [
         updated: "2023-07-17T16:13:58.298Z",
         summary: "Celebrate Anniversary | Annually on July 17",
         creator: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         organizer: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         start: {
@@ -237,11 +237,11 @@ export const recurring = [
         updated: "2023-07-17T16:14:14.811Z",
         summary: "Lunch Break | Weekdays",
         creator: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         organizer: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         start: {
@@ -271,11 +271,11 @@ export const recurring = [
         updated: "2023-07-17T16:15:07.759Z",
         summary: "Study for Exam | MWF until Dec 31",
         creator: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         organizer: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         start: {
@@ -307,11 +307,11 @@ export const recurring = [
         updated: "2023-07-17T16:15:57.532Z",
         summary: "Pay Credit Card | Monthly on 17 For 10 Occurrences",
         creator: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         organizer: {
-          email: "***REMOVED***@gmail.com",
+          email: "foo@gmail.com",
           self: true,
         },
         start: {

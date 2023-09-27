@@ -1,8 +1,8 @@
 import React from "react";
 import { colorNameByPriority } from "@core/constants/colors";
 import { Priority } from "@core/constants/core.constants";
-import { SaveBtn } from "@web/components/Button";
 import { getBrighterColor } from "@core/util/color.utils";
+import { SaveBtn } from "@web/components/Button";
 
 import { StyledSubmitRow } from "../styled";
 

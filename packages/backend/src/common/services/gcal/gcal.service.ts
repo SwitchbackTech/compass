@@ -2,10 +2,7 @@ import { gSchema$Event, gParamsEventsList, gCalendar } from "@core/types/gcal";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import { Params_WatchEvents } from "@core/types/sync.types";
 import { ENV } from "@backend/common/constants/env.constants";
-import {
-  GCAL_PRIMARY,
-  GCAL_NOTIFICATION_TOKEN,
-} from "@backend/common/constants/backend.constants";
+import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { GcalError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
@@ -63,10 +60,10 @@ class GCalService {
       calendarId: params.gCalendarId,
       requestBody: {
         // reminder: address always needs to be HTTPS
-        address: ENV.BASEURL + GCAL_NOTIFICATION_ENDPOINT,
+        address: (ENV.BASEURL as string) + GCAL_NOTIFICATION_ENDPOINT,
         expiration: params.expiration,
         id: params.channelId,
-        token: GCAL_NOTIFICATION_TOKEN,
+        token: ENV.TOKEN_GCAL_NOTIFICATION,
         type: "web_hook",
       },
       syncToken: params.nextSyncToken,

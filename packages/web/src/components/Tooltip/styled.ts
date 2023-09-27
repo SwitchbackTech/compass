@@ -1,8 +1,8 @@
 import styled from "styled-components";
 import { ColorNames } from "@core/types/color.types";
 import { getColor } from "@core/util/color.utils";
-import { Flex } from "@web/components/Flex";
 import { BASE_COLORS } from "@core/constants/colors";
+import { Flex } from "@web/components/Flex";
 
 export const StyledShortcutTip = styled(Flex)`
   background-color: ${BASE_COLORS.LIGHT_GREY};
