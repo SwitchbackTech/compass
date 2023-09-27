@@ -73,7 +73,7 @@ export const invalidSyncTokenError = new GaxiosError(
         return (status >= 200 && status < 300) || status === 304;
       },
       retry: true,
-      body: '{"address":"https://foo.yourdomain.app/api/sync/gcal/notifications","expiration":"1675307413038","id":"5af8c0d2-de66-4954-9860-ce43c7c60a22","token":"***REMOVED***","type":"web_hook"}',
+      body: '{"address":"https://foo.yourdomain.app/api/sync/gcal/notifications","expiration":"1675307413038","id":"5af8c0d2-de66-4954-9860-ce43c7c60a22","token":"somesecrettoke","type":"web_hook"}',
       responseType: "json",
       retryConfig: {
         currentRetryAttempt: 0,
