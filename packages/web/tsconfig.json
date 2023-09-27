@@ -27,7 +27,6 @@
     // "experimentalDecorators": true,
     // "sourceMap": true,
     // "outDir": "./dist/tsc/",
-    // "jsx": "react-jsx",
     "jsx": "react",
     "paths": {
       "@web/*": ["./src/*"],

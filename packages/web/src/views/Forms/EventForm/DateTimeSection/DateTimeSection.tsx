@@ -306,39 +306,3 @@ export const DateTimeSection: FC<Props> = ({
     </StyledDateTimeFlex>
   );
 };
-
-/*
-
-  const onStartTimePickerOpen = () => {
-    setIsStartTimePickerOpen(true);
-    setAutoFocusedTimePicker("start");
-
-    if (startTime) {
-      setStartTime(startTime);
-      setIsEndTimePickerOpen(true);
-      return;
-    }
-
-    const roundedUpMinutes = roundToNext(dayjs().minute(), GRID_TIME_STEP);
-    const _start = dayjs().set("minute", roundedUpMinutes);
-    const value = _start.format(HOURS_MINUTES_FORMAT);
-    const label = _start.format(HOURS_AM_FORMAT);
-
-    setStartTime({ value, label });
-
-    if (endTime) {
-      setIsEndTimePickerOpen(true);
-    }
-  };
-*/
-/*
-  const findOption = () => {
-    const endOption = timeOptions.find((_option) => {
-      const option = dayjs(`2000-00-00 ${_option.value}`, YMDHAM_FORMAT);
-      const start = dayjs(`2000-00-00 ${startTime.value}`, YMDHAM_FORMAT);
-      const startTimeAdded = start.add(30, "minute");
-
-      return option.isSame(startTimeAdded);
-    });
-  };
-  */

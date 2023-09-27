@@ -1,12 +1,12 @@
 import React, { FC } from "react";
 import Select from "react-select";
 import { ColorHex } from "@core/constants/colors";
+import { Schema_Event } from "@core/types/event.types";
 import { Recurrence_Selection } from "@web/common/types/web.event.types";
 import {
   getRecurrenceOption,
   getRecurrenceRule,
 } from "@web/common/utils/web.date.util";
-import { Schema_Event } from "@core/types/event.types";
 
 import {
   StyledRepeatRow,

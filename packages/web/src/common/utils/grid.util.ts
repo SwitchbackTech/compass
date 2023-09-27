@@ -348,7 +348,6 @@ export const getRelativePercentages = (todayIndex: number) => {
   return { beforeToday, afterTmrw };
 };
 
-// ++ remove
 export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
   // past/future week
   if (week !== today.week()) return FLEX_EQUAL;
@@ -445,7 +444,6 @@ export const getLineClamp = (durationHours: number) => {
   return Math.round((heightOfEvent - 7) / 16) || 1;
 };
 
-// ++ remove
 export const getPrevDayWidth = (today: Dayjs) => {
   const todayWeekNum = today.get("day") + 1;
   const yesterdayDayNum = todayWeekNum - 1;

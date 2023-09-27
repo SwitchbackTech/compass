@@ -312,7 +312,6 @@ export const useDraftUtil = (
             endDate,
             startDate,
             priority: draft.priority,
-            // [dateKey]: currTime.format(),
           };
         });
       };

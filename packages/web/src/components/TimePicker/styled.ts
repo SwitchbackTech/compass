@@ -1,10 +1,10 @@
 import styled from "styled-components";
-import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
-import { Divider } from "@web/components/Divider";
-import { FORM_TIME_SIZE } from "@web/views/Forms/EventForm/styled";
 import { BASE_COLORS } from "@core/constants/colors";
 import { getColor } from "@core/util/color.utils";
 import { ColorNames } from "@core/types/color.types";
+import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
+import { Divider } from "@web/components/Divider";
+import { FORM_TIME_SIZE } from "@web/views/Forms/EventForm/styled";
 
 export interface Props {
   bgColor?: string;

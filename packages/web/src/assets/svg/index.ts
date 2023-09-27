@@ -5,5 +5,4 @@ export { default as MonthCalendarIcon } from "./monthCalendar.svg";
 export { default as HamburgerMenuIcon } from "./hamburgerMenu.svg";
 export { default as SidebarCollapseIcon } from "./sidebarCollapse.svg";
 export { default as SidebarOpenIcon } from "./sidebarOpen.svg";
-export { default as StrawberryMenuIcon } from "./strawberryMenu.svg";
 export { default as TrashIcon } from "./trash.svg";

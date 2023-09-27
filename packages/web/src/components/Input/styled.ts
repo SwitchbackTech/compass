@@ -1,6 +1,6 @@
 import styled from "styled-components";
-import { InputProps, inputBaseStyles } from "@web/common/styles/components";
 import { BASE_COLORS } from "@core/constants/colors";
+import { InputProps, inputBaseStyles } from "@web/common/styles/components";
 
 export enum Scale {
   SMALL = "small",

@@ -1,6 +1,6 @@
-import { call, put, takeLatest, select } from "@redux-saga/core/effects";
 import { normalize } from "normalizr";
 import dayjs from "dayjs";
+import { call, put, takeLatest, select } from "@redux-saga/core/effects";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { RootState } from "@web/store";
@@ -46,7 +46,6 @@ function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
       selectEventById(state, _id)
     )) as Response_GetEventsSaga;
 
-    //++ call prepEvtBeforeConvertToSomedayt
     const updatedEvent = { ...currEvent, ...updatedFields };
     delete updatedEvent.order;
     delete updatedEvent.recurrence;

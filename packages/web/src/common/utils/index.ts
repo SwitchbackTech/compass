@@ -1,5 +1,3 @@
-import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
-
 export const headers = (token?: string) => {
   if (token) {
     return {

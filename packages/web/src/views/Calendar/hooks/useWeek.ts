@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Dayjs } from "dayjs";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { Category_View } from "@web/views/Calendar/calendarView.types";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 
 export const useWeek = (today: Dayjs) => {
   const dispatch = useAppDispatch();
