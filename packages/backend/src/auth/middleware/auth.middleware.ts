@@ -5,11 +5,9 @@ import {
   AuthError,
   GcalError,
 } from "@backend/common/constants/error.constants";
-import { IS_DEV } from "@backend/common/constants/env.constants";
+import { ENV, IS_DEV } from "@backend/common/constants/env.constants";
 import { hasGoogleHeaders } from "@backend/sync/util/sync.utils";
-import { GCAL_NOTIFICATION_TOKEN } from "@backend/common/constants/backend.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { COMPASS_SYNC_TOKEN } from "@backend/common/constants/backend.constants";
 
 class AuthMiddleware {
   verifyIsDev = (_req: Request, res: Response, next: NextFunction) => {
@@ -23,7 +21,7 @@ class AuthMiddleware {
 
   verifyIsFromCompass = (req: Request, res: Response, next: NextFunction) => {
     const tokenIsInvalid =
-      (req.headers["x-comp-token"] as string) !== COMPASS_SYNC_TOKEN;
+      (req.headers["x-comp-token"] as string) !== ENV.TOKEN_COMPASS_SYNC;
 
     if (tokenIsInvalid) {
       res.status(Status.FORBIDDEN).send({
@@ -41,7 +39,7 @@ class AuthMiddleware {
   verifyIsFromGoogle = (req: Request, res: Response, next: NextFunction) => {
     const tokenIsInvalid =
       (req.headers["x-goog-channel-token"] as string) !==
-      GCAL_NOTIFICATION_TOKEN;
+      ENV.TOKEN_GCAL_NOTIFICATION;
     const isMissingHeaders = !hasGoogleHeaders(req.headers);
 
     if (isMissingHeaders || tokenIsInvalid) {

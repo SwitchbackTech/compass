@@ -1,10 +1,10 @@
 import { SessionRequest } from "supertokens-node/framework/express";
-import { SReqBody, Res_Promise } from "@backend/common/types/express.types";
 import {
   Schema_Event,
   Params_DeleteMany,
   Payload_Order,
 } from "@core/types/event.types";
+import { SReqBody, Res_Promise } from "@backend/common/types/express.types";
 import eventService from "@backend/event/services/event.service";
 
 class EventController {

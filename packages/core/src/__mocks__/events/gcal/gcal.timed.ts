@@ -12,13 +12,13 @@ export const timed = [
     description: "Sign Lease and pick apartment",
     location: "PH",
     creator: {
-      email: "***REMOVED***@gmail.com",
-      displayName: "tyler hitzeman",
+      email: "foo@gmail.com",
+      displayName: "foo user",
       self: true,
     },
     organizer: {
-      email: "***REMOVED***@gmail.com",
-      displayName: "tyler hitzeman",
+      email: "foo@gmail.com",
+      displayName: "foo user",
       self: true,
     },
     start: {
@@ -57,13 +57,13 @@ export const timed = [
     description: "Speakers",
     location: "Memorial TITU",
     creator: {
-      email: "***REMOVED***@gmail.com",
-      displayName: "tyler hitzeman",
+      email: "foo@gmail.com",
+      displayName: "foo user",
       self: true,
     },
     organizer: {
-      email: "***REMOVED***@gmail.com",
-      displayName: "tyler hitzeman",
+      email: "foo@gmail.com",
+      displayName: "foo user",
       self: true,
     },
     start: {
@@ -76,12 +76,7 @@ export const timed = [
     },
     iCalUID: "m24m3crstgci7o468k9hqrr2gk@google.com",
     sequence: 1,
-    // extendedProperties: {
-    //   private: {
-    //     origin: "googleimport",
-    //     priority: "self",
-    //   },
-    // },
+
     reminders: {
       useDefault: true,
     },
@@ -100,13 +95,13 @@ export const timed = [
     location: "LTG/Terrace",
     colorId: "9",
     creator: {
-      email: "***REMOVED***@gmail.com",
-      displayName: "tyler hitzeman",
+      email: "foo@gmail.com",
+      displayName: "foo user",
       self: true,
     },
     organizer: {
-      email: "***REMOVED***@gmail.com",
-      displayName: "tyler hitzeman",
+      email: "foo@gmail.com",
+      displayName: "foo user",
       self: true,
     },
     start: {

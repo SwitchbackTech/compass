@@ -19,7 +19,7 @@ export class SyncRoutes extends CommonRoutesConfig {
     /***************
      * PROD ROUTES
      ***************/
-    this.app.route(GCAL_NOTIFICATION_ENDPOINT).post([
+    this.app.route(`/api${GCAL_NOTIFICATION_ENDPOINT}`).post([
       authMiddleware.verifyIsFromGoogle,
       //@ts-ignore
       syncController.handleGoogleNotification,

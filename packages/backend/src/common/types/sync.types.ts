@@ -1,5 +1,5 @@
-import { Result_Watch_Stop } from "@core/types/sync.types";
 import { DeleteResult, UpdateResult } from "mongodb";
+import { Result_Watch_Stop } from "@core/types/sync.types";
 
 export interface Summary_Resync {
   _delete: {

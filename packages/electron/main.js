@@ -220,25 +220,6 @@ ipcMain.on("synchronous-message", (event, arg) => {
   event.returnValue = "pong";
 });
 
-/*
-// demo of `toMain`
-ipcMain.on("toMain", (event, args) => {
-  console.log("reading file for fun ...");
-  fs.readFile(
-    "/Users/ty/src/switchback/calendar/app/electron/preload.js",
-    (error, data) => {
-      console.log("filedata:", data);
-      console.log("anyerrors:", error);
-      const responseObj = { status: "it worked" };
-
-      // Send result back to renderer process
-      console.log("sending results to renderer ...");
-      win.webContents.send("fromMain", responseObj);
-    }
-  );
-});
-*/
-
 // Quit when all windows are closed.
 app.on("window-all-closed", () => {
   // On macOS it is common for applications and their menu bar
