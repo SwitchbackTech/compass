@@ -1,16 +1,13 @@
 import path from "path";
 import dotenv from "dotenv";
 dotenv.config({
-  // assumes script is run from dev root
   path: path.resolve(process.cwd(), "packages/backend/.env"),
 });
 import { Command } from "commander";
 import mongoService from "@backend/common/services/mongo.service";
 
-import { getPckgsTo, getVmInfo } from "./common/cli.utils";
-import { analyzeWeb } from "./commands/analyze";
 import { runBuild } from "./commands/build";
-import { copyToVM } from "./commands/scp";
+import { Category_VM } from "./common/cli.types";
 
 mongoService;
 
@@ -22,12 +19,11 @@ const runScript = async () => {
   };
 
   const program = new Command();
-  program.option("-a, --analyze", "analyzes prod builds");
   program.option("-b, --build", "builds packages");
-  program.option("-c, --scp", "copies existing builds to VM");
   program.option("-d, --delete", "deletes users data from compass database");
   program.option(
-    "-e --environment <environment>, specify environment (`Category_VM` value)"
+    "-e --environment <environment>",
+    "specify environment (`Category_VM` value)"
   );
   program.option("-f, --force", "forces operation, no cautionary prompts");
   program.option(
@@ -45,22 +41,10 @@ const runScript = async () => {
   }
 
   switch (true) {
-    case options["analyze"]: {
-      analyzeWeb();
-      break;
-    }
     case options["build"]: {
-      await runBuild(options["packages"], options["environment"]);
-      break;
-    }
-    case options["scp"]: {
-      console.log(
-        "TODO - update .envs in build first -- might be re-using old one"
-      );
-      process.exit(1);
-      const pckgs = await getPckgsTo("scp");
-      const vmInfo = await getVmInfo();
-      copyToVM(pckgs, vmInfo);
+      const pckgs = options["packages"] as string[] | undefined;
+      const env = options["environment"] as Category_VM | undefined;
+      await runBuild(pckgs, env);
       break;
     }
     case options["delete"]: {
@@ -75,7 +59,7 @@ const runScript = async () => {
       break;
     }
     default:
-      exitHelpfully("unsupported cmd");
+      exitHelpfully("Unsupported cmd");
   }
 };
 

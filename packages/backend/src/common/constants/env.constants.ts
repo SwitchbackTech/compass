@@ -9,19 +9,18 @@ if (!Object.values(NodeEnv).includes(_nodeEnv)) {
 export const IS_DEV = isDev(_nodeEnv);
 const db = IS_DEV ? "dev_calendar" : "prod_calendar";
 
-const _error = "error!!!";
+const _error = ">> TODO: set this value in .env <<";
 
 export const ENV = {
-  BASEURL: process.env["BASEURL"] || _error,
-  CHANNEL_EXPIRATION_MIN: process.env["CHANNEL_EXPIRATION_MIN"] || _error,
+  BASEURL: process.env["BASEURL"],
+  CHANNEL_EXPIRATION_MIN: process.env["CHANNEL_EXPIRATION_MIN"] || "10",
   CLIENT_ID: process.env["CLIENT_ID"] || _error,
   CLIENT_SECRET: process.env["CLIENT_SECRET"] || _error,
   DB: db,
   EMAILER_KEY: process.env["EMAILER_API_KEY"] || _error,
   EMAILER_SECRET: process.env["EMAILER_API_SECRET"] || _error,
   EMAILER_LIST_ID: process.env["EMAILER_LIST_ID"] || _error,
-  LOG_LEVEL: process.env["LOG_LEVEL"] || "debug",
-  MONGO_URI: process.env["MONGO_URI"] || "mongodb://localhost:27017/",
+  MONGO_URI: process.env["MONGO_URI"] || _error,
   NODE_ENV: _nodeEnv,
   PORT: process.env["PORT"] || PORT_DEFAULT_API,
   SUPERTOKENS_URI: process.env["SUPERTOKENS_URI"] || _error,

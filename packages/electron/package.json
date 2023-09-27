@@ -1,9 +1,16 @@
 {
   "name": "compass-desktop",
-  "description": "desktop client. Not working yet",
-  "author": "Tyler Dane, Switchback LLC <hello@switchback.tech>",
+  "description": "Desktop client. Not working yet",
+  "license": "MIT",
   "version": "2.0.0",
   "private": true,
+  "scripts": {
+    "dev:desktop": "cross-env NODE_ENV=development electron .",
+    "audit:desktop": "yarn electronegativity -i ./ -x LimitNavigationGlobalCheck,PermissionRequestHandlerGlobalCheck",
+    "build:desktop": "electron-builder --dir",
+    "build:desktop -a": "electron-builder --mac --linux --windows",
+    "translate:desktop": "node localization/translateMissing.js"
+  },
   "build": {
     "productName": "Compass Calendar",
     "appId": "app.compasscalendar",

@@ -3,11 +3,10 @@ import { GaxiosError } from "googleapis-common";
 export const invalidValueError = new GaxiosError(
   "Invalid Value",
   {
-    url: "https://www.googleapis.com/calendar/v3/calendars/***REMOVED***%40gmail.com/events/watch?syncToken=x",
+    url: "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=x",
     method: "POST",
     data: {
-      address:
-        "https://***REMOVED***/api/sync/gcal/notifications",
+      address: "https://foo.yourdomain.app/api/sync/gcal/notifications",
       expiration: "1675961300771",
       id: "b69deec8-8526-4504-b376-db83295df0f0",
       token: "secret",
@@ -24,7 +23,7 @@ export const invalidValueError = new GaxiosError(
     },
     params: { syncToken: "x" },
     retry: true,
-    body: '{"address":"https://***REMOVED***/api/sync/gcal/notifications","expiration":"1675961300771","id":"b69deec8-8526-4504-b376-db83295df0f0","token":"secret","type":"web_hook"}',
+    body: '{"address":"https://foo.yourdomain.app/api/sync/gcal/notifications","expiration":"1675961300771","id":"b69deec8-8526-4504-b376-db83295df0f0","token":"secret","type":"web_hook"}',
     responseType: "json",
     retryConfig: {
       currentRetryAttempt: 0,
@@ -40,11 +39,10 @@ export const invalidValueError = new GaxiosError(
   },
   {
     config: {
-      url: "https://www.googleapis.com/calendar/v3/calendars/***REMOVED***%40gmail.com/events/watch?syncToken=x",
+      url: "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=x",
       method: "POST",
       data: {
-        address:
-          "https://***REMOVED***/api/sync/gcal/notifications",
+        address: "https://foo.yourdomain.app/api/sync/gcal/notifications",
         expiration: "1675961300771",
         id: "b69deec8-8526-4504-b376-db83295df0f0",
         token: "secret",
@@ -61,7 +59,7 @@ export const invalidValueError = new GaxiosError(
       },
       params: { syncToken: "x" },
       retry: true,
-      body: '{"address":"https://***REMOVED***/api/sync/gcal/notifications","expiration":"1675961300771","id":"b69deec8-8526-4504-b376-db83295df0f0","token":"secret","type":"web_hook"}',
+      body: '{"address":"https://foo.yourdomain.app/api/sync/gcal/notifications","expiration":"1675961300771","id":"b69deec8-8526-4504-b376-db83295df0f0","token":"secret","type":"web_hook"}',
       responseType: "json",
       retryConfig: {
         currentRetryAttempt: 0,
@@ -104,7 +102,7 @@ export const invalidValueError = new GaxiosError(
     statusText: "Bad Request",
     request: {
       responseURL:
-        "https://www.googleapis.com/calendar/v3/calendars/***REMOVED***%40gmail.com/events/watch?syncToken=x",
+        "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=x",
     },
   }
 );

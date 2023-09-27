@@ -310,7 +310,7 @@ app.on("web-contents-created", (event, contents) => {
   contents.setWindowOpenHandler(({ url }) => {
     const parsedUrl = new URL(url);
     const validOrigins = [
-      "https://***REMOVED***",
+      "https://foo.yourdomain.app",
       "https://www.google.com",
       "google.com",
     ];

@@ -1,7 +1,7 @@
 {
   "name": "@compass/scripts",
-  "description": "Compass Calendar Scripts",
-  "authors": "Switchback LLC",
+  "description": "Compass Scripts",
+  "license": "MIT",
   "version": "1.0.0",
   "main": "./src/cli.ts",
   "private": true,
