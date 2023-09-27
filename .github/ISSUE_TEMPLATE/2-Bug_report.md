@@ -1,7 +1,10 @@
 ---
 name: Bug report
-about: Report technical issues. 🐞
-labels: "bug"
+about: "Report technical issues. \U0001F41E"
+title: ''
+labels: bug
+assignees: ''
+
 ---
 
 ## Prerequisites
