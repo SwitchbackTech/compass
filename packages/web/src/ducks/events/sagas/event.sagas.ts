@@ -123,7 +123,6 @@ function* createEvent({ payload }: Action_CreateEvent) {
       res.data,
       normalizedEventsSchema()
     );
-    console.log(normalizedEvent);
 
     if (payload.isSomeday) {
       yield put(getSomedayEventsSlice.actions.insert(res.data._id));

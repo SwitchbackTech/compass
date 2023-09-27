@@ -1,6 +1,6 @@
-process.env.BASEURL = "https://***REMOVED***";
+process.env.BASEURL = "https://foo.yourdomain.app";
 process.env.CORS =
-  "https://***REMOVED***,http://localhost:3000,http://localhost:9080,app://rse";
+  "https://foo.yourdomain.app,http://localhost:3000,http://localhost:9080,app://rse";
 process.env.LOG_LEVEL = "debug";
 process.env.NODE_ENV = "test";
 process.env.PORT = 3000;

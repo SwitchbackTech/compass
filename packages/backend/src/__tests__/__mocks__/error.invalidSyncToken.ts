@@ -4,14 +4,13 @@ import { GaxiosError } from "googleapis-common";
 export const invalidSyncTokenError = new GaxiosError(
   "Sync token is no longer valid, a full sync is required.",
   {
-    url: "https://www.googleapis.com/calendar/v3/calendars/***REMOVED***%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
+    url: "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
     method: "POST",
     paramsSerializer: (params) => {
       return qs.stringify(params, { arrayFormat: "repeat" });
     },
     data: {
-      address:
-        "https://***REMOVED***/api/sync/gcal/notifications",
+      address: "https://foo.yourdomain.app/api/sync/gcal/notifications",
       expiration: "1675307413038",
       id: "5af8c0d2-de66-4954-9860-ce43c7c60a22",
       token: "secret",
@@ -33,7 +32,7 @@ export const invalidSyncTokenError = new GaxiosError(
       return (status >= 200 && status < 300) || status === 304;
     },
     retry: true,
-    body: '{"address":"https://***REMOVED***/api/sync/gcal/notifications","expiration":"1675307413038","id":"5af8c0d2-de66-4954-9860-ce43c7c60a22","token":"secretToken","type":"web_hook"}',
+    body: '{"address":"https://foo.yourdomain.app/api/sync/gcal/notifications","expiration":"1675307413038","id":"5af8c0d2-de66-4954-9860-ce43c7c60a22","token":"secretToken","type":"web_hook"}',
     responseType: "json",
     retryConfig: {
       currentRetryAttempt: 0,
@@ -49,11 +48,10 @@ export const invalidSyncTokenError = new GaxiosError(
   },
   {
     config: {
-      url: "https://www.googleapis.com/calendar/v3/calendars/***REMOVED***%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
+      url: "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
       method: "POST",
       data: {
-        address:
-          "https://***REMOVED***/api/sync/gcal/notifications",
+        address: "https://foo.yourdomain.app/api/sync/gcal/notifications",
         expiration: "1675307413038",
         id: "5af8c0d2-de66-4954-9860-ce43c7c60a22",
         token: "secret",
@@ -75,7 +73,7 @@ export const invalidSyncTokenError = new GaxiosError(
         return (status >= 200 && status < 300) || status === 304;
       },
       retry: true,
-      body: '{"address":"https://***REMOVED***/api/sync/gcal/notifications","expiration":"1675307413038","id":"5af8c0d2-de66-4954-9860-ce43c7c60a22","token":"***REMOVED***","type":"web_hook"}',
+      body: '{"address":"https://foo.yourdomain.app/api/sync/gcal/notifications","expiration":"1675307413038","id":"5af8c0d2-de66-4954-9860-ce43c7c60a22","token":"***REMOVED***","type":"web_hook"}',
       responseType: "json",
       retryConfig: {
         currentRetryAttempt: 0,
@@ -124,7 +122,7 @@ export const invalidSyncTokenError = new GaxiosError(
     statusText: "Gone",
     request: {
       responseURL:
-        "https://www.googleapis.com/calendar/v3/calendars/***REMOVED***%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
+        "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
     },
   }
 );

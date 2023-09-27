@@ -1,1 +1,0 @@
-curl -m 70 -X POST https://***REMOVED***\?domain=***REMOVED*** -H "Authorization: bearer $(gcloud auth print-identity-token)"

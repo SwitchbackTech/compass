@@ -58,8 +58,9 @@ export const handleExpressError = async (
 ) => {
   res.header("Content-Type", "application/json");
 
+  errorHandler.log(e);
+
   if (e instanceof BaseError) {
-    errorHandler.log(e);
     res.status(e.statusCode).send(e);
   } else {
     const userId = await parseUserId(res, e);
@@ -67,7 +68,6 @@ export const handleExpressError = async (
       logger.error(
         "Express error occured, but couldnt handle due to missing userId"
       );
-      logger.debug(res);
       res.status(Status.UNSURE).send(UserError.MissingUserIdField);
       return;
     }
