@@ -90,8 +90,6 @@ export const MULTI_WEEK: Schema_Event = {
   isTimesShown: true,
   startDate: "2022-09-01T00:00:00-06:00",
   endDate: "2022-09-22T00:00:00-06:00",
-  // startDate: "2022-02-01",
-  // endDate: "2022-03-08",
   priority: Priorities.WORK,
 };
 export const TY_TIM: Schema_Event = {
