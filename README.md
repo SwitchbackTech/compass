@@ -1,8 +1,10 @@
-# Compass
+# 🧭 Compass
 
 ![Build](https://github.com/SwitchbackTech/compass/actions/workflows/test.yml/badge.svg) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Compass is a weekly calendar app that integrates with Google Calendar.
+### Compass is a weekly calendar app that integrates with Google Calendar.
+
+![Compass_Highlights](https://github.com/SwitchbackTech/compass/assets/30163055/00543d34-5dfc-47d5-9b83-d84d4c748391)
 
 ## Features
 
@@ -43,8 +45,6 @@ All the docs are at [docs.compasscalendar.com](https://docs.compasscalendar.com)
 ## Context
 
 Checkout the [launch post on the Compass Blog](https://www.compasscalendar.com/post/compass-is-open-source) to learn more about the project and its history
-
-## License: MIT
 
 ## Links
 
