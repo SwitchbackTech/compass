@@ -44,6 +44,9 @@ I got pretty far, but I didn't include all the features you'd expect from a cale
 
 All the docs are at [docs.compasscalendar.com](https://docs.compasscalendar.com), including guides on how to install, test, build, deploy, and contribute
 
+[![TheDocs](https://github.com/SwitchbackTech/compass/assets/30163055/b9577876-43af-49eb-830b-df0644c1af8f)](https://docs.compasscalendar.com)
+
+
 ## Links
 
 📃 [Compass Docs](https://docs.compasscalendar.com)
