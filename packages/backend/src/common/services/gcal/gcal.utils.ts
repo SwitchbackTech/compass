@@ -21,6 +21,16 @@ export const cancelledEventsIds = (events: gSchema$Event[]) => {
   return cancelledIds;
 };
 
+export const getEmailFromUrl = (url: string) => {
+  const emailMatch = url.match(/\/calendars\/([^/]+)\/events/);
+
+  if (emailMatch && emailMatch[1]) {
+    return emailMatch[1].replace("%40", "@");
+  }
+
+  return null;
+};
+
 export const getPrimaryGcalId = (calendarList: Schema_CalendarList) => {
   const primaryGCal = calendarList.google.items[0];
   const gCalendarId = primaryGCal!.id as string;
