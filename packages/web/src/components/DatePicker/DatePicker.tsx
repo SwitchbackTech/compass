@@ -138,10 +138,9 @@ export const DatePicker: React.FC<Props> = ({
                     {">"}
                   </Text>
                 </ChangeDayButtonsStyledFlex>
-
                 {withTodayButton &&
-                  formattedCurrentMonth !== formattedSelectedMonth && (
                     <TodayStyledText
+                      isCurrentDate={formattedCurrentMonth === formattedSelectedMonth}
                       cursor="pointer"
                       onClick={() => {
                         changeMonth(dayjs().month());
@@ -152,7 +151,7 @@ export const DatePicker: React.FC<Props> = ({
                     >
                       Today
                     </TodayStyledText>
-                  )}
+                  }
               </Flex>
             )}
           </StyledHeaderFlex>

@@ -2,19 +2,14 @@ import pkg from "inquirer";
 const { prompt } = pkg;
 import { findCompassUsersBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
+import mongoService from "@backend/common/services/mongo.service";
+import { Summary_Delete } from "@backend/user/types/user.types";
+import { log } from "@scripts/common/cli.utils";
 
-export interface Summary_Delete {
-  calendarlist?: number;
-  events?: number;
-  eventWatches?: number;
-  priorities?: number;
-  syncs?: number;
-  user?: number;
-  sessions?: number;
-}
+mongoService;
 
 export const deleteCompassDataForMatchingUsers = async (user: string) => {
-  console.log(`Deleting Compass data for users matching: ${user}`);
+  log.info(`Deleting Compass data for users matching: ${user}`);
 
   const isEmail = user.includes("@");
   const idKeyword = isEmail ? "email" : "_id";
@@ -28,17 +23,17 @@ export const deleteCompassDataForMatchingUsers = async (user: string) => {
     totalSummary.push(summary);
   }
 
-  console.log(`Deleted: ${JSON.stringify(totalSummary, null, 2)}`);
+  log.success(`Deleted: ${JSON.stringify(totalSummary, null, 2)}`);
 };
 
-export const startDeleteFlow = async (user: string | null, force?: boolean) => {
-  if (!user) {
-    console.log("no user");
-    process.exit(1);
-  }
+export const startDeleteFlow = async (user: string, force = false) => {
+  log.info("Connecting to db...");
+  await mongoService.waitUntilConnected();
 
   if (force === true) {
+    log.info(`Deleting ${user}'s Compass data ...`);
     await deleteCompassDataForMatchingUsers(user);
+    process.exit(0);
   }
 
   const questions = [
@@ -52,12 +47,13 @@ export const startDeleteFlow = async (user: string | null, force?: boolean) => {
   prompt(questions)
     .then((a: { delete: boolean }) => {
       if (a.delete) {
-        console.log(`Okie dokie, deleting ${user}'s Compass data ...`);
+        log.info(`Okie dokie, deleting ${user}'s Compass data ...`);
         deleteCompassDataForMatchingUsers(user)
           .catch((e) => console.log(e))
           .finally(() => process.exit(0));
       } else {
-        console.log("No worries, see ya next time");
+        log.info("No worries, see ya next time");
+        process.exit(0);
       }
     })
     .catch((err) => console.log(err));
