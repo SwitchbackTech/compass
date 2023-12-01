@@ -11,10 +11,12 @@ import {
   isFullSyncRequired,
   isGoogleError,
   isInvalidValue,
+  getEmailFromUrl,
 } from "@backend/common/services/gcal/gcal.utils";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 import { errorHandler } from "./error.handler";
 
@@ -46,6 +48,16 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
       if (sync) {
         return sync.user;
       }
+
+      if (e.config.url) {
+        const email = getEmailFromUrl(e.config.url);
+        if (email) {
+          const user = await findCompassUserBy("email", email);
+          if (user) {
+            return user._id.toString();
+          }
+        }
+      }
     }
   }
 
@@ -66,7 +78,7 @@ export const handleExpressError = async (
     const userId = await parseUserId(res, e);
     if (!userId) {
       logger.error(
-        "Express error occured, but couldnt handle due to missing userId"
+        "Express error occured, but couldn't handle due to missing userId"
       );
       res.status(Status.UNSURE).send(UserError.MissingUserIdField);
       return;
