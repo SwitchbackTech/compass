@@ -29,7 +29,10 @@ import { ENV } from "@backend/common/constants/env.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
-import { isGoogleTokenExpired } from "@backend/common/services/gcal/gcal.utils";
+import {
+  isFullSyncRequired,
+  isGoogleTokenExpired,
+} from "@backend/common/services/gcal/gcal.utils";
 import eventService from "@backend/event/services/event.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -486,7 +489,8 @@ export const pruneSync = async (toPrune: string[]) => {
 
 export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
   const _refreshes = toRefresh.map(async (r) => {
-    let deletedUserData = false;
+    let revokedSession = false;
+    let resynced = false;
 
     try {
       const gcal = await getGcalClient(r.userId);
@@ -504,19 +508,22 @@ export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
       });
 
       const refreshes = await Promise.all(refreshesByUser);
-      return { user: r.userId, results: refreshes, deletedUserData };
+      return { user: r.userId, results: refreshes, resynced, revokedSession };
     } catch (e) {
       if (isGoogleTokenExpired(e as Error)) {
-        await userService.deleteCompassDataForUser(r.userId, false);
-        deletedUserData = true;
+        await compassAuthService.revokeSessionsByUser(r.userId);
+        revokedSession = true;
+      } else if (isFullSyncRequired(e as Error)) {
+        await userService.reSyncGoogleData(r.userId);
+        resynced = true;
       } else {
-        logger.warn(
+        logger.error(
           `Unexpected error during refresh for user: ${r.userId}:\n`,
           e
         );
         throw e;
       }
-      return { user: r.userId, results: [], deletedUserData };
+      return { user: r.userId, results: [], resynced, revokedSession };
     }
   });
 

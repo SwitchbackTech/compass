@@ -154,25 +154,28 @@ class SyncService {
     const deletedDuringPrune = pruneResult.filter((p) => p.deletedUserData);
 
     const refreshResult = await refreshSync(toRefresh);
-    const refreshed = refreshResult.filter((r) => !r.deletedUserData);
-    const deletedDuringRefresh = refreshResult.filter((r) => r.deletedUserData);
+    const refreshed = refreshResult.filter((r) => !r.revokedSession);
+    const revokedSession = refreshResult.filter((r) => r.revokedSession);
+    const resynced = refreshResult.filter((r) => r.resynced);
 
     logger.debug(`Sync Maintenance Results:
-      ignored: ${ignored.length} 
-      pruned: ${pruned.map((p) => p.user).toString()}
-      refreshed: ${refreshed.map((r) => r.user).toString()}
+      IGNORED: ${ignored.length} 
+      PRUNED: ${pruned.map((p) => p.user).toString()}
+      REFRESHED: ${refreshed.map((r) => r.user).toString()}
 
-      deletedDuringPrune: ${deletedDuringPrune.map((r) => r.user).toString()}
-      deletedDuringRefresh: ${deletedDuringRefresh
+      DELETED DURING PRUNE: ${deletedDuringPrune.map((r) => r.user).toString()}
+      REVOKED SESSION DURING REFRESH: ${revokedSession
         .map((r) => r.user)
         .toString()}
+      RESYNCED DURING REFRESH: ${resynced.map((r) => r.user).toString()}
     `);
 
     return {
       ignored: ignored.length,
       pruned: pruned.length,
       refreshed: refreshed.length,
-      deleted: deletedDuringPrune.length + deletedDuringRefresh.length,
+      revoked: revokedSession.length,
+      deleted: deletedDuringPrune.length,
     };
   };
 
