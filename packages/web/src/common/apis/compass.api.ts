@@ -30,7 +30,12 @@ CompassApi.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (status === Status.GONE || status === Status.REDUX_REFRESH_NEEDED) {
+    if (status === Status.REDUX_REFRESH_NEEDED) {
+      window.location.reload();
+      return Promise.resolve();
+    }
+
+    if (status === Status.GONE) {
       await _signOut(LOGIN_REQUIRED_MSG);
     } else {
       alert("Hmm, something's off.");
