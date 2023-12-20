@@ -38,6 +38,7 @@ packages/backend/logs
 packages/backend/build
 packages/backend/node_modules
 packages/backend/playgroud
+packages/backend/.env
 
 
 !.env.project
