@@ -140,6 +140,7 @@ export const DatePicker: React.FC<Props> = ({
                 </ChangeDayButtonsStyledFlex>
 
                 {withTodayButton &&
+                //removed the condition here and put it in the prop 'isCurrentDate to check for truthyness
                     <TodayStyledText
                     isCurrentDate={formattedCurrentMonth === formattedSelectedMonth}
                       cursor="pointer"
