@@ -136,7 +136,6 @@ export const StyledDatePicker = styled.div<{
 export const StyledHeaderFlex = styled(Flex)`
   padding: 0 5px 5px 8px;
 `;
-//Introduced a prop that TodayStyledText will take
 export const TodayStyledText = styled(Text)<{isCurrentDate:boolean}>`
   margin-right: 40px;
   padding: 0px 6px;
