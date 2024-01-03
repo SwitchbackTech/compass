@@ -12280,7 +12280,7 @@ react-popper@^2.2.5, react-popper@^2.3.0:
     react-fast-compare "^3.0.1"
     warning "^4.0.2"
 
-react-redux@^8.0.4, react-redux@^8.1.2:
+react-redux@^8.0.4:
   version "8.1.2"
   resolved "https://registry.yarnpkg.com/react-redux/-/react-redux-8.1.2.tgz#9076bbc6b60f746659ad6d51cb05de9c5e1e9188"
   integrity sha512-xJKYI189VwfsFc4CJvHqHlDrzyFTY/3vZACbE+rr/zQ34Xx1wQfB4OTOSeOSNrF6BDVe8OOdxIrAnMGXA3ggfw==
@@ -12290,6 +12290,14 @@ react-redux@^8.0.4, react-redux@^8.1.2:
     "@types/use-sync-external-store" "^0.0.3"
     hoist-non-react-statics "^3.3.2"
     react-is "^18.0.0"
+    use-sync-external-store "^1.0.0"
+
+react-redux@^9.0.4:
+  version "9.0.4"
+  resolved "https://registry.yarnpkg.com/react-redux/-/react-redux-9.0.4.tgz#6892d465f086507a517d4b53eb589876e6bc8344"
+  integrity sha512-9J1xh8sWO0vYq2sCxK2My/QO7MzUMRi3rpiILP/+tDr8krBHixC6JMM17fMK88+Oh3e4Ae6/sHIhNBgkUivwFA==
+  dependencies:
+    "@types/use-sync-external-store" "^0.0.3"
     use-sync-external-store "^1.0.0"
 
 react-router-dom@^6.8.1:
