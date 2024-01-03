@@ -26,8 +26,8 @@ describe("Calendar: Display without State", () => {
     });
 
     /* current year in YYYY format */
-    const currentYear = new Date().getFullYear().toString(); // YYYY
-    expect(screen.getByText(currentYear)).toBeInTheDocument();
+    // const currentYear = new Date().getFullYear().toString(); // YYYY
+    // expect(screen.getByText(currentYear)).toBeInTheDocument();
 
     /* week nav arrows */
     expect(

@@ -15,7 +15,7 @@
   "devDependencies": {
     "@types/inquirer": "^9.0.1",
     "@types/node": "^20.6.3",
-    "@types/shelljs": "^0.8.11",
+    "@types/shelljs": "^0.8.15",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.0.0",
     "typescript": "^5.1.6"

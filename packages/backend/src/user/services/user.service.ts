@@ -5,7 +5,6 @@ import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
 import { BaseError } from "@core/errors/errors.base";
 import { CompassError } from "@backend/common/types/error.types";
-import { Summary_Delete } from "@scripts/commands/delete";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { AuthError } from "@backend/common/constants/error.constants";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
@@ -25,6 +24,7 @@ import priorityService from "@backend/priority/services/priority.service";
 import syncService from "@backend/sync/services/sync.service";
 
 import emailService from "./email.service";
+import { Summary_Delete } from "../types/user.types";
 
 const logger = Logger("app:user.service");
 
