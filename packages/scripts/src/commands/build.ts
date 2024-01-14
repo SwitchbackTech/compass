@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
 import shell from "shelljs";
-import { Options_Cli, Info_VM } from "@scripts/common/cli.types";
+import { Options_Cli, Info_VM, Category_VM } from "@scripts/common/cli.types";
 import {
   COMPASS_BUILD_DEV,
   COMPASS_ROOT_DEV,
@@ -14,6 +14,7 @@ import {
   _confirm,
   log,
   fileExists,
+  getClientId,
 } from "@scripts/common/cli.utils";
 
 export const runBuild = async (options: Options_Cli) => {
@@ -30,7 +31,7 @@ export const runBuild = async (options: Options_Cli) => {
   }
 
   if (pckgs.includes(PCKG.WEB)) {
-    buildWeb(vmInfo);
+    await buildWeb(vmInfo);
   }
 };
 
@@ -54,11 +55,13 @@ const buildNodePckgs = async (vmInfo: Info_VM, skipEnv?: boolean) => {
   });
 };
 
-const buildWeb = (vmInfo: Info_VM) => {
+const buildWeb = async (vmInfo: Info_VM) => {
   const { baseUrl, destination } = vmInfo;
-  const gClientId = process.env["CLIENT_ID"] as string;
 
   const envFile = destination === "staging" ? ".env" : ".env.prod";
+
+  const gClientId = await getClientId(destination);
+
   const envPath = path.join(__dirname, "..", "..", "..", "backend", envFile);
   dotenv.config({ path: envPath });
 

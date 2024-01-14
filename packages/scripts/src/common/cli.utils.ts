@@ -6,40 +6,30 @@ import shell from "shelljs";
 import { ALL_PACKAGES, CLI_ENV } from "./cli.constants";
 import { Category_VM } from "./cli.types";
 
-export const _confirm = async (question: string, _default = true) => {
-  const q = [
-    {
-      type: "confirm",
-      name: "confirm",
-      message: question,
-      default: _default,
-    },
-  ];
-  return prompt(q)
-    .then((a: { confirm: boolean }) => a.confirm)
-    .catch((e) => {
-      console.log(e);
-      process.exit(1);
-    });
-};
-
 export const fileExists = (file: string) => {
   return shell.test("-e", file);
 };
 
-export const getVmInfo = async (environment?: Category_VM) => {
-  const destination = environment
-    ? environment
-    : ((await getListAnswer("Select environment to use:", [
-        "staging",
-        "production",
-      ])) as Category_VM);
+export const getClientId = async (destination: Category_VM) => {
+  if (destination === "staging") {
+    return process.env["CLIENT_ID"] as string;
+  }
 
-  const isStaging = destination === "staging";
-  const domain = await getDomainAnswer(isStaging);
-  const baseUrl = `https://${domain}/api`;
+  if (destination === "production") {
+    const q = `Enter the googleClientId for the production environment:`;
 
-  return { baseUrl, destination };
+    return prompt([{ type: "input", name: "answer", message: q }])
+      .then((a: { answer: string }) => {
+        log.info(`\tUsing: >>${a.answer}<<`);
+        return a.answer;
+      })
+      .catch((e) => {
+        console.log(e);
+        process.exit(1);
+      });
+  }
+
+  throw Error("Invalid destination");
 };
 
 const getDomainAnswer = async (isStaging: boolean) => {
@@ -59,7 +49,7 @@ const getDomainAnswer = async (isStaging: boolean) => {
 
   return prompt([{ type: "input", name: "answer", message: q }])
     .then((a: { answer: string }) => {
-      console.log(`\tUsing: ${a.answer}.
+      log.info(`\tUsing: ${a.answer}.
         Save this value in .env to skip this step next time`);
       return a.answer;
     })
@@ -67,6 +57,20 @@ const getDomainAnswer = async (isStaging: boolean) => {
       console.log(e);
       process.exit(1);
     });
+};
+export const getVmInfo = async (environment?: Category_VM) => {
+  const destination = environment
+    ? environment
+    : ((await getListAnswer("Select environment to use:", [
+        "staging",
+        "production",
+      ])) as Category_VM);
+
+  const isStaging = destination === "staging";
+  const domain = await getDomainAnswer(isStaging);
+  const baseUrl = `https://${domain}/api`;
+
+  return { baseUrl, destination };
 };
 
 const getListAnswer = async (question: string, choices: string[]) => {
@@ -118,4 +122,21 @@ export const log = {
   warning: (msg: string) => console.log(chalk.hex("#FFA500")(msg)),
   success: (msg: string) => console.log(chalk.green(msg)),
   tip: (msg: string) => console.log(chalk.hex("#f5c150")(msg)),
+};
+
+export const _confirm = async (question: string, _default = true) => {
+  const q = [
+    {
+      type: "confirm",
+      name: "confirm",
+      message: question,
+      default: _default,
+    },
+  ];
+  return prompt(q)
+    .then((a: { confirm: boolean }) => a.confirm)
+    .catch((e) => {
+      console.log(e);
+      process.exit(1);
+    });
 };
