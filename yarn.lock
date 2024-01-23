@@ -5188,6 +5188,11 @@ crypto-browserify@^3.12.0:
     randombytes "^2.0.0"
     randomfill "^1.0.3"
 
+crypto-js@^4.1.1:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/crypto-js/-/crypto-js-4.2.0.tgz#4d931639ecdfd12ff80e8186dba6af2c2e856631"
+  integrity sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==
+
 css-box-model@^1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/css-box-model/-/css-box-model-1.2.1.tgz#59951d3b81fd6b2074a62d49444415b0d2b4d7c1"
@@ -10892,6 +10897,13 @@ pirates@^4.0.4, pirates@^4.0.6:
   resolved "https://registry.yarnpkg.com/pirates/-/pirates-4.0.6.tgz#3018ae32ecfcff6c29ba2267cbf21166ac1f36b9"
   integrity sha512-saLsH7WeYYPiD25LDuLRRY/i+6HaPYr6G1OUlN39otzkSTxKnubR9RTxS3/Kk50s1g2JTgFwWQDQyplC5/SHZg==
 
+pkce-challenge@^3.0.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/pkce-challenge/-/pkce-challenge-3.1.0.tgz#c974ee934e62c501f09da817964e75db201ee8bf"
+  integrity sha512-bQ/0XPZZ7eX+cdAkd61uYWpfMhakH3NeteUF1R8GNa+LMqX8QFAkbCLqq+AYAns1/ueACBu/BMWhrlKGrdvGZg==
+  dependencies:
+    crypto-js "^4.1.1"
+
 pkg-dir@4.2.0, pkg-dir@^4.1.0, pkg-dir@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/pkg-dir/-/pkg-dir-4.2.0.tgz#f099133df7ede422e81d1d8448270eeb3e4261f3"
@@ -11302,16 +11314,6 @@ raw-body@2.5.1:
   version "2.5.1"
   resolved "https://registry.yarnpkg.com/raw-body/-/raw-body-2.5.1.tgz#fe1b1628b181b700215e5fd42389f98b71392857"
   integrity sha512-qqJBtEyVgS0ZmPGdCFPWJ3FreoqvG4MVQln/kCgF7Olq95IbOp0/BWyMwbdtn4VTvkM8Y7khCQ2Xgk/tcrCXig==
-  dependencies:
-    bytes "3.1.2"
-    http-errors "2.0.0"
-    iconv-lite "0.4.24"
-    unpipe "1.0.0"
-
-raw-body@^2.5.2:
-  version "2.5.2"
-  resolved "https://registry.yarnpkg.com/raw-body/-/raw-body-2.5.2.tgz#99febd83b90e08975087e8f1f9419a149366b68a"
-  integrity sha512-8zGqypfENjCIqGhgXToC8aB2r7YrBX+AQAfIPs/Mlk+BtPTztOvTS01NRW/3Eh60J+a48lt8qsCzirQ6loCVfA==
   dependencies:
     bytes "3.1.2"
     http-errors "2.0.0"
@@ -12896,10 +12898,10 @@ supertokens-js-override@0.0.4, supertokens-js-override@^0.0.4:
   resolved "https://registry.yarnpkg.com/supertokens-js-override/-/supertokens-js-override-0.0.4.tgz#9af583fbc5e1f0195dbb358c4fcf75f44c76dc09"
   integrity sha512-r0JFBjkMIdep3Lbk3JA+MpnpuOtw4RSyrlRAbrzMcxwiYco3GFWl/daimQZ5b1forOiUODpOlXbSOljP/oyurg==
 
-supertokens-node@^14.1.3:
-  version "14.1.4"
-  resolved "https://registry.yarnpkg.com/supertokens-node/-/supertokens-node-14.1.4.tgz#0b5d5f095c0dfa660baf41bbd5066dc5e55720c5"
-  integrity sha512-Hf/z4r1W9Pk6rlRp7Pa9ibgsqnIy0tc4kzZk72gZ/fHArNKb+G0BZI3JJ5Vm8TrOZx5+DabLN40xahx2qLwalQ==
+supertokens-node@^16.7.1:
+  version "16.7.1"
+  resolved "https://registry.yarnpkg.com/supertokens-node/-/supertokens-node-16.7.1.tgz#67c32b5f28fc45bdd90229d28409e853cc797a29"
+  integrity sha512-5MwjWIz4Z04U/qmBXpIJ7z4l0l4SzRyhldgQ5kwuNjEHrnWrf47zabj1onrmL5SId2iKD80EN+ri/F/UBNoLPg==
   dependencies:
     content-type "^1.0.5"
     cookie "0.4.0"
@@ -12909,20 +12911,20 @@ supertokens-node@^14.1.3:
     jose "^4.13.1"
     libphonenumber-js "^1.9.44"
     nodemailer "^6.7.2"
+    pkce-challenge "^3.0.0"
     psl "1.8.0"
-    raw-body "^2.5.2"
     supertokens-js-override "^0.0.4"
-    twilio "^4.7.2"
+    twilio "^4.19.3"
 
-supertokens-web-js@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/supertokens-web-js/-/supertokens-web-js-0.6.0.tgz#df0add6513a0f26f98d76713fe874309eae84963"
-  integrity sha512-2KOgWNGanh+/zpdaFQgiA9dQa6T9wA6LcoB6m1BTZ7JIqR3mYmpLD5uu8ERtISNAGUjcXziON/Fp5ZnlBByCcw==
+supertokens-web-js@^0.8.0:
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/supertokens-web-js/-/supertokens-web-js-0.8.0.tgz#10973d51b9c8f75e757f7261b078abd93cb794bb"
+  integrity sha512-kkvuPbdy1I0e7nejVJAhpPJhR5h7EUHdn7Fh1YqfSjZfSJh46J3JU2qWGCgSDVZuD1hSuUKb6skF9CQnltHWrQ==
   dependencies:
     supertokens-js-override "0.0.4"
-    supertokens-website "^17.0.0"
+    supertokens-website "^17.0.3"
 
-supertokens-website@^17.0.0:
+supertokens-website@^17.0.3:
   version "17.0.5"
   resolved "https://registry.yarnpkg.com/supertokens-website/-/supertokens-website-17.0.5.tgz#ce510a82000aaca9bd8b6a8b9193ba1eda95367b"
   integrity sha512-NBOiKO3NV2VBAFgO+ZEmpOPVde2BwOjB6T0qjj2XaZX4jh+6yDGhrckJMwF5R0ucpTgOQXmBrpDnUJ5kFZlgiQ==
@@ -13341,7 +13343,7 @@ tunnel@^0.0.6:
   resolved "https://registry.yarnpkg.com/tunnel/-/tunnel-0.0.6.tgz#72f1314b34a5b192db012324df2cc587ca47f92c"
   integrity sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==
 
-twilio@^4.7.2:
+twilio@^4.19.3:
   version "4.20.1"
   resolved "https://registry.yarnpkg.com/twilio/-/twilio-4.20.1.tgz#212a475338e07db27390ad5590ad7d7a452fd5f4"
   integrity sha512-raoK6LKBtpaqPpaMamgQkNHnAgReW0rW3PS1Eow177f9yZV7lLw3UyqGctGcREMeWFLyH2kEDpgZG7vT1ezL9Q==
