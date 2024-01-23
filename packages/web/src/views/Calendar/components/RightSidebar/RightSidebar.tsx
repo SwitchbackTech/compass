@@ -1,5 +1,5 @@
 import React, { FC } from "react";
-import { useAppSelector } from "@web/store/store.hooks";
+import { useAppSelector,useAppDispatch } from "@web/store/store.hooks";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { selectIsRightSidebarOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { Divider } from "@web/components/Divider";
@@ -14,10 +14,10 @@ interface Props {
 }
 
 export const RightSidebar: FC<Props> = (props) => {
-  const isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
+  let isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
 
   if (!isRightSidebarOpen) return null;
-
+ 
   const handleCheckboxChange = (e) => {
     alert("can't touch this");
   };
@@ -69,6 +69,7 @@ export const RightSidebar: FC<Props> = (props) => {
           withAnimation={false}
         />
         <p>Thanks for trying Compass 💙</p>
+        
       </div>
     </StyledRightSidebar>
   );

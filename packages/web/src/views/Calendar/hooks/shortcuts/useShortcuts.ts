@@ -8,6 +8,7 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { selectIsRightSidebarOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { isDrafting, roundToNext } from "@web/common/utils";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
@@ -36,6 +37,7 @@ export const useShortcuts = (
 
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+  const isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
 
   useEffect(() => {
     const _getStart = () => {
@@ -100,8 +102,11 @@ export const useShortcuts = (
 
       const handlersByKey = {
         [Key.OpenBracket]: () => toggleSidebar("left"),
-        [Key.ClosedBracket]: () =>
-          dispatch(settingsSlice.actions.toggleRightSidebar()),
+        [Key.ClosedBracket]: () =>{
+          if (!isRightSidebarOpen) {
+            dispatch(settingsSlice.actions.toggleRightSidebar());
+          }
+        },
         [Key.C]: () => _createTimedDraft(),
         [Key.T]: () => {
           scrollUtil.scrollToNow();
@@ -120,6 +125,11 @@ export const useShortcuts = (
         [Key.W]: () => _createSomedayDraft("week"),
         [Key.Z]: () => {
           navigate(ROOT_ROUTES.LOGOUT);
+        },
+        [Key.Escape]: () => {
+          if (isRightSidebarOpen) {
+            dispatch(settingsSlice.actions.toggleRightSidebar());
+          }
         },
       } as { [key: number]: () => void };
 
