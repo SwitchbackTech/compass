@@ -11,11 +11,15 @@ export const CompassApi = axios.create({
   baseURL: ENV_WEB.API_BASEURL,
 });
 
+const _goToLogin = () => {
+  window.location = ROOT_ROUTES.LOGIN;
+  window.location.reload();
+};
+
 const _signOut = async (msg: string) => {
   alert(msg);
   await signOut();
-  window.location = ROOT_ROUTES.LOGIN;
-  window.location.reload();
+  _goToLogin();
 };
 
 CompassApi.interceptors.response.use(
@@ -25,9 +29,18 @@ CompassApi.interceptors.response.use(
   async (error: AxiosError) => {
     const status = error?.response?.status;
 
-    if (status === Status.UNAUTHORIZED) {
-      alert(LOGIN_REQUIRED_MSG);
-      return Promise.reject(error);
+    // if (status === Status.UNAUTHORIZED) {
+    //   window.location = ROOT_ROUTES.LOGIN;
+    // }
+
+    //++ todo if keeping: use error constant
+    if (
+      status === Status.BAD_REQUEST &&
+      (error?.response?.data as { description: string })?.description ===
+        "Failed to access the userId"
+    ) {
+      console.log("todo: idk");
+      // clear session & retry;
     }
 
     if (status === Status.REDUX_REFRESH_NEEDED) {
@@ -38,7 +51,7 @@ CompassApi.interceptors.response.use(
     if (status === Status.GONE) {
       await _signOut(LOGIN_REQUIRED_MSG);
     } else {
-      alert("Hmm, something's off.");
+      // alert("Hmm, something's off.");
       console.log(error);
       return Promise.reject(error);
     }

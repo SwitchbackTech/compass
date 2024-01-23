@@ -2,6 +2,7 @@ import { Response } from "express";
 import { WithId } from "mongodb";
 import { GaxiosError } from "gaxios";
 import { TokenPayload } from "google-auth-library";
+import { convertToRecipeUserId } from "supertokens-node";
 import { SessionRequest } from "supertokens-node/framework/express";
 import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
@@ -83,7 +84,13 @@ class AuthController {
         ? await this.login(user, gcalClient, gRefreshToken)
         : await this.signup(gUser, gcalClient, gRefreshToken);
 
-      await Session.createNewSession(req, res, cUserId);
+      const session = await Session.createNewSession(
+        req,
+        res,
+        "public",
+        convertToRecipeUserId(cUserId)
+      );
+      logger.debug(`Created session for user: ${session.getUserId()}`);
 
       const result: Result_Auth_Compass = { cUserId };
 

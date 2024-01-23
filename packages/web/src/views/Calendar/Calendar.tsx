@@ -22,14 +22,17 @@ import { RightSidebar } from "./components/RightSidebar";
 import { Draft } from "./components/Event/Draft";
 import { Dedication } from "./components/Dedication";
 
+// refactor to wrapper component that locks down anything
+// and returns the child if session exists
+// and redirects if not
 export const Calendar = () => {
   const sessionContext = Session.useSessionContext();
 
-  if (sessionContext.loading) {
+  if (scwessionContext.loading) {
     return <AbsoluteOverflowLoader />;
   }
 
-  if (!sessionContext.doesSessionExist) {
+  if (!Session.doesSessionExist()) {
     return <Navigate to={ROOT_ROUTES.LOGIN} />;
   }
 

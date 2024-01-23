@@ -7,7 +7,13 @@ import { LogoutView } from "@web/views/Logout";
 import { NotFoundView } from "@web/views/NotFound";
 
 const router = createBrowserRouter([
-  { path: ROOT_ROUTES.ROOT, element: <Calendar /> },
+  {
+    path: ROOT_ROUTES.ROOT,
+    //++ TODO add auth wrapper here
+    // if session exists: render calendar
+    // if not, redirect to login
+    element: <Calendar />,
+  },
   { path: ROOT_ROUTES.LOGIN, element: <LoginView /> },
   { path: ROOT_ROUTES.LOGOUT, element: <LogoutView /> },
   { path: "*", element: <NotFoundView /> },
