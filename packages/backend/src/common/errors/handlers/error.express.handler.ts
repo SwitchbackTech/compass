@@ -61,6 +61,8 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
     }
   }
 
+  logger.error(e);
+
   return null;
 };
 
@@ -80,7 +82,7 @@ export const handleExpressError = async (
       logger.error(
         "Express error occured, but couldn't handle due to missing userId"
       );
-      res.status(Status.UNSURE).send(UserError.MissingUserIdField);
+      res.status(Status.BAD_REQUEST).send(UserError.MissingUserIdField);
       return;
     }
 
