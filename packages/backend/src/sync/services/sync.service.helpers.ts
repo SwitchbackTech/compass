@@ -15,11 +15,11 @@ import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { Schema_CalendarList } from "@core/types/calendar.types";
+import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.util";
 import { EventError } from "@backend/common/constants/error.constants";
-import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import {
   GenericError,
   GcalError,
@@ -44,6 +44,7 @@ import {
   categorizeGcalEvents,
   getActiveDeadline,
   getSummary,
+  isUsingHttps,
   syncExpired,
   syncExpiresSoon,
 } from "../util/sync.utils";
@@ -331,7 +332,13 @@ export const initSync = async (gcal: gCalendar, userId: string) => {
 
   await calendarService.create(cCalendarList);
 
-  await watchEventsByGcalIds(userId, gCalendarIds, gcal);
+  if (isUsingHttps()) {
+    await watchEventsByGcalIds(userId, gCalendarIds, gcal);
+  } else {
+    logger.warn(
+      `Skipped gcal watch during sync init because BASEURL does not use HTTPS: '${ENV.BASEURL}'`
+    );
+  }
 
   return gCalendarIds;
 };
@@ -434,11 +441,9 @@ export const prepIncrementalImport = async (
     return sync.google.events;
   }
 
-  const isNotUsingHTTPS =
-    ENV.BASEURL !== undefined && !ENV.BASEURL.includes("https");
-  if (isNotUsingHTTPS) {
+  if (!isUsingHttps()) {
     logger.warn(
-      `Reminder: Skipping gcal watch because BASEURL does not use HTTPS: '${
+      `Skipped gcal watch during incremental import because BASEURL does not use HTTPS: '${
         ENV.BASEURL || ""
       }'`
     );
