@@ -38,7 +38,8 @@ export const getPrimaryGcalId = (calendarList: Schema_CalendarList) => {
   return gCalendarId;
 };
 
-export const isGoogleTokenExpired = (e: GaxiosError | Error) => {
+// occurs when token expired or revoked
+export const isInvalidGoogleToken = (e: GaxiosError | Error) => {
   const is400 = "code" in e && e.code === "400";
   const hasInvalidMsg = "message" in e && e.message === "invalid_grant";
   const isInvalid = is400 && hasInvalidMsg;

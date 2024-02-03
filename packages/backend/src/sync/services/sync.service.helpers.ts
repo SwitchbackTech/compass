@@ -31,7 +31,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 import {
   isFullSyncRequired,
-  isGoogleTokenExpired,
+  isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import eventService from "@backend/event/services/event.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
@@ -472,7 +472,7 @@ export const pruneSync = async (toPrune: string[]) => {
     try {
       stopped = await syncService.stopWatches(u);
     } catch (e) {
-      if (isGoogleTokenExpired(e as Error)) {
+      if (isInvalidGoogleToken(e as Error)) {
         await userService.deleteCompassDataForUser(u, false);
         deletedUserData = true;
       } else {
@@ -515,7 +515,7 @@ export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
       const refreshes = await Promise.all(refreshesByUser);
       return { user: r.userId, results: refreshes, resynced, revokedSession };
     } catch (e) {
-      if (isGoogleTokenExpired(e as Error)) {
+      if (isInvalidGoogleToken(e as Error)) {
         await compassAuthService.revokeSessionsByUser(r.userId);
         revokedSession = true;
       } else if (isFullSyncRequired(e as Error)) {

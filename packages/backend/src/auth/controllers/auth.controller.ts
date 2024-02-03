@@ -2,7 +2,6 @@ import { Response } from "express";
 import { WithId } from "mongodb";
 import { GaxiosError } from "gaxios";
 import { TokenPayload } from "google-auth-library";
-import { convertToRecipeUserId } from "supertokens-node";
 import { SessionRequest } from "supertokens-node/framework/express";
 import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
@@ -24,17 +23,11 @@ import GoogleAuthService from "@backend/auth/services/google.auth.service";
 import userService from "@backend/user/services/user.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import syncService from "@backend/sync/services/sync.service";
+import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 
 import { initGoogleClient } from "../services/auth.utils";
 
 const logger = Logger("app:auth.controller");
-
-const isCodeInvalid = (e: GaxiosError | Error) => {
-  if ("code" in e && "message" in e) {
-    return e.code === "400" && e.message === "invalid_grant";
-  }
-  return false;
-};
 
 class AuthController {
   createSession = async (req: ReqBody<UserInfo_Compass>, res: Res_Promise) => {
@@ -84,19 +77,13 @@ class AuthController {
         ? await this.login(user, gcalClient, gRefreshToken)
         : await this.signup(gUser, gcalClient, gRefreshToken);
 
-      const session = await Session.createNewSession(
-        req,
-        res,
-        "public",
-        convertToRecipeUserId(cUserId)
-      );
-      logger.debug(`Created session for user: ${session.getUserId()}`);
+      await Session.createNewSession(req, res, cUserId);
 
       const result: Result_Auth_Compass = { cUserId };
 
       res.promise(result);
     } catch (e) {
-      if (isCodeInvalid(e as GaxiosError)) {
+      if (isInvalidGoogleToken(e as GaxiosError)) {
         const invalidCodeErr = error(GcalError.CodeInvalid, "gAPI Auth Failed");
         logger.error(invalidCodeErr);
 
