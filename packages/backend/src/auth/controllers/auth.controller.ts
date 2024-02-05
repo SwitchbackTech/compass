@@ -3,6 +3,7 @@ import { WithId } from "mongodb";
 import { GaxiosError } from "gaxios";
 import { TokenPayload } from "google-auth-library";
 import { SessionRequest } from "supertokens-node/framework/express";
+import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
@@ -34,7 +35,9 @@ class AuthController {
     const { cUserId, email } = req.body;
 
     if (cUserId) {
-      await Session.createNewSession(req, res, cUserId, {}, {});
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      const sUserId = supertokens.convertToRecipeUserId(cUserId);
+      await Session.createNewSession(req, res, "public", sUserId);
     }
 
     if (email) {
@@ -44,7 +47,9 @@ class AuthController {
         res.promise({ error: "user doesn't exist" });
         return;
       }
-      await Session.createNewSession(req, res, user._id.toString(), {}, {});
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      const sUserId = supertokens.convertToRecipeUserId(user._id.toString());
+      await Session.createNewSession(req, res, "public", sUserId);
     }
 
     res.promise({
@@ -77,7 +82,9 @@ class AuthController {
         ? await this.login(user, gcalClient, gRefreshToken)
         : await this.signup(gUser, gcalClient, gRefreshToken);
 
-      await Session.createNewSession(req, res, cUserId);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      const sUserId = supertokens.convertToRecipeUserId(cUserId);
+      await Session.createNewSession(req, res, "public", sUserId);
 
       const result: Result_Auth_Compass = { cUserId };
 
