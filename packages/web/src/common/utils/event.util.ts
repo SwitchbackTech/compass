@@ -145,7 +145,7 @@ export const getWeekDayLabel = (day: Dayjs | Date) => {
 };
 
 export const handleError = (error: Error) => {
-  const codesToIgnore = [Status.NOT_FOUND, Status.GONE];
+  const codesToIgnore = [Status.NOT_FOUND, Status.GONE, Status.UNAUTHORIZED];
   const code = parseInt(error.message.slice(-3));
   if (codesToIgnore.includes(code)) {
     // api interceptor will handle these
