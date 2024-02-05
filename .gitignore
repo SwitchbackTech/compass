@@ -16,6 +16,7 @@ credentials.txt
 *.log
 *.mongodb
 *.tsbuildinfo
+packages/**/yarn.lock
 
 ########
 # DIRS #
