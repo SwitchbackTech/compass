@@ -11,7 +11,6 @@ import { ENV } from "@backend/common/constants/env.constants";
 
 export const initSupertokens = () => {
   SuperTokens.init({
-    debug: true,
     appInfo: {
       appName: APP_NAME,
       apiBasePath: "/api",
