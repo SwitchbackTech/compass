@@ -42,6 +42,7 @@ const app: Application = express();
 //@ts-ignore
 app.use(requestMiddleware());
 app.use(supertokensCors());
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 app.use(supertokensMiddleware());
 app.use(corsWhitelist);
 app.use(helmet());
@@ -55,6 +56,7 @@ routes.push(new EventRoutes(app));
 routes.push(new SyncRoutes(app));
 routes.push(new CalendarRoutes(app));
 
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 app.use(supertokensErrorHandler()); // Keep this after routes
 
 /* Express Start */

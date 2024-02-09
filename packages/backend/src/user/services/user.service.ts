@@ -25,6 +25,7 @@ import syncService from "@backend/sync/services/sync.service";
 
 import emailService from "./email.service";
 import { Summary_Delete } from "../types/user.types";
+import { findCompassUserBy } from "../queries/user.queries";
 
 const logger = Logger("app:user.service");
 
@@ -73,8 +74,19 @@ class UserService {
         summary.eventWatches = watches.length;
       }
 
+      const user = await findCompassUserBy("_id", userId);
+      if (!user) {
+        throw error(AuthError.NoUserId, "Failed to find user");
+      }
+
       const syncs = await syncService.deleteAllByUser(userId);
       summary.syncs = syncs.deletedCount;
+
+      // delete other users with same email
+      const staleSyncs = await syncService.deleteAllByGcalId(
+        user.google.googleId
+      );
+      summary.syncs += staleSyncs.deletedCount;
 
       initSupertokens();
       const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
@@ -119,7 +131,6 @@ class UserService {
     await emailService.addToEmailList(email, firstName);
 
     const gCalendarIds = await initSync(gcalClient, userId);
-
     await syncService.importFull(gcalClient, gCalendarIds, userId);
 
     await priorityService.createDefaultPriorities(userId);

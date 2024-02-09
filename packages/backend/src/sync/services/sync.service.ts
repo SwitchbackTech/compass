@@ -37,7 +37,7 @@ import {
   updateRefreshedAtFor,
   updateSyncTokenFor,
 } from "../util/sync.queries";
-import { getChannelExpiration } from "../util/sync.utils";
+import { getChannelExpiration, isUsingHttps } from "../util/sync.utils";
 
 const logger = Logger("app:sync.service");
 class SyncService {
@@ -102,7 +102,13 @@ class SyncService {
   ) => {
     const eventImports = gCalendarIds.map(async (gCalId) => {
       const { nextSyncToken } = await importEvents(userId, gcal, gCalId);
-      await updateSyncTokenFor("events", userId, nextSyncToken, gCalId);
+      if (isUsingHttps()) {
+        await updateSyncTokenFor("events", userId, nextSyncToken, gCalId);
+      } else {
+        logger.warn(
+          `Skipped updating sync token for user: ${userId} and gCalId: ${gCalId} because not using https`
+        );
+      }
     });
 
     await Promise.all(eventImports);

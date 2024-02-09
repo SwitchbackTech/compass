@@ -39,6 +39,7 @@ export const supertokensCors = () =>
   });
 
 initSupertokens();
+
 export {
   errorHandler as supertokensErrorHandler,
   middleware as supertokensMiddleware,

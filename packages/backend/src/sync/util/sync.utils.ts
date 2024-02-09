@@ -160,6 +160,9 @@ export const hasGoogleHeaders = (headers: object) => {
   return hasHeaders;
 };
 
+export const isUsingHttps = () =>
+  ENV.BASEURL !== undefined && ENV.BASEURL.includes("https");
+
 export const logExpirationReminder = (min: number) => {
   const hours = Math.round((min / 60) * 100) / 100;
   const days = Math.round((hours / 24) * 100) / 100;

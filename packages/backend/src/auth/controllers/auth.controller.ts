@@ -3,6 +3,7 @@ import { WithId } from "mongodb";
 import { GaxiosError } from "gaxios";
 import { TokenPayload } from "google-auth-library";
 import { SessionRequest } from "supertokens-node/framework/express";
+import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
@@ -23,24 +24,20 @@ import GoogleAuthService from "@backend/auth/services/google.auth.service";
 import userService from "@backend/user/services/user.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import syncService from "@backend/sync/services/sync.service";
+import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 
 import { initGoogleClient } from "../services/auth.utils";
 
 const logger = Logger("app:auth.controller");
-
-const isCodeInvalid = (e: GaxiosError | Error) => {
-  if ("code" in e && "message" in e) {
-    return e.code === "400" && e.message === "invalid_grant";
-  }
-  return false;
-};
 
 class AuthController {
   createSession = async (req: ReqBody<UserInfo_Compass>, res: Res_Promise) => {
     const { cUserId, email } = req.body;
 
     if (cUserId) {
-      await Session.createNewSession(req, res, cUserId, {}, {});
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      const sUserId = supertokens.convertToRecipeUserId(cUserId);
+      await Session.createNewSession(req, res, "public", sUserId);
     }
 
     if (email) {
@@ -50,7 +47,9 @@ class AuthController {
         res.promise({ error: "user doesn't exist" });
         return;
       }
-      await Session.createNewSession(req, res, user._id.toString(), {}, {});
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      const sUserId = supertokens.convertToRecipeUserId(user._id.toString());
+      await Session.createNewSession(req, res, "public", sUserId);
     }
 
     res.promise({
@@ -83,13 +82,15 @@ class AuthController {
         ? await this.login(user, gcalClient, gRefreshToken)
         : await this.signup(gUser, gcalClient, gRefreshToken);
 
-      await Session.createNewSession(req, res, cUserId);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      const sUserId = supertokens.convertToRecipeUserId(cUserId);
+      await Session.createNewSession(req, res, "public", sUserId);
 
       const result: Result_Auth_Compass = { cUserId };
 
       res.promise(result);
     } catch (e) {
-      if (isCodeInvalid(e as GaxiosError)) {
+      if (isInvalidGoogleToken(e as GaxiosError)) {
         const invalidCodeErr = error(GcalError.CodeInvalid, "gAPI Auth Failed");
         logger.error(invalidCodeErr);
 

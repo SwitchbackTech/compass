@@ -4,7 +4,7 @@ import { invalidGrant400Error } from "./__mocks__/error.google.invalidGrant";
 import {
   getEmailFromUrl,
   isFullSyncRequired,
-  isGoogleTokenExpired,
+  isInvalidGoogleToken,
   isInvalidValue,
 } from "../common/services/gcal/gcal.utils";
 
@@ -16,7 +16,7 @@ describe("Google Error Parsing", () => {
     expect(isInvalidValue(invalidValueError)).toBe(true);
   });
   it("recognizes expired refresh token", () => {
-    expect(isGoogleTokenExpired(invalidGrant400Error)).toBe(true);
+    expect(isInvalidGoogleToken(invalidGrant400Error)).toBe(true);
   });
 });
 

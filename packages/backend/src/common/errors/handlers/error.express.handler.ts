@@ -7,7 +7,7 @@ import { UserError } from "@backend/common/constants/error.constants";
 import { CompassError, Info_Error } from "@backend/common/types/error.types";
 import { SessionResponse } from "@backend/common/types/express.types";
 import {
-  isGoogleTokenExpired,
+  isInvalidGoogleToken,
   isFullSyncRequired,
   isGoogleError,
   isInvalidValue,
@@ -32,6 +32,8 @@ const assembleErrorInfo = (e: CompassError) => {
   if (IS_DEV) {
     errInfo.stack = e.stack;
   }
+
+  return errInfo;
 };
 
 const parseUserId = async (res: SessionResponse, e: Error) => {
@@ -61,6 +63,8 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
     }
   }
 
+  logger.error(e);
+
   return null;
 };
 
@@ -70,9 +74,8 @@ export const handleExpressError = async (
 ) => {
   res.header("Content-Type", "application/json");
 
-  errorHandler.log(e);
-
   if (e instanceof BaseError) {
+    errorHandler.log(e);
     res.status(e.statusCode).send(e);
   } else {
     const userId = await parseUserId(res, e);
@@ -80,7 +83,7 @@ export const handleExpressError = async (
       logger.error(
         "Express error occured, but couldn't handle due to missing userId"
       );
-      res.status(Status.UNSURE).send(UserError.MissingUserIdField);
+      res.status(Status.BAD_REQUEST).send(UserError.MissingUserIdField);
       return;
     }
 
@@ -102,22 +105,12 @@ const handleGoogleError = async (
   res: SessionResponse,
   e: GaxiosError
 ) => {
-  if (isGoogleTokenExpired(e)) {
+  if (isInvalidGoogleToken(e)) {
     const revokeResult = await compassAuthService.revokeSessionsByUser(userId);
+    logger.debug(
+      `Invalid Google token for user: ${userId}\n\t${revokeResult.sessionsRevoked} session(s) revoked as result`
+    );
     res.status(Status.UNAUTHORIZED).send(revokeResult);
-    return;
-  }
-
-  const isAccessRevoked = false;
-  if (isAccessRevoked) {
-    logger.warn(`User revoked access, cleaning data: ${userId}`);
-    logger.debug("\t(not really, currently debugging)");
-    logger.debug(JSON.stringify(e));
-    return;
-
-    await userService.deleteCompassDataForUser(userId, false);
-
-    res.status(Status.GONE).send("User revoked access, deleted all data");
     return;
   }
 

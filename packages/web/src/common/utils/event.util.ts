@@ -145,16 +145,21 @@ export const getWeekDayLabel = (day: Dayjs | Date) => {
 };
 
 export const handleError = (error: Error) => {
-  console.log(error.message);
-  console.log(error.stack);
-  console.log(error);
-
-  const messageCode = parseInt(error.message.slice(-3));
-  if (messageCode === Status.UNAUTHORIZED) {
-    // SuperTokensWrapper will handle these
+  const codesToIgnore = [Status.NOT_FOUND, Status.GONE, Status.UNAUTHORIZED];
+  const code = parseInt(error.message.slice(-3));
+  if (codesToIgnore.includes(code)) {
+    // api interceptor will handle these
     return;
   }
 
+  if (code === Status.INTERNAL_SERVER) {
+    alert("Something went wrong behind the scenes. Please try again later.");
+    window.location.reload();
+  }
+
+  console.log(error.message);
+  console.log(error.stack);
+  console.log(error);
   alert(error);
 };
 
