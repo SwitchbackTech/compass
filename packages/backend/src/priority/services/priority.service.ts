@@ -135,11 +135,11 @@ class PriorityService {
         { returnDocument: "after" }
       );
 
-    if (response.value === null || response.ok !== 0) {
+    if (!response || response["value"] === null || response["ok"] !== 0) {
       return new BaseError("Update Failed", "Ensure id is correct", 400, true);
     }
 
-    const updatedPriority = response.value as unknown as Schema_Priority;
+    const updatedPriority = response["value"] as unknown as Schema_Priority;
     return updatedPriority;
   }
 }

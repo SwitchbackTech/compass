@@ -67,10 +67,10 @@ export const updateEvent = async (
       { returnDocument: "after" }
     );
 
-  if (response.value === null || !response.ok) {
+  if (!response || response["value"] === null || !response["ok"]) {
     throw error(EventError.NoMatchingEvent, "Prompt Redux refresh");
   }
-  return response.value;
+  return response["value"];
 };
 
 export const updateFutureInstances = async (

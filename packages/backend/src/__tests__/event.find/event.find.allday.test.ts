@@ -11,10 +11,7 @@ describe("Mar 6 - 12, 2022: All-Day Events", () => {
 
   beforeAll(async () => {
     // setup in-memory connection using jest-mongodb
-    connection = await MongoClient.connect(process.env.MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    connection = await MongoClient.connect(process.env.MONGO_URL as string);
     db = await connection.db();
     eventCollection = db.collection("event");
     await eventCollection.insertMany(mockEventSetMar22);
