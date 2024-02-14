@@ -34,7 +34,6 @@
     "@compass/backend": "*",
     "@compass/core": "*",
     "module-alias": "^2.2.2",
-    "mongodb": "6.3",
     "process": "^0.11.10",
     "source-map-support": "^0.5.20",
     "tslib": "^2.4.0",
