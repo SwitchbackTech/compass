@@ -10,10 +10,7 @@ describe("Jan 2022: Many Formats", () => {
 
   beforeAll(async () => {
     // setup in-memory connection using jest-mongodb
-    connection = await MongoClient.connect(process.env.MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    connection = await MongoClient.connect(process.env.MONGO_URL as string);
     db = await connection.db();
     eventCollection = db.collection("event.find.test");
 

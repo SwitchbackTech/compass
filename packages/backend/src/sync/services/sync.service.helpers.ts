@@ -302,8 +302,9 @@ export const importEventsByCalendar = async (
       );
     }
 
-    updated += result.nInserted + result.nUpserted + result.nModified;
-    deleted += result.nRemoved;
+    updated +=
+      result.insertedCount + result.upsertedCount + result.modifiedCount;
+    deleted += result.deletedCount;
 
     nextSyncToken = response.nextSyncToken;
     nextPageToken = response.nextPageToken;
