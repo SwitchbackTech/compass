@@ -46,7 +46,26 @@ class MongoService {
       });
   };
 
-  isConnected = () => this.client !== undefined;
+  waitUntilConnected = async () => {
+    return new Promise<void>((resolve, reject) => {
+      const timeout = 8000;
+      const interval = 1000;
+      let elapsedTime = 0;
+
+      const checkConnection = setInterval(() => {
+        if (this.client !== undefined) {
+          clearInterval(checkConnection);
+          resolve();
+        } else {
+          elapsedTime += interval;
+          if (elapsedTime >= timeout) {
+            clearInterval(checkConnection);
+            reject(new Error("Timeout: Failed to connect to MongoDB"));
+          }
+        }
+      }, interval);
+    });
+  };
 
   objectId = (id: string): ObjectId => {
     return new ObjectId(id);

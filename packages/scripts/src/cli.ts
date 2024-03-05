@@ -4,58 +4,62 @@ dotenv.config({
   path: path.resolve(process.cwd(), "packages/backend/.env"),
 });
 import { Command } from "commander";
-import mongoService from "@backend/common/services/mongo.service";
 
 import { runBuild } from "./commands/build";
-import { Category_VM } from "./common/cli.types";
-
-mongoService;
+import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
+import { startDeleteFlow } from "./commands/delete";
+import { log } from "./common/cli.utils";
 
 const runScript = async () => {
   const exitHelpfully = (msg?: string) => {
-    msg && console.log(msg);
+    msg && log.error(msg);
     console.log(program.helpInformation());
     process.exit(1);
   };
 
   const program = new Command();
-  program.option("-b, --build", "builds packages");
-  program.option("-d, --delete", "deletes users data from compass database");
   program.option(
-    "-e --environment <environment>",
-    "specify environment (`Category_VM` value)"
+    `-e, --environment [${CATEGORY_VM.STAG}|${CATEGORY_VM.PROD}]`,
+    "specify environment"
   );
   program.option("-f, --force", "forces operation, no cautionary prompts");
   program.option(
-    "-p, --packages [pkgs...]",
-    "specifies which packages to build"
+    "-u, --user [id|email]",
+    "specifies which user to run script for"
   );
-  program.option("-u, --user <id>", "specifies which user to run script for");
+
+  program
+    .command("build")
+    .description("build compass package(s)")
+    .argument(
+      `[${ALL_PACKAGES.join("|")}]`,
+      "package(s) to build, separated by comma"
+    )
+    .option("--skip-env", "skips copying env files to build");
+
+  program
+    .command("delete")
+    .description("deletes users data from compass database");
 
   program.parse(process.argv);
 
   const options = program.opts();
-
-  if (Object.keys(options).length === 0) {
-    exitHelpfully();
-  }
+  const cmd = program.args[0];
 
   switch (true) {
-    case options["build"]: {
-      const pckgs = options["packages"] as string[] | undefined;
-      const env = options["environment"] as Category_VM | undefined;
-      await runBuild(pckgs, env);
+    case cmd === "build": {
+      await runBuild(options);
       break;
     }
-    case options["delete"]: {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
-      const { startDeleteFlow } = require("./commands/delete");
+    case cmd === "delete": {
+      const force = options["force"] as boolean;
+      const user = options["user"] as string;
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      startDeleteFlow(
-        options["user"] as string | null,
-        options["force"] as boolean | undefined
-      );
+      if (!user || typeof user !== "string") {
+        exitHelpfully("You must supply a user");
+      }
+
+      await startDeleteFlow(user, force);
       break;
     }
     default:

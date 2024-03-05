@@ -15,11 +15,11 @@ import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { Schema_CalendarList } from "@core/types/calendar.types";
+import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { yearsAgo } from "@backend/common/helpers/common.util";
 import { EventError } from "@backend/common/constants/error.constants";
-import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import {
   GenericError,
   GcalError,
@@ -31,7 +31,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 import {
   isFullSyncRequired,
-  isGoogleTokenExpired,
+  isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import eventService from "@backend/event/services/event.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
@@ -44,6 +44,7 @@ import {
   categorizeGcalEvents,
   getActiveDeadline,
   getSummary,
+  isUsingHttps,
   syncExpired,
   syncExpiresSoon,
 } from "../util/sync.utils";
@@ -301,8 +302,9 @@ export const importEventsByCalendar = async (
       );
     }
 
-    updated += result.nInserted + result.nUpserted + result.nModified;
-    deleted += result.nRemoved;
+    updated +=
+      result.insertedCount + result.upsertedCount + result.modifiedCount;
+    deleted += result.deletedCount;
 
     nextSyncToken = response.nextSyncToken;
     nextPageToken = response.nextPageToken;
@@ -331,7 +333,13 @@ export const initSync = async (gcal: gCalendar, userId: string) => {
 
   await calendarService.create(cCalendarList);
 
-  await watchEventsByGcalIds(userId, gCalendarIds, gcal);
+  if (isUsingHttps()) {
+    await watchEventsByGcalIds(userId, gCalendarIds, gcal);
+  } else {
+    logger.warn(
+      `Skipped gcal watch during sync init because BASEURL does not use HTTPS: '${ENV.BASEURL}'`
+    );
+  }
 
   return gCalendarIds;
 };
@@ -434,11 +442,9 @@ export const prepIncrementalImport = async (
     return sync.google.events;
   }
 
-  const isNotUsingHTTPS =
-    ENV.BASEURL !== undefined && !ENV.BASEURL.includes("https");
-  if (isNotUsingHTTPS) {
+  if (!isUsingHttps()) {
     logger.warn(
-      `Reminder: Skipping gcal watch because BASEURL does not use HTTPS: '${
+      `Skipped gcal watch during incremental import because BASEURL does not use HTTPS: '${
         ENV.BASEURL || ""
       }'`
     );
@@ -467,7 +473,7 @@ export const pruneSync = async (toPrune: string[]) => {
     try {
       stopped = await syncService.stopWatches(u);
     } catch (e) {
-      if (isGoogleTokenExpired(e as Error)) {
+      if (isInvalidGoogleToken(e as Error)) {
         await userService.deleteCompassDataForUser(u, false);
         deletedUserData = true;
       } else {
@@ -510,7 +516,7 @@ export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
       const refreshes = await Promise.all(refreshesByUser);
       return { user: r.userId, results: refreshes, resynced, revokedSession };
     } catch (e) {
-      if (isGoogleTokenExpired(e as Error)) {
+      if (isInvalidGoogleToken(e as Error)) {
         await compassAuthService.revokeSessionsByUser(r.userId);
         revokedSession = true;
       } else if (isFullSyncRequired(e as Error)) {

@@ -1,81 +1,112 @@
 import dotenv from "dotenv";
 import path from "path";
 import shell from "shelljs";
-import { Category_VM, VmInfo } from "@scripts/common/cli.types";
+import { Options_Cli, Info_VM } from "@scripts/common/cli.types";
 import {
   COMPASS_BUILD_DEV,
   COMPASS_ROOT_DEV,
+  NODE_BUILD,
+  PCKG,
 } from "@scripts/common/cli.constants";
-import { getVmInfo, getPckgsTo } from "@scripts/common/cli.utils";
+import {
+  getVmInfo,
+  getPckgsTo,
+  _confirm,
+  log,
+  fileExists,
+  getClientId,
+} from "@scripts/common/cli.utils";
 
-const buildPackages = async (pckgs: string[], vmInfo: VmInfo) => {
-  if (pckgs.length === 0) {
-    console.log("Ya gotta select a package to build");
-    process.exit(1);
+export const runBuild = async (options: Options_Cli) => {
+  const env = options["environment"];
+  const vmInfo = await getVmInfo(env);
+
+  const pckgs =
+    options["packages"] === undefined
+      ? await getPckgsTo("build")
+      : options["packages"];
+
+  if (pckgs.includes(PCKG.NODE)) {
+    await buildNodePckgs(vmInfo, options["skipEnv"]);
   }
 
-  if (pckgs.includes("nodePckgs")) {
-    await buildNodePckgs(vmInfo);
-  }
-
-  if (pckgs.includes("web")) {
-    buildWeb(vmInfo);
+  if (pckgs.includes(PCKG.WEB)) {
+    await buildWeb(vmInfo);
   }
 };
 
 // eslint-disable-next-line @typescript-eslint/require-await
-const buildNodePckgs = async (vmInfo: VmInfo) => {
-  removeOldBuildFor("nodePckgs");
+const buildNodePckgs = async (vmInfo: Info_VM, skipEnv?: boolean) => {
+  removeOldBuildFor(PCKG.NODE);
+  createNodeDirs();
+  await copyNodeConfigsToBuild(vmInfo, skipEnv);
 
-  console.log("Compiling node packages ...");
+  log.info("Compiling node packages ...");
   // eslint-disable-next-line @typescript-eslint/require-await
   shell.exec("yarn tsc --project tsconfig.json", async function (code: number) {
     if (code !== 0) {
-      console.log("Exiting because of compilation errors");
+      log.error("Exiting because of compilation errors");
       process.exit(code);
     }
 
-    console.log("Compiled node pckgs");
+    log.success("Compiled node pckgs");
 
-    copyConfigFilesToBuild(vmInfo);
-
-    installProdDependencies();
+    installDependencies();
   });
 };
 
-const buildWeb = (vmInfo: VmInfo) => {
-  removeOldBuildFor("web");
-  shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
-  console.log("Getting API baseUrl ...");
+const buildWeb = async (vmInfo: Info_VM) => {
   const { baseUrl, destination } = vmInfo;
-
   const envFile = destination === "staging" ? ".env" : ".env.prod";
+
+  const gClientId = await getClientId(destination);
+
   const envPath = path.join(__dirname, "..", "..", "..", "backend", envFile);
   dotenv.config({ path: envPath });
 
-  const gClientId = process.env["CLIENT_ID"] as string;
+  removeOldBuildFor(PCKG.WEB);
 
-  console.log("Compiling web files...");
+  log.info("Compiling web files...");
+  shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
   shell.exec(
     `webpack --mode=production --env API_BASEURL=${baseUrl} GOOGLE_CLIENT_ID=${gClientId}`
   );
 
-  shell.cd(COMPASS_ROOT_DEV);
-  zipWeb();
+  log.success(`Done building web files.`);
+  log.tip(`
+    Now you'll probably want to:
+      - zip the build/web dir
+      - copy it to your ${destination} server
+      - unzip it
+      - run it`);
+  process.exit(0);
 };
 
-const copyConfigFilesToBuild = (vmInfo: VmInfo) => {
-  const NODE_BUILD = `${COMPASS_BUILD_DEV}/node`;
-
+const copyNodeConfigsToBuild = async (vmInfo: Info_VM, skipEnv?: boolean) => {
   const envName = vmInfo.destination === "production" ? ".prod.env" : ".env";
 
-  console.log("Copying root configs to build ...");
-  shell.cp(
-    `${COMPASS_ROOT_DEV}/packages/backend/${envName}`,
-    `${NODE_BUILD}/.env`
-  );
+  const envPath = `${COMPASS_ROOT_DEV}/packages/backend/${envName}`;
 
-  console.log("Copying package configs to build ...");
+  if (fileExists(envPath)) {
+    log.info("Copying env file to build ...");
+
+    shell.cp(envPath, `${NODE_BUILD}/.env`);
+    log.success("Copied env file to build");
+  } else {
+    log.warning(`Env file does not exist: ${envPath}`);
+
+    const keepGoing =
+      skipEnv === true ? true : await _confirm("Continue anyway?");
+
+    if (!keepGoing) {
+      log.error("Exiting due to missing env file");
+      process.exit(1);
+    }
+
+    log.warning("Continuing without env file ...");
+  }
+
+  log.info("Copying package configs to build ...");
   shell.cp(`${COMPASS_ROOT_DEV}/package.json`, `${NODE_BUILD}/package.json`);
 
   shell.cp(
@@ -86,53 +117,49 @@ const copyConfigFilesToBuild = (vmInfo: VmInfo) => {
     `${COMPASS_ROOT_DEV}/packages/core/package.json`,
     `${NODE_BUILD}/packages/core/package.json`
   );
+  log.success("Copied package configs to build");
 };
 
-const installProdDependencies = () => {
-  console.log("Installing prod dependencies for node pckgs ...");
+const createNodeDirs = () => {
+  shell.mkdir("-p", `${NODE_BUILD}/packages/backend`);
+  shell.mkdir("-p", `${NODE_BUILD}/packages/core`);
+};
+
+const installDependencies = () => {
+  log.info("Installing dependencies...");
 
   shell.cd(`${COMPASS_BUILD_DEV}/node`);
   shell.exec("yarn install --production", function (code: number) {
     if (code !== 0) {
-      console.log("exiting cuz error during compiliation");
+      log.error("Exiting cuz error during compiliation");
       process.exit(code);
     }
 
-    zipNode();
+    log.success(`Done building node packages.`);
+    log.tip(`
+    Now you'll probably want to:
+      - zip the build/node dir
+      - copy it to your prod server
+      - unzip it
+      - run it`);
+    process.exit(0);
   });
 };
 
-const removeOldBuildFor = (pckg: "nodePckgs" | "web") => {
-  if (pckg === "nodePckgs") {
-    console.log("Removing old node build ...");
+const removeOldBuildFor = (pckg: string) => {
+  if (pckg === PCKG.NODE) {
+    log.info("Removing old node build ...");
     shell.rm("-rf", [
       "build/tsconfig.tsbuildinfo",
       "build/node",
       "build/nodePckgs.zip",
     ]);
+    log.success("Removed old node build");
   }
 
-  if (pckg === "web") {
-    console.log("Removing old web build ...");
+  if (pckg === PCKG.WEB) {
+    log.info("Removing old web build ...");
     shell.rm("-rf", ["build/web", "build/web.zip"]);
+    log.success("Removed old web build");
   }
-};
-
-export const runBuild = async (
-  packages?: string[],
-  environment?: Category_VM
-) => {
-  const pckgs = packages || (await getPckgsTo("build"));
-  const vmInfo = await getVmInfo(environment);
-  await buildPackages(pckgs, vmInfo);
-};
-
-const zipNode = () => {
-  shell.cd(COMPASS_ROOT_DEV);
-  shell.exec(`zip -q -r build/nodePckgs.zip build/node`);
-};
-
-const zipWeb = () => {
-  shell.cd(COMPASS_ROOT_DEV);
-  shell.exec(`zip -r build/web.zip build/web`);
 };

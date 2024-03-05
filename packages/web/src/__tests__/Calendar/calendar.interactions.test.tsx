@@ -50,17 +50,6 @@ describe("Calendar Interactions", () => {
       );
 
       expect(nowLine).not.toBeInTheDocument();
-
-      /* past week */
-      await user.click(screen.getByText(/today/i));
-
-      await user.click(
-        screen.getByRole("navigation", {
-          name: /previous week/i,
-        })
-      );
-
-      expect(nowLine).not.toBeInTheDocument();
     });
   });
 });

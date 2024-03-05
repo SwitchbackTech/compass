@@ -5,7 +5,6 @@ import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
 import { BaseError } from "@core/errors/errors.base";
 import { CompassError } from "@backend/common/types/error.types";
-import { Summary_Delete } from "@scripts/commands/delete";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { AuthError } from "@backend/common/constants/error.constants";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
@@ -25,6 +24,8 @@ import priorityService from "@backend/priority/services/priority.service";
 import syncService from "@backend/sync/services/sync.service";
 
 import emailService from "./email.service";
+import { Summary_Delete } from "../types/user.types";
+import { findCompassUserBy } from "../queries/user.queries";
 
 const logger = Logger("app:user.service");
 
@@ -73,8 +74,19 @@ class UserService {
         summary.eventWatches = watches.length;
       }
 
+      const user = await findCompassUserBy("_id", userId);
+      if (!user) {
+        throw error(AuthError.NoUserId, "Failed to find user");
+      }
+
       const syncs = await syncService.deleteAllByUser(userId);
       summary.syncs = syncs.deletedCount;
+
+      // delete other users with same email
+      const staleSyncs = await syncService.deleteAllByGcalId(
+        user.google.googleId
+      );
+      summary.syncs += staleSyncs.deletedCount;
 
       initSupertokens();
       const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
@@ -119,7 +131,6 @@ class UserService {
     await emailService.addToEmailList(email, firstName);
 
     const gCalendarIds = await initSync(gcalClient, userId);
-
     await syncService.importFull(gcalClient, gCalendarIds, userId);
 
     await priorityService.createDefaultPriorities(userId);

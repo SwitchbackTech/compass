@@ -1,10 +1,6 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
-import Session from "supertokens-auth-react/recipe/session";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { ID_MAIN } from "@web/common/constants/web.constants";
-import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 
 import { Grid } from "./components/Grid/";
 import { useScroll } from "./hooks/grid/useScroll";
@@ -21,20 +17,6 @@ import { LeftSidebar } from "./components/LeftSidebar";
 import { RightSidebar } from "./components/RightSidebar";
 import { Draft } from "./components/Event/Draft";
 import { Dedication } from "./components/Dedication";
-
-export const Calendar = () => {
-  const sessionContext = Session.useSessionContext();
-
-  if (sessionContext.loading) {
-    return <AbsoluteOverflowLoader />;
-  }
-
-  if (!sessionContext.doesSessionExist) {
-    return <Navigate to={ROOT_ROUTES.LOGIN} />;
-  }
-
-  return <CalendarView />;
-};
 
 export const CalendarView = () => {
   const prefs = usePreferences();

@@ -12,7 +12,7 @@ const db = IS_DEV ? "dev_calendar" : "prod_calendar";
 const _error = ">> TODO: set this value in .env <<";
 
 export const ENV = {
-  BASEURL: process.env["BASEURL"],
+  BASEURL: process.env["BASEURL"] as string,
   CHANNEL_EXPIRATION_MIN: process.env["CHANNEL_EXPIRATION_MIN"] || "10",
   CLIENT_ID: process.env["CLIENT_ID"] || _error,
   CLIENT_SECRET: process.env["CLIENT_SECRET"] || _error,
