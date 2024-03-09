@@ -43,6 +43,7 @@ class PriorityService {
           name: data.name,
         }
       );
+
       if (priorityExists) {
         throw new BaseError(
           "Priority Exists",
@@ -51,6 +52,7 @@ class PriorityService {
           true
         );
       }
+
       const doc = Object.assign({}, data, { user: userId });
       const response = await mongoService.db
         .collection(Collections.PRIORITY)
@@ -62,6 +64,7 @@ class PriorityService {
         name: data.name,
         color: data.color,
       };
+
       return priority;
     }
   }
@@ -92,7 +95,8 @@ class PriorityService {
   }
 
   async deleteAllByUser(userId: string) {
-    const filter = { user: userId };
+    const filter = { user: { $eq: userId } };
+
     const response = await mongoService.db
       .collection(Collections.PRIORITY)
       .deleteMany(filter);
@@ -100,7 +104,11 @@ class PriorityService {
   }
 
   async deleteById(id: string, userId: string) {
-    const filter = { _id: mongoService.objectId(id), user: userId };
+    const filter = {
+      _id: { $eq: mongoService.objectId(id) },
+      user: { $eq: userId },
+    };
+
     const response = await mongoService.db
       .collection(Collections.PRIORITY)
       .deleteOne(filter);
@@ -126,21 +134,21 @@ class PriorityService {
 
     return priority;
   }
+
   async updateById(id: string, priority: PriorityReq, userId: string) {
     const response = await mongoService.db
       .collection(Collections.PRIORITY)
       .findOneAndUpdate(
-        { _id: mongoService.objectId(id), user: userId },
-        { priority },
+        { _id: { $eq: mongoService.objectId(id) }, user: { $eq: userId } },
+        { $set: priority },
         { returnDocument: "after" }
       );
 
-    if (!response || response["value"] === null || response["ok"] !== 0) {
+    if (!response) {
       return new BaseError("Update Failed", "Ensure id is correct", 400, true);
     }
 
-    const updatedPriority = response["value"] as unknown as Schema_Priority;
-    return updatedPriority;
+    return response as unknown as Schema_Priority;
   }
 }
 
