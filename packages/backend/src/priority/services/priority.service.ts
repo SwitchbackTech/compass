@@ -131,16 +131,15 @@ class PriorityService {
       .collection(Collections.PRIORITY)
       .findOneAndUpdate(
         { _id: mongoService.objectId(id), user: userId },
-        { priority },
+        { $set: priority },
         { returnDocument: "after" }
       );
 
-    if (!response || response["value"] === null || response["ok"] !== 0) {
+    if (!response) {
       return new BaseError("Update Failed", "Ensure id is correct", 400, true);
     }
 
-    const updatedPriority = response["value"] as unknown as Schema_Priority;
-    return updatedPriority;
+    return response as unknown as Schema_Priority;
   }
 }
 
