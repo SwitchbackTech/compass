@@ -1,4 +1,9 @@
-import { gSchema$Event, gParamsEventsList, gCalendar } from "@core/types/gcal";
+import {
+  gSchema$Channel,
+  gSchema$Event,
+  gParamsEventsList,
+  gCalendar,
+} from "@core/types/gcal";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import { Params_WatchEvents } from "@core/types/sync.types";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -26,7 +31,10 @@ class GCalService {
   }
 
   async getEvents(gcal: gCalendar, params: gParamsEventsList) {
-    const response = await gcal.events.list(params);
+    const response = await gcal.events.list({
+      ...params,
+      eventTypes: ["default"],
+    });
     return response;
   }
 
@@ -58,9 +66,10 @@ class GCalService {
   watchEvents = async (gcal: gCalendar, params: Params_WatchEvents) => {
     const { data } = await gcal.events.watch({
       calendarId: params.gCalendarId,
+      eventTypes: ["default"],
       requestBody: {
         // reminder: address always needs to be HTTPS
-        address: (ENV.BASEURL as string) + GCAL_NOTIFICATION_ENDPOINT,
+        address: ENV.BASEURL + GCAL_NOTIFICATION_ENDPOINT,
         expiration: params.expiration,
         id: params.channelId,
         token: ENV.TOKEN_GCAL_NOTIFICATION,
@@ -69,7 +78,7 @@ class GCalService {
       syncToken: params.nextSyncToken,
     });
 
-    return { watch: data };
+    return { watch: data as gSchema$Channel };
   };
 }
 
