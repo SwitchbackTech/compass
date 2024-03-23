@@ -1,10 +1,9 @@
 ---
 name: Bug report
 about: "Report technical issues. \U0001F41E"
-title: ''
+title: ""
 labels: bug
-assignees: ''
-
+assignees: ""
 ---
 
 ## Prerequisites
