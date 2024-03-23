@@ -136,10 +136,10 @@ export const StyledDatePicker = styled.div<{
 export const StyledHeaderFlex = styled(Flex)`
   padding: 0 5px 5px 8px;
 `;
-export const TodayStyledText = styled(Text)<{isCurrentDate:boolean}>`
+export const TodayStyledText = styled(Text)<{ isCurrentDate: boolean }>`
   margin-right: 40px;
   padding: 0px 6px;
-  opacity:${({isCurrentDate})=> (isCurrentDate ? 0 : 1)};
+  opacity: ${({ isCurrentDate }) => (isCurrentDate ? 0 : 1)};
 
   &:hover {
     ${_hoverStyle}

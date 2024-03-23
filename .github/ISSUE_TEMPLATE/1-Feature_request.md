@@ -1,10 +1,7 @@
 ---
 name: Feature request
 about: "You want something added to the app \U0001F389"
-title: ''
+title: ""
 labels: enhancement
-assignees: ''
-
+assignees: ""
 ---
-
-
