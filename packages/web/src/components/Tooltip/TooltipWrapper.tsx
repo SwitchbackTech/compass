@@ -14,7 +14,7 @@ import { TooltipDescription } from "./Description";
 export interface Props {
   children: ReactNode;
   description?: string;
-  onClick: () => void;
+  onClick: (event: Event) => void;
   shortcut?: string;
 }
 
@@ -31,7 +31,7 @@ export const TooltipWrapper: React.FC<Props> = ({
       <TooltipTrigger
         onClick={() => {
           setIsTooltipOpen((v) => !v);
-          onClick();
+          onClick(event);
         }}
       >
         {children}

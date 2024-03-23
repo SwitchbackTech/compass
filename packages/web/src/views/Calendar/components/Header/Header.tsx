@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useRef, useEffect } from "react";
 import { Dayjs } from "dayjs";
 import { ColorNames } from "@core/types/color.types";
 import { getAlphaColor, getColor } from "@core/util/color.utils";
@@ -18,6 +18,7 @@ import { selectIsRightSidebarOpen } from "@web/ducks/settings/selectors/settings
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { HamburgerIcon } from "@web/components/Icons/HamburgerIcon";
+import { HamburgerClose } from "@web/assets/svg";
 
 import {
   StyledHeaderRow,
@@ -47,9 +48,30 @@ export const Header: FC<Props> = ({
   const dispatch = useAppDispatch();
 
   const { isDrafting } = useAppSelector(selectDraftId);
-  const isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
+  let isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
+
+  const headerRef = useRef<HTMLDivElement | null>(null);
 
   const { scrollToNow } = scrollUtil;
+
+  const handleOutsideClick = (event: MouseEvent) => {
+    if (
+      isRightSidebarOpen &&
+      headerRef.current &&
+      !headerRef.current.contains(event.target as Node)
+    ) {
+      dispatch(settingsSlice.actions.toggleRightSidebar());
+    }
+  };
+  useEffect(() => {
+    document.addEventListener("click", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener("click", handleOutsideClick);
+    };
+  }, [isRightSidebarOpen]);
+
+
 
   const onSectionClick = () => {
     if (isDrafting) {
@@ -65,9 +87,16 @@ export const Header: FC<Props> = ({
     scrollToNow();
   };
 
+  
+
+  
+  
+  
+
   return (
     <>
       <StyledHeaderRow
+      ref={headerRef}
         alignItems={AlignItems.FLEX_START}
         onClick={onSectionClick}
       >
@@ -130,12 +159,13 @@ export const Header: FC<Props> = ({
         <StyledRightGroup>
           <TooltipWrapper
             description={`${isRightSidebarOpen ? "Collapse" : "Open"} settings`}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation()
               dispatch(settingsSlice.actions.toggleRightSidebar());
             }}
-            shortcut="]"
+            shortcut={isRightSidebarOpen? "ESC" : "]"}
           >
-            <HamburgerIcon />
+            {isRightSidebarOpen ? <HamburgerClose /> : <HamburgerIcon />}
           </TooltipWrapper>
         </StyledRightGroup>
       </StyledHeaderRow>

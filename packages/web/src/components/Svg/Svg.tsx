@@ -1,6 +1,7 @@
 import styled, { css } from "styled-components";
 import {
   HamburgerMenuIcon,
+  HamburgerClose,
   MonthCalendarIcon,
   TrashIcon,
 } from "@web/assets/svg";
@@ -26,6 +27,10 @@ const svgStyles = ({ color, hovercolor }: SvgStylesProps) => {
 export const StyledHamburgerMenuIcon = styled(HamburgerMenuIcon)`
   ${(props: SvgStylesProps) => svgStyles(props)}
 `;
+export const StyledHamburgerClose = styled(HamburgerClose)`
+  ${(props: SvgStylesProps) => svgStyles(props)}
+`;
+
 
 export const StyledMonthCalendarIcon = styled(MonthCalendarIcon)`
   ${(props: SvgStylesProps) => svgStyles(props)}
@@ -34,3 +39,4 @@ export const StyledMonthCalendarIcon = styled(MonthCalendarIcon)`
 export const StyledTrashIcon = styled(TrashIcon)`
   ${(props: SvgStylesProps) => svgStyles(props)}
 `;
+
