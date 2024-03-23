@@ -95,9 +95,6 @@ module.exports = {
 
   // A preset that is used as a base for Jest's configuration
   preset: "@shelf/jest-mongodb",
-  // ts-jest type-checks tests during runtime,
-  // which may be useful, but slows down tests, so omitted
-  // preset: 'ts-jest',
 
   projects: [
     {

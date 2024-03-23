@@ -14,7 +14,6 @@ module.exports = {
     "testing-library",
   ],
   overrides: [
-    // TypeScript-specific configuration
     {
       files: ["*.ts", "*.tsx"],
 
@@ -64,7 +63,6 @@ module.exports = {
   extends: [
     "eslint:recommended",
     "plugin:jest-dom/recommended",
-    // "plugin:testing-library/react", $$ delete
     // this prettier plugin adjusts other parts of this config,
     // so keep it as the last extends item
     "plugin:prettier/recommended",
