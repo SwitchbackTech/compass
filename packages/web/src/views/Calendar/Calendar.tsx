@@ -17,6 +17,7 @@ import { LeftSidebar } from "./components/LeftSidebar";
 import { RightSidebar } from "./components/RightSidebar";
 import { Draft } from "./components/Event/Draft";
 import { Dedication } from "./components/Dedication";
+import { CmdPalette } from "../CmdPalette";
 
 export const CalendarView = () => {
   const prefs = usePreferences();
@@ -48,6 +49,7 @@ export const CalendarView = () => {
   return (
     <Styled id="cal">
       <Dedication />
+      <CmdPalette />
 
       <Draft
         dateCalcs={dateCalcs}

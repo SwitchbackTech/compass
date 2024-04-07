@@ -112,10 +112,10 @@ export const useShortcuts = (
           _discardDraft();
           util.decrementWeek();
         },
-        [Key.K]: () => {
-          _discardDraft();
-          util.incrementWeek();
-        },
+        // [Key.K]: () => {
+        //   _discardDraft();
+        //   util.incrementWeek();
+        // },
         [Key.M]: () => _createSomedayDraft("month"),
         [Key.W]: () => _createSomedayDraft("week"),
         [Key.Z]: () => {
