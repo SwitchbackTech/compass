@@ -16,55 +16,60 @@ const CmdPalette = () => {
   const filteredItems = filterItems(
     [
       {
-        heading: "Home",
-        id: "home",
+        heading: "Common Tasks",
+        id: "general",
         items: [
           {
-            id: "home",
-            children: "Home",
-            icon: "HomeIcon",
-            href: "#",
-          },
-          {
-            id: "settings",
-            children: "Settings",
-            icon: "CogIcon",
-            href: "#",
-          },
-          {
-            id: "projects",
-            children: "Projects",
-            icon: "RectangleStackIcon",
-            closeOnSelect: false,
+            id: "create-event",
+            children: "Create Event [c]",
+            icon: "PlusIcon",
             onClick: () => {
-              setPage("projects");
+              alert("Creating event...");
             },
           },
-        ],
-      },
-      {
-        heading: "Other",
-        id: "advanced",
-        items: [
           {
-            id: "developer-settings",
-            children: "Developer settings",
-            icon: "CodeBracketIcon",
-            href: "#",
-          },
-          {
-            id: "privacy-policy",
-            children: "Privacy policy",
-            icon: "LifebuoyIcon",
-            href: "#",
+            id: "report-bug",
+            children: "Report Bug",
+            icon: "BugAntIcon",
+            href: "https://github.com/SwitchbackTech/compass/issues/new?assignees=&labels=bug&projects=&template=2-Bug_report.md&title=",
           },
           {
             id: "log-out",
-            children: "Log out",
+            children: "Log Out [z]",
             icon: "ArrowRightOnRectangleIcon",
             onClick: () => {
               alert("Logging out...");
             },
+          },
+          {
+            id: "share-feedback",
+            children: "Share Feedback",
+            icon: "EnvelopeOpenIcon",
+            href: "mailto:tyler@switchback.tech",
+          },
+        ],
+      },
+      {
+        heading: "Other Links",
+        id: "advanced",
+        items: [
+          {
+            id: "code",
+            children: "Code",
+            icon: "CodeBracketIcon",
+            href: "https://github.com/SwitchbackTech/compass",
+          },
+          {
+            id: "terms",
+            children: "Terms",
+            icon: "DocumentTextIcon",
+            href: "https://www.compasscalendar.com/terms",
+          },
+          {
+            id: "privacy-policy",
+            children: "Privacy Policy",
+            icon: "LockClosedIcon",
+            href: "https://www.compasscalendar.com/privacy",
           },
         ],
       },
@@ -79,7 +84,7 @@ const CmdPalette = () => {
       search={search}
       isOpen={open}
       page={page}
-      placeholder="Foo"
+      placeholder="Try: 'create', 'bug', or 'view code'"
     >
       <CommandPalette.Page id="root">
         {filteredItems.length ? (
@@ -100,8 +105,7 @@ const CmdPalette = () => {
       </CommandPalette.Page>
 
       <CommandPalette.Page id="projects">
-        {/* Projects page */}
-        <h1>some random page</h1>
+        <h1>Info about Projets</h1>
       </CommandPalette.Page>
     </CommandPalette>
   );
