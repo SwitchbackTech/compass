@@ -98,6 +98,10 @@ export const useShortcuts = (
     const keyDownHandler = (e: KeyboardEvent) => {
       if (isDrafting()) return;
 
+      const isCmdPaletteOpen =
+        document.getElementById("headlessui-portal-root") !== null;
+      if (isCmdPaletteOpen) return;
+
       const handlersByKey = {
         [Key.OpenBracket]: () => toggleSidebar("left"),
         [Key.ClosedBracket]: () =>
