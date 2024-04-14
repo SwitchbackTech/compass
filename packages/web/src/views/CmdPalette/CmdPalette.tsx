@@ -4,7 +4,24 @@ import CommandPalette, {
   getItemIndex,
   useHandleOpenCommandPalette,
 } from "react-cmdk";
-import React, { useState } from "react";
+import React, { FC, useState } from "react";
+import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
+import { Flex } from "@web/components/Flex";
+
+import { StyledKeyTip } from "./styled";
+
+const Cmd: FC<{ title: string; shortcut: string }> = ({ shortcut, title }) => {
+  return (
+    <Flex
+      alignItems={AlignItems.CENTER}
+      justifyContent={JustifyContent.SPACE_BETWEEN}
+      style={{ color: "#FFF" }}
+    >
+      <span>{title}</span>
+      <StyledKeyTip style={{ marginLeft: "20px" }}>{shortcut}</StyledKeyTip>
+    </Flex>
+  );
+};
 
 const CmdPalette = () => {
   const [page, setPage] = useState<"root" | "projects">("root");
@@ -21,7 +38,7 @@ const CmdPalette = () => {
         items: [
           {
             id: "create-event",
-            children: "Create Event [c]",
+            children: <Cmd title="Create Event" shortcut="C" />,
             icon: "PlusIcon",
             onClick: () => {
               alert("Creating event...");
@@ -50,7 +67,7 @@ const CmdPalette = () => {
         ],
       },
       {
-        heading: "Other Links",
+        heading: "More",
         id: "advanced",
         items: [
           {
