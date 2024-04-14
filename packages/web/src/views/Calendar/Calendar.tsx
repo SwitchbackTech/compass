@@ -17,6 +17,7 @@ import { LeftSidebar } from "./components/LeftSidebar";
 import { RightSidebar } from "./components/RightSidebar";
 import { Draft } from "./components/Event/Draft";
 import { Dedication } from "./components/Dedication";
+import { CmdPalette } from "../CmdPalette";
 
 export const CalendarView = () => {
   const prefs = usePreferences();
@@ -31,15 +32,22 @@ export const CalendarView = () => {
 
   const dateCalcs = useDateCalcs(measurements, gridRefs.gridScrollRef);
 
-  useShortcuts(
+  const isCurrentWeek = weekProps.component.isCurrentWeek;
+  const startOfSelectedWeek = weekProps.component.startOfView;
+  const util = weekProps.util;
+  const toggleSidebar = prefs.toggleSidebar;
+
+  const shortcutProps = {
     today,
     dateCalcs,
-    weekProps.component.isCurrentWeek,
-    weekProps.component.startOfView,
-    weekProps.util,
+    isCurrentWeek,
+    startOfSelectedWeek,
+    util,
     scrollUtil,
-    prefs.toggleSidebar
-  );
+    toggleSidebar,
+  };
+
+  useShortcuts(shortcutProps);
 
   const rootProps: RootProps = {
     component: { today: today },
@@ -47,6 +55,7 @@ export const CalendarView = () => {
 
   return (
     <Styled id="cal">
+      <CmdPalette {...shortcutProps} />
       <Dedication />
 
       <Draft

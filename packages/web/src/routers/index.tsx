@@ -10,7 +10,6 @@ import { LoginView } from "@web/views/Login";
 import { LogoutView } from "@web/views/Logout";
 import { NotFoundView } from "@web/views/NotFound";
 import { CalendarView } from "@web/views/Calendar";
-import { CmdPalette } from "@web/views/CmdPalette";
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
@@ -34,7 +33,6 @@ const router = createBrowserRouter([
     path: ROOT_ROUTES.ROOT,
     element: (
       <ProtectedRoute>
-        <CmdPalette />
         <CalendarView />
       </ProtectedRoute>
     ),

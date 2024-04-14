@@ -1,16 +1,15 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Key } from "ts-keycode-enum";
-import dayjs, { Dayjs } from "dayjs";
+import { Dayjs } from "dayjs";
 import { Categories_Event } from "@core/types/event.types";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { isDrafting, roundToNext } from "@web/common/utils";
+import { isDrafting } from "@web/common/utils";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   selectIsAtMonthlyLimit,
@@ -21,16 +20,27 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
 import { WeekProps } from "../useWeek";
+import { getDraftTimes } from "../../components/Event/Draft/draft.util";
 
-export const useShortcuts = (
-  today: Dayjs,
-  dateCalcs: DateCalcs,
-  isCurrentWeek: boolean,
-  startOfSelectedWeek: Dayjs,
-  util: WeekProps["util"],
-  scrollUtil: Util_Scroll,
-  toggleSidebar: (target: "left" | "right") => void
-) => {
+export interface ShortcutProps {
+  today: Dayjs;
+  dateCalcs: DateCalcs;
+  isCurrentWeek: boolean;
+  startOfSelectedWeek: Dayjs;
+  util: WeekProps["util"];
+  scrollUtil: Util_Scroll;
+  toggleSidebar: (target: "left" | "right") => void;
+}
+
+export const useShortcuts = ({
+  today,
+  dateCalcs,
+  isCurrentWeek,
+  startOfSelectedWeek,
+  util,
+  scrollUtil,
+  toggleSidebar,
+}: ShortcutProps) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -38,14 +48,6 @@ export const useShortcuts = (
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
 
   useEffect(() => {
-    const _getStart = () => {
-      if (isCurrentWeek) {
-        return dayjs();
-      } else {
-        return startOfSelectedWeek.hour(dayjs().hour());
-      }
-    };
-
     const _createSomedayDraft = (type: "week" | "month") => {
       if (type === "week" && isAtWeeklyLimit) {
         alert(SOMEDAY_WEEK_LIMIT_MSG);
@@ -69,13 +71,10 @@ export const useShortcuts = (
     };
 
     const _createTimedDraft = () => {
-      const currentMinute = dayjs().minute();
-      const nextMinuteInterval = roundToNext(currentMinute, GRID_TIME_STEP);
-
-      const _start = _getStart().minute(nextMinuteInterval).second(0);
-      const _end = _start.add(1, "hour");
-      const startDate = _start.format();
-      const endDate = _end.format();
+      const { startDate, endDate } = getDraftTimes(
+        isCurrentWeek,
+        startOfSelectedWeek
+      );
 
       dispatch(
         draftSlice.actions.start({
@@ -116,10 +115,10 @@ export const useShortcuts = (
           _discardDraft();
           util.decrementWeek();
         },
-        // [Key.K]: () => {
-        //   _discardDraft();
-        //   util.incrementWeek();
-        // },
+        [Key.K]: () => {
+          _discardDraft();
+          util.incrementWeek();
+        },
         [Key.M]: () => _createSomedayDraft("month"),
         [Key.W]: () => _createSomedayDraft("week"),
         [Key.Z]: () => {

@@ -5,10 +5,26 @@ import CommandPalette, {
   useHandleOpenCommandPalette,
 } from "react-cmdk";
 import React, { FC, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Categories_Event } from "@core/types/event.types";
+import {
+  SOMEDAY_MONTH_LIMIT_MSG,
+  SOMEDAY_WEEK_LIMIT_MSG,
+} from "@core/constants/core.constants";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Flex } from "@web/components/Flex";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { isDrafting } from "@web/common/utils";
+import {
+  selectIsAtMonthlyLimit,
+  selectIsAtWeeklyLimit,
+} from "@web/ducks/events/selectors/someday.selectors";
 
 import { StyledKeyTip } from "./styled";
+import { getDraftTimes } from "../Calendar/components/Event/Draft/draft.util";
+import { ShortcutProps } from "../Calendar/hooks/shortcuts/useShortcuts";
 
 const Cmd: FC<{ title: string; shortcut: string }> = ({ shortcut, title }) => {
   return (
@@ -23,12 +39,72 @@ const Cmd: FC<{ title: string; shortcut: string }> = ({ shortcut, title }) => {
   );
 };
 
-const CmdPalette = () => {
+const CmdPalette = ({
+  today,
+  dateCalcs,
+  isCurrentWeek,
+  startOfSelectedWeek,
+  util,
+  scrollUtil,
+  toggleSidebar,
+}: ShortcutProps) => {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+
+  const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
+  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+
   const [page, setPage] = useState<"root" | "projects">("root");
   const [open, setOpen] = useState<boolean>(true);
   const [search, setSearch] = useState("");
 
   useHandleOpenCommandPalette(setOpen);
+
+  const _createSomedayDraft = (type: "week" | "month") => {
+    if (type === "week" && isAtWeeklyLimit) {
+      alert(SOMEDAY_WEEK_LIMIT_MSG);
+      return;
+    }
+    if (type === "month" && isAtMonthlyLimit) {
+      alert(SOMEDAY_MONTH_LIMIT_MSG);
+      return;
+    }
+
+    const eventType =
+      type === "week"
+        ? Categories_Event.SOMEDAY_WEEK
+        : Categories_Event.SOMEDAY_MONTH;
+
+    dispatch(
+      draftSlice.actions.start({
+        eventType,
+      })
+    );
+  };
+
+  const _createTimedDraft = () => {
+    const { startDate, endDate } = getDraftTimes(
+      isCurrentWeek,
+      startOfSelectedWeek
+    );
+
+    dispatch(
+      draftSlice.actions.start({
+        activity: "createShortcut",
+        eventType: Categories_Event.TIMED,
+        event: {
+          startDate,
+          endDate,
+        },
+      })
+    );
+  };
+
+  const _discardDraft = () => {
+    if (isDrafting()) {
+      dispatch(draftSlice.actions.discard());
+    }
+  };
 
   const filteredItems = filterItems(
     [
@@ -40,8 +116,28 @@ const CmdPalette = () => {
             id: "create-event",
             children: <Cmd title="Create Event" shortcut="C" />,
             icon: "PlusIcon",
+            onClick: () => _createTimedDraft(),
+          },
+          {
+            id: "create-someday-week-event",
+            children: "Create Week Event [w]",
+            icon: "PlusIcon",
+            onClick: () => _createSomedayDraft("week"),
+          },
+          {
+            id: "create-someday-month-event",
+            children: "Create Month Event [m]",
+            icon: "PlusIcon",
+            onClick: () => _createSomedayDraft("month"),
+          },
+          {
+            id: "today",
+            children: `Go to Today (${today.format("dddd, MMMM D")}) [t]`,
+            icon: "ArrowUturnDownIcon",
             onClick: () => {
-              alert("Creating event...");
+              scrollUtil.scrollToNow();
+              _discardDraft();
+              util.goToToday();
             },
           },
           {
@@ -54,9 +150,7 @@ const CmdPalette = () => {
             id: "log-out",
             children: "Log Out [z]",
             icon: "ArrowRightOnRectangleIcon",
-            onClick: () => {
-              alert("Logging out...");
-            },
+            onClick: () => navigate(ROOT_ROUTES.LOGOUT),
           },
           {
             id: "share-feedback",
