@@ -55,7 +55,7 @@ const CmdPalette = ({
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
 
   const [page, setPage] = useState<"root" | "projects">("root");
-  const [open, setOpen] = useState<boolean>(true);
+  const [open, setOpen] = useState<boolean>(false);
   const [search, setSearch] = useState("");
 
   useHandleOpenCommandPalette(setOpen);
@@ -145,6 +145,7 @@ const CmdPalette = ({
             children: "Report Bug",
             icon: "BugAntIcon",
             href: "https://github.com/SwitchbackTech/compass/issues/new?assignees=&labels=bug&projects=&template=2-Bug_report.md&title=",
+            target: "_blank",
           },
           {
             id: "log-out",
@@ -157,6 +158,7 @@ const CmdPalette = ({
             children: "Share Feedback",
             icon: "EnvelopeOpenIcon",
             href: "mailto:tyler@switchback.tech",
+            target: "_blank",
           },
         ],
       },
@@ -175,12 +177,14 @@ const CmdPalette = ({
             children: "Terms",
             icon: "DocumentTextIcon",
             href: "https://www.compasscalendar.com/terms",
+            target: "_blank",
           },
           {
             id: "privacy-policy",
             children: "Privacy Policy",
             icon: "LockClosedIcon",
             href: "https://www.compasscalendar.com/privacy",
+            target: "_blank",
           },
         ],
       },
