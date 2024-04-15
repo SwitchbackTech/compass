@@ -101,6 +101,8 @@ export const useShortcuts = ({
         document.getElementById("headlessui-portal-root") !== null;
       if (isCmdPaletteOpen) return;
 
+      if (e.metaKey) return;
+
       const handlersByKey = {
         [Key.OpenBracket]: () => toggleSidebar("left"),
         [Key.ClosedBracket]: () =>
