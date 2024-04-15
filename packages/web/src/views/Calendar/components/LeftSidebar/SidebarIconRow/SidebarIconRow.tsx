@@ -1,17 +1,12 @@
-import React, { FC } from "react";
-import { MonthCalendarIcon } from "@web/components/Icons/MonthCalendarIcon";
-import { Preferences } from "@web/views/Calendar/hooks/usePreferences";
+import React from "react";
+import { MetaKeyIcon } from "@web/components/Icons/MetaKeyIcon";
 
 import { StyledBottomRow } from "../styled";
 
-interface Props {
-  prefs: Preferences;
-}
-
-export const SidebarIconRow: FC<Props> = ({ prefs }) => {
+export const SidebarIconRow = () => {
   return (
     <StyledBottomRow>
-      <MonthCalendarIcon prefs={prefs} />
+      <MetaKeyIcon />
     </StyledBottomRow>
   );
 };

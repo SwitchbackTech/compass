@@ -7,6 +7,7 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 
 import { Styled, getSidebarToggleIcon, StyledSidebarOverflow } from "./styled";
 import { SomedaySection } from "./SomedaySection";
+import { SidebarIconRow } from "./SidebarIconRow";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -50,7 +51,7 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         viewEnd={weekEnd}
       />
 
-      {/* <SidebarIconRow prefs={prefs} /> */}
+      <SidebarIconRow />
     </Styled>
   );
 };

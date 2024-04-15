@@ -1,10 +1,10 @@
 import "react-cmdk/dist/cmdk.css";
+import React, { FC, useEffect, useState } from "react";
 import CommandPalette, {
   filterItems,
   getItemIndex,
   useHandleOpenCommandPalette,
 } from "react-cmdk";
-import React, { FC, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Categories_Event } from "@core/types/event.types";
 import {
@@ -21,6 +21,8 @@ import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
+import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 
 import { StyledKeyTip } from "./styled";
 import { getDraftTimes } from "../Calendar/components/Event/Draft/draft.util";
@@ -53,10 +55,15 @@ const CmdPalette = ({
 
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+  const _open = useAppSelector(selectIsCmdPaletteOpen);
 
-  const [page, setPage] = useState<"root" | "projects">("root");
   const [open, setOpen] = useState<boolean>(false);
+  const [page, setPage] = useState<"root" | "projects">("root");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    setOpen(_open);
+  }, [_open]);
 
   useHandleOpenCommandPalette(setOpen);
 
@@ -195,7 +202,10 @@ const CmdPalette = ({
   return (
     <CommandPalette
       onChangeSearch={setSearch}
-      onChangeOpen={setOpen}
+      onChangeOpen={() => {
+        dispatch(settingsSlice.actions.closeCmdPalette());
+        setOpen(!open);
+      }}
       search={search}
       isOpen={open}
       page={page}
@@ -217,10 +227,6 @@ const CmdPalette = ({
         ) : (
           <CommandPalette.FreeSearchAction />
         )}
-      </CommandPalette.Page>
-
-      <CommandPalette.Page id="projects">
-        <h1>Info about Projets</h1>
       </CommandPalette.Page>
     </CommandPalette>
   );
