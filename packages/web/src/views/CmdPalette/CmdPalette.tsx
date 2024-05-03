@@ -11,8 +11,6 @@ import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
-import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
-import { Flex } from "@web/components/Flex";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
@@ -24,31 +22,15 @@ import {
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 
-import { StyledKeyTip } from "./styled";
 import { getDraftTimes } from "../Calendar/components/Event/Draft/draft.util";
 import { ShortcutProps } from "../Calendar/hooks/shortcuts/useShortcuts";
 
-const Cmd: FC<{ title: string; shortcut: string }> = ({ shortcut, title }) => {
-  return (
-    <Flex
-      alignItems={AlignItems.CENTER}
-      justifyContent={JustifyContent.SPACE_BETWEEN}
-      style={{ color: "#FFF" }}
-    >
-      <span>{title}</span>
-      <StyledKeyTip style={{ marginLeft: "20px" }}>{shortcut}</StyledKeyTip>
-    </Flex>
-  );
-};
-
 const CmdPalette = ({
   today,
-  dateCalcs,
   isCurrentWeek,
   startOfSelectedWeek,
   util,
   scrollUtil,
-  toggleSidebar,
 }: ShortcutProps) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -58,7 +40,7 @@ const CmdPalette = ({
   const _open = useAppSelector(selectIsCmdPaletteOpen);
 
   const [open, setOpen] = useState<boolean>(false);
-  const [page, setPage] = useState<"root" | "projects">("root");
+  const [page] = useState<"root" | "projects">("root");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -121,7 +103,7 @@ const CmdPalette = ({
         items: [
           {
             id: "create-event",
-            children: <Cmd title="Create Event" shortcut="C" />,
+            children: "Create Event [c]",
             icon: "PlusIcon",
             onClick: () => _createTimedDraft(),
           },
