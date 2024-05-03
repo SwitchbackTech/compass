@@ -1,7 +1,13 @@
 import {
   StyledHamburgerMenuIcon,
+  StyledMetaKeyIcon,
   StyledMonthCalendarIcon,
   StyledTrashIcon,
 } from "./Svg";
 
-export { StyledHamburgerMenuIcon, StyledMonthCalendarIcon, StyledTrashIcon };
+export {
+  StyledHamburgerMenuIcon,
+  StyledMetaKeyIcon,
+  StyledMonthCalendarIcon,
+  StyledTrashIcon,
+};

@@ -1,6 +1,7 @@
 import styled, { css } from "styled-components";
 import {
   HamburgerMenuIcon,
+  MetaKeyIcon,
   MonthCalendarIcon,
   TrashIcon,
 } from "@web/assets/svg";
@@ -24,6 +25,10 @@ const svgStyles = ({ color, hovercolor }: SvgStylesProps) => {
 };
 
 export const StyledHamburgerMenuIcon = styled(HamburgerMenuIcon)`
+  ${(props: SvgStylesProps) => svgStyles(props)}
+`;
+
+export const StyledMetaKeyIcon = styled(MetaKeyIcon)`
   ${(props: SvgStylesProps) => svgStyles(props)}
 `;
 

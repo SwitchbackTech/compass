@@ -7,6 +7,7 @@ interface State_Settings {
     start: string;
     end: string;
   };
+  isCmdPaletteOpen: boolean;
   isRightSidebarOpen: boolean;
 }
 
@@ -15,6 +16,7 @@ const initialState: State_Settings = {
     start: dayjs().format(),
     end: dayjs().endOf("week").format(),
   },
+  isCmdPaletteOpen: false,
   isRightSidebarOpen: false,
 };
 
@@ -29,6 +31,15 @@ export const settingsSlice = createSlice({
   name: "settings",
   initialState,
   reducers: {
+    closeCmdPalette: (state) => {
+      state.isCmdPaletteOpen = false;
+    },
+    openCmdPalette: (state) => {
+      state.isCmdPaletteOpen = true;
+    },
+    toggleCmdPalette: (state) => {
+      state.isCmdPaletteOpen = !state.isCmdPaletteOpen;
+    },
     toggleRightSidebar: (state) => {
       state.isRightSidebarOpen = !state.isRightSidebarOpen;
     },
