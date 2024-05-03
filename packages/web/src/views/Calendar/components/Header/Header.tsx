@@ -54,24 +54,7 @@ export const Header: FC<Props> = ({
 
   const { scrollToNow } = scrollUtil;
 
-  const handleOutsideClick = (event: MouseEvent) => {
-    if (
-      isRightSidebarOpen &&
-      headerRef.current &&
-      !headerRef.current.contains(event.target as Node)
-    ) {
-      dispatch(settingsSlice.actions.toggleRightSidebar());
-    }
-  };
-  useEffect(() => {
-    document.addEventListener("click", handleOutsideClick);
-
-    return () => {
-      document.removeEventListener("click", handleOutsideClick);
-    };
-  }, [isRightSidebarOpen]);
-
-
+ 
 
   const onSectionClick = () => {
     if (isDrafting) {
