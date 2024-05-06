@@ -9,6 +9,8 @@ export const GlobalStyle = createGlobalStyle`
 
   body {
     margin: 0;
+    background-color:rgb(28, 49, 66);
+    overflow:hidden;
   }
 
   .react-datepicker-popper {
