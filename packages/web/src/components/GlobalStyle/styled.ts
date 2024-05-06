@@ -11,7 +11,6 @@ export const GlobalStyle = createGlobalStyle`
     margin: 0;
     background-color:rgb(28, 49, 66);
     overflow-x: hidden;
-    overflow-y: auto;
   }
 
   .react-datepicker-popper {
