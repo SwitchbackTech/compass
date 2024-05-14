@@ -1,5 +1,6 @@
 import { createGlobalStyle } from "styled-components";
 import { ZIndex } from "@web/common/constants/web.constants";
+import { BASE_COLORS } from "@core/constants/colors";
 
 export const GlobalStyle = createGlobalStyle`
   * {
@@ -9,7 +10,7 @@ export const GlobalStyle = createGlobalStyle`
 
   body {
     margin: 0;
-    background-color:rgb(28, 49, 66);
+    background-color:${BASE_COLORS.DEEP_BLUE};
     overflow-x: hidden;
   }
 
