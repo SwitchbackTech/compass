@@ -276,6 +276,7 @@ export const EventForm: React.FC<FormProps> = ({
 
       <DateTimeSection
         bgColor={getColor(colorNameByPriority[priority])}
+        event={event}
         category={category}
         endTime={endTime}
         isEndDatePickerOpen={isEndDatePickerOpen}
@@ -289,6 +290,7 @@ export const EventForm: React.FC<FormProps> = ({
         startTime={startTime}
         setIsEndDatePickerOpen={setIsEndDatePickerOpen}
         setIsStartDatePickerOpen={setIsStartDatePickerOpen}
+        setEvent={setEvent}
       />
 
       <StyledDescriptionField
