@@ -1,8 +1,8 @@
-import React, { FC } from "react";
+import React, { FC, SetStateAction } from "react";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { Key } from "ts-key-enum";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { MONTH_DAY_YEAR } from "@core/constants/date.constants";
 import { SelectOption } from "@web/common/types/component.types";
 import { AlignItems } from "@web/components/Flex/styled";
@@ -12,9 +12,11 @@ import {
   dateIsValid,
   getTimeOptionByValue,
   getTimeOptions,
+  mapToBackend,
   shouldAdjustComplimentDate,
   shouldAdjustComplimentTime,
 } from "@web/common/utils/web.date.util";
+import { Option_Time } from "@web/common/types/util.types";
 
 import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
 
@@ -22,6 +24,7 @@ dayjs.extend(customParseFormat);
 
 export interface Props {
   category: Categories_Event;
+  event: Schema_Event;
   endTime?: SelectOption<string>;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
@@ -34,10 +37,12 @@ export interface Props {
   setSelectedEndDate: (value: Date) => void;
   setSelectedStartDate: (value: Date) => void;
   setStartTime: (value: SelectOption<string>) => void;
+  setEvent: (event: Schema_Event) => SetStateAction<Schema_Event | void>;
   startTime: SelectOption<string>;
 }
 
 export const DateTimeSection: FC<Props> = ({
+  event,
   category,
   isEndDatePickerOpen,
   isStartDatePickerOpen,
@@ -50,6 +55,7 @@ export const DateTimeSection: FC<Props> = ({
   setEndTime,
   setSelectedEndDate,
   setSelectedStartDate,
+  setEvent,
   startTime,
   endTime,
 }) => {
@@ -82,7 +88,7 @@ export const DateTimeSection: FC<Props> = ({
   const adjustComplimentTimeIfNeeded = (
     changed: "start" | "end",
     value: string
-  ) => {
+  ): Option_Time | undefined => {
     const start = changed === "start" ? value : startTime.value;
     const end = changed === "end" ? value : endTime.value;
 
@@ -101,13 +107,14 @@ export const DateTimeSection: FC<Props> = ({
         const _correctedEnd = compliment.add(adjustment, "minutes");
         const correctedEnd = getTimeOptionByValue(_correctedEnd);
         setEndTime(correctedEnd);
-        return;
+        return correctedEnd;
       }
 
       if (changed === "end") {
         const _correctedStart = compliment.subtract(adjustment, "minutes");
         const correctedStart = getTimeOptionByValue(_correctedStart);
         setStartTime(correctedStart);
+        return correctedStart;
       }
     }
   };
@@ -210,7 +217,25 @@ export const DateTimeSection: FC<Props> = ({
 
   const onSelectEndTime = (option: SelectOption<string>) => {
     setEndTime(option);
-    adjustComplimentTimeIfNeeded("end", option.value);
+    const correctedStart = adjustComplimentTimeIfNeeded("end", option.value);
+
+    if (endTime.value && endTime.value !== option.value) {
+      const { startDate, endDate } = mapToBackend({
+        startDate: selectedStartDate,
+        endDate: selectedEndDate,
+        startTime: correctedStart ? correctedStart : startTime,
+        endTime: option,
+        isAllDay: event.isAllDay,
+      });
+
+      const _event = {
+        ...event,
+        startDate,
+        endDate,
+      };
+
+      setEvent(_event);
+    }
   };
 
   const onSelectStartDate = (start: Date) => {
@@ -221,7 +246,25 @@ export const DateTimeSection: FC<Props> = ({
 
   const onSelectStartTime = (option: SelectOption<string>) => {
     setStartTime(option);
-    adjustComplimentTimeIfNeeded("start", option.value);
+    const correctedEnd = adjustComplimentTimeIfNeeded("start", option.value);
+
+    if (startTime.value && startTime.value !== option.value) {
+      const { startDate, endDate } = mapToBackend({
+        startDate: selectedStartDate,
+        endDate: selectedEndDate,
+        startTime: option,
+        endTime: correctedEnd ? correctedEnd : endTime,
+        isAllDay: event.isAllDay,
+      });
+
+      const _event = {
+        ...event,
+        startDate,
+        endDate,
+      };
+
+      setEvent(_event);
+    }
   };
 
   const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
