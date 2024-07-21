@@ -129,21 +129,24 @@ const installDependencies = () => {
   log.info("Installing dependencies...");
 
   shell.cd(`${COMPASS_BUILD_DEV}/node`);
-  shell.exec("yarn install --production", function (code: number) {
-    if (code !== 0) {
-      log.error("Exiting cuz error during compiliation");
-      process.exit(code);
-    }
+  shell.exec(
+    "yarn install --production --ignore-scripts",
+    function (code: number) {
+      if (code !== 0) {
+        log.error("Exiting cuz error during compiliation");
+        process.exit(code);
+      }
 
-    log.success(`Done building node packages.`);
-    log.tip(`
+      log.success(`Done building node packages.`);
+      log.tip(`
     Now you'll probably want to:
       - zip the build/node dir
       - copy it to your prod server
       - unzip it
       - run it`);
-    process.exit(0);
-  });
+      process.exit(0);
+    }
+  );
 };
 
 const removeOldBuildFor = (pckg: string) => {
