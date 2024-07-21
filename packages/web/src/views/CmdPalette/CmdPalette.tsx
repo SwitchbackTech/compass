@@ -160,6 +160,7 @@ const CmdPalette = ({
             children: "Code",
             icon: "CodeBracketIcon",
             href: "https://github.com/SwitchbackTech/compass",
+            target: "_blank",
           },
           {
             id: "terms",
