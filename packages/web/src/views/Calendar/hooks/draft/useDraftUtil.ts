@@ -272,28 +272,26 @@ export const useDraftUtil = (
 
   const resize = useCallback(
     (e: MouseEvent) => {
+      const oppositeKey =
+        dateBeingChanged === "startDate" ? "endDate" : "startDate";
+
       const flipIfNeeded = (currTime: Dayjs) => {
         let startDate = draft.startDate;
         let endDate = draft.endDate;
 
+        let justFlipped = false;
         let dateKey = dateBeingChanged;
-        const oppositeKey =
-          dateBeingChanged === "startDate" ? "endDate" : "startDate";
         const opposite = dayjs(draft[oppositeKey]);
-
         const comparisonKeyword =
           dateBeingChanged === "startDate" ? "after" : "before";
-
-        const isSame = currTime.isSame(opposite);
 
         if (comparisonKeyword === "after") {
           if (currTime.isAfter(opposite)) {
             dateKey = oppositeKey;
             startDate = draft.endDate;
             setDateBeingChanged(dateKey);
-          } else if (isSame) {
-            setDateBeingChanged(oppositeKey);
-            endDate = dayjs(endDate).add(GRID_TIME_STEP, "minutes").format();
+
+            justFlipped = true;
           }
         } else if (comparisonKeyword === "before") {
           if (currTime.isBefore(opposite)) {
@@ -302,18 +300,23 @@ export const useDraftUtil = (
               .subtract(GRID_TIME_STEP, "minutes")
               .format();
             endDate = dayjs(startDate).add(GRID_TIME_STEP, "minutes").format();
+
+            justFlipped = true;
           }
         }
 
         setDraft((_draft) => {
           return {
             ..._draft,
+            hasFlipped: justFlipped,
             isOpen: false,
             endDate,
             startDate,
             priority: draft.priority,
           };
         });
+
+        return justFlipped;
       };
 
       e.preventDefault();
@@ -332,9 +335,10 @@ export const useDraftUtil = (
         return;
       }
 
-      flipIfNeeded(currTime);
+      const justFlipped = flipIfNeeded(currTime);
+      const dateChanged = justFlipped ? oppositeKey : dateBeingChanged;
 
-      const origTime = dayjs(draft[dateBeingChanged]);
+      const origTime = dayjs(draft[dateChanged]);
       const diffMin = currTime.diff(origTime, "minute");
       const updatedTime = origTime.add(diffMin, "minutes").format();
 
@@ -345,7 +349,7 @@ export const useDraftUtil = (
       }
 
       setDraft((_draft) => {
-        return { ..._draft, [dateBeingChanged]: updatedTime };
+        return { ..._draft, [dateChanged]: updatedTime };
       });
     },
     [
