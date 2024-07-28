@@ -25,7 +25,10 @@ import {
   selectDraft,
   selectDraftStatus,
 } from "@web/ducks/events/selectors/draft.selectors";
-import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
+import {
+  DRAFT_DURATION_MIN,
+  GRID_TIME_STEP,
+} from "@web/views/Calendar/layout.constants";
 import {
   selectIsAtWeeklyLimit,
   selectSomedayWeekCount,
@@ -270,15 +273,28 @@ export const useDraftUtil = (
     [dateBeingChanged, draft]
   );
 
+  /* 
+  todo refactor to:
+  --------------------
+  let dateBeingChanged = "endDate";
+  const {shouldFlip, newDateBeingChanged} = shouldFlip()
+  if (shouldFlip) {
+    setDraft({...draft, startDate, endDate})
+  }
+    dateBeingChanged  = newDateBeingChanged
+  */
   const resize = useCallback(
     (e: MouseEvent) => {
+      const oppositeKey =
+        dateBeingChanged === "startDate" ? "endDate" : "startDate";
+
       const flipIfNeeded = (currTime: Dayjs) => {
+        let justFlipped = false;
         let startDate = draft.startDate;
         let endDate = draft.endDate;
 
         let dateKey = dateBeingChanged;
-        const oppositeKey =
-          dateBeingChanged === "startDate" ? "endDate" : "startDate";
+
         const opposite = dayjs(draft[oppositeKey]);
 
         const comparisonKeyword =
@@ -288,32 +304,51 @@ export const useDraftUtil = (
 
         if (comparisonKeyword === "after") {
           if (currTime.isAfter(opposite)) {
+            console.log("flipping cuz currTime is after opposite");
             dateKey = oppositeKey;
             startDate = draft.endDate;
             setDateBeingChanged(dateKey);
-          } else if (isSame) {
-            setDateBeingChanged(oppositeKey);
-            endDate = dayjs(endDate).add(GRID_TIME_STEP, "minutes").format();
+            justFlipped = true;
           }
+          // else if (isSame) {
+          //   console.log("same time, adding 15min to end");
+          //   setDateBeingChanged(oppositeKey);
+          //   endDate = dayjs(endDate).add(GRID_TIME_STEP, "minutes").format();
+          // }
         } else if (comparisonKeyword === "before") {
           if (currTime.isBefore(opposite)) {
+            console.log("flipping cuz currTime is BEFORE opposite");
             setDateBeingChanged(oppositeKey);
             startDate = dayjs(startDate)
               .subtract(GRID_TIME_STEP, "minutes")
               .format();
             endDate = dayjs(startDate).add(GRID_TIME_STEP, "minutes").format();
+
+            console.log("new start", startDate);
+            console.log("new end", endDate);
+
+            justFlipped = true;
           }
+          // might need to add this back in
+          // else if (isSame) {
+          // console.log("TODO: flip");
+          // setDateBeingChanged(oppositeKey);
+          // endDate = dayjs(endDate).add(GRID_TIME_STEP, "minutes").format();
+          // }
         }
 
         setDraft((_draft) => {
           return {
             ..._draft,
+            hasFlipped: justFlipped,
             isOpen: false,
             endDate,
             startDate,
             priority: draft.priority,
           };
         });
+
+        return justFlipped;
       };
 
       e.preventDefault();
@@ -332,9 +367,28 @@ export const useDraftUtil = (
         return;
       }
 
-      flipIfNeeded(currTime);
+      const justFlipped = flipIfNeeded(currTime);
+      justFlipped === true && console.log("just flipped");
+      /*
+      setResizeStatus({ hasMoved: true });
 
-      const origTime = dayjs(draft[dateBeingChanged]);
+      const oppositeKey =
+        dateBeingChanged === "startDate" ? "endDate" : "startDate";
+      flipped && console.log("flipped, returning..");
+      if (flipped) {
+        setDraft((_draft) => {
+          return { ..._draft, [dateBeingChanged]: updatedTime };
+          // return { ..._draft, [oppositeKey]: updatedTime };
+        });
+        return;
+      }
+      */
+
+      /* setting if no flip occured */
+      const dateChanged = justFlipped ? oppositeKey : dateBeingChanged;
+
+      // const origTime = dayjs(draft[dateBeingChanged]);
+      const origTime = dayjs(draft[dateChanged]);
       const diffMin = currTime.diff(origTime, "minute");
       const updatedTime = origTime.add(diffMin, "minutes").format();
 
@@ -345,7 +399,7 @@ export const useDraftUtil = (
       }
 
       setDraft((_draft) => {
-        return { ..._draft, [dateBeingChanged]: updatedTime };
+        return { ..._draft, [dateChanged]: updatedTime };
       });
     },
     [

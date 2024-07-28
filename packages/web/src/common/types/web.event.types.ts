@@ -9,9 +9,10 @@ export enum Recurrence_Selection {
   MONTH = "month",
 }
 export interface Schema_GridEvent extends Schema_Event {
+  hasFlipped?: boolean;
+  importanceIndex?: number;
   isOpen?: boolean;
   isEditing?: boolean;
-  importanceIndex?: number;
   row?: number;
   siblingsCount?: number;
 }
