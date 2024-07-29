@@ -65,7 +65,6 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   z-index: ${ZIndex.LAYER_1};
 
   &:hover {
-    cursor: default;
     transition: background-color 0.35s linear;
 
     ${({ isPlaceholder, isResizing, hoverColor }) =>
@@ -95,8 +94,8 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
 `;
 
 export interface ScalerProps {
+  showResizeCursor: boolean;
   bottom?: string;
-  isDragging: boolean;
   top?: string;
 }
 
@@ -113,5 +112,5 @@ export const StyledEventScaler = styled.div.attrs<ScalerProps>((props) => {
   left: 0;
   top: ${(props) => props.top};
   bottom: ${(props) => props.bottom};
-  ${(props) => !props.isDragging && `cursor: ns-resize`};
+  ${(props) => props.showResizeCursor && `cursor: row-resize`};
 `;

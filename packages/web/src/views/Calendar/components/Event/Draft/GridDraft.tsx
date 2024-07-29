@@ -15,6 +15,7 @@ interface Props {
   draftUtil: GridDraftProps["draftUtil"];
   formProps: EventFormProps;
   isDragging: boolean;
+  isResizing: boolean;
   measurements: Measurements_Grid;
   weekProps: WeekProps;
 }
@@ -24,6 +25,7 @@ export const GridDraft: FC<Props> = ({
   draftUtil,
   formProps,
   isDragging,
+  isResizing,
   measurements,
   weekProps,
 }) => {
@@ -43,7 +45,7 @@ export const GridDraft: FC<Props> = ({
         isDragging={isDragging}
         isDraft={true}
         isPlaceholder={false}
-        isResizing={false}
+        isResizing={isResizing}
         key={`draft-${draft?._id}`}
         measurements={measurements}
         onEventMouseDown={(event: Schema_GridEvent, e: MouseEvent) => {

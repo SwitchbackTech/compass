@@ -37,7 +37,7 @@ export const Draft: FC<Props> = ({
     weekProps,
     isSidebarOpen
   );
-  const { draft, isDragging } = draftState;
+  const { draft, isDragging, isResizing } = draftState;
 
   const { isDrafting } = useAppSelector(selectDraftId);
 
@@ -58,6 +58,7 @@ export const Draft: FC<Props> = ({
           draftUtil={draftUtil}
           formProps={formProps}
           isDragging={isDragging}
+          isResizing={isResizing}
           measurements={measurements}
           weekProps={weekProps}
         />
