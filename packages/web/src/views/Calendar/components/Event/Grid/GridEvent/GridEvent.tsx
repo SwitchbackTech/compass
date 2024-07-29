@@ -96,21 +96,19 @@ const _GridEvent = (
               isDrafting={isDragging || isResizing}
               isPlaceholder={isPlaceholder}
             />
-            {!isPlaceholder && !isDragging && (
-              <>
-                <StyledEventScaler
-                  isDragging={isDragging}
-                  onMouseDown={(e) => onScalerMouseDown(event, e, "startDate")}
-                  top="-1px"
-                />
+            <>
+              <StyledEventScaler
+                showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
+                onMouseDown={(e) => onScalerMouseDown(event, e, "startDate")}
+                top="-1px"
+              />
 
-                <StyledEventScaler
-                  bottom="-1px"
-                  isDragging={isDragging}
-                  onMouseDown={(e) => onScalerMouseDown(event, e, "endDate")}
-                />
-              </>
-            )}
+              <StyledEventScaler
+                bottom="-1px"
+                showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
+                onMouseDown={(e) => onScalerMouseDown(event, e, "endDate")}
+              />
+            </>
           </>
         )}
       </Flex>
