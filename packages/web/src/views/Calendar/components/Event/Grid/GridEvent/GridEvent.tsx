@@ -100,11 +100,11 @@ const _GridEvent = (
               <StyledEventScaler
                 showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
                 onMouseDown={(e) => onScalerMouseDown(event, e, "startDate")}
-                top="-1px"
+                top="-0.25px"
               />
 
               <StyledEventScaler
-                bottom="-1px"
+                bottom="-0.25px"
                 showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
                 onMouseDown={(e) => onScalerMouseDown(event, e, "endDate")}
               />
