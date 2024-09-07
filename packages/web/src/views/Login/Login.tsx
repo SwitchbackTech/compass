@@ -1,17 +1,23 @@
 import { v4 as uuidv4 } from "uuid";
 import React, { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
+import GoogleButton from "react-google-button";
 import Session from "supertokens-auth-react/recipe/session";
 import { useGoogleLogin } from "@react-oauth/google";
-import { ColorNames } from "@core/types/color.types";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { Text } from "@web/components/Text";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import googleSignInBtn from "@web/assets/png/googleSignInBtn.png";
 
-import { GoogleBtnWrapper, StyledLogin } from "./styled";
+import {
+  SignInButtonWrapper,
+  Card,
+  CardHeader,
+  Description,
+  StyledLogin,
+  Subtitle,
+  Title,
+} from "./styled";
 
 export const LoginView = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -87,29 +93,23 @@ export const LoginView = () => {
         >
           {isAuthenticating && <AbsoluteOverflowLoader />}
 
-          <Text colorName={ColorNames.WHITE_2} size={30}>
-            Welcome to Compass,
-          </Text>
-          <Text colorName={ColorNames.WHITE_2} size={23}>
-            the weekly planner for minimalists
-          </Text>
-
-          <Text colorName={ColorNames.WHITE_3} size={18}>
-            Almost there! Now let's import events from your Google Calendar
-          </Text>
-
-          <GoogleBtnWrapper
-            role="button"
-            onClick={() => {
-              login();
-            }}
-          >
-            <img
-              src={googleSignInBtn}
-              alt="Continue With Google"
-              aria-label="Continue With Google"
-            />
-          </GoogleBtnWrapper>
+          <Card>
+            <CardHeader>
+              <Title>Welcome to Compass</Title>
+              <Description>The weekly planner for minimalists</Description>
+            </CardHeader>
+            <Subtitle>You're almost ready to start planning!</Subtitle>
+            <Subtitle>
+              Now let's import your events from Google Calendar
+            </Subtitle>
+            <SignInButtonWrapper>
+              <GoogleButton
+                aria-label="Sign in with Google"
+                type="light"
+                onClick={() => login()}
+              />
+            </SignInButtonWrapper>
+          </Card>
         </StyledLogin>
       )}
     </>
