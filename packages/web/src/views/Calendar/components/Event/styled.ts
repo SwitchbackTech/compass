@@ -107,7 +107,7 @@ export const StyledEventScaler = styled.div.attrs<ScalerProps>((props) => {
 })<ScalerProps>`
   position: absolute;
   width: 100%;
-  height: 9px;
+  height: 4.5px;
   opacity: 0;
   left: 0;
   top: ${(props) => props.top};
