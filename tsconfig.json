@@ -1,13 +1,13 @@
 /* Visit https://aka.ms/tsconfig.json to read more about this file */
 {
-  /* Web module excluded because webpack handles packaging*/
+  /* Web module excluded because webpack handles packaging */
   "include": [
     "packages/core/src/**/*.ts",
     "packages/backend/src/**/*.ts",
     "packages/scripts/src/**/*.ts",
     "packages/scripts/src/commands/dev.js"
   ],
-  "exclude": ["**/__mocks__/*", "**/*.test.ts*", "**/*.test.js*"],
+  "exclude": ["**/__mocks__/*"],
   "compilerOptions": {
     "target": "ES2016" /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017', 'ES2018', 'ES2019', 'ES2020', or 'ESNEXT'. */,
     "module": "commonjs" /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', 'es2020', or 'ESNext'. */,
