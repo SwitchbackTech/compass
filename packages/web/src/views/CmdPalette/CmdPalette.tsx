@@ -192,7 +192,7 @@ const CmdPalette = ({
       search={search}
       isOpen={open}
       page={page}
-      placeholder="Try: 'create', 'bug', or 'view code'"
+      placeholder="Try: 'create', 'bug', or 'code'"
     >
       <CommandPalette.Page id="root">
         {filteredItems.length ? (
