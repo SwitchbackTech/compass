@@ -133,6 +133,7 @@ module.exports = (env, argv) => {
         "@web/public": resolvePath("./src/public"),
         "@web/routers": resolvePath("./src/routers"),
         "@web/store": resolvePath("./src/store"),
+        "@web/socket": resolvePath("./src/socket"),
         "@web/views": resolvePath("./src/views"),
       },
     },
