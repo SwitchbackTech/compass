@@ -22,6 +22,7 @@ export const ENV = {
   EMAILER_LIST_ID: process.env["EMAILER_LIST_ID"] || _error,
   MONGO_URI: process.env["MONGO_URI"] || _error,
   NODE_ENV: _nodeEnv,
+  ORIGINS_ALLOWED: process.env["CORS"] ? process.env["CORS"].split(",") : [],
   PORT: process.env["PORT"] || PORT_DEFAULT_API,
   SUPERTOKENS_URI: process.env["SUPERTOKENS_URI"] || _error,
   SUPERTOKENS_KEY: process.env["SUPERTOKENS_KEY"] || _error,

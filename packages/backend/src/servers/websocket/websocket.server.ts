@@ -10,6 +10,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { Schema_Event } from "@core/types/event.types";
 import { SocketError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { ENV } from "@backend/common/constants/env.constants";
 
 const logger = Logger("app:root");
 
@@ -36,7 +37,11 @@ export const initWebsocketServer = (server: HttpServer) => {
     ServerToClientEvents,
     InterServerEvents,
     SocketData
-  >(server, {});
+  >(server, {
+    cors: {
+      origin: ENV.ORIGINS_ALLOWED,
+    },
+  });
 
   io.on("connection", (socket) => {
     // const userId = socket.handshake.query["userId"] as string | undefined;
