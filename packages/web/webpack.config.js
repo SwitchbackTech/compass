@@ -125,6 +125,7 @@ module.exports = (env, argv) => {
       alias: {
         "@core": resolvePath("../core/src"),
         "@web/assets": resolvePath("./src/assets"),
+        "@web/auth": resolvePath("./src/auth"),
         "@web/backend": resolvePath("../backend/src"),
         "@web/common": resolvePath("./src/common"),
         "@web/components": resolvePath("./src/components"),

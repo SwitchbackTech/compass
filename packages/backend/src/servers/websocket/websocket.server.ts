@@ -40,20 +40,23 @@ export const initWebsocketServer = (server: HttpServer) => {
   >(server, {
     cors: {
       origin: ENV.ORIGINS_ALLOWED,
+      credentials: true,
     },
   });
 
   io.on("connection", (socket) => {
-    // const userId = socket.handshake.query["userId"] as string | undefined;
-    const userId = "123"; //TODO update
+    const userId = socket.handshake.query["userId"] as string | undefined;
 
     if (!userId) {
       throw error(SocketError.SocketIdNotFound, "Connection closed");
     }
 
+    console.log("connection made to:", userId);
     connections.set(userId, socket.id);
+    console.log(connections);
 
     socket.on("disconnect", () => {
+      console.log("disconnecting from:", userId);
       connections.delete(userId);
     });
 
