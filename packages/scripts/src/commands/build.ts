@@ -42,17 +42,20 @@ const buildNodePckgs = async (vmInfo: Info_VM, skipEnv?: boolean) => {
   await copyNodeConfigsToBuild(vmInfo, skipEnv);
 
   log.info("Compiling node packages ...");
-  // eslint-disable-next-line @typescript-eslint/require-await
-  shell.exec("yarn tsc --project tsconfig.json", async function (code: number) {
-    if (code !== 0) {
-      log.error("Exiting because of compilation errors");
-      process.exit(code);
+  shell.exec(
+    "yarn tsc --project tsconfig.build.json",
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async function (code: number) {
+      if (code !== 0) {
+        log.error("Exiting because of compilation errors");
+        process.exit(code);
+      }
+
+      log.success("Compiled node pckgs");
+
+      installDependencies();
     }
-
-    log.success("Compiled node pckgs");
-
-    installDependencies();
-  });
+  );
 };
 
 const buildWeb = async (vmInfo: Info_VM) => {
