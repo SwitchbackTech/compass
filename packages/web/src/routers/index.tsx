@@ -6,13 +6,16 @@ import { LogoutView } from "@web/views/Logout";
 import { NotFoundView } from "@web/views/NotFound";
 import { CalendarView } from "@web/views/Calendar";
 import { ProtectedRoute } from "@web/auth/ProtectedRoute";
+import SocketProvider from "@web/socket/SocketProvider";
 
 const router = createBrowserRouter([
   {
     path: ROOT_ROUTES.ROOT,
     element: (
       <ProtectedRoute>
-        <CalendarView />
+        <SocketProvider>
+          <CalendarView />
+        </SocketProvider>
       </ProtectedRoute>
     ),
   },

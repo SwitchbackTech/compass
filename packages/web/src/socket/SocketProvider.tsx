@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { ServerToClientEvents } from "@core/types/websocket.types";
 import { getUserId } from "@web/auth/auth.util";
 
-//TODO Move this to loading above the calendar
-// to reduce re-rendering
-const useSocketEventListener = () => {
+const SocketProvider = ({ children }: { children: ReactNode }) => {
   const [userId, setUserId] = useState<null | string>(null);
 
   useEffect(() => {
@@ -46,6 +44,8 @@ const useSocketEventListener = () => {
     console.log("connected to server!");
     console.log(socket);
   });
+
+  return children;
 };
 
-export default useSocketEventListener;
+export default SocketProvider;

@@ -1,7 +1,6 @@
 import React from "react";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { ID_MAIN } from "@web/common/constants/web.constants";
-import useSocketEventListener from "@web/socket/useSocketEventListener";
 
 import { Grid } from "./components/Grid/";
 import { useScroll } from "./hooks/grid/useScroll";
@@ -49,7 +48,6 @@ export const CalendarView = () => {
   };
 
   useShortcuts(shortcutProps);
-  useSocketEventListener();
 
   const rootProps: RootProps = {
     component: { today: today },
