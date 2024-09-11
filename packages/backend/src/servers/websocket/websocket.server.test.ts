@@ -17,7 +17,11 @@ describe("WebSocket Server", () => {
     io = initWebsocketServer(httpServer);
     httpServer.listen(() => {
       const port = (httpServer.address() as AddressInfo).port;
-      clientSocket = ioc(`http://localhost:${port}`);
+      const userId = "testUser123";
+
+      clientSocket = ioc(`http://localhost:${port}`, {
+        query: { userId },
+      });
 
       io.on("connection", (socket) => {
         serverSocket = socket;
@@ -43,13 +47,13 @@ describe("WebSocket Server", () => {
   });
 
   it("accepts message from client after successful update", (done) => {
-    const clientId = "client123";
+    const userId = "client123";
 
-    serverSocket.on("eventChanged", (receivedClientId) => {
-      expect(receivedClientId).toBe(clientId);
+    serverSocket.on("eventChanged", (receivedUserId) => {
+      expect(receivedUserId).toBe(userId);
       done();
     });
 
-    clientSocket.emit("eventChanged", clientId);
+    clientSocket.emit("eventChanged", userId);
   });
 });
