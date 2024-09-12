@@ -3,7 +3,7 @@ import { Server as SocketIOServer } from "socket.io";
 import { Schema_Event } from "./event.types";
 
 export interface ClientToServerEvents {
-  eventChangeProcessed: (clientId: string) => void;
+  EVENT_CHANGE_PROCESSED: (clientId: string) => void;
 }
 
 export type CompassSocketServer = SocketIOServer<
@@ -13,11 +13,11 @@ export type CompassSocketServer = SocketIOServer<
   SocketData
 >;
 export interface InterServerEvents {
-  eventReceived: (data: Schema_Event) => Schema_Event;
+  EVENT_RECEIVED: (data: Schema_Event) => Schema_Event;
 }
 
 export interface ServerToClientEvents {
-  eventChanged: (data: Schema_Event) => void;
+  EVENT_CHANGED: (data: Schema_Event) => void;
 }
 
 export interface SocketData {

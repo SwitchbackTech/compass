@@ -3,6 +3,11 @@ import { createServer } from "node:http";
 import { type AddressInfo } from "node:net";
 import { Server as IoServer, type Socket as ServerSocket } from "socket.io";
 import { io as ioc, type Socket as ClientSocket } from "socket.io-client";
+import { Schema_Event } from "@core/types/event.types";
+import {
+  EVENT_CHANGE_PROCESSED,
+  EVENT_CHANGED,
+} from "@core/constants/websocket.constants";
 
 import { initWebsocketServer } from "./websocket.server";
 
@@ -37,23 +42,30 @@ describe("WebSocket Server", () => {
     clientSocket.disconnect();
   });
 
-  it("emits msg from server to client after event change", (done) => {
-    clientSocket.on("eventChanged", (arg) => {
-      expect(arg).toEqual({ id: 1, name: "Test Event" });
-      done();
+  describe(EVENT_CHANGED, () => {
+    it("emits event payload to client", (done) => {
+      clientSocket.on(EVENT_CHANGED, (arg) => {
+        expect(arg).toEqual({ _id: "1", title: "Test Event" });
+        done();
+      });
+
+      const event: Schema_Event = { _id: "1", title: "Test Event" };
+      serverSocket.emit(EVENT_CHANGED, event);
     });
 
-    serverSocket.emit("eventChanged", { id: 1, name: "Test Event" });
+    it.todo("emits eventChanged after reciving updated event data from Gcal");
   });
 
-  it("accepts message from client after successful update", (done) => {
-    const userId = "client123";
+  describe(EVENT_CHANGE_PROCESSED, () => {
+    it("accepts message from client after successful update", (done) => {
+      const userId = "client123";
 
-    serverSocket.on("eventChanged", (receivedUserId) => {
-      expect(receivedUserId).toBe(userId);
-      done();
+      serverSocket.on(EVENT_CHANGE_PROCESSED, (receivedUserId) => {
+        expect(receivedUserId).toBe(userId);
+        done();
+      });
+
+      clientSocket.emit(EVENT_CHANGE_PROCESSED, userId);
     });
-
-    clientSocket.emit("eventChanged", userId);
   });
 });

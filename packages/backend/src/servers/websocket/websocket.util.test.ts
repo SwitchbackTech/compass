@@ -2,6 +2,7 @@ import { Server as SocketIOServer } from "socket.io";
 import { Schema_Event } from "@core/types/event.types";
 import { SocketError } from "@backend/common/constants/error.constants";
 import { CompassSocketServer } from "@core/types/websocket.types";
+import { EVENT_CHANGED } from "@core/constants/websocket.constants";
 
 import { connections, emitEventToUser } from "./websocket.server";
 
@@ -48,7 +49,7 @@ describe("emitEventToUser", () => {
     );
 
     expect(mockIoInstance.to).toHaveBeenCalledWith(socketId);
-    expect(mockIoInstance.emit).toHaveBeenCalledWith("eventChanged", event);
+    expect(mockIoInstance.emit).toHaveBeenCalledWith(EVENT_CHANGED, event);
   });
   it("throws error if socketId not found", () => {
     const userId = "nonexistentUser";

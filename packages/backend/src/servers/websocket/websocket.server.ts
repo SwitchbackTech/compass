@@ -7,13 +7,17 @@ import {
   ServerToClientEvents,
   SocketData,
 } from "@core/types/websocket.types";
+import {
+  EVENT_CHANGE_PROCESSED,
+  EVENT_CHANGED,
+} from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { Schema_Event } from "@core/types/event.types";
 import { SocketError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { ENV } from "@backend/common/constants/env.constants";
 
-const logger = Logger("app:root");
+const logger = Logger("app:websocket.server");
 
 let io: CompassSocketServer;
 export const connections = new Map<string, string>(); // { userId: socketId }
@@ -27,14 +31,14 @@ export const emitEventToUser = (
   const socketId = connections.get(userId);
 
   if (!socketId) {
-    logger.warning("Event update not sent to client due to userId:", userId);
+    logger.warning(`Event update not sent to client due to userId: ${userId}`);
     throw error(
       SocketError.SocketIdNotFound,
       "Event update not sent to client"
     );
   }
 
-  socketServer.to(socketId).emit("eventChanged", event);
+  socketServer.to(socketId).emit(EVENT_CHANGED, event);
 };
 
 export const initWebsocketServer = (server: HttpServer) => {
@@ -57,17 +61,17 @@ export const initWebsocketServer = (server: HttpServer) => {
       throw error(SocketError.SocketIdNotFound, "Connection closed");
     }
 
-    console.log("connection made to:", userId);
+    logger.debug(`Connection made to: ${userId}`);
     connections.set(userId, socket.id);
     console.log(connections);
 
     socket.on("disconnect", () => {
-      console.log("disconnecting from:", userId);
+      logger.debug(`Disconnecting from: ${userId}`);
       connections.delete(userId);
     });
 
-    socket.on("eventChangeProcessed", (clientId) => {
-      console.log("client successfully processed updated:", clientId);
+    socket.on(EVENT_CHANGE_PROCESSED, (clientId) => {
+      logger.debug(`Client successfully processed updated: ${clientId}`);
     });
   });
 
