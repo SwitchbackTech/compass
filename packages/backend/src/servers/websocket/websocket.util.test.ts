@@ -1,6 +1,7 @@
 import { Server as SocketIOServer } from "socket.io";
 import { Schema_Event } from "@core/types/event.types";
 import { SocketError } from "@backend/common/constants/error.constants";
+import { CompassSocketServer } from "@core/types/websocket.types";
 
 import { connections, emitEventToUser } from "./websocket.server";
 
@@ -40,7 +41,11 @@ describe("emitEventToUser", () => {
     );
 
     connections.set(userId, socketId);
-    emitEventToUser(userId, event);
+    emitEventToUser(
+      userId,
+      event,
+      mockIoInstance as unknown as CompassSocketServer
+    );
 
     expect(mockIoInstance.to).toHaveBeenCalledWith(socketId);
     expect(mockIoInstance.emit).toHaveBeenCalledWith("eventChanged", event);

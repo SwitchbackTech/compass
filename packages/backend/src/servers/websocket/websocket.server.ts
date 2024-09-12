@@ -1,11 +1,12 @@
+import { Server as HttpServer } from "http";
+import { Server as SocketIOServer } from "socket.io";
 import {
   ClientToServerEvents,
+  CompassSocketServer,
   InterServerEvents,
   ServerToClientEvents,
   SocketData,
 } from "@core/types/websocket.types";
-import { Server as HttpServer } from "http";
-import { Server as SocketIOServer } from "socket.io";
 import { Logger } from "@core/logger/winston.logger";
 import { Schema_Event } from "@core/types/event.types";
 import { SocketError } from "@backend/common/constants/error.constants";
@@ -14,9 +15,15 @@ import { ENV } from "@backend/common/constants/env.constants";
 
 const logger = Logger("app:root");
 
+let io: CompassSocketServer;
 export const connections = new Map<string, string>(); // { userId: socketId }
 
-export const emitEventToUser = (userId: string, event: Schema_Event) => {
+export const emitEventToUser = (
+  userId: string,
+  event: Schema_Event,
+  server?: CompassSocketServer
+) => {
+  const socketServer = server || io;
   const socketId = connections.get(userId);
 
   if (!socketId) {
@@ -27,12 +34,11 @@ export const emitEventToUser = (userId: string, event: Schema_Event) => {
     );
   }
 
-  const io = new SocketIOServer<ServerToClientEvents>();
-  io.to(socketId).emit("eventChanged", event);
+  socketServer.to(socketId).emit("eventChanged", event);
 };
 
 export const initWebsocketServer = (server: HttpServer) => {
-  const io = new SocketIOServer<
+  io = new SocketIOServer<
     ClientToServerEvents,
     ServerToClientEvents,
     InterServerEvents,
