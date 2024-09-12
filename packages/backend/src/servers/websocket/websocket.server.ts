@@ -45,7 +45,7 @@ export const initWebsocketServer = (server: HttpServer) => {
   });
 
   io.on("connection", (socket) => {
-    const userId = socket.handshake.query["userId"] as string | undefined;
+    const userId = socket.handshake.query["userId"] as SocketData["userId"];
 
     if (!userId) {
       throw error(SocketError.SocketIdNotFound, "Connection closed");
