@@ -31,7 +31,9 @@ export const emitEventToUser = (
   const socketId = connections.get(userId);
 
   if (!socketId) {
-    logger.warning(`Event update not sent to client due to userId: ${userId}`);
+    logger.warn(
+      `Event update not sent to client due to missing userId: ${userId}`
+    );
     throw error(
       SocketError.SocketIdNotFound,
       "Event update not sent to client"
