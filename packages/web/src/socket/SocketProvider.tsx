@@ -3,6 +3,7 @@ import { io, Socket } from "socket.io-client";
 import { ServerToClientEvents } from "@core/types/websocket.types";
 import { EVENT_CHANGED } from "@core/constants/websocket.constants";
 import { useUser } from "@web/auth/UserContext";
+import { ENV_WEB } from "@web/common/constants/env.constants";
 
 const SocketProvider = ({ children }: { children: ReactNode }) => {
   const { userId } = useUser();
@@ -18,8 +19,7 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
   //     socket.off("eventChanged");
   //   };
   // }, [dispatch, socket]);
-  console.log("setting socket with uid:", userId);
-  const socket: Socket<ServerToClientEvents> = io("http://localhost:3000", {
+  const socket: Socket<ServerToClientEvents> = io(ENV_WEB.BACKEND_BASEURL, {
     withCredentials: true,
     query: {
       userId,
