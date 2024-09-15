@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useEffect } from "react";
 import { Dayjs } from "dayjs";
 import { ColorNames } from "@core/types/color.types";
 import { getAlphaColor, getColor } from "@core/util/color.utils";
@@ -18,6 +18,8 @@ import { selectIsRightSidebarOpen } from "@web/ducks/settings/selectors/settings
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { HamburgerIcon } from "@web/components/Icons/HamburgerIcon";
+import { selectSyncState } from "@web/ducks/events/selectors/sync.selector";
+import { resetEventChanged } from "@web/ducks/events/slices/sync.slice";
 
 import {
   StyledHeaderRow,
@@ -48,7 +50,43 @@ export const Header: FC<Props> = ({
 
   const { isDrafting } = useAppSelector(selectDraftId);
   const isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
+  /* start POC */
+  // next steps:
+  //  - check if it's not already present (eg if change originally came from Compass)
+  //  - if still relevant, add new console log
+  //  - then render refresh button with tooltip explaining
+  //    that the event data is stale
+  //  - on click, refetch the events
+  //    - ideally you can just dispatch the event so the whole page
+  //      doesnt need to be re-rendered
+  //      as backup, can run window.reload
+  // TODO reduce re-rendering
+  const { eventChanged, eventData } = useAppSelector(selectSyncState);
 
+  const isEventInView = (eventStartDate: string, eventEndDate: string) => {
+    return true;
+    // const eventStart = new Date(eventStartDate);
+    // const eventEnd = new Date(eventEndDate);
+    // const viewStart = new Date(currentViewStartDate);
+    // const viewEnd = new Date(currentViewEndDate);
+
+    // return (
+    //   (eventStart >= viewStart && eventStart <= viewEnd) ||
+    //   (eventEnd >= viewStart && eventEnd <= viewEnd)
+    // );
+  };
+
+  useEffect(() => {
+    if (eventChanged && eventData) {
+      if (isEventInView(eventData.startDate, eventData.endDate)) {
+        console.log("Event is in the current view");
+        // Render the refresh button
+      }
+      // Reset the eventChanged state after handling
+      dispatch(resetEventChanged());
+    }
+  }, [eventChanged, eventData, dispatch]);
+  /* end POC */
   const { scrollToNow } = scrollUtil;
 
   const onSectionClick = () => {

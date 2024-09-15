@@ -38,6 +38,9 @@ export class SyncRoutes extends CommonRoutesConfig {
     /***************
      * DEBUG ROUTES
      ***************/
+    this.app
+      .route(`/api/event-change-demo`)
+      .post([syncDebugController.dispatchEventToClient]);
 
     this.app.route(`${SYNC_DEBUG}/import-incremental/:userId`).post([
       authMiddleware.verifyIsFromCompass,
