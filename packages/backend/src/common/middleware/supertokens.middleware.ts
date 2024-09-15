@@ -4,7 +4,7 @@ import Dashboard from "supertokens-node/recipe/dashboard";
 import Session from "supertokens-node/recipe/session";
 import {
   APP_NAME,
-  PORT_DEFAULT_API,
+  PORT_DEFAULT_BACKEND,
   PORT_DEFAULT_WEB,
 } from "@core/constants/core.constants";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -14,7 +14,7 @@ export const initSupertokens = () => {
     appInfo: {
       appName: APP_NAME,
       apiBasePath: "/api",
-      apiDomain: `http://localhost:${PORT_DEFAULT_API}`,
+      apiDomain: `http://localhost:${PORT_DEFAULT_BACKEND}`,
       websiteBasePath: "/login",
       websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
     },
