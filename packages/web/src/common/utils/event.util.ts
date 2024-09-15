@@ -163,6 +163,26 @@ export const handleError = (error: Error) => {
   alert(error);
 };
 
+export const isEventInRange = (
+  eventDate: { start: string; end: string },
+  rangeDate: { start: string; end: string }
+) => {
+  const isStartDateInRange = dayjs(eventDate.start).isBetween(
+    rangeDate.start,
+    rangeDate.end,
+    "day",
+    "[]"
+  );
+  const isEndDateInRange = dayjs(eventDate.end).isBetween(
+    rangeDate.start,
+    rangeDate.end,
+    "day",
+    "[]"
+  );
+
+  return isStartDateInRange || isEndDateInRange;
+};
+
 export const prepEvtAfterDraftDrop = (
   category: Categories_Event,
   dropItem: DropResult,
