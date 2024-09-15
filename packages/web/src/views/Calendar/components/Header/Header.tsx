@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from "react";
+import React, { FC, useEffect, useState } from "react";
 import { Dayjs } from "dayjs";
 import { ColorNames } from "@core/types/color.types";
 import { getAlphaColor, getColor } from "@core/util/color.utils";
@@ -7,7 +7,7 @@ import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { TodayButton } from "@web/views/Calendar/components/TodayButton";
-import { getWeekDayLabel } from "@web/common/utils/event.util";
+import { getWeekDayLabel, isEventInRange } from "@web/common/utils/event.util";
 import { WEEK_DAYS_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -52,42 +52,51 @@ export const Header: FC<Props> = ({
   const isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
   /* start POC */
   // next steps:
-  //  - check if it's not already present (eg if change originally came from Compass)
-  //  - if still relevant, add new console log
-  //  - then render refresh button with tooltip explaining
-  //    that the event data is stale
   //  - on click, refetch the events
   //    - ideally you can just dispatch the event so the whole page
   //      doesnt need to be re-rendered
   //      as backup, can run window.reload
-  // TODO reduce re-rendering
-  const { eventChanged, eventData } = useAppSelector(selectSyncState);
+  //  - check if it's not already present (eg if change originally came from Compass)
+  //   - if still relevant, add new console log
+  //  - reduce re-rendering
+  const { updatedEvent } = useAppSelector(selectSyncState);
 
-  const isEventInView = (eventStartDate: string, eventEndDate: string) => {
-    return true;
-    // const eventStart = new Date(eventStartDate);
-    // const eventEnd = new Date(eventEndDate);
-    // const viewStart = new Date(currentViewStartDate);
-    // const viewEnd = new Date(currentViewEndDate);
-
-    // return (
-    //   (eventStart >= viewStart && eventStart <= viewEnd) ||
-    //   (eventEnd >= viewStart && eventEnd <= viewEnd)
-    // );
-  };
+  const [isRefreshNeeded, setIsRefreshNeeded] = useState(false);
 
   useEffect(() => {
-    if (eventChanged && eventData) {
-      if (isEventInView(eventData.startDate, eventData.endDate)) {
-        console.log("Event is in the current view");
-        // Render the refresh button
-      }
-      // Reset the eventChanged state after handling
-      dispatch(resetEventChanged());
+    if (updatedEvent) {
+      const event = {
+        start: updatedEvent.startDate,
+        end: updatedEvent.endDate,
+      };
+      const range = {
+        start: weekProps.component.startOfView.format(),
+        end: weekProps.component.endOfView.format(),
+      };
+      const eventInViewChanged = isEventInRange(event, range);
+      setIsRefreshNeeded(eventInViewChanged);
     }
-  }, [eventChanged, eventData, dispatch]);
+    // console.log("resettting...");
+    // dispatch(resetEventChanged());
+    // const needsRefresh = updatedEvent !== null;
+    // setIsRefreshNeeded(needsRefresh);
+  }, [
+    updatedEvent,
+    dispatch,
+    weekProps.component.startOfView,
+    weekProps.component.endOfView,
+  ]);
   /* end POC */
   const { scrollToNow } = scrollUtil;
+
+  const onRefreshClick = () => {
+    console.log("fetching latest ...");
+    setTimeout(() => {
+      console.log("Events refetched");
+      dispatch(resetEventChanged());
+      setIsRefreshNeeded(false);
+    }, 2000);
+  };
 
   const onSectionClick = () => {
     if (isDrafting) {
@@ -160,6 +169,16 @@ export const Header: FC<Props> = ({
                 >
                   {">"}
                 </ArrowNavigationButton>
+              </TooltipWrapper>
+              <TooltipWrapper
+                description="Refresh events"
+                onClick={() => {
+                  isRefreshNeeded ? onRefreshClick() : alert("ur good");
+                }}
+              >
+                <button disabled={!isRefreshNeeded}>
+                  {isRefreshNeeded ? "Refresh" : "Up-to-date"}
+                </button>
               </TooltipWrapper>
             </StyledNavigationArrows>
           </StyledNavigationButtons>

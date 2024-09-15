@@ -1,31 +1,25 @@
+import { Schema_Event } from "@core/types/event.types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface EventState {
-  eventChanged: boolean;
-  eventData: { startDate: string; endDate: string } | null;
+interface State_Sync {
+  updatedEvent: Schema_Event | null;
 }
 
-const initialState: EventState = {
-  eventChanged: false,
-  eventData: null,
+const initialState: State_Sync = {
+  updatedEvent: null,
 };
 
 export const syncSlice = createSlice({
   name: "sync",
   initialState,
   reducers: {
-    eventChanged(
-      state,
-      action: PayloadAction<{ startDate: string; endDate: string }>
-    ) {
-      state.eventChanged = true;
-      state.eventData = action.payload;
+    processEventChange(state, action: PayloadAction<Schema_Event>) {
+      state.updatedEvent = action.payload;
     },
     resetEventChanged(state) {
-      state.eventChanged = false;
-      state.eventData = null;
+      state.updatedEvent = null;
     },
   },
 });
 
-export const { eventChanged, resetEventChanged } = syncSlice.actions;
+export const { processEventChange, resetEventChanged } = syncSlice.actions;
