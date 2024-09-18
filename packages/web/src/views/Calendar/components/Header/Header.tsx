@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from "react";
+import React, { FC } from "react";
 import { Dayjs } from "dayjs";
 import { ColorNames } from "@core/types/color.types";
 import { getAlphaColor, getColor } from "@core/util/color.utils";
@@ -7,7 +7,8 @@ import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { TodayButton } from "@web/views/Calendar/components/TodayButton";
-import { getWeekDayLabel, isEventInRange } from "@web/common/utils/event.util";
+import { getWeekDayLabel } from "@web/common/utils/event.util";
+import { useRefresh } from "@web/common/hooks/useRefresh";
 import { WEEK_DAYS_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -18,8 +19,6 @@ import { selectIsRightSidebarOpen } from "@web/ducks/settings/selectors/settings
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { HamburgerIcon } from "@web/components/Icons/HamburgerIcon";
-import { selectSyncState } from "@web/ducks/events/selectors/sync.selector";
-import { resetEventChanged } from "@web/ducks/events/slices/sync.slice";
 
 import {
   StyledHeaderRow,
@@ -47,56 +46,12 @@ export const Header: FC<Props> = ({
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
+  const { scrollToNow } = scrollUtil;
 
   const { isDrafting } = useAppSelector(selectDraftId);
   const isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
-  /* start POC */
-  // next steps:
-  //  - on click, refetch the events
-  //    - ideally you can just dispatch the event so the whole page
-  //      doesnt need to be re-rendered
-  //      as backup, can run window.reload
-  //  - check if it's not already present (eg if change originally came from Compass)
-  //   - if still relevant, add new console log
-  //  - reduce re-rendering
-  const { updatedEvent } = useAppSelector(selectSyncState);
-
-  const [isRefreshNeeded, setIsRefreshNeeded] = useState(false);
-
-  useEffect(() => {
-    if (updatedEvent) {
-      const event = {
-        start: updatedEvent.startDate,
-        end: updatedEvent.endDate,
-      };
-      const range = {
-        start: weekProps.component.startOfView.format(),
-        end: weekProps.component.endOfView.format(),
-      };
-      const eventInViewChanged = isEventInRange(event, range);
-      setIsRefreshNeeded(eventInViewChanged);
-    }
-    // console.log("resettting...");
-    // dispatch(resetEventChanged());
-    // const needsRefresh = updatedEvent !== null;
-    // setIsRefreshNeeded(needsRefresh);
-  }, [
-    updatedEvent,
-    dispatch,
-    weekProps.component.startOfView,
-    weekProps.component.endOfView,
-  ]);
-  /* end POC */
-  const { scrollToNow } = scrollUtil;
-
-  const onRefreshClick = () => {
-    console.log("fetching latest ...");
-    setTimeout(() => {
-      console.log("Events refetched");
-      dispatch(resetEventChanged());
-      setIsRefreshNeeded(false);
-    }, 2000);
-  };
+  const { startOfView, endOfView } = weekProps.component;
+  const { isRefreshNeeded, onRefresh } = useRefresh(startOfView, endOfView);
 
   const onSectionClick = () => {
     if (isDrafting) {
@@ -121,13 +76,13 @@ export const Header: FC<Props> = ({
         <StyledLeftGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
             <Text colorName={ColorNames.WHITE_1} size={40}>
-              {weekProps.component.startOfView.format("MMMM")}
+              {startOfView.format("MMMM")}
             </Text>
 
             <SpaceCharacter />
 
             <Text colorName={ColorNames.GREY_4} size={38}>
-              {weekProps.component.startOfView.format("YYYY")}
+              {startOfView.format("YYYY")}
             </Text>
           </StyledHeaderLabel>
 
@@ -171,10 +126,9 @@ export const Header: FC<Props> = ({
                 </ArrowNavigationButton>
               </TooltipWrapper>
               <TooltipWrapper
+                // shortcut="R"
                 description="Refresh events"
-                onClick={() => {
-                  isRefreshNeeded ? onRefreshClick() : alert("ur good");
-                }}
+                onClick={() => onRefresh()}
               >
                 <button disabled={!isRefreshNeeded}>
                   {isRefreshNeeded ? "Refresh" : "Up-to-date"}
@@ -210,7 +164,7 @@ export const Header: FC<Props> = ({
           let dayNumberToDisplay = day.format("D");
 
           dayNumberToDisplay =
-            day.format("MM") !== weekProps.component.startOfView.format("MM") &&
+            day.format("MM") !== startOfView.format("MM") &&
             day.format("D") === "1"
               ? day.format("MMM D")
               : dayNumberToDisplay;

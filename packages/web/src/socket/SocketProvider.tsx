@@ -8,8 +8,8 @@ import { processEventChange } from "@web/ducks/events/slices/sync.slice";
 import { useDispatch } from "react-redux";
 
 const SocketProvider = ({ children }: { children: ReactNode }) => {
-  const { userId } = useUser();
   const dispatch = useDispatch();
+  const { userId } = useUser();
 
   const socket: Socket<ServerToClientEvents> = io(ENV_WEB.BACKEND_BASEURL, {
     withCredentials: true,
@@ -19,12 +19,12 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
   });
 
   socket.on("connect", () => {
-    console.log(`connected to server with userId: ${userId}`);
+    console.log(`connected to server with userId: ${userId}`); //TODO delete
     console.log(socket);
   });
 
   socket.on(EVENT_CHANGED, (data) => {
-    console.log("event changed:", data);
+    console.log("dispatching event change ...");
     dispatch(processEventChange(data));
   });
 
