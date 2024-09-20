@@ -76,13 +76,18 @@ class AuthController {
         tokens
       );
 
-      const user = await findCompassUserBy("google.googleId", gUser.sub);
+      const { authMethod, user } = await compassAuthService.determineAuthMethod(
+        gUser.sub
+      );
+      const { cUserId } =
+        authMethod === "login"
+          ? await this.login(
+              user as WithId<Schema_User>,
+              gcalClient,
+              gRefreshToken
+            )
+          : await this.signup(gUser, gcalClient, gRefreshToken);
 
-      const { cUserId } = user
-        ? await this.login(user, gcalClient, gRefreshToken)
-        : await this.signup(gUser, gcalClient, gRefreshToken);
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const sUserId = supertokens.convertToRecipeUserId(cUserId);
       await Session.createNewSession(req, res, "public", sUserId);
 
