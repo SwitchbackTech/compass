@@ -142,12 +142,11 @@ class UserService {
 
   reSyncGoogleData = async (userId: string) => {
     logger.warn(`Re-syncing google data for user: ${userId}`);
-    const summary: Summary_Resync = { _delete: {}, recreate: {}, revoke: {} };
+    const summary: Summary_Resync = { _delete: {}, recreate: {} };
 
     try {
       summary._delete = await this._deleteBeforeReSyncingGoogle(userId);
       summary.recreate = await this._reSyncGoogle(userId);
-      summary.revoke = await compassAuthService.revokeSessionsByUser(userId);
 
       return { result: Result_Resync.SUCCESS, summary };
     } catch (e) {

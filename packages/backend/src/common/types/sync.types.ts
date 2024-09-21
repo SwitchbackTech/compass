@@ -14,7 +14,7 @@ export interface Summary_Resync {
     events?: "success";
     sync?: UpdateResult;
   };
-  revoke: {
+  revoke?: {
     sessionsRevoked?: number;
   };
 }
