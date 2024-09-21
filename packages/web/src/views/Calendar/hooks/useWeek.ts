@@ -5,11 +5,12 @@ import { useAppDispatch } from "@web/store/store.hooks";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
-import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { Category_View } from "@web/views/Calendar/calendarView.types";
+import { updateDates } from "@web/ducks/events/slices/view.slice";
 
 export const useWeek = (today: Dayjs) => {
   const dispatch = useAppDispatch();
+  console.log("in useWeek");
 
   const origStart = useMemo(() => today.startOf("week"), [today]);
   const [start, setStartOfView] = useState(origStart);
@@ -33,18 +34,20 @@ export const useWeek = (today: Dayjs) => {
         endDate: toUTCOffset(end),
       })
     );
+  }, [dispatch, end, start]);
 
+  useEffect(() => {
     dispatch(
       getSomedayEventsSlice.actions.request({
         startDate: monthStart.format(YEAR_MONTH_DAY_FORMAT),
         endDate: monthEnd.format(YEAR_MONTH_DAY_FORMAT),
       })
     );
-  }, [dispatch, end, monthEnd, monthStart, start]);
+  }, [dispatch, monthEnd, monthStart]);
 
   useEffect(() => {
     dispatch(
-      settingsSlice.actions.updateDates({
+      updateDates({
         start: start.format(),
         end: end.format(),
       })

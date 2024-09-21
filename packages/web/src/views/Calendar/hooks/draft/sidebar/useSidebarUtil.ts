@@ -31,11 +31,11 @@ import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
-import { selectDatesInView } from "@web/ducks/settings/selectors/settings.selectors";
 import {
   getDatesByCategory,
   getMigrationDates,
 } from "@web/common/utils/web.date.util";
+import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";

@@ -13,6 +13,7 @@ import { useGridLayout } from "./hooks/grid/useGridLayout";
 import { usePreferences } from "./hooks/usePreferences";
 import { useDateCalcs } from "./hooks/grid/useDateCalcs";
 import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
+import { useRefresh } from "./hooks/useRefresh";
 import { LeftSidebar } from "./components/LeftSidebar";
 import { RightSidebar } from "./components/RightSidebar";
 import { Draft } from "./components/Event/Draft";
@@ -24,6 +25,7 @@ export const CalendarView = () => {
 
   const { today } = useToday();
 
+  useRefresh();
   const weekProps = useWeek(today);
 
   const { gridRefs, measurements } = useGridLayout(weekProps.component.week);

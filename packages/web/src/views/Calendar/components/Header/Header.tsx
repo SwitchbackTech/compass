@@ -8,7 +8,6 @@ import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { TodayButton } from "@web/views/Calendar/components/TodayButton";
 import { getWeekDayLabel } from "@web/common/utils/event.util";
-import { useRefresh } from "@web/common/hooks/useRefresh";
 import { WEEK_DAYS_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -50,8 +49,7 @@ export const Header: FC<Props> = ({
 
   const { isDrafting } = useAppSelector(selectDraftId);
   const isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
-  const { startOfView, endOfView } = weekProps.component;
-  const { isRefreshNeeded, onRefresh } = useRefresh(startOfView, endOfView);
+  const { startOfView } = weekProps.component;
 
   const onSectionClick = () => {
     if (isDrafting) {
@@ -124,15 +122,6 @@ export const Header: FC<Props> = ({
                 >
                   {">"}
                 </ArrowNavigationButton>
-              </TooltipWrapper>
-              <TooltipWrapper
-                // shortcut="R"
-                description="Refresh events"
-                onClick={() => onRefresh()}
-              >
-                <button disabled={!isRefreshNeeded}>
-                  {isRefreshNeeded ? "Refresh" : "Up-to-date"}
-                </button>
               </TooltipWrapper>
             </StyledNavigationArrows>
           </StyledNavigationButtons>

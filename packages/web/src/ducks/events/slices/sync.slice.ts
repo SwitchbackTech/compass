@@ -1,25 +1,24 @@
-import { Schema_Event } from "@core/types/event.types";
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 
 interface State_Sync {
-  updatedEvent: Schema_Event | null;
+  isFetchNeeded: boolean;
 }
 
 const initialState: State_Sync = {
-  updatedEvent: null,
+  isFetchNeeded: false,
 };
 
 export const syncSlice = createSlice({
   name: "sync",
   initialState,
   reducers: {
-    processEventChange(state, action: PayloadAction<Schema_Event>) {
-      state.updatedEvent = action.payload;
+    resetIsFetchNeeded: (state) => {
+      state.isFetchNeeded = false;
     },
-    resetEventChanged(state) {
-      state.updatedEvent = null;
+    triggerFetch: (state) => {
+      state.isFetchNeeded = true;
     },
   },
 });
 
-export const { processEventChange, resetEventChanged } = syncSlice.actions;
+export const { triggerFetch, resetIsFetchNeeded } = syncSlice.actions;
