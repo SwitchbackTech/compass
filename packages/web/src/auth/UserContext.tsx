@@ -8,9 +8,7 @@ import React, {
 
 import { getUserId } from "./auth.util";
 
-export const UserContext = createContext<{ userId: string | null } | undefined>(
-  undefined
-);
+const UserContext = createContext<{ userId: string } | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [userId, setUserId] = useState<string | null>(null);
@@ -31,8 +29,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
 export const useUser = () => {
   const context = useContext(UserContext);
+
   if (context === undefined) {
     throw new Error("useUser must be used within a UserProvider");
   }
+
   return context;
 };
