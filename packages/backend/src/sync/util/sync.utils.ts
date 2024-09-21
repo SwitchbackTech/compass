@@ -160,6 +160,13 @@ export const hasGoogleHeaders = (headers: object) => {
   return hasHeaders;
 };
 
+export const canDoIncrementalSync = (sync: Schema_Sync) => {
+  const everyCalendarHasSyncToken = sync.google?.events?.every(
+    (event) => event.nextSyncToken !== null
+  );
+  return everyCalendarHasSyncToken;
+};
+
 export const isUsingHttps = () =>
   ENV.BASEURL !== undefined && ENV.BASEURL.includes("https");
 
