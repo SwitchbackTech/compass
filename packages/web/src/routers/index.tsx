@@ -7,15 +7,18 @@ import { NotFoundView } from "@web/views/NotFound";
 import { CalendarView } from "@web/views/Calendar";
 import { ProtectedRoute } from "@web/auth/ProtectedRoute";
 import SocketProvider from "@web/socket/SocketProvider";
+import { UserProvider } from "@web/auth/UserContext";
 
 const router = createBrowserRouter([
   {
     path: ROOT_ROUTES.ROOT,
     element: (
       <ProtectedRoute>
-        <SocketProvider>
-          <CalendarView />
-        </SocketProvider>
+        <UserProvider>
+          <SocketProvider>
+            <CalendarView />
+          </SocketProvider>
+        </UserProvider>
       </ProtectedRoute>
     ),
   },

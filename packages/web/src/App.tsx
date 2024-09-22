@@ -16,7 +16,6 @@ import { ToastContainer } from "react-toastify";
 
 import { RootRouter } from "./routers";
 import { store } from "./store";
-import { UserProvider } from "./auth/UserContext";
 
 SuperTokens.init({
   appInfo: {
@@ -38,22 +37,20 @@ export const App = () => {
         <Provider store={store}>
           <GoogleOAuthProvider clientId={ENV_WEB.CLIENT_ID}>
             <SuperTokensWrapper>
-              <UserProvider>
-                <GlobalStyle />
-                <RootRouter />
-                <ToastContainer
-                  position="bottom-left"
-                  autoClose={5000}
-                  hideProgressBar={false}
-                  newestOnTop={false}
-                  closeOnClick
-                  rtl={false}
-                  pauseOnFocusLoss
-                  draggable
-                  pauseOnHover
-                  theme="dark"
-                />
-              </UserProvider>
+              <GlobalStyle />
+              <RootRouter />
+              <ToastContainer
+                position="bottom-left"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+              />
             </SuperTokensWrapper>
           </GoogleOAuthProvider>
         </Provider>

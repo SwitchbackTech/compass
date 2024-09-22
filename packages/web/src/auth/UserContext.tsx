@@ -2,28 +2,45 @@ import React, {
   createContext,
   ReactNode,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useState,
 } from "react";
+import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 
 import { getUserId } from "./auth.util";
 
-const UserContext = createContext<{ userId: string } | undefined>(undefined);
+const UserContext = createContext<
+  { isLoadingUser: boolean; userId: string } | undefined
+>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [userId, setUserId] = useState<string | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const fetchUserId = async () => {
-      const uid = await getUserId();
-      setUserId(uid);
+      try {
+        const uid = await getUserId();
+        setUserId(uid);
+      } catch (e) {
+        console.log("Failed to get user because:");
+        console.log(e);
+      } finally {
+        setIsLoadingUser(false);
+      }
     };
 
     void fetchUserId();
   }, []);
 
+  if (isLoadingUser || userId === null) {
+    return <AbsoluteOverflowLoader />;
+  }
+
   return (
-    <UserContext.Provider value={{ userId }}>{children}</UserContext.Provider>
+    <UserContext.Provider value={{ userId, isLoadingUser }}>
+      {children}
+    </UserContext.Provider>
   );
 };
 

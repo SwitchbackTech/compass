@@ -2,6 +2,7 @@ import React, { ReactNode, useLayoutEffect, useState } from "react";
 import Session from "supertokens-auth-react/recipe/session";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   }, [navigate]);
 
   if (isAuthenticated === null) {
-    return <div>Loading...</div>;
+    return <AbsoluteOverflowLoader />;
   } else {
     return <>{children}</>;
   }
