@@ -14,12 +14,13 @@ Here are the main features:
 
 - 🔄 2-way sync with Google Calendar
 - 🔄 Recurring events
+- ⚡ Command palette
+- ⚡ Shortcuts
 - 🕒 Display events in local time
 - 🏷️ Tagging events
 - 🖍️ Resizing events
-- 🖍️ Task reordering
-- 🖍️ Drag & drop tasks & events
-- 🖍️ Shortcuts
+- 🖍️ Reordering tasks
+- 🖍️ Drag & drop
 - ✉️ Email capture
 - 🔐 Google OAuth authentication
 - 🔐 User session management
@@ -28,7 +29,7 @@ Visit [app.compasscalendar.com](https://app.compasscalendar.com) to see them all
 
 ## Limitations
 
-This calendar a work-in-progress that might not have everything
+This calendar is a work in progress that might not have everything
 you need, including:
 
 - Sub-calendars (only primary calendar is supported)
