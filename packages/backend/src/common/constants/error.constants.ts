@@ -124,9 +124,9 @@ export const GcalError = {
 };
 
 export const SocketError = {
-  SocketIdNotFound: {
-    description: "Socket id not found",
-    status: Status.NOT_FOUND,
+  InvalidSocketId: {
+    description: "Invalid socket id",
+    status: Status.BAD_REQUEST,
     isOperational: true,
   },
 };
