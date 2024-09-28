@@ -1,6 +1,5 @@
 import { Server as HttpServer } from "http";
 import { createServer } from "node:http";
-import { type AddressInfo } from "node:net";
 import { Server as IoServer, type Socket as ServerSocket } from "socket.io";
 import { io as ioc, type Socket as ClientSocket } from "socket.io-client";
 import { Schema_Event } from "@core/types/event.types";
@@ -10,6 +9,7 @@ import {
 } from "@core/constants/websocket.constants";
 
 import { initWebsocketServer } from "./websocket.server";
+import { getServerUri } from "./websocket.util";
 
 describe("WebSocket Server", () => {
   let httpServer: HttpServer;
@@ -21,10 +21,10 @@ describe("WebSocket Server", () => {
     httpServer = createServer();
     io = initWebsocketServer(httpServer);
     httpServer.listen(() => {
-      const port = (httpServer.address() as AddressInfo).port;
+      const uri = getServerUri(httpServer);
       const userId = "testUser123";
 
-      clientSocket = ioc(`http://localhost:${port}`, {
+      clientSocket = ioc(uri, {
         query: { userId },
       });
 
@@ -36,10 +36,17 @@ describe("WebSocket Server", () => {
     });
   });
 
-  afterAll(() => {
-    io.close();
-    httpServer.close();
-    clientSocket.disconnect();
+  afterAll((done) => {
+    io.close()
+      .then(() => httpServer.close())
+      .then(() => {
+        clientSocket.disconnect();
+        done();
+      })
+      .catch((err) => {
+        console.error(err);
+        done();
+      });
   });
 
   describe(EVENT_CHANGED, () => {

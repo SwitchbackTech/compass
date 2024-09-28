@@ -17,9 +17,11 @@ import { SocketError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { ENV } from "@backend/common/constants/env.constants";
 
+import { handleWsError } from "./websocket.util";
+
 const logger = Logger("app:websocket.server");
 
-let io: CompassSocketServer;
+let wsServer: CompassSocketServer;
 export const connections = new Map<string, string>(); // { userId: socketId }
 
 export const emitEventToUser = (
@@ -27,24 +29,22 @@ export const emitEventToUser = (
   event: Schema_Event,
   server?: CompassSocketServer
 ) => {
-  const socketServer = server || io;
+  const socketServer = server || wsServer;
   const socketId = connections.get(userId);
 
   if (!socketId) {
     logger.warn(
       `Event update not sent to client due to missing userId: ${userId}`
     );
-    throw error(
-      SocketError.SocketIdNotFound,
-      "Event update not sent to client"
-    );
+    console.log(JSON.stringify(connections));
+    throw error(SocketError.InvalidSocketId, "Event update not sent to client");
   }
 
   socketServer.to(socketId).emit(EVENT_CHANGED, event);
 };
 
 export const initWebsocketServer = (server: HttpServer) => {
-  io = new SocketIOServer<
+  wsServer = new SocketIOServer<
     ClientToServerEvents,
     ServerToClientEvents,
     InterServerEvents,
@@ -56,26 +56,49 @@ export const initWebsocketServer = (server: HttpServer) => {
     },
   });
 
-  io.on("connection", (socket) => {
-    const userId = socket.handshake.query["userId"] as SocketData["userId"];
+  wsServer.use((socket, next) => {
+    if (socket.handshake) {
+      const userId = socket.handshake.query["userId"] as string;
 
-    if (!userId) {
-      throw error(SocketError.SocketIdNotFound, "Connection closed");
+      if (!userId || userId === "undefined" || userId === "null") {
+        const err = error(SocketError.InvalidSocketId, "Connection closed");
+        logger.error("WebSocket Error:\n\t", err);
+        return next(err);
+      }
     }
 
-    logger.debug(`Connection made to: ${userId}`);
-    connections.set(userId, socket.id);
-    console.log(connections);
-
-    socket.on("disconnect", () => {
-      logger.debug(`Disconnecting from: ${userId}`);
-      connections.delete(userId);
-    });
-
-    socket.on(EVENT_CHANGE_PROCESSED, (clientId) => {
-      logger.debug(`Client successfully processed updated: ${clientId}`);
-    });
+    next();
   });
 
-  return io;
+  wsServer.on(
+    "connection",
+    handleWsError((socket) => {
+      const userId = socket.handshake.query["userId"] as SocketData["userId"];
+
+      logger.debug(`Connection made to: ${userId}`);
+      connections.set(userId, socket.id);
+      console.log(connections);
+
+      socket.on(
+        "disconnect",
+        handleWsError(() => {
+          logger.debug(`Disconnecting from: ${userId}`);
+          connections.delete(userId);
+        })
+      );
+
+      socket.on(
+        EVENT_CHANGE_PROCESSED,
+        handleWsError((clientId) => {
+          logger.debug(`Client successfully processed updated: ${clientId}`);
+        })
+      );
+    })
+  );
+
+  wsServer.engine.on("connection_error", (err: Error) => {
+    logger.error(`Connection error: ${err.message}`);
+  });
+
+  return wsServer;
 };

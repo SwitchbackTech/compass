@@ -21,5 +21,5 @@ export interface ServerToClientEvents {
 }
 
 export interface SocketData {
-  userId?: string;
+  userId: string;
 }
