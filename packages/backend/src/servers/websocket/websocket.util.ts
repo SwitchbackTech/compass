@@ -1,6 +1,9 @@
 import { Server as HttpServer } from "http";
 import { type AddressInfo } from "node:net";
 import { BaseError } from "@core/errors/errors.base";
+import { Logger } from "@core/logger/winston.logger";
+
+const logger = Logger("app:websocket.util");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type HandlerFunction<T extends any[], R> = (...args: T) => R | Promise<R>;
@@ -15,8 +18,7 @@ export const handleWsError = <T extends any[], R>(
   handler: HandlerFunction<T, R>
 ) => {
   const handleError = (err: BaseError) => {
-    //TODO convert to logger
-    console.error("WebSocket Error:\n\t", err);
+    logger.error("WebSocket Error:\n\t", err);
     throw err;
   };
 

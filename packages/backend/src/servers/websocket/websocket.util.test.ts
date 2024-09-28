@@ -7,26 +7,10 @@ import { SocketError } from "@backend/common/constants/error.constants";
 import { connections, emitEventToUser } from "./websocket.server";
 
 jest.mock("socket.io");
-jest.mock("@core/logger/winston.logger", () => {
-  return {
-    Logger: jest.fn().mockImplementation(() => {
-      return {
-        debug: jest.fn(),
-        warn: jest.fn(),
-      };
-    }),
-  };
-});
 
 describe("emitEventToUser", () => {
-  let logger: { warn: jest.Mock };
-
   beforeEach(() => {
     (SocketIOServer as unknown as jest.Mock).mockClear();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-var-requires
-    logger = require("@core/logger/winston.logger").Logger();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    logger.warn.mockClear();
   });
 
   it("emits event to the correct socketId", () => {
