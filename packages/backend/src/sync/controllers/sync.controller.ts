@@ -26,9 +26,6 @@ class SyncController {
 
       const response = await syncService.handleGcalNotification(syncPayload);
 
-      // TODO:
-      // check if user is currently connected via websocket
-      // if so: dispatch response to client via websocket
       res.promise(response);
     } catch (e) {
       const resourceId = req.headers["x-goog-resource-id"] as string;
