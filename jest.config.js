@@ -157,6 +157,9 @@ module.exports = {
       setupFiles: [
         "<rootDir>/packages/backend/src/__tests__/backend.test.init.js",
       ],
+      setupFilesAfterEnv: [
+        "<rootDir>/packages/backend/src/__tests__/backend.test.start.js",
+      ],
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],
     },

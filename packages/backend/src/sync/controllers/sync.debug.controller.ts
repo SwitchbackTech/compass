@@ -1,12 +1,32 @@
-import { Request } from "express";
+import { Request, Response } from "express";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
+import { notifyClient } from "@backend/servers/websocket/websocket.server";
 
 import syncService from "../services/sync.service";
 import { getSync } from "../util/sync.queries";
 
 class SyncDebugController {
+  dispatchEventToClient = (_req: Request, res: Response) => {
+    try {
+      const userId = process.env["DEMO_SOCKET_USER"];
+      if (!userId) {
+        console.log("No demo user");
+        throw new Error("No demo user");
+      }
+      const startDate = new Date();
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 1);
+
+      notifyClient(userId);
+      res.sendStatus(200);
+    } catch (e) {
+      console.error("Error during dispatch:", e);
+      res.status(500).send("An error occurred while processing your request.");
+    }
+  };
+
   importIncremental = async (req: SessionRequest, res: Res_Promise) => {
     const userId = req.params["userId"];
     if (!userId) {

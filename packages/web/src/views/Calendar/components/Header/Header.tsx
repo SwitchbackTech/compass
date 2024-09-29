@@ -45,11 +45,11 @@ export const Header: FC<Props> = ({
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
+  const { scrollToNow } = scrollUtil;
 
   const { isDrafting } = useAppSelector(selectDraftId);
   const isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
-
-  const { scrollToNow } = scrollUtil;
+  const { startOfView } = weekProps.component;
 
   const onSectionClick = () => {
     if (isDrafting) {
@@ -74,13 +74,13 @@ export const Header: FC<Props> = ({
         <StyledLeftGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
             <Text colorName={ColorNames.WHITE_1} size={40}>
-              {weekProps.component.startOfView.format("MMMM")}
+              {startOfView.format("MMMM")}
             </Text>
 
             <SpaceCharacter />
 
             <Text colorName={ColorNames.GREY_4} size={38}>
-              {weekProps.component.startOfView.format("YYYY")}
+              {startOfView.format("YYYY")}
             </Text>
           </StyledHeaderLabel>
 
@@ -153,7 +153,7 @@ export const Header: FC<Props> = ({
           let dayNumberToDisplay = day.format("D");
 
           dayNumberToDisplay =
-            day.format("MM") !== weekProps.component.startOfView.format("MM") &&
+            day.format("MM") !== startOfView.format("MM") &&
             day.format("D") === "1"
               ? day.format("MMM D")
               : dayNumberToDisplay;

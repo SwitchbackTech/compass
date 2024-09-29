@@ -10,6 +10,8 @@ import {
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { syncSlice } from "@web/ducks/events/slices/sync.slice";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
 
 const eventsReducer = combineReducers({
   createEvent: createEventSlice.reducer,
@@ -25,4 +27,6 @@ const eventsReducer = combineReducers({
 export const reducers = {
   events: eventsReducer,
   settings: settingsSlice.reducer,
+  sync: syncSlice.reducer,
+  view: viewSlice.reducer,
 };

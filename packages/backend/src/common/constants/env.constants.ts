@@ -1,4 +1,4 @@
-import { NodeEnv, PORT_DEFAULT_API } from "@core/constants/core.constants";
+import { NodeEnv, PORT_DEFAULT_BACKEND } from "@core/constants/core.constants";
 import { isDev } from "@core/util/env.util";
 
 const _nodeEnv = process.env["NODE_ENV"] as NodeEnv;
@@ -22,7 +22,8 @@ export const ENV = {
   EMAILER_LIST_ID: process.env["EMAILER_LIST_ID"] || _error,
   MONGO_URI: process.env["MONGO_URI"] || _error,
   NODE_ENV: _nodeEnv,
-  PORT: process.env["PORT"] || PORT_DEFAULT_API,
+  ORIGINS_ALLOWED: process.env["CORS"] ? process.env["CORS"].split(",") : [],
+  PORT: process.env["PORT"] || PORT_DEFAULT_BACKEND,
   SUPERTOKENS_URI: process.env["SUPERTOKENS_URI"] || _error,
   SUPERTOKENS_KEY: process.env["SUPERTOKENS_KEY"] || _error,
   TOKEN_GCAL_NOTIFICATION: process.env["TOKEN_GCAL_NOTIFICATION"] || _error,

@@ -17,6 +17,7 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { notifyClient } from "@backend/servers/websocket/websocket.server";
 
 import {
   assembleEventImports,
@@ -92,6 +93,9 @@ class SyncService {
     };
 
     const response = await importEventsByCalendar(userId, syncInfo);
+
+    notifyClient(userId);
+
     return response;
   };
 

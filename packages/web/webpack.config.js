@@ -125,6 +125,7 @@ module.exports = (env, argv) => {
       alias: {
         "@core": resolvePath("../core/src"),
         "@web/assets": resolvePath("./src/assets"),
+        "@web/auth": resolvePath("./src/auth"),
         "@web/backend": resolvePath("../backend/src"),
         "@web/common": resolvePath("./src/common"),
         "@web/components": resolvePath("./src/components"),
@@ -133,6 +134,7 @@ module.exports = (env, argv) => {
         "@web/public": resolvePath("./src/public"),
         "@web/routers": resolvePath("./src/routers"),
         "@web/store": resolvePath("./src/store"),
+        "@web/socket": resolvePath("./src/socket"),
         "@web/views": resolvePath("./src/views"),
       },
     },

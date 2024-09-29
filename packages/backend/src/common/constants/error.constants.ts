@@ -123,6 +123,14 @@ export const GcalError = {
   },
 };
 
+export const SocketError = {
+  InvalidSocketId: {
+    description: "Invalid socket id",
+    status: Status.BAD_REQUEST,
+    isOperational: true,
+  },
+};
+
 export const SyncError = {
   AccessRevoked: {
     description: "User revoked access to their 3rd-party calendar (GCal)",

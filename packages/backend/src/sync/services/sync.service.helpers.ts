@@ -287,7 +287,7 @@ export const importEventsByCalendar = async (
     const ops = assembleEventOperations(userId, toDelete, toUpdate);
 
     if (Object.keys(ops).length === 0) {
-      logger.warning("No detected changes");
+      logger.warn("No detected changes");
       return noChanges;
     }
 
