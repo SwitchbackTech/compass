@@ -22,8 +22,8 @@ class SyncDebugController {
       notifyClient(userId);
       res.sendStatus(200);
     } catch (e) {
-      console.log("error during dispatch:", e);
-      res.send(e);
+      console.error("Error during dispatch:", e);
+      res.status(500).send("An error occurred while processing your request.");
     }
   };
 
