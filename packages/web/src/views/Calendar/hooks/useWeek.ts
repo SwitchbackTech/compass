@@ -10,7 +10,6 @@ import { updateDates } from "@web/ducks/events/slices/view.slice";
 
 export const useWeek = (today: Dayjs) => {
   const dispatch = useAppDispatch();
-  console.log("in useWeek");
 
   const origStart = useMemo(() => today.startOf("week"), [today]);
   const [start, setStartOfView] = useState(origStart);

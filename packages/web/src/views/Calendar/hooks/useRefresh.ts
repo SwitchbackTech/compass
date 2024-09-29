@@ -13,14 +13,12 @@ export const useRefresh = () => {
 
   useEffect(() => {
     if (isRefreshNeeded) {
-      console.log("refreshing...");
       dispatch(
         getWeekEventsSlice.actions.request({
           startDate: toUTCOffset(start),
           endDate: toUTCOffset(end),
         })
       );
-      console.log("resetting after fetch..");
       dispatch(resetIsFetchNeeded());
     }
   }, [dispatch, end, isRefreshNeeded, start]);
