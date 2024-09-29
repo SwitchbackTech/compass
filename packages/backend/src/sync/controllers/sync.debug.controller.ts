@@ -2,14 +2,13 @@ import { Request, Response } from "express";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
-import { emitEventToUser } from "@backend/servers/websocket/websocket.server";
-import { Schema_Event } from "@core/types/event.types";
+import { notifyClient } from "@backend/servers/websocket/websocket.server";
 
 import syncService from "../services/sync.service";
 import { getSync } from "../util/sync.queries";
 
 class SyncDebugController {
-  dispatchEventToClient = async (req: Request, res: Response) => {
+  dispatchEventToClient = (_req: Request, res: Response) => {
     try {
       const userId = process.env["DEMO_SOCKET_USER"];
       if (!userId) {
@@ -20,21 +19,10 @@ class SyncDebugController {
       const endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 1);
 
-      const event: Schema_Event = {
-        _id: "123",
-        title: "test",
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        isAllDay: false,
-        description: "test description",
-      };
-
-      console.log("dispatching ....", req.body);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      emitEventToUser(userId, event);
-      res.send(event);
+      notifyClient(userId);
+      res.sendStatus(200);
     } catch (e) {
-      console.log("returning error so server doesnt crash...");
+      console.log("error during dispatch:", e);
       res.send(e);
     }
   };

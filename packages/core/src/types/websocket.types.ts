@@ -17,7 +17,7 @@ export interface InterServerEvents {
 }
 
 export interface ServerToClientEvents {
-  EVENT_CHANGED: (data: Schema_Event) => void;
+  EVENT_CHANGED: () => void;
 }
 
 export interface SocketData {

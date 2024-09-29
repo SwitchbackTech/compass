@@ -18,18 +18,15 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  socket.on("connect", () => {
-    console.log(`connected to server with userId: ${userId}`); //TODO delete
-    console.log(socket);
+  socket.on("connect_error", (err) => {
+    console.log("connect_error:", err);
   });
 
-  socket.on(EVENT_CHANGED, (data) => {
-    // const payload = {
-    //   start: data.startDate,
-    //   end: data.endDate,
-    //   lastFetched: "",
-    // };
-    // dispatch(updateDates(payload));
+  socket.on("disconnect", (reason) => {
+    console.log("disconnected, cuz:", reason);
+  });
+
+  socket.on(EVENT_CHANGED, () => {
     dispatch(triggerFetch());
   });
 

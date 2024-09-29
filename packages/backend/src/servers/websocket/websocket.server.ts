@@ -12,7 +12,6 @@ import {
   EVENT_CHANGED,
 } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
-import { Schema_Event } from "@core/types/event.types";
 import { SocketError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -24,11 +23,7 @@ const logger = Logger("app:websocket.server");
 let wsServer: CompassSocketServer;
 export const connections = new Map<string, string>(); // { userId: socketId }
 
-export const emitEventToUser = (
-  userId: string,
-  event: Schema_Event,
-  server?: CompassSocketServer
-) => {
+export const notifyClient = (userId: string, server?: CompassSocketServer) => {
   const socketServer = server || wsServer;
   const socketId = connections.get(userId);
 
@@ -36,11 +31,10 @@ export const emitEventToUser = (
     logger.warn(
       `Event update not sent to client due to missing userId: ${userId}`
     );
-    console.log(JSON.stringify(connections));
     throw error(SocketError.InvalidSocketId, "Event update not sent to client");
   }
 
-  socketServer.to(socketId).emit(EVENT_CHANGED, event);
+  socketServer.to(socketId).emit(EVENT_CHANGED);
 };
 
 export const initWebsocketServer = (server: HttpServer) => {
