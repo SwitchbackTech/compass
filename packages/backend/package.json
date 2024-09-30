@@ -20,7 +20,7 @@
     "rrule": "^2.7.2",
     "saslprep": "^1.0.3",
     "socket.io": "^4.7.5",
-    "supertokens-node": "^16.7.1",
+    "supertokens-node": "^20.0.5",
     "tslib": "^2.4.0"
   },
   "devDependencies": {
