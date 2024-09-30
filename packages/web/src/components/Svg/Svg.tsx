@@ -24,10 +24,6 @@ const svgStyles = ({ color, hovercolor }: SvgStylesProps) => {
   `;
 };
 
-export const StyledHamburgerMenuIcon = styled(HamburgerMenuIcon)`
-  ${(props: SvgStylesProps) => svgStyles(props)}
-`;
-
 export const StyledMetaKeyIcon = styled(MetaKeyIcon)`
   ${(props: SvgStylesProps) => svgStyles(props)}
 `;
