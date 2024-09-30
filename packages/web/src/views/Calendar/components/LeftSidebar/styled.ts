@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { SidebarCollapseIcon, SidebarOpenIcon } from "@web/assets/svg";
 import { getColor } from "@core/util/color.utils";
 import { ColorNames } from "@core/types/color.types";
 import { CheckBox } from "@web/components/CheckBox";
@@ -10,14 +9,16 @@ import {
 } from "@web/views/Calendar/layout.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { FlexDirections } from "@web/components/Flex/styled";
+import { ArrowLineLeftIcon } from "@web/components/Icons/ArrowLeftLine";
+import { ArrowLineRightIcon } from "@web/components/Icons/ArrowRightLine";
 
 import { SidebarProps, SectionProps } from "./sidebar.types";
 
 export const getSidebarToggleIcon = (isToggled: boolean) => {
   if (isToggled) {
-    return StyledCollapseIcon;
+    return ArrowLineLeftIcon;
   } else {
-    return StyledOpenIcon;
+    return ArrowLineRightIcon;
   }
 };
 
@@ -69,19 +70,6 @@ export const StyledDividerWrapper = styled.div`
   padding: 5px 0 7px 0;
 `;
 
-const StyledCollapseIcon = styled(SidebarCollapseIcon)`
-  cursor: pointer;
-  color: ${getColor(ColorNames.GREY_6)};
-  position: absolute;
-  right: 7px;
-  bottom: 8px;
-  z-index: ${ZIndex.LAYER_1};
-
-  &:hover {
-    color: ${getColor(ColorNames.WHITE_2)};
-  }
-`;
-
 export const StyledHeaderFlex = styled(Flex)`
   padding-left: 17px;
   width: calc(100% - 45px);
@@ -91,19 +79,6 @@ export const StyledFiltersPopoverContent = styled.div`
   background: ${getColor(ColorNames.WHITE_5)};
   padding: 8px 8px 8px 5px;
   border-radius: 4px;
-`;
-
-const StyledOpenIcon = styled(SidebarOpenIcon)`
-  cursor: pointer;
-  color: ${getColor(ColorNames.GREY_6)};
-  position: absolute;
-  right: 7px;
-  bottom: 8px;
-  z-index: ${ZIndex.LAYER_1};
-
-  &:hover {
-    color: ${getColor(ColorNames.WHITE_2)};
-  }
 `;
 
 export const StyledPriorityFilterButton = styled.div`
