@@ -1,12 +1,10 @@
 import React from "react";
-import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/types/color.types";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 
-import { StyledMetaKeyIcon } from "../Svg";
 import { TooltipWrapper } from "../Tooltip/TooltipWrapper";
+import { StyledCommandIcon } from "./Command";
 
 export const MetaKeyIcon = () => {
   const dispatch = useAppDispatch();
@@ -15,7 +13,8 @@ export const MetaKeyIcon = () => {
 
   return (
     <TooltipWrapper
-      description="Open command palette (Cmd + K)"
+      description="Open command palette"
+      shortcut="Cmd + K"
       onClick={() => {
         if (isCmdPaletteOpen) {
           dispatch(settingsSlice.actions.closeCmdPalette());
@@ -24,7 +23,7 @@ export const MetaKeyIcon = () => {
         }
       }}
     >
-      <StyledMetaKeyIcon hovercolor={getColor(ColorNames.WHITE_1)} />
+      <StyledCommandIcon size={25} />
     </TooltipWrapper>
   );
 };
