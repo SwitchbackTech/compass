@@ -56,7 +56,9 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   left: ${(props) => props.left}px;
   opacity: ${(props) => props.opacity};
   overflow: hidden;
-  padding: 1px;
+  padding-left: 5px;
+  padding-right: 3px;
+  padding-top: 1px;
   position: absolute;
   top: ${(props) => props.top}px;
 
