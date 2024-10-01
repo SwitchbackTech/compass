@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { CheckIcon } from "@web/assets/svg";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
+import { Check } from "@phosphor-icons/react";
 
 import { Styled, StyledPlaceholder } from "./styled";
 
@@ -42,7 +42,7 @@ export const CheckBox: React.FC<Props> = ({
           onClick={onClick}
         />
       ) : (
-        <CheckIcon />
+        <Check />
       )}
     </Styled>
   );
