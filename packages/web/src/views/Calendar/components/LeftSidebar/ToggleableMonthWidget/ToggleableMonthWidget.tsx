@@ -6,12 +6,11 @@ import { getColor } from "@core/util/color.utils";
 import { DatePicker } from "@web/components/DatePicker";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
-import { Props as ToggleArrowProps } from "../ToggleArrow/ToggleArrow";
 import { Styled } from "./styled";
 
 dayjs.extend(weekPlugin);
 
-export interface Props extends Omit<ToggleArrowProps, "onToggle"> {
+export interface Props {
   isCurrentWeek: boolean;
   monthsShown?: number;
   setStartOfView: WeekProps["state"]["setStartOfView"];
