@@ -8,6 +8,7 @@ export const StyledListIcon = styled(List)`
   transition: filter 0.2s ease;
 
   &:hover {
+    cursor: pointer;
     filter: brightness(130%);
   }
 `;

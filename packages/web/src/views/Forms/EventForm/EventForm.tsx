@@ -11,7 +11,7 @@ import { getColor } from "@core/util/color.utils";
 import { Priorities } from "@core/constants/core.constants";
 import { colorNameByPriority } from "@core/constants/colors";
 import { Schema_Event } from "@core/types/event.types";
-import { DeleteIcon } from "@web/components/Icons";
+import { DeleteIcon } from "@web/components/Icons/Delete";
 import { getCategory } from "@web/common/utils/event.util";
 import { SelectOption } from "@web/common/types/component.types";
 import {

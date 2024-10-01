@@ -1,3 +1,3 @@
-import { StyledMonthCalendarIcon, StyledTrashIcon } from "./Svg";
+import { StyledMonthCalendarIcon } from "./Svg";
 
-export { StyledMonthCalendarIcon, StyledTrashIcon };
+export { StyledMonthCalendarIcon };

@@ -5,7 +5,7 @@ import { Key } from "ts-key-enum";
 import { colorNameByPriority } from "@core/constants/colors";
 import { getColor } from "@core/util/color.utils";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { DeleteIcon } from "@web/components/Icons";
+import { DeleteIcon } from "@web/components/Icons/Delete";
 import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
