@@ -23,7 +23,7 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
   const weekStart = props.weekProps.component.startOfView;
   const weekEnd = props.weekProps.component.endOfView;
 
-  const SidebarToggleIcon = getSidebarToggleIcon(props.prefs.isLeftSidebarOpen);
+  const ToggleSidebarIcon = getSidebarToggleIcon(props.prefs.isLeftSidebarOpen);
 
   return (
     <Styled
@@ -38,9 +38,7 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
         onClick={() => prefs.toggleSidebar("left")}
         shortcut="["
       >
-        <div role="button">
-          <SidebarToggleIcon cursor="pointer" />
-        </div>
+        <ToggleSidebarIcon size={28} />
       </TooltipWrapper>
 
       <SomedaySection

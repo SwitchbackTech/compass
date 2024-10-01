@@ -1,5 +1,5 @@
 import React from "react";
-import { MetaKeyIcon } from "@web/components/Icons/MetaKeyIcon";
+import { MetaKeyIcon } from "@web/components/Icons/MetaKey";
 
 import { StyledBottomRow } from "../styled";
 

@@ -17,7 +17,7 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { selectIsRightSidebarOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { HamburgerIcon } from "@web/components/Icons/HamburgerIcon";
+import { StyledListIcon } from "@web/components/Icons/List";
 
 import {
   StyledHeaderRow,
@@ -135,7 +135,7 @@ export const Header: FC<Props> = ({
             }}
             shortcut="]"
           >
-            <HamburgerIcon />
+            <StyledListIcon size={28} />
           </TooltipWrapper>
         </StyledRightGroup>
       </StyledHeaderRow>

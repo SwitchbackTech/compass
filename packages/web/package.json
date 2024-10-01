@@ -10,6 +10,7 @@
     "@compass/core": "1.0.0",
     "@floating-ui/react": "^0.19.2",
     "@hello-pangea/dnd": "^16.2.0",
+    "@phosphor-icons/react": "^2.1.7",
     "@popperjs/core": "^2.11.5",
     "@react-oauth/google": "^0.7.0",
     "@reduxjs/toolkit": "^1.6.1",
