@@ -29,6 +29,8 @@ export const StyledRepeatText = styled.span<Props>`
   }
 `;
 
-export const StyledSelectContainer = styled.div`
-  /* width: 100%; */
+export const StyledRepeatTextContainer = styled(Flex)`
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 `;

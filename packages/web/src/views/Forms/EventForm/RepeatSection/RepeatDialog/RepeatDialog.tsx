@@ -7,11 +7,12 @@ import {
   getRecurrenceOption,
   getRecurrenceRule,
 } from "@web/common/utils/web.date.util";
+import { RepeatIcon } from "@web/components/Icons/Repeat";
 
 import {
   StyledRepeatRow,
   StyledRepeatText,
-  StyledSelectContainer,
+  StyledRepeatTextContainer,
 } from "../styled";
 
 interface Props {
@@ -48,11 +49,12 @@ export const RepeatDialog: FC<Props> = ({
 
   return (
     <StyledRepeatRow>
-      <StyledRepeatText hasRepeat={true} onClick={onRepeatTextClick}>
-        🔁 Repeats every
-      </StyledRepeatText>
+      <StyledRepeatTextContainer onClick={onRepeatTextClick}>
+        <RepeatIcon />
+        <StyledRepeatText hasRepeat={true}>Repeats every</StyledRepeatText>
+      </StyledRepeatTextContainer>
 
-      <StyledSelectContainer>
+      <div>
         <Select
           defaultValue={defaultValue}
           isOptionDisabled={(opt) =>
@@ -88,7 +90,7 @@ export const RepeatDialog: FC<Props> = ({
             }),
           }}
         />
-      </StyledSelectContainer>
+      </div>
     </StyledRepeatRow>
   );
 };
