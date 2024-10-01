@@ -10,9 +10,10 @@ export const ArrowLineLeftIcon = styled(ArrowLineLeft)`
   position: absolute;
   right: 7px;
   bottom: 8px;
+  transition: filter 0.2s ease;
   z-index: ${ZIndex.LAYER_1};
 
   &:hover {
-    color: ${getColor(ColorNames.WHITE_2)};
+    filter: brightness(130%);
   }
 `;
