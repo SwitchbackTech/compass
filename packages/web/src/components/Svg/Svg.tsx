@@ -1,5 +1,4 @@
-import styled, { css } from "styled-components";
-import { MonthCalendarIcon, TrashIcon } from "@web/assets/svg";
+import { css } from "styled-components";
 
 interface SvgStylesProps {
   color?: string;
@@ -18,11 +17,3 @@ const svgStyles = ({ color, hovercolor }: SvgStylesProps) => {
     }
   `;
 };
-
-export const StyledMonthCalendarIcon = styled(MonthCalendarIcon)`
-  ${(props: SvgStylesProps) => svgStyles(props)}
-`;
-
-export const StyledTrashIcon = styled(TrashIcon)`
-  ${(props: SvgStylesProps) => svgStyles(props)}
-`;
