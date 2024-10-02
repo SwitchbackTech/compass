@@ -7,16 +7,16 @@ import { ZIndex } from "@web/common/constants/web.constants";
 
 interface StyledEventProps {
   allDay: boolean;
-  backgroundColor: string;
+  backgroundColor?: string;
   height: number;
-  hoverColor: string;
+  hoverColor?: string;
   isDragging: boolean;
   isInPast: boolean;
   isResizing: boolean;
   isPlaceholder: boolean;
   left: number;
   lineClamp: number;
-  opacity: number;
+  opacity?: number;
   priority: Priority;
   top: number;
   width: number;
