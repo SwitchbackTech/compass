@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { Priority } from "@core/constants/core.constants";
 import { getColor, hoverColorsByPriority } from "@core/util/color.utils";
 import { colorNameByPriority } from "@core/constants/colors";
+import { Text } from "@web/components/Text";
 import { ZIndex } from "@web/common/constants/web.constants";
 
 interface StyledEventProps {
@@ -14,6 +15,7 @@ interface StyledEventProps {
   isResizing: boolean;
   isPlaceholder: boolean;
   left: number;
+  lineClamp: number;
   opacity: number;
   priority: Priority;
   top: number;
@@ -56,7 +58,8 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   left: ${(props) => props.left}px;
   opacity: ${(props) => props.opacity};
   overflow: hidden;
-  padding: 1px;
+  padding-left: 5px;
+  padding-right: 3px;
   position: absolute;
   top: ${(props) => props.top}px;
 
@@ -89,8 +92,13 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
       text-overflow: ellipsis;
       word-break: break-all;
       -webkit-box-orient: vertical;
+      -webkit-line-clamp: ${(props) => props.lineClamp};
     }
   }
+`;
+
+export const StyledEventTitle = styled(Text)`
+  min-height: 3px;
 `;
 
 export interface ScalerProps {

@@ -438,10 +438,11 @@ export const getAbsoluteLeftPosition = (
   return positionStart;
 };
 
-export const getLineClamp = (durationHours: number) => {
-  // how were these magic numbers determined?
-  const heightOfEvent = 54 * +durationHours.toFixed(2) || 0.25;
-  return Math.round((heightOfEvent - 7) / 16) || 1;
+export const getLineClamp = (height: number) => {
+  const min = 1;
+  const computed = Math.round((height - 7) / 16);
+  const lineClamp = Math.max(min, computed);
+  return lineClamp;
 };
 
 export const getPrevDayWidth = (today: Dayjs) => {

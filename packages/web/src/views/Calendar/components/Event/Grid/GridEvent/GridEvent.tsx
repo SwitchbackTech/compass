@@ -1,9 +1,14 @@
-import React, { ForwardedRef, forwardRef, memo, MouseEvent } from "react";
+import React, {
+  ForwardedRef,
+  forwardRef,
+  memo,
+  MouseEvent,
+  useMemo,
+} from "react";
 import dayjs from "dayjs";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { Text } from "@web/components/Text";
 import { Flex } from "@web/components/Flex";
 import {
   AlignItems,
@@ -12,8 +17,9 @@ import {
 } from "@web/components/Flex/styled";
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
 import { adjustIsTimesShown } from "@web/common/utils/event.util";
+import { getLineClamp } from "@web/common/utils/grid.util";
 
-import { StyledEvent, StyledEventScaler } from "../../styled";
+import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
 import { Times } from "./Times";
 
 interface Props {
@@ -61,6 +67,11 @@ const _GridEvent = (
     false
   );
 
+  const lineClamp = useMemo(
+    () => getLineClamp(position.height),
+    [position.height]
+  );
+
   return (
     <StyledEvent
       allDay={event.isAllDay || false}
@@ -71,6 +82,7 @@ const _GridEvent = (
       isPlaceholder={isPlaceholder}
       isResizing={isResizing}
       left={position.left}
+      lineClamp={lineClamp}
       onMouseDown={(e) => {
         onEventMouseDown(event, e);
       }}
@@ -86,9 +98,9 @@ const _GridEvent = (
         direction={FlexDirections.COLUMN}
         flexWrap={FlexWrap.WRAP}
       >
-        <Text size={10.3} role="textbox">
+        <StyledEventTitle size={10.3} role="textbox">
           {event.title}
-        </Text>
+        </StyledEventTitle>
         {!event.isAllDay && (
           <>
             <Times

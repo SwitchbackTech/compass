@@ -33,7 +33,7 @@ export const useGridClick = (
 
       if (category === Categories_Event.TIMED) {
         hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved;
-        shouldSubmit = !draft.isOpen;
+        shouldSubmit = !draft?.isOpen;
       } else if (category === Categories_Event.ALLDAY) {
         hasMoved = dragStatus?.hasMoved;
         shouldSubmit = hasMoved;
