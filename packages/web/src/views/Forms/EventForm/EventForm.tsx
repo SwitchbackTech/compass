@@ -20,6 +20,7 @@ import {
 } from "@web/common/utils/web.date.util";
 import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/LeftSidebar/SomedaySection/SomedayEvents/styled";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
+import FocusTrap from "focus-trap-react";
 
 import { FormProps, SetEventFormField } from "./types";
 import { DateTimeSection } from "./DateTimeSection";
@@ -224,84 +225,94 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   return (
-    <StyledEventForm
-      {...props}
-      isOpen={isFormOpen}
-      name={ID_EVENT_FORM}
-      onKeyDown={onFormKeyDown}
-      onMouseUp={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-
-        if (isStartDatePickerOpen) {
-          setIsStartDatePickerOpen(false);
-        }
-
-        if (isEndDatePickerOpen) {
-          setIsEndDatePickerOpen(false);
-        }
+    <FocusTrap
+      focusTrapOptions={{
+        // To avoid conflicting with other events, like clicking outside closes the form
+        allowOutsideClick: true,
       }}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-      }}
-      priority={priority}
-      role="form"
     >
-      <StyledIconRow>
-        {!isDraft && (
-          <StyledMigrateArrowInForm
-            onClick={(e) => {
-              e.stopPropagation();
-              onConvert();
-            }}
-            role="button"
-            title="Move to sidebar"
-          >
-            {"<"}
-          </StyledMigrateArrowInForm>
-        )}
-        <DeleteIcon onDelete={onDeleteForm} title="Delete Event" />
-      </StyledIconRow>
+      <StyledEventForm
+        {...props}
+        isOpen={isFormOpen}
+        name={ID_EVENT_FORM}
+        onKeyDown={onFormKeyDown}
+        onMouseUp={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
 
-      <StyledTitleField
-        autoFocus
-        onChange={onChangeEventTextField("title")}
-        onKeyDown={ignoreDelete}
-        placeholder="Title"
-        role="textarea"
-        name="Event Title"
-        value={title}
-      />
+          if (isStartDatePickerOpen) {
+            setIsStartDatePickerOpen(false);
+          }
 
-      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
+          if (isEndDatePickerOpen) {
+            setIsEndDatePickerOpen(false);
+          }
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+        }}
+        priority={priority}
+        role="form"
+      >
+        <StyledIconRow>
+          {!isDraft && (
+            <StyledMigrateArrowInForm
+              onClick={(e) => {
+                e.stopPropagation();
+                onConvert();
+              }}
+              role="button"
+              title="Move to sidebar"
+            >
+              {"<"}
+            </StyledMigrateArrowInForm>
+          )}
+          <DeleteIcon onDelete={onDeleteForm} title="Delete Event" />
+        </StyledIconRow>
 
-      <DateTimeSection
-        bgColor={getColor(colorNameByPriority[priority])}
-        event={event}
-        category={category}
-        endTime={endTime}
-        isEndDatePickerOpen={isEndDatePickerOpen}
-        isStartDatePickerOpen={isStartDatePickerOpen}
-        selectedEndDate={selectedEndDate}
-        selectedStartDate={selectedStartDate}
-        setEndTime={setEndTime}
-        setSelectedEndDate={setSelectedEndDate}
-        setSelectedStartDate={setSelectedStartDate}
-        setStartTime={setStartTime}
-        startTime={startTime}
-        setIsEndDatePickerOpen={setIsEndDatePickerOpen}
-        setIsStartDatePickerOpen={setIsStartDatePickerOpen}
-        setEvent={setEvent}
-      />
+        <StyledTitleField
+          autoFocus
+          onChange={onChangeEventTextField("title")}
+          onKeyDown={ignoreDelete}
+          placeholder="Title"
+          role="textarea"
+          name="Event Title"
+          value={title}
+        />
 
-      <StyledDescriptionField
-        onChange={onChangeEventTextField("description")}
-        onKeyDown={ignoreDelete}
-        placeholder="Description"
-        value={event.description || ""}
-      />
+        <PrioritySection
+          onSetEventField={onSetEventField}
+          priority={priority}
+        />
 
-      <SaveSection priority={priority} onSubmit={onSubmitForm} />
-    </StyledEventForm>
+        <DateTimeSection
+          bgColor={getColor(colorNameByPriority[priority])}
+          event={event}
+          category={category}
+          endTime={endTime}
+          isEndDatePickerOpen={isEndDatePickerOpen}
+          isStartDatePickerOpen={isStartDatePickerOpen}
+          selectedEndDate={selectedEndDate}
+          selectedStartDate={selectedStartDate}
+          setEndTime={setEndTime}
+          setSelectedEndDate={setSelectedEndDate}
+          setSelectedStartDate={setSelectedStartDate}
+          setStartTime={setStartTime}
+          startTime={startTime}
+          setIsEndDatePickerOpen={setIsEndDatePickerOpen}
+          setIsStartDatePickerOpen={setIsStartDatePickerOpen}
+          setEvent={setEvent}
+        />
+
+        <StyledDescriptionField
+          onChange={onChangeEventTextField("description")}
+          onKeyDown={ignoreDelete}
+          placeholder="Description"
+          value={event.description || ""}
+        />
+
+        <SaveSection priority={priority} onSubmit={onSubmitForm} />
+      </StyledEventForm>
+    </FocusTrap>
   );
 };
