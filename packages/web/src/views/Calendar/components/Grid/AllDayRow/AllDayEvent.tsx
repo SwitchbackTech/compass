@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import React, { memo, MouseEvent } from "react";
-import { Schema_Event, Categories_Event } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
@@ -30,11 +30,6 @@ const AllDayEvent = ({
 }: Props) => {
   const dispatch = useAppDispatch();
 
-  const editAllDayEvent = (event: Schema_Event) => {
-    console.log("starting to drag allday..");
-    dispatch(draftSlice.actions.startDragging({ event }));
-  };
-
   const position = getPosition(
     event,
     startOfView,
@@ -44,18 +39,9 @@ const AllDayEvent = ({
   );
 
   const onEventMouseDown = (e: MouseEvent, event: Schema_Event) => {
-    console.log("moused down on all day event");
     e.stopPropagation();
 
-    if (!isPlaceholder) {
-      console.log("swapping ...");
-      dispatch(
-        draftSlice.actions.swap({ event, category: Categories_Event.ALLDAY })
-      );
-      return;
-    }
-
-    editAllDayEvent(event);
+    dispatch(draftSlice.actions.startDragging({ event }));
   };
 
   return (
