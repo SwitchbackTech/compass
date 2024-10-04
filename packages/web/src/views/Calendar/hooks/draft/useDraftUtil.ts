@@ -148,7 +148,7 @@ export const useDraftUtil = (
         return { ..._draft, isOpen: false };
       });
     }
-  }, [dateCalcs, isDragging]);
+  }, [isDragging]);
 
   const convert = (start: string, end: string) => {
     if (isAtWeeklyLimit) {
