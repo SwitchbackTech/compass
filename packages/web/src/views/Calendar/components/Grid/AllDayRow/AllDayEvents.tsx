@@ -21,7 +21,7 @@ export const AllDayEvents = ({
   endOfView,
 }: Props) => {
   const allDayEvents = useAppSelector(selectAllDayEvents);
-  const { isDrafting, draftId } = useAppSelector(selectDraftId);
+  const { draftId } = useAppSelector(selectDraftId);
 
   return (
     <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>
@@ -29,7 +29,7 @@ export const AllDayEvents = ({
         return (
           <AllDayEventMemo
             key={`${event.title}-${i}`}
-            isPlaceholder={isDrafting && event._id === draftId}
+            isPlaceholder={event._id === draftId}
             event={event}
             startOfView={startOfView}
             endOfView={endOfView}

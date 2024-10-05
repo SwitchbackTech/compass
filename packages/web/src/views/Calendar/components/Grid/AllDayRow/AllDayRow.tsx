@@ -14,9 +14,9 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getDefaultEvent } from "@web/common/utils/event.util";
-import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { isEventFormOpen } from "@web/common/utils";
 
 import { StyledAllDayColumns, StyledGridCol } from "../Columns/styled";
 import { StyledAllDayRow } from "./styled";
@@ -41,7 +41,6 @@ export const AllDayRow: FC<Props> = ({
 
   const { startOfView, weekDays } = weekProps.component;
 
-  const { isDrafting } = useAppSelector(selectDraftId);
   const allDayEvents = useAppSelector(selectAllDayEvents);
   const _rowVals = allDayEvents.map((e: Schema_GridEvent) => e.row);
   const rowsCount = _rowVals.length === 0 ? 1 : Math.max(..._rowVals);
@@ -70,7 +69,7 @@ export const AllDayRow: FC<Props> = ({
   };
 
   const onSectionMouseDown = (e: MouseEvent) => {
-    if (isDrafting) {
+    if (isEventFormOpen()) {
       dispatch(draftSlice.actions.discard());
       return;
     }
