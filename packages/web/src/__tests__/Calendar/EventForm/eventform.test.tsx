@@ -28,7 +28,7 @@ describe("Event Form", () => {
   //   await _clickHeading(user);
   //   await user.click(screen.getByRole("button", { name: /takeover world/i }));
   //   expect(
-  //     within(screen.getByTestId("somedayForm")).getByText("Takeover world")
+  //     within(screen.getRole("form", name: {"Someday Event Form"})).getByText("Takeover world")
   //   ).toBeInTheDocument();
   // }, 10000);
   it("closes when clicking outside", async () => {

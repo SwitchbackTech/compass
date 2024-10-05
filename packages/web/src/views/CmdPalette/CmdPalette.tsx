@@ -14,7 +14,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { isDrafting } from "@web/common/utils";
+import { isEventFormOpen } from "@web/common/utils";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
@@ -90,7 +90,7 @@ const CmdPalette = ({
   };
 
   const _discardDraft = () => {
-    if (isDrafting()) {
+    if (isEventFormOpen()) {
       dispatch(draftSlice.actions.discard());
     }
   };

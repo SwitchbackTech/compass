@@ -105,7 +105,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   return (
     <StyledEventForm
       {...props}
-      data-testid="somedayForm"
+      name="Someday Event Form"
       id={ID_SIDEBAR_FORM}
       isOpen={true}
       onClick={stopPropagation}

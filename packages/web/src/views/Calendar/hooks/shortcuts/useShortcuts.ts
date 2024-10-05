@@ -8,7 +8,7 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { isDrafting } from "@web/common/utils";
+import { isEventFormOpen } from "@web/common/utils";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
@@ -89,13 +89,13 @@ export const useShortcuts = ({
     };
 
     const _discardDraft = () => {
-      if (isDrafting()) {
+      if (isEventFormOpen()) {
         dispatch(draftSlice.actions.discard());
       }
     };
 
     const keyDownHandler = (e: KeyboardEvent) => {
-      if (isDrafting()) return;
+      if (isEventFormOpen()) return;
 
       const isCmdPaletteOpen =
         document.getElementById("headlessui-portal-root") !== null;

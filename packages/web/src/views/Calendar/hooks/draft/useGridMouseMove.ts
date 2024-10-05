@@ -7,12 +7,14 @@ export const useGridMouseMove = (
   draftState: State_GridDraft,
   draftUtil: Util_GridDraft
 ) => {
-  const { draft, isDragging, isResizing } = draftState;
+  const { draft, isDrafting, isDragging, isResizing } = draftState;
 
   const { drag, resize } = draftUtil;
 
   const _onMouseMove = useCallback(
     (e: MouseEvent) => {
+      if (!isDrafting) return;
+
       if (isResizing && !draft?.isAllDay) {
         resize(e);
       } else if (isDragging) {
@@ -20,7 +22,7 @@ export const useGridMouseMove = (
         drag(e);
       }
     },
-    [draft?.isAllDay, drag, isDragging, isResizing, resize]
+    [draft?.isAllDay, drag, isDrafting, isDragging, isResizing, resize]
   );
 
   useEventListener("mousemove", _onMouseMove);
