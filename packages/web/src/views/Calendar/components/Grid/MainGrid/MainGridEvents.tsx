@@ -8,6 +8,7 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
+import { isEventFormOpen } from "@web/common/utils";
 
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
 
@@ -20,11 +21,11 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const dispatch = useAppDispatch();
 
   const timedEvents = useAppSelector(selectGridEvents);
-  const { draftId, isDrafting } = useAppSelector(selectDraftId);
+  const draftId = useAppSelector(selectDraftId);
 
   const onMouseDown = (e: MouseEvent, event: Schema_Event) => {
     e.stopPropagation();
-    if (isDrafting) {
+    if (isEventFormOpen()) {
       dispatch(
         draftSlice.actions.swap({ event, category: Categories_Event.TIMED })
       );
@@ -57,7 +58,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
             event={event}
             isDragging={false}
             isDraft={false}
-            isPlaceholder={isDrafting && event._id === draftId}
+            isPlaceholder={event._id === draftId}
             isResizing={false}
             key={`initial-${event._id}`}
             measurements={measurements}

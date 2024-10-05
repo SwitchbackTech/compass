@@ -4,8 +4,8 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { useAppSelector } from "@web/store/store.hooks";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import {
-  selectDraftId,
   selectDraftStatus,
+  selectIsDrafting,
 } from "@web/ducks/events/selectors/draft.selectors";
 import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
 
@@ -20,7 +20,7 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   }, [categorizedEvents]);
 
   const { eventType: draftType } = useAppSelector(selectDraftStatus);
-  const { isDrafting: isDraftingRedux } = useAppSelector(selectDraftId);
+  const isDraftingRedux = useAppSelector(selectIsDrafting);
 
   const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
   const [isDrafting, setIsDrafting] = useState(false);

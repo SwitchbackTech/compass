@@ -8,7 +8,7 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { getCategory } from "@web/common/utils/event.util";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
-import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
+import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 
 import { getDraftContainer } from "./draft.util";
 import { GridDraft } from "./GridDraft";
@@ -39,7 +39,7 @@ export const Draft: FC<Props> = ({
   );
   const { draft, isDragging, isResizing } = draftState;
 
-  const { isDrafting } = useAppSelector(selectDraftId);
+  const isDrafting = useAppSelector(selectIsDrafting);
 
   const formProps = useEventForm("grid");
 

@@ -21,7 +21,7 @@ export const AllDayEvents = ({
   endOfView,
 }: Props) => {
   const allDayEvents = useAppSelector(selectAllDayEvents);
-  const { draftId } = useAppSelector(selectDraftId);
+  const draftId = useAppSelector(selectDraftId);
 
   return (
     <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>
