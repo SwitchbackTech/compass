@@ -41,7 +41,12 @@ import { isEventFormOpen } from "@web/common/utils";
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
 
-export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
+export const useSidebarUtil = (
+  dateCalcs: DateCalcs,
+  state: State_Sidebar,
+  setDraft: React.Dispatch<React.SetStateAction<Schema_GridEvent>>,
+  setIsDrafting: React.Dispatch<React.SetStateAction<boolean>>
+) => {
   const dispatch = useAppDispatch();
 
   const { start, end } = useAppSelector(selectDatesInView);
@@ -51,9 +56,12 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
 
-  const resetLocalDraftState = () => {
-    state.setIsDrafting(false);
-    state.setDraft(null);
+  const resetLocalDraftStateIfNeeded = () => {
+    if (state.isDrafting) {
+      console.log("--- resetting local draft state");
+      state.setIsDrafting(false);
+      state.setDraft(null);
+    }
   };
 
   const close = () => {
@@ -140,18 +148,13 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   };
 
   const createDefaultSomeday = useCallback(() => {
-    console.log("!!!CREATING DEFAULT SOMEAY...");
+    console.log("~~CREATING DEFAULT SOMEAY...");
+
     const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
 
-    state.setDraft({
-      ...somedayDefault,
-      endDate: viewEnd.format(YEAR_MONTH_DAY_FORMAT),
-      startDate: viewStart.format(YEAR_MONTH_DAY_FORMAT),
-      isOpen: true,
-    });
-
-    state.setIsDrafting(true);
-  }, [viewStart, viewEnd]);
+    setDraft({ ...somedayDefault, isOpen: true });
+    setIsDrafting(true);
+  }, [setDraft]);
 
   const getDatesAfterDroppingOn = (
     target: "mainGrid" | "alldayRow",
@@ -397,7 +400,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
 
   return {
     close,
-    resetLocalDraftState,
+    resetLocalDraftStateIfNeeded,
     createDefaultSomeday,
     onDraft,
     onDragEnd,

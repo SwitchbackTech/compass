@@ -16,6 +16,8 @@ import {
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { getDefaultEvent } from "@web/common/utils/event.util";
+import { YEAR_MONTH_FORMAT } from "@core/constants/date.constants";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
@@ -26,7 +28,8 @@ export interface ShortcutProps {
   today: Dayjs;
   dateCalcs: DateCalcs;
   isCurrentWeek: boolean;
-  startOfSelectedWeek: Dayjs;
+  startOfView: Dayjs;
+  endOfView: Dayjs;
   util: WeekProps["util"];
   scrollUtil: Util_Scroll;
   toggleSidebar: (target: "left" | "right") => void;
@@ -36,7 +39,8 @@ export const useShortcuts = ({
   today,
   dateCalcs,
   isCurrentWeek,
-  startOfSelectedWeek,
+  startOfView,
+  endOfView,
   util,
   scrollUtil,
   toggleSidebar,
@@ -63,18 +67,21 @@ export const useShortcuts = ({
           ? Categories_Event.SOMEDAY_WEEK
           : Categories_Event.SOMEDAY_MONTH;
 
+      const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
       dispatch(
         draftSlice.actions.start({
           eventType,
+          event: {
+            ...somedayDefault,
+            startDate: startOfView.format(YEAR_MONTH_FORMAT),
+            endDate: endOfView.format(YEAR_MONTH_FORMAT),
+          },
         })
       );
     };
 
     const _createTimedDraft = () => {
-      const { startDate, endDate } = getDraftTimes(
-        isCurrentWeek,
-        startOfSelectedWeek
-      );
+      const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
 
       dispatch(
         draftSlice.actions.start({
@@ -147,7 +154,8 @@ export const useShortcuts = ({
     isAtWeeklyLimit,
     isCurrentWeek,
     navigate,
-    startOfSelectedWeek,
+    startOfView,
+    endOfView,
     scrollUtil,
     toggleSidebar,
     util,

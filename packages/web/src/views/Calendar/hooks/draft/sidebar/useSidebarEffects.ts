@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
@@ -10,36 +10,35 @@ import {
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
 import {
+  selectDraft,
   selectDraftStatus,
   selectIsDrafting,
 } from "@web/ducks/events/selectors/draft.selectors";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { getDefaultEvent } from "@web/common/utils/event.util";
 
 import { Util_Sidebar } from "./useSidebarUtil";
 
 export const useSidebarEffects = (util: Util_Sidebar) => {
-  const { close, resetLocalDraftState, createDefaultSomeday } = util;
+  const { close, resetLocalDraftStateIfNeeded, createDefaultSomeday } = util;
 
   const { eventType: draftType } = useAppSelector(selectDraftStatus);
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const isDraftingRedux = useAppSelector(selectIsDrafting);
 
-  const handleSomedayTrigger = useCallback(() => {
-    if (!isDraftingRedux) {
-      console.log("resetting local draft state");
-      // close();
-      resetLocalDraftState();
-      return;
-    }
-    console.log("drafting ", draftType);
+  const [shouldTriggerDraft, setShouldTriggerDraft] = useState(false);
 
-    const isGridDraft =
-      draftType !== Categories_Event.SOMEDAY_WEEK &&
-      draftType !== Categories_Event.SOMEDAY_MONTH;
+  /*
+  useEffect(() => {
+    // const isGridDraft =
+    //   draftType !== Categories_Event.SOMEDAY_WEEK &&
+    //   draftType !== Categories_Event.SOMEDAY_MONTH;
 
+    const isGridDraft = false;
     if (isGridDraft) {
-      console.log("closing sidebar draft so it doesn't get stale");
-      close();
+      console.log("TODO closing sidebar draft so it doesn't get stale");
+      // close();
       return;
     }
 
@@ -55,11 +54,33 @@ export const useSidebarEffects = (util: Util_Sidebar) => {
       }
     }
 
-    //TODO enable this to get shortcuts to work
-    // createDefaultSomeday();
-  }, [isDraftingRedux, draftType, close, isAtWeeklyLimit, isAtMonthlyLimit]);
+    setShouldTriggerDraft(true);
+  }, [
+    // isDraftingRedux,
+    draftType,
+    // resetLocalDraftStateIfNeeded,
+    // setShouldTriggerDraft,
+    // close,
+    isAtWeeklyLimit,
+    isAtMonthlyLimit,
+  ]);
+  */
 
   useEffect(() => {
-    handleSomedayTrigger();
-  }, [handleSomedayTrigger]);
+    if (!isDraftingRedux) {
+      resetLocalDraftStateIfNeeded();
+    }
+  }, [isDraftingRedux, resetLocalDraftStateIfNeeded]);
+
+  useEffect(() => {
+    // if (shouldTriggerDraft) {
+    // const shouldStartNew =
+    //   isDraftingRedux && draftType === Categories_Event.SOMEDAY_WEEK;
+    // m: add another state that checks if it's existing or new
+    const shouldStartNew = isDraftingRedux;
+    if (shouldStartNew) {
+      console.log("setting default here...");
+      createDefaultSomeday();
+    }
+  }, [isDraftingRedux, createDefaultSomeday]);
 };
