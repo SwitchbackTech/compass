@@ -14,7 +14,7 @@ export const selectIsDraftingExisting = (state: RootState) =>
 
 export const selectIsDraftingSomeday = (state: RootState) =>
   state.events.draft.status.eventType === Categories_Event.SOMEDAY_WEEK ||
-  Categories_Event.SOMEDAY_MONTH;
+  state.events.draft.status.eventType === Categories_Event.SOMEDAY_MONTH;
 
 export const selectDraftId = (state: RootState) =>
   state.events.draft.event?._id;

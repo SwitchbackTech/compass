@@ -16,7 +16,6 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { isEventFormOpen } from "@web/common/utils";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 
 import { StyledAllDayColumns, StyledGridCol } from "../Columns/styled";

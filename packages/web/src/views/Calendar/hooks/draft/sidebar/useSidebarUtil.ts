@@ -57,17 +57,14 @@ export const useSidebarUtil = (
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
 
   const resetLocalDraftStateIfNeeded = () => {
-    console.log("checking if we need to reset sidebar state...");
-    console.log(state);
     if (state.isDrafting) {
-      console.log("--- resetting local draft state");
+      console.log("--- resetting local draft state, prev:");
       state.setIsDrafting(false);
       state.setDraft(null);
     }
   };
 
   const close = () => {
-    console.log("closing [util]...");
     state.setIsDrafting(false);
     state.setDraft(null);
 
@@ -319,7 +316,6 @@ export const useSidebarUtil = (
 
   const onSectionClick = (section: Categories_Event) => {
     if (state.isDrafting) {
-      console.log("assuming click out so closing");
       dispatch(draftSlice.actions.discard());
       close();
       return;
@@ -336,7 +332,6 @@ export const useSidebarUtil = (
     }
 
     if (isEventFormOpen()) {
-      console.log("** discarding existing draft");
       dispatch(draftSlice.actions.discard());
       return;
     }
@@ -404,6 +399,7 @@ export const useSidebarUtil = (
     onMigrate,
     onSectionClick,
     onSubmit,
+    setDraft,
   };
 };
 
