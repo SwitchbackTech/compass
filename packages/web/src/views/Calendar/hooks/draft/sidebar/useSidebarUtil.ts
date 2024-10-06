@@ -51,6 +51,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
 
   const close = () => {
+    console.log("closing [util]...");
     state.setIsDrafting(false);
     state.setDraft(null);
 
@@ -58,7 +59,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
       state.draftType === Categories_Event.SOMEDAY_WEEK ||
       state.draftType == Categories_Event.SOMEDAY_MONTH;
 
-    if (state.isDraftingRedux && isSomeday) {
+    if (state.isDraftingExisting || (state.isDraftingNew && isSomeday)) {
       dispatch(draftSlice.actions.discard());
     }
   };
@@ -169,12 +170,27 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
     }
   };
 
-  const onDraft = (event: Schema_Event) => {
+  const onDraft = (event: Schema_Event, category: Categories_Event) => {
+    // console.log("starting draft...of type:", category);
     state.setIsDrafting(true);
     state.setDraft({
       ...event,
       isOpen: true,
     });
+
+    console.log("existing?", state.isDraftingExisting);
+    dispatch(
+      draftSlice.actions.start({
+        event: event,
+        eventType: category,
+      })
+    );
+    // console.log("starting draft...of type:", category);
+    // state.setIsDrafting(true);
+    // state.setDraft({
+    //   ...event,
+    //   isOpen: true,
+    // });
   };
 
   const onDragEnd = (result: DropResult) => {
@@ -294,13 +310,10 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   };
 
   const onSectionClick = (section: Categories_Event) => {
-    if (state.isDraftingRedux) {
+    if (state.isDrafting) {
+      console.log("assuming click out so closing");
       dispatch(draftSlice.actions.discard());
-      return;
-    }
-
-    if (state.isDraftingExisting) {
-      state.draft && close();
+      close();
       return;
     }
 

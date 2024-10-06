@@ -4,8 +4,6 @@ import { Schema_Event } from "@core/types/event.types";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -19,6 +17,7 @@ interface Props {
   measurements: Measurements_Grid;
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
+  onMouseDown: (e: MouseEvent, event: Schema_Event) => void;
 }
 
 const AllDayEvent = ({
@@ -27,9 +26,8 @@ const AllDayEvent = ({
   measurements,
   startOfView,
   endOfView,
+  onMouseDown,
 }: Props) => {
-  const dispatch = useAppDispatch();
-
   const position = getPosition(
     event,
     startOfView,
@@ -37,12 +35,6 @@ const AllDayEvent = ({
     measurements,
     false
   );
-
-  const onEventMouseDown = (e: MouseEvent, event: Schema_Event) => {
-    e.stopPropagation();
-
-    dispatch(draftSlice.actions.startDragging({ event }));
-  };
 
   return (
     <StyledEvent
@@ -54,7 +46,7 @@ const AllDayEvent = ({
       isResizing={false}
       left={position.left}
       lineClamp={1}
-      onMouseDown={(e) => onEventMouseDown(e, event)}
+      onMouseDown={(e) => onMouseDown(e, event)}
       priority={event.priority}
       role="button"
       top={position.top}

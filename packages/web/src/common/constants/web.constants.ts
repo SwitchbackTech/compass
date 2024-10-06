@@ -18,7 +18,6 @@ export const ID_SIDEBAR = "sidebar";
 export const ID_SOMEDAY_DRAFT = "somedayDraft";
 export const ID_SOMEDAY_EVENTS = "ID_SOMEDAY_EVENTS";
 export const ID_SOMEDAY_EVENT_FORM = "Someday Event Form";
-export const ID_SIDEBAR_FORM = "sidebarForm";
 
 export const OPTIONS_RECURRENCE = {
   WEEK: { value: Recurrence_Selection.WEEK, label: "week" },

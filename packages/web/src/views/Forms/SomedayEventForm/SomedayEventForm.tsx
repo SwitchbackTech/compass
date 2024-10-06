@@ -6,7 +6,6 @@ import { colorNameByPriority } from "@core/constants/colors";
 import { getColor } from "@core/util/color.utils";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { DeleteIcon } from "@web/components/Icons/Delete";
-import { ID_SIDEBAR_FORM } from "@web/common/constants/web.constants";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
@@ -17,6 +16,7 @@ import {
   StyledIconRow,
   StyledTitleField,
 } from "@web/views/Forms/EventForm/styled";
+import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 
 import { RepeatSection } from "../EventForm/RepeatSection";
 
@@ -105,8 +105,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   return (
     <StyledEventForm
       {...props}
-      name="Someday Event Form"
-      id={ID_SIDEBAR_FORM}
+      name={ID_SOMEDAY_EVENT_FORM}
       isOpen={true}
       onClick={stopPropagation}
       onKeyDown={onKeyDown}

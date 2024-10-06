@@ -11,7 +11,7 @@ export const useSidebar = (
 ) => {
   const state = useSidebarState(measurements);
   const util = useSidebarUtil(dateCalcs, state);
-  useSidebarEffects(state, util);
+  useSidebarEffects(util);
 
   const _state = {
     draft: state.draft,

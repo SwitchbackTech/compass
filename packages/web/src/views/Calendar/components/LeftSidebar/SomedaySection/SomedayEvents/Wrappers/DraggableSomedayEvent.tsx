@@ -46,7 +46,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
                 isDrafting={isDraftingThisEvent}
                 isOverGrid={isOverGrid}
                 onClose={util.close}
-                onDraft={util.onDraft}
+                onDraft={() => util.onDraft(event, category)}
                 onMigrate={util.onMigrate}
                 onSubmit={() => util.onSubmit(category)}
                 provided={provided}

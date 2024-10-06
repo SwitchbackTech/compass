@@ -8,6 +8,7 @@ import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
+import { Util_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarUtil";
 
 import { NewStyledSomedayEvent } from "./styled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
@@ -19,8 +20,8 @@ export interface Props {
   isDragging: boolean;
   isOverGrid: boolean;
   onClose: () => void;
-  onDraft: (event: Schema_GridEvent) => void;
-  onMigrate: (event: Schema_GridEvent, location: "forward" | "back") => void;
+  onDraft: (event: Schema_GridEvent, category: Categories_Event) => void;
+  onMigrate: Util_Sidebar["onMigrate"];
   onSubmit: (event?: Schema_Event) => void;
   provided: DraggableProvided;
   setEvent: Dispatch<SetStateAction<Schema_GridEvent>>;
@@ -63,7 +64,7 @@ export const SomedayEvent = ({
 
       case Key.Enter: {
         if (!shouldOpenForm) {
-          onDraft(event);
+          onDraft(event, category);
         }
         break;
       }
@@ -82,9 +83,9 @@ export const SomedayEvent = ({
         isOverGrid={isOverGrid}
         isFocused={isFocused}
         onBlur={() => setIsFocused(false)}
-        onClick={(e: MouseEvent) => {
+        onClick={(e) => {
           e.stopPropagation();
-          onDraft(event);
+          onDraft(event, category);
         }}
         onFocus={() => setIsFocused(true)}
         onKeyDown={onKeyDown}
