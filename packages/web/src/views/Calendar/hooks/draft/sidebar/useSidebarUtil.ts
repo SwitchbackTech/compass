@@ -36,6 +36,7 @@ import {
   getMigrationDates,
 } from "@web/common/utils/web.date.util";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
+import { isEventFormOpen } from "@web/common/utils";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
@@ -49,6 +50,11 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
 
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
+
+  const resetLocalDraftState = () => {
+    state.setIsDrafting(false);
+    state.setDraft(null);
+  };
 
   const close = () => {
     console.log("closing [util]...");
@@ -134,6 +140,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   };
 
   const createDefaultSomeday = useCallback(() => {
+    console.log("!!!CREATING DEFAULT SOMEAY...");
     const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
 
     state.setDraft({
@@ -327,6 +334,14 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
       return;
     }
 
+    if (isEventFormOpen()) {
+      console.log("** discarding existing draft");
+      dispatch(draftSlice.actions.discard());
+      return;
+    }
+    // don't start if its an allday draft
+    console.log("state status");
+    console.log(state);
     dispatch(
       draftSlice.actions.start({
         eventType: section,
@@ -382,6 +397,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
 
   return {
     close,
+    resetLocalDraftState,
     createDefaultSomeday,
     onDraft,
     onDragEnd,
