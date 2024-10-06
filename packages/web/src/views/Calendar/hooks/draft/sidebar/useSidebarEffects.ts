@@ -64,18 +64,32 @@ export const useSidebarEffects = (util: Util_Sidebar) => {
   ]);
   */
 
+  // useEffect(() => {
+  //   if (!isDraftingRedux || isDraftingExisting) {
+  //     resetLocalDraftStateIfNeeded();
+  //   }
+  // }, [isDraftingExisting, isDraftingRedux, resetLocalDraftStateIfNeeded]);
   useEffect(() => {
+    console.log("draftingRedux?", isDraftingRedux);
     if (!isDraftingRedux) {
+      console.log("resetting local draft state...");
       resetLocalDraftStateIfNeeded();
     }
-    // also check if the drafttype changed
   }, [isDraftingRedux, resetLocalDraftStateIfNeeded]);
 
   useEffect(() => {
+    console.log("draftingRedux?", isDraftingRedux);
     const shouldStartNew = isDraftingRedux && !isDraftingExisting;
     if (shouldStartNew) {
       console.log("creating new default...");
       createDefaultSomeday();
+    } else if (!isDraftingRedux && !isDraftingExisting) {
+      console.log("resetting local draft state...");
+      // resetLocalDraftStateIfNeeded()
+    } else if (!isDraftingRedux) {
+      console.log("chtoas!!");
+    } else {
+      console.log("hmmmm");
     }
   }, [isDraftingExisting, isDraftingRedux, createDefaultSomeday]);
 };

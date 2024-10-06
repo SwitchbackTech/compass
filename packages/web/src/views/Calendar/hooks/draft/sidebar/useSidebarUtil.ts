@@ -150,8 +150,6 @@ export const useSidebarUtil = (
   };
 
   const createDefaultSomeday = useCallback(() => {
-    console.log("~~CREATING DEFAULT SOMEAY...");
-
     const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
 
     setDraft({ ...somedayDefault, isOpen: true });
@@ -342,9 +340,7 @@ export const useSidebarUtil = (
       dispatch(draftSlice.actions.discard());
       return;
     }
-    // don't start if its an allday draft
-    console.log("state status");
-    console.log(state);
+
     dispatch(
       draftSlice.actions.start({
         eventType: section,

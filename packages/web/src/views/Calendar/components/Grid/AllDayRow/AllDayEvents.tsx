@@ -12,7 +12,7 @@ import {
   selectIsDraftingSomeday,
 } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { isEventFormOpen } from "@web/common/utils";
+import { isSomedayEventFormOpen } from "@web/common/utils";
 
 import { StyledEvents } from "./styled";
 import { AllDayEventMemo } from "./AllDayEvent";
@@ -39,18 +39,13 @@ export const AllDayEvents = ({
 
     // if drafting someday event, close that
     // (but swap if drafting grid)
-    if (isDraftingSomeday) {
+    // if (isDraftingSomeday) {
+    if (isSomedayEventFormOpen()) {
       console.log("closing old someday draft");
       dispatch(draftSlice.actions.discard());
+      return;
     }
     // if (draftStatus.eventType === Categories_Event.SOMEDAY_WEEK) {
-    // if (isDrafting) {
-    // if (isEventFormOpen()) {
-    //   console.log("closing existing draft & exiting");
-    //   dispatch(draftSlice.actions.discard());
-    //   return;
-    // }
-
     // console.log("about to start dragging, cuz", draftStatus, event);
     console.log("starting drag");
     dispatch(draftSlice.actions.startDragging({ event }));
