@@ -9,6 +9,7 @@ import {
   selectDraftId,
   selectDraftStatus,
   selectIsDrafting,
+  selectIsDraftingSomeday,
 } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { isEventFormOpen } from "@web/common/utils";
@@ -17,13 +18,11 @@ import { StyledEvents } from "./styled";
 import { AllDayEventMemo } from "./AllDayEvent";
 
 interface Props {
-  isDrafting: boolean;
   measurements: Measurements_Grid;
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
 }
 export const AllDayEvents = ({
-  isDrafting,
   measurements,
   startOfView,
   endOfView,
@@ -31,22 +30,26 @@ export const AllDayEvents = ({
   const allDayEvents = useAppSelector(selectAllDayEvents);
   // const isDrafting = useAppSelector(selectIsDrafting);
   const draftId = useAppSelector(selectDraftId);
+  const isDraftingSomeday = useAppSelector(selectIsDraftingSomeday);
   // const draftStatus = useAppSelector(selectDraftStatus);
   const dispatch = useAppDispatch();
 
   const onMouseDown = (e: MouseEvent, event: Schema_Event) => {
     e.stopPropagation();
 
-    // console.log("draftId:", draftId);
+    // if drafting someday event, close that
+    // (but swap if drafting grid)
+    if (isDraftingSomeday) {
+      console.log("closing old someday draft");
+      dispatch(draftSlice.actions.discard());
+    }
     // if (draftStatus.eventType === Categories_Event.SOMEDAY_WEEK) {
     // if (isDrafting) {
-    // if (isDrafting) {
-    if (isEventFormOpen()) {
-      console.log("not starting drag");
-      console.log("closing existing draft");
-      dispatch(draftSlice.actions.discard());
-      // return;
-    }
+    // if (isEventFormOpen()) {
+    //   console.log("closing existing draft & exiting");
+    //   dispatch(draftSlice.actions.discard());
+    //   return;
+    // }
 
     // console.log("about to start dragging, cuz", draftStatus, event);
     console.log("starting drag");

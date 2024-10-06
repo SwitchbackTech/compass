@@ -93,7 +93,6 @@ export const AllDayRow: FC<Props> = ({
         ))}
       </StyledAllDayColumns>
       <AllDayEvents
-        isDrafting={isDrafting}
         measurements={measurements}
         startOfView={weekProps.component.startOfView}
         endOfView={weekProps.component.endOfView}

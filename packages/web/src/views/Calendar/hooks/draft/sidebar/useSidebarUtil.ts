@@ -57,6 +57,8 @@ export const useSidebarUtil = (
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
 
   const resetLocalDraftStateIfNeeded = () => {
+    console.log("checking if we need to reset sidebar state...");
+    console.log(state);
     if (state.isDrafting) {
       console.log("--- resetting local draft state");
       state.setIsDrafting(false);
@@ -181,21 +183,19 @@ export const useSidebarUtil = (
   };
 
   const onDraft = (event: Schema_Event, category: Categories_Event) => {
-    // console.log("starting draft...of type:", category);
     state.setIsDrafting(true);
     state.setDraft({
       ...event,
       isOpen: true,
     });
 
-    console.log("existing?", state.isDraftingExisting);
+    // console.log("existing?", state.isDraftingExisting);
     dispatch(
       draftSlice.actions.start({
         event: event,
         eventType: category,
       })
     );
-    // console.log("starting draft...of type:", category);
     // state.setIsDrafting(true);
     // state.setDraft({
     //   ...event,

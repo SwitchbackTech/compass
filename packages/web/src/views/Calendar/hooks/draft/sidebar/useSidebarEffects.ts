@@ -13,6 +13,7 @@ import {
   selectDraft,
   selectDraftStatus,
   selectIsDrafting,
+  selectIsDraftingExisting,
 } from "@web/ducks/events/selectors/draft.selectors";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getDefaultEvent } from "@web/common/utils/event.util";
@@ -26,8 +27,7 @@ export const useSidebarEffects = (util: Util_Sidebar) => {
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const isDraftingRedux = useAppSelector(selectIsDrafting);
-
-  const [shouldTriggerDraft, setShouldTriggerDraft] = useState(false);
+  const isDraftingExisting = useAppSelector(selectIsDraftingExisting);
 
   /*
   useEffect(() => {
@@ -53,8 +53,6 @@ export const useSidebarEffects = (util: Util_Sidebar) => {
         return;
       }
     }
-
-    setShouldTriggerDraft(true);
   }, [
     // isDraftingRedux,
     draftType,
@@ -70,17 +68,14 @@ export const useSidebarEffects = (util: Util_Sidebar) => {
     if (!isDraftingRedux) {
       resetLocalDraftStateIfNeeded();
     }
+    // also check if the drafttype changed
   }, [isDraftingRedux, resetLocalDraftStateIfNeeded]);
 
   useEffect(() => {
-    // if (shouldTriggerDraft) {
-    // const shouldStartNew =
-    //   isDraftingRedux && draftType === Categories_Event.SOMEDAY_WEEK;
-    // m: add another state that checks if it's existing or new
-    const shouldStartNew = isDraftingRedux;
+    const shouldStartNew = isDraftingRedux && !isDraftingExisting;
     if (shouldStartNew) {
-      console.log("setting default here...");
+      console.log("creating new default...");
       createDefaultSomeday();
     }
-  }, [isDraftingRedux, createDefaultSomeday]);
+  }, [isDraftingExisting, isDraftingRedux, createDefaultSomeday]);
 };
