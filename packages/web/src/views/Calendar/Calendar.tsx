@@ -35,7 +35,6 @@ export const CalendarView = () => {
   const dateCalcs = useDateCalcs(measurements, gridRefs.gridScrollRef);
 
   const isCurrentWeek = weekProps.component.isCurrentWeek;
-  const startOfSelectedWeek = weekProps.component.startOfView;
   const util = weekProps.util;
   const toggleSidebar = prefs.toggleSidebar;
 
@@ -43,7 +42,8 @@ export const CalendarView = () => {
     today,
     dateCalcs,
     isCurrentWeek,
-    startOfSelectedWeek,
+    startOfView: weekProps.component.startOfView,
+    endOfView: weekProps.component.endOfView,
     util,
     scrollUtil,
     toggleSidebar,

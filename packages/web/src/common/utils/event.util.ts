@@ -102,6 +102,12 @@ export const getDefaultEvent = (
   startDate?: string,
   endDate?: string
 ): Schema_GridEvent | null => {
+  const defaultSomeday = {
+    isAllDay: false,
+    isSomeday: true,
+    origin: Origin.COMPASS,
+    priority: Priorities.UNASSIGNED,
+  };
   switch (draftType) {
     case Categories_Event.ALLDAY:
       return {
@@ -112,12 +118,7 @@ export const getDefaultEvent = (
         endDate: startDate,
       };
     case Categories_Event.SOMEDAY_WEEK || Categories_Event.SOMEDAY_MONTH:
-      return {
-        isAllDay: false,
-        isSomeday: true,
-        origin: Origin.COMPASS,
-        priority: Priorities.UNASSIGNED,
-      };
+      return defaultSomeday;
     case Categories_Event.TIMED: {
       return {
         isAllDay: false,

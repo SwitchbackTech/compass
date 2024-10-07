@@ -8,6 +8,7 @@ export const COLUMN_MONTH = "monthEvents";
 export const GOOGLE = "google";
 
 export const ID_ALLDAY_COLUMNS = "allDayColumns";
+export const ID_EVENT_FORM = "Event Form";
 export const ID_GRID_ALLDAY_ROW = "allDayRow";
 export const ID_GRID_EVENTS_ALLDAY = "allDayEvents";
 export const ID_GRID_EVENTS_TIMED = "timedEvents";
@@ -16,7 +17,7 @@ export const ID_MAIN = "mainSection";
 export const ID_SIDEBAR = "sidebar";
 export const ID_SOMEDAY_DRAFT = "somedayDraft";
 export const ID_SOMEDAY_EVENTS = "ID_SOMEDAY_EVENTS";
-export const ID_SIDEBAR_FORM = "sidebarForm";
+export const ID_SOMEDAY_EVENT_FORM = "Someday Event Form";
 
 export const OPTIONS_RECURRENCE = {
   WEEK: { value: Recurrence_Selection.WEEK, label: "week" },

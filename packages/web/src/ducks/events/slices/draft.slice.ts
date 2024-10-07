@@ -27,7 +27,7 @@ export const draftSlice = createSlice({
   name: "draft",
   initialState: initialDraft as State_DraftEvent,
   reducers: {
-    discard: (state) => initialDraft,
+    discard: () => initialDraft,
     start: (state, action: Action_DraftEvent) => {
       const { activity, event, eventType } = action.payload;
 

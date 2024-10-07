@@ -19,6 +19,7 @@ import {
   mapToBackend,
 } from "@web/common/utils/web.date.util";
 import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/LeftSidebar/SomedaySection/SomedayEvents/styled";
+import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 
 import { FormProps, SetEventFormField } from "./types";
 import { DateTimeSection } from "./DateTimeSection";
@@ -226,7 +227,7 @@ export const EventForm: React.FC<FormProps> = ({
     <StyledEventForm
       {...props}
       isOpen={isFormOpen}
-      name="Event Form"
+      name={ID_EVENT_FORM}
       onKeyDown={onFormKeyDown}
       onMouseUp={(e) => {
         e.stopPropagation();

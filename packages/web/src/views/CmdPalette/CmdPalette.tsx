@@ -1,5 +1,5 @@
 import "react-cmdk/dist/cmdk.css";
-import React, { FC, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import CommandPalette, {
   filterItems,
   getItemIndex,
@@ -14,7 +14,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { isDrafting } from "@web/common/utils";
+import { isEventFormOpen } from "@web/common/utils";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
@@ -28,7 +28,7 @@ import { ShortcutProps } from "../Calendar/hooks/shortcuts/useShortcuts";
 const CmdPalette = ({
   today,
   isCurrentWeek,
-  startOfSelectedWeek,
+  startOfView,
   util,
   scrollUtil,
 }: ShortcutProps) => {
@@ -72,10 +72,7 @@ const CmdPalette = ({
   };
 
   const _createTimedDraft = () => {
-    const { startDate, endDate } = getDraftTimes(
-      isCurrentWeek,
-      startOfSelectedWeek
-    );
+    const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
 
     dispatch(
       draftSlice.actions.start({
@@ -90,7 +87,7 @@ const CmdPalette = ({
   };
 
   const _discardDraft = () => {
-    if (isDrafting()) {
+    if (isEventFormOpen()) {
       dispatch(draftSlice.actions.discard());
     }
   };

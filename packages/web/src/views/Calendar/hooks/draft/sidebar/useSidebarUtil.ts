@@ -36,11 +36,17 @@ import {
   getMigrationDates,
 } from "@web/common/utils/web.date.util";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
+import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
 
-export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
+export const useSidebarUtil = (
+  dateCalcs: DateCalcs,
+  state: State_Sidebar,
+  setDraft: React.Dispatch<React.SetStateAction<Schema_GridEvent>>,
+  setIsDrafting: React.Dispatch<React.SetStateAction<boolean>>
+) => {
   const dispatch = useAppDispatch();
 
   const { start, end } = useAppSelector(selectDatesInView);
@@ -50,6 +56,15 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
 
+  const resetLocalDraftStateIfNeeded = () => {
+    if (!state.isDrafting) return;
+
+    if (isSomedayEventFormOpen()) {
+      state.setIsDrafting(false);
+      state.setDraft(null);
+    }
+  };
+
   const close = () => {
     state.setIsDrafting(false);
     state.setDraft(null);
@@ -58,7 +73,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
       state.draftType === Categories_Event.SOMEDAY_WEEK ||
       state.draftType == Categories_Event.SOMEDAY_MONTH;
 
-    if (state.isDraftingRedux && isSomeday) {
+    if (state.isDraftingExisting || (state.isDraftingNew && isSomeday)) {
       dispatch(draftSlice.actions.discard());
     }
   };
@@ -135,15 +150,10 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   const createDefaultSomeday = useCallback(() => {
     const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
 
-    state.setDraft({
-      ...somedayDefault,
-      endDate: viewEnd.format(YEAR_MONTH_DAY_FORMAT),
-      startDate: viewStart.format(YEAR_MONTH_DAY_FORMAT),
-      isOpen: true,
-    });
-
-    state.setIsDrafting(true);
-  }, [viewStart, viewEnd]);
+    setDraft({ ...somedayDefault, isOpen: true });
+    setIsDrafting(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setDraft]);
 
   const getDatesAfterDroppingOn = (
     target: "mainGrid" | "alldayRow",
@@ -169,12 +179,19 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
     }
   };
 
-  const onDraft = (event: Schema_Event) => {
+  const onDraft = (event: Schema_Event, category: Categories_Event) => {
     state.setIsDrafting(true);
     state.setDraft({
       ...event,
       isOpen: true,
     });
+
+    dispatch(
+      draftSlice.actions.start({
+        event: event,
+        eventType: category,
+      })
+    );
   };
 
   const onDragEnd = (result: DropResult) => {
@@ -294,13 +311,9 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
   };
 
   const onSectionClick = (section: Categories_Event) => {
-    if (state.isDraftingRedux) {
+    if (state.isDrafting) {
       dispatch(draftSlice.actions.discard());
-      return;
-    }
-
-    if (state.isDraftingExisting) {
-      state.draft && close();
+      close();
       return;
     }
 
@@ -311,6 +324,11 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
 
     if (section === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
       alert(SOMEDAY_MONTH_LIMIT_MSG);
+      return;
+    }
+
+    if (isEventFormOpen()) {
+      dispatch(draftSlice.actions.discard());
       return;
     }
 
@@ -369,6 +387,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
 
   return {
     close,
+    resetLocalDraftStateIfNeeded,
     createDefaultSomeday,
     onDraft,
     onDragEnd,
@@ -376,6 +395,7 @@ export const useSidebarUtil = (dateCalcs: DateCalcs, state: State_Sidebar) => {
     onMigrate,
     onSectionClick,
     onSubmit,
+    setDraft,
   };
 };
 

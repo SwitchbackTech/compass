@@ -1,76 +1,31 @@
-import { useCallback, useEffect } from "react";
-import { Categories_Event } from "@core/types/event.types";
-import {
-  SOMEDAY_MONTH_LIMIT_MSG,
-  SOMEDAY_WEEK_LIMIT_MSG,
-} from "@core/constants/core.constants";
+import { useEffect } from "react";
 import { useAppSelector } from "@web/store/store.hooks";
 import {
-  selectIsAtMonthlyLimit,
-  selectIsAtWeeklyLimit,
-} from "@web/ducks/events/selectors/someday.selectors";
+  selectIsDrafting,
+  selectIsDraftingExisting,
+  selectIsDraftingSomeday,
+} from "@web/ducks/events/selectors/draft.selectors";
 
-import { State_Sidebar } from "./useSidebarState";
 import { Util_Sidebar } from "./useSidebarUtil";
 
-export const useSidebarEffects = (state: State_Sidebar, util: Util_Sidebar) => {
-  const {
-    draft,
-    draftType,
-    isDraftingNew,
-    isDraftingRedux,
-    somedayIds,
-    setDraft,
-    setIsDrafting,
-    setIsDraftingExisting,
-  } = state;
-  const { createDefaultSomeday } = util;
+export const useSidebarEffects = (util: Util_Sidebar) => {
+  const { resetLocalDraftStateIfNeeded, createDefaultSomeday } = util;
 
-  const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
-  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+  const isDrafting = useAppSelector(selectIsDrafting);
+  const isDraftingExisting = useAppSelector(selectIsDraftingExisting);
+  const isDraftingSomeday = useAppSelector(selectIsDraftingSomeday);
 
   useEffect(() => {
-    setIsDraftingExisting(somedayIds.includes(draft?._id));
-  }, [draft, somedayIds, setIsDraftingExisting]);
-
-  useEffect(() => {
-    if (
-      !isDraftingRedux ||
-      (draftType !== Categories_Event.SOMEDAY_WEEK &&
-        draftType !== Categories_Event.SOMEDAY_MONTH)
-    ) {
-      setIsDrafting(false);
-      setDraft(null);
+    const isSidebarStatePotentiallyStale = !isDraftingSomeday;
+    if (isSidebarStatePotentiallyStale) {
+      resetLocalDraftStateIfNeeded();
     }
-  }, [draftType, isDraftingRedux, setDraft, setIsDrafting]);
-
-  const handleSomedayTrigger = useCallback(() => {
-    const isNewDraft = isDraftingRedux && !isDraftingNew;
-    if (!isNewDraft) return;
-
-    if (draftType === Categories_Event.SOMEDAY_WEEK) {
-      if (isAtWeeklyLimit) {
-        alert(SOMEDAY_WEEK_LIMIT_MSG);
-        return;
-      }
-    } else if (draftType === Categories_Event.SOMEDAY_MONTH) {
-      if (isAtMonthlyLimit) {
-        alert(SOMEDAY_MONTH_LIMIT_MSG);
-        return;
-      }
-    }
-
-    createDefaultSomeday();
-  }, [
-    draftType,
-    createDefaultSomeday,
-    isDraftingNew,
-    isDraftingRedux,
-    isAtWeeklyLimit,
-    isAtMonthlyLimit,
-  ]);
+  }, [isDraftingSomeday, resetLocalDraftStateIfNeeded]);
 
   useEffect(() => {
-    handleSomedayTrigger();
-  }, [handleSomedayTrigger]);
+    const shouldStartNew = isDrafting && !isDraftingExisting;
+    if (shouldStartNew) {
+      createDefaultSomeday();
+    }
+  }, [isDraftingExisting, isDrafting, createDefaultSomeday]);
 };
