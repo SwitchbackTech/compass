@@ -36,7 +36,8 @@ import {
   getMigrationDates,
 } from "@web/common/utils/web.date.util";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
-import { isEventFormOpen } from "@web/common/utils";
+import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
+import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
@@ -55,14 +56,40 @@ export const useSidebarUtil = (
 
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
+  // const isDraftingRedux = useAppSelector(selectIsDrafting); //TODO remove
 
   const resetLocalDraftStateIfNeeded = () => {
-    if (state.isDrafting) {
-      console.log("--- resetting local draft state, prev:");
+    if (!state.isDrafting) return;
+
+    if (isSomedayEventFormOpen()) {
+      console.log("resetting local draft state [closing form]");
       state.setIsDrafting(false);
       state.setDraft(null);
     }
   };
+
+  /*
+  const resetLocalDraftStateIfNeeded = () => {
+    // !state.isDrafting && console.log("skipping cuz not drafting local");
+    if (!state.isDrafting) return;
+
+    //todo need to differentiate between when you're dragging a someday
+    // and when a someday is just open and needs to be closed
+    const isLocalSomedayDraft = state.draft?.isSomeday && !isDraftingRedux;
+    if (isLocalSomedayDraft) {
+      const isSomedayFormOpen = isSomedayEventFormOpen();
+      if (isSomedayFormOpen) {
+        console.log("--- resetting local draft state [closing form]");
+        state.setIsDrafting(false);
+        state.setDraft(null);
+      } else {
+        console.log("someday form isnt open, so skipping");
+      }
+    } else {
+      console.log("drafting, but its diff");
+    }
+  };
+  */
 
   const close = () => {
     state.setIsDrafting(false);
@@ -151,6 +178,7 @@ export const useSidebarUtil = (
 
     setDraft({ ...somedayDefault, isOpen: true });
     setIsDrafting(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setDraft]);
 
   const getDatesAfterDroppingOn = (
@@ -184,18 +212,12 @@ export const useSidebarUtil = (
       isOpen: true,
     });
 
-    // console.log("existing?", state.isDraftingExisting);
     dispatch(
       draftSlice.actions.start({
         event: event,
         eventType: category,
       })
     );
-    // state.setIsDrafting(true);
-    // state.setDraft({
-    //   ...event,
-    //   isOpen: true,
-    // });
   };
 
   const onDragEnd = (result: DropResult) => {

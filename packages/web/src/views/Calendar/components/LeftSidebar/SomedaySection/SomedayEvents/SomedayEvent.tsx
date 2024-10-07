@@ -9,6 +9,8 @@ import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import { Util_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarUtil";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { useAppDispatch } from "@web/store/store.hooks";
 
 import { NewStyledSomedayEvent } from "./styled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
@@ -44,6 +46,7 @@ export const SomedayEvent = ({
     category === Categories_Event.SOMEDAY_WEEK ? "sidebarWeek" : "sidebarMonth";
   const { y, reference, floating, strategy } = useEventForm(formType);
 
+  const dispatch = useAppDispatch();
   const [isFocused, setIsFocused] = useState(false);
 
   const initialFormOpen = event?.isOpen || (isDrafting && !isDragging);
@@ -52,6 +55,12 @@ export const SomedayEvent = ({
   useEffect(() => {
     setShouldOpenForm(event?.isOpen || (isDrafting && !isDragging));
   }, [event?.isOpen, isDrafting, isDragging]);
+
+  // useEffect(() => {
+  //   if (isDragging) {
+  //     dispatch(draftSlice.actions.startDragging({ event }));
+  //   }
+  // }, [dispatch, event, isDragging]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     switch (e.key) {

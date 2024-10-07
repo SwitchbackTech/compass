@@ -110,6 +110,7 @@ export const useDraftUtil = (
       setDraft(reduxDraft);
 
       if (activity === "dragging") {
+        console.log("start drag");
         setIsDragging(true);
         return;
       }
@@ -365,6 +366,7 @@ export const useDraftUtil = (
   );
 
   const stopDragging = () => {
+    console.log("stop drag");
     setIsDragging(false);
     setDragStatus(null);
   };
