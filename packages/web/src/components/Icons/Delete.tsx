@@ -8,5 +8,7 @@ interface Props {
 }
 
 export const DeleteIcon: React.FC<Props> = ({ onDelete, title }) => {
-  return <TrashIcon onClick={onDelete} role="button" name={title} size={27} />;
+  return (
+    <TrashIcon onClick={onDelete} role="button" aria-label={title} size={27} />
+  );
 };
