@@ -1,4 +1,4 @@
-import React from "react";
+import React, { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -34,8 +34,12 @@ describe("Event Form", () => {
   it("closes when clicking outside", async () => {
     render(<CalendarView />, { state: preloadedState });
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: CLIMB.title }));
-    await _clickHeading(user);
+
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: CLIMB.title }));
+      await _clickHeading(user);
+    });
+
     await waitFor(() => {
       expect(screen.queryByRole("form")).not.toBeInTheDocument();
     });
@@ -66,11 +70,15 @@ describe("Event Form", () => {
     it("dialog is not open by default", async () => {
       const user = userEvent.setup();
       const { container } = render(<CalendarView />, { state: preloadedState });
-      await user.click(
-        screen.getByRole("button", {
-          name: /climb/i,
-        })
-      );
+
+      await act(async () => {
+        await user.click(
+          screen.getByRole("button", {
+            name: /climb/i,
+          })
+        );
+      });
+
       expect(container.getElementsByClassName("startDatePicker")).toHaveLength(
         0
       );
