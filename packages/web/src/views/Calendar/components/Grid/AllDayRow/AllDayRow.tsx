@@ -1,4 +1,4 @@
-import React, { FC, MouseEvent, useCallback, useEffect } from "react";
+import React, { FC, MouseEvent, useEffect } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -16,7 +16,7 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import { isEventFormOpen } from "@web/common/utils";
 
 import { StyledAllDayColumns, StyledGridCol } from "../Columns/styled";
 import { StyledAllDayRow } from "./styled";
@@ -38,7 +38,6 @@ export const AllDayRow: FC<Props> = ({
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
-  const isDrafting = useAppSelector(selectIsDrafting);
 
   const { startOfView, weekDays } = weekProps.component;
 
@@ -70,13 +69,11 @@ export const AllDayRow: FC<Props> = ({
   };
 
   const onSectionMouseDown = (e: MouseEvent) => {
-    // if (isEventFormOpen()) {
-    if (isDrafting) {
+    if (isEventFormOpen()) {
       dispatch(draftSlice.actions.discard());
       return;
     }
 
-    console.log("not drafting, starting new allday draft");
     startAlldayDraft(e);
   };
 
