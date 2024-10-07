@@ -34,11 +34,7 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
 
   const isDraftingNew =
     isDrafting && !isDraftingExisting && !somedayIds.includes(draft?._id);
-  const _isDraftingRedux = isDraftingExisting || isDraftingNew;
-  // const shouldPreviewOnGrid =
-  // draft !== null && _isDraftingRedux && isOverGrid && !draft?.isOpen;
-  //TODO fix this
-  // const shouldPreviewOnGrid = draft !== null && isOverGrid;
+
   const shouldPreviewOnGrid = draft !== null && isOverGrid && !draft?.isOpen;
 
   return {

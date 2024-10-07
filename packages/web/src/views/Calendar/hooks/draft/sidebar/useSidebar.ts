@@ -35,11 +35,6 @@ export const useSidebar = (
   return {
     state: _state,
     util,
-    // util: {
-    // ...util,
-    // setDraft: state.setDraft,
-    // setIsDrafting: state.setIsDrafting,
-    // },
   };
 };
 
