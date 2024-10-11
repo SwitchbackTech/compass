@@ -2,6 +2,7 @@ import { createSelector } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
 import { RootState } from "@web/store";
 import { assignEventsToRow } from "@web/common/utils/grid.util";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export const selectAllDayEvents = createSelector(
   (state: RootState) => state.events.entities.value || {},
@@ -38,5 +39,14 @@ export const selectGridEvents = createSelector(
     );
 
     return weekEvents;
+  }
+);
+
+export const selectRowCount = createSelector(
+  selectAllDayEvents,
+  (allDayEvents: Schema_GridEvent[]) => {
+    const _rowVals = allDayEvents.map((e) => e.row);
+    const rowsCount = _rowVals.length === 0 ? 1 : Math.max(..._rowVals);
+    return rowsCount;
   }
 );
