@@ -14,8 +14,7 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getDefaultEvent } from "@web/common/utils/event.util";
-import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
 import { isEventFormOpen } from "@web/common/utils";
 
 import { StyledAllDayColumns, StyledGridCol } from "../Columns/styled";
@@ -40,10 +39,7 @@ export const AllDayRow: FC<Props> = ({
   const dispatch = useAppDispatch();
 
   const { startOfView, weekDays } = weekProps.component;
-
-  const allDayEvents = useAppSelector(selectAllDayEvents);
-  const _rowVals = allDayEvents.map((e: Schema_GridEvent) => e.row);
-  const rowsCount = _rowVals.length === 0 ? 1 : Math.max(..._rowVals);
+  const rowsCount = useAppSelector(selectRowCount);
 
   useEffect(() => {
     measurements.remeasure(ID_GRID_MAIN);
