@@ -40,7 +40,7 @@ export const useEventForm = (
     };
   }
 
-  const { x, y, reference, floating, strategy } = useFloating(options);
+  const { x, y, reference, floating, strategy, context } = useFloating(options);
 
   return {
     x,
@@ -48,6 +48,7 @@ export const useEventForm = (
     reference,
     floating,
     strategy,
+    context,
   };
 };
 

@@ -1,7 +1,7 @@
 import { Key } from "ts-key-enum";
 import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { DraggableProvided } from "@hello-pangea/dnd";
-import { FloatingPortal } from "@floating-ui/react";
+import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
@@ -42,7 +42,7 @@ export const SomedayEvent = ({
 }: Props) => {
   const formType =
     category === Categories_Event.SOMEDAY_WEEK ? "sidebarWeek" : "sidebarMonth";
-  const { y, reference, floating, strategy } = useEventForm(formType);
+  const { y, reference, floating, strategy, context } = useEventForm(formType);
 
   const [isFocused, setIsFocused] = useState(false);
 
@@ -104,25 +104,27 @@ export const SomedayEvent = ({
 
       <FloatingPortal>
         {shouldOpenForm && (
-          <StyledFloatContainer
-            ref={floating}
-            strategy={strategy}
-            top={y ?? 40}
-            left={SIDEBAR_OPEN_WIDTH}
-          >
-            <SomedayEventForm
-              event={event}
-              onClose={() => {
-                setShouldOpenForm(false);
-                onClose();
-              }}
-              onConvert={() =>
-                console.log("TODO: convert someday event to grid event")
-              }
-              onSubmit={onSubmit}
-              setEvent={setEvent}
-            />
-          </StyledFloatContainer>
+          <FloatingFocusManager context={context}>
+            <StyledFloatContainer
+              ref={floating}
+              strategy={strategy}
+              top={y ?? 40}
+              left={SIDEBAR_OPEN_WIDTH}
+            >
+              <SomedayEventForm
+                event={event}
+                onClose={() => {
+                  setShouldOpenForm(false);
+                  onClose();
+                }}
+                onConvert={() =>
+                  console.log("TODO: convert someday event to grid event")
+                }
+                onSubmit={onSubmit}
+                setEvent={setEvent}
+              />
+            </StyledFloatContainer>
+          </FloatingFocusManager>
         )}
       </FloatingPortal>
     </>
