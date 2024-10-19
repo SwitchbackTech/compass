@@ -1,21 +1,22 @@
 import React from "react";
-import { SuperTokensWrapper } from "supertokens-auth-react";
+import { ToastContainer } from "react-toastify";
+import { ThemeProvider } from "styled-components";
+import SuperTokens, { SuperTokensWrapper } from "supertokens-auth-react";
+import Session from "supertokens-auth-react/recipe/session";
 import { Provider } from "react-redux";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import Session from "supertokens-auth-react/recipe/session";
-import SuperTokens from "supertokens-auth-react";
 import { APP_NAME, PORT_DEFAULT_WEB } from "@core/constants/core.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { sagas } from "@web/store/sagas";
 import { GlobalStyle } from "@web/components/GlobalStyle";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-import { ToastContainer } from "react-toastify";
 
 import { RootRouter } from "./routers";
 import { store } from "./store";
+import { theme } from "./common/styles/theme";
 
 SuperTokens.init({
   appInfo: {
@@ -38,19 +39,21 @@ export const App = () => {
           <GoogleOAuthProvider clientId={ENV_WEB.CLIENT_ID}>
             <SuperTokensWrapper>
               <GlobalStyle />
-              <RootRouter />
-              <ToastContainer
-                position="bottom-left"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="dark"
-              />
+              <ThemeProvider theme={theme}>
+                <RootRouter />
+                <ToastContainer
+                  position="bottom-left"
+                  autoClose={5000}
+                  hideProgressBar={false}
+                  newestOnTop={false}
+                  closeOnClick
+                  rtl={false}
+                  pauseOnFocusLoss
+                  draggable
+                  pauseOnHover
+                  theme="dark"
+                />
+              </ThemeProvider>
             </SuperTokensWrapper>
           </GoogleOAuthProvider>
         </Provider>
