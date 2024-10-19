@@ -1,0 +1,79 @@
+import { DefaultTheme } from "styled-components";
+
+const blue500 = "hsl(210 100 63 / 12.94%)";
+const blue400 = "hsl(210 100 63 / 30.2%)";
+const blue300 = "hsl(195 78 56)";
+const blue200 = "hsl(202 100 67)";
+const blue100 = "hsl(210 100 73)";
+const orange500 = "hsl(25 100 63)";
+const orange400 = "hsl(20 84 68)";
+const orange300 = "hsl(34 100 66)";
+const orange200 = "hsl(40 75 61)";
+const orange100 = "hsl(35 70 68)";
+const red500 = "hsl(0 63 60)";
+const red400 = "hsl(357 81 69)";
+const red300 = "hsl(355 84 69)";
+const green500 = "hsl(105 61 62)";
+const green400 = "hsl(80 65 57)";
+const green300 = "hsl(160 62 74)";
+const purple500 = "hsl(269 18 43 / 40%)";
+const purple400 = "hsl(269 18 43)";
+const purple300 = "hsl(270 100 83)";
+const darkBlue500 = "hsl(220 29 6)";
+const darkBlue400 = "hsl(222 28 7)";
+const darkBlue300 = "hsl(218 27 8)";
+const darkBlue200 = "hsl(218 24 9)";
+const darkBlue100 = "hsl(223 27 10)";
+const gray900 = "hsl(0 0 0 / 50.2%)";
+const gray800 = "hsl(219 18 34 / 20%)";
+const gray700 = "hsl(219 18 34 25.1%)";
+const gray600 = "hsl(219 8 46 / 20%)";
+const gray500 = "hsl(219 8 46 / 20%)";
+const gray400 = "hsl(221 9 37)";
+const gray300 = "hsl(219 8 46 / 90.2%)";
+const gray200 = "hsl(208 13 71 / 54.9%)";
+const gray100 = "hsl(47 7 73)";
+const white200 = "hsl(0 0 98)";
+const white100 = "hsl(0 0 100)";
+
+export const darkBlueGradient = {
+  level1: darkBlue400,
+  level2: darkBlue400,
+  level3: darkBlue200,
+  level4: darkBlue300,
+  level5: darkBlue400,
+};
+
+export const theme: DefaultTheme = {
+  color: {
+    bg: {
+      primary: darkBlue400,
+    },
+    border: {
+      primary: gray800,
+      secondary: gray700,
+    },
+    fg: {
+      primary: darkBlue200,
+    },
+    panel: {
+      bg: gray700,
+      shadow: gray400,
+    },
+    status: {
+      success: green500,
+      error: red500,
+      warning: orange500,
+      info: blue200,
+    },
+    tag: {
+      one: blue300,
+      two: green500,
+      three: purple300,
+    },
+    text: {
+      primaryLight: white100,
+      primaryLightInactive: white200,
+    },
+  },
+};
