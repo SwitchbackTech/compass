@@ -1,10 +1,37 @@
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { Flex } from "@web/components/Flex";
 import { getColor } from "@core/util/color.utils";
 import { ColorNames } from "@core/types/color.types";
 
+import { darkBlueGradient } from "../../common/styles/theme";
+
+const bgAnimation = keyframes`
+  0% {
+    background-position-x: 0;
+  }
+  100% {
+    background-position-x: 10000px;
+  }
+`;
+
+export const StyledLoginContainer = styled.div`
+  background: linear-gradient(
+    to right,
+    ${darkBlueGradient.level1},
+    ${darkBlueGradient.level2},
+    ${darkBlueGradient.level3},
+    ${darkBlueGradient.level4},
+    ${darkBlueGradient.level5}
+  );
+  background-size: 10000px 100%;
+  animation: ${bgAnimation} 10s ease infinite;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
 export const StyledLogin = styled(Flex)`
-  background: ${getColor(ColorNames.BLUE_2)};
   bottom: 0;
   justify-content: center;
   left: 0;
@@ -16,32 +43,34 @@ export const StyledLogin = styled(Flex)`
 `;
 
 export const Card = styled.div`
-  background: #213c53;
-  border-radius: 8px;
+  box-shadow: 0 4px 8px ${({ theme }) => theme.color.panel.shadow};
+  background: ${({ theme }) => theme.color.fg.primary};
+  border-radius: 35px;
   width: 100%;
-  max-width: 500px;
-  padding: 2rem;
+  max-width: 577px;
+  padding: 2.5rem;
 `;
 
 export const CardHeader = styled.div`
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 6.5rem;
 `;
 
 export const Title = styled.h2`
   font-size: 2.5rem;
   font-weight: bold;
-  color: ${getColor(ColorNames.WHITE_5)};
+  color: ${({ theme }) => theme.color.text.primaryLight};
   margin-bottom: 1rem;
 `;
 
-export const Description = styled.p`
-  color: ${getColor(ColorNames.WHITE_4)};
+export const Subtitle = styled.p`
+  color: ${({ theme }) => theme.color.text.primaryLight};
   font-size: 1.25rem;
+  font-style: italic;
   margin-bottom: 2.25rem;
 `;
 
-export const Subtitle = styled.p`
+export const Description = styled.p`
   color: ${getColor(ColorNames.WHITE_5)};
   font-size: 1rem;
   margin-bottom: 1rem;
@@ -50,7 +79,6 @@ export const Subtitle = styled.p`
 
 export const SignInButtonWrapper = styled.div`
   display: flex;
-  background: #213c53;
   align-items: center;
   justify-content: center;
   width: 100%;
