@@ -54,7 +54,7 @@ export const theme: DefaultTheme = {
       secondary: gray700,
     },
     fg: {
-      primary: darkBlue200,
+      primary: gray100,
     },
     panel: {
       bg: gray700,
@@ -72,6 +72,7 @@ export const theme: DefaultTheme = {
       three: purple300,
     },
     text: {
+      primary: gray100,
       primaryLight: white100,
       primaryLightInactive: white200,
     },

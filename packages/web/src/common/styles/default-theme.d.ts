@@ -29,6 +29,7 @@ declare module "styled-components" {
         three: string;
       };
       text: {
+        primary: string;
         primaryLight: string;
         primaryLightInactive: string;
       };
