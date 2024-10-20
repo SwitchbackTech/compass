@@ -49,6 +49,11 @@ export const Card = styled.div`
   width: 100%;
   max-width: 577px;
   padding: 2.5rem;
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 8px 16px ${({ theme }) => theme.color.panel.shadow};
+  }
 `;
 
 export const CardHeader = styled.div`
