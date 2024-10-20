@@ -42,7 +42,7 @@ export const StyledSidebarList = styled.div`
 `;
 
 export const Styled = styled(Flex)<SidebarProps>`
-  background: ${getColor(ColorNames.GREY_3)};
+  background: ${({ theme }) => theme.color.panel.bg};
   flex-direction: ${FlexDirections.COLUMN};
   height: 100%;
   overflow: hidden;
@@ -99,8 +99,8 @@ export const StyledPriorityFilterItem = styled(Flex)`
 
 export const StyledSidebarOverflow = styled.div<SidebarProps>`
   position: absolute;
-  background: ${({ isToggled }) =>
-    isToggled ? getColor(ColorNames.GREY_3) : getColor(ColorNames.BLUE_2)};
+  background: ${({ isToggled, theme }) =>
+    isToggled ? theme.color.panel.bg : theme.color.bg.primary};
   width: ${({ isToggled }) => (isToggled ? 0 : "100%")};
   height: 100%;
   right: 0;
