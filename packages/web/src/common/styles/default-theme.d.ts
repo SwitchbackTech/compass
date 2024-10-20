@@ -19,6 +19,7 @@ declare module "styled-components" {
         scrollbar: string;
         scrollbarActive: string;
         shadow: string;
+        text: string;
       };
       status: {
         success: string;

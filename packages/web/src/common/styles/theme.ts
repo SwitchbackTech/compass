@@ -62,6 +62,7 @@ export const theme: DefaultTheme = {
       scrollbar: gray500,
       scrollbarActive: gray400,
       shadow: gray400,
+      text: white200,
     },
     status: {
       success: green500,
