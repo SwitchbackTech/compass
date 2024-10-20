@@ -59,6 +59,8 @@ export const theme: DefaultTheme = {
     },
     panel: {
       bg: gray600,
+      scrollbar: gray500,
+      scrollbarActive: gray400,
       shadow: gray400,
     },
     status: {

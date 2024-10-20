@@ -16,6 +16,8 @@ declare module "styled-components" {
       };
       panel: {
         bg: string;
+        scrollbar: string;
+        scrollbarActive: string;
         shadow: string;
       };
       status: {
