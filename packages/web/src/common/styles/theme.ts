@@ -58,7 +58,7 @@ export const theme: DefaultTheme = {
       primary: gray100,
     },
     panel: {
-      bg: gray700,
+      bg: gray600,
       shadow: gray400,
     },
     status: {
