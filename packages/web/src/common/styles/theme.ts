@@ -48,6 +48,7 @@ export const theme: DefaultTheme = {
   color: {
     bg: {
       primary: darkBlue400,
+      secondary: darkBlue200,
     },
     border: {
       primary: gray800,

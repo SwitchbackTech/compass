@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
-import Session from "supertokens-auth-react/recipe/session";
+import { useNavigate } from "react-router-dom";
+import Session, { signOut } from "supertokens-auth-react/recipe/session";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { signOut } from "supertokens-auth-react/recipe/session";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
-import { useNavigate } from "react-router-dom";
 
 import { StyledLogin } from "../Login/styled";
+import { StyledLogoutBtn } from "./styled";
 
 export const LogoutView = () => {
   const navigate = useNavigate();
@@ -47,7 +47,9 @@ export const LogoutView = () => {
       direction={FlexDirections.COLUMN}
     >
       {isLoggingOut && <AbsoluteOverflowLoader />}
-      <button onClick={() => void logout()}>Signout</button>
+      <StyledLogoutBtn role="button" onClick={() => void logout()}>
+        Signout
+      </StyledLogoutBtn>
     </StyledLogin>
   );
 };

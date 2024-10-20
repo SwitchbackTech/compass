@@ -14,7 +14,7 @@ export const StyledFeedbackBtnContainer = styled(Flex)`
   right: 8%;
 `;
 
-const Btn = styled.div`
+export const Btn = styled.div`
   align-items: center;
   border-radius: 2px;
   display: flex;
