@@ -44,7 +44,7 @@ export const StyledLogin = styled(Flex)`
 
 export const Card = styled.div`
   box-shadow: 0 4px 8px ${({ theme }) => theme.color.panel.shadow};
-  background: ${({ theme }) => theme.color.fg.primary};
+  background: ${({ theme }) => theme.color.bg.secondary};
   border-radius: 35px;
   width: 100%;
   max-width: 577px;
