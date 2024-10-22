@@ -72,6 +72,7 @@ export const theme: DefaultTheme = {
     },
     border: {
       primary: gray800,
+      primaryDark: gray900,
       secondary: gray700,
     },
     fg: {
@@ -99,6 +100,7 @@ export const theme: DefaultTheme = {
       primary: gray100,
       primaryLight: white100,
       primaryLightInactive: white200,
+      secondary: darkBlue400,
     },
   },
 };

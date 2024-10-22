@@ -9,6 +9,7 @@ declare module "styled-components" {
       };
       border: {
         primary: string;
+        primaryDark: string;
         secondary: string;
       };
       fg: {
@@ -36,6 +37,7 @@ declare module "styled-components" {
         primary: string;
         primaryLight: string;
         primaryLightInactive: string;
+        secondary: string;
       };
     };
   }
