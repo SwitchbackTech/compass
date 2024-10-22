@@ -1,9 +1,10 @@
 import styled from "styled-components";
 import { Priority } from "@core/constants/core.constants";
-import { getColor, hoverColorsByPriority } from "@core/util/color.utils";
+import { getColor } from "@core/util/color.utils";
 import { colorNameByPriority } from "@core/constants/colors";
 import { Text } from "@web/components/Text";
 import { ZIndex } from "@web/common/constants/web.constants";
+import { hoverColorsByPriority } from "@web/common/styles/theme";
 
 interface StyledEventProps {
   allDay: boolean;

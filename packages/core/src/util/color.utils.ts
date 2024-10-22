@@ -1,5 +1,4 @@
-import { Priorities } from "@core/constants/core.constants";
-import { ColorHex, colors, invertedColors } from "@core/constants/colors";
+import { BASE_COLORS, ColorHex, OLDcolors } from "@core/constants/colors";
 import { ColorNames, InvertedColorNames } from "@core/types/color.types";
 
 export const getAlphaColor = (colorName: ColorNames, opacity: number) => {
@@ -10,17 +9,27 @@ export const getAlphaColor = (colorName: ColorNames, opacity: number) => {
 export const getBrighterColor = (colorName: ColorNames) => {
   // assumes that the higher the numbers are, the brighter the colors
   //@ts-ignore
-  return colors[getNeighbourKey(colorName, colors, 1)] as string;
+  return OLDcolors[getNeighbourKey(colorName, OLDcolors, 1)] as string;
 };
 
 export const getColor = (colorName: ColorNames) =>
-  colors[colorName] as ColorHex;
+  OLDcolors[colorName] as ColorHex;
 
 export const getDarkerColor = (colorName: ColorNames) => {
-  return colors[getNeighbourKey(colorName, colors, -1) as ColorNames];
+  return OLDcolors[getNeighbourKey(colorName, OLDcolors, -1) as ColorNames];
 };
 
 export const getInvertedColor = (colorName: InvertedColorNames) => {
+  const invertedColors = {
+    // priority colors
+    [ColorNames.GREY_4]: BASE_COLORS.ONYX_GREY,
+    [ColorNames.BLUE_7]: BASE_COLORS.ONYX_GREY,
+    [ColorNames.BLUE_5]: BASE_COLORS.DEEP_BLUE,
+    [ColorNames.TEAL_2]: BASE_COLORS.DEEP_BLUE,
+    // other
+    [ColorNames.WHITE_1]: OLDcolors.white_3,
+    [ColorNames.YELLOW_2]: OLDcolors.yellow_3,
+  };
   //@ts-ignore
   return invertedColors[colorName] as string;
 };
@@ -42,11 +51,4 @@ export const getNeighbourKey = (key = "", obj = {}, diff = 1) => {
   const neighbourKey = `${propName}_${neighbourIndex}`;
 
   return Object.keys(obj).find((_key) => _key === neighbourKey) || key;
-};
-
-export const hoverColorsByPriority = {
-  [Priorities.UNASSIGNED]: "#F0FFFF",
-  [Priorities.WORK]: "#80B8E1",
-  [Priorities.RELATIONS]: "#86D2ED",
-  [Priorities.SELF]: "#8EB1FF",
 };

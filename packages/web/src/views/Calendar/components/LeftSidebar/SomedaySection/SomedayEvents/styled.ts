@@ -1,13 +1,10 @@
 import styled from "styled-components";
+import { DroppableProvided } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
-import {
-  getColor,
-  getInvertedColor,
-  hoverColorsByPriority,
-} from "@core/util/color.utils";
+import { getColor, getInvertedColor } from "@core/util/color.utils";
 import { BASE_COLORS, colorNameByPriority } from "@core/constants/colors";
 import { InvertedColorNames } from "@core/types/color.types";
-import { DroppableProvided } from "@hello-pangea/dnd";
+import { hoverColorsByPriority } from "@web/common/styles/theme";
 
 export interface Props extends DroppableProvided {
   priority: Priorities;

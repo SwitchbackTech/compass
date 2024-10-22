@@ -1,7 +1,7 @@
 import { Priorities } from "@core/constants/core.constants";
 import { Colors, ColorNames } from "@core/types/color.types";
 
-export type ColorHex = keyof typeof colors;
+export type ColorHex = keyof typeof OLDcolors;
 
 export const BASE_COLORS = {
   DEEP_BLUE: "#1C3142",
@@ -10,7 +10,7 @@ export const BASE_COLORS = {
   LIGHT_GREY: "#8293A1",
 };
 
-export const colors: Colors = {
+export const OLDcolors: Colors = {
   [ColorNames.BLUE_1]: "#0E1821",
   [ColorNames.BLUE_2]: BASE_COLORS.DEEP_BLUE,
   [ColorNames.BLUE_3]: "#1E2A4B",
@@ -52,18 +52,3 @@ export const colorNameByPriority = {
   [Priorities.SELF]: ColorNames.BLUE_5,
   [Priorities.RELATIONS]: ColorNames.TEAL_2,
 };
-
-export const GRID_LINE_OPACITY_PERCENT = 48;
-
-export const invertedColors = {
-  // priority colors
-  [ColorNames.GREY_4]: BASE_COLORS.ONYX_GREY,
-  [ColorNames.BLUE_7]: BASE_COLORS.ONYX_GREY,
-  [ColorNames.BLUE_5]: BASE_COLORS.DEEP_BLUE,
-  [ColorNames.TEAL_2]: BASE_COLORS.DEEP_BLUE,
-  // other
-  [ColorNames.WHITE_1]: colors.white_3,
-  [ColorNames.YELLOW_2]: colors.yellow_3,
-};
-
-export const linearGradient = `linear-gradient(90deg, ${colors.teal_3}, #4764CA)`;

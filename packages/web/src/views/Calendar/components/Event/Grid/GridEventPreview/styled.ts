@@ -2,13 +2,11 @@ import styled from "styled-components";
 import type { XYCoord } from "react-dnd";
 import type { CSSProperties } from "react";
 import { Priority } from "@core/constants/core.constants";
-import {
-  getInvertedColor,
-  hoverColorsByPriority,
-} from "@core/util/color.utils";
+import { getInvertedColor } from "@core/util/color.utils";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { colorNameByPriority } from "@core/constants/colors";
 import { InvertedColorNames } from "@core/types/color.types";
+import { hoverColorsByPriority } from "@web/common/styles/theme";
 
 import { snapToGrid } from "./snap.grid";
 

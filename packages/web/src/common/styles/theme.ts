@@ -1,3 +1,4 @@
+import { Priorities } from "@core/constants/core.constants";
 import { DefaultTheme } from "styled-components";
 
 const blue500 = "hsl(210 100 63 / 12.94%)";
@@ -33,6 +34,7 @@ const gray400 = "hsl(221 9 37)";
 const gray300 = "hsl(219 8 46 / 90.2%)";
 const gray200 = "hsl(208 13 71 / 54.9%)";
 const gray100 = "hsl(47 7 73)";
+const white300 = "hsl(180 100% 97%)";
 const white200 = "hsl(0 0 98)";
 const white100 = "hsl(0 0 100)";
 
@@ -43,6 +45,24 @@ export const darkBlueGradient = {
   level4: darkBlue300,
   level5: darkBlue400,
 };
+
+export const hoverColorsByPriority = {
+  [Priorities.UNASSIGNED]: white300,
+  [Priorities.WORK]: green400,
+  [Priorities.RELATIONS]: orange300,
+  [Priorities.SELF]: blue300,
+};
+
+export const colorByPriority = {
+  [Priorities.UNASSIGNED]: gray700,
+  [Priorities.WORK]: green500,
+  [Priorities.RELATIONS]: orange500,
+  [Priorities.SELF]: blue500,
+};
+
+export const GRID_LINE_OPACITY_PERCENT = 48;
+
+export const linearGradient = `linear-gradient(90deg, ${blue100}, ${blue400})`;
 
 export const theme: DefaultTheme = {
   color: {
