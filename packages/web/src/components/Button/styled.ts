@@ -5,7 +5,6 @@ import {
   getColor,
   getInvertedColor,
 } from "@core/util/color.utils";
-import { BASE_COLORS } from "@core/constants/colors";
 import { Flex } from "@web/components/Flex";
 
 export const StyledFeedbackBtnContainer = styled(Flex)`
@@ -33,8 +32,8 @@ export const PalletteBtn = styled(Btn)<PalletteProps>`
   color: ${({ color }) => getInvertedColor(color)};
   min-width: 158px;
   padding: 0 8px;
-  border: ${({ border, bordered }) =>
-    border || (bordered && `2px solid ${BASE_COLORS.DEEP_BLUE}`)};
+  border: ${({ border, bordered, theme }) =>
+    border || (bordered && `2px solid ${theme.color.border.primary}`)};
 
   &:focus {
     border-width: ${({ bordered }) => (bordered ? 2 : 1)}px;
@@ -59,7 +58,7 @@ export const StyledSaveBtn = styled(PalletteBtn)<CustomProps>`
   min-width: ${({ minWidth }) => minWidth}px;
 
   &:focus {
-    border: 2px solid ${BASE_COLORS.DEEP_BLUE};
+    border: 2px solid ${({ theme }) => theme.color.border.primary};
   }
   &:hover {
     filter: brightness(120%);
