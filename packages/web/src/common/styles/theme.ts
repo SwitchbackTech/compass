@@ -103,4 +103,10 @@ export const theme: DefaultTheme = {
       secondary: darkBlue400,
     },
   },
+  text: {
+    default: "0.8125rem",
+  },
+  transition: {
+    default: "0.2s",
+  },
 };

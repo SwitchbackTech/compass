@@ -40,5 +40,11 @@ declare module "styled-components" {
         secondary: string;
       };
     };
+    text: {
+      default: string;
+    };
+    transition: {
+      default: string;
+    };
   }
 }
