@@ -13,10 +13,11 @@ import {
   SignInButtonWrapper,
   Card,
   CardHeader,
-  Description,
-  StyledLogin,
   Subtitle,
+  StyledLogin,
+  Description,
   Title,
+  StyledLoginContainer,
 } from "./styled";
 
 export const LoginView = () => {
@@ -87,30 +88,32 @@ export const LoginView = () => {
       {isAuthenticated ? (
         <Navigate to={ROOT_ROUTES.ROOT} />
       ) : (
-        <StyledLogin
-          alignItems={AlignItems.CENTER}
-          direction={FlexDirections.COLUMN}
-        >
-          {isAuthenticating && <AbsoluteOverflowLoader />}
+        <StyledLoginContainer>
+          <StyledLogin
+            alignItems={AlignItems.CENTER}
+            direction={FlexDirections.COLUMN}
+          >
+            {isAuthenticating && <AbsoluteOverflowLoader />}
 
-          <Card>
-            <CardHeader>
-              <Title>Welcome to Compass</Title>
-              <Description>The weekly planner for minimalists</Description>
-            </CardHeader>
-            <Subtitle>You're almost ready to start planning!</Subtitle>
-            <Subtitle>
-              Now let's import your events from Google Calendar
-            </Subtitle>
-            <SignInButtonWrapper>
-              <GoogleButton
-                aria-label="Sign in with Google"
-                type="light"
-                onClick={() => login()}
-              />
-            </SignInButtonWrapper>
-          </Card>
-        </StyledLogin>
+            <Card>
+              <CardHeader>
+                <Title>Welcome to Compass</Title>
+                <Subtitle>The weekly planner for minimalists</Subtitle>
+              </CardHeader>
+              <Description>You're almost ready to start planning!</Description>
+              <Description>
+                Now let's import your events from Google Calendar
+              </Description>
+              <SignInButtonWrapper>
+                <GoogleButton
+                  aria-label="Sign in with Google"
+                  type="light"
+                  onClick={() => login()}
+                />
+              </SignInButtonWrapper>
+            </Card>
+          </StyledLogin>
+        </StyledLoginContainer>
       )}
     </>
   );

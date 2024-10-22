@@ -2,8 +2,6 @@ import React, { MouseEvent, useRef } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
-import { colorNameByPriority } from "@core/constants/colors";
-import { getColor } from "@core/util/color.utils";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { DeleteIcon } from "@web/components/Icons/Delete";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
@@ -17,6 +15,7 @@ import {
   StyledTitleField,
 } from "@web/views/Forms/EventForm/styled";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
+import { colorByPriority } from "@web/common/styles/theme";
 
 import { RepeatSection } from "../EventForm/RepeatSection";
 
@@ -31,7 +30,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const dispatch = useAppDispatch();
 
   const { priority, title } = event || {};
-  const bgColor = getColor(colorNameByPriority[priority]);
+  const bgColor = colorByPriority[priority];
 
   const origRecurrence = useRef(event?.recurrence).current;
 

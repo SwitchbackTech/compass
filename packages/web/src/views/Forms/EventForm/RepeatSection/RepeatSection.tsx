@@ -1,5 +1,4 @@
 import React, { FC, useState } from "react";
-import { ColorHex } from "@core/constants/colors";
 import { RRULE } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 
@@ -8,7 +7,7 @@ import { RepeatDialog } from "./RepeatDialog";
 import { SetEventFormField } from "../types";
 
 interface Props {
-  bgColor: ColorHex;
+  bgColor: string;
   onSetEventField: SetEventFormField;
   recurrence: Schema_Event["recurrence"];
 }
@@ -22,7 +21,6 @@ export const RepeatSection: FC<Props> = ({
 
   const toggleRecurrence = () => {
     if (isRepeat) {
-      console.log("setting to null ...");
       onSetEventField("recurrence", null);
       setIsRepeat(false);
     } else {

@@ -1,12 +1,12 @@
 import styled from "styled-components";
-import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/types/color.types";
 import { Flex } from "@web/components/Flex";
+import { ZIndex } from "@web/common/constants/web.constants";
+import { theme } from "@web/common/styles/theme";
 
 export const modalStyles = {
   content: {
-    background: getColor(ColorNames.WHITE_1),
-    border: `1px solid ${getColor(ColorNames.GREY_3)}`,
+    background: theme.color.fg.primary,
+    boxShadow: `0 4px 8px ${theme.color.panel.shadow}`,
     top: "50%",
     left: "50%",
     right: "auto",
@@ -14,24 +14,18 @@ export const modalStyles = {
     marginRight: "-50%",
     transform: "translate(-50%, -50%)",
     width: "59%",
-    zIndex: 1000,
+    zIndex: ZIndex.MAX,
   },
 };
 
 export const StyledCaption = styled.div`
-  color: #545050;
+  color: transparent;
   font-size: 0.8rem;
   margin-left: 70px;
   padding-bottom: 30px;
 `;
 
-export const StyledDedicationModal = styled.div`
-  background-color: ${getColor(ColorNames.WHITE_1)};
-
-  &.ReactModal__Content--after-open {
-    background-color: pink;
-  }
-`;
+export const StyledDedicationModal = styled.div``;
 
 export const StyledDedicationText = styled.p`
   font-size: 1rem;
@@ -45,8 +39,7 @@ export const StyledDerekQuoteContainer = styled(Flex)`
 
 export const StyledDerekPic = styled.img`
   border-radius: 50%;
-  border: 4px solid #fff;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 10px ${({ theme }) => theme.color.panel.shadow};
   max-width: 100%;
 `;
 

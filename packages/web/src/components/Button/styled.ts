@@ -5,7 +5,6 @@ import {
   getColor,
   getInvertedColor,
 } from "@core/util/color.utils";
-import { BASE_COLORS } from "@core/constants/colors";
 import { Flex } from "@web/components/Flex";
 
 export const StyledFeedbackBtnContainer = styled(Flex)`
@@ -14,7 +13,7 @@ export const StyledFeedbackBtnContainer = styled(Flex)`
   right: 8%;
 `;
 
-const Btn = styled.div`
+export const Btn = styled.div`
   align-items: center;
   border-radius: 2px;
   display: flex;
@@ -33,12 +32,8 @@ export const PalletteBtn = styled(Btn)<PalletteProps>`
   color: ${({ color }) => getInvertedColor(color)};
   min-width: 158px;
   padding: 0 8px;
-  border: ${({ border, bordered }) =>
-    border || (bordered && `2px solid ${BASE_COLORS.DEEP_BLUE}`)};
-
-  &:focus {
-    border-width: ${({ bordered }) => (bordered ? 2 : 1)}px;
-  }
+  border: ${({ border, bordered, theme }) =>
+    border || (bordered && `1px solid ${theme.color.border.primaryDark}`)};
 
   &:hover {
     background: ${({ color }) => getInvertedColor(color)};
@@ -59,7 +54,7 @@ export const StyledSaveBtn = styled(PalletteBtn)<CustomProps>`
   min-width: ${({ minWidth }) => minWidth}px;
 
   &:focus {
-    border: 2px solid ${BASE_COLORS.DEEP_BLUE};
+    border: 1px solid ${({ theme }) => theme.color.border.primaryDark};
   }
   &:hover {
     filter: brightness(120%);
