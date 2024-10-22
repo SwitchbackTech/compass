@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { BASE_COLORS } from "@core/constants/colors";
 import { getColor } from "@core/util/color.utils";
 import { ColorNames } from "@core/types/color.types";
 import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
@@ -50,7 +49,7 @@ export const StyledTimePicker = styled.div<Props>`
     }
 
     &__single-value {
-      color: ${BASE_COLORS.DEEP_BLUE};
+      color: ${({ theme }) => theme.color.text.secondary};
     }
 
     &__menu {
