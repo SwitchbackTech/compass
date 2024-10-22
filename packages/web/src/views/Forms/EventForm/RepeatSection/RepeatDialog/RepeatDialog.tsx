@@ -1,6 +1,5 @@
 import React, { FC } from "react";
 import Select from "react-select";
-import { ColorHex } from "@core/constants/colors";
 import { Schema_Event } from "@core/types/event.types";
 import { Recurrence_Selection } from "@web/common/types/web.event.types";
 import {
@@ -16,7 +15,7 @@ import {
 } from "../styled";
 
 interface Props {
-  bgColor: ColorHex;
+  bgColor: string;
   recurrence: Schema_Event["recurrence"];
   onChangeRecurrence: (rule: string[] | null) => void;
   setIsRepeat: React.Dispatch<React.SetStateAction<boolean>>;
@@ -68,10 +67,11 @@ export const RepeatDialog: FC<Props> = ({
             onChangeRecurrence(rrule);
           }}
           styles={{
+            //TODO start here
             control: (baseStyles, state) => ({
               ...baseStyles,
               backgroundColor: bgColor,
-              borderColor: state.isFocused ? "grey" : "lightgrey",
+              borderColor: state.isFocused ? "pink" : "purple",
               fontSize,
               minHeight: "30px",
               height: "30px",
