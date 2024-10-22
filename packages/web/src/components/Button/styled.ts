@@ -33,11 +33,7 @@ export const PalletteBtn = styled(Btn)<PalletteProps>`
   min-width: 158px;
   padding: 0 8px;
   border: ${({ border, bordered, theme }) =>
-    border || (bordered && `2px solid ${theme.color.border.primary}`)};
-
-  &:focus {
-    border-width: ${({ bordered }) => (bordered ? 2 : 1)}px;
-  }
+    border || (bordered && `1px solid ${theme.color.border.primaryDark}`)};
 
   &:hover {
     background: ${({ color }) => getInvertedColor(color)};
@@ -58,7 +54,7 @@ export const StyledSaveBtn = styled(PalletteBtn)<CustomProps>`
   min-width: ${({ minWidth }) => minWidth}px;
 
   &:focus {
-    border: 2px solid ${({ theme }) => theme.color.border.primary};
+    border: 1px solid ${({ theme }) => theme.color.border.primaryDark};
   }
   &:hover {
     filter: brightness(120%);

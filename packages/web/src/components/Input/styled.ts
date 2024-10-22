@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { BASE_COLORS } from "@core/constants/colors";
 import { InputProps, inputBaseStyles } from "@web/common/styles/components";
 
 export enum Scale {
@@ -26,7 +25,7 @@ const fontSizeByScale = {
 
 export const StyledInput = styled.input<Props>`
   border: none;
-  color: ${BASE_COLORS.DEEP_BLUE};
+  color: ${({ theme }) => theme.color.text.secondary};
   height: ${({ scale = Scale.MEDIUM }) => heightByScale[scale]}px;
   font-size: ${({ scale = Scale.MEDIUM }) => fontSizeByScale[scale]}px;
   outline: none;
