@@ -1,15 +1,18 @@
+import tinycolor from "tinycolor2";
 import { BASE_COLORS, ColorHex, OLDcolors } from "@core/constants/colors";
 import { ColorNames, InvertedColorNames } from "@core/types/color.types";
+
+export const brighten = (color: string) => {
+  return tinycolor(color).brighten().toString();
+};
+
+export const darken = (color: string) => {
+  return tinycolor(color).darken().toString();
+};
 
 export const getAlphaColor = (colorName: ColorNames, opacity: number) => {
   const _opacity = Math.round(Math.min(Math.max(opacity || 1, 0), 1) * 255);
   return getColor(colorName) + _opacity.toString(16).toUpperCase();
-};
-
-export const getBrighterColor = (colorName: ColorNames) => {
-  // assumes that the higher the numbers are, the brighter the colors
-  //@ts-ignore
-  return OLDcolors[getNeighbourKey(colorName, OLDcolors, 1)] as string;
 };
 
 export const getColor = (colorName: ColorNames) =>

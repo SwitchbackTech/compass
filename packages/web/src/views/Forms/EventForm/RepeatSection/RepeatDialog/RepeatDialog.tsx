@@ -1,7 +1,7 @@
 import React, { FC } from "react";
 import Select, { StylesConfig } from "react-select";
-import tinycolor from "tinycolor2";
 import { Schema_Event } from "@core/types/event.types";
+import { brighten, darken } from "@core/util/color.utils";
 import { Recurrence_Selection } from "@web/common/types/web.event.types";
 import {
   getRecurrenceOption,
@@ -45,8 +45,8 @@ export const RepeatDialog: FC<Props> = ({
   };
 
   const fontSize = theme.text.default;
-  const bgBright = tinycolor(bgColor).brighten().toString();
-  const bgDark = tinycolor(bgColor).darken().toString();
+  const bgBright = brighten(bgColor);
+  const bgDark = darken(bgColor);
 
   const selectStyles: StylesConfig = {
     control: (baseStyles) => ({

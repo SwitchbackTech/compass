@@ -1,10 +1,6 @@
 import styled from "styled-components";
 import { ColorNames } from "@core/types/color.types";
-import {
-  getBrighterColor,
-  getColor,
-  getInvertedColor,
-} from "@core/util/color.utils";
+import { brighten, getColor, getInvertedColor } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 
 export const StyledFeedbackBtnContainer = styled(Flex)`
@@ -37,7 +33,7 @@ export const PalletteBtn = styled(Btn)<PalletteProps>`
 
   &:hover {
     background: ${({ color }) => getInvertedColor(color)};
-    color: ${({ color }) => getBrighterColor(color)};
+    color: ${({ color }) => brighten(color)};
     transition: background-color 0.5s;
     transition: color 0.55s;
   }
