@@ -1,8 +1,8 @@
 import React from "react";
-import { colorNameByPriority } from "@core/constants/colors";
 import { Priority } from "@core/constants/core.constants";
-import { getBrighterColor } from "@core/util/color.utils";
+import { brighten } from "@core/util/color.utils";
 import { SaveBtn } from "@web/components/Button";
+import { colorByPriority } from "@web/common/styles/theme";
 
 import { StyledSubmitRow } from "../styled";
 
@@ -15,8 +15,8 @@ export const SaveSection: React.FC<Props> = ({
   onSubmit: _onSubmit,
   priority,
 }) => {
-  const colorName = colorNameByPriority[priority];
-  const color = getBrighterColor(colorName);
+  const origColor = colorByPriority[priority];
+  const color = brighten(origColor);
 
   return (
     <StyledSubmitRow>
