@@ -29,8 +29,6 @@ export const RepeatDialog: FC<Props> = ({
 }) => {
   const options = [
     { value: Recurrence_Selection.WEEK, label: "week" },
-    { value: Recurrence_Selection.WEEKS_2, label: "2 weeks" },
-    { value: Recurrence_Selection.WEEKS_3, label: "3 weeks" },
     { value: Recurrence_Selection.MONTH, label: "month" },
   ];
 
@@ -56,14 +54,16 @@ export const RepeatDialog: FC<Props> = ({
       <div>
         <Select
           defaultValue={defaultValue}
-          isOptionDisabled={(opt) =>
+          isOptionDisabled={(selection) =>
             ![Recurrence_Selection.WEEK, Recurrence_Selection.MONTH].includes(
-              opt.value
+              selection.value as Recurrence_Selection
             )
           }
           options={options}
           onChange={(selection) => {
-            const rrule = getRecurrenceRule(selection.value);
+            const rrule = getRecurrenceRule(
+              selection.value as Recurrence_Selection
+            );
             onChangeRecurrence(rrule);
           }}
           styles={{

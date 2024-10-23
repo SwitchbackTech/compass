@@ -148,12 +148,6 @@ export const getRecurrenceRule = (selection: Recurrence_Selection) => {
     case Recurrence_Selection.WEEK:
       return [RRULE.WEEK];
       break;
-    case Recurrence_Selection.WEEKS_2:
-      return [RRULE.WEEKS_2];
-      break;
-    case Recurrence_Selection.WEEKS_3:
-      return [RRULE.WEEKS_3];
-      break;
     case Recurrence_Selection.MONTH:
       return [RRULE.MONTH];
       break;

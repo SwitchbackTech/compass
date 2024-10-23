@@ -4,8 +4,6 @@ import { SelectOption } from "@web/common/types/component.types";
 export enum Recurrence_Selection {
   NONE = "none",
   WEEK = "week",
-  WEEKS_2 = "2 weeks",
-  WEEKS_3 = "3 weeks",
   MONTH = "month",
 }
 export interface Schema_GridEvent extends Schema_Event {
