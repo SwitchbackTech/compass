@@ -22,6 +22,9 @@ declare module "styled-components" {
         shadow: string;
         text: string;
       };
+      shadow: {
+        default: string;
+      };
       status: {
         success: string;
         error: string;

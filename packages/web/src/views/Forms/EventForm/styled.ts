@@ -1,8 +1,5 @@
 import styled from "styled-components";
-import { Priorities } from "@core/constants/core.constants";
-import { colorNameByPriority } from "@core/constants/colors";
-import { ColorNames, InvertedColorNames } from "@core/types/color.types";
-import { getColor, getInvertedColor } from "@core/util/color.utils";
+import { Priorities, Priority } from "@core/constants/core.constants";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import {
   ANIMATION_TIME_3_MS,
@@ -11,6 +8,7 @@ import {
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
 import { Button } from "@web/components/Button";
+import { hoverColorsByPriority } from "@web/common/styles/theme";
 
 import { StyledFormProps } from "./types";
 
@@ -23,17 +21,9 @@ interface SomedayFormProps extends StyledFormProps {
 
 export const StyledEventForm = styled.form<SomedayFormProps>`
   background: ${({ priority }) =>
-    getColor(
-      colorNameByPriority[priority || Priorities.UNASSIGNED] as ColorNames
-    )};
+    hoverColorsByPriority[(priority as Priority) || Priorities.UNASSIGNED]};
   border-radius: 4px;
-  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.25);
-  color: ${({ priority }) =>
-    getInvertedColor(
-      colorNameByPriority[
-        priority || Priorities.UNASSIGNED
-      ] as InvertedColorNames
-    )};
+  box-shadow: 0px 5px 5px ${({ theme }) => theme.color.shadow.default};
   font-size: 20px;
   padding: 18px 20px;
   transition: ${ANIMATION_TIME_3_MS};

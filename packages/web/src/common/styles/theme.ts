@@ -37,6 +37,7 @@ const gray100 = "hsl(47 7 73)";
 const white300 = "hsl(180 100% 97%)";
 const white200 = "hsl(0 0 98)";
 const white100 = "hsl(0 0 100)";
+const black300 = "hsla(0 0 0 / 25%)";
 
 export const darkBlueGradient = {
   level1: darkBlue400,
@@ -84,6 +85,9 @@ export const theme: DefaultTheme = {
       scrollbarActive: gray400,
       shadow: gray400,
       text: white200,
+    },
+    shadow: {
+      default: black300,
     },
     status: {
       success: green500,
