@@ -49,7 +49,7 @@ export const StyledTimePicker = styled.div<Props>`
     }
 
     &__single-value {
-      color: ${({ theme }) => theme.color.text.secondary};
+      color: ${({ theme }) => theme.color.text.dark};
     }
 
     &__menu {

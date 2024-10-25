@@ -37,10 +37,10 @@ declare module "styled-components" {
         three: string;
       };
       text: {
-        primary: string;
-        primaryLight: string;
-        primaryLightInactive: string;
-        secondary: string;
+        light: string;
+        lighter: string;
+        lightInactive: string;
+        dark: string;
       };
     };
     text: {

@@ -3,7 +3,7 @@ import { Flex } from "@web/components/Flex";
 
 export const StyledTodayButton = styled(Flex)`
   align-items: center;
-  color: ${({ theme }) => theme.color.text.primary};
+  color: ${({ theme }) => theme.color.text.light};
   cursor: pointer;
   display: flex;
   font-size: 17px;

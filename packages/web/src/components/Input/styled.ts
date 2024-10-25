@@ -25,7 +25,7 @@ const fontSizeByScale = {
 
 export const StyledInput = styled.input<Props>`
   border: none;
-  color: ${({ theme }) => theme.color.text.secondary};
+  color: ${({ theme }) => theme.color.text.dark};
   height: ${({ scale = Scale.MEDIUM }) => heightByScale[scale]}px;
   font-size: ${({ scale = Scale.MEDIUM }) => fontSizeByScale[scale]}px;
   outline: none;

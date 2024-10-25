@@ -101,10 +101,10 @@ export const theme: DefaultTheme = {
       three: purple300,
     },
     text: {
-      primary: gray100,
-      primaryLight: white100,
-      primaryLightInactive: white200,
-      secondary: darkBlue400,
+      light: gray100,
+      lighter: white100,
+      lightInactive: white200,
+      dark: darkBlue400,
     },
   },
   text: {

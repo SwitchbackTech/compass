@@ -64,12 +64,12 @@ export const CardHeader = styled.div`
 export const Title = styled.h2`
   font-size: 2.5rem;
   font-weight: bold;
-  color: ${({ theme }) => theme.color.text.primaryLight};
+  color: ${({ theme }) => theme.color.text.lighter};
   margin-bottom: 1rem;
 `;
 
 export const Subtitle = styled.p`
-  color: ${({ theme }) => theme.color.text.primaryLight};
+  color: ${({ theme }) => theme.color.text.lighter};
   font-size: 1.25rem;
   font-style: italic;
   margin-bottom: 2.25rem;

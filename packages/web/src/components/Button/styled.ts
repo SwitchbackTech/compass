@@ -26,7 +26,7 @@ interface PalletteProps {
 
 export const PriorityButton = styled(Btn)<PalletteProps>`
   background: color;
-  color: ${({ theme }) => theme.color.text.secondary};
+  color: ${({ theme }) => theme.color.text.dark};
   min-width: 158px;
   padding: 0 8px;
   border: ${({ border, bordered, theme }) =>
@@ -48,8 +48,8 @@ export const StyledSaveBtn = styled(PriorityButton)<CustomProps>`
   background: ${({ priority }) => darken(colorByPriority[priority])};
   color: ${({ priority, theme }) =>
     priority === Priorities.UNASSIGNED
-      ? theme.color.text.primary
-      : theme.color.text.secondary};
+      ? theme.color.text.light
+      : theme.color.text.dark};
   min-width: ${({ minWidth }) => minWidth}px;
 
   &:focus {
@@ -58,7 +58,7 @@ export const StyledSaveBtn = styled(PriorityButton)<CustomProps>`
   &:hover {
     color: ${({ priority, theme }) =>
       priority === Priorities.UNASSIGNED
-        ? theme.color.text.primary
+        ? theme.color.text.light
         : brighten(colorByPriority[priority])};
   }
 `;

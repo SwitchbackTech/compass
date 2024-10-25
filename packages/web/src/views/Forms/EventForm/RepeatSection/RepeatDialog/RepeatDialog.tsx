@@ -75,8 +75,8 @@ export const RepeatDialog: FC<Props> = ({
           ? bgDark
           : undefined,
         color: isDisabled
-          ? theme.color.text.primaryLightInactive
-          : theme.color.text.secondary,
+          ? theme.color.text.lightInactive
+          : theme.color.text.dark,
         cursor: isDisabled ? "not-allowed" : "default",
 
         ":active": {
