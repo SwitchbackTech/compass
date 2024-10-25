@@ -1,10 +1,4 @@
-import {
-  PalletteBtn,
-  StyledSaveBtn,
-  StyledFeedbackBtnContainer,
-} from "./styled";
-
-export const Button = PalletteBtn;
+import { StyledSaveBtn, StyledFeedbackBtnContainer } from "./styled";
 
 export const SaveBtn = StyledSaveBtn;
 

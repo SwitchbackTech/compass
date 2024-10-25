@@ -1,7 +1,8 @@
 import styled from "styled-components";
-import { ColorNames } from "@core/types/color.types";
-import { brighten, getColor, getInvertedColor } from "@core/util/color.utils";
+import { brighten, darken } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
+import { Priorities, Priority } from "@core/constants/core.constants";
+import { colorByPriority } from "@web/common/styles/theme";
 
 export const StyledFeedbackBtnContainer = styled(Flex)`
   position: absolute;
@@ -18,41 +19,46 @@ export const Btn = styled.div`
 `;
 
 interface PalletteProps {
-  color?: ColorNames | string;
+  color?: string;
   bordered?: boolean;
   border?: string;
 }
 
-export const PalletteBtn = styled(Btn)<PalletteProps>`
-  background: ${({ color }) => getColor(color)};
-  color: ${({ color }) => getInvertedColor(color)};
+export const PriorityButton = styled(Btn)<PalletteProps>`
+  background: color;
+  color: ${({ theme }) => theme.color.text.secondary};
   min-width: 158px;
   padding: 0 8px;
   border: ${({ border, bordered, theme }) =>
-    border || (bordered && `1px solid ${theme.color.border.primaryDark}`)};
+    border || (bordered && `2px solid ${theme.color.border.primaryDark}`)};
 
   &:hover {
-    background: ${({ color }) => getInvertedColor(color)};
+    background: ${({ theme }) => theme.color.bg.primary};
     color: ${({ color }) => brighten(color)};
     transition: background-color 0.5s;
     transition: color 0.55s;
   }
 `;
 interface CustomProps {
-  background: string;
-  color?: string;
+  priority: Priority;
   minWidth: number;
 }
 
-export const StyledSaveBtn = styled(PalletteBtn)<CustomProps>`
-  background: ${({ background }) => background};
-  color: ${({ color }) => color};
+export const StyledSaveBtn = styled(PriorityButton)<CustomProps>`
+  background: ${({ priority }) => darken(colorByPriority[priority])};
+  color: ${({ priority, theme }) =>
+    priority === Priorities.UNASSIGNED
+      ? theme.color.text.primary
+      : theme.color.text.secondary};
   min-width: ${({ minWidth }) => minWidth}px;
 
   &:focus {
-    border: 1px solid ${({ theme }) => theme.color.border.primaryDark};
+    border: 2px solid ${({ theme }) => theme.color.border.primaryDark};
   }
   &:hover {
-    filter: brightness(120%);
+    color: ${({ priority, theme }) =>
+      priority === Priorities.UNASSIGNED
+        ? theme.color.text.primary
+        : brighten(colorByPriority[priority])};
   }
 `;

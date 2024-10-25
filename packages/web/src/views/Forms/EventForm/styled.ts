@@ -7,8 +7,8 @@ import {
 } from "@web/common/constants/web.constants";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
-import { Button } from "@web/components/Button";
 import { hoverColorsByPriority } from "@web/common/styles/theme";
+import { PriorityButton } from "@web/components/Button/styled";
 
 import { StyledFormProps } from "./types";
 
@@ -50,7 +50,7 @@ export const StyledIconRow = styled(Flex)`
   justify-content: end;
 `;
 
-export const StyledSubmitButton = styled(Button)`
+export const StyledSubmitButton = styled(PriorityButton)`
   border: 2px solid;
   margin-top: 15px;
   min-width: ${EVENT_WIDTH_MINIMUM}px;

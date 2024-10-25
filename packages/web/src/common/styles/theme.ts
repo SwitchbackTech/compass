@@ -55,7 +55,7 @@ export const hoverColorsByPriority = {
 };
 
 export const colorByPriority = {
-  [Priorities.UNASSIGNED]: gray700,
+  [Priorities.UNASSIGNED]: gray400,
   [Priorities.WORK]: green500,
   [Priorities.RELATIONS]: orange500,
   [Priorities.SELF]: blue500,

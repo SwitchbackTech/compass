@@ -1,8 +1,8 @@
 import React from "react";
 import { Priorities, Priority } from "@core/constants/core.constants";
-import { colorNameByPriority } from "@core/constants/colors";
 import { JustifyContent } from "@web/components/Flex/styled";
-import { Button } from "@web/components/Button";
+import { colorByPriority } from "@web/common/styles/theme";
+import { PriorityButton } from "@web/components/Button/styled";
 
 import { StyledPriorityFlex } from "./styled";
 import { SetEventFormField } from "../types";
@@ -18,9 +18,9 @@ export const PrioritySection: React.FC<Props> = ({
 }) => {
   return (
     <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
-      <Button
+      <PriorityButton
         bordered={priority === Priorities.WORK}
-        color={colorNameByPriority.work}
+        color={colorByPriority.work}
         onClick={() => {
           onSetEventField("priority", Priorities.WORK);
         }}
@@ -30,11 +30,11 @@ export const PrioritySection: React.FC<Props> = ({
         title="Doing your best work"
       >
         Work
-      </Button>
+      </PriorityButton>
 
-      <Button
+      <PriorityButton
         bordered={priority === Priorities.SELF}
-        color={colorNameByPriority.self}
+        color={colorByPriority.self}
         onClick={() => onSetEventField("priority", Priorities.SELF)}
         onFocus={() => onSetEventField("priority", Priorities.SELF)}
         role="tab"
@@ -42,11 +42,11 @@ export const PrioritySection: React.FC<Props> = ({
         title="Nurturing your authentic self"
       >
         Self
-      </Button>
+      </PriorityButton>
 
-      <Button
+      <PriorityButton
         bordered={priority === Priorities.RELATIONS}
-        color={colorNameByPriority.relationships}
+        color={colorByPriority.relationships}
         onClick={() => {
           onSetEventField("priority", Priorities.RELATIONS);
         }}
@@ -56,7 +56,7 @@ export const PrioritySection: React.FC<Props> = ({
         title="Connecting with others"
       >
         Relationships
-      </Button>
+      </PriorityButton>
     </StyledPriorityFlex>
   );
 };
