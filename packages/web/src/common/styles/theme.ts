@@ -48,17 +48,17 @@ export const darkBlueGradient = {
 };
 
 export const hoverColorsByPriority = {
-  [Priorities.UNASSIGNED]: white300,
+  [Priorities.UNASSIGNED]: white200,
   [Priorities.WORK]: green400,
-  [Priorities.RELATIONS]: orange300,
-  [Priorities.SELF]: blue300,
+  [Priorities.RELATIONS]: orange400,
+  [Priorities.SELF]: blue200,
 };
 
 export const colorByPriority = {
-  [Priorities.UNASSIGNED]: gray400,
+  [Priorities.UNASSIGNED]: gray100,
   [Priorities.WORK]: green500,
   [Priorities.RELATIONS]: orange500,
-  [Priorities.SELF]: blue500,
+  [Priorities.SELF]: blue300,
 };
 
 export const GRID_LINE_OPACITY_PERCENT = 48;

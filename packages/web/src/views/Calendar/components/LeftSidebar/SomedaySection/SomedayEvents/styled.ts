@@ -1,10 +1,13 @@
 import styled from "styled-components";
 import { DroppableProvided } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
-import { getColor, getInvertedColor } from "@core/util/color.utils";
+import { brighten, getInvertedColor } from "@core/util/color.utils";
 import { BASE_COLORS, colorNameByPriority } from "@core/constants/colors";
 import { InvertedColorNames } from "@core/types/color.types";
-import { hoverColorsByPriority } from "@web/common/styles/theme";
+import {
+  colorByPriority,
+  hoverColorsByPriority,
+} from "@web/common/styles/theme";
 
 export interface Props extends DroppableProvided {
   priority: Priorities;
@@ -50,22 +53,19 @@ export const StyledMigrateArrowInForm = styled(StyledMigrateArrow)`
   font-size: 27px;
 `;
 
-export const NewStyledSomedayEvent = styled.div<Props>`
-  background: ${({ isDrafting, isDragging, isFocused, priority }) => {
+export const StyledNewSomedayEvent = styled.div<Props>`
+  background: ${({ isDrafting, isDragging, priority }) => {
     if (isDrafting) {
       if (isDragging) {
-        return "lightgreen";
+        return brighten(colorByPriority[priority]);
       }
       return hoverColorsByPriority[priority];
     }
 
-    return getColor(colorNameByPriority[priority]);
+    return colorByPriority[priority];
   }};
   border-radius: 2px;
-  color: ${({ priority }) =>
-    getInvertedColor(
-      colorNameByPriority[priority] as unknown as InvertedColorNames
-    )};
+  color: ${({ theme }) => theme.color.text.dark};
   height: ${SOMEDAY_EVENT_HEIGHT}px;
   filter: brightness(
     ${({ isDragging, isFocused }) =>
