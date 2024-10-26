@@ -1,14 +1,7 @@
 import styled from "styled-components";
 import { brighten, darken } from "@core/util/color.utils";
-import { Flex } from "@web/components/Flex";
 import { Priorities, Priority } from "@core/constants/core.constants";
 import { colorByPriority } from "@web/common/styles/theme";
-
-export const StyledFeedbackBtnContainer = styled(Flex)`
-  position: absolute;
-  top: 10%;
-  right: 8%;
-`;
 
 export const Btn = styled.div`
   align-items: center;
@@ -46,10 +39,8 @@ interface CustomProps {
 
 export const StyledSaveBtn = styled(PriorityButton)<CustomProps>`
   background: ${({ priority }) => darken(colorByPriority[priority])};
-  color: ${({ priority, theme }) =>
-    priority === Priorities.UNASSIGNED
-      ? theme.color.text.light
-      : theme.color.text.dark};
+  color: ${({ theme }) => theme.color.text.dark}
+      
   min-width: ${({ minWidth }) => minWidth}px;
 
   &:focus {

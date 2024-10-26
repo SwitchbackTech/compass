@@ -1,6 +1,6 @@
 import React from "react";
 import { Priority } from "@core/constants/core.constants";
-import { SaveBtn } from "@web/components/Button";
+import { StyledSaveBtn } from "@web/components/Button/styled";
 
 import { StyledSubmitRow } from "../styled";
 
@@ -15,7 +15,7 @@ export const SaveSection: React.FC<Props> = ({
 }) => {
   return (
     <StyledSubmitRow>
-      <SaveBtn
+      <StyledSaveBtn
         minWidth={110}
         priority={priority}
         role="tab"
@@ -24,7 +24,7 @@ export const SaveSection: React.FC<Props> = ({
         onClick={_onSubmit}
       >
         Save
-      </SaveBtn>
+      </StyledSaveBtn>
     </StyledSubmitRow>
   );
 };
