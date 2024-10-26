@@ -1,10 +1,7 @@
 import styled from "styled-components";
 import { Priorities, Priority } from "@core/constants/core.constants";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
-import {
-  ANIMATION_TIME_3_MS,
-  ZIndex,
-} from "@web/common/constants/web.constants";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
 import { hoverColorsByPriority } from "@web/common/styles/theme";
@@ -26,7 +23,7 @@ export const StyledEventForm = styled.form<SomedayFormProps>`
   box-shadow: 0px 5px 5px ${({ theme }) => theme.color.shadow.default};
   font-size: 20px;
   padding: 18px 20px;
-  transition: ${ANIMATION_TIME_3_MS};
+  transition: ${({ theme }) => theme.transition.default};
   width: 585px;
   z-index: ${ZIndex.LAYER_1};
 `;

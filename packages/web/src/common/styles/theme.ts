@@ -111,6 +111,6 @@ export const theme: DefaultTheme = {
     default: "0.8125rem",
   },
   transition: {
-    default: "0.2s",
+    default: "0.3s",
   },
 };

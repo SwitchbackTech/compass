@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { getColor } from "@core/util/color.utils";
 import { ColorNames } from "@core/types/color.types";
-import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
 import { Divider } from "@web/components/Divider";
 import { FORM_TIME_SIZE } from "@web/views/Forms/EventForm/styled";
 
@@ -62,7 +61,7 @@ export const StyledTimePicker = styled.div<Props>`
         font-size: ${FORM_TIME_SIZE - 3}px;
         padding: 0;
         ${({ isOpen: open }) => !open && "max-height: 0;"}
-        transition: ${ANIMATION_TIME_3_MS};
+        transition: ${({ theme }) => theme.transition.default};
 
         ::-webkit-scrollbar {
           width: 8px;
