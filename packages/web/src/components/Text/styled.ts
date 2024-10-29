@@ -1,9 +1,9 @@
 import styled from "styled-components";
-import { BackgroundProps, ColorProps } from "@web/common/styles/components";
-import { getColor } from "@core/util/color.utils";
 import { linearGradient } from "@web/common/styles/theme";
 
-export interface Props extends BackgroundProps, ColorProps {
+export interface Props {
+  bgColor?: string;
+  color?: string;
   cursor?: string;
   fontWeight?: number | "normal" | "bold" | "bolder" | "lighter";
   lineHeight?: number;
@@ -13,7 +13,7 @@ export interface Props extends BackgroundProps, ColorProps {
 }
 
 export const StyledText = styled.span<Props>`
-  ${({ colorName }) => colorName && `color ${getColor(colorName)};`}
+  ${({ color }) => color && `color: ${color};`}
   ${({ cursor }) => cursor && `cursor: ${cursor};`}
   font-weight: ${({ fontWeight = "normal" }) => fontWeight};
   ${({ lineHeight }) => lineHeight && `line-height: ${lineHeight}px;`}
