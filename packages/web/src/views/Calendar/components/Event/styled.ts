@@ -1,10 +1,12 @@
 import styled from "styled-components";
 import { Priority } from "@core/constants/core.constants";
-import { getColor } from "@core/util/color.utils";
-import { colorNameByPriority } from "@core/constants/colors";
+import { brighten } from "@core/util/color.utils";
 import { Text } from "@web/components/Text";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { hoverColorsByPriority } from "@web/common/styles/theme";
+import {
+  colorByPriority,
+  hoverColorsByPriority,
+} from "@web/common/styles/theme";
 
 interface StyledEventProps {
   allDay: boolean;
@@ -23,15 +25,15 @@ interface StyledEventProps {
   width: number;
 }
 
-const DIM = 0.65;
+const DIM = 0.7;
 
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   const getBgColor = () => {
     if (props.isResizing || props.isDragging) {
-      return hoverColorsByPriority[props.priority];
+      return brighten(colorByPriority[props.priority]);
     }
 
-    const origColor = getColor(colorNameByPriority[props.priority]);
+    const origColor = colorByPriority[props.priority];
     return origColor;
   };
 
