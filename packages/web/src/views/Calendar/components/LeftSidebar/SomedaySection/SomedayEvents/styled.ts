@@ -1,9 +1,7 @@
 import styled from "styled-components";
 import { DroppableProvided } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
-import { brighten, getInvertedColor } from "@core/util/color.utils";
-import { BASE_COLORS, colorNameByPriority } from "@core/constants/colors";
-import { InvertedColorNames } from "@core/types/color.types";
+import { brighten } from "@core/util/color.utils";
 import {
   colorByPriority,
   hoverColorsByPriority,
@@ -25,7 +23,7 @@ export const StyledMigrateArrow = styled.span`
 
   &:hover {
     border-radius: 50%;
-    background: ${BASE_COLORS.ONYX_GREY};
+    background: ${({ theme }) => theme.color.bg.primary};
     color: white;
     cursor: pointer;
     padding-right: 7px;
@@ -36,7 +34,7 @@ export const StyledMigrateArrow = styled.span`
 `;
 
 export const StyledRecurrenceText = styled.span`
-  border: 1px solid ${BASE_COLORS.ONYX_GREY};
+  border: 1px solid ${({ theme }) => theme.color.border.primary};
   border-radius: 2px;
   font-size: 10px;
   opacity: 0;
@@ -82,10 +80,6 @@ export const StyledNewSomedayEvent = styled.div<Props>`
 
   &:hover {
     background: ${({ priority }) => hoverColorsByPriority[priority]};
-    color: ${({ priority }) =>
-      getInvertedColor(
-        colorNameByPriority[priority] as unknown as InvertedColorNames
-      )};
     cursor: pointer;
   }
 
