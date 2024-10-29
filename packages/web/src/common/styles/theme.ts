@@ -1,5 +1,5 @@
-import { Priorities } from "@core/constants/core.constants";
 import { DefaultTheme } from "styled-components";
+import { Priorities } from "@core/constants/core.constants";
 
 const blue500 = "hsl(210 100 63 / 12.94%)";
 const blue400 = "hsl(210 100 63 / 30.2%)";
@@ -105,6 +105,7 @@ export const theme: DefaultTheme = {
       lighter: white100,
       lightInactive: white200,
       dark: darkBlue400,
+      darkPlaceholder: gray300,
     },
   },
   text: {

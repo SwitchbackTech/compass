@@ -41,6 +41,7 @@ declare module "styled-components" {
         lighter: string;
         lightInactive: string;
         dark: string;
+        darkPlaceholder: string;
       };
     };
     text: {
