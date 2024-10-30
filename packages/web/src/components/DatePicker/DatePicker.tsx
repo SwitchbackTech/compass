@@ -64,7 +64,7 @@ export const DatePicker: React.FC<Props> = ({
       calendarContainer={(containerProps) => (
         <StyledDatePicker
           {...containerProps}
-          monthsCount={(props.monthsShown || 0) + 1}
+          selectedColor={bgColor}
           view={view}
         />
       )}

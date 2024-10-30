@@ -102,6 +102,7 @@ export const theme: DefaultTheme = {
       three: purple300,
     },
     text: {
+      accent: blue200,
       light: gray100,
       lighter: white100,
       lightInactive: white200,

@@ -1,12 +1,12 @@
 import styled from "styled-components";
-import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/types/color.types";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
 import { SIDEBAR_MONTH_HEIGHT } from "@web/views/Calendar/layout.constants";
+import { theme } from "@web/common/styles/theme";
 
 const _hoverStyle = `
-  background-color: ${getColor(ColorNames.BLUE_5)};
+  background-color: ${theme.color.fg.primary}; 
+  color: ${theme.color.text.dark};
 `;
 
 export const ChangeDayButtonsStyledFlex = styled(Flex)`
@@ -29,13 +29,13 @@ export const MonthContainerStyled = styled(Flex)`
 `;
 
 export const StyledDatePicker = styled.div<{
-  monthsCount?: number;
   view: "widget" | "picker";
+  selectedColor: string;
 }>`
-  background-color: ${getColor(ColorNames.GREY_3)};
+  background-color: ${({ theme }) => theme.color.bg.primary};
   border: none;
   border-radius: 2px;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  box-shadow: 0px 4px 4px ${({ theme }) => theme.color.shadow.default};
   font-weight: 500;
   font-size: 12px;
   user-select: none;
@@ -65,8 +65,7 @@ export const StyledDatePicker = styled.div<{
 
       &:hover {
         ${({ view }) =>
-          view === "widget" &&
-          `background-color: ${getColor(ColorNames.GREY_2)}`};
+          view === "widget" && `background-color: ${theme.color.fg.primary}`};
       }
     }
 
@@ -79,7 +78,7 @@ export const StyledDatePicker = styled.div<{
 
     &__day-name {
       opacity: 0.8;
-      color: ${getColor(ColorNames.WHITE_3)};
+      color: ${theme.color.text.light};
       font-size: 11px;
       margin: 0;
     }
@@ -87,7 +86,7 @@ export const StyledDatePicker = styled.div<{
     &__day {
       border: none !important;
       border-radius: 50% !important;
-      color: white;
+      color: ${theme.color.text.lighter};
       margin: 0;
 
       &:hover {
@@ -103,17 +102,20 @@ export const StyledDatePicker = styled.div<{
       }
 
       &--selected {
-        background-color: ${getColor(ColorNames.BLUE_5)};
+        color: ${theme.color.text.dark};
+        background-color: ${({ selectedColor }) => selectedColor};
       }
 
       &--today {
-        background-color: ${getColor(ColorNames.GREY_1)};
-        color: ${getColor(ColorNames.GREY_4)};
-        font-weight: normal;
+        color: ${({ selectedColor }) => selectedColor};
+      }
+
+      &--keyboard-selected {
+        background-color: ${theme.color.bg.primary};
       }
 
       &--outside-month {
-        color: ${getColor(ColorNames.WHITE_3)}99;
+        color: ${theme.color.text.darkPlaceholder};
       }
     }
   }
@@ -142,6 +144,7 @@ export const TodayStyledText = styled(Text)<{ isCurrentDate: boolean }>`
   opacity: ${({ isCurrentDate }) => (isCurrentDate ? 0 : 1)};
 
   &:hover {
-    ${_hoverStyle}
+    filter: brightness(160%);
+    transition: filter 0.35s ease-out;
   }
 `;
