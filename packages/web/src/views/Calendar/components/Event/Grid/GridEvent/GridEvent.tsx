@@ -130,5 +130,9 @@ const _GridEvent = (
 
 export const GridEvent = forwardRef(_GridEvent);
 export const GridEventMemo = memo(GridEvent, (prev, next) => {
-  return prev.event === next.event && prev.measurements === next.measurements;
+  return (
+    prev.event === next.event &&
+    prev.isPlaceholder === next.isPlaceholder &&
+    prev.measurements === next.measurements
+  );
 });
