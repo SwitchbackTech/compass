@@ -47,10 +47,11 @@ export const darkBlueGradient = {
   level5: darkBlue400,
 };
 
+//TODO rename to hoverColor
 export const hoverColorsByPriority = {
   [Priorities.UNASSIGNED]: white200,
   [Priorities.WORK]: green400,
-  [Priorities.RELATIONS]: orange400,
+  [Priorities.RELATIONS]: orange300,
   [Priorities.SELF]: blue200,
 };
 
@@ -110,6 +111,7 @@ export const theme: DefaultTheme = {
   },
   text: {
     default: "0.8125rem",
+    medium: "1rem",
   },
   transition: {
     default: "0.3s",

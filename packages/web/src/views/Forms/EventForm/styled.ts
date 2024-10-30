@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { Priorities, Priority } from "@core/constants/core.constants";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { Flex } from "@web/components/Flex";
@@ -17,8 +16,7 @@ interface SomedayFormProps extends StyledFormProps {
 }
 
 export const StyledEventForm = styled.form<SomedayFormProps>`
-  background: ${({ priority }) =>
-    hoverColorsByPriority[(priority as Priority) || Priorities.UNASSIGNED]};
+  background: ${({ priority }) => hoverColorsByPriority[priority]};
   border-radius: 4px;
   box-shadow: 0px 5px 5px ${({ theme }) => theme.color.shadow.default};
   font-size: 20px;

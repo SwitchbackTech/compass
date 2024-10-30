@@ -46,6 +46,7 @@ declare module "styled-components" {
     };
     text: {
       default: string;
+      medium: string;
     };
     transition: {
       default: string;

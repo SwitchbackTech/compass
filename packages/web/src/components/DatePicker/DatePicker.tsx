@@ -4,10 +4,10 @@ import "react-datepicker/dist/react-datepicker.css";
 import dayjs from "dayjs";
 import classNames from "classnames";
 import { Text } from "@web/components/Text";
-import { ColorNames } from "@core/types/color.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Flex } from "@web/components/Flex";
 import { Input } from "@web/components/Input";
+import { theme } from "@web/common/styles/theme";
 
 import {
   ChangeDayButtonsStyledFlex,
@@ -68,13 +68,7 @@ export const DatePicker: React.FC<Props> = ({
           view={view}
         />
       )}
-      customInput={
-        <Input
-          bgColor={bgColor}
-          colorName={ColorNames.TEAL_1}
-          onBlurCapture={onInputBlur}
-        />
-      }
+      customInput={<Input bgColor={bgColor} onBlurCapture={onInputBlur} />}
       dateFormat={"M-d-yyyy"}
       formatWeekDay={(day) => day[0]}
       open={isOpen}
@@ -111,7 +105,7 @@ export const DatePicker: React.FC<Props> = ({
             justifyContent={JustifyContent.LEFT}
           >
             <MonthContainerStyled>
-              <Text colorName={ColorNames.WHITE_1} size={17}>
+              <Text color={theme.color.text.light} size={17}>
                 {formattedSelectedMonth}
               </Text>
             </MonthContainerStyled>
@@ -123,7 +117,7 @@ export const DatePicker: React.FC<Props> = ({
                     cursor="pointer"
                     onClick={decreaseMonth}
                     fontWeight={600}
-                    colorName={ColorNames.WHITE_1}
+                    color={theme.color.text.light}
                     size={20}
                   >
                     {"<"}
@@ -132,7 +126,7 @@ export const DatePicker: React.FC<Props> = ({
                     cursor="pointer"
                     onClick={increaseMonth}
                     fontWeight={600}
-                    colorName={ColorNames.WHITE_1}
+                    color={theme.color.text.light}
                     size={20}
                   >
                     {">"}
@@ -148,7 +142,7 @@ export const DatePicker: React.FC<Props> = ({
                       changeMonth(dayjs().month());
                       changeYear(dayjs().year());
                     }}
-                    colorName={ColorNames.WHITE_1}
+                    color={theme.color.text.light}
                     size={16}
                   >
                     Today
