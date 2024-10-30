@@ -2,7 +2,7 @@ import { Flex } from "@web/components/Flex";
 import styled from "styled-components";
 
 export const StyledRepeatContainer = styled.div`
-  padding-bottom: 10px;
+  margin-bottom: 10px;
   &:hover {
     cursor: pointer;
   }
