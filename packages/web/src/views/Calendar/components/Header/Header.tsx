@@ -1,14 +1,10 @@
 import React, { FC } from "react";
 import { Dayjs } from "dayjs";
-import { ColorNames } from "@core/types/color.types";
-import { getAlphaColor, getColor } from "@core/util/color.utils";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
+import { AlignItems } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { TodayButton } from "@web/views/Calendar/components/TodayButton";
-import { getWeekDayLabel } from "@web/common/utils/event.util";
-import { WEEK_DAYS_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
@@ -23,13 +19,12 @@ import {
   StyledHeaderRow,
   StyledNavigationButtons,
   ArrowNavigationButton,
-  StyledWeekDaysFlex,
-  StyledWeekDayFlex,
   StyledLeftGroup,
   StyledRightGroup,
   StyledHeaderLabel,
   StyledNavigationArrows,
 } from "./styled";
+import { DayLabels } from "./DayLabels";
 
 interface Props {
   rootProps: RootProps;
@@ -72,15 +67,11 @@ export const Header: FC<Props> = ({
       >
         <StyledLeftGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
-            <Text colorName={ColorNames.WHITE_1} size={40}>
-              {startOfView.format("MMMM")}
-            </Text>
+            <Text size={40}>{startOfView.format("MMMM")}</Text>
 
             <SpaceCharacter />
 
-            <Text colorName={ColorNames.GREY_4} size={38}>
-              {startOfView.format("YYYY")}
-            </Text>
+            <Text size={38}>{startOfView.format("YYYY")}</Text>
           </StyledHeaderLabel>
 
           <StyledNavigationButtons>
@@ -98,7 +89,6 @@ export const Header: FC<Props> = ({
                 shortcut="J"
               >
                 <ArrowNavigationButton
-                  colorName={ColorNames.GREY_4}
                   cursor="pointer"
                   role="navigation"
                   size={35}
@@ -113,7 +103,6 @@ export const Header: FC<Props> = ({
                 shortcut="K"
               >
                 <ArrowNavigationButton
-                  colorName={ColorNames.GREY_4}
                   cursor="pointer"
                   role="navigation"
                   size={35}
@@ -139,45 +128,13 @@ export const Header: FC<Props> = ({
         </StyledRightGroup>
       </StyledHeaderRow>
 
-      <StyledWeekDaysFlex>
-        {weekProps.component.weekDays.map((day) => {
-          const isDayInCurrentWeek = today.week() === weekProps.component.week;
-          const isToday =
-            isDayInCurrentWeek && today.format("DD") === day.format("DD");
-
-          let weekDayTextColor = isToday
-            ? getColor(ColorNames.TEAL_3)
-            : getAlphaColor(ColorNames.WHITE_1, 0.72);
-
-          let dayNumberToDisplay = day.format("D");
-
-          dayNumberToDisplay =
-            day.format("MM") !== startOfView.format("MM") &&
-            day.format("D") === "1"
-              ? day.format("MMM D")
-              : dayNumberToDisplay;
-
-          if (day.isBefore(rootProps.component.today, "day")) {
-            weekDayTextColor = getAlphaColor(ColorNames.WHITE_1, 0.55);
-          }
-
-          return (
-            <StyledWeekDayFlex
-              justifyContent={JustifyContent.CENTER}
-              key={getWeekDayLabel(day)}
-              alignItems={AlignItems.FLEX_END}
-              title={getWeekDayLabel(day)}
-              color={weekDayTextColor}
-            >
-              <Text lineHeight={WEEK_DAYS_HEIGHT} size={WEEK_DAYS_HEIGHT}>
-                {dayNumberToDisplay}
-              </Text>
-              <SpaceCharacter />
-              <Text size={12}>{day.format("ddd")}</Text>
-            </StyledWeekDayFlex>
-          );
-        })}
-      </StyledWeekDaysFlex>
+      <DayLabels
+        rootProps={rootProps}
+        startOfView={weekProps.component.startOfView}
+        today={today}
+        week={weekProps.component.week}
+        weekDays={weekProps.component.weekDays}
+      />
     </>
   );
 };
