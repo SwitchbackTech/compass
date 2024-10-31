@@ -41,6 +41,7 @@ export const StyledLeftGroup = styled(Flex)`
 
 export const StyledHeaderRow = styled(Flex)`
   align-items: ${AlignItems.CENTER};
+  color: ${({ theme }) => theme.color.text.light};
   font-size: 40px;
   justify-content: ${JustifyContent.SPACE_BETWEEN};
   margin-left: ${GRID_MARGIN_LEFT}px;

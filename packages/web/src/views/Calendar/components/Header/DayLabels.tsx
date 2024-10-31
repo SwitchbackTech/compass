@@ -1,8 +1,7 @@
 import React, { FC } from "react";
 import { Dayjs } from "dayjs";
-import { ColorNames } from "@core/types/color.types";
-import { getColor, getAlphaColor } from "@core/util/color.utils";
 import { Text } from "@web/components/Text";
+import { linearGradient, theme } from "@web/common/styles/theme";
 import { getWeekDayLabel } from "@web/common/utils/event.util";
 import { JustifyContent, AlignItems } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
@@ -25,28 +24,34 @@ export const DayLabels: FC<Props> = ({
   week,
   weekDays,
 }) => {
+  const getColor = (day: Dayjs) => {
+    const isCurrentWeek = today.week() === week;
+    const isToday = isCurrentWeek && today.format("DD") === day.format("DD");
+
+    let color = isToday ? theme.color.text.accent : theme.color.text.light;
+    if (day.isBefore(today, "day")) {
+      color = theme.color.text.lightInactive;
+    }
+
+    return color;
+  };
+
+  const getDayNumber = (day: Dayjs) => {
+    let dayNumber = day.format("D");
+
+    dayNumber =
+      day.format("MM") !== startOfView.format("MM") && day.format("D") === "1"
+        ? day.format("MMM D")
+        : dayNumber;
+
+    return dayNumber;
+  };
+
   return (
     <StyledWeekDaysFlex>
       {weekDays.map((day) => {
-        const isDayInCurrentWeek = today.week() === week;
-        const isToday =
-          isDayInCurrentWeek && today.format("DD") === day.format("DD");
-
-        let weekDayTextColor = isToday
-          ? getColor(ColorNames.TEAL_3)
-          : getAlphaColor(ColorNames.WHITE_1, 0.72);
-
-        let dayNumberToDisplay = day.format("D");
-
-        dayNumberToDisplay =
-          day.format("MM") !== startOfView.format("MM") &&
-          day.format("D") === "1"
-            ? day.format("MMM D")
-            : dayNumberToDisplay;
-
-        if (day.isBefore(today, "day")) {
-          weekDayTextColor = getAlphaColor(ColorNames.WHITE_1, 0.55);
-        }
+        const dayNumber = getDayNumber(day);
+        const color = getColor(day);
 
         return (
           <StyledWeekDayFlex
@@ -54,10 +59,10 @@ export const DayLabels: FC<Props> = ({
             key={getWeekDayLabel(day)}
             alignItems={AlignItems.FLEX_END}
             title={getWeekDayLabel(day)}
-            color={weekDayTextColor}
+            color={color}
           >
             <Text lineHeight={WEEK_DAYS_HEIGHT} size={WEEK_DAYS_HEIGHT}>
-              {dayNumberToDisplay}
+              {dayNumber}
             </Text>
             <SpaceCharacter />
             <Text size={12}>{day.format("ddd")}</Text>

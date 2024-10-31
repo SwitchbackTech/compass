@@ -105,7 +105,7 @@ export const theme: DefaultTheme = {
       accent: blue200,
       light: gray100,
       lighter: white100,
-      lightInactive: white200,
+      lightInactive: gray200,
       dark: darkBlue400,
       darkPlaceholder: gray300,
     },
