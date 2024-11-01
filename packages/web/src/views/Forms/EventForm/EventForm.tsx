@@ -19,7 +19,10 @@ import {
 } from "@web/common/utils/web.date.util";
 import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/LeftSidebar/SomedaySection/SomedayEvents/styled";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
-import { hoverColorByPriority } from "@web/common/styles/theme.util";
+import {
+  colorByPriority,
+  hoverColorByPriority,
+} from "@web/common/styles/theme.util";
 
 import { FormProps, SetEventFormField } from "./types";
 import { DateTimeSection } from "./DateTimeSection";
@@ -27,9 +30,9 @@ import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
 import {
   StyledEventForm,
-  StyledDescriptionField,
+  StyledDescription,
   StyledIconRow,
-  StyledTitleField,
+  StyledTitle,
 } from "./styled";
 
 export const EventForm: React.FC<FormProps> = ({
@@ -269,13 +272,14 @@ export const EventForm: React.FC<FormProps> = ({
           <DeleteIcon onDelete={onDeleteForm} title="Delete Event" />
         </StyledIconRow>
 
-        <StyledTitleField
+        <StyledTitle
           autoFocus
           onChange={onChangeEventTextField("title")}
           onKeyDown={ignoreDelete}
           placeholder="Title"
           role="textarea"
           name="Event Title"
+          underlineColor={colorByPriority[priority]}
           value={title}
         />
 
@@ -303,7 +307,8 @@ export const EventForm: React.FC<FormProps> = ({
           setEvent={setEvent}
         />
 
-        <StyledDescriptionField
+        <StyledDescription
+          underlineColor={colorByPriority[priority]}
           onChange={onChangeEventTextField("description")}
           onKeyDown={ignoreDelete}
           placeholder="Description"

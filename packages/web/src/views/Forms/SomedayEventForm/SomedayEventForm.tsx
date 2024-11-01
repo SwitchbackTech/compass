@@ -9,10 +9,10 @@ import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 import {
-  StyledDescriptionField,
+  StyledDescription,
   StyledEventForm,
   StyledIconRow,
-  StyledTitleField,
+  StyledTitle,
 } from "@web/views/Forms/EventForm/styled";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
@@ -119,12 +119,13 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         <DeleteIcon onDelete={onDelete} title="Delete Someday Event" />
       </StyledIconRow>
 
-      <StyledTitleField
+      <StyledTitle
         autoFocus
         onChange={onChangeEventTextField("title")}
         placeholder="Title"
         role="input"
         title="title"
+        underlineColor={colorByPriority[priority]}
         value={title}
       />
 
@@ -136,9 +137,10 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         recurrence={event.recurrence}
       />
 
-      <StyledDescriptionField
+      <StyledDescription
         onChange={onChangeEventTextField("description")}
         placeholder="Description"
+        underlineColor={colorByPriority[priority]}
         value={event.description || ""}
       />
 

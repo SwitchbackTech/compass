@@ -26,7 +26,7 @@ export const StyledEventForm = styled.form<SomedayFormProps>`
   z-index: ${ZIndex.LAYER_1};
 `;
 
-export const StyledDescriptionField = styled(Textarea)`
+export const StyledDescription = styled(Textarea)`
   background: transparent;
   border: hidden;
   font-size: 20px;
@@ -57,7 +57,7 @@ export const StyledSubmitRow = styled(Flex)`
   padding-top: 18px;
 `;
 
-export const StyledTitleField = styled(Textarea)`
+export const StyledTitle = styled(Textarea)`
   background: transparent;
   height: 40px;
   font-size: 35px;

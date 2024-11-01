@@ -2,7 +2,6 @@ import React, { FC } from "react";
 import { Dayjs } from "dayjs";
 import { Text } from "@web/components/Text";
 import { theme } from "@web/common/styles/theme";
-import { linearGradient } from "@web/common/styles/theme.util";
 import { getWeekDayLabel } from "@web/common/utils/event.util";
 import { JustifyContent, AlignItems } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";

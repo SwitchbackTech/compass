@@ -7,12 +7,19 @@ import {
 
 export type Props<T extends ClassNamedComponent> = T &
   UnderlinedInput & {
-    Component: React.ComponentType<T>;
     autoFocus?: boolean;
+    Component: React.ComponentType<T>;
+    underlineColor?: string;
   };
 
-export const Focusable = <T,>(
-  { Component, autoFocus = false, withUnderline, ...props }: Props<T>,
+const _Focusable = <T,>(
+  {
+    autoFocus = false,
+    Component,
+    underlineColor,
+    withUnderline,
+    ...props
+  }: Props<T>,
   ref: Ref<HTMLDivElement>
 ) => {
   const [isFocused, toggleFocused] = useState(autoFocus);
@@ -27,12 +34,12 @@ export const Focusable = <T,>(
         onBlur={() => toggleFocused(false)}
         autoFocus={autoFocus}
       />
-      {!!withUnderline && isFocused && <Divider />}
+      {!!withUnderline && isFocused && <Divider color={underlineColor} />}
     </>
   );
 };
 
-export const FocusableUnderlineLayout = forwardRef(Focusable) as <
+export const Focusable = forwardRef(_Focusable) as <
   T extends ClassNamedComponent
 >(
   p: Props<T> & { ref?: Ref<HTMLDivElement | HTMLTextAreaElement> }

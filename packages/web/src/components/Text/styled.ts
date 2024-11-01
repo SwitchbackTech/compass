@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { linearGradient } from "@web/common/styles/theme.util";
+import { getGradient, defaultGradient } from "@web/common/styles/theme.util";
 
 export interface Props {
   bgColor?: string;
@@ -26,19 +26,19 @@ export const StyledText = styled.span<Props>`
     withGradient &&
     `
   color: transparent;
-  background: ${linearGradient};
+  background: ${defaultGradient};
   background-clip: text;
   -webkit-background-clip: text; 
   `}
 
-  ${({ withUnderline = false, cursor }) =>
+  ${({ color, cursor, withUnderline = false }) =>
     withUnderline &&
     `
     cursor: ${cursor || "pointer"};
     &:hover {
       &::after {
         content: ' ';
-        background: ${linearGradient};
+        background: ${getGradient(color)};
         position: absolute;
         width: 100%;
         height: 2px;
