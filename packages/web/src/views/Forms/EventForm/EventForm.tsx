@@ -19,7 +19,7 @@ import {
 } from "@web/common/utils/web.date.util";
 import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/LeftSidebar/SomedaySection/SomedayEvents/styled";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
-import { hoverColorsByPriority } from "@web/common/styles/theme";
+import { hoverColorByPriority } from "@web/common/styles/theme.util";
 
 import { FormProps, SetEventFormField } from "./types";
 import { DateTimeSection } from "./DateTimeSection";
@@ -285,7 +285,7 @@ export const EventForm: React.FC<FormProps> = ({
         />
 
         <DateTimeSection
-          bgColor={hoverColorsByPriority[priority]}
+          bgColor={hoverColorByPriority[priority]}
           event={event}
           category={category}
           endTime={endTime}

@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { getColor } from "@core/util/color.utils";
-import { linearGradient } from "@web/common/styles/theme";
+import { linearGradient } from "@web/common/styles/theme.util";
 
 import { Props } from "./types";
 

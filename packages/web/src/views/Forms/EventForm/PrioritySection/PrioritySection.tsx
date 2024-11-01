@@ -1,7 +1,7 @@
 import React from "react";
 import { Priorities, Priority } from "@core/constants/core.constants";
 import { JustifyContent } from "@web/components/Flex/styled";
-import { colorByPriority } from "@web/common/styles/theme";
+import { colorByPriority } from "@web/common/styles/theme.util";
 import { PriorityButton } from "@web/components/Button/styled";
 
 import { StyledPriorityFlex } from "./styled";

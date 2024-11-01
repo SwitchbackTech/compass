@@ -4,11 +4,8 @@ import { getColor } from "@core/util/color.utils";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import { Flex } from "@web/components/Flex";
 import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
-import { GRID_LINE_OPACITY_PERCENT } from "@web/common/styles/theme";
 
-const colBorder = `1px solid ${getColor(
-  ColorNames.GREY_4
-)}${GRID_LINE_OPACITY_PERCENT}`;
+const colBorder = `1px solid ${getColor(ColorNames.GREY_4)}48`;
 
 export const Columns = styled(Flex)`
   position: absolute;

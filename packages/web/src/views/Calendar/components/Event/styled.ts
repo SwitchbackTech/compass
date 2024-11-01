@@ -5,8 +5,8 @@ import { Text } from "@web/components/Text";
 import { ZIndex } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
-  hoverColorsByPriority,
-} from "@web/common/styles/theme";
+  hoverColorByPriority,
+} from "@web/common/styles/theme.util";
 
 interface StyledEventProps {
   allDay: boolean;
@@ -42,7 +42,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
     isInPast: props.isInPast,
     hoverColor: props.isPlaceholder
       ? null
-      : hoverColorsByPriority[props.priority],
+      : hoverColorByPriority[props.priority],
     opacity: props.isPlaceholder ? 0.5 : null,
     ref: props.ref,
     top: props.top,

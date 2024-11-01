@@ -4,11 +4,10 @@ import { ColorNames } from "@core/types/color.types";
 import { Flex } from "@web/components/Flex";
 import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
 import { DIVIDER_GRID } from "@web/views/Calendar/layout.constants";
-import { GRID_LINE_OPACITY_PERCENT } from "@web/common/styles/theme";
 
 export const gridDividerBorder = `${DIVIDER_GRID}px solid ${getColor(
   ColorNames.GREY_4
-)}${GRID_LINE_OPACITY_PERCENT}`;
+)}48`;
 
 export const StyledGridRow = styled(Flex)`
   height: calc(100% / 11);

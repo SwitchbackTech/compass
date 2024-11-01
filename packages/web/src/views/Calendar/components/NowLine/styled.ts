@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { linearGradient } from "@web/common/styles/theme";
+import { linearGradient } from "@web/common/styles/theme.util";
 
 interface StyledNowLineProps {
   width: number;

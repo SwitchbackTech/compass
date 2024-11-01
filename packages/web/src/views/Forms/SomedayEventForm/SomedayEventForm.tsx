@@ -15,7 +15,7 @@ import {
   StyledTitleField,
 } from "@web/views/Forms/EventForm/styled";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
-import { colorByPriority } from "@web/common/styles/theme";
+import { colorByPriority } from "@web/common/styles/theme.util";
 
 import { RepeatSection } from "../EventForm/RepeatSection";
 

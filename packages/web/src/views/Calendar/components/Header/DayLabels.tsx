@@ -1,7 +1,8 @@
 import React, { FC } from "react";
 import { Dayjs } from "dayjs";
 import { Text } from "@web/components/Text";
-import { linearGradient, theme } from "@web/common/styles/theme";
+import { theme } from "@web/common/styles/theme";
+import { linearGradient } from "@web/common/styles/theme.util";
 import { getWeekDayLabel } from "@web/common/utils/event.util";
 import { JustifyContent, AlignItems } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
@@ -27,13 +28,13 @@ export const DayLabels: FC<Props> = ({
   const getColor = (day: Dayjs) => {
     const isCurrentWeek = today.week() === week;
     const isToday = isCurrentWeek && today.format("DD") === day.format("DD");
+    const color = day.isBefore(today, "day")
+      ? theme.color.text.lightInactive
+      : isToday
+      ? theme.color.text.accent
+      : theme.color.text.light;
 
-    let color = isToday ? theme.color.text.accent : theme.color.text.light;
-    if (day.isBefore(today, "day")) {
-      color = theme.color.text.lightInactive;
-    }
-
-    return color;
+    return { isToday, color };
   };
 
   const getDayNumber = (day: Dayjs) => {
@@ -51,7 +52,7 @@ export const DayLabels: FC<Props> = ({
     <StyledWeekDaysFlex>
       {weekDays.map((day) => {
         const dayNumber = getDayNumber(day);
-        const color = getColor(day);
+        const { isToday, color } = getColor(day);
 
         return (
           <StyledWeekDayFlex
@@ -61,7 +62,11 @@ export const DayLabels: FC<Props> = ({
             title={getWeekDayLabel(day)}
             color={color}
           >
-            <Text lineHeight={WEEK_DAYS_HEIGHT} size={WEEK_DAYS_HEIGHT}>
+            <Text
+              lineHeight={WEEK_DAYS_HEIGHT}
+              size={WEEK_DAYS_HEIGHT}
+              withGradient={isToday}
+            >
               {dayNumber}
             </Text>
             <SpaceCharacter />

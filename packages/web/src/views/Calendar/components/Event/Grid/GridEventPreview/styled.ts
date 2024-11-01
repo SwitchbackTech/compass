@@ -6,7 +6,7 @@ import { getInvertedColor } from "@core/util/color.utils";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { colorNameByPriority } from "@core/constants/colors";
 import { InvertedColorNames } from "@core/types/color.types";
-import { hoverColorsByPriority } from "@web/common/styles/theme";
+import { hoverColorByPriority } from "@web/common/styles/theme.util";
 
 import { snapToGrid } from "./snap.grid";
 
@@ -57,12 +57,12 @@ interface StyledEventProps {
 export const StyledGridEventPreview = styled.div.attrs<StyledEventProps>(
   (props) => {
     return {
-      backgroundColor: hoverColorsByPriority[props.priority],
+      backgroundColor: hoverColorByPriority[props.priority],
       color: getInvertedColor(
         colorNameByPriority[props.priority] as unknown as InvertedColorNames
       ),
       height: props.height,
-      hoverColor: hoverColorsByPriority[props.priority],
+      hoverColor: hoverColorByPriority[props.priority],
       width: props.width,
     };
   }

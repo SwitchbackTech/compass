@@ -3,7 +3,7 @@ import { Flex } from "@web/components/Flex";
 import { getColor } from "@core/util/color.utils";
 import { ColorNames } from "@core/types/color.types";
 
-import { darkBlueGradient } from "../../common/styles/theme";
+import { darkBlueGradient } from "../../common/styles/theme.util";
 
 const bgAnimation = keyframes`
   0% {

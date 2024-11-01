@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { linearGradient } from "@web/common/styles/theme";
+import { linearGradient } from "@web/common/styles/theme.util";
 
 export interface Props {
   bgColor?: string;
@@ -8,6 +8,7 @@ export interface Props {
   fontWeight?: number | "normal" | "bold" | "bolder" | "lighter";
   lineHeight?: number;
   size?: number;
+  withGradient?: boolean;
   withUnderline?: boolean;
   zIndex?: number;
 }
@@ -15,10 +16,20 @@ export interface Props {
 export const StyledText = styled.span<Props>`
   ${({ color }) => color && `color: ${color};`}
   ${({ cursor }) => cursor && `cursor: ${cursor};`}
-  font-weight: ${({ fontWeight = "normal" }) => fontWeight};
   ${({ lineHeight }) => lineHeight && `line-height: ${lineHeight}px;`}
-  position: relative;
   ${({ size }) => size && `font-size: ${size}px;`}
+
+  font-weight: ${({ fontWeight = "normal" }) => fontWeight};
+  position: relative;
+
+  ${({ withGradient }) =>
+    withGradient &&
+    `
+  color: transparent;
+  background: ${linearGradient};
+  background-clip: text;
+  -webkit-background-clip: text; 
+  `}
 
   ${({ withUnderline = false, cursor }) =>
     withUnderline &&

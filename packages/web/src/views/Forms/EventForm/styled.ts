@@ -3,7 +3,7 @@ import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
-import { hoverColorsByPriority } from "@web/common/styles/theme";
+import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import { PriorityButton } from "@web/components/Button/styled";
 
 import { StyledFormProps } from "./types";
@@ -16,7 +16,7 @@ interface SomedayFormProps extends StyledFormProps {
 }
 
 export const StyledEventForm = styled.form<SomedayFormProps>`
-  background: ${({ priority }) => hoverColorsByPriority[priority]};
+  background: ${({ priority }) => hoverColorByPriority[priority]};
   border-radius: 4px;
   box-shadow: 0px 5px 5px ${({ theme }) => theme.color.shadow.default};
   font-size: 20px;

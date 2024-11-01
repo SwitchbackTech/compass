@@ -4,8 +4,8 @@ import { Priorities } from "@core/constants/core.constants";
 import { brighten } from "@core/util/color.utils";
 import {
   colorByPriority,
-  hoverColorsByPriority,
-} from "@web/common/styles/theme";
+  hoverColorByPriority,
+} from "@web/common/styles/theme.util";
 
 export interface Props extends DroppableProvided {
   priority: Priorities;
@@ -57,7 +57,7 @@ export const StyledNewSomedayEvent = styled.div<Props>`
       if (isDragging) {
         return brighten(colorByPriority[priority]);
       }
-      return hoverColorsByPriority[priority];
+      return hoverColorByPriority[priority];
     }
 
     return colorByPriority[priority];
@@ -79,7 +79,7 @@ export const StyledNewSomedayEvent = styled.div<Props>`
   width: 298px;
 
   &:hover {
-    background: ${({ priority }) => hoverColorsByPriority[priority]};
+    background: ${({ priority }) => hoverColorByPriority[priority]};
     cursor: pointer;
   }
 
