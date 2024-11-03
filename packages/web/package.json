@@ -8,7 +8,7 @@
   "dependencies": {
     "@atlaskit/css-reset": "^6.3.20",
     "@compass/core": "1.0.0",
-    "@floating-ui/react": "^0.19.2",
+    "@floating-ui/react": "^0.26.27",
     "@hello-pangea/dnd": "^16.2.0",
     "@phosphor-icons/react": "^2.1.7",
     "@popperjs/core": "^2.11.5",
