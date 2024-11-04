@@ -10,17 +10,8 @@ export const darken = (color: string) => {
   return tinycolor(color).darken().toString();
 };
 
-export const getAlphaColor = (colorName: ColorNames, opacity: number) => {
-  const _opacity = Math.round(Math.min(Math.max(opacity || 1, 0), 1) * 255);
-  return getColor(colorName) + _opacity.toString(16).toUpperCase();
-};
-
 export const getColor = (colorName: ColorNames) =>
   OLDcolors[colorName] as ColorHex;
-
-export const getDarkerColor = (colorName: ColorNames) => {
-  return OLDcolors[getNeighbourKey(colorName, OLDcolors, -1) as ColorNames];
-};
 
 export const getInvertedColor = (colorName: InvertedColorNames) => {
   const invertedColors = {
