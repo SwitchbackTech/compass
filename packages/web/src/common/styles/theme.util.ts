@@ -40,16 +40,13 @@ export const gradientByPriority = {
   )})`,
 };
 
-export const defaultGradient = `linear-gradient(90deg, ${c.blue100}, ${c.blue500})`;
+export const blueGradient = `linear-gradient(${c.blue200}, ${c.blue300})`;
+const grayGradient = `linear-gradient(90deg, ${c.gray100}, ${c.gray200})`;
 
 export const getGradient = (color: string) => {
   const priority = Object.keys(colorByPriority).find(
     (key) => colorByPriority[key as Priorities] === color
   ) as Priorities | undefined;
 
-  return priority ? gradientByPriority[priority] : defaultGradient;
-  // TODO remove
-  //   return priority
-  //     ? gradientByPriority[priority]
-  //     : `linear-gradient(90deg, ${c.gray100}, ${c.gray200})}`;
+  return priority ? gradientByPriority[priority] : grayGradient;
 };

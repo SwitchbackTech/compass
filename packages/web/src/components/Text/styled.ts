@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { getGradient, defaultGradient } from "@web/common/styles/theme.util";
+import { getGradient, blueGradient } from "@web/common/styles/theme.util";
 
 export interface Props {
   bgColor?: string;
@@ -26,7 +26,7 @@ export const StyledText = styled.span<Props>`
     withGradient &&
     `
   color: transparent;
-  background: ${defaultGradient};
+  background: ${blueGradient};
   background-clip: text;
   -webkit-background-clip: text; 
   `}
