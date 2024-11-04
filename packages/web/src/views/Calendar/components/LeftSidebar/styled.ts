@@ -6,8 +6,8 @@ import {
 } from "@web/views/Calendar/layout.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { FlexDirections } from "@web/components/Flex/styled";
-import { ArrowLineLeftIcon } from "@web/components/Icons/ArrowLeftLine";
-import { ArrowLineRightIcon } from "@web/components/Icons/ArrowRightLine";
+import { ArrowLineLeftIcon } from "@web/components/Icons/ArrowLineLeft";
+import { ArrowLineRightIcon } from "@web/components/Icons/ArrowLineRight";
 
 import { SidebarProps, SectionProps } from "./sidebar.types";
 
