@@ -3,8 +3,6 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { selectIsRightSidebarOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { Divider } from "@web/components/Divider";
-import { getAlphaColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/types/color.types";
 
 import { StyledRightSidebar } from "./styled";
 import { ToggleableMonthWidget } from "../LeftSidebar/ToggleableMonthWidget";
@@ -32,7 +30,6 @@ export const RightSidebar: FC<Props> = (props) => {
       />
       <div>
         <Divider
-          color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
           role="separator"
           title="right sidebar divider"
           withAnimation={false}
@@ -49,21 +46,6 @@ export const RightSidebar: FC<Props> = (props) => {
         </label>
 
         <Divider
-          color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
-          role="separator"
-          title="right sidebar divider"
-          withAnimation={false}
-        />
-
-        <Divider
-          color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
-          role="separator"
-          title="right sidebar divider"
-          withAnimation={false}
-        />
-
-        <Divider
-          color={getAlphaColor(ColorNames.WHITE_4, 0.5)}
           role="separator"
           title="right sidebar divider"
           withAnimation={false}
