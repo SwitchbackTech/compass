@@ -53,6 +53,7 @@ export const theme: DefaultTheme = {
     },
     fg: {
       primary: c.gray100,
+      primaryDark: c.gray200,
     },
     gridLine: {
       primary: c.gray800,

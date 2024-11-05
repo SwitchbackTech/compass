@@ -14,6 +14,7 @@ declare module "styled-components" {
       };
       fg: {
         primary: string;
+        primaryDark: string;
       };
       gridLine: {
         primary: string;

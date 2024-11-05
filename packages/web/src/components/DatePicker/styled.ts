@@ -65,7 +65,8 @@ export const StyledDatePicker = styled.div<{
 
       &:hover {
         ${({ view }) =>
-          view === "widget" && `background-color: ${theme.color.fg.primary}`};
+          view === "widget" &&
+          `background-color: ${theme.color.fg.primaryDark}`};
       }
     }
 
