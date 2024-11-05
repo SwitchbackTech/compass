@@ -15,6 +15,9 @@ declare module "styled-components" {
       fg: {
         primary: string;
       };
+      gridLine: {
+        primary: string;
+      };
       panel: {
         bg: string;
         scrollbar: string;

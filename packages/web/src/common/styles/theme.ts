@@ -54,6 +54,9 @@ export const theme: DefaultTheme = {
     fg: {
       primary: c.gray100,
     },
+    gridLine: {
+      primary: c.gray800,
+    },
     panel: {
       bg: c.gray600,
       scrollbar: c.gray500,

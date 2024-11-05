@@ -1,11 +1,10 @@
 import styled from "styled-components";
-import { ColorNames } from "@core/types/color.types";
-import { getColor } from "@core/util/color.utils";
-import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
+import {
+  DIVIDER_GRID,
+  EVENT_WIDTH_MINIMUM,
+} from "@web/views/Calendar/layout.constants";
 import { Flex } from "@web/components/Flex";
 import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
-
-const colBorder = `1px solid ${getColor(ColorNames.GREY_4)}48`;
 
 export const Columns = styled(Flex)`
   position: absolute;
@@ -18,7 +17,8 @@ export const StyledAllDayColumns = styled(Columns)`
 `;
 
 export const StyledGridCol = styled.div<{ color: string }>`
-  border-left: ${colBorder};
+  border-left: ${({ theme }) =>
+    `${DIVIDER_GRID}px solid ${theme.color.gridLine.primary}`};
   background: ${({ color }) => color};
   flex-basis: 100%;
   height: 100%;
