@@ -1,6 +1,4 @@
 import tinycolor from "tinycolor2";
-import { BASE_COLORS, ColorHex, OLDcolors } from "@core/constants/colors";
-import { ColorNames, InvertedColorNames } from "@core/types/color.types";
 
 export const brighten = (color: string, amount?: number) => {
   return tinycolor(color).brighten(amount).toString();
@@ -8,24 +6,6 @@ export const brighten = (color: string, amount?: number) => {
 
 export const darken = (color: string, amount?: number) => {
   return tinycolor(color).darken(amount).toString();
-};
-
-export const getColor = (colorName: ColorNames) =>
-  OLDcolors[colorName] as ColorHex;
-
-export const getInvertedColor = (colorName: InvertedColorNames) => {
-  const invertedColors = {
-    // priority colors
-    [ColorNames.GREY_4]: BASE_COLORS.ONYX_GREY,
-    [ColorNames.BLUE_7]: BASE_COLORS.ONYX_GREY,
-    [ColorNames.BLUE_5]: BASE_COLORS.DEEP_BLUE,
-    [ColorNames.TEAL_2]: BASE_COLORS.DEEP_BLUE,
-    // other
-    [ColorNames.WHITE_1]: OLDcolors.white_3,
-    [ColorNames.YELLOW_2]: OLDcolors.yellow_3,
-  };
-  //@ts-ignore
-  return invertedColors[colorName] as string;
 };
 
 export const getNeighbourKey = (key = "", obj = {}, diff = 1) => {
