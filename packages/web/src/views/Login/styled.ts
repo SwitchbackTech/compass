@@ -1,7 +1,5 @@
 import styled, { keyframes } from "styled-components";
 import { Flex } from "@web/components/Flex";
-import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/types/color.types";
 
 import { darkBlueGradient } from "../../common/styles/theme.util";
 
@@ -76,7 +74,7 @@ export const Subtitle = styled.p`
 `;
 
 export const Description = styled.p`
-  color: ${getColor(ColorNames.WHITE_5)};
+  color: ${({ theme }) => theme.color.text.lighter};
   font-size: 1rem;
   margin-bottom: 1rem;
   text-align: center;
