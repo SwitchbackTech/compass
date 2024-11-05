@@ -2,12 +2,12 @@ import tinycolor from "tinycolor2";
 import { BASE_COLORS, ColorHex, OLDcolors } from "@core/constants/colors";
 import { ColorNames, InvertedColorNames } from "@core/types/color.types";
 
-export const brighten = (color: string) => {
-  return tinycolor(color).brighten().toString();
+export const brighten = (color: string, amount?: number) => {
+  return tinycolor(color).brighten(amount).toString();
 };
 
-export const darken = (color: string) => {
-  return tinycolor(color).darken().toString();
+export const darken = (color: string, amount?: number) => {
+  return tinycolor(color).darken(amount).toString();
 };
 
 export const getColor = (colorName: ColorNames) =>

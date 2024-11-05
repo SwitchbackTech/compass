@@ -1,8 +1,6 @@
 import styled from "styled-components";
-import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/types/color.types";
+import { darken } from "@core/util/color.utils";
 import { Divider } from "@web/components/Divider";
-import { FORM_TIME_SIZE } from "@web/views/Forms/EventForm/styled";
 
 export interface Props {
   bgColor?: string;
@@ -10,7 +8,7 @@ export interface Props {
 }
 
 export const StyledTimePicker = styled.div<Props>`
-  font-size: ${FORM_TIME_SIZE}px;
+  font-size: ${({ theme }) => theme.text.medium};
   min-width: 90px;
   position: relative;
 
@@ -58,7 +56,7 @@ export const StyledTimePicker = styled.div<Props>`
       min-width: 150px;
 
       &-list {
-        font-size: ${FORM_TIME_SIZE - 3}px;
+        font-size: 14px;
         padding: 0;
         ${({ isOpen: open }) => !open && "max-height: 0;"}
         transition: ${({ theme }) => theme.transition.default};
@@ -67,10 +65,10 @@ export const StyledTimePicker = styled.div<Props>`
           width: 8px;
         }
         ::-webkit-scrollbar-thumb {
-          background: ${getColor(ColorNames.GREY_3)};
+          background: ${({ bgColor }) => darken(bgColor, 40)};
           border-radius: 3px;
           &:hover {
-            background: ${getColor(ColorNames.GREY_2)};
+            background: ${({ bgColor }) => darken(bgColor, 80)};
             transition: background-color 0.2s;
           }
         }

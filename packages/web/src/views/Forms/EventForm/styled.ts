@@ -8,8 +8,6 @@ import { PriorityButton } from "@web/components/Button/styled";
 
 import { StyledFormProps } from "./types";
 
-export const FORM_TIME_SIZE = 17;
-
 interface SomedayFormProps extends StyledFormProps {
   x?: number;
   y?: number;
