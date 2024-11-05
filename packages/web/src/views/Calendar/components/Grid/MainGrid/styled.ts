@@ -1,12 +1,9 @@
 import styled from "styled-components";
-import { ColorNames } from "@core/types/color.types";
-import { getColor } from "@core/util/color.utils";
-import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
+import { brighten } from "@core/util/color.utils";
 import {
   GRID_PADDING_BOTTOM,
   SCROLLBAR_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { Flex } from "@web/components/Flex";
 
 export const StyledMainGrid = styled.div`
   flex: 1;
@@ -26,22 +23,13 @@ export const StyledMainGrid = styled.div`
   ::-webkit-scrollbar {
     width: ${SCROLLBAR_WIDTH}px;
   }
+
   ::-webkit-scrollbar-thumb {
     border-radius: 7px;
-    background: ${getColor(ColorNames.GREY_3)};
+    background: ${({ theme }) => brighten(theme.color.bg.primary, 10)};
     &:hover {
-      background: ${getColor(ColorNames.GREY_4)};
+      background: ${({ theme }) => brighten(theme.color.bg.primary, 20)};
       transition: background-color 0.2s;
     }
   }
-`;
-
-export const StyledPrevDaysOverflow = styled(Flex)`
-  background: ${getColor(ColorNames.WHITE_1)};
-  flex-basis: 100%;
-  height: 100%;
-  min-width: ${EVENT_WIDTH_MINIMUM}px;
-  opacity: 0.05;
-  position: absolute;
-  width: 100%;
 `;
