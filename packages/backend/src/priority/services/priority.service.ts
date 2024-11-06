@@ -6,7 +6,6 @@ import {
 import { Priorities } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { BaseError } from "@core/errors/errors.base";
-import { colorNameByPriority } from "@core/constants/colors";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 
@@ -62,7 +61,6 @@ class PriorityService {
         _id: response.insertedId.toString(),
         user: userId,
         name: data.name,
-        color: data.color,
       };
 
       return priority;
@@ -72,22 +70,18 @@ class PriorityService {
   async createDefaultPriorities(userId: string) {
     return await this.create(userId, [
       {
-        color: colorNameByPriority.unassigned,
         name: Priorities.UNASSIGNED,
         user: userId,
       },
       {
-        color: colorNameByPriority.self,
         name: Priorities.SELF,
         user: userId,
       },
       {
-        color: colorNameByPriority.work,
         name: Priorities.WORK,
         user: userId,
       },
       {
-        color: colorNameByPriority.relationships,
         name: Priorities.RELATIONS,
         user: userId,
       },
