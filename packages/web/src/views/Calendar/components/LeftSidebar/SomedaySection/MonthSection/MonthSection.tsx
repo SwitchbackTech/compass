@@ -1,5 +1,4 @@
 import React, { FC } from "react";
-import { ColorNames } from "@core/types/color.types";
 import { Categories_Event } from "@core/types/event.types";
 import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
@@ -34,7 +33,7 @@ export const MonthSection: FC<Props> = ({
         alignItems={AlignItems.CENTER}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        <Text colorName={ColorNames.WHITE_1} role="heading" size={22}>
+        <Text role="heading" size={22}>
           {monthLabel}
         </Text>
         <div onClick={(e) => e.stopPropagation()}>

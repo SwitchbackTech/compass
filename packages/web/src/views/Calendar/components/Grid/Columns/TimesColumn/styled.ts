@@ -1,9 +1,8 @@
 import styled from "styled-components";
-import { Colors } from "@core/types/color.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 
 interface Props {
-  color: Colors;
+  color: string;
 }
 
 export const StyledTimesLabel = styled.div<Props>`
