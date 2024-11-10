@@ -1,5 +1,7 @@
 import styled from "styled-components";
 import { getGradient, blueGradient } from "@web/common/styles/theme.util";
+import { FontSize } from "@web/common/styles/style.types";
+import { theme } from "@web/common/styles/theme";
 
 export interface Props {
   bgColor?: string;
@@ -7,18 +9,19 @@ export interface Props {
   cursor?: string;
   fontWeight?: number | "normal" | "bold" | "bolder" | "lighter";
   lineHeight?: number;
-  size?: number;
+  size?: FontSize;
   withGradient?: boolean;
   withUnderline?: boolean;
   zIndex?: number;
 }
 
+// size && font-size: ${theme.text[size] || size};`} //TODO fallback to m */
 export const StyledText = styled.span<Props>`
   ${({ color }) => color && `color: ${color};`}
   ${({ cursor }) => cursor && `cursor: ${cursor};`}
   ${({ lineHeight }) => lineHeight && `line-height: ${lineHeight}px;`}
-  ${({ size }) => size && `font-size: ${size}px;`}
-
+  ${({ size }) => size && `font-size: ${theme.text[size] || "5px"};`} 
+  
   font-weight: ${({ fontWeight = "normal" }) => fontWeight};
   position: relative;
 

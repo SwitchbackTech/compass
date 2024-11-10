@@ -85,14 +85,14 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
           width={width}
         >
           <Flex alignItems={AlignItems.CENTER} flexWrap={FlexWrap.WRAP}>
-            <Text size={12} role="textbox">
+            <Text size="m" role="textbox">
               {event.title}
             </Text>
 
             {isOverMainGrid && (
               <>
                 <SpaceCharacter />
-                <Text size={10}>{getTimePreview()}</Text>
+                <Text size="s">{getTimePreview()}</Text>
               </>
             )}
           </Flex>

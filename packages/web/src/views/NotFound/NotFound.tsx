@@ -18,11 +18,11 @@ export const NotFoundView = () => {
   return (
     <StyledNotFoundContainer>
       <div>
-        <Text size={38}>🏴‍☠️ Shiver me timbers! </Text>
+        <Text size="4xl">🏴‍☠️ Shiver me timbers! </Text>
       </div>
 
       <div>
-        <Text size={22}>This isn't part of the app, matey</Text>
+        <Text size="xxl">This isn't part of the app, matey</Text>
       </div>
 
       <StyledBackButton onClick={goHome}>

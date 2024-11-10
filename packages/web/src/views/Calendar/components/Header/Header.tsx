@@ -67,11 +67,11 @@ export const Header: FC<Props> = ({
       >
         <StyledLeftGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
-            <Text size={40}>{startOfView.format("MMMM")}</Text>
+            <Text size="4xl">{startOfView.format("MMMM")}</Text>
 
             <SpaceCharacter />
 
-            <Text size={38}>{startOfView.format("YYYY")}</Text>
+            <Text size="xxxl">{startOfView.format("YY")}</Text>
           </StyledHeaderLabel>
 
           <StyledNavigationButtons>
@@ -91,7 +91,7 @@ export const Header: FC<Props> = ({
                 <ArrowNavigationButton
                   cursor="pointer"
                   role="navigation"
-                  size={35}
+                  size="xxl"
                   title="previous week"
                 >
                   {"<"}
@@ -105,7 +105,7 @@ export const Header: FC<Props> = ({
                 <ArrowNavigationButton
                   cursor="pointer"
                   role="navigation"
-                  size={35}
+                  size="xxl"
                   title="next week"
                 >
                   {">"}

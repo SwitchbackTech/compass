@@ -33,7 +33,7 @@ export const MonthSection: FC<Props> = ({
         alignItems={AlignItems.CENTER}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        <Text role="heading" size={22}>
+        <Text role="heading" size="xl">
           {monthLabel}
         </Text>
         <div onClick={(e) => e.stopPropagation()}>
@@ -45,7 +45,7 @@ export const MonthSection: FC<Props> = ({
             shortcut="M"
           >
             <div role="button">
-              <StyledAddEventButton size={25}>+</StyledAddEventButton>
+              <StyledAddEventButton size="xl">+</StyledAddEventButton>
             </div>
           </TooltipWrapper>
         </div>

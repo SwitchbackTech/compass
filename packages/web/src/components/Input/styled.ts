@@ -8,7 +8,7 @@ export const StyledInput = styled.input<Props>`
   background-color: ${({ bgColor }) => bgColor};
   border: none;
   height: 34px;
-  font-size: ${({ theme }) => theme.text.medium};
+  font-size: ${({ theme }) => theme.text.l};
   outline: none;
   width: 100%;
 

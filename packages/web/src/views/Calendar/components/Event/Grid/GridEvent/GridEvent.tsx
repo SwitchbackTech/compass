@@ -98,14 +98,14 @@ const _GridEvent = (
         direction={FlexDirections.COLUMN}
         flexWrap={FlexWrap.WRAP}
       >
-        <StyledEventTitle size={10.3} role="textbox">
+        <StyledEventTitle size="m" role="textbox">
           {event.title}
         </StyledEventTitle>
         {!event.isAllDay && (
           <>
             <Times
               event={event}
-              isDrafting={isDragging || isResizing}
+              isDrafting={isDraft}
               isPlaceholder={isPlaceholder}
             />
             <>

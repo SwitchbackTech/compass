@@ -96,8 +96,8 @@ export const DatePicker: React.FC<Props> = ({
         changeYear,
         customHeaderCount,
       }) => {
-        const formattedSelectedMonth = dayjs(monthDate).format("MMM YYYY");
-        const formattedCurrentMonth = dayjs().format("MMM YYYY");
+        const selectedMonth = dayjs(monthDate).format("MMM YYYY");
+        const currentMonth = dayjs().format("MMM YYYY");
 
         return (
           <StyledHeaderFlex
@@ -105,8 +105,8 @@ export const DatePicker: React.FC<Props> = ({
             justifyContent={JustifyContent.LEFT}
           >
             <MonthContainerStyled>
-              <Text color={theme.color.text.light} size={17}>
-                {formattedSelectedMonth}
+              <Text color={theme.color.text.light} size="xl">
+                {selectedMonth}
               </Text>
             </MonthContainerStyled>
 
@@ -116,34 +116,30 @@ export const DatePicker: React.FC<Props> = ({
                   <Text
                     cursor="pointer"
                     onClick={decreaseMonth}
-                    fontWeight={600}
                     color={theme.color.text.light}
-                    size={20}
+                    size="l"
                   >
                     {"<"}
                   </Text>
                   <Text
                     cursor="pointer"
                     onClick={increaseMonth}
-                    fontWeight={600}
                     color={theme.color.text.light}
-                    size={20}
+                    size="l"
                   >
                     {">"}
                   </Text>
                 </ChangeDayButtonsStyledFlex>
                 {withTodayButton && (
                   <TodayStyledText
-                    isCurrentDate={
-                      formattedCurrentMonth === formattedSelectedMonth
-                    }
+                    isCurrentDate={currentMonth === selectedMonth}
                     cursor="pointer"
                     onClick={() => {
                       changeMonth(dayjs().month());
                       changeYear(dayjs().year());
                     }}
                     color={theme.color.text.light}
-                    size={16}
+                    size="l"
                   >
                     Today
                   </TodayStyledText>

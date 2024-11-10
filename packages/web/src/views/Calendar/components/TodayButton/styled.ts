@@ -6,7 +6,7 @@ export const StyledTodayButton = styled(Flex)`
   color: ${({ theme }) => theme.color.text.light};
   cursor: pointer;
   display: flex;
-  font-size: 17px;
+  font-size: ${({ theme }) => theme.text.l};
   min-width: 80px;
   padding: 0 10px;
 

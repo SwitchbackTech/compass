@@ -61,15 +61,11 @@ export const DayLabels: FC<Props> = ({
             title={getWeekDayLabel(day)}
             color={color}
           >
-            <Text
-              lineHeight={WEEK_DAYS_HEIGHT}
-              size={WEEK_DAYS_HEIGHT}
-              withGradient={isToday}
-            >
+            <Text size="xxl" withGradient={isToday}>
               {dayNumber}
             </Text>
             <SpaceCharacter />
-            <Text size={12}>{day.format("ddd")}</Text>
+            <Text size="l">{day.format("ddd")}</Text>
           </StyledWeekDayFlex>
         );
       })}

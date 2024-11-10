@@ -30,7 +30,7 @@ export const SomedayEventRectangle = ({
         direction={FlexDirections.ROW}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        <Text size={15}>{event.title}</Text>
+        <Text size="l">{event.title}</Text>
 
         {canMigrate ? (
           <Flex>

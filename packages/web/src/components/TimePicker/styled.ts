@@ -8,7 +8,7 @@ export interface Props {
 }
 
 export const StyledTimePicker = styled.div<Props>`
-  font-size: ${({ theme }) => theme.text.medium};
+  font-size: ${({ theme }) => theme.text.l};
   min-width: 90px;
   position: relative;
 

@@ -56,7 +56,7 @@ const AllDayEvent = ({
         alignItems={AlignItems.FLEX_START}
         direction={FlexDirections.COLUMN}
       >
-        <Text size={10.3} role="textbox">
+        <Text size="m" role="textbox">
           {event.title}
           <SpaceCharacter />
         </Text>
