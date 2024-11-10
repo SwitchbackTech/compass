@@ -4,7 +4,7 @@ import { theme } from "@web/common/styles/theme";
 
 export const GlobalStyle = createGlobalStyle`
   * {
-    font-family: 'Poppins';
+    font-family: 'Rubik', Arial, sans-serif;
     box-sizing: border-box;
   }
 
