@@ -1,6 +1,5 @@
 import styled from "styled-components";
 import { getGradient, blueGradient } from "@web/common/styles/theme.util";
-import { FontSize } from "@web/common/styles/style.types";
 import { theme } from "@web/common/styles/theme";
 
 export interface Props {
@@ -14,6 +13,8 @@ export interface Props {
   withUnderline?: boolean;
   zIndex?: number;
 }
+
+type FontSize = "xs" | "s" | "m" | "l" | "xl" | "xxl" | "xxxl" | "4xl" | "5xl";
 
 export const StyledText = styled.span<Props>`
   ${({ color }) => color && `color: ${color};`}
