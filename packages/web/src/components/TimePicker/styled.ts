@@ -56,7 +56,7 @@ export const StyledTimePicker = styled.div<Props>`
       min-width: 150px;
 
       &-list {
-        font-size: 14px;
+        font-size: ${({ theme }) => theme.text.size.m};
         padding: 0;
         ${({ isOpen: open }) => !open && "max-height: 0;"}
         transition: ${({ theme }) => theme.transition.default};
