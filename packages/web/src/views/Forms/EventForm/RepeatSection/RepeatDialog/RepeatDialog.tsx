@@ -44,7 +44,7 @@ export const RepeatDialog: FC<Props> = ({
     setIsRepeat(false);
   };
 
-  const fontSize = theme.text.m;
+  const fontSize = theme.text.size.m;
   const bgBright = brighten(bgColor);
   const bgDark = darken(bgColor);
 

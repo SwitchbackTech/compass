@@ -20,7 +20,7 @@ interface Props {
 export const StyledRepeatText = styled.span<Props>`
   border: 1px solid transparent;
   border-radius: 3px;
-  font-size: ${({ theme }) => theme.text.m};
+  font-size: ${({ theme }) => theme.text.size.m};
   opacity: ${({ hasRepeat }) => !hasRepeat && 0.85};
   padding: 2px 8px;
 
@@ -28,7 +28,6 @@ export const StyledRepeatText = styled.span<Props>`
   &:hover {
     border: ${({ hasRepeat, theme }) =>
       !hasRepeat && `1px solid ${theme.color.border.primaryDark}`};
-    font-weight: bold;
   }
 `;
 

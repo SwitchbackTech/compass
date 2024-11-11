@@ -15,12 +15,11 @@ export interface Props {
   zIndex?: number;
 }
 
-// size && font-size: ${theme.text[size] || size};`} //TODO fallback to m */
 export const StyledText = styled.span<Props>`
   ${({ color }) => color && `color: ${color};`}
   ${({ cursor }) => cursor && `cursor: ${cursor};`}
   ${({ lineHeight }) => lineHeight && `line-height: ${lineHeight}px;`}
-  ${({ size }) => size && `font-size: ${theme.text[size] || "5px"};`} 
+  ${({ size }) => size && `font-size: ${theme.text.size[size]};`} 
   
   font-weight: ${({ fontWeight = "normal" }) => fontWeight};
   position: relative;

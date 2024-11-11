@@ -27,7 +27,8 @@ export const StyledEventForm = styled.form<SomedayFormProps>`
 export const StyledDescription = styled(Textarea)`
   background: transparent;
   border: hidden;
-  font-size: 20px;
+  font-size: ${({ theme }) => theme.text.size.xxl};
+  font-weight: ${({ theme }) => theme.text.weight.regular};
   max-height: 180px;
   position: relative;
   width: calc(100% - 20px) !important;
@@ -57,8 +58,7 @@ export const StyledSubmitRow = styled(Flex)`
 
 export const StyledTitle = styled(Textarea)`
   background: transparent;
-  height: 40px;
-  font-size: 35px;
+  font-size: ${({ theme }) => theme.text.size["5xl"]};
   &:hover {
     filter: brightness(90%);
   }

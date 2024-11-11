@@ -50,14 +50,24 @@ declare module "styled-components" {
       };
     };
     text: {
-      xs: string;
-      s: string;
-      m: string;
-      l: string;
-      xl: string;
-      xxl: string;
-      xxxl: string;
-      "4xl": string;
+      size: {
+        xs: string;
+        s: string;
+        m: string;
+        l: string;
+        xl: string;
+        xxl: string;
+        xxxl: string;
+        "4xl": string;
+        "5xl": string;
+      };
+      weight: {
+        light: number;
+        regular: number;
+        medium: number;
+        bold: number;
+        extraBold: number;
+      };
     };
     transition: {
       default: string;
