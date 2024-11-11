@@ -7,7 +7,6 @@ import { JustifyContent, AlignItems } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 
 import { RootProps } from "../../calendarView.types";
-import { WEEK_DAYS_HEIGHT } from "../../layout.constants";
 import { StyledWeekDaysFlex, StyledWeekDayFlex } from "./styled";
 
 interface Props {
