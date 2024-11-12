@@ -2,8 +2,7 @@ import React, { FC } from "react";
 import { Dayjs } from "dayjs";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { NowLine } from "@web/views/Calendar/components/NowLine";
-import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/types/color.types";
+import { theme } from "@web/common/styles/theme";
 
 import { StyledGridCols, StyledGridCol } from "./styled";
 import { TimesColumn } from "./TimesColumn";
@@ -22,7 +21,7 @@ export const Columns: FC<Props> = ({
   weekDays,
 }) => {
   const todayIndex = today.day();
-  const pastDayColor = `${getColor(ColorNames.GREY_3)}30`;
+  const pastDayColor = theme.color.bg.secondary;
 
   const _getColumnColor = (dayIndex: number) => {
     const isPastDay = todayIndex > dayIndex;

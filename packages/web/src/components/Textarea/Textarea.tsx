@@ -5,26 +5,30 @@ import React, {
   RefObject,
   useRef,
 } from "react";
-import { FocusableUnderlineLayout } from "@web/components/FocusableUnderlinedComponent";
+import { Focusable } from "@web/components/Focusable/Focusable";
 
-import { Styled } from "./styled";
-import { Props } from "./types";
+import { StyledTextarea } from "./styled";
+import { TextareaProps } from "./types";
 
-const Component: ForwardRefRenderFunction<HTMLTextAreaElement, Props> = (
-  { withUnderline = true, ...props }: Props,
+const _Textarea: ForwardRefRenderFunction<
+  HTMLTextAreaElement,
+  TextareaProps
+> = (
+  { withUnderline = true, underlineColor, ...props }: TextareaProps,
   parentRef: ForwardedRef<HTMLTextAreaElement>
 ) => {
   const newRef = useRef<HTMLTextAreaElement>(null);
   const ref = (parentRef || newRef) as RefObject<HTMLTextAreaElement>;
 
   return (
-    <FocusableUnderlineLayout
-      Component={Styled}
+    <Focusable
+      Component={StyledTextarea}
       ref={ref}
+      underlineColor={underlineColor}
       withUnderline={withUnderline}
       {...props}
     />
   );
 };
 
-export const Textarea = forwardRef(Component);
+export const Textarea = forwardRef(_Textarea);

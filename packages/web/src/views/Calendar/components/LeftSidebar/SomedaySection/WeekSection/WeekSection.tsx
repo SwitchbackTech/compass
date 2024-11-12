@@ -5,7 +5,6 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { ColorNames } from "@core/types/color.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
@@ -33,7 +32,7 @@ export const WeekSection: FC<Props> = ({
         alignItems={AlignItems.CENTER}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        <Text colorName={ColorNames.WHITE_1} role="heading" size={22}>
+        <Text role="heading" size="xl">
           {weekLabel}
         </Text>
 
@@ -46,7 +45,7 @@ export const WeekSection: FC<Props> = ({
             shortcut="W"
           >
             <div role="button">
-              <StyledAddEventButton size={25}>+</StyledAddEventButton>
+              <StyledAddEventButton size="xl">+</StyledAddEventButton>
             </div>
           </TooltipWrapper>
         </div>

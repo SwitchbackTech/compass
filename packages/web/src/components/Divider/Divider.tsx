@@ -1,6 +1,6 @@
 import React, { HTMLAttributes, useEffect, useState } from "react";
 
-import { Styled } from "./styled";
+import { StyledDivider } from "./styled";
 import { Props } from "./types";
 
 export const Divider: React.FC<Props & HTMLAttributes<HTMLDivElement>> = (
@@ -12,5 +12,5 @@ export const Divider: React.FC<Props & HTMLAttributes<HTMLDivElement>> = (
     toggle(true);
   }, []);
 
-  return <Styled toggled={toggled} {...props} />;
+  return <StyledDivider toggled={toggled} {...props} />;
 };

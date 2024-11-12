@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import Modal from "react-modal";
 import { useHotkeys } from "react-hotkeys-hook";
-import { colorNameByPriority } from "@core/constants/colors";
-import { Button } from "@web/components/Button";
 import derekImg from "@web/assets/png/derek.png";
+import { Flex } from "@web/components/Flex";
+import { FlexDirections, JustifyContent } from "@web/components/Flex/styled";
+import { StyledXIcon } from "@web/components/Icons/X";
 
 import {
   StyledCaption,
-  StyledDedicationModal,
   StyledDedicationText,
   StyledDerekPic,
   StyledDerekQuote,
@@ -33,7 +33,7 @@ export const Dedication = () => {
   };
 
   return (
-    <StyledDedicationModal>
+    <>
       <Modal
         appElement={document.getElementById("root")}
         isOpen={isOpen}
@@ -43,7 +43,13 @@ export const Dedication = () => {
         shouldFocusAfterRender={true}
         style={modalStyles}
       >
-        <h2>For Derek</h2>
+        <Flex
+          direction={FlexDirections.ROW}
+          justifyContent={JustifyContent.SPACE_BETWEEN}
+        >
+          <h2>For Derek</h2>
+          <StyledXIcon size={20} onClick={close} />
+        </Flex>
         <StyledDedicationText>
           This app is dedicated to Derek John Benton (1993-2014).
         </StyledDedicationText>
@@ -57,11 +63,7 @@ export const Dedication = () => {
           <StyledDerekPic src={derekImg} alt="Headshot of Derek" />
         </StyledDerekQuoteContainer>
         <StyledCaption>-Derek's Facebook post from 12.24.2013</StyledCaption>
-
-        <Button color={colorNameByPriority.work} onClick={close}>
-          Close
-        </Button>
       </Modal>
-    </StyledDedicationModal>
+    </>
   );
 };

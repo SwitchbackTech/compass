@@ -16,6 +16,7 @@ export enum JustifyContent {
 
 export enum AlignItems {
   CENTER = "center",
+  BASELINE = "baseline",
   FLEX_END = "flex-end",
   FLEX_START = "flex-start",
 }

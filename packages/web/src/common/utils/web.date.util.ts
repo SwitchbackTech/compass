@@ -6,8 +6,6 @@ import {
   YMDHAM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
 } from "@core/constants/date.constants";
-import { ColorNames } from "@core/types/color.types";
-import { getColor } from "@core/util/color.utils";
 import { RRULE } from "@core/constants/core.constants";
 import {
   Option_Time,
@@ -23,6 +21,7 @@ import {
   Recurrence_Selection,
   Schema_SelectedDates,
 } from "../types/web.event.types";
+import { theme } from "../styles/theme";
 
 export const dateIsValid = (date: string) => {
   const notNaN = !Number.isNaN(new Date(date).getTime());
@@ -38,8 +37,8 @@ export const getColorsByHour = (currentHour: number) => {
   [...(new Array(24) as number[])].map((_, index) => {
     const isCurrentHour = currentHour - 1 === index;
     const color = isCurrentHour
-      ? getColor(ColorNames.TEAL_3)
-      : `${getColor(ColorNames.WHITE_4)}80`;
+      ? theme.color.text.accent
+      : theme.color.text.light;
 
     colors.push(color);
 
@@ -147,12 +146,6 @@ export const getRecurrenceRule = (selection: Recurrence_Selection) => {
   switch (selection) {
     case Recurrence_Selection.WEEK:
       return [RRULE.WEEK];
-      break;
-    case Recurrence_Selection.WEEKS_2:
-      return [RRULE.WEEKS_2];
-      break;
-    case Recurrence_Selection.WEEKS_3:
-      return [RRULE.WEEKS_3];
       break;
     case Recurrence_Selection.MONTH:
       return [RRULE.MONTH];

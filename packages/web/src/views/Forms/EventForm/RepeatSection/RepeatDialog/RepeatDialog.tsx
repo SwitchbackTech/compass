@@ -1,13 +1,14 @@
 import React, { FC } from "react";
-import Select from "react-select";
-import { ColorHex } from "@core/constants/colors";
+import Select, { StylesConfig } from "react-select";
 import { Schema_Event } from "@core/types/event.types";
+import { brighten, darken } from "@core/util/color.utils";
 import { Recurrence_Selection } from "@web/common/types/web.event.types";
 import {
   getRecurrenceOption,
   getRecurrenceRule,
 } from "@web/common/utils/web.date.util";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
+import { theme } from "@web/common/styles/theme";
 
 import {
   StyledRepeatRow,
@@ -16,7 +17,7 @@ import {
 } from "../styled";
 
 interface Props {
-  bgColor: ColorHex;
+  bgColor: string;
   recurrence: Schema_Event["recurrence"];
   onChangeRecurrence: (rule: string[] | null) => void;
   setIsRepeat: React.Dispatch<React.SetStateAction<boolean>>;
@@ -30,8 +31,6 @@ export const RepeatDialog: FC<Props> = ({
 }) => {
   const options = [
     { value: Recurrence_Selection.WEEK, label: "week" },
-    { value: Recurrence_Selection.WEEKS_2, label: "2 weeks" },
-    { value: Recurrence_Selection.WEEKS_3, label: "3 weeks" },
     { value: Recurrence_Selection.MONTH, label: "month" },
   ];
 
@@ -40,11 +39,56 @@ export const RepeatDialog: FC<Props> = ({
       ? getRecurrenceOption(recurrence.rule[0])
       : options[0];
 
-  const fontSize = "13px";
-
   const onRepeatTextClick = () => {
     onChangeRecurrence(null);
     setIsRepeat(false);
+  };
+
+  const fontSize = theme.text.size.m;
+  const bgBright = brighten(bgColor);
+  const bgDark = darken(bgColor);
+
+  const selectStyles: StylesConfig = {
+    control: (baseStyles) => ({
+      ...baseStyles,
+      backgroundColor: bgColor,
+      borderRadius: 4,
+      fontSize,
+      height: "27px",
+    }),
+    indicatorSeparator: () => ({
+      visibility: "hidden",
+    }),
+    menuList: (baseStyles) => ({
+      ...baseStyles,
+      fontSize,
+      backgroundColor: bgColor,
+    }),
+    option: (styles, { isDisabled, isFocused, isSelected }) => {
+      return {
+        ...styles,
+        backgroundColor: isDisabled
+          ? undefined
+          : isSelected
+          ? bgBright
+          : isFocused
+          ? bgDark
+          : undefined,
+        color: isDisabled
+          ? theme.color.text.lightInactive
+          : theme.color.text.dark,
+        cursor: isDisabled ? "not-allowed" : "default",
+
+        ":active": {
+          ...styles[":active"],
+          backgroundColor: !isDisabled
+            ? isSelected
+              ? bgColor
+              : bgBright
+            : undefined,
+        },
+      };
+    },
   };
 
   return (
@@ -57,38 +101,23 @@ export const RepeatDialog: FC<Props> = ({
       <div>
         <Select
           defaultValue={defaultValue}
-          isOptionDisabled={(opt) =>
+          isOptionDisabled={(selection: { value: string; label: string }) =>
             ![Recurrence_Selection.WEEK, Recurrence_Selection.MONTH].includes(
-              opt.value
+              selection.value as Recurrence_Selection
             )
           }
           options={options}
-          onChange={(selection) => {
-            const rrule = getRecurrenceRule(selection.value);
+          onChange={(selection: { value: string; label: string }) => {
+            const rrule = getRecurrenceRule(
+              selection.value as Recurrence_Selection
+            );
             onChangeRecurrence(rrule);
           }}
-          styles={{
-            control: (baseStyles, state) => ({
-              ...baseStyles,
-              backgroundColor: bgColor,
-              borderColor: state.isFocused ? "grey" : "lightgrey",
-              fontSize,
-              minHeight: "30px",
-              height: "30px",
-            }),
-            indicatorSeparator: () => ({
-              visibility: "hidden",
-            }),
-            menuList: (baseStyles) => ({
-              ...baseStyles,
-              backgroundColor: bgColor,
-              fontSize,
-            }),
-            option: (baseStyles, state) => ({
-              ...baseStyles,
-              color: state.isDisabled ? "#505050" : "black",
-            }),
-          }}
+          theme={(theme) => ({
+            ...theme,
+            borderRadius: 4,
+          })}
+          styles={selectStyles}
         />
       </div>
     </StyledRepeatRow>

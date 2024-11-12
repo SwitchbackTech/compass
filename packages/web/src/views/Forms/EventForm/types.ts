@@ -22,6 +22,6 @@ export type SetEventFormField = <FieldName extends keyof Schema_Event>(
 
 export interface StyledFormProps {
   isOpen?: boolean;
-  priority?: string;
+  priority?: Priority;
   title?: string;
 }

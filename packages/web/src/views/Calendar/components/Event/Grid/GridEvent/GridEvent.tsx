@@ -98,14 +98,14 @@ const _GridEvent = (
         direction={FlexDirections.COLUMN}
         flexWrap={FlexWrap.WRAP}
       >
-        <StyledEventTitle size={10.3} role="textbox">
+        <StyledEventTitle size="m" role="textbox">
           {event.title}
         </StyledEventTitle>
         {!event.isAllDay && (
           <>
             <Times
               event={event}
-              isDrafting={isDragging || isResizing}
+              isDrafting={isDraft}
               isPlaceholder={isPlaceholder}
             />
             <>
@@ -130,5 +130,9 @@ const _GridEvent = (
 
 export const GridEvent = forwardRef(_GridEvent);
 export const GridEventMemo = memo(GridEvent, (prev, next) => {
-  return prev.event === next.event && prev.measurements === next.measurements;
+  return (
+    prev.event === next.event &&
+    prev.isPlaceholder === next.isPlaceholder &&
+    prev.measurements === next.measurements
+  );
 });

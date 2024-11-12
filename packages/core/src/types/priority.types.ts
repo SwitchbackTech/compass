@@ -1,5 +1,4 @@
 export interface PriorityReq {
-  color: string;
   name: string;
 }
 

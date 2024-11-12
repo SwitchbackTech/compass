@@ -1,20 +1,12 @@
 import styled from "styled-components";
-import { Priorities } from "@core/constants/core.constants";
-import { colorNameByPriority } from "@core/constants/colors";
-import { ColorNames, InvertedColorNames } from "@core/types/color.types";
-import { getColor, getInvertedColor } from "@core/util/color.utils";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
-import {
-  ANIMATION_TIME_3_MS,
-  ZIndex,
-} from "@web/common/constants/web.constants";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
-import { Button } from "@web/components/Button";
+import { hoverColorByPriority } from "@web/common/styles/theme.util";
+import { PriorityButton } from "@web/components/Button/styled";
 
 import { StyledFormProps } from "./types";
-
-export const FORM_TIME_SIZE = 17;
 
 interface SomedayFormProps extends StyledFormProps {
   x?: number;
@@ -22,29 +14,21 @@ interface SomedayFormProps extends StyledFormProps {
 }
 
 export const StyledEventForm = styled.form<SomedayFormProps>`
-  background: ${({ priority }) =>
-    getColor(
-      colorNameByPriority[priority || Priorities.UNASSIGNED] as ColorNames
-    )};
+  background: ${({ priority }) => hoverColorByPriority[priority]};
   border-radius: 4px;
-  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.25);
-  color: ${({ priority }) =>
-    getInvertedColor(
-      colorNameByPriority[
-        priority || Priorities.UNASSIGNED
-      ] as InvertedColorNames
-    )};
+  box-shadow: 0px 5px 5px ${({ theme }) => theme.color.shadow.default};
   font-size: 20px;
   padding: 18px 20px;
-  transition: ${ANIMATION_TIME_3_MS};
+  transition: ${({ theme }) => theme.transition.default};
   width: 585px;
   z-index: ${ZIndex.LAYER_1};
 `;
 
-export const StyledDescriptionField = styled(Textarea)`
+export const StyledDescription = styled(Textarea)`
   background: transparent;
   border: hidden;
-  font-size: 20px;
+  font-size: ${({ theme }) => theme.text.size.xxl};
+  font-weight: ${({ theme }) => theme.text.weight.regular};
   max-height: 180px;
   position: relative;
   width: calc(100% - 20px) !important;
@@ -60,7 +44,7 @@ export const StyledIconRow = styled(Flex)`
   justify-content: end;
 `;
 
-export const StyledSubmitButton = styled(Button)`
+export const StyledSubmitButton = styled(PriorityButton)`
   border: 2px solid;
   margin-top: 15px;
   min-width: ${EVENT_WIDTH_MINIMUM}px;
@@ -72,10 +56,9 @@ export const StyledSubmitRow = styled(Flex)`
   padding-top: 18px;
 `;
 
-export const StyledTitleField = styled(Textarea)`
+export const StyledTitle = styled(Textarea)`
   background: transparent;
-  height: 40px;
-  font-size: 35px;
+  font-size: ${({ theme }) => theme.text.size["5xl"]};
   &:hover {
     filter: brightness(90%);
   }

@@ -1,9 +1,12 @@
 import styled from "styled-components";
 import { Priority } from "@core/constants/core.constants";
-import { getColor, hoverColorsByPriority } from "@core/util/color.utils";
-import { colorNameByPriority } from "@core/constants/colors";
+import { brighten } from "@core/util/color.utils";
 import { Text } from "@web/components/Text";
 import { ZIndex } from "@web/common/constants/web.constants";
+import {
+  colorByPriority,
+  hoverColorByPriority,
+} from "@web/common/styles/theme.util";
 
 interface StyledEventProps {
   allDay: boolean;
@@ -22,15 +25,13 @@ interface StyledEventProps {
   width: number;
 }
 
-const DIM = 0.65;
-
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   const getBgColor = () => {
     if (props.isResizing || props.isDragging) {
-      return hoverColorsByPriority[props.priority];
+      return brighten(colorByPriority[props.priority]);
     }
 
-    const origColor = getColor(colorNameByPriority[props.priority]);
+    const origColor = colorByPriority[props.priority];
     return origColor;
   };
 
@@ -41,7 +42,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
     isInPast: props.isInPast,
     hoverColor: props.isPlaceholder
       ? null
-      : hoverColorsByPriority[props.priority],
+      : hoverColorByPriority[props.priority],
     opacity: props.isPlaceholder ? 0.5 : null,
     ref: props.ref,
     top: props.top,
@@ -52,7 +53,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   border-radius: 2px;
   ${(props) => props.isDragging && `cursor: grabbing`}
   filter: brightness(
-    ${({ isInPast }) => (isInPast ? DIM : null)}
+    ${({ isInPast }) => (isInPast ? 0.7 : null)}
   );
   height: ${({ height }) => height}px;
   left: ${(props) => props.left}px;
@@ -70,13 +71,12 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   &:hover {
     transition: background-color 0.35s linear;
 
-    ${({ isPlaceholder, isResizing, hoverColor }) =>
+    ${({ isPlaceholder, isResizing, hoverColor, theme }) =>
       !isPlaceholder &&
       !isResizing &&
       `
       background-color: ${hoverColor};
-      drop-shadow(2px 4px 4px black);
-      filter: brigthness(0.65); 
+      drop-shadow(2px 4px 4px ${theme.color.shadow.default});
       `};
   }
 

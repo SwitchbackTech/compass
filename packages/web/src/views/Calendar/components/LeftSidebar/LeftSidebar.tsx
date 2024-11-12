@@ -5,7 +5,11 @@ import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 
-import { Styled, getSidebarToggleIcon, StyledSidebarOverflow } from "./styled";
+import {
+  StyledLeftSidebar,
+  getSidebarToggleIcon,
+  StyledSidebarOverflow,
+} from "./styled";
 import { SomedaySection } from "./SomedaySection";
 import { SidebarIconRow } from "./SidebarIconRow";
 
@@ -26,7 +30,7 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
   const ToggleSidebarIcon = getSidebarToggleIcon(props.prefs.isLeftSidebarOpen);
 
   return (
-    <Styled
+    <StyledLeftSidebar
       id="sidebar"
       isToggled={prefs.isLeftSidebarOpen}
       role="complementary"
@@ -50,6 +54,6 @@ export const LeftSidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = (
       />
 
       <SidebarIconRow />
-    </Styled>
+    </StyledLeftSidebar>
   );
 };

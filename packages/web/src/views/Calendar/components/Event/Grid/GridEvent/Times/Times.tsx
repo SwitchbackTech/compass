@@ -24,8 +24,7 @@ export const Times: React.FC<Props> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isTimesShown, setIsTimesShown] = useState(event.isTimesShown);
 
-  const SIZE = 10;
-  const shouldRevealBox = isPlaceholder && !isTimesShown && !isDrafting;
+  const shouldRevealBox = !isPlaceholder && !isTimesShown && !isDrafting;
 
   const toggleTimes = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -52,9 +51,8 @@ export const Times: React.FC<Props> = ({
           onMouseDown={toggleTimes}
         >
           <Text
-            lineHeight={SIZE}
             role="textbox"
-            size={SIZE}
+            size="xs"
             title="Click to hide times"
             zIndex={ZIndex.LAYER_3}
           >
@@ -65,9 +63,8 @@ export const Times: React.FC<Props> = ({
         <StyledTimes revealBox={shouldRevealBox}>
           {isHovered && shouldRevealBox ? (
             <Text
-              lineHeight={SIZE}
               onMouseDown={toggleTimes}
-              size={SIZE}
+              size="xs"
               role="textbox"
               title="Click to show times"
             >

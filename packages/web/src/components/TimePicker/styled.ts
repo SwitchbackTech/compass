@@ -1,10 +1,6 @@
 import styled from "styled-components";
-import { BASE_COLORS } from "@core/constants/colors";
-import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/types/color.types";
-import { ANIMATION_TIME_3_MS } from "@web/common/constants/web.constants";
+import { darken } from "@core/util/color.utils";
 import { Divider } from "@web/components/Divider";
-import { FORM_TIME_SIZE } from "@web/views/Forms/EventForm/styled";
 
 export interface Props {
   bgColor?: string;
@@ -12,7 +8,7 @@ export interface Props {
 }
 
 export const StyledTimePicker = styled.div<Props>`
-  font-size: ${FORM_TIME_SIZE}px;
+  font-size: ${({ theme }) => theme.text.size.l};
   min-width: 90px;
   position: relative;
 
@@ -50,7 +46,7 @@ export const StyledTimePicker = styled.div<Props>`
     }
 
     &__single-value {
-      color: ${BASE_COLORS.DEEP_BLUE};
+      color: ${({ theme }) => theme.color.text.dark};
     }
 
     &__menu {
@@ -60,19 +56,19 @@ export const StyledTimePicker = styled.div<Props>`
       min-width: 150px;
 
       &-list {
-        font-size: ${FORM_TIME_SIZE - 3}px;
+        font-size: ${({ theme }) => theme.text.size.m};
         padding: 0;
         ${({ isOpen: open }) => !open && "max-height: 0;"}
-        transition: ${ANIMATION_TIME_3_MS};
+        transition: ${({ theme }) => theme.transition.default};
 
         ::-webkit-scrollbar {
           width: 8px;
         }
         ::-webkit-scrollbar-thumb {
-          background: ${getColor(ColorNames.GREY_3)};
+          background: ${({ bgColor }) => darken(bgColor, 40)};
           border-radius: 3px;
           &:hover {
-            background: ${getColor(ColorNames.GREY_2)};
+            background: ${({ bgColor }) => darken(bgColor, 80)};
             transition: background-color 0.2s;
           }
         }

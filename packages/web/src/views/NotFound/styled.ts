@@ -1,15 +1,24 @@
 import styled from "styled-components";
-import { BASE_COLORS } from "@core/constants/colors";
+import { darkBlueGradient } from "@web/common/styles/theme.util";
+
 export const StyledNotFoundImg = styled.img`
   border-radius: 50%;
-  border: 4px solid #fff;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  border: ${({ theme }) => `4px solid ${theme.color.bg.primary}`};
+  box-shadow: ${({ theme }) => `0 0 10px ${theme.color.shadow.default}`};
   max-width: 100%;
 `;
 
 export const StyledNotFoundContainer = styled.div`
   align-items: center;
-  background: ${BASE_COLORS.DEEP_BLUE};
+  background: linear-gradient(
+    to right,
+    ${darkBlueGradient.level1},
+    ${darkBlueGradient.level2},
+    ${darkBlueGradient.level3},
+    ${darkBlueGradient.level4},
+    ${darkBlueGradient.level5}
+  );
+  color: ${({ theme }) => theme.color.text.lighter};
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -18,10 +27,10 @@ export const StyledNotFoundContainer = styled.div`
 `;
 
 export const StyledBackButton = styled.button`
-  background: ${BASE_COLORS.SLATE_GREY};
-  border: 2px solid ${BASE_COLORS.SLATE_GREY};
+  background: ${({ theme }) => theme.color.fg.primaryDark};
+  border: ${({ theme }) => `2px solid ${theme.color.border.primary}`};
   border-radius: 4px;
-  color: ${BASE_COLORS.ONYX_GREY};
+  color: ${({ theme }) => theme.color.text.lighter};
   cursor: pointer;
   font-size: 16px;
   font-weight: 600;

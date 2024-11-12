@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import FocusTrap from "focus-trap-react";
 import React, {
   KeyboardEvent,
   KeyboardEventHandler,
@@ -7,9 +8,7 @@ import React, {
   useState,
 } from "react";
 import { Key } from "ts-key-enum";
-import { getColor } from "@core/util/color.utils";
 import { Priorities } from "@core/constants/core.constants";
-import { colorNameByPriority } from "@core/constants/colors";
 import { Schema_Event } from "@core/types/event.types";
 import { DeleteIcon } from "@web/components/Icons/Delete";
 import { getCategory } from "@web/common/utils/event.util";
@@ -20,7 +19,10 @@ import {
 } from "@web/common/utils/web.date.util";
 import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/LeftSidebar/SomedaySection/SomedayEvents/styled";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
-import FocusTrap from "focus-trap-react";
+import {
+  colorByPriority,
+  hoverColorByPriority,
+} from "@web/common/styles/theme.util";
 
 import { FormProps, SetEventFormField } from "./types";
 import { DateTimeSection } from "./DateTimeSection";
@@ -28,9 +30,9 @@ import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
 import {
   StyledEventForm,
-  StyledDescriptionField,
+  StyledDescription,
   StyledIconRow,
-  StyledTitleField,
+  StyledTitle,
 } from "./styled";
 
 export const EventForm: React.FC<FormProps> = ({
@@ -270,13 +272,14 @@ export const EventForm: React.FC<FormProps> = ({
           <DeleteIcon onDelete={onDeleteForm} title="Delete Event" />
         </StyledIconRow>
 
-        <StyledTitleField
+        <StyledTitle
           autoFocus
           onChange={onChangeEventTextField("title")}
           onKeyDown={ignoreDelete}
           placeholder="Title"
           role="textarea"
           name="Event Title"
+          underlineColor={colorByPriority[priority]}
           value={title}
         />
 
@@ -286,7 +289,7 @@ export const EventForm: React.FC<FormProps> = ({
         />
 
         <DateTimeSection
-          bgColor={getColor(colorNameByPriority[priority])}
+          bgColor={hoverColorByPriority[priority]}
           event={event}
           category={category}
           endTime={endTime}
@@ -304,7 +307,8 @@ export const EventForm: React.FC<FormProps> = ({
           setEvent={setEvent}
         />
 
-        <StyledDescriptionField
+        <StyledDescription
+          underlineColor={colorByPriority[priority]}
           onChange={onChangeEventTextField("description")}
           onKeyDown={ignoreDelete}
           placeholder="Description"

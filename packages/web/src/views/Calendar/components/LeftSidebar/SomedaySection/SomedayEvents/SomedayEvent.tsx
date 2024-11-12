@@ -10,7 +10,7 @@ import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import { Util_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarUtil";
 
-import { NewStyledSomedayEvent } from "./styled";
+import { StyledNewSomedayEvent } from "./styled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
 
 export interface Props {
@@ -75,7 +75,7 @@ export const SomedayEvent = ({
 
   return (
     <>
-      <NewStyledSomedayEvent
+      <StyledNewSomedayEvent
         {...provided.draggableProps}
         {...provided.dragHandleProps}
         isDragging={isDragging}
@@ -100,7 +100,7 @@ export const SomedayEvent = ({
             onMigrate={onMigrate}
           />
         </div>
-      </NewStyledSomedayEvent>
+      </StyledNewSomedayEvent>
 
       <FloatingPortal>
         {shouldOpenForm && (

@@ -1,7 +1,5 @@
 import { Recurrence_Selection } from "../types/web.event.types";
 
-export const ANIMATION_TIME_3_MS = "0.3s";
-
 export const COLUMN_WEEK = "weekEvents";
 export const COLUMN_MONTH = "monthEvents";
 

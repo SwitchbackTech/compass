@@ -7,7 +7,7 @@ interface Props {
 
 export const TooltipDescription: FC<Props> = ({ description }) => {
   return (
-    <Text size={11} style={{ paddingRight: 10 }}>
+    <Text size="m" style={{ paddingRight: 10 }}>
       {description}
     </Text>
   );

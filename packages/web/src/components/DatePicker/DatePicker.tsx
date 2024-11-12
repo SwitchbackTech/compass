@@ -4,10 +4,10 @@ import "react-datepicker/dist/react-datepicker.css";
 import dayjs from "dayjs";
 import classNames from "classnames";
 import { Text } from "@web/components/Text";
-import { ColorNames } from "@core/types/color.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Flex } from "@web/components/Flex";
 import { Input } from "@web/components/Input";
+import { theme } from "@web/common/styles/theme";
 
 import {
   ChangeDayButtonsStyledFlex,
@@ -64,17 +64,11 @@ export const DatePicker: React.FC<Props> = ({
       calendarContainer={(containerProps) => (
         <StyledDatePicker
           {...containerProps}
-          monthsCount={(props.monthsShown || 0) + 1}
+          selectedColor={bgColor}
           view={view}
         />
       )}
-      customInput={
-        <Input
-          bgColor={bgColor}
-          colorName={ColorNames.TEAL_1}
-          onBlurCapture={onInputBlur}
-        />
-      }
+      customInput={<Input bgColor={bgColor} onBlurCapture={onInputBlur} />}
       dateFormat={"M-d-yyyy"}
       formatWeekDay={(day) => day[0]}
       open={isOpen}
@@ -102,8 +96,8 @@ export const DatePicker: React.FC<Props> = ({
         changeYear,
         customHeaderCount,
       }) => {
-        const formattedSelectedMonth = dayjs(monthDate).format("MMM YYYY");
-        const formattedCurrentMonth = dayjs().format("MMM YYYY");
+        const selectedMonth = dayjs(monthDate).format("MMM YYYY");
+        const currentMonth = dayjs().format("MMM YYYY");
 
         return (
           <StyledHeaderFlex
@@ -111,8 +105,8 @@ export const DatePicker: React.FC<Props> = ({
             justifyContent={JustifyContent.LEFT}
           >
             <MonthContainerStyled>
-              <Text colorName={ColorNames.WHITE_1} size={17}>
-                {formattedSelectedMonth}
+              <Text color={theme.color.text.light} size="xl">
+                {selectedMonth}
               </Text>
             </MonthContainerStyled>
 
@@ -122,34 +116,30 @@ export const DatePicker: React.FC<Props> = ({
                   <Text
                     cursor="pointer"
                     onClick={decreaseMonth}
-                    fontWeight={600}
-                    colorName={ColorNames.WHITE_1}
-                    size={20}
+                    color={theme.color.text.light}
+                    size="l"
                   >
                     {"<"}
                   </Text>
                   <Text
                     cursor="pointer"
                     onClick={increaseMonth}
-                    fontWeight={600}
-                    colorName={ColorNames.WHITE_1}
-                    size={20}
+                    color={theme.color.text.light}
+                    size="l"
                   >
                     {">"}
                   </Text>
                 </ChangeDayButtonsStyledFlex>
                 {withTodayButton && (
                   <TodayStyledText
-                    isCurrentDate={
-                      formattedCurrentMonth === formattedSelectedMonth
-                    }
+                    isCurrentDate={currentMonth === selectedMonth}
                     cursor="pointer"
                     onClick={() => {
                       changeMonth(dayjs().month());
                       changeYear(dayjs().year());
                     }}
-                    colorName={ColorNames.WHITE_1}
-                    size={16}
+                    color={theme.color.text.light}
+                    size="l"
                   >
                     Today
                   </TodayStyledText>

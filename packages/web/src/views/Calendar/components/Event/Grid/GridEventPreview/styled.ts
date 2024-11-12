@@ -2,13 +2,9 @@ import styled from "styled-components";
 import type { XYCoord } from "react-dnd";
 import type { CSSProperties } from "react";
 import { Priority } from "@core/constants/core.constants";
-import {
-  getInvertedColor,
-  hoverColorsByPriority,
-} from "@core/util/color.utils";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { colorNameByPriority } from "@core/constants/colors";
-import { InvertedColorNames } from "@core/types/color.types";
+import { theme } from "@web/common/styles/theme";
+import { hoverColorByPriority } from "@web/common/styles/theme.util";
 
 import { snapToGrid } from "./snap.grid";
 
@@ -59,12 +55,10 @@ interface StyledEventProps {
 export const StyledGridEventPreview = styled.div.attrs<StyledEventProps>(
   (props) => {
     return {
-      backgroundColor: hoverColorsByPriority[props.priority],
-      color: getInvertedColor(
-        colorNameByPriority[props.priority] as unknown as InvertedColorNames
-      ),
+      backgroundColor: hoverColorByPriority[props.priority],
+      color: theme.color.text.dark,
       height: props.height,
-      hoverColor: hoverColorsByPriority[props.priority],
+      hoverColor: hoverColorByPriority[props.priority],
       width: props.width,
     };
   }

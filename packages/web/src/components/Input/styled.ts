@@ -1,38 +1,20 @@
 import styled from "styled-components";
-import { BASE_COLORS } from "@core/constants/colors";
-import { InputProps, inputBaseStyles } from "@web/common/styles/components";
 
-export enum Scale {
-  SMALL = "small",
-  MEDIUM = "medium",
-  LARGE = "large",
+export interface Props {
+  bgColor?: string;
 }
-
-export interface Props extends InputProps {
-  scale?: Scale;
-}
-
-const heightByScale = {
-  [Scale.LARGE]: 55,
-  [Scale.MEDIUM]: 34,
-  [Scale.SMALL]: 15,
-};
-
-const fontSizeByScale = {
-  [Scale.LARGE]: 50,
-  [Scale.MEDIUM]: 17,
-  [Scale.SMALL]: 10,
-};
 
 export const StyledInput = styled.input<Props>`
+  background-color: ${({ bgColor }) => bgColor};
   border: none;
-  color: ${BASE_COLORS.DEEP_BLUE};
-  height: ${({ scale = Scale.MEDIUM }) => heightByScale[scale]}px;
-  font-size: ${({ scale = Scale.MEDIUM }) => fontSizeByScale[scale]}px;
+  height: 34px;
+  font-size: ${({ theme }) => theme.text.size.l};
   outline: none;
   width: 100%;
 
-  ${inputBaseStyles}
+  ::placeholder {
+    color: ${({ theme }) => theme.color.text.darkPlaceholder};
+  }
 
   &:hover {
     filter: brightness(87%);

@@ -1,13 +1,11 @@
 import styled from "styled-components";
-import { Priorities } from "@core/constants/core.constants";
-import {
-  getColor,
-  getInvertedColor,
-  hoverColorsByPriority,
-} from "@core/util/color.utils";
-import { BASE_COLORS, colorNameByPriority } from "@core/constants/colors";
-import { InvertedColorNames } from "@core/types/color.types";
 import { DroppableProvided } from "@hello-pangea/dnd";
+import { Priorities } from "@core/constants/core.constants";
+import { brighten } from "@core/util/color.utils";
+import {
+  colorByPriority,
+  hoverColorByPriority,
+} from "@web/common/styles/theme.util";
 
 export interface Props extends DroppableProvided {
   priority: Priorities;
@@ -25,7 +23,7 @@ export const StyledMigrateArrow = styled.span`
 
   &:hover {
     border-radius: 50%;
-    background: ${BASE_COLORS.ONYX_GREY};
+    background: ${({ theme }) => theme.color.bg.primary};
     color: white;
     cursor: pointer;
     padding-right: 7px;
@@ -36,7 +34,7 @@ export const StyledMigrateArrow = styled.span`
 `;
 
 export const StyledRecurrenceText = styled.span`
-  border: 1px solid ${BASE_COLORS.ONYX_GREY};
+  border: 1px solid ${({ theme }) => theme.color.border.primary};
   border-radius: 2px;
   font-size: 10px;
   opacity: 0;
@@ -53,22 +51,19 @@ export const StyledMigrateArrowInForm = styled(StyledMigrateArrow)`
   font-size: 27px;
 `;
 
-export const NewStyledSomedayEvent = styled.div<Props>`
-  background: ${({ isDrafting, isDragging, isFocused, priority }) => {
+export const StyledNewSomedayEvent = styled.div<Props>`
+  background: ${({ isDrafting, isDragging, priority }) => {
     if (isDrafting) {
       if (isDragging) {
-        return "lightgreen";
+        return brighten(colorByPriority[priority]);
       }
-      return hoverColorsByPriority[priority];
+      return hoverColorByPriority[priority];
     }
 
-    return getColor(colorNameByPriority[priority]);
+    return colorByPriority[priority];
   }};
   border-radius: 2px;
-  color: ${({ priority }) =>
-    getInvertedColor(
-      colorNameByPriority[priority] as unknown as InvertedColorNames
-    )};
+  color: ${({ theme }) => theme.color.text.dark};
   height: ${SOMEDAY_EVENT_HEIGHT}px;
   filter: brightness(
     ${({ isDragging, isFocused }) =>
@@ -84,11 +79,7 @@ export const NewStyledSomedayEvent = styled.div<Props>`
   width: 298px;
 
   &:hover {
-    background: ${({ priority }) => hoverColorsByPriority[priority]};
-    color: ${({ priority }) =>
-      getInvertedColor(
-        colorNameByPriority[priority] as unknown as InvertedColorNames
-      )};
+    background: ${({ priority }) => hoverColorByPriority[priority]};
     cursor: pointer;
   }
 

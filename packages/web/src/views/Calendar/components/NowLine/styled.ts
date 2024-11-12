@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { linearGradient } from "@core/constants/colors";
+import { blueGradient } from "@web/common/styles/theme.util";
 
 interface StyledNowLineProps {
   width: number;
@@ -8,7 +8,7 @@ interface StyledNowLineProps {
 }
 
 export const StyledNowLine = styled.div<StyledNowLineProps>`
-  background: ${linearGradient};
+  background: ${blueGradient};
   height: 1px;
   position: absolute;
   top: ${({ top }) => top}%;

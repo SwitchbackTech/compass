@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import weekPlugin from "dayjs/plugin/weekOfYear";
-import { ColorNames } from "@core/types/color.types";
-import { getColor } from "@core/util/color.utils";
 import { DatePicker } from "@web/components/DatePicker";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { theme } from "@web/common/styles/theme";
 
 import { Styled } from "./styled";
 
@@ -34,7 +33,7 @@ export const ToggleableMonthWidget: React.FC<Props> = ({
     <Styled role="dialog" data-testid="Month Widget">
       <DatePicker
         animationOnToggle={false}
-        bgColor={getColor(ColorNames.GREY_3)}
+        bgColor={theme.color.text.light}
         calendarClassName="sidebarDatePicker"
         inline
         isOpen={true}

@@ -1,6 +1,4 @@
 import React, { FC, useMemo, useRef } from "react";
-import { getAlphaColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/types/color.types";
 import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
 import { getWeekRangeLabel } from "@web/common/utils/web.date.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
@@ -10,6 +8,7 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useSidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
+import { theme } from "@web/common/styles/theme";
 
 import { WeekSection } from "./WeekSection/WeekSection";
 import { MonthSection } from "./MonthSection";
@@ -53,7 +52,7 @@ export const SomedaySection: FC<Props> = ({
       />
 
       <Divider
-        color={getAlphaColor(ColorNames.WHITE_4, 0.3)}
+        color={theme.color.border.primary}
         role="separator"
         title="sidebar divider"
         withAnimation={false}

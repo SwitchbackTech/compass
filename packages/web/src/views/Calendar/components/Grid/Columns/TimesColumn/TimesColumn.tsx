@@ -34,7 +34,7 @@ export const TimesColumn = () => {
     <StyledDayTimes>
       {hourLabels.map((label, index) => (
         <StyledTimesLabel color={colors[index]} key={`${label}-${index}`}>
-          <Text size={9}>{label}</Text>
+          <Text size="xs">{label}</Text>
         </StyledTimesLabel>
       ))}
     </StyledDayTimes>

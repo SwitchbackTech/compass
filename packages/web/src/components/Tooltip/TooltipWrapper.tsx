@@ -42,7 +42,7 @@ export const TooltipWrapper: React.FC<Props> = ({
           {description && <TooltipDescription description={description} />}
           {shortcut && (
             <StyledShortcutTip>
-              <Text size={12}>{shortcut}</Text>
+              <Text size="m">{shortcut}</Text>
             </StyledShortcutTip>
           )}
         </Flex>

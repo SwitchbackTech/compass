@@ -1,20 +1,9 @@
 import styled from "styled-components";
-import { ColorNames } from "@core/types/color.types";
-import {
-  getBrighterColor,
-  getColor,
-  getInvertedColor,
-} from "@core/util/color.utils";
-import { BASE_COLORS } from "@core/constants/colors";
-import { Flex } from "@web/components/Flex";
+import { brighten, darken } from "@core/util/color.utils";
+import { Priorities, Priority } from "@core/constants/core.constants";
+import { colorByPriority } from "@web/common/styles/theme.util";
 
-export const StyledFeedbackBtnContainer = styled(Flex)`
-  position: absolute;
-  top: 10%;
-  right: 8%;
-`;
-
-const Btn = styled.div`
+export const Btn = styled.div`
   align-items: center;
   border-radius: 2px;
   display: flex;
@@ -23,45 +12,44 @@ const Btn = styled.div`
 `;
 
 interface PalletteProps {
-  color?: ColorNames | string;
+  color?: string;
   bordered?: boolean;
   border?: string;
 }
 
-export const PalletteBtn = styled(Btn)<PalletteProps>`
-  background: ${({ color }) => getColor(color)};
-  color: ${({ color }) => getInvertedColor(color)};
+export const PriorityButton = styled(Btn)<PalletteProps>`
+  background: color;
+  color: ${({ theme }) => theme.color.text.dark};
   min-width: 158px;
   padding: 0 8px;
-  border: ${({ border, bordered }) =>
-    border || (bordered && `2px solid ${BASE_COLORS.DEEP_BLUE}`)};
-
-  &:focus {
-    border-width: ${({ bordered }) => (bordered ? 2 : 1)}px;
-  }
+  border: ${({ border, bordered, theme }) =>
+    border || (bordered && `2px solid ${theme.color.border.primaryDark}`)};
 
   &:hover {
-    background: ${({ color }) => getInvertedColor(color)};
-    color: ${({ color }) => getBrighterColor(color)};
+    background: ${({ theme }) => theme.color.bg.primary};
+    color: ${({ color }) => brighten(color)};
     transition: background-color 0.5s;
     transition: color 0.55s;
   }
 `;
 interface CustomProps {
-  background: string;
-  color?: string;
+  priority: Priority;
   minWidth: number;
 }
 
-export const StyledSaveBtn = styled(PalletteBtn)<CustomProps>`
-  background: ${({ background }) => background};
-  color: ${({ color }) => color};
+export const StyledSaveBtn = styled(PriorityButton)<CustomProps>`
+  background: ${({ priority }) => darken(colorByPriority[priority])};
+  color: ${({ theme }) => theme.color.text.dark}
+      
   min-width: ${({ minWidth }) => minWidth}px;
 
   &:focus {
-    border: 2px solid ${BASE_COLORS.DEEP_BLUE};
+    border: 2px solid ${({ theme }) => theme.color.border.primaryDark};
   }
   &:hover {
-    filter: brightness(120%);
+    color: ${({ priority, theme }) =>
+      priority === Priorities.UNASSIGNED
+        ? theme.color.text.light
+        : brighten(colorByPriority[priority])};
   }
 `;

@@ -1,7 +1,4 @@
 import styled from "styled-components";
-import { getColor } from "@core/util/color.utils";
-import { ColorNames } from "@core/types/color.types";
-import { CheckBox } from "@web/components/CheckBox";
 import { Flex } from "@web/components/Flex";
 import {
   SIDEBAR_CLOSED_WIDTH,
@@ -9,8 +6,8 @@ import {
 } from "@web/views/Calendar/layout.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { FlexDirections } from "@web/components/Flex/styled";
-import { ArrowLineLeftIcon } from "@web/components/Icons/ArrowLeftLine";
-import { ArrowLineRightIcon } from "@web/components/Icons/ArrowRightLine";
+import { ArrowLineLeftIcon } from "@web/components/Icons/ArrowLineLeft";
+import { ArrowLineRightIcon } from "@web/components/Icons/ArrowLineRight";
 
 import { SidebarProps, SectionProps } from "./sidebar.types";
 
@@ -32,17 +29,17 @@ export const StyledSidebarList = styled.div`
     width: 8px;
   }
   ::-webkit-scrollbar-thumb {
-    background: ${getColor(ColorNames.GREY_2)};
+    background-color: ${({ theme }) => theme.color.panel.scrollbar};
     border-radius: 3px;
+
     &:hover {
-      background: ${getColor(ColorNames.GREY_1)};
-      transition: background-color 0.2s;
+      background-color: ${({ theme }) => theme.color.panel.scrollbarActive};
     }
   }
 `;
 
-export const Styled = styled(Flex)<SidebarProps>`
-  background: ${getColor(ColorNames.GREY_3)};
+export const StyledLeftSidebar = styled(Flex)<SidebarProps>`
+  background: ${({ theme }) => theme.color.panel.bg};
   flex-direction: ${FlexDirections.COLUMN};
   height: 100%;
   overflow: hidden;
@@ -52,55 +49,19 @@ export const Styled = styled(Flex)<SidebarProps>`
     isToggled ? SIDEBAR_OPEN_WIDTH : SIDEBAR_CLOSED_WIDTH}px;
 `;
 
-export const StyledBottomRow = styled.div<SectionProps>`
+export const StyledIconRow = styled.div<SectionProps>`
   bottom: 0;
-  border-top: 1px solid ${getColor(ColorNames.GREY_6)};
+  border-top: 1px solid ${({ theme }) => theme.color.border.primary};
   height: 40px;
-  padding: 10px 20px;
+  padding: 9px 20px;
   position: absolute;
   width: 100%;
 `;
 
-export const StyledCheckBox = styled(CheckBox)`
-  margin-right: 5px;
-`;
-
-export const StyledDividerWrapper = styled.div`
-  cursor: row-resize;
-  padding: 5px 0 7px 0;
-`;
-
-export const StyledHeaderFlex = styled(Flex)`
-  padding-left: 17px;
-  width: calc(100% - 45px);
-`;
-
-export const StyledFiltersPopoverContent = styled.div`
-  background: ${getColor(ColorNames.WHITE_5)};
-  padding: 8px 8px 8px 5px;
-  border-radius: 4px;
-`;
-
-export const StyledPriorityFilterButton = styled.div`
-  color: ${getColor(ColorNames.WHITE_1)};
-  cursor: pointer;
-  transition: 0.3s;
-
-  &:hover {
-    color: ${getColor(ColorNames.WHITE_4)};
-  }
-`;
-
-export const StyledPriorityFilterItem = styled(Flex)`
-  &:not(:last-child) {
-    margin-bottom: 8px;
-  }
-`;
-
 export const StyledSidebarOverflow = styled.div<SidebarProps>`
   position: absolute;
-  background: ${({ isToggled }) =>
-    isToggled ? getColor(ColorNames.GREY_3) : getColor(ColorNames.BLUE_2)};
+  background: ${({ isToggled, theme }) =>
+    isToggled ? theme.color.panel.bg : theme.color.bg.primary};
   width: ${({ isToggled }) => (isToggled ? 0 : "100%")};
   height: 100%;
   right: 0;

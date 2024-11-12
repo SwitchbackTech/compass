@@ -1,12 +1,12 @@
 import React from "react";
 import { MetaKeyIcon } from "@web/components/Icons/MetaKey";
 
-import { StyledBottomRow } from "../styled";
+import { StyledIconRow } from "../styled";
 
 export const SidebarIconRow = () => {
   return (
-    <StyledBottomRow>
+    <StyledIconRow>
       <MetaKeyIcon />
-    </StyledBottomRow>
+    </StyledIconRow>
   );
 };

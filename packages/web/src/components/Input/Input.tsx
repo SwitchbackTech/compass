@@ -8,9 +8,9 @@ import {
   ClassNamedComponent,
   UnderlinedInput,
 } from "@web/common/types/component.types";
-import { FocusableUnderlineLayout } from "@web/components/FocusableUnderlinedComponent";
 
 import { StyledInput, Props as StyledProps } from "./styled";
+import { Focusable } from "../Focusable/Focusable";
 
 export interface Props
   extends ClassNamedComponent,
@@ -25,7 +25,7 @@ const InputComponent: ForwardRefRenderFunction<HTMLInputElement, Props> = (
   { withUnderline = true, ...props }: Props,
   ref: Ref<HTMLInputElement>
 ) => (
-  <FocusableUnderlineLayout
+  <Focusable
     Component={StyledInput}
     ref={ref}
     withUnderline={withUnderline}
