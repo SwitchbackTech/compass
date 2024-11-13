@@ -38,6 +38,11 @@ export const StyledSidebarList = styled.div`
   }
 `;
 
+export const StyledLeftIconGroup = styled.div`
+  gap: 20px;
+  display: flex;
+`;
+
 export const StyledLeftSidebar = styled(Flex)<SidebarProps>`
   background: ${({ theme }) => theme.color.panel.bg};
   flex-direction: ${FlexDirections.COLUMN};
@@ -49,11 +54,12 @@ export const StyledLeftSidebar = styled(Flex)<SidebarProps>`
     isToggled ? SIDEBAR_OPEN_WIDTH : SIDEBAR_CLOSED_WIDTH}px;
 `;
 
-export const StyledIconRow = styled.div<SectionProps>`
+export const StyledIconRow = styled(Flex)<SectionProps>`
   bottom: 0;
   border-top: 1px solid ${({ theme }) => theme.color.border.primary};
   height: 40px;
-  padding: 9px 20px;
+  flex-direction: ${FlexDirections.ROW};
+  padding: 9px 44px 9px 20px;
   position: absolute;
   width: 100%;
 `;

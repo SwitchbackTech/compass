@@ -51,10 +51,10 @@ export const StyledNavigationArrows = styled(Flex)`
   padding-left: 20px;
 `;
 
-export const StyledNavigationButtons = styled(Flex)`
+export const StyledNavigationGroup = styled(Flex)`
+  align-items: baseline;
   justify-content: space-between;
-  margin-right: 50px;
-  padding-left: 20px;
+  margin-right: 20px;
 `;
 
 export const StyledRightGroup = styled(Flex)`
