@@ -19,10 +19,9 @@ export const modalStyles = {
 };
 
 export const StyledCaption = styled.div`
-  color: transparent;
   font-size: 0.8rem;
-  margin-left: 70px;
-  padding-bottom: 30px;
+  margin-left: 50px;
+  padding-top: 30px;
 `;
 
 export const StyledDedicationModal = styled.div``;
@@ -46,6 +45,5 @@ export const StyledDerekPic = styled.img`
 export const StyledDerekQuote = styled.blockquote`
   font-size: 1.5rem;
   font-style: italic;
-  font-weight: bold;
   margin-right: 20px;
 `;

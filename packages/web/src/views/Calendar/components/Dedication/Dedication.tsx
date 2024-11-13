@@ -18,15 +18,9 @@ import {
 export const Dedication = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  useHotkeys(
-    "ctrl+shift+0",
-    () => {
-      setIsOpen(!isOpen);
-    },
-    {
-      keydown: true,
-    }
-  );
+  useHotkeys("ctrl+shift+0", () => {
+    setIsOpen(!isOpen);
+  });
 
   const close = () => {
     setIsOpen(false);
@@ -59,10 +53,12 @@ export const Dedication = () => {
             "I have such amazing friends and family and I wish I could slow down
             time just a little bit so I can take all these relationships in as
             much as possible. Time is the biggest enemy we all face."
+            <StyledCaption>
+              -Derek's Facebook post from 12.24.2013
+            </StyledCaption>
           </StyledDerekQuote>
           <StyledDerekPic src={derekImg} alt="Headshot of Derek" />
         </StyledDerekQuoteContainer>
-        <StyledCaption>-Derek's Facebook post from 12.24.2013</StyledCaption>
       </Modal>
     </>
   );
