@@ -7,6 +7,15 @@ interface State_View {
     start: string;
     end: string;
   };
+  leftSidebar: "monthWidget" | "tasks" | "collapsed";
+}
+
+interface Action_DatesChange extends Action {
+  payload: State_View["dates"];
+}
+
+interface Action_SidebarViewChange extends Action {
+  payload: State_View["leftSidebar"];
 }
 
 const initialState: State_View = {
@@ -14,14 +23,8 @@ const initialState: State_View = {
     start: dayjs().format(),
     end: dayjs().endOf("week").format(),
   },
+  leftSidebar: "tasks",
 };
-
-export interface Action_DatesChange extends Action {
-  payload: {
-    start: string;
-    end: string;
-  };
-}
 
 export const viewSlice = createSlice({
   name: "view",
@@ -29,6 +32,9 @@ export const viewSlice = createSlice({
   reducers: {
     updateDates: (state, action: Action_DatesChange) => {
       state.dates = action.payload;
+    },
+    updateLeftSidebarView: (state, action: Action_SidebarViewChange) => {
+      state.leftSidebar = action.payload;
     },
   },
 });
