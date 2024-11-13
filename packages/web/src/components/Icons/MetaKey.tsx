@@ -1,12 +1,23 @@
 import React from "react";
+import styled from "styled-components";
+import { Command } from "@phosphor-icons/react";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 
 import { TooltipWrapper } from "../Tooltip/TooltipWrapper";
-import { StyledCommandIcon } from "./Command";
+import { IconProps } from "./icon.types";
 
-export const MetaKeyIcon = () => {
+const StyledCommandIcon = styled(Command)`
+  color: ${({ theme }) => theme.color.text.lighter};
+  transition: filter 0.2s ease;
+
+  &:hover {
+    filter: brightness(130%);
+  }
+`;
+
+export const MetaKeyIcon: React.FC<IconProps> = (props) => {
   const dispatch = useAppDispatch();
 
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
@@ -14,7 +25,7 @@ export const MetaKeyIcon = () => {
   return (
     <TooltipWrapper
       description="Open command palette"
-      shortcut="Cmd + K"
+      shortcut="CMD + K"
       onClick={() => {
         if (isCmdPaletteOpen) {
           dispatch(settingsSlice.actions.closeCmdPalette());
@@ -23,7 +34,7 @@ export const MetaKeyIcon = () => {
         }
       }}
     >
-      <StyledCommandIcon size={25} />
+      <StyledCommandIcon {...props} />
     </TooltipWrapper>
   );
 };
