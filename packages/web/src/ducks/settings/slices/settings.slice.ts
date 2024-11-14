@@ -2,12 +2,10 @@ import { createSlice } from "@reduxjs/toolkit";
 
 interface State_Settings {
   isCmdPaletteOpen: boolean;
-  isRightSidebarOpen: boolean;
 }
 
 const initialState: State_Settings = {
   isCmdPaletteOpen: false,
-  isRightSidebarOpen: false,
 };
 
 export const settingsSlice = createSlice({
@@ -22,9 +20,6 @@ export const settingsSlice = createSlice({
     },
     toggleCmdPalette: (state) => {
       state.isCmdPaletteOpen = !state.isCmdPaletteOpen;
-    },
-    toggleRightSidebar: (state) => {
-      state.isRightSidebarOpen = !state.isRightSidebarOpen;
     },
   },
 });

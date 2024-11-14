@@ -15,7 +15,6 @@ import { useDateCalcs } from "./hooks/grid/useDateCalcs";
 import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
 import { useRefresh } from "./hooks/useRefresh";
 import { LeftSidebar } from "./components/LeftSidebar";
-import { RightSidebar } from "./components/RightSidebar";
 import { Draft } from "./components/Event/Draft";
 import { Dedication } from "./components/Dedication";
 import { CmdPalette } from "../CmdPalette";
@@ -91,8 +90,6 @@ export const CalendarView = () => {
           weekProps={weekProps}
         />
       </StyledCalendar>
-
-      <RightSidebar weekProps={weekProps} />
     </Styled>
   );
 };
