@@ -1,6 +1,6 @@
 import React, { FC } from "react";
 import { Dayjs } from "dayjs";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
@@ -8,16 +8,13 @@ import { TodayButton } from "@web/views/Calendar/components/TodayButton";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { selectIsRightSidebarOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { StyledListIcon } from "@web/components/Icons/List";
 import { isEventFormOpen } from "@web/common/utils";
 
 import {
   StyledHeaderRow,
-  StyledNavigationButtons,
+  StyledNavigationGroup,
   ArrowNavigationButton,
   StyledLeftGroup,
   StyledRightGroup,
@@ -42,7 +39,6 @@ export const Header: FC<Props> = ({
   const dispatch = useAppDispatch();
   const { scrollToNow } = scrollUtil;
 
-  const isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
   const { startOfView } = weekProps.component;
 
   const onSectionClick = () => {
@@ -62,7 +58,7 @@ export const Header: FC<Props> = ({
   return (
     <>
       <StyledHeaderRow
-        alignItems={AlignItems.FLEX_START}
+        alignItems={AlignItems.BASELINE}
         onClick={onSectionClick}
       >
         <StyledLeftGroup>
@@ -73,8 +69,10 @@ export const Header: FC<Props> = ({
 
             <Text size="xxxl">{startOfView.format("YY")}</Text>
           </StyledHeaderLabel>
+        </StyledLeftGroup>
 
-          <StyledNavigationButtons>
+        <StyledRightGroup>
+          <StyledNavigationGroup>
             <TooltipWrapper
               description={today.format("dddd, MMMM D")}
               onClick={onTodayClick}
@@ -112,19 +110,7 @@ export const Header: FC<Props> = ({
                 </ArrowNavigationButton>
               </TooltipWrapper>
             </StyledNavigationArrows>
-          </StyledNavigationButtons>
-        </StyledLeftGroup>
-
-        <StyledRightGroup>
-          <TooltipWrapper
-            description={`${isRightSidebarOpen ? "Collapse" : "Open"} settings`}
-            onClick={() => {
-              dispatch(settingsSlice.actions.toggleRightSidebar());
-            }}
-            shortcut="]"
-          >
-            <StyledListIcon size={28} />
-          </TooltipWrapper>
+          </StyledNavigationGroup>
         </StyledRightGroup>
       </StyledHeaderRow>
 
