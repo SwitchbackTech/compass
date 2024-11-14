@@ -18,7 +18,7 @@ export const CalendarIcon: React.FC<IconProps> = (props) => {
   return (
     <TooltipWrapper
       description="Open month widget"
-      shortcut="SHIFT + 1"
+      shortcut="SHIFT + 2"
       onClick={() => {
         console.log("Open month widget");
       }}
