@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useHotkeys } from "react-hotkeys-hook";
 import { Key } from "ts-keycode-enum";
 import { Dayjs } from "dayjs";
 import { Categories_Event } from "@core/types/event.types";
@@ -10,12 +11,12 @@ import {
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { isEventFormOpen } from "@web/common/utils";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
-import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import { YEAR_MONTH_FORMAT } from "@core/constants/date.constants";
 
@@ -32,7 +33,6 @@ export interface ShortcutProps {
   endOfView: Dayjs;
   util: WeekProps["util"];
   scrollUtil: Util_Scroll;
-  toggleSidebar: (target: "left" | "right") => void;
 }
 
 export const useShortcuts = ({
@@ -43,13 +43,19 @@ export const useShortcuts = ({
   endOfView,
   util,
   scrollUtil,
-  toggleSidebar,
 }: ShortcutProps) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+
+  useHotkeys("shift+1", () => {
+    dispatch(viewSlice.actions.updateSidebarTab("tasks"));
+  });
+  useHotkeys("shift+2", () => {
+    dispatch(viewSlice.actions.updateSidebarTab("monthWidget"));
+  });
 
   useEffect(() => {
     const _createSomedayDraft = (type: "week" | "month") => {
@@ -111,9 +117,7 @@ export const useShortcuts = ({
       if (e.metaKey) return;
 
       const handlersByKey = {
-        [Key.OpenBracket]: () => toggleSidebar("left"),
-        [Key.ClosedBracket]: () =>
-          dispatch(settingsSlice.actions.toggleRightSidebar()),
+        [Key.OpenBracket]: () => dispatch(viewSlice.actions.toggleSidebar()),
         [Key.C]: () => _createTimedDraft(),
         [Key.T]: () => {
           scrollUtil.scrollToNow();
@@ -157,7 +161,6 @@ export const useShortcuts = ({
     startOfView,
     endOfView,
     scrollUtil,
-    toggleSidebar,
     util,
   ]);
 };
