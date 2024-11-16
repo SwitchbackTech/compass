@@ -19,7 +19,6 @@ export const useGridLayout = (week: number) => {
   useEffect(() => {
     _measureMainGrid();
     _measureAllDayRow();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [week]);
 
   useEffect(() => {
@@ -59,7 +58,6 @@ export const useGridLayout = (week: number) => {
         _measureMainGrid(node);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [mainMeasurements]
   );
 
@@ -99,7 +97,6 @@ export const useGridLayout = (week: number) => {
   };
 
   const remeasure = (elem: MeasureableElement) => {
-    console.log("remeasuring...");
     switch (elem) {
       case "mainGrid": {
         _measureMainGrid();
