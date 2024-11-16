@@ -31,8 +31,7 @@ export const useGridLayout = (week: number) => {
 
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [week]); //remove ?? ++
+  }, []);
 
   useEffect(() => {
     // measure upon toggle
@@ -100,6 +99,7 @@ export const useGridLayout = (week: number) => {
   };
 
   const remeasure = (elem: MeasureableElement) => {
+    console.log("remeasuring...");
     switch (elem) {
       case "mainGrid": {
         _measureMainGrid();

@@ -2,7 +2,7 @@ import React from "react";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useAppSelector } from "@web/store/store.hooks";
-import { selectSidebar } from "@web/ducks/events/selectors/view.selectors";
+import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 
 import { Grid } from "./components/Grid/";
 import { useScroll } from "./hooks/grid/useScroll";
@@ -21,17 +21,14 @@ import { Dedication } from "./components/Dedication";
 import { CmdPalette } from "../CmdPalette";
 
 export const CalendarView = () => {
-  const sidebar = useAppSelector(selectSidebar);
+  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
   const { today } = useToday();
 
   useRefresh();
   const weekProps = useWeek(today);
 
-  const { gridRefs, measurements } = useGridLayout(
-    weekProps.component.week,
-    sidebar.isOpen
-  );
+  const { gridRefs, measurements } = useGridLayout(weekProps.component.week);
 
   const scrollUtil = useScroll(gridRefs.gridScrollRef);
 
@@ -63,7 +60,7 @@ export const CalendarView = () => {
 
       <Draft
         dateCalcs={dateCalcs}
-        isSidebarOpen={sidebar.isOpen}
+        isSidebarOpen={isSidebarOpen}
         measurements={measurements}
         weekProps={weekProps}
       />
@@ -84,7 +81,7 @@ export const CalendarView = () => {
 
         <Grid
           dateCalcs={dateCalcs}
-          isSidebarOpen={sidebar.isOpen}
+          isSidebarOpen={isSidebarOpen}
           gridRefs={gridRefs}
           measurements={measurements}
           today={today}
