@@ -2,7 +2,7 @@ import React, { FC, memo } from "react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
+import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 
 import { DraggableSomedayEvent } from "./DraggableSomedayEvent";
 
@@ -11,7 +11,7 @@ export const DraggableSomedayEvents: FC<{
   events: Schema_Event[];
   draft: Schema_GridEvent;
   isOverGrid: boolean;
-  util: SomedayEventsProps["util"];
+  util: SidebarProps["util"];
 }> = memo(({ category, draft, events, isOverGrid, util }) => {
   return (
     <>

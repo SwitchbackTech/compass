@@ -3,7 +3,7 @@ import { Droppable } from "@hello-pangea/dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
+import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 
 import { DraggableSomedayEvent } from "./Wrappers/DraggableSomedayEvent";
 import { DraggableSomedayEvents } from "./Wrappers/DraggableSomedayEvents";
@@ -17,7 +17,7 @@ export interface Props {
   events: Schema_Event[];
   isDraftingNew: boolean;
   isOverGrid: boolean;
-  util: SomedayEventsProps["util"];
+  util: SidebarProps["util"];
 }
 
 export const SomedayEventsColumn: FC<Props> = ({

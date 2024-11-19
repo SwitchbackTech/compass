@@ -19,6 +19,7 @@ import {
 } from "@web/ducks/events/selectors/someday.selectors";
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import { YEAR_MONTH_FORMAT } from "@core/constants/date.constants";
+import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
@@ -49,6 +50,7 @@ export const useShortcuts = ({
 
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+  const tab = useAppSelector(selectSidebarTab);
 
   useHotkeys("shift+1", () => {
     dispatch(viewSlice.actions.updateSidebarTab("tasks"));
@@ -66,6 +68,10 @@ export const useShortcuts = ({
       if (type === "month" && isAtMonthlyLimit) {
         alert(SOMEDAY_MONTH_LIMIT_MSG);
         return;
+      }
+
+      if (tab !== "tasks") {
+        dispatch(viewSlice.actions.updateSidebarTab("tasks"));
       }
 
       const eventType =

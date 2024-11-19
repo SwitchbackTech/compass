@@ -7,31 +7,29 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { useSidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { theme } from "@web/common/styles/theme";
+import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 
 import { WeekSection } from "./WeekSection/WeekSection";
 import { MonthSection } from "./MonthSection";
-import { Styled } from "./styled";
+import { SidebarContainer, SidebarContent } from "./styled";
 
 interface Props {
   dateCalcs: DateCalcs;
-  flex?: number;
   measurements: Measurements_Grid;
+  sidebarProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
   viewEnd: WeekProps["component"]["endOfView"];
 }
 
 export const SomedaySection: FC<Props> = ({
   dateCalcs,
-  flex,
   measurements,
+  sidebarProps,
   viewEnd,
   viewStart,
 }) => {
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
-
-  const sidebarProps = useSidebar(measurements, dateCalcs);
 
   const somedayRef = useRef();
   const weekLabel = useMemo(
@@ -40,30 +38,32 @@ export const SomedaySection: FC<Props> = ({
   );
 
   return (
-    <Styled flex={flex} ref={somedayRef}>
+    <SidebarContainer ref={somedayRef}>
       {isProcessing && <AbsoluteOverflowLoader />}
 
-      <WeekSection
-        dateCalcs={dateCalcs}
-        measurements={measurements}
-        somedayProps={sidebarProps}
-        viewStart={viewStart}
-        weekLabel={weekLabel}
-      />
+      <SidebarContent>
+        <WeekSection
+          dateCalcs={dateCalcs}
+          measurements={measurements}
+          sidebarProps={sidebarProps}
+          viewStart={viewStart}
+          weekLabel={weekLabel}
+        />
 
-      <Divider
-        color={theme.color.border.primary}
-        role="separator"
-        title="sidebar divider"
-        withAnimation={false}
-      />
+        <Divider
+          color={theme.color.border.primary}
+          role="separator"
+          title="sidebar divider"
+          withAnimation={false}
+        />
 
-      <MonthSection
-        dateCalcs={dateCalcs}
-        measurements={measurements}
-        somedayProps={sidebarProps}
-        viewStart={viewStart}
-      />
-    </Styled>
+        <MonthSection
+          dateCalcs={dateCalcs}
+          measurements={measurements}
+          somedayProps={sidebarProps}
+          viewStart={viewStart}
+        />
+      </SidebarContent>
+    </SidebarContainer>
   );
 };

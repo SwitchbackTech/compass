@@ -6,6 +6,7 @@ import {
   colorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
+import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 
 export interface Props extends DroppableProvided {
   priority: Priorities;
@@ -62,6 +63,7 @@ export const StyledNewSomedayEvent = styled.div<Props>`
 
     return colorByPriority[priority];
   }};
+
   border-radius: 2px;
   color: ${({ theme }) => theme.color.text.dark};
   height: ${SOMEDAY_EVENT_HEIGHT}px;
@@ -76,7 +78,7 @@ export const StyledNewSomedayEvent = styled.div<Props>`
   }};
   padding: 5px;
   transition: background-color 0.2s, box-shadow 0.2s;
-  width: 298px;
+  width: calc(${SIDEBAR_OPEN_WIDTH}-5) px;
 
   &:hover {
     background: ${({ priority }) => hoverColorByPriority[priority]};

@@ -1,6 +1,6 @@
 import React, { FC } from "react";
 import { Dayjs } from "dayjs";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
@@ -11,6 +11,9 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { isEventFormOpen } from "@web/common/utils";
+import { SidebarIcon } from "@web/components/Icons/Sidebar";
+import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
 
 import {
   StyledHeaderRow,
@@ -40,6 +43,7 @@ export const Header: FC<Props> = ({
   const { scrollToNow } = scrollUtil;
 
   const { startOfView } = weekProps.component;
+  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
   const onSectionClick = () => {
     if (isEventFormOpen()) {
@@ -61,13 +65,20 @@ export const Header: FC<Props> = ({
         alignItems={AlignItems.BASELINE}
         onClick={onSectionClick}
       >
+        <TooltipWrapper
+          description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
+          shortcut="["
+        >
+          <SidebarIcon size={25} isFocused={isSidebarOpen} />
+        </TooltipWrapper>
         <StyledLeftGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
             <Text size="4xl">{startOfView.format("MMMM")}</Text>
 
             <SpaceCharacter />
 
-            <Text size="xxxl">{startOfView.format("YY")}</Text>
+            <Text size="xxxl">{startOfView.format("YYYY")}</Text>
           </StyledHeaderLabel>
         </StyledLeftGroup>
 

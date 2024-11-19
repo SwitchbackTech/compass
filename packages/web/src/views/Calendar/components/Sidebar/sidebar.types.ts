@@ -7,9 +7,7 @@ export interface PriorityFilter {
   [Priorities.WORK]?: boolean;
   [Priorities.SELF]?: boolean;
 }
-export interface SidebarProps {
-  isToggled: boolean;
-}
+
 export interface SectionProps {
   height?: string;
 }

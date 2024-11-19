@@ -38,4 +38,4 @@ export const useSidebar = (
   };
 };
 
-export type SomedayEventsProps = ReturnType<typeof useSidebar>;
+export type SidebarProps = ReturnType<typeof useSidebar>;

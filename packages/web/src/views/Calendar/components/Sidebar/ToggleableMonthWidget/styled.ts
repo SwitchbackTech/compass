@@ -13,5 +13,4 @@ export const Styled = styled.div`
 export const StyledMonthName = styled(Text)`
   display: block;
   padding-top: 18px;
-  margin-left: 50px;
 `;

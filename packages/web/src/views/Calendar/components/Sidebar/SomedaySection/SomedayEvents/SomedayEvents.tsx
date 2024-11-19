@@ -8,18 +8,20 @@ import {
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
+import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GridEventPreview } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/GridEventPreview";
+import { Text } from "@web/components/Text";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 import { SomedayEventsColumn } from "./SomedayEventsColumn";
-import { StyledSidebarList } from "../../styled";
+import { EventPlaceholder, SidebarList } from "../../styled";
 
 interface Props {
   category: Categories_Event;
   dateCalcs: DateCalcs;
   measurements: Measurements_Grid;
-  somedayProps: SomedayEventsProps;
+  sidebarProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
 }
 
@@ -27,10 +29,10 @@ export const SomedayEvents: FC<Props> = ({
   category,
   dateCalcs,
   measurements,
-  somedayProps,
+  sidebarProps,
   viewStart,
 }) => {
-  const { state, util } = somedayProps;
+  const { state, util } = sidebarProps;
   const gridX = state.mouseCoords.x - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
   const dayIndex = dateCalcs.getDayNumberByX(gridX);
 
@@ -58,7 +60,7 @@ export const SomedayEvents: FC<Props> = ({
         />
       )}
 
-      <StyledSidebarList onClick={() => util.onSectionClick(category)}>
+      <SidebarList>
         <div key={`${category}-wrapper`}>
           <SomedayEventsColumn
             category={category}
@@ -71,7 +73,26 @@ export const SomedayEvents: FC<Props> = ({
             util={util}
           />
         </div>
-      </StyledSidebarList>
+        {!isDraftingNew && (
+          <TooltipWrapper
+            description={
+              category === Categories_Event.SOMEDAY_MONTH
+                ? "Add to month"
+                : "Add to week"
+            }
+            onClick={() =>
+              sidebarProps.util.onPlaceholderClick(
+                Categories_Event.SOMEDAY_WEEK
+              )
+            }
+            shortcut={category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"}
+          >
+            <EventPlaceholder>
+              <Text size="l">+</Text>
+            </EventPlaceholder>
+          </TooltipWrapper>
+        )}
+      </SidebarList>
     </DragDropContext>
   );
 };

@@ -15,7 +15,7 @@ import { useGridLayout } from "./hooks/grid/useGridLayout";
 import { useDateCalcs } from "./hooks/grid/useDateCalcs";
 import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
 import { useRefresh } from "./hooks/useRefresh";
-import { LeftSidebar } from "./components/LeftSidebar";
+import { Sidebar } from "./components/Sidebar";
 import { Draft } from "./components/Event/Draft";
 import { Dedication } from "./components/Dedication";
 import { CmdPalette } from "../CmdPalette";
@@ -65,12 +65,13 @@ export const CalendarView = () => {
         weekProps={weekProps}
       />
 
-      <LeftSidebar
-        dateCalcs={dateCalcs}
-        measurements={measurements}
-        weekProps={weekProps}
-      />
-
+      {isSidebarOpen && (
+        <Sidebar
+          dateCalcs={dateCalcs}
+          measurements={measurements}
+          weekProps={weekProps}
+        />
+      )}
       <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
         <Header
           rootProps={rootProps}

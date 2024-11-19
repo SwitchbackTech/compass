@@ -194,6 +194,13 @@ export const useSidebarUtil = (
     );
   };
 
+  const discardIfDrafting = () => {
+    if (state.isDrafting) {
+      dispatch(draftSlice.actions.discard());
+      close();
+    }
+  };
+
   const onDragEnd = (result: DropResult) => {
     const { destination, draggableId, source } = result;
 
@@ -310,7 +317,7 @@ export const useSidebarUtil = (
     close();
   };
 
-  const onSectionClick = (section: Categories_Event) => {
+  const onPlaceholderClick = (section: Categories_Event) => {
     if (state.isDrafting) {
       dispatch(draftSlice.actions.discard());
       close();
@@ -387,14 +394,15 @@ export const useSidebarUtil = (
 
   return {
     close,
-    resetLocalDraftStateIfNeeded,
     createDefaultSomeday,
+    discardIfDrafting,
     onDraft,
     onDragEnd,
     onDragStart,
     onMigrate,
-    onSectionClick,
+    onPlaceholderClick,
     onSubmit,
+    resetLocalDraftStateIfNeeded,
     setDraft,
   };
 };

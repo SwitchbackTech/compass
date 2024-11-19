@@ -1,8 +1,8 @@
 import styled from "styled-components";
-import { CheckCircle } from "@phosphor-icons/react";
+import { Sidebar } from "@phosphor-icons/react";
 
 import { iconStyles } from "./styled";
 
-export const TodoIcon = styled(CheckCircle)`
+export const SidebarIcon = styled(Sidebar)`
   ${iconStyles}
 `;

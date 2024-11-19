@@ -1,7 +1,7 @@
 import React, { FC } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { SomedayEventsProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
+import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 
 import { SomedayEvent } from "../SomedayEvent";
@@ -13,7 +13,7 @@ export interface Props {
   index: number;
   isDrafting: boolean;
   isOverGrid: boolean;
-  util: SomedayEventsProps["util"];
+  util: SidebarProps["util"];
 }
 
 export const DraggableSomedayEvent: FC<Props> = ({
