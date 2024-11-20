@@ -12,10 +12,6 @@ export const Columns = styled(Flex)`
   left: ${GRID_MARGIN_LEFT}px;
 `;
 
-export const StyledAllDayColumns = styled(Columns)`
-  height: 100%;
-`;
-
 export const StyledGridCol = styled.div<{ color: string }>`
   border-left: ${({ theme }) =>
     `${DIVIDER_GRID}px solid ${theme.color.gridLine.primary}`};

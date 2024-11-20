@@ -14,7 +14,7 @@ interface Props {
   weekDays: Dayjs[];
 }
 
-export const Columns: FC<Props> = ({
+export const MainGridColumns: FC<Props> = ({
   isCurrentWeek,
   today,
   week,

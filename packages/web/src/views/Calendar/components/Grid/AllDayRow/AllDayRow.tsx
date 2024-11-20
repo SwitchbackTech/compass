@@ -17,8 +17,8 @@ import { getDefaultEvent } from "@web/common/utils/event.util";
 import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
 import { isEventFormOpen } from "@web/common/utils";
 
-import { StyledAllDayColumns, StyledGridCol } from "../Columns/styled";
-import { StyledAllDayRow } from "./styled";
+import { StyledGridCol } from "../Columns/styled";
+import { StyledAllDayColumns, StyledAllDayRow } from "./styled";
 import { AllDayEvents } from "./AllDayEvents";
 
 interface Props {
