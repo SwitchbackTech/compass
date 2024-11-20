@@ -12,7 +12,6 @@ export const ID_GRID_EVENTS_ALLDAY = "allDayEvents";
 export const ID_GRID_EVENTS_TIMED = "timedEvents";
 export const ID_GRID_MAIN = "mainGrid";
 export const ID_MAIN = "mainSection";
-export const ID_SIDEBAR = "sidebar";
 export const ID_SOMEDAY_DRAFT = "somedayDraft";
 export const ID_SOMEDAY_EVENTS = "ID_SOMEDAY_EVENTS";
 export const ID_SOMEDAY_EVENT_FORM = "Someday Event Form";

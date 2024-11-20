@@ -28,7 +28,10 @@ export const CalendarView = () => {
   useRefresh();
   const weekProps = useWeek(today);
 
-  const { gridRefs, measurements } = useGridLayout(weekProps.component.week);
+  const { gridRefs, measurements } = useGridLayout(
+    isSidebarOpen,
+    weekProps.component.week
+  );
 
   const scrollUtil = useScroll(gridRefs.gridScrollRef);
 
