@@ -58,7 +58,7 @@ export const SidebarContainer = styled(Flex)`
   overflow: hidden;
   position: relative;
   transition: 0.4s;
-  width: ${SIDEBAR_OPEN_WIDTH}px;
+  min-width: ${SIDEBAR_OPEN_WIDTH}px;
 `;
 
 export const IconRow = styled(Flex)<SectionProps>`
