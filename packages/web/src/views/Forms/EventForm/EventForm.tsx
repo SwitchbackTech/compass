@@ -17,7 +17,7 @@ import {
   getTimeOptionByValue,
   mapToBackend,
 } from "@web/common/utils/web.date.util";
-import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedaySection/SomedayEvents/styled";
+import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/styled";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
   colorByPriority,

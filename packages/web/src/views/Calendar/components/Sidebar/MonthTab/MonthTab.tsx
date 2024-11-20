@@ -16,7 +16,7 @@ export interface Props {
   weekStart: WeekProps["component"]["startOfView"];
 }
 
-export const ToggleableMonthWidget: React.FC<Props> = ({
+export const MonthTab: React.FC<Props> = ({
   isCurrentWeek,
   monthsShown,
   setStartOfView,

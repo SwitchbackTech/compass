@@ -14,9 +14,9 @@ import {
   CalendarListContainer,
   SidebarTabContainer,
 } from "./styled";
-import { SomedaySection } from "./SomedaySection";
+import { SomedaySection } from "./SomedayTab";
 import { SidebarIconRow } from "./SidebarIconRow";
-import { ToggleableMonthWidget } from "./ToggleableMonthWidget/ToggleableMonthWidget";
+import { MonthTab } from "./MonthTab/MonthTab";
 import { useSidebar } from "../../hooks/draft/sidebar/useSidebar";
 
 interface Props {
@@ -54,7 +54,7 @@ export const Sidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = ({
         )}
         {tab === "monthWidget" && (
           <>
-            <ToggleableMonthWidget
+            <MonthTab
               monthsShown={1}
               setStartOfView={weekProps.state.setStartOfView}
               isCurrentWeek={weekProps.component.isCurrentWeek}
