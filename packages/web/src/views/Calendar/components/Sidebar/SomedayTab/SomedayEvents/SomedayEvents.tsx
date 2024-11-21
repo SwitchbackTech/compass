@@ -80,11 +80,7 @@ export const SomedayEvents: FC<Props> = ({
                 ? "Add to month"
                 : "Add to week"
             }
-            onClick={() =>
-              sidebarProps.util.onPlaceholderClick(
-                Categories_Event.SOMEDAY_WEEK
-              )
-            }
+            onClick={() => sidebarProps.util.onPlaceholderClick(category)}
             shortcut={category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"}
           >
             <EventPlaceholder>
