@@ -43,7 +43,7 @@ export const SidebarIconRow = () => {
           <TodoIcon isFocused={tab === "tasks"} size={25} />
         </TooltipWrapper>
         <TooltipWrapper
-          description="Open month widget"
+          description="Open month"
           shortcut="SHIFT + 2"
           onClick={() =>
             dispatch(viewSlice.actions.updateSidebarTab("monthWidget"))

@@ -289,10 +289,11 @@ export const EventForm: React.FC<FormProps> = ({
         />
 
         <DateTimeSection
-          bgColor={hoverColorByPriority[priority]}
+          bgColor={colorByPriority[priority]}
           event={event}
           category={category}
           endTime={endTime}
+          inputColor={hoverColorByPriority[priority]}
           isEndDatePickerOpen={isEndDatePickerOpen}
           isStartDatePickerOpen={isStartDatePickerOpen}
           selectedEndDate={selectedEndDate}

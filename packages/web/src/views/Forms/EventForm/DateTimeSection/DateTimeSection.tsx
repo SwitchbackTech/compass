@@ -17,18 +17,20 @@ import {
   shouldAdjustComplimentTime,
 } from "@web/common/utils/web.date.util";
 import { Option_Time } from "@web/common/types/util.types";
+import { darken } from "@core/util/color.utils";
 
 import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
 
 dayjs.extend(customParseFormat);
 
 export interface Props {
+  bgColor: string;
   category: Categories_Event;
   event: Schema_Event;
   endTime?: SelectOption<string>;
+  inputColor?: string;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
-  bgColor?: string;
   selectedEndDate?: Date;
   selectedStartDate?: Date;
   setEndTime: (value: SelectOption<string>) => void;
@@ -42,11 +44,12 @@ export interface Props {
 }
 
 export const DateTimeSection: FC<Props> = ({
-  event,
+  bgColor,
   category,
+  event,
+  inputColor,
   isEndDatePickerOpen,
   isStartDatePickerOpen,
-  bgColor,
   selectedEndDate,
   selectedStartDate,
   setIsStartDatePickerOpen,
@@ -282,8 +285,9 @@ export const DateTimeSection: FC<Props> = ({
               onMouseDown={stopPropagation}
             >
               <DatePicker
-                bgColor={bgColor}
+                bgColor={darken(bgColor, 15)}
                 calendarClassName="startDatePicker"
+                inputColor={inputColor}
                 isOpen={isStartDatePickerOpen}
                 onCalendarClose={closeStartDatePicker}
                 onCalendarOpen={() => {
@@ -307,8 +311,9 @@ export const DateTimeSection: FC<Props> = ({
               onMouseDown={stopPropagation}
             >
               <DatePicker
-                bgColor={bgColor}
+                bgColor={darken(bgColor, 15)}
                 calendarClassName="endDatePicker"
+                inputColor={inputColor}
                 isOpen={isEndDatePickerOpen}
                 onCalendarClose={closeEndDatePicker}
                 onCalendarOpen={() => setIsEndDatePickerOpen(true)}

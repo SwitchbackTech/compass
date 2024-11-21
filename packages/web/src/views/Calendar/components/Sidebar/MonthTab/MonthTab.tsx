@@ -4,6 +4,7 @@ import weekPlugin from "dayjs/plugin/weekOfYear";
 import { DatePicker } from "@web/components/DatePicker";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { theme } from "@web/common/styles/theme";
+import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 
 import { Styled } from "./styled";
 
@@ -33,8 +34,7 @@ export const MonthTab: React.FC<Props> = ({
     <Styled role="dialog" data-testid="Month Widget">
       <DatePicker
         animationOnToggle={false}
-        bgColor={theme.color.text.light}
-        calendarClassName="sidebarDatePicker"
+        calendarClassName={ID_DATEPICKER_SIDEBAR}
         inline
         isOpen={true}
         monthsShown={monthsShown}
@@ -44,7 +44,7 @@ export const MonthTab: React.FC<Props> = ({
         }}
         selected={selectedDate}
         shouldCloseOnSelect={false}
-        view="widget"
+        view="sidebar"
         withTodayButton={true}
       />
     </Styled>
