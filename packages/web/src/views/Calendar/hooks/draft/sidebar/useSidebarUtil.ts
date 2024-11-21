@@ -37,6 +37,7 @@ import {
 } from "@web/common/utils/web.date.util";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
+import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
@@ -49,12 +50,13 @@ export const useSidebarUtil = (
 ) => {
   const dispatch = useAppDispatch();
 
-  const { start, end } = useAppSelector(selectDatesInView);
-  const viewStart = dayjs(start);
-  const viewEnd = dayjs(end);
-
+  const isDraftingOnGrid = useAppSelector(selectIsDrafting);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
+  const { start, end } = useAppSelector(selectDatesInView);
+
+  const viewStart = dayjs(start);
+  const viewEnd = dayjs(end);
 
   const resetLocalDraftStateIfNeeded = () => {
     if (!state.isDrafting) return;
@@ -198,6 +200,10 @@ export const useSidebarUtil = (
     if (state.isDrafting) {
       dispatch(draftSlice.actions.discard());
       close();
+      return;
+    }
+    if (isDraftingOnGrid) {
+      dispatch(draftSlice.actions.discard());
     }
   };
 
