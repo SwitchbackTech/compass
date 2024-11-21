@@ -42,7 +42,8 @@ export const SomedayEvent = ({
 }: Props) => {
   const formType =
     category === Categories_Event.SOMEDAY_WEEK ? "sidebarWeek" : "sidebarMonth";
-  const { y, reference, floating, strategy, context } = useEventForm(formType);
+  const { y, strategy, context, setReference, setFloating } =
+    useEventForm(formType);
 
   const [isFocused, setIsFocused] = useState(false);
 
@@ -93,7 +94,7 @@ export const SomedayEvent = ({
         role="button"
         ref={provided.innerRef}
       >
-        <div ref={reference}>
+        <div ref={setReference}>
           <SomedayEventRectangle
             category={category}
             event={event}
@@ -106,7 +107,7 @@ export const SomedayEvent = ({
         {shouldOpenForm && (
           <FloatingFocusManager context={context}>
             <StyledFloatContainer
-              ref={floating}
+              ref={setFloating}
               strategy={strategy}
               top={y ?? 40}
               left={SIDEBAR_OPEN_WIDTH}
