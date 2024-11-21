@@ -5,26 +5,20 @@ import {
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 import { FlexDirections } from "@web/components/Flex/styled";
-import { ArrowLineLeftIcon } from "@web/components/Icons/ArrowLineLeft";
-import { ArrowLineRightIcon } from "@web/components/Icons/ArrowLineRight";
 
 import { SectionProps } from "./sidebar.types";
 
 const ICON_ROW_HEIGHT = 40;
 
-export const getSidebarToggleIcon = (isToggled: boolean) => {
-  if (isToggled) {
-    return ArrowLineLeftIcon;
-  } else {
-    return ArrowLineRightIcon;
-  }
-};
-
 export const CalendarListContainer = styled.div``;
 
 export const CalendarLabel = styled.label`
+  align-items: center;
   display: flex;
-  align-items: "center";
+`;
+
+export const CalendarList = styled.ul`
+  padding-left: 10px;
 `;
 
 export const EventPlaceholder = styled.div`
@@ -44,6 +38,17 @@ export const EventPlaceholder = styled.div`
   }
 `;
 
+export const IconRow = styled(Flex)<SectionProps>`
+  align-items: center;
+  bottom: 0;
+  border-top: 1px solid ${({ theme }) => theme.color.border.primary};
+  height: ${ICON_ROW_HEIGHT}px;
+  flex-direction: ${FlexDirections.ROW};
+  padding: 0 25px;
+  position: absolute;
+  width: 100%;
+`;
+
 export const LeftIconGroup = styled.div`
   gap: 20px;
   display: flex;
@@ -59,17 +64,6 @@ export const SidebarContainer = styled(Flex)`
   position: relative;
   transition: 0.4s;
   min-width: ${SIDEBAR_OPEN_WIDTH}px;
-`;
-
-export const IconRow = styled(Flex)<SectionProps>`
-  align-items: center;
-  bottom: 0;
-  border-top: 1px solid ${({ theme }) => theme.color.border.primary};
-  height: ${ICON_ROW_HEIGHT}px;
-  flex-direction: ${FlexDirections.ROW};
-  padding: 0 25px;
-  position: absolute;
-  width: 100%;
 `;
 
 export const SidebarTabContainer = styled.div`
@@ -95,9 +89,4 @@ export const SidebarTabContainer = styled.div`
 export const SidebarList = styled.div`
   overflow: auto;
   width: 100%;
-`;
-
-export const SomedaySection = styled(Flex)<SectionProps>`
-  overflow: hidden;
-  padding-top: 26px;
 `;

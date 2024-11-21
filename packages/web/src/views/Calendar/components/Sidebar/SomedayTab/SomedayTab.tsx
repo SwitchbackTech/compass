@@ -12,7 +12,7 @@ import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar
 
 import { WeekSection } from "./WeekSection/WeekSection";
 import { MonthSection } from "./MonthSection";
-import { SidebarContainer, SidebarContent } from "./styled";
+import { SidebarContent } from "./styled";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -22,7 +22,7 @@ interface Props {
   viewEnd: WeekProps["component"]["endOfView"];
 }
 
-export const SomedaySection: FC<Props> = ({
+export const SomedayTab: FC<Props> = ({
   dateCalcs,
   measurements,
   sidebarProps,
@@ -38,32 +38,29 @@ export const SomedaySection: FC<Props> = ({
   );
 
   return (
-    <SidebarContainer ref={somedayRef}>
+    <SidebarContent ref={somedayRef}>
       {isProcessing && <AbsoluteOverflowLoader />}
+      <WeekSection
+        dateCalcs={dateCalcs}
+        measurements={measurements}
+        sidebarProps={sidebarProps}
+        viewStart={viewStart}
+        weekLabel={weekLabel}
+      />
 
-      <SidebarContent>
-        <WeekSection
-          dateCalcs={dateCalcs}
-          measurements={measurements}
-          sidebarProps={sidebarProps}
-          viewStart={viewStart}
-          weekLabel={weekLabel}
-        />
+      <Divider
+        color={theme.color.border.primary}
+        role="separator"
+        title="sidebar divider"
+        withAnimation={false}
+      />
 
-        <Divider
-          color={theme.color.border.primary}
-          role="separator"
-          title="sidebar divider"
-          withAnimation={false}
-        />
-
-        <MonthSection
-          dateCalcs={dateCalcs}
-          measurements={measurements}
-          somedayProps={sidebarProps}
-          viewStart={viewStart}
-        />
-      </SidebarContent>
-    </SidebarContainer>
+      <MonthSection
+        dateCalcs={dateCalcs}
+        measurements={measurements}
+        somedayProps={sidebarProps}
+        viewStart={viewStart}
+      />
+    </SidebarContent>
   );
 };

@@ -1,14 +1,9 @@
-import React, { useEffect, useState } from "react";
-import dayjs from "dayjs";
-import weekPlugin from "dayjs/plugin/weekOfYear";
-import { DatePicker } from "@web/components/DatePicker";
+import React from "react";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { theme } from "@web/common/styles/theme";
-import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 
-import { Styled } from "./styled";
-
-dayjs.extend(weekPlugin);
+import { SidebarMonthPicker } from "./MonthPicker/SidebarMonthPicker";
+import { SubCalendarList } from "./SubCalendarList/SubCalendarList";
+import { SidebarContent } from "../SomedayTab/styled";
 
 export interface Props {
   isCurrentWeek: boolean;
@@ -21,32 +16,17 @@ export const MonthTab: React.FC<Props> = ({
   isCurrentWeek,
   monthsShown,
   setStartOfView,
+  weekStart,
 }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-
-  useEffect(() => {
-    if (isCurrentWeek) {
-      setSelectedDate(null);
-    }
-  }, [isCurrentWeek]);
-
   return (
-    <Styled role="dialog" data-testid="Month Widget">
-      <DatePicker
-        animationOnToggle={false}
-        calendarClassName={ID_DATEPICKER_SIDEBAR}
-        inline
-        isOpen={true}
+    <SidebarContent>
+      <SidebarMonthPicker
+        isCurrentWeek={isCurrentWeek}
         monthsShown={monthsShown}
-        onChange={(date) => {
-          setSelectedDate(date);
-          setStartOfView(dayjs(date).startOf("week"));
-        }}
-        selected={selectedDate}
-        shouldCloseOnSelect={false}
-        view="sidebar"
-        withTodayButton={true}
+        setStartOfView={setStartOfView}
+        weekStart={weekStart}
       />
-    </Styled>
+      <SubCalendarList />
+    </SidebarContent>
   );
 };
