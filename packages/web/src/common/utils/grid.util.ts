@@ -16,7 +16,6 @@ import { Category } from "@web/ducks/events/event.types";
 import {
   DIVIDER_GRID,
   GRID_X_PADDING_TOTAL,
-  SIDEBAR_CLOSED_WIDTH,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -470,10 +469,11 @@ export const getWidthInPixels = (
 };
 
 export const getX = (e: MouseEvent | number, isSidebarOpen: boolean) => {
-  const xOffset = isSidebarOpen ? SIDEBAR_OPEN_WIDTH : SIDEBAR_CLOSED_WIDTH;
+  const x = typeof e === "number" ? e : e.clientX;
 
-  const origX = typeof e === "number" ? e : e.clientX;
-  const x = origX - xOffset;
+  if (isSidebarOpen) {
+    return x - SIDEBAR_OPEN_WIDTH;
+  }
   return x;
 };
 

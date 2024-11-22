@@ -5,7 +5,7 @@ import { getWidthBuffer } from "@web/common/utils/grid.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
-import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/LeftSidebar/SomedaySection/SomedayEvents/styled";
+import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/styled";
 import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";

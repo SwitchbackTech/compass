@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { brighten, compliment, darken, isDark } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
 import { SIDEBAR_MONTH_HEIGHT } from "@web/views/Calendar/layout.constants";
@@ -28,11 +29,21 @@ export const MonthContainerStyled = styled(Flex)`
   width: 97px;
 `;
 
-export const StyledDatePicker = styled.div<{
-  view: "widget" | "picker";
+interface Props {
+  bgColor: string;
+  isDark?: boolean;
   selectedColor: string;
-}>`
-  background-color: ${({ theme }) => theme.color.bg.primary};
+  view: "grid" | "sidebar";
+}
+
+export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
+  bgColor: props.bgColor,
+  isDark: isDark(props.bgColor),
+  selectedColor: props.selectedColor,
+  view: props.view,
+}))<Props>`
+  background-color: ${({ bgColor, view }) =>
+    view === "sidebar" ? "transparent" : bgColor};
   border: none;
   border-radius: 2px;
   box-shadow: 0px 4px 4px ${({ theme }) => theme.color.shadow.default};
@@ -64,8 +75,8 @@ export const StyledDatePicker = styled.div<{
       width: 100%;
 
       &:hover {
-        ${({ view }) =>
-          view === "widget" &&
+        ${({ view, theme }) =>
+          view === "sidebar" &&
           `background-color: ${theme.color.fg.primaryDark}`};
       }
     }
@@ -79,7 +90,8 @@ export const StyledDatePicker = styled.div<{
 
     &__day-name {
       opacity: 0.8;
-      color: ${theme.color.text.light};
+      color: ${({ theme, isDark }) =>
+        isDark ? theme.color.text.light : theme.color.text.dark};
       font-size: 11px;
       margin: 0;
     }
@@ -87,7 +99,8 @@ export const StyledDatePicker = styled.div<{
     &__day {
       border: none !important;
       border-radius: 50% !important;
-      color: ${theme.color.text.lighter};
+      color: ${({ theme, isDark }) =>
+        isDark ? theme.color.text.lighter : theme.color.text.dark};
       margin: 0;
 
       &:hover {
@@ -103,12 +116,16 @@ export const StyledDatePicker = styled.div<{
       }
 
       &--selected {
-        color: ${theme.color.text.dark};
         background-color: ${({ selectedColor }) => selectedColor};
       }
 
       &--today {
-        color: ${({ selectedColor }) => selectedColor};
+        color: ${({ view }) =>
+          view === "sidebar" ? theme.color.text.accent : theme.color.text.dark};
+        text-decoration: underline;
+        text-decoration-color: ${({ view }) =>
+          view === "sidebar" ? theme.color.text.accent : theme.color.text.dark};
+        text-underline-offset: 3px;
       }
 
       &--keyboard-selected {
@@ -116,22 +133,26 @@ export const StyledDatePicker = styled.div<{
       }
 
       &--outside-month {
-        color: ${theme.color.text.darkPlaceholder};
+        color: ${({ theme, isDark }) =>
+          isDark
+            ? darken(theme.color.text.light)
+            : brighten(theme.color.text.dark)};
+        opacity: 0.8;
       }
     }
-  }
 
-  &.calendar {
-    height: 0;
-    width: 414px;
-    overflow: hidden;
+    &.calendar {
+      height: 0;
+      width: 414px;
+      overflow: hidden;
 
-    &--open {
-      height: ${SIDEBAR_MONTH_HEIGHT}px;
-    }
+      &--open {
+        height: ${SIDEBAR_MONTH_HEIGHT}px;
+      }
 
-    &--animation {
-      transition: 0.3s;
+      &--animation {
+        transition: 0.3s;
+      }
     }
   }
 `;

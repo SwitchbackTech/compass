@@ -17,7 +17,7 @@ import {
   getTimeOptionByValue,
   mapToBackend,
 } from "@web/common/utils/web.date.util";
-import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/LeftSidebar/SomedaySection/SomedayEvents/styled";
+import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/styled";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
@@ -289,10 +289,11 @@ export const EventForm: React.FC<FormProps> = ({
         />
 
         <DateTimeSection
-          bgColor={hoverColorByPriority[priority]}
+          bgColor={colorByPriority[priority]}
           event={event}
           category={category}
           endTime={endTime}
+          inputColor={hoverColorByPriority[priority]}
           isEndDatePickerOpen={isEndDatePickerOpen}
           isStartDatePickerOpen={isStartDatePickerOpen}
           selectedEndDate={selectedEndDate}

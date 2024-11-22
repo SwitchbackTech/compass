@@ -41,7 +41,7 @@ export const theme: DefaultTheme = {
     border: {
       primary: c.gray800,
       primaryDark: c.gray900,
-      secondary: c.gray700,
+      secondary: c.gray100,
     },
     fg: {
       primary: c.gray100,

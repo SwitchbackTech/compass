@@ -14,11 +14,15 @@ import { getDefaultEvent } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { isEventFormOpen } from "@web/common/utils";
+import { getHourLabels } from "@web/common/utils/web.date.util";
 
-import { Columns } from "../Columns";
-import { GridRows } from "./GridRows";
-import { StyledMainGrid } from "./styled";
+import {
+  StyledGridRow,
+  StyledGridWithTimeLabels,
+  StyledMainGrid,
+} from "./styled";
 import { MainGridEvents } from "./MainGridEvents";
+import { MainGridColumns } from "../Columns/MainGridColumns";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -66,19 +70,22 @@ export const MainGrid: FC<Props> = ({
   };
 
   return (
-    <StyledMainGrid
-      id={ID_GRID_MAIN}
-      onMouseDown={onMouseDown}
-      ref={mergeRefs([mainGridRef, scrollRef])}
-    >
-      <Columns
+    <StyledMainGrid id={ID_GRID_MAIN} ref={mergeRefs([mainGridRef, scrollRef])}>
+      <MainGridColumns
         isCurrentWeek={isCurrentWeek}
         today={today}
         week={week}
         weekDays={weekDays}
       />
 
-      <GridRows />
+      <StyledGridWithTimeLabels>
+        {getHourLabels().map((dayTime, index) => (
+          <StyledGridRow
+            key={`${dayTime}-${index}:dayTimes`}
+            onMouseDown={onMouseDown}
+          />
+        ))}
+      </StyledGridWithTimeLabels>
 
       <MainGridEvents measurements={measurements} weekProps={weekProps} />
     </StyledMainGrid>

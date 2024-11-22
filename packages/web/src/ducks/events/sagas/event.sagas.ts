@@ -36,7 +36,7 @@ import {
   Entities_Event,
 } from "../event.types";
 import { getSomedayEventsSlice } from "../slices/someday.slice";
-import { Action_Someday_Reorder } from "../types/someday.slice.types";
+import { Action_Someday_Reorder } from "../slices/someday.slice.types";
 
 function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
   try {

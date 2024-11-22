@@ -6,7 +6,7 @@ import {
   Action_DraftEvent,
   Action_Draft_Resize,
   Action_Draft_Swap,
-} from "../types/draft.slice.types";
+} from "./draft.slice.types";
 
 interface State_DraftEvent {
   status: Status_DraftEvent | null;

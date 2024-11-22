@@ -1,6 +1,14 @@
 import React from "react";
+import styled from "styled-components";
+import { Trash } from "@phosphor-icons/react";
 
-import { TrashIcon } from "./Trash";
+export const TrashIcon = styled(Trash)`
+  transition: filter 0.2s ease;
+  &:hover {
+    cursor: pointer;
+    filter: brightness(50%);
+  }
+`;
 
 interface Props {
   onDelete: () => void;

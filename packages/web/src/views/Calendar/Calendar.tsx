@@ -1,6 +1,8 @@
 import React from "react";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { ID_MAIN } from "@web/common/constants/web.constants";
+import { useAppSelector } from "@web/store/store.hooks";
+import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 
 import { Grid } from "./components/Grid/";
 import { useScroll } from "./hooks/grid/useScroll";
@@ -10,25 +12,26 @@ import { Header } from "./components/Header";
 import { RootProps } from "./calendarView.types";
 import { Styled, StyledCalendar } from "./styled";
 import { useGridLayout } from "./hooks/grid/useGridLayout";
-import { usePreferences } from "./hooks/usePreferences";
 import { useDateCalcs } from "./hooks/grid/useDateCalcs";
 import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
 import { useRefresh } from "./hooks/useRefresh";
-import { LeftSidebar } from "./components/LeftSidebar";
-import { RightSidebar } from "./components/RightSidebar";
+import { Sidebar } from "./components/Sidebar";
 import { Draft } from "./components/Event/Draft";
 import { Dedication } from "./components/Dedication";
 import { CmdPalette } from "../CmdPalette";
 
 export const CalendarView = () => {
-  const prefs = usePreferences();
+  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
   const { today } = useToday();
 
   useRefresh();
   const weekProps = useWeek(today);
 
-  const { gridRefs, measurements } = useGridLayout(weekProps.component.week);
+  const { gridRefs, measurements } = useGridLayout(
+    isSidebarOpen,
+    weekProps.component.week
+  );
 
   const scrollUtil = useScroll(gridRefs.gridScrollRef);
 
@@ -36,7 +39,6 @@ export const CalendarView = () => {
 
   const isCurrentWeek = weekProps.component.isCurrentWeek;
   const util = weekProps.util;
-  const toggleSidebar = prefs.toggleSidebar;
 
   const shortcutProps = {
     today,
@@ -46,7 +48,6 @@ export const CalendarView = () => {
     endOfView: weekProps.component.endOfView,
     util,
     scrollUtil,
-    toggleSidebar,
   };
 
   useShortcuts(shortcutProps);
@@ -62,18 +63,18 @@ export const CalendarView = () => {
 
       <Draft
         dateCalcs={dateCalcs}
-        isSidebarOpen={prefs.isLeftSidebarOpen}
+        isSidebarOpen={isSidebarOpen}
         measurements={measurements}
         weekProps={weekProps}
       />
 
-      <LeftSidebar
-        dateCalcs={dateCalcs}
-        prefs={prefs}
-        measurements={measurements}
-        weekProps={weekProps}
-      />
-
+      {isSidebarOpen && (
+        <Sidebar
+          dateCalcs={dateCalcs}
+          measurements={measurements}
+          weekProps={weekProps}
+        />
+      )}
       <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
         <Header
           rootProps={rootProps}
@@ -84,15 +85,13 @@ export const CalendarView = () => {
 
         <Grid
           dateCalcs={dateCalcs}
-          isSidebarOpen={prefs.isLeftSidebarOpen}
+          isSidebarOpen={isSidebarOpen}
           gridRefs={gridRefs}
           measurements={measurements}
           today={today}
           weekProps={weekProps}
         />
       </StyledCalendar>
-
-      <RightSidebar weekProps={weekProps} />
     </Styled>
   );
 };

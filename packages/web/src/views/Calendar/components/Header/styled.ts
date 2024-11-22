@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import {
   EVENT_WIDTH_MINIMUM,
-  PAGE_X_PADDING,
+  PAGE_MARGIN_X,
 } from "@web/views/Calendar/layout.constants";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
@@ -42,7 +42,6 @@ export const StyledHeaderRow = styled(Flex)`
   color: ${({ theme }) => theme.color.text.light};
   font-size: 40px;
   justify-content: ${JustifyContent.SPACE_BETWEEN};
-  margin-left: ${GRID_MARGIN_LEFT}px;
   height: ${HEADER_HEIGHT}px;
   width: 100%;
 `;
@@ -51,15 +50,13 @@ export const StyledNavigationArrows = styled(Flex)`
   padding-left: 20px;
 `;
 
-export const StyledNavigationButtons = styled(Flex)`
+export const StyledNavigationGroup = styled(Flex)`
+  align-items: baseline;
   justify-content: space-between;
-  margin-right: 50px;
-  padding-left: 20px;
+  margin-right: 20px;
 `;
 
-export const StyledRightGroup = styled(Flex)`
-  padding-right: ${PAGE_X_PADDING * 2}px;
-`;
+export const StyledRightGroup = styled(Flex)``;
 
 export const StyledWeekDaysFlex = styled(Flex)`
   width: calc(100% - ${GRID_MARGIN_LEFT}px);

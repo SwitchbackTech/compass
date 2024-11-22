@@ -8,6 +8,7 @@ import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Flex } from "@web/components/Flex";
 import { Input } from "@web/components/Input";
 import { theme } from "@web/common/styles/theme";
+import { isDark } from "@core/util/color.utils";
 
 import {
   ChangeDayButtonsStyledFlex,
@@ -19,10 +20,11 @@ import {
 
 export interface Props extends ReactDatePickerProps {
   animationOnToggle?: boolean;
-  bgColor: string;
+  bgColor?: string;
+  inputColor?: string;
   isOpen?: boolean;
   onInputBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  view: "widget" | "picker";
+  view: "sidebar" | "grid";
   withTodayButton?: boolean;
 }
 
@@ -35,6 +37,7 @@ export const DatePicker: React.FC<Props> = ({
   autoFocus: _autoFocus = false,
   bgColor,
   calendarClassName,
+  inputColor,
   isOpen = true,
   onSelect = () => null,
   onInputBlur,
@@ -45,6 +48,12 @@ export const DatePicker: React.FC<Props> = ({
   ...props
 }) => {
   const datepickerRef = useRef<CalendarRef>(null);
+  const headerColor =
+    view === "sidebar"
+      ? theme.color.text.light
+      : isDark(bgColor)
+      ? theme.color.text.lighter
+      : theme.color.text.dark;
 
   useEffect(() => {
     if (_autoFocus) {
@@ -64,11 +73,12 @@ export const DatePicker: React.FC<Props> = ({
       calendarContainer={(containerProps) => (
         <StyledDatePicker
           {...containerProps}
-          selectedColor={bgColor}
+          bgColor={bgColor}
+          selectedColor={theme.color.text.accent}
           view={view}
         />
       )}
-      customInput={<Input bgColor={bgColor} onBlurCapture={onInputBlur} />}
+      customInput={<Input bgColor={inputColor} onBlurCapture={onInputBlur} />}
       dateFormat={"M-d-yyyy"}
       formatWeekDay={(day) => day[0]}
       open={isOpen}
@@ -105,7 +115,7 @@ export const DatePicker: React.FC<Props> = ({
             justifyContent={JustifyContent.LEFT}
           >
             <MonthContainerStyled>
-              <Text color={theme.color.text.light} size="xl">
+              <Text color={headerColor} size="xl">
                 {selectedMonth}
               </Text>
             </MonthContainerStyled>
@@ -116,7 +126,7 @@ export const DatePicker: React.FC<Props> = ({
                   <Text
                     cursor="pointer"
                     onClick={decreaseMonth}
-                    color={theme.color.text.light}
+                    color={headerColor}
                     size="l"
                   >
                     {"<"}
@@ -124,7 +134,7 @@ export const DatePicker: React.FC<Props> = ({
                   <Text
                     cursor="pointer"
                     onClick={increaseMonth}
-                    color={theme.color.text.light}
+                    color={headerColor}
                     size="l"
                   >
                     {">"}

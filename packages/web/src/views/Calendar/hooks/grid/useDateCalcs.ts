@@ -20,12 +20,6 @@ export const useDateCalcs = (
   measurements: Measurements_Grid,
   scrollRef: Ref_Grid
 ) => {
-  const _measurements = useRef(measurements);
-
-  useLayoutEffect(() => {
-    _measurements.current = measurements;
-  }, [measurements]);
-
   const getDateByX = (x: number, firstDayInView: Dayjs) => {
     const gridX = x - GRID_X_START;
     const dayIndex = getDayNumberByX(gridX);
@@ -36,8 +30,7 @@ export const useDateCalcs = (
 
   const getDateByXY = (x: number, y: number, firstDayInView: Dayjs) => {
     const isOverAllDayRow =
-      y > _measurements.current.allDayRow.top &&
-      y < _measurements.current.mainGrid.top;
+      y > measurements.allDayRow.top && y < measurements.mainGrid.top;
 
     let date = getDateByX(x, firstDayInView);
 
@@ -65,7 +58,7 @@ export const useDateCalcs = (
 
   const getDayNumberByX = (x: number) => {
     let dayNumber = 0;
-    _measurements.current.colWidths.reduce((prev, width, index) => {
+    measurements.colWidths.reduce((prev, width, index) => {
       if (x >= prev && x < prev + width) {
         dayNumber = index;
       }
@@ -78,9 +71,9 @@ export const useDateCalcs = (
 
   const getMinuteByY = (y: number) => {
     const scrollTop = scrollRef.current.scrollTop;
-    const gridY = y - _measurements.current.mainGrid.top + scrollTop;
+    const gridY = y - measurements.mainGrid.top + scrollTop;
 
-    const decimalMinute = (gridY / _measurements.current.hourHeight) * 60;
+    const decimalMinute = (gridY / measurements.hourHeight) * 60;
     const roundedMinute = roundToNearest(decimalMinute, GRID_TIME_STEP);
     const finalMinute = Math.max(0, roundedMinute); // prevents negative number when clicking all-day row
     return finalMinute;
@@ -90,7 +83,7 @@ export const useDateCalcs = (
     const day = dayjs(date);
     const startTime = ACCEPTED_TIMES.indexOf(day.format(HOURS_AM_FORMAT)) / 4;
 
-    return _measurements.current.hourHeight * startTime;
+    return measurements.hourHeight * startTime;
   };
 
   return {

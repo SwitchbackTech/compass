@@ -7,3 +7,7 @@ export const brighten = (color: string, amount?: number) => {
 export const darken = (color: string, amount?: number) => {
   return tinycolor(color).darken(amount).toString();
 };
+
+export const isDark = (color: string) => {
+  return tinycolor(color).isDark();
+};

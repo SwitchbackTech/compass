@@ -8,16 +8,16 @@ import { TodayButton } from "@web/views/Calendar/components/TodayButton";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { selectIsRightSidebarOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { StyledListIcon } from "@web/components/Icons/List";
 import { isEventFormOpen } from "@web/common/utils";
+import { SidebarIcon } from "@web/components/Icons/Sidebar";
+import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
 
 import {
   StyledHeaderRow,
-  StyledNavigationButtons,
+  StyledNavigationGroup,
   ArrowNavigationButton,
   StyledLeftGroup,
   StyledRightGroup,
@@ -42,8 +42,8 @@ export const Header: FC<Props> = ({
   const dispatch = useAppDispatch();
   const { scrollToNow } = scrollUtil;
 
-  const isRightSidebarOpen = useAppSelector(selectIsRightSidebarOpen);
   const { startOfView } = weekProps.component;
+  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
   const onSectionClick = () => {
     if (isEventFormOpen()) {
@@ -62,19 +62,28 @@ export const Header: FC<Props> = ({
   return (
     <>
       <StyledHeaderRow
-        alignItems={AlignItems.FLEX_START}
+        alignItems={AlignItems.BASELINE}
         onClick={onSectionClick}
       >
+        <TooltipWrapper
+          description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
+          shortcut="["
+        >
+          <SidebarIcon size={25} isFocused={isSidebarOpen} />
+        </TooltipWrapper>
         <StyledLeftGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
             <Text size="4xl">{startOfView.format("MMMM")}</Text>
 
             <SpaceCharacter />
 
-            <Text size="xxxl">{startOfView.format("YY")}</Text>
+            <Text size="xxxl">{startOfView.format("YYYY")}</Text>
           </StyledHeaderLabel>
+        </StyledLeftGroup>
 
-          <StyledNavigationButtons>
+        <StyledRightGroup>
+          <StyledNavigationGroup>
             <TooltipWrapper
               description={today.format("dddd, MMMM D")}
               onClick={onTodayClick}
@@ -112,19 +121,7 @@ export const Header: FC<Props> = ({
                 </ArrowNavigationButton>
               </TooltipWrapper>
             </StyledNavigationArrows>
-          </StyledNavigationButtons>
-        </StyledLeftGroup>
-
-        <StyledRightGroup>
-          <TooltipWrapper
-            description={`${isRightSidebarOpen ? "Collapse" : "Open"} settings`}
-            onClick={() => {
-              dispatch(settingsSlice.actions.toggleRightSidebar());
-            }}
-            shortcut="]"
-          >
-            <StyledListIcon size={28} />
-          </TooltipWrapper>
+          </StyledNavigationGroup>
         </StyledRightGroup>
       </StyledHeaderRow>
 
