@@ -8,39 +8,40 @@ import {
   EVENT_CHANGED,
 } from "@core/constants/websocket.constants";
 
-import { initWebsocketServer } from "./websocket.server";
 import { getServerUri } from "./websocket.util";
+import { WebSocketServer } from "./websocket.server";
 
 describe("WebSocket Server", () => {
   let httpServer: HttpServer;
-  let io: IoServer;
-  let serverSocket: ServerSocket;
-  let clientSocket: ClientSocket;
+  let wsServer: IoServer;
+  let client: ClientSocket;
+  let socket: ServerSocket;
 
   beforeAll((done) => {
     httpServer = createServer();
-    io = initWebsocketServer(httpServer);
+    wsServer = new WebSocketServer().init(httpServer);
     httpServer.listen(() => {
       const uri = getServerUri(httpServer);
       const userId = "testUser123";
 
-      clientSocket = ioc(uri, {
+      client = ioc(uri, {
         query: { userId },
       });
 
-      io.on("connection", (socket) => {
-        serverSocket = socket;
+      wsServer.on("connection", (_socket) => {
+        socket = _socket;
       });
 
-      clientSocket.on("connect", done);
+      client.on("connect", done);
     });
   });
 
   afterAll((done) => {
-    io.close()
+    wsServer
+      .close()
       .then(() => httpServer.close())
       .then(() => {
-        clientSocket.disconnect();
+        client.disconnect();
         done();
       })
       .catch((err) => {
@@ -50,29 +51,27 @@ describe("WebSocket Server", () => {
   });
 
   describe(EVENT_CHANGED, () => {
-    it("emits event payload to client", (done) => {
-      clientSocket.on(EVENT_CHANGED, (arg) => {
+    it("emits eventpayload  to client", (done) => {
+      client.on(EVENT_CHANGED, (arg) => {
         expect(arg).toEqual({ _id: "1", title: "Test Event" });
         done();
       });
 
       const event: Schema_Event = { _id: "1", title: "Test Event" };
-      serverSocket.emit(EVENT_CHANGED, event);
+      socket.emit(EVENT_CHANGED, event);
     });
-
-    it.todo("emits eventChanged after reciving updated event data from Gcal");
   });
 
   describe(EVENT_CHANGE_PROCESSED, () => {
     it("accepts message from client after successful update", (done) => {
       const userId = "client123";
 
-      serverSocket.on(EVENT_CHANGE_PROCESSED, (receivedUserId) => {
+      socket.on(EVENT_CHANGE_PROCESSED, (receivedUserId) => {
         expect(receivedUserId).toBe(userId);
         done();
       });
 
-      clientSocket.emit(EVENT_CHANGE_PROCESSED, userId);
+      client.emit(EVENT_CHANGE_PROCESSED, userId);
     });
   });
 });

@@ -129,6 +129,12 @@ export const SocketError = {
     status: Status.BAD_REQUEST,
     isOperational: true,
   },
+  ServerNotReady: {
+    description:
+      "WebSocket server not ready (Did you forget to initialize it?)",
+    status: Status.INTERNAL_SERVER,
+    isOperational: false,
+  },
 };
 
 export const SyncError = {

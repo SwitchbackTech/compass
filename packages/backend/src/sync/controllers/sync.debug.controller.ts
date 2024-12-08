@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
-import { notifyClient } from "@backend/servers/websocket/websocket.server";
+import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 
 import syncService from "../services/sync.service";
 import { getSync } from "../util/sync.queries";
@@ -19,7 +19,7 @@ class SyncDebugController {
       const endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 1);
 
-      notifyClient(userId);
+      webSocketServer.handleBackgroundCalendarChange(userId);
       res.sendStatus(200);
     } catch (e) {
       console.error("Error during dispatch:", e);
