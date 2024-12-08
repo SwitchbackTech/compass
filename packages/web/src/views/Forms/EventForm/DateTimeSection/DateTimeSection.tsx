@@ -135,24 +135,6 @@ export const DateTimeSection: FC<Props> = ({
     setIsStartDatePickerOpen(false);
   };
 
-  const openEndDatePicker = () => {
-    if (isStartDatePickerOpen) {
-      setIsStartDatePickerOpen(false);
-    }
-    if (!isEndDatePickerOpen) {
-      setIsEndDatePickerOpen(true);
-    }
-  };
-
-  const openStartDatePicker = () => {
-    if (isEndDatePickerOpen) {
-      setIsEndDatePickerOpen(false);
-    }
-    if (!isStartDatePickerOpen) {
-      setIsStartDatePickerOpen(true);
-    }
-  };
-
   const onPickerKeyDown = (
     picker: "start" | "end",
     e: React.KeyboardEvent<HTMLDivElement>
@@ -279,11 +261,7 @@ export const DateTimeSection: FC<Props> = ({
       {category === Categories_Event.ALLDAY && (
         <>
           <StyledDateFlex alignItems={AlignItems.CENTER}>
-            <div
-              onFocus={openStartDatePicker}
-              onMouseUp={stopPropagation}
-              onMouseDown={stopPropagation}
-            >
+            <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
               <DatePicker
                 bgColor={darken(bgColor, 15)}
                 calendarClassName="startDatePicker"
@@ -305,11 +283,7 @@ export const DateTimeSection: FC<Props> = ({
           </StyledDateFlex>
 
           <StyledDateFlex alignItems={AlignItems.CENTER}>
-            <div
-              onFocus={openEndDatePicker}
-              onMouseUp={stopPropagation}
-              onMouseDown={stopPropagation}
-            >
+            <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
               <DatePicker
                 bgColor={darken(bgColor, 15)}
                 calendarClassName="endDatePicker"
