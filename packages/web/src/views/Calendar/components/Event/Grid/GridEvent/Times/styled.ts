@@ -10,9 +10,6 @@ export const StyledTimes = styled.div<Props>`
     revealBox &&
     css`
       transition: box-shadow 0.25s linear;
-      &:hover {
-        box-shadow: 0px 0px 0px 2px black;
-      }
     `};
 `;
 

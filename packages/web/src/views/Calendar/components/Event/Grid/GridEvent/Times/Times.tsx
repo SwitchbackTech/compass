@@ -1,13 +1,10 @@
-import React, { useState } from "react";
-import debounce from "lodash/debounce";
-import { useAppDispatch } from "@web/store/store.hooks";
+import React from "react";
 import { Text } from "@web/components/Text";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { getTimesLabel } from "@web/common/utils/web.date.util";
-import { editEventSlice } from "@web/ducks/events/slices/event.slice";
 
-import { StyledTimes, StyledTimesPlaceholder } from "./styled";
+import { StyledTimes } from "./styled";
 
 interface Props {
   event: Schema_GridEvent;
@@ -19,62 +16,13 @@ export const Times: React.FC<Props> = ({
   isDrafting,
   isPlaceholder,
 }) => {
-  const dispatch = useAppDispatch();
-
-  const [isHovered, setIsHovered] = useState(false);
-  const [isTimesShown, setIsTimesShown] = useState(event.isTimesShown);
-
-  const shouldRevealBox = !isPlaceholder && !isTimesShown && !isDrafting;
-
-  const toggleTimes = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    const newVal = !isTimesShown;
-    setIsTimesShown(() => newVal);
-
-    dispatch(
-      editEventSlice.actions.request({
-        _id: event._id,
-        event: { ...event, isTimesShown: newVal },
-      })
-    );
-  };
+  const shouldRevealBox = !isPlaceholder && !isDrafting;
 
   return (
-    <div
-      onMouseEnter={debounce(() => setIsHovered(true), 300)}
-      onMouseLeave={debounce(() => setIsHovered(false), 300)}
-    >
-      {isTimesShown ? (
-        <StyledTimes
-          revealBox={isHovered && !isDrafting}
-          onMouseDown={toggleTimes}
-        >
-          <Text
-            role="textbox"
-            size="xs"
-            title="Click to hide times"
-            zIndex={ZIndex.LAYER_3}
-          >
-            {getTimesLabel(event.startDate, event.endDate)}
-          </Text>
-        </StyledTimes>
-      ) : (
-        <StyledTimes revealBox={shouldRevealBox}>
-          {isHovered && shouldRevealBox ? (
-            <Text
-              onMouseDown={toggleTimes}
-              size="xs"
-              role="textbox"
-              title="Click to show times"
-            >
-              Show times
-            </Text>
-          ) : (
-            <StyledTimesPlaceholder />
-          )}
-        </StyledTimes>
-      )}
-    </div>
+    <StyledTimes revealBox={shouldRevealBox}>
+      <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
+        {getTimesLabel(event.startDate, event.endDate)}
+      </Text>
+    </StyledTimes>
   );
 };

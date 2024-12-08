@@ -32,7 +32,6 @@ export namespace MapEvent {
           // sync changes between compass and integrations
           origin: event.origin || Origin.UNSURE,
           priority: event.priority || Priorities.UNASSIGNED,
-          isTimesShown: event.isTimesShown?.toString() || "true",
         },
       },
     };
@@ -77,11 +76,7 @@ const _toCompass = (
   const _start = gEvent.start == undefined ? placeHolder.start : gEvent.start;
   const _end = gEvent.end === undefined ? placeHolder.end : gEvent.end;
   const _isAllDay = gEvent.start !== undefined && "date" in gEvent.start;
-  const _origIsTimesShown =
-    gEvent.extendedProperties?.private?.["isTimesShown"];
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const _isTimesShown =
-    _origIsTimesShown !== undefined ? JSON.parse(_origIsTimesShown) : true;
   const _origPriority = gEvent.extendedProperties?.private?.["priority"];
   const _priority =
     _origPriority === undefined
@@ -98,7 +93,6 @@ const _toCompass = (
     isAllDay: _isAllDay,
     isSomeday: false,
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    isTimesShown: _isTimesShown,
     // @ts-ignore
     startDate: _isAllDay ? _start.date : _start.dateTime,
     // @ts-ignore

@@ -16,7 +16,6 @@ import {
   FlexWrap,
 } from "@web/components/Flex/styled";
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
-import { adjustIsTimesShown } from "@web/common/utils/event.util";
 import { getLineClamp } from "@web/common/utils/grid.util";
 
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
@@ -55,9 +54,7 @@ const _GridEvent = (
   const { component } = weekProps;
 
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
-  const event = isDraft
-    ? _event
-    : adjustIsTimesShown(_event, isInPast, component.isCurrentWeek);
+  const event = _event;
 
   const position = getPosition(
     event,
@@ -103,11 +100,13 @@ const _GridEvent = (
         </StyledEventTitle>
         {!event.isAllDay && (
           <>
-            <Times
-              event={event}
-              isDrafting={isDraft}
-              isPlaceholder={isPlaceholder}
-            />
+            {!isInPast && (
+              <Times
+                event={event}
+                isDrafting={isDraft}
+                isPlaceholder={isPlaceholder}
+              />
+            )}
             <>
               <StyledEventScaler
                 showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
