@@ -17,9 +17,11 @@ import {
 } from "@web/components/Flex/styled";
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
 import { getLineClamp } from "@web/common/utils/grid.util";
+import { getTimesLabel } from "@web/common/utils/web.date.util";
+import { ZIndex } from "@web/common/constants/web.constants";
+import { Text } from "@web/components/Text";
 
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
-import { Times } from "./Times";
 
 interface Props {
   event: Schema_GridEvent;
@@ -101,11 +103,9 @@ const _GridEvent = (
         {!event.isAllDay && (
           <>
             {!isInPast && (
-              <Times
-                event={event}
-                isDrafting={isDraft}
-                isPlaceholder={isPlaceholder}
-              />
+              <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
+                {getTimesLabel(event.startDate, event.endDate)}
+              </Text>
             )}
             <>
               <StyledEventScaler
