@@ -70,33 +70,6 @@ describe("toGcal", () => {
       Priorities.UNASSIGNED
     );
   });
-  it("saves isTimesShown as private extended property", () => {
-    const gcalEvent = MapEvent.toGcal({
-      _id: "yupm",
-      user: "user1",
-      title: "Jan 1 2021",
-      isAllDay: true,
-      isTimesShown: false,
-      startDate: "2022-01-01T07:07:00-05:00",
-      endDate: "2022-01-01T07:11:30-05:00",
-      priority: Priorities.WORK,
-    });
-    expect(gcalEvent.extendedProperties.private.isTimesShown).toBe("false");
-  });
-
-  it("sets isTimesShown to true when none provided", () => {
-    const gcalEvent = MapEvent.toGcal({
-      _id: "yupm",
-      user: "user1",
-      title: "Jan 1 2021",
-      isAllDay: true,
-      // no isTimesShown here
-      startDate: "2022-01-01T07:07:00-05:00",
-      endDate: "2022-01-01T07:11:30-05:00",
-      priority: Priorities.WORK,
-    });
-    expect(gcalEvent.extendedProperties.private.isTimesShown).toBe("true");
-  });
   it("set origin to unsure as private extended properties when none provided", () => {
     const gcalEvent = MapEvent.toGcal({
       // no origin here
@@ -142,29 +115,7 @@ describe("toCompass", () => {
     });
   });
 
-  it("sets isTimesShown to true by default", () => {
-    const gEvent = gcalEvents.items.find(
-      (ge) => ge.summary === "No extendedProperties"
-    );
-    const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.COMPASS)[0];
-
-    expect(cEvent.isTimesShown).toBe(true);
-  });
-
   describe("from Gcal", () => {
-    it("gets isTimesShown from private extended properties", () => {
-      const regularGcalEvent = gcalEvents.items.find(
-        (ge) => ge.summary === "Meeting with Stan"
-      );
-      const cEvent = MapEvent.toCompass(
-        "user99",
-        [regularGcalEvent],
-        Origin.GOOGLE_IMPORT
-      );
-
-      expect(cEvent[0].isTimesShown).toBe(false);
-    });
-
     it("gets priority from private extended properties", () => {
       const regularGcalEvent = gcalEvents.items.find(
         (ge) => ge.summary === "Meeting with Stan"

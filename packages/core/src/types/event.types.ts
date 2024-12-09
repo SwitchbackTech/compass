@@ -44,7 +44,6 @@ export interface Schema_Event {
   endDate?: string;
   isAllDay?: boolean;
   isSomeday?: boolean;
-  isTimesShown?: boolean;
   gEventId?: string;
   order?: number;
   origin?: Origin;
