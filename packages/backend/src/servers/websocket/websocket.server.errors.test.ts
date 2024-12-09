@@ -4,8 +4,8 @@ import { io as ioc, type Socket as ClientSocket } from "socket.io-client";
 import { Server as IoServer } from "socket.io";
 import { SocketError } from "@backend/common/constants/error.constants";
 
-import { initWebsocketServer } from "./websocket.server";
 import { getServerUri } from "./websocket.util";
+import { WebSocketServer } from "./websocket.server";
 
 describe("WebSocket Server: Error Handling", () => {
   let httpServer: HttpServer;
@@ -15,7 +15,7 @@ describe("WebSocket Server: Error Handling", () => {
 
   beforeAll((done) => {
     httpServer = createServer();
-    wsServer = initWebsocketServer(httpServer);
+    wsServer = new WebSocketServer().init(httpServer);
     httpServer.listen(() => {
       serverUri = getServerUri(httpServer);
       done();

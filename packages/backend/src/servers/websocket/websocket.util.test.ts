@@ -1,38 +1,56 @@
 import { Server as SocketIOServer } from "socket.io";
+import { createServer, Server as HttpServer } from "http";
 import { CompassSocketServer } from "@core/types/websocket.types";
 import { EVENT_CHANGED } from "@core/constants/websocket.constants";
-import { SocketError } from "@backend/common/constants/error.constants";
 
-import { connections, notifyClient } from "./websocket.server";
+import { WebSocketServer } from "./websocket.server";
 
 jest.mock("socket.io");
 
-describe("emitEventToUser", () => {
-  beforeEach(() => {
-    (SocketIOServer as unknown as jest.Mock).mockClear();
-  });
+describe("handleBackgroundCalendarChange", () => {
+  let mockHttpServer: jest.Mocked<HttpServer>;
+  let mockIo: jest.Mocked<CompassSocketServer>;
+  let webSocketServer: WebSocketServer;
 
-  it("emits event to the correct socketId", () => {
-    const userId = "existingUser";
-    const socketId = "socket123";
-    const mockIo = {
+  beforeAll(() => {
+    mockIo = {
       to: jest.fn().mockReturnThis(),
       emit: jest.fn(),
-    };
-
+      use: jest.fn(),
+      on: jest.fn(),
+      engine: { on: jest.fn() },
+    } as unknown as jest.Mocked<CompassSocketServer>;
     (SocketIOServer as unknown as jest.Mock).mockImplementation(() => mockIo);
 
-    connections.set(userId, socketId);
-    notifyClient(userId, mockIo as unknown as CompassSocketServer);
+    webSocketServer = new WebSocketServer();
 
+    mockHttpServer = createServer() as jest.Mocked<HttpServer>;
+    webSocketServer.init(mockHttpServer);
+  });
+
+  afterAll(() => {
+    jest.clearAllMocks();
+  });
+
+  it("emits event to the correct socketId", (): void => {
+    const httpServer = createServer();
+    webSocketServer.init(httpServer);
+
+    const userId = "existingUser";
+    const socketId = "socket123";
+    webSocketServer.addConnection(userId, socketId);
+    webSocketServer.handleBackgroundCalendarChange(userId);
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(mockIo.to).toHaveBeenCalledWith(socketId);
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(mockIo.emit).toHaveBeenCalledWith(EVENT_CHANGED);
   });
-  it("throws error if socketId not found", () => {
+  it("ignores change if no connection between client and ws server", () => {
     const userId = "nonexistentUser";
 
-    expect(() => notifyClient(userId)).toThrow(
-      SocketError.InvalidSocketId.description
-    );
+    const result = webSocketServer.handleBackgroundCalendarChange(userId);
+
+    expect(result).toEqual("IGNORED");
   });
 });
