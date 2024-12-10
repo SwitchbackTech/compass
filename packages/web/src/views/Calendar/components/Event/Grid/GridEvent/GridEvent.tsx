@@ -102,7 +102,7 @@ const _GridEvent = (
         </StyledEventTitle>
         {!event.isAllDay && (
           <>
-            {!isInPast && (
+            {(isDraft || !isInPast) && (
               <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
                 {getTimesLabel(event.startDate, event.endDate)}
               </Text>
