@@ -116,7 +116,6 @@ export const useSidebarUtil = (
     const updatedFields: Schema_Event = {
       isAllDay: true,
       isSomeday: false,
-      isTimesShown: false,
       startDate: dates.startDate,
       endDate: dates.endDate,
     };
@@ -136,7 +135,6 @@ export const useSidebarUtil = (
     const updatedFields: Schema_Event = {
       isAllDay: false,
       isSomeday: false,
-      isTimesShown: true,
       startDate: dates.startDate,
       endDate: dates.endDate,
     };

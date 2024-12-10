@@ -34,7 +34,6 @@ export const timed = [
 
     extendedProperties: {
       private: {
-        isTimesShown: false,
         origin: "compass",
         priority: "work",
       },

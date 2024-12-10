@@ -20,23 +20,6 @@ dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isBetween);
 
-export const adjustIsTimesShown = (
-  event: Schema_Event,
-  isInPast: boolean,
-  isCurrentWeek: boolean
-) => {
-  if (isCurrentWeek) {
-    return isInPast
-      ? { ...event, isTimesShown: false }
-      : { ...event, isTimesShown: true };
-  }
-  if (isInPast) {
-    return { ...event, isTimesShown: false };
-  }
-
-  return "isTimesShown" in event ? event : { ...event, isTimesShown: true };
-};
-
 export const categorizeSomedayEvents = (
   somedayEvents: Schema_SomedayEventsColumn["events"],
   dates: { startDate: Dayjs; endDate: Dayjs }
@@ -123,7 +106,6 @@ export const getDefaultEvent = (
       return {
         isAllDay: false,
         isSomeday: false,
-        isTimesShown: true,
         priority: Priorities.UNASSIGNED,
         startDate,
         endDate,
