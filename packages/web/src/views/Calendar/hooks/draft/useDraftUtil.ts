@@ -387,11 +387,10 @@ export const useDraftUtil = (
           event,
         })
       );
+      discard();
     } else {
       dispatch(createEventSlice.actions.request(event));
     }
-
-    discard();
   };
 
   return {

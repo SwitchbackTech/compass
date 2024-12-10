@@ -8,7 +8,10 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { getCategory } from "@web/common/utils/event.util";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
-import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import {
+  selectIsDrafting,
+  selectIsDraftProcessing,
+} from "@web/ducks/events/selectors/draft.selectors";
 
 import { getDraftContainer } from "./draft.util";
 import { GridDraft } from "./GridDraft";
@@ -40,13 +43,27 @@ export const Draft: FC<Props> = ({
   const { draft, isDragging, isResizing } = draftState;
 
   const isDrafting = useAppSelector(selectIsDrafting);
+  const isProcessing = useAppSelector(selectIsDraftProcessing);
 
   const formProps = useEventForm("grid");
+  const [preservedDraft, setPreservedDraft] = useState(draft);
 
-  if (isLoadingDOM || !draft || !isDrafting) return null;
+  useEffect(() => {
+    if (!isProcessing) {
+      setPreservedDraft(draft);
+    }
+  }, [isProcessing, draft]);
 
-  const container = getDraftContainer(draft.isAllDay);
-  const category = getCategory(draft);
+  if (isLoadingDOM) return null;
+  if (!preservedDraft) return null;
+
+  if (preservedDraft && !isDrafting && !isProcessing) {
+    return null;
+  }
+  if (!preservedDraft && !draft) return null;
+
+  const container = getDraftContainer(preservedDraft.isAllDay);
+  const category = getCategory(preservedDraft);
   const isGridEvent =
     category === Categories_Event.ALLDAY || category === Categories_Event.TIMED;
 
@@ -54,7 +71,7 @@ export const Draft: FC<Props> = ({
     <>
       {isGridEvent && (
         <GridDraft
-          draft={draft}
+          draft={preservedDraft}
           draftUtil={draftUtil}
           formProps={formProps}
           isDragging={isDragging}
