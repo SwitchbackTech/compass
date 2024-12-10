@@ -137,9 +137,9 @@ describe("getAllDayEventWidth", () => {
 
   test("pastToFutureWeek", () => {
     const start = dayjs("2022-01-01");
-    const end = dayjs("2022-03-06");
-    const startOfWeek = dayjs("2022-03-12");
-    const endOfWeek = dayjs("2022-12-30");
+    const end = dayjs("2022-03-20");
+    const startOfWeek = dayjs("2022-03-06");
+    const endOfWeek = dayjs("2022-03-12");
 
     const category = getEventCategory(start, end, startOfWeek, endOfWeek);
     expect(
@@ -152,6 +152,44 @@ describe("getAllDayEventWidth", () => {
         [1, 1, 1, 1, 1, 1, 1]
       )
     ).toBe(7);
+  });
+
+  test("notAtThisWeek - past", () => {
+    const start = dayjs("2022-01-01");
+    const end = dayjs("2022-03-01");
+    const startOfWeek = dayjs("2022-03-06");
+    const endOfWeek = dayjs("2022-03-12");
+
+    const category = getEventCategory(start, end, startOfWeek, endOfWeek);
+    expect(
+      getAllDayEventWidth(
+        category,
+        0, //this index shouldnt matter in this scenario
+        start,
+        end,
+        startOfWeek,
+        [0, 0, 0, 0, 0, 0, 0]
+      )
+    ).toBe(-666);
+  });
+
+  test("notAtThisWeek - future", () => {
+    const start = dayjs("2022-04-01");
+    const end = dayjs("2022-04-12");
+    const startOfWeek = dayjs("2022-03-06");
+    const endOfWeek = dayjs("2022-03-12");
+
+    const category = getEventCategory(start, end, startOfWeek, endOfWeek);
+    expect(
+      getAllDayEventWidth(
+        category,
+        0, //this index shouldnt matter in this scenario
+        start,
+        end,
+        startOfWeek,
+        [0, 0, 0, 0, 0, 0, 0]
+      )
+    ).toBe(-666);
   });
 });
 
