@@ -26,6 +26,12 @@ export const Draft: FC<Props> = ({
   measurements,
   weekProps,
 }) => {
+  const [isLoadingDOM, setIsLoadingDOM] = useState(true);
+
+  useEffect(() => {
+    setIsLoadingDOM(false);
+  }, []);
+
   const { draftState, draftUtil } = useGridDraft(
     dateCalcs,
     weekProps,
@@ -36,9 +42,8 @@ export const Draft: FC<Props> = ({
   const isDrafting = useAppSelector(selectIsDrafting);
 
   const formProps = useEventForm("grid");
-  console.log(draft, isDrafting);
 
-  if (!draft || !isDrafting) return null;
+  if (isLoadingDOM || !draft || !isDrafting) return null;
 
   const container = getDraftContainer(draft.isAllDay);
   const category = getCategory(draft);

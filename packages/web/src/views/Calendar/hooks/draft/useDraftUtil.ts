@@ -57,9 +57,6 @@ export const useDraftUtil = (
     isDrafting,
   } = useAppSelector(selectDraftStatus);
   const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
-  const createEventSuccess = useAppSelector(
-    (state) => state.events.createEvent.isSuccess
-  );
 
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
 
@@ -97,13 +94,6 @@ export const useDraftUtil = (
       return;
     }
   }, [isDrafting, draft?.isOpen]);
-
-  // Removes the draft every time a new event is successfully created
-  useEffect(() => {
-    if (createEventSuccess) {
-      discard();
-    }
-  }, [createEventSuccess]);
 
   const handleChange = useCallback(() => {
     if (isDrafting) {
@@ -401,7 +391,7 @@ export const useDraftUtil = (
       dispatch(createEventSlice.actions.request(event));
     }
 
-    //discard();
+    discard();
   };
 
   return {
