@@ -390,11 +390,15 @@ export const getEventCategory = (
     return Category.PastToThisWeek;
   }
   if (!startsThisWeek && !endsThisWeek) {
+    const endsBeforeThisWeek = end.isBefore(startOfWeek);
+    const startsAfterThisWeek = start.isAfter(endOfWeek);
+    if (endsBeforeThisWeek || startsAfterThisWeek) {
+      return Category.NotAtThisWeek;
+    }
     return Category.PastToFutureWeek;
   }
-
-  console.log("Logic error while getting event category");
-  return Category.ThisWeekOnly;
+  // Don't know if reaching here is possible, but will return a value just in case
+  return Category.NotAtThisWeek;
 };
 
 export const getLeftPosition = (

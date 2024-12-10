@@ -54,6 +54,7 @@ export enum Category {
   ThisToFutureWeek = "thisToFutureWeek",
   PastToThisWeek = "pastToThisWeek",
   PastToFutureWeek = "pastToFutureWeek",
+  NotAtThisWeek = "notAtThisWeek",
 }
 
 export interface Entities_Event {
