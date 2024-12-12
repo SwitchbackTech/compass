@@ -377,16 +377,19 @@ export const useDraftUtil = (
 
   const submit = (draft: Schema_GridEvent) => {
     const event = prepEvtBeforeSubmit(draft);
+    const { startOfView, endOfView } = weekProps.component;
 
     const isExisting = event._id;
-    // include param for how to handle recurrences
     if (isExisting) {
-      dispatch(
-        editEventSlice.actions.request({
-          _id: event._id,
-          event,
-        })
-      );
+      const isOutsideView =
+        !dayjs(event.startDate).isBetween(startOfView, endOfView, null, "[]") &&
+        !dayjs(event.endDate).isBetween(startOfView, endOfView, null, "[]");
+
+      const _payload = { _id: event._id, event };
+      const payload = isOutsideView
+        ? { ..._payload, shouldRemove: true }
+        : _payload;
+      dispatch(editEventSlice.actions.request(payload));
     } else {
       dispatch(createEventSlice.actions.request(event));
     }
