@@ -77,6 +77,7 @@ export interface Payload_EditEvent {
   applyTo?: Categories_Recur;
   _id: string;
   event: Schema_Event;
+  shouldRemove: boolean;
 }
 
 export interface Payload_GetPaginatedEvents extends Filters_Pagination {
