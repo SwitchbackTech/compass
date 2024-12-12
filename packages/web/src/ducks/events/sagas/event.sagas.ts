@@ -166,6 +166,9 @@ export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
 export function* editEvent({ payload }: Action_EditEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.edit(payload));
+    if (payload.shouldRemove) {
+      yield put(eventsEntitiesSlice.actions.delete({ _id: payload._id }));
+    }
     yield call(EventApi.edit, payload._id, payload.event, {
       applyTo: payload.applyTo,
     });
