@@ -218,22 +218,21 @@ export const getWeekRangeLabel = (weekStart: Dayjs, weekEnd: Dayjs) => {
 };
 
 export const getCalendarHeadingLabel = (
-  weekStart: Dayjs,
-  weekEnd: Dayjs,
+  start: Dayjs,
+  end: Dayjs,
   now: Dayjs
 ) => {
-  const weekStartsInCurrentYear = now.year() === weekStart.year();
-  const weekEndsInCurrentYear = now.year() === weekEnd.year();
-  const weekIsInCurerntYear = weekStartsInCurrentYear && weekEndsInCurrentYear;
+  const startsThisYear = now.year() === start.year();
+  const endsThisYear = now.year() === end.year();
 
-  if (weekIsInCurerntYear) {
-    return weekStart.format("MMMM");
-  } else if (weekStartsInCurrentYear || weekEndsInCurrentYear) {
-    const startLabel = weekStart.format("MMM YY");
-    const endLabel = weekEnd.format("MMM YY");
+  if (startsThisYear && endsThisYear) {
+    return start.format("MMMM");
+  } else if (startsThisYear || endsThisYear) {
+    const startLabel = start.format("MMM YY");
+    const endLabel = end.format("MMM YY");
     return `${startLabel} - ${endLabel}`;
   } else {
-    return weekStart.format("MMMM YYYY");
+    return start.format("MMMM YYYY");
   }
 };
 
