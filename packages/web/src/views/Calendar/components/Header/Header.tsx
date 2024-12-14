@@ -1,8 +1,7 @@
 import React, { FC } from "react";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { AlignItems } from "@web/components/Flex/styled";
-import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { TodayButton } from "@web/views/Calendar/components/TodayButton";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
@@ -14,6 +13,7 @@ import { isEventFormOpen } from "@web/common/utils";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { getCalendarHeadingLabel } from "@web/common/utils/web.date.util";
 
 import {
   StyledHeaderRow,
@@ -42,7 +42,7 @@ export const Header: FC<Props> = ({
   const dispatch = useAppDispatch();
   const { scrollToNow } = scrollUtil;
 
-  const { startOfView } = weekProps.component;
+  const { startOfView, endOfView } = weekProps.component;
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
   const onSectionClick = () => {
@@ -59,6 +59,8 @@ export const Header: FC<Props> = ({
     scrollToNow();
   };
 
+  const headerLabel = getCalendarHeadingLabel(startOfView, endOfView, dayjs());
+
   return (
     <>
       <StyledHeaderRow
@@ -74,11 +76,7 @@ export const Header: FC<Props> = ({
         </TooltipWrapper>
         <StyledLeftGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
-            <Text size="4xl">{startOfView.format("MMMM")}</Text>
-
-            <SpaceCharacter />
-
-            <Text size="xxxl">{startOfView.format("YYYY")}</Text>
+            <Text size="4xl">{headerLabel}</Text>
           </StyledHeaderLabel>
         </StyledLeftGroup>
 

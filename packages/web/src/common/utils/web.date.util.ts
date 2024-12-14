@@ -210,10 +210,30 @@ export const getTimesLabel = (startDate: string, endDate: string) => {
 };
 
 export const getWeekRangeLabel = (weekStart: Dayjs, weekEnd: Dayjs) => {
+  const isSameMonth = weekStart.month() === weekEnd.month();
   const start = weekStart.format("M.D");
-  const end = weekEnd.format("D");
+  const end = weekEnd.format(isSameMonth ? "D" : "M.D");
   const label = start + " - " + end;
   return label;
+};
+
+export const getCalendarHeadingLabel = (
+  start: Dayjs,
+  end: Dayjs,
+  now: Dayjs
+) => {
+  const startsThisYear = now.year() === start.year();
+  const endsThisYear = now.year() === end.year();
+
+  if (startsThisYear && endsThisYear) {
+    return start.format("MMMM");
+  } else if (startsThisYear || endsThisYear) {
+    const startLabel = start.format("MMM YY");
+    const endLabel = end.format("MMM YY");
+    return `${startLabel} - ${endLabel}`;
+  } else {
+    return start.format("MMMM YYYY");
+  }
 };
 
 export const mapToBackend = (s: Schema_SelectedDates) => {
