@@ -6,7 +6,7 @@ dotenv.config({
 import { Command } from "commander";
 
 import { runBuild } from "./commands/build";
-import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
+import { ALL_PACKAGES, CATEGORY_VM, PCKG } from "./common/cli.constants";
 import { startDeleteFlow } from "./commands/delete";
 import { log } from "./common/cli.utils";
 import { Options_Cli } from "./common/cli.types";
@@ -58,6 +58,21 @@ const getCliOptions = (program: Command): Options_Cli => {
   return options;
 };
 
+const validatePackages = (packages: string[] | undefined) => {
+  if (!packages) {
+    log.error("Packages must be defined");
+  }
+  if (!packages?.includes(PCKG.NODE) && !packages?.includes(PCKG.WEB)) {
+    log.error(
+      `One or more of these pckgs isn't supported: ${(
+        packages as string[]
+      )?.toString()}`
+    );
+
+    process.exit(1);
+  }
+};
+
 const runScript = async () => {
   const program = createProgram();
   program.parse(process.argv);
@@ -68,6 +83,7 @@ const runScript = async () => {
   const cmd = program.args[0];
   switch (true) {
     case cmd === "build": {
+      validatePackages(options.packages);
       await runBuild(options);
       break;
     }
