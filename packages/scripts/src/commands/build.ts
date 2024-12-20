@@ -18,24 +18,21 @@ import {
 } from "@scripts/common/cli.utils";
 
 export const runBuild = async (options: Options_Cli) => {
-  const env = options["environment"];
-  const vmInfo = await getVmInfo(env);
+  const vmInfo = await getVmInfo(options.environment);
 
   const pckgs =
-    options["packages"] === undefined
+    options?.packages?.length === 0
       ? await getPckgsTo("build")
-      : options["packages"];
+      : (options.packages as string[]);
 
   if (pckgs.includes(PCKG.NODE)) {
-    await buildNodePckgs(vmInfo, options["skipEnv"]);
+    await buildNodePckgs(vmInfo, options.skipEnv);
   }
-
   if (pckgs.includes(PCKG.WEB)) {
     await buildWeb(vmInfo);
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
 const buildNodePckgs = async (vmInfo: Info_VM, skipEnv?: boolean) => {
   removeOldBuildFor(PCKG.NODE);
   createNodeDirs();
@@ -78,10 +75,10 @@ const buildWeb = async (vmInfo: Info_VM) => {
   log.success(`Done building web files.`);
   log.tip(`
     Now you'll probably want to:
-      - zip the build/web dir
+      - zip the build dir
       - copy it to your ${destination} server
-      - unzip it
-      - run it`);
+      - unzip it and serve as the static assets
+      `);
   process.exit(0);
 };
 
