@@ -9,22 +9,17 @@ import { runBuild } from "./commands/build";
 import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
 import { startDeleteFlow } from "./commands/delete";
 import { log } from "./common/cli.utils";
+import { Options_Cli } from "./common/cli.types";
 
-const runScript = async () => {
-  const exitHelpfully = (msg?: string) => {
-    msg && log.error(msg);
-    console.log(program.helpInformation());
-    process.exit(1);
-  };
-
+const createProgram = () => {
   const program = new Command();
   program.option(
-    `-e, --environment [${CATEGORY_VM.STAG}|${CATEGORY_VM.PROD}]`,
+    `-e, --environment [${CATEGORY_VM.STAG} | ${CATEGORY_VM.PROD}]`,
     "specify environment"
   );
   program.option("-f, --force", "forces operation, no cautionary prompts");
   program.option(
-    "-u, --user [id|email]",
+    "-u, --user [id | email]",
     "specifies which user to run script for"
   );
 
@@ -32,7 +27,7 @@ const runScript = async () => {
     .command("build")
     .description("build compass package(s)")
     .argument(
-      `[${ALL_PACKAGES.join("|")}]`,
+      `[${ALL_PACKAGES.join(" | ")}]`,
       "package(s) to build, separated by comma"
     )
     .option("--skip-env", "skips copying env files to build");
@@ -40,30 +35,52 @@ const runScript = async () => {
   program
     .command("delete")
     .description("deletes users data from compass database");
+  return program;
+};
 
+const exitHelpfully = (program: Command, msg?: string) => {
+  msg && log.error(msg);
+  console.log(program.helpInformation());
+  process.exit(1);
+};
+
+const getCliOptions = (program: Command): Options_Cli => {
+  const _options = program.opts();
+  const packages = program.args[1]?.split(",");
+
+  const options = {
+    ..._options,
+    packages,
+    force: _options["force"] === true,
+    user: _options["user"] as string,
+  };
+
+  return options;
+};
+
+const runScript = async () => {
+  const program = createProgram();
   program.parse(process.argv);
 
-  const options = program.opts();
-  const cmd = program.args[0];
+  const options = getCliOptions(program);
+  const { user, force } = options;
 
+  const cmd = program.args[0];
   switch (true) {
     case cmd === "build": {
       await runBuild(options);
       break;
     }
     case cmd === "delete": {
-      const force = options["force"] as boolean;
-      const user = options["user"] as string;
-
       if (!user || typeof user !== "string") {
-        exitHelpfully("You must supply a user");
+        exitHelpfully(program, "You must supply a user");
       }
 
-      await startDeleteFlow(user, force);
+      await startDeleteFlow(user as string, force);
       break;
     }
     default:
-      exitHelpfully("Unsupported cmd");
+      exitHelpfully(program, "Unsupported cmd");
   }
 };
 
