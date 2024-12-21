@@ -26,17 +26,17 @@ export const runBuild = async (options: Options_Cli) => {
       : (options.packages as string[]);
 
   if (pckgs.includes(PCKG.NODE)) {
-    await buildNodePckgs(vmInfo, options.skipEnv);
+    await buildNodePckgs(vmInfo, options);
   }
   if (pckgs.includes(PCKG.WEB)) {
     await buildWeb(vmInfo);
   }
 };
 
-const buildNodePckgs = async (vmInfo: Info_VM, skipEnv?: boolean) => {
+const buildNodePckgs = async (vmInfo: Info_VM, options: Options_Cli) => {
   removeOldBuildFor(PCKG.NODE);
   createNodeDirs();
-  await copyNodeConfigsToBuild(vmInfo, skipEnv);
+  await copyNodeConfigsToBuild(vmInfo, options.skipEnv, options.force);
 
   log.info("Compiling node packages ...");
   shell.exec(
@@ -82,7 +82,11 @@ const buildWeb = async (vmInfo: Info_VM) => {
   process.exit(0);
 };
 
-const copyNodeConfigsToBuild = async (vmInfo: Info_VM, skipEnv?: boolean) => {
+const copyNodeConfigsToBuild = async (
+  vmInfo: Info_VM,
+  skipEnv?: boolean,
+  force?: boolean
+) => {
   const envName = vmInfo.destination === "production" ? ".prod.env" : ".env";
 
   const envPath = `${COMPASS_ROOT_DEV}/packages/backend/${envName}`;
@@ -96,7 +100,9 @@ const copyNodeConfigsToBuild = async (vmInfo: Info_VM, skipEnv?: boolean) => {
     log.warning(`Env file does not exist: ${envPath}`);
 
     const keepGoing =
-      skipEnv === true ? true : await _confirm("Continue anyway?");
+      skipEnv === true || force === true
+        ? true
+        : await _confirm("Continue anyway?");
 
     if (!keepGoing) {
       log.error("Exiting due to missing env file");
