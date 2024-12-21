@@ -34,7 +34,7 @@ const createProgram = () => {
 
   program
     .command("delete")
-    .description("deletes users data from compass database");
+    .description("delete user data from compass database");
   return program;
 };
 
