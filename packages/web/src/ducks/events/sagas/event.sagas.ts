@@ -10,6 +10,7 @@ import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
 import {
+  createOptimisticEvent,
   handleError,
   normalizedEventsSchema,
 } from "@web/common/utils/event.util";
@@ -112,38 +113,74 @@ function* convertTimedEvent({ payload }: Action_ConvertTimedEvent) {
 }
 
 function* createEvent({ payload }: Action_CreateEvent) {
+  const event = createOptimisticEvent(payload);
   try {
+    // Insert the optimistic event into the store to immediately display the event
+    if (payload.isSomeday) {
+      yield put(getSomedayEventsSlice.actions.insert(event._id));
+    } else {
+      yield put(getWeekEventsSlice.actions.insert(event._id));
+    }
+    yield put(
+      eventsEntitiesSlice.actions.insert(
+        normalize<Schema_Event>(event, normalizedEventsSchema()).entities.events
+      )
+    );
+
+    // Send a request to create the event
     const res = (yield call(
       EventApi.create,
       payload
     )) as Response_CreateEventSaga;
 
-    const normalizedEvent = normalize<Schema_Event>(
-      res.data,
-      normalizedEventsSchema()
-    );
-
+    // Replace the optimistic event with the actual event
     if (payload.isSomeday) {
-      yield put(getSomedayEventsSlice.actions.insert(res.data._id));
+      yield put(
+        getSomedayEventsSlice.actions.replace({
+          oldSomedayId: event._id,
+          newSomedayId: res.data._id,
+        })
+      );
     } else {
-      yield put(getWeekEventsSlice.actions.insert(res.data._id));
+      yield put(
+        getWeekEventsSlice.actions.replace({
+          oldWeekId: event._id,
+          newWeekId: res.data._id,
+        })
+      );
     }
 
     yield put(
-      eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
+      eventsEntitiesSlice.actions.replace({
+        oldEventId: event._id,
+        newEvent: res.data,
+      })
     );
+
     yield put(createEventSlice.actions.success());
   } catch (error) {
     yield put(createEventSlice.actions.error());
+    yield call(deleteEvent, {
+      payload: { _id: event._id },
+    } as Action_DeleteEvent);
     handleError(error as Error);
   }
 }
 
 export function* deleteEvent({ payload }: Action_DeleteEvent) {
+  // TODO: Ideally we should pass the entire event object instead of just its id
+  // to the `deleteEvent` payload. Gives us more context to work with.
+  const event = (yield select((state: RootState) =>
+    selectEventById(state, payload._id)
+  )) as Schema_Event;
+
   try {
     yield put(getWeekEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
-    yield call(EventApi.delete, payload._id);
+    if (!event.optimistic) {
+      yield call(EventApi.delete, payload._id);
+    }
+
     yield put(deleteEventSlice.actions.success());
   } catch (error) {
     yield put(deleteEventSlice.actions.error());

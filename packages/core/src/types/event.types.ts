@@ -56,6 +56,7 @@ export interface Schema_Event {
   title?: string;
   updatedAt?: Date;
   user?: string;
+  optimistic?: boolean;
 }
 
 export interface Query_Event extends Query {
