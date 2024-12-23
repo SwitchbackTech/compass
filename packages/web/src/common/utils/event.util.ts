@@ -211,12 +211,12 @@ export const prepEvtBeforeSubmit = (draft: Schema_GridEvent) => {
 export const normalizedEventsSchema = () =>
   new schema.Entity("events", {}, { idAttribute: "_id" });
 
-export const createOptimisticEvent = (event: Schema_Event) => {
-  const _event = {
+export const createOptimisticEvent = (event: Schema_GridEvent) => {
+  const _event: Schema_GridEvent = {
     ...event,
     _id: `optimistic-${uuidv4()}`,
     optimistic: true,
-  } as Schema_Event;
+  };
 
   return _event;
 };
