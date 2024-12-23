@@ -215,7 +215,7 @@ export const createOptimisticEvent = (event: Schema_GridEvent) => {
   const _event: Schema_GridEvent = {
     ...event,
     _id: `optimistic-${uuidv4()}`,
-    optimistic: true,
+    isOptimistic: true,
   };
 
   return _event;
