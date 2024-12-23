@@ -1,4 +1,3 @@
-import { schema } from "normalizr";
 import dayjs, { Dayjs } from "dayjs";
 import { v4 as uuidv4 } from "uuid";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -207,9 +206,6 @@ export const prepEvtBeforeSubmit = (draft: Schema_GridEvent) => {
 
   return event;
 };
-
-export const normalizedEventsSchema = () =>
-  new schema.Entity("events", {}, { idAttribute: "_id" });
 
 export const createOptimisticEvent = (event: Schema_GridEvent) => {
   const _event: Schema_GridEvent = {

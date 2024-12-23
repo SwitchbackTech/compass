@@ -12,7 +12,6 @@ import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/
 import {
   createOptimisticEvent,
   handleError,
-  normalizedEventsSchema,
 } from "@web/common/utils/event.util";
 
 import {
@@ -38,6 +37,11 @@ import {
 } from "../event.types";
 import { getSomedayEventsSlice } from "../slices/someday.slice";
 import { Action_Someday_Reorder } from "../slices/someday.slice.types";
+import {
+  insertOptimisticEvent,
+  normalizedEventsSchema,
+  updateEventId,
+} from "./event.saga.util";
 
 function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
   try {
@@ -115,47 +119,14 @@ function* convertTimedEvent({ payload }: Action_ConvertTimedEvent) {
 function* createEvent({ payload }: Action_CreateEvent) {
   const event = createOptimisticEvent(payload);
   try {
-    // Insert the optimistic event into the store to immediately display the event
-    if (payload.isSomeday) {
-      yield put(getSomedayEventsSlice.actions.insert(event._id));
-    } else {
-      yield put(getWeekEventsSlice.actions.insert(event._id));
-    }
-    yield put(
-      eventsEntitiesSlice.actions.insert(
-        normalize<Schema_Event>(event, normalizedEventsSchema()).entities.events
-      )
-    );
+    yield* insertOptimisticEvent(event, payload.isSomeday);
 
-    // Send a request to create the event
     const res = (yield call(
       EventApi.create,
       payload
     )) as Response_CreateEventSaga;
 
-    // Replace the optimistic event with the actual event
-    if (payload.isSomeday) {
-      yield put(
-        getSomedayEventsSlice.actions.replace({
-          oldSomedayId: event._id,
-          newSomedayId: res.data._id,
-        })
-      );
-    } else {
-      yield put(
-        getWeekEventsSlice.actions.replace({
-          oldWeekId: event._id,
-          newWeekId: res.data._id,
-        })
-      );
-    }
-
-    yield put(
-      eventsEntitiesSlice.actions.replace({
-        oldEventId: event._id,
-        newEvent: res.data,
-      })
-    );
+    yield* updateEventId(event._id, res.data._id, payload.isSomeday);
 
     yield put(createEventSlice.actions.success());
   } catch (error) {
