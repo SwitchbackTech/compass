@@ -86,7 +86,7 @@ export interface Payload_EditEvent {
 
 export interface Payload_ReplaceEvent {
   oldEventId: string;
-  newEvent: Schema_Event;
+  newEventId: string;
 }
 
 export interface Payload_GetPaginatedEvents extends Filters_Pagination {

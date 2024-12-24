@@ -47,7 +47,7 @@ export function* updateEventId(
   yield put(
     eventsEntitiesSlice.actions.replace({
       oldEventId: oldId,
-      newEvent: newId,
+      newEventId: newId,
     })
   );
 }
