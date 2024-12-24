@@ -13,6 +13,7 @@ import {
   createOptimisticEvent,
   handleError,
 } from "@web/common/utils/event.util";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 import {
   createEventSlice,
@@ -139,16 +140,14 @@ function* createEvent({ payload }: Action_CreateEvent) {
 }
 
 export function* deleteEvent({ payload }: Action_DeleteEvent) {
-  // TODO: Ideally we should pass the entire event object instead of just its id
-  // to the `deleteEvent` payload. Gives us more context to work with.
   const event = (yield select((state: RootState) =>
     selectEventById(state, payload._id)
-  )) as Schema_Event;
+  )) as Schema_GridEvent;
 
   try {
     yield put(getWeekEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
-    if (!event.optimistic) {
+    if (!event.isOptimistic) {
       yield call(EventApi.delete, payload._id);
     }
 
