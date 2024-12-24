@@ -55,7 +55,10 @@ export const eventsEntitiesSlice = createSlice({
     },
     replace: (state, action: Action_ReplaceEvent) => {
       const { oldEventId, newEventId } = action.payload;
+
       state.value[newEventId] = state.value[oldEventId];
+      state.value[newEventId]._id = newEventId;
+
       delete state.value[oldEventId];
     },
     updateAfterTzChange: (state, action: Action_TimezoneChange) => {
