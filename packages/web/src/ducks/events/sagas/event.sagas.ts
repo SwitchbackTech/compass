@@ -14,6 +14,7 @@ import {
   handleError,
 } from "@web/common/utils/event.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { ID_OPTIMISTIC_PREFIX } from "@web/common/constants/web.constants";
 
 import {
   createEventSlice,
@@ -41,7 +42,7 @@ import { Action_Someday_Reorder } from "../slices/someday.slice.types";
 import {
   insertOptimisticEvent,
   normalizedEventsSchema,
-  updateEventId,
+  replaceOptimisticId,
 } from "./event.saga.util";
 
 function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
@@ -119,6 +120,8 @@ function* convertTimedEvent({ payload }: Action_ConvertTimedEvent) {
 
 function* createEvent({ payload }: Action_CreateEvent) {
   const event = createOptimisticEvent(payload);
+  const optimisticId = event._id;
+
   try {
     yield* insertOptimisticEvent(event, payload.isSomeday);
 
@@ -127,13 +130,13 @@ function* createEvent({ payload }: Action_CreateEvent) {
       payload
     )) as Response_CreateEventSaga;
 
-    yield* updateEventId(event._id, res.data._id, payload.isSomeday);
+    yield* replaceOptimisticId(optimisticId, res.data._id, payload.isSomeday);
 
     yield put(createEventSlice.actions.success());
   } catch (error) {
     yield put(createEventSlice.actions.error());
     yield call(deleteEvent, {
-      payload: { _id: event._id },
+      payload: { _id: optimisticId },
     } as Action_DeleteEvent);
     handleError(error as Error);
   }
@@ -147,7 +150,9 @@ export function* deleteEvent({ payload }: Action_DeleteEvent) {
   try {
     yield put(getWeekEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
-    if (!event.isOptimistic) {
+
+    const isInDb = !event._id.startsWith(ID_OPTIMISTIC_PREFIX);
+    if (isInDb) {
       yield call(EventApi.delete, payload._id);
     }
 

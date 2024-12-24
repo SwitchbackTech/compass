@@ -2,13 +2,14 @@ import { schema } from "normalizr";
 import { put } from "redux-saga/effects";
 import { normalize } from "normalizr";
 import { Schema_Event } from "@core/types/event.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 import { getSomedayEventsSlice } from "../slices/someday.slice";
 import { getWeekEventsSlice } from "../slices/week.slice";
 import { eventsEntitiesSlice } from "../slices/event.slice";
 
 export function* insertOptimisticEvent(
-  event: Schema_Event,
+  event: Schema_GridEvent,
   isSomeday: boolean
 ) {
   if (isSomeday) {
@@ -23,22 +24,22 @@ export function* insertOptimisticEvent(
   );
 }
 
-export function* updateEventId(
-  oldId: string,
+export function* replaceOptimisticId(
+  optimisticId: string,
   newId: string,
   isSomeday: boolean
 ) {
   if (isSomeday) {
     yield put(
       getSomedayEventsSlice.actions.replace({
-        oldSomedayId: oldId,
+        oldSomedayId: optimisticId,
         newSomedayId: newId,
       })
     );
   } else {
     yield put(
       getWeekEventsSlice.actions.replace({
-        oldWeekId: oldId,
+        oldWeekId: optimisticId,
         newWeekId: newId,
       })
     );
@@ -46,7 +47,7 @@ export function* updateEventId(
 
   yield put(
     eventsEntitiesSlice.actions.replace({
-      oldEventId: oldId,
+      oldEventId: optimisticId,
       newEventId: newId,
     })
   );

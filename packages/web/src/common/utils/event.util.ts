@@ -14,7 +14,11 @@ import {
   Schema_SomedayEventsColumn,
 } from "../types/web.event.types";
 import { removeGridFields } from "./grid.util";
-import { COLUMN_WEEK, COLUMN_MONTH } from "../constants/web.constants";
+import {
+  COLUMN_WEEK,
+  COLUMN_MONTH,
+  ID_OPTIMISTIC_PREFIX,
+} from "../constants/web.constants";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -207,11 +211,10 @@ export const prepEvtBeforeSubmit = (draft: Schema_GridEvent) => {
   return event;
 };
 
-export const createOptimisticEvent = (event: Schema_GridEvent) => {
-  const _event: Schema_GridEvent = {
+export const createOptimisticEvent = (event: Schema_Event) => {
+  const _event: Schema_Event = {
     ...event,
-    _id: `optimistic-${uuidv4()}`,
-    isOptimistic: true,
+    _id: `${ID_OPTIMISTIC_PREFIX}-${uuidv4()}`,
   };
 
   return _event;
