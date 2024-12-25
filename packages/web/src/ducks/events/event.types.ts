@@ -45,6 +45,10 @@ export interface Action_InsertEvents extends Action {
   payload: Entities_Event | undefined;
 }
 
+export interface Action_ReplaceEvent extends Action {
+  payload: Payload_ReplaceEvent;
+}
+
 export interface Action_TimezoneChange extends Action {
   payload: { timezone: string };
 }
@@ -78,6 +82,11 @@ export interface Payload_EditEvent {
   event: Schema_Event;
   applyTo?: Categories_Recur;
   shouldRemove?: boolean;
+}
+
+export interface Payload_ReplaceEvent {
+  oldEventId: string;
+  newEventId: string;
 }
 
 export interface Payload_GetPaginatedEvents extends Filters_Pagination {

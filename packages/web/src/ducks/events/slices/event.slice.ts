@@ -10,6 +10,7 @@ import {
   Action_DeleteEvent,
   Action_EditEvent,
   Action_InsertEvents,
+  Action_ReplaceEvent,
   Action_TimezoneChange,
   Entities_Event,
   Payload_EditEvent,
@@ -51,6 +52,14 @@ export const eventsEntitiesSlice = createSlice({
     },
     insert: (state, action: Action_InsertEvents) => {
       state.value = { ...state.value, ...action.payload };
+    },
+    replace: (state, action: Action_ReplaceEvent) => {
+      const { oldEventId, newEventId } = action.payload;
+
+      state.value[newEventId] = state.value[oldEventId];
+      state.value[newEventId]._id = newEventId;
+
+      delete state.value[oldEventId];
     },
     updateAfterTzChange: (state, action: Action_TimezoneChange) => {
       const nextState = changeTimezones(state, action.payload.timezone);

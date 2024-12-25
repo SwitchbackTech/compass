@@ -9,8 +9,8 @@ export enum Recurrence_Selection {
 export interface Schema_GridEvent extends Schema_Event {
   hasFlipped?: boolean;
   importanceIndex?: number;
-  isOpen?: boolean;
   isEditing?: boolean;
+  isOpen?: boolean;
   row?: number;
   siblingsCount?: number;
 }

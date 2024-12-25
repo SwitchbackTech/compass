@@ -25,5 +25,16 @@ export const getWeekEventsSlice = createAsyncSlice<
         state.value.data.push(action.payload);
       }
     },
+    replace: (
+      state,
+      action: { payload: { oldWeekId: string; newWeekId: string } }
+    ) => {
+      state.value.data = state.value.data.map((id: string) => {
+        if (id === action.payload.oldWeekId) {
+          return action.payload.newWeekId;
+        }
+        return id;
+      });
+    },
   },
 });

@@ -10,9 +10,11 @@ import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
 import {
+  createOptimisticEvent,
   handleError,
-  normalizedEventsSchema,
 } from "@web/common/utils/event.util";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { ID_OPTIMISTIC_PREFIX } from "@web/common/constants/web.constants";
 
 import {
   createEventSlice,
@@ -37,6 +39,11 @@ import {
 } from "../event.types";
 import { getSomedayEventsSlice } from "../slices/someday.slice";
 import { Action_Someday_Reorder } from "../slices/someday.slice.types";
+import {
+  insertOptimisticEvent,
+  normalizedEventsSchema,
+  replaceOptimisticId,
+} from "./event.saga.util";
 
 function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
   try {
@@ -112,38 +119,43 @@ function* convertTimedEvent({ payload }: Action_ConvertTimedEvent) {
 }
 
 function* createEvent({ payload }: Action_CreateEvent) {
+  const event = createOptimisticEvent(payload);
+  const optimisticId = event._id;
+
   try {
+    yield* insertOptimisticEvent(event, payload.isSomeday);
+
     const res = (yield call(
       EventApi.create,
       payload
     )) as Response_CreateEventSaga;
 
-    const normalizedEvent = normalize<Schema_Event>(
-      res.data,
-      normalizedEventsSchema()
-    );
+    yield* replaceOptimisticId(optimisticId, res.data._id, payload.isSomeday);
 
-    if (payload.isSomeday) {
-      yield put(getSomedayEventsSlice.actions.insert(res.data._id));
-    } else {
-      yield put(getWeekEventsSlice.actions.insert(res.data._id));
-    }
-
-    yield put(
-      eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
-    );
     yield put(createEventSlice.actions.success());
   } catch (error) {
     yield put(createEventSlice.actions.error());
+    yield call(deleteEvent, {
+      payload: { _id: optimisticId },
+    } as Action_DeleteEvent);
     handleError(error as Error);
   }
 }
 
 export function* deleteEvent({ payload }: Action_DeleteEvent) {
+  const event = (yield select((state: RootState) =>
+    selectEventById(state, payload._id)
+  )) as Schema_GridEvent;
+
   try {
     yield put(getWeekEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
-    yield call(EventApi.delete, payload._id);
+
+    const isInDb = !event._id.startsWith(ID_OPTIMISTIC_PREFIX);
+    if (isInDb) {
+      yield call(EventApi.delete, payload._id);
+    }
+
     yield put(deleteEventSlice.actions.success());
   } catch (error) {
     yield put(deleteEventSlice.actions.error());

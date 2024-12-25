@@ -29,6 +29,18 @@ export const getSomedayEventsSlice = createAsyncSlice<
       }
     },
 
+    replace: (
+      state,
+      action: { payload: { oldSomedayId: string; newSomedayId: string } }
+    ) => {
+      state.value.data = state.value.data.map((id: string) => {
+        if (id === action.payload.oldSomedayId) {
+          return action.payload.newSomedayId;
+        }
+        return id;
+      });
+    },
+
     reorder: (state, action) => {
       return;
     },
