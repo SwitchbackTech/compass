@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { NodeEnv, PORT_DEFAULT_BACKEND } from "@core/constants/core.constants";
 import { isDev } from "@core/util/env.util";
+import { Logger } from "@core/logger/winston.logger";
+
+const logger = Logger("app:constants");
 
 const _nodeEnv = process.env["NODE_ENV"] as NodeEnv;
 if (!Object.values(NodeEnv).includes(_nodeEnv)) {
@@ -11,22 +14,22 @@ const IS_DEV = isDev(_nodeEnv);
 
 const EnvSchema = z
   .object({
-    BASEURL: z.string(),
-    CHANNEL_EXPIRATION_MIN: z.string().default("10"),
-    CLIENT_ID: z.string(),
-    CLIENT_SECRET: z.string(),
-    DB: z.string(),
-    EMAILER_KEY: z.string().optional(),
-    EMAILER_SECRET: z.string().optional(),
-    EMAILER_LIST_ID: z.string().optional(),
-    MONGO_URI: z.string(),
+    BASEURL: z.string().nonempty(),
+    CHANNEL_EXPIRATION_MIN: z.string().nonempty().default("10"),
+    CLIENT_ID: z.string().nonempty(),
+    CLIENT_SECRET: z.string().nonempty(),
+    DB: z.string().nonempty(),
+    EMAILER_KEY: z.string().nonempty().optional(),
+    EMAILER_SECRET: z.string().nonempty().optional(),
+    EMAILER_LIST_ID: z.string().nonempty().optional(),
+    MONGO_URI: z.string().nonempty(),
     NODE_ENV: z.nativeEnum(NodeEnv),
-    ORIGINS_ALLOWED: z.array(z.string()).default([]),
-    PORT: z.string().default(PORT_DEFAULT_BACKEND.toString()),
-    SUPERTOKENS_URI: z.string(),
-    SUPERTOKENS_KEY: z.string(),
-    TOKEN_GCAL_NOTIFICATION: z.string(),
-    TOKEN_COMPASS_SYNC: z.string(),
+    ORIGINS_ALLOWED: z.array(z.string().nonempty()).default([]),
+    PORT: z.string().nonempty().default(PORT_DEFAULT_BACKEND.toString()),
+    SUPERTOKENS_URI: z.string().nonempty(),
+    SUPERTOKENS_KEY: z.string().nonempty(),
+    TOKEN_GCAL_NOTIFICATION: z.string().nonempty(),
+    TOKEN_COMPASS_SYNC: z.string().nonempty(),
   })
   .strict();
 
@@ -54,13 +57,7 @@ export const ENV = {
 const parsedEnv = EnvSchema.safeParse(ENV);
 
 if (!parsedEnv.success) {
-  console.log(parsedEnv.error.issues);
-  console.log(
-    `Exiting because a critical env value is missing or invalid: ${JSON.stringify(
-      parsedEnv.error.format(),
-      null,
-      2
-    )}`
-  );
+  logger.error(`Exiting because a critical env value is missing or invalid:`);
+  console.error(parsedEnv.error.issues);
   process.exit(1);
 }
