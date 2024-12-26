@@ -50,6 +50,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
                 onMigrate={util.onMigrate}
                 onSubmit={() => util.onSubmit(category)}
                 provided={provided}
+                snapshot={snapshot}
                 setEvent={util.setDraft}
               />
             </>
