@@ -1,6 +1,10 @@
 import { Key } from "ts-key-enum";
 import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { DraggableProvided } from "@hello-pangea/dnd";
+import {
+  DraggableProvided,
+  DraggableStateSnapshot,
+  DraggableStyle,
+} from "@hello-pangea/dnd";
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -13,6 +17,31 @@ import { Util_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar
 import { StyledNewSomedayEvent } from "./styled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
 
+function getStyle(
+  style: DraggableStyle,
+  snapshot: DraggableStateSnapshot,
+  isOverGrid: boolean
+) {
+  if (!snapshot.isDropAnimating) {
+    return style;
+  }
+
+  const disableDropAnimationStyles = {
+    ...style,
+    // cannot be 0, but make it super tiny. See https://github.com/atlassian/react-beautiful-dnd/blob/master/docs/guides/drop-animation.md#skipping-the-drop-animation
+    transitionDuration: `0.001s`,
+  };
+
+  // Drop animation adds delay to the `onDragEnd` event, causes bad UX when
+  // dragging events to the grid. Disable drop animation when dragging events
+  // to the grid.
+  if (isOverGrid) {
+    return disableDropAnimationStyles;
+  }
+
+  return style;
+}
+
 export interface Props {
   category: Categories_Event;
   event: Schema_GridEvent;
@@ -24,6 +53,7 @@ export interface Props {
   onMigrate: Util_Sidebar["onMigrate"];
   onSubmit: (event?: Schema_Event) => void;
   provided: DraggableProvided;
+  snapshot: DraggableStateSnapshot;
   setEvent: Dispatch<SetStateAction<Schema_GridEvent>>;
 }
 
@@ -38,6 +68,7 @@ export const SomedayEvent = ({
   onMigrate,
   onSubmit,
   provided,
+  snapshot,
   setEvent,
 }: Props) => {
   const formType =
@@ -78,6 +109,7 @@ export const SomedayEvent = ({
       <StyledNewSomedayEvent
         {...provided.draggableProps}
         {...provided.dragHandleProps}
+        style={getStyle(provided.draggableProps.style, snapshot, isOverGrid)}
         isDragging={isDragging}
         isDrafting={isDrafting}
         isOverGrid={isOverGrid}
