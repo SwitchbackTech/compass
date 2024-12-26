@@ -54,7 +54,8 @@
     "supertokens-auth-react": "^0.46.0",
     "supertokens-web-js": "^0.13.0",
     "ts-keycode-enum": "^1.0.6",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@babel/core": "^7.15.5",
