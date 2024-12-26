@@ -10,6 +10,7 @@ export const IS_DEV = isDev(_nodeEnv);
 const db = IS_DEV ? "dev_calendar" : "prod_calendar";
 
 const _error = ">> TODO: set this value in .env <<";
+const _optional = "";
 
 export const ENV = {
   BASEURL: process.env["BASEURL"] as string,
@@ -17,9 +18,9 @@ export const ENV = {
   CLIENT_ID: process.env["CLIENT_ID"] || _error,
   CLIENT_SECRET: process.env["CLIENT_SECRET"] || _error,
   DB: db,
-  EMAILER_KEY: process.env["EMAILER_API_KEY"] || _error,
-  EMAILER_SECRET: process.env["EMAILER_API_SECRET"] || _error,
-  EMAILER_LIST_ID: process.env["EMAILER_LIST_ID"] || _error,
+  EMAILER_KEY: process.env["EMAILER_API_KEY"] || _optional,
+  EMAILER_SECRET: process.env["EMAILER_API_SECRET"] || _optional,
+  EMAILER_LIST_ID: process.env["EMAILER_LIST_ID"] || _optional,
   MONGO_URI: process.env["MONGO_URI"] || _error,
   NODE_ENV: _nodeEnv,
   ORIGINS_ALLOWED: process.env["CORS"] ? process.env["CORS"].split(",") : [],
