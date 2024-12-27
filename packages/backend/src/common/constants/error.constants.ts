@@ -34,7 +34,7 @@ export const DbError = {
 export const EmailerError = {
   IncorrectApiKey: {
     description:
-      "Incorrect API key. Please make sure environment variables beginning with EMAILER_ are set correctly",
+      "Incorrect API key. Please make sure environment variables beginning with EMAILER_ are correct",
     status: Status.BAD_REQUEST,
     isOperational: true,
   },

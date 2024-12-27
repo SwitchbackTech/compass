@@ -10,7 +10,7 @@ class EmailService {
   addToEmailList = async (email: string, firstName: string) => {
     if (!ENV.EMAILER_LIST_ID && !ENV.EMAILER_SECRET) {
       logger.warn(
-        "Email service is disabled. Required environment variables are missing."
+        "Skipped adding email to list, because EMAILER_ environment variables are missing."
       );
       return;
     }
