@@ -15,7 +15,11 @@ class EmailService {
       return;
     }
 
-    const url = `https://api.convertkit.com/v3/tags/${ENV.EMAILER_LIST_ID}/subscribe?api_secret=${ENV.EMAILER_SECRET}&email=${email}&first_name=${firstName}`;
+    const url = `https://api.convertkit.com/v3/tags/${
+      ENV.EMAILER_LIST_ID as string
+    }/subscribe?api_secret=${
+      ENV.EMAILER_SECRET as string
+    }&email=${email}&first_name=${firstName}`;
 
     try {
       const response = await axios.post(url);
@@ -37,7 +41,7 @@ class EmailService {
       ) {
         throw error(
           EmailerError.IncorrectApiKey,
-          "Incorrect API key. Please make sure environment variables beginning with EMAILER_ are set correctly or set to an empty string."
+          "Failed to add email to list. Please make sure environment variables beginning with EMAILER_ are correct"
         );
       }
 
