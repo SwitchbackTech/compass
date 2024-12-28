@@ -18,7 +18,10 @@ import {
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
 import { getLineClamp } from "@web/common/utils/grid.util";
 import { getTimesLabel } from "@web/common/utils/web.date.util";
-import { ZIndex } from "@web/common/constants/web.constants";
+import {
+  ID_OPTIMISTIC_PREFIX,
+  ZIndex,
+} from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
 
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
@@ -56,6 +59,7 @@ const _GridEvent = (
   const { component } = weekProps;
 
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
+  const isOptimistic = _event._id?.startsWith(ID_OPTIMISTIC_PREFIX);
   const event = _event;
 
   const position = getPosition(
@@ -79,10 +83,13 @@ const _GridEvent = (
       isDragging={isDragging}
       isInPast={isInPast}
       isPlaceholder={isPlaceholder}
+      isOptimistic={isOptimistic}
       isResizing={isResizing}
       left={position.left}
       lineClamp={lineClamp}
       onMouseDown={(e) => {
+        if (isOptimistic) return;
+
         onEventMouseDown(event, e);
       }}
       priority={event.priority}

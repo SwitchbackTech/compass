@@ -30,6 +30,13 @@ export const hoverColorByPriority = {
   [Priorities.SELF]: brighten(c.blueGray200),
 };
 
+export const disabledColorByPriority = {
+  [Priorities.UNASSIGNED]: darken(c.blueGray400, 30),
+  [Priorities.WORK]: darken(c.blueGray100, 30),
+  [Priorities.RELATIONS]: darken(c.teal, 30),
+  [Priorities.SELF]: darken(c.blueGray200, 30),
+};
+
 export const gradientByPriority = {
   [Priorities.UNASSIGNED]: `linear-gradient(90deg, ${darken(
     UNASSIGNED,
