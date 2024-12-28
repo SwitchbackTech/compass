@@ -10,7 +10,7 @@ import { getSync } from "../util/sync.queries";
 class SyncDebugController {
   dispatchEventToClient = (_req: Request, res: Response) => {
     try {
-      const userId = process.env["DEMO_SOCKET_USER"];
+      const userId = process.env["SOCKET_USER"];
       if (!userId) {
         console.log("No demo user");
         throw new Error("No demo user");

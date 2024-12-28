@@ -42,4 +42,4 @@ packages/backend/.env
 packages/backend/.prod.env
 
 
-!.env.project
+!.env.example
