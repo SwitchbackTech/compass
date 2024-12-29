@@ -1,11 +1,10 @@
 import styled from "styled-components";
 import { Priority } from "@core/constants/core.constants";
-import { brighten } from "@core/util/color.utils";
+import { brighten, darken } from "@core/util/color.utils";
 import { Text } from "@web/components/Text";
 import { ZIndex } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
-  disabledColorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
 
@@ -14,7 +13,6 @@ interface StyledEventProps {
   backgroundColor?: string;
   height: number;
   hoverColor?: string;
-  disabledColor?: string;
   isDragging: boolean;
   isInPast: boolean;
   isResizing: boolean;
@@ -46,7 +44,6 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
     hoverColor: props.isPlaceholder
       ? null
       : hoverColorByPriority[props.priority],
-    disabledColor: disabledColorByPriority[props.priority],
     opacity: props.isPlaceholder ? 0.5 : null,
     ref: props.ref,
     top: props.top,
@@ -76,20 +73,20 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
     transition: background-color 0.35s linear;
 
     ${({
+      backgroundColor,
+      isOptimistic,
       isPlaceholder,
       isResizing,
-      isOptimistic,
       hoverColor,
-      disabledColor,
       theme,
     }) =>
       !isPlaceholder &&
       !isResizing &&
       `
-      background-color: ${isOptimistic ? disabledColor : hoverColor};
+      background-color: ${isOptimistic ? darken(backgroundColor) : hoverColor};
       cursor: ${isOptimistic ? "wait" : "pointer"};
       drop-shadow(2px 4px 4px ${theme.color.shadow.default});
-      `};
+     `};
   }
 
   &.active {
