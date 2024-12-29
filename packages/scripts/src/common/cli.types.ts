@@ -1,16 +1,13 @@
-export type Category_VM = "staging" | "production";
+import { z } from "zod";
 
-export interface Info_VM {
-  baseUrl: string;
-  destination: Category_VM;
-}
+export type Environment_Cli = "staging" | "production";
 
-export interface Options_Cli {
-  build?: boolean;
-  delete?: boolean;
-  environment?: Category_VM;
-  force?: boolean;
-  packages?: string[];
-  skipEnv?: boolean;
-  user?: string;
-}
+export const Schema_Options_Cli = z.object({
+  clientId: z.string().optional(),
+  environment: z.enum(["staging", "production"]).optional(),
+  force: z.boolean().optional(),
+  packages: z.array(z.string()).optional(),
+  user: z.string().optional(),
+});
+
+export type Options_Cli = z.infer<typeof Schema_Options_Cli>;
