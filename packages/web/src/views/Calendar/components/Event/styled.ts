@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { Priority } from "@core/constants/core.constants";
-import { brighten } from "@core/util/color.utils";
+import { brighten, darken } from "@core/util/color.utils";
 import { Text } from "@web/components/Text";
 import { ZIndex } from "@web/common/constants/web.constants";
 import {
@@ -17,6 +17,7 @@ interface StyledEventProps {
   isInPast: boolean;
   isResizing: boolean;
   isPlaceholder: boolean;
+  isOptimistic: boolean;
   left: number;
   lineClamp: number;
   opacity?: number;
@@ -71,13 +72,21 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   &:hover {
     transition: background-color 0.35s linear;
 
-    ${({ isPlaceholder, isResizing, hoverColor, theme }) =>
+    ${({
+      backgroundColor,
+      isOptimistic,
+      isPlaceholder,
+      isResizing,
+      hoverColor,
+      theme,
+    }) =>
       !isPlaceholder &&
       !isResizing &&
       `
-      background-color: ${hoverColor};
+      background-color: ${isOptimistic ? darken(backgroundColor) : hoverColor};
+      cursor: ${isOptimistic ? "wait" : "pointer"};
       drop-shadow(2px 4px 4px ${theme.color.shadow.default});
-      `};
+     `};
   }
 
   &.active {
