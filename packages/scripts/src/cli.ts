@@ -8,8 +8,13 @@ import { Command } from "commander";
 import { runBuild } from "./commands/build";
 import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
 import { startDeleteFlow } from "./commands/delete";
-import { Options_Cli, Schema_Options_Cli } from "./common/cli.types";
-import { log } from "./common/cli.utils";
+import { Options_Cli } from "./common/cli.types";
+import {
+  log,
+  mergeOptions,
+  validateOptions,
+  validatePackages,
+} from "./common/cli.utils";
 
 class CompassCli {
   private program: Command;
@@ -29,18 +34,21 @@ class CompassCli {
     );
     program.option("-f, --force", "force operation, no cautionary prompts");
     program.option(
-      "-u, --user [id | email]",
+      "--user [id | email]",
       "specify which user to run script for"
     );
 
     program
       .command("build")
-      .description("build compass package(s)")
+      .description("build compass package")
       .argument(
         `[${ALL_PACKAGES.join(" | ")}]`,
-        "package(s) to build, separated by comma"
+        "package to build (only provde 1 at a time)"
       )
-      .option("--skip-env", "skip copying env files to build");
+      .option(
+        "-c, --clientId <clientId>",
+        "google client id to inject into build"
+      );
 
     program
       .command("delete")
@@ -49,37 +57,10 @@ class CompassCli {
   }
 
   private getCliOptions(): Options_Cli {
-    const _options = this.program.opts();
-    const packages = this.program.args[1]?.split(",");
-    const options: Options_Cli = {
-      ..._options,
-      force: _options["force"] === true,
-      packages,
-    };
+    const options = mergeOptions(this.program);
+    const validOptions = validateOptions(options);
 
-    const { data, error } = Schema_Options_Cli.safeParse(options);
-    if (error) {
-      log.error(`Invalid CLI options: ${JSON.stringify(error.format())}`);
-      process.exit(1);
-    }
-
-    return data;
-  }
-
-  private validatePackages(packages: string[] | undefined) {
-    if (!packages) {
-      log.error("Packages must be defined");
-      process.exit(1);
-    }
-    const unsupportedPackages = packages.filter(
-      (pkg) => !ALL_PACKAGES.includes(pkg)
-    );
-    if (unsupportedPackages.length > 0) {
-      log.error(
-        `One or more of these packages isn't supported: ${unsupportedPackages.toString()}`
-      );
-      process.exit(1);
-    }
+    return validOptions;
   }
 
   public async run() {
@@ -88,7 +69,7 @@ class CompassCli {
 
     switch (true) {
       case cmd === "build": {
-        this.validatePackages(packages);
+        validatePackages(packages);
         await runBuild(this.options);
         break;
       }

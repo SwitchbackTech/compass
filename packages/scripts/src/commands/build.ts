@@ -62,7 +62,9 @@ const buildWeb = async (options: Options_Cli) => {
 
   const envFile = environment === "staging" ? ".env" : ".env.prod";
   const baseUrl = await getApiBaseUrl(environment);
-  const gClientId = await getClientId(environment);
+  const gClientId = options.clientId
+    ? options.clientId
+    : await getClientId(environment);
 
   const envPath = path.join(__dirname, "..", "..", "..", "backend", envFile);
   dotenv.config({ path: envPath });
