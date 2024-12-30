@@ -16,13 +16,12 @@ import {
   getClientId,
   getApiBaseUrl,
   getEnvironmentAnswer,
+  validatePackages,
 } from "@scripts/common/cli.utils";
 
 export const runBuild = async (options: Options_Cli) => {
-  const pckgs =
-    options?.packages?.length === 0
-      ? await getPckgsTo("build")
-      : (options.packages as string[]);
+  const pckgs = options.packages ? options.packages : await getPckgsTo("build");
+  validatePackages(pckgs);
 
   if (pckgs.includes(PCKG.NODE)) {
     await buildNodePckgs(options);

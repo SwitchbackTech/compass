@@ -64,12 +64,11 @@ class CompassCli {
   }
 
   public async run() {
-    const { user, force, packages } = this.options;
+    const { user, force } = this.options;
     const cmd = this.program.args[0];
 
     switch (true) {
       case cmd === "build": {
-        validatePackages(packages);
         await runBuild(this.options);
         break;
       }

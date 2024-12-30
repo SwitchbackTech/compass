@@ -176,7 +176,7 @@ export const validateOptions = (options: Options_Cli): Options_Cli => {
 
 export const validatePackages = (packages: string[] | undefined) => {
   if (!packages) {
-    log.error("Packages must be defined");
+    log.error("Package must be defined");
     process.exit(1);
   }
   const unsupportedPackages = packages.filter(
