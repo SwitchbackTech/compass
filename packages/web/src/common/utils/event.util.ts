@@ -11,6 +11,7 @@ import { Status } from "@core/errors/status.codes";
 
 import {
   Schema_GridEvent,
+  Schema_OptimisticEvent,
   Schema_SomedayEventsColumn,
 } from "../types/web.event.types";
 import { removeGridFields } from "./grid.util";
@@ -211,8 +212,10 @@ export const prepEvtBeforeSubmit = (draft: Schema_GridEvent) => {
   return event;
 };
 
-export const createOptimisticEvent = (event: Schema_Event) => {
-  const _event: Schema_Event = {
+export const createOptimisticEvent = (
+  event: Schema_Event
+): Schema_OptimisticEvent => {
+  const _event: Schema_OptimisticEvent = {
     ...event,
     _id: `${ID_OPTIMISTIC_PREFIX}-${uuidv4()}`,
   };
