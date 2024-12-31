@@ -488,17 +488,22 @@ const normalizeDayNums = (days: number[]) => {
   });
 };
 
-export const removeGridFields = (event: Schema_GridEvent): Schema_Event => {
+export const removeGridProperties = (event: Schema_GridEvent): Schema_Event => {
   const {
     isEditing,
     importanceIndex,
     isOpen,
     row,
     siblingsCount,
-    ...eventWithoutGridFields
+    ...eventWithoutGridProps
   } = event;
 
-  return eventWithoutGridFields;
+  return eventWithoutGridProps;
+};
+
+export const removeSomedayProperties = (event: Schema_Event): Schema_Event => {
+  const { order, recurrence, ...eventWithoutSomedayProps } = event;
+  return eventWithoutSomedayProps;
 };
 
 export const widthMinusPadding = (width: number) => {

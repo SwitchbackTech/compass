@@ -11,6 +11,7 @@ import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
 import {
   createOptimisticEvent,
+  createOptimisticGridEvent,
   handleError,
 } from "@web/common/utils/event.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -54,14 +55,13 @@ function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
       selectEventById(state, _id)
     )) as Response_GetEventsSaga;
 
-    const gridEvent = { ...currEvent, ...updatedFields };
-    delete gridEvent.order;
-    delete gridEvent.recurrence;
-
-    const optimisticGridEvent = createOptimisticEvent(gridEvent);
+    // Optimistically convert the event
+    const optimisticGridEvent = createOptimisticGridEvent(
+      currEvent,
+      updatedFields
+    );
     optimisticId = optimisticGridEvent._id;
 
-    // Optimistically convert the event
     yield put(getSomedayEventsSlice.actions.remove({ _id }));
     yield* insertOptimisticEvent(optimisticGridEvent, false);
 
