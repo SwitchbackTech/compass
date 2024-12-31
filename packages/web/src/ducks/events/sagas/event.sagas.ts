@@ -46,34 +46,38 @@ import {
 } from "./event.saga.util";
 
 function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
-  let event = {};
+  const { _id, updatedFields } = payload;
+  let optimisticId: string | null = null;
 
   try {
-    const { _id, updatedFields } = payload;
-
     const currEvent = (yield select((state: RootState) =>
       selectEventById(state, _id)
     )) as Response_GetEventsSaga;
 
+    const gridEvent = { ...currEvent, ...updatedFields };
+    delete gridEvent.order;
+    delete gridEvent.recurrence;
+
+    const optimisticGridEvent = createOptimisticEvent(gridEvent);
+    optimisticId = optimisticGridEvent._id;
+
     // Optimistically convert the event
     yield put(getSomedayEventsSlice.actions.remove({ _id }));
-    event = createOptimisticEvent({
-      ...currEvent,
-      ...updatedFields,
-    });
-    const optimisticId = event._id;
-    yield* insertOptimisticEvent(event, false);
+    yield* insertOptimisticEvent(optimisticGridEvent, false);
 
-    const updatedEvent = { ...currEvent, ...updatedFields };
-    delete updatedEvent.order;
-    delete updatedEvent.recurrence;
-
-    const res = yield call(EventApi.edit, _id, updatedEvent);
+    const res = yield call(EventApi.edit, _id, gridEvent);
     const convertedEvent = res.data as Schema_Event;
-    yield* replaceOptimisticId(optimisticId, convertedEvent._id, false);
+
+    yield* replaceOptimisticId(
+      optimisticId,
+      convertedEvent._id as string,
+      false
+    );
   } catch (error) {
-    yield put(eventsEntitiesSlice.actions.delete({ _id: event._id }));
-    yield put(getSomedayEventsSlice.actions.insert(payload._id));
+    if (optimisticId) {
+      yield put(eventsEntitiesSlice.actions.delete({ _id: optimisticId }));
+    }
+    yield put(getSomedayEventsSlice.actions.insert(_id));
     yield put(getSomedayEventsSlice.actions.error());
     handleError(error as Error);
   }
