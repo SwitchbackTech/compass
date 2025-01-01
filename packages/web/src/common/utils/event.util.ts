@@ -213,7 +213,7 @@ export const prepEvtBeforeSubmit = (draft: Schema_GridEvent) => {
   return event;
 };
 
-export const createOptimisticEvent = (
+export const replaceIdWithOptimisticId = (
   event: Schema_Event
 ): Schema_OptimisticEvent => {
   const _event: Schema_OptimisticEvent = {
@@ -222,16 +222,4 @@ export const createOptimisticEvent = (
   };
 
   return _event;
-};
-
-export const createOptimisticGridEvent = (
-  currentEvent: Response_GetEventsSaga,
-  updatedFields: Schema_GridEvent
-) => {
-  const gridEvent = { ...currentEvent, ...updatedFields };
-  delete gridEvent.order;
-  delete gridEvent.recurrence;
-
-  const optimisticGridEvent = createOptimisticEvent(gridEvent);
-  return optimisticGridEvent;
 };

@@ -10,12 +10,12 @@ import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
 import {
-  createOptimisticEvent,
-  createOptimisticGridEvent,
+  replaceIdWithOptimisticId,
   handleError,
 } from "@web/common/utils/event.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { ID_OPTIMISTIC_PREFIX } from "@web/common/constants/web.constants";
+import { AxiosResponse } from "axios";
 
 import {
   createEventSlice,
@@ -48,28 +48,36 @@ import {
 
 function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
   const { _id, updatedFields } = payload;
-  let optimisticId: string | null = null;
+  const optimisticId: string | null = null;
 
   try {
+    //get grid event from store
     const currEvent = (yield select((state: RootState) =>
       selectEventById(state, _id)
     )) as Response_GetEventsSaga;
+    const gridEvent = { ...currEvent, ...updatedFields };
+    // remove extra props before sending to DB
+    delete gridEvent.order;
+    delete gridEvent.recurrence;
 
-    // Optimistically convert the event
-    const optimisticGridEvent = createOptimisticGridEvent(
-      currEvent,
-      updatedFields
-    );
-    optimisticId = optimisticGridEvent._id;
-
+    //get optimisitcGridEvent
+    const optimisticGridEvent = replaceIdWithOptimisticId(gridEvent);
     yield put(getSomedayEventsSlice.actions.remove({ _id }));
     yield* insertOptimisticEvent(optimisticGridEvent, false);
 
-    const res = yield call(EventApi.edit, _id, gridEvent);
-    const convertedEvent = res.data as Schema_Event;
+    // call API
+    const response = (yield call(
+      EventApi.edit,
+      _id,
+      gridEvent,
+      {}
+    )) as AxiosResponse<Schema_Event>;
 
+    const convertedEvent = response.data;
+
+    // replace ids
     yield* replaceOptimisticId(
-      optimisticId,
+      optimisticGridEvent._id,
       convertedEvent._id as string,
       false
     );
@@ -115,7 +123,7 @@ function* convertTimedEvent({ payload }: Action_ConvertTimedEvent) {
 }
 
 function* createEvent({ payload }: Action_CreateEvent) {
-  const event = createOptimisticEvent(payload);
+  const event = replaceIdWithOptimisticId(payload);
   const optimisticId = event._id;
 
   try {
