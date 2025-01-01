@@ -1,4 +1,4 @@
-import { IS_DEV } from "@backend/common/constants/env.constants";
+import { IS_DEV } from "./env.constants";
 
 export const Collections = {
   CALENDARLIST: IS_DEV ? "_dev.calendarlist" : "calendarlist",
