@@ -10,7 +10,7 @@ if (!Object.values(NodeEnv).includes(_nodeEnv)) {
   throw new Error(`Invalid NODE_ENV value: '${_nodeEnv}'`);
 }
 
-const IS_DEV = isDev(_nodeEnv);
+export const IS_DEV = isDev(_nodeEnv);
 
 const EnvSchema = z
   .object({
