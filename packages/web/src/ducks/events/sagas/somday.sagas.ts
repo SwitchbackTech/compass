@@ -1,30 +1,30 @@
 import { AxiosResponse } from "axios";
 import { normalize } from "normalizr";
-import { call, put, select } from "redux-saga/effects";
+import { call, put } from "redux-saga/effects";
 import { Schema_Event } from "@core/types/event.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   replaceIdWithOptimisticId,
   handleError,
 } from "@web/common/utils/event.util";
-import { RootState } from "@web/store";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { removeSomedayProperties } from "@web/common/utils/grid.util";
 
 import { Action_Someday_Reorder } from "../slices/someday.slice.types";
 import { EventApi } from "../event.api";
 import {
   Action_ConvertSomedayEvent,
-  Response_GetEventsSaga,
   Action_DeleteEvent,
   Action_GetEvents,
   Response_GetEventsSuccess,
 } from "../event.types";
-import { selectEventById } from "../selectors/event.selectors";
 import { eventsEntitiesSlice } from "../slices/event.slice";
 import { getSomedayEventsSlice } from "../slices/someday.slice";
 import {
   insertOptimisticEvent,
   replaceOptimisticId,
   normalizedEventsSchema,
+  getEventById,
 } from "./saga.util";
 
 export function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
@@ -32,21 +32,14 @@ export function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
   const optimisticId: string | null = null;
 
   try {
-    //get grid event from store
-    const currEvent = (yield select((state: RootState) =>
-      selectEventById(state, _id)
-    )) as Response_GetEventsSaga;
-    const gridEvent = { ...currEvent, ...updatedFields };
-    // remove extra props before sending to DB
-    delete gridEvent.order;
-    delete gridEvent.recurrence;
+    const gridEvent = yield* _assembleGridEvent(_id, updatedFields);
 
-    //get optimisitcGridEvent
+    //create optimisitcGridEvent
     const optimisticGridEvent = replaceIdWithOptimisticId(gridEvent);
     yield put(getSomedayEventsSlice.actions.remove({ _id }));
     yield* insertOptimisticEvent(optimisticGridEvent, false);
 
-    // call API
+    // create real event
     const response = (yield call(
       EventApi.edit,
       _id,
@@ -56,7 +49,7 @@ export function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
 
     const convertedEvent = response.data;
 
-    // replace ids
+    // cleanup replace ids
     yield* replaceOptimisticId(
       optimisticGridEvent._id,
       convertedEvent._id as string,
@@ -115,4 +108,15 @@ export function* reorderSomedayEvents({ payload }: Action_Someday_Reorder) {
     yield put(getSomedayEventsSlice.actions.error());
     handleError(error as Error);
   }
+}
+
+function* _assembleGridEvent(
+  _id: string,
+  updatedFields: Partial<Schema_Event>
+) {
+  const currEvent = yield* getEventById(_id);
+
+  const _gridEvent = { ...currEvent, ...updatedFields };
+  const gridEvent = removeSomedayProperties(_gridEvent);
+  return gridEvent as Schema_GridEvent;
 }
