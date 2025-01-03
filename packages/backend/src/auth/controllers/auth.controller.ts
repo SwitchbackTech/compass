@@ -20,11 +20,14 @@ import {
   findCompassUserBy,
   updateGoogleRefreshToken,
 } from "@backend/user/queries/user.queries";
-import GoogleAuthService from "@backend/auth/services/google.auth.service";
+import GoogleAuthService, {
+  getGAuthClientForUser,
+} from "@backend/auth/services/google.auth.service";
 import userService from "@backend/user/services/user.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import syncService from "@backend/sync/services/sync.service";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
+import { BaseError } from "@core/errors/errors.base";
 
 import { initGoogleClient } from "../services/auth.utils";
 
@@ -61,6 +64,33 @@ class AuthController {
     const userId = req.session?.getUserId();
 
     res.promise({ userId });
+  };
+
+  verifyGAuthSession = async (req: SessionRequest, res: Res_Promise) => {
+    try {
+      const userId = req.session?.getUserId();
+
+      if (!userId) {
+        res.promise({ valid: false, error: "No session found" });
+        return;
+      }
+
+      const gAuthClient = await getGAuthClientForUser({ _id: userId });
+
+      // Upon receiving an access token, we know the session is valid
+      const accessToken = await gAuthClient.getAccessToken();
+
+      res.promise({ valid: true });
+    } catch (error) {
+      if (error instanceof BaseError && error.result === "No access token") {
+        res.promise({ valid: false, error: "Invalid Google Token" });
+      } else {
+        res.promise({
+          valid: null, // We don't know if the session is valid or not, so we return null
+          error,
+        });
+      }
+    }
   };
 
   loginOrSignup = async (req: SReqBody<{ code: string }>, res: Res_Promise) => {

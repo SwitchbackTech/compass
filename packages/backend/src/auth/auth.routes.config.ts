@@ -42,6 +42,16 @@ export class AuthRoutes extends CommonRoutesConfig {
       authController.loginOrSignup,
     ]);
 
+    /**
+     * Ensures a user's google session is still valid, since
+     * we need to occasionally sync events
+     */
+    this.app.route(`/api/auth/session/gauth/verify`).get([
+      verifySession(),
+      //@ts-expect-error TODO: fix TS for this and other controller methods in this file
+      authController.verifyGAuthSession,
+    ]);
+
     return this.app;
   }
 }
