@@ -2,20 +2,30 @@ import pkg from "inquirer";
 import chalk from "chalk";
 const { prompt } = pkg;
 import shell from "shelljs";
+import { Command } from "commander";
 
 import { ALL_PACKAGES, CLI_ENV } from "./cli.constants";
-import { Category_VM } from "./cli.types";
+import { Environment_Cli, Options_Cli } from "./cli.types";
 
 export const fileExists = (file: string) => {
   return shell.test("-e", file);
 };
 
-export const getClientId = async (destination: Category_VM) => {
-  if (destination === "staging") {
+export const getApiBaseUrl = async (environment: Environment_Cli) => {
+  const category = environment ? environment : await getEnvironmentAnswer();
+  const isStaging = category === "staging";
+  const domain = await getDomainAnswer(isStaging);
+  const baseUrl = `https://${domain}/api`;
+
+  return baseUrl;
+};
+
+export const getClientId = async (environment: Environment_Cli) => {
+  if (environment === "staging") {
     return process.env["CLIENT_ID"] as string;
   }
 
-  if (destination === "production") {
+  if (environment === "production") {
     const q = `Enter the googleClientId for the production environment:`;
 
     return prompt([{ type: "input", name: "answer", message: q }])
@@ -58,22 +68,17 @@ const getDomainAnswer = async (isStaging: boolean) => {
       process.exit(1);
     });
 };
-export const getVmInfo = async (environment?: Category_VM) => {
-  const destination = environment
-    ? environment
-    : ((await getListAnswer("Select environment to use:", [
-        "staging",
-        "production",
-      ])) as Category_VM);
 
-  const isStaging = destination === "staging";
-  const domain = await getDomainAnswer(isStaging);
-  const baseUrl = `https://${domain}/api`;
+export const getEnvironmentAnswer = async (): Promise<Environment_Cli> => {
+  const environment = (await getListAnswer("Select environment to use:", [
+    "staging",
+    "production",
+  ])) as Environment_Cli;
 
-  return { baseUrl, destination };
+  return environment;
 };
 
-const getListAnswer = async (question: string, choices: string[]) => {
+export const getListAnswer = async (question: string, choices: string[]) => {
   const q = [
     {
       type: "list",
@@ -122,6 +127,24 @@ export const log = {
   warning: (msg: string) => console.log(chalk.hex("#FFA500")(msg)),
   success: (msg: string) => console.log(chalk.green(msg)),
   tip: (msg: string) => console.log(chalk.hex("#f5c150")(msg)),
+};
+
+export const mergeOptions = (program: Command): Options_Cli => {
+  const _options = program.opts();
+  const packages = program.args[1]?.split(",");
+  const options: Options_Cli = {
+    ..._options,
+    force: _options["force"] === true,
+    packages,
+  };
+
+  const build = program.commands.find((cmd) => cmd.name() === "build");
+  const clientId = build?.opts()["clientId"] as string;
+  if (build && clientId) {
+    options.clientId = clientId;
+  }
+
+  return options;
 };
 
 export const _confirm = async (question: string, _default = true) => {

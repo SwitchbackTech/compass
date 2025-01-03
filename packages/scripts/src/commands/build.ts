@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
 import shell from "shelljs";
-import { Options_Cli, Info_VM } from "@scripts/common/cli.types";
+import { Options_Cli } from "@scripts/common/cli.types";
 import {
   COMPASS_BUILD_DEV,
   COMPASS_ROOT_DEV,
@@ -9,37 +9,29 @@ import {
   PCKG,
 } from "@scripts/common/cli.constants";
 import {
-  getVmInfo,
-  getPckgsTo,
   _confirm,
   log,
   fileExists,
   getClientId,
+  getApiBaseUrl,
+  getEnvironmentAnswer,
 } from "@scripts/common/cli.utils";
 
 export const runBuild = async (options: Options_Cli) => {
-  const env = options["environment"];
-  const vmInfo = await getVmInfo(env);
+  const packages = options.packages as string[];
 
-  const pckgs =
-    options["packages"] === undefined
-      ? await getPckgsTo("build")
-      : options["packages"];
-
-  if (pckgs.includes(PCKG.NODE)) {
-    await buildNodePckgs(vmInfo, options["skipEnv"]);
+  if (packages.includes(PCKG.NODE)) {
+    await buildNodePckgs(options);
   }
-
-  if (pckgs.includes(PCKG.WEB)) {
-    await buildWeb(vmInfo);
+  if (packages.includes(PCKG.WEB)) {
+    await buildWeb(options);
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
-const buildNodePckgs = async (vmInfo: Info_VM, skipEnv?: boolean) => {
+const buildNodePckgs = async (options: Options_Cli) => {
   removeOldBuildFor(PCKG.NODE);
   createNodeDirs();
-  await copyNodeConfigsToBuild(vmInfo, skipEnv);
+  await copyNodeConfigsToBuild(options);
 
   log.info("Compiling node packages ...");
   shell.exec(
@@ -58,11 +50,17 @@ const buildNodePckgs = async (vmInfo: Info_VM, skipEnv?: boolean) => {
   );
 };
 
-const buildWeb = async (vmInfo: Info_VM) => {
-  const { baseUrl, destination } = vmInfo;
-  const envFile = destination === "staging" ? ".env" : ".env.prod";
+const buildWeb = async (options: Options_Cli) => {
+  const environment =
+    options.environment !== undefined
+      ? options.environment
+      : await getEnvironmentAnswer();
 
-  const gClientId = await getClientId(destination);
+  const envFile = environment === "staging" ? ".env" : ".env.prod";
+  const baseUrl = await getApiBaseUrl(environment);
+  const gClientId = options.clientId
+    ? options.clientId
+    : await getClientId(environment);
 
   const envPath = path.join(__dirname, "..", "..", "..", "backend", envFile);
   dotenv.config({ path: envPath });
@@ -78,15 +76,16 @@ const buildWeb = async (vmInfo: Info_VM) => {
   log.success(`Done building web files.`);
   log.tip(`
     Now you'll probably want to:
-      - zip the build/web dir
-      - copy it to your ${destination} server
-      - unzip it
-      - run it`);
+      - zip the build dir
+      - copy it to your ${environment} environment
+      - unzip it to expose the static assets
+      - serve assets
+      `);
   process.exit(0);
 };
 
-const copyNodeConfigsToBuild = async (vmInfo: Info_VM, skipEnv?: boolean) => {
-  const envName = vmInfo.destination === "production" ? ".prod.env" : ".env";
+const copyNodeConfigsToBuild = async (options: Options_Cli) => {
+  const envName = options.environment === "production" ? ".prod.env" : ".env";
 
   const envPath = `${COMPASS_ROOT_DEV}/packages/backend/${envName}`;
 
@@ -99,7 +98,7 @@ const copyNodeConfigsToBuild = async (vmInfo: Info_VM, skipEnv?: boolean) => {
     log.warning(`Env file does not exist: ${envPath}`);
 
     const keepGoing =
-      skipEnv === true ? true : await _confirm("Continue anyway?");
+      options.force === true ? true : await _confirm("Continue anyway?");
 
     if (!keepGoing) {
       log.error("Exiting due to missing env file");
