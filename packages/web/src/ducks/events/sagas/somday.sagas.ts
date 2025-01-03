@@ -32,29 +32,13 @@ export function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
   const optimisticId: string | null = null;
 
   try {
+    yield put(getSomedayEventsSlice.actions.remove({ _id }));
+
     const gridEvent = yield* _assembleGridEvent(_id, updatedFields);
 
-    //create optimisitcGridEvent
-    const optimisticGridEvent = replaceIdWithOptimisticId(gridEvent);
-    yield put(getSomedayEventsSlice.actions.remove({ _id }));
-    yield* insertOptimisticEvent(optimisticGridEvent, false);
-
-    // create real event
-    const response = (yield call(
-      EventApi.edit,
-      _id,
-      gridEvent,
-      {}
-    )) as AxiosResponse<Schema_Event>;
-
-    const convertedEvent = response.data;
-
-    // cleanup replace ids
-    yield* replaceOptimisticId(
-      optimisticGridEvent._id,
-      convertedEvent._id as string,
-      false
-    );
+    const optimisticId = yield* _createOptimisticGridEvent(gridEvent);
+    const persistentId = yield* _convertEvent(gridEvent);
+    yield* replaceOptimisticId(optimisticId, persistentId as string, false);
   } catch (error) {
     if (optimisticId) {
       yield put(eventsEntitiesSlice.actions.delete({ _id: optimisticId }));
@@ -119,4 +103,24 @@ function* _assembleGridEvent(
   const _gridEvent = { ...currEvent, ...updatedFields };
   const gridEvent = removeSomedayProperties(_gridEvent);
   return gridEvent as Schema_GridEvent;
+}
+
+function* _convertEvent(gridEvent: Schema_GridEvent) {
+  const response = (yield call(
+    EventApi.edit,
+    gridEvent._id as string,
+    gridEvent,
+    {}
+  )) as AxiosResponse<Schema_Event>;
+
+  const convertedEvent = response.data;
+  return convertedEvent._id;
+}
+
+function* _createOptimisticGridEvent(gridEvent: Schema_GridEvent) {
+  const optimisticGridEvent = replaceIdWithOptimisticId(gridEvent);
+
+  yield* insertOptimisticEvent(optimisticGridEvent, false);
+
+  return optimisticGridEvent._id;
 }
