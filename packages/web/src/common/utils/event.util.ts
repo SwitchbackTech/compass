@@ -8,12 +8,14 @@ import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
+import { Response_GetEventsSaga } from "@web/ducks/events/event.types";
 
 import {
   Schema_GridEvent,
+  Schema_OptimisticEvent,
   Schema_SomedayEventsColumn,
 } from "../types/web.event.types";
-import { removeGridFields } from "./grid.util";
+import { removeGridProperties } from "./grid.util";
 import {
   COLUMN_WEEK,
   COLUMN_MONTH,
@@ -191,7 +193,7 @@ export const prepEvtAfterDraftDrop = (
 };
 
 export const prepEvtBeforeConvertToSomeday = (draft: Schema_GridEvent) => {
-  const event = removeGridFields(draft);
+  const event = removeGridProperties(draft);
 
   if (event.recurrence) {
     delete event.recurrence;
@@ -201,7 +203,7 @@ export const prepEvtBeforeConvertToSomeday = (draft: Schema_GridEvent) => {
 };
 
 export const prepEvtBeforeSubmit = (draft: Schema_GridEvent) => {
-  const _event = removeGridFields({ ...draft });
+  const _event = removeGridProperties({ ...draft });
 
   const event = {
     ..._event,
@@ -211,8 +213,10 @@ export const prepEvtBeforeSubmit = (draft: Schema_GridEvent) => {
   return event;
 };
 
-export const createOptimisticEvent = (event: Schema_Event) => {
-  const _event: Schema_Event = {
+export const replaceIdWithOptimisticId = (
+  event: Schema_Event
+): Schema_OptimisticEvent => {
+  const _event: Schema_OptimisticEvent = {
     ...event,
     _id: `${ID_OPTIMISTIC_PREFIX}-${uuidv4()}`,
   };

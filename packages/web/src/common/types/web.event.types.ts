@@ -15,6 +15,10 @@ export interface Schema_GridEvent extends Schema_Event {
   siblingsCount?: number;
 }
 
+export interface Schema_OptimisticEvent extends Schema_Event {
+  _id: string; // We guarantee that we have an _id for optimistic events, unlike `Schema_Event`
+}
+
 export interface Schema_SelectedDates {
   startDate: Date;
   startTime: SelectOption<string>;

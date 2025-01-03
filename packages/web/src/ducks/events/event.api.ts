@@ -5,6 +5,7 @@ import {
   Schema_Event,
 } from "@core/types/event.types";
 import { CompassApi } from "@web/common/apis/compass.api";
+import { AxiosPromise } from "axios";
 
 const EventApi = {
   create: (event: Schema_Event) => {
@@ -17,7 +18,7 @@ const EventApi = {
     _id: string,
     event: Schema_Event,
     params: { applyTo?: Categories_Recur }
-  ) => {
+  ): AxiosPromise<Schema_Event> => {
     if (params?.applyTo) {
       return CompassApi.put(`/event/${_id}?applyTo=${params.applyTo}`, event);
     }
