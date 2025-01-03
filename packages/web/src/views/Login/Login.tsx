@@ -1,13 +1,16 @@
 import { v4 as uuidv4 } from "uuid";
 import React, { useEffect, useRef, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import GoogleButton from "react-google-button";
-import Session from "supertokens-auth-react/recipe/session";
+import Session, { signOut } from "supertokens-auth-react/recipe/session";
+import { GoogleOAuthSession } from "@web/auth/gauth.util";
 import { useGoogleLogin } from "@react-oauth/google";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
+import { toast } from "react-toastify";
+import { SyncApi } from "@web/common/apis/sync.api";
 
 import {
   SignInButtonWrapper,
@@ -20,7 +23,18 @@ import {
   StyledLoginContainer,
 } from "./styled";
 
+const clearSession = async () => {
+  try {
+    await SyncApi.stopWatches();
+    await signOut();
+  } catch (error) {
+    console.error("Failed to clear session", error);
+  }
+};
+
 export const LoginView = () => {
+  const [searchParams] = useSearchParams();
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
@@ -29,14 +43,23 @@ export const LoginView = () => {
   useEffect(() => {
     const checkSession = async () => {
       const isAlreadyAuthed = await Session.doesSessionExist();
-      setIsAuthenticated(isAlreadyAuthed);
+      const isGAuthSessionValid = await GoogleOAuthSession.verifySession();
+      setIsAuthenticated(isAlreadyAuthed && isGAuthSessionValid);
     };
 
-    checkSession().catch((e) => {
-      alert(e);
-      console.log(e);
-    });
-  }, []);
+    const reason = searchParams.get("reason");
+
+    if (reason === "gauth-session-expired") {
+      toast.error("Google session expired, please login again");
+      clearSession();
+    } else {
+      checkSession().catch((e) => {
+        alert(e);
+        console.log(e);
+        clearSession();
+      });
+    }
+  }, [searchParams]);
 
   const SCOPES_REQUIRED = [
     "email",
