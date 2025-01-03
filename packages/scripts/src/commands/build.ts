@@ -9,24 +9,21 @@ import {
   PCKG,
 } from "@scripts/common/cli.constants";
 import {
-  getPckgsTo,
   _confirm,
   log,
   fileExists,
   getClientId,
   getApiBaseUrl,
   getEnvironmentAnswer,
-  validatePackages,
 } from "@scripts/common/cli.utils";
 
 export const runBuild = async (options: Options_Cli) => {
-  const pckgs = options.packages ? options.packages : await getPckgsTo("build");
-  validatePackages(pckgs);
+  const packages = options.packages as string[];
 
-  if (pckgs.includes(PCKG.NODE)) {
+  if (packages.includes(PCKG.NODE)) {
     await buildNodePckgs(options);
   }
-  if (pckgs.includes(PCKG.WEB)) {
+  if (packages.includes(PCKG.WEB)) {
     await buildWeb(options);
   }
 };
