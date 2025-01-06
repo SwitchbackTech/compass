@@ -21,7 +21,8 @@
     "saslprep": "^1.0.3",
     "socket.io": "^4.7.5",
     "supertokens-node": "^20.0.5",
-    "tslib": "^2.4.0"
+    "tslib": "^2.4.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@shelf/jest-mongodb": "^4.1.4",
