@@ -53,7 +53,10 @@ export const updateEvent = async (
   eventId: string,
   event: Schema_Event
 ) => {
-  const _event = { ...event };
+  const _event = {
+    ...event,
+    user: userId,
+  };
 
   if ("_id" in event) {
     delete _event._id; // mongo doesn't allow changing this field directly
