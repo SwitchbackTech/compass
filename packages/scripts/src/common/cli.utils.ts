@@ -4,18 +4,27 @@ const { prompt } = pkg;
 import shell from "shelljs";
 
 import { ALL_PACKAGES, CLI_ENV } from "./cli.constants";
-import { Category_VM } from "./cli.types";
+import { Environment_Cli } from "./cli.types";
 
 export const fileExists = (file: string) => {
   return shell.test("-e", file);
 };
 
-export const getClientId = async (destination: Category_VM) => {
-  if (destination === "staging") {
+export const getApiBaseUrl = async (environment: Environment_Cli) => {
+  const category = environment ? environment : await getEnvironmentAnswer();
+  const isStaging = category === "staging";
+  const domain = await getDomainAnswer(isStaging);
+  const baseUrl = `https://${domain}/api`;
+
+  return baseUrl;
+};
+
+export const getClientId = async (environment: Environment_Cli) => {
+  if (environment === "staging") {
     return process.env["CLIENT_ID"] as string;
   }
 
-  if (destination === "production") {
+  if (environment === "production") {
     const q = `Enter the googleClientId for the production environment:`;
 
     return prompt([{ type: "input", name: "answer", message: q }])
@@ -58,22 +67,17 @@ const getDomainAnswer = async (isStaging: boolean) => {
       process.exit(1);
     });
 };
-export const getVmInfo = async (environment?: Category_VM) => {
-  const destination = environment
-    ? environment
-    : ((await getListAnswer("Select environment to use:", [
-        "staging",
-        "production",
-      ])) as Category_VM);
 
-  const isStaging = destination === "staging";
-  const domain = await getDomainAnswer(isStaging);
-  const baseUrl = `https://${domain}/api`;
+export const getEnvironmentAnswer = async (): Promise<Environment_Cli> => {
+  const environment = (await getListAnswer("Select environment to use:", [
+    "staging",
+    "production",
+  ])) as Environment_Cli;
 
-  return { baseUrl, destination };
+  return environment;
 };
 
-const getListAnswer = async (question: string, choices: string[]) => {
+export const getListAnswer = async (question: string, choices: string[]) => {
   const q = [
     {
       type: "list",
