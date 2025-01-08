@@ -5,6 +5,11 @@ import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import authController from "./controllers/auth.controller";
 import authMiddleware from "./middleware/auth.middleware";
 
+/**
+ * Routes with the verifyIsDev middleware are
+ * only available when running the app in dev,
+ * as they are not called by production code.
+ */
 export class AuthRoutes extends CommonRoutesConfig {
   constructor(app: express.Application) {
     super(app, "AuthRoutes");
@@ -12,19 +17,23 @@ export class AuthRoutes extends CommonRoutesConfig {
 
   configureRoutes(): express.Application {
     /**
-     * Convenience routes for debugging (eg via Postman)
-     *
-     * Production code shouldn't call these
-     * directly, which is why they're limited to devs only
+     * Checks whether user's google access token is still valid
      */
+    this.app.route(`/api/auth/google`).get([
+      verifySession(),
+      //@ts-expect-error res.promise is not returning response types correctly
+      authController.verifyGToken,
+    ]);
+
     this.app
       .route(`/api/auth/session`)
       .all(authMiddleware.verifyIsDev)
-      //@ts-ignore
+      //@ts-expect-error res.promise is not returning response types correctly
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       .post(authController.createSession)
       .get([
         verifySession(),
-        //@ts-ignore
+        //@ts-expect-error res.promise is not returning response types correctly
         authController.getUserIdFromSession,
       ]);
 
@@ -38,18 +47,8 @@ export class AuthRoutes extends CommonRoutesConfig {
      */
     this.app.route(`/api/oauth/google`).post([
       authMiddleware.verifyGoogleOauthCode,
-      //@ts-ignore
+      //@ts-expect-error res.promise is not returning response types correctly
       authController.loginOrSignup,
-    ]);
-
-    /**
-     * Ensures a user's google session is still valid, since
-     * we need to occasionally sync events
-     */
-    this.app.route(`/api/auth/session/gauth/verify`).get([
-      verifySession(),
-      //@ts-expect-error TODO: fix TS for this and other controller methods in this file
-      authController.verifyGAuthSession,
     ]);
 
     return this.app;

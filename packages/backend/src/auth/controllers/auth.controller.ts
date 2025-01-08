@@ -66,7 +66,7 @@ class AuthController {
     res.promise({ userId });
   };
 
-  verifyGAuthSession = async (req: SessionRequest, res: Res_Promise) => {
+  verifyGToken = async (req: SessionRequest, res: Res_Promise) => {
     try {
       const userId = req.session?.getUserId();
 

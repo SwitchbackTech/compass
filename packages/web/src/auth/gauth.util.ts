@@ -3,13 +3,10 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 export class GoogleOAuthSession {
   static async verifySession() {
     try {
-      const res = await fetch(
-        `${ENV_WEB.API_BASEURL}/auth/session/gauth/verify`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const res = await fetch(`${ENV_WEB.API_BASEURL}/auth/google`, {
+        method: "GET",
+        credentials: "include",
+      });
 
       if (!res.ok) return false;
 
