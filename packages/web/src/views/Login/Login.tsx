@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import GoogleButton from "react-google-button";
 import Session, { signOut } from "supertokens-auth-react/recipe/session";
-import { GoogleOAuthSession } from "@web/auth/gauth.util";
+import { validateGoogleAccessToken } from "@web/auth/gauth.util";
 import { useGoogleLogin } from "@react-oauth/google";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { AuthApi } from "@web/common/apis/auth.api";
@@ -43,7 +43,7 @@ export const LoginView = () => {
   useEffect(() => {
     const checkSession = async () => {
       const isAlreadyAuthed = await Session.doesSessionExist();
-      const isGAuthSessionValid = await GoogleOAuthSession.verifySession();
+      const isGAuthSessionValid = await validateGoogleAccessToken();
       setIsAuthenticated(isAlreadyAuthed && isGAuthSessionValid);
     };
 

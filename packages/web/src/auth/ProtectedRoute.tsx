@@ -3,7 +3,7 @@ import Session from "supertokens-auth-react/recipe/session";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { GoogleOAuthSession } from "@web/auth/gauth.util";
+import { validateGoogleAccessToken } from "@web/auth/gauth.util";
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
@@ -11,15 +11,14 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useLayoutEffect(() => {
-    async function fetchSession() {
+    async function ensureAuthentication() {
       const isSessionValid = await Session.doesSessionExist();
-      const isGAuthSessionValid = await GoogleOAuthSession.verifySession();
+      const isGAccessTokenValid = await validateGoogleAccessToken();
 
-      const isAuthenticated = isSessionValid && isGAuthSessionValid;
+      const isAuthenticated = isSessionValid && isGAccessTokenValid;
       setIsAuthenticated(isAuthenticated);
       if (!isAuthenticated) {
-        // Are we not authenticated because of a Google Auth session expiration?
-        const dueToGAuth = !!isSessionValid && !isGAuthSessionValid;
+        const dueToGAuth = !!isSessionValid && !isGAccessTokenValid;
 
         if (dueToGAuth) {
           navigate(`${ROOT_ROUTES.LOGIN}?reason=gauth-session-expired`);
@@ -29,7 +28,7 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    void fetchSession();
+    void ensureAuthentication();
   }, [navigate]);
 
   if (isAuthenticated === null) {
