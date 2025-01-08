@@ -38,6 +38,7 @@ import {
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import { useUser } from "@web/auth/UserContext";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
@@ -49,6 +50,7 @@ export const useSidebarUtil = (
   setIsDrafting: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
   const dispatch = useAppDispatch();
+  const { userId } = useUser();
 
   const isDraftingOnGrid = useAppSelector(selectIsDrafting);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
@@ -88,7 +90,8 @@ export const useSidebarUtil = (
     const event = prepEvtAfterDraftDrop(
       Categories_Event.TIMED,
       dropItem,
-      dates
+      dates,
+      userId
     );
 
     dispatch(createEventSlice.actions.request(event));
@@ -102,7 +105,8 @@ export const useSidebarUtil = (
     const event = prepEvtAfterDraftDrop(
       Categories_Event.ALLDAY,
       dropItem,
-      dates
+      dates,
+      userId
     );
 
     dispatch(createEventSlice.actions.request(event));
@@ -148,7 +152,10 @@ export const useSidebarUtil = (
   };
 
   const createDefaultSomeday = useCallback(() => {
-    const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
+    const somedayDefault = getDefaultEvent(
+      Categories_Event.SOMEDAY_WEEK,
+      userId
+    );
 
     setDraft({ ...somedayDefault, isOpen: true });
     setIsDrafting(true);
@@ -253,7 +260,10 @@ export const useSidebarUtil = (
       };
     } else {
       console.log("REMINDER: update for monthly");
-      const defaultSomeday = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
+      const defaultSomeday = getDefaultEvent(
+        Categories_Event.SOMEDAY_WEEK,
+        userId
+      );
       _draft = { ...defaultSomeday, isOpen: false };
     }
 

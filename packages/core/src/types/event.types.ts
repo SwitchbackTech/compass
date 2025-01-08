@@ -55,7 +55,7 @@ export interface Schema_Event {
   startDate?: string;
   title?: string;
   updatedAt?: Date;
-  user?: string;
+  user?: string; // TODO: `user` should never be optional. An event should always be associated with a user.
 }
 
 export interface Query_Event extends Query {

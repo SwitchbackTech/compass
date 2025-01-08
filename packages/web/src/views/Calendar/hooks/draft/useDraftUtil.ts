@@ -30,6 +30,7 @@ import {
   selectIsAtWeeklyLimit,
   selectSomedayWeekCount,
 } from "@web/ducks/events/selectors/someday.selectors";
+import { useUser } from "@web/auth/UserContext";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { WeekProps } from "../useWeek";
@@ -48,6 +49,7 @@ export const useDraftUtil = (
   isSidebarOpen: boolean
 ) => {
   const dispatch = useAppDispatch();
+  const { userId } = useUser();
 
   const reduxDraft = useAppSelector(selectDraft);
   const {
@@ -96,29 +98,33 @@ export const useDraftUtil = (
   }, [isDrafting, draft?.isOpen]);
 
   const handleChange = useCallback(() => {
-    if (isDrafting) {
-      if (activity === "createShortcut") {
-        const defaultDraft = getDefaultEvent(
-          reduxDraftType,
-          reduxDraft?.startDate,
-          reduxDraft?.endDate
-        );
-        setDraft({ ...defaultDraft, isOpen: true });
-        return;
-      }
-
-      setDraft(reduxDraft);
-
-      if (activity === "dragging") {
-        setIsDragging(true);
-        return;
-      }
-
-      if (activity === "resizing") {
-        setIsResizing(true);
-        setDateBeingChanged(dateToResize);
-      }
+    if (!isDrafting) {
+      return;
     }
+
+    if (activity === "createShortcut") {
+      const defaultDraft = getDefaultEvent(
+        reduxDraftType,
+        userId,
+        reduxDraft?.startDate,
+        reduxDraft?.endDate
+      );
+      setDraft({ ...defaultDraft, isOpen: true });
+      return;
+    }
+
+    setDraft(reduxDraft);
+
+    if (activity === "dragging") {
+      setIsDragging(true);
+      return;
+    }
+
+    if (activity === "resizing") {
+      setIsResizing(true);
+      setDateBeingChanged(dateToResize);
+    }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activity,
@@ -134,20 +140,20 @@ export const useDraftUtil = (
   }, [handleChange]);
 
   useEffect(() => {
-    if (isDragging) {
-      setDraft((_draft) => {
-        const durationMin = dayjs(_draft.endDate).diff(
-          _draft.startDate,
-          "minutes"
-        );
+    if (!isDragging) return;
 
-        setDragStatus({
-          durationMin,
-        });
+    setDraft((_draft) => {
+      const durationMin = dayjs(_draft.endDate).diff(
+        _draft.startDate,
+        "minutes"
+      );
 
-        return { ..._draft, isOpen: false };
+      setDragStatus({
+        durationMin,
       });
-    }
+
+      return { ..._draft, isOpen: false };
+    });
   }, [isDragging]);
 
   const convert = (start: string, end: string) => {
