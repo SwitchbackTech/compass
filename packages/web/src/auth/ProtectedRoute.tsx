@@ -3,21 +3,32 @@ import Session from "supertokens-auth-react/recipe/session";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
+import { validateGoogleAccessToken } from "@web/auth/gauth.util";
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useLayoutEffect(() => {
-    async function fetchSession() {
-      const isAuthenticated = await Session.doesSessionExist();
+    async function ensureAuthentication() {
+      const isSessionValid = await Session.doesSessionExist();
+      const isGAccessTokenValid = await validateGoogleAccessToken();
+
+      const isAuthenticated = isSessionValid && isGAccessTokenValid;
       setIsAuthenticated(isAuthenticated);
       if (!isAuthenticated) {
-        navigate(ROOT_ROUTES.LOGIN);
+        const dueToGAuth = !!isSessionValid && !isGAccessTokenValid;
+
+        if (dueToGAuth) {
+          navigate(`${ROOT_ROUTES.LOGIN}?reason=gauth-session-expired`);
+        } else {
+          navigate(ROOT_ROUTES.LOGIN);
+        }
       }
     }
 
-    void fetchSession();
+    void ensureAuthentication();
   }, [navigate]);
 
   if (isAuthenticated === null) {
