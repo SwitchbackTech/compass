@@ -16,7 +16,6 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
 import { isEventFormOpen } from "@web/common/utils";
-import { useUser } from "@web/auth/UserContext";
 
 import { StyledGridCol } from "../Columns/styled";
 import { StyledAllDayColumns, StyledAllDayRow } from "./styled";
@@ -38,7 +37,6 @@ export const AllDayRow: FC<Props> = ({
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
-  const { userId } = useUser();
 
   const { startOfView, weekDays } = weekProps.component;
   const rowsCount = useAppSelector(selectRowCount);
@@ -57,7 +55,7 @@ export const AllDayRow: FC<Props> = ({
       YEAR_MONTH_DAY_FORMAT
     );
 
-    const event = getDefaultEvent(Categories_Event.ALLDAY, userId, startDate);
+    const event = getDefaultEvent(Categories_Event.ALLDAY, startDate);
     dispatch(
       draftSlice.actions.start({
         eventType: Categories_Event.ALLDAY,

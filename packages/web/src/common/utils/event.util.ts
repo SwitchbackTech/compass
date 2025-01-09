@@ -88,7 +88,6 @@ export const getCategory = (event: Schema_Event) => {
 
 export const getDefaultEvent = (
   draftType: Categories_Event,
-  userId: string,
   startDate?: string,
   endDate?: string
 ): Schema_GridEvent | null => {
@@ -97,7 +96,6 @@ export const getDefaultEvent = (
     isSomeday: true,
     origin: Origin.COMPASS,
     priority: Priorities.UNASSIGNED,
-    user: userId,
   };
   switch (draftType) {
     case Categories_Event.ALLDAY:
@@ -107,7 +105,6 @@ export const getDefaultEvent = (
         priority: Priorities.UNASSIGNED,
         startDate,
         endDate: startDate,
-        user: userId,
       };
     case Categories_Event.SOMEDAY_WEEK || Categories_Event.SOMEDAY_MONTH:
       return defaultSomeday;
@@ -118,7 +115,6 @@ export const getDefaultEvent = (
         priority: Priorities.UNASSIGNED,
         startDate,
         endDate,
-        user: userId,
       };
     }
     default:
@@ -179,10 +175,9 @@ export const isEventInRange = (
 export const prepEvtAfterDraftDrop = (
   category: Categories_Event,
   dropItem: DropResult,
-  dates: { startDate: string; endDate: string },
-  userId: string
+  dates: { startDate: string; endDate: string }
 ) => {
-  const baseEvent = getDefaultEvent(category, userId);
+  const baseEvent = getDefaultEvent(category);
 
   const event: Schema_Event = {
     ...baseEvent,

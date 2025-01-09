@@ -15,7 +15,6 @@ import { getX } from "@web/common/utils/grid.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { isEventFormOpen } from "@web/common/utils";
 import { getHourLabels } from "@web/common/utils/web.date.util";
-import { useUser } from "@web/auth/UserContext";
 
 import {
   StyledGridRow,
@@ -45,7 +44,6 @@ export const MainGrid: FC<Props> = ({
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
-  const { userId } = useUser();
 
   const { component } = weekProps;
   const { isCurrentWeek, week, weekDays } = component;
@@ -65,12 +63,7 @@ export const MainGrid: FC<Props> = ({
     const startDate = _start.format();
     const endDate = _start.add(DRAFT_DURATION_MIN, "minutes").format();
 
-    const event = getDefaultEvent(
-      Categories_Event.TIMED,
-      userId,
-      startDate,
-      endDate
-    );
+    const event = getDefaultEvent(Categories_Event.TIMED, startDate, endDate);
     dispatch(
       draftSlice.actions.startResizing({ event, dateToChange: "endDate" })
     );

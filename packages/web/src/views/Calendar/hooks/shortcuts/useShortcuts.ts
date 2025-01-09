@@ -20,7 +20,6 @@ import {
 import { getDefaultEvent } from "@web/common/utils/event.util";
 import { YEAR_MONTH_FORMAT } from "@core/constants/date.constants";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
-import { useUser } from "@web/auth/UserContext";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
@@ -47,7 +46,6 @@ export const useShortcuts = ({
   scrollUtil,
 }: ShortcutProps) => {
   const dispatch = useAppDispatch();
-  const { userId } = useUser();
   const navigate = useNavigate();
 
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
@@ -81,10 +79,7 @@ export const useShortcuts = ({
           ? Categories_Event.SOMEDAY_WEEK
           : Categories_Event.SOMEDAY_MONTH;
 
-      const somedayDefault = getDefaultEvent(
-        Categories_Event.SOMEDAY_WEEK,
-        userId
-      );
+      const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
       dispatch(
         draftSlice.actions.start({
           eventType,
