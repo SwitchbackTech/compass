@@ -7,7 +7,7 @@ import { isSameMonth } from "@core/util/date.utils";
 import {
   Query_Event,
   Query_Event_Update,
-  Schema_Event,
+  Schema_Event_Core,
 } from "@core/types/event.types";
 import { RRULE } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
@@ -17,7 +17,10 @@ import { GenericError } from "@backend/common/constants/error.constants";
 dayjs.extend(tz);
 dayjs.extend(utc);
 
-export const assembleInstances = (event: Schema_Event, baseId?: string) => {
+export const assembleInstances = (
+  event: Schema_Event_Core,
+  baseId?: string
+) => {
   if (
     !event.recurrence ||
     !event.recurrence.rule ||
@@ -35,7 +38,7 @@ export const assembleInstances = (event: Schema_Event, baseId?: string) => {
   return events;
 };
 
-export const getCreateParams = (userId: string, event: Schema_Event) => {
+export const getCreateParams = (userId: string, event: Schema_Event_Core) => {
   const _event = {
     ...event,
     _id: undefined,
@@ -51,7 +54,9 @@ export const getCreateParams = (userId: string, event: Schema_Event) => {
   return { _event, isRecurring, syncToGcal };
 };
 
-export const getDeleteByIdFilter = (event: Schema_Event): Filter<object> => {
+export const getDeleteByIdFilter = (
+  event: Schema_Event_Core
+): Filter<object> => {
   if (!event._id) {
     throw error(
       GenericError.BadRequest,
@@ -117,7 +122,7 @@ export const getReadAllFilter = (
 };
 
 export const getUpdateAction = (
-  event: Schema_Event,
+  event: Schema_Event_Core,
   query: Query_Event_Update
 ) => {
   const hasInstances = event?.recurrence?.eventId !== undefined;
@@ -234,7 +239,7 @@ const _getDates = (rule: string, nextInstance: Date) => {
 
 const _generateInstances = (
   rule: string,
-  orig: Schema_Event,
+  orig: Schema_Event_Core,
   baseId?: string
 ) => {
   if (!orig.startDate || !orig.endDate) {

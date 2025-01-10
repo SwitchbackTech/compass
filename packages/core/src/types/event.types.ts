@@ -58,6 +58,14 @@ export interface Schema_Event {
   user?: string;
 }
 
+export interface Schema_Event_Core extends Schema_Event {
+  startDate: string;
+  endDate: string;
+  origin: Origin;
+  priority: Priority;
+  user: string;
+}
+
 export interface Query_Event extends Query {
   end?: string;
   someday?: string;
