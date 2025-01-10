@@ -6,6 +6,7 @@ import {
 } from "@core/types/event.types";
 import { SReqBody, Res_Promise } from "@backend/common/types/express.types";
 import eventService from "@backend/event/services/event.service";
+import { validateEvent } from "@backend/event/validators/event.validator";
 
 class EventController {
   create = async (req: SReqBody<Schema_Event>, res: Res_Promise) => {
@@ -13,12 +14,24 @@ class EventController {
 
     try {
       if (req.body instanceof Array) {
-        const response = await eventService.createMany(req.body);
+        const events = req.body as Schema_Event[];
+        if (!events.every((event) => validateEvent(event).success)) {
+          res.promise(Promise.reject({ error: "Invalid events array" }));
+          return;
+        }
+
+        const response = await eventService.createMany(events);
         res.promise(response);
         return;
       }
 
-      const response = await eventService.create(userId, req.body);
+      const event = req.body;
+      if (!validateEvent(event).success) {
+        res.promise(Promise.reject({ error: "Invalid event" }));
+        return;
+      }
+
+      const response = await eventService.create(userId, event);
 
       res.promise(response);
     } catch (e) {
@@ -94,6 +107,11 @@ class EventController {
     const userId = req.session?.getUserId() as string;
     try {
       const event = req.body;
+      if (!validateEvent(event).success) {
+        res.promise(Promise.reject("Invalid event"));
+        return;
+      }
+
       const eventId = req.params["id"] as string;
 
       const response = await eventService.updateById(
