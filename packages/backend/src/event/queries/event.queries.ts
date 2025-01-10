@@ -1,5 +1,9 @@
 import { AnyBulkWriteOperation } from "mongodb";
-import { Payload_Order, Schema_Event } from "@core/types/event.types";
+import {
+  Payload_Order,
+  Schema_Event,
+  Schema_Event_Core,
+} from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
 import { getIdFilter } from "@backend/common/helpers/mongo.utils";
 import mongoService from "@backend/common/services/mongo.service";
@@ -51,7 +55,7 @@ export const reorderEvents = async (userId: string, order: Payload_Order[]) => {
 export const updateEvent = async (
   userId: string,
   eventId: string,
-  event: Schema_Event
+  event: Schema_Event_Core
 ) => {
   const _event = {
     ...event,

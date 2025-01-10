@@ -3,6 +3,7 @@ import {
   Schema_Event,
   Params_DeleteMany,
   Payload_Order,
+  Schema_Event_Core,
 } from "@core/types/event.types";
 import { SReqBody, Res_Promise } from "@backend/common/types/express.types";
 import eventService from "@backend/event/services/event.service";
@@ -20,7 +21,9 @@ class EventController {
           return;
         }
 
-        const response = await eventService.createMany(events);
+        const response = await eventService.createMany(
+          events as Schema_Event_Core[]
+        );
         res.promise(response);
         return;
       }
@@ -31,7 +34,10 @@ class EventController {
         return;
       }
 
-      const response = await eventService.create(userId, event);
+      const response = await eventService.create(
+        userId,
+        event as Schema_Event_Core
+      );
 
       res.promise(response);
     } catch (e) {
@@ -117,7 +123,7 @@ class EventController {
       const response = await eventService.updateById(
         userId,
         eventId,
-        event,
+        event as Schema_Event_Core,
         req.query
       );
       res.promise(response);
