@@ -375,8 +375,8 @@ export const useDraftUtil = (
     setDateBeingChanged("endDate");
   };
 
-  const submit = (draft: Schema_GridEvent) => {
-    const event = prepEvtBeforeSubmit(draft);
+  const submit = async (draft: Schema_GridEvent) => {
+    const event = await prepEvtBeforeSubmit(draft);
     const { startOfView, endOfView } = weekProps.component;
 
     const isExisting = event._id;

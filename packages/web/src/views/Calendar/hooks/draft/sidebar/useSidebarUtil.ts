@@ -283,8 +283,8 @@ export const useSidebarUtil = (
     close();
   };
 
-  const onSubmit = (category: Categories_Event) => {
-    const _event = prepEvtBeforeSubmit(state.draft);
+  const onSubmit = async (category: Categories_Event) => {
+    const _event = await prepEvtBeforeSubmit(state.draft);
 
     const { startDate, endDate } = getDatesByCategory(
       category,

@@ -8,7 +8,7 @@ import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
-import { Response_GetEventsSaga } from "@web/ducks/events/event.types";
+import { getUserId } from "@web/auth/auth.util";
 
 import {
   Schema_GridEvent,
@@ -202,12 +202,13 @@ export const prepEvtBeforeConvertToSomeday = (draft: Schema_GridEvent) => {
   return event;
 };
 
-export const prepEvtBeforeSubmit = (draft: Schema_GridEvent) => {
+export const prepEvtBeforeSubmit = async (draft: Schema_GridEvent) => {
   const _event = removeGridProperties({ ...draft });
 
   const event = {
     ..._event,
     origin: Origin.COMPASS,
+    user: await getUserId(),
   } as Schema_Event;
 
   return event;
