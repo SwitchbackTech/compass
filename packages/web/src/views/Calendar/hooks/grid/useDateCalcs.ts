@@ -1,10 +1,9 @@
-import { useLayoutEffect, useRef } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import weekPlugin from "dayjs/plugin/weekOfYear";
 import { HOURS_AM_FORMAT } from "@core/constants/date.constants";
-import { roundToNearest } from "@web/common/utils";
+import { roundToPrev } from "@web/common/utils";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
@@ -70,12 +69,18 @@ export const useDateCalcs = (
   };
 
   const getMinuteByY = (y: number) => {
+    if (!measurements.mainGrid) return 0; // TS guard. This should never happen
+
     const scrollTop = scrollRef.current.scrollTop;
+    // gridY is the distance from the top of the grid (main grid) to the click
     const gridY = y - measurements.mainGrid.top + scrollTop;
 
     const decimalMinute = (gridY / measurements.hourHeight) * 60;
-    const roundedMinute = roundToNearest(decimalMinute, GRID_TIME_STEP);
-    const finalMinute = Math.max(0, roundedMinute); // prevents negative number when clicking all-day row
+
+    const flooredMinute = roundToPrev(decimalMinute, GRID_TIME_STEP);
+
+    const finalMinute = Math.max(0, flooredMinute); // prevents negative number when clicking all-day row
+
     return finalMinute;
   };
 
