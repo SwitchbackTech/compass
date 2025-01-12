@@ -98,8 +98,8 @@ export const CoreEventSchema = z.object({
     z.string().date(),
   ]),
   title: z.string().optional(),
-  updatedAt: z
-    .union([z.string().datetime(), z.string().datetime({ offset: true })])
-    .optional(),
+  updatedAt: z.date().optional(),
   user: z.string(),
 });
+
+export type Event_Core = z.infer<typeof CoreEventSchema>;
