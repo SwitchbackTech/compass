@@ -2,15 +2,16 @@
 import { BaseError } from "@core/errors/errors.base";
 import { Origin, Priorities, Priority } from "@core/constants/core.constants";
 import { isAllDay, notCancelled } from "@core/util/event.util";
-import { Schema_Event } from "@core/types/event.types";
+import { Event_Core, Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
+import { validateEvent } from "@core/validators/event.validator";
 
 export namespace MapEvent {
   export const toCompass = (
     userId: string,
     events: gSchema$Event[],
     origin?: Origin
-  ): Schema_Event[] => {
+  ): Event_Core[] => {
     const mapped = events
       .filter(notCancelled)
       .map((e: gSchema$Event) => _toCompass(userId, e, origin));
@@ -44,7 +45,7 @@ const _toCompass = (
   userId: string,
   gEvent: gSchema$Event,
   origin?: Origin
-): Schema_Event => {
+): Event_Core => {
   if (!gEvent.id) {
     throw new BaseError(
       "Bad Google Event Id",
@@ -101,5 +102,6 @@ const _toCompass = (
     updatedAt: new Date(),
   };
 
-  return compassEvent;
+  const validatedCompassEvent = validateEvent(compassEvent);
+  return validatedCompassEvent;
 };

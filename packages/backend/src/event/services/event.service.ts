@@ -17,6 +17,7 @@ import {
   Result_DeleteMany,
   Payload_Order,
   Query_Event_Update,
+  Event_Core,
 } from "@core/types/event.types";
 import { getCurrentRangeDates } from "@core/util/date.utils";
 import { Collections } from "@backend/common/constants/collections";
@@ -139,7 +140,7 @@ class EventService {
     return await this.create(userId, defaultWeekly);
   };
 
-  createMany = async (events: Schema_Event_Core[]) => {
+  createMany = async (events: Event_Core[]) => {
     const parsedEvents = events.map((e) => {
       const cleanedEvent = {
         ...e,
