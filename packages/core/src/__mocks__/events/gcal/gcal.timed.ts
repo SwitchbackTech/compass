@@ -119,7 +119,7 @@ export const timed = [
     extendedProperties: {
       private: {
         origin: "googleimport",
-        priority: "relations",
+        priority: "relationships",
       },
     },
 
