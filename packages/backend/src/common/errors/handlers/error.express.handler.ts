@@ -74,8 +74,8 @@ export const handleExpressError = async (
 ) => {
   res.header("Content-Type", "application/json");
 
+  errorHandler.log(e);
   if (e instanceof BaseError) {
-    errorHandler.log(e);
     res.status(e.statusCode).send(e);
   } else {
     const userId = await parseUserId(res, e);
@@ -88,7 +88,7 @@ export const handleExpressError = async (
     }
 
     if (isGoogleError(e)) {
-      await handleGoogleError(userId, res, e as GaxiosError);
+      await handleGoogleError(userId, res, e);
     } else {
       const errInfo = assembleErrorInfo(e);
       res.status(e.status || Status.INTERNAL_SERVER).send(errInfo);
