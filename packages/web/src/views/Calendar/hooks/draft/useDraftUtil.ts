@@ -29,6 +29,7 @@ import {
   selectIsAtWeeklyLimit,
   selectSomedayWeekCount,
 } from "@web/ducks/events/selectors/someday.selectors";
+import { getUserId } from "@web/auth/auth.util";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { WeekProps } from "../useWeek";
@@ -375,7 +376,8 @@ export const useDraftUtil = (
   };
 
   const submit = async (draft: Schema_GridEvent) => {
-    const event = await prepEvtBeforeSubmit(draft);
+    const userId = await getUserId();
+    const event = prepEvtBeforeSubmit(draft, userId);
     const { startOfView, endOfView } = weekProps.component;
 
     const isExisting = event._id;

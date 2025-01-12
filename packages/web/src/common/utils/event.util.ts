@@ -9,7 +9,6 @@ import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { validateEvent } from "@core/validators/event.validator";
 import { Status } from "@core/errors/status.codes";
-import { getUserId } from "@web/auth/auth.util";
 
 import {
   Schema_GridEvent,
@@ -193,12 +192,14 @@ export const prepEvtAfterDraftDrop = (
   return event;
 };
 
-export const prepEvtBeforeSubmit = async (draft: Schema_GridEvent) => {
-  const user = await getUserId();
+export const prepEvtBeforeSubmit = (
+  draft: Schema_GridEvent,
+  userId: string
+) => {
   const _event = {
     ...draft,
     origin: Origin.COMPASS,
-    user,
+    user: userId,
   };
 
   const event = validateEvent(_event);
