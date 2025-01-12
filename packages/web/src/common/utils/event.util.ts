@@ -7,6 +7,7 @@ import { DropResult } from "@hello-pangea/dnd";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { validateEvent } from "@core/validators/event.validator";
 import { Status } from "@core/errors/status.codes";
 import { getUserId } from "@web/auth/auth.util";
 
@@ -15,10 +16,9 @@ import {
   Schema_OptimisticEvent,
   Schema_SomedayEventsColumn,
 } from "../types/web.event.types";
-import { removeGridProperties } from "./grid.util";
 import {
-  COLUMN_WEEK,
   COLUMN_MONTH,
+  COLUMN_WEEK,
   ID_OPTIMISTIC_PREFIX,
 } from "../constants/web.constants";
 
@@ -141,14 +141,15 @@ export const handleError = (error: Error) => {
     return;
   }
 
+  console.log(error.message);
+  console.log(error.stack);
+  console.log(error);
+
   if (code === Status.INTERNAL_SERVER) {
     alert("Something went wrong behind the scenes. Please try again later.");
     window.location.reload();
   }
 
-  console.log(error.message);
-  console.log(error.stack);
-  console.log(error);
   alert(error);
 };
 
@@ -192,25 +193,15 @@ export const prepEvtAfterDraftDrop = (
   return event;
 };
 
-export const prepEvtBeforeConvertToSomeday = (draft: Schema_GridEvent) => {
-  const event = removeGridProperties(draft);
-
-  if (event.recurrence) {
-    delete event.recurrence;
-  }
-
-  return event;
-};
-
 export const prepEvtBeforeSubmit = async (draft: Schema_GridEvent) => {
-  const _event = removeGridProperties({ ...draft });
-
-  const event = {
-    ..._event,
+  const user = await getUserId();
+  const _event = {
+    ...draft,
     origin: Origin.COMPASS,
-    user: await getUserId(),
-  } as Schema_Event;
+    user,
+  };
 
+  const event = validateEvent(_event);
   return event;
 };
 

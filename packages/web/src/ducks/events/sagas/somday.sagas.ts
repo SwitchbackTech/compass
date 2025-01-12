@@ -8,7 +8,7 @@ import {
   handleError,
 } from "@web/common/utils/event.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { removeSomedayProperties } from "@web/common/utils/grid.util";
+import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 
 import { Action_Someday_Reorder } from "../slices/someday.slice.types";
 import { EventApi } from "../event.api";
@@ -101,8 +101,8 @@ function* _assembleGridEvent(
   const currEvent = yield* getEventById(_id);
 
   const _gridEvent = { ...currEvent, ...updatedFields };
-  const gridEvent = removeSomedayProperties(_gridEvent);
-  return gridEvent as Schema_GridEvent;
+  const gridEvent = validateGridEvent(_gridEvent);
+  return gridEvent;
 }
 
 function* _convertEvent(gridEvent: Schema_GridEvent) {

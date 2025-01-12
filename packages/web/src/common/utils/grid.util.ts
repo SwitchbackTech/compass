@@ -18,7 +18,6 @@ import {
   GRID_X_PADDING_TOTAL,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 dayjs.extend(dayOfYear);
 dayjs.extend(weekPlugin);
@@ -486,19 +485,6 @@ const normalizeDayNums = (days: number[]) => {
       return d;
     }
   });
-};
-
-export const removeGridProperties = (event: Schema_GridEvent): Schema_Event => {
-  const {
-    isEditing,
-    importanceIndex,
-    isOpen,
-    row,
-    siblingsCount,
-    ...eventWithoutGridProps
-  } = event;
-
-  return eventWithoutGridProps;
 };
 
 export const removeSomedayProperties = (event: Schema_Event): Schema_Event => {

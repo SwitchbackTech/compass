@@ -1,4 +1,4 @@
-import { MouseEvent } from "react";
+import { MouseEvent, useCallback, useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import {
   Priorities,
@@ -6,6 +6,7 @@ import {
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { validateEvent } from "@core/validators/event.validator";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getX } from "@web/common/utils/grid.util";
 import {
@@ -15,10 +16,8 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useCallback, useEffect, useState } from "react";
 import {
   getDefaultEvent,
-  prepEvtBeforeConvertToSomeday,
   prepEvtBeforeSubmit,
 } from "@web/common/utils/event.util";
 import {
@@ -164,7 +163,7 @@ export const useDraftUtil = (
       endDate: end,
       order: somedayWeekCount,
     };
-    const event = prepEvtBeforeConvertToSomeday(_draft);
+    const event = validateEvent(_draft);
     dispatch(getWeekEventsSlice.actions.convert({ event }));
 
     discard();

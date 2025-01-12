@@ -284,14 +284,15 @@ export const useSidebarUtil = (
   };
 
   const onSubmit = async (category: Categories_Event) => {
-    const _event = await prepEvtBeforeSubmit(state.draft);
+    if (!state.draft) return;
 
     const { startDate, endDate } = getDatesByCategory(
       category,
       viewStart,
       viewEnd
     );
-    const event = { ..._event, startDate, endDate };
+    const _event = { ...state.draft, startDate, endDate };
+    const event = await prepEvtBeforeSubmit(_event);
 
     const isExisting = event._id;
     if (isExisting) {
