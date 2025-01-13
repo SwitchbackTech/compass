@@ -202,7 +202,6 @@ export const prepEvtBeforeSubmit = (
     user: userId,
   };
 
-  delete _event.updatedAt; // remove to avoid type conflict between string and Date
   const event = validateEvent(_event);
   return event;
 };

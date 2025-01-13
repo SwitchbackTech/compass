@@ -55,7 +55,7 @@ export interface Schema_Event {
   };
   startDate?: string;
   title?: string;
-  updatedAt?: Date;
+  updatedAt?: Date | string;
   user?: string;
 }
 
@@ -98,7 +98,7 @@ export const CoreEventSchema = z.object({
     z.string().date(),
   ]),
   title: z.string().optional(),
-  updatedAt: z.date().optional(),
+  updatedAt: z.union([z.date(), z.string().datetime()]).optional(),
   user: z.string(),
 });
 
