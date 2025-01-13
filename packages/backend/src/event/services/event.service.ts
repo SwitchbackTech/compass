@@ -11,12 +11,13 @@ import { MapEvent } from "@core/mappers/map.event";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import {
-  Schema_Event,
+  Schema_Event_Core,
   Query_Event,
   Params_DeleteMany,
   Result_DeleteMany,
   Payload_Order,
   Query_Event_Update,
+  Event_Core,
 } from "@core/types/event.types";
 import { getCurrentRangeDates } from "@core/util/date.utils";
 import { Collections } from "@backend/common/constants/collections";
@@ -43,7 +44,7 @@ import {
 } from "../queries/event.queries";
 
 class EventService {
-  create = async (userId: string, event: Schema_Event) => {
+  create = async (userId: string, event: Schema_Event_Core) => {
     const { _event, isRecurring, syncToGcal } = getCreateParams(userId, event);
 
     //  must update gcal's data before Compass's
@@ -66,7 +67,7 @@ class EventService {
       eventId = response.insertedId.toString();
     }
 
-    const eventWithId: Schema_Event = {
+    const eventWithId: Schema_Event_Core = {
       ..._event,
       _id: eventId,
     };
@@ -84,7 +85,7 @@ class EventService {
   createDefaultSomedays = async (userId: string) => {
     const { week, month } = getCurrentRangeDates();
 
-    const defaultWeekly: Schema_Event = {
+    const defaultWeekly: Schema_Event_Core = {
       title: "⭐ That one thing...",
       isAllDay: false,
       isSomeday: true,
@@ -93,13 +94,14 @@ class EventService {
       priority: Priorities.UNASSIGNED,
       origin: Origin.COMPASS,
       description: `... that you wanna do this week, but aren't sure when.\
-        \nKeep it here for safekeeping, then drag it over to the calendar once you're ready to commit times.\
-        \n\nThese sidebar events are:\
-        \n-filtered by the calendar week you're on\
-        \n-limited to ${SOMEDAY_WEEKLY_LIMIT} per week`,
+      \nKeep it here for safekeeping, then drag it over to the calendar once you're ready to commit times.\
+      \n\nThese sidebar events are:\
+      \n-filtered by the calendar week you're on\
+      \n-limited to ${SOMEDAY_WEEKLY_LIMIT} per week`,
+      user: userId,
     };
 
-    const weeklyRepeat: Schema_Event = {
+    const weeklyRepeat: Schema_Event_Core = {
       title: "🪴 Water plants",
       isAllDay: false,
       isSomeday: true,
@@ -115,9 +117,10 @@ class EventService {
       recurrence: {
         rule: [RRULE.WEEK],
       },
+      user: userId,
     };
 
-    const monthlyRepeat: Schema_Event = {
+    const monthlyRepeat: Schema_Event_Core = {
       isAllDay: false,
       isSomeday: true,
       origin: Origin.COMPASS,
@@ -129,6 +132,7 @@ class EventService {
         rule: [RRULE.MONTH],
       },
       description: `This one repeats once a month for ${RRULE_COUNT_MONTHS} months`,
+      user: userId,
     };
 
     await this.create(userId, weeklyRepeat);
@@ -136,7 +140,7 @@ class EventService {
     return await this.create(userId, defaultWeekly);
   };
 
-  createMany = async (events: Schema_Event[]) => {
+  createMany = async (events: Event_Core[]) => {
     const parsedEvents = events.map((e) => {
       const cleanedEvent = {
         ...e,
@@ -185,7 +189,7 @@ class EventService {
     }
 
     const deleteFromGcal = !event["isSomeday"];
-    const _event = event as unknown as Schema_Event;
+    const _event = event as unknown as Schema_Event_Core;
     const gEventId = _event.gEventId;
 
     if (deleteFromGcal) {
@@ -243,7 +247,7 @@ class EventService {
   readAll = async (
     userId: string,
     query: Query_Event
-  ): Promise<Schema_Event[] | BaseError> => {
+  ): Promise<Schema_Event_Core[] | BaseError> => {
     const filter = getReadAllFilter(userId, query);
 
     if (query.someday) {
@@ -252,13 +256,13 @@ class EventService {
         .find(filter)
         .limit(SOMEDAY_WEEKLY_LIMIT + SOMEDAY_MONTHLY_LIMIT)
         .sort({ startDate: 1 })
-        .toArray()) as unknown as Schema_Event[];
+        .toArray()) as unknown as Schema_Event_Core[];
       return response;
     } else {
       const response = (await mongoService.db
         .collection(Collections.EVENT)
         .find(filter)
-        .toArray()) as unknown as Schema_Event[];
+        .toArray()) as unknown as Schema_Event_Core[];
       return response;
     }
   };
@@ -297,7 +301,7 @@ class EventService {
   updateById = async (
     userId: string,
     eventId: string,
-    event: Schema_Event,
+    event: Schema_Event_Core,
     query: Query_Event_Update
   ) => {
     const updateGcal = !event.isSomeday;
@@ -360,7 +364,7 @@ export default new EventService();
  *  to put in event.service.util)
  *********/
 
-const _createGcalEvent = async (userId: string, event: Schema_Event) => {
+const _createGcalEvent = async (userId: string, event: Schema_Event_Core) => {
   const _gEvent = MapEvent.toGcal(event);
 
   const gcal = await getGcalClient(userId);
@@ -369,7 +373,7 @@ const _createGcalEvent = async (userId: string, event: Schema_Event) => {
   return gEvent;
 };
 
-const _createInstances = async (event: Schema_Event, baseId?: string) => {
+const _createInstances = async (event: Schema_Event_Core, baseId?: string) => {
   const instances = assembleInstances(event, baseId);
 
   const { insertedIds } = await mongoService.db
@@ -384,7 +388,7 @@ const _createInstances = async (event: Schema_Event, baseId?: string) => {
   return eventId;
 };
 
-const _deleteFromCompass = async (event: Schema_Event) => {
+const _deleteFromCompass = async (event: Schema_Event_Core) => {
   const isRecurring = event.recurrence !== undefined;
 
   if (!event.user || !event._id) {
@@ -400,14 +404,14 @@ const _deleteFromCompass = async (event: Schema_Event) => {
   return response;
 };
 
-const _removeRecurrence = (event: Schema_Event) => {
+const _removeRecurrence = (event: Schema_Event_Core) => {
   const eventWithoutRecur = { ...event };
   delete eventWithoutRecur.recurrence;
 
   return eventWithoutRecur;
 };
 
-const _updateGcal = async (userId: string, event: Schema_Event) => {
+const _updateGcal = async (userId: string, event: Schema_Event_Core) => {
   const wasSomedayEvent = event.gEventId === undefined;
 
   if (wasSomedayEvent) {

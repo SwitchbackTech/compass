@@ -1,4 +1,9 @@
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { z } from "zod";
+import {
+  Categories_Event,
+  CoreEventSchema,
+  Schema_Event,
+} from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
 
 export enum Recurrence_Selection {
@@ -6,13 +11,17 @@ export enum Recurrence_Selection {
   WEEK = "week",
   MONTH = "month",
 }
+
+export const GridEventSchema = CoreEventSchema.extend({
+  hasFlipped: z.boolean().optional(),
+  isOpen: z.boolean().optional(),
+  row: z.number().optional(),
+});
+
 export interface Schema_GridEvent extends Schema_Event {
   hasFlipped?: boolean;
-  importanceIndex?: number;
-  isEditing?: boolean;
   isOpen?: boolean;
-  row?: number;
-  siblingsCount?: number;
+  row?: number; //TODO: delete if not used
 }
 
 export interface Schema_OptimisticEvent extends Schema_Event {

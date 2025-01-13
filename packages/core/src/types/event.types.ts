@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { Query } from "express-serve-static-core";
 import { Origin, Priority, Priorities } from "@core/constants/core.constants";
 
@@ -54,8 +55,16 @@ export interface Schema_Event {
   };
   startDate?: string;
   title?: string;
-  updatedAt?: Date;
+  updatedAt?: Date | string;
   user?: string;
+}
+
+export interface Schema_Event_Core extends Schema_Event {
+  startDate: string;
+  endDate: string;
+  origin: Origin;
+  priority: Priority;
+  user: string;
 }
 
 export interface Query_Event extends Query {
@@ -68,3 +77,29 @@ export interface Query_Event extends Query {
 export interface Query_Event_Update extends Query {
   applyTo?: Categories_Recur;
 }
+
+const Recurrence = z.object({
+  rule: z.array(z.string()).optional(),
+  eventId: z.string().optional(),
+});
+
+export const CoreEventSchema = z.object({
+  _id: z.string().optional(),
+  description: z.string().nullable().optional(),
+  endDate: z.union([z.string().datetime({ offset: true }), z.string().date()]),
+  isAllDay: z.boolean().optional(),
+  isSomeday: z.boolean().optional(),
+  gEventId: z.string().optional(),
+  origin: z.nativeEnum(Origin),
+  priority: z.nativeEnum(Priorities),
+  recurrence: Recurrence.optional(),
+  startDate: z.union([
+    z.string().datetime({ offset: true }),
+    z.string().date(),
+  ]),
+  title: z.string().optional(),
+  updatedAt: z.union([z.date(), z.string().datetime()]).optional(),
+  user: z.string(),
+});
+
+export type Event_Core = z.infer<typeof CoreEventSchema>;

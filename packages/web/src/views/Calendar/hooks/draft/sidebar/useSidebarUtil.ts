@@ -12,6 +12,7 @@ import {
 } from "@core/types/event.types";
 import { DropResult } from "@hello-pangea/dnd";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
+import { getUserId } from "@web/auth/auth.util";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -283,15 +284,18 @@ export const useSidebarUtil = (
     close();
   };
 
-  const onSubmit = (category: Categories_Event) => {
-    const _event = prepEvtBeforeSubmit(state.draft);
+  const onSubmit = async (category: Categories_Event) => {
+    if (!state.draft) return;
 
     const { startDate, endDate } = getDatesByCategory(
       category,
       viewStart,
       viewEnd
     );
-    const event = { ..._event, startDate, endDate };
+    const _event = { ...state.draft, startDate, endDate };
+
+    const userId = await getUserId();
+    const event = prepEvtBeforeSubmit(_event, userId);
 
     const isExisting = event._id;
     if (isExisting) {

@@ -113,6 +113,7 @@ module.exports = {
         "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
         "^@web/__tests__/(.*)$": "<rootDir>/packages/web/src/__tests__/$1",
         "^@web/assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
+        "^@web/auth/(.*)$": "<rootDir>/packages/web/src/auth/$1",
         "^@web/common/(.*)$": "<rootDir>/packages/web/src/common/$1",
         "^@web/components/(.*)$": "<rootDir>/packages/web/src/components/$1",
         "^@web/containers/(.*)$": "<rootDir>/packages/web/src/containers/$1",
