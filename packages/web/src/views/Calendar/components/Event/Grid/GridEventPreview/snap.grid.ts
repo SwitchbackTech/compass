@@ -69,7 +69,6 @@ export const snapToGrid = (
   scrollTop: number
 ): [number, number] => {
   if (!measurements.mainGrid) {
-    // Fallback in case measurements are not available
     return [cursorX, cursorY];
   }
 
