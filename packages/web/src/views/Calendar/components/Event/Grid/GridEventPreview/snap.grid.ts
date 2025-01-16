@@ -2,6 +2,66 @@ import { roundToPrev } from "@web/common/utils";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
+const snapYToGrid = (
+  cursorY: number,
+  measurements: Measurements_Grid,
+  scrollTop: number
+): number => {
+  if (!measurements.mainGrid) return cursorY; // TS guard
+
+  // Calculate the cursor's Y position relative to the grid's top and account for scrolling
+  const gridY = cursorY - measurements.mainGrid.top + scrollTop;
+
+  // Convert the grid time interval to a fractional hour (assuming GRID_TIME_STEP is in minutes and will never be larger than 60)
+  const fractionalHour = GRID_TIME_STEP / 60;
+
+  // Calculate the height of a single grid time interval in pixels
+  const intervalHeightInPixels = measurements.hourHeight * fractionalHour;
+
+  // Snap the relative Y position to the nearest grid interval
+  const snappedRelativeY = roundToPrev(gridY, intervalHeightInPixels);
+
+  // Adjust snappedY to position the event relative to the grid's top
+  const snappedY = measurements.mainGrid.top - scrollTop + snappedRelativeY;
+
+  return snappedY;
+};
+
+const snapXToGrid = (
+  cursorX: number,
+  measurements: Measurements_Grid
+): number => {
+  if (!measurements.mainGrid) return cursorX; // TS guard
+
+  // `mainGrid.left` includes half the width of time column. It does not start at the first day column.
+  // due to that, we need to account for its width, otherwise snappedX will be off.
+  // Ideally we should fix how `mainGrid.left` is calculated to not include half the width of time column and
+  // include only the grid interactivity area (i.e. day columns).
+  // For now, we estimate the width of the time column to be 55px
+  const TIME_COLUMN_WIDTH = 55;
+
+  // Calculate the cursor's X position relative to the grid's left and account for scrolling
+  const gridX = cursorX - TIME_COLUMN_WIDTH - measurements.mainGrid.left;
+
+  // Width of a single grid column (right now it appears the width is the same for across all columns, even in
+  // different view ports, so we can reliably use the first column width)
+  const intervalWidthInPixels = measurements.colWidths[0];
+
+  // Snap the relative X position to the nearest grid column
+  const snappedRelativeX = roundToPrev(gridX, intervalWidthInPixels);
+
+  if (snappedRelativeX < 0) {
+    // We are not inside the 'real' main grid area (we are excluding the time column), return cursorX
+    return cursorX;
+  }
+
+  // Adjust snappedX to position the event relative to the grid's left
+  const snappedX =
+    measurements.mainGrid.left + TIME_COLUMN_WIDTH + snappedRelativeX;
+
+  return snappedX;
+};
+
 export const snapToGrid = (
   cursorX: number,
   cursorY: number,
@@ -17,25 +77,12 @@ export const snapToGrid = (
   const isCursorWithinGrid = cursorY > measurements.mainGrid.top;
 
   let snappedY = cursorY;
+  let snappedX = cursorX;
 
   if (isCursorWithinGrid) {
-    // Calculate the cursor's Y position relative to the grid's top and account for scrolling
-    const gridY = cursorY - measurements.mainGrid.top + scrollTop;
-
-    // Convert the grid time interval to a fractional hour (assuming GRID_TIME_STEP is in minutes and will never be larger than 60)
-    const fractionalHour = GRID_TIME_STEP / 60;
-
-    // Calculate the height of a single grid time interval in pixels
-    const intervalHeightInPixels = measurements.hourHeight * fractionalHour;
-
-    // Snap the relative Y position to the nearest grid interval
-    const snappedRelativeY = roundToPrev(gridY, intervalHeightInPixels);
-
-    // Adjust snappedY to position the event relative to the grid's top
-    snappedY = measurements.mainGrid.top - scrollTop + snappedRelativeY;
+    snappedY = snapYToGrid(cursorY, measurements, scrollTop);
+    snappedX = snapXToGrid(cursorX, measurements);
   }
-
-  const snappedX = cursorX;
 
   return [snappedX, snappedY];
 };
