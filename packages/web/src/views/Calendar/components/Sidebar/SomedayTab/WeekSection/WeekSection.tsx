@@ -3,7 +3,10 @@ import { Categories_Event } from "@core/types/event.types";
 import { Text } from "@web/components/Text";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import {
+  Measurements_Grid,
+  Refs_Grid,
+} from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 
@@ -16,6 +19,7 @@ interface Props {
   sidebarProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
   weekLabel: string;
+  gridRefs: Refs_Grid;
 }
 
 export const WeekSection: FC<Props> = ({
@@ -24,6 +28,7 @@ export const WeekSection: FC<Props> = ({
   sidebarProps,
   viewStart,
   weekLabel,
+  gridRefs,
 }) => {
   return (
     <SidebarSection>
@@ -42,6 +47,7 @@ export const WeekSection: FC<Props> = ({
         measurements={measurements}
         sidebarProps={sidebarProps}
         viewStart={viewStart}
+        gridScrollRef={gridRefs.gridScrollRef}
       />
     </SidebarSection>
   );

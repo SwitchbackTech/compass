@@ -2,7 +2,10 @@ import React, { FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import {
+  Measurements_Grid,
+  Refs_Grid,
+} from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { Text } from "@web/components/Text";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
@@ -16,6 +19,7 @@ interface Props {
   measurements: Measurements_Grid;
   somedayProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
+  gridRefs: Refs_Grid;
 }
 
 export const MonthSection: FC<Props> = ({
@@ -23,6 +27,7 @@ export const MonthSection: FC<Props> = ({
   measurements,
   somedayProps,
   viewStart,
+  gridRefs,
 }) => {
   const monthLabel = getMonthListLabel(viewStart);
 
@@ -43,6 +48,7 @@ export const MonthSection: FC<Props> = ({
         measurements={measurements}
         sidebarProps={somedayProps}
         viewStart={viewStart}
+        gridScrollRef={gridRefs.gridScrollRef}
       />
     </SidebarSection>
   );

@@ -1,7 +1,10 @@
 import React, { FC } from "react";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import {
+  Measurements_Grid,
+  Refs_Grid,
+} from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useAppSelector } from "@web/store/store.hooks";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 
@@ -15,12 +18,14 @@ interface Props {
   dateCalcs: DateCalcs;
   measurements: Measurements_Grid;
   weekProps: WeekProps;
+  gridRefs: Refs_Grid;
 }
 
 export const Sidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = ({
   dateCalcs,
   measurements,
   weekProps,
+  gridRefs,
 }: Props) => {
   const weekStart = weekProps.component.startOfView;
   const weekEnd = weekProps.component.endOfView;
@@ -42,6 +47,7 @@ export const Sidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = ({
             sidebarProps={sidebarProps}
             viewStart={weekStart}
             viewEnd={weekEnd}
+            gridRefs={gridRefs}
           />
         )}
         {tab === "monthWidget" && (

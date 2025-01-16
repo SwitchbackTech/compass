@@ -7,10 +7,14 @@ import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/styled";
 import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import {
+  Measurements_Grid,
+  Refs_Grid,
+} from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
+import { snapToGrid } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/snap.grid";
 
 import { getItemStyles, layerStyles, StyledGridEventPreview } from "./styled";
 
@@ -23,6 +27,7 @@ export interface Props {
   measurements: Measurements_Grid;
   mouseCoords: { x: number; y: number };
   startOfView: WeekProps["component"]["startOfView"];
+  gridScrollRef: Refs_Grid["gridScrollRef"];
 }
 
 export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
@@ -34,6 +39,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
   measurements,
   mouseCoords,
   startOfView,
+  gridScrollRef,
 }) {
   const { colWidths } = measurements;
   const { x, y } = mouseCoords;
@@ -72,9 +78,16 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
   const height = getHeight();
   const width = getWidth();
 
+  const [snappedX, snappedY] = snapToGrid(
+    x,
+    y,
+    measurements,
+    gridScrollRef.current?.scrollTop || 0
+  );
+
   return (
     <div style={layerStyles}>
-      <div style={getItemStyles({ x: 0, y: 0 }, { x, y })}>
+      <div style={getItemStyles({ x: snappedX, y: snappedY })}>
         <StyledGridEventPreview
           className={"active"}
           duration={1}

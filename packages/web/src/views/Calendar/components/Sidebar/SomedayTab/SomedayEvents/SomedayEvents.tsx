@@ -7,7 +7,10 @@ import {
   GRID_X_START,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import {
+  Measurements_Grid,
+  Refs_Grid,
+} from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GridEventPreview } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/GridEventPreview";
@@ -23,6 +26,7 @@ interface Props {
   measurements: Measurements_Grid;
   sidebarProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
+  gridScrollRef: Refs_Grid["gridScrollRef"];
 }
 
 export const SomedayEvents: FC<Props> = ({
@@ -31,6 +35,7 @@ export const SomedayEvents: FC<Props> = ({
   measurements,
   sidebarProps,
   viewStart,
+  gridScrollRef,
 }) => {
   const { state, util } = sidebarProps;
   const gridX = state.mouseCoords.x - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
@@ -57,6 +62,7 @@ export const SomedayEvents: FC<Props> = ({
           measurements={measurements}
           mouseCoords={state.mouseCoords}
           startOfView={viewStart}
+          gridScrollRef={gridScrollRef}
         />
       )}
 

@@ -73,6 +73,7 @@ export const CalendarView = () => {
           dateCalcs={dateCalcs}
           measurements={measurements}
           weekProps={weekProps}
+          gridRefs={gridRefs}
         />
       )}
       <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
