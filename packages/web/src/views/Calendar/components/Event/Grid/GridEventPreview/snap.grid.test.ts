@@ -2,6 +2,7 @@ import {
   MeasureableElement,
   Measurements_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { MouseCoords } from "@web/views/Calendar/hooks/draft/useMousePosition";
 
 import { snapToGrid } from "./snap.grid";
 describe("snapToGrid", () => {
@@ -28,9 +29,12 @@ describe("snapToGrid", () => {
   };
 
   it("returns the cursor position if measurements are not available", () => {
+    const mouseCoords: MouseCoords = { x: 200, y: 300 };
+    const scrollTop = 0;
+
     const result = snapToGrid(
-      200,
-      300,
+      mouseCoords.x,
+      mouseCoords.y,
       {
         mainGrid: null,
         allDayRow: null,
@@ -40,14 +44,24 @@ describe("snapToGrid", () => {
           console.log("foo", elem);
         },
       },
-      0
+      scrollTop
     );
-    expect(result).toEqual([200, 300]);
+
+    expect(result).toEqual([mouseCoords.x, mouseCoords.y]);
   });
 
   it("returns the cursor position if cursor is not within the grid", () => {
-    const result = snapToGrid(200, 50, measurements, 0);
-    expect(result).toEqual([200, 50]);
+    const mouseCoords: MouseCoords = { x: 200, y: 50 };
+    const scrollTop = 0;
+
+    const result = snapToGrid(
+      mouseCoords.x,
+      mouseCoords.y,
+      measurements,
+      scrollTop
+    );
+
+    expect(result).toEqual([mouseCoords.x, mouseCoords.y]);
   });
 
   it("snaps the cursor position to the nearest grid interval", () => {
