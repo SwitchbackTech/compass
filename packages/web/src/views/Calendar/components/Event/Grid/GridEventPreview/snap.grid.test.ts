@@ -5,7 +5,7 @@ import {
 import { MouseCoords } from "@web/views/Calendar/hooks/draft/useMousePosition";
 
 import { snapToGrid } from "./snap.grid";
-describe("snapToGrid", () => {
+describe("snapToGrid. 7 day grid", () => {
   const measurements: Measurements_Grid = {
     mainGrid: {
       top: 100,
@@ -21,7 +21,7 @@ describe("snapToGrid", () => {
       },
     },
     hourHeight: 60,
-    colWidths: [100, 100, 100, 100, 100, 100, 100],
+    colWidths: Array(7).fill(100) as number[],
     allDayRow: null,
     remeasure: (elem: MeasureableElement) => {
       console.log("remeasuring element", elem);
