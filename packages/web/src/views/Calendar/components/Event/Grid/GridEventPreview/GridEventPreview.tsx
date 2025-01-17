@@ -79,7 +79,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
   const height = getHeight();
   const width = getWidth();
 
-  const [snappedX, snappedY] = snapToGrid(
+  const { x: snappedX, y: snappedY } = snapToGrid(
     x,
     y,
     measurements,

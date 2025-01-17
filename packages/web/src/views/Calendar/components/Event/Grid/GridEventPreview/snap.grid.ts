@@ -2,6 +2,11 @@ import { roundToPrev } from "@web/common/utils";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 
+export interface SnappedCoords {
+  x: number;
+  y: number;
+}
+
 const snapYToGrid = (
   cursorY: number,
   measurements: Measurements_Grid,
@@ -67,9 +72,9 @@ export const snapToGrid = (
   cursorY: number,
   measurements: Measurements_Grid,
   scrollTop: number
-): [number, number] => {
+): SnappedCoords => {
   if (!measurements.mainGrid) {
-    return [cursorX, cursorY];
+    return { x: cursorX, y: cursorY };
   }
 
   // Check if the cursor is within the bounds of the main grid
@@ -83,5 +88,5 @@ export const snapToGrid = (
     snappedX = snapXToGrid(cursorX, measurements);
   }
 
-  return [snappedX, snappedY];
+  return { x: snappedX, y: snappedY };
 };
