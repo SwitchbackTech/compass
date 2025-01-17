@@ -5,6 +5,11 @@ import {
   GRID_Y_START,
 } from "@web/views/Calendar/layout.constants";
 
+export interface MouseCoords {
+  x: number;
+  y: number;
+}
+
 export const useMousePosition = (
   isDragging: boolean,
   isFormOpen: boolean,
@@ -14,7 +19,7 @@ export const useMousePosition = (
   const [isOverMainGrid, setIsOverMainGrid] = useState(false);
   const [isOverAllDayRow, setIsOverAllDayRow] = useState(false);
 
-  const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 });
+  const [mouseCoords, setMouseCoords] = useState<MouseCoords>({ x: 0, y: 0 });
 
   const { allDayRow } = measurements;
 

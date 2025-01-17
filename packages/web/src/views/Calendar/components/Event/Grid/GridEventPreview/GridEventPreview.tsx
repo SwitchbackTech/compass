@@ -15,6 +15,7 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { snapToGrid } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/snap.grid";
+import { MouseCoords } from "@web/views/Calendar/hooks/draft/useMousePosition";
 
 import { getItemStyles, layerStyles, StyledGridEventPreview } from "./styled";
 
@@ -25,7 +26,7 @@ export interface Props {
   isOverAllDayRow: boolean;
   isOverMainGrid: boolean;
   measurements: Measurements_Grid;
-  mouseCoords: { x: number; y: number };
+  mouseCoords: MouseCoords;
   startOfView: WeekProps["component"]["startOfView"];
   gridScrollRef: Refs_Grid["gridScrollRef"];
 }

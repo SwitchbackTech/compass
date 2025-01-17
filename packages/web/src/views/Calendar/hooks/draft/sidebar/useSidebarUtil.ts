@@ -39,6 +39,7 @@ import {
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import { MouseCoords } from "@web/views/Calendar/hooks/draft/useMousePosition";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
@@ -158,7 +159,7 @@ export const useSidebarUtil = (
 
   const getDatesAfterDroppingOn = (
     target: "mainGrid" | "alldayRow",
-    mouseCoords: { x: number; y: number }
+    mouseCoords: MouseCoords
   ) => {
     const x = getX(mouseCoords.x, true);
     const y = mouseCoords.y;
