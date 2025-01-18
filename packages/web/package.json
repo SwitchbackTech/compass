@@ -82,7 +82,7 @@
     "eslint-plugin-testing-library": "^5.0.5",
     "eslint-plugin-react-hooks": "^4.3.0",
     "jest": "^29.0.3",
-    "jest-environment-jsdom": "^29.0.3",
+    "jest-environment-jsdom": "^29.7.0",
     "jest-styled-components": "^7.0.5",
     "msw": "^1.0.1",
     "ts-key-enum": "^2.0.12",
