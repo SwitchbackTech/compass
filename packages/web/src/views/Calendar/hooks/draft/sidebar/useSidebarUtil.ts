@@ -12,7 +12,6 @@ import {
 } from "@core/types/event.types";
 import { DropResult } from "@hello-pangea/dnd";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
-import { getUserId } from "@web/auth/auth.util";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -21,6 +20,8 @@ import {
   prepEvtBeforeSubmit,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
+import { getUserId } from "@web/auth/auth.util";
+import { Coordinates } from "@web/common/types/util.types";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import {
   createEventSlice,
@@ -39,7 +40,6 @@ import {
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
-import { MouseCoords } from "@web/views/Calendar/hooks/draft/useMousePosition";
 
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
@@ -159,7 +159,7 @@ export const useSidebarUtil = (
 
   const getDatesAfterDroppingOn = (
     target: "mainGrid" | "alldayRow",
-    mouseCoords: MouseCoords
+    mouseCoords: Coordinates
   ) => {
     const x = getX(mouseCoords.x, true);
     const y = mouseCoords.y;

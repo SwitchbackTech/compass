@@ -2,9 +2,9 @@ import {
   MeasureableElement,
   Measurements_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { MouseCoords } from "@web/views/Calendar/hooks/draft/useMousePosition";
 
 import { snapToGrid, MAIN_GRID_TIME_COLUMN_WIDTH } from "./snap.grid";
+import { Coordinates } from "@web/common/types/util.types";
 
 // 7 day main grid
 describe("snapToGrid. 7 day grid", () => {
@@ -32,7 +32,7 @@ describe("snapToGrid. 7 day grid", () => {
 
   const defaultX = 105;
   const defaultY = 160;
-  const mouseCoords: MouseCoords = { x: defaultX, y: defaultY };
+  const mouseCoords: Coordinates = { x: defaultX, y: defaultY };
 
   // Hack to tell TS that measurements.mainGrid is not null in below "it" blocks
   if (!measurements.mainGrid) return;
