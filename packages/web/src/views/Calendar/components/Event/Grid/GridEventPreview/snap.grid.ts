@@ -7,6 +7,15 @@ export interface SnappedCoords {
   y: number;
 }
 
+// `measurements.mainGrid.left` includes half the width of time column. It does not start at the first day column.
+// due to that, we need to account for its width, otherwise snappedX will be off.
+// Ideally we should fix how `mainGrid.left` is calculated to not include half the width of time column and
+// include only the grid interactivity area (i.e. day columns).
+// For now, we estimate the width of the time column to be 55px
+export const TIME_COLUMN_WIDTH = 55;
+
+// TODO: Draw a step by step diagram to explain how the snapping works? (Might
+// help facilitate quicker understanding of the code)
 const snapYToGrid = (
   cursorY: number,
   measurements: Measurements_Grid,
@@ -26,8 +35,8 @@ const snapYToGrid = (
   // Snap the relative Y position to the nearest grid interval
   const snappedRelativeY = roundToPrev(gridY, intervalHeightInPixels);
 
-  // Adjust snappedY to position the event relative to the grid's top
-  const snappedY = measurements.mainGrid.top - scrollTop + snappedRelativeY;
+  // Adjust snappedY to position the event relative to the page's viewport
+  const snappedY = snappedRelativeY + measurements.mainGrid.top - scrollTop;
 
   return snappedY;
 };
@@ -37,13 +46,6 @@ const snapXToGrid = (
   measurements: Measurements_Grid
 ): number => {
   if (!measurements.mainGrid) return cursorX; // TS guard
-
-  // `mainGrid.left` includes half the width of time column. It does not start at the first day column.
-  // due to that, we need to account for its width, otherwise snappedX will be off.
-  // Ideally we should fix how `mainGrid.left` is calculated to not include half the width of time column and
-  // include only the grid interactivity area (i.e. day columns).
-  // For now, we estimate the width of the time column to be 55px
-  const TIME_COLUMN_WIDTH = 55;
 
   // Calculate the cursor's X position relative to the grid's left and account for scrolling
   const gridX = cursorX - TIME_COLUMN_WIDTH - measurements.mainGrid.left;
