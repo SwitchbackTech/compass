@@ -34,7 +34,7 @@ describe("snapToGrid. 7 day grid", () => {
   const defaultY = 160;
   const mouseCoords: MouseCoords = { x: defaultX, y: defaultY };
 
-  // Hack to tell TS that measurements.mainGrid is not null
+  // Hack to tell TS that measurements.mainGrid is not null in below "it" blocks
   if (!measurements.mainGrid) return;
   const { mainGrid: measurementsMainGrid } = measurements;
 
