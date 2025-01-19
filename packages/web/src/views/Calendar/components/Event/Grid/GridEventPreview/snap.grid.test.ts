@@ -4,7 +4,9 @@ import {
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { MouseCoords } from "@web/views/Calendar/hooks/draft/useMousePosition";
 
-import { snapToGrid } from "./snap.grid";
+import { snapToGrid, TIME_COLUMN_WIDTH } from "./snap.grid";
+
+// 7 day main grid
 describe("snapToGrid. 7 day grid", () => {
   const measurements: Measurements_Grid = {
     mainGrid: {
@@ -28,10 +30,28 @@ describe("snapToGrid. 7 day grid", () => {
     },
   };
 
-  it("returns the cursor position if measurements are not available", () => {
-    const mouseCoords: MouseCoords = { x: 200, y: 300 };
-    const scrollTop = 0;
+  const defaultX = 105;
+  const defaultY = 160;
+  const mouseCoords: MouseCoords = { x: defaultX, y: defaultY };
 
+  // Hack to tell TS that measurements.mainGrid is not null
+  if (!measurements.mainGrid) return;
+  const { mainGrid: measurementsMainGrid } = measurements;
+
+  // Override main grid
+  const mainGrid = {
+    ...measurementsMainGrid,
+    // Real "left" for main grid. See comment for TIME_COLUMN_WIDTH in snap.grid.ts for why we do this
+    left: measurementsMainGrid.left + TIME_COLUMN_WIDTH,
+  };
+
+  afterEach(() => {
+    // Reset mouse coords incase they were changed
+    mouseCoords.x = defaultX;
+    mouseCoords.y = defaultY;
+  });
+
+  it("returns the cursor position if measurements are not available", () => {
     const result = snapToGrid(
       mouseCoords.x,
       mouseCoords.y,
@@ -44,15 +64,67 @@ describe("snapToGrid. 7 day grid", () => {
           console.log("foo", elem);
         },
       },
-      scrollTop
+      0
     );
 
-    expect(result).toEqual([mouseCoords.x, mouseCoords.y]);
+    expect(result).toEqual({
+      x: mouseCoords.x,
+      y: mouseCoords.y,
+    });
   });
 
   it("returns the cursor position if cursor is not within the grid", () => {
-    const mouseCoords: MouseCoords = { x: 200, y: 50 };
-    const scrollTop = 0;
+    const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
+
+    expect(result).toEqual({
+      x: mouseCoords.x,
+      y: mouseCoords.y,
+    });
+  });
+
+  it("Snaps Y to correct time interval", () => {
+    const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
+
+    const expectedY = 160;
+    const expectedX = mainGrid.left;
+
+    expect(result).toEqual({ x: expectedX, y: expectedY });
+
+    // Move the cursor down a little
+    mouseCoords.y = mouseCoords.y + 5;
+
+    // Expect result to still be the same
+    expect(result).toEqual({ x: expectedX, y: expectedY });
+  });
+
+  it("Snaps X to correct day column", () => {
+    let result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
+
+    const expectedY = mouseCoords.y;
+    const expectedX = mainGrid.left;
+
+    expect(result).toEqual({ x: expectedX, y: expectedY });
+
+    // Simulate moving the mouse to the right very very close to the next
+    // column, but don't cross its boundary. We should remain in the same
+    // column (because we didn't cross the boundary)
+    mouseCoords.x =
+      mouseCoords.x +
+      measurements.colWidths[0] -
+      // "1px". This helps us not cross the boundary
+      1;
+
+    // Expect to still be in the same column
+    result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
+
+    expect(result).toEqual({ x: expectedX, y: expectedY });
+  });
+
+  it("Snaps Y to correct time interval when scrolled", () => {
+    // Scroll down a few hour rows. This can be changed to any number and we will
+    // still always get the same result as long as we scroll down hour rows consistently.
+    const HOURS_TO_SCROLL = 3;
+    const scrollTop = measurements.hourHeight * HOURS_TO_SCROLL;
 
     const result = snapToGrid(
       mouseCoords.x,
@@ -61,35 +133,127 @@ describe("snapToGrid. 7 day grid", () => {
       scrollTop
     );
 
-    expect(result).toEqual([mouseCoords.x, mouseCoords.y]);
+    const expectedY = 160;
+    const expectedX = mainGrid.left;
+
+    expect(result).toEqual({ x: expectedX, y: expectedY });
   });
 
-  it("snaps the cursor position to the nearest grid interval", () => {
-    const result = snapToGrid(200, 150, measurements, 0);
-    expect(result).toEqual([200, 160]);
+  it("Snaps X to correct day column when scrolled", () => {
+    const scrollTop = measurements.hourHeight * 3;
+
+    let result = snapToGrid(
+      mouseCoords.x,
+      mouseCoords.y,
+      measurements,
+      scrollTop
+    );
+
+    const expectedY = mouseCoords.y;
+    const expectedX = mainGrid.left;
+
+    expect(result).toEqual({ x: expectedX, y: expectedY });
+
+    mouseCoords.x = mouseCoords.x + measurements.colWidths[0] - 1;
+
+    result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
+
+    expect(result).toEqual({ x: expectedX, y: expectedY });
   });
 
-  it("accounts for scrolling when snapping the cursor position", () => {
-    const result = snapToGrid(200, 150, measurements, 50);
-    expect(result).toEqual([200, 110]);
+  it("Correctly updates Y to next time interval when cursor is moved to the next interval", () => {
+    const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
+
+    const expectedY = 160;
+    const expectedX = mainGrid.left;
+
+    expect(result).toEqual({ x: expectedX, y: expectedY });
+
+    // Move the cursor down to the next time interval
+    mouseCoords.y = mouseCoords.y + measurements.hourHeight;
+
+    const nextResult = snapToGrid(
+      mouseCoords.x,
+      mouseCoords.y,
+      measurements,
+      0
+    );
+
+    const expectedNextY = expectedY + measurements.hourHeight;
+
+    expect(nextResult).toEqual({ x: expectedX, y: expectedNextY });
   });
 
-  it("handles snapping when cursor is within the grid", () => {
-    const result = snapToGrid(200, 200, measurements, 0);
-    expect(result).toEqual([200, 220]);
+  it("Correctly updates X to next day column when cursor is moved to the next column", () => {
+    const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
+
+    const expectedY = 160;
+    const expectedX = mainGrid.left;
+
+    expect(result).toEqual({ x: expectedX, y: expectedY });
+
+    // Move the cursor to the next column
+    mouseCoords.x = mouseCoords.x + measurements.colWidths[0];
+
+    const nextResult = snapToGrid(
+      mouseCoords.x,
+      mouseCoords.y,
+      measurements,
+      0
+    );
+
+    const expectedNextX = expectedX + measurements.colWidths[0];
+
+    expect(nextResult).toEqual({ x: expectedNextX, y: expectedY });
   });
 
-  it("handles snapping when cursor is within the grid and scrolled", () => {
-    const result = snapToGrid(200, 200, measurements, 50);
-    expect(result).toEqual([200, 170]);
+  it("Correctly updates Y to prev time interval when cursor is moved to the prev interval", () => {
+    mouseCoords.y = mouseCoords.y + measurements.hourHeight;
+
+    const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
+
+    const expectedY = 160 + measurements.hourHeight;
+    const expectedX = mainGrid.left;
+
+    expect(result).toEqual({ x: expectedX, y: expectedY });
+
+    // Move the cursor up to the previous time interval
+    mouseCoords.y = mouseCoords.y - measurements.hourHeight;
+
+    const nextResult = snapToGrid(
+      mouseCoords.x,
+      mouseCoords.y,
+      measurements,
+      0
+    );
+
+    const expectedNextY = expectedY - measurements.hourHeight;
+
+    expect(nextResult).toEqual({ x: expectedX, y: expectedNextY });
   });
 
-  it("handles snapping when cursor is within the grid and scrolled with different column widths", () => {
-    const customMeasurements: Measurements_Grid = {
-      ...measurements,
-      colWidths: [120, 120, 120, 120, 120, 120, 120],
-    };
-    const result = snapToGrid(250, 200, customMeasurements, 50);
-    expect(result).toEqual([250, 170]);
+  it("Correctly updates X to prev day column when cursor is moved to the prev column", () => {
+    mouseCoords.x = mouseCoords.x + measurements.colWidths[0];
+
+    const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
+
+    const expectedY = 160;
+    const expectedX = mainGrid.left + measurements.colWidths[0];
+
+    expect(result).toEqual({ x: expectedX, y: expectedY });
+
+    // Move the cursor to the previous column
+    mouseCoords.x = mouseCoords.x - measurements.colWidths[0];
+
+    const nextResult = snapToGrid(
+      mouseCoords.x,
+      mouseCoords.y,
+      measurements,
+      0
+    );
+
+    const expectedNextX = expectedX - measurements.colWidths[0];
+
+    expect(nextResult).toEqual({ x: expectedNextX, y: expectedY });
   });
 });
