@@ -4,7 +4,7 @@ import {
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { MouseCoords } from "@web/views/Calendar/hooks/draft/useMousePosition";
 
-import { snapToGrid, TIME_COLUMN_WIDTH } from "./snap.grid";
+import { snapToGrid, MAIN_GRID_TIME_COLUMN_WIDTH } from "./snap.grid";
 
 // 7 day main grid
 describe("snapToGrid. 7 day grid", () => {
@@ -41,8 +41,8 @@ describe("snapToGrid. 7 day grid", () => {
   // Override main grid
   const mainGrid = {
     ...measurementsMainGrid,
-    // Real "left" for main grid. See comment for TIME_COLUMN_WIDTH in snap.grid.ts for why we do this
-    left: measurementsMainGrid.left + TIME_COLUMN_WIDTH,
+    // Real "left" for main grid. See comment for MAIN_GRID_TIME_COLUMN_WIDTH in snap.grid.ts for why we do this
+    left: measurementsMainGrid.left + MAIN_GRID_TIME_COLUMN_WIDTH,
   };
 
   afterEach(() => {

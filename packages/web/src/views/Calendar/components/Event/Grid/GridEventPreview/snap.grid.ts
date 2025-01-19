@@ -12,7 +12,7 @@ export interface SnappedCoords {
 // Ideally we should fix how `mainGrid.left` is calculated to not include half the width of time column and
 // include only the grid interactivity area (i.e. day columns).
 // For now, we estimate the width of the time column to be 55px
-export const TIME_COLUMN_WIDTH = 55;
+export const MAIN_GRID_TIME_COLUMN_WIDTH = 55;
 
 // TODO: Draw a step by step diagram to explain how the snapping works? (Might
 // help facilitate quicker understanding of the code)
@@ -48,7 +48,8 @@ const snapXToGrid = (
   if (!measurements.mainGrid) return cursorX; // TS guard
 
   // Calculate the cursor's X position relative to the grid's left and account for scrolling
-  const gridX = cursorX - TIME_COLUMN_WIDTH - measurements.mainGrid.left;
+  const gridX =
+    cursorX - MAIN_GRID_TIME_COLUMN_WIDTH - measurements.mainGrid.left;
 
   // Width of a single grid column (right now it appears the width is the same for across all columns, even in
   // different view ports, so we can reliably use the first column width)
@@ -64,7 +65,7 @@ const snapXToGrid = (
 
   // Adjust snappedX to position the event relative to the grid's left
   const snappedX =
-    measurements.mainGrid.left + TIME_COLUMN_WIDTH + snappedRelativeX;
+    measurements.mainGrid.left + MAIN_GRID_TIME_COLUMN_WIDTH + snappedRelativeX;
 
   return snappedX;
 };
