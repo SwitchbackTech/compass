@@ -30,9 +30,9 @@ describe("snapToGrid. 7 day grid", () => {
     },
   };
 
-  const defaultX = 105;
-  const defaultY = 160;
-  const mouseCoords: Coordinates = { x: defaultX, y: defaultY };
+  const DEFAULT_X = 105;
+  const DEFAULT_Y = 160;
+  const mouseCoords: Coordinates = { x: DEFAULT_X, y: DEFAULT_Y };
 
   // Hack to tell TS that measurements.mainGrid is not null in below "it" blocks
   if (!measurements.mainGrid) return;
@@ -47,8 +47,8 @@ describe("snapToGrid. 7 day grid", () => {
 
   afterEach(() => {
     // Reset mouse coords incase they were changed
-    mouseCoords.x = defaultX;
-    mouseCoords.y = defaultY;
+    mouseCoords.x = DEFAULT_X;
+    mouseCoords.y = DEFAULT_Y;
   });
 
   it("returns the cursor position if measurements are not available", () => {
@@ -85,16 +85,15 @@ describe("snapToGrid. 7 day grid", () => {
   it("Snaps Y to correct time interval", () => {
     const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
 
-    const expectedY = 160;
     const expectedX = mainGrid.left;
 
-    expect(result).toEqual({ x: expectedX, y: expectedY });
+    expect(result).toEqual({ x: expectedX, y: DEFAULT_Y });
 
     // Move the cursor down a little
     mouseCoords.y = mouseCoords.y + 5;
 
     // Expect result to still be the same
-    expect(result).toEqual({ x: expectedX, y: expectedY });
+    expect(result).toEqual({ x: expectedX, y: DEFAULT_Y });
   });
 
   it("Snaps X to correct day column", () => {
@@ -133,7 +132,7 @@ describe("snapToGrid. 7 day grid", () => {
       scrollTop
     );
 
-    const expectedY = 160;
+    const expectedY = DEFAULT_Y;
     const expectedX = mainGrid.left;
 
     expect(result).toEqual({ x: expectedX, y: expectedY });
@@ -164,12 +163,10 @@ describe("snapToGrid. 7 day grid", () => {
   it("Correctly updates Y to next time interval when cursor is moved to the next interval", () => {
     const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
 
-    const expectedY = 160;
     const expectedX = mainGrid.left;
 
-    expect(result).toEqual({ x: expectedX, y: expectedY });
+    expect(result).toEqual({ x: expectedX, y: DEFAULT_Y });
 
-    // Move the cursor down to the next time interval
     mouseCoords.y = mouseCoords.y + measurements.hourHeight;
 
     const nextResult = snapToGrid(
@@ -179,7 +176,7 @@ describe("snapToGrid. 7 day grid", () => {
       0
     );
 
-    const expectedNextY = expectedY + measurements.hourHeight;
+    const expectedNextY = DEFAULT_Y + measurements.hourHeight;
 
     expect(nextResult).toEqual({ x: expectedX, y: expectedNextY });
   });
@@ -187,7 +184,7 @@ describe("snapToGrid. 7 day grid", () => {
   it("Correctly updates X to next day column when cursor is moved to the next column", () => {
     const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
 
-    const expectedY = 160;
+    const expectedY = DEFAULT_Y;
     const expectedX = mainGrid.left;
 
     expect(result).toEqual({ x: expectedX, y: expectedY });
@@ -212,7 +209,7 @@ describe("snapToGrid. 7 day grid", () => {
 
     const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
 
-    const expectedY = 160 + measurements.hourHeight;
+    const expectedY = DEFAULT_Y + measurements.hourHeight;
     const expectedX = mainGrid.left;
 
     expect(result).toEqual({ x: expectedX, y: expectedY });
@@ -237,10 +234,9 @@ describe("snapToGrid. 7 day grid", () => {
 
     const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
 
-    const expectedY = 160;
     const expectedX = mainGrid.left + measurements.colWidths[0];
 
-    expect(result).toEqual({ x: expectedX, y: expectedY });
+    expect(result).toEqual({ x: expectedX, y: DEFAULT_Y });
 
     // Move the cursor to the previous column
     mouseCoords.x = mouseCoords.x - measurements.colWidths[0];
@@ -254,6 +250,6 @@ describe("snapToGrid. 7 day grid", () => {
 
     const expectedNextX = expectedX - measurements.colWidths[0];
 
-    expect(nextResult).toEqual({ x: expectedNextX, y: expectedY });
+    expect(nextResult).toEqual({ x: expectedNextX, y: DEFAULT_Y });
   });
 });
