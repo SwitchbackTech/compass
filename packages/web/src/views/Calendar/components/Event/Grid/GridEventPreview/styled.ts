@@ -6,28 +6,17 @@ import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 
-import { snapToGrid } from "./snap.grid";
-
-export const getItemStyles = (
-  initialOffset: XYCoord | null,
-  currentOffset: XYCoord | null
-) => {
-  if (!initialOffset || !currentOffset) {
+export const getItemStyles = (currentOffset: XYCoord | null) => {
+  if (!currentOffset) {
     return {
       display: "none",
     };
   }
 
-  let { x, y } = currentOffset;
-
-  // snap logic
-  x -= initialOffset.x;
-  y -= initialOffset.y;
-  [x, y] = snapToGrid(x, y);
-  x += initialOffset.x;
-  y += initialOffset.y;
+  const { x, y } = currentOffset;
 
   const transform = `translate(${x}px, ${y}px)`;
+
   return {
     transform,
     WebkitTransform: transform,

@@ -5,7 +5,10 @@ import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { Divider } from "@web/components/Divider";
 import { useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import {
+  Measurements_Grid,
+  Refs_Grid,
+} from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { theme } from "@web/common/styles/theme";
 import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
@@ -20,6 +23,7 @@ interface Props {
   sidebarProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
   viewEnd: WeekProps["component"]["endOfView"];
+  gridRefs: Refs_Grid;
 }
 
 export const SomedayTab: FC<Props> = ({
@@ -28,6 +32,7 @@ export const SomedayTab: FC<Props> = ({
   sidebarProps,
   viewEnd,
   viewStart,
+  gridRefs,
 }) => {
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
 
@@ -46,6 +51,7 @@ export const SomedayTab: FC<Props> = ({
         sidebarProps={sidebarProps}
         viewStart={viewStart}
         weekLabel={weekLabel}
+        gridRefs={gridRefs}
       />
 
       <Divider
@@ -60,6 +66,7 @@ export const SomedayTab: FC<Props> = ({
         measurements={measurements}
         somedayProps={sidebarProps}
         viewStart={viewStart}
+        gridRefs={gridRefs}
       />
     </SidebarContent>
   );

@@ -12,7 +12,6 @@ import {
 } from "@core/types/event.types";
 import { DropResult } from "@hello-pangea/dnd";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
-import { getUserId } from "@web/auth/auth.util";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -21,6 +20,8 @@ import {
   prepEvtBeforeSubmit,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
+import { getUserId } from "@web/auth/auth.util";
+import { Coordinates } from "@web/common/types/util.types";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import {
   createEventSlice,
@@ -158,7 +159,7 @@ export const useSidebarUtil = (
 
   const getDatesAfterDroppingOn = (
     target: "mainGrid" | "alldayRow",
-    mouseCoords: { x: number; y: number }
+    mouseCoords: Coordinates
   ) => {
     const x = getX(mouseCoords.x, true);
     const y = mouseCoords.y;

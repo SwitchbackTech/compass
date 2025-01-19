@@ -4,7 +4,10 @@ export interface AssignResult {
   fits: boolean;
   rowNum?: number;
 }
-
+export interface Coordinates {
+  x: number;
+  y: number;
+}
 export interface Option_Time {
   label: string;
   value: string;
