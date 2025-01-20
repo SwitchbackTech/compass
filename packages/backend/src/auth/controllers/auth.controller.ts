@@ -82,14 +82,7 @@ class AuthController {
 
       res.promise({ isValid: true });
     } catch (error) {
-      const isGoogleError = error instanceof GaxiosError;
       const isBaseError = error instanceof BaseError;
-
-      if (isGoogleError) {
-        logger.error(`Google API Error: ${error.message}`);
-        res.promise({ isValid: false, error: "A server error occurred" });
-        return;
-      }
 
       if (isBaseError && error.result === "No access token") {
         res.promise({ isValid: false, error: "Invalid Google Token" });
