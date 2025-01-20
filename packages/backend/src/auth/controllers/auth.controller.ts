@@ -71,7 +71,7 @@ class AuthController {
       const userId = req.session?.getUserId();
 
       if (!userId) {
-        res.promise({ valid: false, error: "No session found" });
+        res.promise({ isValid: false, error: "No session found" });
         return;
       }
 
@@ -80,13 +80,13 @@ class AuthController {
       // Upon receiving an access token, we know the session is valid
       const accessToken = await gAuthClient.getAccessToken();
 
-      res.promise({ valid: true });
+      res.promise({ isValid: true });
     } catch (error) {
       if (error instanceof BaseError && error.result === "No access token") {
-        res.promise({ valid: false, error: "Invalid Google Token" });
+        res.promise({ isValid: false, error: "Invalid Google Token" });
       } else {
         res.promise({
-          valid: null, // We don't know if the session is valid or not, so we return null
+          isValid: false,
           error,
         });
       }
