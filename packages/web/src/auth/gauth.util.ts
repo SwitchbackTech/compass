@@ -9,9 +9,9 @@ export const validateGoogleAccessToken = async () => {
 
     if (!res.ok) return false;
 
-    const body = (await res.json()) as { valid: boolean };
+    const body = (await res.json()) as { isValid: boolean };
 
-    return !!body.valid;
+    return !!body.isValid;
   } catch (error) {
     console.error(error);
     return false;
