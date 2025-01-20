@@ -18,7 +18,7 @@ const logger = Logger("app:google.auth.service");
 
 export const getGAuthClientForUser = async (
   user: WithId<Schema_User> | { _id: string }
-) => {
+): Promise<GoogleAuthService> => {
   const gAuthClient = new GoogleAuthService();
 
   let gRefreshToken: string | undefined;
