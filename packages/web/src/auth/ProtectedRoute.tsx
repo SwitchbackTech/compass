@@ -3,8 +3,8 @@ import Session from "supertokens-auth-react/recipe/session";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { validateGoogleAccessToken } from "@web/auth/gauth.util";
 import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
+import { AuthApi } from "@web/common/apis/auth.api";
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   useLayoutEffect(() => {
     async function ensureAuthentication() {
       const isSessionValid = await Session.doesSessionExist();
-      const isGAccessTokenValid = await validateGoogleAccessToken();
+      const isGAccessTokenValid = await AuthApi.validateGoogleAccessToken();
 
       const isAuthenticated = isSessionValid && isGAccessTokenValid;
       setIsAuthenticated(isAuthenticated);

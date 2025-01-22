@@ -8,16 +8,17 @@ import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
-import { Result_Auth_Compass, UserInfo_Compass } from "@core/types/auth.types";
+import {
+  Result_Auth_Compass,
+  Result_VerifyGToken,
+  UserInfo_Compass,
+} from "@core/types/auth.types";
 import {
   ReqBody,
   Res_Promise,
   SReqBody,
 } from "@backend/common/types/express.types";
-import {
-  AuthError,
-  GcalError,
-} from "@backend/common/constants/error.constants";
+import { GcalError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import {
   findCompassUserBy,
@@ -83,22 +84,14 @@ class AuthController {
       // Upon receiving an access token, we know the session is valid
       await gAuthClient.getAccessToken();
 
-      res.promise({ isValid: true });
+      const result: Result_VerifyGToken = { isValid: true };
+      res.promise(result);
     } catch (error) {
-      const isBaseError = error instanceof BaseError;
-
-      if (
-        isBaseError &&
-        error.result === AuthError.NoGAuthAccessToken.description
-      ) {
-        res.promise({ isValid: false, error: "Invalid Google Token" });
-        return;
-      }
-
-      res.promise({
+      const result: Result_VerifyGToken = {
         isValid: false,
-        error,
-      });
+        error: error as Error | BaseError,
+      };
+      res.promise(result);
     }
   };
 
