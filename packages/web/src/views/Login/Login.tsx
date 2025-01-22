@@ -55,7 +55,7 @@ export const LoginView = () => {
 
     void (async () => {
       if (reason === AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED) {
-        toast.error(GAUTH_SESSION_EXPIRED_UI_MESSAGE);
+        toast.warn(GAUTH_SESSION_EXPIRED_UI_MESSAGE);
         await clearSession();
       } else {
         checkSession().catch(async (e) => {
