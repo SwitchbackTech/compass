@@ -127,7 +127,7 @@ class GoogleAuthService {
     if (!token) {
       throw error(
         AuthError.NoGAuthAccessToken,
-        "No google auth access token found"
+        "Google auth access token not returned"
       );
     }
 
