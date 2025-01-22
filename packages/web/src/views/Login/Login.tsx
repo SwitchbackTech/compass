@@ -11,7 +11,10 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { toast } from "react-toastify";
 import { SyncApi } from "@web/common/apis/sync.api";
-import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
+import {
+  AUTH_FAILURE_REASONS,
+  GAUTH_SESSION_EXPIRED_UI_MESSAGE,
+} from "@web/common/constants/auth.constants";
 
 import {
   SignInButtonWrapper,
@@ -52,7 +55,7 @@ export const LoginView = () => {
 
     void (async () => {
       if (reason === AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED) {
-        toast.error("Google session expired, please login again");
+        toast.error(GAUTH_SESSION_EXPIRED_UI_MESSAGE);
         await clearSession();
       } else {
         checkSession().catch(async (e) => {
