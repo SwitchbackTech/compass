@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { validateGoogleAccessToken } from "@web/auth/gauth.util";
+import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
@@ -21,7 +22,9 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
         const dueToGAuth = !!isSessionValid && !isGAccessTokenValid;
 
         if (dueToGAuth) {
-          navigate(`${ROOT_ROUTES.LOGIN}?reason=gauth-session-expired`);
+          navigate(
+            `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED}`
+          );
         } else {
           navigate(ROOT_ROUTES.LOGIN);
         }
