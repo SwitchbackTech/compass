@@ -11,6 +11,7 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { toast } from "react-toastify";
 import { SyncApi } from "@web/common/apis/sync.api";
+import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
 
 import {
   SignInButtonWrapper,
@@ -49,7 +50,7 @@ export const LoginView = () => {
 
     const reason = searchParams.get("reason");
 
-    if (reason === "gauth-session-expired") {
+    if (reason === AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED) {
       toast.error("Google session expired, please login again");
       clearSession();
     } else {
