@@ -14,7 +14,10 @@ import {
   Res_Promise,
   SReqBody,
 } from "@backend/common/types/express.types";
-import { GcalError } from "@backend/common/constants/error.constants";
+import {
+  AuthError,
+  GcalError,
+} from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import {
   findCompassUserBy,
@@ -84,7 +87,10 @@ class AuthController {
     } catch (error) {
       const isBaseError = error instanceof BaseError;
 
-      if (isBaseError && error.result === "No access token") {
+      if (
+        isBaseError &&
+        error.result === AuthError.NoGAuthAccessToken.description
+      ) {
         res.promise({ isValid: false, error: "Invalid Google Token" });
         return;
       }

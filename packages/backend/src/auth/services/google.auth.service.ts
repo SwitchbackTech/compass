@@ -7,7 +7,10 @@ import { gCalendar } from "@core/types/gcal";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import { UserError } from "@backend/common/constants/error.constants";
+import {
+  AuthError,
+  UserError,
+} from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { Schema_User } from "@core/types/user.types";
 import { WithId } from "mongodb";
@@ -122,11 +125,9 @@ class GoogleAuthService {
     const { token } = await this.oauthClient.getAccessToken();
 
     if (!token) {
-      throw new BaseError(
-        "No access token",
-        "oauth client is missing access token. Probably needs a new refresh token to obtain a new access token",
-        Status.BAD_REQUEST,
-        false
+      throw error(
+        AuthError.NoGAuthAccessToken,
+        "No google auth access token found"
       );
     }
 
