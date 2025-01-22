@@ -1,5 +1,9 @@
 import { ENV_WEB } from "@web/common/constants/env.constants";
 
+interface HttpFetch_GoogleAuthResponse {
+  isValid: boolean;
+}
+
 export const validateGoogleAccessToken = async () => {
   try {
     const res = await fetch(`${ENV_WEB.API_BASEURL}/auth/google`, {
@@ -9,7 +13,7 @@ export const validateGoogleAccessToken = async () => {
 
     if (!res.ok) return false;
 
-    const body = (await res.json()) as { isValid: boolean };
+    const body = (await res.json()) as HttpFetch_GoogleAuthResponse;
 
     return !!body.isValid;
   } catch (error) {
