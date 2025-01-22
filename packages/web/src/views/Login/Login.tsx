@@ -50,16 +50,18 @@ export const LoginView = () => {
 
     const reason = searchParams.get("reason");
 
-    if (reason === AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED) {
-      toast.error("Google session expired, please login again");
-      clearSession();
-    } else {
-      checkSession().catch((e) => {
-        alert(e);
-        console.log(e);
-        clearSession();
-      });
-    }
+    void (async () => {
+      if (reason === AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED) {
+        toast.error("Google session expired, please login again");
+        await clearSession();
+      } else {
+        checkSession().catch(async (e) => {
+          alert(e);
+          console.log(e);
+          await clearSession();
+        });
+      }
+    })();
   }, [searchParams]);
 
   const SCOPES_REQUIRED = [
