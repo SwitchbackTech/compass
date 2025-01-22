@@ -81,7 +81,7 @@ class AuthController {
       const gAuthClient = await getGAuthClientForUser({ _id: userId });
 
       // Upon receiving an access token, we know the session is valid
-      const accessToken = await gAuthClient.getAccessToken();
+      await gAuthClient.getAccessToken();
 
       res.promise({ isValid: true });
     } catch (error) {
