@@ -7,6 +7,7 @@ import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
+import { useAuthCheck } from "@web/auth/useAuthCheck";
 
 import {
   SignInButtonWrapper,
@@ -24,6 +25,8 @@ export const LoginView = () => {
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+
+  const { isAuthenticated: isAlreadyAuthenticated } = useAuthCheck();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -43,6 +46,14 @@ export const LoginView = () => {
     const scopesGranted = scope.split(" ");
 
     return SCOPES_REQUIRED.some((s) => !scopesGranted.includes(s));
+  };
+
+  const handleButtonClick = () => {
+    if (isAlreadyAuthenticated) {
+      navigate(ROOT_ROUTES.ROOT);
+    } else {
+      login();
+    }
   };
 
   const login = useGoogleLogin({
@@ -100,7 +111,7 @@ export const LoginView = () => {
               <GoogleButton
                 aria-label="Sign in with Google"
                 type="light"
-                onClick={() => login()}
+                onClick={handleButtonClick}
               />
             </SignInButtonWrapper>
           </Card>
