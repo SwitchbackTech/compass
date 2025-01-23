@@ -1,28 +1,39 @@
-import React, { ReactNode, useLayoutEffect, useState } from "react";
-import Session from "supertokens-auth-react/recipe/session";
+import React, { ReactNode, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
+import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
+
+import { useAuthCheck } from "./useAuthCheck";
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  useLayoutEffect(() => {
-    async function fetchSession() {
-      const isAuthenticated = await Session.doesSessionExist();
-      setIsAuthenticated(isAuthenticated);
-      if (!isAuthenticated) {
-        navigate(ROOT_ROUTES.LOGIN);
+  const { isAuthenticated, isCheckingAuth, isGoogleTokenActive } =
+    useAuthCheck();
+
+  useEffect(() => {
+    const handleAuthCheck = () => {
+      if (isAuthenticated === false) {
+        if (isGoogleTokenActive === false) {
+          navigate(
+            `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED}`
+          );
+        } else {
+          navigate(
+            `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.USER_SESSION_EXPIRED}`
+          );
+        }
       }
-    }
+    };
 
-    void fetchSession();
-  }, [navigate]);
+    void handleAuthCheck();
+  }, [isAuthenticated, isGoogleTokenActive, navigate]);
 
-  if (isAuthenticated === null) {
-    return <AbsoluteOverflowLoader />;
-  } else {
-    return <>{children}</>;
-  }
+  return (
+    <>
+      {isCheckingAuth && <AbsoluteOverflowLoader />}
+      {children}
+    </>
+  );
 };

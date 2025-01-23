@@ -37,11 +37,7 @@ CompassApi.interceptors.response.use(
       return Promise.resolve();
     }
 
-    if (
-      status === Status.GONE ||
-      status === Status.NOT_FOUND ||
-      status === Status.UNAUTHORIZED
-    ) {
+    if (status === Status.GONE || status === Status.NOT_FOUND) {
       await _signOut(status);
     } else {
       console.log(error);

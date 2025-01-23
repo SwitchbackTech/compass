@@ -23,8 +23,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         const uid = await getUserId();
         setUserId(uid);
       } catch (e) {
-        console.log("Failed to get user because:");
-        console.log(e);
+        console.log("Failed to get user because:", e);
       } finally {
         setIsLoadingUser(false);
       }

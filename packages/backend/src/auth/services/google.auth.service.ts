@@ -3,17 +3,59 @@ import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
 import { Status } from "@core/errors/status.codes";
 import { BaseError } from "@core/errors/errors.base";
+import { gCalendar } from "@core/types/gcal";
 import { UserInfo_Google } from "@core/types/auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import { UserError } from "@backend/common/constants/error.constants";
+import {
+  AuthError,
+  UserError,
+} from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { Schema_User } from "@core/types/user.types";
+import { WithId } from "mongodb";
 
 import compassAuthService from "./compass.auth.service";
 
 const logger = Logger("app:google.auth.service");
 
-export const getGcalClient = async (userId: string) => {
+export const getGAuthClientForUser = async (
+  user: WithId<Schema_User> | { _id: string }
+) => {
+  const gAuthClient = new GoogleAuthService();
+
+  let gRefreshToken: string | undefined;
+
+  if ("google" in user && user.google) {
+    gRefreshToken = user.google.gRefreshToken;
+  }
+
+  if (!gRefreshToken) {
+    const userId = "_id" in user ? (user._id as string) : undefined;
+
+    if (!userId) {
+      logger.error(`Expected to either get a user or a userId.`);
+      throw error(UserError.InvalidValue, "User not found");
+    }
+
+    const _user = await findCompassUserBy("_id", userId);
+
+    if (!_user) {
+      logger.error(`Couldn't find user with this id: ${userId}`);
+      throw error(UserError.UserNotFound, "User not found");
+    }
+
+    gRefreshToken = _user.google.gRefreshToken;
+  }
+
+  gAuthClient.oauthClient.setCredentials({
+    refresh_token: gRefreshToken,
+  });
+
+  return gAuthClient;
+};
+
+export const getGcalClient = async (userId: string): Promise<gCalendar> => {
   const user = await findCompassUserBy("_id", userId);
   if (!user) {
     logger.error(`Couldn't find user with this id: ${userId}`);
@@ -24,11 +66,7 @@ export const getGcalClient = async (userId: string) => {
     );
   }
 
-  const gAuthClient = new GoogleAuthService();
-
-  gAuthClient.oauthClient.setCredentials({
-    refresh_token: user.google.gRefreshToken,
-  });
+  const gAuthClient = await getGAuthClientForUser(user);
 
   const calendar = google.calendar({
     version: "v3",
@@ -49,7 +87,7 @@ class GoogleAuthService {
     );
   }
 
-  getGcalClient() {
+  getGcalClient(): gCalendar {
     const gcal = google.calendar({
       version: "v3",
       auth: this.oauthClient,
@@ -81,6 +119,19 @@ class GoogleAuthService {
     });
     const payload = ticket.getPayload() as TokenPayload;
     return payload;
+  }
+
+  async getAccessToken() {
+    const { token } = await this.oauthClient.getAccessToken();
+
+    if (!token) {
+      throw error(
+        AuthError.NoGAuthAccessToken,
+        "Google auth access token not returned"
+      );
+    }
+
+    return token;
   }
 }
 

@@ -8,7 +8,11 @@ import Session from "supertokens-node/recipe/session";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
-import { Result_Auth_Compass, UserInfo_Compass } from "@core/types/auth.types";
+import {
+  Result_Auth_Compass,
+  Result_VerifyGToken,
+  UserInfo_Compass,
+} from "@core/types/auth.types";
 import {
   ReqBody,
   Res_Promise,
@@ -20,11 +24,14 @@ import {
   findCompassUserBy,
   updateGoogleRefreshToken,
 } from "@backend/user/queries/user.queries";
-import GoogleAuthService from "@backend/auth/services/google.auth.service";
+import GoogleAuthService, {
+  getGAuthClientForUser,
+} from "@backend/auth/services/google.auth.service";
 import userService from "@backend/user/services/user.service";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import syncService from "@backend/sync/services/sync.service";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
+import { BaseError } from "@core/errors/errors.base";
 
 import { initGoogleClient } from "../services/auth.utils";
 
@@ -61,6 +68,31 @@ class AuthController {
     const userId = req.session?.getUserId();
 
     res.promise({ userId });
+  };
+
+  verifyGToken = async (req: SessionRequest, res: Res_Promise) => {
+    try {
+      const userId = req.session?.getUserId();
+
+      if (!userId) {
+        res.promise({ isValid: false, error: "No session found" });
+        return;
+      }
+
+      const gAuthClient = await getGAuthClientForUser({ _id: userId });
+
+      // Upon receiving an access token, we know the session is valid
+      await gAuthClient.getAccessToken();
+
+      const result: Result_VerifyGToken = { isValid: true };
+      res.promise(result);
+    } catch (error) {
+      const result: Result_VerifyGToken = {
+        isValid: false,
+        error: error as Error | BaseError,
+      };
+      res.promise(result);
+    }
   };
 
   loginOrSignup = async (req: SReqBody<{ code: string }>, res: Res_Promise) => {

@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
 import React, { useEffect, useRef, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import GoogleButton from "react-google-button";
-import Session from "supertokens-auth-react/recipe/session";
 import { useGoogleLogin } from "@react-oauth/google";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
+import { useAuthCheck } from "@web/auth/useAuthCheck";
 
 import {
   SignInButtonWrapper,
@@ -21,22 +21,20 @@ import {
 } from "./styled";
 
 export const LoginView = () => {
+  const navigate = useNavigate();
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  const antiCsrfToken = useRef(uuidv4()).current;
+  const { isAuthenticated: isAlreadyAuthenticated } = useAuthCheck();
 
   useEffect(() => {
-    const checkSession = async () => {
-      const isAlreadyAuthed = await Session.doesSessionExist();
-      setIsAuthenticated(isAlreadyAuthed);
-    };
+    if (isAuthenticated) {
+      navigate(ROOT_ROUTES.ROOT);
+    }
+  }, [isAuthenticated, navigate]);
 
-    checkSession().catch((e) => {
-      alert(e);
-      console.log(e);
-    });
-  }, []);
+  const antiCsrfToken = useRef(uuidv4()).current;
 
   const SCOPES_REQUIRED = [
     "email",
@@ -48,6 +46,14 @@ export const LoginView = () => {
     const scopesGranted = scope.split(" ");
 
     return SCOPES_REQUIRED.some((s) => !scopesGranted.includes(s));
+  };
+
+  const handleButtonClick = () => {
+    if (isAlreadyAuthenticated) {
+      navigate(ROOT_ROUTES.ROOT);
+    } else {
+      login();
+    }
   };
 
   const login = useGoogleLogin({
@@ -85,36 +91,32 @@ export const LoginView = () => {
 
   return (
     <>
-      {isAuthenticated ? (
-        <Navigate to={ROOT_ROUTES.ROOT} />
-      ) : (
-        <StyledLoginContainer>
-          <StyledLogin
-            alignItems={AlignItems.CENTER}
-            direction={FlexDirections.COLUMN}
-          >
-            {isAuthenticating && <AbsoluteOverflowLoader />}
+      <StyledLoginContainer>
+        <StyledLogin
+          alignItems={AlignItems.CENTER}
+          direction={FlexDirections.COLUMN}
+        >
+          {isAuthenticating && <AbsoluteOverflowLoader />}
 
-            <Card>
-              <CardHeader>
-                <Title>Welcome to Compass</Title>
-                <Subtitle>The weekly planner for minimalists</Subtitle>
-              </CardHeader>
-              <Description>You're almost ready to start planning!</Description>
-              <Description>
-                Now let's import your events from Google Calendar
-              </Description>
-              <SignInButtonWrapper>
-                <GoogleButton
-                  aria-label="Sign in with Google"
-                  type="light"
-                  onClick={() => login()}
-                />
-              </SignInButtonWrapper>
-            </Card>
-          </StyledLogin>
-        </StyledLoginContainer>
-      )}
+          <Card>
+            <CardHeader>
+              <Title>Welcome to Compass</Title>
+              <Subtitle>The weekly planner for minimalists</Subtitle>
+            </CardHeader>
+            <Description>You're almost ready to start planning!</Description>
+            <Description>
+              Now let's import your events from Google Calendar
+            </Description>
+            <SignInButtonWrapper>
+              <GoogleButton
+                aria-label="Sign in with Google"
+                type="light"
+                onClick={handleButtonClick}
+              />
+            </SignInButtonWrapper>
+          </Card>
+        </StyledLogin>
+      </StyledLoginContainer>
     </>
   );
 };

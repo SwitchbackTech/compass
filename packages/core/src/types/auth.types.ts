@@ -6,6 +6,11 @@ export interface Result_Auth_Compass {
   error?: BaseError;
 }
 
+export interface Result_VerifyGToken {
+  isValid: boolean;
+  error?: BaseError | Error;
+}
+
 export interface User_Google {
   id: string;
   email: string;

@@ -21,6 +21,11 @@ export const AuthError = {
     status: Status.INTERNAL_SERVER,
     isOperational: false,
   },
+  NoGAuthAccessToken: {
+    description: "No gauth access token",
+    status: Status.BAD_REQUEST,
+    isOperational: true,
+  },
 };
 
 export const DbError = {
