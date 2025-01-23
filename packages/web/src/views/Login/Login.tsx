@@ -1,7 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { signOut as revokeSession } from "supertokens-web-js/recipe/session";
+import { useNavigate } from "react-router-dom";
 import GoogleButton from "react-google-button";
 import { useGoogleLogin } from "@react-oauth/google";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
@@ -22,7 +21,6 @@ import {
 
 export const LoginView = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -32,18 +30,6 @@ export const LoginView = () => {
       navigate(ROOT_ROUTES.ROOT);
     }
   }, [isAuthenticated, navigate]);
-
-  // useEffect(() => {
-  //   const resetAuthState = async () => {
-  //     await revokeSession();
-  //   };
-
-  //   // assumes that cleanup is needed whenever reason is provided
-  //   const cleanupNeeded = searchParams.get("reason");
-  //   if (cleanupNeeded) {
-  //     void resetAuthState();
-  //   }
-  // }, [searchParams]);
 
   const antiCsrfToken = useRef(uuidv4()).current;
 
