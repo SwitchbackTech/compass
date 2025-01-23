@@ -1,42 +1,39 @@
-import React, { ReactNode, useLayoutEffect, useState } from "react";
-import Session from "supertokens-auth-react/recipe/session";
+import React, { ReactNode, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { AUTH_FAILURE_REASONS } from "@web/common/constants/auth.constants";
-import { AuthApi } from "@web/common/apis/auth.api";
+
+import { useAuthCheck } from "./useAuthCheck";
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const { isAuthenticated, isCheckingAuth, isGAccessTokenActive } =
+    useAuthCheck();
 
-  useLayoutEffect(() => {
-    async function ensureAuthentication() {
-      const isSessionValid = await Session.doesSessionExist();
-      const isGAccessTokenValid = await AuthApi.validateGoogleAccessToken();
-
-      const isAuthenticated = isSessionValid && isGAccessTokenValid;
-      setIsAuthenticated(isAuthenticated);
+  useEffect(() => {
+    const handleAuthCheck = () => {
       if (!isAuthenticated) {
-        const dueToGAuth = !!isSessionValid && !isGAccessTokenValid;
-
-        if (dueToGAuth) {
+        if (!isGAccessTokenActive) {
           navigate(
             `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED}`
           );
         } else {
-          navigate(ROOT_ROUTES.LOGIN);
+          navigate(
+            `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.USER_SESSION_EXPIRED}`
+          );
         }
       }
-    }
+    };
 
-    void ensureAuthentication();
-  }, [navigate]);
+    void handleAuthCheck();
+  }, [isAuthenticated, isGAccessTokenActive, navigate]);
 
-  if (isAuthenticated === null) {
-    return <AbsoluteOverflowLoader />;
-  } else {
-    return <>{children}</>;
-  }
+  return (
+    <>
+      {isCheckingAuth && <AbsoluteOverflowLoader />}
+      {children}
+    </>
+  );
 };
