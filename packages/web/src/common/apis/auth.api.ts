@@ -13,7 +13,6 @@ const AuthApi = {
   async validateGoogleAccessToken() {
     try {
       const res = await CompassApi.get(`/auth/google`);
-      console.log("res:", res);
 
       if (res.status !== 200) return false;
 
