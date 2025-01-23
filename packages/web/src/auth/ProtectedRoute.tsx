@@ -9,13 +9,13 @@ import { useAuthCheck } from "./useAuthCheck";
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
-  const { isAuthenticated, isCheckingAuth, isGAccessTokenActive } =
+  const { isAuthenticated, isCheckingAuth, isGoogleTokenActive } =
     useAuthCheck();
 
   useEffect(() => {
     const handleAuthCheck = () => {
-      if (!isAuthenticated) {
-        if (!isGAccessTokenActive) {
+      if (isAuthenticated === false) {
+        if (isGoogleTokenActive === false) {
           navigate(
             `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED}`
           );
@@ -28,7 +28,7 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
     };
 
     void handleAuthCheck();
-  }, [isAuthenticated, isGAccessTokenActive, navigate]);
+  }, [isAuthenticated, isGoogleTokenActive, navigate]);
 
   return (
     <>

@@ -4,9 +4,11 @@ import { AuthApi } from "@web/common/apis/auth.api";
 
 export const useAuthCheck = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isSessionActive, setIsSessionActive] = useState(false);
-  const [isGAccessTokenActive, setIsGAccessTokenActive] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isSessionActive, setIsSessionActive] = useState<boolean | null>(null);
+  const [isGoogleTokenActive, setIsGoogleTokenActive] = useState<
+    boolean | null
+  >(null);
 
   useLayoutEffect(() => {
     const checkAuth = async () => {
@@ -15,10 +17,10 @@ export const useAuthCheck = () => {
         const _isSessionActive = await Session.doesSessionExist();
         setIsSessionActive(_isSessionActive);
 
-        const _isGAccessTokenActive = await AuthApi.validateGoogleAccessToken();
-        setIsGAccessTokenActive(_isGAccessTokenActive);
+        const _isGoogleTokenActive = await AuthApi.validateGoogleAccessToken();
+        setIsGoogleTokenActive(_isGoogleTokenActive);
 
-        setIsAuthenticated(isSessionActive && isGAccessTokenActive);
+        setIsAuthenticated(isSessionActive && isGoogleTokenActive);
       } catch (error) {
         console.error("Error checking authentication:", error);
       } finally {
@@ -27,12 +29,12 @@ export const useAuthCheck = () => {
     };
 
     void checkAuth();
-  }, [isGAccessTokenActive, isSessionActive]);
+  }, [isGoogleTokenActive, isSessionActive]);
 
   return {
     isAuthenticated,
     isCheckingAuth,
-    isGAccessTokenActive,
+    isGoogleTokenActive,
     isSessionActive,
   };
 };
