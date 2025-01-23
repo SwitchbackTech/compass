@@ -1,19 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
 import React, { useEffect, useRef, useState } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { signOut as revokeSession } from "supertokens-web-js/recipe/session";
 import GoogleButton from "react-google-button";
-import Session, { signOut } from "supertokens-auth-react/recipe/session";
 import { useGoogleLogin } from "@react-oauth/google";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { toast } from "react-toastify";
-import { SyncApi } from "@web/common/apis/sync.api";
-import {
-  AUTH_FAILURE_REASONS,
-  GAUTH_SESSION_EXPIRED_UI_MESSAGE,
-} from "@web/common/constants/auth.constants";
 
 import {
   SignInButtonWrapper,
@@ -26,45 +20,32 @@ import {
   StyledLoginContainer,
 } from "./styled";
 
-const clearSession = async () => {
-  try {
-    await SyncApi.stopWatches();
-    await signOut();
-  } catch (error) {
-    console.error("Failed to clear session", error);
-  }
-};
-
 export const LoginView = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  const antiCsrfToken = useRef(uuidv4()).current;
-
   useEffect(() => {
-    const checkSession = async () => {
-      const isAlreadyAuthed = await Session.doesSessionExist();
-      const isGAuthSessionValid = await AuthApi.validateGoogleAccessToken();
-      setIsAuthenticated(isAlreadyAuthed && isGAuthSessionValid);
-    };
+    if (isAuthenticated) {
+      navigate(ROOT_ROUTES.ROOT);
+    }
+  }, [isAuthenticated, navigate]);
 
-    const reason = searchParams.get("reason");
+  // useEffect(() => {
+  //   const resetAuthState = async () => {
+  //     await revokeSession();
+  //   };
 
-    void (async () => {
-      if (reason === AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED) {
-        toast.warn(GAUTH_SESSION_EXPIRED_UI_MESSAGE);
-        await clearSession();
-      } else {
-        checkSession().catch(async (e) => {
-          alert(e);
-          console.log(e);
-          await clearSession();
-        });
-      }
-    })();
-  }, [searchParams]);
+  //   // assumes that cleanup is needed whenever reason is provided
+  //   const cleanupNeeded = searchParams.get("reason");
+  //   if (cleanupNeeded) {
+  //     void resetAuthState();
+  //   }
+  // }, [searchParams]);
+
+  const antiCsrfToken = useRef(uuidv4()).current;
 
   const SCOPES_REQUIRED = [
     "email",
@@ -113,36 +94,32 @@ export const LoginView = () => {
 
   return (
     <>
-      {isAuthenticated ? (
-        <Navigate to={ROOT_ROUTES.ROOT} />
-      ) : (
-        <StyledLoginContainer>
-          <StyledLogin
-            alignItems={AlignItems.CENTER}
-            direction={FlexDirections.COLUMN}
-          >
-            {isAuthenticating && <AbsoluteOverflowLoader />}
+      <StyledLoginContainer>
+        <StyledLogin
+          alignItems={AlignItems.CENTER}
+          direction={FlexDirections.COLUMN}
+        >
+          {isAuthenticating && <AbsoluteOverflowLoader />}
 
-            <Card>
-              <CardHeader>
-                <Title>Welcome to Compass</Title>
-                <Subtitle>The weekly planner for minimalists</Subtitle>
-              </CardHeader>
-              <Description>You're almost ready to start planning!</Description>
-              <Description>
-                Now let's import your events from Google Calendar
-              </Description>
-              <SignInButtonWrapper>
-                <GoogleButton
-                  aria-label="Sign in with Google"
-                  type="light"
-                  onClick={() => login()}
-                />
-              </SignInButtonWrapper>
-            </Card>
-          </StyledLogin>
-        </StyledLoginContainer>
-      )}
+          <Card>
+            <CardHeader>
+              <Title>Welcome to Compass</Title>
+              <Subtitle>The weekly planner for minimalists</Subtitle>
+            </CardHeader>
+            <Description>You're almost ready to start planning!</Description>
+            <Description>
+              Now let's import your events from Google Calendar
+            </Description>
+            <SignInButtonWrapper>
+              <GoogleButton
+                aria-label="Sign in with Google"
+                type="light"
+                onClick={() => login()}
+              />
+            </SignInButtonWrapper>
+          </Card>
+        </StyledLogin>
+      </StyledLoginContainer>
     </>
   );
 };
