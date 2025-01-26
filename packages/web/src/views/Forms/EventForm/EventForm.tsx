@@ -45,6 +45,7 @@ export const EventForm: React.FC<FormProps> = ({
   ...props
 }) => {
   const { priority, title } = event || {};
+  const priorityColor = colorByPriority[priority || Priorities.UNASSIGNED];
   const category = getCategory(event);
   const isDraft = !event._id;
 
@@ -283,21 +284,21 @@ export const EventForm: React.FC<FormProps> = ({
           placeholder="Title"
           role="textarea"
           name="Event Title"
-          underlineColor={colorByPriority[priority]}
+          underlineColor={priorityColor}
           value={title}
         />
 
         <PrioritySection
           onSetEventField={onSetEventField}
-          priority={priority}
+          priority={priority || Priorities.UNASSIGNED}
         />
 
         <DateTimeSection
-          bgColor={colorByPriority[priority]}
+          bgColor={priorityColor}
           event={event}
           category={category}
           endTime={endTime}
-          inputColor={hoverColorByPriority[priority]}
+          inputColor={hoverColorByPriority[priority || Priorities.UNASSIGNED]}
           isEndDatePickerOpen={isEndDatePickerOpen}
           isStartDatePickerOpen={isStartDatePickerOpen}
           selectedEndDate={selectedEndDate}
@@ -313,14 +314,17 @@ export const EventForm: React.FC<FormProps> = ({
         />
 
         <StyledDescription
-          underlineColor={colorByPriority[priority]}
+          underlineColor={priorityColor}
           onChange={onChangeEventTextField("description")}
           onKeyDown={ignoreDelete}
           placeholder="Description"
           value={event.description || ""}
         />
 
-        <SaveSection priority={priority} onSubmit={onSubmitForm} />
+        <SaveSection
+          priority={priority || Priorities.UNASSIGNED}
+          onSubmit={onSubmitForm}
+        />
       </StyledEventForm>
     </FocusTrap>
   );
