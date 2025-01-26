@@ -70,7 +70,7 @@ export const SidebarTabContainer = styled.div`
   height: calc(100% - ${ICON_ROW_HEIGHT}px);
   overflow: auto;
   padding: 0 25px;
-  width: 100%;
+  width: ${SIDEBAR_OPEN_WIDTH}px;
 
   ::-webkit-scrollbar {
     width: 8px;
