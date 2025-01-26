@@ -161,7 +161,7 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   const onDeleteForm = () => {
-    onDelete(event._id);
+    onDelete?.(event._id);
     onClose();
   };
 
