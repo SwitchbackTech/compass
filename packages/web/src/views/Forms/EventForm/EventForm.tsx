@@ -72,7 +72,7 @@ export const EventForm: React.FC<FormProps> = ({
    *********/
 
   const keyDownHandler = useCallback(
-    (e: KeyboardEvent) => {
+    (e: globalThis.KeyboardEvent) => {
       if (e.key === Key.Shift) {
         setIsShiftKeyPressed(true);
       }
@@ -85,7 +85,7 @@ export const EventForm: React.FC<FormProps> = ({
     [_onClose]
   );
 
-  const keyUpHandler = useCallback((e: KeyboardEvent) => {
+  const keyUpHandler = useCallback((e: globalThis.KeyboardEvent) => {
     if (e.key === Key.Shift) {
       setIsShiftKeyPressed(false);
     }
