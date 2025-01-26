@@ -25,7 +25,7 @@ import {
 } from "@web/common/styles/theme.util";
 
 import { FormProps, SetEventFormField } from "./types";
-import { DateTimeSection } from "./DateTimeSection";
+import { DateTimeSection } from "./DateTimeSection/DateTimeSection";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
 import {
@@ -45,29 +45,34 @@ export const EventForm: React.FC<FormProps> = ({
   ...props
 }) => {
   const { priority, title } = event || {};
+  const priorityColor = colorByPriority[priority || Priorities.UNASSIGNED];
   const category = getCategory(event);
   const isDraft = !event._id;
 
   /********
    * State
    ********/
-  const [endTime, setEndTime] = useState<SelectOption<string> | undefined>();
+  const [endTime, setEndTime] = useState<SelectOption<string>>({
+    label: "1 AM",
+    value: "01:00 AM",
+  });
   const [isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
-  const [startTime, setStartTime] = useState<SelectOption<string>>();
-  const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>();
-  const [selectedStartDate, setSelectedStartDate] = useState<
-    Date | undefined
-  >();
+  const [startTime, setStartTime] = useState<SelectOption<string>>({
+    label: "12 AM",
+    value: "12:00 AM",
+  });
+  const [selectedEndDate, setSelectedEndDate] = useState(new Date());
+  const [selectedStartDate, setSelectedStartDate] = useState(new Date());
 
   /********
    * Effect
    *********/
 
   const keyDownHandler = useCallback(
-    (e: KeyboardEvent) => {
+    (e: globalThis.KeyboardEvent) => {
       if (e.key === Key.Shift) {
         setIsShiftKeyPressed(true);
       }
@@ -80,7 +85,7 @@ export const EventForm: React.FC<FormProps> = ({
     [_onClose]
   );
 
-  const keyUpHandler = useCallback((e: KeyboardEvent) => {
+  const keyUpHandler = useCallback((e: globalThis.KeyboardEvent) => {
     if (e.key === Key.Shift) {
       setIsShiftKeyPressed(false);
     }
@@ -156,7 +161,7 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   const onDeleteForm = () => {
-    onDelete(event._id);
+    onDelete?.(event._id);
     onClose();
   };
 
@@ -172,7 +177,7 @@ export const EventForm: React.FC<FormProps> = ({
       startTime,
       endDate: selectedEndDate,
       endTime,
-      isAllDay: event.isAllDay,
+      isAllDay: event.isAllDay || false,
     };
 
     const { startDate, endDate } = mapToBackend(selectedDateTimes);
@@ -279,21 +284,21 @@ export const EventForm: React.FC<FormProps> = ({
           placeholder="Title"
           role="textarea"
           name="Event Title"
-          underlineColor={colorByPriority[priority]}
+          underlineColor={priorityColor}
           value={title}
         />
 
         <PrioritySection
           onSetEventField={onSetEventField}
-          priority={priority}
+          priority={priority || Priorities.UNASSIGNED}
         />
 
         <DateTimeSection
-          bgColor={colorByPriority[priority]}
+          bgColor={priorityColor}
           event={event}
           category={category}
           endTime={endTime}
-          inputColor={hoverColorByPriority[priority]}
+          inputColor={hoverColorByPriority[priority || Priorities.UNASSIGNED]}
           isEndDatePickerOpen={isEndDatePickerOpen}
           isStartDatePickerOpen={isStartDatePickerOpen}
           selectedEndDate={selectedEndDate}
@@ -309,14 +314,17 @@ export const EventForm: React.FC<FormProps> = ({
         />
 
         <StyledDescription
-          underlineColor={colorByPriority[priority]}
+          underlineColor={priorityColor}
           onChange={onChangeEventTextField("description")}
           onKeyDown={ignoreDelete}
           placeholder="Description"
           value={event.description || ""}
         />
 
-        <SaveSection priority={priority} onSubmit={onSubmitForm} />
+        <SaveSection
+          priority={priority || Priorities.UNASSIGNED}
+          onSubmit={onSubmitForm}
+        />
       </StyledEventForm>
     </FocusTrap>
   );

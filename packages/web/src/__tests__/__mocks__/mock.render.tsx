@@ -11,6 +11,7 @@ import { sagaMiddleware } from "@web/common/store/middlewares";
 import { reducers } from "@web/store/reducers";
 import { ThemeProvider } from "styled-components";
 import { theme } from "@web/common/styles/theme";
+import { GlobalStyle } from "@web/components/GlobalStyle";
 
 const customRender = (
   ui: ReactElement,
@@ -32,6 +33,7 @@ const customRender = (
     return (
       <DndProvider backend={HTML5Backend}>
         <GoogleOAuthProvider clientId="anyClientId">
+          <GlobalStyle />
           <ThemeProvider theme={theme}>
             <BrowserRouter>
               <Provider store={store}>{children}</Provider>
