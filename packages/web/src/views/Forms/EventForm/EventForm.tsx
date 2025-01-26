@@ -177,7 +177,7 @@ export const EventForm: React.FC<FormProps> = ({
       startTime,
       endDate: selectedEndDate,
       endTime,
-      isAllDay: event.isAllDay,
+      isAllDay: event.isAllDay || false,
     };
 
     const { startDate, endDate } = mapToBackend(selectedDateTimes);
