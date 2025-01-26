@@ -51,12 +51,18 @@ export const EventForm: React.FC<FormProps> = ({
   /********
    * State
    ********/
-  const [endTime, setEndTime] = useState<SelectOption<string> | undefined>();
+  const [endTime, setEndTime] = useState<SelectOption<string>>({
+    label: "1 AM",
+    value: "01:00 AM",
+  });
   const [isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
-  const [startTime, setStartTime] = useState<SelectOption<string>>();
+  const [startTime, setStartTime] = useState<SelectOption<string>>({
+    label: "12 AM",
+    value: "12:00 AM",
+  });
   const [selectedEndDate, setSelectedEndDate] = useState(new Date());
   const [selectedStartDate, setSelectedStartDate] = useState(new Date());
 
