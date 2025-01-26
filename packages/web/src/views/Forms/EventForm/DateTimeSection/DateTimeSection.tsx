@@ -213,7 +213,7 @@ export const DateTimeSection: FC<Props> = ({
         endDate: selectedEndDate,
         startTime: correctedStart ? correctedStart : startTime,
         endTime: option,
-        isAllDay: event.isAllDay,
+        isAllDay: false,
       });
 
       const _event = {
@@ -242,7 +242,7 @@ export const DateTimeSection: FC<Props> = ({
         endDate: selectedEndDate,
         startTime: option,
         endTime: correctedEnd ? correctedEnd : endTime,
-        isAllDay: event.isAllDay,
+        isAllDay: false,
       });
 
       const _event = {
