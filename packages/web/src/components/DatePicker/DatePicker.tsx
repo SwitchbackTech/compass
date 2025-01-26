@@ -75,6 +75,8 @@ export const DatePicker: React.FC<Props> = ({
           {...containerProps}
           bgColor={bgColor}
           selectedColor={theme.color.text.accent}
+          role="combobox"
+          aria-label="datepicker"
           view={view}
         />
       )}
