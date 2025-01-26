@@ -25,7 +25,7 @@ import {
 } from "@web/common/styles/theme.util";
 
 import { FormProps, SetEventFormField } from "./types";
-import { DateTimeSection } from "./DateTimeSection";
+import { DateTimeSection } from "./DateTimeSection/DateTimeSection";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
 import {
