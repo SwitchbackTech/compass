@@ -272,7 +272,10 @@ export const DateTimeSection: FC<Props> = ({
                   setIsStartDatePickerOpen(true);
                 }}
                 onChange={() => null}
-                onInputClick={() => setIsStartDatePickerOpen(true)}
+                onInputClick={() => {
+                  isEndDatePickerOpen && setIsEndDatePickerOpen(false);
+                  setIsStartDatePickerOpen(true);
+                }}
                 onKeyDown={(e) => onPickerKeyDown("start", e)}
                 onSelect={onSelectStartDate}
                 selected={selectedStartDate}
@@ -292,7 +295,10 @@ export const DateTimeSection: FC<Props> = ({
                 onCalendarClose={closeEndDatePicker}
                 onCalendarOpen={() => setIsEndDatePickerOpen(true)}
                 onChange={() => null}
-                onInputClick={() => setIsEndDatePickerOpen(true)}
+                onInputClick={() => {
+                  isStartDatePickerOpen && setIsStartDatePickerOpen(false);
+                  setIsEndDatePickerOpen(true);
+                }}
                 onKeyDown={(e) => onPickerKeyDown("end", e)}
                 onSelect={onSelectEndDate}
                 selected={selectedEndDate}
