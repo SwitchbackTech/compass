@@ -4,6 +4,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import { Key } from "ts-key-enum";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { MONTH_DAY_YEAR } from "@core/constants/date.constants";
+import { darken } from "@core/util/color.utils";
 import { SelectOption } from "@web/common/types/component.types";
 import { AlignItems } from "@web/components/Flex/styled";
 import { TimePicker } from "@web/components/TimePicker";
@@ -17,7 +18,6 @@ import {
   shouldAdjustComplimentTime,
 } from "@web/common/utils/web.date.util";
 import { Option_Time } from "@web/common/types/util.types";
-import { darken } from "@core/util/color.utils";
 
 import { StyledDateFlex, StyledDateTimeFlex, StyledTimeFlex } from "./styled";
 
@@ -27,7 +27,7 @@ export interface Props {
   bgColor: string;
   category: Categories_Event;
   event: Schema_Event;
-  endTime?: SelectOption<string>;
+  endTime: SelectOption<string>;
   inputColor?: string;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
@@ -91,7 +91,7 @@ export const DateTimeSection: FC<Props> = ({
   const adjustComplimentTimeIfNeeded = (
     changed: "start" | "end",
     value: string
-  ): Option_Time | undefined => {
+  ): Option_Time => {
     const start = changed === "start" ? value : startTime.value;
     const end = changed === "end" ? value : endTime.value;
 
@@ -120,6 +120,9 @@ export const DateTimeSection: FC<Props> = ({
         return correctedStart;
       }
     }
+
+    const defaultOption = changed === "start" ? startTime : endTime;
+    return defaultOption;
   };
 
   const getDateFromInput = (val: string) => {
@@ -280,7 +283,7 @@ export const DateTimeSection: FC<Props> = ({
                 onSelect={onSelectStartDate}
                 selected={selectedStartDate}
                 title="Pick Start Date"
-                view="picker"
+                view="grid"
               />
             </div>
           </StyledDateFlex>
@@ -303,7 +306,7 @@ export const DateTimeSection: FC<Props> = ({
                 onSelect={onSelectEndDate}
                 selected={selectedEndDate}
                 title="Pick End Date"
-                view="picker"
+                view="grid"
               />
             </div>
           </StyledDateFlex>
