@@ -5,6 +5,7 @@ import { Flex } from "@web/components/Flex";
 import { Textarea } from "@web/components/Textarea";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import { PriorityButton } from "@web/components/Button/styled";
+import { Input } from "@web/components/Input";
 
 import { StyledFormProps } from "./types";
 
@@ -56,9 +57,10 @@ export const StyledSubmitRow = styled(Flex)`
   padding-top: 18px;
 `;
 
-export const StyledTitle = styled(Textarea)`
+export const StyledTitle = styled(Input)`
   background: transparent;
   font-size: ${({ theme }) => theme.text.size["5xl"]};
+  font-weight: 600;
   &:hover {
     filter: brightness(90%);
   }
