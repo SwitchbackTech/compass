@@ -31,8 +31,8 @@ export interface Props {
   inputColor?: string;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
-  selectedEndDate?: Date;
-  selectedStartDate?: Date;
+  selectedEndDate: Date;
+  selectedStartDate: Date;
   setEndTime: (value: SelectOption<string>) => void;
   setIsEndDatePickerOpen: (arg0: boolean) => void;
   setIsStartDatePickerOpen: (arg0: boolean) => void;

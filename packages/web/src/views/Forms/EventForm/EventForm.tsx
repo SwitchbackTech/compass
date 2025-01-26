@@ -57,10 +57,8 @@ export const EventForm: React.FC<FormProps> = ({
   const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
   const [startTime, setStartTime] = useState<SelectOption<string>>();
-  const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>();
-  const [selectedStartDate, setSelectedStartDate] = useState<
-    Date | undefined
-  >();
+  const [selectedEndDate, setSelectedEndDate] = useState(new Date());
+  const [selectedStartDate, setSelectedStartDate] = useState(new Date());
 
   /********
    * Effect
