@@ -34,9 +34,16 @@ export const selectGridEvents = createSelector(
     if (!("data" in weekIds) || weekIds.data.length === 0) return [];
     const weekEventsMapped = weekIds.data.map((_id: string) => entities[_id]);
 
-    const weekEvents = weekEventsMapped.filter(
-      (e: Schema_Event) => e !== undefined && !e.isAllDay
-    );
+    const weekEvents: Schema_GridEvent[] = weekEventsMapped
+      .filter((e: Schema_Event) => e !== undefined && !e.isAllDay)
+      .map((e) => ({
+        ...e,
+        position: {
+          isOverlapping: false,
+          widthMultiplier: 1,
+          horizontalOrder: 0,
+        },
+      }));
 
     return weekEvents;
   }

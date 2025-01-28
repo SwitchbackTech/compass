@@ -22,6 +22,11 @@ export interface Schema_GridEvent extends Schema_Event {
   hasFlipped?: boolean;
   isOpen?: boolean;
   row?: number; //TODO: delete if not used
+  position: {
+    isOverlapping: boolean;
+    widthMultiplier: number; // EG: 0.5 for half width
+    horizontalOrder: number;
+  };
 }
 
 export interface Schema_OptimisticEvent extends Schema_Event {

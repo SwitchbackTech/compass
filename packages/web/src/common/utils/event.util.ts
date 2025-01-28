@@ -90,18 +90,28 @@ export const getDefaultEvent = (
   startDate?: string,
   endDate?: string
 ): Schema_GridEvent | null => {
+  const defaultEvent: Schema_GridEvent = {
+    priority: Priorities.UNASSIGNED,
+    position: {
+      isOverlapping: false,
+      widthMultiplier: 1,
+      horizontalOrder: 1,
+    },
+  };
+
   const defaultSomeday = {
+    ...defaultEvent,
     isAllDay: false,
     isSomeday: true,
     origin: Origin.COMPASS,
-    priority: Priorities.UNASSIGNED,
   };
+
   switch (draftType) {
     case Categories_Event.ALLDAY:
       return {
+        ...defaultEvent,
         isAllDay: true,
         isSomeday: false,
-        priority: Priorities.UNASSIGNED,
         startDate,
         endDate: startDate,
       };
@@ -109,9 +119,9 @@ export const getDefaultEvent = (
       return defaultSomeday;
     case Categories_Event.TIMED: {
       return {
+        ...defaultEvent,
         isAllDay: false,
         isSomeday: false,
-        priority: Priorities.UNASSIGNED,
         startDate,
         endDate,
       };
@@ -139,10 +149,6 @@ export const handleError = (error: Error) => {
     // api interceptor will handle these
     return;
   }
-
-  console.log(error.message);
-  console.log(error.stack);
-  console.log(error);
 
   if (code === Status.INTERNAL_SERVER) {
     alert("Something went wrong behind the scenes. Please try again later.");
