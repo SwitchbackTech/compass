@@ -29,7 +29,7 @@ export const GridDraft: FC<Props> = ({
   measurements,
   weekProps,
 }) => {
-  const { x, y, reference, floating, strategy } = formProps;
+  const { x, y, refs, strategy } = formProps;
 
   const onConvert = () => {
     const start = weekProps.component.startOfView.format(YEAR_MONTH_DAY_FORMAT);
@@ -63,14 +63,14 @@ export const GridDraft: FC<Props> = ({
           draftUtil.setDateBeingChanged(dateToChange);
           draftUtil.setIsResizing(true);
         }}
-        ref={reference}
+        ref={refs.setReference}
         weekProps={weekProps}
       />
 
       <div>
         {draft?.isOpen && (
           <StyledFloatContainer
-            ref={floating}
+            ref={refs.setFloating}
             strategy={strategy}
             top={y ?? 0}
             left={x ?? 0}

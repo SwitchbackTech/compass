@@ -4,13 +4,13 @@ import {
   offset,
   shift,
   useFloating,
-  UseFloatingProps,
+  UseFloatingOptions,
 } from "@floating-ui/react";
 
 export const useEventForm = (
   eventType: "grid" | "sidebarWeek" | "sidebarMonth"
 ) => {
-  let options: Partial<UseFloatingProps>;
+  let options: Partial<UseFloatingOptions>;
 
   if (eventType === "sidebarWeek" || eventType === "sidebarMonth") {
     const placement = eventType === "sidebarWeek" ? "right-start" : "right";
@@ -40,15 +40,14 @@ export const useEventForm = (
     };
   }
 
-  const { x, y, reference, floating, strategy, context } = useFloating(options);
+  const { context, x, y, refs, strategy } = useFloating(options);
 
   return {
+    context,
+    refs,
+    strategy,
     x,
     y,
-    reference,
-    floating,
-    strategy,
-    context,
   };
 };
 
