@@ -222,3 +222,88 @@ export const replaceIdWithOptimisticId = (
 
   return _event;
 };
+
+export const adjustOverlappingEvents = (events: Schema_GridEvent[]) => {
+  // Deep copy events
+  let adjustedEvents = events.map((event) => ({
+    ...event,
+    position: { ...event.position },
+  }));
+
+  // Sort by start time first
+  adjustedEvents.sort((a, b) => dayjs(a.startDate).diff(dayjs(b.startDate)));
+
+  const processedEvents = new Set<string>();
+
+  // Helper function to find all overlapping events recursively
+  const findAllOverlappingEvents = (
+    baseEvent: Schema_GridEvent,
+    accumulatedEvents = new Set<Schema_GridEvent>()
+  ): Set<Schema_GridEvent> => {
+    const directOverlaps = adjustedEvents.filter(
+      (otherEvent) =>
+        otherEvent !== baseEvent && // Skip itself
+        !accumulatedEvents.has(otherEvent) && // Skip if already processed
+        dayjs(baseEvent.startDate).isBefore(dayjs(otherEvent.endDate)) &&
+        dayjs(baseEvent.endDate).isAfter(dayjs(otherEvent.startDate))
+    );
+
+    directOverlaps.forEach((event) => {
+      accumulatedEvents.add(event);
+      // Recursively find overlaps for each overlapping event
+      findAllOverlappingEvents(event, accumulatedEvents);
+    });
+
+    return accumulatedEvents;
+  };
+
+  for (let i = 0; i < adjustedEvents.length; i++) {
+    const targetEvent = adjustedEvents[i];
+
+    // Skip if already processed
+    if (processedEvents.has(targetEvent._id)) {
+      continue;
+    }
+
+    // Find all overlapping events recursively
+    const overlappingEventsSet = findAllOverlappingEvents(
+      targetEvent,
+      new Set([targetEvent])
+    );
+    const eventGroup = Array.from(overlappingEventsSet);
+
+    if (eventGroup.length > 1) {
+      // If there are any overlaps, calculate width multiplier
+      let multiplier = 1 / eventGroup.length;
+      // Round to 2 decimal places (in case we have way too many decimal places from the division)
+      multiplier = Math.round(multiplier * 100) / 100;
+
+      // Set adjustments for all events in the group
+      eventGroup.forEach((event, i) => {
+        event.position.isOverlapping = true;
+        event.position.widthMultiplier *= multiplier;
+        event.position.horizontalOrder = i + 1;
+        processedEvents.add(event._id);
+      });
+
+      // If exact start and end times match, sort alphabetically by title
+      if (
+        eventGroup.every(
+          (event) =>
+            dayjs(event.startDate).isSame(targetEvent.startDate) &&
+            dayjs(event.endDate).isSame(targetEvent.endDate)
+        )
+      ) {
+        eventGroup.sort((a, b) => {
+          if (!a.title || !b.title) {
+            return 0;
+          }
+
+          return a.title.localeCompare(b.title);
+        });
+      }
+    }
+  }
+
+  return adjustedEvents;
+};
