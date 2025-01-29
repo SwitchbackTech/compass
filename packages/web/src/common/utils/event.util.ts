@@ -85,19 +85,39 @@ export const getCategory = (event: Schema_Event) => {
   return Categories_Event.TIMED;
 };
 
+export const assembleGridEvent = (
+  event: Partial<Schema_GridEvent>
+): Schema_GridEvent => ({
+  _id: event._id || "",
+  title: event.title || "",
+  description: event.description || "",
+  startDate: event.startDate || "",
+  endDate: event.endDate || "",
+  user: event.user || "",
+  isAllDay: event.isAllDay || false,
+  isSomeday: event.isSomeday || false,
+  origin: event.origin || Origin.COMPASS,
+  priority: event.priority || Priorities.UNASSIGNED,
+  position: event.position || {
+    isOverlapping: false,
+    widthMultiplier: 1,
+    horizontalOrder: 1,
+  },
+});
+
 export const getDefaultEvent = (
   draftType: Categories_Event,
   startDate?: string,
   endDate?: string
 ): Schema_GridEvent | null => {
-  const defaultEvent: Schema_GridEvent = {
+  const defaultEvent = assembleGridEvent({
     priority: Priorities.UNASSIGNED,
     position: {
       isOverlapping: false,
       widthMultiplier: 1,
       horizontalOrder: 1,
     },
-  };
+  });
 
   const defaultSomeday = {
     ...defaultEvent,
