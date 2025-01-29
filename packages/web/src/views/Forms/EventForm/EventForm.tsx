@@ -5,6 +5,7 @@ import React, {
   KeyboardEventHandler,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { Key } from "ts-key-enum";
@@ -66,6 +67,8 @@ export const EventForm: React.FC<FormProps> = ({
   });
   const [selectedEndDate, setSelectedEndDate] = useState(new Date());
   const [selectedStartDate, setSelectedStartDate] = useState(new Date());
+
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   /********
    * Effect
@@ -299,6 +302,7 @@ export const EventForm: React.FC<FormProps> = ({
           category={category}
           endTime={endTime}
           inputColor={hoverColorByPriority[priority || Priorities.UNASSIGNED]}
+          nextElementRef={descriptionRef}
           isEndDatePickerOpen={isEndDatePickerOpen}
           isStartDatePickerOpen={isStartDatePickerOpen}
           selectedEndDate={selectedEndDate}
@@ -318,6 +322,7 @@ export const EventForm: React.FC<FormProps> = ({
           onChange={onChangeEventTextField("description")}
           onKeyDown={ignoreDelete}
           placeholder="Description"
+          ref={descriptionRef}
           value={event.description || ""}
         />
 

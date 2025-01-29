@@ -1,4 +1,4 @@
-import React, { FC, SetStateAction } from "react";
+import React, { FC, SetStateAction, useRef } from "react";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
@@ -24,6 +24,7 @@ export interface Props {
   event: Schema_Event;
   endTime: SelectOption<string>;
   inputColor?: string;
+  nextElementRef: React.RefObject<HTMLTextAreaElement>;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
   selectedEndDate: Date;
@@ -43,6 +44,7 @@ export const DateTimeSection: FC<Props> = ({
   category,
   event,
   inputColor,
+  nextElementRef,
   isEndDatePickerOpen,
   isStartDatePickerOpen,
   selectedEndDate,
@@ -58,6 +60,8 @@ export const DateTimeSection: FC<Props> = ({
   endTime,
 }) => {
   const timeOptions = getTimeOptions();
+
+  const endTimeRef = useRef(null);
 
   const adjustComplimentTimeIfNeeded = (
     changed: "start" | "end",
@@ -165,8 +169,9 @@ export const DateTimeSection: FC<Props> = ({
             bgColor={bgColor}
             value={startTime}
             inputId="startTimePicker"
+            nextElementRef={endTimeRef}
             onChange={onSelectStartTime}
-            openMenuOnFocus={true}
+            openMenuOnFocus
             options={timeOptions}
           />
           -
@@ -174,9 +179,11 @@ export const DateTimeSection: FC<Props> = ({
             bgColor={bgColor}
             value={endTime}
             inputId="endTimePicker"
+            nextElementRef={nextElementRef}
             onChange={onSelectEndTime}
             openMenuOnFocus
             options={timeOptions}
+            ref={endTimeRef}
           />
         </StyledTimeFlex>
       )}
