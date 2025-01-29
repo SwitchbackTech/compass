@@ -243,7 +243,9 @@ export const replaceIdWithOptimisticId = (
   return _event;
 };
 
-export const adjustOverlappingEvents = (events: Schema_GridEvent[]) => {
+export const adjustOverlappingEvents = (
+  events: Schema_GridEvent[]
+): Schema_GridEvent[] => {
   // Deep copy events
   let adjustedEvents = events.map((event) => ({
     ...event,
