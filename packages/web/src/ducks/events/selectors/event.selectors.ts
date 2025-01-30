@@ -3,6 +3,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { RootState } from "@web/store";
 import { assignEventsToRow } from "@web/common/utils/grid.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { assembleGridEvent } from "@web/common/utils/event.util";
 
 export const selectAllDayEvents = createSelector(
   (state: RootState) => state.events.entities.value || {},
@@ -36,14 +37,7 @@ export const selectGridEvents = createSelector(
 
     const weekEvents: Schema_GridEvent[] = weekEventsMapped
       .filter((e: Schema_Event) => e !== undefined && !e.isAllDay)
-      .map((e) => ({
-        ...e,
-        position: {
-          isOverlapping: false,
-          widthMultiplier: 1,
-          horizontalOrder: 0,
-        },
-      }));
+      .map(assembleGridEvent);
 
     return weekEvents;
   }
