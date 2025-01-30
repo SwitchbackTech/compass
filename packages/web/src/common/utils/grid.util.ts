@@ -401,8 +401,8 @@ export const getLeftPosition = (
   category: Category,
   startIndex: number,
   colWidths: number[],
-  event: Schema_GridEvent,
-  eventWidth: number
+  event?: Schema_GridEvent,
+  eventWidth?: number
 ) => {
   const left = getAbsoluteLeftPosition(
     category,
@@ -419,8 +419,8 @@ export const getAbsoluteLeftPosition = (
   category: Category,
   startIndex: number,
   colWidths: number[],
-  event: Schema_GridEvent,
-  eventWidth: number
+  event?: Schema_GridEvent,
+  eventWidth?: number
 ) => {
   let positionStart: number;
   switch (category) {
@@ -436,6 +436,10 @@ export const getAbsoluteLeftPosition = (
         positionStart = colWidths.reduce((accum, width, index) => {
           return index < startIndex ? accum + width : accum;
         }, 0);
+
+        if (!event || !eventWidth) {
+          return positionStart;
+        }
 
         if (
           event.position.isOverlapping &&
