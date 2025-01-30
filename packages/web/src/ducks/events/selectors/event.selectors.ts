@@ -3,6 +3,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { RootState } from "@web/store";
 import { assignEventsToRow } from "@web/common/utils/grid.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { assembleGridEvent } from "@web/common/utils/event.util";
 
 export const selectAllDayEvents = createSelector(
   (state: RootState) => state.events.entities.value || {},
@@ -34,9 +35,9 @@ export const selectGridEvents = createSelector(
     if (!("data" in weekIds) || weekIds.data.length === 0) return [];
     const weekEventsMapped = weekIds.data.map((_id: string) => entities[_id]);
 
-    const weekEvents = weekEventsMapped.filter(
-      (e: Schema_Event) => e !== undefined && !e.isAllDay
-    );
+    const weekEvents: Schema_GridEvent[] = weekEventsMapped
+      .filter((e: Schema_Event) => e !== undefined && !e.isAllDay)
+      .map(assembleGridEvent);
 
     return weekEvents;
   }

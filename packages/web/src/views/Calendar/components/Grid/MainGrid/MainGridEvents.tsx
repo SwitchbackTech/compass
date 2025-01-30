@@ -11,6 +11,7 @@ import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { isEventFormOpen } from "@web/common/utils";
 
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
+import { adjustOverlappingEvents } from "@web/common/utils/event.util";
 
 interface Props {
   measurements: Measurements_Grid;
@@ -22,6 +23,8 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
   const timedEvents = useAppSelector(selectGridEvents);
   const draftId = useAppSelector(selectDraftId);
+
+  const adjustedEvents = adjustOverlappingEvents(timedEvents);
 
   const onMouseDown = (e: MouseEvent, event: Schema_Event) => {
     e.stopPropagation();
@@ -52,7 +55,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
   return (
     <div id={ID_GRID_EVENTS_TIMED}>
-      {timedEvents.map((event: Schema_GridEvent) => {
+      {adjustedEvents.map((event: Schema_GridEvent) => {
         return (
           <GridEventMemo
             event={event}

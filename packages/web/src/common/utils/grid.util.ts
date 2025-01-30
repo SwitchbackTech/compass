@@ -18,6 +18,7 @@ import {
   GRID_X_PADDING_TOTAL,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 dayjs.extend(dayOfYear);
 dayjs.extend(weekPlugin);
@@ -399,9 +400,17 @@ export const getEventCategory = (
 export const getLeftPosition = (
   category: Category,
   startIndex: number,
-  widths: number[]
+  colWidths: number[],
+  event?: Schema_GridEvent,
+  eventWidth?: number
 ) => {
-  const left = getAbsoluteLeftPosition(category, startIndex, widths);
+  const left = getAbsoluteLeftPosition(
+    category,
+    startIndex,
+    colWidths,
+    event,
+    eventWidth
+  );
 
   return left;
 };
@@ -409,7 +418,9 @@ export const getLeftPosition = (
 export const getAbsoluteLeftPosition = (
   category: Category,
   startIndex: number,
-  widths: number[]
+  colWidths: number[],
+  event?: Schema_GridEvent,
+  eventWidth?: number
 ) => {
   let positionStart: number;
   switch (category) {
@@ -422,9 +433,20 @@ export const getAbsoluteLeftPosition = (
     case Category.ThisToFutureWeek:
       {
         // add up from 0 index to startIndex
-        positionStart = widths.reduce((accum, width, index) => {
+        positionStart = colWidths.reduce((accum, width, index) => {
           return index < startIndex ? accum + width : accum;
         }, 0);
+
+        if (!event || !eventWidth) {
+          return positionStart;
+        }
+
+        if (
+          event.position?.isOverlapping &&
+          event.position.horizontalOrder > 1
+        ) {
+          positionStart += eventWidth * (event.position.horizontalOrder - 1);
+        }
       }
       break;
     default: {

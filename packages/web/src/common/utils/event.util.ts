@@ -85,23 +85,58 @@ export const getCategory = (event: Schema_Event) => {
   return Categories_Event.TIMED;
 };
 
+export const assembleGridEvent = (
+  event: Partial<Schema_GridEvent>
+): Schema_GridEvent => {
+  // TODO: Maybe move to a constants file?
+  const DEFAULT_POSITION = {
+    isOverlapping: false,
+    widthMultiplier: 1,
+    horizontalOrder: 1,
+  };
+
+  return {
+    _id: event._id || "",
+    title: event.title || "",
+    description: event.description || "",
+    startDate: event.startDate || "",
+    endDate: event.endDate || "",
+    user: event.user || "",
+    isAllDay: event.isAllDay || false,
+    isSomeday: event.isSomeday || false,
+    origin: event.origin || Origin.COMPASS,
+    priority: event.priority || Priorities.UNASSIGNED,
+    position: event.position || DEFAULT_POSITION,
+  };
+};
+
 export const getDefaultEvent = (
   draftType: Categories_Event,
   startDate?: string,
   endDate?: string
 ): Schema_GridEvent | null => {
+  const defaultEvent = assembleGridEvent({
+    priority: Priorities.UNASSIGNED,
+    position: {
+      isOverlapping: false,
+      widthMultiplier: 1,
+      horizontalOrder: 1,
+    },
+  });
+
   const defaultSomeday = {
+    ...defaultEvent,
     isAllDay: false,
     isSomeday: true,
     origin: Origin.COMPASS,
-    priority: Priorities.UNASSIGNED,
   };
+
   switch (draftType) {
     case Categories_Event.ALLDAY:
       return {
+        ...defaultEvent,
         isAllDay: true,
         isSomeday: false,
-        priority: Priorities.UNASSIGNED,
         startDate,
         endDate: startDate,
       };
@@ -109,9 +144,9 @@ export const getDefaultEvent = (
       return defaultSomeday;
     case Categories_Event.TIMED: {
       return {
+        ...defaultEvent,
         isAllDay: false,
         isSomeday: false,
-        priority: Priorities.UNASSIGNED,
         startDate,
         endDate,
       };
@@ -139,10 +174,6 @@ export const handleError = (error: Error) => {
     // api interceptor will handle these
     return;
   }
-
-  console.log(error.message);
-  console.log(error.stack);
-  console.log(error);
 
   if (code === Status.INTERNAL_SERVER) {
     alert("Something went wrong behind the scenes. Please try again later.");
@@ -215,4 +246,91 @@ export const replaceIdWithOptimisticId = (
   };
 
   return _event;
+};
+
+export const adjustOverlappingEvents = (
+  events: Schema_GridEvent[]
+): Schema_GridEvent[] => {
+  // Deep copy events
+  let adjustedEvents = events.map((event) => ({
+    ...event,
+    position: { ...event.position },
+  }));
+
+  // Sort by start time first
+  adjustedEvents.sort((a, b) => dayjs(a.startDate).diff(dayjs(b.startDate)));
+
+  const processedEvents = new Set<string>();
+
+  // Helper function to find all overlapping events recursively
+  const findAllOverlappingEvents = (
+    baseEvent: Schema_GridEvent,
+    accumulatedEvents = new Set<Schema_GridEvent>()
+  ): Set<Schema_GridEvent> => {
+    const directOverlaps = adjustedEvents.filter(
+      (otherEvent) =>
+        otherEvent !== baseEvent && // Skip itself
+        !accumulatedEvents.has(otherEvent) && // Skip if already processed
+        dayjs(baseEvent.startDate).isBefore(dayjs(otherEvent.endDate)) &&
+        dayjs(baseEvent.endDate).isAfter(dayjs(otherEvent.startDate))
+    );
+
+    directOverlaps.forEach((event) => {
+      accumulatedEvents.add(event);
+      // Recursively find overlaps for each overlapping event
+      findAllOverlappingEvents(event, accumulatedEvents);
+    });
+
+    return accumulatedEvents;
+  };
+
+  for (let i = 0; i < adjustedEvents.length; i++) {
+    const targetEvent = adjustedEvents[i];
+
+    // Skip if already processed
+    if (processedEvents.has(targetEvent._id)) {
+      continue;
+    }
+
+    // Find all overlapping events recursively
+    const overlappingEventsSet = findAllOverlappingEvents(
+      targetEvent,
+      new Set([targetEvent])
+    );
+    const eventGroup = Array.from(overlappingEventsSet);
+
+    if (eventGroup.length > 1) {
+      // If there are any overlaps, calculate width multiplier
+      let multiplier = 1 / eventGroup.length;
+      // Round to 2 decimal places (in case we have way too many decimal places from the division)
+      multiplier = Math.round(multiplier * 100) / 100;
+
+      // Set adjustments for all events in the group
+      eventGroup.forEach((event, i) => {
+        event.position.isOverlapping = true;
+        event.position.widthMultiplier *= multiplier;
+        event.position.horizontalOrder = i + 1;
+        processedEvents.add(event._id);
+      });
+
+      // If exact start and end times match, sort alphabetically by title
+      if (
+        eventGroup.every(
+          (event) =>
+            dayjs(event.startDate).isSame(targetEvent.startDate) &&
+            dayjs(event.endDate).isSame(targetEvent.endDate)
+        )
+      ) {
+        eventGroup.sort((a, b) => {
+          if (!a.title || !b.title) {
+            return 0;
+          }
+
+          return a.title.localeCompare(b.title);
+        });
+      }
+    }
+  }
+
+  return adjustedEvents;
 };

@@ -22,6 +22,8 @@ export const getPosition = (
   measurements: Measurements_Grid,
   isDraft: boolean
 ) => {
+  if (!event) return null; // TS Guard
+
   const { colWidths } = measurements;
   const start = dayjs(event.startDate);
   const end = dayjs(event.endDate);
@@ -29,15 +31,11 @@ export const getPosition = (
   const category = getEventCategory(start, end, startOfView, endOfView);
   const startIndex = start.get("day");
 
-  let left = getLeftPosition(category, startIndex, colWidths);
-
-  if (isDraft || !event.isAllDay) {
-    left += GRID_MARGIN_LEFT;
-  }
-
   let height: number;
   let top: number;
   let width: number;
+  let left: number;
+
   if (event.isAllDay) {
     height = EVENT_ALLDAY_HEIGHT;
     top = 23 * (event?.row || 1); // found by experimenting with what 'looked right'
@@ -50,7 +48,7 @@ export const getPosition = (
       colWidths
     );
   } else {
-    width = colWidths[startIndex];
+    width = colWidths[startIndex] * event.position.widthMultiplier;
     const widthBuffer = 11;
     width -= widthBuffer;
 
@@ -63,6 +61,12 @@ export const getPosition = (
     const durationHours = duration * MS_IN_HR;
     height = hourHeight * durationHours;
     height -= DRAFT_PADDING_BOTTOM;
+  }
+
+  left = getLeftPosition(category, startIndex, colWidths, event, width);
+
+  if (isDraft || !event.isAllDay) {
+    left += GRID_MARGIN_LEFT;
   }
 
   const position = { height, left, top, width };
