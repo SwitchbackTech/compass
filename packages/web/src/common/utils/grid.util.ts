@@ -442,7 +442,7 @@ export const getAbsoluteLeftPosition = (
         }
 
         if (
-          event.position.isOverlapping &&
+          event.position?.isOverlapping &&
           event.position.horizontalOrder > 1
         ) {
           positionStart += eventWidth * (event.position.horizontalOrder - 1);
