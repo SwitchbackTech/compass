@@ -6,10 +6,6 @@ export const StyledDateTimeFlex = styled(Flex)`
   margin-bottom: 10px;
 `;
 
-export const StyledDateFlex = styled(Flex)`
-  width: 120px;
-`;
-
 export const StyledTimeFlex = styled(Flex)`
   margin-left: 40px;
 `;
