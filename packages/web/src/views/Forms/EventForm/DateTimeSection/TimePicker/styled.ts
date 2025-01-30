@@ -4,7 +4,6 @@ import { Divider } from "@web/components/Divider";
 
 export interface Props {
   bgColor?: string;
-  isOpen?: boolean;
 }
 
 export const StyledTimePicker = styled.div<Props>`
@@ -58,17 +57,16 @@ export const StyledTimePicker = styled.div<Props>`
       &-list {
         font-size: ${({ theme }) => theme.text.size.m};
         padding: 0;
-        ${({ isOpen: open }) => !open && "max-height: 0;"}
         transition: ${({ theme }) => theme.transition.default};
 
         ::-webkit-scrollbar {
           width: 8px;
         }
         ::-webkit-scrollbar-thumb {
-          background: ${({ bgColor }) => darken(bgColor, 40)};
+          background: ${({ bgColor }) => bgColor && darken(bgColor, 40)};
           border-radius: 3px;
           &:hover {
-            background: ${({ bgColor }) => darken(bgColor, 80)};
+            background: ${({ bgColor }) => bgColor && darken(bgColor, 80)};
             transition: background-color 0.2s;
           }
         }
