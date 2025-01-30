@@ -16,14 +16,12 @@ import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 
 export const getPosition = (
-  event: Schema_GridEvent | null,
+  event: Schema_GridEvent,
   startOfView: Dayjs,
   endOfView: Dayjs,
   measurements: Measurements_Grid,
   isDraft: boolean
 ) => {
-  if (!event) return null; // TS Guard
-
   const { colWidths } = measurements;
   const start = dayjs(event.startDate);
   const end = dayjs(event.endDate);

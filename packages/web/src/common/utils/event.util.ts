@@ -88,7 +88,6 @@ export const getCategory = (event: Schema_Event) => {
 export const assembleGridEvent = (
   event: Partial<Schema_GridEvent>
 ): Schema_GridEvent => {
-  // TODO: Maybe move to a constants file?
   const DEFAULT_POSITION = {
     isOverlapping: false,
     widthMultiplier: 1,
@@ -201,6 +200,11 @@ export const isEventInRange = (
   );
 
   return isStartDateInRange || isEndDateInRange;
+};
+
+export const isOptimisticEvent = (event: Schema_GridEvent) => {
+  const isOptimistic = event._id?.startsWith(ID_OPTIMISTIC_PREFIX) || false;
+  return isOptimistic;
 };
 
 export const prepEvtAfterDraftDrop = (

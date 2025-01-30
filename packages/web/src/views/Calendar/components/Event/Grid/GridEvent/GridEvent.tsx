@@ -6,7 +6,9 @@ import React, {
   useMemo,
 } from "react";
 import dayjs from "dayjs";
+import { Priorities } from "@core/constants/core.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { isOptimisticEvent } from "@web/common/utils/event.util";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Flex } from "@web/components/Flex";
@@ -18,10 +20,7 @@ import {
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
 import { getLineClamp } from "@web/common/utils/grid.util";
 import { getTimesLabel } from "@web/common/utils/web.date.util";
-import {
-  ID_OPTIMISTIC_PREFIX,
-  ZIndex,
-} from "@web/common/constants/web.constants";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
 
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
@@ -59,8 +58,8 @@ const _GridEvent = (
   const { component } = weekProps;
 
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
-  const isOptimistic = _event._id?.startsWith(ID_OPTIMISTIC_PREFIX);
   const event = _event;
+  const isOptimistic = isOptimisticEvent(event);
 
   const position = getPosition(
     event,
@@ -78,7 +77,7 @@ const _GridEvent = (
   return (
     <StyledEvent
       allDay={event.isAllDay || false}
-      className={isDraft ? "active" : null}
+      className={isDraft ? "active" : undefined}
       height={position.height || 0}
       isDragging={isDragging}
       isInPast={isInPast}
@@ -92,7 +91,7 @@ const _GridEvent = (
 
         onEventMouseDown(event, e);
       }}
-      priority={event.priority}
+      priority={event.priority || Priorities.UNASSIGNED}
       ref={ref}
       role="button"
       tabindex="0"
@@ -111,7 +110,10 @@ const _GridEvent = (
           <>
             {(isDraft || !isInPast) && (
               <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
-                {getTimesLabel(event.startDate, event.endDate)}
+                {getTimesLabel(
+                  event.startDate as string,
+                  event.endDate as string
+                )}
               </Text>
             )}
             <>
