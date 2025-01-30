@@ -1,7 +1,9 @@
 import dayjs from "dayjs";
 import React, { memo, MouseEvent } from "react";
-import { Schema_Event } from "@core/types/event.types";
+import { Priorities } from "@core/constants/core.constants";
 import { Flex } from "@web/components/Flex";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { isOptimisticEvent } from "@web/common/utils/event.util";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { getPosition } from "@web/views/Calendar/hooks/event/getPosition";
@@ -10,9 +12,6 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Text } from "@web/components/Text";
 
 import { StyledEvent } from "../../Event/styled";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { Priorities } from "@core/constants/core.constants";
-import { isOptimisticEvent } from "@web/common/utils/event.util";
 
 interface Props {
   event: Schema_GridEvent;
@@ -20,7 +19,7 @@ interface Props {
   measurements: Measurements_Grid;
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
-  onMouseDown: (e: MouseEvent, event: Schema_Event) => void;
+  onMouseDown: (e: MouseEvent, event: Schema_GridEvent) => void;
 }
 
 const AllDayEvent = ({

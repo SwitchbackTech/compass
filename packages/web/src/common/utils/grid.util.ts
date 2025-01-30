@@ -43,7 +43,12 @@ export const assignEventToRow = (
   return { fits, rowNum };
 };
 
-export const assignEventsToRow = (allDayEvents: Schema_Event[]) => {
+export const assignEventsToRow = (
+  allDayEvents: Schema_Event[]
+): {
+  rowsCount: number;
+  allDayEvents: Schema_GridEvent[];
+} => {
   const rows: number[][] = [];
   // makes copy of all event objects to allow for adding a 'row' field
   // can likely be optimized using immer's `produce` and `draft`
@@ -442,7 +447,8 @@ export const getAbsoluteLeftPosition = (
         }
 
         if (
-          event.position?.isOverlapping &&
+          !event.isAllDay &&
+          event.position.isOverlapping &&
           event.position.horizontalOrder > 1
         ) {
           positionStart += eventWidth * (event.position.horizontalOrder - 1);

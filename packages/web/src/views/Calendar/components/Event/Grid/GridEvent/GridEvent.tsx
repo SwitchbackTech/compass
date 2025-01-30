@@ -6,7 +6,9 @@ import React, {
   useMemo,
 } from "react";
 import dayjs from "dayjs";
+import { Priorities } from "@core/constants/core.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { isOptimisticEvent } from "@web/common/utils/event.util";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Flex } from "@web/components/Flex";
@@ -22,8 +24,6 @@ import { ZIndex } from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
 
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
-import { Priorities } from "@core/constants/core.constants";
-import { isOptimisticEvent } from "@web/common/utils/event.util";
 
 interface Props {
   event: Schema_GridEvent;

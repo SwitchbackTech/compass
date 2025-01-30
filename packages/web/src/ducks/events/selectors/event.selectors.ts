@@ -5,16 +5,18 @@ import { assignEventsToRow } from "@web/common/utils/grid.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event.util";
 
+type Schema_GridEvent_NoPosition = Omit<Schema_GridEvent, "position">;
+
 export const selectAllDayEvents = createSelector(
   (state: RootState) => state.events.entities.value || {},
   (state: RootState) => state.events.getWeekEvents.value || [],
   (entities, weekIds) => {
     if (!("data" in weekIds) || weekIds.data.length === 0) return [];
 
-    const weekEvents: Schema_Event[] = weekIds.data.map(
+    const weekEvents: Schema_GridEvent_NoPosition[] = weekIds.data.map(
       (_id: string) => entities[_id]
     );
-    const _allDayEvents: Schema_Event[] = weekEvents.filter(
+    const _allDayEvents: Schema_GridEvent_NoPosition[] = weekEvents.filter(
       (e: Schema_Event) => e !== undefined && e.isAllDay
     );
     const { allDayEvents } = assignEventsToRow(_allDayEvents);
