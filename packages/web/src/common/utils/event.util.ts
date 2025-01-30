@@ -203,6 +203,11 @@ export const isEventInRange = (
   return isStartDateInRange || isEndDateInRange;
 };
 
+export const isOptimisticEvent = (event: Schema_GridEvent) => {
+  const isOptimistic = event._id?.startsWith(ID_OPTIMISTIC_PREFIX) || false;
+  return isOptimistic;
+};
+
 export const prepEvtAfterDraftDrop = (
   category: Categories_Event,
   dropItem: DropResult,

@@ -10,9 +10,12 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Text } from "@web/components/Text";
 
 import { StyledEvent } from "../../Event/styled";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { Priorities } from "@core/constants/core.constants";
+import { isOptimisticEvent } from "@web/common/utils/event.util";
 
 interface Props {
-  event: Schema_Event;
+  event: Schema_GridEvent;
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
   startOfView: WeekProps["component"]["startOfView"];
@@ -36,18 +39,21 @@ const AllDayEvent = ({
     false
   );
 
+  const isOptimistic = isOptimisticEvent(event);
+
   return (
     <StyledEvent
-      allDay={event.isAllDay}
+      allDay={event.isAllDay || true}
       height={position.height}
       isDragging={false}
       isInPast={dayjs().isAfter(dayjs(event.endDate))}
       isPlaceholder={isPlaceholder}
+      isOptimistic={isOptimistic}
       isResizing={false}
       left={position.left}
       lineClamp={1}
       onMouseDown={(e) => onMouseDown(e, event)}
-      priority={event.priority}
+      priority={event.priority || Priorities.UNASSIGNED}
       role="button"
       top={position.top}
       width={position.width}
