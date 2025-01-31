@@ -66,7 +66,7 @@ const _GridEvent = (
     component.startOfView,
     component.endOfView,
     measurements,
-    false
+    isDraft
   );
 
   const lineClamp = useMemo(

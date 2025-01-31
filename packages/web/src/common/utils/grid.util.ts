@@ -10,6 +10,8 @@ import {
   FLEX_TMRW,
   FLEX_TODAY,
   AFTER_TMRW_MULTIPLE,
+  GRID_MARGIN_LEFT,
+  GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN,
 } from "@web/views/Calendar/layout.constants";
 import { AssignResult, WidthPercentages } from "@web/common/types/util.types";
 import { Category } from "@web/ducks/events/event.types";
@@ -407,15 +409,31 @@ export const getLeftPosition = (
   startIndex: number,
   colWidths: number[],
   event?: Schema_GridEvent,
-  eventWidth?: number
+  eventWidth?: number,
+  isDraft?: boolean
 ) => {
-  const left = getAbsoluteLeftPosition(
+  let left = getAbsoluteLeftPosition(
     category,
     startIndex,
     colWidths,
     event,
-    eventWidth
+    eventWidth,
+    isDraft
   );
+
+  if (isDraft || !event?.isAllDay) {
+    left += GRID_MARGIN_LEFT;
+  }
+
+  if (event?.position?.isOverlapping) {
+    const isFirstEventInRow = event.position.horizontalOrder === 1;
+    left +=
+      // Increase the left margin of the overlapping event if it not the first event in the row
+      isFirstEventInRow
+        ? 0
+        : GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN *
+          (event.position.horizontalOrder - 1);
+  }
 
   return left;
 };
@@ -425,7 +443,8 @@ export const getAbsoluteLeftPosition = (
   startIndex: number,
   colWidths: number[],
   event?: Schema_GridEvent,
-  eventWidth?: number
+  eventWidth?: number,
+  isDraft?: boolean
 ) => {
   let positionStart: number;
   switch (category) {
@@ -447,6 +466,7 @@ export const getAbsoluteLeftPosition = (
         }
 
         if (
+          !isDraft &&
           !event.isAllDay &&
           event.position.isOverlapping &&
           event.position.horizontalOrder > 1
