@@ -407,14 +407,16 @@ export const getLeftPosition = (
   startIndex: number,
   colWidths: number[],
   event?: Schema_GridEvent,
-  eventWidth?: number
+  eventWidth?: number,
+  isDraft?: boolean
 ) => {
   const left = getAbsoluteLeftPosition(
     category,
     startIndex,
     colWidths,
     event,
-    eventWidth
+    eventWidth,
+    isDraft
   );
 
   return left;
@@ -425,7 +427,8 @@ export const getAbsoluteLeftPosition = (
   startIndex: number,
   colWidths: number[],
   event?: Schema_GridEvent,
-  eventWidth?: number
+  eventWidth?: number,
+  isDraft?: boolean
 ) => {
   let positionStart: number;
   switch (category) {
@@ -447,6 +450,7 @@ export const getAbsoluteLeftPosition = (
         }
 
         if (
+          !isDraft &&
           !event.isAllDay &&
           event.position.isOverlapping &&
           event.position.horizontalOrder > 1

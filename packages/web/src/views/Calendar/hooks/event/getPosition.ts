@@ -46,7 +46,12 @@ export const getPosition = (
       colWidths
     );
   } else {
-    width = colWidths[startIndex] * event.position.widthMultiplier;
+    width = isDraft
+      ? // If we are drafting an event, we want the event to be full width of the column
+        colWidths[startIndex]
+      : // Else, we want the width to be whatever the event's width multiplier is
+        colWidths[startIndex] * event.position.widthMultiplier;
+
     const widthBuffer = 11;
     width -= widthBuffer;
 
@@ -61,7 +66,14 @@ export const getPosition = (
     height -= DRAFT_PADDING_BOTTOM;
   }
 
-  left = getLeftPosition(category, startIndex, colWidths, event, width);
+  left = getLeftPosition(
+    category,
+    startIndex,
+    colWidths,
+    event,
+    width,
+    isDraft
+  );
 
   if (isDraft || !event.isAllDay) {
     left += GRID_MARGIN_LEFT;
