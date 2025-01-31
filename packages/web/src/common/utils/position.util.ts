@@ -198,6 +198,37 @@ export const getPosition = (
   return position;
 };
 
+const getRelativeLeftPosition = (
+  left: number,
+  event?: Schema_GridEvent,
+  isDraft?: boolean
+) => {
+  let adjustment = 0;
+  const GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN = 4;
+
+  if (event?.position?.isOverlapping) {
+    const isFirstEventInRow = event.position.horizontalOrder === 1;
+    if (!isFirstEventInRow) {
+      console.log("adding cuz not first in row");
+      adjustment +=
+        GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN *
+        (event.position.horizontalOrder - 1);
+    }
+  }
+
+  // if (event?.isAllDay === false) {
+  //   adjustment += GRID_MARGIN_LEFT;
+  // }
+  // if (isDraft || event?.isAllDay === false) {
+  //   console.log("adjusting with margin");
+  //   adjustment += GRID_MARGIN_LEFT;
+  // }
+
+  const relativeLeft = left + adjustment + GRID_MARGIN_LEFT;
+  console.log("relativeleft", relativeLeft);
+  return relativeLeft;
+};
+
 export const getTimedEventWidth = (
   colWidths: number[],
   startIndex: number,
@@ -231,19 +262,8 @@ export const getLeftPosition = (
     eventWidth,
     isDraft
   );
+  left = getRelativeLeftPosition(left, event, isDraft);
 
-  if (event?.position?.isOverlapping) {
-    const isFirstEventInRow = event.position.horizontalOrder === 1;
-    left +=
-      // Increase the left margin of the overlapping event if it not the first event in the row
-      isFirstEventInRow
-        ? 0
-        : GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN *
-          (event.position.horizontalOrder - 1);
-  }
-  if (isDraft || event?.isAllDay === false) {
-    left += GRID_MARGIN_LEFT;
-  }
   return left;
 };
 
