@@ -12,7 +12,6 @@ import {
   DRAFT_PADDING_BOTTOM,
   EVENT_ALLDAY_HEIGHT,
 } from "@web/views/Calendar/layout.constants";
-import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 
 export const getPosition = (
@@ -74,10 +73,6 @@ export const getPosition = (
     width,
     isDraft
   );
-
-  if (isDraft || !event.isAllDay) {
-    left += GRID_MARGIN_LEFT;
-  }
 
   const position = { height, left, top, width };
   return position;

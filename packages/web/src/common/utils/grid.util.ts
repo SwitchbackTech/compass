@@ -10,6 +10,8 @@ import {
   FLEX_TMRW,
   FLEX_TODAY,
   AFTER_TMRW_MULTIPLE,
+  GRID_MARGIN_LEFT,
+  GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN,
 } from "@web/views/Calendar/layout.constants";
 import { AssignResult, WidthPercentages } from "@web/common/types/util.types";
 import { Category } from "@web/ducks/events/event.types";
@@ -410,7 +412,7 @@ export const getLeftPosition = (
   eventWidth?: number,
   isDraft?: boolean
 ) => {
-  const left = getAbsoluteLeftPosition(
+  let left = getAbsoluteLeftPosition(
     category,
     startIndex,
     colWidths,
@@ -418,6 +420,20 @@ export const getLeftPosition = (
     eventWidth,
     isDraft
   );
+
+  if (isDraft || !event?.isAllDay) {
+    left += GRID_MARGIN_LEFT;
+  }
+
+  if (event?.position.isOverlapping) {
+    const isFirstEventInRow = event.position.horizontalOrder === 1;
+    left +=
+      // Increase the left margin of the overlapping event if it not the first event in the row
+      isFirstEventInRow
+        ? 0
+        : GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN *
+          (event.position.horizontalOrder - 1);
+  }
 
   return left;
 };
