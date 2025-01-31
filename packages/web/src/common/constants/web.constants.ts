@@ -132,3 +132,9 @@ export const ACCEPTED_TIMES = [
   "11:30 PM",
   "11:45 PM",
 ];
+
+export const SCHEMA_GRID_EVENT_DEFAULT_POSITION = {
+  isOverlapping: false,
+  widthMultiplier: 1,
+  horizontalOrder: 1,
+};

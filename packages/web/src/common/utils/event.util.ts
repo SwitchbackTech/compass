@@ -19,6 +19,7 @@ import {
   COLUMN_MONTH,
   COLUMN_WEEK,
   ID_OPTIMISTIC_PREFIX,
+  SCHEMA_GRID_EVENT_DEFAULT_POSITION,
 } from "../constants/web.constants";
 
 dayjs.extend(isSameOrAfter);
@@ -88,12 +89,6 @@ export const getCategory = (event: Schema_Event) => {
 export const assembleGridEvent = (
   event: Partial<Schema_GridEvent>
 ): Schema_GridEvent => {
-  const DEFAULT_POSITION = {
-    isOverlapping: false,
-    widthMultiplier: 1,
-    horizontalOrder: 1,
-  };
-
   return {
     _id: event._id || "",
     title: event.title || "",
@@ -105,7 +100,7 @@ export const assembleGridEvent = (
     isSomeday: event.isSomeday || false,
     origin: event.origin || Origin.COMPASS,
     priority: event.priority || Priorities.UNASSIGNED,
-    position: event.position || DEFAULT_POSITION,
+    position: event.position || SCHEMA_GRID_EVENT_DEFAULT_POSITION,
   };
 };
 
@@ -335,6 +330,14 @@ export const adjustOverlappingEvents = (
       }
     }
   }
+
+  return adjustedEvents;
+};
+
+export const adjustEvents = (
+  events: Schema_GridEvent[]
+): Schema_GridEvent[] => {
+  const adjustedEvents = adjustOverlappingEvents(events);
 
   return adjustedEvents;
 };
