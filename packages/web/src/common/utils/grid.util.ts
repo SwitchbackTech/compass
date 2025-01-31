@@ -425,7 +425,7 @@ export const getLeftPosition = (
     left += GRID_MARGIN_LEFT;
   }
 
-  if (event?.position.isOverlapping) {
+  if (event?.position?.isOverlapping) {
     const isFirstEventInRow = event.position.horizontalOrder === 1;
     left +=
       // Increase the left margin of the overlapping event if it not the first event in the row
