@@ -1,10 +1,11 @@
 import dayjs from "dayjs";
+
 import {
-  getAllDayEventWidth,
   getEventCategory,
+  getAllDayEventWidth,
   getLeftPosition,
-} from "@web/common/utils/grid.util";
-import { widthMinusPadding } from "@web/common/utils/grid.util";
+  widthMinusPadding,
+} from "@web/common/utils/position.util";
 
 describe("getAllDayEventWidth", () => {
   it("is never wider than 1 week", () => {

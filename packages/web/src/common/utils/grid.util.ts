@@ -5,19 +5,14 @@ import weekPlugin from "dayjs/plugin/weekOfYear";
 import dayOfYear from "dayjs/plugin/dayOfYear";
 import { Schema_Event } from "@core/types/event.types";
 import {
-  EVENT_PADDING_RIGHT,
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
   AFTER_TMRW_MULTIPLE,
-  GRID_MARGIN_LEFT,
-  GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN,
 } from "@web/views/Calendar/layout.constants";
 import { AssignResult, WidthPercentages } from "@web/common/types/util.types";
-import { Category } from "@web/ducks/events/event.types";
 import {
   DIVIDER_GRID,
-  GRID_X_PADDING_TOTAL,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -80,50 +75,6 @@ export const assignEventsToRow = (
   return { rowsCount: rows.length, allDayEvents: orderedAllDayEvents };
 };
 
-export const getAllDayEventWidth = (
-  category: Category,
-  startIndex: number,
-  start: Dayjs,
-  end: Dayjs,
-  startOfWeek: Dayjs,
-  widths: number[]
-) => {
-  let width: number;
-
-  switch (category) {
-    case Category.ThisWeekOnly: {
-      let duration = end.diff(start, "days");
-      if (duration === 0) {
-        // if only one day, then use original width
-        width = widths[startIndex];
-        duration = 1; // prevents width from being 0
-      }
-      width = _sumEventWidths(duration, startIndex, widths);
-      break;
-    }
-    case Category.ThisToFutureWeek: {
-      width = _sumEventWidths(7 - startIndex, startIndex, widths);
-      break;
-    }
-    case Category.PastToThisWeek: {
-      const daysThisWeek = end.diff(startOfWeek, "days");
-      // start at 0 because event carries over from last week
-      width = _sumEventWidths(daysThisWeek, 0, widths);
-      break;
-    }
-    case Category.PastToFutureWeek: {
-      width = _sumEventWidths(7, 0, widths);
-      break;
-    }
-    default: {
-      console.log("Logic error while parsing date width");
-      width = -666;
-    }
-  }
-
-  return widthMinusPadding(width);
-};
-
 export const getBeforeAfterPercentages = (
   percentRemaining: number,
   todayIndex: number,
@@ -152,7 +103,6 @@ export const getCurrentPercentOfDay = () => {
   return (getCurrentMinute() / 1440) * 100;
 };
 
-// ++ separate past-future from current (?)
 export const getColumnWidthPercentages = (
   todayIndex: number
 ): WidthPercentages => {
@@ -378,112 +328,6 @@ export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
   return prevDayFlex * AFTER_TMRW_MULTIPLE;
 };
 
-export const getEventCategory = (
-  start: Dayjs,
-  end: Dayjs,
-  startOfWeek: Dayjs,
-  endOfWeek: Dayjs
-): Category => {
-  const startsThisWeek = start.isBetween(startOfWeek, endOfWeek, "day", "[]");
-  const endsThisWeek = end.isBetween(startOfWeek, endOfWeek, "day", "[]");
-
-  if (startsThisWeek && endsThisWeek) {
-    return Category.ThisWeekOnly;
-  }
-  if (startsThisWeek && !endsThisWeek) {
-    return Category.ThisToFutureWeek;
-  }
-  if (!startsThisWeek && endsThisWeek) {
-    return Category.PastToThisWeek;
-  }
-  if (!startsThisWeek && !endsThisWeek) {
-    return Category.PastToFutureWeek;
-  }
-
-  console.log("Logic error while getting event category");
-  return Category.ThisWeekOnly;
-};
-
-export const getLeftPosition = (
-  category: Category,
-  startIndex: number,
-  colWidths: number[],
-  event?: Schema_GridEvent,
-  eventWidth?: number,
-  isDraft?: boolean
-) => {
-  let left = getAbsoluteLeftPosition(
-    category,
-    startIndex,
-    colWidths,
-    event,
-    eventWidth,
-    isDraft
-  );
-
-  if (isDraft || !event?.isAllDay) {
-    left += GRID_MARGIN_LEFT;
-  }
-
-  if (event?.position?.isOverlapping) {
-    const isFirstEventInRow = event.position.horizontalOrder === 1;
-    left +=
-      // Increase the left margin of the overlapping event if it not the first event in the row
-      isFirstEventInRow
-        ? 0
-        : GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN *
-          (event.position.horizontalOrder - 1);
-  }
-
-  return left;
-};
-
-export const getAbsoluteLeftPosition = (
-  category: Category,
-  startIndex: number,
-  colWidths: number[],
-  event?: Schema_GridEvent,
-  eventWidth?: number,
-  isDraft?: boolean
-) => {
-  let positionStart: number;
-  switch (category) {
-    case Category.PastToThisWeek:
-    case Category.PastToFutureWeek: {
-      positionStart = 0;
-      break;
-    }
-    case Category.ThisWeekOnly:
-    case Category.ThisToFutureWeek:
-      {
-        // add up from 0 index to startIndex
-        positionStart = colWidths.reduce((accum, width, index) => {
-          return index < startIndex ? accum + width : accum;
-        }, 0);
-
-        if (!event || !eventWidth) {
-          return positionStart;
-        }
-
-        if (
-          !isDraft &&
-          !event.isAllDay &&
-          event.position.isOverlapping &&
-          event.position.horizontalOrder > 1
-        ) {
-          positionStart += eventWidth * (event.position.horizontalOrder - 1);
-        }
-      }
-      break;
-    default: {
-      console.log("Logic error while parsing left position of date");
-      positionStart = -666;
-    }
-  }
-
-  return positionStart;
-};
-
 export const getLineClamp = (height: number) => {
   const min = 1;
   const computed = Math.round((height - 7) / 16);
@@ -505,16 +349,6 @@ export const getPrevDayWidth = (today: Dayjs) => {
 export const getWidthBuffer = (startIndex: number) =>
   startIndex * (DIVIDER_GRID * 2);
 
-export const getWidthInPixels = (
-  percent: number, //eg 21.4 for 21.4%
-  windowWidth: number
-) => {
-  const gridWidth = windowWidth - GRID_X_PADDING_TOTAL;
-
-  const widthInPixels = gridWidth * (percent * 0.01);
-  return Math.floor(widthInPixels);
-};
-
 export const getX = (e: MouseEvent | number, isSidebarOpen: boolean) => {
   const x = typeof e === "number" ? e : e.clientX;
 
@@ -533,20 +367,6 @@ const normalizeDayNums = (days: number[]) => {
       return d;
     }
   });
-};
-
-export const removeSomedayProperties = (event: Schema_Event): Schema_Event => {
-  const { order, recurrence, ...eventWithoutSomedayProps } = event;
-  return eventWithoutSomedayProps;
-};
-
-export const widthMinusPadding = (width: number) => {
-  const adjustedWidth = width - EVENT_PADDING_RIGHT;
-
-  if (adjustedWidth < 0) {
-    return width;
-  }
-  return adjustedWidth;
 };
 
 const _anySharedValues = (arr1: number[], arr2: number[]) => {
@@ -615,20 +435,4 @@ const _range = (start: number, end: number) => {
   return Array(end - start + 1)
     .fill(null)
     .map((_, idx) => start + idx);
-};
-
-const _sumEventWidths = (
-  duration: number,
-  startIndex: number,
-  widths: number[]
-) => {
-  // create array of numbers, one for each day, setting each to 0 by default,
-  // then set values based on the widths of the days of the event
-  const eventWidths: number[] = Array(duration || 0)
-    .fill(0)
-    .map((_, index) => widths[index + startIndex] || 0);
-
-  // add up width of each day of the event
-  const eventWidth = eventWidths.reduce((accum, value) => accum + value, 0);
-  return eventWidth;
 };
