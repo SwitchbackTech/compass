@@ -199,33 +199,28 @@ export const getPosition = (
 };
 
 const getRelativeLeftPosition = (
-  left: number,
+  initialLeft: number,
   event?: Schema_GridEvent,
   isDraft?: boolean
 ) => {
   let adjustment = 0;
   const GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN = 4;
 
-  if (event?.position?.isOverlapping) {
-    const isFirstEventInRow = event.position.horizontalOrder === 1;
-    if (!isFirstEventInRow) {
-      console.log("adding cuz not first in row");
+  if (!isDraft && event?.position?.isOverlapping) {
+    const isNotFirstInRow = event.position.horizontalOrder !== 1;
+    if (isNotFirstInRow) {
       adjustment +=
         GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN *
         (event.position.horizontalOrder - 1);
     }
   }
 
-  // if (event?.isAllDay === false) {
-  //   adjustment += GRID_MARGIN_LEFT;
-  // }
-  // if (isDraft || event?.isAllDay === false) {
-  //   console.log("adjusting with margin");
-  //   adjustment += GRID_MARGIN_LEFT;
-  // }
+  const isTimedEvent = event?.isAllDay === false;
+  if (isTimedEvent) {
+    adjustment += GRID_MARGIN_LEFT;
+  }
 
-  const relativeLeft = left + adjustment + GRID_MARGIN_LEFT;
-  console.log("relativeleft", relativeLeft);
+  const relativeLeft = initialLeft + adjustment;
   return relativeLeft;
 };
 
@@ -262,6 +257,7 @@ export const getLeftPosition = (
     eventWidth,
     isDraft
   );
+
   left = getRelativeLeftPosition(left, event, isDraft);
 
   return left;
