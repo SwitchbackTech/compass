@@ -8,7 +8,6 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import {
   EVENT_ALLDAY_HEIGHT,
   DRAFT_PADDING_BOTTOM,
-  GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN,
   EVENT_PADDING_RIGHT,
   GRID_MARGIN_LEFT,
 } from "@web/views/Calendar/layout.constants";
@@ -262,8 +261,6 @@ export const getLeftPosition = (
 
   return left;
 };
-
-export const getWidth = () => {};
 
 export const widthMinusPadding = (width: number) => {
   const adjustedWidth = width - EVENT_PADDING_RIGHT;

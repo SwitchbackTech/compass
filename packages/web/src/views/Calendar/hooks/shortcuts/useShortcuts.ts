@@ -60,7 +60,7 @@ export const useShortcuts = ({
   });
 
   useEffect(() => {
-    const _createSomedayDraft = (type: "week" | "month") => {
+    const _createSomedayDraft = async (type: "week" | "month") => {
       if (type === "week" && isAtWeeklyLimit) {
         alert(SOMEDAY_WEEK_LIMIT_MSG);
         return;
@@ -79,7 +79,9 @@ export const useShortcuts = ({
           ? Categories_Event.SOMEDAY_WEEK
           : Categories_Event.SOMEDAY_MONTH;
 
-      const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
+      const somedayDefault = await getDefaultEvent(
+        Categories_Event.SOMEDAY_WEEK
+      );
       dispatch(
         draftSlice.actions.start({
           eventType,

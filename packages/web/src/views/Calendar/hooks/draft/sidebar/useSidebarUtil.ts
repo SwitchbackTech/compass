@@ -149,8 +149,8 @@ export const useSidebarUtil = (
     );
   };
 
-  const createDefaultSomeday = useCallback(() => {
-    const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
+  const createDefaultSomeday = useCallback(async () => {
+    const somedayDefault = await getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
 
     setDraft({ ...somedayDefault, isOpen: true });
     setIsDrafting(true);

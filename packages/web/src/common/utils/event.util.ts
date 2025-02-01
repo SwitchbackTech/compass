@@ -9,6 +9,7 @@ import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { validateEvent } from "@core/validators/event.validator";
 import { Status } from "@core/errors/status.codes";
+import { getUserId } from "@web/auth/auth.util";
 
 import {
   Schema_GridEvent,
@@ -19,7 +20,6 @@ import {
   COLUMN_MONTH,
   COLUMN_WEEK,
   ID_OPTIMISTIC_PREFIX,
-  SCHEMA_GRID_EVENT_DEFAULT_POSITION,
 } from "../constants/web.constants";
 
 dayjs.extend(isSameOrAfter);
@@ -86,67 +86,85 @@ export const getCategory = (event: Schema_Event) => {
   return Categories_Event.TIMED;
 };
 
-export const assembleGridEvent = (
-  event: Partial<Schema_GridEvent>
-): Schema_GridEvent => {
-  return {
-    _id: event._id || "",
+export const assembleBaseEvent = (
+  userId: string,
+  event: Partial<Schema_Event>
+): Schema_Event => {
+  const baseEvent = {
+    _id: event._id,
     title: event.title || "",
     description: event.description || "",
     startDate: event.startDate || "",
     endDate: event.endDate || "",
-    user: event.user || "",
+    user: userId,
     isAllDay: event.isAllDay || false,
     isSomeday: event.isSomeday || false,
     origin: event.origin || Origin.COMPASS,
     priority: event.priority || Priorities.UNASSIGNED,
-    position: event.position || SCHEMA_GRID_EVENT_DEFAULT_POSITION,
   };
+
+  return baseEvent;
 };
 
-export const getDefaultEvent = (
-  draftType: Categories_Event,
-  startDate?: string,
-  endDate?: string
-): Schema_GridEvent | null => {
-  const defaultEvent = assembleGridEvent({
-    priority: Priorities.UNASSIGNED,
+export const assembleGridEvent = (event: Schema_Event): Schema_GridEvent => {
+  const gridEvent: Schema_GridEvent = {
+    ...event,
     position: {
       isOverlapping: false,
       widthMultiplier: 1,
       horizontalOrder: 1,
     },
+  };
+  return gridEvent;
+};
+
+export const getDefaultEvent = async (
+  draftType: Categories_Event,
+  startDate?: string,
+  endDate?: string
+): Promise<Schema_Event | Schema_GridEvent> => {
+  const userId = await getUserId();
+  const baseEvent = assembleBaseEvent(userId, {
+    priority: Priorities.UNASSIGNED,
   });
 
-  const defaultSomeday = {
-    ...defaultEvent,
-    isAllDay: false,
-    isSomeday: true,
-    origin: Origin.COMPASS,
-  };
-
   switch (draftType) {
-    case Categories_Event.ALLDAY:
-      return {
-        ...defaultEvent,
+    case Categories_Event.ALLDAY: {
+      const defaultAllday: Schema_Event = {
+        ...baseEvent,
         isAllDay: true,
         isSomeday: false,
         startDate,
         endDate: startDate,
       };
-    case Categories_Event.SOMEDAY_WEEK || Categories_Event.SOMEDAY_MONTH:
+      return defaultAllday;
+    }
+    case Categories_Event.SOMEDAY_WEEK || Categories_Event.SOMEDAY_MONTH: {
+      const defaultSomeday: Schema_Event = {
+        ...baseEvent,
+        isAllDay: false,
+        isSomeday: true,
+        origin: Origin.COMPASS,
+      };
       return defaultSomeday;
+    }
     case Categories_Event.TIMED: {
-      return {
-        ...defaultEvent,
+      const defaultTimed: Schema_GridEvent = {
+        ...baseEvent,
         isAllDay: false,
         isSomeday: false,
         startDate,
         endDate,
+        position: {
+          isOverlapping: false,
+          widthMultiplier: 1,
+          horizontalOrder: 1,
+        },
       };
+      return defaultTimed;
     }
     default:
-      return null;
+      return baseEvent;
   }
 };
 

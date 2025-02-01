@@ -46,7 +46,7 @@ export const AllDayRow: FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowsCount]);
 
-  const startAlldayDraft = (e: MouseEvent) => {
+  const startAlldayDraft = async (e: MouseEvent) => {
     const x = getX(e, isSidebarOpen);
     const startDate = dateCalcs.getDateStrByXY(
       x,
@@ -55,7 +55,7 @@ export const AllDayRow: FC<Props> = ({
       YEAR_MONTH_DAY_FORMAT
     );
 
-    const event = getDefaultEvent(Categories_Event.ALLDAY, startDate);
+    const event = await getDefaultEvent(Categories_Event.ALLDAY, startDate);
     dispatch(
       draftSlice.actions.start({
         eventType: Categories_Event.ALLDAY,
@@ -64,13 +64,13 @@ export const AllDayRow: FC<Props> = ({
     );
   };
 
-  const onSectionMouseDown = (e: MouseEvent) => {
+  const onSectionMouseDown = async (e: MouseEvent) => {
     if (isEventFormOpen()) {
       dispatch(draftSlice.actions.discard());
       return;
     }
 
-    startAlldayDraft(e);
+    await startAlldayDraft(e);
   };
 
   return (

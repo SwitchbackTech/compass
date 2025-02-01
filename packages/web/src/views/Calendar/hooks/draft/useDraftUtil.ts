@@ -95,10 +95,10 @@ export const useDraftUtil = (
     }
   }, [isDrafting, draft?.isOpen]);
 
-  const handleChange = useCallback(() => {
+  const handleChange = useCallback(async () => {
     if (isDrafting) {
       if (activity === "createShortcut") {
-        const defaultDraft = getDefaultEvent(
+        const defaultDraft = await getDefaultEvent(
           reduxDraftType,
           reduxDraft?.startDate,
           reduxDraft?.endDate

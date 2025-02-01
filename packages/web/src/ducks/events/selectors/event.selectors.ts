@@ -3,7 +3,10 @@ import { Schema_Event } from "@core/types/event.types";
 import { RootState } from "@web/store";
 import { assignEventsToRow } from "@web/common/utils/grid.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleGridEvent } from "@web/common/utils/event.util";
+import {
+  assembleBaseEvent,
+  assembleGridEvent,
+} from "@web/common/utils/event.util";
 
 type Schema_GridEvent_NoPosition = Omit<Schema_GridEvent, "position">;
 

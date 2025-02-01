@@ -48,22 +48,26 @@ export const MainGrid: FC<Props> = ({
   const { component } = weekProps;
   const { isCurrentWeek, week, weekDays } = component;
 
-  const onMouseDown = (e: MouseEvent) => {
+  const onMouseDown = async (e: MouseEvent) => {
     if (isEventFormOpen()) {
       dispatch(draftSlice.actions.discard());
       return;
     }
 
-    startTimedDraft(e);
+    await startTimedDraft(e);
   };
 
-  const startTimedDraft = (e: MouseEvent) => {
+  const startTimedDraft = async (e: MouseEvent) => {
     const x = getX(e, isSidebarOpen);
     const _start = dateCalcs.getDateByXY(x, e.clientY, component.startOfView);
     const startDate = _start.format();
     const endDate = _start.add(DRAFT_DURATION_MIN, "minutes").format();
 
-    const event = getDefaultEvent(Categories_Event.TIMED, startDate, endDate);
+    const event = await getDefaultEvent(
+      Categories_Event.TIMED,
+      startDate,
+      endDate
+    );
     dispatch(
       draftSlice.actions.startResizing({ event, dateToChange: "endDate" })
     );

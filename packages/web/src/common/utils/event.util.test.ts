@@ -1,7 +1,7 @@
 import {
   isEventInRange,
   adjustOverlappingEvents,
-  assembleGridEvent,
+  assembleBaseEvent,
 } from "./event.util";
 
 describe("isEventInRange", () => {
@@ -29,12 +29,12 @@ describe("adjustOverlappingEvents", () => {
   const time = (time: string) => `2025-01-27T${time}:00+03:00`;
 
   it("Sorts events by start time", () => {
-    const eventA = assembleGridEvent({
+    const eventA = assembleBaseEvent({
       _id: "A",
       startDate: time("07:30"),
       endDate: time("08:00"),
     });
-    const eventB = assembleGridEvent({
+    const eventB = assembleBaseEvent({
       _id: "B",
       startDate: time("07:15"),
       endDate: time("07:45"),
@@ -47,12 +47,12 @@ describe("adjustOverlappingEvents", () => {
   });
 
   it("Returns the same array if no events overlap", () => {
-    const eventA = assembleGridEvent({
+    const eventA = assembleBaseEvent({
       _id: "A",
       startDate: time("07:30"),
       endDate: time("08:00"),
     });
-    const eventB = assembleGridEvent({
+    const eventB = assembleBaseEvent({
       _id: "B",
       startDate: time("08:00"),
       endDate: time("08:30"),
@@ -64,12 +64,12 @@ describe("adjustOverlappingEvents", () => {
   });
 
   it("Adjusts events that overlap", () => {
-    const eventA = assembleGridEvent({
+    const eventA = assembleBaseEvent({
       _id: "A",
       startDate: time("07:30"),
       endDate: time("08:00"),
     });
-    const eventB = assembleGridEvent({
+    const eventB = assembleBaseEvent({
       _id: "B",
       startDate: time("07:45"),
       endDate: time("08:15"),
@@ -84,17 +84,17 @@ describe("adjustOverlappingEvents", () => {
   });
 
   it("Does not modify events that do not overlap", () => {
-    const eventA = assembleGridEvent({
+    const eventA = assembleBaseEvent({
       _id: "A",
       startDate: time("07:30"),
       endDate: time("08:00"),
     });
-    const eventB = assembleGridEvent({
+    const eventB = assembleBaseEvent({
       _id: "B",
       startDate: time("07:45"),
       endDate: time("08:15"),
     });
-    const nonOverlappingEventC = assembleGridEvent({
+    const nonOverlappingEventC = assembleBaseEvent({
       _id: "C",
       startDate: time("09:45"),
       endDate: time("10:15"),
@@ -115,17 +115,17 @@ describe("adjustOverlappingEvents", () => {
   });
 
   it("Adjusts events that indirectly overlap", () => {
-    const eventA = assembleGridEvent({
+    const eventA = assembleBaseEvent({
       _id: "A",
       startDate: time("07:30"),
       endDate: time("08:00"),
     });
-    const eventB = assembleGridEvent({
+    const eventB = assembleBaseEvent({
       _id: "B",
       startDate: time("07:45"),
       endDate: time("08:15"),
     });
-    const eventC = assembleGridEvent({
+    const eventC = assembleBaseEvent({
       _id: "C",
       // `eventC` starts when `eventA` ends, does not directly overlap, but should still be adjusted because it indirectly overlaps due to `eventB`
       startDate: time("08:00"),
@@ -144,29 +144,29 @@ describe("adjustOverlappingEvents", () => {
 
   it("Adjusts events that overlap in 2 distinct groups", () => {
     // Group 1
-    const eventA = assembleGridEvent({
+    const eventA = assembleBaseEvent({
       _id: "A",
       startDate: time("07:30"),
       endDate: time("08:00"),
     });
-    const eventB = assembleGridEvent({
+    const eventB = assembleBaseEvent({
       _id: "B",
       startDate: time("07:45"),
       endDate: time("08:15"),
     });
-    const eventC = assembleGridEvent({
+    const eventC = assembleBaseEvent({
       _id: "C",
       startDate: time("08:00"),
       endDate: time("08:30"),
     });
 
     // Group 2
-    const eventD = assembleGridEvent({
+    const eventD = assembleBaseEvent({
       _id: "D",
       startDate: time("10:00"),
       endDate: time("11:00"),
     });
-    const eventE = assembleGridEvent({
+    const eventE = assembleBaseEvent({
       _id: "E",
       startDate: time("10:30"),
       endDate: time("11:30"),
@@ -196,13 +196,13 @@ describe("adjustOverlappingEvents", () => {
   });
 
   it("Orders alphabetically if start and end times are the same", () => {
-    const eventA = assembleGridEvent({
+    const eventA = assembleBaseEvent({
       _id: "A",
       title: "A",
       startDate: time("07:30"),
       endDate: time("08:00"),
     });
-    const eventB = assembleGridEvent({
+    const eventB = assembleBaseEvent({
       _id: "B",
       title: "B",
       startDate: time("07:30"),
