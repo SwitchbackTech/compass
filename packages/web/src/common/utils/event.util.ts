@@ -26,6 +26,88 @@ dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isBetween);
 
+export const assembleBaseEvent = (
+  userId: string,
+  event: Partial<Schema_Event>
+): Schema_Event => {
+  const baseEvent = {
+    _id: event._id,
+    title: event.title || "",
+    description: event.description || "",
+    startDate: event.startDate || "",
+    endDate: event.endDate || "",
+    user: userId,
+    isAllDay: event.isAllDay || false,
+    isSomeday: event.isSomeday || false,
+    origin: event.origin || Origin.COMPASS,
+    priority: event.priority || Priorities.UNASSIGNED,
+  };
+
+  return baseEvent;
+};
+
+export const assembleDefaultEvent = async (
+  draftType: Categories_Event,
+  startDate?: string,
+  endDate?: string
+): Promise<Schema_Event | Schema_GridEvent> => {
+  const userId = await getUserId();
+  const baseEvent = assembleBaseEvent(userId, {
+    priority: Priorities.UNASSIGNED,
+  });
+
+  switch (draftType) {
+    case Categories_Event.ALLDAY: {
+      const defaultAllday: Schema_Event = {
+        ...baseEvent,
+        isAllDay: true,
+        isSomeday: false,
+        startDate,
+        endDate: startDate,
+      };
+      return defaultAllday;
+    }
+    case Categories_Event.SOMEDAY_WEEK || Categories_Event.SOMEDAY_MONTH: {
+      const defaultSomeday: Schema_Event = {
+        ...baseEvent,
+        isAllDay: false,
+        isSomeday: true,
+        origin: Origin.COMPASS,
+      };
+      return defaultSomeday;
+    }
+    case Categories_Event.TIMED: {
+      const defaultTimed: Schema_GridEvent = {
+        ...baseEvent,
+        isAllDay: false,
+        isSomeday: false,
+        startDate,
+        endDate,
+        position: {
+          isOverlapping: false,
+          widthMultiplier: 1,
+          horizontalOrder: 1,
+        },
+      };
+      return defaultTimed;
+    }
+    default:
+      return baseEvent;
+  }
+};
+
+export const assembleGridEvent = (event: Schema_Event): Schema_GridEvent => {
+  const gridEvent = {
+    ...event,
+    position: {
+      isOverlapping: false,
+      widthMultiplier: 1,
+      horizontalOrder: 1,
+    },
+  };
+  return gridEvent;
+};
+
 export const categorizeSomedayEvents = (
   somedayEvents: Schema_SomedayEventsColumn["events"],
   dates: { startDate: Dayjs; endDate: Dayjs }
@@ -86,88 +168,6 @@ export const getCategory = (event: Schema_Event) => {
   return Categories_Event.TIMED;
 };
 
-export const assembleBaseEvent = (
-  userId: string,
-  event: Partial<Schema_Event>
-): Schema_Event => {
-  const baseEvent = {
-    _id: event._id,
-    title: event.title || "",
-    description: event.description || "",
-    startDate: event.startDate || "",
-    endDate: event.endDate || "",
-    user: userId,
-    isAllDay: event.isAllDay || false,
-    isSomeday: event.isSomeday || false,
-    origin: event.origin || Origin.COMPASS,
-    priority: event.priority || Priorities.UNASSIGNED,
-  };
-
-  return baseEvent;
-};
-
-export const assembleGridEvent = (event: Schema_Event): Schema_GridEvent => {
-  const gridEvent: Schema_GridEvent = {
-    ...event,
-    position: {
-      isOverlapping: false,
-      widthMultiplier: 1,
-      horizontalOrder: 1,
-    },
-  };
-  return gridEvent;
-};
-
-export const getDefaultEvent = async (
-  draftType: Categories_Event,
-  startDate?: string,
-  endDate?: string
-): Promise<Schema_Event | Schema_GridEvent> => {
-  const userId = await getUserId();
-  const baseEvent = assembleBaseEvent(userId, {
-    priority: Priorities.UNASSIGNED,
-  });
-
-  switch (draftType) {
-    case Categories_Event.ALLDAY: {
-      const defaultAllday: Schema_Event = {
-        ...baseEvent,
-        isAllDay: true,
-        isSomeday: false,
-        startDate,
-        endDate: startDate,
-      };
-      return defaultAllday;
-    }
-    case Categories_Event.SOMEDAY_WEEK || Categories_Event.SOMEDAY_MONTH: {
-      const defaultSomeday: Schema_Event = {
-        ...baseEvent,
-        isAllDay: false,
-        isSomeday: true,
-        origin: Origin.COMPASS,
-      };
-      return defaultSomeday;
-    }
-    case Categories_Event.TIMED: {
-      const defaultTimed: Schema_GridEvent = {
-        ...baseEvent,
-        isAllDay: false,
-        isSomeday: false,
-        startDate,
-        endDate,
-        position: {
-          isOverlapping: false,
-          widthMultiplier: 1,
-          horizontalOrder: 1,
-        },
-      };
-      return defaultTimed;
-    }
-    default:
-      return baseEvent;
-  }
-};
-
 export const getMonthListLabel = (start: Dayjs) => {
   return start.format("MMMM");
 };
@@ -225,7 +225,7 @@ export const prepEvtAfterDraftDrop = (
   dropItem: DropResult,
   dates: { startDate: string; endDate: string }
 ) => {
-  const baseEvent = getDefaultEvent(category);
+  const baseEvent = assembleDefaultEvent(category);
 
   const event: Schema_Event = {
     ...baseEvent,
