@@ -13,7 +13,7 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { getDefaultEvent } from "@web/common/utils/event.util";
+import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
 import { isEventFormOpen } from "@web/common/utils";
 
@@ -46,7 +46,7 @@ export const AllDayRow: FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowsCount]);
 
-  const startAlldayDraft = (e: MouseEvent) => {
+  const startAlldayDraft = async (e: MouseEvent) => {
     const x = getX(e, isSidebarOpen);
     const startDate = dateCalcs.getDateStrByXY(
       x,
@@ -55,7 +55,10 @@ export const AllDayRow: FC<Props> = ({
       YEAR_MONTH_DAY_FORMAT
     );
 
-    const event = getDefaultEvent(Categories_Event.ALLDAY, startDate);
+    const event = await assembleDefaultEvent(
+      Categories_Event.ALLDAY,
+      startDate
+    );
     dispatch(
       draftSlice.actions.start({
         eventType: Categories_Event.ALLDAY,
@@ -64,13 +67,13 @@ export const AllDayRow: FC<Props> = ({
     );
   };
 
-  const onSectionMouseDown = (e: MouseEvent) => {
+  const onSectionMouseDown = async (e: MouseEvent) => {
     if (isEventFormOpen()) {
       dispatch(draftSlice.actions.discard());
       return;
     }
 
-    startAlldayDraft(e);
+    await startAlldayDraft(e);
   };
 
   return (

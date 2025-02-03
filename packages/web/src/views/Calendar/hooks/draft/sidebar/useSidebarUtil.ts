@@ -16,7 +16,7 @@ import { DropResult_ReactDND } from "@web/common/types/dnd.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   prepEvtAfterDraftDrop,
-  getDefaultEvent,
+  assembleDefaultEvent,
   prepEvtBeforeSubmit,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
@@ -149,8 +149,10 @@ export const useSidebarUtil = (
     );
   };
 
-  const createDefaultSomeday = useCallback(() => {
-    const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
+  const createDefaultSomeday = useCallback(async () => {
+    const somedayDefault = await assembleDefaultEvent(
+      Categories_Event.SOMEDAY_WEEK
+    );
 
     setDraft({ ...somedayDefault, isOpen: true });
     setIsDrafting(true);
@@ -255,7 +257,9 @@ export const useSidebarUtil = (
       };
     } else {
       console.log("REMINDER: update for monthly");
-      const defaultSomeday = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
+      const defaultSomeday = assembleDefaultEvent(
+        Categories_Event.SOMEDAY_WEEK
+      );
       _draft = { ...defaultSomeday, isOpen: false };
     }
 

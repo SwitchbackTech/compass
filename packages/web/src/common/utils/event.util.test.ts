@@ -1,7 +1,7 @@
 import {
-  isEventInRange,
   adjustOverlappingEvents,
   assembleGridEvent,
+  isEventInRange,
 } from "./event.util";
 
 describe("isEventInRange", () => {

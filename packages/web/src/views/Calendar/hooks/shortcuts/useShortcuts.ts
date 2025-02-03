@@ -17,7 +17,7 @@ import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
-import { getDefaultEvent } from "@web/common/utils/event.util";
+import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import { YEAR_MONTH_FORMAT } from "@core/constants/date.constants";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 
@@ -60,7 +60,7 @@ export const useShortcuts = ({
   });
 
   useEffect(() => {
-    const _createSomedayDraft = (type: "week" | "month") => {
+    const _createSomedayDraft = async (type: "week" | "month") => {
       if (type === "week" && isAtWeeklyLimit) {
         alert(SOMEDAY_WEEK_LIMIT_MSG);
         return;
@@ -79,7 +79,9 @@ export const useShortcuts = ({
           ? Categories_Event.SOMEDAY_WEEK
           : Categories_Event.SOMEDAY_MONTH;
 
-      const somedayDefault = getDefaultEvent(Categories_Event.SOMEDAY_WEEK);
+      const somedayDefault = await assembleDefaultEvent(
+        Categories_Event.SOMEDAY_WEEK
+      );
       dispatch(
         draftSlice.actions.start({
           eventType,

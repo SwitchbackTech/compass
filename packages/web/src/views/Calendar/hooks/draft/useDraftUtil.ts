@@ -17,7 +17,7 @@ import {
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import {
-  getDefaultEvent,
+  assembleDefaultEvent,
   prepEvtBeforeSubmit,
 } from "@web/common/utils/event.util";
 import {
@@ -95,10 +95,10 @@ export const useDraftUtil = (
     }
   }, [isDrafting, draft?.isOpen]);
 
-  const handleChange = useCallback(() => {
+  const handleChange = useCallback(async () => {
     if (isDrafting) {
       if (activity === "createShortcut") {
-        const defaultDraft = getDefaultEvent(
+        const defaultDraft = await assembleDefaultEvent(
           reduxDraftType,
           reduxDraft?.startDate,
           reduxDraft?.endDate
