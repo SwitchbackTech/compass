@@ -9,9 +9,9 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { isEventFormOpen } from "@web/common/utils";
+import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
 
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
-import { adjustEvents } from "@web/common/utils/event.util";
 
 interface Props {
   measurements: Measurements_Grid;
@@ -24,7 +24,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const timedEvents = useAppSelector(selectGridEvents);
   const draftId = useAppSelector(selectDraftId);
 
-  const adjustedEvents = adjustEvents(timedEvents);
+  const adjustedEvents = adjustOverlappingEvents(timedEvents);
 
   const onMouseDown = (e: MouseEvent, event: Schema_Event) => {
     e.stopPropagation();
