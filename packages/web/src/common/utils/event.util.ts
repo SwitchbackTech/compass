@@ -147,7 +147,7 @@ export const assembleDefaultEvent = async (
   endDate?: string
 ): Promise<Schema_Event | Schema_GridEvent> => {
   const userId = await getUserId();
-  const baseEvent = assembleBaseEvent(userId, {
+  const baseEvent = _assembleBaseEvent(userId, {
     priority: Priorities.UNASSIGNED,
   });
 
@@ -358,4 +358,24 @@ export const replaceIdWithOptimisticId = (
   };
 
   return _event;
+};
+
+const _assembleBaseEvent = (
+  userId: string,
+  event: Partial<Schema_Event>
+): Schema_Event => {
+  const baseEvent = {
+    _id: event._id,
+    title: event.title || "",
+    description: event.description || "",
+    startDate: event.startDate || "",
+    endDate: event.endDate || "",
+    user: userId,
+    isAllDay: event.isAllDay || false,
+    isSomeday: event.isSomeday || false,
+    origin: event.origin || Origin.COMPASS,
+    priority: event.priority || Priorities.UNASSIGNED,
+  };
+
+  return baseEvent;
 };
