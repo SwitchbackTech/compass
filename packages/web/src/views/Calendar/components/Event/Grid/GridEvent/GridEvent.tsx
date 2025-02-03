@@ -3,7 +3,10 @@ import React, {
   forwardRef,
   memo,
   MouseEvent,
+  useEffect,
   useMemo,
+  useRef,
+  useState,
 } from "react";
 import dayjs from "dayjs";
 import { Priorities } from "@core/constants/core.constants";
@@ -58,6 +61,10 @@ const _GridEvent = (
   const { component } = weekProps;
 
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
+  const [isDragPaused, setIsDragPaused] = useState(false);
+  const dragAndPauseThreshold = 480; // in ms, change accordingly to responsiveness
+  const timer = useRef<NodeJS.Timeout | null>(null);
+
   const event = _event;
   const isOptimistic = isOptimisticEvent(event);
 
@@ -74,6 +81,32 @@ const _GridEvent = (
     [position.height]
   );
 
+  const onMouseMove = (e: MouseEvent) => {
+    setIsDragPaused(false);
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        setIsDragPaused(true);
+      }, dragAndPauseThreshold);
+    }
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      setIsDragPaused(false);
+      timer.current = setTimeout(() => {
+        setIsDragPaused(true);
+      }, dragAndPauseThreshold);
+    } else setIsDragPaused(false);
+
+    return () => {
+      if (timer.current) {
+        clearTimeout(timer.current);
+        timer.current = null;
+      }
+    };
+  }, [isDragging]);
+
   return (
     <StyledEvent
       allDay={event.isAllDay || false}
@@ -81,8 +114,10 @@ const _GridEvent = (
       height={position.height || 0}
       isDragging={isDragging}
       isInPast={isInPast}
+      onMouseMove={onMouseMove}
       isPlaceholder={isPlaceholder}
       isOptimistic={isOptimistic}
+      isDragPaused={isDragPaused}
       isResizing={isResizing}
       left={position.left}
       lineClamp={lineClamp}
