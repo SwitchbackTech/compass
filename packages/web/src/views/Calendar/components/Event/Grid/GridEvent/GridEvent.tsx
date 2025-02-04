@@ -121,12 +121,14 @@ const _GridEvent = (
                 showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
                 onMouseDown={(e) => onScalerMouseDown(event, e, "startDate")}
                 top="-0.25px"
+                zIndex={ZIndex.LAYER_4}
               />
 
               <StyledEventScaler
                 bottom="-0.25px"
                 showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
                 onMouseDown={(e) => onScalerMouseDown(event, e, "endDate")}
+                zIndex={ZIndex.LAYER_4}
               />
             </>
           </>

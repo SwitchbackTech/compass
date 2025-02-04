@@ -114,6 +114,7 @@ export interface ScalerProps {
   showResizeCursor: boolean;
   bottom?: string;
   top?: string;
+  zIndex?: number;
 }
 
 export const StyledEventScaler = styled.div.attrs<ScalerProps>((props) => {
@@ -130,4 +131,5 @@ export const StyledEventScaler = styled.div.attrs<ScalerProps>((props) => {
   top: ${(props) => props.top};
   bottom: ${(props) => props.bottom};
   ${(props) => props.showResizeCursor && `cursor: row-resize`};
+  ${({ zIndex }) => zIndex && `z-index: ${zIndex}`}
 `;
