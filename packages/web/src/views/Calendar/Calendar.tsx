@@ -4,6 +4,7 @@ import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useAppSelector } from "@web/store/store.hooks";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 
+import GridContextMenuWrapper from "./components/Grid/contextmenu/GridContextMenuWrapper";
 import { Grid } from "./components/Grid/";
 import { useScroll } from "./hooks/grid/useScroll";
 import { useToday } from "./hooks/useToday";
@@ -84,14 +85,16 @@ export const CalendarView = () => {
           weekProps={weekProps}
         />
 
-        <Grid
-          dateCalcs={dateCalcs}
-          isSidebarOpen={isSidebarOpen}
-          gridRefs={gridRefs}
-          measurements={measurements}
-          today={today}
-          weekProps={weekProps}
-        />
+        <GridContextMenuWrapper>
+          <Grid
+            dateCalcs={dateCalcs}
+            isSidebarOpen={isSidebarOpen}
+            gridRefs={gridRefs}
+            measurements={measurements}
+            today={today}
+            weekProps={weekProps}
+          />
+        </GridContextMenuWrapper>
       </StyledCalendar>
     </Styled>
   );
