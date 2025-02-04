@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { Categories_Event } from "@core/types/event.types";
 import { getUserId } from "@web/auth/auth.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
