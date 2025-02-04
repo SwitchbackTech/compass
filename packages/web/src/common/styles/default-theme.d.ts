@@ -72,5 +72,8 @@ declare module "styled-components" {
     transition: {
       default: string;
     };
+    shape: {
+      borderRadius: string;
+    };
   }
 }

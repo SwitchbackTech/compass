@@ -103,4 +103,7 @@ export const theme: DefaultTheme = {
   transition: {
     default: "0.3s",
   },
+  shape: {
+    borderRadius: "4px",
+  },
 };

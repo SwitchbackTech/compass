@@ -54,7 +54,7 @@ export const StyledGridEventPreview = styled.div.attrs<StyledEventProps>(
 )<StyledEventProps>`
   background-color: ${(props) => props.backgroundColor};
   color: ${(props) => props.color};
-  border-radius: 3px;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
   box-shadow: 0 0 0 0 transparent;
   height: ${({ height }) => height}px;
   position: absolute;

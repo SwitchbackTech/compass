@@ -25,7 +25,7 @@ export const EventPlaceholder = styled.div`
   align-items: center;
   border: 1px dashed ${({ theme }) => theme.color.border.secondary};
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
   display: flex;
   justify-content: center;
   margin: 5px 0;
@@ -77,7 +77,7 @@ export const SidebarTabContainer = styled.div`
   }
   ::-webkit-scrollbar-thumb {
     background-color: transparent;
-    border-radius: 3px;
+    border-radius: ${({ theme }) => theme.shape.borderRadius};
   }
   &:hover {
     ::-webkit-scrollbar-thumb {
