@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import styled from "styled-components";
 import { Priorities } from "@core/constants/core.constants";
 import { ContextMenuPosition } from "./GridContextMenuWrapper";
 
@@ -7,13 +8,66 @@ interface ContextMenuProps {
   onClose: () => void;
 }
 
+const MenuWrapper = styled.ul<{ position: ContextMenuPosition | null }>`
+  position: absolute;
+  top: ${({ position }) => position?.y || 0}px;
+  left: ${({ position }) => position?.x || 0}px;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
+  padding: 5px 0;
+  list-style: none;
+  z-index: 1000;
+  min-width: 160px;
+`;
+
+const PriorityContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+`;
+
+const PriorityCircle = styled.div<{ color: string; selected: boolean }>`
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid ${({ color }) => color};
+  background-color: ${({ selected, color }) =>
+    selected ? color : "transparent"};
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+`;
+
+const MenuItem = styled.li`
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #eee;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
+`;
+
 const ContextMenu = ({ position, onClose }: ContextMenuProps) => {
   const menuRef = useRef<HTMLUListElement>(null);
   const [selectedPriority, setSelectedPriority] = useState(
     Priorities.UNASSIGNED
   );
 
-  // TODO: Get colors from a constant
+  // TODO: Use colors from constant
   const priorities = [
     { id: "work", value: Priorities.WORK, color: "rgb(200, 236, 249)" },
     { id: "self", value: Priorities.SELF, color: "rgb(149, 189, 219)" },
@@ -25,11 +79,7 @@ const ContextMenu = ({ position, onClose }: ContextMenuProps) => {
   ];
 
   const actions = [
-    {
-      id: "edit",
-      label: "✏️ Edit",
-      onClick: () => alert("Edit clicked"),
-    },
+    { id: "edit", label: "✏️ Edit", onClick: () => alert("Edit clicked") },
     {
       id: "delete",
       label: "🗑️ Delete",
@@ -60,92 +110,29 @@ const ContextMenu = ({ position, onClose }: ContextMenuProps) => {
   }, [onClose]);
 
   return (
-    <ul
-      ref={menuRef}
-      style={{
-        position: "absolute",
-        top: position?.y,
-        left: position?.x,
-        backgroundColor: "white",
-        border: "1px solid #ccc",
-        boxShadow: "0px 4px 6px rgba(0,0,0,0.1)",
-        borderRadius: "8px",
-        padding: "5px 0",
-        listStyle: "none",
-        zIndex: 1000,
-        minWidth: "160px",
-      }}
-    >
-      {/* Priority Selection */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "10px",
-          padding: "10px",
-        }}
-      >
+    <MenuWrapper ref={menuRef} position={position}>
+      <PriorityContainer>
         {priorities.map((priority) => (
-          <div
+          <PriorityCircle
             key={priority.id}
+            color={priority.color}
+            selected={selectedPriority === priority.value}
             onClick={() => setSelectedPriority(priority.value)}
-            style={{
-              width: "20px",
-              height: "20px",
-              borderRadius: "50%",
-              border: `2px solid ${priority.color}`,
-              backgroundColor:
-                selectedPriority === priority.value
-                  ? priority.color
-                  : "transparent",
-              cursor: "pointer",
-              transition: "all 0.2s ease-in-out",
-              boxShadow:
-                selectedPriority === priority.value
-                  ? `0px 0px 0px 0px ${priority.color}`
-                  : "none",
-            }}
           />
         ))}
-      </div>
-
-      {/* Edit and Delete Options */}
-      {actions.map((item, i) => {
-        const isLast = i === actions.length - 1;
-
-        return (
-          <li
-            key={item.id}
-            onClick={() => {
-              item.onClick();
-              onClose();
-            }}
-            style={{
-              padding: "10px 12px",
-              cursor: "pointer",
-              userSelect: "none",
-              fontSize: "14px",
-              color: "#333",
-              whiteSpace: "nowrap",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              borderBottom: !isLast ? "1px solid #eee" : "none",
-            }}
-            onMouseEnter={(e) => {
-              const target = e.target as HTMLElement;
-              target.style.backgroundColor = "#f5f5f5";
-            }}
-            onMouseLeave={(e) => {
-              const target = e.target as HTMLElement;
-              target.style.backgroundColor = "white";
-            }}
-          >
-            {item.label}
-          </li>
-        );
-      })}
-    </ul>
+      </PriorityContainer>
+      {actions.map((item) => (
+        <MenuItem
+          key={item.id}
+          onClick={() => {
+            item.onClick();
+            onClose();
+          }}
+        >
+          {item.label}
+        </MenuItem>
+      ))}
+    </MenuWrapper>
   );
 };
 
