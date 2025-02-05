@@ -54,7 +54,7 @@ const _GridEvent = (
     onScalerMouseDown,
     weekProps,
   }: Props,
-  ref: ForwardedRef<HTMLButtonElement>
+  ref: ForwardedRef<HTMLDivElement>
 ) => {
   const { component } = weekProps;
 
