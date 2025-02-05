@@ -5,7 +5,12 @@ import {
   DraggableStateSnapshot,
   DraggableStyle,
 } from "@hello-pangea/dnd";
-import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
+import {
+  FloatingFocusManager,
+  FloatingPortal,
+  useDismiss,
+  useInteractions,
+} from "@floating-ui/react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
@@ -44,7 +49,7 @@ function getStyle(
 
 export interface Props {
   category: Categories_Event;
-  event: Schema_GridEvent;
+  event: Schema_GridEvent; //TODO make this Event (not grid)
   isDrafting: boolean;
   isDragging: boolean;
   isOverGrid: boolean;
@@ -74,28 +79,34 @@ export const SomedayEvent = ({
   const formType =
     category === Categories_Event.SOMEDAY_WEEK ? "sidebarWeek" : "sidebarMonth";
 
-  const { context, refs, strategy, y } = useEventForm(formType);
-
-  const [isFocused, setIsFocused] = useState(false);
-
   const initialFormOpen = event?.isOpen || (isDrafting && !isDragging);
-  const [shouldOpenForm, setShouldOpenForm] = useState(initialFormOpen);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(initialFormOpen);
+
+  const onIsFormOpenChange = (isOpen: boolean) => {
+    setIsFormOpen(isOpen);
+    if (!isOpen) {
+      setIsFocused(false);
+    }
+  };
+
+  const { context, refs, strategy, y } = useEventForm(
+    formType,
+    isFormOpen,
+    onIsFormOpenChange
+  );
+
+  const dismiss = useDismiss(context);
+  const { getReferenceProps, getFloatingProps } = useInteractions([dismiss]);
 
   useEffect(() => {
-    setShouldOpenForm(event?.isOpen || (isDrafting && !isDragging));
+    setIsFormOpen(event?.isOpen || (isDrafting && !isDragging));
   }, [event?.isOpen, isDrafting, isDragging]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     switch (e.key) {
-      case Key.Escape: {
-        if (isFocused) {
-          setIsFocused(false);
-        }
-        break;
-      }
-
       case Key.Enter: {
-        if (!shouldOpenForm) {
+        if (!isFormOpen) {
           onDraft(event, category);
         }
         break;
@@ -112,7 +123,7 @@ export const SomedayEvent = ({
         {...provided.dragHandleProps}
         style={getStyle(provided.draggableProps.style, snapshot, isOverGrid)}
         isDragging={isDragging}
-        isDrafting={isDrafting}
+        isFormOpen={isFormOpen}
         isOverGrid={isOverGrid}
         isFocused={isFocused}
         onBlur={() => setIsFocused(false)}
@@ -120,13 +131,15 @@ export const SomedayEvent = ({
           e.stopPropagation();
           onDraft(event, category);
         }}
-        onFocus={() => setIsFocused(true)}
+        onFocus={() => {
+          setIsFocused(true);
+        }}
         onKeyDown={onKeyDown}
         priority={event.priority}
         role="button"
         ref={provided.innerRef}
       >
-        <div ref={refs.setReference}>
+        <div ref={refs.setReference} {...getReferenceProps()}>
           <SomedayEventRectangle
             category={category}
             event={event}
@@ -135,7 +148,7 @@ export const SomedayEvent = ({
         </div>
       </StyledNewSomedayEvent>
 
-      {shouldOpenForm && (
+      {isFormOpen && (
         <FloatingPortal>
           <FloatingFocusManager context={context}>
             <StyledFloatContainer
@@ -143,11 +156,13 @@ export const SomedayEvent = ({
               strategy={strategy}
               top={y ?? 40}
               left={SIDEBAR_OPEN_WIDTH}
+              {...getFloatingProps()}
             >
               <SomedayEventForm
                 event={event}
                 onClose={() => {
-                  setShouldOpenForm(false);
+                  console.log("closing someday form ...");
+                  setIsFormOpen(false);
                   onClose();
                 }}
                 onConvert={() =>

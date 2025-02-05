@@ -65,7 +65,7 @@ export const Header: FC<Props> = ({
     <>
       <StyledHeaderRow
         alignItems={AlignItems.BASELINE}
-        onClick={onSectionClick}
+        // onClick={onSectionClick} //TODO remove this after getting click out/ESC to work globally
       >
         <TooltipWrapper
           description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}

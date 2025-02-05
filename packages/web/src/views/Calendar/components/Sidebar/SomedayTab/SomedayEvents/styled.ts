@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { DroppableProvided } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
-import { brighten } from "@core/util/color.utils";
 import {
   colorByPriority,
   hoverColorByPriority,
@@ -10,8 +9,8 @@ import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 
 export interface Props extends DroppableProvided {
   priority: Priorities;
-  isDrafting: boolean;
   isDragging?: boolean;
+  isFormOpen: boolean;
   isOverGrid: boolean;
   isFocused: boolean;
 }
@@ -53,24 +52,16 @@ export const StyledMigrateArrowInForm = styled(StyledMigrateArrow)`
 `;
 
 export const StyledNewSomedayEvent = styled.div<Props>`
-  background: ${({ isDrafting, isDragging, priority }) => {
-    if (isDrafting) {
-      if (isDragging) {
-        return brighten(colorByPriority[priority]);
-      }
+  background: ${({ isFormOpen, isFocused, priority }) => {
+    if (isFocused || isFormOpen) {
       return hoverColorByPriority[priority];
     }
-
     return colorByPriority[priority];
   }};
 
   border-radius: 2px;
   color: ${({ theme }) => theme.color.text.dark};
   height: ${SOMEDAY_EVENT_HEIGHT}px;
-  filter: brightness(
-    ${({ isDragging, isFocused }) =>
-      isFocused && !isDragging ? "160%" : "100%"}
-  );
   margin-bottom: 2px;
   opacity: ${({ isDragging, isOverGrid }) => {
     if (isDragging && isOverGrid) return 0;

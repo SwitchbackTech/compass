@@ -70,12 +70,13 @@ export const useSidebarUtil = (
   };
 
   const close = () => {
+    console.log("closing... ");
     state.setIsDrafting(false);
     state.setDraft(null);
 
     const isSomeday =
       state.draftType === Categories_Event.SOMEDAY_WEEK ||
-      state.draftType == Categories_Event.SOMEDAY_MONTH;
+      state.draftType === Categories_Event.SOMEDAY_MONTH;
 
     if (state.isDraftingExisting || (state.isDraftingNew && isSomeday)) {
       dispatch(draftSlice.actions.discard());
@@ -200,6 +201,7 @@ export const useSidebarUtil = (
 
   const discardIfDrafting = () => {
     if (state.isDrafting) {
+      console.log("drafting in sidebar, so discarding");
       dispatch(draftSlice.actions.discard());
       close();
       return;
@@ -332,8 +334,10 @@ export const useSidebarUtil = (
 
   const onPlaceholderClick = (section: Categories_Event) => {
     if (state.isDrafting) {
+      console.log("discarding cuz drafting already. State:", state);
       dispatch(draftSlice.actions.discard());
-      close();
+      //close is checking
+      // close();
       return;
     }
 
@@ -416,6 +420,7 @@ export const useSidebarUtil = (
     onPlaceholderClick,
     onSubmit,
     resetLocalDraftStateIfNeeded,
+    setIsDrafting,
     setDraft,
   };
 };

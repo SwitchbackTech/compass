@@ -8,7 +8,9 @@ import {
 } from "@floating-ui/react";
 
 export const useEventForm = (
-  eventType: "grid" | "sidebarWeek" | "sidebarMonth"
+  eventType: "grid" | "sidebarWeek" | "sidebarMonth",
+  isOpen: boolean,
+  onIsFormOpenChange: (isOpen: boolean) => void
 ) => {
   let options: Partial<UseFloatingOptions>;
 
@@ -40,7 +42,13 @@ export const useEventForm = (
     };
   }
 
-  const { context, x, y, refs, strategy } = useFloating(options);
+  const { context, x, y, refs, strategy } = useFloating({
+    ...options,
+    open: isOpen,
+    onOpenChange(newIsOpen) {
+      onIsFormOpenChange(newIsOpen);
+    },
+  });
 
   return {
     context,

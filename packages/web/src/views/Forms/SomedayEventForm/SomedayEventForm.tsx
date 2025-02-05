@@ -69,13 +69,14 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
-    e.stopPropagation();
     switch (e.key) {
-      case Key.Escape: {
-        _onClose();
-        break;
-      }
+      // case Key.Escape: {
+      //   console.log("running close after keying ESC down...");
+      //   _onClose();
+      //   break;
+      // }
       case Key.Enter: {
+        e.stopPropagation();
         if (e.metaKey) {
           _onSubmit();
           return;
@@ -105,9 +106,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     <StyledEventForm
       {...props}
       name={ID_SOMEDAY_EVENT_FORM}
-      isOpen={true}
+      // isOpen={true} //TODO cleanup
       onClick={stopPropagation}
-      onKeyDown={onKeyDown}
+      // onKeyDown={onKeyDown} //TODO cleanup
       onMouseDown={stopPropagation}
       onMouseUp={(e) => {
         e.stopPropagation();

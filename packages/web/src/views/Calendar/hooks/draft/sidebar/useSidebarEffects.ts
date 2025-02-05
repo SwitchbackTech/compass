@@ -9,7 +9,7 @@ import {
 import { Util_Sidebar } from "./useSidebarUtil";
 
 export const useSidebarEffects = (util: Util_Sidebar) => {
-  const { resetLocalDraftStateIfNeeded, createDefaultSomeday } = util;
+  const { createDefaultSomeday, resetLocalDraftStateIfNeeded } = util;
 
   const isDrafting = useAppSelector(selectIsDrafting);
   const isDraftingExisting = useAppSelector(selectIsDraftingExisting);
