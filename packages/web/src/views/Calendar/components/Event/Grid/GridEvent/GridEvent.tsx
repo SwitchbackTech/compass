@@ -24,6 +24,7 @@ import { Text } from "@web/components/Text";
 
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
 import { getPosition } from "@web/common/utils/position.util";
+import { DATA_EVENT_ELEMENT_ID } from "@web/views/Calendar/layout.constants";
 
 interface Props {
   event: Schema_GridEvent;
@@ -74,30 +75,33 @@ const _GridEvent = (
     [position.height]
   );
 
-  return (
-    <StyledEvent
-      allDay={event.isAllDay || false}
-      className={isDraft ? "active" : undefined}
-      height={position.height || 0}
-      isDragging={isDragging}
-      isInPast={isInPast}
-      isPlaceholder={isPlaceholder}
-      isOptimistic={isOptimistic}
-      isResizing={isResizing}
-      left={position.left}
-      lineClamp={lineClamp}
-      onMouseDown={(e) => {
-        if (isOptimistic) return;
+  const styledEventProps = {
+    [DATA_EVENT_ELEMENT_ID]: event._id,
+    allDay: event.isAllDay || false,
+    className: isDraft ? "active" : undefined,
+    height: position.height || 0,
+    isDragging,
+    isInPast,
+    isPlaceholder,
+    isOptimistic,
+    isResizing,
+    left: position.left,
+    lineClamp,
+    onMouseDown: (e: MouseEvent) => {
+      if (isOptimistic) return;
 
-        onEventMouseDown(event, e);
-      }}
-      priority={event.priority || Priorities.UNASSIGNED}
-      ref={ref}
-      role="button"
-      tabindex="0"
-      top={position.top}
-      width={position.width || 0}
-    >
+      onEventMouseDown(event, e);
+    },
+    priority: event.priority || Priorities.UNASSIGNED,
+    ref,
+    role: "button",
+    tabindex: "0",
+    top: position.top,
+    width: position.width || 0,
+  };
+
+  return (
+    <StyledEvent {...styledEventProps}>
       <Flex
         alignItems={AlignItems.FLEX_START}
         direction={FlexDirections.COLUMN}

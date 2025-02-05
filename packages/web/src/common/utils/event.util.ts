@@ -21,6 +21,7 @@ import {
   COLUMN_WEEK,
   ID_OPTIMISTIC_PREFIX,
 } from "../constants/web.constants";
+import { DATA_EVENT_ELEMENT_ID } from "@web/views/Calendar/layout.constants";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -283,4 +284,9 @@ const _assembleBaseEvent = (
   };
 
   return baseEvent;
+};
+
+export const getCalendarEventIdFromElement = (element: HTMLElement) => {
+  const id = element.getAttribute(DATA_EVENT_ELEMENT_ID);
+  return id;
 };

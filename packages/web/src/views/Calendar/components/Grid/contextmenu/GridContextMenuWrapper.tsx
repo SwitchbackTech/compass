@@ -1,4 +1,5 @@
 import React, { ReactNode, useState, useRef } from "react";
+import { getCalendarEventIdFromElement } from "@web/common/utils/event.util";
 import ContextMenu from "./ContextMenu";
 
 export interface ContextMenuPosition {
@@ -9,15 +10,25 @@ export interface ContextMenuPosition {
 const GridContextMenuWrapper = ({ children }: { children: ReactNode }) => {
   const [contextMenuPos, setContextMenuPos] =
     useState<ContextMenuPosition | null>(null);
-  null;
+
   const wrapperRef = useRef(null);
 
-  const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setContextMenuPos({
-      x: event.pageX,
-      y: event.pageY,
-    });
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const calendarEventId = getCalendarEventIdFromElement(target);
+    const hasClickedOnCalendarEvent = !!calendarEventId;
+
+    if (hasClickedOnCalendarEvent) {
+      e.preventDefault();
+      setContextMenuPos({
+        x: e.pageX,
+        y: e.pageY,
+      });
+    }
   };
 
   const closeMenu = () => {
