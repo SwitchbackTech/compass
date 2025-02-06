@@ -199,18 +199,6 @@ export const useSidebarUtil = (
     );
   };
 
-  const discardIfDrafting = () => {
-    if (state.isDrafting) {
-      console.log("drafting in sidebar, so discarding");
-      dispatch(draftSlice.actions.discard());
-      close();
-      return;
-    }
-    if (isDraftingOnGrid) {
-      dispatch(draftSlice.actions.discard());
-    }
-  };
-
   const onDragEnd = (result: DropResult) => {
     const { destination, draggableId, source } = result;
 
@@ -412,7 +400,6 @@ export const useSidebarUtil = (
   return {
     close,
     createDefaultSomeday,
-    discardIfDrafting,
     onDraft,
     onDragEnd,
     onDragStart,

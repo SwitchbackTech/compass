@@ -12,12 +12,13 @@ import {
   useInteractions,
 } from "@floating-ui/react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import { Util_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarUtil";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { useAppDispatch } from "@web/store/store.hooks";
 
 import { StyledNewSomedayEvent } from "./styled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
@@ -49,17 +50,17 @@ function getStyle(
 
 export interface Props {
   category: Categories_Event;
-  event: Schema_GridEvent; //TODO make this Event (not grid)
+  event: Schema_Event;
   isDrafting: boolean;
   isDragging: boolean;
   isOverGrid: boolean;
   onClose: () => void;
-  onDraft: (event: Schema_GridEvent, category: Categories_Event) => void;
+  onDraft: (event: Schema_Event, category: Categories_Event) => void;
   onMigrate: Util_Sidebar["onMigrate"];
   onSubmit: (event?: Schema_Event) => void;
   provided: DraggableProvided;
   snapshot: DraggableStateSnapshot;
-  setEvent: Dispatch<SetStateAction<Schema_GridEvent>>;
+  setEvent: Dispatch<SetStateAction<Schema_Event>>;
 }
 
 export const SomedayEvent = ({
@@ -76,19 +77,23 @@ export const SomedayEvent = ({
   snapshot,
   setEvent,
 }: Props) => {
-  const formType =
-    category === Categories_Event.SOMEDAY_WEEK ? "sidebarWeek" : "sidebarMonth";
+  const dispatch = useAppDispatch();
 
-  const initialFormOpen = event?.isOpen || (isDrafting && !isDragging);
-  const [isFocused, setIsFocused] = useState(false);
+  const initialFormOpen = isDrafting && !isDragging;
   const [isFormOpen, setIsFormOpen] = useState(initialFormOpen);
+  const [isFocused, setIsFocused] = useState(false);
 
   const onIsFormOpenChange = (isOpen: boolean) => {
     setIsFormOpen(isOpen);
     if (!isOpen) {
       setIsFocused(false);
     }
+
+    dispatch(draftSlice.actions.discard());
   };
+
+  const formType =
+    category === Categories_Event.SOMEDAY_WEEK ? "sidebarWeek" : "sidebarMonth";
 
   const { context, refs, strategy, y } = useEventForm(
     formType,
@@ -100,8 +105,8 @@ export const SomedayEvent = ({
   const { getReferenceProps, getFloatingProps } = useInteractions([dismiss]);
 
   useEffect(() => {
-    setIsFormOpen(event?.isOpen || (isDrafting && !isDragging));
-  }, [event?.isOpen, isDrafting, isDragging]);
+    setIsFormOpen(isDrafting && !isDragging);
+  }, [isDrafting, isDragging]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     switch (e.key) {
