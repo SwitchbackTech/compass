@@ -88,7 +88,13 @@ const _GridEvent = (
     left: position.left,
     lineClamp,
     onMouseDown: (e: MouseEvent) => {
-      if (isOptimistic) return;
+      const isRightBtnClick = e.button === 2;
+
+      if (
+        isOptimistic || // Event is in the process of being created, don't allow any interactions until it's completely saved
+        isRightBtnClick
+      )
+        return;
 
       onEventMouseDown(event, e);
     },

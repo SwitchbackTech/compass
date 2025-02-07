@@ -2,8 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Priorities } from "@core/constants/core.constants";
 import { ContextMenuPosition } from "./GridContextMenuWrapper";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { useAppDispatch } from "@web/store/store.hooks";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 
 interface ContextMenuProps {
+  event: Schema_GridEvent;
   position: ContextMenuPosition | null;
   onClose: () => void;
 }
@@ -61,7 +65,9 @@ const MenuItem = styled.li`
   }
 `;
 
-const ContextMenu = ({ position, onClose }: ContextMenuProps) => {
+const ContextMenu = ({ event, position, onClose }: ContextMenuProps) => {
+  const dispatch = useAppDispatch();
+
   const menuRef = useRef<HTMLUListElement>(null);
   const [selectedPriority, setSelectedPriority] = useState(
     Priorities.UNASSIGNED
@@ -79,7 +85,21 @@ const ContextMenu = ({ position, onClose }: ContextMenuProps) => {
   ];
 
   const actions = [
-    { id: "edit", label: "✏️ Edit", onClick: () => alert("Edit clicked") },
+    {
+      id: "edit",
+      label: "✏️ Edit",
+      onClick: () => {
+        dispatch(
+          draftSlice.actions.start({
+            source: "contextMenu",
+            event: {
+              ...event,
+              isOpen: true,
+            },
+          })
+        );
+      },
+    },
     {
       id: "delete",
       label: "🗑️ Delete",

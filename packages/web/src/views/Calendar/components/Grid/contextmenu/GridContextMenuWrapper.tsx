@@ -1,15 +1,24 @@
 import React, { ReactNode, useState, useRef } from "react";
 import { getCalendarEventIdFromElement } from "@web/common/utils/event.util";
 import ContextMenu from "./ContextMenu";
+import { useAppSelector } from "@web/store/store.hooks";
+import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export interface ContextMenuPosition {
   x: number;
   y: number;
 }
 
-const GridContextMenuWrapper = ({ children }: { children: ReactNode }) => {
+interface GridContextMenuWrapper {
+  children: ReactNode;
+}
+
+const GridContextMenuWrapper = ({ children }: GridContextMenuWrapper) => {
+  const timedEvents = useAppSelector(selectGridEvents);
   const [contextMenuPos, setContextMenuPos] =
     useState<ContextMenuPosition | null>(null);
+  const [event, setEvent] = useState<Schema_GridEvent | null>(null);
 
   const wrapperRef = useRef(null);
 
@@ -24,17 +33,22 @@ const GridContextMenuWrapper = ({ children }: { children: ReactNode }) => {
 
     if (hasClickedOnCalendarEvent) {
       e.preventDefault();
+
+      const event = timedEvents.find((e) => e._id === calendarEventId);
+      if (!event) return; // TS guard
+
       setContextMenuPos({
         x: e.pageX,
         y: e.pageY,
       });
+      setEvent(event);
     }
   };
 
   const closeMenu = () => {
     setContextMenuPos(null);
+    setEvent(null);
   };
-
   return (
     <div
       ref={wrapperRef}
@@ -42,9 +56,10 @@ const GridContextMenuWrapper = ({ children }: { children: ReactNode }) => {
       onContextMenu={handleContextMenu}
     >
       {children}
-      {contextMenuPos && (
+      {contextMenuPos && event && (
         <ContextMenu
           position={{ x: contextMenuPos.x, y: contextMenuPos.y }}
+          event={event}
           onClose={closeMenu}
         />
       )}
