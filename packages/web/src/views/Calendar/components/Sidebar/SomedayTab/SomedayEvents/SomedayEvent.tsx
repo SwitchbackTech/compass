@@ -17,8 +17,6 @@ import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import { Util_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarUtil";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
 
 import { StyledNewSomedayEvent } from "./styled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
@@ -77,8 +75,6 @@ export const SomedayEvent = ({
   snapshot,
   setEvent,
 }: Props) => {
-  const dispatch = useAppDispatch();
-
   const initialFormOpen = isDrafting && !isDragging;
   const [isFormOpen, setIsFormOpen] = useState(initialFormOpen);
   const [isFocused, setIsFocused] = useState(false);
@@ -89,7 +85,7 @@ export const SomedayEvent = ({
       setIsFocused(false);
     }
 
-    dispatch(draftSlice.actions.discard());
+    onClose();
   };
 
   const formType =
@@ -165,11 +161,7 @@ export const SomedayEvent = ({
             >
               <SomedayEventForm
                 event={event}
-                onClose={() => {
-                  console.log("closing someday form ...");
-                  setIsFormOpen(false);
-                  onClose();
-                }}
+                onClose={onClose}
                 onConvert={() =>
                   console.log("TODO: convert someday event to grid event")
                 }

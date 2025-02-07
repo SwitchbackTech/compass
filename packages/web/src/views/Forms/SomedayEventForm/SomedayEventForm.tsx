@@ -21,7 +21,7 @@ import { RepeatSection } from "../EventForm/RepeatSection";
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
-  onClose: _onClose,
+  onClose,
   onConvert,
   onSubmit,
   setEvent,
@@ -65,7 +65,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       toast(eventTitle);
     }
 
-    _onClose();
+    onClose();
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
@@ -106,11 +106,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     <StyledEventForm
       {...props}
       name={ID_SOMEDAY_EVENT_FORM}
-      // isOpen={true} //TODO cleanup
       onClick={stopPropagation}
       // onKeyDown={onKeyDown} //TODO cleanup
       onMouseDown={stopPropagation}
       onMouseUp={(e) => {
+        //TODO use stopProp
         e.stopPropagation();
       }}
       priority={priority}

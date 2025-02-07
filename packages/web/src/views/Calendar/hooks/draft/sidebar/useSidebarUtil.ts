@@ -81,6 +81,7 @@ export const useSidebarUtil = (
     if (state.isDraftingExisting || (state.isDraftingNew && isSomeday)) {
       dispatch(draftSlice.actions.discard());
     }
+    console.log("state after close finished:", state);
   };
 
   // call this when enabling DND for drafts
@@ -324,8 +325,7 @@ export const useSidebarUtil = (
     if (state.isDrafting) {
       console.log("discarding cuz drafting already. State:", state);
       dispatch(draftSlice.actions.discard());
-      //close is checking
-      // close();
+      close();
       return;
     }
 
