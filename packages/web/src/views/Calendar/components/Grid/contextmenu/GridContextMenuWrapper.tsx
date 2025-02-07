@@ -4,6 +4,7 @@ import ContextMenu from "./ContextMenu";
 import { useAppSelector } from "@web/store/store.hooks";
 import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import InvisibleBackdrop from "@web/views/Calendar/components/Grid/contextmenu/InvisibleBackdrop";
 
 export interface ContextMenuPosition {
   x: number;
@@ -49,6 +50,7 @@ const GridContextMenuWrapper = ({ children }: GridContextMenuWrapper) => {
     setContextMenuPos(null);
     setEvent(null);
   };
+
   return (
     <div
       ref={wrapperRef}
@@ -57,13 +59,17 @@ const GridContextMenuWrapper = ({ children }: GridContextMenuWrapper) => {
     >
       {children}
       {contextMenuPos && event && (
-        <ContextMenu
-          position={{ x: contextMenuPos.x, y: contextMenuPos.y }}
-          event={event}
-          onClose={closeMenu}
-        />
+        <>
+          <InvisibleBackdrop onClick={closeMenu} />
+          <ContextMenu
+            position={{ x: contextMenuPos.x, y: contextMenuPos.y }}
+            event={event}
+            onClose={closeMenu}
+          />
+        </>
       )}
     </div>
   );
 };
+
 export default GridContextMenuWrapper;
