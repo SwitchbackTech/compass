@@ -3,8 +3,10 @@ import {
   flip,
   offset,
   shift,
+  useDismiss,
   useFloating,
   UseFloatingOptions,
+  useInteractions,
 } from "@floating-ui/react";
 
 export const useEventForm = (
@@ -50,8 +52,13 @@ export const useEventForm = (
     },
   });
 
+  const dismiss = useDismiss(context);
+  const { getReferenceProps, getFloatingProps } = useInteractions([dismiss]);
+
   return {
     context,
+    getReferenceProps,
+    getFloatingProps,
     refs,
     strategy,
     x,

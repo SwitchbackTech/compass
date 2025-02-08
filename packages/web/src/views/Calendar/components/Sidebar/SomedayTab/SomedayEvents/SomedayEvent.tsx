@@ -5,12 +5,7 @@ import {
   DraggableStateSnapshot,
   DraggableStyle,
 } from "@hello-pangea/dnd";
-import {
-  FloatingFocusManager,
-  FloatingPortal,
-  useDismiss,
-  useInteractions,
-} from "@floating-ui/react";
+import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
@@ -91,14 +86,8 @@ export const SomedayEvent = ({
   const formType =
     category === Categories_Event.SOMEDAY_WEEK ? "sidebarWeek" : "sidebarMonth";
 
-  const { context, refs, strategy, y } = useEventForm(
-    formType,
-    isFormOpen,
-    onIsFormOpenChange
-  );
-
-  const dismiss = useDismiss(context);
-  const { getReferenceProps, getFloatingProps } = useInteractions([dismiss]);
+  const { context, getReferenceProps, getFloatingProps, refs, strategy, y } =
+    useEventForm(formType, isFormOpen, onIsFormOpenChange);
 
   useEffect(() => {
     setIsFormOpen(isDrafting && !isDragging);
