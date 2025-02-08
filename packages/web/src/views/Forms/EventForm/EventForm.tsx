@@ -79,11 +79,6 @@ export const EventForm: React.FC<FormProps> = ({
       if (e.key === Key.Shift) {
         setIsShiftKeyPressed(true);
       }
-
-      if (e.key === Key.Escape) {
-        setTimeout(_onClose);
-        return;
-      }
     },
     [_onClose]
   );
