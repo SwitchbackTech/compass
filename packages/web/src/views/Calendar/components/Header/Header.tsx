@@ -6,10 +6,8 @@ import { Text } from "@web/components/Text";
 import { TodayButton } from "@web/views/Calendar/components/TodayButton";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { isEventFormOpen } from "@web/common/utils";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
@@ -45,13 +43,6 @@ export const Header: FC<Props> = ({
   const { startOfView, endOfView } = weekProps.component;
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
-  const onSectionClick = () => {
-    if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
-      return;
-    }
-  };
-
   const onTodayClick = () => {
     if (!weekProps.component.isCurrentWeek) {
       weekProps.util.goToToday();
@@ -63,10 +54,7 @@ export const Header: FC<Props> = ({
 
   return (
     <>
-      <StyledHeaderRow
-        alignItems={AlignItems.BASELINE}
-        // onClick={onSectionClick} //TODO remove this after getting click out/ESC to work globally
-      >
+      <StyledHeaderRow alignItems={AlignItems.BASELINE}>
         <TooltipWrapper
           description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
           onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
