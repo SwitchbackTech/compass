@@ -23,7 +23,7 @@ import { ZIndex } from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
 
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
-import { getPosition } from "@web/common/utils/position/position.util";
+import { getEventPosition } from "@web/common/utils/position/event.position";
 
 interface Props {
   event: Schema_GridEvent;
@@ -61,7 +61,7 @@ const _GridEvent = (
   const event = _event;
   const isOptimistic = isOptimisticEvent(event);
 
-  const position = getPosition(
+  const position = getEventPosition(
     event,
     component.startOfView,
     component.endOfView,

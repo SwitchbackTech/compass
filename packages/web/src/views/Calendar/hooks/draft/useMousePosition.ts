@@ -5,6 +5,7 @@ import {
   GRID_Y_START,
 } from "@web/views/Calendar/layout.constants";
 import { Coordinates } from "@web/common/types/util.types";
+import { getMousePosition } from "@web/common/utils/position/mouse.position";
 
 export const useMousePosition = (
   isDragging: boolean,
@@ -22,18 +23,21 @@ export const useMousePosition = (
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       console.log("handling mouse move ...");
+      if (!allDayRow?.bottom || !allDayRow?.top) {
+        throw Error("Missing measurements for all-day row");
+      }
+
       const x = e.clientX;
       const y = e.clientY;
-
-      const isPastSidebar = x > SIDEBAR_X_START;
-
-      const isOverAllDayRow =
-        isPastSidebar && y < allDayRow.bottom && y > allDayRow.top;
-
-      const isOverMainGrid =
-        isPastSidebar && !isOverAllDayRow && y > GRID_Y_START;
-
-      const isOverGrid = isOverAllDayRow || isOverMainGrid;
+      const { isOverGrid, isOverAllDayRow, isOverMainGrid } = getMousePosition(
+        {
+          allDayRowBottom: allDayRow?.bottom,
+          allDayRowTop: allDayRow?.top,
+          gridYStart: GRID_Y_START,
+          sidebarXStart: SIDEBAR_X_START,
+        },
+        { x, y }
+      );
 
       setIsOverGrid(isOverGrid);
       setIsOverAllDayRow(isOverAllDayRow);

@@ -4,7 +4,7 @@ import { Priorities } from "@core/constants/core.constants";
 import { Flex } from "@web/components/Flex";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isOptimisticEvent } from "@web/common/utils/event.util";
-import { getPosition } from "@web/common/utils/position/position.util";
+import { getEventPosition } from "@web/common/utils/position/event.position";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
@@ -30,7 +30,7 @@ const AllDayEvent = ({
   endOfView,
   onMouseDown,
 }: Props) => {
-  const position = getPosition(
+  const position = getEventPosition(
     event,
     startOfView,
     endOfView,

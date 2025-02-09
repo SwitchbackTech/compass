@@ -136,7 +136,7 @@ export const getEventCategory = (
   return Category.ThisWeekOnly;
 };
 
-export const getPosition = (
+export const getEventPosition = (
   event: Schema_GridEvent,
   startOfView: Dayjs,
   endOfView: Dayjs,

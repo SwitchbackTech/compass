@@ -1,9 +1,9 @@
 import { MouseEvent, useCallback, useState } from "react";
 
-import { useEventListener } from "../mouse/useEventListener";
 import { State_GridDraft, Util_GridDraft } from "./useDraftUtil";
 import { Categories_Event } from "@core/types/event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
+import { getMousePosition } from "@web/common/utils/position/mouse.position";
 import { getX } from "@web/common/utils/grid.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -14,39 +14,10 @@ import {
   SIDEBAR_X_START,
 } from "../../layout.constants";
 import { DateCalcs } from "../grid/useDateCalcs";
+import { useEventListener } from "../mouse/useEventListener";
 import { WeekProps } from "../useWeek";
-import { useMousePosition } from "./useMousePosition";
 import { Measurements_Grid } from "../grid/useGridLayout";
-
-type Layout = {
-  allDayRowBottom: number;
-  allDayRowTop: number;
-  gridYStart: number;
-  sidebarXStart: number;
-};
-
-const getMousePosition = (e: MouseEvent, layout: Layout) => {
-  console.log("handling mouse move ...");
-  const x = e.clientX;
-  const y = e.clientY;
-
-  const { allDayRowTop, allDayRowBottom, gridYStart, sidebarXStart } = layout;
-
-  const isPastSidebar = x > sidebarXStart;
-
-  const isOverAllDayRow =
-    isPastSidebar && y < allDayRowBottom && y > allDayRowTop;
-
-  const isOverMainGrid = isPastSidebar && !isOverAllDayRow && y > gridYStart;
-
-  const isOverGrid = isOverAllDayRow || isOverMainGrid;
-
-  return {
-    isOverGrid,
-    isOverMainGrid,
-    isOverAllDayRow,
-  };
-};
+import { useMousePosition } from "./useMousePosition";
 
 export const useGridMouseMove = (
   draftState: State_GridDraft,
@@ -90,16 +61,28 @@ export const useGridMouseMove = (
 
   const onMouseMove = useCallback(
     (e: MouseEvent) => {
+      //TODO handle when dragging over grid
+      // TODO handle when dropping
       if (isMouseDown) {
-        const position = getMousePosition(e, {
-          allDayRowBottom: measurements.allDayRow?.bottom,
-          allDayRowTop: measurements.allDayRow?.top,
-          gridYStart: GRID_Y_START,
-          sidebarXStart: SIDEBAR_X_START,
-        });
-        console.log(position);
-        if (position.isOverGrid) {
-          console.log("over grid...");
+        const allDayRow = measurements.allDayRow;
+        if (!allDayRow?.bottom || !allDayRow?.top) {
+          throw Error("Missing measurements for all-day row");
+        }
+
+        const { isOverMainGrid } = getMousePosition(
+          {
+            allDayRowBottom: allDayRow.bottom,
+            allDayRowTop: allDayRow.top,
+            gridYStart: GRID_Y_START,
+            sidebarXStart: SIDEBAR_X_START,
+          },
+          {
+            x: e.clientX,
+            y: e.clientY,
+          }
+        );
+        if (isOverMainGrid) {
+          console.log("over main grid...");
         }
         if (isDrafting) {
           console.log("moved while mouse down and draftin!!!");
