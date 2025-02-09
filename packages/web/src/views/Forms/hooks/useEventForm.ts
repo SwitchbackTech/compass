@@ -47,7 +47,9 @@ export const useEventForm = (
   const { context, x, y, refs, strategy } = useFloating({
     ...options,
     open: isOpen,
-    onOpenChange(newIsOpen) {
+    onOpenChange(newIsOpen, event, reason) {
+      console.log(reason);
+      console.log(event);
       onIsFormOpenChange(newIsOpen);
     },
   });

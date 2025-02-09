@@ -25,6 +25,7 @@ import {
   selectDraftStatus,
 } from "@web/ducks/events/selectors/draft.selectors";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
+import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import {
   selectIsAtWeeklyLimit,
   selectSomedayWeekCount,
@@ -68,32 +69,76 @@ export const useDraftUtil = (
   const [dateBeingChanged, setDateBeingChanged] = useState<
     "startDate" | "endDate" | null
   >("endDate");
+  /* form stuff -- TODO organize */
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const onIsFormOpenChange = (isOpen: boolean) => {
+    const formAlreadyOpen = isFormOpen === true;
+    const shouldJustDiscard = formAlreadyOpen;
 
-  useEffect(() => {
+    if (shouldJustDiscard) {
+      // console.log("clicked out, discarding...");
+      console.log("clicked out, just resetting...");
+      reset();
+      // discard();
+      return;
+    } else {
+      // we wont actually get here
+      console.log("clicked empty, starting new ...");
+    }
+    setIsFormOpen(isOpen);
+    console.log("closed form [onIsFormOpenChange]");
+
+    /*
+
+    did user click outside or click empty?
+     - clickoutside: form is open
+     - click empty: form is not already open
+
+    if already drafting -- ie user clicked outside
+     ::then they want the form to just close
+      - close form
+      - reset draft
+    else -- user clicked empty space
+      ::then they want the new draft to appear 
+      - start draft
+    */
+
+    if (isOpen === false) {
+      reset();
+      discard();
+    }
+  };
+  const formProps = useEventForm("grid", isFormOpen, onIsFormOpenChange);
+
+  const reset = () => {
     setDraft(null);
     setIsDragging(false);
+    setIsFormOpen(false);
     setIsResizing(false);
     setDragStatus(null);
     setResizeStatus(null);
     setDateBeingChanged(null);
+  };
+
+  useEffect(() => {
+    reset();
+    discard();
   }, [weekProps.component.week]);
 
   useEffect(() => {
     if (isResizing) {
-      setDraft((_draft) => {
-        setDateBeingChanged(dateBeingChanged);
-        return { ..._draft, isOpen: false };
-      });
+      setDateBeingChanged(dateBeingChanged);
+      setIsFormOpen(false);
     }
   }, [dateBeingChanged, isResizing]);
 
   useEffect(() => {
-    const isStaleDraft = !isDrafting && draft?.isOpen;
+    const isStaleDraft = !isDrafting && isFormOpen;
     if (isStaleDraft) {
       setDraft(null);
       return;
     }
-  }, [isDrafting, draft?.isOpen]);
+  }, [isDrafting, isFormOpen]);
 
   const handleChange = useCallback(async () => {
     if (isDrafting) {
@@ -103,7 +148,8 @@ export const useDraftUtil = (
           reduxDraft?.startDate,
           reduxDraft?.endDate
         );
-        setDraft({ ...defaultDraft, isOpen: true });
+        setDraft(defaultDraft);
+        setIsFormOpen(true);
         return;
       }
 
@@ -135,6 +181,7 @@ export const useDraftUtil = (
 
   useEffect(() => {
     if (isDragging) {
+      setIsFormOpen(false);
       setDraft((_draft) => {
         const durationMin = dayjs(_draft.endDate).diff(
           _draft.startDate,
@@ -145,7 +192,7 @@ export const useDraftUtil = (
           durationMin,
         });
 
-        return { ..._draft, isOpen: false };
+        return draft;
       });
     }
   }, [isDragging]);
@@ -221,6 +268,7 @@ export const useDraftUtil = (
       };
 
       if (!isDragging) {
+        alert("not dragging (anymore?)");
         return;
       }
 
@@ -305,11 +353,11 @@ export const useDraftUtil = (
           }
         }
 
+        setIsFormOpen(false);
         setDraft((_draft) => {
           return {
             ..._draft,
             hasFlipped: justFlipped,
-            isOpen: false,
             endDate,
             startDate,
             priority: draft.priority,
@@ -365,6 +413,7 @@ export const useDraftUtil = (
   );
 
   const stopDragging = () => {
+    console.log("done dragging");
     setIsDragging(false);
     setDragStatus(null);
   };
@@ -400,8 +449,10 @@ export const useDraftUtil = (
     draftState: {
       draft,
       dragStatus,
+      formProps,
       isDrafting,
       isDragging,
+      isFormOpen,
       isResizing,
       reduxDraft,
       reduxDraftType,
@@ -416,6 +467,7 @@ export const useDraftUtil = (
       setDateBeingChanged,
       setDraft,
       setIsDragging,
+      setIsFormOpen,
       setIsResizing,
       stopDragging,
       stopResizing,

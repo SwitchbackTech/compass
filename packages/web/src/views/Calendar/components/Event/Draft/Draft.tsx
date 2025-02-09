@@ -7,7 +7,6 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { getCategory } from "@web/common/utils/event.util";
-import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 
 import { getDraftContainer } from "./draft.util";
@@ -35,14 +34,11 @@ export const Draft: FC<Props> = ({
   const { draftState, draftUtil } = useGridDraft(
     dateCalcs,
     weekProps,
+    measurements,
     isSidebarOpen
   );
-  const { draft, isDragging, isResizing } = draftState;
-
   const isDrafting = useAppSelector(selectIsDrafting);
-
-  const formProps = useEventForm("grid");
-
+  const { draft, isDragging, formProps, isFormOpen, isResizing } = draftState;
   if (isLoadingDOM || !draft || !isDrafting) return null;
 
   const container = getDraftContainer(draft.isAllDay);
@@ -50,6 +46,7 @@ export const Draft: FC<Props> = ({
   const isGridEvent =
     category === Categories_Event.ALLDAY || category === Categories_Event.TIMED;
 
+  //TODO m: use Floating UI portal instead of React's
   return createPortal(
     <>
       {isGridEvent && (
@@ -57,6 +54,7 @@ export const Draft: FC<Props> = ({
           draft={draft}
           draftUtil={draftUtil}
           formProps={formProps}
+          isFormOpen={isFormOpen}
           isDragging={isDragging}
           isResizing={isResizing}
           measurements={measurements}

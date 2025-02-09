@@ -1,4 +1,6 @@
 import React, { FC, MouseEvent } from "react";
+import { FloatingFocusManager } from "@floating-ui/react";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { EventForm } from "@web/views/Forms/EventForm";
@@ -6,7 +8,6 @@ import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { GridDraftProps } from "@web/views/Calendar/hooks/draft/useGridDraft";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EventFormProps } from "@web/views/Forms/hooks/useEventForm";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 
 import { GridEvent } from "../Grid";
 
@@ -15,6 +16,7 @@ interface Props {
   draftUtil: GridDraftProps["draftUtil"];
   formProps: EventFormProps;
   isDragging: boolean;
+  isFormOpen: boolean;
   isResizing: boolean;
   measurements: Measurements_Grid;
   weekProps: WeekProps;
@@ -25,11 +27,13 @@ export const GridDraft: FC<Props> = ({
   draftUtil,
   formProps,
   isDragging,
+  isFormOpen,
   isResizing,
   measurements,
   weekProps,
 }) => {
-  const { x, y, refs, strategy } = formProps;
+  const { context, getReferenceProps, getFloatingProps, refs, strategy, x, y } =
+    formProps;
 
   const onConvert = () => {
     const start = weekProps.component.startOfView.format(YEAR_MONTH_DAY_FORMAT);
@@ -37,6 +41,7 @@ export const GridDraft: FC<Props> = ({
 
     draftUtil.convert(start, end);
   };
+  // isFormOpen && alert("form opne on Grid");
 
   return (
     <>
@@ -63,27 +68,33 @@ export const GridDraft: FC<Props> = ({
           draftUtil.setDateBeingChanged(dateToChange);
           draftUtil.setIsResizing(true);
         }}
-        ref={refs.setReference}
         weekProps={weekProps}
+        ref={refs.setReference}
+        {...getReferenceProps()}
       />
 
       <div>
-        {draft?.isOpen && (
-          <StyledFloatContainer
-            ref={refs.setFloating}
-            strategy={strategy}
-            top={y ?? 0}
-            left={x ?? 0}
-          >
-            <EventForm
-              event={draft}
-              onClose={draftUtil.discard}
-              onConvert={onConvert}
-              onDelete={draftUtil.deleteEvent}
-              onSubmit={(_draft: Schema_GridEvent) => draftUtil.submit(_draft)}
-              setEvent={draftUtil.setDraft}
-            />
-          </StyledFloatContainer>
+        {isFormOpen && (
+          <FloatingFocusManager context={context}>
+            <StyledFloatContainer
+              ref={refs.setFloating}
+              strategy={strategy}
+              top={y ?? 0}
+              left={x ?? 0}
+              {...getFloatingProps()}
+            >
+              <EventForm
+                event={draft}
+                onClose={draftUtil.discard}
+                onConvert={onConvert}
+                onDelete={draftUtil.deleteEvent}
+                onSubmit={(_draft: Schema_GridEvent) =>
+                  draftUtil.submit(_draft)
+                }
+                setEvent={draftUtil.setDraft}
+              />
+            </StyledFloatContainer>
+          </FloatingFocusManager>
         )}
       </div>
     </>

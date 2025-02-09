@@ -1,17 +1,16 @@
 import { MouseEvent, useRef, useEffect } from "react";
 
 export const useEventListener = (
-  eventName: "mouseup" | "mousemove",
+  eventName: "mousedown" | "mouseup" | "mousemove",
   handler: (e: MouseEvent) => void,
   element = window
 ) => {
   const savedHandler = useRef<(e: MouseEvent) => void>();
-  // Update ref.current value if handler changes.
-  // This allows our effect below to always get latest handler ...
-  // ... without us needing to pass it in effect deps array ...
-  // ... and potentially cause effect to re-run every render.
 
   useEffect(() => {
+    // This allows this effect to always get latest handler
+    // without us needing to pass it in effect deps array,
+    // causing excessive re-rendering.
     savedHandler.current = handler;
   }, [eventName, handler]);
 
@@ -31,8 +30,8 @@ export const useEventListener = (
     return () => {
       element.removeEventListener(eventName, listener);
     };
-    // removing 'element' passes some eventform tests
-    // but fails to capture onmouseup events from useGridClick
-    // }, [element, eventName]);
+    // Don't remove 'element' from dep array before adequately
+    // testing. Doing so might pass typechecking and some tests,
+    // but might cause onmouseup events from useGridClick to break
   }, [element, eventName]);
 };

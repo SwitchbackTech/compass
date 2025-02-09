@@ -21,6 +21,7 @@ export const useMousePosition = (
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
+      console.log("handling mouse move ...");
       const x = e.clientX;
       const y = e.clientY;
 

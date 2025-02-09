@@ -3,7 +3,7 @@ import mergeRefs from "react-merge-refs";
 import { Dayjs } from "dayjs";
 import { Categories_Event } from "@core/types/event.types";
 import { DRAFT_DURATION_MIN } from "@web/views/Calendar/layout.constants";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Ref_Callback } from "@web/common/types/util.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
@@ -23,6 +23,10 @@ import {
 } from "./styled";
 import { MainGridEvents } from "./MainGridEvents";
 import { MainGridColumns } from "../Columns/MainGridColumns";
+import {
+  selectIsDrafting,
+  selectIsDraftingExisting,
+} from "@web/ducks/events/selectors/draft.selectors";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -47,31 +51,25 @@ export const MainGrid: FC<Props> = ({
 
   const { component } = weekProps;
   const { isCurrentWeek, week, weekDays } = component;
+  const isDrafting = useAppSelector(selectIsDrafting);
 
-  const onMouseDown = async (e: MouseEvent) => {
-    if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
-      return;
-    }
+  //TODO remove
+  // const onGridClick = async (e: MouseEvent) => {
+  //   if (isDrafting) {
+  //     console.log("todo discarding...");
 
-    await startTimedDraft(e);
-  };
+  //     // todo next: this works for main grid, but now when
+  //     // clicking outside on any other element its
+  //     // still lingering the old draft cuz were not discarding there
 
-  const startTimedDraft = async (e: MouseEvent) => {
-    const x = getX(e, isSidebarOpen);
-    const _start = dateCalcs.getDateByXY(x, e.clientY, component.startOfView);
-    const startDate = _start.format();
-    const endDate = _start.add(DRAFT_DURATION_MIN, "minutes").format();
+  //     // ESC and repeating this flow also breaks
+  //     dispatch(draftSlice.actions.discard());
+  //     return;
+  //   }
 
-    const event = await assembleDefaultEvent(
-      Categories_Event.TIMED,
-      startDate,
-      endDate
-    );
-    dispatch(
-      draftSlice.actions.startResizing({ event, dateToChange: "endDate" })
-    );
-  };
+  //   console.log("form not open, so starting draft");
+  //   await startTimedDraft(e);
+  // };
 
   return (
     <StyledMainGrid id={ID_GRID_MAIN} ref={mergeRefs([mainGridRef, scrollRef])}>
@@ -86,7 +84,7 @@ export const MainGrid: FC<Props> = ({
         {getHourLabels().map((dayTime, index) => (
           <StyledGridRow
             key={`${dayTime}-${index}:dayTimes`}
-            onMouseDown={onMouseDown}
+            // onClick={onGridClick}
           />
         ))}
       </StyledGridWithTimeLabels>

@@ -6,8 +6,8 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 
-import { State_GridDraft, Util_GridDraft } from "./useDraftUtil";
 import { useEventListener } from "../mouse/useEventListener";
+import { State_GridDraft, Util_GridDraft } from "./useDraftUtil";
 
 export const useGridClick = (
   draftState: State_GridDraft,
@@ -23,7 +23,14 @@ export const useGridClick = (
     resizeStatus,
   } = draftState;
 
-  const { discard, setDraft, stopDragging, stopResizing, submit } = draftUtil;
+  const {
+    discard,
+    setDraft,
+    setIsFormOpen,
+    stopDragging,
+    stopResizing,
+    submit,
+  } = draftUtil;
 
   const getNextAction = useCallback(
     (category: Categories_Event) => {
@@ -61,9 +68,7 @@ export const useGridClick = (
     );
 
     if (shouldOpenForm) {
-      setDraft((_draft) => {
-        return { ..._draft, isOpen: true };
-      });
+      setIsFormOpen(true);
       return;
     }
 
@@ -84,6 +89,7 @@ export const useGridClick = (
         return;
       }
 
+      //TODO remove
       if (isDrafting && reduxDraftType === Categories_Event.ALLDAY) {
         discard();
         return;
@@ -107,9 +113,7 @@ export const useGridClick = (
         Categories_Event.TIMED
       );
       if (shouldOpenForm) {
-        setDraft((_draft) => {
-          return { ..._draft, isOpen: true };
-        });
+        setIsFormOpen(true);
         return;
       }
 
