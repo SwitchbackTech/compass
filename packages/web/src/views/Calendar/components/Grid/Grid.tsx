@@ -37,8 +37,6 @@ export const Grid: FC<Props> = ({
       />
 
       <MainGrid
-        dateCalcs={dateCalcs}
-        isSidebarOpen={isSidebarOpen}
         mainGridRef={mainGridRef}
         measurements={measurements}
         scrollRef={gridScrollRef}

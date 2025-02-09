@@ -1,7 +1,7 @@
 import { MouseEvent, useRef, useEffect } from "react";
 
 export const useEventListener = (
-  eventName: "mousedown" | "mouseup" | "mousemove",
+  eventName: "click" | "mousedown" | "mouseup" | "mousemove",
   handler: (e: MouseEvent) => void,
   element = window
 ) => {

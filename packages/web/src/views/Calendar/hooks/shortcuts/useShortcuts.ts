@@ -18,13 +18,13 @@ import {
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
+import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import { YEAR_MONTH_FORMAT } from "@core/constants/date.constants";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
 import { WeekProps } from "../useWeek";
-import { getDraftTimes } from "../../components/Event/Draft/draft.util";
 
 export interface ShortcutProps {
   today: Dayjs;

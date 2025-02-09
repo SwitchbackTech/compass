@@ -48,8 +48,7 @@ export const useEventForm = (
     ...options,
     open: isOpen,
     onOpenChange(newIsOpen, event, reason) {
-      console.log(reason);
-      console.log(event);
+      console.log("changed cuz:", reason);
       onIsFormOpenChange(newIsOpen);
     },
   });

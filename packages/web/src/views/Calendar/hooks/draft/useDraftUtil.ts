@@ -73,20 +73,15 @@ export const useDraftUtil = (
   const [isFormOpen, setIsFormOpen] = useState(false);
   const onIsFormOpenChange = (isOpen: boolean) => {
     const formAlreadyOpen = isFormOpen === true;
-    const shouldJustDiscard = formAlreadyOpen;
 
-    if (shouldJustDiscard) {
-      // console.log("clicked out, discarding...");
-      console.log("clicked out, just resetting...");
+    if (formAlreadyOpen) {
+      // console.log("clicked out, so reseting + discarding...");
+      console.log("clicked out, so reseting ..");
       reset();
       // discard();
       return;
-    } else {
-      // we wont actually get here
-      console.log("clicked empty, starting new ...");
     }
     setIsFormOpen(isOpen);
-    console.log("closed form [onIsFormOpenChange]");
 
     /*
 
@@ -142,12 +137,12 @@ export const useDraftUtil = (
 
   const handleChange = useCallback(async () => {
     if (isDrafting) {
-      if (activity === "createShortcut") {
-        const defaultDraft = await assembleDefaultEvent(
+      if (activity === "createShortcut" || activity === "gridClick") {
+        const defaultDraft = (await assembleDefaultEvent(
           reduxDraftType,
           reduxDraft?.startDate,
           reduxDraft?.endDate
-        );
+        )) as Schema_GridEvent;
         setDraft(defaultDraft);
         setIsFormOpen(true);
         return;
@@ -165,7 +160,6 @@ export const useDraftUtil = (
         setDateBeingChanged(dateToResize);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activity,
     dateToResize,

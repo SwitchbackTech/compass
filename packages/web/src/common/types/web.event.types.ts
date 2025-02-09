@@ -52,8 +52,10 @@ export interface Schema_SomedayEventsColumn {
     [key: string]: Schema_Event;
   };
 }
+
+type Activity = "createShortcut" | "dragging" | "gridClick" | "resizing";
 export interface Status_DraftEvent {
-  activity: string | null;
+  activity: Activity | null;
   eventType: Categories_Event | null;
   isDrafting: boolean;
   dateToResize: "startDate" | "endDate" | null;

@@ -22,9 +22,9 @@ interface Payload_Draft_Drag {
 }
 
 interface Payload_DraftEvent {
+  activity?: "createShortcut" | "dragging" | "gridClick" | "resizing";
   event?: Schema_Event;
   eventType: Categories_Event;
-  activity?: "createShortcut" | "dragging" | "resizing";
 }
 
 interface Payload_Draft_Resize {

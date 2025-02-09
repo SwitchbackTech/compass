@@ -7,9 +7,9 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { getCategory } from "@web/common/utils/event.util";
+import { getDraftContainer } from "@web/common/utils/draft/draft.util";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 
-import { getDraftContainer } from "./draft.util";
 import { GridDraft } from "./GridDraft";
 
 interface Props {

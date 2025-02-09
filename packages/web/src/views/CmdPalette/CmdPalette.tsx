@@ -22,7 +22,7 @@ import {
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 
-import { getDraftTimes } from "../Calendar/components/Event/Draft/draft.util";
+import { getDraftTimes } from "../../common/utils/draft/draft.util";
 import { ShortcutProps } from "../Calendar/hooks/shortcuts/useShortcuts";
 
 const CmdPalette = ({

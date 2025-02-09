@@ -3,7 +3,7 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "../useWeek";
 import { useDraftUtil } from "./useDraftUtil";
 import { useGridClick } from "./useGridClick";
-import { useGridMouseMove } from "./useGridMouseMove";
+import { useMouseHandlers } from "./useMouseHandlers";
 import { Measurements_Grid } from "../grid/useGridLayout";
 
 export const useGridDraft = (
@@ -19,7 +19,7 @@ export const useGridDraft = (
   );
 
   useGridClick(draftState, draftUtil);
-  useGridMouseMove(
+  useMouseHandlers(
     draftState,
     draftUtil,
     dateCalcs,
