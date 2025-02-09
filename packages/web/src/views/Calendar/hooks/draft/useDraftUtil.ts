@@ -1,5 +1,6 @@
 import { MouseEvent, useCallback, useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
+import { OpenChangeReason } from "@floating-ui/react";
 import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -69,34 +70,22 @@ export const useDraftUtil = (
   const [dateBeingChanged, setDateBeingChanged] = useState<
     "startDate" | "endDate" | null
   >("endDate");
-  /* form stuff -- TODO organize */
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const onIsFormOpenChange = (isOpen: boolean) => {
+  const onIsFormOpenChange = (isOpen: boolean, reason?: OpenChangeReason) => {
     const formAlreadyOpen = isFormOpen === true;
 
     if (formAlreadyOpen) {
-      // console.log("clicked out, so reseting + discarding...");
-      console.log("clicked out, so reseting ..");
       reset();
-      // discard();
+
+      // Not including click or outside press reasons
+      // to avoid conflicting with custom mouse
+      // handlers (useMouseHandlers.ts)
+      if (reason === "escape-key") {
+        discard();
+      }
       return;
     }
     setIsFormOpen(isOpen);
-
-    /*
-
-    did user click outside or click empty?
-     - clickoutside: form is open
-     - click empty: form is not already open
-
-    if already drafting -- ie user clicked outside
-     ::then they want the form to just close
-      - close form
-      - reset draft
-    else -- user clicked empty space
-      ::then they want the new draft to appear 
-      - start draft
-    */
 
     if (isOpen === false) {
       reset();
@@ -407,7 +396,6 @@ export const useDraftUtil = (
   );
 
   const stopDragging = () => {
-    console.log("done dragging");
     setIsDragging(false);
     setDragStatus(null);
   };

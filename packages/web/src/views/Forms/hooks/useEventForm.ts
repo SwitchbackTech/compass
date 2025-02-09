@@ -2,6 +2,7 @@ import {
   autoUpdate,
   flip,
   offset,
+  OpenChangeReason,
   shift,
   useDismiss,
   useFloating,
@@ -12,7 +13,7 @@ import {
 export const useEventForm = (
   eventType: "grid" | "sidebarWeek" | "sidebarMonth",
   isOpen: boolean,
-  onIsFormOpenChange: (isOpen: boolean) => void
+  onIsFormOpenChange: (isOpen: boolean, reason?: OpenChangeReason) => void
 ) => {
   let options: Partial<UseFloatingOptions>;
 
@@ -47,9 +48,8 @@ export const useEventForm = (
   const { context, x, y, refs, strategy } = useFloating({
     ...options,
     open: isOpen,
-    onOpenChange(newIsOpen, event, reason) {
-      console.log("changed cuz:", reason);
-      onIsFormOpenChange(newIsOpen);
+    onOpenChange(newIsOpen, _, reason) {
+      onIsFormOpenChange(newIsOpen, reason);
     },
   });
 
