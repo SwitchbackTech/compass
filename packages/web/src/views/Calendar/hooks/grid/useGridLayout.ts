@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ID_ALLDAY_COLUMNS,
-  ID_GRID_ALLDAY_ROW,
+  ID_GRID_ALLDAY_CONTAINER,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { getElemById } from "@web/common/utils/grid.util";
@@ -56,7 +56,9 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
       setAllDayMeasurements(allDayRect);
       return;
     }
-    const allDayRect = getElemById(ID_GRID_ALLDAY_ROW).getBoundingClientRect();
+    const allDayRect = getElemById(
+      ID_GRID_ALLDAY_CONTAINER
+    ).getBoundingClientRect();
     setAllDayMeasurements(allDayRect);
   };
 

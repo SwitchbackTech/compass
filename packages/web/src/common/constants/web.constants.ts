@@ -7,8 +7,8 @@ export const GOOGLE = "google";
 
 export const ID_ALLDAY_COLUMNS = "allDayColumns";
 export const ID_EVENT_FORM = "Event Form";
+export const ID_GRID_ALLDAY_CONTAINER = "allDayRowContainer";
 export const ID_GRID_ALLDAY_ROW = "allDayRow";
-export const ID_GRID_EVENTS_ALLDAY = "allDayEvents";
 export const ID_GRID_EVENTS_TIMED = "timedEvents";
 export const ID_GRID_MAIN = "mainGrid";
 export const ID_GRID_ROW = "gridRow";

@@ -1,5 +1,5 @@
 import React, { MouseEvent } from "react";
-import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
+import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -37,7 +37,7 @@ export const AllDayEvents = ({
   };
 
   return (
-    <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>
+    <StyledEvents id={ID_GRID_ALLDAY_ROW}>
       {allDayEvents.map((event: Schema_GridEvent, i) => {
         return (
           <AllDayEventMemo

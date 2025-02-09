@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Ref_Callback } from "@web/common/types/util.types";
 import {
   ID_ALLDAY_COLUMNS,
-  ID_GRID_ALLDAY_ROW,
+  ID_GRID_ALLDAY_CONTAINER,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { getX } from "@web/common/utils/grid.util";
@@ -78,7 +78,7 @@ export const AllDayRow: FC<Props> = ({
 
   return (
     <StyledAllDayRow
-      id={ID_GRID_ALLDAY_ROW}
+      id={ID_GRID_ALLDAY_CONTAINER}
       rowsCount={rowsCount}
       onMouseDown={onSectionMouseDown}
     >

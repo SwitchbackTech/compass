@@ -2,7 +2,7 @@ import { MouseEvent, useCallback } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { getElemById } from "@web/common/utils/grid.util";
 import {
-  ID_GRID_ALLDAY_ROW,
+  ID_GRID_ALLDAY_CONTAINER,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 
@@ -137,7 +137,7 @@ export const useGridClick = (
   useEventListener(
     "mouseup",
     _onAllDayRowMouseUp,
-    getElemById(ID_GRID_ALLDAY_ROW)
+    getElemById(ID_GRID_ALLDAY_CONTAINER)
   );
   const mainGrid = getElemById(ID_GRID_MAIN);
   useEventListener("mouseup", _onMainGridMouseUp, mainGrid);
