@@ -23,7 +23,7 @@ import { ZIndex } from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
 
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
-import { getPosition } from "@web/common/utils/position.util";
+import { getPosition } from "@web/common/utils/position/position.util";
 
 interface Props {
   event: Schema_GridEvent;

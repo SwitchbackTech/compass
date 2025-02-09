@@ -8,11 +8,45 @@ import { getX } from "@web/common/utils/grid.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
-import { DRAFT_DURATION_MIN } from "../../layout.constants";
+import {
+  DRAFT_DURATION_MIN,
+  GRID_Y_START,
+  SIDEBAR_X_START,
+} from "../../layout.constants";
 import { DateCalcs } from "../grid/useDateCalcs";
 import { WeekProps } from "../useWeek";
 import { useMousePosition } from "./useMousePosition";
 import { Measurements_Grid } from "../grid/useGridLayout";
+
+type Layout = {
+  allDayRowBottom: number;
+  allDayRowTop: number;
+  gridYStart: number;
+  sidebarXStart: number;
+};
+
+const getMousePosition = (e: MouseEvent, layout: Layout) => {
+  console.log("handling mouse move ...");
+  const x = e.clientX;
+  const y = e.clientY;
+
+  const { allDayRowTop, allDayRowBottom, gridYStart, sidebarXStart } = layout;
+
+  const isPastSidebar = x > sidebarXStart;
+
+  const isOverAllDayRow =
+    isPastSidebar && y < allDayRowBottom && y > allDayRowTop;
+
+  const isOverMainGrid = isPastSidebar && !isOverAllDayRow && y > gridYStart;
+
+  const isOverGrid = isOverAllDayRow || isOverMainGrid;
+
+  return {
+    isOverGrid,
+    isOverMainGrid,
+    isOverAllDayRow,
+  };
+};
 
 export const useGridMouseMove = (
   draftState: State_GridDraft,
@@ -57,7 +91,14 @@ export const useGridMouseMove = (
   const onMouseMove = useCallback(
     (e: MouseEvent) => {
       if (isMouseDown) {
-        if (positionProps.isOverGrid) {
+        const position = getMousePosition(e, {
+          allDayRowBottom: measurements.allDayRow?.bottom,
+          allDayRowTop: measurements.allDayRow?.top,
+          gridYStart: GRID_Y_START,
+          sidebarXStart: SIDEBAR_X_START,
+        });
+        console.log(position);
+        if (position.isOverGrid) {
           console.log("over grid...");
         }
         if (isDrafting) {

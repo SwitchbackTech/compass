@@ -12,8 +12,8 @@ import {
   GRID_MARGIN_LEFT,
 } from "@web/views/Calendar/layout.constants";
 import { Category } from "@web/ducks/events/event.types";
-import { ACCEPTED_TIMES } from "../constants/web.constants";
-import { Schema_GridEvent } from "../types/web.event.types";
+import { ACCEPTED_TIMES } from "../../constants/web.constants";
+import { Schema_GridEvent } from "../../types/web.event.types";
 
 dayjs.extend(dayOfYear);
 dayjs.extend(weekPlugin);
