@@ -1,21 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
-import { Priorities } from "@core/constants/core.constants";
-import { ContextMenuPosition } from "./GridContextMenuWrapper";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  useInteractions,
+  useDismiss,
+  useClick,
+  useRole,
+} from "@floating-ui/react";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { Priorities } from "@core/constants/core.constants";
 
-interface ContextMenuProps {
-  event: Schema_GridEvent;
-  position: ContextMenuPosition | null;
-  onClose: () => void;
-}
-
-const MenuWrapper = styled.ul<{ position: ContextMenuPosition | null }>`
+const MenuWrapper = styled.ul`
   position: absolute;
-  top: ${({ position }) => position?.y || 0}px;
-  left: ${({ position }) => position?.x || 0}px;
   background-color: white;
   border: 1px solid #ccc;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
@@ -65,95 +61,84 @@ const MenuItem = styled.li`
   }
 `;
 
-const ContextMenu = ({ event, position, onClose }: ContextMenuProps) => {
-  const dispatch = useAppDispatch();
+const ContextMenu = React.forwardRef<HTMLUListElement, any>(
+  ({ event, onClose, style, context }, ref) => {
+    const dispatch = useAppDispatch();
+    const [selectedPriority, setSelectedPriority] = useState(
+      Priorities.UNASSIGNED
+    );
 
-  const menuRef = useRef<HTMLUListElement>(null);
-  const [selectedPriority, setSelectedPriority] = useState(
-    Priorities.UNASSIGNED
-  );
-
-  // TODO: Use colors from constant
-  const priorities = [
-    { id: "work", value: Priorities.WORK, color: "rgb(200, 236, 249)" },
-    { id: "self", value: Priorities.SELF, color: "rgb(149, 189, 219)" },
-    {
-      id: "relations",
-      value: Priorities.RELATIONS,
-      color: "rgb(134, 208, 187)",
-    },
-  ];
-
-  const actions = [
-    {
-      id: "edit",
-      label: "✏️ Edit",
-      onClick: () => {
-        dispatch(
-          draftSlice.actions.start({
-            source: "contextMenu",
-            event: {
-              ...event,
-              isOpen: true,
-            },
-          })
-        );
+    // TODO: Use colors from constant
+    const priorities = [
+      { id: "work", value: Priorities.WORK, color: "rgb(200, 236, 249)" },
+      { id: "self", value: Priorities.SELF, color: "rgb(149, 189, 219)" },
+      {
+        id: "relations",
+        value: Priorities.RELATIONS,
+        color: "rgb(134, 208, 187)",
       },
-    },
-    {
-      id: "delete",
-      label: "🗑️ Delete",
-      onClick: () => alert("Delete clicked"),
-    },
-  ];
+    ];
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    const actions = [
+      {
+        id: "edit",
+        label: "✏️ Edit",
+        onClick: () => {
+          dispatch(
+            draftSlice.actions.start({
+              source: "contextMenu",
+              event: { ...event, isOpen: true },
+            })
+          );
+        },
+      },
+      {
+        id: "delete",
+        label: "🗑️ Delete",
+        onClick: () => alert("Delete clicked"),
+      },
+    ];
+
+    const dismiss = useDismiss(context, {
+      outsidePress: (event) => {
+        event.preventDefault(); // Prevents clicking another UI element when dismissing
         onClose();
-      }
-    };
+        return true;
+      },
+    });
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
+    const click = useClick(context, { enabled: true });
 
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
+    const role = useRole(context, { role: "menu" });
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
+    const { getFloatingProps } = useInteractions([dismiss, click, role]);
 
-  return (
-    <MenuWrapper ref={menuRef} position={position}>
-      <PriorityContainer>
-        {priorities.map((priority) => (
-          <PriorityCircle
-            key={priority.id}
-            color={priority.color}
-            selected={selectedPriority === priority.value}
-            onClick={() => setSelectedPriority(priority.value)}
-          />
+    return (
+      <MenuWrapper ref={ref} style={style} {...getFloatingProps()}>
+        <PriorityContainer>
+          {priorities.map((priority) => (
+            <PriorityCircle
+              key={priority.id}
+              color={priority.color}
+              selected={selectedPriority === priority.value}
+              onClick={() => setSelectedPriority(priority.value)}
+            />
+          ))}
+        </PriorityContainer>
+        {actions.map((item) => (
+          <MenuItem
+            key={item.id}
+            onClick={() => {
+              item.onClick();
+              onClose();
+            }}
+          >
+            {item.label}
+          </MenuItem>
         ))}
-      </PriorityContainer>
-      {actions.map((item) => (
-        <MenuItem
-          key={item.id}
-          onClick={() => {
-            item.onClick();
-            onClose();
-          }}
-        >
-          {item.label}
-        </MenuItem>
-      ))}
-    </MenuWrapper>
-  );
-};
+      </MenuWrapper>
+    );
+  }
+);
 
 export default ContextMenu;
