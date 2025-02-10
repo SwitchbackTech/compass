@@ -1,6 +1,5 @@
 import { MouseEvent, useCallback, useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
-import { OpenChangeReason } from "@floating-ui/react";
 import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -26,7 +25,6 @@ import {
   selectDraftStatus,
 } from "@web/ducks/events/selectors/draft.selectors";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
-import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import {
   selectIsAtWeeklyLimit,
   selectSomedayWeekCount,
@@ -35,6 +33,7 @@ import { getUserId } from "@web/auth/auth.util";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { WeekProps } from "../useWeek";
+import { useDraftForm } from "./form/useDraftForm";
 export interface Status_Drag {
   durationMin: number;
   hasMoved?: boolean;
@@ -71,38 +70,6 @@ export const useDraftUtil = (
     "startDate" | "endDate" | null
   >("endDate");
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const onIsFormOpenChange = (isOpen: boolean, reason?: OpenChangeReason) => {
-    const formAlreadyOpen = isFormOpen === true;
-
-    if (formAlreadyOpen) {
-      reset();
-
-      // Not including click or outside press reasons
-      // to avoid conflicting with custom mouse
-      // handlers (useMouseHandlers.ts)
-      if (reason === "escape-key") {
-        discard();
-      }
-      return;
-    }
-    setIsFormOpen(isOpen);
-
-    if (isOpen === false) {
-      reset();
-      discard();
-    }
-  };
-  const formProps = useEventForm("grid", isFormOpen, onIsFormOpenChange);
-
-  const reset = () => {
-    setDraft(null);
-    setIsDragging(false);
-    setIsFormOpen(false);
-    setIsResizing(false);
-    setDragStatus(null);
-    setResizeStatus(null);
-    setDateBeingChanged(null);
-  };
 
   useEffect(() => {
     reset();
@@ -123,6 +90,25 @@ export const useDraftUtil = (
       return;
     }
   }, [isDrafting, isFormOpen]);
+
+  const reset = () => {
+    setDraft(null);
+    setIsDragging(false);
+    setIsFormOpen(false);
+    setIsResizing(false);
+    setDragStatus(null);
+    setResizeStatus(null);
+    setDateBeingChanged(null);
+  };
+  const discard = useCallback(() => {
+    if (draft) {
+      setDraft(null);
+    }
+
+    if (reduxDraft || reduxDraftType) {
+      dispatch(draftSlice.actions.discard());
+    }
+  }, [dispatch, draft, reduxDraft, reduxDraftType]);
 
   const handleResizing = useCallback(() => {
     console.log("-setting local draft to:", reduxDraft);
@@ -224,16 +210,6 @@ export const useDraftUtil = (
     }
     discard();
   };
-
-  const discard = useCallback(() => {
-    if (draft) {
-      setDraft(null);
-    }
-
-    if (reduxDraft || reduxDraftType) {
-      dispatch(draftSlice.actions.discard());
-    }
-  }, [dispatch, draft, reduxDraft, reduxDraftType]);
 
   const drag = useCallback(
     (e: MouseEvent) => {
@@ -444,6 +420,8 @@ export const useDraftUtil = (
 
     discard();
   };
+
+  const { formProps } = useDraftForm(isFormOpen, reset, discard, setIsFormOpen);
 
   return {
     draftState: {
