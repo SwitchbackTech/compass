@@ -6,8 +6,8 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { validateEvent } from "@core/validators/event.validator";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getX } from "@web/common/utils/grid.util";
 import {
@@ -124,38 +124,56 @@ export const useDraftUtil = (
     }
   }, [isDrafting, isFormOpen]);
 
-  const handleChange = useCallback(async () => {
-    if (isDrafting) {
-      if (activity === "createShortcut" || activity === "gridClick") {
-        const defaultDraft = (await assembleDefaultEvent(
-          reduxDraftType,
-          reduxDraft?.startDate,
-          reduxDraft?.endDate
-        )) as Schema_GridEvent;
-        setDraft(defaultDraft);
-        setIsFormOpen(true);
-        return;
-      }
+  const handleResizing = useCallback(() => {
+    console.log("-setting local draft to:", reduxDraft);
+    setDraft(reduxDraft);
+    setIsResizing(true);
+    setDateBeingChanged(dateToResize);
+  }, [reduxDraft, dateToResize]);
 
+  const handleDragging = useCallback(() => {
+    setDraft(reduxDraft);
+    setIsDragging(true);
+  }, [reduxDraft]);
+
+  const handleShortcutOrClick = useCallback(async () => {
+    const draftingExisting = reduxDraft !== null;
+    if (draftingExisting) {
+      console.log("!setting local draft to:", reduxDraft);
       setDraft(reduxDraft);
+    } else {
+      const defaultDraft = (await assembleDefaultEvent(
+        reduxDraftType,
+        reduxDraft?.startDate,
+        reduxDraft?.endDate
+      )) as Schema_GridEvent;
+      setDraft(defaultDraft);
+    }
+    setIsFormOpen(true);
+  }, [reduxDraft, reduxDraftType]);
 
-      if (activity === "dragging") {
-        setIsDragging(true);
-        return;
-      }
+  const handleChange = useCallback(async () => {
+    if (!isDrafting) return;
 
-      if (activity === "resizing") {
-        setIsResizing(true);
-        setDateBeingChanged(dateToResize);
-      }
+    if (activity === "createShortcut" || activity === "gridClick") {
+      await handleShortcutOrClick();
+      return;
+    }
+
+    if (activity === "dragging") {
+      handleDragging();
+      return;
+    }
+
+    if (activity === "resizing") {
+      handleResizing();
     }
   }, [
     activity,
-    dateToResize,
-    dispatch,
+    handleDragging,
+    handleResizing,
+    handleShortcutOrClick,
     isDrafting,
-    reduxDraft,
-    reduxDraftType,
   ]);
 
   useEffect(() => {
