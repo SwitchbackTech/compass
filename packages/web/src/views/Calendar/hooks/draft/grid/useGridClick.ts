@@ -8,7 +8,7 @@ import {
 import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 
-import { useEventListener } from "../mouse/useEventListener";
+import { useEventListener } from "../../mouse/useEventListener";
 import { State_Draft, Util_Draft } from "./useDraft";
 
 export const useGridClick = (

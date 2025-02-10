@@ -13,10 +13,10 @@ import {
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { DateCalcs } from "../grid/useDateCalcs";
-import { useEventListener } from "../mouse/useEventListener";
+import { useEventListener } from "./useEventListener";
 import { WeekProps } from "../useWeek";
 import { Measurements_Grid } from "../grid/useGridLayout";
-import { State_Draft, Util_Draft } from "./useDraft";
+import { State_Draft, Util_Draft } from "../draft/grid/useDraft";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 
 export const useMouseHandlers = (

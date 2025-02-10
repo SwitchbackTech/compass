@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import dayjs from "dayjs";
 import { State_Draft_Local } from "../state/useDraftState";
 import { Setters_Draft_Actions } from "../actions/useDraftActions";
-import { WeekProps } from "../../useWeek";
+import { WeekProps } from "../../../useWeek";
 
 export const useDraftEffects = (
   state: State_Draft_Local,
