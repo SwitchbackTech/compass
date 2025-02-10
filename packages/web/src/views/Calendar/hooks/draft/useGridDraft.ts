@@ -1,7 +1,7 @@
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 
 import { WeekProps } from "../useWeek";
-import { useDraftUtil } from "./useDraftUtil";
+import { useDraft } from "./useDraft";
 import { useGridClick } from "./useGridClick";
 import { useMouseHandlers } from "./useMouseHandlers";
 import { Measurements_Grid } from "../grid/useGridLayout";
@@ -12,7 +12,7 @@ export const useGridDraft = (
   measurements: Measurements_Grid,
   isSidebarOpen: boolean
 ) => {
-  const { draftState, draftUtil } = useDraftUtil(
+  const { draftState, draftUtil } = useDraft(
     dateCalcs,
     weekProps,
     isSidebarOpen

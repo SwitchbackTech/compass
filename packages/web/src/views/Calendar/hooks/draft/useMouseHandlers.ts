@@ -5,17 +5,21 @@ import {
   assembleTimedDraft,
   isOverMainGrid,
 } from "@web/common/utils/draft/draft.util";
-import { ID_GRID_ROW } from "@web/common/constants/web.constants";
+import {
+  ID_GRID_ALLDAY_ROW,
+  ID_GRID_ROW,
+  ID_GRID_ROW_CONTAINER,
+} from "@web/common/constants/web.constants";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { DateCalcs } from "../grid/useDateCalcs";
 import { useEventListener } from "../mouse/useEventListener";
 import { WeekProps } from "../useWeek";
 import { Measurements_Grid } from "../grid/useGridLayout";
-import { State_GridDraft, Util_GridDraft } from "./useDraftUtil";
+import { State_Draft, Util_GridDraft } from "./useDraft";
 
 export const useMouseHandlers = (
-  draftState: State_GridDraft,
+  draftState: State_Draft,
   draftUtil: Util_GridDraft,
   dateCalcs: DateCalcs,
   measurements: Measurements_Grid,
@@ -48,14 +52,32 @@ export const useMouseHandlers = (
   };
 
   const onClick = async (e: MouseEvent) => {
-    const clickedEmptyRow = (e.target as HTMLElement).id.includes(ID_GRID_ROW);
-    if (!clickedEmptyRow) return;
+    const clickedMainGrid = (e.target as HTMLElement).id.includes(ID_GRID_ROW);
+    // const didNotClickMainGridContainer =
+    //   (e.target as HTMLElement).id.includes(ID_GRID_ROW_CONTAINER) === false;
+
+    const clickedAllDayRow =
+      (e.target as HTMLElement).id === ID_GRID_ALLDAY_ROW;
+
+    if (!clickedMainGrid && !clickedAllDayRow) {
+      console.log(
+        "not discarding OR creating new cuz you didn't click right place",
+        `target id: ${e.target.id}`,
+        `clickedMainGrid: ${clickedMainGrid}`,
+        `clickedAllDayRow: ${clickedAllDayRow}`
+      );
+      return;
+    }
+
+    // what about when clicking sidebar?
+    // console.log("handling cuz you clicked empty space in grid:", e.target);
 
     if (isDrafting) {
       dispatch(draftSlice.actions.discard());
       return;
     }
 
+    // if (clickedMainGrid) {
     const event = await assembleTimedDraft(
       e,
       dateCalcs,
@@ -69,9 +91,11 @@ export const useMouseHandlers = (
         event,
       })
     );
+    // }
   };
 
   const onMouseDown = useCallback((e: MouseEvent) => {
+    console.log("moused down");
     setIsMouseDown(true);
   }, []);
 

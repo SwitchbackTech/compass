@@ -7,10 +7,10 @@ import {
 } from "@web/common/constants/web.constants";
 
 import { useEventListener } from "../mouse/useEventListener";
-import { State_GridDraft, Util_GridDraft } from "./useDraftUtil";
+import { State_Draft, Util_GridDraft } from "./useDraft";
 
 export const useGridClick = (
-  draftState: State_GridDraft,
+  draftState: State_Draft,
   draftUtil: Util_GridDraft
 ) => {
   const {

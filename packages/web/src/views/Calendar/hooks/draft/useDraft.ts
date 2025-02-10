@@ -34,16 +34,9 @@ import { getUserId } from "@web/auth/auth.util";
 import { DateCalcs } from "../grid/useDateCalcs";
 import { WeekProps } from "../useWeek";
 import { useDraftForm } from "./form/useDraftForm";
-export interface Status_Drag {
-  durationMin: number;
-  hasMoved?: boolean;
-}
+import { useDraftState } from "./state/useDraftState";
 
-interface Status_Resize {
-  hasMoved: boolean;
-}
-
-export const useDraftUtil = (
+export const useDraft = (
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
   isSidebarOpen: boolean
@@ -61,15 +54,26 @@ export const useDraftUtil = (
 
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
 
-  const [isDragging, setIsDragging] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
-  const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
-  const [dragStatus, setDragStatus] = useState<Status_Drag | null>();
-  const [resizeStatus, setResizeStatus] = useState<Status_Resize | null>(null);
-  const [dateBeingChanged, setDateBeingChanged] = useState<
-    "startDate" | "endDate" | null
-  >("endDate");
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const { state, setters } = useDraftState();
+  const {
+    isDragging,
+    isResizing,
+    draft,
+    dragStatus,
+    resizeStatus,
+    dateBeingChanged,
+    isFormOpen,
+  } = state;
+
+  const {
+    setIsDragging,
+    setIsResizing,
+    setDraft,
+    setDragStatus,
+    setResizeStatus,
+    setDateBeingChanged,
+    setIsFormOpen,
+  } = setters;
 
   useEffect(() => {
     reset();
@@ -100,6 +104,7 @@ export const useDraftUtil = (
     setResizeStatus(null);
     setDateBeingChanged(null);
   };
+
   const discard = useCallback(() => {
     if (draft) {
       setDraft(null);
@@ -454,6 +459,6 @@ export const useDraftUtil = (
   };
 };
 
-export type Hook_GridUtil = ReturnType<typeof useDraftUtil>;
-export type State_GridDraft = Hook_GridUtil["draftState"];
-export type Util_GridDraft = Hook_GridUtil["draftUtil"];
+export type Hook_Draft = ReturnType<typeof useDraft>;
+export type State_Draft = Hook_Draft["draftState"];
+export type Util_GridDraft = Hook_Draft["draftUtil"];
