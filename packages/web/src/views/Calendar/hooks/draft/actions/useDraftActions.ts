@@ -33,8 +33,9 @@ import {
 } from "@web/ducks/events/selectors/draft.selectors";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { State_Draft_Local } from "../state/useDraftState";
+import { useDraftEffects } from "../effects/useDraftEffects";
 
-type DraftActionSetters = {
+export type Setters_Draft_Actions = {
   setIsDragging: (isDragging: boolean) => void;
   setIsResizing: (isResizing: boolean) => void;
   setDragStatus: (status: any) => void;
@@ -46,7 +47,7 @@ type DraftActionSetters = {
 
 export const useDraftActions = (
   draftState: State_Draft_Local,
-  setters: DraftActionSetters,
+  setters: Setters_Draft_Actions,
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
   isSidebarOpen: boolean
@@ -81,27 +82,6 @@ export const useDraftActions = (
     setDraft,
     setIsFormOpen,
   } = setters;
-
-  //TODO change into user action for changing week
-  useEffect(() => {
-    reset();
-    discard();
-  }, [weekProps.component.week]);
-
-  useEffect(() => {
-    if (isResizing) {
-      setDateBeingChanged(dateBeingChanged);
-      setIsFormOpen(false);
-    }
-  }, [dateBeingChanged, isResizing]);
-
-  useEffect(() => {
-    const isStaleDraft = !isDrafting && isFormOpen;
-    if (isStaleDraft) {
-      setDraft(null);
-      return;
-    }
-  }, [isDrafting, isFormOpen]);
 
   const startDragging = useCallback(() => {
     setDraft(reduxDraft);
@@ -413,27 +393,7 @@ export const useDraftActions = (
     isDrafting,
   ]);
 
-  useEffect(() => {
-    handleChange();
-  }, [handleChange]);
-
-  useEffect(() => {
-    if (isDragging) {
-      setIsFormOpen(false);
-      setDraft((_draft) => {
-        const durationMin = dayjs(_draft.endDate).diff(
-          _draft.startDate,
-          "minutes"
-        );
-
-        setDragStatus({
-          durationMin,
-        });
-
-        return draft;
-      });
-    }
-  }, [isDragging]);
+  useDraftEffects(draftState, setters, weekProps, isDrafting, handleChange);
 
   return {
     stopDragging,
