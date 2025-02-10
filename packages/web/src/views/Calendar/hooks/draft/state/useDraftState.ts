@@ -9,7 +9,7 @@ interface Status_Resize {
   hasMoved: boolean;
 }
 
-interface DraftState {
+export interface State_Draft_Local {
   isDragging: boolean;
   isResizing: boolean;
   draft: Schema_GridEvent | null;
@@ -19,7 +19,7 @@ interface DraftState {
   isFormOpen: boolean;
 }
 
-interface DraftStateSetters {
+export interface Setters_Draft {
   setIsDragging: (value: boolean) => void;
   setIsResizing: (value: boolean) => void;
   setDraft: (value: Schema_GridEvent | null) => void;
@@ -40,17 +40,17 @@ export const useDraftState = () => {
   >("endDate");
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const state: DraftState = {
-    isDragging,
-    isResizing,
+  const state: State_Draft_Local = {
     draft,
     dragStatus,
+    isDragging,
+    isFormOpen,
+    isResizing,
     resizeStatus,
     dateBeingChanged,
-    isFormOpen,
   };
 
-  const setters: DraftStateSetters = {
+  const setters: Setters_Draft = {
     setIsDragging,
     setIsResizing,
     setDraft,

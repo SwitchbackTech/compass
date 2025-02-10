@@ -16,18 +16,21 @@ import { DateCalcs } from "../grid/useDateCalcs";
 import { useEventListener } from "../mouse/useEventListener";
 import { WeekProps } from "../useWeek";
 import { Measurements_Grid } from "../grid/useGridLayout";
-import { State_Draft, Util_GridDraft } from "./useDraft";
+import { State_Draft, Util_Draft } from "./useDraft";
+import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 
 export const useMouseHandlers = (
   draftState: State_Draft,
-  draftUtil: Util_GridDraft,
+  draftUtil: Util_Draft,
   dateCalcs: DateCalcs,
   measurements: Measurements_Grid,
   startOfView: WeekProps["component"]["startOfView"]
 ) => {
   const dispatch = useAppDispatch();
 
-  const { draft, isDrafting, isDragging, isResizing } = draftState;
+  const isDrafting = useAppSelector(selectIsDrafting);
+
+  const { draft, isDragging, isResizing } = draftState;
   const { drag, resize } = draftUtil;
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
   const [isMouseDown, setIsMouseDown] = useState(false);

@@ -5,23 +5,21 @@ import {
   ID_GRID_ALLDAY_CONTAINER,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
+import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 
 import { useEventListener } from "../mouse/useEventListener";
-import { State_Draft, Util_GridDraft } from "./useDraft";
+import { State_Draft, Util_Draft } from "./useDraft";
 
 export const useGridClick = (
   draftState: State_Draft,
-  draftUtil: Util_GridDraft
+  draftUtil: Util_Draft
 ) => {
-  const {
-    draft,
-    dragStatus,
-    isDrafting,
-    isDragging,
-    isResizing,
-    reduxDraftType,
-    resizeStatus,
-  } = draftState;
+  const { draft, dragStatus, isDragging, isResizing, resizeStatus } =
+    draftState;
+  const draftStatus = useAppSelector(selectDraftStatus);
+  const reduxDraftType = draftStatus?.eventType;
+  const isDrafting = draftStatus?.isDrafting;
 
   const {
     discard,

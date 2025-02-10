@@ -19,7 +19,7 @@ interface Props {
   measurements: Measurements_Grid;
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
-  onMouseDown: (e: MouseEvent, event: Schema_GridEvent) => void;
+  onClick: (e: MouseEvent, event: Schema_GridEvent) => void;
 }
 
 const AllDayEvent = ({
@@ -28,7 +28,7 @@ const AllDayEvent = ({
   measurements,
   startOfView,
   endOfView,
-  onMouseDown,
+  onClick,
 }: Props) => {
   const position = getEventPosition(
     event,
@@ -51,7 +51,7 @@ const AllDayEvent = ({
       isResizing={false}
       left={position.left}
       lineClamp={1}
-      onMouseDown={(e) => onMouseDown(e, event)}
+      onClick={(e: MouseEvent) => onClick(e, event)}
       priority={event.priority || Priorities.UNASSIGNED}
       role="button"
       top={position.top}

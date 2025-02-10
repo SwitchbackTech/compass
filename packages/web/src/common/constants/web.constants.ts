@@ -12,6 +12,7 @@ export const ID_GRID_ALLDAY_ROW = "allDayRow";
 export const ID_GRID_EVENTS_TIMED = "timedEvents";
 export const ID_GRID_MAIN = "mainGrid";
 export const ID_GRID_ROW = "gridRow";
+export const ID_GRID_ROW_CONTAINER = "mainGridContainer";
 export const ID_MAIN = "mainSection";
 export const ID_DATEPICKER_SIDEBAR = "sidebarDatePicker";
 export const ID_SOMEDAY_DRAFT = "somedayDraft";

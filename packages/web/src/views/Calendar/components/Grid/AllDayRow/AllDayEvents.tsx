@@ -5,7 +5,10 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
-import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
+import {
+  selectDraftId,
+  selectIsDrafting,
+} from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { isSomedayEventFormOpen } from "@web/common/utils";
 
@@ -16,25 +19,39 @@ interface Props {
   measurements: Measurements_Grid;
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
+  onClick: (e: MouseEvent, event: Schema_GridEvent) => Promise<void>;
 }
 export const AllDayEvents = ({
   measurements,
   startOfView,
   endOfView,
+  onClick,
 }: Props) => {
+  // const dispatch = useAppDispatch();
   const allDayEvents = useAppSelector(selectAllDayEvents);
   const draftId = useAppSelector(selectDraftId);
-  const dispatch = useAppDispatch();
+  // const isDrafting = useAppSelector(selectIsDrafting);
 
-  const onMouseDown = (e: MouseEvent, event: Schema_GridEvent) => {
-    e.stopPropagation();
+  // const onClick = (e: MouseEvent, event: Schema_GridEvent) => {
+  //   e.stopPropagation();
 
-    if (isSomedayEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
-    }
+  //   if (isDrafting) {
+  //     console.log("todo: close draft");
+  //   } else {
+  //     dispatch(draftSlice.actions.)
+  //     console.log("todo open this draft");
+  //   }
 
-    dispatch(draftSlice.actions.startDragging({ event }));
-  };
+  // TODO remove - shouldn't need to do this anymore
+  // if (isSomedayEventFormOpen()) {
+  //   console.log("discarding (someday form)");
+  //   dispatch(draftSlice.actions.discard());
+  //   return;
+  // }
+
+  //TODO move this to onMouseDown?
+  // dispatch(draftSlice.actions.startDragging({ event }));
+  // };
 
   return (
     <StyledEvents id={ID_GRID_ALLDAY_ROW}>
@@ -47,7 +64,7 @@ export const AllDayEvents = ({
             startOfView={startOfView}
             endOfView={endOfView}
             measurements={measurements}
-            onMouseDown={onMouseDown}
+            onClick={onClick}
           />
         );
       })}

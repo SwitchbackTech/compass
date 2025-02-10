@@ -5,7 +5,11 @@ import { Dayjs } from "dayjs";
 import { Ref_Callback } from "@web/common/types/util.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Ref_Grid } from "@web/views/Calendar/components/Grid/grid.types";
-import { ID_GRID_MAIN, ID_GRID_ROW } from "@web/common/constants/web.constants";
+import {
+  ID_GRID_MAIN,
+  ID_GRID_ROW_CONTAINER,
+  ID_GRID_ROW,
+} from "@web/common/constants/web.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 
 import { getHourLabels } from "@web/common/utils/web.date.util";
@@ -45,7 +49,7 @@ export const MainGrid: FC<Props> = ({
         weekDays={weekDays}
       />
 
-      <StyledGridWithTimeLabels>
+      <StyledGridWithTimeLabels id={ID_GRID_ROW_CONTAINER}>
         {getHourLabels().map((dayTime, index) => (
           <StyledGridRow
             key={`${dayTime}-${index}:dayTimes`}
