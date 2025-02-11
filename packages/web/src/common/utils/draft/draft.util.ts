@@ -18,6 +18,25 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getMousePosition } from "../position/mouse.position";
 
+export const assembleAlldayDraft = async (
+  e: MouseEvent,
+  dateCalcs: DateCalcs,
+  isSidebarOpen: boolean,
+  startOfView: Dayjs
+): Promise<Schema_GridEvent> => {
+  const x = getX(e, isSidebarOpen);
+  const _start = dateCalcs.getDateByXY(x, e.clientY, startOfView);
+  const startDate = _start.format();
+  const endDate = _start.add(1, "day").format();
+
+  const event = (await assembleDefaultEvent(
+    Categories_Event.ALLDAY,
+    startDate,
+    endDate
+  )) as Schema_GridEvent;
+  return event;
+};
+
 export const assembleTimedDraft = async (
   e: MouseEvent,
   dateCalcs: DateCalcs,

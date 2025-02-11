@@ -39,7 +39,6 @@ export const draftSlice = createSlice({
         eventType,
       };
     },
-
     startResizing: (state, action: Action_Draft_Resize) => {
       const { event, dateToChange } = action.payload;
       return {
@@ -52,7 +51,6 @@ export const draftSlice = createSlice({
         },
       };
     },
-
     startDragging: (state, action) => {
       const { event } = action.payload;
       state.event = event;
@@ -62,7 +60,11 @@ export const draftSlice = createSlice({
         isDrafting: true,
       };
     },
-
+    stopResizing: (state) => {
+      if (state.status) {
+        state.status.activity = null;
+      }
+    },
     swap: (state, action: Action_Draft_Swap) => {
       const { category, event } = action.payload;
       state.event = event;
