@@ -5,7 +5,7 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { EventForm } from "@web/views/Forms/EventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { GridDraftProps } from "@web/views/Calendar/hooks/draft/useGridDraft";
+import { Util_Draft } from "@web/views/Calendar/hooks/draft/grid/useDraft";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EventFormProps } from "@web/views/Forms/hooks/useEventForm";
 
@@ -13,7 +13,7 @@ import { GridEvent } from "../Grid";
 
 interface Props {
   draft: Schema_GridEvent;
-  draftUtil: GridDraftProps["draftUtil"];
+  draftUtil: Util_Draft["draftUtil"];
   formProps: EventFormProps;
   isDragging: boolean;
   isFormOpen: boolean;
@@ -41,7 +41,6 @@ export const GridDraft: FC<Props> = ({
 
     draftUtil.convert(start, end);
   };
-  // isFormOpen && alert("form opne on Grid");
 
   return (
     <>

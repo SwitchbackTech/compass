@@ -20,7 +20,9 @@ export const useDraftForm = (
       discard();
     } else if (reason === "outside-press") {
       if (isResizing) {
-        dispatch(draftSlice.actions.stopResizing({}));
+        //TODO: maybe move this up to mouse handlers
+        // so its in the same spot as drag handler
+        dispatch(draftSlice.actions.resetActivity({}));
       }
     }
   };

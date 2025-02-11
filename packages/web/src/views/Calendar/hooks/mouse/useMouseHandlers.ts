@@ -8,6 +8,8 @@ import {
 } from "@web/common/utils/draft/draft.util";
 import {
   ID_GRID_ALLDAY_ROW,
+  ID_GRID_EVENTS_TIMED,
+  ID_GRID_MAIN,
   ID_GRID_ROW,
   ID_GRID_ROW_CONTAINER,
 } from "@web/common/constants/web.constants";
@@ -19,8 +21,8 @@ import { WeekProps } from "../useWeek";
 import { Measurements_Grid } from "../grid/useGridLayout";
 import { State_Draft, Util_Draft } from "../draft/grid/useDraft";
 import {
-  selectDraftStatus,
   selectIsDrafting,
+  selectIsResizing,
 } from "@web/ducks/events/selectors/draft.selectors";
 
 export const useMouseHandlers = (
@@ -33,8 +35,7 @@ export const useMouseHandlers = (
   const dispatch = useAppDispatch();
 
   const isDrafting = useAppSelector(selectIsDrafting);
-  const draftStatus = useAppSelector(selectDraftStatus);
-  const isResizing = draftStatus?.activity === "resizing";
+  const isResizing = useAppSelector(selectIsResizing);
 
   const { draft, isDragging } = draftState;
   const { drag, resize } = draftUtil;
@@ -80,12 +81,17 @@ export const useMouseHandlers = (
     );
   };
 
-  const getClickTarget = (e: MouseEvent): "alldayrow" | "maingrid" | null => {
+  const getClickTarget = (
+    e: MouseEvent
+  ): "alldayrow" | "maingrid" | "event" | null => {
     const target = e.target as HTMLElement;
     const id = target.id;
 
     if (id === ID_GRID_ALLDAY_ROW) return "alldayrow";
     if (id.includes(ID_GRID_ROW)) return "maingrid";
+    if (id === ID_GRID_ROW_CONTAINER) return "maingrid";
+    if (id === ID_GRID_MAIN) return "maingrid";
+    if (id === ID_GRID_EVENTS_TIMED) return "event";
 
     return null;
   };
@@ -102,32 +108,35 @@ export const useMouseHandlers = (
     );
   };
 
-  const onClick = async (e: MouseEvent) => {
+  const handleMainGridClick = async (e: MouseEvent) => {
+    console.log("clicked maingrid");
     if (isDrafting) {
-      if (isResizing) {
-        console.log("ignoring cuz resizing");
-        return;
-      } else {
+      if (!isResizing) {
+        console.log("resetting ");
         dispatch(draftSlice.actions.discard({}));
         return;
       }
+    } else {
+      await createTimedDraft(e);
     }
+  };
 
+  const onClick = async (e: MouseEvent) => {
     const location = getClickTarget(e);
+
     switch (location) {
       case "alldayrow":
         await createAlldayDraft(e);
         break;
       case "maingrid":
-        console.log("clicked maingrid");
-        await createTimedDraft(e);
+        handleMainGridClick(e);
+        break;
+      case "event":
+        console.log("clicked event");
         break;
       default:
-        console.log(
-          "not discarding OR creating new cuz you didn't click right place",
-          `target id: ${e.target.id}`
-        );
-        return;
+        console.log("discarding cuz clicked:", location);
+        dispatch(draftSlice.actions.discard({}));
     }
   };
 

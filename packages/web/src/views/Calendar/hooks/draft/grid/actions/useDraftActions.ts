@@ -89,7 +89,6 @@ export const useDraftActions = (
   }, [reduxDraft]);
 
   const startResizing = useCallback(() => {
-    console.log("-setting local draft to:", reduxDraft);
     setDraft(reduxDraft);
     setIsResizing(true);
     setDateBeingChanged(dateToResize);
@@ -356,7 +355,6 @@ export const useDraftActions = (
   const handleShortcutOrClick = useCallback(async () => {
     const draftingExisting = reduxDraft !== null;
     if (draftingExisting) {
-      console.log("!setting local draft to:", reduxDraft);
       setDraft(reduxDraft);
     } else {
       const defaultDraft = (await assembleDefaultEvent(

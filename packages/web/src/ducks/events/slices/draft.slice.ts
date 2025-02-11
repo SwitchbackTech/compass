@@ -60,7 +60,7 @@ export const draftSlice = createSlice({
         isDrafting: true,
       };
     },
-    stopResizing: (state) => {
+    resetActivity: (state) => {
       if (state.status) {
         state.status.activity = null;
       }
