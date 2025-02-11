@@ -7,19 +7,24 @@ import {
   shift,
   flip,
 } from "@floating-ui/react";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { useAppSelector } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import ContextMenu from "./ContextMenu";
-import { getCalendarEventIdFromElement } from "@web/common/utils/event.util";
+import {
+  assembleGridEvent,
+  getCalendarEventIdFromElement,
+} from "@web/common/utils/event.util";
 import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 
 const GridContextMenuWrapper = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
+  const dispatch = useAppDispatch();
   const timedEvents = useAppSelector(selectGridEvents);
-  const [event, setEvent] = useState<Schema_GridEvent | null>(null); // TODO: Should instead use draft event in redux store
+  const draftEvent = useAppSelector(selectDraft);
   const [isOpen, setIsOpen] = useState(false);
 
   const { refs, x, y, context } = useFloating({
@@ -50,28 +55,41 @@ const GridContextMenuWrapper = ({
       refs.setReference({
         getBoundingClientRect: () => new DOMRect(e.clientX, e.clientY, 0, 0), // Position menu exactly at the click position
       });
-      setEvent(selectedEvent);
+      dispatch(
+        draftSlice.actions.start({
+          source: "contextMenu",
+          event: {
+            ...selectedEvent,
+            isOpen: false,
+          },
+        })
+      );
       setIsOpen(true);
     }
   };
 
   const closeMenu = () => {
     setIsOpen(false);
-    setEvent(null);
   };
 
   return (
     <div style={{ display: "contents" }} onContextMenu={handleContextMenu}>
       {children}
-      {isOpen && event && (
+      {isOpen && draftEvent && (
         <ContextMenu
           ref={refs.setFloating}
-          event={event}
-          onClose={closeMenu}
+          gridEvent={assembleGridEvent(draftEvent)}
+          onOutsideClick={() => {
+            closeMenu();
+            dispatch(draftSlice.actions.discard());
+          }}
+          onMenuItemClick={() => {
+            closeMenu();
+          }}
           style={{
             position: "absolute",
-            top: y,
-            left: x,
+            top: `${y}px`,
+            left: `${x}px`,
           }}
           context={context}
         />

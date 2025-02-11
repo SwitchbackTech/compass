@@ -5,10 +5,12 @@ import {
   useDismiss,
   useClick,
   useRole,
+  FloatingContext,
 } from "@floating-ui/react";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { Priorities } from "@core/constants/core.constants";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 const MenuWrapper = styled.ul`
   position: absolute;
@@ -61,8 +63,16 @@ const MenuItem = styled.li`
   }
 `;
 
-const ContextMenu = React.forwardRef<HTMLUListElement, any>(
-  ({ event, onClose, style, context }, ref) => {
+interface ContextMenuProps {
+  gridEvent: Schema_GridEvent;
+  onOutsideClick: () => void;
+  onMenuItemClick: () => void;
+  style: React.CSSProperties;
+  context: FloatingContext;
+}
+
+const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
+  ({ gridEvent, onOutsideClick, onMenuItemClick, style, context }, ref) => {
     const dispatch = useAppDispatch();
     const [selectedPriority, setSelectedPriority] = useState(
       Priorities.UNASSIGNED
@@ -87,7 +97,7 @@ const ContextMenu = React.forwardRef<HTMLUListElement, any>(
           dispatch(
             draftSlice.actions.start({
               source: "contextMenu",
-              event: { ...event, isOpen: true },
+              event: { ...gridEvent, isOpen: true },
             })
           );
         },
@@ -102,7 +112,7 @@ const ContextMenu = React.forwardRef<HTMLUListElement, any>(
     const dismiss = useDismiss(context, {
       outsidePress: (event) => {
         event.preventDefault(); // Prevents clicking another UI element when dismissing
-        onClose();
+        onOutsideClick();
         return true;
       },
     });
@@ -130,7 +140,7 @@ const ContextMenu = React.forwardRef<HTMLUListElement, any>(
             key={item.id}
             onClick={() => {
               item.onClick();
-              onClose();
+              onMenuItemClick();
             }}
           >
             {item.label}
