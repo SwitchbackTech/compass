@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import styled from "styled-components";
 import {
   useInteractions,
@@ -7,10 +7,9 @@ import {
   useRole,
   FloatingContext,
 } from "@floating-ui/react";
-import { useAppDispatch } from "@web/store/store.hooks";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { Priorities } from "@core/constants/core.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import ContextMenuItems from "./ContextMenuItems";
 
 const MenuWrapper = styled.ul`
   position: absolute;
@@ -24,46 +23,8 @@ const MenuWrapper = styled.ul`
   min-width: 160px;
 `;
 
-const PriorityContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px;
-`;
-
-const PriorityCircle = styled.div<{ color: string; selected: boolean }>`
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid ${({ color }) => color};
-  background-color: ${({ selected, color }) =>
-    selected ? color : "transparent"};
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-`;
-
-const MenuItem = styled.li`
-  padding: 10px 12px;
-  cursor: pointer;
-  user-select: none;
-  font-size: 14px;
-  color: #333;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid #eee;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background-color: #f5f5f5;
-  }
-`;
-
 interface ContextMenuProps {
+  weekProps: WeekProps;
   gridEvent: Schema_GridEvent;
   onOutsideClick: () => void;
   onMenuItemClick: () => void;
@@ -72,43 +33,10 @@ interface ContextMenuProps {
 }
 
 const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
-  ({ gridEvent, onOutsideClick, onMenuItemClick, style, context }, ref) => {
-    const dispatch = useAppDispatch();
-    const [selectedPriority, setSelectedPriority] = useState(
-      Priorities.UNASSIGNED
-    );
-
-    // TODO: Use colors from constant
-    const priorities = [
-      { id: "work", value: Priorities.WORK, color: "rgb(200, 236, 249)" },
-      { id: "self", value: Priorities.SELF, color: "rgb(149, 189, 219)" },
-      {
-        id: "relations",
-        value: Priorities.RELATIONS,
-        color: "rgb(134, 208, 187)",
-      },
-    ];
-
-    const actions = [
-      {
-        id: "edit",
-        label: "✏️ Edit",
-        onClick: () => {
-          dispatch(
-            draftSlice.actions.start({
-              source: "contextMenu",
-              event: { ...gridEvent, isOpen: true },
-            })
-          );
-        },
-      },
-      {
-        id: "delete",
-        label: "🗑️ Delete",
-        onClick: () => alert("Delete clicked"),
-      },
-    ];
-
+  (
+    { weekProps, gridEvent, onOutsideClick, onMenuItemClick, style, context },
+    ref
+  ) => {
     const dismiss = useDismiss(context, {
       outsidePress: (event) => {
         event.preventDefault(); // Prevents clicking another UI element when dismissing
@@ -125,27 +53,11 @@ const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
 
     return (
       <MenuWrapper ref={ref} style={style} {...getFloatingProps()}>
-        <PriorityContainer>
-          {priorities.map((priority) => (
-            <PriorityCircle
-              key={priority.id}
-              color={priority.color}
-              selected={selectedPriority === priority.value}
-              onClick={() => setSelectedPriority(priority.value)}
-            />
-          ))}
-        </PriorityContainer>
-        {actions.map((item) => (
-          <MenuItem
-            key={item.id}
-            onClick={() => {
-              item.onClick();
-              onMenuItemClick();
-            }}
-          >
-            {item.label}
-          </MenuItem>
-        ))}
+        <ContextMenuItems
+          weekProps={weekProps}
+          gridEvent={gridEvent}
+          onItemClick={onMenuItemClick}
+        />
       </MenuWrapper>
     );
   }

@@ -85,7 +85,7 @@ export const CalendarView = () => {
           weekProps={weekProps}
         />
 
-        <GridContextMenuWrapper>
+        <GridContextMenuWrapper weekProps={weekProps}>
           <Grid
             dateCalcs={dateCalcs}
             isSidebarOpen={isSidebarOpen}
