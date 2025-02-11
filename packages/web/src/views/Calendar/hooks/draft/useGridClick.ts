@@ -80,6 +80,8 @@ export const useGridClick = (
 
   const _onMainGridMouseUp = useCallback(
     (e: MouseEvent) => {
+      if (e.button !== 0) return;
+
       if (!draft || !isDrafting) {
         return;
       }
