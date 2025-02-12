@@ -64,7 +64,7 @@ function ContextMenuItems({
 }: ContextMenuItemsProps) {
   const dispatch = useAppDispatch();
   const {
-    draftUtil: { submit },
+    draftUtil: { submit, deleteEvent },
   } = useDraftUtil(
     // @ts-expect-error
     {},
@@ -88,26 +88,32 @@ function ContextMenuItems({
   const handleEditPriority = (priority: Priorities) => {
     setSelectedPriority(priority);
     submit({ ...gridEvent, priority });
-    onItemClick();
+    onItemClick && onItemClick();
+  };
+
+  const handleEdit = () => {
+    dispatch(
+      draftSlice.actions.start({
+        source: "contextMenu",
+        event: { ...gridEvent, isOpen: true },
+      })
+    );
+  };
+
+  const handleDelete = () => {
+    deleteEvent();
   };
 
   const actions: ContextMenuAction[] = [
     {
       id: "edit",
       label: "✏️ Edit",
-      onClick: () => {
-        dispatch(
-          draftSlice.actions.start({
-            source: "contextMenu",
-            event: { ...gridEvent, isOpen: true },
-          })
-        );
-      },
+      onClick: handleEdit,
     },
     {
       id: "delete",
       label: "🗑️ Delete",
-      onClick: () => alert("Delete clicked"),
+      onClick: handleDelete,
     },
   ];
 
