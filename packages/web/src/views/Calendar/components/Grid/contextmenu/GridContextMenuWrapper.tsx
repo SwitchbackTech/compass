@@ -13,7 +13,10 @@ import {
   assembleGridEvent,
   getCalendarEventIdFromElement,
 } from "@web/common/utils/event.util";
-import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
+import {
+  selectAllDayEvents,
+  selectGridEvents,
+} from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -27,7 +30,9 @@ const GridContextMenuWrapper = ({
 }) => {
   const dispatch = useAppDispatch();
   const timedEvents = useAppSelector(selectGridEvents);
+  const allDayEvents = useAppSelector(selectAllDayEvents);
   const draftEvent = useAppSelector(selectDraft);
+
   const [isOpen, setIsOpen] = useState(false);
 
   const { refs, x, y, context } = useFloating({
@@ -49,9 +54,10 @@ const GridContextMenuWrapper = ({
     if (hasClickedOnCalendarEvent) {
       e.preventDefault();
 
-      const selectedEvent = timedEvents.find(
-        (ev) => ev._id === calendarEventId
-      );
+      const selectedEvent =
+        timedEvents.find((ev) => ev._id === calendarEventId) ||
+        allDayEvents.find((ev) => ev._id === calendarEventId);
+
       if (!selectedEvent) return; // TS guard
 
       // Create a virtual element where the user clicked

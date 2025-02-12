@@ -287,6 +287,6 @@ const _assembleBaseEvent = (
 };
 
 export const getCalendarEventIdFromElement = (element: HTMLElement) => {
-  const id = element.getAttribute(DATA_EVENT_ELEMENT_ID);
-  return id;
+  const eventElement = element.closest(`[${DATA_EVENT_ELEMENT_ID}]`);
+  return eventElement ? eventElement.getAttribute(DATA_EVENT_ELEMENT_ID) : null;
 };

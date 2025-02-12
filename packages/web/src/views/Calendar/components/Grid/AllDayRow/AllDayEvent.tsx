@@ -12,6 +12,7 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Text } from "@web/components/Text";
 
 import { StyledEvent } from "../../Event/styled";
+import { DATA_EVENT_ELEMENT_ID } from "@web/views/Calendar/layout.constants";
 
 interface Props {
   event: Schema_GridEvent;
@@ -40,23 +41,26 @@ const AllDayEvent = ({
 
   const isOptimistic = isOptimisticEvent(event);
 
+  const styledEventProps = {
+    [DATA_EVENT_ELEMENT_ID]: event._id,
+    allDay: event.isAllDay || true,
+    height: position.height,
+    isDragging: false,
+    isInPast: dayjs().isAfter(dayjs(event.endDate)),
+    isPlaceholder,
+    isOptimistic,
+    isResizing: false,
+    left: position.left,
+    lineClamp: 1,
+    onMouseDown: (e: MouseEvent) => onMouseDown(e, event),
+    priority: event.priority || Priorities.UNASSIGNED,
+    role: "button",
+    top: position.top,
+    width: position.width,
+  };
+
   return (
-    <StyledEvent
-      allDay={event.isAllDay || true}
-      height={position.height}
-      isDragging={false}
-      isInPast={dayjs().isAfter(dayjs(event.endDate))}
-      isPlaceholder={isPlaceholder}
-      isOptimistic={isOptimistic}
-      isResizing={false}
-      left={position.left}
-      lineClamp={1}
-      onMouseDown={(e) => onMouseDown(e, event)}
-      priority={event.priority || Priorities.UNASSIGNED}
-      role="button"
-      top={position.top}
-      width={position.width}
-    >
+    <StyledEvent {...styledEventProps}>
       <Flex
         alignItems={AlignItems.FLEX_START}
         direction={FlexDirections.COLUMN}
