@@ -1,5 +1,5 @@
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { Schema_GridEvent } from "@core/types/event.types";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useDraftUtil } from "@web/views/Calendar/hooks/draft/useDraftUtil";
@@ -54,13 +54,13 @@ export interface ContextMenuAction {
 
 interface ContextMenuItemsProps {
   weekProps: WeekProps;
-  gridEvent: Schema_GridEvent;
+  calEvent: Schema_GridEvent;
   onItemClick?: () => void;
 }
 
 function ContextMenuItems({
   weekProps,
-  gridEvent,
+  calEvent,
   onItemClick,
 }: ContextMenuItemsProps) {
   const dispatch = useAppDispatch();
@@ -73,7 +73,7 @@ function ContextMenuItems({
     false
   );
 
-  const [selectedPriority, setSelectedPriority] = useState(gridEvent.priority);
+  const [selectedPriority, setSelectedPriority] = useState(calEvent.priority);
 
   // TODO: Use colors from constant
   const priorities = [
@@ -88,7 +88,7 @@ function ContextMenuItems({
 
   const handleEditPriority = (priority: Priorities) => {
     setSelectedPriority(priority);
-    submit({ ...gridEvent, priority });
+    submit({ ...calEvent, priority });
     onItemClick && onItemClick();
   };
 
@@ -96,7 +96,7 @@ function ContextMenuItems({
     dispatch(
       draftSlice.actions.start({
         source: "contextMenu",
-        event: { ...gridEvent, isOpen: true },
+        event: { ...calEvent, isOpen: true },
       })
     );
   };
