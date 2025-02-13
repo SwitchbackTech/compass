@@ -20,6 +20,7 @@ interface Props {
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
   onClick: (e: MouseEvent, event: Schema_GridEvent) => void;
+  onMouseDown: (e: MouseEvent, event: Schema_GridEvent) => void;
 }
 
 const AllDayEvent = ({
@@ -29,6 +30,7 @@ const AllDayEvent = ({
   startOfView,
   endOfView,
   onClick,
+  onMouseDown,
 }: Props) => {
   const position = getEventPosition(
     event,
@@ -42,6 +44,7 @@ const AllDayEvent = ({
 
   return (
     <StyledEvent
+      id={`${event.title}-${event._id}`}
       allDay={event.isAllDay || true}
       height={position.height}
       isDragging={false}
@@ -52,6 +55,7 @@ const AllDayEvent = ({
       left={position.left}
       lineClamp={1}
       onClick={(e: MouseEvent) => onClick(e, event)}
+      onMouseDown={(e: MouseEvent) => onMouseDown(e, event)}
       priority={event.priority || Priorities.UNASSIGNED}
       role="button"
       top={position.top}

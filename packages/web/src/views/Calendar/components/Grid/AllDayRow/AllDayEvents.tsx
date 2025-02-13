@@ -1,5 +1,5 @@
 import React, { MouseEvent } from "react";
-import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
+import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -20,12 +20,14 @@ interface Props {
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
   onClick: (e: MouseEvent, event: Schema_GridEvent) => Promise<void>;
+  onMouseDown: (e: MouseEvent, event: Schema_GridEvent) => void;
 }
 export const AllDayEvents = ({
   measurements,
   startOfView,
   endOfView,
   onClick,
+  onMouseDown,
 }: Props) => {
   // const dispatch = useAppDispatch();
   const allDayEvents = useAppSelector(selectAllDayEvents);
@@ -54,7 +56,7 @@ export const AllDayEvents = ({
   // };
 
   return (
-    <StyledEvents id={ID_GRID_ALLDAY_ROW}>
+    <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>
       {allDayEvents.map((event: Schema_GridEvent, i) => {
         return (
           <AllDayEventMemo
@@ -65,6 +67,7 @@ export const AllDayEvents = ({
             endOfView={endOfView}
             measurements={measurements}
             onClick={onClick}
+            onMouseDown={onMouseDown}
           />
         );
       })}

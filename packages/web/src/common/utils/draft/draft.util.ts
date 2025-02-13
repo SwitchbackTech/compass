@@ -1,7 +1,7 @@
 import { MouseEvent } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import {
-  ID_GRID_ALLDAY_ROW,
+  ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
 import { roundToNext } from "@web/common/utils";
@@ -72,7 +72,7 @@ export const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
 
 export const getDraftContainer = (isAllDay: boolean) => {
   if (isAllDay) {
-    return getElemById(ID_GRID_ALLDAY_ROW);
+    return getElemById(ID_GRID_EVENTS_ALLDAY);
   }
 
   return getElemById(ID_GRID_EVENTS_TIMED);

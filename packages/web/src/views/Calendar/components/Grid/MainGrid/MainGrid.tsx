@@ -19,8 +19,8 @@ import {
   StyledGridWithTimeLabels,
   StyledMainGrid,
 } from "./styled";
-import { MainGridEvents } from "./MainGridEvents";
 import { MainGridColumns } from "../Columns/MainGridColumns";
+import { MainGridEvents } from "./MainGridEvents";
 
 interface Props {
   mainGridRef: Ref_Callback;

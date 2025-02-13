@@ -6,6 +6,7 @@ import {
   Action_DraftEvent,
   Action_Draft_Resize,
   Action_Draft_Swap,
+  Action_Location_Set,
 } from "./draft.slice.types";
 
 interface State_DraftEvent {
@@ -19,6 +20,7 @@ const initialDraft = {
     isDrafting: false,
     eventType: null,
     dateToResize: null,
+    location: null,
   },
   event: null,
 };
@@ -73,6 +75,12 @@ export const draftSlice = createSlice({
         isDrafting: true,
         eventType: category,
       };
+    },
+    setLocation: (state, action: Action_Location_Set) => {
+      const { location } = action.payload;
+      if (state.status) {
+        state.status.location = location;
+      }
     },
   },
 });

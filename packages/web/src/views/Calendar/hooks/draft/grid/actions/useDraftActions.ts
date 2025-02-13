@@ -25,8 +25,6 @@ import {
   selectIsAtWeeklyLimit,
   selectSomedayWeekCount,
 } from "@web/ducks/events/selectors/someday.selectors";
-import { DateCalcs } from "../../grid/useDateCalcs";
-import { WeekProps } from "../../useWeek";
 import {
   selectDraft,
   selectDraftStatus,
@@ -34,6 +32,8 @@ import {
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { State_Draft_Local } from "../state/useDraftState";
 import { useDraftEffects } from "../effects/useDraftEffects";
+import { DateCalcs } from "../../../grid/useDateCalcs";
+import { WeekProps } from "../../../useWeek";
 
 export type Setters_Draft_Actions = {
   setIsDragging: (isDragging: boolean) => void;
@@ -159,7 +159,7 @@ export const useDraftActions = (
     }
 
     if (reduxDraft || reduxDraftType) {
-      dispatch(draftSlice.actions.discard());
+      dispatch(draftSlice.actions.discard({}));
     }
   }, [dispatch, draft, reduxDraft, reduxDraftType]);
 

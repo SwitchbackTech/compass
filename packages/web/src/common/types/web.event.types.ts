@@ -54,9 +54,18 @@ export interface Schema_SomedayEventsColumn {
 }
 
 type Activity = "createShortcut" | "dragging" | "gridClick" | "resizing";
+
+export enum Location_Draft {
+  ALLDAY_ROW = "alldayRow",
+  ALLDAY_EVENT = "alldayEvent",
+  MAIN_GRID = "mainGrid",
+  MAIN_GRID_EVENT = "mainGridEvent",
+}
+
 export interface Status_DraftEvent {
   activity: Activity | null;
   eventType: Categories_Event | null;
   isDrafting: boolean;
   dateToResize: "startDate" | "endDate" | null;
+  location: Location_Draft | null;
 }

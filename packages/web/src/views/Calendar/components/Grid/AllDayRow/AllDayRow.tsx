@@ -20,8 +20,14 @@ import { isEventFormOpen } from "@web/common/utils";
 import { StyledGridCol } from "../Columns/styled";
 import { StyledAllDayColumns, StyledAllDayRow } from "./styled";
 import { AllDayEvents } from "./AllDayEvents";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import {
+  Location_Draft,
+  Schema_GridEvent,
+} from "@web/common/types/web.event.types";
+import {
+  selectIsDrafting,
+  selectIsDragging,
+} from "@web/ducks/events/selectors/draft.selectors";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -43,19 +49,42 @@ export const AllDayRow: FC<Props> = ({
   const { startOfView, weekDays } = weekProps.component;
   const rowsCount = useAppSelector(selectRowCount);
   const isDrafting = useAppSelector(selectIsDrafting);
+  const isDragging = useAppSelector(selectIsDragging);
 
   useEffect(() => {
     measurements.remeasure(ID_GRID_MAIN);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowsCount]);
 
+  const onMouseDown = (e: MouseEvent, event: Schema_GridEvent) => {
+    // e.stopPropagation();
+    dispatch(
+      draftSlice.actions.setLocation({ location: Location_Draft.ALLDAY_EVENT })
+    );
+
+    if (isEventFormOpen()) {
+      console.log("swapping...");
+      draftSlice.actions.swap({ event, category: Categories_Event.ALLDAY });
+      return;
+    }
+    editAllDayEvent(event);
+  };
+
+  const editAllDayEvent = (event: Schema_GridEvent) => {
+    dispatch(
+      draftSlice.actions.startDragging({
+        event,
+      })
+    );
+  };
+
   const openAlldayDraft = async (e: MouseEvent, event: Schema_GridEvent) => {
     e.stopPropagation();
+    dispatch(draftSlice.actions.setLocation({ location: "alldayEvent" }));
 
     if (isDrafting) {
       console.log("todo: close draft");
     } else {
-      console.log("opening draft for:", event.title);
       dispatch(
         draftSlice.actions.start({
           activity: "gridClick",
@@ -88,21 +117,8 @@ export const AllDayRow: FC<Props> = ({
     );
   };
 
-  const onSectionMouseDown = async (e: MouseEvent) => {
-    if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
-      return;
-    }
-
-    await startNewAlldayDraft(e);
-  };
-
   return (
-    <StyledAllDayRow
-      id={ID_GRID_ALLDAY_CONTAINER}
-      rowsCount={rowsCount}
-      // onMouseDown={onSectionMouseDown}
-    >
+    <StyledAllDayRow id={ID_GRID_ALLDAY_CONTAINER} rowsCount={rowsCount}>
       <StyledAllDayColumns id={ID_ALLDAY_COLUMNS} ref={allDayRef}>
         {weekDays.map((day) => (
           <StyledGridCol color={null} key={day.format(YEAR_MONTH_DAY_FORMAT)} />
@@ -113,6 +129,7 @@ export const AllDayRow: FC<Props> = ({
         startOfView={weekProps.component.startOfView}
         endOfView={weekProps.component.endOfView}
         onClick={openAlldayDraft}
+        onMouseDown={onMouseDown}
       />
     </StyledAllDayRow>
   );
