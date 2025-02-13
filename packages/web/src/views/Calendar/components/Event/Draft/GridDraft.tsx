@@ -3,7 +3,7 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { EventForm } from "@web/views/Forms/EventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { GridDraftProps } from "@web/views/Calendar/hooks/draft/useGridDraft";
+import { GridDraftProps } from "@web/views/Calendar/hooks/draft/grid/useGridDraft";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EventFormProps } from "@web/views/Forms/hooks/useEventForm";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";

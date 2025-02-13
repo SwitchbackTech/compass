@@ -2,7 +2,7 @@ import React, { FC, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Categories_Event } from "@core/types/event.types";
 import { useAppSelector } from "@web/store/store.hooks";
-import { useGridDraft } from "@web/views/Calendar/hooks/draft/useGridDraft";
+import { useGridDraft } from "@web/views/Calendar/hooks/draft/grid/useGridDraft";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";

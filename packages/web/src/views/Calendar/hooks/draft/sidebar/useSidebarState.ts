@@ -6,7 +6,7 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
 import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
 
-import { useMousePosition } from "../useMousePosition";
+import { useMousePosition } from "./useMousePosition";
 
 export const useSidebarState = (measurements: Measurements_Grid) => {
   const categorizedEvents = useAppSelector(selectCategorizedEvents);

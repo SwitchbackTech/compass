@@ -1,13 +1,17 @@
 import { MouseEvent, useCallback } from "react";
 
-import { useEventListener } from "../mouse/useEventListener";
-import { State_GridDraft, Util_GridDraft } from "./useDraftUtil";
+import { useEventListener } from "../../mouse/useEventListener";
+import { State_Draft, Util_Draft } from "../useDraft";
+import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 
 export const useGridMouseMove = (
-  draftState: State_GridDraft,
-  draftUtil: Util_GridDraft
+  draftState: State_Draft,
+  draftUtil: Util_Draft
 ) => {
-  const { draft, isDrafting, isDragging, isResizing } = draftState;
+  const { draft, isDragging, isResizing } = draftState;
+
+  const isDrafting = useAppSelector(selectIsDrafting);
 
   const { drag, resize } = draftUtil;
 
