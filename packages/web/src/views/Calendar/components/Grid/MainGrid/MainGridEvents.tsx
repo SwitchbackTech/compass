@@ -47,8 +47,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
   const editTimedEvent = (event: Schema_GridEvent) => {
     dispatch(
-      // TODO: `actions.startDragging` is confusing, it appears to mix concerns for both dragging
-      // and editing. Need to refactor to separate these concerns.
       draftSlice.actions.startDragging({
         event,
       })
