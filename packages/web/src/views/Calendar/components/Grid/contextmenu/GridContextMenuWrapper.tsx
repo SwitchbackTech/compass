@@ -12,6 +12,7 @@ import ContextMenu from "./ContextMenu";
 import {
   assembleGridEvent,
   getCalendarEventIdFromElement,
+  isOptimisticEvent,
 } from "@web/common/utils/event.util";
 import {
   selectAllDayEvents,
@@ -59,6 +60,8 @@ const GridContextMenuWrapper = ({
         allDayEvents.find((ev) => ev._id === calendarEventId);
 
       if (!selectedEvent) return; // TS guard
+
+      if (isOptimisticEvent(selectedEvent)) return;
 
       // Create a virtual element where the user clicked
       refs.setReference({
