@@ -19,7 +19,7 @@ interface Props {
 
 export const StyledRepeatText = styled.span<Props>`
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
   font-size: ${({ theme }) => theme.text.size.m};
   opacity: ${({ hasRepeat }) => !hasRepeat && 0.85};
   padding: 2px 8px;
@@ -34,7 +34,7 @@ export const StyledRepeatText = styled.span<Props>`
 export const StyledRepeatTextContainer = styled(Flex)`
   align-items: center;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
   gap: 6px;
   justify-content: center;
   margin-right: 8px;

@@ -49,6 +49,8 @@ export const MainGrid: FC<Props> = ({
   const { isCurrentWeek, week, weekDays } = component;
 
   const onMouseDown = async (e: MouseEvent) => {
+    if (e.button !== 0) return;
+
     if (isEventFormOpen()) {
       dispatch(draftSlice.actions.discard());
       return;

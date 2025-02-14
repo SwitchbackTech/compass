@@ -64,7 +64,7 @@ export const StyledTimePicker = styled.div<Props>`
         }
         ::-webkit-scrollbar-thumb {
           background: ${({ bgColor }) => bgColor && darken(bgColor, 40)};
-          border-radius: 3px;
+          border-radius: ${({ theme }) => theme.shape.borderRadius};
           &:hover {
             background: ${({ bgColor }) => bgColor && darken(bgColor, 80)};
             transition: background-color 0.2s;

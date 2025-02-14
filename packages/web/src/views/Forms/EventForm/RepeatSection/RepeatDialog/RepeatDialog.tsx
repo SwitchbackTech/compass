@@ -52,7 +52,7 @@ export const RepeatDialog: FC<Props> = ({
     control: (baseStyles) => ({
       ...baseStyles,
       backgroundColor: bgColor,
-      borderRadius: 4,
+      borderRadius: theme.shape.borderRadius,
       fontSize,
       height: "27px",
     }),

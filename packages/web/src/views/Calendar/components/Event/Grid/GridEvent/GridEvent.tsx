@@ -19,7 +19,10 @@ import {
 } from "@web/components/Flex/styled";
 import { getLineClamp } from "@web/common/utils/grid.util";
 import { getTimesLabel } from "@web/common/utils/web.date.util";
-import { ZIndex } from "@web/common/constants/web.constants";
+import {
+  ZIndex,
+  DATA_EVENT_ELEMENT_ID,
+} from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
 
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
@@ -53,7 +56,7 @@ const _GridEvent = (
     onScalerMouseDown,
     weekProps,
   }: Props,
-  ref: ForwardedRef<HTMLButtonElement>
+  ref: ForwardedRef<HTMLDivElement>
 ) => {
   const { component } = weekProps;
 
@@ -74,30 +77,39 @@ const _GridEvent = (
     [position.height]
   );
 
-  return (
-    <StyledEvent
-      allDay={event.isAllDay || false}
-      className={isDraft ? "active" : undefined}
-      height={position.height || 0}
-      isDragging={isDragging}
-      isInPast={isInPast}
-      isPlaceholder={isPlaceholder}
-      isOptimistic={isOptimistic}
-      isResizing={isResizing}
-      left={position.left}
-      lineClamp={lineClamp}
-      onMouseDown={(e) => {
-        if (isOptimistic) return;
+  const styledEventProps = {
+    [DATA_EVENT_ELEMENT_ID]: event._id,
+    allDay: event.isAllDay || false,
+    className: isDraft ? "active" : undefined,
+    height: position.height || 0,
+    isDragging,
+    isInPast,
+    isPlaceholder,
+    isOptimistic,
+    isResizing,
+    left: position.left,
+    lineClamp,
+    onMouseDown: (e: MouseEvent) => {
+      const isRightBtnClick = e.button === 2;
 
-        onEventMouseDown(event, e);
-      }}
-      priority={event.priority || Priorities.UNASSIGNED}
-      ref={ref}
-      role="button"
-      tabindex="0"
-      top={position.top}
-      width={position.width || 0}
-    >
+      if (
+        isOptimistic || // Event is in the process of being created, don't allow any interactions until it's completely saved
+        isRightBtnClick
+      )
+        return;
+
+      onEventMouseDown(event, e);
+    },
+    priority: event.priority || Priorities.UNASSIGNED,
+    ref,
+    role: "button",
+    tabindex: "0",
+    top: position.top,
+    width: position.width || 0,
+  };
+
+  return (
+    <StyledEvent {...styledEventProps}>
       <Flex
         alignItems={AlignItems.FLEX_START}
         direction={FlexDirections.COLUMN}

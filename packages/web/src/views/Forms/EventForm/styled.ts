@@ -16,7 +16,7 @@ interface SomedayFormProps extends StyledFormProps {
 
 export const StyledEventForm = styled.form<SomedayFormProps>`
   background: ${({ priority }) => hoverColorByPriority[priority]};
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
   box-shadow: 0px 5px 5px ${({ theme }) => theme.color.shadow.default};
   font-size: 20px;
   padding: 18px 20px;

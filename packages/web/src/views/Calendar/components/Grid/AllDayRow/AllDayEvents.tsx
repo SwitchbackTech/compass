@@ -29,6 +29,10 @@ export const AllDayEvents = ({
   const onMouseDown = (e: MouseEvent, event: Schema_GridEvent) => {
     e.stopPropagation();
 
+    if (e.button !== 0) {
+      return;
+    }
+
     if (isSomedayEventFormOpen()) {
       dispatch(draftSlice.actions.discard());
     }

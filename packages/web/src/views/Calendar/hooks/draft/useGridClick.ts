@@ -47,39 +47,46 @@ export const useGridClick = (
     [draft?._id, draft?.isOpen, dragStatus?.hasMoved, resizeStatus?.hasMoved]
   );
 
-  const _onAllDayRowMouseUp = useCallback(() => {
-    if (isDragging) {
-      stopDragging();
-    }
+  const _onAllDayRowMouseUp = useCallback(
+    (e: MouseEvent) => {
+      if (e.button !== 0) return;
 
-    if (!draft || !isDrafting) {
-      return;
-    }
+      if (isDragging) {
+        stopDragging();
+      }
 
-    const { shouldSubmit, shouldOpenForm } = getNextAction(
-      Categories_Event.ALLDAY
-    );
+      if (!draft || !isDrafting) {
+        return;
+      }
 
-    if (shouldOpenForm) {
-      setDraft((_draft) => {
-        return { ..._draft, isOpen: true };
-      });
-      return;
-    }
+      const { shouldSubmit, shouldOpenForm } = getNextAction(
+        Categories_Event.ALLDAY
+      );
 
-    shouldSubmit && submit(draft);
-  }, [
-    isDragging,
-    draft,
-    isDrafting,
-    getNextAction,
-    submit,
-    stopDragging,
-    setDraft,
-  ]);
+      if (shouldOpenForm) {
+        setDraft((_draft) => {
+          return { ..._draft, isOpen: true };
+        });
+        return;
+      }
+
+      shouldSubmit && submit(draft);
+    },
+    [
+      isDragging,
+      draft,
+      isDrafting,
+      getNextAction,
+      submit,
+      stopDragging,
+      setDraft,
+    ]
+  );
 
   const _onMainGridMouseUp = useCallback(
     (e: MouseEvent) => {
+      if (e.button !== 0) return;
+
       if (!draft || !isDrafting) {
         return;
       }
