@@ -1,4 +1,5 @@
 import { Priorities } from "@core/constants/core.constants";
+import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
@@ -75,14 +76,21 @@ function ContextMenuItems({
 
   const [selectedPriority, setSelectedPriority] = useState(calEvent.priority);
 
-  // TODO: Use colors from constant
   const priorities = [
-    { id: "work", value: Priorities.WORK, color: "rgb(200, 236, 249)" },
-    { id: "self", value: Priorities.SELF, color: "rgb(149, 189, 219)" },
+    {
+      id: "work",
+      value: Priorities.WORK,
+      color: colorByPriority[Priorities.WORK],
+    },
+    {
+      id: "self",
+      value: Priorities.SELF,
+      color: colorByPriority[Priorities.SELF],
+    },
     {
       id: "relations",
       value: Priorities.RELATIONS,
-      color: "rgb(134, 208, 187)",
+      color: colorByPriority[Priorities.RELATIONS],
     },
   ];
 
