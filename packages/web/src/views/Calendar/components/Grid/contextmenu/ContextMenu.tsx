@@ -9,7 +9,7 @@ import {
 } from "@floating-ui/react";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import ContextMenuItems from "./ContextMenuItems";
+import { ContextMenuItems } from "./ContextMenuItems";
 
 const MenuWrapper = styled.ul`
   position: absolute;
@@ -32,7 +32,7 @@ interface ContextMenuProps {
   context: FloatingContext;
 }
 
-const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
+export const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
   (
     {
       weekProps,
@@ -62,12 +62,10 @@ const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
       <MenuWrapper ref={ref} style={style} {...getFloatingProps()}>
         <ContextMenuItems
           weekProps={weekProps}
-          calEvent={calEvent}
+          event={calEvent}
           onItemClick={onMenuItemClick}
         />
       </MenuWrapper>
     );
   }
 );
-
-export default ContextMenu;
