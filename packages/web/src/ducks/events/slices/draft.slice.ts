@@ -16,7 +16,6 @@ interface State_DraftEvent {
 const initialDraft = {
   status: {
     activity: null,
-    source: null,
     isDrafting: false,
     eventType: null,
     dateToResize: null,
@@ -30,13 +29,12 @@ export const draftSlice = createSlice({
   reducers: {
     discard: () => initialDraft,
     start: (state, action: Action_DraftEvent) => {
-      const { activity, event, eventType, source = "grid" } = action.payload;
+      const { activity, event, eventType } = action.payload;
 
       state.event = event;
       state.status = {
         ...state.status,
         activity,
-        source,
         isDrafting: true,
         eventType,
       };

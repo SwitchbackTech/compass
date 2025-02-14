@@ -25,7 +25,6 @@ interface Payload_DraftEvent {
   event?: Schema_Event;
   eventType: Categories_Event;
   activity?: "createShortcut" | "dragging" | "resizing";
-  source?: "grid" | "contextMenu";
 }
 
 interface Payload_Draft_Resize {

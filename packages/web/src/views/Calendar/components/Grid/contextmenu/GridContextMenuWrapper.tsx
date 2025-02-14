@@ -69,7 +69,6 @@ const GridContextMenuWrapper = ({
       });
       dispatch(
         draftSlice.actions.start({
-          source: "contextMenu",
           event: {
             ...selectedEvent,
             isOpen: false,
