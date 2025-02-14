@@ -90,7 +90,7 @@ const GridContextMenuWrapper = ({
         <ContextMenu
           weekProps={weekProps}
           ref={refs.setFloating}
-          calEvent={assembleGridEvent(draftEvent)}
+          event={assembleGridEvent(draftEvent)}
           style={{
             position: "absolute",
             top: `${y}px`,

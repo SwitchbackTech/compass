@@ -25,7 +25,7 @@ const MenuWrapper = styled.ul`
 
 interface ContextMenuProps {
   weekProps: WeekProps;
-  calEvent: Schema_GridEvent;
+  event: Schema_GridEvent;
   onOutsideClick: () => void;
   onMenuItemClick: () => void;
   style: React.CSSProperties;
@@ -34,7 +34,14 @@ interface ContextMenuProps {
 
 const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
   (
-    { weekProps, calEvent, onOutsideClick, onMenuItemClick, style, context },
+    {
+      weekProps,
+      event: calEvent,
+      onOutsideClick,
+      onMenuItemClick,
+      style,
+      context,
+    },
     ref
   ) => {
     const dismiss = useDismiss(context, {

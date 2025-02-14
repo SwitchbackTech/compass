@@ -62,13 +62,13 @@ export interface ContextMenuAction {
 
 interface ContextMenuItemsProps {
   weekProps: WeekProps;
-  calEvent: Schema_GridEvent;
+  event: Schema_GridEvent;
   onItemClick?: () => void;
 }
 
 function ContextMenuItems({
   weekProps,
-  calEvent,
+  event,
   onItemClick,
 }: ContextMenuItemsProps) {
   const dispatch = useAppDispatch();
@@ -81,7 +81,7 @@ function ContextMenuItems({
     false
   );
 
-  const [selectedPriority, setSelectedPriority] = useState(calEvent.priority);
+  const [selectedPriority, setSelectedPriority] = useState(event.priority);
 
   const priorities = [
     {
@@ -103,7 +103,7 @@ function ContextMenuItems({
 
   const handleEditPriority = (priority: Priorities) => {
     setSelectedPriority(priority);
-    submit({ ...calEvent, priority });
+    submit({ ...event, priority });
     onItemClick && onItemClick();
   };
 
@@ -111,7 +111,7 @@ function ContextMenuItems({
     dispatch(
       draftSlice.actions.start({
         source: "contextMenu",
-        event: { ...calEvent, isOpen: true },
+        event: { ...event, isOpen: true },
       })
     );
   };
