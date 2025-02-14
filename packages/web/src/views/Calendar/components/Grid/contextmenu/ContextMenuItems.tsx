@@ -1,6 +1,8 @@
 import { Priorities } from "@core/constants/core.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import IconButton from "@web/components/IconButton";
+import { Trash, PenNib } from "@phosphor-icons/react";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useDraftUtil } from "@web/views/Calendar/hooks/draft/useDraftUtil";
@@ -47,10 +49,15 @@ const MenuItem = styled.li`
   }
 `;
 
+const MenuItemLabel = styled.span`
+  font-size: ${({ theme }) => theme.text.size.l};
+`;
+
 export interface ContextMenuAction {
   id: string;
   label: string;
   onClick: () => void;
+  icon: React.ReactNode;
 }
 
 interface ContextMenuItemsProps {
@@ -116,13 +123,23 @@ function ContextMenuItems({
   const actions: ContextMenuAction[] = [
     {
       id: "edit",
-      label: "✏️ Edit",
+      label: "Edit",
       onClick: handleEdit,
+      icon: (
+        <IconButton>
+          <PenNib />
+        </IconButton>
+      ),
     },
     {
       id: "delete",
-      label: "🗑️ Delete",
+      label: "Delete",
       onClick: handleDelete,
+      icon: (
+        <IconButton>
+          <Trash />
+        </IconButton>
+      ),
     },
   ];
 
@@ -146,7 +163,8 @@ function ContextMenuItems({
             onItemClick && onItemClick();
           }}
         >
-          {item.label}
+          {item.icon}
+          <MenuItemLabel>{item.label}</MenuItemLabel>
         </MenuItem>
       ))}
     </>
