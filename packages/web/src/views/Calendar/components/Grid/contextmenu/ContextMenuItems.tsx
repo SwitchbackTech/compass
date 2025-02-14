@@ -1,7 +1,7 @@
 import { Priorities } from "@core/constants/core.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import IconButton from "@web/components/IconButton";
+import IconButton from "@web/components/IconButton/IconButton";
 import { Trash, PenNib } from "@phosphor-icons/react";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch } from "@web/store/store.hooks";

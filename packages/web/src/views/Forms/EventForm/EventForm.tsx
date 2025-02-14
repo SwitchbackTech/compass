@@ -12,7 +12,7 @@ import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { Trash } from "@phosphor-icons/react";
-import IconButton from "@web/components/IconButton";
+import IconButton from "@web/components/IconButton/IconButton";
 import { getCategory } from "@web/common/utils/event.util";
 import { SelectOption } from "@web/common/types/component.types";
 import {

@@ -4,7 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { Trash } from "@phosphor-icons/react";
-import IconButton from "@web/components/IconButton";
+import IconButton from "@web/components/IconButton/IconButton";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
