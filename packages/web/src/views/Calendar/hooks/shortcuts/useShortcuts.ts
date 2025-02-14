@@ -5,6 +5,7 @@ import { Key } from "ts-keycode-enum";
 import { Dayjs } from "dayjs";
 import { Categories_Event } from "@core/types/event.types";
 import {
+  Priorities,
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
@@ -13,18 +14,19 @@ import { isEventFormOpen } from "@web/common/utils";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
+import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import { YEAR_MONTH_FORMAT } from "@core/constants/date.constants";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
 import { WeekProps } from "../useWeek";
-import { getDraftTimes } from "../../components/Event/Draft/draft.util";
 
 export interface ShortcutProps {
   today: Dayjs;
@@ -97,14 +99,22 @@ export const useShortcuts = ({
     const _createTimedDraft = () => {
       const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
 
+      const event: Schema_GridEvent = {
+        startDate,
+        endDate,
+        priority: Priorities.UNASSIGNED,
+        position: {
+          isOverlapping: false,
+          widthMultiplier: 1,
+          horizontalOrder: 1,
+        },
+      };
+
       dispatch(
         draftSlice.actions.start({
           activity: "createShortcut",
           eventType: Categories_Event.TIMED,
-          event: {
-            startDate,
-            endDate,
-          },
+          event,
         })
       );
     };
