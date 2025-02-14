@@ -11,7 +11,8 @@ import React, {
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { DeleteIcon } from "@web/components/Icons/Delete";
+import { Trash } from "@phosphor-icons/react";
+import IconButton from "@web/components/IconButton";
 import { getCategory } from "@web/common/utils/event.util";
 import { SelectOption } from "@web/common/types/component.types";
 import {
@@ -277,7 +278,9 @@ export const EventForm: React.FC<FormProps> = ({
               {"<"}
             </StyledMigrateArrowInForm>
           )}
-          <DeleteIcon onDelete={onDeleteForm} title="Delete Event" />
+          <IconButton onClick={onDeleteForm} aria-label="Delete Event">
+            <Trash />
+          </IconButton>
         </StyledIconRow>
 
         <StyledTitle
