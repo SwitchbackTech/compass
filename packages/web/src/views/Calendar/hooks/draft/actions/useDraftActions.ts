@@ -153,11 +153,14 @@ export const useDraftActions = (
   };
 
   const discard = useCallback(() => {
+    console.log("draft", draft);
     if (draft) {
       setDraft(null);
     }
 
+    console.log("discarding ...");
     if (reduxDraft || reduxDraftType) {
+      console.log("discarding redux draft...");
       dispatch(draftSlice.actions.discard({}));
     }
   }, [dispatch, draft, reduxDraft, reduxDraftType]);
@@ -369,7 +372,7 @@ export const useDraftActions = (
   const handleChange = useCallback(async () => {
     if (!isDrafting) return;
 
-    if (activity === "createShortcut" || activity === "gridClick") {
+    if (activity === "createShortcut") {
       await handleShortcutOrClick();
       return;
     }

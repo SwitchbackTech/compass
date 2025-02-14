@@ -1,4 +1,5 @@
 import React, { FC, MouseEvent } from "react";
+import { FloatingFocusManager } from "@floating-ui/react";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { EventForm } from "@web/views/Forms/EventForm";
@@ -29,7 +30,8 @@ export const GridDraft: FC<Props> = ({
   measurements,
   weekProps,
 }) => {
-  const { x, y, refs, strategy } = formProps;
+  const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
+    formProps;
 
   const onConvert = () => {
     const start = weekProps.component.startOfView.format(YEAR_MONTH_DAY_FORMAT);
@@ -65,25 +67,31 @@ export const GridDraft: FC<Props> = ({
         }}
         ref={refs.setReference}
         weekProps={weekProps}
+        {...getReferenceProps()}
       />
 
       <div>
         {draft?.isOpen && (
-          <StyledFloatContainer
-            ref={refs.setFloating}
-            strategy={strategy}
-            top={y ?? 0}
-            left={x ?? 0}
-          >
-            <EventForm
-              event={draft}
-              onClose={draftUtil.discard}
-              onConvert={onConvert}
-              onDelete={draftUtil.deleteEvent}
-              onSubmit={(_draft: Schema_GridEvent) => draftUtil.submit(_draft)}
-              setEvent={draftUtil.setDraft}
-            />
-          </StyledFloatContainer>
+          <FloatingFocusManager context={context}>
+            <StyledFloatContainer
+              ref={refs.setFloating}
+              strategy={strategy}
+              top={y ?? 0}
+              left={x ?? 0}
+              {...getFloatingProps()}
+            >
+              <EventForm
+                event={draft}
+                onClose={draftUtil.discard}
+                onConvert={onConvert}
+                onDelete={draftUtil.deleteEvent}
+                onSubmit={(_draft: Schema_GridEvent) =>
+                  draftUtil.submit(_draft)
+                }
+                setEvent={draftUtil.setDraft}
+              />
+            </StyledFloatContainer>
+          </FloatingFocusManager>
         )}
       </div>
     </>

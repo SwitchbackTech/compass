@@ -2,13 +2,18 @@ import {
   autoUpdate,
   flip,
   offset,
+  OpenChangeReason,
   shift,
+  useDismiss,
   useFloating,
   UseFloatingOptions,
+  useInteractions,
 } from "@floating-ui/react";
 
 export const useEventForm = (
-  eventType: "grid" | "sidebarWeek" | "sidebarMonth"
+  eventType: "grid" | "sidebarWeek" | "sidebarMonth",
+  isOpen: boolean,
+  onIsFormOpenChange: (isOpen: boolean, reason?: OpenChangeReason) => void
 ) => {
   let options: Partial<UseFloatingOptions>;
 
@@ -40,10 +45,22 @@ export const useEventForm = (
     };
   }
 
-  const { context, x, y, refs, strategy } = useFloating(options);
+  const { context, x, y, refs, strategy } = useFloating({
+    ...options,
+    open: isOpen,
+    onOpenChange(newIsOpen, event, reason) {
+      console.log("onOpenChange", newIsOpen, event, reason);
+      onIsFormOpenChange(newIsOpen, reason);
+    },
+  });
+
+  const dismiss = useDismiss(context);
+  const { getReferenceProps, getFloatingProps } = useInteractions([dismiss]);
 
   return {
     context,
+    getFloatingProps,
+    getReferenceProps,
     refs,
     strategy,
     x,

@@ -3,7 +3,7 @@ import mergeRefs from "react-merge-refs";
 import { Dayjs } from "dayjs";
 import { Categories_Event } from "@core/types/event.types";
 import { DRAFT_DURATION_MIN } from "@web/views/Calendar/layout.constants";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Ref_Callback } from "@web/common/types/util.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
@@ -23,6 +23,7 @@ import {
 } from "./styled";
 import { MainGridEvents } from "./MainGridEvents";
 import { MainGridColumns } from "../Columns/MainGridColumns";
+import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -47,10 +48,12 @@ export const MainGrid: FC<Props> = ({
 
   const { component } = weekProps;
   const { isCurrentWeek, week, weekDays } = component;
+  const isDrafting = useAppSelector(selectIsDrafting);
 
   const onMouseDown = async (e: MouseEvent) => {
-    if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
+    if (isDrafting) {
+      console.log("moused down while drafting, discarding....");
+      dispatch(draftSlice.actions.discard({}));
       return;
     }
 

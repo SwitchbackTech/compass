@@ -40,11 +40,20 @@ export const useDraftEffects = (
   }, [dateBeingChanged, isResizing]);
 
   useEffect(() => {
-    const isStaleDraft = !isDrafting && isFormOpen;
+    // const isStaleDraft = !isDrafting && (isResizing || isDragging);
+    const isStaleDraft = !isDrafting;
     if (isStaleDraft) {
+      console.log("setting draft to null");
+      console.log(state);
       setDraft(null);
+      setIsDragging(false);
+      setIsFormOpen(false);
+      setIsResizing(false);
+      setDragStatus(null);
+      setResizeStatus(null);
+      setDateBeingChanged(null);
     }
-  }, [isDrafting, isFormOpen]);
+  }, [isDrafting]);
 
   useEffect(() => {
     handleChange();

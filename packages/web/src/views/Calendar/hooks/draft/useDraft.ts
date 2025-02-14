@@ -2,6 +2,7 @@ import { DateCalcs } from "../grid/useDateCalcs";
 import { WeekProps } from "../useWeek";
 import { useDraftState } from "./state/useDraftState";
 import { useDraftActions } from "./actions/useDraftActions";
+import { useDraftForm } from "./form/useDraftForm";
 
 export const useDraft = (
   dateCalcs: DateCalcs,
@@ -44,10 +45,18 @@ export const useDraft = (
     isSidebarOpen
   );
 
+  const { formProps } = useDraftForm(
+    isFormOpen,
+    actions.reset,
+    actions.discard,
+    setIsFormOpen
+  );
+
   return {
     draftState: {
       draft,
       dragStatus,
+      formProps,
       isDragging,
       isFormOpen,
       isResizing,
