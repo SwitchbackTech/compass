@@ -101,7 +101,7 @@ const GridContextMenuWrapper = ({
           context={context}
           onOutsideClick={() => {
             closeMenu();
-            dispatch(draftSlice.actions.discard());
+            dispatch(draftSlice.actions.discard({}));
           }}
           onMenuItemClick={() => {
             closeMenu();
