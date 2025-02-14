@@ -19,12 +19,14 @@ import {
 } from "@web/components/Flex/styled";
 import { getLineClamp } from "@web/common/utils/grid.util";
 import { getTimesLabel } from "@web/common/utils/web.date.util";
-import { ZIndex } from "@web/common/constants/web.constants";
+import {
+  ZIndex,
+  DATA_EVENT_ELEMENT_ID,
+} from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
 
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
 import { getPosition } from "@web/common/utils/position.util";
-import { DATA_EVENT_ELEMENT_ID } from "@web/views/Calendar/layout.constants";
 
 interface Props {
   event: Schema_GridEvent;

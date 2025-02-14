@@ -19,9 +19,9 @@ import {
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
+  DATA_EVENT_ELEMENT_ID,
   ID_OPTIMISTIC_PREFIX,
 } from "../constants/web.constants";
-import { DATA_EVENT_ELEMENT_ID } from "@web/views/Calendar/layout.constants";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);

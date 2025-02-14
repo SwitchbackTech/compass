@@ -34,5 +34,3 @@ export const GRID_X_PADDING_TOTAL =
 export const SIDEBAR_MONTH_HEIGHT = 275;
 export const SIDEBAR_OPEN_WIDTH = 350;
 export const SIDEBAR_X_START = SIDEBAR_OPEN_WIDTH + GRID_X_START;
-
-export const DATA_EVENT_ELEMENT_ID = "data-event-id";
