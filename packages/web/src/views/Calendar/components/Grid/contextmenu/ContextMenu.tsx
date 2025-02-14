@@ -13,9 +13,9 @@ import ContextMenuItems from "./ContextMenuItems";
 
 const MenuWrapper = styled.ul`
   position: absolute;
-  background-color: white;
-  border: 1px solid #ccc;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: ${({ theme }) => theme.color.menu.bg};
+  border: ${({ theme }) => `1px solid ${theme.color.border.primary}`};
+  box-shadow: ${({ theme }) => `0px 4px 6px ${theme.color.shadow.default}`};
   border-radius: ${({ theme }) => theme.shape.borderRadius};
   padding: 5px 0;
   list-style: none;
