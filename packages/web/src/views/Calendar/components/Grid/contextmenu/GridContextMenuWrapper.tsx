@@ -8,7 +8,6 @@ import {
   flip,
 } from "@floating-ui/react";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import ContextMenu from "./ContextMenu";
 import {
   assembleGridEvent,
   getCalendarEventIdFromElement,
@@ -21,6 +20,7 @@ import {
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { ContextMenu } from "./ContextMenu";
 
 const GridContextMenuWrapper = ({
   children,
@@ -49,17 +49,19 @@ const GridContextMenuWrapper = ({
     if (!(target instanceof HTMLElement)) {
       return;
     }
-    const calendarEventId = getCalendarEventIdFromElement(target);
-    const hasClickedOnCalendarEvent = !!calendarEventId;
+    const eventId = getCalendarEventIdFromElement(target);
+    const hasClickedOnEvent = !!eventId;
 
-    if (hasClickedOnCalendarEvent) {
+    if (hasClickedOnEvent) {
       e.preventDefault();
 
       const selectedEvent =
-        timedEvents.find((ev) => ev._id === calendarEventId) ||
-        allDayEvents.find((ev) => ev._id === calendarEventId);
+        timedEvents.find((ev) => ev._id === eventId) ||
+        allDayEvents.find((ev) => ev._id === eventId);
 
-      if (!selectedEvent) return; // TS guard
+      if (!selectedEvent) {
+        throw new Error("Selected event not found");
+      }
 
       if (isOptimisticEvent(selectedEvent)) return;
 
