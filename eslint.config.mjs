@@ -20,12 +20,12 @@ export default [
   pluginReact.configs.flat["jsx-runtime"],
   importPlugin.flatConfigs.recommended,
   ...tseslint.configs.recommended,
+  { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
   {
     files: ["**/*.{ts,tsx}"],
     ...importPlugin.flatConfigs.typescript,
   },
   { files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"] },
-  { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
   {
     settings: {
       react: {
@@ -42,6 +42,11 @@ export default [
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
       "import/no-dynamic-require": "warn",
+    },
+  },
+  {
+    files: ["packages/web/src/**/*"],
+    rules: {
       "import/no-nodejs-modules": "warn",
     },
   },
