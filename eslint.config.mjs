@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import globals from "globals";
 import pluginJs from "@eslint/js";
 import tseslint from "typescript-eslint";
+import tsparser from "@typescript-eslint/parser";
 import pluginReact from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import pluginJest from "eslint-plugin-jest";
@@ -20,12 +21,21 @@ export default [
   pluginReact.configs.flat["jsx-runtime"],
   importPlugin.flatConfigs.recommended,
   ...tseslint.configs.recommended,
-  { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
   {
     files: ["**/*.{ts,tsx}"],
     ...importPlugin.flatConfigs.typescript,
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
+      // parser: tsparser,
+      // parserOptions: {
+      //   project: [
+      //     "./tsconfig.json",
+      //     "./packages/backend/tsconfig.json",
+      //     "./packages/web/tsconfig.json",
+      //   ],
+      // },
+    },
   },
-  { files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"] },
   {
     settings: {
       react: {
@@ -34,6 +44,14 @@ export default [
       "import/resolver": {
         "eslint-import-resolver-lerna": {
           packages: path.resolve(__dirname, "packages"),
+        },
+        typescript: {
+          // alwaysTryTypes: true,
+          project: [
+            "./tsconfig.json",
+            "./packages/backend/tsconfig.json",
+            "./packages/web/tsconfig.json",
+          ],
         },
       },
     },
