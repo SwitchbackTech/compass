@@ -4,6 +4,7 @@ import { Priorities } from "@core/constants/core.constants";
 import { Flex } from "@web/components/Flex";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isOptimisticEvent } from "@web/common/utils/event.util";
+import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { getPosition } from "@web/common/utils/position.util";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
@@ -12,7 +13,6 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Text } from "@web/components/Text";
 
 import { StyledEvent } from "../../Event/styled";
-
 interface Props {
   event: Schema_GridEvent;
   isPlaceholder: boolean;
@@ -40,23 +40,26 @@ const AllDayEvent = ({
 
   const isOptimistic = isOptimisticEvent(event);
 
+  const styledEventProps = {
+    [DATA_EVENT_ELEMENT_ID]: event._id,
+    allDay: event.isAllDay || true,
+    height: position.height,
+    isDragging: false,
+    isInPast: dayjs().isAfter(dayjs(event.endDate)),
+    isPlaceholder,
+    isOptimistic,
+    isResizing: false,
+    left: position.left,
+    lineClamp: 1,
+    onMouseDown: (e: MouseEvent) => onMouseDown(e, event),
+    priority: event.priority || Priorities.UNASSIGNED,
+    role: "button",
+    top: position.top,
+    width: position.width,
+  };
+
   return (
-    <StyledEvent
-      allDay={event.isAllDay || true}
-      height={position.height}
-      isDragging={false}
-      isInPast={dayjs().isAfter(dayjs(event.endDate))}
-      isPlaceholder={isPlaceholder}
-      isOptimistic={isOptimistic}
-      isResizing={false}
-      left={position.left}
-      lineClamp={1}
-      onMouseDown={(e) => onMouseDown(e, event)}
-      priority={event.priority || Priorities.UNASSIGNED}
-      role="button"
-      top={position.top}
-      width={position.width}
-    >
+    <StyledEvent {...styledEventProps}>
       <Flex
         alignItems={AlignItems.FLEX_START}
         direction={FlexDirections.COLUMN}

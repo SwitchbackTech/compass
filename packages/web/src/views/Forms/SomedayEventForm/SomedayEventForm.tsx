@@ -3,7 +3,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { DeleteIcon } from "@web/components/Icons/Delete";
+import { Trash } from "@phosphor-icons/react";
+import IconButton from "@web/components/IconButton/IconButton";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
@@ -116,7 +117,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       role="form"
     >
       <StyledIconRow>
-        <DeleteIcon onDelete={onDelete} title="Delete Someday Event" />
+        <IconButton onClick={onDelete} aria-label="Delete Someday Event">
+          <Trash />
+        </IconButton>
       </StyledIconRow>
 
       <StyledTitle

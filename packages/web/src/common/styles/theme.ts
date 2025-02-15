@@ -50,6 +50,9 @@ export const theme: DefaultTheme = {
     gridLine: {
       primary: c.gray800,
     },
+    menu: {
+      bg: c.white200,
+    },
     panel: {
       bg: c.gray600,
       scrollbar: c.gray500,
@@ -102,5 +105,8 @@ export const theme: DefaultTheme = {
   },
   transition: {
     default: "0.3s",
+  },
+  shape: {
+    borderRadius: "4px",
   },
 };

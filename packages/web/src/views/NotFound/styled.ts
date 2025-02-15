@@ -29,7 +29,7 @@ export const StyledNotFoundContainer = styled.div`
 export const StyledBackButton = styled.button`
   background: ${({ theme }) => theme.color.fg.primaryDark};
   border: ${({ theme }) => `2px solid ${theme.color.border.primary}`};
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
   color: ${({ theme }) => theme.color.text.lighter};
   cursor: pointer;
   font-size: 16px;

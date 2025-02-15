@@ -19,6 +19,9 @@ declare module "styled-components" {
       gridLine: {
         primary: string;
       };
+      menu: {
+        bg: string;
+      };
       panel: {
         bg: string;
         scrollbar: string;
@@ -71,6 +74,9 @@ declare module "styled-components" {
     };
     transition: {
       default: string;
+    };
+    shape: {
+      borderRadius: string;
     };
   }
 }

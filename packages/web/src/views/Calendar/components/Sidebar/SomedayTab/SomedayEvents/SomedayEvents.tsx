@@ -19,6 +19,7 @@ import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 import { SomedayEventsColumn } from "./SomedayEventsColumn";
 import { EventPlaceholder, SidebarList } from "../../styled";
+import { State_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarState";
 
 interface Props {
   category: Categories_Event;
@@ -28,6 +29,19 @@ interface Props {
   viewStart: WeekProps["component"]["startOfView"];
   gridScrollRef: Refs_Grid["gridScrollRef"];
 }
+
+const getSomedayEvents = (
+  category: Categories_Event,
+  somedayEvents: State_Sidebar["somedayEvents"]
+) => {
+  const colName =
+    category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH;
+  const column = somedayEvents.columns[colName];
+
+  return column.eventIds.map(
+    (eventId: string) => somedayEvents.events[eventId]
+  );
+};
 
 export const SomedayEvents: FC<Props> = ({
   category,
@@ -41,12 +55,11 @@ export const SomedayEvents: FC<Props> = ({
   const gridX = state.mouseCoords.x - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
   const dayIndex = dateCalcs.getDayNumberByX(gridX);
 
-  const colName =
-    category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH;
-  const column = state.somedayEvents.columns[colName];
-  const events = column.eventIds.map(
-    (eventId: string) => state.somedayEvents.events[eventId]
-  );
+  const column =
+    state.somedayEvents.columns[
+      category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH
+    ];
+  const events = getSomedayEvents(category, state.somedayEvents);
 
   const isDraftingNew = state.isDraftingNew && state.draftType === category;
 

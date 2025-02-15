@@ -19,6 +19,7 @@ import {
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
+  DATA_EVENT_ELEMENT_ID,
   ID_OPTIMISTIC_PREFIX,
 } from "../constants/web.constants";
 
@@ -283,4 +284,9 @@ const _assembleBaseEvent = (
   };
 
   return baseEvent;
+};
+
+export const getCalendarEventIdFromElement = (element: HTMLElement) => {
+  const eventElement = element.closest(`[${DATA_EVENT_ELEMENT_ID}]`);
+  return eventElement ? eventElement.getAttribute(DATA_EVENT_ELEMENT_ID) : null;
 };
