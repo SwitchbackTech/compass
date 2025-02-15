@@ -5,6 +5,7 @@ import pluginReact from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import pluginJest from "eslint-plugin-jest";
 import jestDom from "eslint-plugin-jest-dom";
+import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -44,4 +45,7 @@ export default [
       "jest/valid-expect": "error",
     },
   },
+  // this prettier plugin adjusts other parts of this config,
+  // so keep it as the last item
+  eslintPluginPrettierRecommended,
 ];
