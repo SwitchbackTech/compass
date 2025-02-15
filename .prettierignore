@@ -2,3 +2,4 @@
 build
 coverage
 logs
+.eslintrc.json
