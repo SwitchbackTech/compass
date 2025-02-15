@@ -1,3 +1,4 @@
+import path from "path";
 import globals from "globals";
 import pluginJs from "@eslint/js";
 import tseslint from "typescript-eslint";
@@ -6,6 +7,9 @@ import reactHooks from "eslint-plugin-react-hooks";
 import pluginJest from "eslint-plugin-jest";
 import jestDom from "eslint-plugin-jest-dom";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import testingLibrary from "eslint-plugin-testing-library";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -20,6 +24,11 @@ export default [
       react: {
         version: "detect",
       },
+      "import/resolver": {
+        "eslint-import-resolver-lerna": {
+          packages: path.resolve(__dirname, "packages"),
+        },
+      },
     },
     plugins: { "react-hooks": reactHooks },
     rules: {
@@ -32,7 +41,9 @@ export default [
     files: ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
     plugins: {
       jest: pluginJest,
-      ...jestDom.configs["flat/recommended"],
+      ...jestDom.configs["flat/dom"],
+      ...testingLibrary.configs["flat/recommended"],
+      ...testingLibrary.configs["flat/react"],
     },
     languageOptions: {
       globals: pluginJest.environments.globals.globals,
