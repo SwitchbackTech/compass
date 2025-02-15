@@ -1,4 +1,5 @@
 import path from "path";
+import { fileURLToPath } from "url";
 import globals from "globals";
 import pluginJs from "@eslint/js";
 import tseslint from "typescript-eslint";
@@ -8,6 +9,7 @@ import pluginJest from "eslint-plugin-jest";
 import jestDom from "eslint-plugin-jest-dom";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 import testingLibrary from "eslint-plugin-testing-library";
+import importPlugin from "eslint-plugin-import";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -16,7 +18,12 @@ export default [
   pluginJs.configs.recommended,
   pluginReact.configs.flat.recommended,
   pluginReact.configs.flat["jsx-runtime"],
+  importPlugin.flatConfigs.recommended,
   ...tseslint.configs.recommended,
+  {
+    files: ["**/*.{ts,tsx}"],
+    ...importPlugin.flatConfigs.typescript,
+  },
   { files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"] },
   { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
   {
@@ -34,6 +41,8 @@ export default [
     rules: {
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+      "import/no-dynamic-require": "warn",
+      "import/no-nodejs-modules": "warn",
     },
   },
   {
