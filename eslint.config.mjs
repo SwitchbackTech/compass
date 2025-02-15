@@ -4,6 +4,7 @@ import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import pluginJest from "eslint-plugin-jest";
+import jestDom from "eslint-plugin-jest-dom";
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -28,7 +29,10 @@ export default [
   {
     // Rules and plugins for tests only
     files: ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
-    plugins: { jest: pluginJest },
+    plugins: {
+      jest: pluginJest,
+      ...jestDom.configs["flat/recommended"],
+    },
     languageOptions: {
       globals: pluginJest.environments.globals.globals,
     },
