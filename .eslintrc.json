@@ -2,7 +2,7 @@ const path = require("path");
 
 module.exports = {
   parser: "@typescript-eslint/parser",
-  ignorePatterns: [".eslintrc.js"],
+  ignorePatterns: [".eslintrc.json"],
   plugins: [
     "@typescript-eslint",
     "import",
