@@ -43,7 +43,7 @@ export const DatePickers: FC<Props> = ({
 }) => {
   const adjustComplimentDateIfNeeded = (
     changed: "start" | "end",
-    value: Date
+    value: Date,
   ) => {
     const start = changed === "start" ? value : selectedStartDate;
     const end = changed === "end" ? value : selectedEndDate;
@@ -77,7 +77,7 @@ export const DatePickers: FC<Props> = ({
   };
   const onPickerKeyDown = (
     picker: "start" | "end",
-    e: React.KeyboardEvent<HTMLDivElement>
+    e: React.KeyboardEvent<HTMLDivElement>,
   ) => {
     switch (e.key) {
       case Key.Backspace: {

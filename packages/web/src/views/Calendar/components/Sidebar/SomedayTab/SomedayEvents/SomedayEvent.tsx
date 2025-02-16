@@ -20,7 +20,7 @@ import { SomedayEventRectangle } from "./SomedayEventRectangle";
 function getStyle(
   style: DraggableStyle,
   snapshot: DraggableStateSnapshot,
-  isOverGrid: boolean
+  isOverGrid: boolean,
 ) {
   if (!snapshot.isDropAnimating) {
     return style;

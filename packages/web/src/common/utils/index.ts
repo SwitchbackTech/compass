@@ -14,7 +14,7 @@ export const headers = (token?: string) => {
     return {
       headers: {
         Authorization: `Bearer ${localStorage.getItem(
-          "removedAsPartOfTokenRefactor"
+          "removedAsPartOfTokenRefactor",
         )}`,
       },
     };

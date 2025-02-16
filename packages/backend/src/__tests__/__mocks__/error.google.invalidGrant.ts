@@ -21,5 +21,5 @@ export const invalidGrant400Error = new GaxiosError(
     request: {
       responseURL: "",
     },
-  }
+  },
 );

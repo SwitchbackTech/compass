@@ -6,7 +6,7 @@ import { Status } from "@core/errors/status.codes";
 // Map  user object given by google signin to our schema //
 export const mapUserToCompass = (
   gUser: UserInfo_Google["gUser"],
-  gRefreshToken: string
+  gRefreshToken: string,
 ): Schema_User => {
   if (!gUser.email || !gRefreshToken) {
     throw new BaseError(
@@ -16,7 +16,7 @@ export const mapUserToCompass = (
       })}`,
       "Missing Required GUser Field",
       Status.NOT_FOUND,
-      true
+      true,
     );
   }
 

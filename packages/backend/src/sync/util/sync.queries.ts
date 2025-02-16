@@ -16,7 +16,7 @@ import { getPrimaryGcalId } from "@backend/common/services/gcal/gcal.utils";
 export const createSync = async (
   userId: string,
   calendarList: Schema_CalendarList,
-  nextSyncToken: string
+  nextSyncToken: string,
 ) => {
   const gCalendarId = getPrimaryGcalId(calendarList);
 
@@ -41,7 +41,7 @@ export const reInitSyncByIntegration = async (
   integration: "google",
   userId: string,
   calendarList: Schema_CalendarList,
-  calListSyncToken: string
+  calListSyncToken: string,
 ) => {
   const gCalendarId = getPrimaryGcalId(calendarList);
 
@@ -62,7 +62,7 @@ export const reInitSyncByIntegration = async (
           events: [],
         },
       },
-    }
+    },
   );
 
   return result;
@@ -75,7 +75,7 @@ export const deleteAllSyncData = async (userId: string) => {
 export const deleteWatchData = async (
   userId: string,
   resource: Resource_Sync,
-  channelId: string
+  channelId: string,
 ) => {
   return await mongoService.sync.updateOne(
     { user: userId, [`google.${resource}.channelId`]: channelId },
@@ -84,7 +84,7 @@ export const deleteWatchData = async (
         [`google.${resource}.$.channelId`]: "",
         [`google.${resource}.$.expiration`]: "",
       },
-    }
+    },
   );
 };
 
@@ -137,7 +137,7 @@ export const getSyncByToken = async (syncToken: string) => {
 
 export const hasUpdatedCompassEventRecently = async (
   userId: string,
-  deadline: string
+  deadline: string,
 ) => {
   const recentChanges = await mongoService.event.countDocuments({
     user: userId,
@@ -150,7 +150,7 @@ export const hasUpdatedCompassEventRecently = async (
 
 export const isWatchingEventsByGcalId = async (
   userId: string,
-  gCalendarId: string
+  gCalendarId: string,
 ) => {
   const sync = await mongoService.sync.countDocuments({
     user: userId,
@@ -167,7 +167,7 @@ export const isWatchingEventsByGcalId = async (
 export const updateSyncFor = async (
   resource: Resource_Sync,
   userId: string,
-  data: Payload_Resource_Events
+  data: Payload_Resource_Events,
 ) => {
   if (resource !== "events") {
     throw error(GenericError.NotImplemented, "Sync Update Failed");
@@ -194,14 +194,14 @@ export const updateSyncFor = async (
   if (syncExists) {
     const updateResult = await mongoService.sync.updateOne(
       { user: userId, "google.events.gCalendarId": data.gCalendarId },
-      { $set: { "google.events.$": syncData } }
+      { $set: { "google.events.$": syncData } },
     );
     return updateResult;
   }
 
   const createResult = await mongoService.sync.updateOne(
     { user: userId },
-    { $push: { "google.events": syncData } }
+    { $push: { "google.events": syncData } },
   );
 
   return createResult;
@@ -210,7 +210,7 @@ export const updateSyncFor = async (
 export const updateRefreshedAtFor = async (
   resource: Resource_Sync,
   userId: string,
-  gCalendarId: string
+  gCalendarId: string,
 ) => {
   if (resource !== "events") {
     throw error(GenericError.NotImplemented, "Update RefreshedAt Failed");
@@ -218,7 +218,7 @@ export const updateRefreshedAtFor = async (
 
   const result = await mongoService.sync.updateOne(
     { user: userId, "google.events.gCalendarId": gCalendarId },
-    { $set: { "google.events.$.lastRefreshedAt": new Date() } }
+    { $set: { "google.events.$.lastRefreshedAt": new Date() } },
   );
   return result;
 };
@@ -226,11 +226,11 @@ export const updateRefreshedAtFor = async (
 export const updateSyncTimeBy = async (
   key: "gCalendarId",
   value: string,
-  userId: string
+  userId: string,
 ) => {
   const result = await mongoService.sync.updateOne(
     { user: userId, [`google.events.${key}`]: value },
-    { $set: { "google.events.$.lastSyncedAt": new Date() } }
+    { $set: { "google.events.$.lastSyncedAt": new Date() } },
   );
   return result;
 };
@@ -239,7 +239,7 @@ export const updateSyncTokenFor = async (
   resource: "calendarlist" | "events",
   userId: string,
   nextSyncToken: string,
-  gCalendarId?: string
+  gCalendarId?: string,
 ) => {
   if (resource === "calendarlist") {
     const result = await mongoService.sync.findOneAndUpdate(
@@ -252,7 +252,7 @@ export const updateSyncTokenFor = async (
           "google.calendarlist.0.lastSyncedAt": new Date(),
         },
       },
-      { returnDocument: "after", upsert: true }
+      { returnDocument: "after", upsert: true },
     );
 
     return result;
@@ -269,7 +269,7 @@ export const updateSyncTokenFor = async (
           "google.events.$.lastSyncedAt": new Date(),
         },
       },
-      { upsert: true }
+      { upsert: true },
     );
 
     return response;

@@ -29,14 +29,14 @@ test("start date picker opens and then closes when clicking the end input", asyn
         onSubmit={mockOnSubmit}
         setEvent={mockSetEvent}
       />
-    </div>
+    </div>,
   );
 
   await _clickStartInput();
 
   // Check if the date picker is open
   expect(
-    screen.getByRole("combobox", { name: /datepicker/i })
+    screen.getByRole("combobox", { name: /datepicker/i }),
   ).toBeInTheDocument();
 
   await _clickEndInput();

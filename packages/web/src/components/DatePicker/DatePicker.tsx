@@ -52,8 +52,8 @@ export const DatePicker: React.FC<Props> = ({
     view === "sidebar"
       ? theme.color.text.light
       : isDark(bgColor)
-      ? theme.color.text.lighter
-      : theme.color.text.dark;
+        ? theme.color.text.lighter
+        : theme.color.text.dark;
 
   useEffect(() => {
     if (_autoFocus) {

@@ -48,10 +48,10 @@ describe("Delete Events", () => {
 
       expect(events.includes("Send Newsletter | Base | Past")).toBe(true);
       expect(
-        events.includes("Send Newsletter | Instance2 | Starts Today")
+        events.includes("Send Newsletter | Instance2 | Starts Today"),
       ).toBe(true);
       expect(events.includes("Send Newsletter | Instance2 | Ends Today")).toBe(
-        true
+        true,
       );
     });
   });

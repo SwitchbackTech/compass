@@ -32,8 +32,16 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   const { draft, isDragging, isResizing } = state;
   const isDrafting = useAppSelector(selectIsDrafting);
 
-  if (isLoadingDOM || !draft || !isDrafting) return null;
+  console.log("drafting?", isDrafting, state.draft !== null);
 
+  if (isLoadingDOM || !isDrafting) return null;
+  // if (isLoadingDOM || !draft || !isDrafting) return null;
+
+  if (draft?.isAllDay === undefined) {
+    console.error("draft.isAllDay is undefined");
+    console.log(draft);
+    return null;
+  }
   const container = getDraftContainer(draft.isAllDay);
   const category = getCategory(draft);
   const isGridEvent =

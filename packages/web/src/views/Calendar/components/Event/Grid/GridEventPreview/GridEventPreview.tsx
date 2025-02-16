@@ -83,7 +83,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
     x,
     y,
     measurements,
-    gridScrollRef.current?.scrollTop || 0
+    gridScrollRef.current?.scrollTop || 0,
   );
 
   return (

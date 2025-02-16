@@ -67,7 +67,7 @@ const CmdPalette = ({
     dispatch(
       draftSlice.actions.start({
         eventType,
-      })
+      }),
     );
   };
 
@@ -82,7 +82,7 @@ const CmdPalette = ({
           startDate,
           endDate,
         },
-      })
+      }),
     );
   };
 
@@ -176,7 +176,7 @@ const CmdPalette = ({
         ],
       },
     ],
-    search
+    search,
   );
 
   return (

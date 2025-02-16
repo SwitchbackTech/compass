@@ -23,7 +23,7 @@ const logger = Logger("app:sync.helpers");
 export const assembleEventOperations = (
   userId: string,
   eventsToDelete: string[],
-  eventsToUpdate: gSchema$Event[]
+  eventsToUpdate: gSchema$Event[],
 ) => {
   const bulkOperations: AnyBulkWriteOperation[] = [];
 
@@ -96,7 +96,7 @@ export const findCalendarId = (resourceId: string, sync: Schema_Sync) => {
       "Duplicate resourceIds",
       `Multiple calendars share resourceId: ${resourceId}`,
       Status.BAD_REQUEST,
-      false
+      false,
     );
   }
 
@@ -113,7 +113,7 @@ export const getChannelExpiration = () => {
 export const getSummary = (
   eventsToUpdate: gSchema$Event[],
   eventsToDelete: string[],
-  resourceId: string
+  resourceId: string,
 ) => {
   let updateSummary = "";
   let deleteSummary = "";
@@ -162,7 +162,7 @@ export const hasGoogleHeaders = (headers: object) => {
 
 export const canDoIncrementalSync = (sync: Schema_Sync) => {
   const everyCalendarHasSyncToken = sync.google?.events?.every(
-    (event) => event.nextSyncToken !== null
+    (event) => event.nextSyncToken !== null,
   );
   return everyCalendarHasSyncToken;
 };

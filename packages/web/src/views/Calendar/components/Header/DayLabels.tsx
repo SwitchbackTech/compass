@@ -29,8 +29,8 @@ export const DayLabels: FC<Props> = ({
     const color = day.isBefore(today, "day")
       ? theme.color.text.lightInactive
       : isToday
-      ? theme.color.text.accent
-      : theme.color.text.light;
+        ? theme.color.text.accent
+        : theme.color.text.light;
 
     return { isToday, color };
   };

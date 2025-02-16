@@ -39,7 +39,7 @@ interface Props {
   onScalerMouseDown: (
     event: Schema_GridEvent,
     e: MouseEvent,
-    dateToChange: "startDate" | "endDate"
+    dateToChange: "startDate" | "endDate",
   ) => void;
   weekProps: WeekProps;
 }
@@ -56,7 +56,7 @@ const _GridEvent = (
     onScalerMouseDown,
     weekProps,
   }: Props,
-  ref: ForwardedRef<HTMLDivElement>
+  ref: ForwardedRef<HTMLDivElement>,
 ) => {
   const { component } = weekProps;
 
@@ -69,12 +69,12 @@ const _GridEvent = (
     component.startOfView,
     component.endOfView,
     measurements,
-    isDraft
+    isDraft,
   );
 
   const lineClamp = useMemo(
     () => getLineClamp(position.height),
-    [position.height]
+    [position.height],
   );
 
   const styledEventProps = {
@@ -124,7 +124,7 @@ const _GridEvent = (
               <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
                 {getTimesLabel(
                   event.startDate as string,
-                  event.endDate as string
+                  event.endDate as string,
                 )}
               </Text>
             )}

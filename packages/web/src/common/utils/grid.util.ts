@@ -23,7 +23,7 @@ dayjs.extend(isBetween);
 
 export const assignEventToRow = (
   eventDays: number[],
-  rows: number[][]
+  rows: number[][],
 ): AssignResult => {
   let fits = false;
   let rowNum: number;
@@ -41,7 +41,7 @@ export const assignEventToRow = (
 };
 
 export const assignEventsToRow = (
-  allDayEvents: Schema_Event[]
+  allDayEvents: Schema_Event[],
 ): {
   rowsCount: number;
   allDayEvents: Schema_GridEvent[];
@@ -79,7 +79,7 @@ export const getBeforeAfterPercentages = (
   percentRemaining: number,
   todayIndex: number,
   afterTmrwCount: number,
-  beforeTodayCount: number
+  beforeTodayCount: number,
 ) => {
   const diff = getBeforeTodayDiff(todayIndex, afterTmrwCount);
 
@@ -104,7 +104,7 @@ export const getCurrentPercentOfDay = () => {
 };
 
 export const getColumnWidthPercentages = (
-  todayIndex: number
+  todayIndex: number,
 ): WidthPercentages => {
   const daysInView = 7;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -201,7 +201,7 @@ export const getColumnWidthPercentages = (
 
 export const getBeforeTodayDiff = (
   todayIndex: number,
-  afterTmrwCount: number
+  afterTmrwCount: number,
 ) => {
   const futureFactor = afterTmrwCount * AFTER_TMRW_MULTIPLE;
   const yesterdayIndex = todayIndex - 1;
@@ -233,7 +233,7 @@ export const getRelativePercentages = (todayIndex: number) => {
         remaining,
         todayIndex,
         afterTmrwCount,
-        beforeTodayCount
+        beforeTodayCount,
       );
       beforeToday = percent.beforeToday;
       afterTmrw = percent.afterTmrw;
@@ -248,7 +248,7 @@ export const getRelativePercentages = (todayIndex: number) => {
         remaining,
         todayIndex,
         afterTmrwCount,
-        beforeTodayCount
+        beforeTodayCount,
       );
 
       beforeToday = percent.beforeToday;
@@ -264,7 +264,7 @@ export const getRelativePercentages = (todayIndex: number) => {
         remaining,
         todayIndex,
         afterTmrwCount,
-        beforeTodayCount
+        beforeTodayCount,
       );
 
       beforeToday = percent.beforeToday;
@@ -279,7 +279,7 @@ export const getRelativePercentages = (todayIndex: number) => {
         remaining,
         todayIndex,
         afterTmrwCount,
-        beforeTodayCount
+        beforeTodayCount,
       );
 
       beforeToday = percent.beforeToday;
@@ -397,7 +397,7 @@ const _getEventDayNumbers = (event: Schema_Event) => {
 
 const _noOverlaps = (eventDays: number[], occupiedDays: number[]) => {
   const anyOverlapsThisYear = eventDays.some(
-    (day) => occupiedDays.indexOf(day) >= 0
+    (day) => occupiedDays.indexOf(day) >= 0,
   );
   if (anyOverlapsThisYear) {
     return false;
@@ -411,7 +411,7 @@ const _noOverlaps = (eventDays: number[], occupiedDays: number[]) => {
 
   const anyOverlapsNextYear = _anySharedValues(
     normalizedDays,
-    normalizedOccupiedDays
+    normalizedOccupiedDays,
   );
 
   if (anyOverlapsNextYear) {

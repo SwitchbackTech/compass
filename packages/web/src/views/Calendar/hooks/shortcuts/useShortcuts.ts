@@ -82,7 +82,7 @@ export const useShortcuts = ({
           : Categories_Event.SOMEDAY_MONTH;
 
       const somedayDefault = await assembleDefaultEvent(
-        Categories_Event.SOMEDAY_WEEK
+        Categories_Event.SOMEDAY_WEEK,
       );
       dispatch(
         draftSlice.actions.start({
@@ -92,7 +92,7 @@ export const useShortcuts = ({
             startDate: startOfView.format(YEAR_MONTH_FORMAT),
             endDate: endOfView.format(YEAR_MONTH_FORMAT),
           },
-        })
+        }),
       );
     };
 
@@ -115,7 +115,7 @@ export const useShortcuts = ({
           activity: "createShortcut",
           eventType: Categories_Event.TIMED,
           event,
-        })
+        }),
       );
     };
 

@@ -41,7 +41,7 @@ export const TimePickers: FC<Props> = ({
 
   const adjustComplimentTimeIfNeeded = (
     changed: "start" | "end",
-    value: string
+    value: string,
   ): Option_Time => {
     const start = changed === "start" ? value : startTime.value;
     const end = changed === "end" ? value : endTime.value;
@@ -53,7 +53,7 @@ export const TimePickers: FC<Props> = ({
         start,
         oldEnd: endTime.value,
         end,
-      }
+      },
     );
 
     if (shouldAdjust) {

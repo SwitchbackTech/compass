@@ -19,19 +19,23 @@ interface Props {
 
 export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   const { actions, setters, state } = useDraftContext();
-  const { draft, isDragging, isResizing } = state;
   const { discard, deleteEvent, submit } = actions;
-  const { setDraft, setDateBeingChanged, setIsResizing } = setters;
-
+  const { setDraft, setDateBeingChanged, setIsDragging, setIsResizing } =
+    setters;
+  const { draft, isDragging, formProps, isFormOpen, isResizing } = state;
   const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
-    state.formProps;
+    formProps;
 
+  console.log("isFormOpen?", isFormOpen);
   const onConvert = () => {
     const start = weekProps.component.startOfView.format(YEAR_MONTH_DAY_FORMAT);
     const end = weekProps.component.endOfView.format(YEAR_MONTH_DAY_FORMAT);
 
     actions.convert(start, end);
   };
+
+  if (!draft) return null;
+  if (!draft) console.log("draft is null");
 
   return (
     <>
@@ -43,10 +47,11 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
         isResizing={isResizing}
         key={`draft-${draft?._id}`}
         measurements={measurements}
+        onClick={() => console.log("clicked")}
         onEventMouseDown={(event: Schema_GridEvent, e: MouseEvent) => {
           e.stopPropagation();
           e.preventDefault();
-          setters.setIsDragging(true);
+          setIsDragging(true);
         }}
         onScalerMouseDown={(
           event: Schema_GridEvent,
@@ -64,26 +69,26 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
       />
 
       <div>
-        {draft?.isOpen && (
-          <FloatingFocusManager context={context}>
-            <StyledFloatContainer
-              ref={refs.setFloating}
-              strategy={strategy}
-              top={y ?? 0}
-              left={x ?? 0}
-              {...getFloatingProps()}
-            >
-              <EventForm
-                event={draft}
-                onClose={discard}
-                onConvert={onConvert}
-                onDelete={deleteEvent}
-                onSubmit={(_draft: Schema_GridEvent) => submit(_draft)}
-                setEvent={setDraft}
-              />
-            </StyledFloatContainer>
-          </FloatingFocusManager>
-        )}
+        {/* {isFormOpen && ( */}
+        <FloatingFocusManager context={context}>
+          <StyledFloatContainer
+            ref={refs.setFloating}
+            strategy={strategy}
+            top={y ?? 0}
+            left={x ?? 0}
+            {...getFloatingProps()}
+          >
+            <EventForm
+              event={draft}
+              onClose={discard}
+              onConvert={onConvert}
+              onDelete={deleteEvent}
+              onSubmit={(_draft: Schema_GridEvent) => submit(_draft)}
+              setEvent={setDraft}
+            />
+          </StyledFloatContainer>
+        </FloatingFocusManager>
+        {/* )} */}
       </div>
     </>
   );

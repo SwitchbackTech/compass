@@ -20,7 +20,7 @@ export const findCompassUsersBy = async (key: Ids_User, value: string) => {
 
 export const updateGoogleRefreshToken = async (
   id: string,
-  gRefreshToken: string
+  gRefreshToken: string,
 ) => {
   const filter = getIdFilter("_id", id);
   const result = await mongoService.user.findOneAndUpdate(filter, {

@@ -73,7 +73,7 @@ export function* getSomedayEvents({ payload }: Action_GetEvents) {
       normalizedEventsSchema(),
     ]);
     yield put(
-      eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events)
+      eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events),
     );
 
     const data = {
@@ -96,7 +96,7 @@ export function* reorderSomedayEvents({ payload }: Action_Someday_Reorder) {
 
 function* _assembleGridEvent(
   _id: string,
-  updatedFields: Partial<Schema_Event>
+  updatedFields: Partial<Schema_Event>,
 ) {
   const currEvent = yield* getEventById(_id);
 
@@ -110,7 +110,7 @@ function* _convertEvent(gridEvent: Schema_GridEvent) {
     EventApi.edit,
     gridEvent._id as string,
     gridEvent,
-    {}
+    {},
   )) as AxiosResponse<Schema_Event>;
 
   const convertedEvent = response.data;

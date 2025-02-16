@@ -17,11 +17,11 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
       if (isAuthenticated === false) {
         if (isGoogleTokenActive === false) {
           navigate(
-            `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED}`
+            `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.GAUTH_SESSION_EXPIRED}`,
           );
         } else {
           navigate(
-            `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.USER_SESSION_EXPIRED}`
+            `${ROOT_ROUTES.LOGIN}?reason=${AUTH_FAILURE_REASONS.USER_SESSION_EXPIRED}`,
           );
         }
       }

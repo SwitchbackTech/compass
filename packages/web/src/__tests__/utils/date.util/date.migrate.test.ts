@@ -9,7 +9,7 @@ describe("Migrate: Week Event", () => {
         endDate: "2023-06-24",
       },
       Categories_Event.SOMEDAY_WEEK,
-      "forward"
+      "forward",
     );
 
     expect(dates).toEqual({
@@ -25,7 +25,7 @@ describe("Migrate: Week Event", () => {
         endDate: "2023-07-01",
       },
       Categories_Event.SOMEDAY_WEEK,
-      "back"
+      "back",
     );
 
     expect(dates).toEqual({
@@ -47,7 +47,7 @@ describe("Migrate: Month Event: Forward", () => {
         endDate: "2023-06-24",
       },
       Categories_Event.SOMEDAY_MONTH,
-      "forward"
+      "forward",
     );
 
     expect(dates).toEqual(firstWeekOfJuly);
@@ -60,7 +60,7 @@ describe("Migrate: Month Event: Forward", () => {
         endDate: "2023-06-10",
       },
       Categories_Event.SOMEDAY_MONTH,
-      "forward"
+      "forward",
     );
     expect(midMonthDates).toEqual(firstWeekOfJuly);
   });
@@ -72,7 +72,7 @@ describe("Migrate: Month Event: Forward", () => {
         endDate: "2023-06-03",
       },
       Categories_Event.SOMEDAY_MONTH,
-      "forward"
+      "forward",
     );
 
     expect(monthChangeDates).toEqual({
@@ -90,7 +90,7 @@ describe("Migrate: Month Event: Back", () => {
         endDate: "2023-06-10",
       },
       Categories_Event.SOMEDAY_MONTH,
-      "back"
+      "back",
     );
 
     expect(dates).toEqual({
@@ -106,7 +106,7 @@ describe("Migrate: Month Event: Back", () => {
         endDate: "2023-07-08",
       },
       Categories_Event.SOMEDAY_MONTH,
-      "back"
+      "back",
     );
 
     expect(dates).toEqual({

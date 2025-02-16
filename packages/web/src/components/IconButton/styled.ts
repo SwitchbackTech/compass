@@ -28,7 +28,9 @@ export const StyledIconButton = styled.button<IconButtonProps>`
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  transition:
+    background-color 0.3s ease,
+    transform 0.2s ease;
   font-size: ${({ size = "medium" }) => sizeMap[size]}px;
 
   &:hover {

@@ -31,7 +31,7 @@ function* eventSagas() {
   yield takeLatest(getWeekEventsSlice.actions.convert, convertTimedEvent);
   yield takeLatest(
     getCurrentMonthEventsSlice.actions.request,
-    getCurrentMonthEvents
+    getCurrentMonthEvents,
   );
   yield takeLatest(createEventSlice.actions.request, createEvent);
   yield takeLatest(editEventSlice.actions.request, editEvent);

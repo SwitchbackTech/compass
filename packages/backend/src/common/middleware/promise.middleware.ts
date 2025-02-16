@@ -29,7 +29,7 @@ export const requestMiddleware = () => {
   return (
     _req: express.Request | SessionRequest,
     res: Res_Promise,
-    next: express.NextFunction
+    next: express.NextFunction,
   ) => {
     res.promise = (p: Promise<any> | SyncFunction) => {
       let toResolve: Promise<unknown> | (() => any);

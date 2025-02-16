@@ -27,7 +27,7 @@ describe("getCalendarHeadingLabel", () => {
     const label = getCalendarHeadingLabel(
       weekInViewStart,
       weekInViewEnd,
-      today
+      today,
     );
     const expectedlabel = "January";
     expect(label).toBe(expectedlabel);
@@ -40,7 +40,7 @@ describe("getCalendarHeadingLabel", () => {
     const label = getCalendarHeadingLabel(
       weekInViewStart,
       weekInViewEnd,
-      today
+      today,
     );
     const expectedlabel = "January 2025";
     expect(label).toBe(expectedlabel);
@@ -53,7 +53,7 @@ describe("getCalendarHeadingLabel", () => {
     const label = getCalendarHeadingLabel(
       weekInViewStart,
       weekInViewEnd,
-      today
+      today,
     );
     const expectedlabel = "Dec 24 - Jan 25";
     expect(label).toBe(expectedlabel);

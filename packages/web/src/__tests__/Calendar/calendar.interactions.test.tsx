@@ -15,9 +15,9 @@ it("displays alert upon server error", async () => {
         ctx.status(500),
         ctx.json({
           error: "something broke",
-        })
+        }),
       );
-    })
+    }),
   );
 
   const alertMock = jest.spyOn(window, "alert").mockImplementation();
@@ -46,7 +46,7 @@ describe("Calendar Interactions", () => {
       await user.click(
         screen.getByRole("navigation", {
           name: /next week/i,
-        })
+        }),
       );
 
       expect(nowLine).not.toBeInTheDocument();

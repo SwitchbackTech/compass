@@ -69,10 +69,10 @@ export const MainGrid: FC<Props> = ({
     const event = await assembleDefaultEvent(
       Categories_Event.TIMED,
       startDate,
-      endDate
+      endDate,
     );
     dispatch(
-      draftSlice.actions.startResizing({ event, dateToChange: "endDate" })
+      draftSlice.actions.startResizing({ event, dateToChange: "endDate" }),
     );
   };
 

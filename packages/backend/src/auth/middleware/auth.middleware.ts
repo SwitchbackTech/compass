@@ -27,7 +27,7 @@ class AuthMiddleware {
       res.status(Status.FORBIDDEN).send({
         error: error(
           AuthError.InadequatePermissions,
-          "Compass Verification Failed"
+          "Compass Verification Failed",
         ),
       });
       return;
@@ -55,7 +55,7 @@ class AuthMiddleware {
   verifyGoogleOauthCode = (
     req: SReqBody<{ code: string }>,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     const { code } = req.body;
     if (!code || typeof code !== "string") {

@@ -6,7 +6,7 @@ const get = (
   key: string,
   tokens: morgan.TokenIndexer<IncomingMessage, ServerResponse<IncomingMessage>>,
   req?: IncomingMessage,
-  res?: ServerResponse<IncomingMessage>
+  res?: ServerResponse<IncomingMessage>,
 ) => {
   if (tokens[key] === undefined) return "unknown";
   if (req && res) {

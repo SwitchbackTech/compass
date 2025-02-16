@@ -31,9 +31,9 @@ export interface _CreateSliceOptions<State> {
 export const createAsyncSlice = <
   RequestPayload,
   SuccessPayload = undefined,
-  ErrorPayload = undefined
+  ErrorPayload = undefined,
 >(
-  options: _CreateSliceOptions<AsyncState<SuccessPayload, ErrorPayload>>
+  options: _CreateSliceOptions<AsyncState<SuccessPayload, ErrorPayload>>,
 ) => {
   const initialState: _AsyncState<SuccessPayload, ErrorPayload> = {
     isProcessing: false,

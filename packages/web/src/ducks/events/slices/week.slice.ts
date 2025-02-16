@@ -14,7 +14,7 @@ export const getWeekEventsSlice = createAsyncSlice<
     convert: () => {},
     delete: (state, action: Action_DeleteEvent) => {
       state.value.data = state.value.data.filter(
-        (i: string) => i !== action.payload._id
+        (i: string) => i !== action.payload._id,
       );
     },
     insert: (state, action: { payload: string }) => {
@@ -27,7 +27,7 @@ export const getWeekEventsSlice = createAsyncSlice<
     },
     replace: (
       state,
-      action: { payload: { oldWeekId: string; newWeekId: string } }
+      action: { payload: { oldWeekId: string; newWeekId: string } },
     ) => {
       state.value.data = state.value.data.map((id: string) => {
         if (id === action.payload.oldWeekId) {

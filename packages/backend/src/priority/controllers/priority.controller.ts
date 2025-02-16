@@ -40,7 +40,7 @@ class PriorityController {
     const response = await priorityService.updateById(
       priorityId,
       priority,
-      userId
+      userId,
     );
 
     res.promise(response);

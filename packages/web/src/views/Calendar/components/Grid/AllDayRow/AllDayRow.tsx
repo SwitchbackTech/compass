@@ -52,18 +52,18 @@ export const AllDayRow: FC<Props> = ({
       x,
       e.clientY,
       startOfView,
-      YEAR_MONTH_DAY_FORMAT
+      YEAR_MONTH_DAY_FORMAT,
     );
 
     const event = await assembleDefaultEvent(
       Categories_Event.ALLDAY,
-      startDate
+      startDate,
     );
     dispatch(
       draftSlice.actions.start({
         eventType: Categories_Event.ALLDAY,
         event,
-      })
+      }),
     );
   };
 

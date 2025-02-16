@@ -18,7 +18,7 @@ class CompassAuthService {
     if (!sync) {
       throw error(
         SyncError.NoSyncRecordForUser,
-        "Did not verify sync record for user"
+        "Did not verify sync record for user",
       );
     }
 

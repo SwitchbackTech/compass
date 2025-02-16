@@ -19,7 +19,7 @@ describe("getAllDayEventWidth", () => {
 
     const category = getEventCategory(start, end, startOfWeek, endOfWeek);
     expect(
-      getAllDayEventWidth(category, 0, start, end, startOfWeek, widths)
+      getAllDayEventWidth(category, 0, start, end, startOfWeek, widths),
     ).toBeLessThanOrEqual(maxWidth);
   });
 
@@ -36,8 +36,8 @@ describe("getAllDayEventWidth", () => {
         start,
         end,
         startOfWeek,
-        [118, 117, 273, 237, 177, 176, 177]
-      )
+        [118, 117, 273, 237, 177, 176, 177],
+      ),
     ).toBe(widthMinusPadding(273));
   });
 
@@ -49,7 +49,7 @@ describe("getAllDayEventWidth", () => {
       start,
       end,
       startOfWeek,
-      dayjs("2040-11-03")
+      dayjs("2040-11-03"),
     );
     const sameDayEventWidth = getAllDayEventWidth(
       category,
@@ -57,7 +57,7 @@ describe("getAllDayEventWidth", () => {
       start,
       end,
       startOfWeek,
-      [1, 0, 0, 0, 0, 0, 0]
+      [1, 0, 0, 0, 0, 0, 0],
     );
     expect(sameDayEventWidth).toBe(1);
   });
@@ -77,8 +77,8 @@ describe("getAllDayEventWidth", () => {
         start,
         end,
         startOfWeek,
-        [1, 1, 1, 1, 1, 1, 1]
-      )
+        [1, 1, 1, 1, 1, 1, 1],
+      ),
     ).toBe(1);
   });
 
@@ -95,8 +95,8 @@ describe("getAllDayEventWidth", () => {
         start,
         end,
         startOfWeek,
-        [1, 1, 1, 0, 0, 0, 0]
-      )
+        [1, 1, 1, 0, 0, 0, 0],
+      ),
     ).toBe(3); // 13, 14, 15
 
     const start2 = dayjs("2022-02-17");
@@ -111,8 +111,8 @@ describe("getAllDayEventWidth", () => {
         start2,
         end2,
         startOfWeek2,
-        [1, 1, 1, 1, 0, 0, 0]
-      )
+        [1, 1, 1, 1, 0, 0, 0],
+      ),
       //20, 21, 23, 23
     ).toBe(4);
   });
@@ -131,8 +131,8 @@ describe("getAllDayEventWidth", () => {
         start,
         end,
         startOfWeek,
-        [1, 1, 0, 0, 0, 0, 0]
-      )
+        [1, 1, 0, 0, 0, 0, 0],
+      ),
     ).toBe(2);
   });
 
@@ -150,8 +150,8 @@ describe("getAllDayEventWidth", () => {
         start,
         end,
         startOfWeek,
-        [1, 1, 1, 1, 1, 1, 1]
-      )
+        [1, 1, 1, 1, 1, 1, 1],
+      ),
     ).toBe(7);
   });
 });
@@ -162,7 +162,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-26"),
       dayjs("2022-02-26"),
       dayjs("2022-02-20"),
-      dayjs("2022-02-26")
+      dayjs("2022-02-26"),
     );
     const lastDayOfWeek = getLeftPosition(category, 6, [1, 1, 1, 1, 1, 1, 900]);
     expect(lastDayOfWeek).toBe(6);
@@ -172,7 +172,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-02"),
       dayjs("2022-02-23"),
       dayjs("2022-02-20"),
-      dayjs("2022-02-26")
+      dayjs("2022-02-26"),
     );
 
     expect(getLeftPosition(category, 9, [1, 1, 1, 1, 1, 1, 1])).toBe(0);
@@ -182,7 +182,7 @@ describe("getLeftPosition", () => {
       dayjs("2019-11-11"),
       dayjs("2030-11-11"),
       dayjs("2022-02-20"),
-      dayjs("2022-02-26")
+      dayjs("2022-02-26"),
     );
     expect(getLeftPosition(category, 6, [1, 1, 1, 1, 1, 1, 1])).toBe(0);
   });
@@ -191,12 +191,12 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-20"),
       dayjs("2022-02-23"),
       dayjs("2022-02-20"),
-      dayjs("2022-02-26")
+      dayjs("2022-02-26"),
     );
     const beginningOfWeek = getLeftPosition(
       category1,
       0,
-      [0, 0, 0, 0, 0, 0, 0]
+      [0, 0, 0, 0, 0, 0, 0],
     );
     expect(beginningOfWeek).toBe(0);
 
@@ -204,7 +204,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-24"),
       dayjs("2022-02-26"),
       dayjs("2022-02-20"),
-      dayjs("2022-02-26")
+      dayjs("2022-02-26"),
     );
     const midWeek = getLeftPosition(category2, 4, [1, 1, 1, 1, 0, 0, 0]);
     expect(midWeek).toBe(4);
@@ -213,7 +213,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-26"),
       dayjs("2022-02-26"),
       dayjs("2022-02-20"),
-      dayjs("2022-02-26")
+      dayjs("2022-02-26"),
     );
     const endOfWeek = getLeftPosition(category3, 6, [1, 1, 1, 1, 1, 1, 900]);
     expect(endOfWeek).toBe(6);
@@ -224,12 +224,12 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-21"),
       dayjs("3000-03-03"),
       dayjs("2022-02-20"),
-      dayjs("2022-02-26")
+      dayjs("2022-02-26"),
     );
     const beginningOfWeek = getLeftPosition(
       category1,
       1,
-      [1, 0, 0, 0, 0, 0, 0]
+      [1, 0, 0, 0, 0, 0, 0],
     );
     expect(beginningOfWeek).toBe(1);
 
@@ -237,7 +237,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-23"),
       dayjs("3000-03-03"),
       dayjs("2022-02-20"),
-      dayjs("2022-02-26")
+      dayjs("2022-02-26"),
     );
     const midWeek = getLeftPosition(category2, 4, [1, 1, 1, 1, 0, 0, 0]);
     expect(midWeek).toBe(4);
@@ -246,7 +246,7 @@ describe("getLeftPosition", () => {
       dayjs("2022-02-25"),
       dayjs("3000-03-03"),
       dayjs("2022-02-20"),
-      dayjs("2022-02-26")
+      dayjs("2022-02-26"),
     );
     const endOfWeek = getLeftPosition(category3, 6, [1, 1, 1, 1, 1, 1, 0]);
     expect(endOfWeek).toBe(6);

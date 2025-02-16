@@ -39,7 +39,7 @@ class CompassCli {
       default:
         this.validator.exitHelpfully(
           "root",
-          `${cmd as string} is not a supported cmd`
+          `${cmd as string} is not a supported cmd`,
         );
     }
   }
@@ -54,15 +54,15 @@ class CompassCli {
       .description("build compass package")
       .argument(
         `[${ALL_PACKAGES.join(" | ")}]`,
-        "package to build (only provide 1)"
+        "package to build (only provide 1)",
       )
       .option(
         "-c, --clientId <clientId>",
-        "google client id to inject into build"
+        "google client id to inject into build",
       )
       .option(
         `-e, --environment [${CATEGORY_VM.STAG} | ${CATEGORY_VM.PROD}]`,
-        "specify environment"
+        "specify environment",
       );
 
     program
@@ -70,7 +70,7 @@ class CompassCli {
       .description("delete user data from compass database")
       .option(
         "-u, --user [id | email]",
-        "specify which user to run script for"
+        "specify which user to run script for",
       );
     return program;
   }

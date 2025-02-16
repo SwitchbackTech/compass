@@ -30,7 +30,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     e.stopPropagation();
     if (isEventFormOpen()) {
       dispatch(
-        draftSlice.actions.swap({ event, category: Categories_Event.TIMED })
+        draftSlice.actions.swap({ event, category: Categories_Event.TIMED }),
       );
       return;
     }
@@ -40,7 +40,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
   const resizeTimedEvent = (
     event: Schema_GridEvent,
-    dateToChange: "startDate" | "endDate"
+    dateToChange: "startDate" | "endDate",
   ) => {
     dispatch(draftSlice.actions.startResizing({ event, dateToChange }));
   };
@@ -49,7 +49,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     dispatch(
       draftSlice.actions.startDragging({
         event,
-      })
+      }),
     );
   };
 
@@ -71,7 +71,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
             onScalerMouseDown={(
               event,
               e,
-              dateToChange: "startDate" | "endDate"
+              dateToChange: "startDate" | "endDate",
             ) => {
               e.stopPropagation();
               e.preventDefault();

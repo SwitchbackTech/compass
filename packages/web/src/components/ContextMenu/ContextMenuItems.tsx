@@ -3,8 +3,6 @@ import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import IconButton from "@web/components/IconButton/IconButton";
 import { Trash, PenNib } from "@phosphor-icons/react";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
 import React, { useState } from "react";
 import {
   MenuItem,
@@ -13,6 +11,7 @@ import {
   PriorityContainer,
 } from "./styled";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
+import { assembleGridEvent } from "@web/common/utils/event.util";
 
 export interface ContextMenuAction {
   id: string;
@@ -23,16 +22,13 @@ export interface ContextMenuAction {
 
 interface ContextMenuItemsProps {
   event: Schema_GridEvent;
-  onItemClick?: () => void;
+  close: () => void;
 }
 
-export function ContextMenuItems({
-  event,
-  onItemClick,
-}: ContextMenuItemsProps) {
-  const dispatch = useAppDispatch();
-  const { actions } = useDraftContext();
-  const { submit, deleteEvent } = actions;
+export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
+  const { actions, setters } = useDraftContext();
+  const { openForm, deleteEvent, submit } = actions;
+  const { setDraft } = setters;
 
   const [selectedPriority, setSelectedPriority] = useState(event.priority);
 
@@ -57,21 +53,13 @@ export function ContextMenuItems({
   const handleEditPriority = (priority: Priorities) => {
     setSelectedPriority(priority);
     submit({ ...event, priority });
-    if (onItemClick) {
-      console.log("onItemClick triggered");
-      onItemClick();
-    } else {
-      console.log("no onItemClick");
-    }
+    close();
   };
 
   const handleEdit = () => {
-    dispatch(
-      draftSlice.actions.start({
-        source: "contextMenu",
-        event: { ...event, isOpen: true },
-      }),
-    );
+    setDraft(assembleGridEvent(event));
+    openForm();
+    close();
   };
 
   const menuActions: ContextMenuAction[] = [
@@ -114,11 +102,6 @@ export function ContextMenuItems({
           key={item.id}
           onClick={() => {
             item.onClick();
-            if (onItemClick) {
-              onItemClick();
-            } else {
-              console.log("~~no onItemClick");
-            }
           }}
         >
           {item.icon}

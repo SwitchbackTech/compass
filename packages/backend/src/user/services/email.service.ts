@@ -10,7 +10,7 @@ class EmailService {
   addToEmailList = async (email: string, firstName: string) => {
     if (!ENV.EMAILER_LIST_ID && !ENV.EMAILER_SECRET) {
       logger.warn(
-        "Skipped adding email to list, because EMAILER_ environment variables are missing."
+        "Skipped adding email to list, because EMAILER_ environment variables are missing.",
       );
       return;
     }
@@ -27,7 +27,7 @@ class EmailService {
       if (response.status !== 200) {
         throw error(
           EmailerError.AddToListFailed,
-          "Failed to add email to list"
+          "Failed to add email to list",
         );
         logger.error(response.data);
       }
@@ -41,7 +41,7 @@ class EmailService {
       ) {
         throw error(
           EmailerError.IncorrectApiKey,
-          "Failed to add email to list. Please make sure environment variables beginning with EMAILER_ are correct"
+          "Failed to add email to list. Please make sure environment variables beginning with EMAILER_ are correct",
         );
       }
 

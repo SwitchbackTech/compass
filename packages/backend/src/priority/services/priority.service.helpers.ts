@@ -6,7 +6,7 @@ import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
 export const mapPriorityData = (
   newIds: InsertedIds,
   data: PriorityReq[],
-  userId: string
+  userId: string,
 ): Schema_Priority[] => {
   const priorities: Schema_Priority[] = [];
   for (const [key, id] of Object.entries(newIds)) {

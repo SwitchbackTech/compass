@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import dayjs from "dayjs";
 import { State_Draft_Local } from "../state/useDraftState";
 import { Setters_Draft_Actions } from "../actions/useDraftActions";
-import { WeekProps } from "../../useWeek";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 export const useDraftEffects = (
   state: State_Draft_Local,
@@ -43,8 +43,6 @@ export const useDraftEffects = (
     // const isStaleDraft = !isDrafting && (isResizing || isDragging);
     const isStaleDraft = !isDrafting;
     if (isStaleDraft) {
-      console.log("setting draft to null");
-      console.log(state);
       setDraft(null);
       setIsDragging(false);
       setIsFormOpen(false);

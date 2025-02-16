@@ -19,7 +19,7 @@ class EventController {
         events.forEach(validateEvent);
 
         const response = await eventService.createMany(
-          events as Schema_Event_Core[]
+          events as Schema_Event_Core[],
         );
         res.promise(response);
         return;
@@ -30,7 +30,7 @@ class EventController {
 
       const response = await eventService.create(
         userId,
-        event as Schema_Event_Core
+        event as Schema_Event_Core,
       );
 
       res.promise(response);
@@ -115,7 +115,7 @@ class EventController {
         userId,
         eventId,
         event as Schema_Event_Core,
-        req.query
+        req.query,
       );
       res.promise(response);
     } catch (e) {

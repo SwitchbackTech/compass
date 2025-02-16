@@ -65,7 +65,7 @@ describe("regular week: March 6-12", () => {
     const futureDays = ["2022-03-11", "2022-03-12"];
     futureDays.forEach((d) => {
       expect(getFlexBasis(dayjs(d), week, mar9)).toBe(
-        prevDayWidth * AFTER_TMRW_MULTIPLE
+        prevDayWidth * AFTER_TMRW_MULTIPLE,
       );
     });
   });
@@ -90,13 +90,13 @@ describe("beginning of month: Feb 27 - Mar 5", () => {
 
   test("Fri [today]", () => {
     expect(getFlexBasis(dayjs("2022-03-04"), weekInFocus, today)).toBe(
-      FLEX_TODAY
+      FLEX_TODAY,
     );
   });
 
   test("Sat", () => {
     expect(getFlexBasis(dayjs("2022-03-05"), weekInFocus, today)).toBe(
-      FLEX_TMRW
+      FLEX_TMRW,
     );
   });
 });
@@ -114,17 +114,17 @@ describe("end of month: Mar 27 - Apr 2", () => {
 
   test("Thu [today]", () => {
     expect(getFlexBasis(dayjs("2022-03-31"), weekInFocus, today)).toBe(
-      FLEX_TODAY
+      FLEX_TODAY,
     );
   });
   test("Fri", () => {
     expect(getFlexBasis(dayjs("2022-04-01"), weekInFocus, today)).toBe(
-      FLEX_TMRW
+      FLEX_TMRW,
     );
   });
   test("Sat", () => {
     expect(getFlexBasis(dayjs("2022-04-02"), weekInFocus, today)).toBe(
-      prevDayWidth * AFTER_TMRW_MULTIPLE
+      prevDayWidth * AFTER_TMRW_MULTIPLE,
     );
   });
 });

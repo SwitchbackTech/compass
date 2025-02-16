@@ -23,18 +23,15 @@ const MenuWrapper = styled.ul`
 `;
 
 interface ContextMenuProps {
-  event: Schema_GridEvent;
+  event?: Schema_GridEvent;
   onOutsideClick: () => void;
-  onMenuItemClick: () => void;
+  close: () => void;
   style: React.CSSProperties;
   context: FloatingContext;
 }
 
 export const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
-  (
-    { event: calEvent, onOutsideClick, onMenuItemClick, style, context },
-    ref,
-  ) => {
+  ({ event, onOutsideClick, close, style, context }, ref) => {
     const dismiss = useDismiss(context, {
       outsidePress: (event) => {
         event.preventDefault(); // Prevents clicking another UI element when dismissing
@@ -49,9 +46,11 @@ export const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
 
     const { getFloatingProps } = useInteractions([dismiss, click, role]);
 
+    if (!event) return null;
+
     return (
       <MenuWrapper ref={ref} style={style} {...getFloatingProps()}>
-        <ContextMenuItems event={calEvent} onItemClick={onMenuItemClick} />
+        <ContextMenuItems event={event} close={close} />
       </MenuWrapper>
     );
   },

@@ -3,8 +3,7 @@ import { FlexDirections } from "@web/components/Flex/styled";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useAppSelector } from "@web/store/store.hooks";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
-
-import GridContextMenuWrapper from "../../components/ContextMenu/GridContextMenuWrapper";
+import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { Grid } from "./components/Grid/";
 import { useScroll } from "./hooks/grid/useScroll";
 import { useToday } from "./hooks/useToday";
@@ -21,7 +20,6 @@ import { Dedication } from "./components/Dedication";
 import { CmdPalette } from "../CmdPalette";
 import { Draft } from "./components/Draft/Draft";
 import { DraftProvider } from "./components/Draft/context/DraftProvider";
-
 export const CalendarView = () => {
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
@@ -85,7 +83,7 @@ export const CalendarView = () => {
             weekProps={weekProps}
           />
 
-          <GridContextMenuWrapper>
+          <ContextMenuWrapper>
             <Grid
               dateCalcs={dateCalcs}
               isSidebarOpen={isSidebarOpen}
@@ -94,7 +92,7 @@ export const CalendarView = () => {
               today={today}
               weekProps={weekProps}
             />
-          </GridContextMenuWrapper>
+          </ContextMenuWrapper>
         </StyledCalendar>
       </DraftProvider>
     </Styled>

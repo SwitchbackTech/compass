@@ -12,14 +12,14 @@ jest.mock("@web/auth/auth.util", () => ({
 export const assembleTimedGridEvent = async (
   startTime: string,
   endTime: string,
-  id?: string
+  id?: string,
 ) => {
   const _time = (time: string) => `2025-01-27T${time}:00+03:00`;
 
   const _event = await assembleDefaultEvent(
     Categories_Event.TIMED,
     _time(startTime),
-    _time(endTime)
+    _time(endTime),
   );
 
   const event = id ? { ..._event, _id: id } : _event;

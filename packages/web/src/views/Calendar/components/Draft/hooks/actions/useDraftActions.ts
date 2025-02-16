@@ -32,22 +32,12 @@ import {
 } from "@web/ducks/events/selectors/draft.selectors";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { State_Draft_Local } from "../state/useDraftState";
+import { Setters_Draft, State_Draft_Local } from "../state/useDraftState";
 import { useDraftEffects } from "../effects/useDraftEffects";
-
-export type Setters_Draft_Actions = {
-  setIsDragging: (isDragging: boolean) => void;
-  setIsResizing: (isResizing: boolean) => void;
-  setDragStatus: (status: any) => void;
-  setResizeStatus: (status: any) => void;
-  setDateBeingChanged: (value: "startDate" | "endDate" | null) => void;
-  setDraft: (draft: any) => void;
-  setIsFormOpen: (isOpen: boolean) => void;
-};
 
 export const useDraftActions = (
   draftState: State_Draft_Local,
-  setters: Setters_Draft_Actions,
+  setters: Setters_Draft,
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
   isSidebarOpen: boolean,
@@ -125,6 +115,10 @@ export const useDraftActions = (
     discard();
   };
 
+  const closeForm = () => {
+    setIsFormOpen(false);
+  };
+
   const convert = (start: string, end: string) => {
     if (isAtWeeklyLimit) {
       alert(SOMEDAY_WEEK_LIMIT_MSG);
@@ -154,14 +148,11 @@ export const useDraftActions = (
   };
 
   const discard = useCallback(() => {
-    console.log("draft", draft);
     if (draft) {
       setDraft(null);
     }
 
-    console.log("discarding ...");
     if (reduxDraft || reduxDraftType) {
-      console.log("discarding redux draft...");
       dispatch(draftSlice.actions.discard({}));
     }
   }, [dispatch, draft, reduxDraft, reduxDraftType]);
@@ -251,9 +242,15 @@ export const useDraftActions = (
     [dateBeingChanged, draft],
   );
 
+  const openForm = () => {
+    console.log("opening form...");
+    setIsFormOpen(true);
+  };
+
   const reset = () => {
     setDraft(null);
     setIsDragging(false);
+    // closeForm();
     setIsFormOpen(false);
     setIsResizing(false);
     setDragStatus(null);
@@ -296,6 +293,7 @@ export const useDraftActions = (
           }
         }
 
+        // closeForm();
         setIsFormOpen(false);
         setDraft((_draft) => {
           return {
@@ -367,7 +365,7 @@ export const useDraftActions = (
       )) as Schema_GridEvent;
       setDraft(defaultDraft);
     }
-    setIsFormOpen(true);
+    openForm();
   }, [reduxDraft, reduxDraftType]);
 
   const handleChange = useCallback(async () => {
@@ -397,14 +395,17 @@ export const useDraftActions = (
   useDraftEffects(draftState, setters, weekProps, isDrafting, handleChange);
 
   return {
-    stopDragging,
-    stopResizing,
+    closeForm,
     submit,
     convert,
     deleteEvent,
     discard,
     drag,
+    openForm,
     reset,
     resize,
+    stopDragging,
+    stopResizing,
   };
 };
+export type Actions_Draft = ReturnType<typeof useDraftActions>;

@@ -81,7 +81,7 @@ class SyncDebugController {
 
   startEventWatch = async (
     req: SReqBody<{ calendarId: string }>,
-    res: Res_Promise
+    res: Res_Promise,
   ) => {
     try {
       const userId = req.session?.getUserId() as string;
@@ -116,7 +116,7 @@ class SyncDebugController {
 
   stopWatching = async (
     req: SReqBody<{ channelId: string; resourceId: string }>,
-    res: Res_Promise
+    res: Res_Promise,
   ) => {
     try {
       const userId = req.session?.getUserId() as string;
@@ -126,7 +126,7 @@ class SyncDebugController {
       const stopResult = await syncService.stopWatch(
         userId,
         channelId,
-        resourceId
+        resourceId,
       );
 
       res.promise(stopResult);

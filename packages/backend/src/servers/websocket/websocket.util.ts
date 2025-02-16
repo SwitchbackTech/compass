@@ -15,7 +15,7 @@ export const getServerUri = (httpServer: HttpServer) => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handleWsError = <T extends any[], R>(
-  handler: HandlerFunction<T, R>
+  handler: HandlerFunction<T, R>,
 ) => {
   const handleError = (err: BaseError) => {
     logger.error("WebSocket Error:\n\t", err);

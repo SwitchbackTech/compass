@@ -6,7 +6,7 @@ class CalendarService {
   add = async (
     integration: "google",
     calendarList: Schema_CalendarList,
-    userId: string
+    userId: string,
   ) => {
     const payload = calendarList.google.items;
 
@@ -18,7 +18,7 @@ class CalendarService {
           $push: {
             [`${integration}.items`]: payload,
           },
-        }
+        },
       );
 
     return response;
@@ -44,7 +44,7 @@ class CalendarService {
       .collection(Collections.CALENDARLIST)
       .updateOne(
         { user: userId },
-        { $unset: { [`${integration}.items`]: "" } }
+        { $unset: { [`${integration}.items`]: "" } },
       );
 
     return response;

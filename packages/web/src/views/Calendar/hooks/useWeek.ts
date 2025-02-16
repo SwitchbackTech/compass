@@ -31,7 +31,7 @@ export const useWeek = (today: Dayjs) => {
       getWeekEventsSlice.actions.request({
         startDate: toUTCOffset(start),
         endDate: toUTCOffset(end),
-      })
+      }),
     );
   }, [dispatch, end, start]);
 
@@ -40,7 +40,7 @@ export const useWeek = (today: Dayjs) => {
       getSomedayEventsSlice.actions.request({
         startDate: monthStart.format(YEAR_MONTH_DAY_FORMAT),
         endDate: monthEnd.format(YEAR_MONTH_DAY_FORMAT),
-      })
+      }),
     );
   }, [dispatch, monthEnd, monthStart]);
 
@@ -49,7 +49,7 @@ export const useWeek = (today: Dayjs) => {
       updateDates({
         start: start.format(),
         end: end.format(),
-      })
+      }),
     );
   }, [dispatch, end, start]);
 

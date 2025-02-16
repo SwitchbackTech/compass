@@ -17,7 +17,7 @@ export const useRefresh = () => {
         getWeekEventsSlice.actions.request({
           startDate: toUTCOffset(start),
           endDate: toUTCOffset(end),
-        })
+        }),
       );
       dispatch(resetIsFetchNeeded());
     }

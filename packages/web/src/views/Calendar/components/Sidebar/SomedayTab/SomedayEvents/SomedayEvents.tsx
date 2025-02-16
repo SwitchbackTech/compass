@@ -32,14 +32,14 @@ interface Props {
 
 const getSomedayEvents = (
   category: Categories_Event,
-  somedayEvents: State_Sidebar["somedayEvents"]
+  somedayEvents: State_Sidebar["somedayEvents"],
 ) => {
   const colName =
     category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH;
   const column = somedayEvents.columns[colName];
 
   return column.eventIds.map(
-    (eventId: string) => somedayEvents.events[eventId]
+    (eventId: string) => somedayEvents.events[eventId],
   );
 };
 

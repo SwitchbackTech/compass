@@ -4,7 +4,7 @@ import { StyledDivider } from "./styled";
 import { Props } from "./types";
 
 export const Divider: React.FC<Props & HTMLAttributes<HTMLDivElement>> = (
-  props
+  props,
 ) => {
   const [toggled, toggle] = useState(false);
 

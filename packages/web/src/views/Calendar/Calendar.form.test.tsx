@@ -74,7 +74,7 @@ describe("Event Form", () => {
       await user.click(
         within(form).getByRole("button", {
           name: /delete someday event/i,
-        })
+        }),
       );
     });
 
@@ -91,12 +91,12 @@ describe("Event Form", () => {
         await user.click(
           screen.getByRole("button", {
             name: /climb/i,
-          })
+          }),
         );
       });
 
       expect(container.getElementsByClassName("startDatePicker")).toHaveLength(
-        0
+        0,
       );
     });
   });
@@ -112,7 +112,7 @@ const _clickHeading = async (user: UserEvent) => {
 const _confirmCorrectEventFormIsOpen = async (eventName: string) => {
   await waitFor(() => {
     expect(
-      within(screen.getByRole("form")).getByText(eventName)
+      within(screen.getByRole("form")).getByText(eventName),
     ).toBeInTheDocument();
   });
 };

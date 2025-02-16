@@ -3,11 +3,12 @@ import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 
 export const useDraftForm = (
   isFormOpen: boolean,
-  reset: () => void,
   discard: () => void,
+  reset: () => void,
   setIsFormOpen: (isOpen: boolean) => void,
 ) => {
   const handleDiscard = (reason?: OpenChangeReason) => {
+    console.log("resetting...");
     reset();
 
     if (reason === "escape-key") {
@@ -32,6 +33,7 @@ export const useDraftForm = (
       return;
     }
 
+    console.log("setting isFormOpen to", isOpen);
     setIsFormOpen(isOpen);
 
     if (isOpen === false) {
@@ -40,6 +42,7 @@ export const useDraftForm = (
       discard();
     }
   };
+
   const formProps = useEventForm("grid", isFormOpen, onIsFormOpenChange);
-  return { formProps };
+  return formProps;
 };

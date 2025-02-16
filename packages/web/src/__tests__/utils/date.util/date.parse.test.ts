@@ -7,7 +7,7 @@ describe("Date Categories: Month", () => {
     const dates = getDatesByCategory(
       Categories_Event.SOMEDAY_MONTH,
       dayjs("2023-06-04"),
-      dayjs("2023-06-10")
+      dayjs("2023-06-10"),
     );
 
     expect(dates).toEqual({
@@ -20,7 +20,7 @@ describe("Date Categories: Month", () => {
     const dates = getDatesByCategory(
       Categories_Event.SOMEDAY_MONTH,
       dayjs("2023-06-25"),
-      dayjs("2023-07-01")
+      dayjs("2023-07-01"),
     );
 
     expect(dates).toEqual({

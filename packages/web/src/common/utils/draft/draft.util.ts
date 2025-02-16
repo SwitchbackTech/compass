@@ -19,7 +19,7 @@ export const assembleAlldayDraft = async (
   e: MouseEvent,
   dateCalcs: DateCalcs,
   isSidebarOpen: boolean,
-  startOfView: Dayjs
+  startOfView: Dayjs,
 ): Promise<Schema_GridEvent> => {
   const x = getX(e, isSidebarOpen);
   const _start = dateCalcs.getDateByXY(x, e.clientY, startOfView);
@@ -29,7 +29,7 @@ export const assembleAlldayDraft = async (
   const event = (await assembleDefaultEvent(
     Categories_Event.ALLDAY,
     startDate,
-    endDate
+    endDate,
   )) as Schema_GridEvent;
   return event;
 };
@@ -38,7 +38,7 @@ export const assembleTimedDraft = async (
   e: MouseEvent,
   dateCalcs: DateCalcs,
   isSidebarOpen: boolean,
-  startOfView: Dayjs
+  startOfView: Dayjs,
 ): Promise<Schema_GridEvent> => {
   const x = getX(e, isSidebarOpen);
   const _start = dateCalcs.getDateByXY(x, e.clientY, startOfView);
@@ -48,7 +48,7 @@ export const assembleTimedDraft = async (
   const event = (await assembleDefaultEvent(
     Categories_Event.TIMED,
     startDate,
-    endDate
+    endDate,
   )) as Schema_GridEvent;
   return event;
 };

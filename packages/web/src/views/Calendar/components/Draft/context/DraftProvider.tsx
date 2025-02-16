@@ -3,7 +3,8 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useDraftActions } from "../hooks/actions/useDraftActions";
 import { useDraftState } from "../hooks/state/useDraftState";
-import { DraftContext } from "./DraftContext";
+import { DraftContext, State_Draft_Combined } from "./DraftContext";
+import { useDraftForm } from "../hooks/state/useDraftForm";
 
 interface DraftProviderProps {
   children: React.ReactNode;
@@ -17,14 +18,23 @@ export const DraftProvider = ({
   weekProps,
   isSidebarOpen,
 }: DraftProviderProps) => {
-  const { state, setters } = useDraftState();
+  const { state: originalState, setters } = useDraftState();
   const actions = useDraftActions(
-    state,
+    originalState,
     setters,
     dateCalcs,
     weekProps,
     isSidebarOpen,
   );
+  const { discard, reset } = actions;
+  const { isFormOpen } = originalState;
+  const { setIsFormOpen } = setters;
+  const formProps = useDraftForm(isFormOpen, discard, reset, setIsFormOpen);
+
+  const state: State_Draft_Combined = {
+    ...originalState,
+    formProps,
+  };
 
   return (
     <DraftContext.Provider value={{ state, setters, actions }}>

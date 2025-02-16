@@ -71,16 +71,16 @@ export class WebSocketServer {
           handleWsError(() => {
             logger.debug(`Disconnecting from: ${userId}`);
             this.connections.delete(userId);
-          })
+          }),
         );
 
         socket.on(
           EVENT_CHANGE_PROCESSED,
           handleWsError((clientId) => {
             logger.debug(`Client successfully processed updated: ${clientId}`);
-          })
+          }),
         );
-      })
+      }),
     );
 
     this.wsServer.engine.on("connection_error", (err: Error) => {

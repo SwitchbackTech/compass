@@ -11,7 +11,7 @@ const baseUrl = process.env.BASEURL || `http://localhost:${port}/api`;
 
 const devWeb = () => {
   shell.exec(
-    `cd packages/web && yarn webpack serve --mode=development --env API_BASEURL=${baseUrl} API_PORT=${port} IS_DEV=true GOOGLE_CLIENT_ID=${clientId}`
+    `cd packages/web && yarn webpack serve --mode=development --env API_BASEURL=${baseUrl} API_PORT=${port} IS_DEV=true GOOGLE_CLIENT_ID=${clientId}`,
   );
 };
 
