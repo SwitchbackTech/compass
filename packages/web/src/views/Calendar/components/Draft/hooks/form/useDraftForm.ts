@@ -5,7 +5,7 @@ export const useDraftForm = (
   isFormOpen: boolean,
   reset: () => void,
   discard: () => void,
-  setIsFormOpen: (isOpen: boolean) => void
+  setIsFormOpen: (isOpen: boolean) => void,
 ) => {
   const handleDiscard = (reason?: OpenChangeReason) => {
     reset();

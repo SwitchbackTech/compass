@@ -9,7 +9,7 @@ import { Coordinates } from "@web/common/types/util.types";
 export const useMousePosition = (
   isDragging: boolean,
   isFormOpen: boolean,
-  measurements: Measurements_Grid
+  measurements: Measurements_Grid,
 ) => {
   const [isOverGrid, setIsOverGrid] = useState(false);
   const [isOverMainGrid, setIsOverMainGrid] = useState(false);

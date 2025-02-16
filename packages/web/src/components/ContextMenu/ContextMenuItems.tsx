@@ -5,8 +5,6 @@ import IconButton from "@web/components/IconButton/IconButton";
 import { Trash, PenNib } from "@phosphor-icons/react";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { useDraftUtil } from "@web/views/Calendar/hooks/draft/useDraftUtil";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import React, { useState } from "react";
 import {
   MenuItem,
@@ -14,6 +12,7 @@ import {
   PriorityCircle,
   PriorityContainer,
 } from "./styled";
+import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 
 export interface ContextMenuAction {
   id: string;
@@ -23,25 +22,17 @@ export interface ContextMenuAction {
 }
 
 interface ContextMenuItemsProps {
-  weekProps: WeekProps;
   event: Schema_GridEvent;
   onItemClick?: () => void;
 }
 
 export function ContextMenuItems({
-  weekProps,
   event,
   onItemClick,
 }: ContextMenuItemsProps) {
   const dispatch = useAppDispatch();
-  const {
-    draftUtil: { submit, deleteEvent },
-  } = useDraftUtil(
-    // @ts-expect-error
-    {},
-    weekProps,
-    false
-  );
+  const { actions } = useDraftContext();
+  const { submit, deleteEvent } = actions;
 
   const [selectedPriority, setSelectedPriority] = useState(event.priority);
 
@@ -66,7 +57,12 @@ export function ContextMenuItems({
   const handleEditPriority = (priority: Priorities) => {
     setSelectedPriority(priority);
     submit({ ...event, priority });
-    onItemClick && onItemClick();
+    if (onItemClick) {
+      console.log("onItemClick triggered");
+      onItemClick();
+    } else {
+      console.log("no onItemClick");
+    }
   };
 
   const handleEdit = () => {
@@ -74,15 +70,11 @@ export function ContextMenuItems({
       draftSlice.actions.start({
         source: "contextMenu",
         event: { ...event, isOpen: true },
-      })
+      }),
     );
   };
 
-  const handleDelete = () => {
-    deleteEvent();
-  };
-
-  const actions: ContextMenuAction[] = [
+  const menuActions: ContextMenuAction[] = [
     {
       id: "edit",
       label: "Edit",
@@ -96,7 +88,7 @@ export function ContextMenuItems({
     {
       id: "delete",
       label: "Delete",
-      onClick: handleDelete,
+      onClick: deleteEvent,
       icon: (
         <IconButton>
           <Trash />
@@ -117,12 +109,16 @@ export function ContextMenuItems({
           />
         ))}
       </PriorityContainer>
-      {actions.map((item) => (
+      {menuActions.map((item) => (
         <MenuItem
           key={item.id}
           onClick={() => {
             item.onClick();
-            onItemClick && onItemClick();
+            if (onItemClick) {
+              onItemClick();
+            } else {
+              console.log("~~no onItemClick");
+            }
           }}
         >
           {item.icon}

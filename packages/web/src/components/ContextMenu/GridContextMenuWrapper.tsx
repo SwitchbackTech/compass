@@ -19,15 +19,12 @@ import {
 } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { ContextMenu } from "./ContextMenu";
 
 const GridContextMenuWrapper = ({
   children,
-  weekProps,
 }: {
   children: React.ReactNode;
-  weekProps: WeekProps;
 }) => {
   const dispatch = useAppDispatch();
   const timedEvents = useAppSelector(selectGridEvents);
@@ -75,7 +72,7 @@ const GridContextMenuWrapper = ({
             ...selectedEvent,
             isOpen: false,
           },
-        })
+        }),
       );
       setIsOpen(true);
     }
@@ -90,7 +87,6 @@ const GridContextMenuWrapper = ({
       {children}
       {isOpen && draftEvent && (
         <ContextMenu
-          weekProps={weekProps}
           ref={refs.setFloating}
           event={assembleGridEvent(draftEvent)}
           style={{

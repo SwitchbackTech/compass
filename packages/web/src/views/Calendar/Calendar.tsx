@@ -17,9 +17,10 @@ import { useDateCalcs } from "./hooks/grid/useDateCalcs";
 import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
 import { useRefresh } from "./hooks/useRefresh";
 import { Sidebar } from "./components/Sidebar";
-import { Draft } from "./components/Event/Draft";
 import { Dedication } from "./components/Dedication";
 import { CmdPalette } from "../CmdPalette";
+import { Draft } from "./components/Draft/Draft";
+import { DraftProvider } from "./components/Draft/context/DraftProvider";
 
 export const CalendarView = () => {
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
@@ -31,7 +32,7 @@ export const CalendarView = () => {
 
   const { gridRefs, measurements } = useGridLayout(
     isSidebarOpen,
-    weekProps.component.week
+    weekProps.component.week,
   );
 
   const scrollUtil = useScroll(gridRefs.gridScrollRef);
@@ -62,40 +63,40 @@ export const CalendarView = () => {
       <CmdPalette {...shortcutProps} />
       <Dedication />
 
-      <Draft
+      <DraftProvider
         dateCalcs={dateCalcs}
-        isSidebarOpen={isSidebarOpen}
-        measurements={measurements}
         weekProps={weekProps}
-      />
-
-      {isSidebarOpen && (
-        <Sidebar
-          dateCalcs={dateCalcs}
-          measurements={measurements}
-          weekProps={weekProps}
-          gridRefs={gridRefs}
-        />
-      )}
-      <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
-        <Header
-          rootProps={rootProps}
-          scrollUtil={scrollUtil}
-          today={today}
-          weekProps={weekProps}
-        />
-
-        <GridContextMenuWrapper weekProps={weekProps}>
-          <Grid
+        isSidebarOpen={isSidebarOpen}
+      >
+        <Draft measurements={measurements} weekProps={weekProps} />
+        {isSidebarOpen && (
+          <Sidebar
             dateCalcs={dateCalcs}
-            isSidebarOpen={isSidebarOpen}
-            gridRefs={gridRefs}
             measurements={measurements}
+            weekProps={weekProps}
+            gridRefs={gridRefs}
+          />
+        )}
+        <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
+          <Header
+            rootProps={rootProps}
+            scrollUtil={scrollUtil}
             today={today}
             weekProps={weekProps}
           />
-        </GridContextMenuWrapper>
-      </StyledCalendar>
+
+          <GridContextMenuWrapper>
+            <Grid
+              dateCalcs={dateCalcs}
+              isSidebarOpen={isSidebarOpen}
+              gridRefs={gridRefs}
+              measurements={measurements}
+              today={today}
+              weekProps={weekProps}
+            />
+          </GridContextMenuWrapper>
+        </StyledCalendar>
+      </DraftProvider>
     </Styled>
   );
 };

@@ -48,7 +48,7 @@ export const useSidebarUtil = (
   dateCalcs: DateCalcs,
   state: State_Sidebar,
   setDraft: React.Dispatch<React.SetStateAction<Schema_GridEvent>>,
-  setIsDrafting: React.Dispatch<React.SetStateAction<boolean>>
+  setIsDrafting: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   const dispatch = useAppDispatch();
 
@@ -85,12 +85,12 @@ export const useSidebarUtil = (
   // call this when enabling DND for drafts
   const convertSomedayDraftToTimed = (
     dropItem: DropResult_ReactDND,
-    dates: { startDate: string; endDate: string }
+    dates: { startDate: string; endDate: string },
   ) => {
     const event = prepEvtAfterDraftDrop(
       Categories_Event.TIMED,
       dropItem,
-      dates
+      dates,
     );
 
     dispatch(createEventSlice.actions.request(event));
@@ -99,12 +99,12 @@ export const useSidebarUtil = (
 
   const convertSomedayDraftToAllDay = (
     dropItem: DropResult_ReactDND,
-    dates: { startDate: string; endDate: string }
+    dates: { startDate: string; endDate: string },
   ) => {
     const event = prepEvtAfterDraftDrop(
       Categories_Event.ALLDAY,
       dropItem,
-      dates
+      dates,
     );
 
     dispatch(createEventSlice.actions.request(event));
@@ -113,7 +113,7 @@ export const useSidebarUtil = (
 
   const convertSomedayEventToAllDay = (
     _id: string,
-    dates: { startDate: string; endDate: string }
+    dates: { startDate: string; endDate: string },
   ) => {
     const updatedFields: Schema_Event = {
       isAllDay: true,
@@ -126,13 +126,13 @@ export const useSidebarUtil = (
       getSomedayEventsSlice.actions.convert({
         _id,
         updatedFields,
-      })
+      }),
     );
   };
 
   const convertSomedayEventToTimed = (
     _id: string,
-    dates: { startDate: string; endDate: string }
+    dates: { startDate: string; endDate: string },
   ) => {
     const updatedFields: Schema_Event = {
       isAllDay: false,
@@ -145,13 +145,13 @@ export const useSidebarUtil = (
       getSomedayEventsSlice.actions.convert({
         _id,
         updatedFields,
-      })
+      }),
     );
   };
 
   const createDefaultSomeday = useCallback(async () => {
     const somedayDefault = await assembleDefaultEvent(
-      Categories_Event.SOMEDAY_WEEK
+      Categories_Event.SOMEDAY_WEEK,
     );
 
     setDraft({ ...somedayDefault, isOpen: true });
@@ -161,7 +161,7 @@ export const useSidebarUtil = (
 
   const getDatesAfterDroppingOn = (
     target: "mainGrid" | "alldayRow",
-    mouseCoords: Coordinates
+    mouseCoords: Coordinates,
   ) => {
     const x = getX(mouseCoords.x, true);
     const y = mouseCoords.y;
@@ -194,7 +194,7 @@ export const useSidebarUtil = (
       draftSlice.actions.start({
         event: event,
         eventType: category,
-      })
+      }),
     );
   };
 
@@ -258,7 +258,7 @@ export const useSidebarUtil = (
     } else {
       console.log("REMINDER: update for monthly");
       const defaultSomeday = assembleDefaultEvent(
-        Categories_Event.SOMEDAY_WEEK
+        Categories_Event.SOMEDAY_WEEK,
       );
       _draft = { ...defaultSomeday, isOpen: false };
     }
@@ -270,7 +270,7 @@ export const useSidebarUtil = (
   const onMigrate = (
     event: Schema_Event,
     category: Categories_Event,
-    direction: Direction_Migrate
+    direction: Direction_Migrate,
   ) => {
     const _event = _updateEventAfterMigration(event, category, direction);
 
@@ -280,7 +280,7 @@ export const useSidebarUtil = (
         editEventSlice.actions.request({
           _id: _event._id,
           event: _event,
-        })
+        }),
       );
     } else {
       dispatch(createEventSlice.actions.request(_event));
@@ -295,7 +295,7 @@ export const useSidebarUtil = (
     const { startDate, endDate } = getDatesByCategory(
       category,
       viewStart,
-      viewEnd
+      viewEnd,
     );
     const _event = { ...state.draft, startDate, endDate };
 
@@ -312,7 +312,7 @@ export const useSidebarUtil = (
           _id: event._id,
           event,
           applyTo: isRecurring || wasRecurring ? "all" : null,
-        })
+        }),
       );
     } else {
       const order =
@@ -355,7 +355,7 @@ export const useSidebarUtil = (
     dispatch(
       draftSlice.actions.start({
         eventType: section,
-      })
+      }),
     );
 
     createDefaultSomeday();
@@ -392,13 +392,13 @@ export const useSidebarUtil = (
   const _updateEventAfterMigration = (
     event: Schema_Event,
     category: Categories_Event,
-    direction: Direction_Migrate
+    direction: Direction_Migrate,
   ) => {
     const origDates = { startDate: event.startDate, endDate: event.endDate };
     const { startDate, endDate } = getMigrationDates(
       origDates,
       category,
-      direction
+      direction,
     );
 
     const newEvent = { ...event, startDate, endDate, isOpen: false };

@@ -8,11 +8,11 @@ import {
 import { useAppSelector } from "@web/store/store.hooks";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 
-import { SidebarContainer, SidebarTabContainer } from "./styled";
+import { useSidebar } from "../Draft/hooks/sidebar/useSidebar";
 import { SomedayTab } from "./SomedayTab/SomedayTab";
 import { SidebarIconRow } from "./SidebarIconRow";
 import { MonthTab } from "./MonthTab/MonthTab";
-import { useSidebar } from "../../hooks/draft/sidebar/useSidebar";
+import { SidebarContainer, SidebarTabContainer } from "./styled";
 
 interface Props {
   dateCalcs: DateCalcs;

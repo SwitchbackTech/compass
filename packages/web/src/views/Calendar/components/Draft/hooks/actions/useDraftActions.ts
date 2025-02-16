@@ -1,4 +1,4 @@
-import { MouseEvent, useCallback, useEffect } from "react";
+import { MouseEvent, useCallback } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import { validateEvent } from "@core/validators/event.validator";
 import {
@@ -12,6 +12,7 @@ import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { getUserId } from "@web/auth/auth.util";
 import { getX } from "@web/common/utils/grid.util";
 import {
@@ -29,11 +30,10 @@ import {
   selectDraft,
   selectDraftStatus,
 } from "@web/ducks/events/selectors/draft.selectors";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { State_Draft_Local } from "../state/useDraftState";
 import { useDraftEffects } from "../effects/useDraftEffects";
-import { DateCalcs } from "../../grid/useDateCalcs";
-import { WeekProps } from "../../useWeek";
 
 export type Setters_Draft_Actions = {
   setIsDragging: (isDragging: boolean) => void;
@@ -50,7 +50,7 @@ export const useDraftActions = (
   setters: Setters_Draft_Actions,
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
-  isSidebarOpen: boolean
+  isSidebarOpen: boolean,
 ) => {
   const dispatch = useAppDispatch();
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
@@ -146,6 +146,7 @@ export const useDraftActions = (
   };
 
   const deleteEvent = () => {
+    console.log("delete triggered for:", draft);
     if (draft?._id) {
       dispatch(deleteEventSlice.actions.request({ _id: draft._id }));
     }
@@ -173,7 +174,7 @@ export const useDraftActions = (
           const _initialStart = dateCalcs.getDateByXY(
             x,
             e.clientY,
-            weekProps.component.startOfView
+            weekProps.component.startOfView,
           );
 
           const startDate = _draft?.isAllDay
@@ -182,7 +183,7 @@ export const useDraftActions = (
 
           const _end = _initialStart.add(
             dragStatus?.durationMin || 0,
-            "minutes"
+            "minutes",
           );
 
           const endDate = _draft.isAllDay
@@ -207,7 +208,7 @@ export const useDraftActions = (
       const currTime = dateCalcs.getDateStrByXY(
         x,
         e.clientY,
-        weekProps.component.startOfView
+        weekProps.component.startOfView,
       );
       const hasMoved = currTime !== draft.startDate;
 
@@ -228,7 +229,7 @@ export const useDraftActions = (
       draft?.startDate,
       dragStatus?.hasMoved,
       dragStatus?.durationMin,
-    ]
+    ],
   );
 
   const isValidMovement = useCallback(
@@ -247,7 +248,7 @@ export const useDraftActions = (
 
       return true;
     },
-    [dateBeingChanged, draft]
+    [dateBeingChanged, draft],
   );
 
   const reset = () => {
@@ -318,7 +319,7 @@ export const useDraftActions = (
       const currTime = dateCalcs.getDateByXY(
         x,
         e.clientY,
-        weekProps.component.startOfView
+        weekProps.component.startOfView,
       );
 
       if (!isValidMovement(currTime)) {
@@ -351,7 +352,7 @@ export const useDraftActions = (
       isValidMovement,
       resizeStatus?.hasMoved,
       weekProps.component.startOfView,
-    ]
+    ],
   );
 
   const handleShortcutOrClick = useCallback(async () => {
@@ -362,7 +363,7 @@ export const useDraftActions = (
       const defaultDraft = (await assembleDefaultEvent(
         reduxDraftType,
         reduxDraft?.startDate,
-        reduxDraft?.endDate
+        reduxDraft?.endDate,
       )) as Schema_GridEvent;
       setDraft(defaultDraft);
     }

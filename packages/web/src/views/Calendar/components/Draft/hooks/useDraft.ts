@@ -1,13 +1,13 @@
-import { DateCalcs } from "../grid/useDateCalcs";
-import { WeekProps } from "../useWeek";
 import { useDraftState } from "./state/useDraftState";
 import { useDraftActions } from "./actions/useDraftActions";
 import { useDraftForm } from "./form/useDraftForm";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 export const useDraft = (
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
-  isSidebarOpen: boolean
+  isSidebarOpen: boolean,
 ) => {
   const { state, setters } = useDraftState();
   const {
@@ -42,14 +42,14 @@ export const useDraft = (
     },
     dateCalcs,
     weekProps,
-    isSidebarOpen
+    isSidebarOpen,
   );
 
   const { formProps } = useDraftForm(
     isFormOpen,
     actions.reset,
     actions.discard,
-    setIsFormOpen
+    setIsFormOpen,
   );
 
   return {

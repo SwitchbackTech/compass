@@ -6,22 +6,20 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 
-import { useEventListener } from "../../mouse/useEventListener";
-import { State_Draft, Util_Draft } from "../useDraft";
 import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import { useEventListener } from "@web/views/Calendar/hooks/mouse/useEventListener";
+import { useDraftContext } from "../../context/useDraftContext";
 
-export const useGridClick = (
-  draftState: State_Draft,
-  draftUtil: Util_Draft
-) => {
-  const { draft, dragStatus, isDragging, isResizing, resizeStatus } =
-    draftState;
+export const useGridClick = () => {
+  const { actions, setters, state } = useDraftContext();
+  const { draft, dragStatus, isDragging, isResizing, resizeStatus } = state;
+  const { setDraft } = setters;
+  const { discard, stopDragging, stopResizing, submit } = actions;
+
   const draftStatus = useAppSelector(selectDraftStatus);
   const reduxDraftType = draftStatus?.eventType;
   const isDrafting = draftStatus?.isDrafting;
-
-  const { discard, setDraft, stopDragging, stopResizing, submit } = draftUtil;
 
   const getNextAction = useCallback(
     (category: Categories_Event) => {
@@ -42,7 +40,7 @@ export const useGridClick = (
 
       return { shouldOpenForm, shouldSubmit };
     },
-    [draft?._id, draft?.isOpen, dragStatus?.hasMoved, resizeStatus?.hasMoved]
+    [draft?._id, draft?.isOpen, dragStatus?.hasMoved, resizeStatus?.hasMoved],
   );
 
   const _onAllDayRowMouseUp = useCallback(
@@ -58,7 +56,7 @@ export const useGridClick = (
       }
 
       const { shouldSubmit, shouldOpenForm } = getNextAction(
-        Categories_Event.ALLDAY
+        Categories_Event.ALLDAY,
       );
 
       if (shouldOpenForm) {
@@ -78,7 +76,7 @@ export const useGridClick = (
       submit,
       stopDragging,
       setDraft,
-    ]
+    ],
   );
 
   const _onMainGridMouseUp = useCallback(
@@ -109,7 +107,7 @@ export const useGridClick = (
       }
 
       const { shouldSubmit, shouldOpenForm } = getNextAction(
-        Categories_Event.TIMED
+        Categories_Event.TIMED,
       );
       if (shouldOpenForm) {
         setDraft((_draft) => {
@@ -132,13 +130,13 @@ export const useGridClick = (
       stopDragging,
       stopResizing,
       submit,
-    ]
+    ],
   );
 
   useEventListener(
     "mouseup",
     _onAllDayRowMouseUp,
-    getElemById(ID_GRID_ALLDAY_ROW)
+    getElemById(ID_GRID_ALLDAY_ROW),
   );
   const mainGrid = getElemById(ID_GRID_MAIN);
   useEventListener("mouseup", _onMainGridMouseUp, mainGrid);

@@ -1,19 +1,16 @@
 import { MouseEvent, useCallback } from "react";
 
-import { useEventListener } from "../../mouse/useEventListener";
-import { State_Draft, Util_Draft } from "../useDraft";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import { useEventListener } from "@web/views/Calendar/hooks/mouse/useEventListener";
+import { useDraftContext } from "../../context/useDraftContext";
 
-export const useGridMouseMove = (
-  draftState: State_Draft,
-  draftUtil: Util_Draft
-) => {
-  const { draft, isDragging, isResizing } = draftState;
+export const useGridMouseMove = () => {
+  const { actions, state } = useDraftContext();
+  const { draft, isDragging, isResizing } = state;
+  const { drag, resize } = actions;
 
   const isDrafting = useAppSelector(selectIsDrafting);
-
-  const { drag, resize } = draftUtil;
 
   const _onMouseMove = useCallback(
     (e: MouseEvent) => {
@@ -26,7 +23,7 @@ export const useGridMouseMove = (
         drag(e);
       }
     },
-    [draft?.isAllDay, drag, isDrafting, isDragging, isResizing, resize]
+    [draft?.isAllDay, drag, isDrafting, isDragging, isResizing, resize],
   );
 
   useEventListener("mousemove", _onMouseMove);

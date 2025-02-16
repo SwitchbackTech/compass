@@ -9,7 +9,7 @@ export const useDraftEffects = (
   setters: Setters_Draft_Actions,
   weekProps: WeekProps,
   isDrafting: boolean,
-  handleChange: () => Promise<void>
+  handleChange: () => Promise<void>,
 ) => {
   const { draft, isDragging, isResizing, isFormOpen, dateBeingChanged } = state;
   const {
@@ -65,7 +65,7 @@ export const useDraftEffects = (
       setDraft((_draft) => {
         const durationMin = dayjs(_draft.endDate).diff(
           _draft.startDate,
-          "minutes"
+          "minutes",
         );
 
         setDragStatus({
