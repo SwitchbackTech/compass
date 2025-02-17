@@ -181,5 +181,6 @@ export const useShortcuts = ({
     endOfView,
     scrollUtil,
     util,
+    tab,
   ]);
 };
