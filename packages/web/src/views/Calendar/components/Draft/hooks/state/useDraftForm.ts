@@ -24,11 +24,13 @@ export const useDraftForm = (
     }
   };
 
-  const onIsFormOpenChange = (isOpen: boolean, reason?: OpenChangeReason) => {
+  const onIsFormOpenChange = (
+    isOpen: boolean,
+    event,
+    reason?: OpenChangeReason,
+  ) => {
     const isFormAlreadyOpen = isFormOpen === true;
-    console.log("isFormAlreadyOpen", isFormAlreadyOpen);
     if (isFormAlreadyOpen) {
-      // console.log("discarding (local) draft cuz form already open");
       handleDiscard(reason);
       return;
     }

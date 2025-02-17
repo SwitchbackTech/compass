@@ -66,7 +66,6 @@ export const MainGrid: FC<Props> = ({
   };
 
   const startTimedDraft = async (e: MouseEvent) => {
-    console.log(e.button);
     const x = getX(e, isSidebarOpen);
     const _start = dateCalcs.getDateByXY(x, e.clientY, component.startOfView);
     const startDate = _start.format();

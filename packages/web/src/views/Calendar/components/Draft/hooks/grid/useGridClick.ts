@@ -12,10 +12,9 @@ import { useEventListener } from "@web/views/Calendar/hooks/mouse/useEventListen
 import { useDraftContext } from "../../context/useDraftContext";
 
 export const useGridClick = () => {
-  const { actions, setters, state } = useDraftContext();
+  const { actions, state } = useDraftContext();
   const { draft, dragStatus, isDragging, isResizing, resizeStatus } = state;
-  const { setDraft } = setters;
-  const { discard, stopDragging, stopResizing, submit } = actions;
+  const { discard, openForm, stopDragging, stopResizing, submit } = actions;
 
   const draftStatus = useAppSelector(selectDraftStatus);
   const reduxDraftType = draftStatus?.eventType;
@@ -60,13 +59,13 @@ export const useGridClick = () => {
       );
 
       if (shouldOpenForm) {
-        setDraft((_draft) => {
-          return { ..._draft, isOpen: true };
-        });
+        openForm();
         return;
       }
 
-      shouldSubmit && submit(draft);
+      if (shouldSubmit) {
+        submit(draft);
+      }
     },
     [
       isDragging,
@@ -75,7 +74,7 @@ export const useGridClick = () => {
       getNextAction,
       submit,
       stopDragging,
-      setDraft,
+      openForm,
     ],
   );
 
@@ -99,10 +98,12 @@ export const useGridClick = () => {
       }
 
       if (isResizing) {
+        console.log("stopping resize");
         stopResizing();
       }
 
       if (isDragging) {
+        console.log("stopping drag");
         stopDragging();
       }
 
@@ -110,13 +111,15 @@ export const useGridClick = () => {
         Categories_Event.TIMED,
       );
       if (shouldOpenForm) {
-        setDraft((_draft) => {
-          return { ..._draft, isOpen: true };
-        });
+        console.log("opening form");
+        openForm();
         return;
       }
 
-      shouldSubmit && submit(draft);
+      console.log("shouldSubmit", shouldSubmit);
+      if (shouldSubmit) {
+        submit(draft);
+      }
     },
     [
       discard,
@@ -125,8 +128,8 @@ export const useGridClick = () => {
       isDrafting,
       isDragging,
       isResizing,
+      openForm,
       reduxDraftType,
-      setDraft,
       stopDragging,
       stopResizing,
       submit,
