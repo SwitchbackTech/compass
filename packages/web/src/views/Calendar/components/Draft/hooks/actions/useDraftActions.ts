@@ -140,9 +140,8 @@ export const useDraftActions = (
   };
 
   const deleteEvent = () => {
-    console.log("delete triggered for:", draft);
-    if (draft?._id) {
-      dispatch(deleteEventSlice.actions.request({ _id: draft._id }));
+    if (reduxDraft?._id) {
+      dispatch(deleteEventSlice.actions.request({ _id: reduxDraft._id }));
     }
     discard();
   };
