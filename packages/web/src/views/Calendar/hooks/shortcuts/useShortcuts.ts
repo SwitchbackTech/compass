@@ -103,6 +103,7 @@ export const useShortcuts = ({
         startDate,
         endDate,
         priority: Priorities.UNASSIGNED,
+        isAllDay: false,
         position: {
           isOverlapping: false,
           widthMultiplier: 1,
