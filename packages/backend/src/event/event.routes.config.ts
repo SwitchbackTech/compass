@@ -49,7 +49,9 @@ export class EventRoutes extends CommonRoutesConfig {
       //@ts-ignore
       .put(eventController.update)
       //@ts-ignore
-      .delete(eventController.delete);
+      .delete(eventController.delete)
+      // @ts-ignore
+      .patch(eventController.update);
 
     return this.app;
   }

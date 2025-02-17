@@ -275,3 +275,38 @@ export const updateSyncTokenFor = async (
     return response;
   }
 };
+
+export const updateSyncTokenForAll = async (
+  userId: string,
+  nextSyncToken: string
+) => {
+  const result = await mongoService.sync.updateOne(
+    { user: userId },
+    {
+      $set: {
+        "google.calendarlist.0.nextSyncToken": nextSyncToken,
+        "google.calendarlist.0.lastSyncedAt": new Date(),
+        "google.events.$[].nextSyncToken": nextSyncToken,
+        "google.events.$[].lastSyncedAt": new Date(),
+      },
+    }
+  );
+
+  return result;
+}
+
+export const reverseGoogleSync = async (userId: string) => {
+  const result = await mongoService.sync.updateOne(
+    { user: userId },
+    {
+      $set: {
+        "google.calendarlist.0.nextSyncToken": "",
+        "google.calendarlist.0.lastSyncedAt": new Date(),
+        "google.events.$[].nextSyncToken": "",
+        "google.events.$[].lastSyncedAt": new Date(),
+      },
+    }
+  );
+
+  return result;
+}

@@ -122,6 +122,26 @@ class EventController {
       res.promise(Promise.reject(e));
     }
   };
+
+  patch = async (req: SReqBody<Schema_Event>, res: Res_Promise) => {
+    const userId = req.session?.getUserId() as string;
+    try {
+      const event = req.body;
+      validateEvent(event);
+
+      const eventId = req.params["id"] as string;
+
+      const response = await eventService.updateById(
+        userId,
+        eventId,
+        event as Schema_Event_Core,
+        req.query
+      );
+      res.promise(response);
+    } catch (e) {
+      res.promise(Promise.reject(e));
+    }
+  }
 }
 
 export default new EventController();

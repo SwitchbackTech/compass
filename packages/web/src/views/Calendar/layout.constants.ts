@@ -24,7 +24,7 @@ export const WEEK_DAYS_MARGIN_Y = 22;
 
 export const GRID_PADDING_BOTTOM = 20;
 export const GRID_MARGIN_LEFT = 50;
-export const GRID_TIME_STEP = 15;
+export const GRID_TIME_STEP = 5;
 export const GRID_X_START = PAGE_MARGIN_X + GRID_MARGIN_LEFT;
 export const GRID_Y_START =
   PAGE_MARGIN_TOP + HEADER_HEIGHT + WEEK_DAYS_HEIGHT + WEEK_DAYS_MARGIN_Y;
