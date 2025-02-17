@@ -27,6 +27,7 @@ import { Text } from "@web/components/Text";
 
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
 import { getPosition } from "@web/common/utils/position.util";
+import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 
 interface Props {
   event: Schema_GridEvent;
@@ -90,16 +91,17 @@ const _GridEvent = (
     left: position.left,
     lineClamp,
     onMouseDown: (e: MouseEvent) => {
-      const isRightBtnClick = e.button === 2;
-
       if (
         isOptimistic || // Event is in the process of being created, don't allow any interactions until it's completely saved
-        isRightBtnClick
+        isRightClick(e) // Ignores right click here so it can pass through to context menu
       )
         return;
 
       onEventMouseDown(event, e);
     },
+    // onMouseUp: () => {
+    //   console.log("mouse up");
+    // },
     priority: event.priority || Priorities.UNASSIGNED,
     ref,
     role: "button",

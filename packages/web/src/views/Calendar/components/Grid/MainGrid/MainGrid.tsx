@@ -24,6 +24,7 @@ import {
 import { MainGridEvents } from "./MainGridEvents";
 import { MainGridColumns } from "../Columns/MainGridColumns";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -57,10 +58,15 @@ export const MainGrid: FC<Props> = ({
       return;
     }
 
+    if (isRightClick(e)) {
+      return;
+    }
+
     await startTimedDraft(e);
   };
 
   const startTimedDraft = async (e: MouseEvent) => {
+    console.log(e.button);
     const x = getX(e, isSidebarOpen);
     const _start = dateCalcs.getDateByXY(x, e.clientY, component.startOfView);
     const startDate = _start.format();
