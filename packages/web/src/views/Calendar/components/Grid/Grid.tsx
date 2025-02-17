@@ -24,7 +24,7 @@ export const Grid: FC<Props> = ({
   today,
   weekProps,
 }) => {
-  const { allDayRef, gridScrollRef, mainGridRef } = gridRefs;
+  const { allDayRef, mainGridRef } = gridRefs;
 
   return (
     <>
@@ -41,7 +41,6 @@ export const Grid: FC<Props> = ({
         isSidebarOpen={isSidebarOpen}
         mainGridRef={mainGridRef}
         measurements={measurements}
-        scrollRef={gridScrollRef}
         today={today}
         weekProps={weekProps}
       />

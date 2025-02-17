@@ -10,7 +10,7 @@ export type MeasureableElement = "mainGrid" | "allDayRow";
 
 export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
   const [allDayMeasurements, setAllDayMeasurements] = useState<DOMRect | null>(
-    null,
+    null
   );
   const [mainMeasurements, setMainMeasurements] = useState<DOMRect | null>();
   const [colWidths, setColWidths] = useState<number[]>([]);
@@ -39,16 +39,7 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
     }
   }, []);
 
-  const gridScrollRef = useRef<HTMLDivElement | null>(null);
-
-  const mainGridRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (node !== null && !mainMeasurements) {
-        _measureMainGrid(node);
-      }
-    },
-    [mainMeasurements],
-  );
+  const mainGridRef = useRef<HTMLDivElement | null>(null);
 
   const _measureAllDayRow = (node?: HTMLDivElement) => {
     if (node) {
@@ -103,10 +94,15 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
     }
   };
 
+  useEffect(() => {
+    if (mainGridRef.current && !mainMeasurements) {
+      _measureMainGrid(mainGridRef.current);
+    }
+  }, [mainGridRef.current]);
+
   return {
     gridRefs: {
       allDayRef,
-      gridScrollRef,
       mainGridRef,
     },
     measurements: {

@@ -33,9 +33,9 @@ export const CalendarView = () => {
     weekProps.component.week,
   );
 
-  const scrollUtil = useScroll(gridRefs.gridScrollRef);
+  const scrollUtil = useScroll(gridRefs.mainGridRef);
 
-  const dateCalcs = useDateCalcs(measurements, gridRefs.gridScrollRef);
+  const dateCalcs = useDateCalcs(measurements, gridRefs.mainGridRef);
 
   const isCurrentWeek = weekProps.component.isCurrentWeek;
   const util = weekProps.util;

@@ -48,7 +48,7 @@ export const MonthSection: FC<Props> = ({
         measurements={measurements}
         sidebarProps={somedayProps}
         viewStart={viewStart}
-        gridScrollRef={gridRefs.gridScrollRef}
+        mainGridRef={gridRefs.mainGridRef}
       />
     </SidebarSection>
   );

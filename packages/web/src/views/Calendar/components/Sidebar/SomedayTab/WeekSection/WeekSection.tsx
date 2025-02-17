@@ -47,7 +47,7 @@ export const WeekSection: FC<Props> = ({
         measurements={measurements}
         sidebarProps={sidebarProps}
         viewStart={viewStart}
-        gridScrollRef={gridRefs.gridScrollRef}
+        mainGridRef={gridRefs.mainGridRef}
       />
     </SidebarSection>
   );

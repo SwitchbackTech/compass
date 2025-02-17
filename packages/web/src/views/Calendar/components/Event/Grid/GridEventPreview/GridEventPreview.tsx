@@ -28,7 +28,7 @@ export interface Props {
   measurements: Measurements_Grid;
   mouseCoords: MouseCoords;
   startOfView: WeekProps["component"]["startOfView"];
-  gridScrollRef: Refs_Grid["gridScrollRef"];
+  mainGridRef: Refs_Grid["mainGridRef"];
 }
 
 export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
@@ -40,7 +40,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
   measurements,
   mouseCoords,
   startOfView,
-  gridScrollRef,
+  mainGridRef,
 }) {
   const { colWidths } = measurements;
   const { x, y } = mouseCoords;
@@ -83,7 +83,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
     x,
     y,
     measurements,
-    gridScrollRef.current?.scrollTop || 0,
+    mainGridRef.current?.scrollTop || 0
   );
 
   return (

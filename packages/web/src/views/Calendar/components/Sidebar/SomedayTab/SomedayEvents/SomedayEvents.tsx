@@ -27,7 +27,7 @@ interface Props {
   measurements: Measurements_Grid;
   sidebarProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
-  gridScrollRef: Refs_Grid["gridScrollRef"];
+  mainGridRef: Refs_Grid["mainGridRef"];
 }
 
 const getSomedayEvents = (
@@ -49,7 +49,7 @@ export const SomedayEvents: FC<Props> = ({
   measurements,
   sidebarProps,
   viewStart,
-  gridScrollRef,
+  mainGridRef,
 }) => {
   const { state, util } = sidebarProps;
   const gridX = state.mouseCoords.x - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
@@ -75,7 +75,7 @@ export const SomedayEvents: FC<Props> = ({
           measurements={measurements}
           mouseCoords={state.mouseCoords}
           startOfView={viewStart}
-          gridScrollRef={gridScrollRef}
+          mainGridRef={mainGridRef}
         />
       )}
 
