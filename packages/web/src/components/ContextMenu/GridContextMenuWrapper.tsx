@@ -36,7 +36,12 @@ export const ContextMenuWrapper = ({
     placement: "right-start",
     middleware: [offset(5), flip(), shift()],
     open: isOpen,
-    onOpenChange: setIsOpen,
+    onOpenChange(newIsOpen, _, reason) {
+      setIsOpen(newIsOpen);
+      if (newIsOpen === false && reason === "escape-key") {
+        handleDiscard();
+      }
+    },
     whileElementsMounted: autoUpdate,
   });
 
@@ -52,10 +57,15 @@ export const ContextMenuWrapper = ({
     return selectedEvent;
   };
 
+  const handleDiscard = () => {
+    closeMenu();
+    dispatch(draftSlice.actions.discard({}));
+  };
+
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target;
     if (!(target instanceof HTMLElement)) {
-      console.error("target is not an HTMLElement");
+      console.error("target is not a HTMLElement");
       return;
     }
     const eventId = getCalendarEventIdFromElement(target);
@@ -100,10 +110,7 @@ export const ContextMenuWrapper = ({
           }}
           context={context}
           close={closeMenu}
-          onOutsideClick={() => {
-            closeMenu();
-            dispatch(draftSlice.actions.discard({}));
-          }}
+          onOutsideClick={handleDiscard}
         />
       )}
     </div>
