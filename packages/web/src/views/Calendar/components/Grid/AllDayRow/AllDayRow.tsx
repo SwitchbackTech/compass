@@ -15,11 +15,12 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
-import { isEventFormOpen } from "@web/common/utils";
+import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 
 import { StyledGridCol } from "../Columns/styled";
 import { StyledAllDayColumns, StyledAllDayRow } from "./styled";
 import { AllDayEvents } from "./AllDayEvents";
+import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -40,6 +41,7 @@ export const AllDayRow: FC<Props> = ({
 
   const { startOfView, weekDays } = weekProps.component;
   const rowsCount = useAppSelector(selectRowCount);
+  const isDrafting = useAppSelector(selectIsDrafting);
 
   useEffect(() => {
     measurements.remeasure(ID_GRID_MAIN);
@@ -59,17 +61,23 @@ export const AllDayRow: FC<Props> = ({
       Categories_Event.ALLDAY,
       startDate,
     );
+
     dispatch(
       draftSlice.actions.start({
+        activity: "gridClick",
         eventType: Categories_Event.ALLDAY,
         event,
       }),
     );
   };
 
-  const onSectionMouseDown = async (e: MouseEvent) => {
-    if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
+  const onMouseDown = async (e: MouseEvent) => {
+    if (isDrafting) {
+      dispatch(draftSlice.actions.discard({}));
+      return;
+    }
+
+    if (isRightClick(e)) {
       return;
     }
 
@@ -80,7 +88,7 @@ export const AllDayRow: FC<Props> = ({
     <StyledAllDayRow
       id={ID_GRID_ALLDAY_ROW}
       rowsCount={rowsCount}
-      onMouseDown={onSectionMouseDown}
+      onMouseDown={onMouseDown}
     >
       <StyledAllDayColumns id={ID_ALLDAY_COLUMNS} ref={allDayRef}>
         {weekDays.map((day) => (

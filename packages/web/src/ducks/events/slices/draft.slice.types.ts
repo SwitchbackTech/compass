@@ -5,6 +5,12 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 export interface Action_DraftEvent extends Action {
   payload: Payload_DraftEvent;
 }
+export type Activity_DraftEvent =
+  | "createShortcut"
+  | "dragging"
+  | "gridClick"
+  | "resizing"
+  | "sidebarClick";
 
 export interface Action_Draft_Drag extends Action {
   payload: Payload_Draft_Drag;
@@ -22,9 +28,9 @@ interface Payload_Draft_Drag {
 }
 
 interface Payload_DraftEvent {
-  event?: Schema_Event;
+  activity: Activity_DraftEvent;
+  event: Schema_Event | null;
   eventType: Categories_Event;
-  activity?: "createShortcut" | "dragging" | "resizing";
 }
 
 interface Payload_Draft_Resize {
@@ -35,4 +41,14 @@ interface Payload_Draft_Resize {
 interface Payload_Draft_Swap {
   event: Schema_GridEvent;
   category: Categories_Event;
+}
+export interface State_DraftEvent {
+  status: Status_DraftEvent | null;
+  event: Schema_Event | null;
+}
+export interface Status_DraftEvent {
+  activity: Activity_DraftEvent | null;
+  eventType?: Categories_Event | null;
+  isDrafting: boolean;
+  dateToResize?: "startDate" | "endDate" | null;
 }

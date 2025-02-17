@@ -6,6 +6,7 @@ import {
   shift,
   flip,
 } from "@floating-ui/react";
+import { Categories_Event } from "@core/types/event.types";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import {
   assembleGridEvent,
@@ -84,6 +85,8 @@ export const ContextMenuWrapper = ({
 
       dispatch(
         draftSlice.actions.start({
+          activity: "gridClick",
+          eventType: Categories_Event.TIMED,
           event,
         }),
       );

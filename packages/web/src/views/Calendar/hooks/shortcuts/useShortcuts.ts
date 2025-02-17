@@ -86,6 +86,7 @@ export const useShortcuts = ({
       );
       dispatch(
         draftSlice.actions.start({
+          activity: "createShortcut",
           eventType,
           event: {
             ...somedayDefault,

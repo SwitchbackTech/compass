@@ -1,17 +1,11 @@
-import { Schema_Event } from "@core/types/event.types";
 import { createSlice } from "@reduxjs/toolkit";
-import { Status_DraftEvent } from "@web/common/types/web.event.types";
 
 import {
   Action_DraftEvent,
   Action_Draft_Resize,
   Action_Draft_Swap,
+  State_DraftEvent,
 } from "./draft.slice.types";
-
-interface State_DraftEvent {
-  status: Status_DraftEvent | null;
-  event: Schema_Event | null;
-}
 
 const initialDraft = {
   status: {

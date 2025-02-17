@@ -1,5 +1,6 @@
 import { MouseEvent } from "react";
 import dayjs, { Dayjs } from "dayjs";
+import { Categories_Event } from "@core/types/event.types";
 import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
@@ -10,7 +11,6 @@ import {
   DRAFT_DURATION_MIN,
   GRID_TIME_STEP,
 } from "@web/views/Calendar/layout.constants";
-import { Categories_Event } from "@core/types/event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";

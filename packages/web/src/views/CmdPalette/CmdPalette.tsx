@@ -24,6 +24,8 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 
 import { ShortcutProps } from "../Calendar/hooks/shortcuts/useShortcuts";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { assembleDefaultEvent } from "@web/common/utils/event.util";
 
 const CmdPalette = ({
   today,
@@ -49,7 +51,7 @@ const CmdPalette = ({
 
   useHandleOpenCommandPalette(setOpen);
 
-  const _createSomedayDraft = (type: "week" | "month") => {
+  const _createSomedayDraft = async (type: "week" | "month") => {
     if (type === "week" && isAtWeeklyLimit) {
       alert(SOMEDAY_WEEK_LIMIT_MSG);
       return;
@@ -66,22 +68,25 @@ const CmdPalette = ({
 
     dispatch(
       draftSlice.actions.start({
+        activity: "createShortcut",
         eventType,
       }),
     );
   };
 
-  const _createTimedDraft = () => {
+  const _createTimedDraft = async () => {
     const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
-
+    const event = (await assembleDefaultEvent(
+      Categories_Event.TIMED,
+      startDate,
+      endDate,
+    )) as Schema_GridEvent;
+    console.log(event);
     dispatch(
       draftSlice.actions.start({
         activity: "createShortcut",
         eventType: Categories_Event.TIMED,
-        event: {
-          startDate,
-          endDate,
-        },
+        event,
       }),
     );
   };

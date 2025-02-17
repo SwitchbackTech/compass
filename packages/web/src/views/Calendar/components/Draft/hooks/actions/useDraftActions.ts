@@ -352,7 +352,7 @@ export const useDraftActions = (
     ],
   );
 
-  const handleShortcutOrClick = useCallback(async () => {
+  const create = useCallback(async () => {
     const draftingExisting = reduxDraft !== null;
     if (draftingExisting) {
       setDraft(reduxDraft);
@@ -368,10 +368,11 @@ export const useDraftActions = (
   }, [reduxDraft, reduxDraftType]);
 
   const handleChange = useCallback(async () => {
+    console.log("handleChange", activity, isDrafting);
     if (!isDrafting) return;
 
-    if (activity === "createShortcut") {
-      await handleShortcutOrClick();
+    if (activity === "createShortcut" || activity === "gridClick") {
+      await create();
       return;
     }
 
@@ -383,13 +384,7 @@ export const useDraftActions = (
     if (activity === "resizing") {
       startResizing();
     }
-  }, [
-    activity,
-    startDragging,
-    startResizing,
-    handleShortcutOrClick,
-    isDrafting,
-  ]);
+  }, [activity, startDragging, startResizing, create, isDrafting]);
 
   useDraftEffects(draftState, setters, weekProps, isDrafting, handleChange);
 

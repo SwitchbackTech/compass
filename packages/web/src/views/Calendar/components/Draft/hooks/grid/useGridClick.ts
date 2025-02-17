@@ -42,11 +42,12 @@ export const useGridClick = () => {
     [draft?._id, draft?.isOpen, dragStatus?.hasMoved, resizeStatus?.hasMoved],
   );
 
-  const _onAllDayRowMouseUp = useCallback(
+  const onAllDayRowMouseUp = useCallback(
     (e: MouseEvent) => {
       if (e.button !== 0) return;
 
       if (isDragging) {
+        console.log("stopping drag");
         stopDragging();
       }
 
@@ -80,7 +81,7 @@ export const useGridClick = () => {
     ],
   );
 
-  const _onMainGridMouseUp = useCallback(
+  const onMainGridMouseUp = useCallback(
     (e: MouseEvent) => {
       if (e.button !== 0) return;
 
@@ -140,9 +141,9 @@ export const useGridClick = () => {
 
   useEventListener(
     "mouseup",
-    _onAllDayRowMouseUp,
+    onAllDayRowMouseUp,
     getElemById(ID_GRID_ALLDAY_ROW),
   );
   const mainGrid = getElemById(ID_GRID_MAIN);
-  useEventListener("mouseup", _onMainGridMouseUp, mainGrid);
+  useEventListener("mouseup", onMainGridMouseUp, mainGrid);
 };
