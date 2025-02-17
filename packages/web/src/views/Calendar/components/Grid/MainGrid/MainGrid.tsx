@@ -21,6 +21,7 @@ import { MainGridEvents } from "./MainGridEvents";
 import { MainGridColumns } from "../Columns/MainGridColumns";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
+import { useDragEventSmartScroll } from "@web/views/Calendar/hooks/grid/useDragEventSmartScroll";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -40,7 +41,6 @@ export const MainGrid: FC<Props> = ({
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
-
   const { component } = weekProps;
   const { isCurrentWeek, week, weekDays } = component;
   const isDrafting = useAppSelector(selectIsDrafting);
@@ -73,6 +73,8 @@ export const MainGrid: FC<Props> = ({
       draftSlice.actions.startResizing({ event, dateToChange: "endDate" }),
     );
   };
+
+  useDragEventSmartScroll(mainGridRef);
 
   return (
     <StyledMainGrid id={ID_GRID_MAIN} ref={mainGridRef}>
