@@ -22,15 +22,15 @@ export const useGridClick = () => {
 
   const getNextAction = useCallback(
     (category: Categories_Event) => {
-      let shouldSubmit: boolean;
-      let hasMoved: boolean;
+      let shouldSubmit = false;
+      let hasMoved = false;
       const isNew = !draft?._id;
 
       if (category === Categories_Event.TIMED) {
-        hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved;
+        hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved || false;
         shouldSubmit = !draft?.isOpen;
       } else if (category === Categories_Event.ALLDAY) {
-        hasMoved = dragStatus?.hasMoved;
+        hasMoved = dragStatus?.hasMoved || false;
         shouldSubmit = hasMoved;
       }
 
@@ -50,7 +50,9 @@ export const useGridClick = () => {
         stopDragging();
       }
 
-      if (!draft || !isDrafting) {
+      console.log("draft", draft);
+      console.log("isDrafting", isDrafting);
+      if (!draft) {
         return;
       }
 
