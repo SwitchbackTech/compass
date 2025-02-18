@@ -21,14 +21,14 @@ it("displays alert upon server error", async () => {
   );
 
   const alertMock = jest.spyOn(window, "alert").mockImplementation();
-  const consoleLogMock = (console.log = jest.fn()); // mock so doesnt clutter test logs
+  const consoleMock = (console.error = jest.fn()); // mock so doesnt clutter test logs
 
   render(<CalendarView />);
 
   await waitFor(() => {
     expect(alertMock).toHaveBeenCalled();
   });
-  expect(consoleLogMock).toHaveBeenCalled();
+  expect(consoleMock).toHaveBeenCalled();
 });
 
 describe("Calendar Interactions", () => {
