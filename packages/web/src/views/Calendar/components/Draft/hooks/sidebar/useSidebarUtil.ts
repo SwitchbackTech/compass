@@ -47,7 +47,7 @@ import { State_Sidebar } from "./useSidebarState";
 export const useSidebarUtil = (
   dateCalcs: DateCalcs,
   state: State_Sidebar,
-  setDraft: React.Dispatch<React.SetStateAction<Schema_GridEvent>>,
+  setDraft: React.Dispatch<React.SetStateAction<Schema_GridEvent | null>>,
   setIsDrafting: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   const dispatch = useAppDispatch();
