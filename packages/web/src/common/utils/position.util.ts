@@ -58,7 +58,7 @@ export const getAbsoluteLeftPosition = (
       }
       break;
     default: {
-      console.log("Logic error while parsing left position of date");
+      console.error("Logic error while parsing left position of date");
       positionStart = -666;
     }
   }
@@ -102,7 +102,7 @@ export const getAllDayEventWidth = (
       break;
     }
     default: {
-      console.log("Logic error while parsing date width");
+      console.error("Logic error while parsing date width");
       width = -666;
     }
   }
@@ -132,7 +132,7 @@ export const getEventCategory = (
     return Category.PastToFutureWeek;
   }
 
-  console.log("Logic error while getting event category");
+  console.error("Logic error while getting event category");
   return Category.ThisWeekOnly;
 };
 

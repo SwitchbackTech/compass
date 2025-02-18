@@ -25,7 +25,7 @@ export const LogoutView = () => {
 
     checkSession().catch((e) => {
       alert(e);
-      console.log(e);
+      console.error(e);
     });
   }, [navigate]);
 

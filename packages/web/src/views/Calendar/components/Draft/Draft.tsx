@@ -35,8 +35,7 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   if (isLoadingDOM || !draft || !isDrafting) return null;
 
   if (draft?.isAllDay === undefined) {
-    console.error("draft.isAllDay is undefined");
-    console.log(draft);
+    console.error("draft.isAllDay is undefined", draft);
     return null;
   }
   const container = getDraftContainer(draft.isAllDay);

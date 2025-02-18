@@ -13,7 +13,6 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { isEventFormOpen } from "@web/common/utils";
 import { getHourLabels } from "@web/common/utils/web.date.util";
 
 import {
@@ -53,8 +52,7 @@ export const MainGrid: FC<Props> = ({
 
   const onMouseDown = async (e: MouseEvent) => {
     if (isDrafting) {
-      console.log("moused down while drafting, discarding....");
-      dispatch(draftSlice.actions.discard({}));
+      dispatch(draftSlice.actions.discard());
       return;
     }
 

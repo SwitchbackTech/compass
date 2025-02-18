@@ -81,7 +81,6 @@ const CmdPalette = ({
       startDate,
       endDate,
     )) as Schema_GridEvent;
-    console.log(event);
     dispatch(
       draftSlice.actions.start({
         activity: "createShortcut",

@@ -47,12 +47,9 @@ export const useGridClick = () => {
       if (e.button !== 0) return;
 
       if (isDragging) {
-        console.log("stopping drag");
         stopDragging();
       }
 
-      console.log("draft", draft);
-      console.log("isDrafting", isDrafting);
       if (!draft) {
         return;
       }
@@ -101,12 +98,10 @@ export const useGridClick = () => {
       }
 
       if (isResizing) {
-        console.log("stopping resize");
         stopResizing();
       }
 
       if (isDragging) {
-        console.log("stopping drag");
         stopDragging();
       }
 
@@ -114,12 +109,10 @@ export const useGridClick = () => {
         Categories_Event.TIMED,
       );
       if (shouldOpenForm) {
-        console.log("opening form");
         openForm();
         return;
       }
 
-      console.log("shouldSubmit", shouldSubmit);
       if (shouldSubmit) {
         submit(draft);
       }

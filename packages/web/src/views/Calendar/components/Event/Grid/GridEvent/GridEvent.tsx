@@ -99,9 +99,7 @@ const _GridEvent = (
 
       onEventMouseDown(event, e);
     },
-    // onMouseUp: () => {
-    //   console.log("mouse up");
-    // },
+
     priority: event.priority || Priorities.UNASSIGNED,
     ref,
     role: "button",

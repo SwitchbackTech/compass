@@ -125,7 +125,6 @@ export const EventForm: React.FC<FormProps> = ({
     setSelectedStartDate(dt.startDate);
     setSelectedEndDate(dt.endDate);
     setIsFormOpen(true);
-    console.log("setting isFormOpen to true");
   }, [event, setEvent]);
 
   /***********

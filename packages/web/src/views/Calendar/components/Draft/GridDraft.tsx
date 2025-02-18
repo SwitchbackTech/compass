@@ -34,7 +34,6 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   };
 
   if (!draft) return null;
-  if (!draft) console.log("draft is null");
 
   return (
     <>

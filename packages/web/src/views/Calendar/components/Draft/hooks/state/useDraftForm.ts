@@ -11,13 +11,11 @@ export const useDraftForm = (
     reset();
 
     if (reason === "escape-key") {
-      console.log("discarding draft cuz escape key was pressed");
       discard();
       return;
     }
 
     if (reason === "outside-press") {
-      console.log("discarding draft cuz outside press");
       discard();
       return;
     }
@@ -33,7 +31,6 @@ export const useDraftForm = (
     setIsFormOpen(isOpen);
 
     if (isOpen === false) {
-      console.log("resetting and discarding");
       reset();
       discard();
     }

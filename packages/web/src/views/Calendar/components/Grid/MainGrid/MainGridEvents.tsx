@@ -29,7 +29,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const onMouseDown = (e: MouseEvent, event: Schema_GridEvent) => {
     e.stopPropagation();
     if (isEventFormOpen()) {
-      console.log("swapping...", event);
       dispatch(
         draftSlice.actions.swap({ event, category: Categories_Event.TIMED }),
       );
@@ -66,7 +65,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
             isResizing={false}
             key={`initial-${event._id}`}
             measurements={measurements}
-            onMouseUp={() => console.log("mouse up")}
             onEventMouseDown={(event, e) => {
               onMouseDown(e, event);
             }}

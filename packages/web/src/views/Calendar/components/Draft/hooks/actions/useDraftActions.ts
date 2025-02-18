@@ -367,7 +367,6 @@ export const useDraftActions = (
   }, [reduxDraft, reduxDraftType]);
 
   const handleChange = useCallback(async () => {
-    console.log("handleChange", activity, isDrafting);
     if (!isDrafting) return;
 
     if (activity === "eventRightClick") {
