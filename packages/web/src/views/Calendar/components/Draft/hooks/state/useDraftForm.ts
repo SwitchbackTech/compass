@@ -8,7 +8,6 @@ export const useDraftForm = (
   setIsFormOpen: (isOpen: boolean) => void,
 ) => {
   const handleDiscard = (reason?: OpenChangeReason) => {
-    console.log("resetting...");
     reset();
 
     if (reason === "escape-key") {
@@ -24,18 +23,13 @@ export const useDraftForm = (
     }
   };
 
-  const onIsFormOpenChange = (
-    isOpen: boolean,
-    event,
-    reason?: OpenChangeReason,
-  ) => {
+  const onIsFormOpenChange = (isOpen: boolean, reason?: OpenChangeReason) => {
     const isFormAlreadyOpen = isFormOpen === true;
     if (isFormAlreadyOpen) {
       handleDiscard(reason);
       return;
     }
 
-    console.log("setting isFormOpen to", isOpen);
     setIsFormOpen(isOpen);
 
     if (isOpen === false) {
