@@ -242,7 +242,6 @@ export const useDraftActions = (
   );
 
   const openForm = () => {
-    console.log("opening form...");
     setIsFormOpen(true);
   };
 
@@ -355,7 +354,7 @@ export const useDraftActions = (
   const create = useCallback(async () => {
     const draftingExisting = reduxDraft !== null;
     if (draftingExisting) {
-      setDraft(reduxDraft);
+      setDraft(reduxDraft as Schema_GridEvent);
     } else {
       const defaultDraft = (await assembleDefaultEvent(
         reduxDraftType,
@@ -370,6 +369,10 @@ export const useDraftActions = (
   const handleChange = useCallback(async () => {
     console.log("handleChange", activity, isDrafting);
     if (!isDrafting) return;
+
+    if (activity === "eventRightClick") {
+      return; // Prevents form and context menu from opening at same time
+    }
 
     if (activity === "createShortcut" || activity === "gridClick") {
       await create();

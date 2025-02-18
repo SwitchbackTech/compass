@@ -85,7 +85,7 @@ export const ContextMenuWrapper = ({
 
       dispatch(
         draftSlice.actions.start({
-          activity: "gridClick",
+          activity: "eventRightClick",
           eventType: Categories_Event.TIMED,
           event,
         }),

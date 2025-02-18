@@ -7,6 +7,7 @@ export interface Action_DraftEvent extends Action {
 }
 export type Activity_DraftEvent =
   | "createShortcut"
+  | "eventRightClick"
   | "dragging"
   | "gridClick"
   | "resizing"
