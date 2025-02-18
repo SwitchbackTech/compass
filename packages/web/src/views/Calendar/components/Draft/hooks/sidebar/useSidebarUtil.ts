@@ -289,6 +289,36 @@ export const useSidebarUtil = (
     close();
   };
 
+  const onPlaceholderClick = (section: Categories_Event) => {
+    if (state.isDrafting) {
+      dispatch(draftSlice.actions.discard());
+      close();
+      return;
+    }
+
+    if (section === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
+      alert(SOMEDAY_WEEK_LIMIT_MSG);
+      return;
+    }
+
+    if (section === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
+      alert(SOMEDAY_MONTH_LIMIT_MSG);
+      return;
+    }
+
+    if (isEventFormOpen()) {
+      dispatch(draftSlice.actions.discard());
+      return;
+    }
+
+    dispatch(
+      draftSlice.actions.start({
+        eventType: section,
+      }),
+    );
+
+    createDefaultSomeday();
+  };
   const onSubmit = async (category: Categories_Event) => {
     if (!state.draft) return;
 
@@ -328,37 +358,6 @@ export const useSidebarUtil = (
     }
 
     close();
-  };
-
-  const onPlaceholderClick = (section: Categories_Event) => {
-    if (state.isDrafting) {
-      dispatch(draftSlice.actions.discard());
-      close();
-      return;
-    }
-
-    if (section === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
-      alert(SOMEDAY_WEEK_LIMIT_MSG);
-      return;
-    }
-
-    if (section === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
-      alert(SOMEDAY_MONTH_LIMIT_MSG);
-      return;
-    }
-
-    if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
-      return;
-    }
-
-    dispatch(
-      draftSlice.actions.start({
-        eventType: section,
-      }),
-    );
-
-    createDefaultSomeday();
   };
 
   const reorder = (result: DropResult) => {
