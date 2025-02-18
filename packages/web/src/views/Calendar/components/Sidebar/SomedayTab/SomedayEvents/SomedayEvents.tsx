@@ -11,7 +11,6 @@ import {
   Measurements_Grid,
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GridEventPreview } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/GridEventPreview";
 import { Text } from "@web/components/Text";
@@ -19,7 +18,8 @@ import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 import { SomedayEventsColumn } from "./SomedayEventsColumn";
 import { EventPlaceholder, SidebarList } from "../../styled";
-import { State_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarState";
+import { SidebarProps } from "../../../Draft/hooks/sidebar/useSidebar";
+import { State_Sidebar } from "../../../Draft/hooks/sidebar/useSidebarState";
 
 interface Props {
   category: Categories_Event;
