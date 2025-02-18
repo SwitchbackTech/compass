@@ -40,8 +40,8 @@ import {
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 
-import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
 
 export const useSidebarUtil = (
