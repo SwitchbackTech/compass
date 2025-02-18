@@ -21,9 +21,14 @@ export const useDraftForm = (
     }
   };
 
-  const onIsFormOpenChange = (isOpen: boolean, reason?: OpenChangeReason) => {
+  const onIsFormOpenChange = (
+    isOpen: boolean,
+    e: Event,
+    reason?: OpenChangeReason,
+  ) => {
     const isFormAlreadyOpen = isFormOpen === true;
     if (isFormAlreadyOpen) {
+      e.preventDefault(); // prevents form opening
       handleDiscard(reason);
       return;
     }

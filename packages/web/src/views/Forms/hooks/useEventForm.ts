@@ -13,7 +13,11 @@ import {
 export const useEventForm = (
   eventType: "grid" | "sidebarWeek" | "sidebarMonth",
   isOpen: boolean,
-  onIsFormOpenChange: (isOpen: boolean, reason?: OpenChangeReason) => void,
+  onIsFormOpenChange: (
+    isOpen: boolean,
+    event: Event,
+    reason?: OpenChangeReason,
+  ) => void,
 ) => {
   let options: Partial<UseFloatingOptions>;
 
@@ -49,7 +53,7 @@ export const useEventForm = (
     ...options,
     open: isOpen,
     onOpenChange(newIsOpen, event, reason) {
-      onIsFormOpenChange(newIsOpen, reason);
+      onIsFormOpenChange(newIsOpen, event, reason);
     },
   });
 

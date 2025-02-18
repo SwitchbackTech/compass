@@ -10,7 +10,7 @@ export const useDraftEffects = (
   isDrafting: boolean,
   handleChange: () => Promise<void>,
 ) => {
-  const { draft, isDragging, isResizing, isFormOpen, dateBeingChanged } = state;
+  const { draft, isDragging, isResizing, dateBeingChanged } = state;
   const {
     setDraft,
     setIsDragging,
@@ -29,6 +29,7 @@ export const useDraftEffects = (
     setDragStatus(null);
     setResizeStatus(null);
     setDateBeingChanged(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekProps.component.week]);
 
   useEffect(() => {
