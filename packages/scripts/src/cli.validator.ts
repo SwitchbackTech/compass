@@ -25,7 +25,7 @@ export class CliValidator {
       console.log(this.program.helpInformation());
     } else {
       const command = this.program.commands.find(
-        (c) => c.name() === cmd
+        (c) => c.name() === cmd,
       ) as Command;
       console.log(command.helpInformation());
     }
@@ -46,12 +46,12 @@ export class CliValidator {
     }
 
     const unsupportedPackages = options.packages.filter(
-      (pkg) => !ALL_PACKAGES.includes(pkg)
+      (pkg) => !ALL_PACKAGES.includes(pkg),
     );
     if (unsupportedPackages.length > 0) {
       this.exitHelpfully(
         "build",
-        `One or more of these packages isn't supported: ${unsupportedPackages.toString()}`
+        `One or more of these packages isn't supported: ${unsupportedPackages.toString()}`,
       );
     }
   }
@@ -67,7 +67,7 @@ export class CliValidator {
     const buildOpts: Options_Cli_Build = {};
 
     const buildCmd = this.program.commands.find(
-      (cmd) => cmd.name() === "build"
+      (cmd) => cmd.name() === "build",
     );
     if (buildCmd) {
       const packages = this.program.args[1]?.split(",");
@@ -96,7 +96,7 @@ export class CliValidator {
     const deleteOpts: Options_Cli_Delete = {};
 
     const deleteCmd = this.program.commands.find(
-      (cmd) => cmd.name() === "delete"
+      (cmd) => cmd.name() === "delete",
     );
     if (deleteCmd) {
       const user = deleteCmd?.opts()["user"] as Options_Cli["user"];
@@ -140,7 +140,7 @@ export class CliValidator {
     if (rootError) {
       this.exitHelpfully(
         "root",
-        `Invalid CLI options: ${rootError.toString()}`
+        `Invalid CLI options: ${rootError.toString()}`,
       );
     }
 
@@ -149,7 +149,7 @@ export class CliValidator {
     if (buildError) {
       this.exitHelpfully(
         "build",
-        `Invalid build options: ${buildError.toString()}`
+        `Invalid build options: ${buildError.toString()}`,
       );
     }
 
@@ -158,7 +158,7 @@ export class CliValidator {
     if (deleteError) {
       this.exitHelpfully(
         "delete",
-        `Invalid delete options: ${deleteError.toString()}`
+        `Invalid delete options: ${deleteError.toString()}`,
       );
     }
 

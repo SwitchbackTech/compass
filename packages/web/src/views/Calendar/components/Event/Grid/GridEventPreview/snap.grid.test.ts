@@ -65,7 +65,7 @@ describe("snapToGrid", () => {
             console.log("foo", elem);
           },
         },
-        0
+        0,
       );
 
       expect(result).toEqual({
@@ -114,7 +114,7 @@ describe("snapToGrid", () => {
         mouseCoords.x,
         mouseCoords.y,
         measurements,
-        scrollTop
+        scrollTop,
       );
 
       const expectedY = mouseCoords.y;
@@ -143,7 +143,7 @@ describe("snapToGrid", () => {
         mouseCoords.x,
         mouseCoords.y,
         measurements,
-        0
+        0,
       );
 
       const expectedNextX = expectedX + measurements.colWidths[0];
@@ -166,7 +166,7 @@ describe("snapToGrid", () => {
         mouseCoords.x,
         mouseCoords.y,
         measurements,
-        0
+        0,
       );
 
       const expectedNextX = expectedX - measurements.colWidths[0];
@@ -198,7 +198,7 @@ describe("snapToGrid", () => {
         mouseCoords.x,
         mouseCoords.y,
         measurements,
-        scrollTop
+        scrollTop,
       );
 
       const expectedY = DEFAULT_Y;
@@ -220,7 +220,7 @@ describe("snapToGrid", () => {
         mouseCoords.x,
         mouseCoords.y,
         measurements,
-        0
+        0,
       );
 
       const expectedNextY = DEFAULT_Y + measurements.hourHeight;
@@ -245,7 +245,7 @@ describe("snapToGrid", () => {
         mouseCoords.x,
         mouseCoords.y,
         measurements,
-        0
+        0,
       );
 
       const expectedNextY = expectedY - measurements.hourHeight;

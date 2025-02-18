@@ -70,10 +70,10 @@ export const RepeatDialog: FC<Props> = ({
         backgroundColor: isDisabled
           ? undefined
           : isSelected
-          ? bgBright
-          : isFocused
-          ? bgDark
-          : undefined,
+            ? bgBright
+            : isFocused
+              ? bgDark
+              : undefined,
         color: isDisabled
           ? theme.color.text.lightInactive
           : theme.color.text.dark,
@@ -103,13 +103,13 @@ export const RepeatDialog: FC<Props> = ({
           defaultValue={defaultValue}
           isOptionDisabled={(selection: { value: string; label: string }) =>
             ![Recurrence_Selection.WEEK, Recurrence_Selection.MONTH].includes(
-              selection.value as Recurrence_Selection
+              selection.value as Recurrence_Selection,
             )
           }
           options={options}
           onChange={(selection: { value: string; label: string }) => {
             const rrule = getRecurrenceRule(
-              selection.value as Recurrence_Selection
+              selection.value as Recurrence_Selection,
             );
             onChangeRecurrence(rrule);
           }}

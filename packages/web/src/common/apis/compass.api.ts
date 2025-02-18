@@ -40,9 +40,9 @@ CompassApi.interceptors.response.use(
     if (status === Status.GONE || status === Status.NOT_FOUND) {
       await _signOut(status);
     } else {
-      console.log(error);
+      console.error(error);
     }
 
     return Promise.reject(error);
-  }
+  },
 );

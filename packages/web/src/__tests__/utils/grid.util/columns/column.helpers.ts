@@ -4,7 +4,7 @@ import { FLEX_TODAY, FLEX_EQUAL } from "@web/views/Calendar/layout.constants";
 
 export const runStandardChecks = (
   todayIndex: number,
-  res: WidthPercentages
+  res: WidthPercentages,
 ) => {
   _addsUpTo100(res);
   _todayIsLargest(todayIndex, res.current);

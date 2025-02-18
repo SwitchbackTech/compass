@@ -23,7 +23,7 @@ test("Priority ids mapped in correct order", () => {
   const priorities: Schema_Priority[] = mapPriorityData(
     insertedIds,
     priorityData,
-    "user123"
+    "user123",
   );
 
   expect(priorities[0]._id).toEqual(insertedIds[0].toString());

@@ -17,7 +17,7 @@ const EventApi = {
   edit: (
     _id: string,
     event: Schema_Event,
-    params: { applyTo?: Categories_Recur }
+    params: { applyTo?: Categories_Recur },
   ): AxiosPromise<Schema_Event> => {
     if (params?.applyTo) {
       return CompassApi.put(`/event/${_id}?applyTo=${params.applyTo}`, event);
@@ -28,11 +28,11 @@ const EventApi = {
   get: (params: Params_Events) => {
     if (params.someday) {
       return CompassApi.get(
-        `/event?someday=true&start=${params.startDate}&end=${params.endDate}`
+        `/event?someday=true&start=${params.startDate}&end=${params.endDate}`,
       );
     } else {
       return CompassApi.get(
-        `/event?start=${params.startDate}&end=${params.endDate}`
+        `/event?start=${params.startDate}&end=${params.endDate}`,
       );
     }
   },

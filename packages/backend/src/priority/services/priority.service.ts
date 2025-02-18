@@ -25,7 +25,7 @@ class PriorityService {
 
   async create(
     userId: string,
-    data: PriorityReq | PriorityReqUser[]
+    data: PriorityReq | PriorityReqUser[],
   ): Promise<Schema_Priority | Schema_Priority[]> {
     if (data instanceof Array) {
       const response = await mongoService.db
@@ -40,7 +40,7 @@ class PriorityService {
         {
           user: userId,
           name: data.name,
-        }
+        },
       );
 
       if (priorityExists) {
@@ -48,7 +48,7 @@ class PriorityService {
           "Priority Exists",
           `${data.name} already exists`,
           Status.NOT_IMPLEMENTED,
-          true
+          true,
         );
       }
 
@@ -111,7 +111,7 @@ class PriorityService {
 
   async readById(
     userId: string,
-    id: string
+    id: string,
   ): Promise<Schema_Priority | object> {
     const filter = {
       _id: mongoService.objectId(id),
@@ -135,7 +135,7 @@ class PriorityService {
       .findOneAndUpdate(
         { _id: { $eq: mongoService.objectId(id) }, user: { $eq: userId } },
         { $set: priority },
-        { returnDocument: "after" }
+        { returnDocument: "after" },
       );
 
     if (!response) {

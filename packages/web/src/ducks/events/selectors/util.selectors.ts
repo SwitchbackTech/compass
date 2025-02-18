@@ -12,12 +12,12 @@ export const selectIsProcessing = (state: RootState) =>
 
 export const selectEventIdsBySectionType = (
   state: RootState,
-  type: SectionType
+  type: SectionType,
 ) => (selectPaginatedEventsBySectionType(state, type) || {}).data || [];
 
 export const selectPaginatedEventsBySectionType = (
   state: RootState,
-  type: SectionType
+  type: SectionType,
 ) => {
   const statePieceName = type.charAt(0).toUpperCase() + type.slice(1);
   const statePiece =

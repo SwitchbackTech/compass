@@ -104,5 +104,5 @@ export const invalidValueError = new GaxiosError(
       responseURL:
         "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=x",
     },
-  }
+  },
 );

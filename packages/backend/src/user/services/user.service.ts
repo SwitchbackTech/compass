@@ -37,7 +37,7 @@ export enum Result_Resync {
 class UserService {
   createUser = async (
     gUser: UserInfo_Google["gUser"],
-    gRefreshToken: string
+    gRefreshToken: string,
   ) => {
     const _compassUser = mapUserToCompass(gUser, gRefreshToken);
     const compassUser = { ..._compassUser, signedUpAt: new Date() };
@@ -84,14 +84,13 @@ class UserService {
 
       // delete other users with same email
       const staleSyncs = await syncService.deleteAllByGcalId(
-        user.google.googleId
+        user.google.googleId,
       );
       summary.syncs += staleSyncs.deletedCount;
 
       initSupertokens();
-      const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
-        userId
-      );
+      const { sessionsRevoked } =
+        await compassAuthService.revokeSessionsByUser(userId);
       summary.sessions = sessionsRevoked;
 
       const _user = await this.deleteUser(userId);
@@ -121,11 +120,11 @@ class UserService {
   initUserData = async (
     gUser: TokenPayload,
     gcalClient: gCalendar,
-    gRefreshToken: string
+    gRefreshToken: string,
   ) => {
     const { email, firstName, userId } = await this.createUser(
       gUser,
-      gRefreshToken
+      gRefreshToken,
     );
 
     await emailService.addToEmailList(email, firstName);
@@ -158,18 +157,18 @@ class UserService {
   saveTimeFor = async (label: "lastLoggedInAt", userId: string) => {
     const res = await mongoService.user.findOneAndUpdate(
       { _id: mongoService.objectId(userId) },
-      { $set: { [label]: new Date() } }
+      { $set: { [label]: new Date() } },
     );
 
     return res;
   };
 
   _deleteBeforeReSyncingGoogle = async (
-    userId: string
+    userId: string,
   ): Promise<Summary_Resync["_delete"]> => {
     const calendarlist = await calendarService.deleteByIntegrateion(
       "google",
-      userId
+      userId,
     );
 
     const events = await eventService.deleteByIntegration("google", userId);
@@ -187,7 +186,7 @@ class UserService {
   };
 
   _reSyncGoogle = async (
-    userId: string
+    userId: string,
   ): Promise<Summary_Resync["recreate"]> => {
     const gcal = await getGcalClient(userId);
     const { cCalendarList, gCalendarIds, calListNextSyncToken } =
@@ -196,14 +195,14 @@ class UserService {
     const calendarlist = await calendarService.add(
       "google",
       cCalendarList,
-      userId
+      userId,
     );
 
     const sync = await reInitSyncByIntegration(
       "google",
       userId,
       cCalendarList,
-      calListNextSyncToken
+      calListNextSyncToken,
     );
 
     const eventWatches = await watchEventsByGcalIds(userId, gCalendarIds, gcal);

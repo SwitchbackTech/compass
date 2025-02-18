@@ -86,7 +86,7 @@ export const EventForm: React.FC<FormProps> = ({
         return;
       }
     },
-    [_onClose]
+    [_onClose],
   );
 
   const keyUpHandler = useCallback((e: globalThis.KeyboardEvent) => {
@@ -216,7 +216,7 @@ export const EventForm: React.FC<FormProps> = ({
       }
 
       const confirmed = window.confirm(
-        `Delete ${event.title || "this event"}?`
+        `Delete ${event.title || "this event"}?`,
       );
       if (confirmed) {
         onDeleteForm();

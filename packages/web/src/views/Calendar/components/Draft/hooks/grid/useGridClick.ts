@@ -6,36 +6,31 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 
-import { State_GridDraft, Util_GridDraft } from "./useDraftUtil";
-import { useEventListener } from "../mouse/useEventListener";
+import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
+import { useEventListener } from "@web/views/Calendar/hooks/mouse/useEventListener";
+import { useDraftContext } from "../../context/useDraftContext";
 
-export const useGridClick = (
-  draftState: State_GridDraft,
-  draftUtil: Util_GridDraft
-) => {
-  const {
-    draft,
-    dragStatus,
-    isDrafting,
-    isDragging,
-    isResizing,
-    reduxDraftType,
-    resizeStatus,
-  } = draftState;
+export const useGridClick = () => {
+  const { actions, state } = useDraftContext();
+  const { draft, dragStatus, isDragging, isResizing, resizeStatus } = state;
+  const { discard, openForm, stopDragging, stopResizing, submit } = actions;
 
-  const { discard, setDraft, stopDragging, stopResizing, submit } = draftUtil;
+  const draftStatus = useAppSelector(selectDraftStatus);
+  const reduxDraftType = draftStatus?.eventType;
+  const isDrafting = draftStatus?.isDrafting;
 
   const getNextAction = useCallback(
     (category: Categories_Event) => {
-      let shouldSubmit: boolean;
-      let hasMoved: boolean;
+      let shouldSubmit = false;
+      let hasMoved = false;
       const isNew = !draft?._id;
 
       if (category === Categories_Event.TIMED) {
-        hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved;
+        hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved || false;
         shouldSubmit = !draft?.isOpen;
       } else if (category === Categories_Event.ALLDAY) {
-        hasMoved = dragStatus?.hasMoved;
+        hasMoved = dragStatus?.hasMoved || false;
         shouldSubmit = hasMoved;
       }
 
@@ -44,10 +39,10 @@ export const useGridClick = (
 
       return { shouldOpenForm, shouldSubmit };
     },
-    [draft?._id, draft?.isOpen, dragStatus?.hasMoved, resizeStatus?.hasMoved]
+    [draft?._id, draft?.isOpen, dragStatus?.hasMoved, resizeStatus?.hasMoved],
   );
 
-  const _onAllDayRowMouseUp = useCallback(
+  const onAllDayRowMouseUp = useCallback(
     (e: MouseEvent) => {
       if (e.button !== 0) return;
 
@@ -55,22 +50,22 @@ export const useGridClick = (
         stopDragging();
       }
 
-      if (!draft || !isDrafting) {
+      if (!draft) {
         return;
       }
 
       const { shouldSubmit, shouldOpenForm } = getNextAction(
-        Categories_Event.ALLDAY
+        Categories_Event.ALLDAY,
       );
 
       if (shouldOpenForm) {
-        setDraft((_draft) => {
-          return { ..._draft, isOpen: true };
-        });
+        openForm();
         return;
       }
 
-      shouldSubmit && submit(draft);
+      if (shouldSubmit) {
+        submit(draft);
+      }
     },
     [
       isDragging,
@@ -79,11 +74,11 @@ export const useGridClick = (
       getNextAction,
       submit,
       stopDragging,
-      setDraft,
-    ]
+      openForm,
+    ],
   );
 
-  const _onMainGridMouseUp = useCallback(
+  const onMainGridMouseUp = useCallback(
     (e: MouseEvent) => {
       if (e.button !== 0) return;
 
@@ -111,16 +106,16 @@ export const useGridClick = (
       }
 
       const { shouldSubmit, shouldOpenForm } = getNextAction(
-        Categories_Event.TIMED
+        Categories_Event.TIMED,
       );
       if (shouldOpenForm) {
-        setDraft((_draft) => {
-          return { ..._draft, isOpen: true };
-        });
+        openForm();
         return;
       }
 
-      shouldSubmit && submit(draft);
+      if (shouldSubmit) {
+        submit(draft);
+      }
     },
     [
       discard,
@@ -129,19 +124,19 @@ export const useGridClick = (
       isDrafting,
       isDragging,
       isResizing,
+      openForm,
       reduxDraftType,
-      setDraft,
       stopDragging,
       stopResizing,
       submit,
-    ]
+    ],
   );
 
   useEventListener(
     "mouseup",
-    _onAllDayRowMouseUp,
-    getElemById(ID_GRID_ALLDAY_ROW)
+    onAllDayRowMouseUp,
+    getElemById(ID_GRID_ALLDAY_ROW),
   );
   const mainGrid = getElemById(ID_GRID_MAIN);
-  useEventListener("mouseup", _onMainGridMouseUp, mainGrid);
+  useEventListener("mouseup", onMainGridMouseUp, mainGrid);
 };

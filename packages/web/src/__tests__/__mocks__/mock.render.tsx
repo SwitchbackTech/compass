@@ -25,7 +25,7 @@ const customRender = (
     }),
 
     ...renderOptions
-  } = {}
+  } = {},
 ) => {
   sagaMiddleware.run(sagas);
 

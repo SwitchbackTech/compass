@@ -3,7 +3,7 @@ import { MouseEvent, useRef, useEffect } from "react";
 export const useEventListener = (
   eventName: "mouseup" | "mousemove",
   handler: (e: MouseEvent) => void,
-  element = window
+  element = window,
 ) => {
   const savedHandler = useRef<(e: MouseEvent) => void>();
   // Update ref.current value if handler changes.

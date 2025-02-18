@@ -5,7 +5,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 
 export const initGoogleClient = async (
   gAuthClient: GoogleAuthService,
-  tokens: Credentials
+  tokens: Credentials,
 ) => {
   const gRefreshToken = tokens.refresh_token;
   if (!gRefreshToken) {

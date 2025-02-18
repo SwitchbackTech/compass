@@ -46,7 +46,7 @@ const buildNodePckgs = async (options: Options_Cli) => {
       log.success("Compiled node pckgs");
 
       installDependencies();
-    }
+    },
   );
 };
 
@@ -70,7 +70,7 @@ const buildWeb = async (options: Options_Cli) => {
   log.info("Compiling web files...");
   shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
   shell.exec(
-    `webpack --mode=production --env API_BASEURL=${baseUrl} GOOGLE_CLIENT_ID=${gClientId}`
+    `webpack --mode=production --env API_BASEURL=${baseUrl} GOOGLE_CLIENT_ID=${gClientId}`,
   );
 
   log.success(`Done building web files.`);
@@ -113,11 +113,11 @@ const copyNodeConfigsToBuild = async (options: Options_Cli) => {
 
   shell.cp(
     `${COMPASS_ROOT_DEV}/packages/backend/package.json`,
-    `${NODE_BUILD}/packages/backend/package.json`
+    `${NODE_BUILD}/packages/backend/package.json`,
   );
   shell.cp(
     `${COMPASS_ROOT_DEV}/packages/core/package.json`,
-    `${NODE_BUILD}/packages/core/package.json`
+    `${NODE_BUILD}/packages/core/package.json`,
   );
   log.success("Copied package configs to build");
 };
@@ -147,7 +147,7 @@ const installDependencies = () => {
       - unzip it
       - run it`);
       process.exit(0);
-    }
+    },
   );
 };
 

@@ -3,7 +3,7 @@ import mergeRefs from "react-merge-refs";
 import { Dayjs } from "dayjs";
 import { Categories_Event } from "@core/types/event.types";
 import { DRAFT_DURATION_MIN } from "@web/views/Calendar/layout.constants";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Ref_Callback } from "@web/common/types/util.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
@@ -13,7 +13,6 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { isEventFormOpen } from "@web/common/utils";
 import { getHourLabels } from "@web/common/utils/web.date.util";
 
 import {
@@ -23,6 +22,8 @@ import {
 } from "./styled";
 import { MainGridEvents } from "./MainGridEvents";
 import { MainGridColumns } from "../Columns/MainGridColumns";
+import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -47,12 +48,15 @@ export const MainGrid: FC<Props> = ({
 
   const { component } = weekProps;
   const { isCurrentWeek, week, weekDays } = component;
+  const isDrafting = useAppSelector(selectIsDrafting);
 
   const onMouseDown = async (e: MouseEvent) => {
-    if (e.button !== 0) return;
-
-    if (isEventFormOpen()) {
+    if (isDrafting) {
       dispatch(draftSlice.actions.discard());
+      return;
+    }
+
+    if (isRightClick(e)) {
       return;
     }
 
@@ -68,10 +72,10 @@ export const MainGrid: FC<Props> = ({
     const event = await assembleDefaultEvent(
       Categories_Event.TIMED,
       startDate,
-      endDate
+      endDate,
     );
     dispatch(
-      draftSlice.actions.startResizing({ event, dateToChange: "endDate" })
+      draftSlice.actions.startResizing({ event, dateToChange: "endDate" }),
     );
   };
 

@@ -77,7 +77,9 @@ export const StyledNewSomedayEvent = styled.div<Props>`
     return 1;
   }};
   padding: 5px;
-  transition: background-color 0.2s, box-shadow 0.2s;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
   width: calc(${SIDEBAR_OPEN_WIDTH}-5) px;
 
   &:hover {

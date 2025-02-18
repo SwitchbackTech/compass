@@ -19,7 +19,7 @@ export const MAIN_GRID_TIME_COLUMN_WIDTH = 55;
 const snapYToGrid = (
   cursorY: number,
   measurements: Measurements_Grid,
-  scrollTop: number
+  scrollTop: number,
 ): number => {
   if (!measurements.mainGrid) return cursorY; // TS guard
 
@@ -43,7 +43,7 @@ const snapYToGrid = (
 
 const snapXToGrid = (
   cursorX: number,
-  measurements: Measurements_Grid
+  measurements: Measurements_Grid,
 ): number => {
   if (!measurements.mainGrid) return cursorX; // TS guard
 
@@ -74,7 +74,7 @@ export const snapToGrid = (
   cursorX: number,
   cursorY: number,
   measurements: Measurements_Grid,
-  scrollTop: number
+  scrollTop: number,
 ): SnappedCoords => {
   if (!measurements.mainGrid) {
     return { x: cursorX, y: cursorY };

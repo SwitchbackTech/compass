@@ -52,21 +52,21 @@ export function* convertTimedEvent({ payload }: Action_ConvertTimedEvent) {
 
     const normalizedEvent = normalize<Schema_Event>(
       event,
-      normalizedEventsSchema()
+      normalizedEventsSchema(),
     );
     yield put(
-      eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events)
+      eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events),
     );
 
     const timedEvents = (yield select((state: RootState) =>
-      selectPaginatedEventsBySectionType(state, "week")
+      selectPaginatedEventsBySectionType(state, "week"),
     )) as Response_GetEventsSaga;
 
     const remainingTimedEvents = timedEvents.data.filter(
-      (id) => id !== event._id
+      (id) => id !== event._id,
     );
     yield put(
-      getWeekEventsSlice.actions.success({ data: remainingTimedEvents })
+      getWeekEventsSlice.actions.success({ data: remainingTimedEvents }),
     );
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error());
@@ -83,7 +83,7 @@ export function* createEvent({ payload }: Action_CreateEvent) {
 
     const res = (yield call(
       EventApi.create,
-      payload
+      payload,
     )) as Response_CreateEventSaga;
 
     yield* replaceOptimisticId(optimisticId, res.data._id, payload.isSomeday);
@@ -100,7 +100,7 @@ export function* createEvent({ payload }: Action_CreateEvent) {
 
 export function* deleteEvent({ payload }: Action_DeleteEvent) {
   const event = (yield select((state: RootState) =>
-    selectEventById(state, payload._id)
+    selectEventById(state, payload._id),
   )) as Schema_GridEvent;
 
   try {
@@ -155,7 +155,7 @@ export function* getCurrentMonthEvents({ payload }: Action_GetPaginatedEvents) {
 }
 
 function* getEvents(
-  payload: Params_Events | Response_HttpPaginatedSuccess<Entities_Event>
+  payload: Params_Events | Response_HttpPaginatedSuccess<Entities_Event>,
 ) {
   try {
     if (!payload.startDate && !payload.endDate && "data" in payload) {
@@ -164,7 +164,7 @@ function* getEvents(
     }
     const res: Response_GetEventsSuccess = (yield call(
       EventApi.get,
-      payload
+      payload,
     )) as Response_GetEventsSuccess;
 
     const normalizedEvents = normalize<Schema_Event>(res.data, [
@@ -172,7 +172,7 @@ function* getEvents(
     ]);
 
     yield put(
-      eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events)
+      eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events),
     );
     return {
       data: normalizedEvents.result as Payload_NormalizedAsyncAction,

@@ -70,7 +70,7 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
 
 export const handleExpressError = async (
   res: SessionResponse,
-  e: CompassError
+  e: CompassError,
 ) => {
   res.header("Content-Type", "application/json");
 
@@ -81,7 +81,7 @@ export const handleExpressError = async (
     const userId = await parseUserId(res, e);
     if (!userId) {
       logger.error(
-        "Express error occured, but couldn't handle due to missing userId"
+        "Express error occured, but couldn't handle due to missing userId",
       );
       res.status(Status.BAD_REQUEST).send(UserError.MissingUserIdField);
       return;
@@ -103,12 +103,12 @@ export const handleExpressError = async (
 const handleGoogleError = async (
   userId: string,
   res: SessionResponse,
-  e: GaxiosError
+  e: GaxiosError,
 ) => {
   if (isInvalidGoogleToken(e)) {
     const revokeResult = await compassAuthService.revokeSessionsByUser(userId);
     logger.debug(
-      `Invalid Google token for user: ${userId}\n\t${revokeResult.sessionsRevoked} session(s) revoked as result`
+      `Invalid Google token for user: ${userId}\n\t${revokeResult.sessionsRevoked} session(s) revoked as result`,
     );
     res.status(Status.UNAUTHORIZED).send(revokeResult);
     return;
@@ -124,7 +124,7 @@ const handleGoogleError = async (
   if (isInvalidValue(e)) {
     logger.error(
       `${userId} (user) has an invalid value. Check params:\n`,
-      e.config.params
+      e.config.params,
     );
 
     res.status(Status.BAD_REQUEST).send({ error: UserError.InvalidValue });

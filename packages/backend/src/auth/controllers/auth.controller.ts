@@ -105,18 +105,18 @@ class AuthController {
 
       const { gUser, gcalClient, gRefreshToken } = await initGoogleClient(
         gAuthClient,
-        tokens
+        tokens,
       );
 
       const { authMethod, user } = await compassAuthService.determineAuthMethod(
-        gUser.sub
+        gUser.sub,
       );
       const { cUserId } =
         authMethod === "login"
           ? await this.login(
               user as WithId<Schema_User>,
               gcalClient,
-              gRefreshToken
+              gRefreshToken,
             )
           : await this.signup(gUser, gcalClient, gRefreshToken);
 
@@ -142,7 +142,7 @@ class AuthController {
   login = async (
     user: WithId<Schema_User>,
     gcal: gCalendar,
-    gRefreshToken: string
+    gRefreshToken: string,
   ) => {
     const cUserId = user._id.toString();
 
@@ -159,7 +159,7 @@ class AuthController {
 
   revokeSessionsByUser = async (
     req: SReqBody<{ userId?: string }>,
-    res: Response
+    res: Response,
   ) => {
     let userId;
     if (req.body.userId) {
@@ -176,12 +176,12 @@ class AuthController {
   signup = async (
     gUser: TokenPayload,
     gcalClient: gCalendar,
-    gRefreshToken: string
+    gRefreshToken: string,
   ) => {
     const userId = await userService.initUserData(
       gUser,
       gcalClient,
-      gRefreshToken
+      gRefreshToken,
     );
 
     return { cUserId: userId };

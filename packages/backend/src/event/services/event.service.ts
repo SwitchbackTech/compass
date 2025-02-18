@@ -156,7 +156,7 @@ class EventService {
     if (response.acknowledged && response.insertedCount !== events.length) {
       throw error(
         EventError.MissingGevents,
-        `Only ${response.insertedCount}/${events.length} saved`
+        `Only ${response.insertedCount}/${events.length} saved`,
       );
     }
   };
@@ -196,7 +196,7 @@ class EventService {
       if (gEventId === undefined) {
         throw error(
           EventError.NoMatchingEvent,
-          "Failed to delete Google event"
+          "Failed to delete Google event",
         );
       }
       const gcal = await getGcalClient(userId);
@@ -209,7 +209,7 @@ class EventService {
 
   deleteMany = async (
     userId: string,
-    params: Params_DeleteMany
+    params: Params_DeleteMany,
   ): Promise<Result_DeleteMany> => {
     const errors = [];
     const response = await mongoService.db
@@ -218,7 +218,7 @@ class EventService {
 
     if (response.deletedCount !== params.ids.length) {
       errors.push(
-        `Only deleted ${response.deletedCount}/${params.ids.length} events`
+        `Only deleted ${response.deletedCount}/${params.ids.length} events`,
       );
     }
     const result = { deletedCount: response.deletedCount, errors: errors };
@@ -229,7 +229,7 @@ class EventService {
     if (integration !== "google") {
       error(
         GenericError.NotImplemented,
-        `Failed to delete events for integration`
+        `Failed to delete events for integration`,
       );
     }
 
@@ -246,7 +246,7 @@ class EventService {
 
   readAll = async (
     userId: string,
-    query: Query_Event
+    query: Query_Event,
   ): Promise<Schema_Event_Core[] | BaseError> => {
     const filter = getReadAllFilter(userId, query);
 
@@ -281,7 +281,7 @@ class EventService {
         "Event not found",
         `Tried with user: ${userId} and _id: ${eventId}`,
         Status.NOT_FOUND,
-        true
+        true,
       );
     }
 
@@ -302,7 +302,7 @@ class EventService {
     userId: string,
     eventId: string,
     event: Schema_Event_Core,
-    query: Query_Event_Update
+    query: Query_Event_Update,
   ) => {
     const updateGcal = !event.isSomeday;
     const action = getUpdateAction(event, query);

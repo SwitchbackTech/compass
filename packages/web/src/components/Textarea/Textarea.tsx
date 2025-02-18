@@ -15,7 +15,7 @@ const _Textarea: ForwardRefRenderFunction<
   TextareaProps
 > = (
   { withUnderline = true, underlineColor, ...props }: TextareaProps,
-  parentRef: ForwardedRef<HTMLTextAreaElement>
+  parentRef: ForwardedRef<HTMLTextAreaElement>,
 ) => {
   const newRef = useRef<HTMLTextAreaElement>(null);
   const ref = (parentRef || newRef) as RefObject<HTMLTextAreaElement>;

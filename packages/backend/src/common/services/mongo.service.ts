@@ -40,7 +40,7 @@ class MongoService {
         logger.warn(
           `MongoDB connection unsuccessful (will retry #${++this
             .count} after ${retrySeconds} seconds):`,
-          err
+          err,
         );
         setTimeout(this._connect, retrySeconds * 1000);
       });

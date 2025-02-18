@@ -17,7 +17,7 @@ export interface FormProps {
 
 export type SetEventFormField = <FieldName extends keyof Schema_Event>(
   field: FieldName,
-  value: Schema_Event[FieldName]
+  value: Schema_Event[FieldName],
 ) => void;
 
 export interface StyledFormProps {

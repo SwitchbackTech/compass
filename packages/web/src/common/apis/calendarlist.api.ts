@@ -8,7 +8,7 @@ const CalendarListApi = {
   async list(): Promise<gSchema$CalendarList> {
     const response: Schema_CalendarList = await axios.get(
       `${ENV_WEB.API_BASEURL}/calendarlist`,
-      headers()
+      headers(),
     );
     return response.data;
   },
@@ -17,7 +17,7 @@ const CalendarListApi = {
     const response = await axios.post(
       `${ENV_WEB.API_BASEURL}/calendarlist`,
       payload,
-      headers()
+      headers(),
     );
     return response.data;
   },

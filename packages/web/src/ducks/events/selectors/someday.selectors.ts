@@ -32,7 +32,7 @@ export const selectSomedayEvents = createSelector(
       }
     });
     return somedayEvents;
-  }
+  },
 );
 
 export const selectCategorizedEvents = createSelector(
@@ -42,7 +42,7 @@ export const selectCategorizedEvents = createSelector(
     const end = dayjs(dates.end);
 
     const sortedEvents = Object.values(somedayEvents).sort(
-      (a, b) => a.order - b.order
+      (a, b) => a.order - b.order,
     );
 
     const weekIds = [];
@@ -88,22 +88,23 @@ export const selectCategorizedEvents = createSelector(
       events: somedayEvents,
     };
     return sortedData;
-  }
+  },
 );
 
 export const selectIsAtWeeklyLimit = createSelector(
   selectCategorizedEvents,
   (somedayEvents) =>
-    somedayEvents.columns[COLUMN_WEEK].eventIds.length >= SOMEDAY_WEEKLY_LIMIT
+    somedayEvents.columns[COLUMN_WEEK].eventIds.length >= SOMEDAY_WEEKLY_LIMIT,
 );
 
 export const selectIsAtMonthlyLimit = createSelector(
   selectCategorizedEvents,
   (somedayEvents) =>
-    somedayEvents.columns[COLUMN_MONTH].eventIds.length >= SOMEDAY_MONTHLY_LIMIT
+    somedayEvents.columns[COLUMN_MONTH].eventIds.length >=
+    SOMEDAY_MONTHLY_LIMIT,
 );
 
 export const selectSomedayWeekCount = createSelector(
   selectCategorizedEvents,
-  (somedayEvents) => somedayEvents.columns[COLUMN_WEEK].eventIds.length
+  (somedayEvents) => somedayEvents.columns[COLUMN_WEEK].eventIds.length,
 );

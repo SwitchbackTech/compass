@@ -10,24 +10,23 @@ export const getWeekEventsSlice = createAsyncSlice<
 >({
   name: "getWeekEvents",
   reducers: {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     convert: () => {},
     delete: (state, action: Action_DeleteEvent) => {
       state.value.data = state.value.data.filter(
-        (i: string) => i !== action.payload._id
+        (i: string) => i !== action.payload._id,
       );
     },
     insert: (state, action: { payload: string }) => {
       // payload is the event id
       if (state.value === null || state.value === undefined) {
-        console.log("error: state.value needs to be initialized");
+        console.error("error: state.value needs to be initialized");
       } else {
         state.value.data.push(action.payload);
       }
     },
     replace: (
       state,
-      action: { payload: { oldWeekId: string; newWeekId: string } }
+      action: { payload: { oldWeekId: string; newWeekId: string } },
     ) => {
       state.value.data = state.value.data.map((id: string) => {
         if (id === action.payload.oldWeekId) {

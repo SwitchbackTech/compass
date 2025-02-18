@@ -33,12 +33,12 @@ describe("Calendar: Display without State", () => {
     expect(
       screen.getByRole("navigation", {
         name: /previous week/i,
-      })
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("navigation", {
         name: /next week/i,
-      })
+      }),
     ).toBeInTheDocument();
 
     /* current week label */
@@ -47,7 +47,7 @@ describe("Calendar: Display without State", () => {
 
     /* now line */
     expect(
-      screen.getByRole("separator", { name: /now line/i })
+      screen.getByRole("separator", { name: /now line/i }),
     ).toBeInTheDocument();
   });
 });
@@ -58,7 +58,7 @@ describe("Calendar: Display with State", () => {
       render(<CalendarView />, { state: preloadedState });
     });
     expect(
-      screen.getByRole("button", { name: /groceries/i })
+      screen.getByRole("button", { name: /groceries/i }),
     ).toBeInTheDocument();
 
     //   expect(

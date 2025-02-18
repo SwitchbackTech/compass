@@ -16,14 +16,14 @@ export const getSomedayEventsSlice = createAsyncSlice<
 
     delete: (state, action: Action_DeleteEvent) => {
       state.value.data = state.value.data.filter(
-        (i: string) => i !== action.payload._id
+        (i: string) => i !== action.payload._id,
       );
     },
 
     insert: (state, action: { payload: string }) => {
       // payload is the event id
       if (state.value === null || state.value === undefined) {
-        console.log("error: state.value needs to be initialized");
+        console.error("error: state.value needs to be initialized");
       } else {
         state.value.data.push(action.payload);
       }
@@ -31,7 +31,7 @@ export const getSomedayEventsSlice = createAsyncSlice<
 
     replace: (
       state,
-      action: { payload: { oldSomedayId: string; newSomedayId: string } }
+      action: { payload: { oldSomedayId: string; newSomedayId: string } },
     ) => {
       state.value.data = state.value.data.map((id: string) => {
         if (id === action.payload.oldSomedayId) {
@@ -50,7 +50,7 @@ export const getSomedayEventsSlice = createAsyncSlice<
       // prevent migrate saga from deleting event
       // from DB
       state.value.data = state.value.data.filter(
-        (i: string) => i !== action.payload._id
+        (i: string) => i !== action.payload._id,
       );
     },
   },

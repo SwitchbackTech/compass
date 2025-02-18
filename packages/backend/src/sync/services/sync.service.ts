@@ -74,14 +74,14 @@ class SyncService {
     const sync = await getSync({ resourceId });
     if (!sync) {
       logger.debug(
-        `Ignored notification becasuse no sync for this resourceId: ${resourceId}`
+        `Ignored notification becasuse no sync for this resourceId: ${resourceId}`,
       );
       return "ignored";
     }
 
     const { userId, gCalendarId, nextSyncToken } = getCalendarInfo(
       sync,
-      resourceId
+      resourceId,
     );
 
     const syncInfo = {
@@ -102,7 +102,7 @@ class SyncService {
   importFull = async (
     gcal: gCalendar,
     gCalendarIds: string[],
-    userId: string
+    userId: string,
   ) => {
     const eventImports = gCalendarIds.map(async (gCalId) => {
       const { nextSyncToken } = await importEvents(userId, gcal, gCalId);
@@ -110,7 +110,7 @@ class SyncService {
         await updateSyncTokenFor("events", userId, nextSyncToken, gCalId);
       } else {
         logger.warn(
-          `Skipped updating sync token for user: ${userId} and gCalId: ${gCalId} because not using https`
+          `Skipped updating sync token for user: ${userId} and gCalId: ${gCalId} because not using https`,
         );
       }
     });
@@ -133,7 +133,7 @@ class SyncService {
   refreshWatch = async (
     userId: string,
     payload: Payload_Sync_Events,
-    gcal?: gCalendar
+    gcal?: gCalendar,
   ) => {
     if (!gcal) gcal = await getGcalClient(userId);
 
@@ -148,7 +148,7 @@ class SyncService {
         gCalendarId: payload.gCalendarId,
         nextSyncToken: payload.nextSyncToken,
       },
-      gcal
+      gcal,
     );
 
     await updateRefreshedAtFor("events", userId, payload.gCalendarId);
@@ -227,13 +227,13 @@ class SyncService {
   startWatchingGcalEvents = async (
     userId: string,
     params: { gCalendarId: string; nextSyncToken?: string },
-    gcal?: gCalendar
+    gcal?: gCalendar,
   ) => {
     if (!gcal) gcal = await getGcalClient(userId);
 
     const alreadyWatching = await isWatchingEventsByGcalId(
       userId,
-      params.gCalendarId
+      params.gCalendarId,
     );
     if (alreadyWatching) {
       throw error(SyncError.CalendarWatchExists, "Skipped Start Watch");
@@ -272,13 +272,13 @@ class SyncService {
   startWatchingGcalEventsById = async (
     userId: string,
     watchParams: { gCalId: string; nextSyncToken?: string }[],
-    gcal: gCalendar
+    gcal: gCalendar,
   ) => {
     const eventWatches = watchParams.map(async (gInfo) => {
       await this.startWatchingGcalEvents(
         userId,
         { gCalendarId: gInfo.gCalId, nextSyncToken: gInfo.nextSyncToken },
-        gcal
+        gcal,
       );
       await updateRefreshedAtFor("events", userId, gInfo.gCalId);
     });
@@ -290,7 +290,7 @@ class SyncService {
     userId: string,
     channelId: string,
     resourceId: string,
-    gcal?: gCalendar
+    gcal?: gCalendar,
   ) => {
     if (!gcal) gcal = await getGcalClient(userId);
 
@@ -320,7 +320,7 @@ class SyncService {
       if (_e.code === "404" || code === 404) {
         await deleteWatchData(userId, "events", channelId);
         logger.warn(
-          "Channel no longer exists. Corresponding sync record deleted"
+          "Channel no longer exists. Corresponding sync record deleted",
         );
         return {};
       }
@@ -346,7 +346,7 @@ class SyncService {
         logger.debug(
           `Skipped stop for calendarId: ${es.gCalendarId} due to missing field(s):
             channelId: ${es.channelId}
-            resourceid: ${es.resourceId}`
+            resourceid: ${es.resourceId}`,
         );
         continue;
       }

@@ -50,7 +50,7 @@ export const StyledGridEventPreview = styled.div.attrs<StyledEventProps>(
       hoverColor: hoverColorByPriority[props.priority],
       width: props.width,
     };
-  }
+  },
 )<StyledEventProps>`
   background-color: ${(props) => props.backgroundColor};
   color: ${(props) => props.color};
@@ -58,7 +58,9 @@ export const StyledGridEventPreview = styled.div.attrs<StyledEventProps>(
   box-shadow: 0 0 0 0 transparent;
   height: ${({ height }) => height}px;
   position: absolute;
-  transition: background-color 0.2s, box-shadow 0.2s;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
   user-select: none;
   width: ${(props) => props.width}px;
 

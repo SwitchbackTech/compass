@@ -1,5 +1,5 @@
 import React, { MouseEvent } from "react";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { Categories_Event } from "@core/types/event.types";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
@@ -26,11 +26,11 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
   const adjustedEvents = adjustOverlappingEvents(timedEvents);
 
-  const onMouseDown = (e: MouseEvent, event: Schema_Event) => {
+  const onMouseDown = (e: MouseEvent, event: Schema_GridEvent) => {
     e.stopPropagation();
     if (isEventFormOpen()) {
       dispatch(
-        draftSlice.actions.swap({ event, category: Categories_Event.TIMED })
+        draftSlice.actions.swap({ event, category: Categories_Event.TIMED }),
       );
       return;
     }
@@ -40,7 +40,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
   const resizeTimedEvent = (
     event: Schema_GridEvent,
-    dateToChange: "startDate" | "endDate"
+    dateToChange: "startDate" | "endDate",
   ) => {
     dispatch(draftSlice.actions.startResizing({ event, dateToChange }));
   };
@@ -49,7 +49,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     dispatch(
       draftSlice.actions.startDragging({
         event,
-      })
+      }),
     );
   };
 
@@ -71,7 +71,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
             onScalerMouseDown={(
               event,
               e,
-              dateToChange: "startDate" | "endDate"
+              dateToChange: "startDate" | "endDate",
             ) => {
               e.stopPropagation();
               e.preventDefault();

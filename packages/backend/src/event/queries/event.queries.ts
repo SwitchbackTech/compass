@@ -55,7 +55,7 @@ export const reorderEvents = async (userId: string, order: Payload_Order[]) => {
 export const updateEvent = async (
   userId: string,
   eventId: string,
-  event: Schema_Event_Core
+  event: Schema_Event_Core,
 ) => {
   const _event = {
     ...event,
@@ -71,7 +71,7 @@ export const updateEvent = async (
     .findOneAndReplace(
       { _id: mongoService.objectId(eventId), user: userId },
       _event,
-      { returnDocument: "after" }
+      { returnDocument: "after" },
     );
 
   if (!response) {
@@ -82,13 +82,13 @@ export const updateEvent = async (
 
 export const updateFutureInstances = async (
   userId: string,
-  event: Schema_Event
+  event: Schema_Event,
 ) => {
   const baseId = event.recurrence?.eventId;
   if (!baseId) {
     throw error(
       GenericError.BadRequest,
-      "Failed to update future instances (No base event id)"
+      "Failed to update future instances (No base event id)",
     );
   }
 

@@ -12,14 +12,14 @@ import { selectEventById } from "../selectors/event.selectors";
 
 export function* getEventById(_id: string) {
   const currEvent = (yield select((state: RootState) =>
-    selectEventById(state, _id)
+    selectEventById(state, _id),
   )) as Schema_Event;
   return currEvent;
 }
 
 export function* insertOptimisticEvent(
   event: Schema_GridEvent,
-  isSomeday: boolean
+  isSomeday: boolean,
 ) {
   if (isSomeday) {
     yield put(getSomedayEventsSlice.actions.insert(event._id));
@@ -28,29 +28,29 @@ export function* insertOptimisticEvent(
   }
   yield put(
     eventsEntitiesSlice.actions.insert(
-      normalize<Schema_Event>(event, normalizedEventsSchema()).entities.events
-    )
+      normalize<Schema_Event>(event, normalizedEventsSchema()).entities.events,
+    ),
   );
 }
 
 export function* replaceOptimisticId(
   optimisticId: string,
   newId: string,
-  isSomeday: boolean
+  isSomeday: boolean,
 ) {
   if (isSomeday) {
     yield put(
       getSomedayEventsSlice.actions.replace({
         oldSomedayId: optimisticId,
         newSomedayId: newId,
-      })
+      }),
     );
   } else {
     yield put(
       getWeekEventsSlice.actions.replace({
         oldWeekId: optimisticId,
         newWeekId: newId,
-      })
+      }),
     );
   }
 
@@ -58,7 +58,7 @@ export function* replaceOptimisticId(
     eventsEntitiesSlice.actions.replace({
       oldEventId: optimisticId,
       newEventId: newId,
-    })
+    }),
   );
 }
 

@@ -67,7 +67,7 @@ describe("toGcal", () => {
       endDate: "2021-01-02",
     });
     expect(gcalEvent.extendedProperties.private.priority).toBe(
-      Priorities.UNASSIGNED
+      Priorities.UNASSIGNED,
     );
   });
   it("set origin to unsure as private extended properties when none provided", () => {
@@ -88,19 +88,19 @@ describe("toCompass", () => {
   const eventsFromCompass = MapEvent.toCompass(
     "user1",
     gcalEvents.items,
-    Origin.COMPASS
+    Origin.COMPASS,
   );
 
   const eventsFromGcalImport = MapEvent.toCompass(
     "user1",
     gcalEvents.items,
-    Origin.GOOGLE_IMPORT
+    Origin.GOOGLE_IMPORT,
   );
 
   const allEvents = [...eventsFromCompass, ...eventsFromGcalImport];
   it("sets priority to unassigned by default", () => {
     const gEvent = gcalEvents.items.find(
-      (ge) => ge.summary === "No extendedProperties"
+      (ge) => ge.summary === "No extendedProperties",
     );
     const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.COMPASS)[0];
 
@@ -118,12 +118,12 @@ describe("toCompass", () => {
   describe("from Gcal", () => {
     it("gets priority from private extended properties", () => {
       const regularGcalEvent = gcalEvents.items.find(
-        (ge) => ge.summary === "Meeting with Stan"
+        (ge) => ge.summary === "Meeting with Stan",
       );
       const cEvent = MapEvent.toCompass(
         "user99",
         [regularGcalEvent],
-        Origin.GOOGLE_IMPORT
+        Origin.GOOGLE_IMPORT,
       );
 
       expect(cEvent[0].priority).toBe("work");

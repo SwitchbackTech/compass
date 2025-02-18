@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export const adjustOverlappingEvents = (
-  events: Schema_GridEvent[]
+  events: Schema_GridEvent[],
 ): Schema_GridEvent[] => {
   let adjustedEvents = deepCopyEvents(events);
   adjustedEvents.sort((a, b) => dayjs(a.startDate).diff(dayjs(b.startDate)));
@@ -26,14 +26,14 @@ export const adjustOverlappingEvents = (
 const findOverlaps = (
   event: Schema_GridEvent,
   adjustedEvents: Schema_GridEvent[],
-  accumulatedEvents = new Set<Schema_GridEvent>()
+  accumulatedEvents = new Set<Schema_GridEvent>(),
 ): Set<Schema_GridEvent> => {
   const directOverlaps = adjustedEvents.filter(
     (otherEvent) =>
       otherEvent !== event &&
       !accumulatedEvents.has(otherEvent) &&
       dayjs(event.startDate).isBefore(dayjs(otherEvent.endDate)) &&
-      dayjs(event.endDate).isAfter(dayjs(otherEvent.startDate))
+      dayjs(event.endDate).isAfter(dayjs(otherEvent.startDate)),
   );
 
   directOverlaps.forEach((overlappingEvent) => {
@@ -68,13 +68,13 @@ const eventsHaveExactSameTimes = (eventGroup: Schema_GridEvent[]): boolean => {
   return eventGroup.every(
     (event) =>
       dayjs(event.startDate).isSame(eventGroup[0].startDate) &&
-      dayjs(event.endDate).isSame(eventGroup[0].endDate)
+      dayjs(event.endDate).isSame(eventGroup[0].endDate),
   );
 };
 
 const sortEventsByTitle = (eventGroup: Schema_GridEvent[]) => {
   eventGroup.sort((a, b) =>
-    a.title && b.title ? a.title.localeCompare(b.title) : 0
+    a.title && b.title ? a.title.localeCompare(b.title) : 0,
   );
 };
 

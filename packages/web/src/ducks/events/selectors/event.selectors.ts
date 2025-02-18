@@ -14,14 +14,14 @@ export const selectAllDayEvents = createSelector(
     if (!("data" in weekIds) || weekIds.data.length === 0) return [];
 
     const weekEvents: Schema_GridEvent_NoPosition[] = weekIds.data.map(
-      (_id: string) => entities[_id]
+      (_id: string) => entities[_id],
     );
     const _allDayEvents: Schema_GridEvent_NoPosition[] = weekEvents.filter(
-      (e: Schema_Event) => e !== undefined && e.isAllDay
+      (e: Schema_Event) => e !== undefined && e.isAllDay,
     );
     const { allDayEvents } = assignEventsToRow(_allDayEvents);
     return allDayEvents;
-  }
+  },
 );
 
 export const selectEventById = (state: RootState, id: string): Schema_Event =>
@@ -42,7 +42,7 @@ export const selectGridEvents = createSelector(
       .map(assembleGridEvent);
 
     return weekEvents;
-  }
+  },
 );
 
 export const selectRowCount = createSelector(
@@ -51,5 +51,5 @@ export const selectRowCount = createSelector(
     const _rowVals = allDayEvents.map((e) => e.row);
     const rowsCount = _rowVals.length === 0 ? 1 : Math.max(..._rowVals);
     return rowsCount;
-  }
+  },
 );

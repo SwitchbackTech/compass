@@ -39,7 +39,7 @@ export const SomedayTab: FC<Props> = ({
   const somedayRef = useRef();
   const weekLabel = useMemo(
     () => getWeekRangeLabel(viewStart, viewEnd),
-    [viewEnd, viewStart]
+    [viewEnd, viewStart],
   );
 
   return (

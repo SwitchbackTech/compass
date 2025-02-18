@@ -20,7 +20,7 @@ import compassAuthService from "./compass.auth.service";
 const logger = Logger("app:google.auth.service");
 
 export const getGAuthClientForUser = async (
-  user: WithId<Schema_User> | { _id: string }
+  user: WithId<Schema_User> | { _id: string },
 ) => {
   const gAuthClient = new GoogleAuthService();
 
@@ -62,7 +62,7 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
     await compassAuthService.revokeSessionsByUser(userId);
     throw error(
       UserError.UserNotFound,
-      "Revoked session & gave up on gcal auth"
+      "Revoked session & gave up on gcal auth",
     );
   }
 
@@ -83,7 +83,7 @@ class GoogleAuthService {
     this.oauthClient = new OAuth2Client(
       ENV.CLIENT_ID,
       ENV.CLIENT_SECRET,
-      "postmessage"
+      "postmessage",
     );
   }
 
@@ -103,7 +103,7 @@ class GoogleAuthService {
         "No id_token",
         "oauth client is missing id_token, so couldn't verify user",
         Status.BAD_REQUEST,
-        false
+        false,
       );
     }
 
@@ -127,7 +127,7 @@ class GoogleAuthService {
     if (!token) {
       throw error(
         AuthError.NoGAuthAccessToken,
-        "Google auth access token not returned"
+        "Google auth access token not returned",
       );
     }
 

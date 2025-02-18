@@ -15,20 +15,20 @@ it("displays alert upon server error", async () => {
         ctx.status(500),
         ctx.json({
           error: "something broke",
-        })
+        }),
       );
-    })
+    }),
   );
 
   const alertMock = jest.spyOn(window, "alert").mockImplementation();
-  const consoleLogMock = (console.log = jest.fn()); // mock so doesnt clutter test logs
+  const consoleMock = (console.error = jest.fn()); // mock so doesnt clutter test logs
 
   render(<CalendarView />);
 
   await waitFor(() => {
     expect(alertMock).toHaveBeenCalled();
   });
-  expect(consoleLogMock).toHaveBeenCalled();
+  expect(consoleMock).toHaveBeenCalled();
 });
 
 describe("Calendar Interactions", () => {
@@ -46,7 +46,7 @@ describe("Calendar Interactions", () => {
       await user.click(
         screen.getByRole("navigation", {
           name: /next week/i,
-        })
+        }),
       );
 
       expect(nowLine).not.toBeInTheDocument();

@@ -19,7 +19,7 @@ dayjs.extend(utc);
 
 export const assembleInstances = (
   event: Schema_Event_Core,
-  baseId?: string
+  baseId?: string,
 ) => {
   if (
     !event.recurrence ||
@@ -28,7 +28,7 @@ export const assembleInstances = (
   ) {
     throw error(
       GenericError.DeveloperError,
-      "Failed to assemble recurring events"
+      "Failed to assemble recurring events",
     );
   }
 
@@ -55,12 +55,12 @@ export const getCreateParams = (userId: string, event: Schema_Event_Core) => {
 };
 
 export const getDeleteByIdFilter = (
-  event: Schema_Event_Core
+  event: Schema_Event_Core,
 ): Filter<object> => {
   if (!event._id) {
     throw error(
       GenericError.BadRequest,
-      "Failed to get Delete Filter (missing id)"
+      "Failed to get Delete Filter (missing id)",
     );
   }
   const _id = new ObjectId(event._id);
@@ -74,7 +74,7 @@ export const getDeleteByIdFilter = (
   if (!event.recurrence || !event.recurrence.eventId) {
     throw error(
       GenericError.DeveloperError,
-      "Failed to get Delete Filter (missing recurrence id)"
+      "Failed to get Delete Filter (missing recurrence id)",
     );
   }
 
@@ -95,7 +95,7 @@ export const getDeleteByIdFilter = (
 
 export const getReadAllFilter = (
   userId: string,
-  query: Query_Event
+  query: Query_Event,
 ): Filter<object> => {
   const { end, someday, start, priorities } = query;
   const isSomeday = someday === "true";
@@ -123,7 +123,7 @@ export const getReadAllFilter = (
 
 export const getUpdateAction = (
   event: Schema_Event_Core,
-  query: Query_Event_Update
+  query: Query_Event_Update,
 ) => {
   const hasInstances = event?.recurrence?.eventId !== undefined;
   const hasRule = event?.recurrence?.rule && event.recurrence.rule.length > 0;
@@ -154,7 +154,7 @@ export const getUpdateAction = (
 const _getDateFilters = (isSomeday: boolean, start: string, end: string) => {
   const { inBetweenStart, inBetweenEnd, overlapping } = _getDateFilterOptions(
     start,
-    end
+    end,
   );
 
   const _isSameMonth = isSameMonth(start, end);
@@ -227,7 +227,7 @@ const _getDates = (rule: string, nextInstance: Date) => {
   } else {
     throw error(
       GenericError.DeveloperError,
-      "Failed to get dates (rule not supported yet)"
+      "Failed to get dates (rule not supported yet)",
     );
   }
 
@@ -240,7 +240,7 @@ const _getDates = (rule: string, nextInstance: Date) => {
 const _generateInstances = (
   rule: string,
   orig: Schema_Event_Core,
-  baseId?: string
+  baseId?: string,
 ) => {
   if (!orig.startDate || !orig.endDate) {
     throw error(GenericError.DeveloperError, "Failed to generate events");

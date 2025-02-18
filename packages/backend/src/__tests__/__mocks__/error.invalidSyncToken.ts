@@ -124,5 +124,5 @@ export const invalidSyncTokenError = new GaxiosError(
       responseURL:
         "https://www.googleapis.com/calendar/v3/calendars/foo%40gmail.com/events/watch?syncToken=1CKj765-V8_wCEKj765-V8_wCGAUghfra8AE%3D",
     },
-  }
+  },
 );

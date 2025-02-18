@@ -7,14 +7,14 @@ import { useSidebarState } from "./useSidebarState";
 
 export const useSidebar = (
   measurements: Measurements_Grid,
-  dateCalcs: DateCalcs
+  dateCalcs: DateCalcs,
 ) => {
   const state = useSidebarState(measurements);
   const util = useSidebarUtil(
     dateCalcs,
     state,
     state.setDraft,
-    state.setIsDrafting
+    state.setIsDrafting,
   );
   useSidebarEffects(util);
 

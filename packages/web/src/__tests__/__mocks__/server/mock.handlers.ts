@@ -24,7 +24,7 @@ export const globalHandlers = [
             title: "Takeover world",
           },
           EUROPE_TRIP,
-        ])
+        ]),
       );
     }
 

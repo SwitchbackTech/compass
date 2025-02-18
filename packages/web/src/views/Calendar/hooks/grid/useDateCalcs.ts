@@ -17,7 +17,7 @@ dayjs.extend(timezone);
 
 export const useDateCalcs = (
   measurements: Measurements_Grid,
-  scrollRef: Ref_Grid
+  scrollRef: Ref_Grid,
 ) => {
   const getDateByX = (x: number, firstDayInView: Dayjs) => {
     const gridX = x - GRID_X_START;
@@ -45,7 +45,7 @@ export const useDateCalcs = (
     x: number,
     y: number,
     firstDayInView: Dayjs,
-    format?: string
+    format?: string,
   ) => {
     const date = getDateByXY(x, y, firstDayInView);
 

@@ -8,7 +8,6 @@ import {
   FloatingContext,
 } from "@floating-ui/react";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { ContextMenuItems } from "./ContextMenuItems";
 
 const MenuWrapper = styled.ul`
@@ -24,26 +23,15 @@ const MenuWrapper = styled.ul`
 `;
 
 interface ContextMenuProps {
-  weekProps: WeekProps;
-  event: Schema_GridEvent;
+  event?: Schema_GridEvent;
   onOutsideClick: () => void;
-  onMenuItemClick: () => void;
+  close: () => void;
   style: React.CSSProperties;
   context: FloatingContext;
 }
 
 export const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
-  (
-    {
-      weekProps,
-      event: calEvent,
-      onOutsideClick,
-      onMenuItemClick,
-      style,
-      context,
-    },
-    ref
-  ) => {
+  ({ event, onOutsideClick, close, style, context }, ref) => {
     const dismiss = useDismiss(context, {
       outsidePress: (event) => {
         event.preventDefault(); // Prevents clicking another UI element when dismissing
@@ -58,14 +46,14 @@ export const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
 
     const { getFloatingProps } = useInteractions([dismiss, click, role]);
 
+    if (!event) return null;
+
     return (
       <MenuWrapper ref={ref} style={style} {...getFloatingProps()}>
-        <ContextMenuItems
-          weekProps={weekProps}
-          event={calEvent}
-          onItemClick={onMenuItemClick}
-        />
+        <ContextMenuItems event={event} close={close} />
       </MenuWrapper>
     );
-  }
+  },
 );
+
+ContextMenu.displayName = "ContextMenu";

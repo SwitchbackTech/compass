@@ -5,6 +5,7 @@ import {
   Schema_Event,
 } from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
+import { Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
 
 export enum Recurrence_Selection {
   NONE = "none",
@@ -51,10 +52,4 @@ export interface Schema_SomedayEventsColumn {
   events: {
     [key: string]: Schema_Event;
   };
-}
-export interface Status_DraftEvent {
-  activity: string | null;
-  eventType: Categories_Event | null;
-  isDrafting: boolean;
-  dateToResize: "startDate" | "endDate" | null;
 }

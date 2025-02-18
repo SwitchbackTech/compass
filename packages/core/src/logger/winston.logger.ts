@@ -13,7 +13,7 @@ const consoleFormat = winston.format.combine(
     return `${_timestamp} [${level}] ${_namespace}: ${message} ${
       Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ""
     }`;
-  })
+  }),
 );
 
 const transports = (logFileName?: string) => {

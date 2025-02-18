@@ -20,7 +20,7 @@ const _Focusable = <T,>(
     withUnderline,
     ...props
   }: Props<T>,
-  ref: Ref<HTMLDivElement>
+  ref: Ref<HTMLDivElement>,
 ) => {
   const [isFocused, toggleFocused] = useState(autoFocus);
   const rest = props as unknown as T;
@@ -40,7 +40,7 @@ const _Focusable = <T,>(
 };
 
 export const Focusable = forwardRef(_Focusable) as <
-  T extends ClassNamedComponent
+  T extends ClassNamedComponent,
 >(
-  p: Props<T> & { ref?: Ref<HTMLDivElement | HTMLTextAreaElement> }
+  p: Props<T> & { ref?: Ref<HTMLDivElement | HTMLTextAreaElement> },
 ) => ReactElement;

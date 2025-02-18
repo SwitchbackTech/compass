@@ -36,7 +36,7 @@ class GCalService {
     if (!response.data.nextSyncToken) {
       throw error(
         GcalError.PaginationNotSupported,
-        "Calendarlist sync token not saved"
+        "Calendarlist sync token not saved",
       );
     }
 

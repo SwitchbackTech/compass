@@ -65,7 +65,7 @@ export const TimePicker = ({
         onMenuOpen={() => {
           scrollTimer = window.setTimeout(() => {
             const defaultOpt = document.getElementsByClassName(
-              `${TIMEPICKER}__option--is-selected`
+              `${TIMEPICKER}__option--is-selected`,
             )[0];
             if (defaultOpt) {
               defaultOpt.scrollIntoView();

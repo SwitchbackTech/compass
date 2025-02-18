@@ -10,7 +10,7 @@ export type MeasureableElement = "mainGrid" | "allDayRow";
 
 export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
   const [allDayMeasurements, setAllDayMeasurements] = useState<DOMRect | null>(
-    null
+    null,
   );
   const [mainMeasurements, setMainMeasurements] = useState<DOMRect | null>();
   const [colWidths, setColWidths] = useState<number[]>([]);
@@ -47,7 +47,7 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
         _measureMainGrid(node);
       }
     },
-    [mainMeasurements]
+    [mainMeasurements],
   );
 
   const _measureAllDayRow = (node?: HTMLDivElement) => {

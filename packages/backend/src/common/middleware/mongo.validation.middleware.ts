@@ -7,7 +7,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 export const validateIdParam = (
   req: SessionRequest,
   res: express.Response,
-  next: express.NextFunction
+  next: express.NextFunction,
 ) => {
   const idParam = req.params["id"] as string;
 

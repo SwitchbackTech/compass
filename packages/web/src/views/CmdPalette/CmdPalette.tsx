@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { isEventFormOpen } from "@web/common/utils";
+import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
@@ -22,8 +23,9 @@ import {
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 
-import { getDraftTimes } from "../Calendar/components/Event/Draft/draft.util";
 import { ShortcutProps } from "../Calendar/hooks/shortcuts/useShortcuts";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { assembleDefaultEvent } from "@web/common/utils/event.util";
 
 const CmdPalette = ({
   today,
@@ -49,7 +51,7 @@ const CmdPalette = ({
 
   useHandleOpenCommandPalette(setOpen);
 
-  const _createSomedayDraft = (type: "week" | "month") => {
+  const _createSomedayDraft = async (type: "week" | "month") => {
     if (type === "week" && isAtWeeklyLimit) {
       alert(SOMEDAY_WEEK_LIMIT_MSG);
       return;
@@ -66,23 +68,25 @@ const CmdPalette = ({
 
     dispatch(
       draftSlice.actions.start({
+        activity: "createShortcut",
         eventType,
-      })
+      }),
     );
   };
 
-  const _createTimedDraft = () => {
+  const _createTimedDraft = async () => {
     const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
-
+    const event = (await assembleDefaultEvent(
+      Categories_Event.TIMED,
+      startDate,
+      endDate,
+    )) as Schema_GridEvent;
     dispatch(
       draftSlice.actions.start({
         activity: "createShortcut",
         eventType: Categories_Event.TIMED,
-        event: {
-          startDate,
-          endDate,
-        },
-      })
+        event,
+      }),
     );
   };
 
@@ -176,7 +180,7 @@ const CmdPalette = ({
         ],
       },
     ],
-    search
+    search,
   );
 
   return (

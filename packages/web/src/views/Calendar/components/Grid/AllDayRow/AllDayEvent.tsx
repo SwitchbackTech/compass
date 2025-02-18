@@ -35,7 +35,7 @@ const AllDayEvent = ({
     startOfView,
     endOfView,
     measurements,
-    false
+    false,
   );
 
   const isOptimistic = isOptimisticEvent(event);

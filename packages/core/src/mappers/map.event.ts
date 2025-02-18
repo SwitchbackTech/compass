@@ -10,7 +10,7 @@ export namespace MapEvent {
   export const toCompass = (
     userId: string,
     events: gSchema$Event[],
-    origin?: Origin
+    origin?: Origin,
   ): Event_Core[] => {
     const mapped = events
       .filter(notCancelled)
@@ -44,14 +44,14 @@ export namespace MapEvent {
 const _toCompass = (
   userId: string,
   gEvent: gSchema$Event,
-  origin?: Origin
+  origin?: Origin,
 ): Event_Core => {
   if (!gEvent.id) {
     throw new BaseError(
       "Bad Google Event Id",
       "You got a google event without an Id, something is off",
       500,
-      false
+      false,
     );
   }
   const _origin =

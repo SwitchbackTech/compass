@@ -65,10 +65,10 @@ const logger = Logger("app:sync.service.helpers");
 export const assembleEventImports = (
   userId: string,
   gcal: gCalendar,
-  eventSyncPayloads: Schema_Sync["google"]["events"]
+  eventSyncPayloads: Schema_Sync["google"]["events"],
 ) => {
   const syncEvents = eventSyncPayloads.map((eventSync) =>
-    importEventsByCalendar(userId, eventSync, gcal)
+    importEventsByCalendar(userId, eventSync, gcal),
   );
 
   return syncEvents;
@@ -76,7 +76,7 @@ export const assembleEventImports = (
 
 const assembleEventWatchPayloads = (
   sync: Schema_Sync,
-  gCalendarIds: string[]
+  gCalendarIds: string[],
 ) => {
   const watchPayloads = gCalendarIds.map((gCalId) => {
     const match = sync?.google.events.find((es) => es.gCalendarId === gCalId);
@@ -93,7 +93,7 @@ const assembleEventWatchPayloads = (
 
 export const getCalendarInfo = (
   sync: WithId<Schema_Sync>,
-  resourceId: string
+  resourceId: string,
 ) => {
   const matches = sync.google.events.filter((g) => {
     return g.resourceId === resourceId;
@@ -131,7 +131,7 @@ export const getCalendarsToSync = async (userId: string, gcal: gCalendar) => {
   const cCalendarList = { ..._ccalList, user: userId } as Schema_CalendarList;
 
   const gCalendarIds = cCalendarList.google.items.map(
-    (gcal) => gcal.id
+    (gcal) => gcal.id,
   ) as string[];
 
   return {
@@ -157,7 +157,7 @@ const getSyncsToRefresh = (sync: Schema_Sync) => {
 
 const getSyncToken = (
   pageToken: string | null | undefined,
-  syncToken: string | null | undefined
+  syncToken: string | null | undefined,
 ) => {
   if (pageToken !== undefined && pageToken !== null) {
     return pageToken;
@@ -166,7 +166,7 @@ const getSyncToken = (
   if (syncToken === undefined || syncToken === null) {
     throw error(
       GenericError.DeveloperError,
-      "Failed to get correct sync token"
+      "Failed to get correct sync token",
     );
   }
 
@@ -176,7 +176,7 @@ const getSyncToken = (
 const getUpdatedEvents = async (
   gcal: gCalendar,
   gCalendarId: string,
-  syncToken: string
+  syncToken: string,
 ) => {
   const response = await gcalService.getEvents(gcal, {
     calendarId: gCalendarId,
@@ -205,7 +205,7 @@ export const hasAnyActiveEventSync = (sync: Schema_Sync) => {
 export const importEvents = async (
   userId: string,
   gcal: gCalendar,
-  calendarId: string
+  calendarId: string,
 ) => {
   let nextPageToken: string | undefined = undefined;
   let nextSyncToken: string | null | undefined = undefined;
@@ -233,7 +233,7 @@ export const importEvents = async (
       const cEvents = MapEvent.toCompass(
         userId,
         gEvents.data.items,
-        Origin.GOOGLE_IMPORT
+        Origin.GOOGLE_IMPORT,
       );
       await eventService.createMany(cEvents);
     }
@@ -252,7 +252,7 @@ export const importEvents = async (
 export const importEventsByCalendar = async (
   userId: string,
   syncInfo: Payload_Sync_Events,
-  gcal?: gCalendar
+  gcal?: gCalendar,
 ) => {
   if (!gcal) gcal = await getGcalClient(userId);
   const { gCalendarId } = syncInfo;
@@ -298,7 +298,7 @@ export const importEventsByCalendar = async (
     if (!result.ok) {
       throw error(
         GenericError.NotSure,
-        "Events not updated after notification"
+        "Events not updated after notification",
       );
     }
 
@@ -337,7 +337,7 @@ export const initSync = async (gcal: gCalendar, userId: string) => {
     await watchEventsByGcalIds(userId, gCalendarIds, gcal);
   } else {
     logger.warn(
-      `Skipped gcal watch during sync init because BASEURL does not use HTTPS: '${ENV.BASEURL}'`
+      `Skipped gcal watch during sync init because BASEURL does not use HTTPS: '${ENV.BASEURL}'`,
     );
   }
 
@@ -418,18 +418,18 @@ export const prepSyncMaintenanceForUser = async (userId: string) => {
 
 export const prepIncrementalImport = async (
   userId: string,
-  gcal: gCalendar
+  gcal: gCalendar,
 ) => {
   const { gCalendarIds, calListNextSyncToken } = await getCalendarsToSync(
     userId,
-    gcal
+    gcal,
   );
 
   const sync = await getSync({ userId });
   if (!sync) {
     throw error(
       SyncError.NoSyncRecordForUser,
-      "Prepping for incremental import failed"
+      "Prepping for incremental import failed",
     );
   }
 
@@ -446,7 +446,7 @@ export const prepIncrementalImport = async (
     logger.warn(
       `Skipped gcal watch during incremental import because BASEURL does not use HTTPS: '${
         ENV.BASEURL || ""
-      }'`
+      }'`,
     );
     return sync.google.events;
   }
@@ -454,12 +454,12 @@ export const prepIncrementalImport = async (
   await updateSyncTokenFor("calendarlist", userId, calListNextSyncToken);
   const eventWatchPayloads = assembleEventWatchPayloads(
     sync as Schema_Sync,
-    gCalendarIds
+    gCalendarIds,
   );
   await syncService.startWatchingGcalEventsById(
     userId,
     eventWatchPayloads,
-    gcal
+    gcal,
   );
   const newSync = (await getSync({ userId })) as Schema_Sync;
 
@@ -482,9 +482,8 @@ export const pruneSync = async (toPrune: string[]) => {
       }
     }
 
-    const { sessionsRevoked } = await compassAuthService.revokeSessionsByUser(
-      u
-    );
+    const { sessionsRevoked } =
+      await compassAuthService.revokeSessionsByUser(u);
 
     return { user: u, results: stopped, sessionsRevoked, deletedUserData };
   });
@@ -505,7 +504,7 @@ export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
         const _refresh = await syncService.refreshWatch(
           r.userId,
           syncPayload,
-          gcal
+          gcal,
         );
         return {
           gcalendarId: syncPayload.gCalendarId,
@@ -525,7 +524,7 @@ export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
       } else {
         logger.error(
           `Unexpected error during refresh for user: ${r.userId}:\n`,
-          e
+          e,
         );
         throw e;
       }
@@ -540,10 +539,10 @@ export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
 export const watchEventsByGcalIds = async (
   userId: string,
   gCalendarIds: string[],
-  gcal: gCalendar
+  gcal: gCalendar,
 ) => {
   const watchGcalEvents = gCalendarIds.map((gCalendarId) =>
-    syncService.startWatchingGcalEvents(userId, { gCalendarId }, gcal)
+    syncService.startWatchingGcalEvents(userId, { gCalendarId }, gcal),
   );
 
   const results = await Promise.all(watchGcalEvents);
@@ -557,7 +556,7 @@ const updateSyncTokenIfNeededFor = async (
   vals: {
     prev: string;
     curr: string;
-  }
+  },
 ) => {
   if (vals.prev !== vals.curr) {
     await updateSyncTokenFor(resource, userId, vals.curr, gCalendarId);

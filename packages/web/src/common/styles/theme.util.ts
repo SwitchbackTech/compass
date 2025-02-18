@@ -33,19 +33,19 @@ export const hoverColorByPriority = {
 export const gradientByPriority = {
   [Priorities.UNASSIGNED]: `linear-gradient(90deg, ${darken(
     UNASSIGNED,
-    15
+    15,
   )}, ${darken(UNASSIGNED, 30)})`,
   [Priorities.WORK]: `linear-gradient(90deg, ${darken(WORK, 15)}, ${darken(
     WORK,
-    30
+    30,
   )})`,
   [Priorities.RELATIONS]: `linear-gradient(90deg, ${darken(
     RELATIONS,
-    15
+    15,
   )}, ${darken(RELATIONS, 30)})`,
   [Priorities.SELF]: `linear-gradient(90deg, ${darken(SELF, 15)}, ${darken(
     SELF,
-    30
+    30,
   )})`,
 };
 
@@ -54,7 +54,7 @@ const grayGradient = `linear-gradient(90deg, ${c.gray100}, ${c.gray200})`;
 
 export const getGradient = (color: string) => {
   const priority = Object.keys(colorByPriority).find(
-    (key) => colorByPriority[key as Priorities] === color
+    (key) => colorByPriority[key as Priorities] === color,
   ) as Priorities | undefined;
 
   return priority ? gradientByPriority[priority] : grayGradient;

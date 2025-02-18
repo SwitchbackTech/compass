@@ -60,7 +60,7 @@ export const LoginView = () => {
     flow: "auth-code",
     scope: SCOPES_REQUIRED.join(" "),
     state: antiCsrfToken,
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+
     onSuccess: async ({ code, scope, state }) => {
       const isFromHacker = state !== antiCsrfToken;
 
@@ -85,7 +85,7 @@ export const LoginView = () => {
     },
     onError: (error) => {
       alert(`Login failed because: ${error.error}`);
-      console.log(error);
+      console.error(error);
     },
   });
 

@@ -25,7 +25,7 @@ export const getAbsoluteLeftPosition = (
   colWidths: number[],
   event?: Schema_GridEvent,
   eventWidth?: number,
-  isDraft?: boolean
+  isDraft?: boolean,
 ) => {
   let positionStart: number;
 
@@ -58,7 +58,7 @@ export const getAbsoluteLeftPosition = (
       }
       break;
     default: {
-      console.log("Logic error while parsing left position of date");
+      console.error("Logic error while parsing left position of date");
       positionStart = -666;
     }
   }
@@ -72,7 +72,7 @@ export const getAllDayEventWidth = (
   start: Dayjs,
   end: Dayjs,
   startOfWeek: Dayjs,
-  widths: number[]
+  widths: number[],
 ) => {
   let width: number;
 
@@ -102,7 +102,7 @@ export const getAllDayEventWidth = (
       break;
     }
     default: {
-      console.log("Logic error while parsing date width");
+      console.error("Logic error while parsing date width");
       width = -666;
     }
   }
@@ -114,7 +114,7 @@ export const getEventCategory = (
   start: Dayjs,
   end: Dayjs,
   startOfWeek: Dayjs,
-  endOfWeek: Dayjs
+  endOfWeek: Dayjs,
 ): Category => {
   const startsThisWeek = start.isBetween(startOfWeek, endOfWeek, "day", "[]");
   const endsThisWeek = end.isBetween(startOfWeek, endOfWeek, "day", "[]");
@@ -132,7 +132,7 @@ export const getEventCategory = (
     return Category.PastToFutureWeek;
   }
 
-  console.log("Logic error while getting event category");
+  console.error("Logic error while getting event category");
   return Category.ThisWeekOnly;
 };
 
@@ -141,7 +141,7 @@ export const getPosition = (
   startOfView: Dayjs,
   endOfView: Dayjs,
   measurements: Measurements_Grid,
-  isDraft: boolean
+  isDraft: boolean,
 ) => {
   const { colWidths } = measurements;
   const start = dayjs(event.startDate);
@@ -164,14 +164,14 @@ export const getPosition = (
       start,
       end,
       startOfView,
-      colWidths
+      colWidths,
     );
   } else {
     width = getTimedEventWidth(
       colWidths,
       startIndex,
       event.position.widthMultiplier,
-      isDraft
+      isDraft,
     );
     const startTime = ACCEPTED_TIMES.indexOf(start.format(HOURS_AM_FORMAT)) / 4;
 
@@ -190,7 +190,7 @@ export const getPosition = (
     colWidths,
     event,
     width,
-    isDraft
+    isDraft,
   );
 
   const position = { height, left, top, width };
@@ -200,7 +200,7 @@ export const getPosition = (
 const getRelativeLeftPosition = (
   initialLeft: number,
   event?: Schema_GridEvent,
-  isDraft?: boolean
+  isDraft?: boolean,
 ) => {
   let adjustment = 0;
   const GRID_EVENT_OVERLAPPING_HORIZONTAL_MARGIN = 4;
@@ -227,7 +227,7 @@ export const getTimedEventWidth = (
   colWidths: number[],
   startIndex: number,
   widthMultiplier: number,
-  isDraft: boolean
+  isDraft: boolean,
 ) => {
   let width = isDraft
     ? // If we are drafting an event, we want the event to be full width of the column
@@ -246,7 +246,7 @@ export const getLeftPosition = (
   colWidths: number[],
   event?: Schema_GridEvent,
   eventWidth?: number,
-  isDraft?: boolean
+  isDraft?: boolean,
 ) => {
   let left = getAbsoluteLeftPosition(
     category,
@@ -254,7 +254,7 @@ export const getLeftPosition = (
     colWidths,
     event,
     eventWidth,
-    isDraft
+    isDraft,
   );
 
   left = getRelativeLeftPosition(left, event, isDraft);
@@ -274,7 +274,7 @@ export const widthMinusPadding = (width: number) => {
 const _sumEventWidths = (
   duration: number,
   startIndex: number,
-  widths: number[]
+  widths: number[],
 ) => {
   // create array of numbers, one for each day, setting each to 0 by default,
   // then set values based on the widths of the days of the event

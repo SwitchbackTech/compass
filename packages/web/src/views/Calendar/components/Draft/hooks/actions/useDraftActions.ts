@@ -1,13 +1,19 @@
-import { MouseEvent, useCallback, useEffect, useState } from "react";
+import { MouseEvent, useCallback } from "react";
 import dayjs, { Dayjs } from "dayjs";
+import { validateEvent } from "@core/validators/event.validator";
+import {
+  assembleDefaultEvent,
+  prepEvtBeforeSubmit,
+} from "@web/common/utils/event.util";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { validateEvent } from "@core/validators/event.validator";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { getUserId } from "@web/auth/auth.util";
 import { getX } from "@web/common/utils/grid.util";
 import {
   editEventSlice,
@@ -17,38 +23,28 @@ import {
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import {
-  assembleDefaultEvent,
-  prepEvtBeforeSubmit,
-} from "@web/common/utils/event.util";
+  selectIsAtWeeklyLimit,
+  selectSomedayWeekCount,
+} from "@web/ducks/events/selectors/someday.selectors";
 import {
   selectDraft,
   selectDraftStatus,
 } from "@web/ducks/events/selectors/draft.selectors";
-import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
-import {
-  selectIsAtWeeklyLimit,
-  selectSomedayWeekCount,
-} from "@web/ducks/events/selectors/someday.selectors";
-import { getUserId } from "@web/auth/auth.util";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { Setters_Draft, State_Draft_Local } from "../state/useDraftState";
+import { useDraftEffects } from "../effects/useDraftEffects";
 
-import { DateCalcs } from "../grid/useDateCalcs";
-import { WeekProps } from "../useWeek";
-export interface Status_Drag {
-  durationMin: number;
-  hasMoved?: boolean;
-}
-
-interface Status_Resize {
-  hasMoved: boolean;
-}
-
-export const useDraftUtil = (
+export const useDraftActions = (
+  draftState: State_Draft_Local,
+  setters: Setters_Draft,
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
-  isSidebarOpen: boolean
+  isSidebarOpen: boolean,
 ) => {
   const dispatch = useAppDispatch();
-
+  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+  const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
   const reduxDraft = useAppSelector(selectDraft);
   const {
     activity,
@@ -56,99 +52,72 @@ export const useDraftUtil = (
     eventType: reduxDraftType,
     isDrafting,
   } = useAppSelector(selectDraftStatus);
-  const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
 
-  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+  const {
+    dateBeingChanged,
+    draft,
+    dragStatus,
+    isDragging,
+    isResizing,
+    resizeStatus,
+  } = draftState;
 
-  const [isDragging, setIsDragging] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
-  const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
-  const [dragStatus, setDragStatus] = useState<Status_Drag | null>();
-  const [resizeStatus, setResizeStatus] = useState<Status_Resize | null>(null);
-  const [dateBeingChanged, setDateBeingChanged] = useState<
-    "startDate" | "endDate" | null
-  >("endDate");
+  const {
+    setIsDragging,
+    setIsResizing,
+    setDragStatus,
+    setResizeStatus,
+    setDateBeingChanged,
+    setDraft,
+    setIsFormOpen,
+  } = setters;
 
-  useEffect(() => {
-    setDraft(null);
+  const startDragging = useCallback(() => {
+    setDraft(reduxDraft);
+    setIsDragging(true);
+  }, [reduxDraft]);
+
+  const startResizing = useCallback(() => {
+    setDraft(reduxDraft);
+    setIsResizing(true);
+    setDateBeingChanged(dateToResize);
+  }, [reduxDraft, dateToResize]);
+
+  const stopDragging = () => {
     setIsDragging(false);
-    setIsResizing(false);
     setDragStatus(null);
+  };
+
+  const stopResizing = () => {
+    setIsResizing(false);
     setResizeStatus(null);
-    setDateBeingChanged(null);
-  }, [weekProps.component.week]);
+    setDateBeingChanged("endDate");
+  };
 
-  useEffect(() => {
-    if (isResizing) {
-      setDraft((_draft) => {
-        setDateBeingChanged(dateBeingChanged);
-        return { ..._draft, isOpen: false };
-      });
+  const submit = async (draft: Schema_GridEvent) => {
+    const userId = await getUserId();
+    const event = prepEvtBeforeSubmit(draft, userId);
+    const { startOfView, endOfView } = weekProps.component;
+
+    const isExisting = event._id;
+    if (isExisting) {
+      const isOutsideView =
+        !dayjs(event.startDate).isBetween(startOfView, endOfView, null, "[]") &&
+        !dayjs(event.endDate).isBetween(startOfView, endOfView, null, "[]");
+
+      const shouldRemove = isOutsideView ? true : false;
+      const payload = { _id: event._id, event, shouldRemove };
+      dispatch(editEventSlice.actions.request(payload));
+    } else {
+      dispatch(createEventSlice.actions.request(event));
     }
-  }, [dateBeingChanged, isResizing]);
 
-  useEffect(() => {
-    const isStaleDraft = !isDrafting && draft?.isOpen;
-    if (isStaleDraft) {
-      setDraft(null);
-      return;
-    }
-  }, [isDrafting, draft?.isOpen]);
+    discard();
+  };
 
-  const handleChange = useCallback(async () => {
-    if (isDrafting) {
-      if (activity === "createShortcut") {
-        const defaultDraft = await assembleDefaultEvent(
-          reduxDraftType,
-          reduxDraft?.startDate,
-          reduxDraft?.endDate
-        );
-        setDraft({ ...defaultDraft, isOpen: true });
-        return;
-      }
-
-      setDraft(reduxDraft);
-
-      if (activity === "dragging") {
-        setIsDragging(true);
-        return;
-      }
-
-      if (activity === "resizing") {
-        setIsResizing(true);
-        setDateBeingChanged(dateToResize);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    activity,
-    dateToResize,
-    dispatch,
-    isDrafting,
-    reduxDraft,
-    reduxDraftType,
-  ]);
-
-  useEffect(() => {
-    handleChange();
-  }, [handleChange]);
-
-  useEffect(() => {
-    if (isDragging) {
-      setDraft((_draft) => {
-        const durationMin = dayjs(_draft.endDate).diff(
-          _draft.startDate,
-          "minutes"
-        );
-
-        setDragStatus({
-          durationMin,
-        });
-
-        return { ..._draft, isOpen: false };
-      });
-    }
-  }, [isDragging]);
+  const closeForm = () => {
+    setIsFormOpen(false);
+  };
 
   const convert = (start: string, end: string) => {
     if (isAtWeeklyLimit) {
@@ -171,8 +140,8 @@ export const useDraftUtil = (
   };
 
   const deleteEvent = () => {
-    if (draft._id) {
-      dispatch(deleteEventSlice.actions.request({ _id: draft._id }));
+    if (reduxDraft?._id) {
+      dispatch(deleteEventSlice.actions.request({ _id: reduxDraft._id }));
     }
     discard();
   };
@@ -183,7 +152,7 @@ export const useDraftUtil = (
     }
 
     if (reduxDraft || reduxDraftType) {
-      dispatch(draftSlice.actions.discard());
+      dispatch(draftSlice.actions.discard({}));
     }
   }, [dispatch, draft, reduxDraft, reduxDraftType]);
 
@@ -195,7 +164,7 @@ export const useDraftUtil = (
           const _initialStart = dateCalcs.getDateByXY(
             x,
             e.clientY,
-            weekProps.component.startOfView
+            weekProps.component.startOfView,
           );
 
           const startDate = _draft?.isAllDay
@@ -204,7 +173,7 @@ export const useDraftUtil = (
 
           const _end = _initialStart.add(
             dragStatus?.durationMin || 0,
-            "minutes"
+            "minutes",
           );
 
           const endDate = _draft.isAllDay
@@ -221,6 +190,7 @@ export const useDraftUtil = (
       };
 
       if (!isDragging) {
+        alert("not dragging (anymore?)");
         return;
       }
 
@@ -228,7 +198,7 @@ export const useDraftUtil = (
       const currTime = dateCalcs.getDateStrByXY(
         x,
         e.clientY,
-        weekProps.component.startOfView
+        weekProps.component.startOfView,
       );
       const hasMoved = currTime !== draft.startDate;
 
@@ -249,14 +219,15 @@ export const useDraftUtil = (
       draft?.startDate,
       dragStatus?.hasMoved,
       dragStatus?.durationMin,
-    ]
+    ],
   );
 
   const isValidMovement = useCallback(
-    (currTime: Dayjs) => {
-      const _currTime = currTime.format();
+    (currTime: dayjs.Dayjs) => {
+      if (!draft || !dateBeingChanged) return false;
 
-      const noChange = draft[dateBeingChanged] === _currTime;
+      const _currTime = currTime.format();
+      const noChange = draft[draft.dateBeingChanged] === _currTime;
       if (noChange) return false;
 
       const diffDay = currTime.day() !== dayjs(draft.startDate).day();
@@ -267,8 +238,23 @@ export const useDraftUtil = (
 
       return true;
     },
-    [dateBeingChanged, draft]
+    [dateBeingChanged, draft],
   );
+
+  const openForm = () => {
+    setIsFormOpen(true);
+  };
+
+  const reset = () => {
+    setDraft(null);
+    setIsDragging(false);
+    // closeForm();
+    setIsFormOpen(false);
+    setIsResizing(false);
+    setDragStatus(null);
+    setResizeStatus(null);
+    setDateBeingChanged(null);
+  };
 
   const resize = useCallback(
     (e: MouseEvent) => {
@@ -305,11 +291,12 @@ export const useDraftUtil = (
           }
         }
 
+        // closeForm();
+        setIsFormOpen(false);
         setDraft((_draft) => {
           return {
             ..._draft,
             hasFlipped: justFlipped,
-            isOpen: false,
             endDate,
             startDate,
             priority: draft.priority,
@@ -328,7 +315,7 @@ export const useDraftUtil = (
       const currTime = dateCalcs.getDateByXY(
         x,
         e.clientY,
-        weekProps.component.startOfView
+        weekProps.component.startOfView,
       );
 
       if (!isValidMovement(currTime)) {
@@ -361,69 +348,60 @@ export const useDraftUtil = (
       isValidMovement,
       resizeStatus?.hasMoved,
       weekProps.component.startOfView,
-    ]
+    ],
   );
 
-  const stopDragging = () => {
-    setIsDragging(false);
-    setDragStatus(null);
-  };
-
-  const stopResizing = () => {
-    setIsResizing(false);
-    setResizeStatus(null);
-    setDateBeingChanged("endDate");
-  };
-
-  const submit = async (draft: Schema_GridEvent) => {
-    const userId = await getUserId();
-    const event = prepEvtBeforeSubmit(draft, userId);
-    const { startOfView, endOfView } = weekProps.component;
-
-    const isExisting = event._id;
-    if (isExisting) {
-      const isOutsideView =
-        !dayjs(event.startDate).isBetween(startOfView, endOfView, null, "[]") &&
-        !dayjs(event.endDate).isBetween(startOfView, endOfView, null, "[]");
-
-      const shouldRemove = isOutsideView ? true : false;
-      const payload = { _id: event._id, event, shouldRemove };
-      dispatch(editEventSlice.actions.request(payload));
+  const create = useCallback(async () => {
+    const draftingExisting = reduxDraft !== null;
+    if (draftingExisting) {
+      setDraft(reduxDraft as Schema_GridEvent);
     } else {
-      dispatch(createEventSlice.actions.request(event));
+      const defaultDraft = (await assembleDefaultEvent(
+        reduxDraftType,
+        reduxDraft?.startDate,
+        reduxDraft?.endDate,
+      )) as Schema_GridEvent;
+      setDraft(defaultDraft);
+    }
+    openForm();
+  }, [reduxDraft, reduxDraftType]);
+
+  const handleChange = useCallback(async () => {
+    if (!isDrafting) return;
+
+    if (activity === "eventRightClick") {
+      return; // Prevents form and context menu from opening at same time
     }
 
-    discard();
-  };
+    if (activity === "createShortcut" || activity === "gridClick") {
+      await create();
+      return;
+    }
+
+    if (activity === "dragging") {
+      startDragging();
+      return;
+    }
+
+    if (activity === "resizing") {
+      startResizing();
+    }
+  }, [activity, startDragging, startResizing, create, isDrafting]);
+
+  useDraftEffects(draftState, setters, weekProps, isDrafting, handleChange);
 
   return {
-    draftState: {
-      draft,
-      dragStatus,
-      isDrafting,
-      isDragging,
-      isResizing,
-      reduxDraft,
-      reduxDraftType,
-      resizeStatus,
-    },
-    draftUtil: {
-      convert,
-      deleteEvent,
-      discard,
-      drag,
-      resize,
-      setDateBeingChanged,
-      setDraft,
-      setIsDragging,
-      setIsResizing,
-      stopDragging,
-      stopResizing,
-      submit,
-    },
+    closeForm,
+    submit,
+    convert,
+    deleteEvent,
+    discard,
+    drag,
+    openForm,
+    reset,
+    resize,
+    stopDragging,
+    stopResizing,
   };
 };
-
-export type Hook_GridUtil = ReturnType<typeof useDraftUtil>;
-export type State_GridDraft = Hook_GridUtil["draftState"];
-export type Util_GridDraft = Hook_GridUtil["draftUtil"];
+export type Actions_Draft = ReturnType<typeof useDraftActions>;

@@ -2,49 +2,42 @@ import React, { FC, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Categories_Event } from "@core/types/event.types";
 import { useAppSelector } from "@web/store/store.hooks";
-import { useGridDraft } from "@web/views/Calendar/hooks/draft/useGridDraft";
+import { getDraftContainer } from "@web/common/utils/draft/draft.util";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { getCategory } from "@web/common/utils/event.util";
-import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 
-import { getDraftContainer } from "./draft.util";
 import { GridDraft } from "./GridDraft";
+import { useGridClick } from "./hooks/grid/useGridClick";
+import { useGridMouseMove } from "./hooks/grid/useGridMouseMove";
+import { useDraftContext } from "./context/useDraftContext";
 
 interface Props {
-  dateCalcs: DateCalcs;
-  isSidebarOpen: boolean;
   measurements: Measurements_Grid;
   weekProps: WeekProps;
 }
 
-export const Draft: FC<Props> = ({
-  dateCalcs,
-  isSidebarOpen,
-  measurements,
-  weekProps,
-}) => {
+export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   const [isLoadingDOM, setIsLoadingDOM] = useState(true);
 
   useEffect(() => {
     setIsLoadingDOM(false);
   }, []);
 
-  const { draftState, draftUtil } = useGridDraft(
-    dateCalcs,
-    weekProps,
-    isSidebarOpen
-  );
-  const { draft, isDragging, isResizing } = draftState;
+  useGridClick();
+  useGridMouseMove();
 
+  const { state } = useDraftContext();
+  const { draft, isDragging, isResizing } = state;
   const isDrafting = useAppSelector(selectIsDrafting);
-
-  const formProps = useEventForm("grid");
 
   if (isLoadingDOM || !draft || !isDrafting) return null;
 
+  if (draft?.isAllDay === undefined) {
+    console.error("draft.isAllDay is undefined", draft);
+    return null;
+  }
   const container = getDraftContainer(draft.isAllDay);
   const category = getCategory(draft);
   const isGridEvent =
@@ -55,8 +48,6 @@ export const Draft: FC<Props> = ({
       {isGridEvent && (
         <GridDraft
           draft={draft}
-          draftUtil={draftUtil}
-          formProps={formProps}
           isDragging={isDragging}
           isResizing={isResizing}
           measurements={measurements}
@@ -64,6 +55,6 @@ export const Draft: FC<Props> = ({
         />
       )}
     </>,
-    container
+    container,
   );
 };

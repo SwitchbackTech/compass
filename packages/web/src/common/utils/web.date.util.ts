@@ -54,7 +54,7 @@ export const getColorsByHour = (currentHour: number) => {
 export const getDatesByCategory = (
   category: Categories_Event,
   weekStart: Dayjs,
-  weekEnd: Dayjs
+  weekEnd: Dayjs,
 ) => {
   if (category === Categories_Event.SOMEDAY_WEEK) {
     return {
@@ -118,7 +118,7 @@ export const getHourLabels = () => {
 export const getMigrationDates = (
   origDates: { startDate: string; endDate: string },
   category: Categories_Event,
-  direction: Direction_Migrate
+  direction: Direction_Migrate,
 ) => {
   const dates =
     category === Categories_Event.SOMEDAY_WEEK
@@ -220,7 +220,7 @@ export const getWeekRangeLabel = (weekStart: Dayjs, weekEnd: Dayjs) => {
 export const getCalendarHeadingLabel = (
   start: Dayjs,
   end: Dayjs,
-  now: Dayjs
+  now: Dayjs,
 ) => {
   const startsThisYear = now.year() === start.year();
   const endsThisYear = now.year() === end.year();
@@ -253,7 +253,7 @@ export const mapToBackend = (s: Schema_SelectedDates) => {
 
 export const shouldAdjustComplimentDate = (
   changed: "start" | "end",
-  vals: Params_DateChange
+  vals: Params_DateChange,
 ) => {
   let shouldAdjust: boolean;
   let compliment: Date;
@@ -282,7 +282,7 @@ export const shouldAdjustComplimentDate = (
 
 export const shouldAdjustComplimentTime = (
   changed: "start" | "end",
-  vals: Params_TimeChange
+  vals: Params_TimeChange,
 ) => {
   let shouldAdjust: boolean;
   let duration: number;
@@ -387,7 +387,7 @@ const _getTimeLabel = (date: string) => {
 
 const _getMonthlyMigrationDates = (
   origDates: { startDate: string; endDate: string },
-  direction: Direction_Migrate
+  direction: Direction_Migrate,
 ) => {
   const WEEK_START = 0;
   let startDate: Dayjs;
@@ -420,7 +420,7 @@ const _getMonthlyMigrationDates = (
 
 const _getWeeklyMigrationDates = (
   origDates: { startDate: string; endDate: string },
-  direction: Direction_Migrate
+  direction: Direction_Migrate,
 ) => {
   const diff = direction === "forward" ? 7 : -7;
 

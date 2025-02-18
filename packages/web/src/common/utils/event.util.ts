@@ -29,7 +29,7 @@ dayjs.extend(isBetween);
 
 export const assembleBaseEvent = (
   userId: string,
-  event: Partial<Schema_Event>
+  event: Partial<Schema_Event>,
 ): Schema_Event => {
   const baseEvent = {
     _id: event._id,
@@ -50,7 +50,7 @@ export const assembleBaseEvent = (
 export const assembleDefaultEvent = async (
   draftType: Categories_Event,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
 ): Promise<Schema_Event | Schema_GridEvent> => {
   const userId = await getUserId();
   const baseEvent = _assembleBaseEvent(userId, {
@@ -111,10 +111,10 @@ export const assembleGridEvent = (event: Schema_Event): Schema_GridEvent => {
 
 export const categorizeSomedayEvents = (
   somedayEvents: Schema_SomedayEventsColumn["events"],
-  dates: { startDate: Dayjs; endDate: Dayjs }
+  dates: { startDate: Dayjs; endDate: Dayjs },
 ): Schema_SomedayEventsColumn => {
   const sortedEvents = Object.values(somedayEvents).sort(
-    (a, b) => a.order - b.order
+    (a, b) => a.order - b.order,
   );
   const weekIds: string[] = [];
   const monthIds: string[] = [];
@@ -125,7 +125,7 @@ export const categorizeSomedayEvents = (
       dates.startDate,
       dates.endDate,
       null,
-      "[]"
+      "[]",
     );
     if (isWeek) {
       weekIds.push(e._id);
@@ -198,19 +198,19 @@ export const handleError = (error: Error) => {
 
 export const isEventInRange = (
   eventDate: { start: string; end: string },
-  rangeDate: { start: string; end: string }
+  rangeDate: { start: string; end: string },
 ) => {
   const isStartDateInRange = dayjs(eventDate.start).isBetween(
     rangeDate.start,
     rangeDate.end,
     "day",
-    "[]"
+    "[]",
   );
   const isEndDateInRange = dayjs(eventDate.end).isBetween(
     rangeDate.start,
     rangeDate.end,
     "day",
-    "[]"
+    "[]",
   );
 
   return isStartDateInRange || isEndDateInRange;
@@ -224,7 +224,7 @@ export const isOptimisticEvent = (event: Schema_GridEvent) => {
 export const prepEvtAfterDraftDrop = (
   category: Categories_Event,
   dropItem: DropResult,
-  dates: { startDate: string; endDate: string }
+  dates: { startDate: string; endDate: string },
 ) => {
   const baseEvent = assembleDefaultEvent(category);
 
@@ -243,7 +243,7 @@ export const prepEvtAfterDraftDrop = (
 
 export const prepEvtBeforeSubmit = (
   draft: Schema_GridEvent,
-  userId: string
+  userId: string,
 ) => {
   const _event = {
     ...draft,
@@ -256,7 +256,7 @@ export const prepEvtBeforeSubmit = (
 };
 
 export const replaceIdWithOptimisticId = (
-  event: Schema_Event
+  event: Schema_Event,
 ): Schema_OptimisticEvent => {
   const _event: Schema_OptimisticEvent = {
     ...event,
@@ -268,7 +268,7 @@ export const replaceIdWithOptimisticId = (
 
 const _assembleBaseEvent = (
   userId: string,
-  event: Partial<Schema_Event>
+  event: Partial<Schema_Event>,
 ): Schema_Event => {
   const baseEvent = {
     _id: event._id,

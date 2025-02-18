@@ -23,7 +23,7 @@ export interface Props
 
 const InputComponent: ForwardRefRenderFunction<HTMLInputElement, Props> = (
   { withUnderline = true, ...props }: Props,
-  ref: Ref<HTMLInputElement>
+  ref: Ref<HTMLInputElement>,
 ) => (
   <Focusable
     Component={StyledInput}
