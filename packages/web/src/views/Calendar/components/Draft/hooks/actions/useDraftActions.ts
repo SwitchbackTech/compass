@@ -161,29 +161,33 @@ export const useDraftActions = (
       const updateTimesDuringDrag = (e: MouseEvent) => {
         setDraft((_draft) => {
           const x = getX(e, isSidebarOpen);
-          const _initialStart = dateCalcs.getDateByXY(
+          const startEndDurationMin = dragStatus?.durationMin || 0;
+
+          let eventStart = dateCalcs.getDateByXY(
             x,
             e.clientY,
             weekProps.component.startOfView,
           );
 
-          const startDate = _draft?.isAllDay
-            ? _initialStart.format(YEAR_MONTH_DAY_FORMAT)
-            : _initialStart.format();
+          let eventEnd = eventStart.add(startEndDurationMin, "minutes");
 
-          const _end = _initialStart.add(
-            dragStatus?.durationMin || 0,
-            "minutes",
-          );
-
-          const endDate = _draft.isAllDay
-            ? _end.format(YEAR_MONTH_DAY_FORMAT)
-            : _end.format();
+          if (!_draft.isAllDay) {
+            // Edge case: timed events' end times can overflow past midnight at the bottom of the grid.
+            // Below logic prevents that from occurring.
+            if (eventEnd.date() !== eventStart.date()) {
+              eventEnd = eventEnd.hour(0).minute(0);
+              eventStart = eventEnd.subtract(startEndDurationMin, "minutes");
+            }
+          }
 
           return {
             ..._draft,
-            startDate,
-            endDate,
+            startDate: _draft.isAllDay
+              ? eventStart.format(YEAR_MONTH_DAY_FORMAT)
+              : eventStart.format(),
+            endDate: _draft.isAllDay
+              ? eventEnd.format(YEAR_MONTH_DAY_FORMAT)
+              : eventEnd.format(),
             priority: _draft?.priority || Priorities.UNASSIGNED,
           };
         });
