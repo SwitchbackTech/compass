@@ -52,7 +52,7 @@ export const useSidebarUtil = (
 ) => {
   const dispatch = useAppDispatch();
 
-  const isDraftingOnGrid = useAppSelector(selectIsDrafting);
+  const isDrafting = useAppSelector(selectIsDrafting);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const { start, end } = useAppSelector(selectDatesInView);
@@ -156,7 +156,6 @@ export const useSidebarUtil = (
 
     setDraft({ ...somedayDefault, isOpen: true });
     setIsDrafting(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setDraft]);
 
   const getDatesAfterDroppingOn = (
@@ -192,7 +191,8 @@ export const useSidebarUtil = (
 
     dispatch(
       draftSlice.actions.start({
-        event: event,
+        activity: "sidebarClick",
+        event,
         eventType: category,
       }),
     );
@@ -204,7 +204,7 @@ export const useSidebarUtil = (
       close();
       return;
     }
-    if (isDraftingOnGrid) {
+    if (isDrafting) {
       dispatch(draftSlice.actions.discard());
     }
   };
@@ -289,8 +289,8 @@ export const useSidebarUtil = (
     close();
   };
 
-  const onPlaceholderClick = (section: Categories_Event) => {
-    if (state.isDrafting) {
+  const onPlaceholderClick = async (section: Categories_Event) => {
+    if (isDrafting) {
       dispatch(draftSlice.actions.discard());
       close();
       return;
@@ -307,13 +307,18 @@ export const useSidebarUtil = (
     }
 
     if (isEventFormOpen()) {
+      // todo replace
       dispatch(draftSlice.actions.discard());
       return;
     }
 
+    const event = await assembleDefaultEvent(Categories_Event.SOMEDAY_WEEK);
+
     dispatch(
       draftSlice.actions.start({
+        activity: "sidebarClick",
         eventType: section,
+        event,
       }),
     );
 
