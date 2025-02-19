@@ -307,7 +307,6 @@ export const useSidebarUtil = (
     }
 
     if (isEventFormOpen()) {
-      // todo replace
       dispatch(draftSlice.actions.discard());
       return;
     }
