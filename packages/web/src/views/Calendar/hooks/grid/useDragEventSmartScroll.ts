@@ -1,5 +1,4 @@
-import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { MutableRefObject, useEffect, useState, useRef } from "react";
 
 const SCROLL_SPEED = 10;
@@ -8,12 +7,12 @@ const EDGE_THRESHOLD = 50;
 export const useDragEventSmartScroll = (
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
 ) => {
-  const draftEvent = useAppSelector(selectDraft);
+  const draftContext = useDraftContext();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const scrollRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!draftEvent) return;
+    if (!draftContext.state.isDragging) return;
 
     const updateMousePosition = (event: MouseEvent) => {
       setMousePosition({ x: event.clientX, y: event.clientY });
@@ -24,10 +23,10 @@ export const useDragEventSmartScroll = (
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
     };
-  }, [draftEvent]);
+  }, [draftContext.state.isDragging]);
 
   useEffect(() => {
-    if (!draftEvent || !mainGridRef.current) return;
+    if (!mainGridRef.current) return;
 
     const container = mainGridRef.current;
 
@@ -67,5 +66,6 @@ export const useDragEventSmartScroll = (
         scrollRef.current = null;
       }
     };
-  }, [mousePosition, draftEvent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mousePosition]);
 };
