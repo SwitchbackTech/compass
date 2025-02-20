@@ -248,8 +248,7 @@ export const useDraftActions = (
   const reset = () => {
     setDraft(null);
     setIsDragging(false);
-    // closeForm();
-    setIsFormOpen(false);
+    closeForm();
     setIsResizing(false);
     setDragStatus(null);
     setResizeStatus(null);
@@ -291,8 +290,7 @@ export const useDraftActions = (
           }
         }
 
-        // closeForm();
-        setIsFormOpen(false);
+        closeForm();
         setDraft((_draft) => {
           return {
             ..._draft,
