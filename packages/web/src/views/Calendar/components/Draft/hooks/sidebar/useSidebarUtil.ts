@@ -47,8 +47,9 @@ import { State_Sidebar } from "./useSidebarState";
 export const useSidebarUtil = (
   dateCalcs: DateCalcs,
   state: State_Sidebar,
-  setDraft: React.Dispatch<React.SetStateAction<Schema_GridEvent | null>>,
+  setDraft: React.Dispatch<React.SetStateAction<Schema_Event | null>>,
   setIsDrafting: React.Dispatch<React.SetStateAction<boolean>>,
+  setIsSomedayFormOpen: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   const dispatch = useAppDispatch();
 
@@ -154,7 +155,8 @@ export const useSidebarUtil = (
       Categories_Event.SOMEDAY_WEEK,
     );
 
-    setDraft({ ...somedayDefault, isOpen: true });
+    setDraft(somedayDefault);
+    setIsSomedayFormOpen(true);
     setIsDrafting(true);
   }, [setDraft]);
 
@@ -184,10 +186,7 @@ export const useSidebarUtil = (
 
   const onDraft = (event: Schema_Event, category: Categories_Event) => {
     state.setIsDrafting(true);
-    state.setDraft({
-      ...event,
-      isOpen: true,
-    });
+    state.setDraft(event);
 
     dispatch(
       draftSlice.actions.start({

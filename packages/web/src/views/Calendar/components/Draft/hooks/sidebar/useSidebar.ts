@@ -15,6 +15,7 @@ export const useSidebar = (
     state,
     state.setDraft,
     state.setIsDrafting,
+    state.setIsSomedayFormOpen,
   );
   useSidebarEffects(util);
 
