@@ -65,7 +65,7 @@ export const SomedayEvents: FC<Props> = ({
 
   return (
     <DragDropContext onDragEnd={util.onDragEnd} onDragStart={util.onDragStart}>
-      {state.shouldPreviewOnGrid && (
+      {state.shouldPreviewOnGrid && state.draft && (
         <GridEventPreview
           dateCalcs={dateCalcs}
           dayIndex={dayIndex}

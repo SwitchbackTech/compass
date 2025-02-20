@@ -47,6 +47,14 @@ export const draftSlice = createSlice({
       };
     },
 
+    startDnd: (state) => {
+      state.status = {
+        ...state.status,
+        activity: "dnd",
+        isDrafting: true,
+      };
+    },
+
     startDragging: (state, action) => {
       const { event } = action.payload;
       state.event = event;

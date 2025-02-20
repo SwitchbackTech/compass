@@ -13,7 +13,6 @@ import {
 import { DropResult } from "@hello-pangea/dnd";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   prepEvtAfterDraftDrop,
   assembleDefaultEvent,
@@ -187,6 +186,7 @@ export const useSidebarUtil = (
   const onDraft = (event: Schema_Event, category: Categories_Event) => {
     state.setIsDrafting(true);
     state.setDraft(event);
+    setIsSomedayFormOpen(true);
 
     dispatch(
       draftSlice.actions.start({
@@ -244,25 +244,22 @@ export const useSidebarUtil = (
     close();
   };
 
-  const onDragStart = (props: { draggableId: string }) => {
+  const onDragStart = async (props: { draggableId: string }) => {
     const existingEvent = state.somedayEvents.events[props.draggableId];
     const isExisting = existingEvent !== undefined;
 
-    let _draft: Schema_GridEvent;
+    dispatch(draftSlice.actions.startDnd());
+
     if (isExisting) {
-      _draft = {
-        ...existingEvent,
-        isOpen: false,
-      };
+      state.setDraft(existingEvent);
     } else {
       console.log("REMINDER: update for monthly");
-      const defaultSomeday = assembleDefaultEvent(
+      const defaultSomeday = await assembleDefaultEvent(
         Categories_Event.SOMEDAY_WEEK,
       );
-      _draft = { ...defaultSomeday, isOpen: false };
+      state.setDraft(defaultSomeday);
     }
 
-    state.setDraft(_draft);
     state.setIsDrafting(true);
   };
 

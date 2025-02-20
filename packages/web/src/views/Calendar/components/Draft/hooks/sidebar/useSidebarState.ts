@@ -3,7 +3,10 @@ import { Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useAppSelector } from "@web/store/store.hooks";
-import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
+import {
+  selectDraftStatus,
+  selectIsDNDing,
+} from "@web/ducks/events/selectors/draft.selectors";
 import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
 
 import { useMousePosition } from "./useMousePosition";
@@ -17,6 +20,7 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   }, [categorizedEvents]);
 
   const { eventType: draftType } = useAppSelector(selectDraftStatus);
+  const isDNDing = useAppSelector(selectIsDNDing);
 
   const [draft, setDraft] = useState<Schema_Event | null>(null);
   const [isDrafting, setIsDrafting] = useState(false);
@@ -25,7 +29,7 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
 
   const isDragging = isDrafting && draft !== null;
   const { isOverAllDayRow, isOverGrid, isOverMainGrid, mouseCoords } =
-    useMousePosition(isDragging, isSomedayFormOpen, measurements);
+    useMousePosition(isDNDing, isSomedayFormOpen, measurements);
 
   const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK]
     .eventIds as string[];
@@ -36,8 +40,7 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   const isDraftingNew =
     isDrafting && !isDraftingExisting && !somedayIds.includes(draft?._id);
 
-  const shouldPreviewOnGrid =
-    draft !== null && isOverGrid && !isSomedayFormOpen;
+  const shouldPreviewOnGrid = isDNDing && isOverGrid;
 
   return {
     draft,
