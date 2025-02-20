@@ -2,9 +2,7 @@ import { createContext } from "react";
 
 import { Setters_Draft, State_Draft_Local } from "../hooks/state/useDraftState";
 import { Actions_Draft } from "../hooks/actions/useDraftActions";
-import { useDraftForm } from "../hooks/state/useDraftForm";
-
-export type Props_DraftForm = ReturnType<typeof useDraftForm>;
+import { Props_DraftForm } from "../hooks/state/useDraftForm";
 
 export interface State_Draft extends State_Draft_Local {
   formProps: Props_DraftForm;
