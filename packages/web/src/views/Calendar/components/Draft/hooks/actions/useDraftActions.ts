@@ -159,38 +159,40 @@ export const useDraftActions = (
   const drag = useCallback(
     (e: MouseEvent) => {
       const updateTimesDuringDrag = (e: MouseEvent) => {
-        setDraft((_draft) => {
-          const x = getX(e, isSidebarOpen);
-          const startEndDurationMin = dragStatus?.durationMin || 0;
+        if (!draft) return;
 
-          let eventStart = dateCalcs.getDateByXY(
-            x,
-            e.clientY,
-            weekProps.component.startOfView,
-          );
+        const x = getX(e, isSidebarOpen);
+        const startEndDurationMin = dragStatus?.durationMin || 0;
 
-          let eventEnd = eventStart.add(startEndDurationMin, "minutes");
+        let eventStart = dateCalcs.getDateByXY(
+          x,
+          e.clientY,
+          weekProps.component.startOfView,
+        );
 
-          if (!_draft.isAllDay) {
-            // Edge case: timed events' end times can overflow past midnight at the bottom of the grid.
-            // Below logic prevents that from occurring.
-            if (eventEnd.date() !== eventStart.date()) {
-              eventEnd = eventEnd.hour(0).minute(0);
-              eventStart = eventEnd.subtract(startEndDurationMin, "minutes");
-            }
+        let eventEnd = eventStart.add(startEndDurationMin, "minutes");
+
+        if (!draft.isAllDay) {
+          // Edge case: timed events' end times can overflow past midnight at the bottom of the grid.
+          // Below logic prevents that from occurring.
+          if (eventEnd.date() !== eventStart.date()) {
+            eventEnd = eventEnd.hour(0).minute(0);
+            eventStart = eventEnd.subtract(startEndDurationMin, "minutes");
           }
+        }
 
-          return {
-            ..._draft,
-            startDate: _draft.isAllDay
-              ? eventStart.format(YEAR_MONTH_DAY_FORMAT)
-              : eventStart.format(),
-            endDate: _draft.isAllDay
-              ? eventEnd.format(YEAR_MONTH_DAY_FORMAT)
-              : eventEnd.format(),
-            priority: _draft?.priority || Priorities.UNASSIGNED,
-          };
-        });
+        const _draft: Schema_GridEvent = {
+          ...draft,
+          startDate: draft.isAllDay
+            ? eventStart.format(YEAR_MONTH_DAY_FORMAT)
+            : eventStart.format(),
+          endDate: draft.isAllDay
+            ? eventEnd.format(YEAR_MONTH_DAY_FORMAT)
+            : eventEnd.format(),
+          priority: draft.priority || Priorities.UNASSIGNED,
+        };
+
+        setDraft(_draft);
       };
 
       if (!isDragging) {
