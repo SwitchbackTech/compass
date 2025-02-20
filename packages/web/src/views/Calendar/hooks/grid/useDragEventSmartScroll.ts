@@ -7,12 +7,13 @@ const EDGE_THRESHOLD = 50;
 export const useDragEventSmartScroll = (
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
 ) => {
-  const draftContext = useDraftContext();
+  const { state } = useDraftContext();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const scrollRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!draftContext.state.isDragging) return;
+    if (!state.isDragging) return;
+    if (state.draft?.isAllDay) return;
 
     const updateMousePosition = (event: MouseEvent) => {
       setMousePosition({ x: event.clientX, y: event.clientY });
@@ -23,7 +24,7 @@ export const useDragEventSmartScroll = (
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
     };
-  }, [draftContext.state.isDragging]);
+  }, [state.isDragging]);
 
   useEffect(() => {
     if (!mainGridRef.current) return;
