@@ -6,13 +6,13 @@ import { SidebarProps } from "@web/views/Calendar/components/Draft/hooks/sidebar
 
 import { DraggableSomedayEvent } from "./DraggableSomedayEvent";
 
-export const DraggableSomedayEvents: FC<{
+const _DraggableSomedayEvents: FC<{
   category: Categories_Event;
   events: Schema_Event[];
   draft: Schema_GridEvent;
   isOverGrid: boolean;
   util: SidebarProps["util"];
-}> = memo(({ category, draft, events, isOverGrid, util }) => {
+}> = ({ category, draft, events, isOverGrid, util }) => {
   return (
     <>
       {events.map((event, index: number) => {
@@ -34,6 +34,6 @@ export const DraggableSomedayEvents: FC<{
       })}
     </>
   );
-});
+};
 
-DraggableSomedayEvents.displayName = "DraggableSomedayEvents";
+export const DraggableSomedayEvents = memo(_DraggableSomedayEvents);
