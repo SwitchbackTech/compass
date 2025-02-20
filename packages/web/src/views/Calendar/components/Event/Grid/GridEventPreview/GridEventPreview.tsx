@@ -1,6 +1,7 @@
 import React, { FC, memo } from "react";
+import { Priorities } from "@core/constants/core.constants";
 import { DAY_COMPACT, DAY_HOUR_MIN_M } from "@core/constants/date.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { Schema_Event } from "@core/types/event.types";
 import { getWidthBuffer } from "@web/common/utils/grid.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
@@ -15,23 +16,22 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { snapToGrid } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/snap.grid";
-import { MouseCoords } from "@web/views/Calendar/hooks/draft/sidebar/useMousePosition";
 
 import { getItemStyles, layerStyles, StyledGridEventPreview } from "./styled";
 
-export interface Props {
+interface Props {
   dateCalcs: DateCalcs;
   dayIndex: number;
-  event: Schema_GridEvent;
+  event: Schema_Event;
   isOverAllDayRow: boolean;
   isOverMainGrid: boolean;
   measurements: Measurements_Grid;
-  mouseCoords: MouseCoords;
+  mouseCoords: { x: number; y: number };
   startOfView: WeekProps["component"]["startOfView"];
   gridScrollRef: Refs_Grid["gridScrollRef"];
 }
 
-export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
+const _GridEventPreview: FC<Props> = ({
   dateCalcs,
   dayIndex,
   event,
@@ -41,7 +41,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
   mouseCoords,
   startOfView,
   gridScrollRef,
-}) {
+}) => {
   const { colWidths } = measurements;
   const { x, y } = mouseCoords;
 
@@ -93,7 +93,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
           className={"active"}
           duration={1}
           height={height}
-          priority={event.priority}
+          priority={event.priority || Priorities.UNASSIGNED}
           role="button"
           tabIndex={0}
           width={width}
@@ -114,4 +114,6 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
       </div>
     </div>
   );
-});
+};
+
+export const GridEventPreview = memo(_GridEventPreview);

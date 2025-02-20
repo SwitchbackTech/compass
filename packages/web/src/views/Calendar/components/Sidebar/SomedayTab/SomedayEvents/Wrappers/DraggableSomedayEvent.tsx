@@ -1,8 +1,8 @@
 import React, { FC } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
+import { SidebarProps } from "@web/views/Calendar/components/Draft/hooks/sidebar/useSidebar";
 
 import { SomedayEvent } from "../SomedayEvent";
 
