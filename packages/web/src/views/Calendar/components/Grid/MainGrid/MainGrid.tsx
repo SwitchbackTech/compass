@@ -45,6 +45,8 @@ export const MainGrid: FC<Props> = ({
   const { isCurrentWeek, week, weekDays } = component;
   const isDrafting = useAppSelector(selectIsDrafting);
 
+  useDragEventSmartScroll(mainGridRef);
+
   const onMouseDown = async (e: MouseEvent) => {
     if (isDrafting) {
       dispatch(draftSlice.actions.discard());
@@ -73,8 +75,6 @@ export const MainGrid: FC<Props> = ({
       draftSlice.actions.startResizing({ event, dateToChange: "endDate" }),
     );
   };
-
-  useDragEventSmartScroll(mainGridRef);
 
   return (
     <StyledMainGrid id={ID_GRID_MAIN} ref={mainGridRef}>
