@@ -1,13 +1,10 @@
-import React, { FC, MouseEvent } from "react";
-import mergeRefs from "react-merge-refs";
+import React, { FC, MouseEvent, MutableRefObject } from "react";
 import { Dayjs } from "dayjs";
 import { Categories_Event } from "@core/types/event.types";
 import { DRAFT_DURATION_MIN } from "@web/views/Calendar/layout.constants";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { Ref_Callback } from "@web/common/types/util.types";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { Ref_Grid } from "@web/views/Calendar/components/Grid/grid.types";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
@@ -24,14 +21,14 @@ import { MainGridEvents } from "./MainGridEvents";
 import { MainGridColumns } from "../Columns/MainGridColumns";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
+import { useDragEventSmartScroll } from "@web/views/Calendar/hooks/grid/useDragEventSmartScroll";
 
 interface Props {
   dateCalcs: DateCalcs;
   isSidebarOpen: boolean;
-  mainGridRef: Ref_Callback;
+  mainGridRef: MutableRefObject<HTMLDivElement | null>;
   measurements: Measurements_Grid;
   today: Dayjs;
-  scrollRef: Ref_Grid;
   weekProps: WeekProps;
 }
 
@@ -41,14 +38,14 @@ export const MainGrid: FC<Props> = ({
   mainGridRef,
   measurements,
   today,
-  scrollRef,
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
-
   const { component } = weekProps;
   const { isCurrentWeek, week, weekDays } = component;
   const isDrafting = useAppSelector(selectIsDrafting);
+
+  useDragEventSmartScroll(mainGridRef);
 
   const onMouseDown = async (e: MouseEvent) => {
     if (isDrafting) {
@@ -80,7 +77,7 @@ export const MainGrid: FC<Props> = ({
   };
 
   return (
-    <StyledMainGrid id={ID_GRID_MAIN} ref={mergeRefs([mainGridRef, scrollRef])}>
+    <StyledMainGrid id={ID_GRID_MAIN} ref={mainGridRef}>
       <MainGridColumns
         isCurrentWeek={isCurrentWeek}
         today={today}

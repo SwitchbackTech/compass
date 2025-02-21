@@ -39,16 +39,7 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
     }
   }, []);
 
-  const gridScrollRef = useRef<HTMLDivElement | null>(null);
-
-  const mainGridRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (node !== null && !mainMeasurements) {
-        _measureMainGrid(node);
-      }
-    },
-    [mainMeasurements],
-  );
+  const mainGridRef = useRef<HTMLDivElement | null>(null);
 
   const _measureAllDayRow = (node?: HTMLDivElement) => {
     if (node) {
@@ -103,10 +94,15 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
     }
   };
 
+  useEffect(() => {
+    if (mainGridRef.current && !mainMeasurements) {
+      _measureMainGrid(mainGridRef.current);
+    }
+  }, [mainGridRef.current]);
+
   return {
     gridRefs: {
       allDayRef,
-      gridScrollRef,
       mainGridRef,
     },
     measurements: {

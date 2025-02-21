@@ -1,3 +1,4 @@
+import { MutableRefObject } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -9,15 +10,13 @@ import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { GRID_X_START } from "@web/views/Calendar/layout.constants";
 
-import { Ref_Grid } from "../../components/Grid/grid.types";
-
 dayjs.extend(weekPlugin);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export const useDateCalcs = (
   measurements: Measurements_Grid,
-  scrollRef: Ref_Grid,
+  mainGridRef: MutableRefObject<HTMLDivElement | null>,
 ) => {
   const getDateByX = (x: number, firstDayInView: Dayjs) => {
     const gridX = x - GRID_X_START;
@@ -71,7 +70,7 @@ export const useDateCalcs = (
   const getMinuteByY = (y: number) => {
     if (!measurements.mainGrid) return 0; // TS guard. This should never happen
 
-    const scrollTop = scrollRef.current.scrollTop;
+    const scrollTop = mainGridRef.current?.scrollTop || 0;
     // gridY is the distance from the top of the grid (main grid) to the click
     const gridY = y - measurements.mainGrid.top + scrollTop;
 
