@@ -34,11 +34,7 @@ export const Sidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = ({
   const sidebarProps = useSidebar(measurements, dateCalcs);
 
   return (
-    <SidebarContainer
-      id="sidebar"
-      role="complementary"
-      onClick={sidebarProps.util.discardIfDrafting}
-    >
+    <SidebarContainer id="sidebar" role="complementary">
       <SidebarTabContainer>
         {tab === "tasks" && (
           <SomedayTab
