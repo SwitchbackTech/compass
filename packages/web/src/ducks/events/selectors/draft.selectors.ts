@@ -3,6 +3,9 @@ import { RootState } from "@web/store";
 
 export const selectDraft = (state: RootState) => state.events.draft.event;
 
+export const selectDraftCategory = (state: RootState) =>
+  state.events.draft.status?.eventType;
+
 export const selectDraftStatus = (state: RootState) =>
   state.events.draft.status;
 
