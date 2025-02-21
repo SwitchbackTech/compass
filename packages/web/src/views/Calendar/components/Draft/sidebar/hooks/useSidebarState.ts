@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useAppSelector } from "@web/store/store.hooks";
-import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
+import {
+  selectDraftStatus,
+  selectIsDNDing,
+} from "@web/ducks/events/selectors/draft.selectors";
 import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
 
 import { useMousePosition } from "./useMousePosition";
@@ -17,14 +20,16 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   }, [categorizedEvents]);
 
   const { eventType: draftType } = useAppSelector(selectDraftStatus);
+  const isDNDing = useAppSelector(selectIsDNDing);
 
-  const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
+  const [draft, setDraft] = useState<Schema_Event | null>(null);
   const [isDrafting, setIsDrafting] = useState(false);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
+  const [isSomedayFormOpen, setIsSomedayFormOpen] = useState(false);
 
   const isDragging = isDrafting && draft !== null;
   const { isOverAllDayRow, isOverGrid, isOverMainGrid, mouseCoords } =
-    useMousePosition(isDragging, draft?.isOpen, measurements);
+    useMousePosition(isDNDing, isSomedayFormOpen, measurements);
 
   const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK]
     .eventIds as string[];
@@ -35,9 +40,9 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   const isDraftingNew =
     isDrafting && !isDraftingExisting && !somedayIds.includes(draft?._id);
 
-  const shouldPreviewOnGrid = draft !== null && isOverGrid && !draft?.isOpen;
+  const shouldPreviewOnGrid = isDNDing && isOverGrid;
 
-  return {
+  const state = {
     draft,
     draftType,
     somedayIds,
@@ -53,11 +58,21 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
     mouseCoords,
     shouldPreviewOnGrid,
     somedayEvents,
+  };
+  const setters = {
     setDraft,
     setIsDrafting,
     setIsDraftingExisting,
+    setIsSomedayFormOpen,
     setSomedayEvents,
+  };
+
+  return {
+    state,
+    setters,
   };
 };
 
-export type State_Sidebar = ReturnType<typeof useSidebarState>;
+type Hook_Sidebar = ReturnType<typeof useSidebarState>;
+export type State_Sidebar = Hook_Sidebar["state"];
+export type Setters_Sidebar = Hook_Sidebar["setters"];

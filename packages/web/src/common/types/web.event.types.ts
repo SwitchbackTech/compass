@@ -1,11 +1,6 @@
 import { z } from "zod";
-import {
-  Categories_Event,
-  CoreEventSchema,
-  Schema_Event,
-} from "@core/types/event.types";
+import { CoreEventSchema, Schema_Event } from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
-import { Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
 
 export enum Recurrence_Selection {
   NONE = "none",
@@ -22,7 +17,7 @@ export const GridEventSchema = CoreEventSchema.extend({
 export interface Schema_GridEvent extends Schema_Event {
   hasFlipped?: boolean;
   isOpen?: boolean;
-  row?: number; //TODO: delete if not used
+  row?: number;
   position: {
     isOverlapping: boolean;
     widthMultiplier: number; // EG: 0.5 for half width

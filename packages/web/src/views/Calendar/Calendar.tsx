@@ -18,8 +18,10 @@ import { useRefresh } from "./hooks/useRefresh";
 import { Sidebar } from "./components/Sidebar";
 import { Dedication } from "./components/Dedication";
 import { CmdPalette } from "../CmdPalette";
-import { Draft } from "./components/Draft/Draft";
 import { DraftProvider } from "./components/Draft/context/DraftProvider";
+import { Draft } from "./components/Draft/Draft";
+import { SidebarDraftProvider } from "./components/Draft/sidebar/context/SidebarDraftProvider";
+
 export const CalendarView = () => {
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
@@ -66,15 +68,17 @@ export const CalendarView = () => {
         weekProps={weekProps}
         isSidebarOpen={isSidebarOpen}
       >
-        <Draft measurements={measurements} weekProps={weekProps} />
-        {isSidebarOpen && (
-          <Sidebar
-            dateCalcs={dateCalcs}
-            measurements={measurements}
-            weekProps={weekProps}
-            gridRefs={gridRefs}
-          />
-        )}
+        <SidebarDraftProvider dateCalcs={dateCalcs} measurements={measurements}>
+          <Draft measurements={measurements} weekProps={weekProps} />
+          {isSidebarOpen && (
+            <Sidebar
+              dateCalcs={dateCalcs}
+              measurements={measurements}
+              weekProps={weekProps}
+              gridRefs={gridRefs}
+            />
+          )}
+        </SidebarDraftProvider>
         <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
           <Header
             rootProps={rootProps}

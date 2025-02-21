@@ -2,7 +2,6 @@ import React, { FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { Text } from "@web/components/Text";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import {
   Measurements_Grid,
   Refs_Grid,
@@ -16,7 +15,6 @@ import { SidebarSection, SidebarHeader } from "../styled";
 interface Props {
   dateCalcs: DateCalcs;
   measurements: Measurements_Grid;
-  sidebarProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
   weekLabel: string;
   gridRefs: Refs_Grid;
@@ -25,7 +23,6 @@ interface Props {
 export const WeekSection: FC<Props> = ({
   dateCalcs,
   measurements,
-  sidebarProps,
   viewStart,
   weekLabel,
   gridRefs,
@@ -45,7 +42,6 @@ export const WeekSection: FC<Props> = ({
         category={Categories_Event.SOMEDAY_WEEK}
         dateCalcs={dateCalcs}
         measurements={measurements}
-        sidebarProps={sidebarProps}
         viewStart={viewStart}
         mainGridRef={gridRefs.mainGridRef}
       />

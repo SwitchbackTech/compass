@@ -3,7 +3,7 @@ import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useDraftActions } from "../hooks/actions/useDraftActions";
 import { useDraftState } from "../hooks/state/useDraftState";
-import { DraftContext, State_Draft_Combined } from "./DraftContext";
+import { DraftContext, State_Draft } from "./DraftContext";
 import { useDraftForm } from "../hooks/state/useDraftForm";
 
 interface DraftProviderProps {
@@ -31,7 +31,7 @@ export const DraftProvider = ({
   const { setIsFormOpen } = setters;
   const formProps = useDraftForm(isFormOpen, discard, reset, setIsFormOpen);
 
-  const state: State_Draft_Combined = {
+  const state: State_Draft = {
     ...originalState,
     formProps,
   };

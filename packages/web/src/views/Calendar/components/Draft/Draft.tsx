@@ -5,13 +5,16 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { getCategory } from "@web/common/utils/event.util";
-import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import {
+  selectDraftCategory,
+  selectIsDrafting,
+} from "@web/ducks/events/selectors/draft.selectors";
 
-import { GridDraft } from "./GridDraft";
-import { useGridClick } from "./hooks/grid/useGridClick";
-import { useGridMouseMove } from "./hooks/grid/useGridMouseMove";
+import { useGridClick } from "./grid/hooks/useGridClick";
+import { useGridMouseMove } from "./grid/hooks/useGridMouseMove";
 import { useDraftContext } from "./context/useDraftContext";
+import { SomedayDraft } from "./sidebar/SomedayDraft";
+import { GridDraft } from "./grid/GridDraft";
 
 interface Props {
   measurements: Measurements_Grid;
@@ -28,9 +31,10 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   useGridClick();
   useGridMouseMove();
 
+  const isDrafting = useAppSelector(selectIsDrafting);
+  const category = useAppSelector(selectDraftCategory);
   const { state } = useDraftContext();
   const { draft, isDragging, isResizing } = state;
-  const isDrafting = useAppSelector(selectIsDrafting);
 
   if (isLoadingDOM || !draft || !isDrafting) return null;
 
@@ -38,10 +42,16 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
     console.error("draft.isAllDay is undefined", draft);
     return null;
   }
-  const container = getDraftContainer(draft.isAllDay);
-  const category = getCategory(draft);
+
+  if (!category) return null;
+
+  const container = getDraftContainer(category);
   const isGridEvent =
     category === Categories_Event.ALLDAY || category === Categories_Event.TIMED;
+
+  const isSomedayEvent =
+    category === Categories_Event.SOMEDAY_WEEK ||
+    category === Categories_Event.SOMEDAY_MONTH;
 
   return createPortal(
     <>
@@ -52,6 +62,14 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
           isResizing={isResizing}
           measurements={measurements}
           weekProps={weekProps}
+        />
+      )}
+      {isSomedayEvent && (
+        <SomedayDraft
+          category={category}
+          draft={draft}
+          index={0}
+          isOverGrid={false}
         />
       )}
     </>,

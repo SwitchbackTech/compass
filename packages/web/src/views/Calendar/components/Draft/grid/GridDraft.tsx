@@ -6,8 +6,8 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { EventForm } from "@web/views/Forms/EventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { GridEvent } from "../Event/Grid";
-import { useDraftContext } from "./context/useDraftContext";
+import { useDraftContext } from "../context/useDraftContext";
+import { GridEvent } from "../../Event/Grid";
 
 interface Props {
   draft: Schema_GridEvent;

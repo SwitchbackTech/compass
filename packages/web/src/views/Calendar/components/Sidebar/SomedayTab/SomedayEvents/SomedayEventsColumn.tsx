@@ -3,11 +3,8 @@ import { Droppable } from "@hello-pangea/dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
-
-import { DraggableSomedayEvent } from "./Wrappers/DraggableSomedayEvent";
 import { DraggableSomedayEvents } from "./Wrappers/DraggableSomedayEvents";
-
+import { DraggableSomedayEvent } from "./Wrappers/DraggableSomedayEvent";
 export interface Props {
   category: Categories_Event;
   column: {
@@ -17,7 +14,6 @@ export interface Props {
   events: Schema_Event[];
   isDraftingNew: boolean;
   isOverGrid: boolean;
-  util: SidebarProps["util"];
 }
 
 export const SomedayEventsColumn: FC<Props> = ({
@@ -27,7 +23,6 @@ export const SomedayEventsColumn: FC<Props> = ({
   events,
   isDraftingNew,
   isOverGrid,
-  util,
 }) => {
   return (
     <>
@@ -41,12 +36,11 @@ export const SomedayEventsColumn: FC<Props> = ({
                   draft={draft}
                   events={events}
                   isOverGrid={isOverGrid}
-                  util={util}
                 />
                 {provided.placeholder}
               </div>
 
-              {isDraftingNew && (
+              {/* {isDraftingNew && (
                 <DraggableSomedayEvent
                   category={category}
                   draftId={ID_SOMEDAY_DRAFT}
@@ -55,9 +49,8 @@ export const SomedayEventsColumn: FC<Props> = ({
                   isDrafting={true}
                   isOverGrid={isOverGrid}
                   key={ID_SOMEDAY_DRAFT}
-                  util={util}
                 />
-              )}
+              )} */}
             </>
           );
         }}

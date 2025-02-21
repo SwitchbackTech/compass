@@ -1,6 +1,5 @@
 import React, { FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
-import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   Measurements_Grid,
@@ -17,7 +16,6 @@ import { SomedayEvents } from "../SomedayEvents";
 interface Props {
   dateCalcs: DateCalcs;
   measurements: Measurements_Grid;
-  somedayProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
   gridRefs: Refs_Grid;
 }
@@ -25,7 +23,6 @@ interface Props {
 export const MonthSection: FC<Props> = ({
   dateCalcs,
   measurements,
-  somedayProps,
   viewStart,
   gridRefs,
 }) => {
@@ -46,7 +43,6 @@ export const MonthSection: FC<Props> = ({
         category={Categories_Event.SOMEDAY_MONTH}
         dateCalcs={dateCalcs}
         measurements={measurements}
-        sidebarProps={somedayProps}
         viewStart={viewStart}
         mainGridRef={gridRefs.mainGridRef}
       />

@@ -13,7 +13,6 @@ import {
 import { DropResult } from "@hello-pangea/dnd";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   prepEvtAfterDraftDrop,
   assembleDefaultEvent,
@@ -40,19 +39,18 @@ import {
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 
-import { DateCalcs } from "../../grid/useDateCalcs";
-import { State_Sidebar } from "./useSidebarState";
+import { Setters_Sidebar, State_Sidebar } from "./useSidebarState";
 
-export const useSidebarUtil = (
+export const useSidebarActions = (
   dateCalcs: DateCalcs,
   state: State_Sidebar,
-  setDraft: React.Dispatch<React.SetStateAction<Schema_GridEvent>>,
-  setIsDrafting: React.Dispatch<React.SetStateAction<boolean>>,
+  setters: Setters_Sidebar,
 ) => {
   const dispatch = useAppDispatch();
 
-  const isDraftingOnGrid = useAppSelector(selectIsDrafting);
+  const isDrafting = useAppSelector(selectIsDrafting);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const { start, end } = useAppSelector(selectDatesInView);
@@ -60,18 +58,21 @@ export const useSidebarUtil = (
   const viewStart = dayjs(start);
   const viewEnd = dayjs(end);
 
+  const { setDraft, setIsDrafting, setIsSomedayFormOpen, setSomedayEvents } =
+    setters;
+
   const resetLocalDraftStateIfNeeded = () => {
     if (!state.isDrafting) return;
 
     if (isSomedayEventFormOpen()) {
-      state.setIsDrafting(false);
-      state.setDraft(null);
+      setIsDrafting(false);
+      setDraft(null);
     }
   };
 
   const close = () => {
-    state.setIsDrafting(false);
-    state.setDraft(null);
+    setIsDrafting(false);
+    setDraft(null);
 
     const isSomeday =
       state.draftType === Categories_Event.SOMEDAY_WEEK ||
@@ -154,9 +155,9 @@ export const useSidebarUtil = (
       Categories_Event.SOMEDAY_WEEK,
     );
 
-    setDraft({ ...somedayDefault, isOpen: true });
+    setDraft(somedayDefault);
+    setIsSomedayFormOpen(true);
     setIsDrafting(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setDraft]);
 
   const getDatesAfterDroppingOn = (
@@ -184,29 +185,17 @@ export const useSidebarUtil = (
   };
 
   const onDraft = (event: Schema_Event, category: Categories_Event) => {
-    state.setIsDrafting(true);
-    state.setDraft({
-      ...event,
-      isOpen: true,
-    });
+    setIsDrafting(true);
+    setDraft(event);
+    setIsSomedayFormOpen(true);
 
     dispatch(
       draftSlice.actions.start({
-        event: event,
+        activity: "sidebarClick",
+        event,
         eventType: category,
       }),
     );
-  };
-
-  const discardIfDrafting = () => {
-    if (state.isDrafting) {
-      dispatch(draftSlice.actions.discard());
-      close();
-      return;
-    }
-    if (isDraftingOnGrid) {
-      dispatch(draftSlice.actions.discard());
-    }
   };
 
   const onDragEnd = (result: DropResult) => {
@@ -245,26 +234,23 @@ export const useSidebarUtil = (
     close();
   };
 
-  const onDragStart = (props: { draggableId: string }) => {
+  const onDragStart = async (props: { draggableId: string }) => {
     const existingEvent = state.somedayEvents.events[props.draggableId];
     const isExisting = existingEvent !== undefined;
 
-    let _draft: Schema_GridEvent;
+    dispatch(draftSlice.actions.startDnd());
+
     if (isExisting) {
-      _draft = {
-        ...existingEvent,
-        isOpen: false,
-      };
+      setDraft(existingEvent);
     } else {
       console.log("REMINDER: update for monthly");
-      const defaultSomeday = assembleDefaultEvent(
+      const defaultSomeday = await assembleDefaultEvent(
         Categories_Event.SOMEDAY_WEEK,
       );
-      _draft = { ...defaultSomeday, isOpen: false };
+      setDraft(defaultSomeday);
     }
 
-    state.setDraft(_draft);
-    state.setIsDrafting(true);
+    setIsDrafting(true);
   };
 
   const onMigrate = (
@@ -289,6 +275,40 @@ export const useSidebarUtil = (
     close();
   };
 
+  const onPlaceholderClick = async (section: Categories_Event) => {
+    if (isDrafting) {
+      dispatch(draftSlice.actions.discard());
+      close();
+      return;
+    }
+
+    if (section === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
+      alert(SOMEDAY_WEEK_LIMIT_MSG);
+      return;
+    }
+
+    if (section === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
+      alert(SOMEDAY_MONTH_LIMIT_MSG);
+      return;
+    }
+
+    if (isEventFormOpen()) {
+      dispatch(draftSlice.actions.discard());
+      return;
+    }
+
+    const event = await assembleDefaultEvent(Categories_Event.SOMEDAY_WEEK);
+
+    dispatch(
+      draftSlice.actions.start({
+        activity: "sidebarClick",
+        eventType: section,
+        event,
+      }),
+    );
+
+    createDefaultSomeday();
+  };
   const onSubmit = async (category: Categories_Event) => {
     if (!state.draft) return;
 
@@ -330,37 +350,6 @@ export const useSidebarUtil = (
     close();
   };
 
-  const onPlaceholderClick = (section: Categories_Event) => {
-    if (state.isDrafting) {
-      dispatch(draftSlice.actions.discard());
-      close();
-      return;
-    }
-
-    if (section === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
-      alert(SOMEDAY_WEEK_LIMIT_MSG);
-      return;
-    }
-
-    if (section === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
-      alert(SOMEDAY_MONTH_LIMIT_MSG);
-      return;
-    }
-
-    if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
-      return;
-    }
-
-    dispatch(
-      draftSlice.actions.start({
-        eventType: section,
-      }),
-    );
-
-    createDefaultSomeday();
-  };
-
   const reorder = (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
@@ -381,7 +370,7 @@ export const useSidebarUtil = (
       },
     };
 
-    state.setSomedayEvents(newState);
+    setSomedayEvents(newState);
 
     const newOrder = newEventIds.map((_id, index) => {
       return { _id, order: index };
@@ -408,7 +397,6 @@ export const useSidebarUtil = (
   return {
     close,
     createDefaultSomeday,
-    discardIfDrafting,
     onDraft,
     onDragEnd,
     onDragStart,
@@ -420,4 +408,4 @@ export const useSidebarUtil = (
   };
 };
 
-export type Util_Sidebar = ReturnType<typeof useSidebarUtil>;
+export type Actions_Sidebar = ReturnType<typeof useSidebarActions>;
