@@ -44,3 +44,5 @@ export const useDraftForm = (
   const formProps = useEventForm("grid", isFormOpen, onIsFormOpenChange);
   return formProps;
 };
+
+export type Props_DraftForm = ReturnType<typeof useDraftForm>;

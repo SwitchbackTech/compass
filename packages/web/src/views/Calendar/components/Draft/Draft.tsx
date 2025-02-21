@@ -10,10 +10,11 @@ import {
   selectIsDrafting,
 } from "@web/ducks/events/selectors/draft.selectors";
 
-import { GridDraft } from "./GridDraft";
-import { useGridClick } from "./hooks/grid/useGridClick";
-import { useGridMouseMove } from "./hooks/grid/useGridMouseMove";
+import { useGridClick } from "./grid/hooks/useGridClick";
+import { useGridMouseMove } from "./grid/hooks/useGridMouseMove";
 import { useDraftContext } from "./context/useDraftContext";
+import { SomedayDraft } from "./sidebar/SomedayDraft";
+import { GridDraft } from "./grid/GridDraft";
 
 interface Props {
   measurements: Measurements_Grid;
@@ -41,9 +42,16 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
     console.error("draft.isAllDay is undefined", draft);
     return null;
   }
-  const container = getDraftContainer(draft.isAllDay);
+
+  if (!category) return null;
+
+  const container = getDraftContainer(category);
   const isGridEvent =
     category === Categories_Event.ALLDAY || category === Categories_Event.TIMED;
+
+  const isSomedayEvent =
+    category === Categories_Event.SOMEDAY_WEEK ||
+    category === Categories_Event.SOMEDAY_MONTH;
 
   return createPortal(
     <>
@@ -54,6 +62,14 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
           isResizing={isResizing}
           measurements={measurements}
           weekProps={weekProps}
+        />
+      )}
+      {isSomedayEvent && (
+        <SomedayDraft
+          category={category}
+          draft={draft}
+          index={0}
+          isOverGrid={false}
         />
       )}
     </>,

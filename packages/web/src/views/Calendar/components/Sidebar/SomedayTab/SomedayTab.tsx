@@ -11,7 +11,6 @@ import {
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { theme } from "@web/common/styles/theme";
-import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 
 import { WeekSection } from "./WeekSection/WeekSection";
 import { MonthSection } from "./MonthSection";
@@ -20,7 +19,6 @@ import { SidebarContent } from "./styled";
 interface Props {
   dateCalcs: DateCalcs;
   measurements: Measurements_Grid;
-  sidebarProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
   viewEnd: WeekProps["component"]["endOfView"];
   gridRefs: Refs_Grid;
@@ -29,7 +27,6 @@ interface Props {
 export const SomedayTab: FC<Props> = ({
   dateCalcs,
   measurements,
-  sidebarProps,
   viewEnd,
   viewStart,
   gridRefs,
@@ -48,7 +45,6 @@ export const SomedayTab: FC<Props> = ({
       <WeekSection
         dateCalcs={dateCalcs}
         measurements={measurements}
-        sidebarProps={sidebarProps}
         viewStart={viewStart}
         weekLabel={weekLabel}
         gridRefs={gridRefs}
@@ -64,7 +60,6 @@ export const SomedayTab: FC<Props> = ({
       <MonthSection
         dateCalcs={dateCalcs}
         measurements={measurements}
-        somedayProps={sidebarProps}
         viewStart={viewStart}
         gridRefs={gridRefs}
       />

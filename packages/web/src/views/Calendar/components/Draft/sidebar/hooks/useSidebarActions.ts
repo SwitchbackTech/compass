@@ -41,14 +41,12 @@ import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 
-import { State_Sidebar } from "./useSidebarState";
+import { Setters_Sidebar, State_Sidebar } from "./useSidebarState";
 
-export const useSidebarUtil = (
+export const useSidebarActions = (
   dateCalcs: DateCalcs,
   state: State_Sidebar,
-  setDraft: React.Dispatch<React.SetStateAction<Schema_Event | null>>,
-  setIsDrafting: React.Dispatch<React.SetStateAction<boolean>>,
-  setIsSomedayFormOpen: React.Dispatch<React.SetStateAction<boolean>>,
+  setters: Setters_Sidebar,
 ) => {
   const dispatch = useAppDispatch();
 
@@ -60,18 +58,21 @@ export const useSidebarUtil = (
   const viewStart = dayjs(start);
   const viewEnd = dayjs(end);
 
+  const { setDraft, setIsDrafting, setIsSomedayFormOpen, setSomedayEvents } =
+    setters;
+
   const resetLocalDraftStateIfNeeded = () => {
     if (!state.isDrafting) return;
 
     if (isSomedayEventFormOpen()) {
-      state.setIsDrafting(false);
-      state.setDraft(null);
+      setIsDrafting(false);
+      setDraft(null);
     }
   };
 
   const close = () => {
-    state.setIsDrafting(false);
-    state.setDraft(null);
+    setIsDrafting(false);
+    setDraft(null);
 
     const isSomeday =
       state.draftType === Categories_Event.SOMEDAY_WEEK ||
@@ -184,8 +185,8 @@ export const useSidebarUtil = (
   };
 
   const onDraft = (event: Schema_Event, category: Categories_Event) => {
-    state.setIsDrafting(true);
-    state.setDraft(event);
+    setIsDrafting(true);
+    setDraft(event);
     setIsSomedayFormOpen(true);
 
     dispatch(
@@ -240,16 +241,16 @@ export const useSidebarUtil = (
     dispatch(draftSlice.actions.startDnd());
 
     if (isExisting) {
-      state.setDraft(existingEvent);
+      setDraft(existingEvent);
     } else {
       console.log("REMINDER: update for monthly");
       const defaultSomeday = await assembleDefaultEvent(
         Categories_Event.SOMEDAY_WEEK,
       );
-      state.setDraft(defaultSomeday);
+      setDraft(defaultSomeday);
     }
 
-    state.setIsDrafting(true);
+    setIsDrafting(true);
   };
 
   const onMigrate = (
@@ -369,7 +370,7 @@ export const useSidebarUtil = (
       },
     };
 
-    state.setSomedayEvents(newState);
+    setSomedayEvents(newState);
 
     const newOrder = newEventIds.map((_id, index) => {
       return { _id, order: index };
@@ -407,4 +408,4 @@ export const useSidebarUtil = (
   };
 };
 
-export type Util_Sidebar = ReturnType<typeof useSidebarUtil>;
+export type Actions_Sidebar = ReturnType<typeof useSidebarActions>;

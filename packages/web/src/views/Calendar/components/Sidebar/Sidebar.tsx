@@ -7,8 +7,8 @@ import {
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useAppSelector } from "@web/store/store.hooks";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
+import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 
-import { useSidebar } from "../Draft/hooks/sidebar/useSidebar";
 import { SomedayTab } from "./SomedayTab/SomedayTab";
 import { SidebarIconRow } from "./SidebarIconRow";
 import { MonthTab } from "./MonthTab/MonthTab";
@@ -31,16 +31,14 @@ export const Sidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = ({
   const weekEnd = weekProps.component.endOfView;
 
   const tab = useAppSelector(selectSidebarTab);
-  const sidebarProps = useSidebar(measurements, dateCalcs);
 
   return (
-    <SidebarContainer id="sidebar" role="complementary">
+    <SidebarContainer id={ID_SIDEBAR} role="complementary">
       <SidebarTabContainer>
         {tab === "tasks" && (
           <SomedayTab
             dateCalcs={dateCalcs}
             measurements={measurements}
-            sidebarProps={sidebarProps}
             viewStart={weekStart}
             viewEnd={weekEnd}
             gridRefs={gridRefs}

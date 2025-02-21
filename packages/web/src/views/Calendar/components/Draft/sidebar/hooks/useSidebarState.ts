@@ -42,7 +42,7 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
 
   const shouldPreviewOnGrid = isDNDing && isOverGrid;
 
-  return {
+  const state = {
     draft,
     draftType,
     somedayIds,
@@ -58,12 +58,21 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
     mouseCoords,
     shouldPreviewOnGrid,
     somedayEvents,
+  };
+  const setters = {
     setDraft,
     setIsDrafting,
     setIsDraftingExisting,
     setIsSomedayFormOpen,
     setSomedayEvents,
   };
+
+  return {
+    state,
+    setters,
+  };
 };
 
-export type State_Sidebar = ReturnType<typeof useSidebarState>;
+type Hook_Sidebar = ReturnType<typeof useSidebarState>;
+export type State_Sidebar = Hook_Sidebar["state"];
+export type Setters_Sidebar = Hook_Sidebar["setters"];

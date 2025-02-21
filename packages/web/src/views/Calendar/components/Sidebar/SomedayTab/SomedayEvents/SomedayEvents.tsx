@@ -18,17 +18,8 @@ import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 import { SomedayEventsColumn } from "./SomedayEventsColumn";
 import { EventPlaceholder, SidebarList } from "../../styled";
-import { SidebarProps } from "../../../Draft/hooks/sidebar/useSidebar";
-import { State_Sidebar } from "../../../Draft/hooks/sidebar/useSidebarState";
-
-interface Props {
-  category: Categories_Event;
-  dateCalcs: DateCalcs;
-  measurements: Measurements_Grid;
-  sidebarProps: SidebarProps;
-  viewStart: WeekProps["component"]["startOfView"];
-  mainGridRef: Refs_Grid["mainGridRef"];
-}
+import { State_Sidebar } from "../../../Draft/sidebar/hooks/sidebar/useSidebarState";
+import { useSidebarContext } from "../../../Draft/sidebar/context/useSidebarContext";
 
 const getSomedayEvents = (
   category: Categories_Event,
@@ -43,15 +34,21 @@ const getSomedayEvents = (
   );
 };
 
+interface Props {
+  category: Categories_Event;
+  dateCalcs: DateCalcs;
+  measurements: Measurements_Grid;
+  viewStart: WeekProps["component"]["startOfView"];
+  mainGridRef: Refs_Grid["mainGridRef"];
+}
 export const SomedayEvents: FC<Props> = ({
   category,
   dateCalcs,
   measurements,
-  sidebarProps,
   viewStart,
   mainGridRef,
 }) => {
-  const { state, util } = sidebarProps;
+  const { actions, state } = useSidebarContext();
   const gridX = state.mouseCoords.x - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
   const dayIndex = dateCalcs.getDayNumberByX(gridX);
 
@@ -64,7 +61,10 @@ export const SomedayEvents: FC<Props> = ({
   const isDraftingNew = state.isDraftingNew && state.draftType === category;
 
   return (
-    <DragDropContext onDragEnd={util.onDragEnd} onDragStart={util.onDragStart}>
+    <DragDropContext
+      onDragEnd={actions.onDragEnd}
+      onDragStart={actions.onDragStart}
+    >
       {state.shouldPreviewOnGrid && state.draft && (
         <GridEventPreview
           dateCalcs={dateCalcs}
@@ -89,7 +89,6 @@ export const SomedayEvents: FC<Props> = ({
             isDraftingNew={isDraftingNew}
             isOverGrid={state.isOverGrid}
             key={COLUMN_WEEK}
-            util={util}
           />
         </div>
         {!isDraftingNew && (
@@ -99,7 +98,7 @@ export const SomedayEvents: FC<Props> = ({
                 ? "Add to month"
                 : "Add to week"
             }
-            onClick={() => sidebarProps.util.onPlaceholderClick(category)}
+            onClick={() => actions.onPlaceholderClick(category)}
             shortcut={category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"}
           >
             <EventPlaceholder>

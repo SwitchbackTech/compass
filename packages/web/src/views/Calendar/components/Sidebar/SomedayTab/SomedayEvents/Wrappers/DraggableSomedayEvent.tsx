@@ -2,9 +2,9 @@ import React, { FC } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
-import { SidebarProps } from "@web/views/Calendar/components/Draft/hooks/sidebar/useSidebar";
 
 import { SomedayEvent } from "../SomedayEvent";
+import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 
 export interface Props {
   category: Categories_Event;
@@ -13,7 +13,6 @@ export interface Props {
   index: number;
   isDrafting: boolean;
   isOverGrid: boolean;
-  util: SidebarProps["util"];
 }
 
 export const DraggableSomedayEvent: FC<Props> = ({
@@ -23,10 +22,10 @@ export const DraggableSomedayEvent: FC<Props> = ({
   isDrafting,
   isOverGrid,
   index,
-  util,
 }) => {
   const isDraftingThisEvent =
     (isDrafting && draftId === event._id) || draftId === ID_SOMEDAY_DRAFT;
+  const { actions, setters } = useSidebarContext();
 
   return (
     <div>
@@ -45,13 +44,13 @@ export const DraggableSomedayEvent: FC<Props> = ({
                 isDragging={snapshot.isDragging}
                 isDrafting={isDraftingThisEvent}
                 isOverGrid={isOverGrid}
-                onClose={util.close}
-                onDraft={() => util.onDraft(event, category)}
-                onMigrate={util.onMigrate}
-                onSubmit={() => util.onSubmit(category)}
+                onClose={actions.close}
+                onDraft={() => actions.onDraft(event, category)}
+                onMigrate={actions.onMigrate}
+                onSubmit={() => actions.onSubmit(category)}
                 provided={provided}
                 snapshot={snapshot}
-                setEvent={util.setDraft}
+                setEvent={setters.setDraft}
               />
             </>
           );

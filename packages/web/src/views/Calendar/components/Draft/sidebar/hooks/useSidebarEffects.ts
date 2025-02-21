@@ -6,9 +6,9 @@ import {
   selectIsDraftingSomeday,
 } from "@web/ducks/events/selectors/draft.selectors";
 
-import { Util_Sidebar } from "./useSidebarUtil";
+import { Actions_Sidebar } from "./useSidebarActions";
 
-export const useSidebarEffects = (util: Util_Sidebar) => {
+export const useSidebarEffects = (util: Actions_Sidebar) => {
   const { resetLocalDraftStateIfNeeded, createDefaultSomeday } = util;
 
   const isDrafting = useAppSelector(selectIsDrafting);
