@@ -4,7 +4,7 @@ import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useDraftActions } from "../hooks/actions/useDraftActions";
 import { useDraftForm } from "../hooks/state/useDraftForm";
 import { useDraftState } from "../hooks/state/useDraftState";
-import { DraftContext } from "./DraftContext";
+import { DraftContext, State_Draft } from "./DraftContext";
 
 interface DraftProviderProps {
   children: React.ReactNode;

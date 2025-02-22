@@ -1,4 +1,5 @@
 import React, { FC } from "react";
+import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";

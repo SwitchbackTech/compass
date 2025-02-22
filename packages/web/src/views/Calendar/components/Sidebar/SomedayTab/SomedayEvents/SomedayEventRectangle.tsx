@@ -4,13 +4,13 @@ import { Flex } from "@web/components/Flex";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
-import { Util_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarUtil";
+import { Actions_Sidebar } from "../../../Draft/sidebar/hooks/useSidebarActions";
 import { StyledMigrateArrow, StyledRecurrenceText } from "./styled";
 
 interface Props {
   category: Categories_Event;
   event: Schema_Event;
-  onMigrate: Util_Sidebar["onMigrate"];
+  onMigrate: Actions_Sidebar["onMigrate"];
 }
 
 export const SomedayEventRectangle = ({

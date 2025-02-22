@@ -9,6 +9,7 @@ import { RootProps } from "./calendarView.types";
 import { Dedication } from "./components/Dedication";
 import { Draft } from "./components/Draft/Draft";
 import { DraftProvider } from "./components/Draft/context/DraftProvider";
+import { SidebarDraftProvider } from "./components/Draft/sidebar/context/SidebarDraftProvider";
 import { Grid } from "./components/Grid/";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
