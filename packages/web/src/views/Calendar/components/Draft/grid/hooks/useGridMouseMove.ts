@@ -1,5 +1,4 @@
 import { MouseEvent, useCallback } from "react";
-
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useEventListener } from "@web/views/Calendar/hooks/mouse/useEventListener";

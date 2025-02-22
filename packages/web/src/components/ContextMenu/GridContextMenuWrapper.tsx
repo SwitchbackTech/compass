@@ -1,24 +1,24 @@
 import React, { useState } from "react";
 import {
-  useFloating,
   autoUpdate,
+  flip,
   offset,
   shift,
-  flip,
+  useFloating,
 } from "@floating-ui/react";
 import { Categories_Event } from "@core/types/event.types";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import {
   assembleGridEvent,
   getCalendarEventIdFromElement,
   isOptimisticEvent,
 } from "@web/common/utils/event.util";
+import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import {
   selectAllDayEvents,
   selectGridEvents,
 } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { ContextMenu } from "./ContextMenu";
 
 export const ContextMenuWrapper = ({

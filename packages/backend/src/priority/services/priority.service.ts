@@ -1,14 +1,13 @@
+import { Priorities } from "@core/constants/core.constants";
+import { BaseError } from "@core/errors/errors.base";
+import { Status } from "@core/errors/status.codes";
 import {
-  Schema_Priority,
   PriorityReq,
   PriorityReqUser,
+  Schema_Priority,
 } from "@core/types/priority.types";
-import { Priorities } from "@core/constants/core.constants";
-import { Status } from "@core/errors/status.codes";
-import { BaseError } from "@core/errors/errors.base";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
-
 import { mapPriorityData } from "./priority.service.helpers";
 
 class PriorityService {

@@ -1,21 +1,21 @@
 import dayjs, { Dayjs } from "dayjs";
-import { MouseEvent } from "react";
+import dayOfYear from "dayjs/plugin/dayOfYear";
 import isBetween from "dayjs/plugin/isBetween";
 import weekPlugin from "dayjs/plugin/weekOfYear";
-import dayOfYear from "dayjs/plugin/dayOfYear";
+import { MouseEvent } from "react";
 import { Schema_Event } from "@core/types/event.types";
+import { AssignResult, WidthPercentages } from "@web/common/types/util.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
+  AFTER_TMRW_MULTIPLE,
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
-  AFTER_TMRW_MULTIPLE,
 } from "@web/views/Calendar/layout.constants";
-import { AssignResult, WidthPercentages } from "@web/common/types/util.types";
 import {
   DIVIDER_GRID,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 dayjs.extend(dayOfYear);
 dayjs.extend(weekPlugin);

@@ -1,5 +1,5 @@
-import { getCurrentMinute } from "@web/common/utils/grid.util";
 import { MutableRefObject, useCallback, useEffect } from "react";
+import { getCurrentMinute } from "@web/common/utils/grid.util";
 
 export const useScroll = (
   timedGridRef: MutableRefObject<HTMLDivElement | null>,

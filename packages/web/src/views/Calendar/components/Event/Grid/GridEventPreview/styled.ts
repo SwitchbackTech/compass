@@ -1,6 +1,6 @@
-import styled from "styled-components";
-import type { XYCoord } from "react-dnd";
 import type { CSSProperties } from "react";
+import type { XYCoord } from "react-dnd";
+import styled from "styled-components";
 import { Priority } from "@core/constants/core.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";

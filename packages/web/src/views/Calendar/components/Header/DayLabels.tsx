@@ -1,13 +1,12 @@
-import React, { FC } from "react";
 import { Dayjs } from "dayjs";
-import { Text } from "@web/components/Text";
+import React, { FC } from "react";
 import { theme } from "@web/common/styles/theme";
 import { getWeekDayLabel } from "@web/common/utils/event.util";
-import { JustifyContent, AlignItems } from "@web/components/Flex/styled";
+import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
-
+import { Text } from "@web/components/Text";
 import { RootProps } from "../../calendarView.types";
-import { StyledWeekDaysFlex, StyledWeekDayFlex } from "./styled";
+import { StyledWeekDayFlex, StyledWeekDaysFlex } from "./styled";
 
 interface Props {
   rootProps: RootProps;

@@ -1,5 +1,5 @@
-import { Flex } from "@web/components/Flex";
 import styled from "styled-components";
+import { Flex } from "@web/components/Flex";
 
 export const StyledRepeatContainer = styled.div`
   margin-bottom: 10px;

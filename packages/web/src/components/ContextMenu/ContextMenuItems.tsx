@@ -1,17 +1,17 @@
+import React, { useState } from "react";
+import { PenNib, Trash } from "@phosphor-icons/react";
 import { Priorities } from "@core/constants/core.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { assembleGridEvent } from "@web/common/utils/event.util";
 import IconButton from "@web/components/IconButton/IconButton";
-import { Trash, PenNib } from "@phosphor-icons/react";
-import React, { useState } from "react";
+import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import {
   MenuItem,
   MenuItemLabel,
   PriorityCircle,
   PriorityContainer,
 } from "./styled";
-import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
-import { assembleGridEvent } from "@web/common/utils/event.util";
 
 export interface ContextMenuAction {
   id: string;

@@ -1,24 +1,32 @@
 import { GaxiosError } from "gaxios";
 import { v4 as uuidv4 } from "uuid";
+import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
 import {
-  Payload_Sync_Notif,
-  Payload_Sync_Events,
   Params_WatchEvents,
+  Payload_Sync_Events,
+  Payload_Sync_Notif,
 } from "@core/types/sync.types";
-import { Logger } from "@core/logger/winston.logger";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import {
   GenericError,
   SyncError,
 } from "@backend/common/constants/error.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
-
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import {
+  deleteWatchData,
+  getSync,
+  isWatchingEventsByGcalId,
+  updateRefreshedAtFor,
+  updateSyncFor,
+  updateSyncTokenFor,
+} from "../util/sync.queries";
+import { getChannelExpiration, isUsingHttps } from "../util/sync.utils";
 import {
   assembleEventImports,
   getCalendarInfo,
@@ -30,15 +38,6 @@ import {
   pruneSync,
   refreshSync,
 } from "./sync.service.helpers";
-import {
-  deleteWatchData,
-  getSync,
-  isWatchingEventsByGcalId,
-  updateSyncFor,
-  updateRefreshedAtFor,
-  updateSyncTokenFor,
-} from "../util/sync.queries";
-import { getChannelExpiration, isUsingHttps } from "../util/sync.utils";
 
 const logger = Logger("app:sync.service");
 class SyncService {

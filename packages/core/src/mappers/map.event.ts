@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { BaseError } from "@core/errors/errors.base";
 import { Origin, Priorities, Priority } from "@core/constants/core.constants";
-import { isAllDay, notCancelled } from "@core/util/event.util";
+import { BaseError } from "@core/errors/errors.base";
 import { Event_Core, Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
+import { isAllDay, notCancelled } from "@core/util/event.util";
 import { validateEvent } from "@core/validators/event.validator";
 
 export namespace MapEvent {

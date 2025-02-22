@@ -1,10 +1,9 @@
 import React, { FC } from "react";
 import { Droppable } from "@hello-pangea/dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { DraggableSomedayEvents } from "./Wrappers/DraggableSomedayEvents";
-import { DraggableSomedayEvent } from "./Wrappers/DraggableSomedayEvent";
+
 export interface Props {
   category: Categories_Event;
   column: {

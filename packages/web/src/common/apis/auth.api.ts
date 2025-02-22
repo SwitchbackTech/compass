@@ -2,7 +2,6 @@ import {
   Result_Auth_Compass,
   Result_VerifyGToken,
 } from "@core/types/auth.types";
-
 import { CompassApi } from "./compass.api";
 
 const AuthApi = {

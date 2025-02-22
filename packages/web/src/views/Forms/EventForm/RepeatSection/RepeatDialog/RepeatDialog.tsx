@@ -2,14 +2,13 @@ import React, { FC } from "react";
 import Select, { StylesConfig } from "react-select";
 import { Schema_Event } from "@core/types/event.types";
 import { brighten, darken } from "@core/util/color.utils";
+import { theme } from "@web/common/styles/theme";
 import { Recurrence_Selection } from "@web/common/types/web.event.types";
 import {
   getRecurrenceOption,
   getRecurrenceRule,
 } from "@web/common/utils/web.date.util";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
-import { theme } from "@web/common/styles/theme";
-
 import {
   StyledRepeatRow,
   StyledRepeatText,

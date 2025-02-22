@@ -1,12 +1,11 @@
 import React, {
-  ForwardedRef,
-  forwardRef,
   ForwardRefRenderFunction,
+  ForwardedRef,
   RefObject,
+  forwardRef,
   useRef,
 } from "react";
 import { Focusable } from "@web/components/Focusable/Focusable";
-
 import { StyledTextarea } from "./styled";
 import { TextareaProps } from "./types";
 

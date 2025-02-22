@@ -1,6 +1,5 @@
 import styled from "styled-components";
 import { Flex } from "@web/components/Flex";
-
 import { PAGE_MARGIN_TOP, PAGE_MARGIN_X } from "./layout.constants";
 
 export const Styled = styled(Flex)`

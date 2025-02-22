@@ -1,11 +1,10 @@
 import { Collection, Db, MongoClient, ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
+import { Schema_Event } from "@core/types/event.types";
 import { Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
-import { Schema_Event } from "@core/types/event.types";
-
-import { ENV } from "../constants/env.constants";
 import { Collections } from "../constants/collections";
+import { ENV } from "../constants/env.constants";
 
 const logger = Logger("app:mongo.service");
 

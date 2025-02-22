@@ -1,10 +1,9 @@
 import React, { FC, useState } from "react";
 import { RRULE } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-
-import { StyledRepeatContainer, StyledRepeatText } from "./styled";
-import { RepeatDialog } from "./RepeatDialog";
 import { SetEventFormField } from "../types";
+import { RepeatDialog } from "./RepeatDialog";
+import { StyledRepeatContainer, StyledRepeatText } from "./styled";
 
 interface Props {
   bgColor: string;

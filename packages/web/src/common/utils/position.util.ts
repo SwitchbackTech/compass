@@ -1,17 +1,17 @@
 import dayjs, { Dayjs } from "dayjs";
+import dayOfYear from "dayjs/plugin/dayOfYear";
 import isBetween from "dayjs/plugin/isBetween";
 import weekPlugin from "dayjs/plugin/weekOfYear";
-import dayOfYear from "dayjs/plugin/dayOfYear";
 import { MS_IN_HR } from "@core/constants/core.constants";
 import { HOURS_AM_FORMAT } from "@core/constants/date.constants";
+import { Category } from "@web/ducks/events/event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import {
-  EVENT_ALLDAY_HEIGHT,
   DRAFT_PADDING_BOTTOM,
+  EVENT_ALLDAY_HEIGHT,
   EVENT_PADDING_RIGHT,
   GRID_MARGIN_LEFT,
 } from "@web/views/Calendar/layout.constants";
-import { Category } from "@web/ducks/events/event.types";
 import { ACCEPTED_TIMES } from "../constants/web.constants";
 import { Schema_GridEvent } from "../types/web.event.types";
 

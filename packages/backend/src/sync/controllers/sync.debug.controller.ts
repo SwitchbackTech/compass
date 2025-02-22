@@ -3,7 +3,6 @@ import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
-
 import syncService from "../services/sync.service";
 import { getSync } from "../util/sync.queries";
 

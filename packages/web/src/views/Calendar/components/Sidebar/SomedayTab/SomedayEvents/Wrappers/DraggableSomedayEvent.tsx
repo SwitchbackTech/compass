@@ -2,9 +2,9 @@ import React, { FC } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
-
-import { SomedayEvent } from "../SomedayEvent";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
+import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
+import { SomedayEvent } from "../SomedayEvent";
 
 export interface Props {
   category: Categories_Event;

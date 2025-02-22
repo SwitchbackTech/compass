@@ -1,11 +1,9 @@
 import { ObjectId } from "mongodb";
-
+import { InsertedIds } from "../../../core/src/types/mongo.types";
 import {
   PriorityReq,
   Schema_Priority,
 } from "../../../core/src/types/priority.types";
-import { InsertedIds } from "../../../core/src/types/mongo.types";
-
 import { mapPriorityData } from "../priority/services/priority.service.helpers";
 
 test("Priority ids mapped in correct order", () => {

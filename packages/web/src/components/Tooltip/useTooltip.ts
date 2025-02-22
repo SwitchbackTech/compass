@@ -1,17 +1,16 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import {
-  useFloating,
   autoUpdate,
-  offset,
   flip,
+  offset,
   shift,
-  useHover,
-  useFocus,
   useDismiss,
-  useRole,
+  useFloating,
+  useFocus,
+  useHover,
   useInteractions,
+  useRole,
 } from "@floating-ui/react";
-
 import { TooltipOptions } from "./types";
 
 export function useTooltip({

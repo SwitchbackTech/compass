@@ -1,6 +1,6 @@
 import styled from "styled-components";
-import { brighten, darken } from "@core/util/color.utils";
 import { Priorities, Priority } from "@core/constants/core.constants";
+import { brighten, darken } from "@core/util/color.utils";
 import { colorByPriority } from "@web/common/styles/theme.util";
 
 export const Btn = styled.div`

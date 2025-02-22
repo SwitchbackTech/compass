@@ -3,9 +3,9 @@ import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import { CLIMB } from "@core/__mocks__/events/events.misc";
-import { CalendarView } from "@web/views/Calendar";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
+import { CalendarView } from "@web/views/Calendar";
 
 jest.mock("@web/views/Calendar/hooks/mouse/useEventListener", () => ({
   useEventListener: jest.fn(),

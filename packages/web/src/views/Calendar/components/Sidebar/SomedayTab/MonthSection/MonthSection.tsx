@@ -1,17 +1,16 @@
 import React, { FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
+import { getMonthListLabel } from "@web/common/utils/event.util";
+import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
+import { Text } from "@web/components/Text";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   Measurements_Grid,
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { Text } from "@web/components/Text";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
-import { getMonthListLabel } from "@web/common/utils/event.util";
-
-import { SidebarHeader, SidebarSection } from "../styled";
 import { SomedayEvents } from "../SomedayEvents";
+import { SidebarHeader, SidebarSection } from "../styled";
 
 interface Props {
   dateCalcs: DateCalcs;

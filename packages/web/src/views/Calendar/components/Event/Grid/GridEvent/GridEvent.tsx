@@ -1,33 +1,32 @@
+import dayjs from "dayjs";
 import React, {
   ForwardedRef,
+  MouseEvent,
   forwardRef,
   memo,
-  MouseEvent,
   useMemo,
 } from "react";
-import dayjs from "dayjs";
 import { Priorities } from "@core/constants/core.constants";
+import {
+  DATA_EVENT_ELEMENT_ID,
+  ZIndex,
+} from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isOptimisticEvent } from "@web/common/utils/event.util";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { getLineClamp } from "@web/common/utils/grid.util";
+import { isRightClick } from "@web/common/utils/mouse/mouse.util";
+import { getPosition } from "@web/common/utils/position.util";
+import { getTimesLabel } from "@web/common/utils/web.date.util";
 import { Flex } from "@web/components/Flex";
 import {
   AlignItems,
   FlexDirections,
   FlexWrap,
 } from "@web/components/Flex/styled";
-import { getLineClamp } from "@web/common/utils/grid.util";
-import { getTimesLabel } from "@web/common/utils/web.date.util";
-import {
-  ZIndex,
-  DATA_EVENT_ELEMENT_ID,
-} from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
-
+import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
-import { getPosition } from "@web/common/utils/position.util";
-import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 
 interface Props {
   event: Schema_GridEvent;

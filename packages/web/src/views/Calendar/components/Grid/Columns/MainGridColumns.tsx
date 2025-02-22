@@ -1,11 +1,10 @@
-import React, { FC } from "react";
 import { Dayjs } from "dayjs";
+import React, { FC } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { theme } from "@web/common/styles/theme";
-
-import { StyledGridCols, StyledGridCol } from "./styled";
+import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { TimesColumn } from "./TimesColumn";
+import { StyledGridCol, StyledGridCols } from "./styled";
 
 interface Props {
   isCurrentWeek: boolean;

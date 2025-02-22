@@ -1,5 +1,5 @@
 import { Action } from "redux";
-import { Schema_Event, Categories_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export interface Action_DraftEvent extends Action {

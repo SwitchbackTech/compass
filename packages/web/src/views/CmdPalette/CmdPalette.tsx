@@ -1,31 +1,30 @@
-import "react-cmdk/dist/cmdk.css";
 import React, { useEffect, useState } from "react";
 import CommandPalette, {
   filterItems,
   getItemIndex,
   useHandleOpenCommandPalette,
 } from "react-cmdk";
+import "react-cmdk/dist/cmdk.css";
 import { useNavigate } from "react-router-dom";
-import { Categories_Event } from "@core/types/event.types";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/common/utils";
 import { getDraftTimes } from "@web/common/utils/draft/draft.util";
+import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
-import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
-
+import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { ShortcutProps } from "../Calendar/hooks/shortcuts/useShortcuts";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleDefaultEvent } from "@web/common/utils/event.util";
 
 const CmdPalette = ({
   today,

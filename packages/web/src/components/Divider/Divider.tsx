@@ -1,5 +1,4 @@
 import React, { HTMLAttributes, useEffect, useState } from "react";
-
 import { StyledDivider } from "./styled";
 import { Props } from "./types";
 

@@ -1,11 +1,10 @@
 import { useEffect } from "react";
-import { useAppSelector } from "@web/store/store.hooks";
 import {
   selectIsDrafting,
   selectIsDraftingExisting,
   selectIsDraftingSomeday,
 } from "@web/ducks/events/selectors/draft.selectors";
-
+import { useAppSelector } from "@web/store/store.hooks";
 import { Actions_Sidebar } from "./useSidebarActions";
 
 export const useSidebarEffects = (util: Actions_Sidebar) => {

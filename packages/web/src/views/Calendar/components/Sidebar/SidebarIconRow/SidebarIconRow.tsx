@@ -1,14 +1,13 @@
 import React from "react";
-import { CommandIcon } from "@web/components/Icons/Command";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
+import { CommandIcon } from "@web/components/Icons/Command";
 import { TodoIcon } from "@web/components/Icons/Todo";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
-
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { IconRow, LeftIconGroup } from "../styled";
 
 export const SidebarIconRow = () => {

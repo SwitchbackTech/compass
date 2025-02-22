@@ -1,17 +1,17 @@
 import React, { ReactElement } from "react";
-import { BrowserRouter } from "react-router-dom";
-import { Provider } from "react-redux";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { Provider } from "react-redux";
+import { BrowserRouter } from "react-router-dom";
+import { ThemeProvider } from "styled-components";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { configureStore } from "@reduxjs/toolkit";
-import { render, RenderOptions } from "@testing-library/react";
-import { sagas } from "@web/store/sagas";
+import { RenderOptions, render } from "@testing-library/react";
 import { sagaMiddleware } from "@web/common/store/middlewares";
-import { reducers } from "@web/store/reducers";
-import { ThemeProvider } from "styled-components";
 import { theme } from "@web/common/styles/theme";
 import { GlobalStyle } from "@web/components/GlobalStyle";
+import { reducers } from "@web/store/reducers";
+import { sagas } from "@web/store/sagas";
 
 const customRender = (
   ui: ReactElement,

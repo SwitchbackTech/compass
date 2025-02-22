@@ -1,9 +1,9 @@
 import styled from "styled-components";
+import { Flex } from "@web/components/Flex";
 import {
   DIVIDER_GRID,
   EVENT_WIDTH_MINIMUM,
 } from "@web/views/Calendar/layout.constants";
-import { Flex } from "@web/components/Flex";
 import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
 
 export const Columns = styled(Flex)`

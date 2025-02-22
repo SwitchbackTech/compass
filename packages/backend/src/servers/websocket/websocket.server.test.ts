@@ -1,15 +1,14 @@
 import { Server as HttpServer } from "http";
 import { createServer } from "node:http";
 import { Server as IoServer, type Socket as ServerSocket } from "socket.io";
-import { io as ioc, type Socket as ClientSocket } from "socket.io-client";
-import { Schema_Event } from "@core/types/event.types";
+import { type Socket as ClientSocket, io as ioc } from "socket.io-client";
 import {
-  EVENT_CHANGE_PROCESSED,
   EVENT_CHANGED,
+  EVENT_CHANGE_PROCESSED,
 } from "@core/constants/websocket.constants";
-
-import { getServerUri } from "./websocket.util";
+import { Schema_Event } from "@core/types/event.types";
 import { WebSocketServer } from "./websocket.server";
+import { getServerUri } from "./websocket.util";
 
 describe("WebSocket Server", () => {
   let httpServer: HttpServer;

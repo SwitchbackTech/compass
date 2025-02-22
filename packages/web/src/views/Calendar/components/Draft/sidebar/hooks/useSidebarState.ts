@@ -1,14 +1,13 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { useAppSelector } from "@web/store/store.hooks";
 import {
   selectDraftStatus,
   selectIsDNDing,
 } from "@web/ducks/events/selectors/draft.selectors";
 import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
-
+import { useAppSelector } from "@web/store/store.hooks";
+import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { useMousePosition } from "./useMousePosition";
 
 export const useSidebarState = (measurements: Measurements_Grid) => {

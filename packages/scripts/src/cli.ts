@@ -1,14 +1,11 @@
-import path from "path";
-import dotenv from "dotenv";
-dotenv.config({
-  path: path.resolve(process.cwd(), "packages/backend/.env"),
-});
+// sort-imports-ignore
 import { Command } from "commander";
-
-import { runBuild } from "./commands/build";
-import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
-import { startDeleteFlow } from "./commands/delete";
+import "./init";
+// eslint-disable-next-line prettier/prettier
 import { CliValidator } from "./cli.validator";
+import { runBuild } from "./commands/build";
+import { startDeleteFlow } from "./commands/delete";
+import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
 
 class CompassCli {
   private program: Command;

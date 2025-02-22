@@ -1,5 +1,5 @@
-import { BaseError } from "@core/errors/errors.base";
 import { AnyBulkWriteOperation, BulkWriteResult } from "mongodb";
+import { BaseError } from "@core/errors/errors.base";
 
 export interface Params_Sync_Gcal extends Payload_Sync_Notif {
   nextSyncToken: string;

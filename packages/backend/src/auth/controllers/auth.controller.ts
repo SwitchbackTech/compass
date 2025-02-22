@@ -1,38 +1,37 @@
 import { Response } from "express";
-import { WithId } from "mongodb";
 import { GaxiosError } from "gaxios";
 import { TokenPayload } from "google-auth-library";
-import { SessionRequest } from "supertokens-node/framework/express";
+import { WithId } from "mongodb";
 import supertokens from "supertokens-node";
+import { SessionRequest } from "supertokens-node/framework/express";
 import Session from "supertokens-node/recipe/session";
+import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
-import { gCalendar } from "@core/types/gcal";
-import { Schema_User } from "@core/types/user.types";
 import {
   Result_Auth_Compass,
   Result_VerifyGToken,
   UserInfo_Compass,
 } from "@core/types/auth.types";
+import { gCalendar } from "@core/types/gcal";
+import { Schema_User } from "@core/types/user.types";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
+import GoogleAuthService, {
+  getGAuthClientForUser,
+} from "@backend/auth/services/google.auth.service";
+import { GcalError } from "@backend/common/constants/error.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import {
   ReqBody,
   Res_Promise,
   SReqBody,
 } from "@backend/common/types/express.types";
-import { GcalError } from "@backend/common/constants/error.constants";
-import { error } from "@backend/common/errors/handlers/error.handler";
+import syncService from "@backend/sync/services/sync.service";
 import {
   findCompassUserBy,
   updateGoogleRefreshToken,
 } from "@backend/user/queries/user.queries";
-import GoogleAuthService, {
-  getGAuthClientForUser,
-} from "@backend/auth/services/google.auth.service";
 import userService from "@backend/user/services/user.service";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
-import syncService from "@backend/sync/services/sync.service";
-import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
-import { BaseError } from "@core/errors/errors.base";
-
 import { initGoogleClient } from "../services/auth.utils";
 
 const logger = Logger("app:auth.controller");

@@ -1,6 +1,6 @@
-import { validateEvent } from "./event.validator";
 import { Origin, Priorities } from "../constants/core.constants";
 import { Schema_Event } from "../types/event.types";
+import { validateEvent } from "./event.validator";
 
 describe("validateEvent", () => {
   it("strips unexpected properties", () => {

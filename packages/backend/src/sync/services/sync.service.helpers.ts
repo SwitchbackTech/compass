@@ -1,44 +1,49 @@
 import { WithId } from "mongodb";
+import { Origin } from "@core/constants/core.constants";
+import { Logger } from "@core/logger/winston.logger";
+import { MapCalendarList } from "@core/mappers/map.calendarlist";
+import { MapEvent } from "@core/mappers/map.event";
+import { Schema_CalendarList } from "@core/types/calendar.types";
 import {
   gCalendar,
-  gSchema$CalendarList,
   gParamsEventsList,
+  gSchema$CalendarList,
 } from "@core/types/gcal";
-import { Logger } from "@core/logger/winston.logger";
+import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import {
   Payload_Sync_Events,
   Payload_Sync_Refresh,
   Result_Watch_Stop,
   Schema_Sync,
 } from "@core/types/sync.types";
-import { Origin } from "@core/constants/core.constants";
-import { MapEvent } from "@core/mappers/map.event";
-import { MapCalendarList } from "@core/mappers/map.calendarlist";
-import { Schema_CalendarList } from "@core/types/calendar.types";
-import { gSchema$CalendarListEntry } from "@core/types/gcal";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import calendarService from "@backend/calendar/services/calendar.service";
 import { Collections } from "@backend/common/constants/collections";
-import { yearsAgo } from "@backend/common/helpers/common.util";
+import { ENV } from "@backend/common/constants/env.constants";
 import { EventError } from "@backend/common/constants/error.constants";
 import {
-  GenericError,
   GcalError,
+  GenericError,
   SyncError,
 } from "@backend/common/constants/error.constants";
-import { ENV } from "@backend/common/constants/env.constants";
-import gcalService from "@backend/common/services/gcal/gcal.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import mongoService from "@backend/common/services/mongo.service";
+import { yearsAgo } from "@backend/common/helpers/common.util";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import {
   isFullSyncRequired,
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
+import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
-import calendarService from "@backend/calendar/services/calendar.service";
 import userService from "@backend/user/services/user.service";
-
-import syncService from "./sync.service";
+import {
+  createSync,
+  getSync,
+  hasUpdatedCompassEventRecently,
+  updateSyncTimeBy,
+  updateSyncTokenFor,
+} from "../util/sync.queries";
 import {
   assembleEventOperations,
   categorizeGcalEvents,
@@ -48,13 +53,7 @@ import {
   syncExpired,
   syncExpiresSoon,
 } from "../util/sync.utils";
-import {
-  createSync,
-  getSync,
-  hasUpdatedCompassEventRecently,
-  updateSyncTimeBy,
-  updateSyncTokenFor,
-} from "../util/sync.queries";
+import syncService from "./sync.service";
 
 /**
  * Helper funcs that include multiple operations (not just DB queries)

@@ -1,8 +1,7 @@
 import { createAsyncSlice } from "@web/common/store/helpers";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
-
-import { Payload_GetEvents, Action_DeleteEvent } from "../event.types";
+import { Action_DeleteEvent, Payload_GetEvents } from "../event.types";
 
 export const getSomedayEventsSlice = createAsyncSlice<
   Payload_GetEvents,

@@ -1,5 +1,4 @@
 import cors from "cors";
-
 import { ENV } from "../constants/env.constants";
 
 const corsWhitelist = cors({

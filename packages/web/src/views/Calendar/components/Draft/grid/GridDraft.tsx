@@ -3,11 +3,11 @@ import { FloatingFocusManager } from "@floating-ui/react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EventForm } from "@web/views/Forms/EventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { useDraftContext } from "../context/useDraftContext";
 import { GridEvent } from "../../Event/Grid";
+import { useDraftContext } from "../context/useDraftContext";
 
 interface Props {
   draft: Schema_GridEvent;

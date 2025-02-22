@@ -1,8 +1,7 @@
+import { Server as HttpServer, createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
-import { createServer, Server as HttpServer } from "http";
-import { CompassSocketServer } from "@core/types/websocket.types";
 import { EVENT_CHANGED } from "@core/constants/websocket.constants";
-
+import { CompassSocketServer } from "@core/types/websocket.types";
 import { WebSocketServer } from "./websocket.server";
 
 jest.mock("socket.io");

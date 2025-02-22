@@ -2,22 +2,21 @@ import { GaxiosError } from "googleapis-common";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { IS_DEV } from "@backend/common/constants/env.constants";
 import { UserError } from "@backend/common/constants/error.constants";
-import { CompassError, Info_Error } from "@backend/common/types/error.types";
-import { SessionResponse } from "@backend/common/types/express.types";
 import {
-  isInvalidGoogleToken,
+  getEmailFromUrl,
   isFullSyncRequired,
   isGoogleError,
+  isInvalidGoogleToken,
   isInvalidValue,
-  getEmailFromUrl,
 } from "@backend/common/services/gcal/gcal.utils";
-import compassAuthService from "@backend/auth/services/compass.auth.service";
+import { CompassError, Info_Error } from "@backend/common/types/error.types";
+import { SessionResponse } from "@backend/common/types/express.types";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
-import userService from "@backend/user/services/user.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-
+import userService from "@backend/user/services/user.service";
 import { errorHandler } from "./error.handler";
 
 const logger = Logger("app:express.handler");

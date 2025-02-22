@@ -1,7 +1,7 @@
 import { MongoClient } from "mongodb";
-import { getReadAllFilter } from "../../event/services/event.service.util";
 import { mockEventSetJan22 } from "../../../../core/src/__mocks__/events/events.22jan";
 import { mockEventSetSomeday1 } from "../../../../core/src/__mocks__/events/events.someday.1";
+import { getReadAllFilter } from "../../event/services/event.service.util";
 
 describe("Jan 2022: Many Formats", () => {
   let connection;

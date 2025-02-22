@@ -5,9 +5,9 @@ import {
   GenericError,
   SyncError,
 } from "@backend/common/constants/error.constants";
-import mongoService from "@backend/common/services/mongo.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { getPrimaryGcalId } from "@backend/common/services/gcal/gcal.utils";
+import mongoService from "@backend/common/services/mongo.service";
 
 /**
  * Helper funcs that predominately query/update the DB

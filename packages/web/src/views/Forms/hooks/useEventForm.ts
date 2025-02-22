@@ -1,12 +1,12 @@
 import {
+  OpenChangeReason,
+  UseFloatingOptions,
   autoUpdate,
   flip,
   offset,
-  OpenChangeReason,
   shift,
   useDismiss,
   useFloating,
-  UseFloatingOptions,
   useInteractions,
 } from "@floating-ui/react";
 

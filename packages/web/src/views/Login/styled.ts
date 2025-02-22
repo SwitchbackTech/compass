@@ -1,6 +1,5 @@
 import styled, { keyframes } from "styled-components";
 import { Flex } from "@web/components/Flex";
-
 import { darkBlueGradient } from "../../common/styles/theme.util";
 
 const bgAnimation = keyframes`
