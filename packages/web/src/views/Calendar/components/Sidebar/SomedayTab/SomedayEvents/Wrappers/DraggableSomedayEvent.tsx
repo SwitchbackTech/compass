@@ -23,8 +23,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
   isOverGrid,
   index,
 }) => {
-  const isDraftingThisEvent =
-    (isDrafting && draftId === event._id) || draftId === ID_SOMEDAY_DRAFT;
+  const isDraftingThisEvent = isDrafting && draftId === event._id;
   const { actions, setters } = useSidebarContext();
 
   return (

@@ -15,7 +15,8 @@ import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 
 import { StyledNewSomedayEvent } from "./styled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
-import { Util_Sidebar } from "../../../Draft/sidebar/hooks/useSidebar";
+import { Actions_Sidebar } from "../../../Draft/sidebar/hooks/useSidebarActions";
+import { Setters_Sidebar } from "../../../Draft/sidebar/hooks/useSidebarState";
 
 function getStyle(
   style: DraggableStyle,
@@ -44,17 +45,17 @@ function getStyle(
 
 export interface Props {
   category: Categories_Event;
-  event: Schema_GridEvent;
+  event: Schema_Event;
   isDrafting: boolean;
   isDragging: boolean;
   isOverGrid: boolean;
   onClose: () => void;
   onDraft: (event: Schema_GridEvent, category: Categories_Event) => void;
-  onMigrate: Util_Sidebar["onMigrate"];
+  onMigrate: Actions_Sidebar["onMigrate"];
   onSubmit: (event?: Schema_Event) => void;
   provided: DraggableProvided;
   snapshot: DraggableStateSnapshot;
-  setEvent: Dispatch<SetStateAction<Schema_GridEvent>>;
+  setEvent: Setters_Sidebar["setDraft"];
 }
 
 export const SomedayEvent = ({
