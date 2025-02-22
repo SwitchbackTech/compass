@@ -1,9 +1,9 @@
 import { Command } from "commander";
-import "./bootstrap";
 import { CliValidator } from "./cli.validator";
 import { runBuild } from "./commands/build";
 import { startDeleteFlow } from "./commands/delete";
 import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
+import "./init";
 
 class CompassCli {
   private program: Command;
