@@ -1,20 +1,9 @@
-import path from "path";
-import moduleAlias from "module-alias";
-moduleAlias.addAliases({
-  "@backend": `${__dirname}`,
-  "@core": `${path.resolve(__dirname, "../../core/src")}`,
-});
-import dotenv from "dotenv";
-const dotenvResult = dotenv.config();
-if (dotenvResult.error) {
-  throw dotenvResult.error;
-}
 import * as http from "http";
 import { Logger } from "@core/logger/winston.logger";
-
+import "./bootstrap";
 import { ENV } from "./common/constants/env.constants";
-import { initExpressServer } from "./servers/express/express.server";
 import mongoService from "./common/services/mongo.service";
+import { initExpressServer } from "./servers/express/express.server";
 import { webSocketServer } from "./servers/websocket/websocket.server";
 
 const logger = Logger("app:root");
