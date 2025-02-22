@@ -69,6 +69,7 @@
     "lint-staged": "^15.2.10",
     "path-browserify": "^1.0.1",
     "prettier": "^3.5.1",
+    "prettier-plugin-organize-imports": "^4.1.0",
     "stream-browserify": "^3.0.0",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
