@@ -1,14 +1,15 @@
-import path from "path";
-import { fileURLToPath } from "url";
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
-import pluginReact from "eslint-plugin-react";
-import reactHooks from "eslint-plugin-react-hooks";
 import pluginJest from "eslint-plugin-jest";
 import jestDom from "eslint-plugin-jest-dom";
-import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import prettierEslint from "eslint-plugin-prettier";
+import pluginReact from "eslint-plugin-react";
+import reactHooks from "eslint-plugin-react-hooks";
 import testingLibrary from "eslint-plugin-testing-library";
+import globals from "globals";
+import path from "path";
+import tseslint from "typescript-eslint";
+import { fileURLToPath } from "url";
+import pluginJs from "@eslint/js";
+import sortImports from "@trivago/prettier-plugin-sort-imports";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -68,7 +69,8 @@ export default [
       "jest/valid-expect": "error",
     },
   },
-  // this prettier plugin adjusts other parts of this config,
-  // so keep it as the last item
-  eslintPluginPrettierRecommended,
+  // these plugins adjust other parts of this config,
+  // so keep them down here
+  prettierEslint,
+  sortImports,
 ];
