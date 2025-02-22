@@ -9,12 +9,6 @@ body:
       value: |
         Thanks for taking the time to fill out this feature request!
 
-  - type: input
-    attributes:
-      label: Feature Title
-      description: Provide a short and descriptive title for the feature request.
-      placeholder: Add Fancy New Thing
-
   - type: textarea
     attributes:
       label: Feature Description
