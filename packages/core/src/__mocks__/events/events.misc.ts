@@ -1,5 +1,6 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
+
 /**
  * Assortment of events with no direct relation to another
  */

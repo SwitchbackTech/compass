@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
+import { Coordinates } from "@web/common/types/util.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import {
-  SIDEBAR_X_START,
   GRID_Y_START,
+  SIDEBAR_X_START,
 } from "@web/views/Calendar/layout.constants";
-import { Coordinates } from "@web/common/types/util.types";
 
 export const useMousePosition = (
   isDragging: boolean,

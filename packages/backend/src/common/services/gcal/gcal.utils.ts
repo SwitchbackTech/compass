@@ -1,6 +1,6 @@
-import { gSchema$Event } from "@core/types/gcal";
 import { GaxiosError } from "googleapis-common";
 import { Schema_CalendarList } from "@core/types/calendar.types";
+import { gSchema$Event } from "@core/types/gcal";
 
 const cancelled = (e: gSchema$Event) => {
   /* 

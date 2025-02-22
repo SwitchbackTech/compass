@@ -1,12 +1,9 @@
 import express, { Application } from "express";
 import helmet from "helmet";
-import corsWhitelist from "@backend/common/middleware/cors.middleware";
-import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import { AuthRoutes } from "@backend/auth/auth.routes.config";
-import { EventRoutes } from "@backend/event/event.routes.config";
-import { PriorityRoutes } from "@backend/priority/priority.routes.config";
-import { SyncRoutes } from "@backend/sync/sync.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
+import { CommonRoutesConfig } from "@backend/common/common.routes.config";
+import corsWhitelist from "@backend/common/middleware/cors.middleware";
 import { httpLoggingMiddleware } from "@backend/common/middleware/http.logger.middleware";
 import { requestMiddleware } from "@backend/common/middleware/promise.middleware";
 import {
@@ -14,6 +11,9 @@ import {
   supertokensErrorHandler,
   supertokensMiddleware,
 } from "@backend/common/middleware/supertokens.middleware";
+import { EventRoutes } from "@backend/event/event.routes.config";
+import { PriorityRoutes } from "@backend/priority/priority.routes.config";
+import { SyncRoutes } from "@backend/sync/sync.routes.config";
 
 export const initExpressServer = () => {
   /* Express Configuration */

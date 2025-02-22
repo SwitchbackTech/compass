@@ -1,26 +1,25 @@
 import React, { FC, MouseEvent, useEffect } from "react";
-import { Categories_Event } from "@core/types/event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { Ref_Callback } from "@web/common/types/util.types";
+import { Categories_Event } from "@core/types/event.types";
 import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
+import { Ref_Callback } from "@web/common/types/util.types";
+import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
+import { isRightClick } from "@web/common/utils/mouse/mouse.util";
+import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { assembleDefaultEvent } from "@web/common/utils/event.util";
-import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
-import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
-
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { StyledGridCol } from "../Columns/styled";
-import { StyledAllDayColumns, StyledAllDayRow } from "./styled";
 import { AllDayEvents } from "./AllDayEvents";
-import { isRightClick } from "@web/common/utils/mouse/mouse.util";
+import { StyledAllDayColumns, StyledAllDayRow } from "./styled";
 
 interface Props {
   dateCalcs: DateCalcs;

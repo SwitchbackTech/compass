@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Session, { signOut } from "supertokens-auth-react/recipe/session";
-import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { SyncApi } from "@web/common/apis/sync.api";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
-
 import { StyledLogin } from "../Login/styled";
 import { StyledLogoutBtn } from "./styled";
 

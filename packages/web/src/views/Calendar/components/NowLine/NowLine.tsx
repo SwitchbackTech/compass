@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { getCurrentPercentOfDay } from "@web/common/utils/grid.util";
-
 import { StyledNowLine } from "./styled";
 
 interface NowLineProps {

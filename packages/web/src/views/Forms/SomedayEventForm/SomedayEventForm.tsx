@@ -2,22 +2,21 @@ import React, { MouseEvent, useRef } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
-import { useAppDispatch } from "@web/store/store.hooks";
 import { Trash } from "@phosphor-icons/react";
+import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
+import { colorByPriority } from "@web/common/styles/theme.util";
 import IconButton from "@web/components/IconButton/IconButton";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
-import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 import {
   StyledDescription,
   StyledEventForm,
   StyledIconRow,
   StyledTitle,
 } from "@web/views/Forms/EventForm/styled";
-import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
-import { colorByPriority } from "@web/common/styles/theme.util";
-
+import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 import { RepeatSection } from "../EventForm/RepeatSection";
 
 export const SomedayEventForm: React.FC<FormProps> = ({

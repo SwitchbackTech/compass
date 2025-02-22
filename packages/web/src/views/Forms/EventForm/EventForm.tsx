@@ -9,33 +9,32 @@ import React, {
   useState,
 } from "react";
 import { Key } from "ts-key-enum";
+import { Trash } from "@phosphor-icons/react";
 import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { Trash } from "@phosphor-icons/react";
-import IconButton from "@web/components/IconButton/IconButton";
-import { getCategory } from "@web/common/utils/event.util";
-import { SelectOption } from "@web/common/types/component.types";
-import {
-  getTimeOptionByValue,
-  mapToBackend,
-} from "@web/common/utils/web.date.util";
-import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/styled";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
-
-import { FormProps, SetEventFormField } from "./types";
+import { SelectOption } from "@web/common/types/component.types";
+import { getCategory } from "@web/common/utils/event.util";
+import {
+  getTimeOptionByValue,
+  mapToBackend,
+} from "@web/common/utils/web.date.util";
+import IconButton from "@web/components/IconButton/IconButton";
+import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/styled";
 import { DateTimeSection } from "./DateTimeSection/DateTimeSection";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
 import {
-  StyledEventForm,
   StyledDescription,
+  StyledEventForm,
   StyledIconRow,
   StyledTitle,
 } from "./styled";
+import { FormProps, SetEventFormField } from "./types";
 
 export const EventForm: React.FC<FormProps> = ({
   event,

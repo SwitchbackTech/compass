@@ -1,12 +1,12 @@
 import { SessionRequest } from "supertokens-node/framework/express";
 import {
-  Schema_Event,
   Params_DeleteMany,
   Payload_Order,
+  Schema_Event,
   Schema_Event_Core,
 } from "@core/types/event.types";
 import { validateEvent } from "@core/validators/event.validator";
-import { SReqBody, Res_Promise } from "@backend/common/types/express.types";
+import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
 import eventService from "@backend/event/services/event.service";
 
 class EventController {

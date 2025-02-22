@@ -1,16 +1,16 @@
-import { AlignItems } from "@web/components/Flex/styled";
 import React, { FC, SetStateAction, useState } from "react";
-import { StyledTimeFlex } from "../styled";
-import { TimePicker } from "./TimePicker";
+import { Schema_Event } from "@core/types/event.types";
+import { SelectOption } from "@web/common/types/component.types";
+import { Option_Time } from "@web/common/types/util.types";
 import {
   getTimeOptionByValue,
   getTimeOptions,
   mapToBackend,
   shouldAdjustComplimentTime,
 } from "@web/common/utils/web.date.util";
-import { SelectOption } from "@web/common/types/component.types";
-import { Option_Time } from "@web/common/types/util.types";
-import { Schema_Event } from "@core/types/event.types";
+import { AlignItems } from "@web/components/Flex/styled";
+import { StyledTimeFlex } from "../styled";
+import { TimePicker } from "./TimePicker";
 
 interface Props {
   bgColor: string;

@@ -1,20 +1,19 @@
-import { google } from "googleapis";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
-import { Logger } from "@core/logger/winston.logger";
-import { Status } from "@core/errors/status.codes";
+import { google } from "googleapis";
+import { WithId } from "mongodb";
 import { BaseError } from "@core/errors/errors.base";
-import { gCalendar } from "@core/types/gcal";
+import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import { UserInfo_Google } from "@core/types/auth.types";
+import { gCalendar } from "@core/types/gcal";
+import { Schema_User } from "@core/types/user.types";
 import { ENV } from "@backend/common/constants/env.constants";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import {
   AuthError,
   UserError,
 } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { Schema_User } from "@core/types/user.types";
-import { WithId } from "mongodb";
-
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import compassAuthService from "./compass.auth.service";
 
 const logger = Logger("app:google.auth.service");

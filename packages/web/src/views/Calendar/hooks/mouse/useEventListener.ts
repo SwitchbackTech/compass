@@ -1,4 +1,4 @@
-import { MouseEvent, useRef, useEffect } from "react";
+import { MouseEvent, useEffect, useRef } from "react";
 
 export const useEventListener = (
   eventName: "mouseup" | "mousemove",

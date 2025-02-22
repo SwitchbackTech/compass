@@ -1,20 +1,20 @@
 import dotenv from "dotenv";
 import path from "path";
 import shell from "shelljs";
-import { Options_Cli } from "@scripts/common/cli.types";
 import {
   COMPASS_BUILD_DEV,
   COMPASS_ROOT_DEV,
   NODE_BUILD,
   PCKG,
 } from "@scripts/common/cli.constants";
+import { Options_Cli } from "@scripts/common/cli.types";
 import {
   _confirm,
-  log,
   fileExists,
-  getClientId,
   getApiBaseUrl,
+  getClientId,
   getEnvironmentAnswer,
+  log,
 } from "@scripts/common/cli.utils";
 
 export const runBuild = async (options: Options_Cli) => {

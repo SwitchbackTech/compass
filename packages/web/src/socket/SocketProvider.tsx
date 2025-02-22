@@ -1,8 +1,8 @@
 import { ReactNode } from "react";
 import { useDispatch } from "react-redux";
-import { io, Socket } from "socket.io-client";
-import { ServerToClientEvents } from "@core/types/websocket.types";
+import { Socket, io } from "socket.io-client";
 import { EVENT_CHANGED } from "@core/constants/websocket.constants";
+import { ServerToClientEvents } from "@core/types/websocket.types";
 import { useUser } from "@web/auth/UserContext";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";

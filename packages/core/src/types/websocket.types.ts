@@ -1,5 +1,4 @@
 import { Server as SocketIOServer } from "socket.io";
-
 import { Schema_Event } from "./event.types";
 
 export interface ClientToServerEvents {

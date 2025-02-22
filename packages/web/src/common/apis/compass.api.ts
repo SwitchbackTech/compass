@@ -2,7 +2,6 @@ import axios, { AxiosError } from "axios";
 import { signOut } from "supertokens-auth-react/recipe/session";
 import { Status } from "@core/errors/status.codes";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-
 import { ROOT_ROUTES } from "../constants/routes";
 
 export const CompassApi = axios.create({

@@ -1,31 +1,30 @@
 import { TokenPayload } from "google-auth-library";
+import { BaseError } from "@core/errors/errors.base";
+import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { UserInfo_Google } from "@core/types/auth.types";
-import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
-import { BaseError } from "@core/errors/errors.base";
-import { CompassError } from "@backend/common/types/error.types";
-import { getGcalClient } from "@backend/auth/services/google.auth.service";
-import { AuthError } from "@backend/common/constants/error.constants";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
+import calendarService from "@backend/calendar/services/calendar.service";
+import { AuthError } from "@backend/common/constants/error.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import mongoService from "@backend/common/services/mongo.service";
+import { CompassError } from "@backend/common/types/error.types";
+import { Summary_Resync } from "@backend/common/types/sync.types";
+import eventService from "@backend/event/services/event.service";
+import priorityService from "@backend/priority/services/priority.service";
+import syncService from "@backend/sync/services/sync.service";
 import {
   getCalendarsToSync,
   initSync,
   watchEventsByGcalIds,
 } from "@backend/sync/services/sync.service.helpers";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import { Summary_Resync } from "@backend/common/types/sync.types";
 import { reInitSyncByIntegration } from "@backend/sync/util/sync.queries";
-import calendarService from "@backend/calendar/services/calendar.service";
-import eventService from "@backend/event/services/event.service";
-import mongoService from "@backend/common/services/mongo.service";
-import priorityService from "@backend/priority/services/priority.service";
-import syncService from "@backend/sync/services/sync.service";
-
-import emailService from "./email.service";
-import { Summary_Delete } from "../types/user.types";
 import { findCompassUserBy } from "../queries/user.queries";
+import { Summary_Delete } from "../types/user.types";
+import emailService from "./email.service";
 
 const logger = Logger("app:user.service");
 

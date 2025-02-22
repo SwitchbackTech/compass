@@ -1,23 +1,23 @@
 import { all, takeLatest } from "redux-saga/effects";
 import {
-  getWeekEvents,
   convertTimedEvent,
-  getCurrentMonthEvents,
-  editEvent,
-  deleteEvent,
   createEvent,
+  deleteEvent,
+  editEvent,
+  getCurrentMonthEvents,
+  getWeekEvents,
 } from "@web/ducks/events/sagas/event.sagas";
 import {
   convertSomedayEvent,
-  getSomedayEvents,
   deleteSomedayEvent,
+  getSomedayEvents,
   reorderSomedayEvents,
 } from "@web/ducks/events/sagas/somday.sagas";
 import {
-  getCurrentMonthEventsSlice,
   createEventSlice,
-  editEventSlice,
   deleteEventSlice,
+  editEventSlice,
+  getCurrentMonthEventsSlice,
 } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";

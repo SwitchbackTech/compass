@@ -1,12 +1,11 @@
 import React, {
-  createContext,
   ReactNode,
+  createContext,
   useContext,
   useLayoutEffect,
   useState,
 } from "react";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-
 import { getUserId } from "./auth.util";
 
 const UserContext = createContext<

@@ -1,12 +1,11 @@
 import styled from "styled-components";
-import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { Flex } from "@web/components/Flex";
-import { Textarea } from "@web/components/Textarea";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import { PriorityButton } from "@web/components/Button/styled";
+import { Flex } from "@web/components/Flex";
 import { Input } from "@web/components/Input";
-
+import { Textarea } from "@web/components/Textarea";
+import { EVENT_WIDTH_MINIMUM } from "@web/views/Calendar/layout.constants";
 import { StyledFormProps } from "./types";
 
 interface SomedayFormProps extends StyledFormProps {

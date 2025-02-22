@@ -1,17 +1,16 @@
 import { Request } from "express";
-import { Payload_Sync_Notif } from "@core/types/sync.types";
-import { Logger } from "@core/logger/winston.logger";
 import { Status } from "@core/errors/status.codes";
-import {
-  isInvalidGoogleToken,
-  isFullSyncRequired,
-} from "@backend/common/services/gcal/gcal.utils";
-import userService from "@backend/user/services/user.service";
+import { Logger } from "@core/logger/winston.logger";
+import { Payload_Sync_Notif } from "@core/types/sync.types";
 import { UserError } from "@backend/common/constants/error.constants";
+import {
+  isFullSyncRequired,
+  isInvalidGoogleToken,
+} from "@backend/common/services/gcal/gcal.utils";
 import { Res_Promise } from "@backend/common/types/express.types";
-
-import { getSync } from "../util/sync.queries";
+import userService from "@backend/user/services/user.service";
 import syncService from "../services/sync.service";
+import { getSync } from "../util/sync.queries";
 
 const logger = Logger("app:sync.controller");
 class SyncController {

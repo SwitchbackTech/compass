@@ -1,5 +1,6 @@
-import { useCallback } from "react";
 import dayjs from "dayjs";
+import { useCallback } from "react";
+import { DropResult } from "@hello-pangea/dnd";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -10,18 +11,28 @@ import {
   Direction_Migrate,
   Schema_Event,
 } from "@core/types/event.types";
-import { DropResult } from "@hello-pangea/dnd";
+import { getUserId } from "@web/auth/auth.util";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
+import { Coordinates } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
 import {
-  prepEvtAfterDraftDrop,
   assembleDefaultEvent,
+  prepEvtAfterDraftDrop,
   prepEvtBeforeSubmit,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
-import { getUserId } from "@web/auth/auth.util";
-import { Coordinates } from "@web/common/types/util.types";
+import {
+  getDatesByCategory,
+  getMigrationDates,
+} from "@web/common/utils/web.date.util";
+import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import {
+  selectIsAtMonthlyLimit,
+  selectIsAtWeeklyLimit,
+} from "@web/ducks/events/selectors/someday.selectors";
+import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import {
   createEventSlice,
@@ -29,18 +40,6 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import {
-  selectIsAtMonthlyLimit,
-  selectIsAtWeeklyLimit,
-} from "@web/ducks/events/selectors/someday.selectors";
-import {
-  getDatesByCategory,
-  getMigrationDates,
-} from "@web/common/utils/web.date.util";
-import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
-import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
-import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
-
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { State_Sidebar } from "./useSidebarState";
 

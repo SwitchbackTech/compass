@@ -1,5 +1,5 @@
-import { Btn } from "@web/components/Button/styled";
 import styled from "styled-components";
+import { Btn } from "@web/components/Button/styled";
 
 export const StyledLogoutBtn = styled(Btn)`
   background: ${({ theme }) => theme.color.status.info};

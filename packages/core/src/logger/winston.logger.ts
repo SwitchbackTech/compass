@@ -1,6 +1,6 @@
-import { MB_50 } from "@core/constants/core.constants";
 import { TransformableInfo } from "logform";
 import * as winston from "winston";
+import { MB_50 } from "@core/constants/core.constants";
 
 const consoleFormat = winston.format.combine(
   winston.format.splat(),

@@ -1,15 +1,14 @@
 import React, { ReactNode, useState } from "react";
+import { AlignItems } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
 import {
   Tooltip,
-  TooltipTrigger,
   TooltipContent,
+  TooltipTrigger,
 } from "@web/components/Tooltip";
-import { AlignItems } from "@web/components/Flex/styled";
-
-import { StyledShortcutTip } from "./styled";
 import { Flex } from "../Flex";
 import { TooltipDescription } from "./Description";
+import { StyledShortcutTip } from "./styled";
 
 export interface Props {
   children: ReactNode;

@@ -5,13 +5,13 @@ import {
   Schema_Event_Core,
 } from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
-import { getIdFilter } from "@backend/common/helpers/mongo.utils";
-import mongoService from "@backend/common/services/mongo.service";
-import { error } from "@backend/common/errors/handlers/error.handler";
 import {
   EventError,
   GenericError,
 } from "@backend/common/constants/error.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { getIdFilter } from "@backend/common/helpers/mongo.utils";
+import mongoService from "@backend/common/services/mongo.service";
 
 type Ids_Event = "_id" | "gEventId";
 

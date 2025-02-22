@@ -1,10 +1,10 @@
 import dayjs from "dayjs";
 import { getFlexBasis, getPrevDayWidth } from "@web/common/utils/grid.util";
 import {
-  FLEX_TODAY,
-  FLEX_TMRW,
   AFTER_TMRW_MULTIPLE,
   FLEX_EQUAL,
+  FLEX_TMRW,
+  FLEX_TODAY,
 } from "@web/views/Calendar/layout.constants";
 
 describe("getFlexBasis", () => {

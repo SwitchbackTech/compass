@@ -1,8 +1,7 @@
 import dayjs from "dayjs";
-
 import {
-  getEventCategory,
   getAllDayEventWidth,
+  getEventCategory,
   getLeftPosition,
   widthMinusPadding,
 } from "@web/common/utils/position.util";

@@ -1,17 +1,16 @@
 import React, { FC } from "react";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   Measurements_Grid,
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { useAppSelector } from "@web/store/store.hooks";
-import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
-
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useSidebar } from "../Draft/hooks/sidebar/useSidebar";
-import { SomedayTab } from "./SomedayTab/SomedayTab";
-import { SidebarIconRow } from "./SidebarIconRow";
 import { MonthTab } from "./MonthTab/MonthTab";
+import { SidebarIconRow } from "./SidebarIconRow";
+import { SomedayTab } from "./SomedayTab/SomedayTab";
 import { SidebarContainer, SidebarTabContainer } from "./styled";
 
 interface Props {

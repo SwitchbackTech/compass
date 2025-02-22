@@ -3,14 +3,12 @@ import { normalize } from "normalizr";
 import { call, put } from "redux-saga/effects";
 import { Schema_Event } from "@core/types/event.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
-import {
-  replaceIdWithOptimisticId,
-  handleError,
-} from "@web/common/utils/event.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  handleError,
+  replaceIdWithOptimisticId,
+} from "@web/common/utils/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
-
-import { Action_Someday_Reorder } from "../slices/someday.slice.types";
 import { EventApi } from "../event.api";
 import {
   Action_ConvertSomedayEvent,
@@ -20,11 +18,12 @@ import {
 } from "../event.types";
 import { eventsEntitiesSlice } from "../slices/event.slice";
 import { getSomedayEventsSlice } from "../slices/someday.slice";
+import { Action_Someday_Reorder } from "../slices/someday.slice.types";
 import {
-  insertOptimisticEvent,
-  replaceOptimisticId,
-  normalizedEventsSchema,
   getEventById,
+  insertOptimisticEvent,
+  normalizedEventsSchema,
+  replaceOptimisticId,
 } from "./saga.util";
 
 export function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {

@@ -1,5 +1,5 @@
-import qs from "qs";
 import { GaxiosError } from "googleapis-common";
+import qs from "qs";
 
 export const invalidSyncTokenError = new GaxiosError(
   "Sync token is no longer valid, a full sync is required.",

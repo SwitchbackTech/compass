@@ -1,6 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { sagaMiddleware } from "@web/common/store/middlewares";
-
 import { reducers } from "./reducers";
 
 export const store = configureStore({

@@ -1,14 +1,13 @@
 import { schema } from "normalizr";
-import { put, select } from "redux-saga/effects";
 import { normalize } from "normalizr";
+import { put, select } from "redux-saga/effects";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { RootState } from "@web/store";
-
+import { selectEventById } from "../selectors/event.selectors";
+import { eventsEntitiesSlice } from "../slices/event.slice";
 import { getSomedayEventsSlice } from "../slices/someday.slice";
 import { getWeekEventsSlice } from "../slices/week.slice";
-import { eventsEntitiesSlice } from "../slices/event.slice";
-import { selectEventById } from "../selectors/event.selectors";
 
 export function* getEventById(_id: string) {
   const currEvent = (yield select((state: RootState) =>

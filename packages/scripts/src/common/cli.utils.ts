@@ -1,10 +1,10 @@
-import pkg from "inquirer";
 import chalk from "chalk";
-const { prompt } = pkg;
+import pkg from "inquirer";
 import shell from "shelljs";
-
 import { ALL_PACKAGES, CLI_ENV } from "./cli.constants";
 import { Environment_Cli } from "./cli.types";
+
+const { prompt } = pkg;
 
 export const fileExists = (file: string) => {
   return shell.test("-e", file);

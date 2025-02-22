@@ -1,6 +1,6 @@
 import express from "express";
-import { SessionRequest } from "supertokens-node/framework/express";
 import { Request, Response } from "express";
+import { SessionRequest } from "supertokens-node/framework/express";
 
 export interface ReqBody<T> extends Request {
   body: T;

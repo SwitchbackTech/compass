@@ -4,20 +4,19 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getWidthBuffer } from "@web/common/utils/grid.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
+import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
+import { snapToGrid } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/snap.grid";
 import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/styled";
-import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
+import { MouseCoords } from "@web/views/Calendar/hooks/draft/sidebar/useMousePosition";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   Measurements_Grid,
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { SpaceCharacter } from "@web/components/SpaceCharacter";
-import { snapToGrid } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/snap.grid";
-import { MouseCoords } from "@web/views/Calendar/hooks/draft/sidebar/useMousePosition";
-
-import { getItemStyles, layerStyles, StyledGridEventPreview } from "./styled";
+import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
+import { StyledGridEventPreview, getItemStyles, layerStyles } from "./styled";
 
 export interface Props {
   dateCalcs: DateCalcs;

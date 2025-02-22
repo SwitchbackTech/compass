@@ -1,12 +1,11 @@
 import express from "express";
+import { verifySession } from "supertokens-node/recipe/session/framework/express";
 import {
   GCAL_NOTIFICATION_ENDPOINT,
   SYNC_DEBUG,
 } from "@core/constants/core.constants";
-import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import authMiddleware from "@backend/auth/middleware/auth.middleware";
-import { verifySession } from "supertokens-node/recipe/session/framework/express";
-
+import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import syncController from "./controllers/sync.controller";
 import syncDebugController from "./controllers/sync.debug.controller";
 

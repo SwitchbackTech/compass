@@ -1,12 +1,12 @@
-import React from "react";
 import { rest } from "msw";
+import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CalendarView } from "@web/views/Calendar";
-import { ENV_WEB } from "@web/common/constants/env.constants";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
+import { ENV_WEB } from "@web/common/constants/env.constants";
+import { CalendarView } from "@web/views/Calendar";
 
 it("displays alert upon server error", async () => {
   server.use(

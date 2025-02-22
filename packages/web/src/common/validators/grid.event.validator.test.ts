@@ -1,5 +1,4 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
-
 import { Schema_GridEvent } from "../types/web.event.types";
 import { validateGridEvent } from "./grid.event.validator";
 
