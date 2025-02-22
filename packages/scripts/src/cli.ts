@@ -1,4 +1,5 @@
 import { Command } from "commander";
+// eslint-disable-next-line prettier/prettier
 import { CliValidator } from "./cli.validator";
 import { runBuild } from "./commands/build";
 import { startDeleteFlow } from "./commands/delete";
