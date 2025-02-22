@@ -24,6 +24,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const draftId = useAppSelector(selectDraftId);
 
   const adjustedEvents = adjustOverlappingEvents(timedEvents);
+  const category = Categories_Event.TIMED;
 
   const onMouseDown = (e: MouseEvent, event: Schema_GridEvent) => {
     e.stopPropagation();
@@ -41,12 +42,19 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     event: Schema_GridEvent,
     dateToChange: "startDate" | "endDate",
   ) => {
-    dispatch(draftSlice.actions.startResizing({ event, dateToChange }));
+    dispatch(
+      draftSlice.actions.startResizing({
+        category,
+        event,
+        dateToChange,
+      }),
+    );
   };
 
   const editTimedEvent = (event: Schema_GridEvent) => {
     dispatch(
       draftSlice.actions.startDragging({
+        category,
         event,
       }),
     );

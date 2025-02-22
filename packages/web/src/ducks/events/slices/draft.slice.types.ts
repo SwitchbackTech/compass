@@ -36,6 +36,7 @@ interface Payload_DraftEvent {
 }
 
 interface Payload_Draft_Resize {
+  category: Categories_Event;
   event: Schema_Event;
   dateToChange: "startDate" | "endDate";
 }
