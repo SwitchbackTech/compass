@@ -1,12 +1,12 @@
 import styled from "styled-components";
 import { Priority } from "@core/constants/core.constants";
 import { brighten, darken } from "@core/util/color.utils";
-import { Text } from "@web/components/Text";
 import { ZIndex } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
+import { Text } from "@web/components/Text";
 
 interface StyledEventProps {
   allDay: boolean;

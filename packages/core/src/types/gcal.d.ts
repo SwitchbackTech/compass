@@ -1,5 +1,5 @@
-import calendar from "googleapis/build/src/apis/calendar";
 import { calendar_v3 } from "googleapis";
+import calendar from "googleapis/build/src/apis/calendar";
 
 /* Google API */
 export declare type gCalendar = calendar_v3.Calendar;

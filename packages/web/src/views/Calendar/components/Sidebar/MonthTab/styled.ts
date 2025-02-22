@@ -1,6 +1,6 @@
 import styled from "styled-components";
-import { Text } from "@web/components/Text";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
+import { Text } from "@web/components/Text";
 
 export const MonthPickerContainer = styled.div`
   position: relative;

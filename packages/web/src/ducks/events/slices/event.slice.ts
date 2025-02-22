@@ -3,9 +3,8 @@ import produce from "immer";
 import { createSlice } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
 import { createAsyncSlice } from "@web/common/store/helpers";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Action_DeleteEvent,
   Action_EditEvent,

@@ -1,3 +1,4 @@
+import { AxiosPromise } from "axios";
 import {
   Categories_Recur,
   Params_Events,
@@ -5,7 +6,6 @@ import {
   Schema_Event,
 } from "@core/types/event.types";
 import { CompassApi } from "@web/common/apis/compass.api";
-import { AxiosPromise } from "axios";
 
 const EventApi = {
   create: (event: Schema_Event) => {

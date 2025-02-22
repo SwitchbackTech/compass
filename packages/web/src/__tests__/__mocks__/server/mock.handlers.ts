@@ -1,5 +1,4 @@
 import { rest } from "msw";
-import { ENV_WEB } from "@web/common/constants/env.constants";
 import {
   CLIMB,
   EUROPE_TRIP,
@@ -8,6 +7,7 @@ import {
   MULTI_WEEK,
   TY_TIM,
 } from "@core/__mocks__/events/events.misc";
+import { ENV_WEB } from "@web/common/constants/env.constants";
 
 export const globalHandlers = [
   rest.get(`${ENV_WEB.API_BASEURL}/event`, (req, res, ctx) => {

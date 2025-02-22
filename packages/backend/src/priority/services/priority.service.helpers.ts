@@ -1,5 +1,5 @@
 import { InsertedIds } from "@core/types/mongo.types";
-import { Schema_Priority, PriorityReq } from "@core/types/priority.types";
+import { PriorityReq, Schema_Priority } from "@core/types/priority.types";
 
 // documents inserted in order by default, so mapping by
 // key order is safe

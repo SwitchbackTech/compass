@@ -1,13 +1,13 @@
 import React from "react";
-import { act, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LoginView } from "@web/views/Login";
-
 // wip cuz .png breaks
 // see if these work after converting png to custom button
 
 import { render } from "../__mocks__/mock.render";
+
 describe("Login", () => {
   it("displays oauth and feedback buttons", async () => {
     render(<LoginView />);

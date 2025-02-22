@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import Modal from "react-modal";
 import { useHotkeys } from "react-hotkeys-hook";
+import Modal from "react-modal";
 import derekImg from "@web/assets/png/derek.png";
 import { Flex } from "@web/components/Flex";
 import { FlexDirections, JustifyContent } from "@web/components/Flex/styled";
 import { StyledXIcon } from "@web/components/Icons/X";
-
 import {
   StyledCaption,
   StyledDedicationText,

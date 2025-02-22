@@ -1,7 +1,7 @@
-import { UserInfo_Google } from "@core/types/auth.types";
-import { Schema_User } from "@core/types/user.types";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
+import { UserInfo_Google } from "@core/types/auth.types";
+import { Schema_User } from "@core/types/user.types";
 
 // Map  user object given by google signin to our schema //
 export const mapUserToCompass = (

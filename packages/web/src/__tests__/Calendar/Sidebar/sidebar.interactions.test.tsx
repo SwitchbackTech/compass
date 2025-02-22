@@ -1,14 +1,14 @@
-import React from "react";
 import { rest } from "msw";
+import React from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { EUROPE_TRIP, LEARN_CHINESE } from "@core/__mocks__/events/events.misc";
-import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
-import { CalendarView } from "@web/views/Calendar";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { CalendarView } from "@web/views/Calendar";
 
 it("runs", () => {
   expect(true).toBe(true);

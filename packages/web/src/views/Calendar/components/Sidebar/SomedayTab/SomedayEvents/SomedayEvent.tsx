@@ -1,21 +1,20 @@
-import { Key } from "ts-key-enum";
 import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Key } from "ts-key-enum";
+import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import {
   DraggableProvided,
   DraggableStateSnapshot,
   DraggableStyle,
 } from "@hello-pangea/dnd";
-import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { Util_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarUtil";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
-import { Util_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarUtil";
-
-import { StyledNewSomedayEvent } from "./styled";
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
+import { StyledNewSomedayEvent } from "./styled";
 
 function getStyle(
   style: DraggableStyle,

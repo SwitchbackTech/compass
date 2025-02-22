@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit";
-
 import {
   Action_DraftEvent,
   Action_Draft_Resize,

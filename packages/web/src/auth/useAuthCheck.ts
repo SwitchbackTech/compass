@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect } from "react";
+import { useLayoutEffect, useState } from "react";
 import Session from "supertokens-auth-react/recipe/session";
 import { AuthApi } from "@web/common/apis/auth.api";
 

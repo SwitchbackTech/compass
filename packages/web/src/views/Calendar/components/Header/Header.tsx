@@ -1,30 +1,29 @@
-import React, { FC } from "react";
 import dayjs, { Dayjs } from "dayjs";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { AlignItems } from "@web/components/Flex/styled";
-import { Text } from "@web/components/Text";
-import { TodayButton } from "@web/views/Calendar/components/TodayButton";
-import { RootProps } from "@web/views/Calendar/calendarView.types";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
-import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import React, { FC } from "react";
 import { isEventFormOpen } from "@web/common/utils";
-import { SidebarIcon } from "@web/components/Icons/Sidebar";
-import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { getCalendarHeadingLabel } from "@web/common/utils/web.date.util";
-
-import {
-  StyledHeaderRow,
-  StyledNavigationGroup,
-  ArrowNavigationButton,
-  StyledLeftGroup,
-  StyledRightGroup,
-  StyledHeaderLabel,
-  StyledNavigationArrows,
-} from "./styled";
+import { AlignItems } from "@web/components/Flex/styled";
+import { SidebarIcon } from "@web/components/Icons/Sidebar";
+import { Text } from "@web/components/Text";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { RootProps } from "@web/views/Calendar/calendarView.types";
+import { TodayButton } from "@web/views/Calendar/components/TodayButton";
+import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DayLabels } from "./DayLabels";
+import {
+  ArrowNavigationButton,
+  StyledHeaderLabel,
+  StyledHeaderRow,
+  StyledLeftGroup,
+  StyledNavigationArrows,
+  StyledNavigationGroup,
+  StyledRightGroup,
+} from "./styled";
 
 interface Props {
   rootProps: RootProps;

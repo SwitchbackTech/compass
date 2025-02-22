@@ -1,10 +1,9 @@
+import { Coordinates } from "@web/common/types/util.types";
 import {
   MeasureableElement,
   Measurements_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
-
-import { snapToGrid, MAIN_GRID_TIME_COLUMN_WIDTH } from "./snap.grid";
-import { Coordinates } from "@web/common/types/util.types";
+import { MAIN_GRID_TIME_COLUMN_WIDTH, snapToGrid } from "./snap.grid";
 
 // 7 day main grid
 describe("snapToGrid", () => {

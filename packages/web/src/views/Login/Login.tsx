@@ -1,23 +1,22 @@
-import { v4 as uuidv4 } from "uuid";
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import GoogleButton from "react-google-button";
+import { useNavigate } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
 import { useGoogleLogin } from "@react-oauth/google";
-import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
+import { useAuthCheck } from "@web/auth/useAuthCheck";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { useAuthCheck } from "@web/auth/useAuthCheck";
-
+import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import {
-  SignInButtonWrapper,
   Card,
   CardHeader,
-  Subtitle,
-  StyledLogin,
   Description,
-  Title,
+  SignInButtonWrapper,
+  StyledLogin,
   StyledLoginContainer,
+  Subtitle,
+  Title,
 } from "./styled";
 
 export const LoginView = () => {

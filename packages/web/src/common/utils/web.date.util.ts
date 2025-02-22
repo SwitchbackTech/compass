@@ -1,27 +1,26 @@
 import dayjs, { Dayjs } from "dayjs";
+import { RRULE } from "@core/constants/core.constants";
 import {
   HOURS_AM_FORMAT,
   HOURS_AM_SHORT_FORMAT,
-  YMDHM_FORMAT,
-  YMDHAM_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
+  YMDHAM_FORMAT,
+  YMDHM_FORMAT,
 } from "@core/constants/date.constants";
-import { RRULE } from "@core/constants/core.constants";
+import { Categories_Event, Direction_Migrate } from "@core/types/event.types";
 import {
   Option_Time,
   Params_DateChange,
   Params_TimeChange,
 } from "@web/common/types/util.types";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
-import { Categories_Event, Direction_Migrate } from "@core/types/event.types";
-
 import { roundToNext } from ".";
 import { ACCEPTED_TIMES, OPTIONS_RECURRENCE } from "../constants/web.constants";
+import { theme } from "../styles/theme";
 import {
   Recurrence_Selection,
   Schema_SelectedDates,
 } from "../types/web.event.types";
-import { theme } from "../styles/theme";
 
 export const dateIsValid = (date: string) => {
   const notNaN = !Number.isNaN(new Date(date).getTime());

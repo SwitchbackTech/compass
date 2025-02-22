@@ -1,21 +1,32 @@
-import { normalize } from "normalizr";
 import dayjs from "dayjs";
+import { normalize } from "normalizr";
 import { call, put, select } from "@redux-saga/core/effects";
-import { Params_Events, Schema_Event } from "@core/types/event.types";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { RootState } from "@web/store";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import { Params_Events, Schema_Event } from "@core/types/event.types";
+import { ID_OPTIMISTIC_PREFIX } from "@web/common/constants/web.constants";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  handleError,
+  replaceIdWithOptimisticId,
+} from "@web/common/utils/event.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
+import { RootState } from "@web/store";
 import {
-  replaceIdWithOptimisticId,
-  handleError,
-} from "@web/common/utils/event.util";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { ID_OPTIMISTIC_PREFIX } from "@web/common/constants/web.constants";
-
+  Action_ConvertTimedEvent,
+  Action_CreateEvent,
+  Action_DeleteEvent,
+  Action_EditEvent,
+  Action_GetEvents,
+  Action_GetPaginatedEvents,
+  Entities_Event,
+  Response_CreateEventSaga,
+  Response_GetEventsSaga,
+  Response_GetEventsSuccess,
+} from "../event.types";
 import {
   createEventSlice,
   deleteEventSlice,
@@ -23,20 +34,8 @@ import {
   eventsEntitiesSlice,
   getCurrentMonthEventsSlice,
 } from "../slices/event.slice";
-import { getWeekEventsSlice } from "../slices/week.slice";
-import {
-  Action_ConvertTimedEvent,
-  Action_CreateEvent,
-  Action_DeleteEvent,
-  Action_EditEvent,
-  Response_GetEventsSaga,
-  Response_GetEventsSuccess,
-  Action_GetPaginatedEvents,
-  Action_GetEvents,
-  Response_CreateEventSaga,
-  Entities_Event,
-} from "../event.types";
 import { getSomedayEventsSlice } from "../slices/someday.slice";
+import { getWeekEventsSlice } from "../slices/week.slice";
 import {
   insertOptimisticEvent,
   normalizedEventsSchema,

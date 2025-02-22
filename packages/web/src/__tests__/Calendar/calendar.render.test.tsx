@@ -4,7 +4,6 @@ import { screen, waitFor } from "@testing-library/react";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { getWeekDayLabel } from "@web/common/utils/event.util";
 import { CalendarView } from "@web/views/Calendar";
-
 import { render } from "../__mocks__/mock.render";
 
 describe("Scroll", () => {

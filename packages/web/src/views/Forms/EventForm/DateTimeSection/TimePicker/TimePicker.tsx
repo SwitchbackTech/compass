@@ -3,8 +3,7 @@ import ReactSelect, { Props as RSProps } from "react-select";
 import { Key } from "ts-key-enum";
 import { SelectOption } from "@web/common/types/component.types";
 import { Option_Time } from "@web/common/types/util.types";
-
-import { StyledTimePicker, StyledDivider } from "./styled";
+import { StyledDivider, StyledTimePicker } from "./styled";
 
 export interface Props extends Omit<RSProps, "onChange" | "value"> {
   bgColor: string;

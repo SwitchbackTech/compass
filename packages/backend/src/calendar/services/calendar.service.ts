@@ -1,6 +1,6 @@
+import { Schema_CalendarList } from "@core/types/calendar.types";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
-import { Schema_CalendarList } from "@core/types/calendar.types";
 
 class CalendarService {
   add = async (

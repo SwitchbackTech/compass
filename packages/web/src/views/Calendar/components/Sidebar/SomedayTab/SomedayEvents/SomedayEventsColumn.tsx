@@ -4,7 +4,6 @@ import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
-
 import { DraggableSomedayEvent } from "./Wrappers/DraggableSomedayEvent";
 import { DraggableSomedayEvents } from "./Wrappers/DraggableSomedayEvents";
 

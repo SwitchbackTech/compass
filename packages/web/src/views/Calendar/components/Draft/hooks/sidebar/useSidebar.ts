@@ -1,9 +1,8 @@
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-
 import { DateCalcs } from "../../grid/useDateCalcs";
 import { useSidebarEffects } from "./useSidebarEffects";
-import { useSidebarUtil } from "./useSidebarUtil";
 import { useSidebarState } from "./useSidebarState";
+import { useSidebarUtil } from "./useSidebarUtil";
 
 export const useSidebar = (
   measurements: Measurements_Grid,

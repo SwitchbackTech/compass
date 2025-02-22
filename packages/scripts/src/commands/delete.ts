@@ -1,10 +1,11 @@
 import pkg from "inquirer";
-const { prompt } = pkg;
+import { log } from "@scripts/common/cli.utils";
+import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUsersBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
-import mongoService from "@backend/common/services/mongo.service";
 import { Summary_Delete } from "@backend/user/types/user.types";
-import { log } from "@scripts/common/cli.utils";
+
+const { prompt } = pkg;
 
 mongoService;
 

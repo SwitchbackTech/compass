@@ -1,25 +1,26 @@
 import React from "react";
-import { FlexDirections } from "@web/components/Flex/styled";
 import { ID_MAIN } from "@web/common/constants/web.constants";
-import { useAppSelector } from "@web/store/store.hooks";
-import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
-import { Grid } from "./components/Grid/";
-import { useScroll } from "./hooks/grid/useScroll";
-import { useToday } from "./hooks/useToday";
-import { useWeek } from "./hooks/useWeek";
-import { Header } from "./components/Header";
-import { RootProps } from "./calendarView.types";
-import { Styled, StyledCalendar } from "./styled";
-import { useGridLayout } from "./hooks/grid/useGridLayout";
-import { useDateCalcs } from "./hooks/grid/useDateCalcs";
-import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
-import { useRefresh } from "./hooks/useRefresh";
-import { Sidebar } from "./components/Sidebar";
-import { Dedication } from "./components/Dedication";
+import { FlexDirections } from "@web/components/Flex/styled";
+import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { CmdPalette } from "../CmdPalette";
+import { RootProps } from "./calendarView.types";
+import { Dedication } from "./components/Dedication";
 import { Draft } from "./components/Draft/Draft";
 import { DraftProvider } from "./components/Draft/context/DraftProvider";
+import { Grid } from "./components/Grid/";
+import { Header } from "./components/Header";
+import { Sidebar } from "./components/Sidebar";
+import { useDateCalcs } from "./hooks/grid/useDateCalcs";
+import { useGridLayout } from "./hooks/grid/useGridLayout";
+import { useScroll } from "./hooks/grid/useScroll";
+import { useShortcuts } from "./hooks/shortcuts/useShortcuts";
+import { useRefresh } from "./hooks/useRefresh";
+import { useToday } from "./hooks/useToday";
+import { useWeek } from "./hooks/useWeek";
+import { Styled, StyledCalendar } from "./styled";
+
 export const CalendarView = () => {
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 

@@ -1,29 +1,28 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useHotkeys } from "react-hotkeys-hook";
-import { Key } from "ts-keycode-enum";
 import { Dayjs } from "dayjs";
-import { Categories_Event } from "@core/types/event.types";
+import { useEffect } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { useNavigate } from "react-router-dom";
+import { Key } from "ts-keycode-enum";
 import {
   Priorities,
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { isEventFormOpen } from "@web/common/utils";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { YEAR_MONTH_FORMAT } from "@core/constants/date.constants";
+import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { isEventFormOpen } from "@web/common/utils";
+import { getDraftTimes } from "@web/common/utils/draft/draft.util";
+import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
-import { assembleDefaultEvent } from "@web/common/utils/event.util";
-import { getDraftTimes } from "@web/common/utils/draft/draft.util";
-import { YEAR_MONTH_FORMAT } from "@core/constants/date.constants";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
-
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
 import { WeekProps } from "../useWeek";

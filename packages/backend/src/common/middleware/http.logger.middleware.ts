@@ -1,6 +1,6 @@
-import morgan from "morgan";
-import { IncomingMessage, ServerResponse } from "http";
 import chalk from "chalk";
+import { IncomingMessage, ServerResponse } from "http";
+import morgan from "morgan";
 
 const get = (
   key: string,

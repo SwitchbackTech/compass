@@ -1,14 +1,14 @@
 import styled from "styled-components";
+import { Flex } from "@web/components/Flex";
+import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
+import { Text } from "@web/components/Text";
 import {
   EVENT_WIDTH_MINIMUM,
   PAGE_MARGIN_X,
 } from "@web/views/Calendar/layout.constants";
-import { Flex } from "@web/components/Flex";
-import { Text } from "@web/components/Text";
-import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import {
-  HEADER_HEIGHT,
   GRID_MARGIN_LEFT,
+  HEADER_HEIGHT,
   WEEK_DAYS_MARGIN_Y,
 } from "@web/views/Calendar/layout.constants";
 

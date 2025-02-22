@@ -1,8 +1,8 @@
-import { gSchema$Event, gParamsEventsList, gCalendar } from "@core/types/gcal";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
+import { gCalendar, gParamsEventsList, gSchema$Event } from "@core/types/gcal";
 import { Params_WatchEvents } from "@core/types/sync.types";
-import { ENV } from "@backend/common/constants/env.constants";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
+import { ENV } from "@backend/common/constants/env.constants";
 import { GcalError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 

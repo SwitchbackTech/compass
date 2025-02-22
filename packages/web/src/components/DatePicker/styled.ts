@@ -1,9 +1,9 @@
 import styled from "styled-components";
 import { brighten, compliment, darken, isDark } from "@core/util/color.utils";
+import { theme } from "@web/common/styles/theme";
 import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
 import { SIDEBAR_MONTH_HEIGHT } from "@web/views/Calendar/layout.constants";
-import { theme } from "@web/common/styles/theme";
 
 const _hoverStyle = `
   background-color: ${theme.color.fg.primary}; 

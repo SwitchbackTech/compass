@@ -1,11 +1,12 @@
-import { MongoClient, ObjectId } from "mongodb";
 import dayjs from "dayjs";
+import { MongoClient, ObjectId } from "mongodb";
 import {
   mockSomedayRecurrences,
   newsletterId,
 } from "../../../../core/src/__mocks__/events/events.someday.recur";
-import { getDeleteByIdFilter } from "../../event/services/event.service.util";
 import { YEAR_MONTH_DAY_FORMAT } from "../../../../core/src/constants/date.constants";
+import { getDeleteByIdFilter } from "../../event/services/event.service.util";
+
 describe("Delete Events", () => {
   let connection;
   let db;

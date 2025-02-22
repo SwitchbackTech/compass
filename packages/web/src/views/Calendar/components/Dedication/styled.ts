@@ -1,7 +1,7 @@
 import styled from "styled-components";
-import { Flex } from "@web/components/Flex";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
+import { Flex } from "@web/components/Flex";
 
 export const modalStyles = {
   content: {

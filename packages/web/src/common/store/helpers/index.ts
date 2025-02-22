@@ -1,10 +1,10 @@
+import { Draft } from "immer";
 import {
-  createSlice,
   PayloadAction,
   SliceCaseReducers,
   ValidateSliceCaseReducers,
+  createSlice,
 } from "@reduxjs/toolkit";
-import { Draft } from "immer";
 
 export interface AsyncState<SuccessPayload, ErrorPayload> {
   isProcessing?: boolean;

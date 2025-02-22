@@ -1,17 +1,16 @@
 import React from "react";
 import {
+  HTMLProps,
+  ReactNode,
   cloneElement,
   forwardRef,
-  HTMLProps,
   isValidElement,
-  ReactNode,
 } from "react";
-import { useMergeRefs, FloatingPortal } from "@floating-ui/react";
+import { FloatingPortal, useMergeRefs } from "@floating-ui/react";
 import { ZIndex } from "@web/common/constants/web.constants";
-
+import { StyledShortcutTip } from "./styled";
 import { TooltipOptions } from "./types";
 import { TooltipContext, useTooltip, useTooltipContext } from "./useTooltip";
-import { StyledShortcutTip } from "./styled";
 
 export function Tooltip({
   children,

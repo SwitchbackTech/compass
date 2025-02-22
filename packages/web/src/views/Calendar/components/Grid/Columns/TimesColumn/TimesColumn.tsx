@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
-import { Text } from "@web/components/Text";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  getHourLabels,
   getColorsByHour,
+  getHourLabels,
 } from "@web/common/utils/web.date.util";
-
+import { Text } from "@web/components/Text";
 import { StyledDayTimes, StyledTimesLabel } from "./styled";
 
 export const TimesColumn = () => {

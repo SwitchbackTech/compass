@@ -1,10 +1,10 @@
 import styled from "styled-components";
 import { brighten } from "@core/util/color.utils";
+import { Flex } from "@web/components/Flex";
 import {
   GRID_PADDING_BOTTOM,
   SCROLLBAR_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { Flex } from "@web/components/Flex";
 import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
 import { DIVIDER_GRID } from "@web/views/Calendar/layout.constants";
 

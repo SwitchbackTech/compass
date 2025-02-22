@@ -1,11 +1,10 @@
 /* eslint-disable testing-library/no-unnecessary-act */
 import React, { act } from "react";
-import { screen } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Schema_Event } from "@core/types/event.types";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import userEvent from "@testing-library/user-event";
-
 import { EventForm } from "./EventForm";
 
 test("start date picker opens and then closes when clicking the end input", async () => {

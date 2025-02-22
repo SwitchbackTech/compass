@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Check } from "@phosphor-icons/react";
-
+import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Styled, StyledPlaceholder } from "./styled";
 
 export interface Props {

@@ -1,15 +1,14 @@
-import React, { FC } from "react";
 import dayjs from "dayjs";
+import React, { FC } from "react";
 import { Key } from "ts-key-enum";
-import { darken } from "@core/util/color.utils";
 import { MONTH_DAY_YEAR } from "@core/constants/date.constants";
-import { DatePicker } from "@web/components/DatePicker";
-import { AlignItems } from "@web/components/Flex/styled";
+import { darken } from "@core/util/color.utils";
 import {
   dateIsValid,
   shouldAdjustComplimentDate,
 } from "@web/common/utils/web.date.util";
-
+import { DatePicker } from "@web/components/DatePicker";
+import { AlignItems } from "@web/components/Flex/styled";
 import { StyledDateFlex } from "./styled";
 
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {

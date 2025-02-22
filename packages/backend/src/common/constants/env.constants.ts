@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { NodeEnv, PORT_DEFAULT_BACKEND } from "@core/constants/core.constants";
-import { isDev } from "@core/util/env.util";
 import { Logger } from "@core/logger/winston.logger";
+import { isDev } from "@core/util/env.util";
 
 const logger = Logger("app:constants");
 

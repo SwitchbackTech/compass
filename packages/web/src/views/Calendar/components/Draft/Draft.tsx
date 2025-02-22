@@ -1,17 +1,16 @@
 import React, { FC, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Categories_Event } from "@core/types/event.types";
-import { useAppSelector } from "@web/store/store.hooks";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { getCategory } from "@web/common/utils/event.util";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
-
+import { useAppSelector } from "@web/store/store.hooks";
+import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GridDraft } from "./GridDraft";
+import { useDraftContext } from "./context/useDraftContext";
 import { useGridClick } from "./hooks/grid/useGridClick";
 import { useGridMouseMove } from "./hooks/grid/useGridMouseMove";
-import { useDraftContext } from "./context/useDraftContext";
 
 interface Props {
   measurements: Measurements_Grid;

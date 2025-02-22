@@ -1,9 +1,8 @@
 import React from "react";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-
+import { SidebarContent } from "../SomedayTab/styled";
 import { SidebarMonthPicker } from "./MonthPicker/SidebarMonthPicker";
 import { SubCalendarList } from "./SubCalendarList/SubCalendarList";
-import { SidebarContent } from "../SomedayTab/styled";
 
 export interface Props {
   isCurrentWeek: boolean;

@@ -1,20 +1,19 @@
 import React, { FC, useMemo, useRef } from "react";
-import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
+import { theme } from "@web/common/styles/theme";
 import { getWeekRangeLabel } from "@web/common/utils/web.date.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { Divider } from "@web/components/Divider";
+import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   Measurements_Grid,
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { theme } from "@web/common/styles/theme";
-import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
-
-import { WeekSection } from "./WeekSection/WeekSection";
 import { MonthSection } from "./MonthSection";
+import { WeekSection } from "./WeekSection/WeekSection";
 import { SidebarContent } from "./styled";
 
 interface Props {

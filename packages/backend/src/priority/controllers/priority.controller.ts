@@ -1,8 +1,7 @@
 //@ts-nocheck
 import { SessionRequest } from "supertokens-node/framework/express";
-import { Res_Promise } from "@backend/common/types/express.types";
 import { PriorityReq } from "@core/types/priority.types";
-
+import { Res_Promise } from "@backend/common/types/express.types";
 import priorityService from "../services/priority.service";
 
 class PriorityController {
