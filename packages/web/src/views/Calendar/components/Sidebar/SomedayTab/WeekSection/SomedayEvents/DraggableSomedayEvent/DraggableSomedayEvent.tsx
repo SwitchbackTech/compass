@@ -25,8 +25,6 @@ export const DraggableSomedayEvent: FC<Props> = ({
   const isDraftingThisEvent = isDrafting && draftId === event._id;
   const { actions, setters } = useSidebarContext();
 
-  isDraftingThisEvent && console.log("drafting:", event.title);
-
   return (
     <div>
       <Draggable
@@ -45,8 +43,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
                 isDrafting={isDraftingThisEvent}
                 isOverGrid={isOverGrid}
                 onMigrate={actions.onMigrate}
-                onFocus={() => setters.setIsFocused(true)}
-                // onSubmit={() => actions.onSubmit(category)}
+                onSubmit={() => actions.onSubmit(category)}
                 provided={provided}
                 snapshot={snapshot}
                 setEvent={setters.setDraft}

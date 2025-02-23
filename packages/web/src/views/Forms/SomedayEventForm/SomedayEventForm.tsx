@@ -22,7 +22,6 @@ import { RepeatSection } from "../EventForm/RepeatSection";
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
   onClose: _onClose,
-  onConvert,
   onSubmit,
   setEvent,
   ...props
@@ -69,21 +68,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
-    e.stopPropagation();
-    switch (e.key) {
-      case Key.Escape: {
-        _onClose();
-        break;
+    if (e.key === Key.Enter) {
+      e.stopPropagation();
+      if (e.metaKey) {
+        _onSubmit();
       }
-      case Key.Enter: {
-        if (e.metaKey) {
-          _onSubmit();
-          return;
-        }
-        break;
-      }
-      default:
-        return;
     }
   };
 

@@ -79,11 +79,6 @@ export const EventForm: React.FC<FormProps> = ({
       if (e.key === Key.Shift) {
         setIsShiftKeyPressed(true);
       }
-
-      if (e.key === Key.Escape) {
-        setTimeout(_onClose);
-        return;
-      }
     },
     [_onClose],
   );
@@ -269,7 +264,7 @@ export const EventForm: React.FC<FormProps> = ({
             <StyledMigrateArrowInForm
               onClick={(e) => {
                 e.stopPropagation();
-                onConvert();
+                onConvert?.();
               }}
               role="button"
               title="Move to sidebar"

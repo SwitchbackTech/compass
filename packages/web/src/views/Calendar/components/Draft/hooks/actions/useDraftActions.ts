@@ -152,7 +152,7 @@ export const useDraftActions = (
     }
 
     if (reduxDraft || reduxDraftType) {
-      dispatch(draftSlice.actions.discard({}));
+      dispatch(draftSlice.actions.discard());
     }
   }, [dispatch, draft, reduxDraft, reduxDraftType]);
 

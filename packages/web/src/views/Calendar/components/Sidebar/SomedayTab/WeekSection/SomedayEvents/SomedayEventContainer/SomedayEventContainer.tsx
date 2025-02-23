@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import { Key } from "ts-key-enum";
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
-import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm";
+import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { Actions_Sidebar } from "../../../../../Draft/sidebar/hooks/useSidebarActions";
 import { Setters_Sidebar } from "../../../../../Draft/sidebar/hooks/useSidebarState";
@@ -37,8 +36,6 @@ export const SomedayEventContainer = ({
   snapshot,
   setEvent,
 }: Props) => {
-  // const formType =
-  //   category === Categories_Event.SOMEDAY_WEEK ? "sidebarWeek" : "sidebarMonth";
   const { actions, setters, state } = useSidebarContext();
 
   const { formProps } = state;
@@ -47,33 +44,6 @@ export const SomedayEventContainer = ({
 
   const isDraftingThisEvent =
     state.isDrafting && state.draft?._id === event._id;
-
-  // const initialFormOpen = event?.isOpen || (isDrafting && !isDragging);
-  // const [shouldOpenForm, setShouldOpenForm] = useState(initialFormOpen);
-
-  // useEffect(() => {
-  //   setShouldOpenForm(event?.isOpen || (isDrafting && !isDragging));
-  // }, [event?.isOpen, isDrafting, isDragging]);
-
-  // const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-  //   switch (e.key) {
-  //     case Key.Escape: {
-  //       if (isFocused) {
-  //         setIsFocused(false);
-  //       }
-  //       break;
-  //     }
-
-  //     case Key.Enter: {
-  //       if (!shouldOpenForm) {
-  //         actions.onDraft(event, category);
-  //       }
-  //       break;
-  //     }
-  //     default:
-  //       break;
-  //   }
-  // };
 
   return (
     <>
@@ -85,7 +55,7 @@ export const SomedayEventContainer = ({
         isOverGrid={isOverGrid}
         isFocused={isFocused}
         onBlur={() => setIsFocused(false)}
-        onClick={() => actions.onDraft(event, category)} //m: stop prop
+        onClick={() => actions.onDraft(event, category)}
         onFocus={() => setIsFocused(true)}
         onKeyDown={() => console.log("onKeyDown")}
         priority={event.priority || Priorities.UNASSIGNED}
@@ -110,9 +80,6 @@ export const SomedayEventContainer = ({
                   setters.setIsSomedayFormOpen(false);
                   actions.close();
                 }}
-                onConvert={() =>
-                  console.log("TODO: convert someday event to grid event")
-                }
                 onSubmit={onSubmit}
                 setEvent={setEvent}
               />
