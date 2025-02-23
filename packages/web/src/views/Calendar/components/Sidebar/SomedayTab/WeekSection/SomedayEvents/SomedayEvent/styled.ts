@@ -1,5 +1,6 @@
 import styled from "styled-components";
-import { DroppableProvided } from "@hello-pangea/dnd";
+import { DraggableStateSnapshot, DroppableProvided } from "@hello-pangea/dnd";
+import { DraggableStyle } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
 import { brighten } from "@core/util/color.utils";
 import {
@@ -8,6 +9,33 @@ import {
 } from "@web/common/styles/theme.util";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 
+export function getStyle(
+  snapshot: DraggableStateSnapshot,
+  isOverGrid: boolean,
+  style?: DraggableStyle,
+) {
+  if (!snapshot.isDropAnimating) {
+    return style;
+  }
+
+  const disableDropAnimationStyles = {
+    ...style,
+    // cannot be 0, but make it super tiny. See https://github.com/atlassian/react-beautiful-dnd/blob/master/docs/guides/drop-animation.md#skipping-the-drop-animation
+    transitionDuration: `0.001s`,
+  };
+
+  // Drop animation adds delay to the `onDragEnd` event, causes bad UX when
+  // dragging events to the grid. Disable drop animation when dragging events
+  // to the grid.
+  if (isOverGrid) {
+    return disableDropAnimationStyles;
+  }
+
+  return style;
+}
+
+export const SOMEDAY_EVENT_HEIGHT = 32;
+
 export interface Props extends DroppableProvided {
   priority: Priorities;
   isDrafting: boolean;
@@ -15,42 +43,6 @@ export interface Props extends DroppableProvided {
   isOverGrid: boolean;
   isFocused: boolean;
 }
-
-export const SOMEDAY_EVENT_HEIGHT = 32;
-
-export const StyledMigrateArrow = styled.span`
-  padding-left: 7px;
-  padding-right: 7px;
-
-  &:hover {
-    border-radius: 50%;
-    background: ${({ theme }) => theme.color.bg.primary};
-    color: white;
-    cursor: pointer;
-    padding-right: 7px;
-    padding-left: 7px;
-    text-align: center;
-    transition: background-color 0.4s;
-  }
-`;
-
-export const StyledRecurrenceText = styled.span`
-  border: 1px solid ${({ theme }) => theme.color.border.primary};
-  border-radius: 2px;
-  font-size: 10px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  width: 43px;
-
-  &:hover {
-    opacity: 1;
-    transition: border ease-in 0.2s;
-  }
-`;
-
-export const StyledMigrateArrowInForm = styled(StyledMigrateArrow)`
-  font-size: 27px;
-`;
 
 export const StyledNewSomedayEvent = styled.div<Props>`
   background: ${({ isDrafting, isDragging, priority }) => {

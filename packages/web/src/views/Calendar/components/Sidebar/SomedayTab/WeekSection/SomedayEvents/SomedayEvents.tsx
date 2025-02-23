@@ -15,31 +15,9 @@ import {
   GRID_X_START,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { useSidebarContext } from "../../../Draft/sidebar/context/useSidebarContext";
-import { State_Sidebar } from "../../../Draft/sidebar/hooks/useSidebarState";
-import { EventPlaceholder, SidebarList } from "../../styled";
-import { SomedayEventsColumn } from "./SomedayEventsColumn";
-
-interface Props {
-  category: Categories_Event;
-  dateCalcs: DateCalcs;
-  measurements: Measurements_Grid;
-  viewStart: WeekProps["component"]["startOfView"];
-  mainGridRef: Refs_Grid["mainGridRef"];
-}
-
-const getSomedayEvents = (
-  category: Categories_Event,
-  somedayEvents: State_Sidebar["somedayEvents"],
-) => {
-  const colName =
-    category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH;
-  const column = somedayEvents.columns[colName];
-
-  return column.eventIds.map(
-    (eventId: string) => somedayEvents.events[eventId],
-  );
-};
+import { useSidebarContext } from "../../../../Draft/sidebar/context/useSidebarContext";
+import { EventPlaceholder, SidebarList } from "../../../styled";
+import { SomedayEventsContainer } from "./SomedayEventsContainer/SomedayEventsContainer";
 
 interface Props {
   category: Categories_Event;
@@ -63,7 +41,6 @@ export const SomedayEvents: FC<Props> = ({
     state.somedayEvents.columns[
       category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH
     ];
-  const events = getSomedayEvents(category, state.somedayEvents);
 
   const isDraftingNew = state.isDraftingNew && state.draftType === category;
 
@@ -88,13 +65,9 @@ export const SomedayEvents: FC<Props> = ({
 
       <SidebarList>
         <div key={`${category}-wrapper`}>
-          <SomedayEventsColumn
+          <SomedayEventsContainer
             category={category}
             column={column}
-            draft={state.draft}
-            events={events}
-            isDraftingNew={isDraftingNew}
-            isOverGrid={state.isOverGrid}
             key={COLUMN_WEEK}
           />
         </div>

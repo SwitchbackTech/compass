@@ -3,7 +3,7 @@ import { Draggable } from "@hello-pangea/dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
-import { SomedayEvent } from "../SomedayEvent";
+import { SomedayEventContainer } from "../SomedayEventContainer/SomedayEventContainer";
 
 export interface Props {
   category: Categories_Event;
@@ -25,6 +25,8 @@ export const DraggableSomedayEvent: FC<Props> = ({
   const isDraftingThisEvent = isDrafting && draftId === event._id;
   const { actions, setters } = useSidebarContext();
 
+  isDraftingThisEvent && console.log("drafting:", event.title);
+
   return (
     <div>
       <Draggable
@@ -36,16 +38,15 @@ export const DraggableSomedayEvent: FC<Props> = ({
         {(provided, snapshot) => {
           return (
             <>
-              <SomedayEvent
+              <SomedayEventContainer
                 category={category}
                 event={event}
                 isDragging={snapshot.isDragging}
                 isDrafting={isDraftingThisEvent}
                 isOverGrid={isOverGrid}
-                onClose={actions.close}
-                onDraft={() => actions.onDraft(event, category)}
                 onMigrate={actions.onMigrate}
-                onSubmit={() => actions.onSubmit(category)}
+                onFocus={() => setters.setIsFocused(true)}
+                // onSubmit={() => actions.onSubmit(category)}
                 provided={provided}
                 snapshot={snapshot}
                 setEvent={setters.setDraft}

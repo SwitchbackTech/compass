@@ -4,7 +4,7 @@ import { Flex } from "@web/components/Flex";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
-import { Actions_Sidebar } from "../../../Draft/sidebar/hooks/useSidebarActions";
+import { Actions_Sidebar } from "../../../../../Draft/sidebar/hooks/useSidebarActions";
 import { StyledMigrateArrow, StyledRecurrenceText } from "./styled";
 
 interface Props {

@@ -393,15 +393,26 @@ export const useSidebarActions = (
     return newEvent;
   };
 
+  //todo reorder
+  const discard = () => {
+    console.log("discarding");
+  };
+
+  const reset = () => {
+    console.log("resetting");
+  };
+
   return {
     close,
     createDefaultSomeday,
+    discard,
     onDraft,
     onDragEnd,
     onDragStart,
     onMigrate,
     onPlaceholderClick,
     onSubmit,
+    reset,
     resetLocalDraftStateIfNeeded,
     setDraft,
   };

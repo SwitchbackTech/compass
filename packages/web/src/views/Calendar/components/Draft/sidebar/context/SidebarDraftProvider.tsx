@@ -1,9 +1,11 @@
 import React, { ReactNode } from "react";
+import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { useDraftForm } from "../../hooks/state/useDraftForm";
 import { useSidebarActions } from "../hooks/useSidebarActions";
 import { useSidebarState } from "../hooks/useSidebarState";
-import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { SidebarDraftContext } from "./SidebarDraftContext";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+
 interface Props {
   children: ReactNode;
   dateCalcs: DateCalcs;
@@ -14,8 +16,20 @@ export const SidebarDraftProvider = ({
   dateCalcs,
   measurements,
 }: Props) => {
-  const { setters, state } = useSidebarState(measurements);
-  const actions = useSidebarActions(dateCalcs, state, setters);
+  const { setters, state: _state } = useSidebarState(measurements);
+  const actions = useSidebarActions(dateCalcs, _state, setters);
+
+  const formProps = useDraftForm(
+    _state.isSomedayFormOpen,
+    actions.discard,
+    actions.reset,
+    setters.setIsSomedayFormOpen,
+  );
+
+  const state = {
+    ..._state,
+    formProps,
+  };
 
   return (
     <SidebarDraftContext.Provider value={{ state, setters, actions }}>

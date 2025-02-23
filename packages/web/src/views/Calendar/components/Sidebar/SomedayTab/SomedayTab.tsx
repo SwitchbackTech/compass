@@ -11,7 +11,7 @@ import {
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { MonthSection } from "./MonthSection";
+import { MonthSection } from "./MonthSection/MonthSection";
 import { WeekSection } from "./WeekSection/WeekSection";
 import { SidebarContent } from "./styled";
 

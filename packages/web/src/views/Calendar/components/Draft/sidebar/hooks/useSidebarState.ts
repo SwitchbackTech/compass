@@ -54,6 +54,7 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
     isOverAllDayRow,
     isOverGrid,
     isOverMainGrid,
+    isSomedayFormOpen,
     mouseCoords,
     shouldPreviewOnGrid,
     somedayEvents,
@@ -73,5 +74,5 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
 };
 
 type Hook_Sidebar = ReturnType<typeof useSidebarState>;
-export type State_Sidebar = Hook_Sidebar["state"];
+export type State_Sidebar_Local = Hook_Sidebar["state"];
 export type Setters_Sidebar = Hook_Sidebar["setters"];

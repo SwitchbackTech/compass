@@ -8,7 +8,6 @@ import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { snapToGrid } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/snap.grid";
-import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/styled";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   Measurements_Grid,
@@ -16,6 +15,7 @@ import {
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
+import { SOMEDAY_EVENT_HEIGHT } from "../../../Sidebar/SomedayTab/WeekSection/SomedayEvents/SomedayEvent/styled";
 import { StyledGridEventPreview, getItemStyles, layerStyles } from "./styled";
 
 interface Props {
