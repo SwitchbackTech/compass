@@ -13,7 +13,6 @@ import { useDraftContext } from "./context/useDraftContext";
 import { GridDraft } from "./grid/GridDraft";
 import { useGridClick } from "./grid/hooks/useGridClick";
 import { useGridMouseMove } from "./grid/hooks/useGridMouseMove";
-import { SomedayDraft } from "./sidebar/SomedayDraft";
 
 interface Props {
   measurements: Measurements_Grid;
@@ -21,11 +20,11 @@ interface Props {
 }
 
 export const Draft: FC<Props> = ({ measurements, weekProps }) => {
-  const [isLoadingDOM, setIsLoadingDOM] = useState(true);
+  // const [isLoadingDOM, setIsLoadingDOM] = useState(true);
 
-  useEffect(() => {
-    setIsLoadingDOM(false);
-  }, []);
+  // useEffect(() => {
+  //   setIsLoadingDOM(false);
+  // }, []);
 
   useGridClick();
   useGridMouseMove();
@@ -35,40 +34,26 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   const { state } = useDraftContext();
   const { draft, isDragging, isResizing } = state;
 
-  if (isLoadingDOM || !draft || !isDrafting) return null;
+  // if (isLoadingDOM || !draft || !isDrafting) return null;
 
   if (draft?.isAllDay === undefined) {
-    console.error("draft.isAllDay is undefined", draft);
     return null;
   }
-
   if (!category) return null;
 
   const container = getDraftContainer(category);
-  const isGridEvent =
+  const isGridDraft =
     category === Categories_Event.ALLDAY || category === Categories_Event.TIMED;
-
-  const isSomedayEvent =
-    category === Categories_Event.SOMEDAY_WEEK ||
-    category === Categories_Event.SOMEDAY_MONTH;
 
   return createPortal(
     <>
-      {isGridEvent && (
+      {isGridDraft && (
         <GridDraft
           draft={draft}
           isDragging={isDragging}
           isResizing={isResizing}
           measurements={measurements}
           weekProps={weekProps}
-        />
-      )}
-      {isSomedayEvent && (
-        <SomedayDraft
-          category={category}
-          draft={draft}
-          index={0}
-          isOverGrid={false}
         />
       )}
     </>,
