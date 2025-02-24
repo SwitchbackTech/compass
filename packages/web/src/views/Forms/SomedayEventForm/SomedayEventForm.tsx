@@ -1,4 +1,4 @@
-import React, { MouseEvent, useRef } from "react";
+import React, { KeyboardEvent, MouseEvent, useRef } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
@@ -21,7 +21,7 @@ import { RepeatSection } from "../EventForm/RepeatSection";
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
-  onClose: _onClose,
+  onClose,
   onSubmit,
   setEvent,
   ...props
@@ -32,6 +32,12 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const bgColor = colorByPriority[priority];
 
   const origRecurrence = useRef(event?.recurrence).current;
+
+  const ignoreDelete = (e: KeyboardEvent) => {
+    if (e.key === Key.Backspace || e.key == Key.Delete) {
+      e.stopPropagation();
+    }
+  };
 
   const _onSubmit = () => {
     const hasInstances = origRecurrence?.eventId !== undefined;
@@ -64,10 +70,21 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       toast(eventTitle);
     }
 
-    _onClose();
+    onClose();
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+  const onKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === Key.Backspace || e.key == Key.Delete) {
+      const confirmed = window.confirm(
+        `Delete ${event.title || "this event"}?`,
+      );
+
+      if (confirmed) {
+        onDelete();
+        onClose();
+      }
+    }
+
     if (e.key === Key.Enter) {
       e.stopPropagation();
       if (e.metaKey) {
@@ -113,6 +130,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       <StyledTitle
         autoFocus
         onChange={onChangeEventTextField("title")}
+        onKeyDown={ignoreDelete}
         placeholder="Title"
         role="input"
         title="title"
@@ -130,6 +148,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
       <StyledDescription
         onChange={onChangeEventTextField("description")}
+        onKeyDown={ignoreDelete}
         placeholder="Description"
         underlineColor={colorByPriority[priority]}
         value={event.description || ""}

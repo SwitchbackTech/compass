@@ -52,7 +52,7 @@ export const SomedayEventsContainer: FC<Props> = ({ category, column }) => {
                 {provided.placeholder}
               </div>
 
-              {/* {isDraftingNew && state.draft && (
+              {isDraftingNew && state.draft && (
                 <DraggableSomedayEvent
                   category={category}
                   draftId={ID_SOMEDAY_DRAFT}
@@ -62,7 +62,7 @@ export const SomedayEventsContainer: FC<Props> = ({ category, column }) => {
                   isOverGrid={state.isOverGrid}
                   key={ID_SOMEDAY_DRAFT}
                 />
-              )} */}
+              )}
             </div>
           );
         }}

@@ -241,7 +241,7 @@ export const prepEvtAfterDraftDrop = (
 };
 
 export const prepEvtBeforeSubmit = (
-  draft: Schema_GridEvent,
+  draft: Schema_Event | Schema_GridEvent,
   userId: string,
 ) => {
   const _event = {
