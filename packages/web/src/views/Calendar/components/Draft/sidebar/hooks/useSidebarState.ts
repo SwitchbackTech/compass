@@ -18,7 +18,6 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
     setSomedayEvents(categorizedEvents);
   }, [categorizedEvents]);
 
-  const { eventType: draftType } = useAppSelector(selectDraftStatus);
   const isDNDing = useAppSelector(selectIsDNDing);
 
   const [draft, setDraft] = useState<Schema_Event | null>(null);
@@ -43,7 +42,6 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
 
   const state = {
     draft,
-    draftType,
     somedayIds,
     somedayMonthIds,
     somedayWeekIds,

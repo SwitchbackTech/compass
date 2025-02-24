@@ -4,6 +4,8 @@ import { Categories_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { GridEventPreview } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/GridEventPreview";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
@@ -42,7 +44,8 @@ export const SomedayEvents: FC<Props> = ({
       category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH
     ];
 
-  const isDraftingNew = state.isDraftingNew && state.draftType === category;
+  const draftCategory = useAppSelector(selectDraftCategory);
+  const isDraftingNew = state.isDraftingNew && draftCategory === category;
 
   return (
     <DragDropContext

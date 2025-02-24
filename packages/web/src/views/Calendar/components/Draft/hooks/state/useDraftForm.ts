@@ -1,7 +1,9 @@
 import { OpenChangeReason } from "@floating-ui/react";
+import { Categories_Event } from "@core/types/event.types";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 
 export const useDraftForm = (
+  category: Categories_Event,
   isFormOpen: boolean,
   discard: () => void,
   reset: () => void,
@@ -41,7 +43,7 @@ export const useDraftForm = (
     }
   };
 
-  const formProps = useEventForm("grid", isFormOpen, onIsFormOpenChange);
+  const formProps = useEventForm(category, isFormOpen, onIsFormOpenChange);
   return formProps;
 };
 

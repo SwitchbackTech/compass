@@ -9,9 +9,10 @@ import {
   useFloating,
   useInteractions,
 } from "@floating-ui/react";
+import { Categories_Event } from "@core/types/event.types";
 
 export const useEventForm = (
-  eventType: "grid" | "sidebarWeek" | "sidebarMonth",
+  category: Categories_Event,
   isOpen: boolean,
   onIsFormOpenChange: (
     isOpen: boolean,
@@ -20,9 +21,13 @@ export const useEventForm = (
   ) => void,
 ) => {
   let options: Partial<UseFloatingOptions>;
+  const isSomeday =
+    category === Categories_Event.SOMEDAY_WEEK ||
+    category === Categories_Event.SOMEDAY_MONTH;
 
-  if (eventType === "sidebarWeek" || eventType === "sidebarMonth") {
-    const placement = eventType === "sidebarWeek" ? "right-start" : "right";
+  if (isSomeday) {
+    const placement =
+      category === Categories_Event.SOMEDAY_WEEK ? "right-start" : "right";
     options = { strategy: "absolute", placement };
   } else {
     options = {

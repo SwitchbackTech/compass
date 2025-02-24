@@ -6,6 +6,8 @@ import {
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
+import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { State_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
 import { useSidebarContext } from "../../../../../Draft/sidebar/context/useSidebarContext";
 import { DraggableSomedayEvent } from "../DraggableSomedayEvent/DraggableSomedayEvent";
@@ -33,9 +35,11 @@ export interface Props {
 
 export const SomedayEventsContainer: FC<Props> = ({ category, column }) => {
   const { state } = useSidebarContext();
-  const isDraftingNew = state.isDraftingNew && state.draftType === category;
 
   const events = getSomedayEvents(category, state.somedayEvents);
+  const draftCategory = useAppSelector(selectDraftCategory);
+  const isDraftingNew = state.isDraftingNew && category === draftCategory;
+
   return (
     <>
       <Droppable droppableId={column.id}>

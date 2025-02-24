@@ -1,4 +1,7 @@
 import React from "react";
+import { Categories_Event } from "@core/types/event.types";
+import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useDraftActions } from "../hooks/actions/useDraftActions";
@@ -29,7 +32,16 @@ export const DraftProvider = ({
   const { discard, reset } = actions;
   const { isFormOpen } = originalState;
   const { setIsFormOpen } = setters;
-  const formProps = useDraftForm(isFormOpen, discard, reset, setIsFormOpen);
+
+  const _category = useAppSelector(selectDraftCategory);
+  const category = _category || Categories_Event.TIMED;
+  const formProps = useDraftForm(
+    category,
+    isFormOpen,
+    discard,
+    reset,
+    setIsFormOpen,
+  );
 
   const state: State_Draft = {
     ...originalState,

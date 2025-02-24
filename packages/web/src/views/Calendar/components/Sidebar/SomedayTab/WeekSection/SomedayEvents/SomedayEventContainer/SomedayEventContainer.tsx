@@ -62,7 +62,17 @@ export const SomedayEventContainer = ({
         provided={provided}
         snapshot={snapshot}
         onMigrate={onMigrate}
-        formRef={formProps.refs.setReference}
+        formProps={formProps}
+        // ref={formProps.refs.setReference}
+        // ref={provided.innerRef}
+        // ref={(node) => {
+        //   if (node) {
+        //     // ref(node);
+        //     formProps.refs.setReference(node);
+        //     provided.innerRef(node);
+        //   }
+        // }}
+        // {...formProps.getReferenceProps()}
       />
 
       {state.isSomedayFormOpen && isDraftingThisEvent && (
@@ -71,8 +81,9 @@ export const SomedayEventContainer = ({
             <StyledFloatContainer
               ref={formProps.refs.setFloating}
               strategy={formProps.strategy}
-              top={formProps.y ?? 40}
+              top={formProps.y}
               left={SIDEBAR_OPEN_WIDTH}
+              {...formProps.getFloatingProps()}
             >
               <SomedayEventForm
                 event={event}
