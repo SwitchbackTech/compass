@@ -32,7 +32,7 @@ export const SomedayTab: FC<Props> = ({
 }) => {
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
 
-  const somedayRef = useRef();
+  const somedayRef = useRef<HTMLDivElement>(null);
   const weekLabel = useMemo(
     () => getWeekRangeLabel(viewStart, viewEnd),
     [viewEnd, viewStart],

@@ -1,5 +1,4 @@
 import React from "react";
-import { ReferenceType } from "@floating-ui/react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
@@ -22,9 +21,6 @@ interface Props {
   onMigrate: Actions_Sidebar["onMigrate"];
   priority: Priorities;
   provided: DraggableProvided;
-  // formRef: ((node: ReferenceType | null) => void) &
-  // ref: ((node: ReferenceType | null) => void) &
-  // ((node: ReferenceType | null) => void);
   formProps: Props_DraftForm;
   snapshot: DraggableStateSnapshot;
 }
@@ -62,20 +58,14 @@ export const SomedayEvent = ({
       onKeyDown={onKeyDown}
       priority={priority}
       role="button"
-      // ref={ref}
       ref={provided.innerRef}
     >
-      {/* <div ref={formProps.refs.setReference} {...formProps.getReferenceProps()}> */}
-      <div ref={formProps.refs.setReference}>
-        <SomedayEventRectangle
-          category={category}
-          event={event}
-          onMigrate={onMigrate}
-          // ref={formProps.refs.setReference}
-          // ref={ref}
-          // {...formProps.getReferenceProps()}
-        />
-      </div>
+      <SomedayEventRectangle
+        category={category}
+        event={event}
+        onMigrate={onMigrate}
+        formProps={formProps}
+      />
     </StyledNewSomedayEvent>
   );
 };

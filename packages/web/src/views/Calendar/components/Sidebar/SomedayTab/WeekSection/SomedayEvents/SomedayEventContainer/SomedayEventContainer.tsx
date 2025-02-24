@@ -3,11 +3,11 @@ import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { useDraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { Actions_Sidebar } from "../../../../../Draft/sidebar/hooks/useSidebarActions";
 import { Setters_Sidebar } from "../../../../../Draft/sidebar/hooks/useSidebarState";
 import { SomedayEvent } from "../SomedayEvent/SomedayEvent";
 
@@ -17,7 +17,6 @@ export interface Props {
   isDrafting: boolean;
   isDragging: boolean;
   isOverGrid: boolean;
-  onMigrate: Actions_Sidebar["onMigrate"];
   onSubmit: (event?: Schema_Event) => void;
   provided: DraggableProvided;
   snapshot: DraggableStateSnapshot;
@@ -30,7 +29,6 @@ export const SomedayEventContainer = ({
   isDrafting,
   isDragging,
   isOverGrid,
-  onMigrate,
   onSubmit,
   provided,
   snapshot,
@@ -38,7 +36,13 @@ export const SomedayEventContainer = ({
 }: Props) => {
   const { actions, setters, state } = useSidebarContext();
 
-  const { formProps } = state;
+  const formProps = useDraftForm(
+    category,
+    state.isSomedayFormOpen && state.draft?._id === event._id,
+    actions.discard,
+    actions.reset,
+    setters.setIsSomedayFormOpen,
+  );
 
   const [isFocused, setIsFocused] = useState(false);
 
@@ -61,18 +65,8 @@ export const SomedayEventContainer = ({
         priority={event.priority || Priorities.UNASSIGNED}
         provided={provided}
         snapshot={snapshot}
-        onMigrate={onMigrate}
+        onMigrate={actions.onMigrate}
         formProps={formProps}
-        // ref={formProps.refs.setReference}
-        // ref={provided.innerRef}
-        // ref={(node) => {
-        //   if (node) {
-        //     // ref(node);
-        //     formProps.refs.setReference(node);
-        //     provided.innerRef(node);
-        //   }
-        // }}
-        // {...formProps.getReferenceProps()}
       />
 
       {state.isSomedayFormOpen && isDraftingThisEvent && (
@@ -83,7 +77,6 @@ export const SomedayEventContainer = ({
               strategy={formProps.strategy}
               top={formProps.y}
               left={SIDEBAR_OPEN_WIDTH}
-              {...formProps.getFloatingProps()}
             >
               <SomedayEventForm
                 event={event}

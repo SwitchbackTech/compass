@@ -4,6 +4,7 @@ import { Flex } from "@web/components/Flex";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
+import { Props_DraftForm } from "@web/views/Calendar/components/Draft/context/DraftContext";
 import { Actions_Sidebar } from "../../../../../Draft/sidebar/hooks/useSidebarActions";
 import { StyledMigrateArrow, StyledRecurrenceText } from "./styled";
 
@@ -11,11 +12,13 @@ interface Props {
   category: Categories_Event;
   event: Schema_Event;
   onMigrate: Actions_Sidebar["onMigrate"];
+  formProps: Props_DraftForm;
 }
 
 export const SomedayEventRectangle = ({
   category,
   event,
+  formProps,
   onMigrate,
 }: Props) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
@@ -23,7 +26,7 @@ export const SomedayEventRectangle = ({
     !event.recurrence?.rule || event.recurrence?.rule.length === 0;
 
   return (
-    <>
+    <div ref={formProps.refs.setReference} {...formProps.getReferenceProps()}>
       <Flex
         alignItems={AlignItems.CENTER}
         direction={FlexDirections.ROW}
@@ -68,6 +71,6 @@ export const SomedayEventRectangle = ({
           </Flex>
         )}
       </Flex>
-    </>
+    </div>
   );
 };
