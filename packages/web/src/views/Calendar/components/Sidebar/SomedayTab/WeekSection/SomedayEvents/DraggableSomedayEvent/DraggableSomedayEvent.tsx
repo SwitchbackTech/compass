@@ -1,7 +1,6 @@
 import React, { FC } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { SomedayEventContainer } from "../SomedayEventContainer/SomedayEventContainer";
 
@@ -31,7 +30,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
         draggableId={event?._id || draftId}
         index={index}
         key={event?._id || draftId}
-        isDragDisabled={draftId === ID_SOMEDAY_DRAFT}
+        isDragDisabled={event?._id === undefined}
       >
         {(provided, snapshot) => {
           return (

@@ -12,8 +12,7 @@ const _DraggableSomedayEvents: FC<{
   return (
     <>
       {events.map((event, index: number) => {
-        const isDrafting =
-          draft?._id === event._id || draft?._id === ID_SOMEDAY_DRAFT;
+        const isDrafting = draft?._id === event._id;
 
         return (
           <DraggableSomedayEvent
