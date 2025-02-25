@@ -9,10 +9,15 @@ export const useSidebarEffects = (
   actions: Actions_Sidebar,
 ) => {
   const isDNDing = useAppSelector(selectIsDNDing);
+  const { closeForm, handleChange } = actions;
+
+  useEffect(() => {
+    handleChange();
+  }, [handleChange]);
 
   useEffect(() => {
     if (isDNDing && state.isSomedayFormOpen) {
-      actions.closeForm();
+      closeForm();
     }
-  }, [isDNDing, state.isSomedayFormOpen, actions]);
+  }, [isDNDing, state.isSomedayFormOpen, closeForm]);
 };

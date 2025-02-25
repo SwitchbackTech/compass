@@ -28,6 +28,7 @@ import {
 } from "@web/common/utils/web.date.util";
 import {
   selectDraft,
+  selectDraftActivity,
   selectDraftCategory,
   selectIsDrafting,
 } from "@web/ducks/events/selectors/draft.selectors";
@@ -59,6 +60,7 @@ export const useSidebarActions = (
   const { start, end } = useAppSelector(selectDatesInView);
   const reduxDraft = useAppSelector(selectDraft);
   const draftType = useAppSelector(selectDraftCategory);
+  const activity = useAppSelector(selectDraftActivity);
 
   const viewStart = dayjs(start);
   const viewEnd = dayjs(end);
@@ -91,6 +93,10 @@ export const useSidebarActions = (
   const closeForm = () => {
     setIsSomedayFormOpen(false);
   };
+
+  const openForm = useCallback(() => {
+    setIsSomedayFormOpen(true);
+  }, [setIsSomedayFormOpen]);
 
   // call this when enabling DND for drafts
   const convertSomedayDraftToTimed = (
@@ -159,6 +165,12 @@ export const useSidebarActions = (
     );
   };
 
+  const create = useCallback(() => {
+    setDraft(reduxDraft);
+    setIsDrafting(true);
+    openForm();
+  }, [openForm, reduxDraft, setDraft, setIsDrafting]);
+
   const createDefaultSomeday = useCallback(async () => {
     const somedayDefault = await assembleDefaultEvent(
       Categories_Event.SOMEDAY_WEEK,
@@ -202,6 +214,12 @@ export const useSidebarActions = (
       return { startDate, endDate };
     }
   };
+
+  const handleChange = useCallback(() => {
+    if (activity === "createShortcut") {
+      create();
+    }
+  }, [activity, create]);
 
   const onDraft = (event: Schema_Event, category: Categories_Event) => {
     setIsDrafting(true);
@@ -328,6 +346,7 @@ export const useSidebarActions = (
 
     createDefaultSomeday();
   };
+
   const onSubmit = async (category: Categories_Event) => {
     if (!state.draft) return;
 
@@ -424,6 +443,7 @@ export const useSidebarActions = (
     closeForm,
     createDefaultSomeday,
     discard,
+    handleChange,
     onDraft,
     onDragEnd,
     onDragStart,
