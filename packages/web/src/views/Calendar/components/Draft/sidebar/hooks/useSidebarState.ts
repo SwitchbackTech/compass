@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import {
-  selectDraftStatus,
-  selectIsDNDing,
-} from "@web/ducks/events/selectors/draft.selectors";
+import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
 import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
@@ -72,5 +69,5 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
 };
 
 type Hook_Sidebar = ReturnType<typeof useSidebarState>;
-export type State_Sidebar_Local = Hook_Sidebar["state"];
+export type State_Sidebar = Hook_Sidebar["state"];
 export type Setters_Sidebar = Hook_Sidebar["setters"];

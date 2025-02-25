@@ -28,6 +28,7 @@ import {
 } from "@web/common/utils/web.date.util";
 import {
   selectDraft,
+  selectDraftCategory,
   selectIsDrafting,
 } from "@web/ducks/events/selectors/draft.selectors";
 import {
@@ -43,11 +44,11 @@ import {
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { Setters_Sidebar, State_Sidebar_Local } from "./useSidebarState";
+import { Setters_Sidebar, State_Sidebar } from "./useSidebarState";
 
 export const useSidebarActions = (
   dateCalcs: DateCalcs,
-  state: State_Sidebar_Local,
+  state: State_Sidebar,
   setters: Setters_Sidebar,
 ) => {
   const dispatch = useAppDispatch();
@@ -57,10 +58,10 @@ export const useSidebarActions = (
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const { start, end } = useAppSelector(selectDatesInView);
   const reduxDraft = useAppSelector(selectDraft);
+  const draftType = useAppSelector(selectDraftCategory);
+
   const viewStart = dayjs(start);
   const viewEnd = dayjs(end);
-
-  const { draft, draftType } = state;
 
   const { setDraft, setIsDrafting, setIsSomedayFormOpen, setSomedayEvents } =
     setters;
@@ -165,14 +166,14 @@ export const useSidebarActions = (
   }, [setDraft]);
 
   const discard = useCallback(() => {
-    if (draft) {
+    if (state.draft) {
       setDraft(null);
     }
 
     if (reduxDraft) {
       dispatch(draftSlice.actions.discard());
     }
-  }, [dispatch, draft, reduxDraft]);
+  }, [dispatch, state.draft, reduxDraft]);
 
   const getDatesAfterDroppingOn = (
     target: "mainGrid" | "alldayRow",
