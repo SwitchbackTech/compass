@@ -16,22 +16,3 @@ export const useSidebarEffects = (
     }
   }, [isDNDing, state.isSomedayFormOpen, actions]);
 };
-//++ TODO delete
-//   const { resetLocalDraftStateIfNeeded, createDefaultSomeday } = actions;
-
-//   const isDrafting = useAppSelector(selectIsDrafting);
-//   const isDraftingExisting = useAppSelector(selectIsDraftingExisting);
-//   const isDraftingSomeday = useAppSelector(selectIsDraftingSomeday);
-// useEffect(() => {
-//   const isSidebarStatePotentiallyStale = !isDraftingSomeday;
-//   if (isSidebarStatePotentiallyStale) {
-//     resetLocalDraftStateIfNeeded();
-//   }
-// }, [isDraftingSomeday, resetLocalDraftStateIfNeeded]);
-
-// useEffect(() => {
-//   const shouldStartNew = isDrafting && !isDraftingExisting;
-//   if (shouldStartNew) {
-//     createDefaultSomeday();
-//   }
-// }, [isDraftingExisting, isDrafting, createDefaultSomeday]);
