@@ -1,11 +1,8 @@
-import React, { FC, useEffect, useState } from "react";
+import React, { FC } from "react";
 import { createPortal } from "react-dom";
 import { Categories_Event } from "@core/types/event.types";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";
-import {
-  selectDraftCategory,
-  selectIsDrafting,
-} from "@web/ducks/events/selectors/draft.selectors";
+import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -20,21 +17,12 @@ interface Props {
 }
 
 export const Draft: FC<Props> = ({ measurements, weekProps }) => {
-  // const [isLoadingDOM, setIsLoadingDOM] = useState(true);
-
-  // useEffect(() => {
-  //   setIsLoadingDOM(false);
-  // }, []);
-
   useGridClick();
   useGridMouseMove();
 
-  const isDrafting = useAppSelector(selectIsDrafting);
   const category = useAppSelector(selectDraftCategory);
   const { state } = useDraftContext();
   const { draft, isDragging, isResizing } = state;
-
-  // if (isLoadingDOM || !draft || !isDrafting) return null;
 
   if (draft?.isAllDay === undefined) {
     return null;
