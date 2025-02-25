@@ -9,7 +9,6 @@ import path from "path";
 import tseslint from "typescript-eslint";
 import { fileURLToPath } from "url";
 import pluginJs from "@eslint/js";
-import sortImports from "@trivago/prettier-plugin-sort-imports";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -71,6 +70,12 @@ export default [
   },
   // these plugins adjust other parts of this config,
   // so keep them down here
-  prettierEslint,
-  sortImports,
+  {
+    plugins: {
+      prettier: prettierEslint,
+    },
+    rules: {
+      ...prettierEslint.configs.recommended.rules,
+    },
+  },
 ];
