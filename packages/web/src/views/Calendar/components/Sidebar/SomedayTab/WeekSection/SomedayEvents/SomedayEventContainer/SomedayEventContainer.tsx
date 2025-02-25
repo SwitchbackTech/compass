@@ -81,7 +81,7 @@ export const SomedayEventContainer = ({
               <SomedayEventForm
                 event={event}
                 onClose={() => {
-                  setters.setIsSomedayFormOpen(false);
+                  actions.closeForm();
                   actions.close();
                 }}
                 onSubmit={onSubmit}

@@ -88,6 +88,10 @@ export const useSidebarActions = (
     }
   };
 
+  const closeForm = () => {
+    setIsSomedayFormOpen(false);
+  };
+
   // call this when enabling DND for drafts
   const convertSomedayDraftToTimed = (
     dropItem: DropResult_ReactDND,
@@ -417,6 +421,7 @@ export const useSidebarActions = (
 
   return {
     close,
+    closeForm,
     createDefaultSomeday,
     discard,
     onDraft,
