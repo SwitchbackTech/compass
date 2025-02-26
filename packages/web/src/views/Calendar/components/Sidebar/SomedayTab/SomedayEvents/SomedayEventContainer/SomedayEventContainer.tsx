@@ -5,10 +5,10 @@ import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { useDraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
+import { Setters_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { Setters_Sidebar } from "../../../../../Draft/sidebar/hooks/useSidebarState";
 import { SomedayEvent } from "../SomedayEvent/SomedayEvent";
 
 export interface Props {

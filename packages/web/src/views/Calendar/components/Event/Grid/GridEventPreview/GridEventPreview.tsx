@@ -15,7 +15,7 @@ import {
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
-import { SOMEDAY_EVENT_HEIGHT } from "../../../Sidebar/SomedayTab/WeekSection/SomedayEvents/SomedayEvent/styled";
+import { SOMEDAY_EVENT_HEIGHT } from "../../../Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { StyledGridEventPreview, getItemStyles, layerStyles } from "./styled";
 
 interface Props {

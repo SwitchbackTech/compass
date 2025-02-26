@@ -17,8 +17,8 @@ import {
   GRID_X_START,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-import { useSidebarContext } from "../../../../Draft/sidebar/context/useSidebarContext";
-import { EventPlaceholder, SidebarList } from "../../../styled";
+import { useSidebarContext } from "../../../Draft/sidebar/context/useSidebarContext";
+import { EventPlaceholder, SidebarList } from "../../styled";
 import { SomedayEventsContainer } from "./SomedayEventsContainer/SomedayEventsContainer";
 
 interface Props {

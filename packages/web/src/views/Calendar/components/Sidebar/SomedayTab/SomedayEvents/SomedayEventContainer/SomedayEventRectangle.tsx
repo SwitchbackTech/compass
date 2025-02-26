@@ -5,7 +5,7 @@ import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
 import { Props_DraftForm } from "@web/views/Calendar/components/Draft/context/DraftContext";
-import { Actions_Sidebar } from "../../../../../Draft/sidebar/hooks/useSidebarActions";
+import { Actions_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarActions";
 import { StyledMigrateArrow, StyledRecurrenceText } from "./styled";
 
 interface Props {

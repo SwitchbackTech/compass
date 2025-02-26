@@ -12,7 +12,7 @@ import { DraftProvider } from "./components/Draft/context/DraftProvider";
 import { SidebarDraftProvider } from "./components/Draft/sidebar/context/SidebarDraftProvider";
 import { Grid } from "./components/Grid/";
 import { Header } from "./components/Header";
-import { Sidebar } from "./components/Sidebar";
+import { Sidebar } from "./components/Sidebar/Sidebar";
 import { useDateCalcs } from "./hooks/grid/useDateCalcs";
 import { useGridLayout } from "./hooks/grid/useGridLayout";
 import { useScroll } from "./hooks/grid/useScroll";

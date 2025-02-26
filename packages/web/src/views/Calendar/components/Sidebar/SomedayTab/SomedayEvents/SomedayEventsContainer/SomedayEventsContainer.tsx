@@ -8,8 +8,8 @@ import {
 } from "@web/common/constants/web.constants";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { State_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
-import { useSidebarContext } from "../../../../../Draft/sidebar/context/useSidebarContext";
+import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
+import { State_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
 import { DraggableSomedayEvent } from "../DraggableSomedayEvent/DraggableSomedayEvent";
 import { DraggableSomedayEvents } from "../DraggableSomedayEvent/DraggableSomedayEvents";
 

@@ -8,8 +8,8 @@ import {
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { SomedayEvents } from "../SomedayEvents/SomedayEvents";
 import { SidebarHeader, SidebarSection } from "../styled";
-import { SomedayEvents } from "./SomedayEvents/SomedayEvents";
 
 interface Props {
   dateCalcs: DateCalcs;
