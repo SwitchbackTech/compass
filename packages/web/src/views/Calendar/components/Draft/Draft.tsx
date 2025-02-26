@@ -30,6 +30,8 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   if (!category) return null;
 
   const container = getDraftContainer(category);
+  if (!container) return null;
+
   const isGridDraft =
     category === Categories_Event.ALLDAY || category === Categories_Event.TIMED;
 

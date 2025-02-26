@@ -74,7 +74,5 @@ export const getDraftContainer = (category: Categories_Event) => {
       return getElemById(ID_GRID_EVENTS_ALLDAY);
     case Categories_Event.TIMED:
       return getElemById(ID_GRID_EVENTS_TIMED);
-    default:
-      return getElemById(ID_SIDEBAR);
   }
 };
