@@ -4,7 +4,6 @@ import { Categories_Event } from "@core/types/event.types";
 import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
-  ID_SIDEBAR,
 } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { roundToNext } from "@web/common/utils";
