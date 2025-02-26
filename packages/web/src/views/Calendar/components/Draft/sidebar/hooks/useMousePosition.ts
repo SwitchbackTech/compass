@@ -7,7 +7,7 @@ import {
 } from "@web/views/Calendar/layout.constants";
 
 export const useMousePosition = (
-  isDragging: boolean,
+  isDNDing: boolean,
   isFormOpen: boolean,
   measurements: Measurements_Grid,
 ) => {
@@ -40,14 +40,14 @@ export const useMousePosition = (
       setMouseCoords({ x, y });
     };
 
-    if (!isDragging || isFormOpen) return;
+    if (!isDNDing) return;
 
     window.addEventListener("mousemove", handleMouseMove);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
     };
-  }, [allDayRow?.bottom, allDayRow?.top, isDragging, isFormOpen]);
+  }, [allDayRow?.bottom, allDayRow?.top, isDNDing, isFormOpen]);
 
   return { isOverAllDayRow, isOverGrid, isOverMainGrid, mouseCoords };
 };

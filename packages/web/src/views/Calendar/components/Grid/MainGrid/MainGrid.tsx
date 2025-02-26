@@ -64,14 +64,15 @@ export const MainGrid: FC<Props> = ({
     const _start = dateCalcs.getDateByXY(x, e.clientY, component.startOfView);
     const startDate = _start.format();
     const endDate = _start.add(DRAFT_DURATION_MIN, "minutes").format();
+    const category = Categories_Event.TIMED;
+    const event = await assembleDefaultEvent(category, startDate, endDate);
 
-    const event = await assembleDefaultEvent(
-      Categories_Event.TIMED,
-      startDate,
-      endDate,
-    );
     dispatch(
-      draftSlice.actions.startResizing({ event, dateToChange: "endDate" }),
+      draftSlice.actions.startResizing({
+        category,
+        event,
+        dateToChange: "endDate",
+      }),
     );
   };
 

@@ -152,7 +152,7 @@ export const useDraftActions = (
     }
 
     if (reduxDraft || reduxDraftType) {
-      dispatch(draftSlice.actions.discard({}));
+      dispatch(draftSlice.actions.discard());
     }
   }, [dispatch, draft, reduxDraft, reduxDraftType]);
 
@@ -254,8 +254,7 @@ export const useDraftActions = (
   const reset = () => {
     setDraft(null);
     setIsDragging(false);
-    // closeForm();
-    setIsFormOpen(false);
+    closeForm();
     setIsResizing(false);
     setDragStatus(null);
     setResizeStatus(null);
@@ -297,8 +296,7 @@ export const useDraftActions = (
           }
         }
 
-        // closeForm();
-        setIsFormOpen(false);
+        closeForm();
         setDraft((_draft) => {
           return {
             ..._draft,

@@ -5,21 +5,19 @@ import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { Divider } from "@web/components/Divider";
 import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   Measurements_Grid,
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { MonthSection } from "./MonthSection";
+import { MonthSection } from "./MonthSection/MonthSection";
 import { WeekSection } from "./WeekSection/WeekSection";
 import { SidebarContent } from "./styled";
 
 interface Props {
   dateCalcs: DateCalcs;
   measurements: Measurements_Grid;
-  sidebarProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
   viewEnd: WeekProps["component"]["endOfView"];
   gridRefs: Refs_Grid;
@@ -28,14 +26,13 @@ interface Props {
 export const SomedayTab: FC<Props> = ({
   dateCalcs,
   measurements,
-  sidebarProps,
   viewEnd,
   viewStart,
   gridRefs,
 }) => {
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
 
-  const somedayRef = useRef();
+  const somedayRef = useRef<HTMLDivElement>(null);
   const weekLabel = useMemo(
     () => getWeekRangeLabel(viewStart, viewEnd),
     [viewEnd, viewStart],
@@ -47,7 +44,6 @@ export const SomedayTab: FC<Props> = ({
       <WeekSection
         dateCalcs={dateCalcs}
         measurements={measurements}
-        sidebarProps={sidebarProps}
         viewStart={viewStart}
         weekLabel={weekLabel}
         gridRefs={gridRefs}
@@ -63,7 +59,6 @@ export const SomedayTab: FC<Props> = ({
       <MonthSection
         dateCalcs={dateCalcs}
         measurements={measurements}
-        somedayProps={sidebarProps}
         viewStart={viewStart}
         gridRefs={gridRefs}
       />

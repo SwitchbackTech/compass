@@ -1,9 +1,8 @@
 import React, { FC } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
-import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
-import { SomedayEvent } from "../SomedayEvent";
+import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
+import { SomedayEventContainer } from "../SomedayEventContainer/SomedayEventContainer";
 
 export interface Props {
   category: Categories_Event;
@@ -12,7 +11,6 @@ export interface Props {
   index: number;
   isDrafting: boolean;
   isOverGrid: boolean;
-  util: SidebarProps["util"];
 }
 
 export const DraggableSomedayEvent: FC<Props> = ({
@@ -22,10 +20,9 @@ export const DraggableSomedayEvent: FC<Props> = ({
   isDrafting,
   isOverGrid,
   index,
-  util,
 }) => {
-  const isDraftingThisEvent =
-    (isDrafting && draftId === event._id) || draftId === ID_SOMEDAY_DRAFT;
+  const isDraftingThisEvent = isDrafting && draftId === event._id;
+  const { actions, setters } = useSidebarContext();
 
   return (
     <div>
@@ -33,24 +30,22 @@ export const DraggableSomedayEvent: FC<Props> = ({
         draggableId={event?._id || draftId}
         index={index}
         key={event?._id || draftId}
-        isDragDisabled={draftId === ID_SOMEDAY_DRAFT}
+        isDragDisabled={event?._id === undefined}
       >
         {(provided, snapshot) => {
           return (
             <>
-              <SomedayEvent
+              <SomedayEventContainer
                 category={category}
                 event={event}
                 isDragging={snapshot.isDragging}
                 isDrafting={isDraftingThisEvent}
                 isOverGrid={isOverGrid}
-                onClose={util.close}
-                onDraft={() => util.onDraft(event, category)}
-                onMigrate={util.onMigrate}
-                onSubmit={() => util.onSubmit(category)}
+                onMigrate={actions.onMigrate}
+                onSubmit={() => actions.onSubmit(category)}
                 provided={provided}
                 snapshot={snapshot}
-                setEvent={util.setDraft}
+                setEvent={setters.setDraft}
               />
             </>
           );

@@ -1,4 +1,5 @@
 import React, { MouseEvent } from "react";
+import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isSomedayEventFormOpen } from "@web/common/utils";
@@ -36,7 +37,12 @@ export const AllDayEvents = ({
       dispatch(draftSlice.actions.discard());
     }
 
-    dispatch(draftSlice.actions.startDragging({ event }));
+    dispatch(
+      draftSlice.actions.startDragging({
+        category: Categories_Event.ALLDAY,
+        event,
+      }),
+    );
   };
 
   return (

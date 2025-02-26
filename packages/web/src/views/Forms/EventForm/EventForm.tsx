@@ -24,7 +24,7 @@ import {
   mapToBackend,
 } from "@web/common/utils/web.date.util";
 import IconButton from "@web/components/IconButton/IconButton";
-import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/styled";
+import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/styled";
 import { DateTimeSection } from "./DateTimeSection/DateTimeSection";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
@@ -78,11 +78,6 @@ export const EventForm: React.FC<FormProps> = ({
     (e: globalThis.KeyboardEvent) => {
       if (e.key === Key.Shift) {
         setIsShiftKeyPressed(true);
-      }
-
-      if (e.key === Key.Escape) {
-        setTimeout(_onClose);
-        return;
       }
     },
     [_onClose],
@@ -269,7 +264,7 @@ export const EventForm: React.FC<FormProps> = ({
             <StyledMigrateArrowInForm
               onClick={(e) => {
                 e.stopPropagation();
-                onConvert();
+                onConvert?.();
               }}
               role="button"
               title="Move to sidebar"

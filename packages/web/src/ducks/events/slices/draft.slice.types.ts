@@ -7,8 +7,9 @@ export interface Action_DraftEvent extends Action {
 }
 export type Activity_DraftEvent =
   | "createShortcut"
-  | "eventRightClick"
+  | "dnd"
   | "dragging"
+  | "eventRightClick"
   | "gridClick"
   | "resizing"
   | "sidebarClick";
@@ -35,6 +36,7 @@ interface Payload_DraftEvent {
 }
 
 interface Payload_Draft_Resize {
+  category: Categories_Event;
   event: Schema_Event;
   dateToChange: "startDate" | "endDate";
 }

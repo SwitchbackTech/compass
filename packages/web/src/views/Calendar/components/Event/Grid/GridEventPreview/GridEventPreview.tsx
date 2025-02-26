@@ -1,14 +1,13 @@
 import React, { FC, memo } from "react";
+import { Priorities } from "@core/constants/core.constants";
 import { DAY_COMPACT, DAY_HOUR_MIN_M } from "@core/constants/date.constants";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { Schema_Event } from "@core/types/event.types";
 import { getWidthBuffer } from "@web/common/utils/grid.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { snapToGrid } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/snap.grid";
-import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/styled";
-import { MouseCoords } from "@web/views/Calendar/hooks/draft/sidebar/useMousePosition";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   Measurements_Grid,
@@ -16,21 +15,22 @@ import {
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
+import { SOMEDAY_EVENT_HEIGHT } from "../../../Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { StyledGridEventPreview, getItemStyles, layerStyles } from "./styled";
 
-export interface Props {
+interface Props {
   dateCalcs: DateCalcs;
   dayIndex: number;
-  event: Schema_GridEvent;
+  event: Schema_Event;
   isOverAllDayRow: boolean;
   isOverMainGrid: boolean;
   measurements: Measurements_Grid;
-  mouseCoords: MouseCoords;
+  mouseCoords: { x: number; y: number };
   startOfView: WeekProps["component"]["startOfView"];
   mainGridRef: Refs_Grid["mainGridRef"];
 }
 
-export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
+const _GridEventPreview: FC<Props> = ({
   dateCalcs,
   dayIndex,
   event,
@@ -40,7 +40,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
   mouseCoords,
   startOfView,
   mainGridRef,
-}) {
+}) => {
   const { colWidths } = measurements;
   const { x, y } = mouseCoords;
 
@@ -92,7 +92,7 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
           className={"active"}
           duration={1}
           height={height}
-          priority={event.priority}
+          priority={event.priority || Priorities.UNASSIGNED}
           role="button"
           tabIndex={0}
           width={width}
@@ -113,4 +113,6 @@ export const GridEventPreview: FC<Props> = memo(function GridEventPreview({
       </div>
     </div>
   );
-});
+};
+
+export const GridEventPreview = memo(_GridEventPreview);

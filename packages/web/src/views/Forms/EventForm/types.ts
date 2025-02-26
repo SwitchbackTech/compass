@@ -7,7 +7,7 @@ export interface FormProps {
   isOpen?: boolean;
   onClose: () => void;
   onCloseEventForm?: () => void;
-  onConvert: () => void;
+  onConvert?: () => void;
   onDelete?: (eventId?: string) => void;
   onSubmit: (event?: Schema_Event) => void;
   onSubmitEventForm?: (event: Schema_Event) => void;

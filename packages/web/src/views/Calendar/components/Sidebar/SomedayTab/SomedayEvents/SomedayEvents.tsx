@@ -4,9 +4,9 @@ import { Categories_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { GridEventPreview } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/GridEventPreview";
-import { SidebarProps } from "@web/views/Calendar/hooks/draft/sidebar/useSidebar";
-import { State_Sidebar } from "@web/views/Calendar/hooks/draft/sidebar/useSidebarState";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   Measurements_Grid,
@@ -17,40 +17,25 @@ import {
   GRID_X_START,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
+import { useSidebarContext } from "../../../Draft/sidebar/context/useSidebarContext";
 import { EventPlaceholder, SidebarList } from "../../styled";
-import { SomedayEventsColumn } from "./SomedayEventsColumn";
+import { SomedayEventsContainer } from "./SomedayEventsContainer/SomedayEventsContainer";
 
 interface Props {
   category: Categories_Event;
   dateCalcs: DateCalcs;
   measurements: Measurements_Grid;
-  sidebarProps: SidebarProps;
   viewStart: WeekProps["component"]["startOfView"];
   mainGridRef: Refs_Grid["mainGridRef"];
 }
-
-const getSomedayEvents = (
-  category: Categories_Event,
-  somedayEvents: State_Sidebar["somedayEvents"],
-) => {
-  const colName =
-    category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH;
-  const column = somedayEvents.columns[colName];
-
-  return column.eventIds.map(
-    (eventId: string) => somedayEvents.events[eventId],
-  );
-};
-
 export const SomedayEvents: FC<Props> = ({
   category,
   dateCalcs,
   measurements,
-  sidebarProps,
   viewStart,
   mainGridRef,
 }) => {
-  const { state, util } = sidebarProps;
+  const { actions, state } = useSidebarContext();
   const gridX = state.mouseCoords.x - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
   const dayIndex = dateCalcs.getDayNumberByX(gridX);
 
@@ -58,13 +43,16 @@ export const SomedayEvents: FC<Props> = ({
     state.somedayEvents.columns[
       category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH
     ];
-  const events = getSomedayEvents(category, state.somedayEvents);
 
-  const isDraftingNew = state.isDraftingNew && state.draftType === category;
+  const draftCategory = useAppSelector(selectDraftCategory);
+  const isDraftingNew = state.isDraftingNew && draftCategory === category;
 
   return (
-    <DragDropContext onDragEnd={util.onDragEnd} onDragStart={util.onDragStart}>
-      {state.shouldPreviewOnGrid && (
+    <DragDropContext
+      onDragEnd={actions.onDragEnd}
+      onDragStart={actions.onDragStart}
+    >
+      {state.shouldPreviewOnGrid && state.draft && (
         <GridEventPreview
           dateCalcs={dateCalcs}
           dayIndex={dayIndex}
@@ -80,15 +68,10 @@ export const SomedayEvents: FC<Props> = ({
 
       <SidebarList>
         <div key={`${category}-wrapper`}>
-          <SomedayEventsColumn
+          <SomedayEventsContainer
             category={category}
             column={column}
-            draft={state.draft}
-            events={events}
-            isDraftingNew={isDraftingNew}
-            isOverGrid={state.isOverGrid}
             key={COLUMN_WEEK}
-            util={util}
           />
         </div>
         {!isDraftingNew && (
@@ -98,7 +81,7 @@ export const SomedayEvents: FC<Props> = ({
                 ? "Add to month"
                 : "Add to week"
             }
-            onClick={() => sidebarProps.util.onPlaceholderClick(category)}
+            onClick={() => actions.onPlaceholderClick(category)}
             shortcut={category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"}
           >
             <EventPlaceholder>

@@ -14,8 +14,6 @@ export interface SnappedCoords {
 // For now, we estimate the width of the time column to be 55px
 export const MAIN_GRID_TIME_COLUMN_WIDTH = 55;
 
-// TODO: Draw a step by step diagram to explain how the snapping works? (Might
-// help facilitate quicker understanding of the code)
 const snapYToGrid = (
   cursorY: number,
   measurements: Measurements_Grid,

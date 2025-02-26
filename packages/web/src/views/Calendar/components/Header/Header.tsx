@@ -1,13 +1,11 @@
 import dayjs, { Dayjs } from "dayjs";
 import React, { FC } from "react";
-import { isEventFormOpen } from "@web/common/utils";
 import { getCalendarHeadingLabel } from "@web/common/utils/web.date.util";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { RootProps } from "@web/views/Calendar/calendarView.types";
@@ -44,13 +42,6 @@ export const Header: FC<Props> = ({
   const { startOfView, endOfView } = weekProps.component;
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
-  const onSectionClick = () => {
-    if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
-      return;
-    }
-  };
-
   const onTodayClick = () => {
     if (!weekProps.component.isCurrentWeek) {
       weekProps.util.goToToday();
@@ -62,10 +53,7 @@ export const Header: FC<Props> = ({
 
   return (
     <>
-      <StyledHeaderRow
-        alignItems={AlignItems.BASELINE}
-        onClick={onSectionClick}
-      >
+      <StyledHeaderRow alignItems={AlignItems.BASELINE}>
         <TooltipWrapper
           description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
           onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
