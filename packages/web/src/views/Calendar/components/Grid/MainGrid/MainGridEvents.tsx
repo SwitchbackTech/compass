@@ -1,4 +1,4 @@
-import React, { MouseEvent } from "react";
+import React from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -8,6 +8,7 @@ import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useGridEventMouseHold } from "@web/views/Calendar/hooks/grid/useGridEventMouseHold";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
@@ -26,17 +27,15 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const adjustedEvents = adjustOverlappingEvents(timedEvents);
   const category = Categories_Event.TIMED;
 
-  const onMouseDown = (e: MouseEvent, event: Schema_GridEvent) => {
-    e.stopPropagation();
+  const { onMouseDown } = useGridEventMouseHold((event) => {
     if (isEventFormOpen()) {
       dispatch(
         draftSlice.actions.swap({ event, category: Categories_Event.TIMED }),
       );
       return;
     }
-
     editTimedEvent(event);
-  };
+  });
 
   const resizeTimedEvent = (
     event: Schema_GridEvent,
