@@ -10,7 +10,7 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { useEventListener } from "@web/views/Calendar/hooks/mouse/useEventListener";
 import { useDraftContext } from "../../context/useDraftContext";
 
-export const useGridClick = () => {
+export const useGridMouseUp = () => {
   const { actions, state } = useDraftContext();
   const { draft, dragStatus, isDragging, isResizing, resizeStatus } = state;
   const { discard, openForm, stopDragging, stopResizing, submit } = actions;

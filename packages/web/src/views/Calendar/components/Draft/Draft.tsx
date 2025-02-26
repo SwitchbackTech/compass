@@ -8,8 +8,8 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { useDraftContext } from "./context/useDraftContext";
 import { GridDraft } from "./grid/GridDraft";
-import { useGridClick } from "./grid/hooks/useGridClick";
 import { useGridMouseMove } from "./grid/hooks/useGridMouseMove";
+import { useGridMouseUp } from "./grid/hooks/useGridMouseUp";
 
 interface Props {
   measurements: Measurements_Grid;
@@ -17,7 +17,7 @@ interface Props {
 }
 
 export const Draft: FC<Props> = ({ measurements, weekProps }) => {
-  useGridClick();
+  useGridMouseUp();
   useGridMouseMove();
 
   const category = useAppSelector(selectDraftCategory);
