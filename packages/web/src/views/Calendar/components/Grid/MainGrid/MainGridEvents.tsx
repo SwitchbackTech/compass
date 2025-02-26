@@ -34,7 +34,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
       return;
     }
     editTimedEvent(event);
-  });
+  }, Categories_Event.TIMED);
 
   const resizeTimedEvent = (
     event: Schema_GridEvent,

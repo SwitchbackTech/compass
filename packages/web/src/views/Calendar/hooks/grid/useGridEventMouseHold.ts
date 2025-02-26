@@ -1,13 +1,25 @@
 import { MouseEvent as ReactMouseEvent, useRef } from "react";
-import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
+import { Categories_Event } from "@core/types/event.types";
+import {
+  ID_GRID_ALLDAY_ROW,
+  ID_GRID_MAIN,
+} from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid.util";
 import { GRID_EVENT_MOUSE_HOLD_DELAY } from "@web/views/Calendar/layout.constants";
 
 export const useGridEventMouseHold = (
   cb: (event: Schema_GridEvent) => void,
+  eventType: Categories_Event.TIMED | Categories_Event.ALLDAY,
   delay: number = GRID_EVENT_MOUSE_HOLD_DELAY,
 ) => {
+  const elementEventTypeMap = {
+    [Categories_Event.TIMED]: ID_GRID_MAIN,
+    [Categories_Event.ALLDAY]: ID_GRID_ALLDAY_ROW,
+  };
+
+  const elementId = elementEventTypeMap[eventType];
+
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
   const mouseMoved = useRef<boolean>(false);
 
@@ -48,7 +60,7 @@ export const useGridEventMouseHold = (
 
       // Delay dispatching the new event to let React flush updates
       setTimeout(() => {
-        getElemById(ID_GRID_MAIN).dispatchEvent(_event);
+        getElemById(elementId).dispatchEvent(_event);
       }, 1);
     };
 
@@ -59,12 +71,12 @@ export const useGridEventMouseHold = (
         clearTimeout(timeoutId.current);
       }
 
-      getElemById(ID_GRID_MAIN).removeEventListener("mousemove", onMouseMove);
-      getElemById(ID_GRID_MAIN).removeEventListener("mouseup", onMouseUp);
+      getElemById(elementId).removeEventListener("mousemove", onMouseMove);
+      getElemById(elementId).removeEventListener("mouseup", onMouseUp);
     };
 
-    getElemById(ID_GRID_MAIN).addEventListener("mousemove", onMouseMove);
-    getElemById(ID_GRID_MAIN).addEventListener("mouseup", onMouseUp);
+    getElemById(elementId).addEventListener("mousemove", onMouseMove);
+    getElemById(elementId).addEventListener("mouseup", onMouseUp);
   };
 
   return { onMouseDown };
