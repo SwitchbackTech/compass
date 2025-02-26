@@ -8,13 +8,12 @@ import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
-import { YEAR_MONTH_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/common/utils";
 import { getDraftTimes } from "@web/common/utils/draft/draft.util";
-import { assembleDefaultEvent } from "@web/common/utils/event.util";
+import { createSomedayDraft } from "@web/common/utils/draft/someday.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
@@ -61,39 +60,29 @@ export const useShortcuts = ({
   });
 
   useEffect(() => {
-    const _createSomedayDraft = async (type: "week" | "month") => {
-      if (type === "week" && isAtWeeklyLimit) {
+    const _createSomedayDraft = async (
+      category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
+    ) => {
+      if (category === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
         alert(SOMEDAY_WEEK_LIMIT_MSG);
         return;
       }
-      if (type === "month" && isAtMonthlyLimit) {
+      if (category === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
         alert(SOMEDAY_MONTH_LIMIT_MSG);
         return;
       }
 
+      await createSomedayDraft({
+        category,
+        startOfView,
+        endOfView,
+        activity: "createShortcut",
+        dispatch,
+      });
+
       if (tab !== "tasks") {
         dispatch(viewSlice.actions.updateSidebarTab("tasks"));
       }
-
-      const eventType =
-        type === "week"
-          ? Categories_Event.SOMEDAY_WEEK
-          : Categories_Event.SOMEDAY_MONTH;
-
-      const somedayDefault = await assembleDefaultEvent(
-        Categories_Event.SOMEDAY_WEEK,
-      );
-      dispatch(
-        draftSlice.actions.start({
-          activity: "createShortcut",
-          eventType,
-          event: {
-            ...somedayDefault,
-            startDate: startOfView.format(YEAR_MONTH_FORMAT),
-            endDate: endOfView.format(YEAR_MONTH_FORMAT),
-          },
-        }),
-      );
     };
 
     const _createTimedDraft = () => {
@@ -151,8 +140,8 @@ export const useShortcuts = ({
           _discardDraft();
           util.incrementWeek();
         },
-        [Key.M]: () => _createSomedayDraft("month"),
-        [Key.W]: () => _createSomedayDraft("week"),
+        [Key.M]: () => _createSomedayDraft(Categories_Event.SOMEDAY_MONTH),
+        [Key.W]: () => _createSomedayDraft(Categories_Event.SOMEDAY_WEEK),
         [Key.Z]: () => {
           navigate(ROOT_ROUTES.LOGOUT);
         },
