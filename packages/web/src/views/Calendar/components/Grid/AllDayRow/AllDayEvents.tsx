@@ -3,6 +3,7 @@ import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isSomedayEventFormOpen } from "@web/common/utils";
+import { isLeftClick } from "@web/common/utils/mouse/mouse.util";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
@@ -29,7 +30,7 @@ export const AllDayEvents = ({
   const onMouseDown = (e: MouseEvent, event: Schema_GridEvent) => {
     e.stopPropagation();
 
-    if (e.button !== 0) {
+    if (!isLeftClick(e)) {
       return;
     }
 
