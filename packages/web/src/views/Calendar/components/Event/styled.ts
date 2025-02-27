@@ -52,10 +52,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
 })<StyledEventProps>`
   background-color: ${(props) => props.backgroundColor};
   border-radius: 2px;
-  ${(props) => props.isDragging && `cursor: grabbing`}
-  filter: brightness(
-    ${({ isInPast }) => (isInPast ? 0.7 : null)}
-  );
+  filter: brightness(${({ isInPast }) => (isInPast ? 0.7 : null)});
   height: ${({ height }) => height}px;
   left: ${(props) => props.left}px;
   opacity: ${(props) => props.opacity};
@@ -76,6 +73,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
       backgroundColor,
       isOptimistic,
       isPlaceholder,
+      isDragging,
       isResizing,
       hoverColor,
       theme,
@@ -84,7 +82,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
       !isResizing &&
       `
       background-color: ${isOptimistic ? darken(backgroundColor) : hoverColor};
-      cursor: ${isOptimistic ? "wait" : "pointer"};
+      cursor: ${isDragging ? "move" : isOptimistic ? "wait" : "pointer"};
       drop-shadow(2px 4px 4px ${theme.color.shadow.default});
      `};
   }
