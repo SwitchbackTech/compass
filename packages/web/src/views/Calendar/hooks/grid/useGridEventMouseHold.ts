@@ -6,7 +6,8 @@ import {
 } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid.util";
-import { GRID_EVENT_MOUSE_HOLD_DELAY } from "@web/views/Calendar/layout.constants";
+
+const GRID_EVENT_MOUSE_HOLD_DELAY = 750;
 
 export const useGridEventMouseHold = (
   cb: (event: Schema_GridEvent) => void,
