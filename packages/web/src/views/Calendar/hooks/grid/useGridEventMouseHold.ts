@@ -7,7 +7,8 @@ import {
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid.util";
 
-const GRID_EVENT_MOUSE_HOLD_DELAY = 750;
+const GRID_EVENT_MOUSE_HOLD_DELAY = 750; // ms
+const GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD = 25; // pixels
 
 export const useGridEventMouseHold = (
   cb: (event: Schema_GridEvent) => void,
@@ -32,19 +33,31 @@ export const useGridEventMouseHold = (
     e.stopPropagation();
     mouseMoved.current = false;
 
+    const initialX = e.clientX;
+    const initialY = e.clientY;
+
     timeoutId.current = setTimeout(() => {
       if (!mouseMoved.current) {
         handleCallback(event);
       }
     }, delay);
 
-    const onMouseMove = () => {
-      mouseMoved.current = true;
-      if (timeoutId.current) {
-        clearTimeout(timeoutId.current);
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      // Calculate distance moved
+      const deltaX = Math.abs(moveEvent.clientX - initialX);
+      const deltaY = Math.abs(moveEvent.clientY - initialY);
+      // Only count as moved if threshold is exceeded
+      if (
+        deltaX > GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD ||
+        deltaY > GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD
+      ) {
+        mouseMoved.current = true;
+        if (timeoutId.current) {
+          clearTimeout(timeoutId.current);
+        }
+        handleCallback(event);
+        cleanup();
       }
-      handleCallback(event);
-      cleanup();
     };
 
     const onMouseUp = () => {
