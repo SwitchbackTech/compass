@@ -72,7 +72,7 @@ export const TimePickers: FC<Props> = ({
       }
     }
 
-    const defaultOption = changed === "start" ? startTime : endTime;
+    const defaultOption = changed === "start" ? endTime : startTime;
     return defaultOption;
   };
 
