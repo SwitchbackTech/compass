@@ -67,12 +67,14 @@ export const assembleDefaultEvent = async (
       };
       return defaultAllday;
     }
-    case Categories_Event.SOMEDAY_WEEK || Categories_Event.SOMEDAY_MONTH: {
+    case Categories_Event.SOMEDAY_WEEK:
+    case Categories_Event.SOMEDAY_MONTH: {
       const defaultSomeday: Schema_Event = {
         ...baseEvent,
         isAllDay: false,
         isSomeday: true,
         origin: Origin.COMPASS,
+        ...(startDate && endDate ? { startDate, endDate } : {}),
       };
       return defaultSomeday;
     }
@@ -166,6 +168,11 @@ export const getCategory = (event: Schema_Event) => {
     return Categories_Event.SOMEDAY_WEEK;
   }
   return Categories_Event.TIMED;
+};
+
+export const getCalendarEventIdFromElement = (element: HTMLElement) => {
+  const eventElement = element.closest(`[${DATA_EVENT_ELEMENT_ID}]`);
+  return eventElement ? eventElement.getAttribute(DATA_EVENT_ELEMENT_ID) : null;
 };
 
 export const getMonthListLabel = (start: Dayjs) => {
@@ -283,9 +290,4 @@ const _assembleBaseEvent = (
   };
 
   return baseEvent;
-};
-
-export const getCalendarEventIdFromElement = (element: HTMLElement) => {
-  const eventElement = element.closest(`[${DATA_EVENT_ELEMENT_ID}]`);
-  return eventElement ? eventElement.getAttribute(DATA_EVENT_ELEMENT_ID) : null;
 };

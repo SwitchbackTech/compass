@@ -1,15 +1,17 @@
 import dayjs, { Dayjs } from "dayjs";
 import { MouseEvent } from "react";
+import { Dispatch } from "redux";
 import { Categories_Event } from "@core/types/event.types";
 import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
-  ID_SIDEBAR,
 } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { roundToNext } from "@web/common/utils";
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import { getElemById, getX } from "@web/common/utils/grid.util";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   DRAFT_DURATION_MIN,
@@ -54,7 +56,30 @@ export const assembleTimedDraft = async (
   return event;
 };
 
-export const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
+export const createTimedDraft = async (
+  isCurrentWeek: boolean,
+  startOfView: Dayjs,
+  activity: Activity_DraftEvent,
+  dispatch: Dispatch,
+) => {
+  const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
+
+  const event = (await assembleDefaultEvent(
+    Categories_Event.TIMED,
+    startDate,
+    endDate,
+  )) as Schema_GridEvent;
+
+  dispatch(
+    draftSlice.actions.start({
+      activity,
+      eventType: Categories_Event.TIMED,
+      event,
+    }),
+  );
+};
+
+const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
   const currentMinute = dayjs().minute();
   const nextMinuteInterval = roundToNext(currentMinute, GRID_TIME_STEP);
 

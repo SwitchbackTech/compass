@@ -4,17 +4,14 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { useNavigate } from "react-router-dom";
 import { Key } from "ts-keycode-enum";
 import {
-  Priorities,
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
-import { YEAR_MONTH_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/common/utils";
-import { getDraftTimes } from "@web/common/utils/draft/draft.util";
-import { assembleDefaultEvent } from "@web/common/utils/event.util";
+import { createTimedDraft } from "@web/common/utils/draft/draft.util";
+import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
@@ -61,63 +58,29 @@ export const useShortcuts = ({
   });
 
   useEffect(() => {
-    const _createSomedayDraft = async (type: "week" | "month") => {
-      if (type === "week" && isAtWeeklyLimit) {
+    const _createSomedayDraft = async (
+      category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
+    ) => {
+      if (category === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
         alert(SOMEDAY_WEEK_LIMIT_MSG);
         return;
       }
-      if (type === "month" && isAtMonthlyLimit) {
+      if (category === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
         alert(SOMEDAY_MONTH_LIMIT_MSG);
         return;
       }
 
+      await createSomedayDraft(
+        category,
+        startOfView,
+        endOfView,
+        "createShortcut",
+        dispatch,
+      );
+
       if (tab !== "tasks") {
         dispatch(viewSlice.actions.updateSidebarTab("tasks"));
       }
-
-      const eventType =
-        type === "week"
-          ? Categories_Event.SOMEDAY_WEEK
-          : Categories_Event.SOMEDAY_MONTH;
-
-      const somedayDefault = await assembleDefaultEvent(
-        Categories_Event.SOMEDAY_WEEK,
-      );
-      dispatch(
-        draftSlice.actions.start({
-          activity: "createShortcut",
-          eventType,
-          event: {
-            ...somedayDefault,
-            startDate: startOfView.format(YEAR_MONTH_FORMAT),
-            endDate: endOfView.format(YEAR_MONTH_FORMAT),
-          },
-        }),
-      );
-    };
-
-    const _createTimedDraft = () => {
-      const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
-
-      const event: Schema_GridEvent = {
-        startDate,
-        endDate,
-        priority: Priorities.UNASSIGNED,
-        isAllDay: false,
-        position: {
-          isOverlapping: false,
-          widthMultiplier: 1,
-          horizontalOrder: 1,
-        },
-      };
-
-      dispatch(
-        draftSlice.actions.start({
-          activity: "createShortcut",
-          eventType: Categories_Event.TIMED,
-          event,
-        }),
-      );
     };
 
     const _discardDraft = () => {
@@ -137,7 +100,13 @@ export const useShortcuts = ({
 
       const handlersByKey = {
         [Key.OpenBracket]: () => dispatch(viewSlice.actions.toggleSidebar()),
-        [Key.C]: () => _createTimedDraft(),
+        [Key.C]: () =>
+          createTimedDraft(
+            isCurrentWeek,
+            startOfView,
+            "createShortcut",
+            dispatch,
+          ),
         [Key.T]: () => {
           scrollUtil.scrollToNow();
           _discardDraft();
@@ -151,8 +120,8 @@ export const useShortcuts = ({
           _discardDraft();
           util.incrementWeek();
         },
-        [Key.M]: () => _createSomedayDraft("month"),
-        [Key.W]: () => _createSomedayDraft("week"),
+        [Key.M]: () => _createSomedayDraft(Categories_Event.SOMEDAY_MONTH),
+        [Key.W]: () => _createSomedayDraft(Categories_Event.SOMEDAY_WEEK),
         [Key.Z]: () => {
           navigate(ROOT_ROUTES.LOGOUT);
         },
