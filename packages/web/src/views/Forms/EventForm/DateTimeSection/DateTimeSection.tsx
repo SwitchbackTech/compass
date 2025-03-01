@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
-import React, { FC, SetStateAction, useRef } from "react";
+import React, { FC, SetStateAction } from "react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
 import { AlignItems } from "@web/components/Flex/styled";
