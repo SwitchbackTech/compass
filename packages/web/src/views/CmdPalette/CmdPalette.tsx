@@ -12,10 +12,9 @@ import {
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/common/utils";
-import { getDraftTimes } from "@web/common/utils/draft/draft.util";
-import { assembleDefaultEvent } from "@web/common/utils/event.util";
+import { createTimedDraft } from "@web/common/utils/draft/draft.util";
+import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
@@ -30,6 +29,7 @@ const CmdPalette = ({
   today,
   isCurrentWeek,
   startOfView,
+  endOfView,
   util,
   scrollUtil,
 }: ShortcutProps) => {
@@ -50,42 +50,24 @@ const CmdPalette = ({
 
   useHandleOpenCommandPalette(setOpen);
 
-  const _createSomedayDraft = async (type: "week" | "month") => {
-    if (type === "week" && isAtWeeklyLimit) {
+  const handleCreateSomedayDraft = async (
+    category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
+  ) => {
+    if (category === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
       alert(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
-    if (type === "month" && isAtMonthlyLimit) {
+    if (category === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
       alert(SOMEDAY_MONTH_LIMIT_MSG);
       return;
     }
 
-    const eventType =
-      type === "week"
-        ? Categories_Event.SOMEDAY_WEEK
-        : Categories_Event.SOMEDAY_MONTH;
-
-    dispatch(
-      draftSlice.actions.start({
-        activity: "createShortcut",
-        eventType,
-      }),
-    );
-  };
-
-  const _createTimedDraft = async () => {
-    const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
-    const event = (await assembleDefaultEvent(
-      Categories_Event.TIMED,
-      startDate,
-      endDate,
-    )) as Schema_GridEvent;
-    dispatch(
-      draftSlice.actions.start({
-        activity: "createShortcut",
-        eventType: Categories_Event.TIMED,
-        event,
-      }),
+    await createSomedayDraft(
+      category,
+      startOfView,
+      endOfView,
+      "createShortcut",
+      dispatch,
     );
   };
 
@@ -105,19 +87,27 @@ const CmdPalette = ({
             id: "create-event",
             children: "Create Event [c]",
             icon: "PlusIcon",
-            onClick: () => _createTimedDraft(),
+            onClick: () =>
+              createTimedDraft(
+                isCurrentWeek,
+                startOfView,
+                "createShortcut",
+                dispatch,
+              ),
           },
           {
             id: "create-someday-week-event",
             children: "Create Week Event [w]",
             icon: "PlusIcon",
-            onClick: () => _createSomedayDraft("week"),
+            onClick: () =>
+              handleCreateSomedayDraft(Categories_Event.SOMEDAY_WEEK),
           },
           {
             id: "create-someday-month-event",
             children: "Create Month Event [m]",
             icon: "PlusIcon",
-            onClick: () => _createSomedayDraft("month"),
+            onClick: () =>
+              handleCreateSomedayDraft(Categories_Event.SOMEDAY_MONTH),
           },
           {
             id: "today",
