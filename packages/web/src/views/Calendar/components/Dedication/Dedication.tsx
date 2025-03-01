@@ -41,7 +41,7 @@ export const Dedication = () => {
           justifyContent={JustifyContent.SPACE_BETWEEN}
         >
           <h2>For Derek</h2>
-          <StyledXIcon size={20} onClick={close} />
+          <StyledXIcon onClick={close} />
         </Flex>
         <StyledDedicationText>
           This app is dedicated to Derek John Benton (1993-2014).

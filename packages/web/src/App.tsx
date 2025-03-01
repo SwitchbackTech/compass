@@ -14,6 +14,7 @@ import { sagaMiddleware } from "@web/common/store/middlewares";
 import { GlobalStyle } from "@web/components/GlobalStyle";
 import { sagas } from "@web/store/sagas";
 import { theme } from "./common/styles/theme";
+import { IconProvider } from "./components/IconProvider/IconProvider";
 import { RootRouter } from "./routers";
 import { store } from "./store";
 
@@ -39,7 +40,9 @@ export const App = () => {
             <SuperTokensWrapper>
               <GlobalStyle />
               <ThemeProvider theme={theme}>
-                <RootRouter />
+                <IconProvider>
+                  <RootRouter />
+                </IconProvider>
                 <ToastContainer
                   position="bottom-left"
                   autoClose={5000}

@@ -32,14 +32,14 @@ export const SidebarIconRow = () => {
           shortcut="CMD + K"
           onClick={toggleCmdPalette}
         >
-          <CommandIcon isFocused={isCmdPaletteOpen} size={25} />
+          <CommandIcon isFocused={isCmdPaletteOpen} />
         </TooltipWrapper>
         <TooltipWrapper
           description="Open tasks"
           shortcut="SHIFT + 1"
           onClick={() => dispatch(viewSlice.actions.updateSidebarTab("tasks"))}
         >
-          <TodoIcon isFocused={tab === "tasks"} size={25} />
+          <TodoIcon isFocused={tab === "tasks"} />
         </TooltipWrapper>
         <TooltipWrapper
           description="Open month"
@@ -48,7 +48,7 @@ export const SidebarIconRow = () => {
             dispatch(viewSlice.actions.updateSidebarTab("monthWidget"))
           }
         >
-          <CalendarIcon isFocused={tab === "monthWidget"} size={25} />
+          <CalendarIcon isFocused={tab === "monthWidget"} />
         </TooltipWrapper>
       </LeftIconGroup>
     </IconRow>

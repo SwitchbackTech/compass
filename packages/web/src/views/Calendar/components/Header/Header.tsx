@@ -59,7 +59,7 @@ export const Header: FC<Props> = ({
           onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
           shortcut="["
         >
-          <SidebarIcon size={25} isFocused={isSidebarOpen} />
+          <SidebarIcon isFocused={isSidebarOpen} />
         </TooltipWrapper>
         <StyledLeftGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
