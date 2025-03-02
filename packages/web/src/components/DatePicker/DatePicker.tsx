@@ -7,8 +7,8 @@ import { isDark } from "@core/util/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
-import { Input } from "@web/components/Input";
 import { Text } from "@web/components/Text";
+import { StyledInput } from "../Input/styled";
 import {
   ChangeDayButtonsStyledFlex,
   MonthContainerStyled,
@@ -79,7 +79,7 @@ export const DatePicker: React.FC<Props> = ({
           view={view}
         />
       )}
-      customInput={<Input bgColor={inputColor} onBlurCapture={onInputBlur} />}
+      customInput={<StyledInput bgColor={inputColor} />}
       dateFormat={"M-d-yyyy"}
       formatWeekDay={(day) => day[0]}
       open={isOpen}

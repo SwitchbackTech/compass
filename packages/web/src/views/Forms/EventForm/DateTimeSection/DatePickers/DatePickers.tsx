@@ -7,7 +7,7 @@ import {
   dateIsValid,
   shouldAdjustComplimentDate,
 } from "@web/common/utils/web.date.util";
-import { DatePicker } from "@web/components/DatePicker";
+import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
 import { StyledDateFlex } from "./styled";
 

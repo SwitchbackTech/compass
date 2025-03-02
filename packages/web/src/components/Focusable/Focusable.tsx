@@ -12,7 +12,7 @@ export type Props<T extends ClassNamedComponent> = T &
     underlineColor?: string;
   };
 
-const _Focusable = <T,>(
+const _Focusable = <T extends ClassNamedComponent>(
   {
     autoFocus = false,
     Component,
@@ -22,7 +22,7 @@ const _Focusable = <T,>(
   }: Props<T>,
   ref: Ref<HTMLDivElement>,
 ) => {
-  const [isFocused, toggleFocused] = useState(autoFocus);
+  const [isFocused, setIsFocused] = useState(false);
   const rest = props as unknown as T;
 
   return (
@@ -30,8 +30,10 @@ const _Focusable = <T,>(
       <Component
         {...rest}
         ref={ref}
-        onFocus={() => toggleFocused(true)}
-        onBlur={() => toggleFocused(false)}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => {
+          setIsFocused(false);
+        }}
         autoFocus={autoFocus}
       />
       {!!withUnderline && isFocused && <Divider color={underlineColor} />}
