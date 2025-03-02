@@ -34,7 +34,7 @@ export interface CalendarRef extends HTMLDivElement {
 export const DatePicker: React.FC<Props> = ({
   animationOnToggle = true,
   autoFocus: _autoFocus = false,
-  bgColor,
+  bgColor = theme.color.bg.primary,
   calendarClassName,
   inputColor,
   isOpen = true,
