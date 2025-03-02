@@ -63,6 +63,7 @@ export const DatePickers: FC<Props> = ({
       }
     }
   };
+
   const closeEndDatePicker = () => {
     setIsEndDatePickerOpen(false);
   };
@@ -70,10 +71,12 @@ export const DatePickers: FC<Props> = ({
   const closeStartDatePicker = () => {
     setIsStartDatePickerOpen(false);
   };
+
   const getDateFromInput = (val: string) => {
     const date = dayjs(val, MONTH_DAY_YEAR).toDate();
     return date;
   };
+
   const onPickerKeyDown = (
     picker: "start" | "end",
     e: React.KeyboardEvent<HTMLDivElement>,
@@ -85,6 +88,8 @@ export const DatePickers: FC<Props> = ({
       }
       case Key.Enter: {
         e.stopPropagation();
+        e.preventDefault();
+
         const input = e.target as HTMLInputElement;
         const val = input.value;
         const isInvalid = val !== undefined && !dateIsValid(val);
@@ -132,6 +137,7 @@ export const DatePickers: FC<Props> = ({
       }
     }
   };
+
   const onSelectStartDate = (start: Date) => {
     setSelectedStartDate(start);
     setIsStartDatePickerOpen(false);
@@ -146,7 +152,7 @@ export const DatePickers: FC<Props> = ({
 
   return (
     <>
-      <StyledDateFlex alignItems={AlignItems.CENTER}>
+      {/* <StyledDateFlex alignItems={AlignItems.CENTER}>
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
           <DatePicker
             bgColor={darken(bgColor, 15)}
@@ -171,7 +177,7 @@ export const DatePickers: FC<Props> = ({
             view="grid"
           />
         </div>
-      </StyledDateFlex>
+      </StyledDateFlex> */}
 
       <StyledDateFlex alignItems={AlignItems.CENTER}>
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
