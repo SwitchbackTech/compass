@@ -1,4 +1,4 @@
-import React, { FC, SetStateAction, useState } from "react";
+import React, { FC, useState } from "react";
 import { Schema_Event } from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
 import { Option_Time } from "@web/common/types/util.types";
@@ -19,7 +19,7 @@ interface Props {
   selectedEndDate: Date;
   selectedStartDate: Date;
   setEndTime: (value: SelectOption<string>) => void;
-  setEvent: (event: Schema_Event) => SetStateAction<Schema_Event | void>;
+  setEvent: (event: Schema_Event) => React.SetStateAction<Schema_Event> | void;
   setStartTime: (value: SelectOption<string>) => void;
   startTime: SelectOption<string>;
 }

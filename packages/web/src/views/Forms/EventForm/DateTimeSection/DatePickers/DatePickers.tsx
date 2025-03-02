@@ -9,6 +9,7 @@ import {
 } from "@web/common/utils/web.date.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
+import { SetEventFormField } from "../../types";
 import { StyledDateFlex } from "./styled";
 
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -22,6 +23,7 @@ interface Props {
   isStartDatePickerOpen: boolean;
   selectedEndDate: Date;
   selectedStartDate: Date;
+  onSetEventField: SetEventFormField;
   setSelectedEndDate: (value: Date) => void;
   setSelectedStartDate: (value: Date) => void;
   setIsStartDatePickerOpen: (arg0: boolean) => void;
@@ -35,6 +37,7 @@ export const DatePickers: FC<Props> = ({
   isStartDatePickerOpen,
   selectedEndDate,
   selectedStartDate,
+  onSetEventField,
   setIsEndDatePickerOpen,
   setIsStartDatePickerOpen,
   setSelectedEndDate,
@@ -142,12 +145,14 @@ export const DatePickers: FC<Props> = ({
     setSelectedStartDate(start);
     setIsStartDatePickerOpen(false);
     adjustComplimentDateIfNeeded("start", start);
+    onSetEventField("startDate", dayjs(start).format(MONTH_DAY_YEAR));
   };
 
   const onSelectEndDate = (end: Date) => {
     setSelectedEndDate(end);
     setIsEndDatePickerOpen(false);
     adjustComplimentDateIfNeeded("end", end);
+    onSetEventField("endDate", dayjs(end).format(MONTH_DAY_YEAR));
   };
 
   return (

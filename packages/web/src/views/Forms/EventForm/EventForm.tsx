@@ -295,6 +295,7 @@ export const EventForm: React.FC<FormProps> = ({
         inputColor={hoverColorByPriority[priority || Priorities.UNASSIGNED]}
         isEndDatePickerOpen={isEndDatePickerOpen}
         isStartDatePickerOpen={isStartDatePickerOpen}
+        onSetEventField={onSetEventField}
         selectedEndDate={selectedEndDate}
         selectedStartDate={selectedStartDate}
         setEndTime={setEndTime}
