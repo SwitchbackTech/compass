@@ -34,7 +34,7 @@ export interface CalendarRef extends HTMLDivElement {
 export const DatePicker: React.FC<Props> = ({
   animationOnToggle = true,
   autoFocus: _autoFocus = false,
-  bgColor,
+  bgColor = theme.color.bg.primary,
   calendarClassName,
   inputColor,
   isOpen = true,
@@ -50,7 +50,7 @@ export const DatePicker: React.FC<Props> = ({
   const headerColor =
     view === "sidebar"
       ? theme.color.text.light
-      : isDark(bgColor)
+      : isDark(bgColor || "")
         ? theme.color.text.lighter
         : theme.color.text.dark;
 
@@ -96,7 +96,6 @@ export const DatePicker: React.FC<Props> = ({
         onSelect(date, event);
       }}
       portalId="root"
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       ref={datepickerRef as any}
       showPopperArrow={false}
       renderCustomHeader={({
