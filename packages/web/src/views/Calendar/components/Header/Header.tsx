@@ -1,5 +1,6 @@
 import dayjs, { Dayjs } from "dayjs";
 import React, { FC } from "react";
+import { theme } from "@web/common/styles/theme";
 import { getCalendarHeadingLabel } from "@web/common/utils/web.date.util";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
@@ -59,7 +60,13 @@ export const Header: FC<Props> = ({
           onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
           shortcut="["
         >
-          <SidebarIcon isFocused={isSidebarOpen} />
+          <SidebarIcon
+            color={
+              isSidebarOpen
+                ? theme.color.text.light
+                : theme.color.text.lightInactive
+            }
+          />
         </TooltipWrapper>
         <StyledLeftGroup>
           <StyledHeaderLabel aria-level={1} role="heading">

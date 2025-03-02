@@ -52,7 +52,7 @@ export const Sidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = ({
           />
         )}
       </SidebarTabContainer>
-      {/* <SidebarIconRow /> */}
+      <SidebarIconRow />
     </SidebarContainer>
   );
 };
