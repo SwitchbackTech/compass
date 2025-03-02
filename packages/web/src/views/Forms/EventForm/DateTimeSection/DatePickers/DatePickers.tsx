@@ -152,7 +152,7 @@ export const DatePickers: FC<Props> = ({
 
   return (
     <>
-      {/* <StyledDateFlex alignItems={AlignItems.CENTER}>
+      <StyledDateFlex alignItems={AlignItems.CENTER}>
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
           <DatePicker
             bgColor={darken(bgColor, 15)}
@@ -177,7 +177,7 @@ export const DatePickers: FC<Props> = ({
             view="grid"
           />
         </div>
-      </StyledDateFlex> */}
+      </StyledDateFlex>
 
       <StyledDateFlex alignItems={AlignItems.CENTER}>
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
