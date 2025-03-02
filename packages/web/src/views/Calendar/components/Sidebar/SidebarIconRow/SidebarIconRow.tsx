@@ -1,4 +1,6 @@
 import React from "react";
+import { Command } from "@phosphor-icons/react";
+import { theme } from "@web/common/styles/theme";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
 import { TodoIcon } from "@web/components/Icons/Todo";
@@ -32,14 +34,26 @@ export const SidebarIconRow = () => {
           shortcut="CMD + K"
           onClick={toggleCmdPalette}
         >
-          <CommandIcon isFocused={isCmdPaletteOpen} size={25} />
+          <CommandIcon
+            color={
+              isCmdPaletteOpen
+                ? theme.color.text.darkPlaceholder
+                : theme.color.text.light
+            }
+          />
         </TooltipWrapper>
         <TooltipWrapper
           description="Open tasks"
           shortcut="SHIFT + 1"
           onClick={() => dispatch(viewSlice.actions.updateSidebarTab("tasks"))}
         >
-          <TodoIcon isFocused={tab === "tasks"} size={25} />
+          <TodoIcon
+            color={
+              tab === "tasks"
+                ? theme.color.text.light
+                : theme.color.text.darkPlaceholder
+            }
+          />
         </TooltipWrapper>
         <TooltipWrapper
           description="Open month"
@@ -48,7 +62,13 @@ export const SidebarIconRow = () => {
             dispatch(viewSlice.actions.updateSidebarTab("monthWidget"))
           }
         >
-          <CalendarIcon isFocused={tab === "monthWidget"} size={25} />
+          <CalendarIcon
+            color={
+              tab === "monthWidget"
+                ? theme.color.text.light
+                : theme.color.text.darkPlaceholder
+            }
+          />
         </TooltipWrapper>
       </LeftIconGroup>
     </IconRow>

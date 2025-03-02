@@ -159,7 +159,9 @@ export const DatePickers: FC<Props> = ({
             }}
             onChange={() => null}
             onInputClick={() => {
-              isEndDatePickerOpen && setIsEndDatePickerOpen(false);
+              if (isEndDatePickerOpen) {
+                setIsEndDatePickerOpen(false);
+              }
               setIsStartDatePickerOpen(true);
             }}
             onKeyDown={(e) => onPickerKeyDown("start", e)}
@@ -182,7 +184,9 @@ export const DatePickers: FC<Props> = ({
             onCalendarOpen={() => setIsEndDatePickerOpen(true)}
             onChange={() => null}
             onInputClick={() => {
-              isStartDatePickerOpen && setIsStartDatePickerOpen(false);
+              if (isStartDatePickerOpen) {
+                setIsStartDatePickerOpen(false);
+              }
               setIsEndDatePickerOpen(true);
             }}
             onKeyDown={(e) => onPickerKeyDown("end", e)}
