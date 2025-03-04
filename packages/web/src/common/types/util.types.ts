@@ -8,6 +8,12 @@ export interface Coordinates {
   x: number;
   y: number;
 }
+export interface Position {
+  top: number;
+  left: number;
+  height: number;
+  width: number;
+}
 export interface Option_Time {
   label: string;
   value: string;

@@ -22,6 +22,9 @@ export interface Schema_GridEvent extends Schema_Event {
     isOverlapping: boolean;
     widthMultiplier: number; // EG: 0.5 for half width
     horizontalOrder: number;
+    dragOffset: {
+      y: number;
+    };
   };
 }
 
