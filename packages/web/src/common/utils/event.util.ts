@@ -2,6 +2,7 @@ import dayjs, { Dayjs } from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import { MouseEvent } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { DropResult } from "@hello-pangea/dnd";
 import { Origin, Priorities } from "@core/constants/core.constants";
@@ -89,6 +90,9 @@ export const assembleDefaultEvent = async (
           isOverlapping: false,
           widthMultiplier: 1,
           horizontalOrder: 1,
+          dragOffset: {
+            y: 0,
+          },
         },
       };
       return defaultTimed;
@@ -105,9 +109,26 @@ export const assembleGridEvent = (event: Schema_Event): Schema_GridEvent => {
       isOverlapping: false,
       widthMultiplier: 1,
       horizontalOrder: 1,
+      dragOffset: {
+        y: 0,
+      },
     },
   };
   return gridEvent;
+};
+
+export const getEventDragOffset = (
+  event?: Schema_GridEvent,
+  e?: MouseEvent,
+): Schema_GridEvent["position"]["dragOffset"] => {
+  if (!event || !e) return { y: 0 };
+
+  const target = e.currentTarget as HTMLElement;
+  const rect = target.getBoundingClientRect();
+
+  return {
+    y: e.clientY - rect.top,
+  };
 };
 
 export const categorizeSomedayEvents = (

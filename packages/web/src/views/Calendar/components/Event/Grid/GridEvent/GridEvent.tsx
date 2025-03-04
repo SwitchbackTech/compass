@@ -11,6 +11,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
+import { Position } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isOptimisticEvent } from "@web/common/utils/event.util";
 import { getLineClamp } from "@web/common/utils/grid.util";
@@ -44,6 +45,16 @@ interface Props {
   weekProps: WeekProps;
 }
 
+const modifyPosition = (
+  basePosition: Position,
+  dragOffset: { y: number },
+): Position => {
+  return {
+    ...basePosition,
+    top: basePosition.top - dragOffset.y,
+  };
+};
+
 const _GridEvent = (
   {
     event: _event,
@@ -64,13 +75,17 @@ const _GridEvent = (
   const event = _event;
   const isOptimistic = isOptimisticEvent(event);
 
-  const position = getPosition(
+  let position = getPosition(
     event,
     component.startOfView,
     component.endOfView,
     measurements,
     isDraft,
   );
+
+  if (isDraft && isDragging) {
+    position = modifyPosition(position, event.position.dragOffset);
+  }
 
   const lineClamp = useMemo(
     () => getLineClamp(position.height),
@@ -98,7 +113,6 @@ const _GridEvent = (
 
       onEventMouseDown(event, e);
     },
-
     priority: event.priority || Priorities.UNASSIGNED,
     ref,
     role: "button",
