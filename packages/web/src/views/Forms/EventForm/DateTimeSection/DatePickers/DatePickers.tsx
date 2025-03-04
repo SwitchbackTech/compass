@@ -7,8 +7,10 @@ import {
   dateIsValid,
   shouldAdjustComplimentDate,
 } from "@web/common/utils/web.date.util";
-import { DatePicker } from "@web/components/DatePicker";
+import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
+import { SetEventFormField } from "../../types";
+import { adjustEndDate } from "../form.datetime.util";
 import { StyledDateFlex } from "./styled";
 
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -17,11 +19,14 @@ const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
 
 interface Props {
   bgColor: string;
+  displayEndDate: Date;
   inputColor?: string;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
   selectedEndDate: Date;
   selectedStartDate: Date;
+  onSetEventField: SetEventFormField;
+  setDisplayEndDate: (value: Date) => void;
   setSelectedEndDate: (value: Date) => void;
   setSelectedStartDate: (value: Date) => void;
   setIsStartDatePickerOpen: (arg0: boolean) => void;
@@ -30,11 +35,14 @@ interface Props {
 
 export const DatePickers: FC<Props> = ({
   bgColor,
+  displayEndDate,
   inputColor,
   isEndDatePickerOpen,
   isStartDatePickerOpen,
   selectedEndDate,
   selectedStartDate,
+  onSetEventField,
+  setDisplayEndDate,
   setIsEndDatePickerOpen,
   setIsStartDatePickerOpen,
   setSelectedEndDate,
@@ -63,6 +71,7 @@ export const DatePickers: FC<Props> = ({
       }
     }
   };
+
   const closeEndDatePicker = () => {
     setIsEndDatePickerOpen(false);
   };
@@ -70,10 +79,12 @@ export const DatePickers: FC<Props> = ({
   const closeStartDatePicker = () => {
     setIsStartDatePickerOpen(false);
   };
+
   const getDateFromInput = (val: string) => {
     const date = dayjs(val, MONTH_DAY_YEAR).toDate();
     return date;
   };
+
   const onPickerKeyDown = (
     picker: "start" | "end",
     e: React.KeyboardEvent<HTMLDivElement>,
@@ -85,6 +96,8 @@ export const DatePickers: FC<Props> = ({
       }
       case Key.Enter: {
         e.stopPropagation();
+        e.preventDefault();
+
         const input = e.target as HTMLInputElement;
         const val = input.value;
         const isInvalid = val !== undefined && !dateIsValid(val);
@@ -132,16 +145,25 @@ export const DatePickers: FC<Props> = ({
       }
     }
   };
+
   const onSelectStartDate = (start: Date) => {
-    setSelectedStartDate(start);
     setIsStartDatePickerOpen(false);
+    setSelectedStartDate(start);
     adjustComplimentDateIfNeeded("start", start);
+
+    const newStartDate = dayjs(start).format(MONTH_DAY_YEAR);
+    onSetEventField("startDate", newStartDate);
   };
 
   const onSelectEndDate = (end: Date) => {
-    setSelectedEndDate(end);
     setIsEndDatePickerOpen(false);
     adjustComplimentDateIfNeeded("end", end);
+
+    setDisplayEndDate(end);
+
+    const { datePickerDate, formattedEndDate } = adjustEndDate(end);
+    setSelectedEndDate(datePickerDate);
+    onSetEventField("endDate", formattedEndDate);
   };
 
   return (
@@ -191,7 +213,7 @@ export const DatePickers: FC<Props> = ({
             }}
             onKeyDown={(e) => onPickerKeyDown("end", e)}
             onSelect={onSelectEndDate}
-            selected={selectedEndDate}
+            selected={displayEndDate}
             title="Pick End Date"
             view="grid"
           />

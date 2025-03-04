@@ -237,11 +237,9 @@ export const getCalendarHeadingLabel = (
 
 export const mapToBackend = (s: Schema_SelectedDates) => {
   if (s.isAllDay) {
-    const adjustedEnd = dayjs(s.endDate).add(1, "day");
-
     return {
       startDate: dayjs(s.startDate).format(YEAR_MONTH_DAY_FORMAT),
-      endDate: adjustedEnd.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: dayjs(s.endDate).format(YEAR_MONTH_DAY_FORMAT),
     };
   }
 

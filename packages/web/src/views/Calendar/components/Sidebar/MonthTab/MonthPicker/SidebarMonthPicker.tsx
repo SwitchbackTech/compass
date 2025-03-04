@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import weekPlugin from "dayjs/plugin/weekOfYear";
 import React, { FC, useEffect, useState } from "react";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
-import { DatePicker } from "@web/components/DatePicker";
+import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { MonthPickerContainer } from "./../styled";
 
