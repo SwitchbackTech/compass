@@ -20,7 +20,9 @@ export const getFormDates = (startDate: string, endDate: string) => {
   const _startDate = start.toDate();
 
   const end = dayjs(endDate);
-  const isOneDay = start.format(YEAR_MONTH_DAY_FORMAT) === endDate;
+  const isOneDay =
+    start.format(YEAR_MONTH_DAY_FORMAT) ===
+    dayjs(endDate).format(YEAR_MONTH_DAY_FORMAT);
   const displayEndDate = isOneDay
     ? start.format(YEAR_MONTH_DAY_FORMAT)
     : end.subtract(1, "day").format(YEAR_MONTH_DAY_FORMAT);

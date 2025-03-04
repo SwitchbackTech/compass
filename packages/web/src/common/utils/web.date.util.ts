@@ -252,12 +252,12 @@ export const shouldAdjustComplimentDate = (
   changed: "start" | "end",
   vals: Params_DateChange,
 ) => {
-  let shouldAdjust: boolean;
-  let compliment: Date;
-
   const { start, end } = vals;
   const _start = dayjs(start);
   const _end = dayjs(end);
+
+  let shouldAdjust = false;
+  let compliment = start;
 
   if (changed === "start") {
     shouldAdjust = _start.isAfter(_end);

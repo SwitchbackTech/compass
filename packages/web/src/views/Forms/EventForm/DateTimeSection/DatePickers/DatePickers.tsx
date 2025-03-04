@@ -62,14 +62,17 @@ export const DatePickers: FC<Props> = ({
 
     if (shouldAdjust) {
       if (changed === "start") {
+        const endDisplay = dayjs(compliment).add(1, "day").toDate();
         setSelectedEndDate(compliment);
-        return;
+        setDisplayEndDate(endDisplay);
       }
 
       if (changed === "end") {
         setSelectedStartDate(compliment);
       }
     }
+
+    return { shouldAdjust, compliment };
   };
 
   const closeEndDatePicker = () => {
@@ -149,10 +152,20 @@ export const DatePickers: FC<Props> = ({
   const onSelectStartDate = (start: Date) => {
     setIsStartDatePickerOpen(false);
     setSelectedStartDate(start);
-    adjustComplimentDateIfNeeded("start", start);
+    const { shouldAdjust, compliment } = adjustComplimentDateIfNeeded(
+      "start",
+      start,
+    );
 
-    const newStartDate = dayjs(start).format(MONTH_DAY_YEAR);
-    onSetEventField("startDate", newStartDate);
+    if (shouldAdjust) {
+      onSetEventField({
+        startDate: dayjs(start).format(MONTH_DAY_YEAR),
+        endDate: dayjs(compliment).format(MONTH_DAY_YEAR),
+      });
+    } else {
+      const newStartDate = dayjs(start).format(MONTH_DAY_YEAR);
+      onSetEventField("startDate", newStartDate);
+    }
   };
 
   const onSelectEndDate = (end: Date) => {

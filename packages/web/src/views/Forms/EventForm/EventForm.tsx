@@ -167,8 +167,14 @@ export const EventForm: React.FC<FormProps> = ({
 
   const onSetEventField: SetEventFormField = (field, value) => {
     const oldEvent = { ...event };
-    const newEvent = { ...oldEvent, [field]: value };
-    setEvent(newEvent);
+    // Handle multiple fields
+    if (typeof field === "object") {
+      setEvent({ ...oldEvent, ...field });
+      return;
+    }
+
+    // Handle single field
+    setEvent({ ...oldEvent, [field]: value });
   };
 
   const onFormKeyDown: KeyboardEventHandler<HTMLFormElement> = (e) => {
