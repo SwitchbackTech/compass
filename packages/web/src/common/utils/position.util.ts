@@ -4,6 +4,7 @@ import isBetween from "dayjs/plugin/isBetween";
 import weekPlugin from "dayjs/plugin/weekOfYear";
 import { MS_IN_HR } from "@core/constants/core.constants";
 import { HOURS_AM_FORMAT } from "@core/constants/date.constants";
+import { Position } from "@web/common/types/util.types";
 import { Category } from "@web/ducks/events/event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import {
@@ -142,7 +143,7 @@ export const getPosition = (
   endOfView: Dayjs,
   measurements: Measurements_Grid,
   isDraft: boolean,
-) => {
+): Position => {
   const { colWidths } = measurements;
   const start = dayjs(event.startDate);
   const end = dayjs(event.endDate);
