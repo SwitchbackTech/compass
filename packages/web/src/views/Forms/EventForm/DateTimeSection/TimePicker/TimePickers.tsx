@@ -2,11 +2,11 @@ import React, { FC, useState } from "react";
 import { Schema_Event } from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
 import { Option_Time } from "@web/common/types/util.types";
+import { shouldAdjustComplimentTime } from "@web/common/utils/datetime/web.datetime.util";
 import {
   getTimeOptionByValue,
   getTimeOptions,
   mapToBackend,
-  shouldAdjustComplimentTime,
 } from "@web/common/utils/web.date.util";
 import { AlignItems } from "@web/components/Flex/styled";
 import { StyledTimeFlex } from "../styled";
