@@ -16,21 +16,19 @@ export const adjustEndDate = (end: Date) => {
 
 export const getFormDates = (startDate: string, endDate: string) => {
   const start = dayjs(startDate);
+  const startDateFormatted = start.format(YEAR_MONTH_DAY_FORMAT);
   const startTime = getTimeOptionByValue(start);
-  const _startDate = start.toDate();
 
   const end = dayjs(endDate);
-  const isOneDay =
-    start.format(YEAR_MONTH_DAY_FORMAT) ===
-    dayjs(endDate).format(YEAR_MONTH_DAY_FORMAT);
+  const isOneDay = startDateFormatted === end.format(YEAR_MONTH_DAY_FORMAT);
   const displayEndDate = isOneDay
-    ? start.format(YEAR_MONTH_DAY_FORMAT)
+    ? startDateFormatted
     : end.subtract(1, "day").format(YEAR_MONTH_DAY_FORMAT);
   const _endDate = isOneDay ? start.toDate() : end.toDate();
   const endTime = getTimeOptionByValue(end);
 
   return {
-    startDate: _startDate,
+    startDate: start.toDate(),
     startTime,
     endDate: _endDate,
     displayEndDate,

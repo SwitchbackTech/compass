@@ -46,33 +46,6 @@ export const DatePickers: FC<Props> = ({
   setSelectedEndDate,
   setSelectedStartDate,
 }) => {
-  const adjustComplimentDateIfNeeded = (
-    changed: "start" | "end",
-    value: Date,
-  ) => {
-    const start = changed === "start" ? value : selectedStartDate;
-    const end = changed === "end" ? value : selectedEndDate;
-
-    const { shouldAdjust, compliment } = shouldAdjustComplimentDate(changed, {
-      start,
-      end,
-    });
-
-    if (shouldAdjust) {
-      if (changed === "start") {
-        const endDisplay = dayjs(compliment).add(1, "day").toDate();
-        setSelectedEndDate(compliment);
-        setDisplayEndDate(endDisplay);
-      }
-
-      if (changed === "end") {
-        setSelectedStartDate(compliment);
-      }
-    }
-
-    return { shouldAdjust, compliment };
-  };
-
   const closeEndDatePicker = () => {
     setIsEndDatePickerOpen(false);
   };
@@ -150,12 +123,15 @@ export const DatePickers: FC<Props> = ({
   const onSelectStartDate = (start: Date) => {
     setIsStartDatePickerOpen(false);
     setSelectedStartDate(start);
-    const { shouldAdjust, compliment } = adjustComplimentDateIfNeeded(
-      "start",
+    const { shouldAdjust, compliment } = shouldAdjustComplimentDate("start", {
       start,
-    );
+      end: selectedEndDate,
+    });
 
     if (shouldAdjust) {
+      const endDisplay = dayjs(compliment).add(1, "day").toDate();
+      setSelectedEndDate(compliment);
+      setDisplayEndDate(endDisplay);
       onSetEventField({
         startDate: dayjs(start).format(MONTH_DAY_YEAR),
         endDate: dayjs(compliment).format(MONTH_DAY_YEAR),
@@ -167,8 +143,16 @@ export const DatePickers: FC<Props> = ({
   };
 
   const onSelectEndDate = (end: Date) => {
+    const { shouldAdjust, compliment } = shouldAdjustComplimentDate("end", {
+      start: selectedStartDate,
+      end,
+    });
+
+    if (shouldAdjust) {
+      setSelectedStartDate(compliment);
+    }
+
     setIsEndDatePickerOpen(false);
-    adjustComplimentDateIfNeeded("end", end);
 
     setDisplayEndDate(end);
 
