@@ -20,6 +20,7 @@ import {
 export interface Props extends ReactDatePickerProps {
   animationOnToggle?: boolean;
   bgColor?: string;
+  displayDate?: Date;
   inputColor?: string;
   isOpen?: boolean;
   onInputBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;

@@ -14,6 +14,7 @@ dayjs.extend(customParseFormat);
 export interface Props {
   bgColor: string;
   category: Categories_Event;
+  displayEndDate: Date;
   event: Schema_Event;
   endTime: SelectOption<string>;
   inputColor?: string;
@@ -22,6 +23,7 @@ export interface Props {
   onSetEventField: SetEventFormField;
   selectedEndDate: Date;
   selectedStartDate: Date;
+  setDisplayEndDate: (value: Date) => void;
   setEndTime: (value: SelectOption<string>) => void;
   setIsEndDatePickerOpen: (arg0: boolean) => void;
   setIsStartDatePickerOpen: (arg0: boolean) => void;
@@ -35,6 +37,7 @@ export interface Props {
 export const DateTimeSection: FC<Props> = ({
   bgColor,
   category,
+  displayEndDate,
   event,
   inputColor,
   isEndDatePickerOpen,
@@ -42,6 +45,7 @@ export const DateTimeSection: FC<Props> = ({
   selectedEndDate,
   selectedStartDate,
   onSetEventField,
+  setDisplayEndDate,
   setIsStartDatePickerOpen,
   setIsEndDatePickerOpen,
   setStartTime,
@@ -57,12 +61,14 @@ export const DateTimeSection: FC<Props> = ({
       {category === Categories_Event.ALLDAY && (
         <DatePickers
           bgColor={bgColor}
+          displayEndDate={displayEndDate}
           inputColor={inputColor}
           isEndDatePickerOpen={isEndDatePickerOpen}
           isStartDatePickerOpen={isStartDatePickerOpen}
           selectedEndDate={selectedEndDate}
           selectedStartDate={selectedStartDate}
           onSetEventField={onSetEventField}
+          setDisplayEndDate={setDisplayEndDate}
           setSelectedEndDate={setSelectedEndDate}
           setSelectedStartDate={setSelectedStartDate}
           setIsEndDatePickerOpen={setIsEndDatePickerOpen}

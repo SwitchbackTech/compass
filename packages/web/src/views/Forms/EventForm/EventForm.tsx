@@ -10,7 +10,6 @@ import React, {
 import { Key } from "ts-key-enum";
 import { Trash } from "@phosphor-icons/react";
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
@@ -18,13 +17,11 @@ import {
 } from "@web/common/styles/theme.util";
 import { SelectOption } from "@web/common/types/component.types";
 import { getCategory } from "@web/common/utils/event.util";
-import {
-  getTimeOptionByValue,
-  mapToBackend,
-} from "@web/common/utils/web.date.util";
+import { mapToBackend } from "@web/common/utils/web.date.util";
 import IconButton from "@web/components/IconButton/IconButton";
 import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/styled";
 import { DateTimeSection } from "./DateTimeSection/DateTimeSection";
+import { getFormDates } from "./DateTimeSection/form.datetime.util";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
 import {
@@ -64,13 +61,14 @@ export const EventForm: React.FC<FormProps> = ({
     label: "12 AM",
     value: "12:00 AM",
   });
-  const [selectedEndDate, setSelectedEndDate] = useState(new Date());
   const [selectedStartDate, setSelectedStartDate] = useState(new Date());
+  const [selectedEndDate, setSelectedEndDate] = useState(new Date());
+  const [displayEndDate, setDisplayEndDate] = useState(selectedStartDate);
 
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
-  /********
-   * Effect
+  /*********
+   * Effects
    *********/
 
   const keyDownHandler = useCallback(
@@ -100,45 +98,17 @@ export const EventForm: React.FC<FormProps> = ({
   }, []);
 
   useEffect(() => {
-    const getDefaultDateTimes = (event: Schema_Event) => {
-      const start = event?.startDate ? dayjs(event.startDate) : dayjs();
-      const startTime = getTimeOptionByValue(start);
-      const startDate = start.toDate();
-
-      const { endDate, endTime } = getDefaultEndDateTimes(event);
-
-      return { startDate, startTime, endDate, endTime };
-    };
-
-    const dt = getDefaultDateTimes(event);
-
     setEvent(event || {});
+
+    const dt = getFormDates(event.startDate as string, event.endDate as string);
     setStartTime(dt.startTime);
-    setEndTime(dt.endTime);
     setSelectedStartDate(dt.startDate);
+    setDisplayEndDate(dayjs(dt.displayEndDate).toDate());
+    setEndTime(dt.endTime);
     setSelectedEndDate(dt.endDate);
+
     setIsFormOpen(true);
   }, [event, setEvent]);
-
-  /***********
-   * Helpers
-   **********/
-
-  const getDefaultEndDateTimes = (event: Schema_Event) => {
-    const end = event?.endDate ? dayjs(event.endDate) : dayjs();
-    const endTime = getTimeOptionByValue(end);
-
-    if (event.isAllDay) {
-      const isMultiDay = !dayjs(event.startDate).isSame(end);
-      if (isMultiDay) {
-        const userFriendlyEnd = end.add(-1, "day").toDate();
-
-        return { endDate: userFriendlyEnd, endTime };
-      }
-    }
-
-    return { endDate: end.toDate(), endTime };
-  };
 
   /***********
    * Handlers
@@ -192,17 +162,16 @@ export const EventForm: React.FC<FormProps> = ({
     };
 
     onSubmit(finalEvent);
-
     onClose();
   };
 
   const onSetEventField: SetEventFormField = (field, value) => {
-    const newEvent = { ...event, [field]: value };
+    const oldEvent = { ...event };
+    const newEvent = { ...oldEvent, [field]: value };
     setEvent(newEvent);
   };
 
   const onFormKeyDown: KeyboardEventHandler<HTMLFormElement> = (e) => {
-    console.log("onFormKeyDown", e.key);
     if (e.key === Key.Backspace || e.key == Key.Delete) {
       if (isDraft) {
         onClose();
@@ -289,6 +258,7 @@ export const EventForm: React.FC<FormProps> = ({
 
       <DateTimeSection
         bgColor={priorityColor}
+        displayEndDate={displayEndDate}
         event={event}
         category={category}
         endTime={endTime}
@@ -303,6 +273,7 @@ export const EventForm: React.FC<FormProps> = ({
         setSelectedStartDate={setSelectedStartDate}
         setStartTime={setStartTime}
         startTime={startTime}
+        setDisplayEndDate={setDisplayEndDate}
         setIsEndDatePickerOpen={setIsEndDatePickerOpen}
         setIsStartDatePickerOpen={setIsStartDatePickerOpen}
         setEvent={setEvent}
