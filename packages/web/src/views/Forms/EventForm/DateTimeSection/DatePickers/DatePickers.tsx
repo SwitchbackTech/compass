@@ -123,12 +123,14 @@ export const DatePickers: FC<Props> = ({
   const onSelectStartDate = (start: Date) => {
     setIsStartDatePickerOpen(false);
     setSelectedStartDate(start);
-    const { shouldAdjust, compliment } = shouldAdjustComplimentDate("start", {
-      start,
-      end: selectedEndDate,
-    });
 
-    if (shouldAdjust) {
+    const { shouldAdjust: shouldAdjustEnd, compliment } =
+      shouldAdjustComplimentDate("start", {
+        start,
+        end: selectedEndDate,
+      });
+
+    if (shouldAdjustEnd) {
       const endDisplay = dayjs(compliment).add(1, "day").toDate();
       setSelectedEndDate(compliment);
       setDisplayEndDate(endDisplay);
@@ -143,22 +145,44 @@ export const DatePickers: FC<Props> = ({
   };
 
   const onSelectEndDate = (end: Date) => {
-    const { shouldAdjust, compliment } = shouldAdjustComplimentDate("end", {
-      start: selectedStartDate,
-      end,
-    });
-
-    if (shouldAdjust) {
-      setSelectedStartDate(compliment);
-    }
-
     setIsEndDatePickerOpen(false);
 
-    setDisplayEndDate(end);
+    const { shouldAdjust: shouldAdjustStart, compliment: sharedDate } =
+      shouldAdjustComplimentDate("end", {
+        start: selectedStartDate,
+        end,
+      });
 
-    const { datePickerDate, formattedEndDate } = adjustEndDate(end);
-    setSelectedEndDate(datePickerDate);
-    onSetEventField("endDate", formattedEndDate);
+    if (shouldAdjustStart) {
+      setSelectedStartDate(sharedDate);
+      setSelectedEndDate(sharedDate);
+      setDisplayEndDate(sharedDate);
+      onSetEventField({
+        startDate: dayjs(sharedDate).format(MONTH_DAY_YEAR),
+        endDate: dayjs(sharedDate).format(MONTH_DAY_YEAR),
+      });
+
+      // const endDisplay = dayjs(compliment).add(1, "day").toDate();
+      // const isOneDay =
+      //   dayjs(compliment).format(MONTH_DAY_YEAR) ===
+      //   dayjs(end).format(MONTH_DAY_YEAR);
+      // const endDisplay = isOneDay
+      //   ? end
+      //   : dayjs(compliment).subtract(1, "day").toDate();
+      // console.log("endDisplay", endDisplay);
+      // setDisplayEndDate(endDisplay);
+      // setSelectedStartDate(compliment);
+      // const { datePickerDate, formattedEndDate } = adjustEndDate(end);
+      // setSelectedEndDate(datePickerDate);
+      // console.log("setting event field...");
+      // onSetEventField({
+      //   endDate: dayjs(selectedStartDate).format(MONTH_DAY_YEAR),
+      //   startDate: dayjs(endDisplay).format(MONTH_DAY_YEAR),
+      // });
+    } else {
+      const newEndDate = dayjs(end).add(1, "day").format(MONTH_DAY_YEAR);
+      onSetEventField("endDate", newEndDate);
+    }
   };
 
   return (
