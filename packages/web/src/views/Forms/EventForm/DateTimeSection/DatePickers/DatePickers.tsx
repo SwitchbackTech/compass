@@ -8,7 +8,6 @@ import { dateIsValid } from "@web/common/utils/web.date.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SetEventFormField } from "../../types";
-import { adjustEndDate } from "../form.datetime.util";
 import { StyledDateFlex } from "./styled";
 
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -131,9 +130,15 @@ export const DatePickers: FC<Props> = ({
       });
 
     if (shouldAdjustEnd) {
+      // Given an all-day event that starts and ends on December 25,
+      // the event form should show a start of "2025-12-25" and an end of "2025-12-25",
+      // and the backend should store the start as "2025-12-25" and the end as "2025-12-26".
+      // Adding one day to the end here helps us achieve that requirement.
       const endDisplay = dayjs(compliment).add(1, "day").toDate();
-      setSelectedEndDate(compliment);
       setDisplayEndDate(endDisplay);
+
+      setSelectedEndDate(compliment);
+
       onSetEventField({
         startDate: dayjs(start).format(MONTH_DAY_YEAR),
         endDate: dayjs(compliment).format(MONTH_DAY_YEAR),
@@ -147,38 +152,19 @@ export const DatePickers: FC<Props> = ({
   const onSelectEndDate = (end: Date) => {
     setIsEndDatePickerOpen(false);
 
-    const { shouldAdjust: shouldAdjustStart, compliment: sharedDate } =
-      shouldAdjustComplimentDate("end", {
-        start: selectedStartDate,
-        end,
-      });
+    const { shouldAdjust, compliment } = shouldAdjustComplimentDate("end", {
+      start: selectedStartDate,
+      end,
+    });
 
-    if (shouldAdjustStart) {
-      setSelectedStartDate(sharedDate);
-      setSelectedEndDate(sharedDate);
-      setDisplayEndDate(sharedDate);
+    if (shouldAdjust) {
+      setSelectedStartDate(compliment);
+      setSelectedEndDate(compliment);
+      setDisplayEndDate(compliment);
       onSetEventField({
-        startDate: dayjs(sharedDate).format(MONTH_DAY_YEAR),
-        endDate: dayjs(sharedDate).format(MONTH_DAY_YEAR),
+        startDate: dayjs(compliment).format(MONTH_DAY_YEAR),
+        endDate: dayjs(compliment).format(MONTH_DAY_YEAR),
       });
-
-      // const endDisplay = dayjs(compliment).add(1, "day").toDate();
-      // const isOneDay =
-      //   dayjs(compliment).format(MONTH_DAY_YEAR) ===
-      //   dayjs(end).format(MONTH_DAY_YEAR);
-      // const endDisplay = isOneDay
-      //   ? end
-      //   : dayjs(compliment).subtract(1, "day").toDate();
-      // console.log("endDisplay", endDisplay);
-      // setDisplayEndDate(endDisplay);
-      // setSelectedStartDate(compliment);
-      // const { datePickerDate, formattedEndDate } = adjustEndDate(end);
-      // setSelectedEndDate(datePickerDate);
-      // console.log("setting event field...");
-      // onSetEventField({
-      //   endDate: dayjs(selectedStartDate).format(MONTH_DAY_YEAR),
-      //   startDate: dayjs(endDisplay).format(MONTH_DAY_YEAR),
-      // });
     } else {
       const newEndDate = dayjs(end).add(1, "day").format(MONTH_DAY_YEAR);
       onSetEventField("endDate", newEndDate);
