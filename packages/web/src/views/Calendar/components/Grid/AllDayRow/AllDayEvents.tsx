@@ -2,7 +2,6 @@ import React from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { isSomedayEventFormOpen } from "@web/common/utils";
 import { isLeftClick } from "@web/common/utils/mouse/mouse.util";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
@@ -28,18 +27,30 @@ export const AllDayEvents = ({
   const draftId = useAppSelector(selectDraftId);
   const dispatch = useAppDispatch();
 
-  const { onMouseDown } = useGridEventMouseHold((event) => {
-    if (isSomedayEventFormOpen()) {
-      dispatch(draftSlice.actions.discard());
-    }
+  const handleClick = (event: Schema_GridEvent) => {
+    dispatch(
+      draftSlice.actions.start({
+        activity: "gridClick",
+        event,
+        eventType: Categories_Event.ALLDAY,
+      }),
+    );
+  };
 
+  const handleDrag = (event: Schema_GridEvent) => {
     dispatch(
       draftSlice.actions.startDragging({
         category: Categories_Event.ALLDAY,
         event,
       }),
     );
-  }, Categories_Event.ALLDAY);
+  };
+
+  const { onMouseDown } = useGridEventMouseHold(
+    Categories_Event.ALLDAY,
+    handleClick,
+    handleDrag,
+  );
 
   return (
     <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>

@@ -7,12 +7,13 @@ import {
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid.util";
 
-const GRID_EVENT_MOUSE_HOLD_DELAY = 750; // ms
-const GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD = 25; // pixels
+export const GRID_EVENT_MOUSE_HOLD_DELAY = 750; // ms
+export const GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD = 25; // pixels
 
 export const useGridEventMouseHold = (
-  cb: (event: Schema_GridEvent) => void,
   eventType: Categories_Event.TIMED | Categories_Event.ALLDAY,
+  onClick: (event: Schema_GridEvent) => void,
+  onDrag: (event: Schema_GridEvent) => void,
   delay: number = GRID_EVENT_MOUSE_HOLD_DELAY,
 ) => {
   const elementEventTypeMap = {
@@ -25,10 +26,6 @@ export const useGridEventMouseHold = (
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
   const mouseMoved = useRef<boolean>(false);
 
-  const handleCallback = (event: Schema_GridEvent) => {
-    cb(event);
-  };
-
   const onMouseDown = (e: ReactMouseEvent, event: Schema_GridEvent) => {
     e.stopPropagation();
     mouseMoved.current = false;
@@ -38,15 +35,15 @@ export const useGridEventMouseHold = (
 
     timeoutId.current = setTimeout(() => {
       if (!mouseMoved.current) {
-        handleCallback(event);
+        mouseMoved.current = true;
+        onDrag(event);
       }
     }, delay);
 
     const onMouseMove = (moveEvent: MouseEvent) => {
-      // Calculate distance moved
       const deltaX = Math.abs(moveEvent.clientX - initialX);
       const deltaY = Math.abs(moveEvent.clientY - initialY);
-      // Only count as moved if threshold is exceeded
+
       if (
         deltaX > GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD ||
         deltaY > GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD
@@ -55,32 +52,20 @@ export const useGridEventMouseHold = (
         if (timeoutId.current) {
           clearTimeout(timeoutId.current);
         }
-        handleCallback(event);
+        onDrag(event);
         cleanup();
       }
     };
 
     const onMouseUp = () => {
+      if (!mouseMoved.current && timeoutId.current) {
+        clearTimeout(timeoutId.current);
+        onClick(event);
+      }
       cleanup();
-
-      // Manually dispatch a new 'mouseup' event to ensure other listeners execute
-      const _event = new MouseEvent("mouseup", {
-        bubbles: true,
-        cancelable: true,
-        button: 0,
-        clientX: e.clientX,
-        clientY: e.clientY,
-      });
-
-      // Delay dispatching the new event to let React flush updates
-      setTimeout(() => {
-        getElemById(elementId).dispatchEvent(_event);
-      }, 1);
     };
 
     const cleanup = () => {
-      handleCallback(event);
-
       if (timeoutId.current) {
         clearTimeout(timeoutId.current);
       }

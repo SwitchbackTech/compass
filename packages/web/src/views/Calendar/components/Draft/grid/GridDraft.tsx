@@ -35,9 +35,16 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
     actions.convert(start, end);
   };
 
-  const { onMouseDown } = useGridEventMouseHold((event) => {
+  const handleClick = () => {};
+  const handleDrag = () => {
     setIsDragging(true);
-  }, Categories_Event.TIMED);
+  };
+
+  const { onMouseDown } = useGridEventMouseHold(
+    Categories_Event.TIMED,
+    handleClick,
+    handleDrag,
+  );
 
   if (!draft) return null;
 
