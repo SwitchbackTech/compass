@@ -16,14 +16,14 @@ export const RepeatSection: FC<Props> = ({
   onSetEventField,
   recurrence,
 }) => {
-  const [isRepeat, setIsRepeat] = useState(recurrence?.rule?.length > 0);
+  const [isRepeat, setIsRepeat] = useState((recurrence?.rule?.length ?? 0) > 0);
 
   const toggleRecurrence = () => {
     if (isRepeat) {
-      onSetEventField("recurrence", null);
+      onSetEventField({ recurrence: { ...recurrence, rule: [] } });
       setIsRepeat(false);
     } else {
-      onSetEventField("recurrence", { ...recurrence, rule: [RRULE.WEEK] });
+      onSetEventField({ recurrence: { ...recurrence, rule: [RRULE.WEEK] } });
       setIsRepeat(true);
     }
   };
@@ -35,9 +35,9 @@ export const RepeatSection: FC<Props> = ({
           bgColor={bgColor}
           onChangeRecurrence={(rule) => {
             if (rule === null) {
-              onSetEventField("recurrence", { ...recurrence, rule: null });
+              onSetEventField({ recurrence: { ...recurrence, rule: [] } });
             } else {
-              onSetEventField("recurrence", { ...recurrence, rule });
+              onSetEventField({ recurrence: { ...recurrence, rule } });
             }
           }}
           recurrence={recurrence}

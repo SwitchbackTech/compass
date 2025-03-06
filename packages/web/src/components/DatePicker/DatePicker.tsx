@@ -7,8 +7,8 @@ import { isDark } from "@core/util/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
-import { Input } from "@web/components/Input";
 import { Text } from "@web/components/Text";
+import { StyledInput } from "../Input/styled";
 import {
   ChangeDayButtonsStyledFlex,
   MonthContainerStyled,
@@ -20,6 +20,7 @@ import {
 export interface Props extends ReactDatePickerProps {
   animationOnToggle?: boolean;
   bgColor?: string;
+  displayDate?: Date;
   inputColor?: string;
   isOpen?: boolean;
   onInputBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
@@ -34,7 +35,7 @@ export interface CalendarRef extends HTMLDivElement {
 export const DatePicker: React.FC<Props> = ({
   animationOnToggle = true,
   autoFocus: _autoFocus = false,
-  bgColor,
+  bgColor = theme.color.bg.primary,
   calendarClassName,
   inputColor,
   isOpen = true,
@@ -50,7 +51,7 @@ export const DatePicker: React.FC<Props> = ({
   const headerColor =
     view === "sidebar"
       ? theme.color.text.light
-      : isDark(bgColor)
+      : isDark(bgColor || "")
         ? theme.color.text.lighter
         : theme.color.text.dark;
 
@@ -79,7 +80,7 @@ export const DatePicker: React.FC<Props> = ({
           view={view}
         />
       )}
-      customInput={<Input bgColor={inputColor} onBlurCapture={onInputBlur} />}
+      customInput={<StyledInput bgColor={inputColor} />}
       dateFormat={"M-d-yyyy"}
       formatWeekDay={(day) => day[0]}
       open={isOpen}
@@ -96,7 +97,6 @@ export const DatePicker: React.FC<Props> = ({
         onSelect(date, event);
       }}
       portalId="root"
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       ref={datepickerRef as any}
       showPopperArrow={false}
       renderCustomHeader={({

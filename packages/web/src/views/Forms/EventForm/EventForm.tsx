@@ -1,5 +1,4 @@
 import dayjs from "dayjs";
-import FocusTrap from "focus-trap-react";
 import React, {
   KeyboardEvent,
   KeyboardEventHandler,
@@ -11,7 +10,6 @@ import React, {
 import { Key } from "ts-key-enum";
 import { Trash } from "@phosphor-icons/react";
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
@@ -19,13 +17,11 @@ import {
 } from "@web/common/styles/theme.util";
 import { SelectOption } from "@web/common/types/component.types";
 import { getCategory } from "@web/common/utils/event.util";
-import {
-  getTimeOptionByValue,
-  mapToBackend,
-} from "@web/common/utils/web.date.util";
+import { mapToBackend } from "@web/common/utils/web.date.util";
 import IconButton from "@web/components/IconButton/IconButton";
 import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/styled";
 import { DateTimeSection } from "./DateTimeSection/DateTimeSection";
+import { getFormDates } from "./DateTimeSection/form.datetime.util";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
 import {
@@ -65,13 +61,14 @@ export const EventForm: React.FC<FormProps> = ({
     label: "12 AM",
     value: "12:00 AM",
   });
-  const [selectedEndDate, setSelectedEndDate] = useState(new Date());
   const [selectedStartDate, setSelectedStartDate] = useState(new Date());
+  const [selectedEndDate, setSelectedEndDate] = useState(new Date());
+  const [displayEndDate, setDisplayEndDate] = useState(selectedStartDate);
 
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
-  /********
-   * Effect
+  /*********
+   * Effects
    *********/
 
   const keyDownHandler = useCallback(
@@ -101,45 +98,17 @@ export const EventForm: React.FC<FormProps> = ({
   }, []);
 
   useEffect(() => {
-    const getDefaultDateTimes = (event: Schema_Event) => {
-      const start = event?.startDate ? dayjs(event.startDate) : dayjs();
-      const startTime = getTimeOptionByValue(start);
-      const startDate = start.toDate();
-
-      const { endDate, endTime } = getDefaultEndDateTimes(event);
-
-      return { startDate, startTime, endDate, endTime };
-    };
-
-    const dt = getDefaultDateTimes(event);
-
     setEvent(event || {});
+
+    const dt = getFormDates(event.startDate as string, event.endDate as string);
     setStartTime(dt.startTime);
-    setEndTime(dt.endTime);
     setSelectedStartDate(dt.startDate);
+    setDisplayEndDate(dayjs(dt.displayEndDate).toDate());
+    setEndTime(dt.endTime);
     setSelectedEndDate(dt.endDate);
+
     setIsFormOpen(true);
   }, [event, setEvent]);
-
-  /***********
-   * Helpers
-   **********/
-
-  const getDefaultEndDateTimes = (event: Schema_Event) => {
-    const end = event?.endDate ? dayjs(event.endDate) : dayjs();
-    const endTime = getTimeOptionByValue(end);
-
-    if (event.isAllDay) {
-      const isMultiDay = !dayjs(event.startDate).isSame(end);
-      if (isMultiDay) {
-        const userFriendlyEnd = end.add(-1, "day").toDate();
-
-        return { endDate: userFriendlyEnd, endTime };
-      }
-    }
-
-    return { endDate: end.toDate(), endTime };
-  };
 
   /***********
    * Handlers
@@ -147,7 +116,7 @@ export const EventForm: React.FC<FormProps> = ({
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onSetEventField(fieldName, e.target.value);
+      onSetEventField({ [fieldName]: e.target.value });
     };
 
   const onClose = () => {
@@ -193,13 +162,11 @@ export const EventForm: React.FC<FormProps> = ({
     };
 
     onSubmit(finalEvent);
-
     onClose();
   };
 
-  const onSetEventField: SetEventFormField = (field, value) => {
-    const newEvent = { ...event, [field]: value };
-    setEvent(newEvent);
+  const onSetEventField: SetEventFormField = (field) => {
+    setEvent({ ...event, ...field });
   };
 
   const onFormKeyDown: KeyboardEventHandler<HTMLFormElement> = (e) => {
@@ -230,103 +197,99 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   return (
-    <FocusTrap
-      focusTrapOptions={{
-        // To avoid conflicting with other events, like clicking outside closes the form
-        allowOutsideClick: true,
+    <StyledEventForm
+      {...props}
+      isOpen={isFormOpen}
+      name={ID_EVENT_FORM}
+      onKeyDown={onFormKeyDown}
+      onMouseUp={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (isStartDatePickerOpen) {
+          setIsStartDatePickerOpen(false);
+        }
+
+        if (isEndDatePickerOpen) {
+          setIsEndDatePickerOpen(false);
+        }
       }}
+      onMouseDown={(e) => {
+        e.stopPropagation();
+      }}
+      priority={priority}
+      role="form"
     >
-      <StyledEventForm
-        {...props}
-        isOpen={isFormOpen}
-        name={ID_EVENT_FORM}
-        onKeyDown={onFormKeyDown}
-        onMouseUp={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
+      <StyledIconRow>
+        {!isDraft && (
+          <StyledMigrateArrowInForm
+            onClick={(e) => {
+              e.stopPropagation();
+              onConvert?.();
+            }}
+            role="button"
+            title="Move to sidebar"
+          >
+            {"<"}
+          </StyledMigrateArrowInForm>
+        )}
+        <IconButton onClick={onDeleteForm} aria-label="Delete Event">
+          <Trash />
+        </IconButton>
+      </StyledIconRow>
 
-          if (isStartDatePickerOpen) {
-            setIsStartDatePickerOpen(false);
-          }
+      <StyledTitle
+        autoFocus
+        onChange={onChangeEventTextField("title")}
+        onKeyDown={ignoreDelete}
+        placeholder="Title"
+        role="textarea"
+        name="Event Title"
+        underlineColor={priorityColor}
+        value={title}
+      />
 
-          if (isEndDatePickerOpen) {
-            setIsEndDatePickerOpen(false);
-          }
-        }}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-        }}
-        priority={priority}
-        role="form"
-      >
-        <StyledIconRow>
-          {!isDraft && (
-            <StyledMigrateArrowInForm
-              onClick={(e) => {
-                e.stopPropagation();
-                onConvert?.();
-              }}
-              role="button"
-              title="Move to sidebar"
-            >
-              {"<"}
-            </StyledMigrateArrowInForm>
-          )}
-          <IconButton onClick={onDeleteForm} aria-label="Delete Event">
-            <Trash />
-          </IconButton>
-        </StyledIconRow>
+      <PrioritySection
+        onSetEventField={onSetEventField}
+        priority={priority || Priorities.UNASSIGNED}
+      />
 
-        <StyledTitle
-          autoFocus
-          onChange={onChangeEventTextField("title")}
-          onKeyDown={ignoreDelete}
-          placeholder="Title"
-          role="textarea"
-          name="Event Title"
-          underlineColor={priorityColor}
-          value={title}
-        />
+      <DateTimeSection
+        bgColor={priorityColor}
+        displayEndDate={displayEndDate}
+        event={event}
+        category={category}
+        endTime={endTime}
+        inputColor={hoverColorByPriority[priority || Priorities.UNASSIGNED]}
+        isEndDatePickerOpen={isEndDatePickerOpen}
+        isStartDatePickerOpen={isStartDatePickerOpen}
+        onSetEventField={onSetEventField}
+        selectedEndDate={selectedEndDate}
+        selectedStartDate={selectedStartDate}
+        setEndTime={setEndTime}
+        setSelectedEndDate={setSelectedEndDate}
+        setSelectedStartDate={setSelectedStartDate}
+        setStartTime={setStartTime}
+        startTime={startTime}
+        setDisplayEndDate={setDisplayEndDate}
+        setIsEndDatePickerOpen={setIsEndDatePickerOpen}
+        setIsStartDatePickerOpen={setIsStartDatePickerOpen}
+        setEvent={setEvent}
+      />
 
-        <PrioritySection
-          onSetEventField={onSetEventField}
-          priority={priority || Priorities.UNASSIGNED}
-        />
+      <StyledDescription
+        underlineColor={priorityColor}
+        onChange={onChangeEventTextField("description")}
+        onKeyDown={ignoreDelete}
+        placeholder="Description"
+        ref={descriptionRef}
+        value={event.description || ""}
+      />
 
-        <DateTimeSection
-          bgColor={priorityColor}
-          event={event}
-          category={category}
-          endTime={endTime}
-          inputColor={hoverColorByPriority[priority || Priorities.UNASSIGNED]}
-          isEndDatePickerOpen={isEndDatePickerOpen}
-          isStartDatePickerOpen={isStartDatePickerOpen}
-          selectedEndDate={selectedEndDate}
-          selectedStartDate={selectedStartDate}
-          setEndTime={setEndTime}
-          setSelectedEndDate={setSelectedEndDate}
-          setSelectedStartDate={setSelectedStartDate}
-          setStartTime={setStartTime}
-          startTime={startTime}
-          setIsEndDatePickerOpen={setIsEndDatePickerOpen}
-          setIsStartDatePickerOpen={setIsStartDatePickerOpen}
-          setEvent={setEvent}
-        />
-
-        <StyledDescription
-          underlineColor={priorityColor}
-          onChange={onChangeEventTextField("description")}
-          onKeyDown={ignoreDelete}
-          placeholder="Description"
-          ref={descriptionRef}
-          value={event.description || ""}
-        />
-
-        <SaveSection
-          priority={priority || Priorities.UNASSIGNED}
-          onSubmit={onSubmitForm}
-        />
-      </StyledEventForm>
-    </FocusTrap>
+      <SaveSection
+        priority={priority || Priorities.UNASSIGNED}
+        onSubmit={onSubmitForm}
+      />
+    </StyledEventForm>
   );
 };

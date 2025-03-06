@@ -8,11 +8,7 @@ import {
   YMDHM_FORMAT,
 } from "@core/constants/date.constants";
 import { Categories_Event, Direction_Migrate } from "@core/types/event.types";
-import {
-  Option_Time,
-  Params_DateChange,
-  Params_TimeChange,
-} from "@web/common/types/util.types";
+import { Option_Time } from "@web/common/types/util.types";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { roundToNext } from ".";
 import { ACCEPTED_TIMES, OPTIONS_RECURRENCE } from "../constants/web.constants";
@@ -237,94 +233,15 @@ export const getCalendarHeadingLabel = (
 
 export const mapToBackend = (s: Schema_SelectedDates) => {
   if (s.isAllDay) {
-    const adjustedEnd = dayjs(s.endDate).add(1, "day");
-
     return {
       startDate: dayjs(s.startDate).format(YEAR_MONTH_DAY_FORMAT),
-      endDate: adjustedEnd.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: dayjs(s.endDate).format(YEAR_MONTH_DAY_FORMAT),
     };
   }
 
   const { startDate, endDate } = _addTimesToDates(s);
 
   return { startDate, endDate };
-};
-
-export const shouldAdjustComplimentDate = (
-  changed: "start" | "end",
-  vals: Params_DateChange,
-) => {
-  let shouldAdjust: boolean;
-  let compliment: Date;
-
-  const { start, end } = vals;
-  const _start = dayjs(start);
-  const _end = dayjs(end);
-
-  if (changed === "start") {
-    shouldAdjust = _start.isAfter(_end);
-    if (shouldAdjust) {
-      compliment = start;
-    }
-  }
-
-  if (changed === "end") {
-    shouldAdjust = _end.isBefore(_start);
-
-    if (shouldAdjust) {
-      compliment = end;
-    }
-  }
-
-  return { shouldAdjust, compliment };
-};
-
-export const shouldAdjustComplimentTime = (
-  changed: "start" | "end",
-  vals: Params_TimeChange,
-) => {
-  let shouldAdjust: boolean;
-  let duration: number;
-  let step: number;
-  let compliment: Dayjs;
-
-  const { oldStart, oldEnd, start, end } = vals;
-
-  const _start = dayjs(`2000-01-01 ${start}`, YMDHAM_FORMAT);
-  const _end = dayjs(`2000-01-01 ${end}`, YMDHAM_FORMAT);
-  const isSame = _start.isSame(_end);
-
-  if (changed === "start") {
-    shouldAdjust = _start.isAfter(_end) || isSame;
-
-    if (shouldAdjust) {
-      const _oldStart = dayjs(`2000-01-01 ${oldStart}`, YMDHAM_FORMAT);
-      const _oldEnd = dayjs(`2000-01-01 ${oldEnd}`, YMDHAM_FORMAT);
-      duration = Math.abs(_oldStart.diff(_oldEnd, "minutes"));
-
-      step = Math.abs(_start.diff(_end, "minutes"));
-
-      compliment = dayjs(`2000-01-01 ${end}`, YMDHAM_FORMAT);
-    }
-  }
-
-  if (changed === "end") {
-    shouldAdjust = _end.isBefore(_start) || isSame;
-
-    if (shouldAdjust) {
-      const _oldStart = dayjs(`2000-01-01 ${oldStart}`, YMDHAM_FORMAT);
-      const _oldEnd = dayjs(`2000-01-01 ${oldEnd}`, YMDHAM_FORMAT);
-      duration = Math.abs(_oldStart.diff(_oldEnd, "minutes"));
-
-      step = Math.abs(_start.diff(_end, "minutes"));
-
-      compliment = dayjs(`2000-01-01 ${start}`, YMDHAM_FORMAT);
-    }
-  }
-
-  const adjustment = duration + step;
-
-  return { shouldAdjust, adjustment, compliment };
 };
 
 // uses inferred timezone and shortened string to

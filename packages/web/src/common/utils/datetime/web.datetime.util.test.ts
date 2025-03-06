@@ -1,7 +1,7 @@
 import {
   shouldAdjustComplimentDate,
   shouldAdjustComplimentTime,
-} from "@web/common/utils/web.date.util";
+} from "@web/common/utils/datetime/web.datetime.util";
 
 describe("Dates", () => {
   it("recognizes date adjustment after changing start", () => {

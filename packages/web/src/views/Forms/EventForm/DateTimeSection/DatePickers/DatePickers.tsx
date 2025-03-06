@@ -3,12 +3,11 @@ import React, { FC } from "react";
 import { Key } from "ts-key-enum";
 import { MONTH_DAY_YEAR } from "@core/constants/date.constants";
 import { darken } from "@core/util/color.utils";
-import {
-  dateIsValid,
-  shouldAdjustComplimentDate,
-} from "@web/common/utils/web.date.util";
-import { DatePicker } from "@web/components/DatePicker";
+import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
+import { dateIsValid } from "@web/common/utils/web.date.util";
+import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
+import { SetEventFormField } from "../../types";
 import { StyledDateFlex } from "./styled";
 
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -17,11 +16,14 @@ const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
 
 interface Props {
   bgColor: string;
+  displayEndDate: Date;
   inputColor?: string;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
   selectedEndDate: Date;
   selectedStartDate: Date;
+  onSetEventField: SetEventFormField;
+  setDisplayEndDate: (value: Date) => void;
   setSelectedEndDate: (value: Date) => void;
   setSelectedStartDate: (value: Date) => void;
   setIsStartDatePickerOpen: (arg0: boolean) => void;
@@ -30,39 +32,19 @@ interface Props {
 
 export const DatePickers: FC<Props> = ({
   bgColor,
+  displayEndDate,
   inputColor,
   isEndDatePickerOpen,
   isStartDatePickerOpen,
   selectedEndDate,
   selectedStartDate,
+  onSetEventField,
+  setDisplayEndDate,
   setIsEndDatePickerOpen,
   setIsStartDatePickerOpen,
   setSelectedEndDate,
   setSelectedStartDate,
 }) => {
-  const adjustComplimentDateIfNeeded = (
-    changed: "start" | "end",
-    value: Date,
-  ) => {
-    const start = changed === "start" ? value : selectedStartDate;
-    const end = changed === "end" ? value : selectedEndDate;
-
-    const { shouldAdjust, compliment } = shouldAdjustComplimentDate(changed, {
-      start,
-      end,
-    });
-
-    if (shouldAdjust) {
-      if (changed === "start") {
-        setSelectedEndDate(compliment);
-        return;
-      }
-
-      if (changed === "end") {
-        setSelectedStartDate(compliment);
-      }
-    }
-  };
   const closeEndDatePicker = () => {
     setIsEndDatePickerOpen(false);
   };
@@ -70,10 +52,12 @@ export const DatePickers: FC<Props> = ({
   const closeStartDatePicker = () => {
     setIsStartDatePickerOpen(false);
   };
+
   const getDateFromInput = (val: string) => {
     const date = dayjs(val, MONTH_DAY_YEAR).toDate();
     return date;
   };
+
   const onPickerKeyDown = (
     picker: "start" | "end",
     e: React.KeyboardEvent<HTMLDivElement>,
@@ -85,6 +69,8 @@ export const DatePickers: FC<Props> = ({
       }
       case Key.Enter: {
         e.stopPropagation();
+        e.preventDefault();
+
         const input = e.target as HTMLInputElement;
         const val = input.value;
         const isInvalid = val !== undefined && !dateIsValid(val);
@@ -132,16 +118,57 @@ export const DatePickers: FC<Props> = ({
       }
     }
   };
+
   const onSelectStartDate = (start: Date) => {
-    setSelectedStartDate(start);
     setIsStartDatePickerOpen(false);
-    adjustComplimentDateIfNeeded("start", start);
+    setSelectedStartDate(start);
+
+    const { shouldAdjust: shouldAdjustEnd, compliment } =
+      shouldAdjustComplimentDate("start", {
+        start,
+        end: selectedEndDate,
+      });
+
+    if (shouldAdjustEnd) {
+      // Given an all-day event that starts and ends on December 25,
+      // the event form should show a start of "2025-12-25" and an end of "2025-12-25",
+      // and the backend should store the start as "2025-12-25" and the end as "2025-12-26".
+      // Adding one day to the end here helps us achieve that requirement.
+      const endDisplay = dayjs(compliment).add(1, "day").toDate();
+      setDisplayEndDate(endDisplay);
+
+      setSelectedEndDate(compliment);
+
+      onSetEventField({
+        startDate: dayjs(start).format(MONTH_DAY_YEAR),
+        endDate: dayjs(compliment).format(MONTH_DAY_YEAR),
+      });
+    } else {
+      const newStartDate = dayjs(start).format(MONTH_DAY_YEAR);
+      onSetEventField({ startDate: newStartDate });
+    }
   };
 
   const onSelectEndDate = (end: Date) => {
-    setSelectedEndDate(end);
     setIsEndDatePickerOpen(false);
-    adjustComplimentDateIfNeeded("end", end);
+
+    const { shouldAdjust, compliment } = shouldAdjustComplimentDate("end", {
+      start: selectedStartDate,
+      end,
+    });
+
+    if (shouldAdjust) {
+      setSelectedStartDate(compliment);
+      setSelectedEndDate(compliment);
+      setDisplayEndDate(compliment);
+      onSetEventField({
+        startDate: dayjs(compliment).format(MONTH_DAY_YEAR),
+        endDate: dayjs(compliment).format(MONTH_DAY_YEAR),
+      });
+    } else {
+      const newEndDate = dayjs(end).add(1, "day").format(MONTH_DAY_YEAR);
+      onSetEventField({ endDate: newEndDate });
+    }
   };
 
   return (
@@ -191,7 +218,7 @@ export const DatePickers: FC<Props> = ({
             }}
             onKeyDown={(e) => onPickerKeyDown("end", e)}
             onSelect={onSelectEndDate}
-            selected={selectedEndDate}
+            selected={displayEndDate}
             title="Pick End Date"
             view="grid"
           />
