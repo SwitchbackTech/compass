@@ -45,7 +45,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       hasInstances && event.recurrence?.rule?.length === 0;
 
     if (removedRecurrence) {
-      onSetEventField("recurrence", { ...event.recurrence, rule: null });
+      onSetEventField({ recurrence: { ...event.recurrence, rule: [] } });
     }
 
     onSubmit(event);
@@ -54,7 +54,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onSetEventField(fieldName, e.target.value);
+      onSetEventField({ [fieldName]: e.target.value });
     };
 
   const onDelete = () => {
@@ -93,10 +93,10 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     }
   };
 
-  const onSetEventField: SetEventFormField = (field, value) => {
-    const newEvent = { ...event, [field]: value };
+  const onSetEventField: SetEventFormField = (field) => {
+    const newEvent = { ...event, ...field };
 
-    if (value === null) {
+    if (field === null) {
       delete newEvent[field];
     }
 

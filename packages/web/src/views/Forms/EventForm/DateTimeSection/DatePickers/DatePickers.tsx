@@ -145,7 +145,7 @@ export const DatePickers: FC<Props> = ({
       });
     } else {
       const newStartDate = dayjs(start).format(MONTH_DAY_YEAR);
-      onSetEventField("startDate", newStartDate);
+      onSetEventField({ startDate: newStartDate });
     }
   };
 
@@ -167,7 +167,7 @@ export const DatePickers: FC<Props> = ({
       });
     } else {
       const newEndDate = dayjs(end).add(1, "day").format(MONTH_DAY_YEAR);
-      onSetEventField("endDate", newEndDate);
+      onSetEventField({ endDate: newEndDate });
     }
   };
 

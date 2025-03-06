@@ -116,7 +116,7 @@ export const EventForm: React.FC<FormProps> = ({
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onSetEventField(fieldName, e.target.value);
+      onSetEventField({ [fieldName]: e.target.value });
     };
 
   const onClose = () => {
@@ -165,16 +165,8 @@ export const EventForm: React.FC<FormProps> = ({
     onClose();
   };
 
-  const onSetEventField: SetEventFormField = (field, value) => {
-    const oldEvent = { ...event };
-    // Handle multiple fields
-    if (typeof field === "object") {
-      setEvent({ ...oldEvent, ...field });
-      return;
-    }
-
-    // Handle single field
-    setEvent({ ...oldEvent, [field]: value });
+  const onSetEventField: SetEventFormField = (field) => {
+    setEvent({ ...event, ...field });
   };
 
   const onFormKeyDown: KeyboardEventHandler<HTMLFormElement> = (e) => {

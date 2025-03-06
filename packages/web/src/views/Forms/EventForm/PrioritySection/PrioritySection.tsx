@@ -21,9 +21,9 @@ export const PrioritySection: React.FC<Props> = ({
         bordered={priority === Priorities.WORK}
         color={colorByPriority.work}
         onClick={() => {
-          onSetEventField("priority", Priorities.WORK);
+          onSetEventField({ priority: Priorities.WORK });
         }}
-        onFocus={() => onSetEventField("priority", Priorities.WORK)}
+        onFocus={() => onSetEventField({ priority: Priorities.WORK })}
         role="tab"
         tabIndex={0}
         title="Doing your best work"
@@ -34,8 +34,8 @@ export const PrioritySection: React.FC<Props> = ({
       <PriorityButton
         bordered={priority === Priorities.SELF}
         color={colorByPriority.self}
-        onClick={() => onSetEventField("priority", Priorities.SELF)}
-        onFocus={() => onSetEventField("priority", Priorities.SELF)}
+        onClick={() => onSetEventField({ priority: Priorities.SELF })}
+        onFocus={() => onSetEventField({ priority: Priorities.SELF })}
         role="tab"
         tabIndex={0}
         title="Nurturing your authentic self"
@@ -47,9 +47,9 @@ export const PrioritySection: React.FC<Props> = ({
         bordered={priority === Priorities.RELATIONS}
         color={colorByPriority.relationships}
         onClick={() => {
-          onSetEventField("priority", Priorities.RELATIONS);
+          onSetEventField({ priority: Priorities.RELATIONS });
         }}
-        onFocus={() => onSetEventField("priority", Priorities.RELATIONS)}
+        onFocus={() => onSetEventField({ priority: Priorities.RELATIONS })}
         role="tab"
         tabIndex={0}
         title="Connecting with others"

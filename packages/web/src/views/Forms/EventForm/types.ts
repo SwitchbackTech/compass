@@ -15,7 +15,6 @@ export interface FormProps {
   setEvent: (event: Schema_Event) => SetStateAction<Schema_Event> | void;
 }
 
-//++ TODO delete export type SetEventFormField = <FieldName extends keyof Schema_Event>(
 type EventField =
   | "title"
   | "description"
@@ -23,7 +22,7 @@ type EventField =
   | "endDate"
   | "priority";
 export type SetEventFormField = (
-  field: EventField | Partial<Schema_Event>,
+  field: Partial<Schema_Event>,
   value?: Schema_Event[EventField],
 ) => void;
 
