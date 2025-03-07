@@ -12,54 +12,20 @@ jest.mock("@web/views/Calendar/hooks/mouse/useEventListener", () => ({
 }));
 
 describe("Event Form", () => {
-  //   it("opens when clicking events", async () => {
-  //     const user = userEvent.setup();
-  //     render(<CalendarView />, { state: preloadedState });
-  //     expect(screen.queryByRole("form")).not.toBeInTheDocument();
-  /* timed event */
-  // await act(async () => {
-  //   await user.click(screen.getByRole("button", { name: /Ty & Tim/i }));
-  //   await _confirmCorrectEventFormIsOpen(TY_TIM.title);
-  // });
-  /* multi-week event */
-  // await act(async () => {
-  //   await _clickHeading(user);
-  //   await user.click(
-  //     screen.getByRole("button", { name: /multiweek event/i })
-  //   );
-  // });
-  // await waitFor(
-  //   () => {
-  //     expect(screen.getByRole("form")).toBeInTheDocument();
-  //   },
-  //   { timeout: 10000 }
-  // );
-  // await _confirmCorrectEventFormIsOpen(MULTI_WEEK.title);
-  // await waitFor(() => {
-  //   expect(
-  //     within(screen.getByRole("form")).getByText(MULTI_WEEK.title)
-  //   ).toBeInTheDocument();
-  // });
-  // /* someday event */
-  // await _clickHeading(user);
-  // await user.click(screen.getByRole("button", { name: /takeover world/i }));
-  // expect(
-  //   within(screen.getRole("form", name: {"Someday Event Form"})).getByText("Takeover world")
-  // ).toBeInTheDocument();
-  // }, 20000);
   it("closes after clicking outside", async () => {
     render(<CalendarView />, { state: preloadedState });
     const user = userEvent.setup();
 
     await act(async () => {
       await user.click(screen.getByRole("button", { name: CLIMB.title }));
-      await _clickHeading(user);
     });
 
-    await waitFor(() => {
-      expect(screen.queryByRole("form")).not.toBeInTheDocument();
+    await act(async () => {
+      await user.click(document.body);
     });
-  }, 10000);
+
+    expect(screen.queryByRole("form")).not.toBeInTheDocument();
+  });
   it("closes after clicking trash icon", async () => {
     const user = userEvent.setup();
     render(<CalendarView />, { state: preloadedState });
@@ -116,3 +82,38 @@ const _confirmCorrectEventFormIsOpen = async (eventName: string) => {
     ).toBeInTheDocument();
   });
 };
+//   it("opens when clicking events", async () => {
+//     const user = userEvent.setup();
+//     render(<CalendarView />, { state: preloadedState });
+//     expect(screen.queryByRole("form")).not.toBeInTheDocument();
+/* timed event */
+// await act(async () => {
+//   await user.click(screen.getByRole("button", { name: /Ty & Tim/i }));
+//   await _confirmCorrectEventFormIsOpen(TY_TIM.title);
+// });
+/* multi-week event */
+// await act(async () => {
+//   await _clickHeading(user);
+//   await user.click(
+//     screen.getByRole("button", { name: /multiweek event/i })
+//   );
+// });
+// await waitFor(
+//   () => {
+//     expect(screen.getByRole("form")).toBeInTheDocument();
+//   },
+//   { timeout: 10000 }
+// );
+// await _confirmCorrectEventFormIsOpen(MULTI_WEEK.title);
+// await waitFor(() => {
+//   expect(
+//     within(screen.getByRole("form")).getByText(MULTI_WEEK.title)
+//   ).toBeInTheDocument();
+// });
+// /* someday event */
+// await _clickHeading(user);
+// await user.click(screen.getByRole("button", { name: /takeover world/i }));
+// expect(
+//   within(screen.getRole("form", name: {"Someday Event Form"})).getByText("Takeover world")
+// ).toBeInTheDocument();
+// }, 20000);

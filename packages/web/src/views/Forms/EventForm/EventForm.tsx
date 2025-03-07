@@ -202,10 +202,7 @@ export const EventForm: React.FC<FormProps> = ({
       isOpen={isFormOpen}
       name={ID_EVENT_FORM}
       onKeyDown={onFormKeyDown}
-      onMouseUp={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-
+      onMouseUp={() => {
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
         }
@@ -233,7 +230,11 @@ export const EventForm: React.FC<FormProps> = ({
             {"<"}
           </StyledMigrateArrowInForm>
         )}
-        <IconButton onClick={onDeleteForm} aria-label="Delete Event">
+        <IconButton
+          onClick={onDeleteForm}
+          aria-label="Delete Event"
+          type="button"
+        >
           <Trash />
         </IconButton>
       </StyledIconRow>
