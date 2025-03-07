@@ -11,7 +11,7 @@ const GRID_EVENT_MOUSE_HOLD_DELAY = 750; // ms
 const GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD = 25; // pixels
 
 export const useGridEventMouseHold = (
-  cb: (event: Schema_GridEvent) => void,
+  cb: (event: Schema_GridEvent, e: ReactMouseEvent) => void,
   eventType: Categories_Event.TIMED | Categories_Event.ALLDAY,
   delay: number = GRID_EVENT_MOUSE_HOLD_DELAY,
 ) => {
@@ -24,13 +24,20 @@ export const useGridEventMouseHold = (
 
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
   const mouseMoved = useRef<boolean>(false);
+  const targetRef = useRef<EventTarget | null>(null);
 
-  const handleCallback = (event: Schema_GridEvent) => {
-    cb(event);
+  const handleCallback = (event: Schema_GridEvent, e: ReactMouseEvent) => {
+    cb(event, {
+      ...e,
+      // `currentTarget` needs to be manually re-set. Not completely
+      // sure why its being overwritten, but this works for now.
+      currentTarget: targetRef.current as EventTarget & Element,
+    });
   };
 
   const onMouseDown = (e: ReactMouseEvent, event: Schema_GridEvent) => {
     e.stopPropagation();
+    targetRef.current = e.currentTarget;
     mouseMoved.current = false;
 
     const initialX = e.clientX;
@@ -38,7 +45,7 @@ export const useGridEventMouseHold = (
 
     timeoutId.current = setTimeout(() => {
       if (!mouseMoved.current) {
-        handleCallback(event);
+        handleCallback(event, e);
       }
     }, delay);
 
@@ -55,7 +62,7 @@ export const useGridEventMouseHold = (
         if (timeoutId.current) {
           clearTimeout(timeoutId.current);
         }
-        handleCallback(event);
+        handleCallback(event, e);
         cleanup();
       }
     };
@@ -79,7 +86,7 @@ export const useGridEventMouseHold = (
     };
 
     const cleanup = () => {
-      handleCallback(event);
+      handleCallback(event, e);
 
       if (timeoutId.current) {
         clearTimeout(timeoutId.current);
