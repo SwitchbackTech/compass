@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
-import userEvent, { UserEvent } from "@testing-library/user-event";
+import userEvent from "@testing-library/user-event";
 import { CLIMB } from "@core/__mocks__/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
@@ -67,53 +67,3 @@ describe("Event Form", () => {
     });
   });
 });
-
-/***********
- * Helpers *
- ***********/
-const _clickHeading = async (user: UserEvent) => {
-  await user.click(screen.getByRole("heading", { level: 1 }));
-};
-
-const _confirmCorrectEventFormIsOpen = async (eventName: string) => {
-  await waitFor(() => {
-    expect(
-      within(screen.getByRole("form")).getByText(eventName),
-    ).toBeInTheDocument();
-  });
-};
-//   it("opens when clicking events", async () => {
-//     const user = userEvent.setup();
-//     render(<CalendarView />, { state: preloadedState });
-//     expect(screen.queryByRole("form")).not.toBeInTheDocument();
-/* timed event */
-// await act(async () => {
-//   await user.click(screen.getByRole("button", { name: /Ty & Tim/i }));
-//   await _confirmCorrectEventFormIsOpen(TY_TIM.title);
-// });
-/* multi-week event */
-// await act(async () => {
-//   await _clickHeading(user);
-//   await user.click(
-//     screen.getByRole("button", { name: /multiweek event/i })
-//   );
-// });
-// await waitFor(
-//   () => {
-//     expect(screen.getByRole("form")).toBeInTheDocument();
-//   },
-//   { timeout: 10000 }
-// );
-// await _confirmCorrectEventFormIsOpen(MULTI_WEEK.title);
-// await waitFor(() => {
-//   expect(
-//     within(screen.getByRole("form")).getByText(MULTI_WEEK.title)
-//   ).toBeInTheDocument();
-// });
-// /* someday event */
-// await _clickHeading(user);
-// await user.click(screen.getByRole("button", { name: /takeover world/i }));
-// expect(
-//   within(screen.getRole("form", name: {"Someday Event Form"})).getByText("Takeover world")
-// ).toBeInTheDocument();
-// }, 20000);
