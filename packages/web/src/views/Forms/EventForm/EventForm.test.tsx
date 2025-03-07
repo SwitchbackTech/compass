@@ -1,4 +1,3 @@
-/* eslint-disable testing-library/no-unnecessary-act */
 import React, { act } from "react";
 import "@testing-library/jest-dom/extend-expect";
 import { screen } from "@testing-library/react";
@@ -41,7 +40,7 @@ test("start date picker opens and then closes when clicking the end input", asyn
   await _clickEndInput();
 
   // Check if the date picker is closed
-  //   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
 const _clickStartInput = async () => {
