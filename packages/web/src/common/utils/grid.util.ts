@@ -49,7 +49,9 @@ export const assignEventsToRow = (
   const rows: number[][] = [];
   // makes copy of all event objects to allow for adding a 'row' field
   // can likely be optimized using immer's `produce` and `draft`
-  const orderedAllDayEvents = allDayEvents.map((e) => ({ ...e }));
+  const orderedAllDayEvents = allDayEvents.map((e) => ({
+    ...e,
+  })) as Schema_GridEvent[];
 
   orderedAllDayEvents.forEach((event, i) => {
     const eventDays = _getEventDayNumbers(event);
@@ -107,7 +109,7 @@ export const getColumnWidthPercentages = (
   todayIndex: number,
 ): WidthPercentages => {
   const daysInView = 7;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
   const pastFutureWeek: number[] = new Array(daysInView).fill(FLEX_EQUAL);
 
   let currentWeek: number[];
@@ -379,10 +381,10 @@ const _getEventDayNumbers = (event: Schema_Event) => {
   const eventDays = _range(startDayOfYear, endDayOfYear);
 
   /*
-    removes the last number so that it doesnt overlap with neighboring events
+    removes the last number so that it doesn't overlap with neighboring events
     example: 
       - an event on July 4 is represented as yyyy-07-04 - yyyy-07-05
-        - its originaly day numbers are: [85, 86]
+        - its original day numbers are: [85, 86]
       - this will cause it to erroneously overlap with an event on July 5 
         - because July 5 day numbers will be [86, 87]
         - 86 is shared between both days
