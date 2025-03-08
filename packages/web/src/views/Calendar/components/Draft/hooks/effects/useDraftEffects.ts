@@ -40,7 +40,6 @@ export const useDraftEffects = (
   }, [dateBeingChanged, isResizing]);
 
   useEffect(() => {
-    // const isStaleDraft = !isDrafting && (isResizing || isDragging);
     const isStaleDraft = !isDrafting;
     if (isStaleDraft) {
       setDraft(null);
@@ -51,7 +50,16 @@ export const useDraftEffects = (
       setResizeStatus(null);
       setDateBeingChanged(null);
     }
-  }, [isDrafting]);
+  }, [
+    isDrafting,
+    setDateBeingChanged,
+    setDraft,
+    setDragStatus,
+    setIsDragging,
+    setIsFormOpen,
+    setIsResizing,
+    setResizeStatus,
+  ]);
 
   useEffect(() => {
     handleChange();
