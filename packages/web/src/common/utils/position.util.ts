@@ -136,7 +136,7 @@ export const getEventCategory = (
   return Category.ThisWeekOnly;
 };
 
-export const getPosition = (
+export const getAllDayEventPosition = (
   event: Schema_GridEvent,
   startOfView: Dayjs,
   endOfView: Dayjs,
@@ -150,41 +150,18 @@ export const getPosition = (
   const category = getEventCategory(start, end, startOfView, endOfView);
   const startIndex = start.get("day");
 
-  let height: number;
-  let top: number;
-  let width: number;
-  let left: number;
+  const height = EVENT_ALLDAY_HEIGHT;
+  const top = 23 * (event?.row || 1); // found by experimenting with what 'looked right'
+  const width = getAllDayEventWidth(
+    category,
+    startIndex,
+    start,
+    end,
+    startOfView,
+    colWidths,
+  );
 
-  if (event.isAllDay) {
-    height = EVENT_ALLDAY_HEIGHT;
-    top = 23 * (event?.row || 1); // found by experimenting with what 'looked right'
-    width = getAllDayEventWidth(
-      category,
-      startIndex,
-      start,
-      end,
-      startOfView,
-      colWidths,
-    );
-  } else {
-    width = getTimedEventWidth(
-      colWidths,
-      startIndex,
-      event.position.widthMultiplier,
-      isDraft,
-    );
-    const startTime = ACCEPTED_TIMES.indexOf(start.format(HOURS_AM_FORMAT)) / 4;
-
-    const hourHeight = measurements.hourHeight;
-    top = hourHeight * startTime;
-
-    const duration = end.diff(start);
-    const durationHours = duration * MS_IN_HR;
-    height = hourHeight * durationHours;
-    height -= DRAFT_PADDING_BOTTOM;
-  }
-
-  left = getLeftPosition(
+  const left = getLeftPosition(
     category,
     startIndex,
     colWidths,
@@ -195,6 +172,74 @@ export const getPosition = (
 
   const position = { height, left, top, width };
   return position;
+};
+
+export const getTimedEventPosition = (
+  event: Schema_GridEvent,
+  startOfView: Dayjs,
+  endOfView: Dayjs,
+  measurements: Measurements_Grid,
+  isDraft: boolean,
+) => {
+  const { colWidths } = measurements;
+  const start = dayjs(event.startDate);
+  const end = dayjs(event.endDate);
+
+  const category = getEventCategory(start, end, startOfView, endOfView);
+  const startIndex = start.get("day");
+
+  const width = getTimedEventWidth(
+    colWidths,
+    startIndex,
+    event.position.widthMultiplier,
+    isDraft,
+  );
+  const startTime = ACCEPTED_TIMES.indexOf(start.format(HOURS_AM_FORMAT)) / 4;
+
+  const hourHeight = measurements.hourHeight;
+  const top = hourHeight * startTime;
+
+  const duration = end.diff(start);
+  const durationHours = duration * MS_IN_HR;
+  let height = hourHeight * durationHours;
+  height -= DRAFT_PADDING_BOTTOM;
+
+  const left = getLeftPosition(
+    category,
+    startIndex,
+    colWidths,
+    event,
+    width,
+    isDraft,
+  );
+
+  const position = { height, left, top, width };
+  return position;
+};
+
+export const getEventPosition = (
+  event: Schema_GridEvent,
+  startOfView: Dayjs,
+  endOfView: Dayjs,
+  measurements: Measurements_Grid,
+  isDraft: boolean,
+) => {
+  if (event.isAllDay) {
+    return getAllDayEventPosition(
+      event,
+      startOfView,
+      endOfView,
+      measurements,
+      isDraft,
+    );
+  }
+  return getTimedEventPosition(
+    event,
+    startOfView,
+    endOfView,
+    measurements,
+    isDraft,
+  );
 };
 
 const getRelativeLeftPosition = (

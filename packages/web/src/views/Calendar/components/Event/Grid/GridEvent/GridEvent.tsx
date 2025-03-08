@@ -15,7 +15,7 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isOptimisticEvent } from "@web/common/utils/event.util";
 import { getLineClamp } from "@web/common/utils/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
-import { getPosition } from "@web/common/utils/position.util";
+import { getEventPosition } from "@web/common/utils/position.util";
 import { getTimesLabel } from "@web/common/utils/web.date.util";
 import { Flex } from "@web/components/Flex";
 import {
@@ -64,7 +64,7 @@ const _GridEvent = (
   const event = _event;
   const isOptimistic = isOptimisticEvent(event);
 
-  const position = getPosition(
+  const position = getEventPosition(
     event,
     component.startOfView,
     component.endOfView,
