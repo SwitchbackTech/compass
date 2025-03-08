@@ -393,7 +393,9 @@ const _getEventDayNumbers = (event: Schema_Event) => {
         - July 5 is [86]
         - There is no overlap, so they can fit on the same row
   */
-  eventDays.pop();
+  if (eventDays.length > 1) {
+    eventDays.pop();
+  }
   return eventDays;
 };
 
