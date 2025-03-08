@@ -58,19 +58,12 @@ export const useDraftEffects = (
   }, [handleChange]);
 
   useEffect(() => {
-    if (isDragging) {
+    if (isDragging && draft) {
       setIsFormOpen(false);
-      setDraft((_draft) => {
-        const durationMin = dayjs(_draft.endDate).diff(
-          _draft.startDate,
-          "minutes",
-        );
+      const durationMin = dayjs(draft.endDate).diff(draft.startDate, "minutes");
 
-        setDragStatus({
-          durationMin,
-        });
-
-        return draft;
+      setDragStatus({
+        durationMin,
       });
     }
   }, [isDragging]);
