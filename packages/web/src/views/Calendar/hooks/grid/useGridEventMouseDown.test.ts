@@ -6,10 +6,10 @@ import * as gridUtils from "@web/common/utils/grid.util";
 import {
   GRID_EVENT_MOUSE_HOLD_DELAY,
   GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD,
-  useGridEventMouseHold,
-} from "./useGridEventMouseHold";
+  useGridEventMouseDown,
+} from "./useGridEventMouseDown";
 
-describe("useGridEventMouseHold", () => {
+describe("useGridEventMouseDown", () => {
   const onClick = jest.fn();
   const onDrag = jest.fn();
   const stopPropagation = jest.fn();
@@ -47,7 +47,7 @@ describe("useGridEventMouseHold", () => {
 
   it("should trigger click when mouse releases before hold delay", () => {
     const { result } = renderHook(() =>
-      useGridEventMouseHold(Categories_Event.TIMED, onClick, onDrag),
+      useGridEventMouseDown(Categories_Event.TIMED, onClick, onDrag),
     );
 
     result.current.onMouseDown(mockMouseEvent, mockEvent);
@@ -66,7 +66,7 @@ describe("useGridEventMouseHold", () => {
 
   it("should trigger drag when mouse stays down after hold delay", () => {
     const { result } = renderHook(() =>
-      useGridEventMouseHold(Categories_Event.TIMED, onClick, onDrag),
+      useGridEventMouseDown(Categories_Event.TIMED, onClick, onDrag),
     );
 
     result.current.onMouseDown(mockMouseEvent, mockEvent);
@@ -78,7 +78,7 @@ describe("useGridEventMouseHold", () => {
 
   it("should trigger drag when mouse moves before hold delay", () => {
     const { result } = renderHook(() =>
-      useGridEventMouseHold(Categories_Event.TIMED, onClick, onDrag),
+      useGridEventMouseDown(Categories_Event.TIMED, onClick, onDrag),
     );
 
     result.current.onMouseDown(mockMouseEvent, mockEvent);
@@ -104,7 +104,7 @@ describe("useGridEventMouseHold", () => {
 
     it("should trigger drag when mouse is held down after delay", () => {
       const { result } = renderHook(() =>
-        useGridEventMouseHold(Categories_Event.TIMED, onClick, onDrag),
+        useGridEventMouseDown(Categories_Event.TIMED, onClick, onDrag),
       );
 
       // Mock :active state to simulate mouse still being down
@@ -121,7 +121,7 @@ describe("useGridEventMouseHold", () => {
 
     it("should not trigger drag when mouse is released before delay", () => {
       const { result } = renderHook(() =>
-        useGridEventMouseHold(Categories_Event.TIMED, onClick, onDrag),
+        useGridEventMouseDown(Categories_Event.TIMED, onClick, onDrag),
       );
 
       result.current.onMouseDown(mockMouseEvent, mockEvent);
@@ -137,7 +137,7 @@ describe("useGridEventMouseHold", () => {
 
     it("should not trigger drag when mouse moves", () => {
       const { result } = renderHook(() =>
-        useGridEventMouseHold(Categories_Event.TIMED, onClick, onDrag),
+        useGridEventMouseDown(Categories_Event.TIMED, onClick, onDrag),
       );
 
       result.current.onMouseDown(mockMouseEvent, mockEvent);

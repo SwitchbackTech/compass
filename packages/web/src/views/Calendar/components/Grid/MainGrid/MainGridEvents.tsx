@@ -7,7 +7,7 @@ import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { useGridEventMouseHold } from "@web/views/Calendar/hooks/grid/useGridEventMouseHold";
+import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
@@ -45,7 +45,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     );
   };
 
-  const { onMouseDown } = useGridEventMouseHold(
+  const { onMouseDown } = useGridEventMouseDown(
     Categories_Event.TIMED,
     handleClick,
     handleDrag,
