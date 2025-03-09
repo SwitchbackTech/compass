@@ -63,6 +63,7 @@ const _GridEvent = (
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
   const isOptimistic = isOptimisticEvent(event);
+  const isRecurring = event.recurrence && event.recurrence?.eventId !== null;
 
   const position = getEventPosition(
     event,
@@ -90,6 +91,12 @@ const _GridEvent = (
     left: position.left,
     lineClamp,
     onMouseDown: (e: MouseEvent) => {
+      if (isRecurring) {
+        console.log(event);
+        alert("Can't edit recurring events (yet)");
+        e.stopPropagation();
+        return;
+      }
       if (
         isOptimistic || // Event is in the process of being created, don't allow any interactions until it's completely saved
         isRightClick(e) // Ignores right click here so it can pass through to context menu
@@ -116,6 +123,7 @@ const _GridEvent = (
       >
         <StyledEventTitle size="m" role="textbox">
           {event.title}
+          {isRecurring && "*"}
         </StyledEventTitle>
         {!event.isAllDay && (
           <>
@@ -130,7 +138,14 @@ const _GridEvent = (
             <>
               <StyledEventScaler
                 showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
-                onMouseDown={(e) => onScalerMouseDown(event, e, "startDate")}
+                onMouseDown={(e) => {
+                  if (isRecurring) {
+                    alert("Can't edit recurring events (yet)");
+                    e.stopPropagation();
+                    return;
+                  }
+                  onScalerMouseDown(event, e, "startDate");
+                }}
                 top="-0.25px"
                 zIndex={ZIndex.LAYER_4}
               />
@@ -138,7 +153,14 @@ const _GridEvent = (
               <StyledEventScaler
                 bottom="-0.25px"
                 showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
-                onMouseDown={(e) => onScalerMouseDown(event, e, "endDate")}
+                onMouseDown={(e) => {
+                  if (isRecurring) {
+                    alert("Can't edit recurring events (yet)");
+                    e.stopPropagation();
+                    return;
+                  }
+                  onScalerMouseDown(event, e, "endDate");
+                }}
                 zIndex={ZIndex.LAYER_4}
               />
             </>

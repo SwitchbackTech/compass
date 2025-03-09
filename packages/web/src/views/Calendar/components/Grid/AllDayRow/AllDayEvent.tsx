@@ -39,6 +39,7 @@ const AllDayEvent = ({
   );
 
   const isOptimistic = isOptimisticEvent(event);
+  const isRecurring = event.recurrence && event.recurrence?.eventId !== null;
 
   const styledEventProps = {
     [DATA_EVENT_ELEMENT_ID]: event._id,
@@ -51,9 +52,17 @@ const AllDayEvent = ({
     isResizing: false,
     left: position.left,
     lineClamp: 1,
-    onMouseDown: (e: MouseEvent) => onMouseDown(e, event),
+    onMouseDown: (e: MouseEvent) => {
+      if (isRecurring) {
+        console.log(event);
+        alert("Can't edit recurring events (yet)");
+        e.stopPropagation();
+        return;
+      }
+      onMouseDown(e, event);
+    },
     priority: event.priority || Priorities.UNASSIGNED,
-    role: "button",
+    role: isRecurring ? undefined : "button",
     top: position.top,
     width: position.width,
   };
@@ -64,8 +73,9 @@ const AllDayEvent = ({
         alignItems={AlignItems.FLEX_START}
         direction={FlexDirections.COLUMN}
       >
-        <Text size="m" role="textbox">
+        <Text size="m" role={isRecurring ? undefined : "textbox"}>
           {event.title}
+          {isRecurring && "*"}
           <SpaceCharacter />
         </Text>
       </Flex>
