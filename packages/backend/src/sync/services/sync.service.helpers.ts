@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { WithId } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
@@ -211,12 +212,16 @@ export const importEvents = async (
   let total = 0;
 
   const numYears = 1;
-  const xYearsAgo = yearsAgo(numYears);
+  const timeMin = yearsAgo(numYears).toISOString();
+  const timeMax = dayjs().add(6, "months").toISOString();
 
   do {
     const params: gParamsEventsList = {
       calendarId,
-      timeMin: xYearsAgo.toISOString(),
+      timeMin,
+      timeMax,
+      singleEvents: true,
+      orderBy: "startTime",
       pageToken: nextPageToken,
     };
 
