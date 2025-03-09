@@ -40,7 +40,6 @@ export const useDraftEffects = (
   }, [dateBeingChanged, isResizing]);
 
   useEffect(() => {
-    // const isStaleDraft = !isDrafting && (isResizing || isDragging);
     const isStaleDraft = !isDrafting;
     if (isStaleDraft) {
       setDraft(null);
@@ -51,26 +50,28 @@ export const useDraftEffects = (
       setResizeStatus(null);
       setDateBeingChanged(null);
     }
-  }, [isDrafting]);
+  }, [
+    isDrafting,
+    setDateBeingChanged,
+    setDraft,
+    setDragStatus,
+    setIsDragging,
+    setIsFormOpen,
+    setIsResizing,
+    setResizeStatus,
+  ]);
 
   useEffect(() => {
     handleChange();
   }, [handleChange]);
 
   useEffect(() => {
-    if (isDragging) {
+    if (isDragging && draft) {
       setIsFormOpen(false);
-      setDraft((_draft) => {
-        const durationMin = dayjs(_draft.endDate).diff(
-          _draft.startDate,
-          "minutes",
-        );
+      const durationMin = dayjs(draft.endDate).diff(draft.startDate, "minutes");
 
-        setDragStatus({
-          durationMin,
-        });
-
-        return draft;
+      setDragStatus({
+        durationMin,
       });
     }
   }, [isDragging]);
