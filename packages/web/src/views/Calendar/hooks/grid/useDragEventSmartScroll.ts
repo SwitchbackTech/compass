@@ -13,7 +13,7 @@ export const useDragEventSmartScroll = (
 
   useEffect(() => {
     if (!state.isDragging) return;
-    if (state.draft?.isAllDay) return;
+    if (state.draft?.isAllDay !== false) return;
 
     const updateMousePosition = (event: MouseEvent) => {
       setMousePosition({ x: event.clientX, y: event.clientY });
@@ -24,15 +24,16 @@ export const useDragEventSmartScroll = (
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
     };
-  }, [state.isDragging]);
+  }, [state.draft?.isAllDay, state.isDragging]);
 
   useEffect(() => {
     if (!mainGridRef.current) return;
-
     const container = mainGridRef.current;
 
     const scrollIfNeeded = () => {
+      if (!state.isDragging) return;
       if (!container) return;
+      if (state.draft?.isAllDay !== false) return;
 
       const { top, bottom } = container.getBoundingClientRect();
       const { y } = mousePosition;
@@ -67,6 +68,5 @@ export const useDragEventSmartScroll = (
         scrollRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mousePosition]);
 };

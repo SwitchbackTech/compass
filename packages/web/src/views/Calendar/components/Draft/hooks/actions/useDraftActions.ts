@@ -147,14 +147,12 @@ export const useDraftActions = (
   };
 
   const discard = useCallback(() => {
-    if (draft) {
-      setDraft(null);
-    }
+    reset();
 
     if (reduxDraft || reduxDraftType) {
       dispatch(draftSlice.actions.discard());
     }
-  }, [dispatch, draft, reduxDraft, reduxDraftType]);
+  }, [dispatch, draft, reduxDraft, reduxDraftType, setDraft]);
 
   const drag = useCallback(
     (e: MouseEvent) => {

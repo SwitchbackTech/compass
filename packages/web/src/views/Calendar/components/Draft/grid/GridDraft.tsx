@@ -3,7 +3,7 @@ import { FloatingFocusManager } from "@floating-ui/react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { useGridEventMouseHold } from "@web/views/Calendar/hooks/grid/useGridEventMouseHold";
+import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EventForm } from "@web/views/Forms/EventForm";
@@ -35,9 +35,16 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
     actions.convert(start, end);
   };
 
-  const { onMouseDown } = useGridEventMouseHold((event) => {
+  const handleClick = () => {};
+  const handleDrag = () => {
     setIsDragging(true);
-  }, Categories_Event.TIMED);
+  };
+
+  const { onMouseDown } = useGridEventMouseDown(
+    Categories_Event.TIMED,
+    handleClick,
+    handleDrag,
+  );
 
   if (!draft) return null;
 

@@ -122,7 +122,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       role="form"
     >
       <StyledIconRow>
-        <IconButton onClick={onDelete} aria-label="Delete Someday Event">
+        <IconButton
+          onClick={onDelete}
+          aria-label="Delete Someday Event"
+          type="button"
+        >
           <Trash />
         </IconButton>
       </StyledIconRow>
