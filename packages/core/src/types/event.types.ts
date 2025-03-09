@@ -50,9 +50,9 @@ export interface Schema_Event {
   origin?: Origin;
   priority?: Priority;
   recurrence?: {
-    rule?: string[];
-    eventId?: string;
-  };
+    rule?: string[] | null;
+    eventId?: string | null;
+  } | null;
   startDate?: string;
   title?: string;
   updatedAt?: Date | string;

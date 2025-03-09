@@ -83,6 +83,14 @@ const _toCompass = (
       ? Priorities.UNASSIGNED
       : (_origPriority as Priority);
 
+  const recurrence =
+    gEvent.recurrence || gEvent.recurringEventId
+      ? {
+          rule: gEvent.recurrence || [],
+          eventId: gEvent.recurringEventId || gEvent.id,
+        }
+      : undefined;
+
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
     user: userId,
@@ -97,6 +105,7 @@ const _toCompass = (
     // @ts-ignore
     endDate: _isAllDay ? _end.date : _end.dateTime,
     priority: _priority,
+    ...(recurrence ? { recurrence } : {}),
     updatedAt: new Date(),
   };
 
