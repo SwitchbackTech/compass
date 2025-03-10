@@ -16,11 +16,9 @@ class EventController {
     try {
       if (req.body instanceof Array) {
         const events = req.body as Schema_Event[];
-        events.forEach(validateEvent);
+        const validatedEvents = events.map(validateEvent);
 
-        const response = await eventService.createMany(
-          events as Schema_Event_Core[],
-        );
+        const response = await eventService.createMany(validatedEvents);
         res.promise(response);
         return;
       }
