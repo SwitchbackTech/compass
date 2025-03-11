@@ -101,11 +101,20 @@ export const useDraftActions = (
 
     const isExisting = event._id;
     if (isExisting) {
-      const isOutsideView =
-        !dayjs(event.startDate).isBetween(startOfView, endOfView, null, "[]") &&
-        !dayjs(event.endDate).isBetween(startOfView, endOfView, null, "[]");
+      const isDateWithinView = (date: string) =>
+        dayjs(date).isBetween(startOfView, endOfView, null, "[]");
 
-      const shouldRemove = isOutsideView ? true : false;
+      const isStartDateInView = isDateWithinView(event.startDate);
+      const isEndDateInView = isDateWithinView(event.endDate);
+      const doesEventSpanView =
+        dayjs(event.startDate).isBefore(startOfView) &&
+        dayjs(event.endDate).isAfter(endOfView);
+
+      const isEventCompletelyOutsideView =
+        !isStartDateInView && !isEndDateInView && !doesEventSpanView;
+
+      const shouldRemove = isEventCompletelyOutsideView;
+
       const payload = { _id: event._id, event, shouldRemove };
       dispatch(editEventSlice.actions.request(payload));
     } else {
