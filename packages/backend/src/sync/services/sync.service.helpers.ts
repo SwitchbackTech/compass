@@ -1,13 +1,16 @@
+import dayjs from "dayjs";
 import { WithId } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { MapCalendarList } from "@core/mappers/map.calendarlist";
 import { MapEvent } from "@core/mappers/map.event";
 import { Schema_CalendarList } from "@core/types/calendar.types";
+import { Schema_Event_Core } from "@core/types/event.types";
 import {
   gCalendar,
   gParamsImportAllEvents,
   gSchema$CalendarList,
+  gSchema$Event,
 } from "@core/types/gcal";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import {
@@ -47,11 +50,11 @@ import {
   assembleEventOperations,
   categorizeGcalEvents,
   getActiveDeadline,
-  getSummary,
   isUsingHttps,
   syncExpired,
   syncExpiresSoon,
 } from "../util/sync.utils";
+import { logSyncOperation } from "./sync.logger";
 import syncService from "./sync.service";
 
 /**
@@ -249,47 +252,115 @@ export const importAllEvents = async (
   };
 };
 
-export const importEventsByCalendar = async (
+/**
+ * Fetches all instances of a recurring event series and returns them as Compass events
+ * TODO organize
+ */
+const getRecurringEventInstances = async (
   userId: string,
-  syncInfo: Payload_Sync_Events,
-  gcal?: gCalendar,
-) => {
-  if (!gcal) gcal = await getGcalClient(userId);
-  const { gCalendarId } = syncInfo;
+  gcal: gCalendar,
+  calendarId: string,
+  recurringEventId: string,
+): Promise<Schema_Event_Core[]> => {
+  // Get instances for next 6 months
+  const timeMin = new Date().toISOString();
+  const timeMax = dayjs().add(6, "months").toISOString();
 
-  const noChanges = {
-    calendar: gCalendarId,
-    result: {
-      updated: 0,
-      deleted: 0,
-    },
-  };
+  console.log("fetching instances for:", recurringEventId);
+  const response = await gcalService.getEvents(gcal, {
+    calendarId,
+    timeMin,
+    timeMax,
+    singleEvents: true,
+    // Use q parameter to filter by recurring event ID since the API doesn't have a direct parameter
+    q: recurringEventId,
+  });
 
-  let nextSyncToken: string | null | undefined = syncInfo.nextSyncToken;
-  let nextPageToken: string | null | undefined = undefined;
-  let deleted = 0;
+  if (!response?.data?.items) {
+    console.log("no items found for:", recurringEventId);
+    return [];
+  }
+
+  // Filter to only get events from this recurring series
+  const seriesEvents = response.data.items.filter(
+    (event) => event.recurringEventId === recurringEventId,
+  );
+
+  console.log("series events:", seriesEvents);
+
+  // Convert to Compass events
+  const compassEvents = MapEvent.toCompass(
+    userId,
+    seriesEvents,
+    Origin.GOOGLE_IMPORT,
+  );
+
+  console.log("compass events:", compassEvents);
+  return compassEvents;
+};
+
+interface ProcessedEvents {
+  regularEvents: Schema_Event_Core[];
+  expandedEvents: Schema_Event_Core[];
+  toDelete: string[];
+}
+
+/**
+ * Process events from Google Calendar, handling both regular and recurring events
+ */
+const processGoogleEvents = async (
+  userId: string,
+  gcal: gCalendar,
+  gCalendarId: string,
+  updatedEvents: gSchema$Event[],
+): Promise<ProcessedEvents> => {
+  const { toDelete, toUpdate } = categorizeGcalEvents(updatedEvents);
+
+  // Handle recurring events
+  const expandedEvents: Schema_Event_Core[] = [];
+  for (const event of toUpdate) {
+    if (
+      event.recurringEventId ||
+      (event.recurrence && event.recurrence.length > 0)
+    ) {
+      console.log("recurring event:", event);
+      const recurringId = event.recurringEventId || event.id;
+      if (!recurringId) continue;
+
+      const instances = await getRecurringEventInstances(
+        userId,
+        gcal,
+        gCalendarId,
+        recurringId,
+      );
+      console.log("# instances:", instances.length);
+      expandedEvents.push(...instances);
+    }
+  }
+
+  // Process regular events
+  const regularEvents = MapEvent.toCompass(
+    userId,
+    toUpdate.filter((e) => !e.recurringEventId && !e.recurrence),
+    Origin.GOOGLE_IMPORT,
+  );
+
+  return { regularEvents, expandedEvents, toDelete };
+};
+
+/**
+ * Update database with processed events
+ */
+const updateDatabase = async (
+  userId: string,
+  events: ProcessedEvents,
+): Promise<{ updated: number; deleted: number }> => {
+  const ops = assembleEventOperations(userId, events.toDelete, []);
   let updated = 0;
+  let deleted = 0;
 
-  do {
-    const syncToken = getSyncToken(nextPageToken, nextSyncToken);
-    const response = await getUpdatedEvents(gcal, gCalendarId, syncToken);
-    const updatedEvents = response.items || [];
-
-    if (updatedEvents.length === 0) {
-      return noChanges;
-    }
-
-    const { toDelete, toUpdate } = categorizeGcalEvents(updatedEvents);
-    const summary = getSummary(toUpdate, toDelete, syncInfo.resourceId);
-    logger.debug(summary);
-
-    const ops = assembleEventOperations(userId, toDelete, toUpdate);
-
-    if (Object.keys(ops).length === 0) {
-      logger.warn("No detected changes");
-      return noChanges;
-    }
-
+  // First handle deletions
+  if (ops.length > 0) {
     const result = await mongoService.db
       .collection(Collections.EVENT)
       .bulkWrite(ops);
@@ -304,22 +375,105 @@ export const importEventsByCalendar = async (
     updated +=
       result.insertedCount + result.upsertedCount + result.modifiedCount;
     deleted += result.deletedCount;
+  }
+
+  // Then create/update all events including recurring instances
+  const allEvents = [...events.regularEvents, ...events.expandedEvents];
+  if (allEvents.length > 0) {
+    await eventService.createMany(allEvents);
+    updated += allEvents.length;
+  }
+
+  console.log("updated:", updated);
+  console.log("deleted:", deleted);
+
+  return { updated, deleted };
+};
+
+/**
+ * Update sync tokens and timestamps
+ */
+const updateSync = async (
+  userId: string,
+  gCalendarId: string,
+  prevSyncToken: string,
+  newSyncToken: string | null | undefined,
+) => {
+  await updateSyncTimeBy("gCalendarId", gCalendarId, userId);
+  await updateSyncTokenIfNeededFor("events", userId, gCalendarId, {
+    prev: prevSyncToken,
+    curr: newSyncToken as string,
+  });
+};
+
+export const importEventsByCalendar = async (
+  userId: string,
+  syncInfo: Payload_Sync_Events,
+  gcal?: gCalendar,
+) => {
+  if (!gcal) gcal = await getGcalClient(userId);
+  const { gCalendarId } = syncInfo;
+
+  const noChanges = {
+    calendar: gCalendarId,
+    result: { updated: 0, deleted: 0 },
+  };
+
+  let nextSyncToken: string | null | undefined = syncInfo.nextSyncToken;
+  let nextPageToken: string | null | undefined = undefined;
+  let totalUpdated = 0;
+  let totalDeleted = 0;
+
+  do {
+    const syncToken = getSyncToken(nextPageToken, nextSyncToken);
+    const response = await getUpdatedEvents(gcal, gCalendarId, syncToken);
+    const updatedEvents = response.items || [];
+
+    if (updatedEvents.length === 0) {
+      return noChanges;
+    }
+
+    // Process events from Google Calendar
+    const processedEvents = await processGoogleEvents(
+      userId,
+      gcal,
+      gCalendarId,
+      updatedEvents,
+    );
+
+    // Log the sync operation
+    await logSyncOperation(userId, gCalendarId, {
+      updatedEvents,
+      summary: {
+        toUpdate: updatedEvents,
+        toDelete: processedEvents.toDelete,
+        resourceId: syncInfo.resourceId,
+      },
+      operations: assembleEventOperations(userId, processedEvents.toDelete, []),
+    });
+
+    // Update database
+    const { updated, deleted } = await updateDatabase(userId, processedEvents);
+
+    totalUpdated += updated;
+    totalDeleted += deleted;
 
     nextSyncToken = response.nextSyncToken;
     nextPageToken = response.nextPageToken;
   } while (nextPageToken !== undefined);
 
-  await updateSyncTimeBy("gCalendarId", gCalendarId, userId);
-  await updateSyncTokenIfNeededFor("events", userId, gCalendarId, {
-    prev: syncInfo.nextSyncToken as string,
-    curr: nextSyncToken as string,
-  });
+  await updateSync(
+    userId,
+    gCalendarId,
+    syncInfo.nextSyncToken as string,
+    nextSyncToken,
+  );
 
   return {
     calendar: gCalendarId,
     result: {
-      updated,
-      deleted,
+      updated: totalUpdated,
+      deleted: totalDeleted,
     },
   };
 };
