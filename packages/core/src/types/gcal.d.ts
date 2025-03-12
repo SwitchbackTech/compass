@@ -14,3 +14,21 @@ export declare type gSchema$Events$Union = gSchema$Events | gSchema$Events[];
 
 export declare type gParamsEventsList =
   calendar.calendar_v3.Params$Resource$Events$List;
+
+/**
+ * Params for importing all events from a calendar, excluding those
+ * that would conflict with nextSyncToken
+ *
+ * @see https://developers.google.com/calendar/api/v3/reference/events/list
+ */
+export declare type gParamsImportAllEvents = Omit<
+  gParamsEventsList,
+  | "iCalUID"
+  | "orderBy"
+  | "privateExtendedProperty"
+  | "q"
+  | "sharedExtendedProperty"
+  | "timeMin"
+  | "timeMax"
+  | "updatedMin"
+>;

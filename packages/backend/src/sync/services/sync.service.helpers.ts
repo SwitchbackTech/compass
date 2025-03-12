@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { WithId } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
@@ -7,7 +6,7 @@ import { MapEvent } from "@core/mappers/map.event";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import {
   gCalendar,
-  gParamsEventsList,
+  gParamsImportAllEvents,
   gSchema$CalendarList,
 } from "@core/types/gcal";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
@@ -29,7 +28,6 @@ import {
   SyncError,
 } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { yearsAgo } from "@backend/common/helpers/common.util";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import {
   isFullSyncRequired,
@@ -202,26 +200,20 @@ export const hasAnyActiveEventSync = (sync: Schema_Sync) => {
   return false;
 };
 
-export const importEvents = async (
+export const importAllEvents = async (
   userId: string,
   gcal: gCalendar,
   calendarId: string,
 ) => {
   let nextPageToken: string | undefined = undefined;
-  let nextSyncToken: string | null | undefined = undefined;
+  let nextSyncToken: string | undefined = undefined;
+
   let total = 0;
 
-  const numYears = 1;
-  const timeMin = yearsAgo(numYears).toISOString();
-  const timeMax = dayjs().add(6, "months").toISOString();
-
   do {
-    const params: gParamsEventsList = {
+    const params: gParamsImportAllEvents = {
       calendarId,
-      timeMin,
-      timeMax,
       singleEvents: true,
-      orderBy: "startTime",
       pageToken: nextPageToken,
     };
 
@@ -242,15 +234,19 @@ export const importEvents = async (
       await eventService.createMany(cEvents);
     }
 
-    nextPageToken = gEvents.data.nextPageToken as string;
-    nextSyncToken = gEvents.data.nextSyncToken;
+    nextPageToken = gEvents.data.nextPageToken ?? undefined;
+    nextSyncToken = gEvents.data.nextSyncToken ?? undefined;
   } while (nextPageToken !== undefined);
 
-  const summary = {
-    total: total,
-    nextSyncToken: nextSyncToken as string,
+  // nextSyncToken is defined when there are no more events
+  if (!nextSyncToken) {
+    throw error(GcalError.NoSyncToken, "Failed to get sync token");
+  }
+
+  return {
+    total,
+    nextSyncToken,
   };
-  return summary;
 };
 
 export const importEventsByCalendar = async (
@@ -276,7 +272,6 @@ export const importEventsByCalendar = async (
 
   do {
     const syncToken = getSyncToken(nextPageToken, nextSyncToken);
-
     const response = await getUpdatedEvents(gcal, gCalendarId, syncToken);
     const updatedEvents = response.items || [];
 
@@ -376,9 +371,11 @@ export const prepSyncMaintenance = async () => {
         ignored.push(userId);
       }
     } else {
-      hasAnyActiveEventSync(sync)
-        ? toPrune.push(sync.user)
-        : ignored.push(userId);
+      if (hasAnyActiveEventSync(sync)) {
+        toPrune.push(sync.user);
+      } else {
+        ignored.push(userId);
+      }
     }
   }
 

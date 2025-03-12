@@ -30,7 +30,7 @@ import { getChannelExpiration, isUsingHttps } from "../util/sync.utils";
 import {
   assembleEventImports,
   getCalendarInfo,
-  importEvents,
+  importAllEvents,
   importEventsByCalendar,
   prepIncrementalImport,
   prepSyncMaintenance,
@@ -104,7 +104,7 @@ class SyncService {
     userId: string,
   ) => {
     const eventImports = gCalendarIds.map(async (gCalId) => {
-      const { nextSyncToken } = await importEvents(userId, gcal, gCalId);
+      const { nextSyncToken } = await importAllEvents(userId, gcal, gCalId);
       if (isUsingHttps()) {
         await updateSyncTokenFor("events", userId, nextSyncToken, gCalId);
       } else {
@@ -273,6 +273,7 @@ class SyncService {
     watchParams: { gCalId: string; nextSyncToken?: string }[],
     gcal: gCalendar,
   ) => {
+    console.log("starting event watch for:", watchParams);
     const eventWatches = watchParams.map(async (gInfo) => {
       await this.startWatchingGcalEvents(
         userId,
