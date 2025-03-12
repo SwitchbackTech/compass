@@ -1,5 +1,6 @@
 import { SessionRequest } from "supertokens-node/framework/express";
 import {
+  Event_Core,
   Params_DeleteMany,
   Payload_Order,
   Schema_Event,
@@ -16,7 +17,11 @@ class EventController {
     try {
       if (req.body instanceof Array) {
         const events = req.body as Schema_Event[];
-        const validatedEvents = events.map(validateEvent);
+
+        const validatedEvents = events.map((event) => {
+          const validated = validateEvent(event);
+          return validated;
+        });
 
         const response = await eventService.createMany(validatedEvents);
         res.promise(response);
@@ -26,10 +31,7 @@ class EventController {
       const event = req.body;
       validateEvent(event);
 
-      const response = await eventService.create(
-        userId,
-        event as Schema_Event_Core,
-      );
+      const response = await eventService.create(userId, event as Event_Core);
 
       res.promise(response);
     } catch (e) {

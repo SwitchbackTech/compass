@@ -41,7 +41,6 @@ class AuthController {
     const { cUserId, email } = req.body;
 
     if (cUserId) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       const sUserId = supertokens.convertToRecipeUserId(cUserId);
       await Session.createNewSession(req, res, "public", sUserId);
     }
@@ -53,7 +52,7 @@ class AuthController {
         res.promise({ error: "user doesn't exist" });
         return;
       }
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+
       const sUserId = supertokens.convertToRecipeUserId(user._id.toString());
       await Session.createNewSession(req, res, "public", sUserId);
     }
