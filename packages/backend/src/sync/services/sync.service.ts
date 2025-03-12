@@ -273,7 +273,6 @@ class SyncService {
     watchParams: { gCalId: string; nextSyncToken?: string }[],
     gcal: gCalendar,
   ) => {
-    console.log("starting event watch for:", watchParams);
     const eventWatches = watchParams.map(async (gInfo) => {
       await this.startWatchingGcalEvents(
         userId,
