@@ -43,7 +43,7 @@ import {
 } from "./event.service.util";
 
 class EventService {
-  create = async (userId: string, event: Schema_Event_Core) => {
+  create = async (userId: string, event: Event_Core) => {
     const { _event, isRecurring, syncToGcal } = getCreateParams(userId, event);
 
     //  must update gcal's data before Compass's

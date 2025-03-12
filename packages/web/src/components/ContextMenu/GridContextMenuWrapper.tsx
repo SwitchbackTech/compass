@@ -78,6 +78,14 @@ export const ContextMenuWrapper = ({
       const event = getSelectedEvent(eventId);
       if (isOptimisticEvent(event)) return;
 
+      const isRecurring =
+        event.recurrence && event.recurrence?.eventId !== null;
+      if (isRecurring) {
+        alert("Can't edit recurring events (yet)");
+        e.stopPropagation();
+        return;
+      }
+
       // Create a virtual element where the user clicked
       refs.setReference({
         getBoundingClientRect: () => new DOMRect(e.clientX, e.clientY, 0, 0), // Position menu exactly at the click position

@@ -77,12 +77,19 @@ const _toCompass = (
   const _start = gEvent.start == undefined ? placeHolder.start : gEvent.start;
   const _end = gEvent.end === undefined ? placeHolder.end : gEvent.end;
   const _isAllDay = gEvent.start !== undefined && "date" in gEvent.start;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const _origPriority = gEvent.extendedProperties?.private?.["priority"];
   const _priority =
     _origPriority === undefined
       ? Priorities.UNASSIGNED
       : (_origPriority as Priority);
+
+  const recurrence =
+    gEvent.recurrence || gEvent.recurringEventId
+      ? {
+          rule: gEvent.recurrence || [],
+          eventId: gEvent.recurringEventId || gEvent.id,
+        }
+      : undefined;
 
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
@@ -93,12 +100,12 @@ const _toCompass = (
     priorities: [],
     isAllDay: _isAllDay,
     isSomeday: false,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     // @ts-ignore
     startDate: _isAllDay ? _start.date : _start.dateTime,
     // @ts-ignore
     endDate: _isAllDay ? _end.date : _end.dateTime,
     priority: _priority,
+    ...(recurrence ? { recurrence } : {}),
     updatedAt: new Date(),
   };
 
