@@ -126,7 +126,7 @@ export const getSummary = (
         .map((e) => e.summary)
         .toString()}" `;
     } else {
-      updateSummary = `updating ${eventsToUpdate.length}`;
+      updateSummary = `updating ${eventsToUpdate.length} `;
     }
   }
 
