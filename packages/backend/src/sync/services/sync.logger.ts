@@ -23,7 +23,12 @@ export const logSyncOperation = async (
   const timestamp = dayjs().format("YYYY-MM-DD_HH-mm-ss");
   const logDir = path.join(process.cwd(), "logs", "sync");
   const filename = `sync_${userId}_${timestamp}.json`;
-  const fullPath = path.join(logDir, filename);
+  let fullPath = path.resolve(logDir, filename);
+
+  // Ensure the fullPath is within the logDir
+  if (!fullPath.startsWith(logDir)) {
+    throw new Error("Invalid file path");
+  }
 
   // Ensure log directory exists
   if (!fs.existsSync(logDir)) {
