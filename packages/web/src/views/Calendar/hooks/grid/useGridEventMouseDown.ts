@@ -95,10 +95,6 @@ export const useGridEventMouseDown = (
         if (timeoutId.current) {
           clearTimeout(timeoutId.current);
         }
-        if (isEventFormOpen()) {
-          cleanup(element, onMouseMove, onMouseUp);
-          return;
-        }
         onDrag(event);
         cleanup(element, onMouseMove, onMouseUp);
       }
