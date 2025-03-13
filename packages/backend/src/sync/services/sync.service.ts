@@ -26,18 +26,23 @@ import {
   updateSyncFor,
   updateSyncTokenFor,
 } from "../util/sync.queries";
-import { getChannelExpiration, isUsingHttps } from "../util/sync.utils";
+import {
+  getCalendarInfo,
+  getChannelExpiration,
+  isUsingHttps,
+} from "../util/sync.util";
 import {
   assembleEventImports,
-  getCalendarInfo,
   importAllEvents,
   importEventsByCalendar,
   prepIncrementalImport,
+} from "./import/sync.import";
+import {
   prepSyncMaintenance,
   prepSyncMaintenanceForUser,
   pruneSync,
   refreshSync,
-} from "./sync.service.helpers";
+} from "./maintain/sync.maintenance";
 
 const logger = Logger("app:sync.service");
 class SyncService {

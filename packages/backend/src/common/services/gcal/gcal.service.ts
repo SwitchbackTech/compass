@@ -25,6 +25,22 @@ class GCalService {
     return response;
   }
 
+  async getEventInstances(
+    gcal: gCalendar,
+    calendarId: string,
+    eventId: string,
+    timeMin?: string,
+    timeMax?: string,
+  ) {
+    const response = await gcal.events.instances({
+      calendarId,
+      eventId,
+      timeMin,
+      timeMax,
+    });
+    return response;
+  }
+
   async getEvents(gcal: gCalendar, params: gParamsEventsList) {
     const response = await gcal.events.list(params);
     return response;
