@@ -41,5 +41,10 @@ packages/backend/playgroud
 packages/backend/.env
 packages/backend/.prod.env
 
+# backend-shared
+packages/backend-shared/build
+
+# sync
+packages/sync/dist
 
 !.env.example
