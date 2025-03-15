@@ -25,6 +25,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@nestjs/cli": "^11.0.5",
     "@shelf/jest-mongodb": "^4.1.4",
     "@types/cors": "^2.8.12",
     "@types/debug": "^4.1.7",
