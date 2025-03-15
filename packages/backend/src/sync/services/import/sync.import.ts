@@ -8,7 +8,7 @@ import {
   gParamsImportAllEvents,
   gSchema$Event,
 } from "@core/types/gcal";
-import { Payload_Sync_Events, Schema_Sync } from "@core/types/sync.types";
+import { Schema_Sync } from "@core/types/sync.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -24,7 +24,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import {
   getSync,
-  updateSyncTimeBy,
+  updateSync,
   updateSyncTokenFor,
 } from "@backend/sync/util/sync.queries";
 import {
@@ -47,17 +47,24 @@ export interface ProcessedEvents {
   expandedEvents: Schema_Event_Core[];
   toDelete: string[];
 }
+
 export const assembleEventImports = (
   userId: string,
-  gcal: gCalendar,
   eventSyncPayloads: Schema_Sync["google"]["events"],
 ) => {
   const syncEvents = eventSyncPayloads.map((eventSync) =>
-    importEventsByCalendar(userId, eventSync, gcal),
+    importEventsByCalendar(
+      userId,
+      eventSync.gCalendarId,
+      eventSync.nextSyncToken,
+    ),
   );
+
+  console.log("++ syncEvents", syncEvents);
 
   return syncEvents;
 };
+
 /**
  * Fetches all instances of a recurring event series and returns them as Compass events
  */
@@ -70,7 +77,7 @@ const getRecurringEventInstances = async (
   const timeMin = new Date().toISOString();
   const timeMax = dayjs().add(6, "months").toISOString();
 
-  console.log("fetching instances for:", recurringEventId);
+  console.log("Fetching instances for:", recurringEventId);
 
   const { data } = await gcalService.getEventInstances(
     gcal,
@@ -183,77 +190,6 @@ export const importAllEvents = async (
   };
 };
 
-export const importEventsByCalendar = async (
-  userId: string,
-  syncInfo: Payload_Sync_Events,
-  gcal?: gCalendar,
-) => {
-  if (!gcal) gcal = await getGcalClient(userId);
-  const { gCalendarId } = syncInfo;
-
-  const noChanges = {
-    calendar: gCalendarId,
-    result: { updated: 0, deleted: 0 },
-  };
-
-  let nextSyncToken: string | null | undefined = syncInfo.nextSyncToken;
-  let nextPageToken: string | null | undefined = undefined;
-  let totalUpdated = 0;
-  let totalDeleted = 0;
-
-  do {
-    const syncToken = getSyncToken(nextPageToken, nextSyncToken);
-    const response = await getUpdatedEvents(gcal, gCalendarId, syncToken);
-    const updatedEvents = response.items || [];
-
-    if (updatedEvents.length === 0) {
-      return noChanges;
-    }
-
-    // Process events from Google Calendar
-    const processedEvents = await processGoogleEvents(
-      userId,
-      gcal,
-      gCalendarId,
-      updatedEvents,
-    );
-
-    await logSyncOperation(userId, gCalendarId, {
-      updatedEvents,
-      summary: {
-        toUpdate: updatedEvents,
-        toDelete: processedEvents.toDelete,
-        resourceId: syncInfo.resourceId,
-      },
-      operations: assembleEventOperations(userId, processedEvents.toDelete, []),
-    });
-
-    // Update database
-    const { updated, deleted } = await updateDatabase(userId, processedEvents);
-
-    totalUpdated += updated;
-    totalDeleted += deleted;
-
-    nextSyncToken = response.nextSyncToken;
-    nextPageToken = response.nextPageToken;
-  } while (nextPageToken !== undefined);
-
-  await updateSync(
-    userId,
-    gCalendarId,
-    syncInfo.nextSyncToken as string,
-    nextSyncToken,
-  );
-
-  return {
-    calendar: gCalendarId,
-    result: {
-      updated: totalUpdated,
-      deleted: totalDeleted,
-    },
-  };
-};
-
 export const prepIncrementalImport = async (
   userId: string,
   gcal: gCalendar,
@@ -302,6 +238,74 @@ export const prepIncrementalImport = async (
   const newSync = (await getSync({ userId })) as Schema_Sync;
 
   return newSync.google.events;
+};
+
+/**
+ * Process updates for a calendar, handling pagination and event processing
+ */
+export const importEventsByCalendar = async (
+  userId: string,
+  gCalendarId: string,
+  initialSyncToken: string,
+) => {
+  const gcal = await getGcalClient(userId);
+
+  let nextSyncToken: string | null | undefined = initialSyncToken;
+  let nextPageToken: string | null | undefined = undefined;
+  let totalUpdated = 0;
+  let totalDeleted = 0;
+
+  do {
+    const syncToken = getSyncToken(nextPageToken, nextSyncToken);
+    const response = await getUpdatedEvents(gcal, gCalendarId, syncToken);
+    const updatedEvents = response.items || [];
+
+    if (updatedEvents.length === 0) {
+      return { updated: 0, deleted: 0, nextSyncToken };
+    }
+
+    const processedEvents = await processGoogleEvents(
+      userId,
+      gcal,
+      gCalendarId,
+      updatedEvents,
+    );
+
+    await logSyncOperation(userId, gCalendarId, {
+      updatedEvents,
+      summary: {
+        toUpdate: updatedEvents,
+        toDelete: processedEvents.toDelete,
+      },
+      nextSyncToken: response.nextSyncToken ?? undefined,
+      operations: [], // TODO remove / update (skipping for now)
+    });
+
+    const { updated, deleted } = await updateDatabase(userId, processedEvents);
+
+    totalUpdated += updated;
+    totalDeleted += deleted;
+
+    nextSyncToken = response.nextSyncToken;
+    nextPageToken = response.nextPageToken;
+  } while (nextPageToken !== undefined);
+
+  if (!nextSyncToken) {
+    throw error(
+      GcalError.NoSyncToken,
+      `Import failed for calendar: ${gCalendarId}`,
+    );
+  }
+
+  await updateSync(userId, gCalendarId, initialSyncToken, nextSyncToken);
+  const result = {
+    updated: totalUpdated,
+    deleted: totalDeleted,
+    nextSyncToken,
+  };
+  console.log("++ import result:");
+  console.log(result);
+  return result;
 };
 
 /**
@@ -387,34 +391,4 @@ const updateDatabase = async (
   console.log("deleted:", deleted);
 
   return { updated, deleted };
-};
-
-/**
- * Update sync tokens and timestamps
- */
-export const updateSync = async (
-  userId: string,
-  gCalendarId: string,
-  prevSyncToken: string,
-  newSyncToken: string | null | undefined,
-) => {
-  await updateSyncTimeBy("gCalendarId", gCalendarId, userId);
-  await updateSyncTokenIfNeededFor("events", userId, gCalendarId, {
-    prev: prevSyncToken,
-    curr: newSyncToken as string,
-  });
-};
-
-const updateSyncTokenIfNeededFor = async (
-  resource: "events" | "calendarlist",
-  userId: string,
-  gCalendarId: string,
-  vals: {
-    prev: string;
-    curr: string;
-  },
-) => {
-  if (vals.prev !== vals.curr) {
-    await updateSyncTokenFor(resource, userId, vals.curr, gCalendarId);
-  }
 };

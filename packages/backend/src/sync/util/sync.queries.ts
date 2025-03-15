@@ -173,17 +173,13 @@ export const updateSyncFor = async (
     throw error(GenericError.NotImplemented, "Sync Update Failed");
   }
 
-  const _syncData = {
+  const syncData = {
     gCalendarId: data.gCalendarId,
     resourceId: data.resourceId,
     lastSyncedAt: new Date(),
     channelId: data.channelId,
     expiration: data.expiration,
   };
-
-  const syncData = data.nextSyncToken
-    ? { ..._syncData, nextSyncToken: data.nextSyncToken }
-    : _syncData;
 
   const matches = await mongoService.sync.countDocuments({
     user: userId,
@@ -223,7 +219,7 @@ export const updateRefreshedAtFor = async (
   return result;
 };
 
-export const updateSyncTimeBy = async (
+const updateSyncTimeBy = async (
   key: "gCalendarId",
   value: string,
   userId: string,
@@ -273,5 +269,38 @@ export const updateSyncTokenFor = async (
     );
 
     return response;
+  }
+};
+
+/**
+ * Update sync tokens and timestamps
+ */
+export const updateSync = async (
+  userId: string,
+  gCalendarId: string,
+  prevSyncToken: string,
+  newSyncToken: string | undefined,
+) => {
+  await updateSyncTimeBy("gCalendarId", gCalendarId, userId);
+  await updateSyncTokenIfNeededFor("events", userId, gCalendarId, {
+    prev: prevSyncToken,
+    curr: newSyncToken,
+  });
+};
+
+const updateSyncTokenIfNeededFor = async (
+  resource: "events" | "calendarlist",
+  userId: string,
+  gCalendarId: string,
+  vals: {
+    prev: string;
+    curr: string | undefined;
+  },
+) => {
+  if (vals.curr !== undefined) {
+    if (vals.prev !== vals.curr) {
+      console.log("++ updateSyncTokenFor", vals.curr);
+      await updateSyncTokenFor(resource, userId, vals.curr, gCalendarId);
+    }
   }
 };
