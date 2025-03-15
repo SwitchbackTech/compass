@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "../services/sync.service";
@@ -85,11 +86,17 @@ class SyncDebugController {
     try {
       const userId = req.session?.getUserId() as string;
       const calendarId = req.body.calendarId;
+      const gcal = await getGcalClient(userId);
 
-      const watchResult = await syncService.startWatchingGcalEvents(userId, {
-        gCalendarId: calendarId,
-      });
+      const watchResult = await syncService.startWatchingGcalEvents(
+        userId,
+        {
+          gCalendarId: calendarId,
+        },
+        gcal,
+      );
 
+      console.log("++ watchResult", watchResult);
       res.promise(watchResult);
     } catch (e) {
       res.promise(Promise.reject(e));

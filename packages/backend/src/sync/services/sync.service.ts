@@ -26,18 +26,23 @@ import {
   updateSyncFor,
   updateSyncTokenFor,
 } from "../util/sync.queries";
-import { getChannelExpiration, isUsingHttps } from "../util/sync.utils";
+import {
+  getCalendarInfo,
+  getChannelExpiration,
+  isUsingHttps,
+} from "../util/sync.util";
 import {
   assembleEventImports,
-  getCalendarInfo,
   importAllEvents,
   importEventsByCalendar,
   prepIncrementalImport,
+} from "./import/sync.import";
+import {
   prepSyncMaintenance,
   prepSyncMaintenanceForUser,
   pruneSync,
   refreshSync,
-} from "./sync.service.helpers";
+} from "./maintain/sync.maintenance";
 
 const logger = Logger("app:sync.service");
 class SyncService {
@@ -64,7 +69,7 @@ class SyncService {
   };
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    const { channelId, expiration, resourceId, resourceState } = payload;
+    const { channelId, resourceId, resourceState } = payload;
     if (resourceState !== "exists") {
       logger.info(`Sync initialized for channelId: ${channelId}`);
       return "initialized";
@@ -83,15 +88,13 @@ class SyncService {
       resourceId,
     );
 
-    const syncInfo = {
-      channelId,
-      expiration,
+    const response = await importEventsByCalendar(
+      userId,
       gCalendarId,
       nextSyncToken,
-      resourceId,
-    };
+    );
 
-    const response = await importEventsByCalendar(userId, syncInfo);
+    console.log("++ response", response);
 
     webSocketServer.handleBackgroundCalendarChange(userId);
 
@@ -122,7 +125,7 @@ class SyncService {
 
     const eventSyncPayloads = await prepIncrementalImport(userId, gcal);
 
-    const importEvents = assembleEventImports(userId, gcal, eventSyncPayloads);
+    const importEvents = assembleEventImports(userId, eventSyncPayloads);
 
     const result = await Promise.all(importEvents);
 
@@ -145,7 +148,6 @@ class SyncService {
       userId,
       {
         gCalendarId: payload.gCalendarId,
-        nextSyncToken: payload.nextSyncToken,
       },
       gcal,
     );
@@ -225,11 +227,9 @@ class SyncService {
 
   startWatchingGcalEvents = async (
     userId: string,
-    params: { gCalendarId: string; nextSyncToken?: string },
-    gcal?: gCalendar,
+    params: { gCalendarId: string },
+    gcal: gCalendar,
   ) => {
-    if (!gcal) gcal = await getGcalClient(userId);
-
     const alreadyWatching = await isWatchingEventsByGcalId(
       userId,
       params.gCalendarId,
@@ -240,15 +240,11 @@ class SyncService {
 
     const channelId = uuidv4();
     const expiration = getChannelExpiration();
-    let watchParams: Params_WatchEvents = {
+    const watchParams: Params_WatchEvents = {
       gCalendarId: params.gCalendarId,
       channelId: channelId,
       expiration,
     };
-
-    if (params.nextSyncToken) {
-      watchParams = { ...watchParams, nextSyncToken: params.nextSyncToken };
-    }
 
     const { watch } = await gcalService.watchEvents(gcal, watchParams);
     const { resourceId } = watch;
@@ -262,7 +258,6 @@ class SyncService {
       channelId,
       resourceId,
       expiration,
-      nextSyncToken: params.nextSyncToken,
     });
 
     return sync;
@@ -273,11 +268,10 @@ class SyncService {
     watchParams: { gCalId: string; nextSyncToken?: string }[],
     gcal: gCalendar,
   ) => {
-    console.log("starting event watch for:", watchParams);
     const eventWatches = watchParams.map(async (gInfo) => {
       await this.startWatchingGcalEvents(
         userId,
-        { gCalendarId: gInfo.gCalId, nextSyncToken: gInfo.nextSyncToken },
+        { gCalendarId: gInfo.gCalId },
         gcal,
       );
       await updateRefreshedAtFor("events", userId, gInfo.gCalId);

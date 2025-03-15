@@ -7,7 +7,7 @@ import {
 } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SReqBody } from "@backend/common/types/express.types";
-import { hasGoogleHeaders } from "@backend/sync/util/sync.utils";
+import { hasGoogleHeaders } from "@backend/sync/util/sync.util";
 
 class AuthMiddleware {
   verifyIsDev = (_req: Request, res: Response, next: NextFunction) => {

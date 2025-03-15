@@ -1,11 +1,8 @@
 import dayjs from "dayjs";
-import { gcalEvents } from "../../../core/src/__mocks__/events/gcal/gcal.event";
-import { cancelledEventsIds } from "../common/services/gcal/gcal.utils";
-import {
-  categorizeGcalEvents,
-  syncExpired,
-  syncExpiresSoon,
-} from "../sync/util/sync.utils";
+import { gcalEvents } from "../../../../../core/src/__mocks__/events/gcal/gcal.event";
+import { cancelledEventsIds } from "../../../common/services/gcal/gcal.utils";
+import { syncExpired, syncExpiresSoon } from "../../util/sync.util";
+import { categorizeGcalEvents } from "./sync.import.util";
 
 describe("categorizeGcalEvents", () => {
   const { toDelete, toUpdate } = categorizeGcalEvents(gcalEvents.items);
