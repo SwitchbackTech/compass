@@ -1,14 +1,31 @@
 import { Injectable } from '@nestjs/common';
-import { gCalendar, gParamsImportAllEvents } from '../types/gcal';
-import { Params_WatchEvents } from 'src/types/sync.types';
+import { gCalendar, gParamsImportAllEvents } from '@common/types/gcal';
 import { GCalAuthService } from './gcal.auth.service';
-
+import { Params_WatchEvents } from '@common/types/sync.types';
+import { error } from '@common/errors/error.handler';
+import { GcalError } from '@common/errors/error.constants';
 @Injectable()
 export class GCalService {
   constructor(private readonly gCalAuthService: GCalAuthService) {}
 
   async getClient(userId: string): Promise<gCalendar> {
     return this.gCalAuthService.getClient(userId);
+  }
+
+  async getCalendarlist(gcal: gCalendar) {
+    const response = await gcal.calendarList.list();
+
+    if (!response.data.nextSyncToken) {
+      throw error(
+        GcalError.PaginationNotSupported,
+        'Calendarlist sync token not saved',
+      );
+    }
+
+    if (!response.data.items) {
+      throw error(GcalError.CalendarlistMissing, 'gCalendarlist not found');
+    }
+    return response.data;
   }
 
   async getEvents(gcal: gCalendar, params: gParamsImportAllEvents) {

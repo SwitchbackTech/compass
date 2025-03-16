@@ -1,7 +1,7 @@
 import { MongoClient, Db, Collection } from 'mongodb';
-import { Schema_Event } from 'src/types/event.types';
-import { Schema_Sync } from 'src/types/sync.types';
-import { Schema_User } from 'src/types/user.types';
+import { Schema_Sync } from '@common/types/sync.types';
+import { Schema_Event } from '@core/types/event.types';
+import { Schema_User } from '@core/types/user.types';
 
 const IS_DEV = process.env.NODE_ENV === 'development';
 

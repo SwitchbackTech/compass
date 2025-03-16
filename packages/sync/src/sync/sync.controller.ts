@@ -1,7 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { SyncService } from './sync.service';
-import { Payload_Sync_Notif } from '../types/sync.types';
-
+import { Payload_Sync_Notif } from '@common/types/sync.types';
 @Controller('sync')
 export class SyncController {
   constructor(private readonly syncService: SyncService) {}

@@ -1,12 +1,12 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { MongoDbService, MONGO_URI } from '../../db/mongo.provider';
-import { gCalendar } from '../../types/gcal.d';
+import { gCalendar } from '@common/types/gcal';
 
 @Injectable()
 export class SyncImportService {
   constructor(@Inject(MONGO_URI) private db: MongoDbService) {}
 
-  async importEventsByCalendar(
+  importEventsByCalendar(
     userId: string,
     gCalendarId: string,
     initialSyncToken: string,
@@ -15,7 +15,7 @@ export class SyncImportService {
     throw new Error('Not implemented');
   }
 
-  async importAllEvents(userId: string, gcal: gCalendar, calendarId: string) {
+  importAllEvents(userId: string, gcal: gCalendar, calendarId: string) {
     // TODO: Implement full import logic
     throw new Error('Not implemented');
   }

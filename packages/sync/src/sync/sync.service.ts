@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { MongoDbService, MONGO_URI } from '../db/mongo.provider';
-import { Payload_Sync_Notif } from '../types/sync.types';
+import { SyncMaintenanceService } from './maintain/sync.maintain.service';
+import { Payload_Sync_Notif } from '@common/types/sync.types';
 
 @Injectable()
 export class SyncService {
@@ -8,7 +9,7 @@ export class SyncService {
     @Inject(MONGO_URI) private db: MongoDbService,
     // private importService: SyncImportService,
     // private watchService: SyncWatchService,
-    // private maintenanceService: SyncMaintenanceService,
+    private maintenanceService: SyncMaintenanceService,
     // private notificationService: SyncNotificationService,
   ) {}
 
@@ -18,7 +19,6 @@ export class SyncService {
   }
 
   async runMaintenance() {
-    // Implementation coming soon
-    throw new Error('Not implemented');
+    await this.maintenanceService.runMaintenance();
   }
 }

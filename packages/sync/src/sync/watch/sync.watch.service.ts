@@ -2,14 +2,13 @@ import { Injectable, Inject } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { MongoDbService, MONGO_URI } from '../../db/mongo.provider';
 import { GaxiosError } from 'gaxios';
-import { gCalendar } from 'src/types/gcal';
+import { gCalendar } from '@common/types/gcal';
 import {
   Params_WatchEvents,
   Payload_Resource_Events,
-  Schema_Sync,
-} from '../../types/sync.types';
+} from '@common/types/sync.types';
 import { GCalService } from '../../gcal/gcal.service';
-
+import { SyncRepository } from '../../repositories/sync.repository';
 @Injectable()
 export class SyncWatchService {
   private clientMap: Map<string, gCalendar> = new Map();
@@ -17,6 +16,7 @@ export class SyncWatchService {
   constructor(
     @Inject(MONGO_URI) private db: MongoDbService,
     private gcalService: GCalService,
+    private syncRepository: SyncRepository,
   ) {}
 
   private async getClientForUser(userId: string): Promise<gCalendar> {
@@ -34,7 +34,7 @@ export class SyncWatchService {
   ) {
     const gcal = await this.getClientForUser(userId);
 
-    const alreadyWatching = await this.isWatchingEventsByGcalId(
+    const alreadyWatching = await this.syncRepository.isWatchingEventsByGcalId(
       userId,
       params.gCalendarId,
     );
@@ -81,7 +81,7 @@ export class SyncWatchService {
         throw new Error('Stop failed');
       }
 
-      await this.deleteWatchData(userId, 'events', channelId);
+      await this.syncRepository.deleteWatchData(userId, 'events', channelId);
 
       return {
         channelId: channelId,
@@ -92,7 +92,7 @@ export class SyncWatchService {
       const code = (error.code as unknown as number) || 0;
 
       if (error.code === '404' || code === 404) {
-        await this.deleteWatchData(userId, 'events', channelId);
+        await this.syncRepository.deleteWatchData(userId, 'events', channelId);
         console.warn(
           'Channel no longer exists. Corresponding sync record deleted',
         );
@@ -104,7 +104,7 @@ export class SyncWatchService {
   }
 
   async stopWatches(userId: string) {
-    const sync = await this.getSync({ userId });
+    const sync = await this.syncRepository.findSync({ userId });
 
     if (!sync || !sync.google.events) {
       return [];
@@ -134,67 +134,11 @@ export class SyncWatchService {
     return stopped;
   }
 
-  private async isWatchingEventsByGcalId(
-    userId: string,
-    gCalendarId: string,
-  ): Promise<boolean> {
-    const count = await this.db.sync.countDocuments({
-      user: userId,
-      'google.events.gCalendarId': gCalendarId,
-      'google.events.$.channelId': { $exists: true },
-      'google.events.$.expiration': { $exists: true },
-    });
-
-    return count === 1;
-  }
-
-  private async deleteWatchData(
-    userId: string,
-    resource: 'events',
-    channelId: string,
-  ) {
-    return await this.db.sync.updateOne(
-      { user: userId, [`google.${resource}.channelId`]: channelId },
-      {
-        $unset: {
-          [`google.${resource}.$.channelId`]: '',
-          [`google.${resource}.$.expiration`]: '',
-        },
-      },
-    );
-  }
-
   private getChannelExpiration(): string {
     const now = new Date();
     // Google Calendar watch expires after 7 days
     const expiration = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     return expiration.getTime().toString();
-  }
-
-  private async getSync(params: {
-    userId?: string;
-    gCalendarId?: string;
-    resourceId?: string;
-  }): Promise<Schema_Sync | null> {
-    let filter = {};
-
-    if (params.userId) {
-      filter = { user: params.userId };
-    }
-
-    if (params.gCalendarId) {
-      filter = { ...filter, 'google.events.gCalendarId': params.gCalendarId };
-    }
-
-    if (params.resourceId) {
-      filter = { ...filter, 'google.events.resourceId': params.resourceId };
-    }
-
-    if (Object.keys(filter).length === 0) {
-      throw new Error('Sync record could not be retrieved');
-    }
-
-    return await this.db.sync.findOne(filter);
   }
 
   private async updateSyncFor(userId: string, data: Payload_Resource_Events) {

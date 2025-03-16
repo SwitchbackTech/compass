@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
-import { gCalendar } from 'src/types/gcal';
+import { gCalendar } from '@common/types/gcal';
 
 @Injectable()
 export class GCalAuthService {
