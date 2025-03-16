@@ -26,6 +26,9 @@ buildcache/
 logs/
 node_modules/
 
+# common
+packages/common/dist
+
 #core
 packages/core/build/
 
