@@ -1,4 +1,7 @@
-import { MongoClient, Db } from 'mongodb';
+import { MongoClient, Db, Collection } from 'mongodb';
+import { Schema_Event } from 'src/types/event.types';
+import { Schema_Sync } from 'src/types/sync.types';
+import { Schema_User } from 'src/types/user.types';
 
 const IS_DEV = process.env.NODE_ENV === 'development';
 
@@ -12,12 +15,12 @@ export const Collections = {
 };
 
 export interface MongoDbService extends Db {
-  sync: Db['collection'];
-  event: Db['collection'];
-  user: Db['collection'];
+  sync: Collection<Schema_Sync>;
+  event: Collection<Schema_Event>;
+  user: Collection<Schema_User>;
 }
 
-export const MONGO_URI = process.env['MONGO_URI'];
+export const MONGO_URI = process.env['MONGO_URI'] as string;
 if (!MONGO_URI) {
   throw new Error('MONGO_URI is not set');
 }

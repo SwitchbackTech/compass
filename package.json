@@ -27,10 +27,11 @@
     "lint -f": "cross-env yarn workspaces run lint-fix",
     "lint:css": "stylelint 'packages/web/src/**/*.ts'",
     "postinstall": "husky install | chmod ug+x .husky/*",
-    "test": "yarn jest",
+    "test": "yarn jest && yarn test:sync",
     "test:backend": "yarn jest backend",
     "test:core": "yarn test core",
-    "test:web": "yarn test web"
+    "test:web": "yarn test web",
+    "test:sync": "cd packages/sync && yarn jest"
   },
   "dependencies": {
     "@compass/backend": "*",
