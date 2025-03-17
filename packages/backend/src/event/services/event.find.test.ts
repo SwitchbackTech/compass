@@ -1,16 +1,17 @@
-import { MongoClient } from "mongodb";
+import { Collection, Db, MongoClient } from "mongodb";
+import { Schema_Event } from "@core/types/event.types";
 import { mockEventSetJan22 } from "../../../../core/src/__mocks__/events/events.22jan";
 import { mockEventSetSomeday1 } from "../../../../core/src/__mocks__/events/events.someday.1";
 import { getReadAllFilter } from "./event.service.util";
 
 describe("Jan 2022: Many Formats", () => {
-  let connection;
-  let db;
-  let eventCollection;
+  let connection: MongoClient;
+  let db: Db;
+  let eventCollection: Collection<Schema_Event>;
 
   beforeAll(async () => {
     // setup in-memory connection using jest-mongodb
-    connection = await MongoClient.connect(process.env.MONGO_URL as string);
+    connection = await MongoClient.connect(process.env["MONGO_URL"] as string);
     db = await connection.db();
     eventCollection = db.collection("event.find.test");
 

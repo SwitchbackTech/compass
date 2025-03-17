@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
-import { MongoClient, ObjectId } from "mongodb";
+import { Collection, Db, MongoClient, ObjectId } from "mongodb";
+import { Schema_Event } from "@core/types/event.types";
 import {
   mockSomedayRecurrences,
   newsletterId,
@@ -8,13 +9,13 @@ import { YEAR_MONTH_DAY_FORMAT } from "../../../../core/src/constants/date.const
 import { getDeleteByIdFilter } from "./event.service.util";
 
 describe("Delete Events", () => {
-  let connection;
-  let db;
-  let eventCollection;
+  let connection: MongoClient;
+  let db: Db;
+  let eventCollection: Collection<Schema_Event>;
 
   beforeAll(async () => {
     // setup in-memory connection using jest-mongodb
-    connection = await MongoClient.connect(process.env.MONGO_URL as string);
+    connection = await MongoClient.connect(process.env["MONGO_URL"] as string);
     db = await connection.db();
     eventCollection = db.collection("event.delete.test");
   });

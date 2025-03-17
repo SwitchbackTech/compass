@@ -94,7 +94,7 @@ module.exports = {
   // notifyMode: "failure-change",
 
   // A preset that is used as a base for Jest's configuration
-  preset: "@shelf/jest-mongodb",
+  preset: "@shelf/jest-mongodb", // https://jestjs.io/docs/mongodb
 
   projects: [
     {
@@ -151,6 +151,7 @@ module.exports = {
         "^@backend/event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
         "^@backend/priority/(.*)$":
           "<rootDir>/packages/backend/src/priority/$1",
+        "^@backend/servers/(.*)$": "<rootDir>/packages/backend/src/servers/$1",
         "^@backend/sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
         "^@backend/user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
       },
