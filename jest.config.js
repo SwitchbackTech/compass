@@ -154,6 +154,8 @@ module.exports = {
         "^@backend/servers/(.*)$": "<rootDir>/packages/backend/src/servers/$1",
         "^@backend/sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
         "^@backend/user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
+        "^@backend/__tests__/(.*)$":
+          "<rootDir>/packages/backend/src/__tests__/$1",
       },
 
       setupFiles: [

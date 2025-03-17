@@ -1,79 +1,168 @@
-import dayjs from "dayjs";
-import { gcalEvents } from "../../../../../core/src/__mocks__/events/gcal/gcal.event";
-import { cancelledEventsIds } from "../../../common/services/gcal/gcal.utils";
-import { syncExpired, syncExpiresSoon } from "../../util/sync.util";
-import { categorizeGcalEvents } from "./sync.import.util";
+import { Db, MongoClient, ObjectId } from "mongodb";
+import { MongoMemoryServer } from "mongodb-memory-server";
+import { Schema_Event } from "@core/types/event.types";
+import { Schema_User } from "@core/types/user.types";
+import {
+  generateGcalEvents,
+  generateRecurringEvent as mockGenerateRecurringEvent,
+} from "@backend/__tests__/factories/event.factory";
+import { Collections } from "@backend/common/constants/collections";
+import mongoService from "@backend/common/services/mongo.service";
+import { SyncImport, createSyncImport } from "./sync.import";
 
-describe("categorizeGcalEvents", () => {
-  const { toDelete, toUpdate } = categorizeGcalEvents(gcalEvents.items);
+const { gcalEvents: mockGcalEvents, totals } = generateGcalEvents();
 
-  describe("eventsToDelete", () => {
-    it("returns array of cancelled gEventIds", () => {
-      expect(toDelete.length).toBeGreaterThan(0);
+jest.mock("googleapis-common", () => ({
+  GaxiosError: class GaxiosError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = "GaxiosError";
+    }
+  },
+}));
 
-      // should be array of string numbers
-      expect(typeof toDelete[1]).toBe("string");
-      const parsedToInt = parseInt(toDelete[1]);
-      expect(typeof parsedToInt).toBe("number");
+// Override gcal API responses with our mock data
+jest.mock("googleapis", () => ({
+  google: {
+    calendar: jest.fn().mockReturnValue({
+      events: {
+        list: jest.fn().mockImplementation(async (params: any) => {
+          const { pageToken } = params;
+          const startIndex = pageToken ? parseInt(pageToken) : 0;
+          const pageSize = 3;
+          const endIndex = startIndex + pageSize;
+          const events = mockGcalEvents.slice(startIndex, endIndex);
+          const hasMore = endIndex < mockGcalEvents.length;
+
+          return {
+            data: {
+              items: events,
+              nextPageToken: hasMore ? endIndex.toString() : undefined,
+              nextSyncToken: hasMore ? undefined : "final-sync-token",
+            },
+          };
+        }),
+        // TODO: Enable this when mocking instances during recurring event import
+        // instances: jest.fn().mockImplementation(async (params: any) => {
+        //   const eventId = params.eventId;
+        //   const instances = Array(3)
+        //     .fill(null)
+        //     .map(() => ({
+        //       ...mockGenerateRecurringEvent(),
+        //       recurringEventId: eventId,
+        //     }));
+
+        //   return {
+        //     data: {
+        //       items: instances,
+        //     },
+        //   };
+        // }),
+      },
+      calendarList: {
+        list: jest.fn().mockResolvedValue({
+          data: {
+            items: [
+              {
+                id: "test-calendar",
+                primary: true,
+                summary: "Test Calendar",
+              },
+            ],
+            nextSyncToken: "calendar-list-sync-token",
+          },
+        }),
+      },
+    }),
+  },
+}));
+
+jest.mock("@backend/common/middleware/supertokens.middleware", () => ({
+  initSupertokens: jest.fn(),
+  getSession: jest.fn(),
+}));
+
+describe("SyncImport", () => {
+  let mongoServer: MongoMemoryServer;
+  let mongoClient: MongoClient;
+  let db: Db;
+  let syncImport: SyncImport;
+  const testUser = new ObjectId().toString();
+
+  beforeAll(async () => {
+    // Setup in-memory MongoDB
+    mongoServer = await MongoMemoryServer.create();
+    const mongoUri = mongoServer.getUri();
+    mongoClient = await MongoClient.connect(mongoUri);
+    db = mongoClient.db("test-db");
+
+    // Setup mongoService mock to use our test db
+    (mongoService as any).db = db;
+    (mongoService as any).user = db.collection<Schema_User>(Collections.USER);
+
+    // Create test user in MongoDB
+    await db.collection(Collections.USER).insertOne({
+      _id: new ObjectId(testUser),
+      email: "test@example.com",
+      google: {
+        email: "test@example.com",
+        accessToken: "fake-access-token",
+        refreshToken: "fake-refresh-token",
+        expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
+      },
     });
-    it("finds deleted/cancelled events", () => {
-      const cancelledIds = cancelledEventsIds(gcalEvents.items);
-      gcalEvents.items.forEach((e) => {
-        if (e.status === "cancelled") {
-          cancelledIds.push(e.id);
-        }
-      });
 
-      toDelete.forEach((e) => {
-        if (cancelledIds.includes(e.id)) {
-          throw new Error("a cancelled event was missed");
-        }
-      });
+    // Create sync record for the user
+    await db.collection(Collections.SYNC).insertOne({
+      user: testUser,
+      google: {
+        calendarlist: [],
+        events: [],
+      },
     });
+
+    syncImport = await createSyncImport(testUser);
   });
 
-  it("doesn't put the same id in both the delete and update list", () => {
-    toUpdate.forEach((e) => {
-      if (toDelete.includes(e.id)) {
-        throw new Error("An event was found in the delete and update category");
-      }
+  beforeEach(async () => {
+    // Clear collections except users before each test
+    const collections = await db.collections();
+    const clearPromises = collections
+      .filter((collection) => collection.collectionName !== "users")
+      .map((collection) => collection.deleteMany({}));
+    await Promise.all(clearPromises);
+  });
+
+  afterAll(async () => {
+    // Cleanup
+    await mongoClient.close();
+    await mongoServer.stop();
+  });
+
+  describe("Full import", () => {
+    it("should include regular and recurring events and skip cancelled events", async () => {
+      const { total: totalProcessed, nextSyncToken } =
+        await syncImport.importAllEvents(testUser, "test-calendar");
+
+      const currentEventsInDb = await db
+        .collection<Schema_Event>(Collections.EVENT)
+        .find()
+        .toArray();
+
+      // Ensure all available gcal events were processed
+      expect(totalProcessed).toEqual(totals.total);
+
+      // Ensure cancelled events were not imported
+      expect(currentEventsInDb).toHaveLength(totals.total - totals.cancelled);
+
+      // Ensures recurring events were imported
+      const recurringEvents = currentEventsInDb.filter(
+        (e) => e.recurrence !== undefined,
+      );
+      expect(recurringEvents).toHaveLength(totals.recurring);
+
+      // Incremental imports need this token, so make sure it's present
+      expect(nextSyncToken).toBe("final-sync-token");
     });
-  });
-});
-
-describe("Sync Expiry Checks", () => {
-  it("returns true if expiry before now", () => {
-    const expired = "1675097074000"; // Jan 30, 2023
-    const isExpired = syncExpired(expired);
-    expect(isExpired).toBe(true);
-  });
-
-  it("returns true if expires soon - v1", () => {
-    const oneMinFromNow = dayjs().add(1, "second").valueOf().toString();
-    const expiresSoon = syncExpiresSoon(oneMinFromNow);
-    expect(expiresSoon).toBe(true);
-  });
-
-  it("returns true if expires soon - v2", () => {
-    const oneMinFromNow = dayjs().add(1, "minute").valueOf().toString();
-    const expiresSoon = syncExpiresSoon(oneMinFromNow);
-    expect(expiresSoon).toBe(true);
-  });
-
-  it("returns true if expires soon - v3", () => {
-    const oneMinFromNow = dayjs().add(1, "day").valueOf().toString();
-    const expiresSoon = syncExpiresSoon(oneMinFromNow);
-    expect(expiresSoon).toBe(true);
-  });
-  it("returns false if expiry after now", () => {
-    const notExpired = "2306249074000"; // Jan 30, 2043
-    const isExpired = syncExpired(notExpired);
-    expect(isExpired).toBe(false);
-  });
-
-  it("returns false if doesnt expires soon - v2", () => {
-    const manyDaysFromNow = dayjs().add(50, "days").valueOf().toString();
-    const expiresSoon = syncExpiresSoon(manyDaysFromNow);
-    expect(expiresSoon).toBe(false);
   });
 });

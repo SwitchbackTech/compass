@@ -1,6 +1,6 @@
-import { invalidGrant400Error } from "../../../__tests__/__mocks__/error.google.invalidGrant";
-import { invalidValueError } from "../../../__tests__/__mocks__/error.google.invalidValue";
-import { invalidSyncTokenError } from "../../../__tests__/__mocks__/error.invalidSyncToken";
+import { invalidGrant400Error } from "../../../__tests__/__mocks__/errors/error.google.invalidGrant";
+import { invalidValueError } from "../../../__tests__/__mocks__/errors/error.google.invalidValue";
+import { invalidSyncTokenError } from "../../../__tests__/__mocks__/errors/error.invalidSyncToken";
 import {
   getEmailFromUrl,
   isFullSyncRequired,
