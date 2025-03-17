@@ -1,12 +1,12 @@
+import { invalidGrant400Error } from "../../../__tests__/__mocks__/error.google.invalidGrant";
+import { invalidValueError } from "../../../__tests__/__mocks__/error.google.invalidValue";
+import { invalidSyncTokenError } from "../../../__tests__/__mocks__/error.invalidSyncToken";
 import {
   getEmailFromUrl,
   isFullSyncRequired,
   isInvalidGoogleToken,
   isInvalidValue,
-} from "../common/services/gcal/gcal.utils";
-import { invalidGrant400Error } from "./__mocks__/error.google.invalidGrant";
-import { invalidValueError } from "./__mocks__/error.google.invalidValue";
-import { invalidSyncTokenError } from "./__mocks__/error.invalidSyncToken";
+} from "./gcal.utils";
 
 describe("Google Error Parsing", () => {
   it("recognizes invalid sync token error", () => {
