@@ -31,12 +31,7 @@ import {
   getChannelExpiration,
   isUsingHttps,
 } from "../util/sync.util";
-import {
-  assembleEventImports,
-  importAllEvents,
-  importEventsByCalendar,
-  prepIncrementalImport,
-} from "./import/sync.import";
+import { createSyncImport } from "./import/sync.import";
 import {
   prepSyncMaintenance,
   prepSyncMaintenanceForUser,
@@ -88,7 +83,8 @@ class SyncService {
       resourceId,
     );
 
-    const response = await importEventsByCalendar(
+    const syncImport = await createSyncImport(userId);
+    const response = await syncImport.importEventsByCalendar(
       userId,
       gCalendarId,
       nextSyncToken,
@@ -106,8 +102,12 @@ class SyncService {
     gCalendarIds: string[],
     userId: string,
   ) => {
+    const syncImport = await createSyncImport(gcal);
     const eventImports = gCalendarIds.map(async (gCalId) => {
-      const { nextSyncToken } = await importAllEvents(userId, gcal, gCalId);
+      const { nextSyncToken } = await syncImport.importAllEvents(
+        userId,
+        gCalId,
+      );
       if (isUsingHttps()) {
         await updateSyncTokenFor("events", userId, nextSyncToken, gCalId);
       } else {
@@ -121,14 +121,10 @@ class SyncService {
   };
 
   importIncremental = async (userId: string, gcal?: gCalendar) => {
-    if (!gcal) gcal = await getGcalClient(userId);
-
-    const eventSyncPayloads = await prepIncrementalImport(userId, gcal);
-
-    const importEvents = assembleEventImports(userId, eventSyncPayloads);
-
-    const result = await Promise.all(importEvents);
-
+    const syncImport = gcal
+      ? await createSyncImport(gcal)
+      : await createSyncImport(userId);
+    const result = await syncImport.importLatestEvents(userId);
     return result;
   };
 
