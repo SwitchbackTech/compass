@@ -27,12 +27,7 @@ export const useDateCalcs = (
   };
 
   const getDateByXY = (x: number, y: number, firstDayInView: Dayjs) => {
-    const isOverAllDayRow =
-      y > measurements.allDayRow.top && y < measurements.mainGrid.top;
-
     let date = getDateByX(x, firstDayInView);
-
-    if (isOverAllDayRow) return date;
 
     const minutes = getMinuteByY(y);
     date = date.add(minutes, "minutes");
