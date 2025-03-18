@@ -5,6 +5,7 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { devAlert } from "@core/util/app.util";
 import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -201,9 +202,8 @@ export const useDraftActions = (
 
         setDraft(_draft);
       };
-
       if (!isDragging) {
-        alert("not dragging (anymore?)");
+        devAlert("not dragging (anymore?)");
         return;
       }
 
