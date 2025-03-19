@@ -385,7 +385,6 @@ export class SyncImport {
     // Then create/update all events including recurring instances
     const allEvents = [...events.regularEvents, ...events.expandedEvents];
     if (allEvents.length > 0) {
-      console.log("! creating ", allEvents.length, " events");
       await eventService.createMany(allEvents);
       updated += allEvents.length;
     }

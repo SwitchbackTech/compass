@@ -1,11 +1,9 @@
 import { Db, MongoClient, ObjectId } from "mongodb";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { Schema_Event } from "@core/types/event.types";
+import { Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
-import {
-  generateGcalEvents,
-  generateRecurringEvent as mockGenerateRecurringEvent,
-} from "@backend/__tests__/factories/event.factory";
+import { generateGcalEvents } from "@backend/__tests__/factories/event.factory";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import { SyncImport, createSyncImport } from "./sync.import";
@@ -99,6 +97,7 @@ describe("SyncImport", () => {
     // Setup mongoService mock to use our test db
     (mongoService as any).db = db;
     (mongoService as any).user = db.collection<Schema_User>(Collections.USER);
+    (mongoService as any).sync = db.collection<Schema_Sync>(Collections.SYNC);
 
     // Create test user in MongoDB
     await db.collection(Collections.USER).insertOne({
