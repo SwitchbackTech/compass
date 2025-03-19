@@ -1,8 +1,6 @@
 import dayjs from "dayjs";
 import fs from "fs";
-import { AnyBulkWriteOperation } from "mongodb";
 import path from "path";
-import { Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 
 interface SyncLogData {
@@ -11,7 +9,6 @@ interface SyncLogData {
     toUpdate: gSchema$Event[];
     toDelete: string[];
   };
-  operations: AnyBulkWriteOperation<Schema_Event>[];
   nextSyncToken?: string;
 }
 
@@ -41,7 +38,6 @@ export const logSyncOperation = async (
     calendarId,
     updatedEvents: data.updatedEvents,
     summary: data.summary,
-    operations: data.operations,
   };
 
   try {
@@ -51,42 +47,3 @@ export const logSyncOperation = async (
     console.error("Failed to write sync log:", err);
   }
 };
-
-//TODO delete
-// export const getSummary = (
-//   eventsToUpdate: gSchema$Event[],
-//   eventsToDelete: string[],
-//   resourceId: string,
-// ) => {
-//   let updateSummary = "";
-//   let deleteSummary = "";
-//   const min = 0;
-//   const max = 3;
-
-//   if (eventsToUpdate.length > min) {
-//     if (eventsToUpdate.length < max) {
-//       updateSummary = `Updating: "${eventsToUpdate
-//         .map((e) => e.summary)
-//         .toString()}" `;
-//     } else {
-//       updateSummary = `Updating ${eventsToUpdate.length} `;
-//     }
-//   }
-
-//   if (eventsToDelete.length > min) {
-//     if (eventsToDelete.length < max) {
-//       const googleIds = eventsToDelete.toString();
-//       deleteSummary = `Deleting: ${googleIds}`;
-//     } else {
-//       deleteSummary = ` Deleting ${eventsToDelete.length}`;
-//     }
-//   }
-
-//   let summary = "";
-//   if (updateSummary !== "") summary += updateSummary;
-//   if (deleteSummary !== "") summary += deleteSummary;
-
-//   summary += ` | ${resourceId}`;
-
-//   return summary;
-// };

@@ -285,7 +285,6 @@ export class SyncImport {
           toDelete: processedEvents.toDelete,
         },
         nextSyncToken: response.nextSyncToken ?? undefined,
-        operations: [], // TODO remove / update (skipping for now)
       });
 
       const { updated, deleted } = await this.updateDatabase(
