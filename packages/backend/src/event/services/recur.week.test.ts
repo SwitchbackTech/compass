@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { RRULE } from "../../../../core/src/constants/core.constants";
 import { assembleInstances } from "../../event/services/event.service.util";
-import { areDatesUnique, haveSharedValues } from "./recur.util";
+import { areDatesUnique, haveSharedValues } from "./_recur.util";
 
 describe("Weekly Recurrence: Basics", () => {
   it("uses sunday & saturday as start/end dates", () => {

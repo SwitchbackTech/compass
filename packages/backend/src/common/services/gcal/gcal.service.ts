@@ -25,6 +25,22 @@ class GCalService {
     return response;
   }
 
+  async getEventInstances(
+    gcal: gCalendar,
+    calendarId: string,
+    eventId: string,
+    timeMin?: string,
+    timeMax?: string,
+  ) {
+    const response = await gcal.events.instances({
+      calendarId,
+      eventId,
+      timeMin,
+      timeMax,
+    });
+    return response;
+  }
+
   async getEvents(gcal: gCalendar, params: gParamsEventsList) {
     const response = await gcal.events.list(params);
     return response;
@@ -60,7 +76,7 @@ class GCalService {
       calendarId: params.gCalendarId,
       requestBody: {
         // reminder: address always needs to be HTTPS
-        address: (ENV.BASEURL as string) + GCAL_NOTIFICATION_ENDPOINT,
+        address: ENV.BASEURL + GCAL_NOTIFICATION_ENDPOINT,
         expiration: params.expiration,
         id: params.channelId,
         token: ENV.TOKEN_GCAL_NOTIFICATION,

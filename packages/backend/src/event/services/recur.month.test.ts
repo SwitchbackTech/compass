@@ -1,5 +1,5 @@
 import { RRULE } from "../../../../core/src/constants/core.constants";
-import { assembleInstances } from "../../event/services/event.service.util";
+import { assembleInstances } from "./event.service.util";
 
 describe("Event Recurrence: Month", () => {
   it("uses first and last of month", () => {

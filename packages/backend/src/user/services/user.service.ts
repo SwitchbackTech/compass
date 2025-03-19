@@ -15,12 +15,12 @@ import { CompassError } from "@backend/common/types/error.types";
 import { Summary_Resync } from "@backend/common/types/sync.types";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import syncService from "@backend/sync/services/sync.service";
 import {
   getCalendarsToSync,
   initSync,
-  watchEventsByGcalIds,
-} from "@backend/sync/services/sync.service.helpers";
+} from "@backend/sync/services/init/sync.init";
+import syncService from "@backend/sync/services/sync.service";
+import { watchEventsByGcalIds } from "@backend/sync/services/watch/sync.watch";
 import { reInitSyncByIntegration } from "@backend/sync/util/sync.queries";
 import { findCompassUserBy } from "../queries/user.queries";
 import { Summary_Delete } from "../types/user.types";

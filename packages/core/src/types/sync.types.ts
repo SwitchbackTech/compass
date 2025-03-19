@@ -17,14 +17,10 @@ export interface Payload_Resource_Events {
   channelId: string;
   expiration: string;
   resourceId: string;
-  nextSyncToken?: string;
 }
 
-export interface Payload_Resource_Events_TokenOptional
-  extends Omit<Payload_Resource_Events, "nextSyncToken"> {
-  nextSyncToken?: string;
-}
 export interface Payload_Sync_Events extends Payload_Resource_Events {
+  nextSyncToken: string;
   lastRefreshedAt?: Date;
   lastSyncedAt?: Date;
 }
