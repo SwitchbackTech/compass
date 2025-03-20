@@ -134,6 +134,7 @@ describe("SyncImport", () => {
 
   afterAll(async () => {
     // Cleanup
+    await mongoService.cleanup();
     await mongoClient.close();
     await mongoServer.stop();
   });

@@ -138,9 +138,14 @@ describe("SyncNotificationService", () => {
   });
 
   afterAll(async () => {
-    // Cleanup
-    await mongoClient.close();
-    await mongoServer.stop();
+    // Cleanup all resources
+    try {
+      await mongoService.cleanup();
+      await mongoClient.close(true); // Force close
+      await mongoServer.stop({ force: true });
+    } catch (err) {
+      console.error("Error during cleanup:", err);
+    }
   });
 
   it("should update existing event instead of creating duplicate when receiving notification", async () => {
