@@ -26,6 +26,7 @@ export const WS_RESULT = {
 export interface Result_Gcal_Notif {
   action: (typeof ACTIONS_SYNC)[keyof typeof ACTIONS_SYNC];
   updated: number;
+  created: number;
   wsResult: (typeof WS_RESULT)[keyof typeof WS_RESULT];
 }
 
@@ -36,6 +37,7 @@ export class SyncNotificationService {
     let result: Result_Gcal_Notif = {
       action: ACTIONS_SYNC.IGNORED,
       updated: 0,
+      created: 0,
       wsResult: WS_RESULT.UNPROCESSED,
     };
 
@@ -72,6 +74,7 @@ export class SyncNotificationService {
     return {
       action: ACTIONS_SYNC.PROCESSED,
       updated: importResult.updated,
+      created: importResult.created,
       wsResult,
     };
   }
