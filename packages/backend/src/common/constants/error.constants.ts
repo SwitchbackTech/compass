@@ -61,6 +61,11 @@ export const EventError = {
     status: Status.INTERNAL_SERVER,
     isOperational: true,
   },
+  MissingProperty: {
+    description: "A required property is missing",
+    status: Status.BAD_REQUEST,
+    isOperational: true,
+  },
   NoGevents: {
     description: "Unexpected empty values in events",
     status: Status.NO_CONTENT,

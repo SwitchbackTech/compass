@@ -2,10 +2,10 @@ import dayjs from "dayjs";
 import { gcalEvents } from "../../../../../core/src/__mocks__/events/gcal/gcal.event";
 import { cancelledEventsIds } from "../../../common/services/gcal/gcal.utils";
 import { syncExpired, syncExpiresSoon } from "../../util/sync.util";
-import { categorizeGcalEvents } from "./sync.import.util";
+import { organizeGcalEventsByType } from "./sync.import.util";
 
 describe("categorizeGcalEvents", () => {
-  const { toDelete, toUpdate } = categorizeGcalEvents(gcalEvents.items);
+  const { toDelete, toUpdate } = organizeGcalEventsByType(gcalEvents.items);
 
   describe("eventsToDelete", () => {
     it("returns array of cancelled gEventIds", () => {
@@ -33,8 +33,12 @@ describe("categorizeGcalEvents", () => {
   });
 
   it("doesn't put the same id in both the delete and update list", () => {
-    toUpdate.forEach((e) => {
-      if (toDelete.includes(e.id)) {
+    const recurringIds = toUpdate.nonRecurring.map((e) => e.id);
+    const nonRecurringIds = toUpdate.nonRecurring.map((e) => e.id);
+    const allIds = [...recurringIds, ...nonRecurringIds];
+
+    allIds.forEach((e) => {
+      if (toDelete.includes(e)) {
         throw new Error("An event was found in the delete and update category");
       }
     });

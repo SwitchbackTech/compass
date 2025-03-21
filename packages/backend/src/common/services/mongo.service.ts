@@ -10,6 +10,7 @@ const logger = Logger("app:mongo.service");
 
 class MongoService {
   private count = 0;
+  private connectTimeout: NodeJS.Timeout | null = null;
   public client: MongoClient | undefined;
   public db!: Db;
 
@@ -21,6 +22,7 @@ class MongoService {
   constructor() {
     this._connect();
   }
+
   _connect = () => {
     MongoClient.connect(ENV.MONGO_URI, {
       serverApi: { strict: true, version: "1" },
@@ -41,8 +43,31 @@ class MongoService {
             .count} after ${retrySeconds} seconds):`,
           err,
         );
-        setTimeout(this._connect, retrySeconds * 1000);
+        this.connectTimeout = setTimeout(this._connect, retrySeconds * 1000);
       });
+  };
+
+  cleanup = async () => {
+    if (this.connectTimeout) {
+      clearTimeout(this.connectTimeout);
+      this.connectTimeout = null;
+    }
+
+    if (this.client) {
+      try {
+        await this.client.close(true);
+      } catch (err) {
+        logger.error("Error closing MongoDB connection:", err);
+      }
+      this.client = undefined;
+      this.db = undefined as any;
+      this.event = undefined as any;
+      this.sync = undefined as any;
+      this.user = undefined as any;
+    }
+
+    this.count = 0;
+    logger.debug("Closed MongoDB connection and cleared all resources");
   };
 
   waitUntilConnected = async () => {
