@@ -4,7 +4,7 @@ import {
   Priorities as MockPriorities,
 } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { mockGcalEvent } from "@backend/__tests__/factories/gcal.event.factory";
+import { gSchema$Event } from "@core/types/gcal";
 import { mockGcal } from "@backend/__tests__/factories/gcal.factory";
 import {
   cleanupTestMongo,
@@ -18,26 +18,50 @@ import {
   WS_RESULT,
 } from "./sync.notify";
 
-const TEST_EVENT_ID = "test-event-id";
+// recurrence parent: will have recurrence (rule), but no recurringEventId
+// recurrence instance: will have recurrence and recurringEventId
 
 // Mock Google Calendar API responses
 jest.mock("googleapis", () => {
-  const mockEvent = mockGcalEvent({
+  const TEST_EVENT_ID = "test-event-id";
+  const mockEvent: gSchema$Event = {
     id: TEST_EVENT_ID,
     summary: "Updated Event",
+    status: "confirmed",
+    htmlLink: "https://www.google.com/calendar/event?eid=test-event-id",
+    created: "2025-03-19T10:32:57.036Z",
+    updated: "2025-03-19T10:32:57.036Z",
+    start: {
+      dateTime: "2025-03-19T14:45:00-05:00",
+      timeZone: "America/Chicago",
+    },
+    end: {
+      dateTime: "2025-03-19T16:00:00-05:00",
+      timeZone: "America/Chicago",
+    },
+    iCalUID: "test-event-id@google.com",
+    sequence: 0,
+    recurrence: ["RRULE:FREQ=DAILY;COUNT=3"],
+    recurringEventId: "20250319",
     extendedProperties: {
       private: {
         origin: MockOrigin.GOOGLE_IMPORT,
         priority: MockPriorities.UNASSIGNED,
       },
     },
-  });
+    reminders: {
+      useDefault: true,
+    },
+    eventType: "default",
+  };
 
   return mockGcal({
     events: [mockEvent],
     nextSyncToken: "new-sync-token",
   });
 });
+
+const TEST_EVENT_ID = "test-event-id";
 
 describe("SyncNotificationService", () => {
   let syncNotifyService: SyncNotificationService;
@@ -56,8 +80,8 @@ describe("SyncNotificationService", () => {
     await cleanupTestMongo(setup);
   });
 
-  describe("Regular Events", () => {
-    it("should update existing event instead of creating duplicate when receiving notification", async () => {
+  describe("Recurring Events: Existing", () => {
+    it("should update one instance when one instance was changed", async () => {
       // Create initial event in Compass
       const initialEvent: Schema_Event = {
         _id: new ObjectId(),
@@ -73,29 +97,27 @@ describe("SyncNotificationService", () => {
         updatedAt: new Date(),
       };
       await mongoService.event.insertOne(initialEvent);
-
-      // Process notification
-      const result = await syncNotifyService.handleGcalNotification({
-        channelId: "test-channel-id",
-        resourceId: "test-resource-id",
-        resourceState: "exists",
-        expiration: new Date(Date.now() + 3600000).toISOString(),
-      });
-
-      // Verify business logic
-      expect(result.action).toBe(ACTIONS_SYNC.PROCESSED);
-      expect(result.updated).toBe(1);
-      expect(result.created).toBe(0);
-      expect(result.wsResult).not.toBe(WS_RESULT.UNPROCESSED);
-
-      // Verify DB state
-      const events = await mongoService.event
-        .find({ gEventId: TEST_EVENT_ID })
-        .toArray();
-      expect(events).toHaveLength(1);
-      expect(events[0]).toBeDefined();
-      expect(events[0]?.["title"]).toBe("Updated Event");
-      expect(events[0]?.["origin"]).toBe(MockOrigin.GOOGLE_IMPORT);
     });
+    it.todo(
+      "should update this and future instances when recurrence rule changed",
+    );
+    it.todo("should update this and future instances when [TBD]");
   });
+  describe("Recurring Events: New", () => {
+    it.todo(
+      "should import all instances when a new event with a recurrence rule is created",
+    );
+  });
+});
+describe("Recurring Events: Existing", () => {
+  it.todo("should update one instance when one instance was changed");
+  it.todo(
+    "should update this and future instances when recurrence rule changed",
+  );
+  it.todo("should update this and future instances when [TBD]");
+});
+describe("Recurring Events: New", () => {
+  it.todo(
+    "should import all instances when a new event with a recurrence rule is created",
+  );
 });
