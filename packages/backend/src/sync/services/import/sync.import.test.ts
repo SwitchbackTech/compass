@@ -1,4 +1,4 @@
-import { generateGcalEvents as mockGcalEvents } from "@backend/__tests__/factories/gcal.event.factory";
+import { mockGcalEvents } from "@backend/__tests__/factories/gcal.event.factory";
 import { mockGcal } from "@backend/__tests__/factories/gcal.factory";
 import {
   cleanupTestMongo,
