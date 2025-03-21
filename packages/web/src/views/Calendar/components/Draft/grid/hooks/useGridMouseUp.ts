@@ -1,9 +1,5 @@
 import { MouseEvent, useCallback } from "react";
 import { Categories_Event } from "@core/types/event.types";
-import {
-  ID_GRID_ALLDAY_ROW,
-  ID_GRID_MAIN,
-} from "@web/common/constants/web.constants";
 import { getElemById } from "@web/common/utils/grid.util";
 import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -41,101 +37,102 @@ export const useGridMouseUp = () => {
     [draft?._id, draft?.isOpen, dragStatus?.hasMoved, resizeStatus?.hasMoved],
   );
 
-  const onAllDayRowMouseUp = useCallback(
+  const handleAllDayRowMouseUp = useCallback(() => {
+    if (!draft) return;
+
+    if (isDragging) {
+      stopDragging();
+    }
+
+    const { shouldSubmit, shouldOpenForm } = getNextAction(
+      Categories_Event.ALLDAY,
+    );
+
+    if (shouldOpenForm) {
+      openForm();
+      return;
+    }
+
+    if (shouldSubmit) {
+      submit(draft);
+    }
+  }, [draft, isDragging, getNextAction, stopDragging, openForm, submit]);
+
+  const handleMainGridMouseUp = useCallback(() => {
+    if (!draft || !isDrafting) return;
+
+    if (isDrafting && reduxDraftType === Categories_Event.ALLDAY) {
+      discard();
+      return;
+    }
+
+    if (isDrafting && reduxDraftType === Categories_Event.SOMEDAY_WEEK) {
+      discard();
+      return;
+    }
+
+    if (isResizing) {
+      stopResizing();
+    }
+
+    if (isDragging) {
+      stopDragging();
+    }
+
+    const { shouldSubmit, shouldOpenForm } = getNextAction(
+      Categories_Event.TIMED,
+    );
+
+    if (shouldOpenForm) {
+      openForm();
+      return;
+    }
+
+    if (shouldSubmit) {
+      submit(draft);
+    }
+  }, [
+    draft,
+    isDrafting,
+    reduxDraftType,
+    isResizing,
+    isDragging,
+    getNextAction,
+    discard,
+    stopResizing,
+    stopDragging,
+    openForm,
+    submit,
+  ]);
+
+  const onGridMouseUp = useCallback(
     (e: MouseEvent) => {
+      if (!draft || !isDrafting) return;
       if (e.button !== 0) return;
 
-      if (isDragging) {
-        stopDragging();
-      }
-
-      if (!draft) {
-        return;
-      }
-
-      const { shouldSubmit, shouldOpenForm } = getNextAction(
-        Categories_Event.ALLDAY,
-      );
-
-      if (shouldOpenForm) {
-        openForm();
-        return;
-      }
-
-      if (shouldSubmit) {
-        submit(draft);
-      }
-    },
-    [
-      isDragging,
-      draft,
-      isDrafting,
-      getNextAction,
-      submit,
-      stopDragging,
-      openForm,
-    ],
-  );
-
-  const onMainGridMouseUp = useCallback(
-    (e: MouseEvent) => {
-      if (e.button !== 0) return;
-
-      if (!draft || !isDrafting) {
-        return;
-      }
-
-      if (isDrafting && reduxDraftType === Categories_Event.ALLDAY) {
-        discard();
-        return;
-      }
-
-      if (isDrafting && reduxDraftType === Categories_Event.SOMEDAY_WEEK) {
+      // Only for SOMEDAY_WEEK in main grid, we need to stop propagation
+      if (
+        isDrafting &&
+        reduxDraftType === Categories_Event.SOMEDAY_WEEK &&
+        !draft?.isAllDay
+      ) {
         e.stopPropagation();
-        discard();
-        return;
       }
 
-      if (isResizing) {
-        stopResizing();
-      }
-
-      if (isDragging) {
-        stopDragging();
-      }
-
-      const { shouldSubmit, shouldOpenForm } = getNextAction(
-        Categories_Event.TIMED,
-      );
-      if (shouldOpenForm) {
-        openForm();
-        return;
-      }
-
-      if (shouldSubmit) {
-        submit(draft);
+      if (draft?.isAllDay) {
+        handleAllDayRowMouseUp();
+      } else {
+        handleMainGridMouseUp();
       }
     },
     [
-      discard,
       draft,
-      getNextAction,
       isDrafting,
-      isDragging,
-      isResizing,
-      openForm,
       reduxDraftType,
-      stopDragging,
-      stopResizing,
-      submit,
+      handleAllDayRowMouseUp,
+      handleMainGridMouseUp,
     ],
   );
 
-  useEventListener(
-    "mouseup",
-    onAllDayRowMouseUp,
-    getElemById(ID_GRID_ALLDAY_ROW),
-  );
-  const mainGrid = getElemById(ID_GRID_MAIN);
-  useEventListener("mouseup", onMainGridMouseUp, mainGrid);
+  useEventListener("mouseup", onGridMouseUp, getElemById("root"));
 };
