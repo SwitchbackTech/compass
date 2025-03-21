@@ -14,7 +14,16 @@ export const generateRecurringEvent = (): gSchema$Event => ({
   recurrence: ["RRULE:FREQ=WEEKLY"],
 });
 
-export const generateGcalEvents = () => {
+interface Mock_Events_Gcal {
+  gcalEvents: gSchema$Event[];
+  totals: {
+    regular: number;
+    recurring: number;
+    cancelled: number;
+    total: number;
+  };
+}
+export const generateGcalEvents = (): Mock_Events_Gcal => {
   const COUNT_REGULAR = 5;
   const COUNT_RECURRING = 3;
   const COUNT_CANCELLED = 2;
