@@ -1,13 +1,12 @@
 import { AnyBulkWriteOperation } from "mongodb";
-import { MapEvent } from "@core/mappers/map.event";
-import { Schema_Event } from "@core/types/event.types";
+import { Schema_Event_Core } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
 
 export const assembleEventOperations = (
   userId: string,
   eventsToDelete: string[],
-  eventsToUpdate: gSchema$Event[],
+  eventsToUpdate: Schema_Event_Core[],
 ) => {
   const bulkOperations: AnyBulkWriteOperation[] = [];
 
@@ -23,9 +22,7 @@ export const assembleEventOperations = (
   }
 
   if (eventsToUpdate.length > 0) {
-    const cEvents = MapEvent.toCompass(userId, eventsToUpdate);
-
-    cEvents.forEach((e: Schema_Event) => {
+    eventsToUpdate.forEach((e: Schema_Event_Core) => {
       bulkOperations.push({
         replaceOne: {
           filter: { gEventId: e.gEventId, user: userId },
@@ -39,18 +36,29 @@ export const assembleEventOperations = (
   return bulkOperations;
 };
 
-export const categorizeGcalEvents = (events: gSchema$Event[]) => {
+export const organizeGcalEventsByType = (events: gSchema$Event[]) => {
   const toDelete = cancelledEventsIds(events);
 
-  // if its going to be deleted anyway, then dont bother updating
+  // If its going to be deleted anyway, then don't bother updating
   const _isntBeingDeleted = (e: gSchema$Event) =>
     !toDelete.includes(e.id as string);
 
   const toUpdate = events.filter((e) => _isntBeingDeleted(e));
 
+  // Split events into recurring and non-recurring
+  const recurringEvents = toUpdate.filter(
+    (e) => e.recurringEventId || e.recurrence,
+  );
+  const nonRecurringEvents = toUpdate.filter(
+    (e) => !e.recurringEventId && !e.recurrence,
+  );
+
   const categorized = {
     toDelete,
-    toUpdate,
+    toUpdate: {
+      recurring: recurringEvents,
+      nonRecurring: nonRecurringEvents,
+    },
   };
   return categorized;
 };

@@ -1,12 +1,13 @@
 import dayjs from "dayjs";
 import fs from "fs";
 import path from "path";
+import { Schema_Event_Core } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 
 interface SyncLogData {
   updatedEvents: gSchema$Event[];
   summary: {
-    toUpdate: gSchema$Event[];
+    toUpdate: Schema_Event_Core[];
     toDelete: string[];
   };
   nextSyncToken?: string;

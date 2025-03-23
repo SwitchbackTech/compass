@@ -35,18 +35,10 @@ import { getCalendarsToSync } from "../init/sync.init";
 import { logSyncOperation } from "../log/sync.logger";
 import syncService from "../sync.service";
 import { assembleEventWatchPayloads } from "../watch/sync.watch";
-import {
-  assembleEventOperations,
-  categorizeGcalEvents,
-} from "./sync.import.util";
+import { EventsToModify } from "./sync.import.types";
+import { organizeGcalEventsByType } from "./sync.import.util";
 
 const logger = Logger("app:sync.import");
-
-export interface ProcessedEvents {
-  regularEvents: Schema_Event_Core[];
-  expandedEvents: Schema_Event_Core[];
-  toDelete: string[];
-}
 
 export class SyncImport {
   private gcal: gCalendar;
@@ -73,10 +65,45 @@ export class SyncImport {
     return syncEvents;
   }
 
+  private async categorizeGevents(
+    userId: string,
+    gCalendarId: string,
+    updatedEvents: gSchema$Event[],
+  ): Promise<EventsToModify> {
+    const { toUpdate, toDelete } = organizeGcalEventsByType(updatedEvents);
+
+    const expandedEvents = await this.expandRecurringEvents(
+      userId,
+      gCalendarId,
+      toUpdate.recurring,
+    );
+
+    const regularEvents = MapEvent.toCompass(
+      userId,
+      toUpdate.nonRecurring,
+      Origin.GOOGLE_IMPORT,
+    );
+
+    const toUpdateCombined = [...regularEvents, ...expandedEvents];
+    await logSyncOperation(userId, gCalendarId, {
+      updatedEvents,
+      summary: {
+        toUpdate: toUpdateCombined,
+        toDelete: toDelete,
+      },
+      nextSyncToken: "idk",
+    });
+
+    return {
+      toUpdate: toUpdateCombined,
+      toDelete,
+    };
+  }
+
   /**
    * Fetches all instances of a recurring event series and returns them as Compass events
    */
-  private async getRecurringEventInstances(
+  private async expandRecurringEvent(
     userId: string,
     calendarId: string,
     recurringEventId: string,
@@ -94,10 +121,39 @@ export class SyncImport {
     const instances = data?.items;
 
     if (!instances) {
-      return [];
+      throw error(
+        EventError.NoGevents,
+        "No instances found for recurring event",
+      );
     }
 
     return MapEvent.toCompass(userId, instances, Origin.GOOGLE_IMPORT);
+  }
+
+  private async expandRecurringEvents(
+    userId: string,
+    calendarId: string,
+    recurringEvents: gSchema$Event[],
+  ): Promise<Schema_Event_Core[]> {
+    const expandedEvents: Schema_Event_Core[] = [];
+
+    for (const event of recurringEvents) {
+      const recurringId = event.recurringEventId || event.id;
+      if (!recurringId) {
+        throw error(
+          EventError.MissingProperty,
+          "Recurring event not expanded due to missing recurrence id",
+        );
+      }
+      const instances = await this.expandRecurringEvent(
+        userId,
+        calendarId,
+        recurringId,
+      );
+      expandedEvents.push(...instances);
+    }
+
+    return expandedEvents;
   }
 
   /**
@@ -134,6 +190,10 @@ export class SyncImport {
       throw error(SyncError.NoEventChanges, "Import Ignored");
     }
 
+    console.log(
+      `++ Updated events (using syncToken: ${syncToken})`,
+      JSON.stringify(response.data, null, 2),
+    );
     return response.data;
   }
 
@@ -262,39 +322,30 @@ export class SyncImport {
     let nextPageToken: string | null | undefined = undefined;
     let totalUpdated = 0;
     let totalDeleted = 0;
-
+    let totalCreated = 0;
     do {
       const syncToken = this.getSyncToken(nextPageToken, nextSyncToken);
       const response = await this.getUpdatedEvents(gCalendarId, syncToken);
       const updatedEvents = response.items || [];
 
       if (updatedEvents.length === 0) {
-        return { updated: 0, deleted: 0, nextSyncToken };
+        return { created: 0, updated: 0, deleted: 0, nextSyncToken };
       }
 
-      const processedEvents = await this.processGoogleEvents(
+      const eventsToModify = await this.categorizeGevents(
         userId,
         gCalendarId,
         updatedEvents,
       );
 
-      await logSyncOperation(userId, gCalendarId, {
-        updatedEvents,
-        summary: {
-          toUpdate: updatedEvents,
-          toDelete: processedEvents.toDelete,
-        },
-        nextSyncToken: response.nextSyncToken ?? undefined,
-      });
-
-      const { updated, deleted } = await this.updateDatabase(
+      const { created, updated, deleted } = await this.updateDatabase(
         userId,
-        processedEvents,
+        eventsToModify,
       );
 
       totalUpdated += updated;
       totalDeleted += deleted;
-
+      totalCreated += created;
       nextSyncToken = response.nextSyncToken;
       nextPageToken = response.nextPageToken;
     } while (nextPageToken !== undefined);
@@ -310,87 +361,85 @@ export class SyncImport {
     return {
       updated: totalUpdated,
       deleted: totalDeleted,
+      created: totalCreated,
       nextSyncToken,
     };
   }
 
   /**
-   * Process events from Google Calendar, handling both regular and recurring events
-   */
-  private async processGoogleEvents(
-    userId: string,
-    gCalendarId: string,
-    updatedEvents: gSchema$Event[],
-  ): Promise<ProcessedEvents> {
-    const { toDelete, toUpdate } = categorizeGcalEvents(updatedEvents);
-
-    // Handle recurring events
-    const expandedEvents: Schema_Event_Core[] = [];
-    for (const event of toUpdate) {
-      if (
-        event.recurringEventId ||
-        (event.recurrence && event.recurrence.length > 0)
-      ) {
-        const recurringId = event.recurringEventId || event.id;
-        if (!recurringId) continue;
-
-        const instances = await this.getRecurringEventInstances(
-          userId,
-          gCalendarId,
-          recurringId,
-        );
-        expandedEvents.push(...instances);
-      }
-    }
-
-    // Process regular events
-    const regularEvents = MapEvent.toCompass(
-      userId,
-      toUpdate.filter((e) => !e.recurringEventId && !e.recurrence),
-      Origin.GOOGLE_IMPORT,
-    );
-
-    return { regularEvents, expandedEvents, toDelete };
-  }
-
-  /**
    * Update database with processed events
    */
-  private async updateDatabase(
-    userId: string,
-    events: ProcessedEvents,
-  ): Promise<{ updated: number; deleted: number }> {
-    const ops = assembleEventOperations(userId, events.toDelete, []);
+  private async updateDatabase(userId: string, events: EventsToModify) {
+    const { toDelete, toUpdate } = events;
+    let created = 0;
     let updated = 0;
     let deleted = 0;
 
-    // First handle deletions
-    if (ops.length > 0) {
+    // Handle deletions
+    if (toDelete.length > 0) {
+      const deleteResult = await mongoService.db
+        .collection(Collections.EVENT)
+        .deleteMany({
+          user: userId,
+          gEventId: { $in: toDelete },
+        });
+      deleted = deleteResult.deletedCount || 0;
+    }
+
+    // Handle updates/creations in a single bulk operation
+    if (toUpdate.length > 0) {
+      //TODO delete
+      // First check what documents exist
+      // const existingDocs = await mongoService.db
+      //   .collection(Collections.EVENT)
+      //   .find({
+      //     user: userId,
+      //     gEventId: { $in: toUpdate.map((e) => e["gEventId"]) },
+      //   })
+      //   .toArray();
+
+      // console.log(`Found ${existingDocs.length} existing events`);
+      // console.log(
+      //   `Existing event IDs: ${existingDocs.map((e) => e["gEventId"]).join(", ")}`,
+      // );
+
+      const bulkOps = toUpdate.map((event) => ({
+        updateOne: {
+          filter: {
+            user: userId,
+            gEventId: event["gEventId"],
+          },
+          update: { $set: event },
+          upsert: true,
+        },
+      }));
+
       const result = await mongoService.db
         .collection(Collections.EVENT)
-        .bulkWrite(ops);
+        .bulkWrite(bulkOps);
 
-      if (!result.ok) {
-        throw error(
-          GenericError.NotSure,
-          "Events not updated after notification",
-        );
-      }
+      //TODo delete
+      // console.log(
+      //   `Bulk write result: ${JSON.stringify(
+      //     {
+      //       modifiedCount: result.modifiedCount,
+      //       upsertedCount: result.upsertedCount,
+      //       matchedCount: result.matchedCount,
+      //       upsertedIds: result.upsertedIds,
+      //     },
+      //     null,
+      //     2,
+      //   )}`,
+      // );
 
-      updated +=
-        result.insertedCount + result.upsertedCount + result.modifiedCount;
-      deleted += result.deletedCount;
+      // For upserts:
+      // - modifiedCount: number of existing documents that were updated
+      // - upsertedCount: number of documents that were inserted because they didn't exist
+      updated = result.modifiedCount || 0;
+      created = result.upsertedCount || 0;
     }
 
-    // Then create/update all events including recurring instances
-    const allEvents = [...events.regularEvents, ...events.expandedEvents];
-    if (allEvents.length > 0) {
-      console.log("! creating ", allEvents.length, " events");
-      await eventService.createMany(allEvents);
-      updated += allEvents.length;
-    }
-
-    return { updated, deleted };
+    return { updated, deleted, created };
   }
 }
 

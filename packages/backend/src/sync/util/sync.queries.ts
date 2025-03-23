@@ -299,7 +299,6 @@ const updateSyncTokenIfNeededFor = async (
 ) => {
   if (vals.curr !== undefined) {
     if (vals.prev !== vals.curr) {
-      console.log("++ updateSyncTokenFor", vals.curr);
       await updateSyncTokenFor(resource, userId, vals.curr, gCalendarId);
     }
   }
