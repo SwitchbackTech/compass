@@ -190,6 +190,10 @@ export class SyncImport {
       throw error(SyncError.NoEventChanges, "Import Ignored");
     }
 
+    console.log(
+      `++ Updated events (using syncToken: ${syncToken})`,
+      JSON.stringify(response.data, null, 2),
+    );
     return response.data;
   }
 

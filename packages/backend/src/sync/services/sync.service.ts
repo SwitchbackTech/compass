@@ -60,6 +60,7 @@ class SyncService {
   };
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
+    console.log("++ handleGcalNotification payload:", payload);
     const syncNotificationService = new SyncNotificationService();
     const response =
       await syncNotificationService.handleGcalNotification(payload);
