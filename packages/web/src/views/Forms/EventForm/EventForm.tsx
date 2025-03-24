@@ -20,8 +20,8 @@ import { getCategory } from "@web/common/utils/event.util";
 import { mapToBackend } from "@web/common/utils/web.date.util";
 import IconButton from "@web/components/IconButton/IconButton";
 import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/styled";
-import { DateTimeSection } from "./DateTimeSection/DateTimeSection";
-import { getFormDates } from "./DateTimeSection/form.datetime.util";
+import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection";
+import { getFormDates } from "./DateControlsSection/DateTimeSection/form.datetime.util";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
 import {
@@ -196,6 +196,29 @@ export const EventForm: React.FC<FormProps> = ({
     onSubmitForm();
   };
 
+  const dateTimeSectionProps = {
+    bgColor: priorityColor,
+    displayEndDate,
+    event,
+    category,
+    endTime,
+    inputColor: hoverColorByPriority[priority || Priorities.UNASSIGNED],
+    isEndDatePickerOpen,
+    isStartDatePickerOpen,
+    onSetEventField,
+    selectedEndDate,
+    selectedStartDate,
+    setEndTime,
+    setSelectedEndDate,
+    setSelectedStartDate,
+    setStartTime,
+    startTime,
+    setDisplayEndDate,
+    setIsEndDatePickerOpen,
+    setIsStartDatePickerOpen,
+    setEvent,
+  };
+
   return (
     <StyledEventForm
       {...props}
@@ -255,28 +278,7 @@ export const EventForm: React.FC<FormProps> = ({
         priority={priority || Priorities.UNASSIGNED}
       />
 
-      <DateTimeSection
-        bgColor={priorityColor}
-        displayEndDate={displayEndDate}
-        event={event}
-        category={category}
-        endTime={endTime}
-        inputColor={hoverColorByPriority[priority || Priorities.UNASSIGNED]}
-        isEndDatePickerOpen={isEndDatePickerOpen}
-        isStartDatePickerOpen={isStartDatePickerOpen}
-        onSetEventField={onSetEventField}
-        selectedEndDate={selectedEndDate}
-        selectedStartDate={selectedStartDate}
-        setEndTime={setEndTime}
-        setSelectedEndDate={setSelectedEndDate}
-        setSelectedStartDate={setSelectedStartDate}
-        setStartTime={setStartTime}
-        startTime={startTime}
-        setDisplayEndDate={setDisplayEndDate}
-        setIsEndDatePickerOpen={setIsEndDatePickerOpen}
-        setIsStartDatePickerOpen={setIsStartDatePickerOpen}
-        setEvent={setEvent}
-      />
+      <DateControlsSection dateTimeSectionProps={dateTimeSectionProps} />
 
       <StyledDescription
         underlineColor={priorityColor}
