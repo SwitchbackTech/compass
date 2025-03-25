@@ -5,6 +5,7 @@ import { RRule } from "rrule";
 import { RRULE } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_Event_Core } from "@core/types/event.types";
+import { gSchema$Event } from "@core/types/gcal";
 import { GenericError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
@@ -30,6 +31,124 @@ export const assembleInstances = (
 
   return events;
 };
+
+export type SeriesAction =
+  | "CREATE_SERIES" // New recurring event
+  | "MODIFY_SERIES" // Series modification (could be split or update)
+  | "UPDATE_INSTANCE" // Single instance update
+  | "DELETE_SERIES" // Delete entire series
+  | "DELETE_INSTANCES"; // Delete one or more instances
+
+export interface ActionAnalysis {
+  action: SeriesAction;
+  baseEvent?: gSchema$Event;
+  modifiedInstance?: gSchema$Event;
+  newBaseEvent?: gSchema$Event;
+  endDate?: string;
+  hasInstances?: boolean; // Whether the payload includes instances
+}
+
+/**
+ * Analyzes an array of events from Google Calendar to determine the next action needed
+ * to sync the database with Google Calendar's state.
+ */
+export function analyzeEventPayload(events: gSchema$Event[]): ActionAnalysis {
+  if (!events || events.length === 0) {
+    throw error(
+      GenericError.DeveloperError,
+      "Payloads not analyzed because no events provided",
+    );
+  }
+
+  // Find base event and instances
+  const baseEvent = events.find(
+    (event) => event.recurrence && !event.recurringEventId,
+  );
+  const instances = events.filter((event) => event.recurringEventId);
+
+  // If we have a single event with recurrence and no instances, it's a new series
+  if (
+    events.length === 1 &&
+    baseEvent?.recurrence &&
+    !baseEvent.recurringEventId
+  ) {
+    return {
+      action: "CREATE_SERIES",
+      baseEvent,
+    };
+  }
+
+  // Check for cancelled events
+  const cancelledEvents = events.filter(
+    (event) => event.status === "cancelled",
+  );
+
+  // If we have no base event and all events are cancelled instances, it's a series deletion
+  if (!baseEvent && cancelledEvents.length === events.length) {
+    return {
+      action: "DELETE_SERIES",
+    };
+  }
+
+  // If we have a base event and cancelled instances, it's an instance deletion
+  if (baseEvent && cancelledEvents.length > 0) {
+    return {
+      action: "DELETE_INSTANCES",
+      baseEvent,
+      modifiedInstance: cancelledEvents[0],
+    };
+  }
+
+  // If we have a base event with UNTIL rule and no cancelled instances, it's a series modification
+  if (baseEvent?.recurrence?.some((rule) => rule.includes("UNTIL"))) {
+    // Find the new base event - it should have recurrence but no UNTIL
+    const newBaseEvent = events.find(
+      (event) =>
+        event.recurrence &&
+        !event.recurringEventId &&
+        event.id !== baseEvent?.id &&
+        !event.recurrence.some((rule) => rule.includes("UNTIL")),
+    );
+
+    if (newBaseEvent) {
+      return {
+        action: "MODIFY_SERIES",
+        baseEvent,
+        newBaseEvent,
+        endDate: baseEvent.recurrence
+          .find((rule) => rule.includes("UNTIL"))
+          ?.split("=")[1],
+        hasInstances: instances.length > 0,
+      };
+    }
+  }
+
+  // If we have instances that point to the base event, it's an instance update
+  if (
+    baseEvent &&
+    instances.length > 0 &&
+    instances.every((instance) => instance.recurringEventId === baseEvent.id)
+  ) {
+    return {
+      action: "UPDATE_INSTANCE",
+      baseEvent,
+      modifiedInstance: instances[0],
+    };
+  }
+
+  // Default case - treat as regular update
+  if (!events[0]) {
+    throw error(
+      GenericError.DeveloperError,
+      "Payloads not analyzed because no events provided",
+    );
+  }
+
+  throw error(
+    GenericError.DeveloperError,
+    "Event not inferred because not all cases were handled",
+  );
+}
 
 const _generateInstances = (
   rule: string,

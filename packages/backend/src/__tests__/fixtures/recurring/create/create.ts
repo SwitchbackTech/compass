@@ -1,6 +1,6 @@
 import { gSchema$Events } from "@core/types/gcal";
 
-export const newRecurringEventPayload: gSchema$Events = {
+export const createNewRecurringEventPayload: gSchema$Events = {
   kind: "calendar#events",
   etag: '"p32fttgkdgag8o0o"',
   summary: "test.user@gmail.com",
