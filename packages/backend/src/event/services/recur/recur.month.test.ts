@@ -1,5 +1,6 @@
-import { RRULE } from "../../../../core/src/constants/core.constants";
-import { assembleInstances } from "./event.service.util";
+import { Schema_Event_Core } from "@core/types/event.types";
+import { RRULE } from "../../../../../core/src/constants/core.constants";
+import { assembleInstances } from "./recur.util";
 
 describe("Event Recurrence: Month", () => {
   it("uses first and last of month", () => {
@@ -9,7 +10,7 @@ describe("Event Recurrence: Month", () => {
       recurrence: {
         rule: [RRULE.MONTH],
       },
-    });
+    } as Schema_Event_Core);
 
     expect(events[0].startDate).toBe("2023-10-01");
     expect(events[0].endDate).toBe("2023-10-31");

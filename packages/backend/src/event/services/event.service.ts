@@ -35,12 +35,12 @@ import {
   updateEvent,
 } from "../queries/event.queries";
 import {
-  assembleInstances,
   getCreateParams,
   getDeleteByIdFilter,
   getReadAllFilter,
   getUpdateAction,
 } from "./event.service.util";
+import { assembleInstances } from "./recur/recur.util";
 
 class EventService {
   create = async (userId: string, event: Event_Core) => {

@@ -1,7 +1,8 @@
 import dayjs from "dayjs";
-import { RRULE } from "../../../../core/src/constants/core.constants";
-import { assembleInstances } from "../../event/services/event.service.util";
-import { areDatesUnique, haveSharedValues } from "./_recur.util";
+import { Schema_Event_Core } from "@core/types/event.types";
+import { RRULE } from "../../../../../core/src/constants/core.constants";
+import { areDatesUnique, haveSharedValues } from "./recur.test.util";
+import { assembleInstances } from "./recur.util";
 
 describe("Weekly Recurrence: Basics", () => {
   it("uses sunday & saturday as start/end dates", () => {
@@ -11,7 +12,7 @@ describe("Weekly Recurrence: Basics", () => {
       recurrence: {
         rule: [RRULE.WEEK],
       },
-    });
+    } as Schema_Event_Core);
 
     const start = dayjs(rEvents[1].startDate);
     const end = dayjs(rEvents[rEvents.length - 1].endDate);
@@ -30,7 +31,7 @@ describe("Weekly Recurrence: Cases", () => {
       startDate: "2023-01-08",
       endDate: "2023-01-14",
       recurrence: { rule: [RRULE.WEEK] },
-    });
+    } as Schema_Event_Core);
 
     expect(events[1].startDate).toBe("2023-01-15");
     expect(events[1].endDate).toBe("2023-01-21");
@@ -43,7 +44,7 @@ describe("Weekly Recurrence: Cases", () => {
       startDate: "2023-07-23",
       endDate: "2023-07-29",
       recurrence: { rule: [RRULE.WEEK] },
-    });
+    } as Schema_Event_Core);
 
     expect(areDatesUnique(events)).toBe(true);
     expect(haveSharedValues(events)).toBe(false);
