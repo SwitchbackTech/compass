@@ -1,33 +1,11 @@
 # Recurring Events
 
-## Vocab
+## Glossary
 
 - Base Event: The first event in the series.
 - Instance Event: A later event in the series.
 - Series: A base event and all its instances.
 - Recurrence: The rule that describes how the event repeats.
-
-## Guiding Principles
-
-### Always keep track of the original base event id
-
-This id is needed to be able to delete/edit all instances.
-
-Even if a user edits just one instance, they might later want to delete the series
-
-The recurringEventId field helps identify:
-
-- Which instance belongs to which series
-- When an instance is modified
-
-### Always keep track of the original start time of an instance
-
-The `originalStartTime` uniquely identifies the instance within the recurring event series even if the instance was moved to a different time
-
-### The presence of UNTIL in recurrence rules indicates (unverified)
-
-- End of current series
-- Start of new series
 
 ## Payload Comparison
 
@@ -36,16 +14,21 @@ The `originalStartTime` uniquely identifies the instance within the recurring ev
 - "`_` id": instance id, where the prefix is the base event id and the suffix is the timestamp of the instances
   - For example, a base event with id `123` and instance on `2025-03-23` will have an instance id of `123_20250323T120000Z`
 
-| Change Type        | GET Payload                                                                                | Base Event                                         | Instance Events                                             | Key Differences                                                                                                                                                  |
-| ------------------ | ------------------------------------------------------------------------------------------ | -------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| New Recurring      | Base                                                                                       | Single base with `recurrence` rule                 | None                                                        | - Only contains the base<br>- Has `recurrence` rule <br>- No instance events                                                                                     |
-| Edit One Instance  | Base + Expanded instances                                                                  | unchanged                                          | - new data<br> - has `_` id<br>- has `recurringEventId`<br> | - Even though only one instance is changed, all instances are returned                                                                                           |
-| Edit This & Future | Base1 + <br>(Expanded? instances with `_` id and new data) + <br>Base2 with `Base1Id_R` id | Base event modified                                | Modified instance + new base                                | - Base has `until` rule<br>- Modified instance<br>- New base with new `recurrence` rule<br>- Original base event id is partially reused in the new base event id |
-| Edit All Instances | Base1 with new data + <br>Instance1 + <br>Base2 with `_R` id                               | - Same id<br>- new data<br>- `UNTIL` added to rule | ?                                                           | <br>- New base with new `recurrence` rule<br>- All instances updated                                                                                             |
+| Change Type        | GET Payload                                                                                | Base Event                                         | Instance Events                                                                              | Key Differences                                                                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New Recurring      | Base                                                                                       | Single base with `recurrence` rule                 | None                                                                                         | - Only contains the base<br>- Has `recurrence` rule <br>- No instance events                                                                                     |
+| Edit One Instance  | Base + other instances that were previously edited individually                            | unchanged                                          | - new data<br> - has `_` id<br>- has `recurringEventId`<br> - does not have `recurrence`<br> | - Even though only one instance changed, all other custom individual instances are returned (but not instances that still match the base)                        |
+| Edit This & Future | Base1 + <br>(Expanded? instances with `_` id and new data) + <br>Base2 with `Base1Id_R` id | Base event modified                                | Modified instance + new base                                                                 | - Base has `until` rule<br>- Modified instance<br>- New base with new `recurrence` rule<br>- Original base event id is partially reused in the new base event id |
+| Edit All Instances | Base1 with new data + <br>Instance1 + <br>Base2 with `_R` id                               | - Same id<br>- new data<br>- `UNTIL` added to rule | ?                                                                                            | <br>- New base with new `recurrence` rule<br>- All instances updated                                                                                             |
 
-## Implementation Guide
+### Payload Observations
 
-### Key Concepts
+The presence of UNTIL in recurrence rules indicates (unverified)
+
+- End of current series
+- Start of new series
+
+## Key Concepts
 
 1. **Event Identification**
 
@@ -66,6 +49,48 @@ The `originalStartTime` uniquely identifies the instance within the recurring ev
    - `recurringEventId` links instances to their base event
    - `originalStartTime` preserves instance's original schedule
    - `iCalUID` remains constant across modifications
+
+### Implementation Guidance
+
+### Always keep track of the original start time of an instance
+
+The `originalStartTime` property uniquely identifies the instance within the recurring event series even if the instance was moved to a different time
+
+1. **Always Track Base Event IDs**
+   This id is needed to be able to delete/edit all instances.
+
+Even if a user edits just one instance, they might later want to delete the series
+
+The `recurringEventId` property helps identify:
+
+- Which instance belongs to which series
+- When an instance is modified
+
+  - Store `recurringEventId` for all instances
+  - Keep `originalStartTime` for modified instances
+  - Use `iCalUID` for cross-referencing
+
+1. **Handle Series Modifications**
+
+   - Check for `UNTIL` rules to identify series endings
+   - Look for `_R` suffix in IDs for new series
+   - Preserve original series data until new series is confirmed
+
+2. **Instance Management**
+
+   - Use `originalStartTime` for instance identification
+   - Keep track of modified instances separately
+   - Handle timezone conversions consistently
+
+3. **Error Handling**
+
+   - Validate recurrence rules
+   - Handle missing or malformed data gracefully
+
+4. **Performance Considerations**
+   - Limit instance expansion to reasonable time windows
+   - Batch database operations
+   - Cache frequently accessed series data
 
 ### Handling Different Scenarios
 
@@ -206,33 +231,35 @@ async function handleAllInstancesEdit(
 }
 ```
 
-### Best Practices
+### Schema
 
-1. **Always Track Original IDs**
+Key fields in Schema_Event and how they relate to
+recurrences
 
-   - Store `recurringEventId` for all instances
-   - Keep `originalStartTime` for modified instances
-   - Use `iCalUID` for cross-referencing
+```ts
+// For base events:
+{
+  gEventId: string;              // Google's event ID
+  recurrence: {
+    rule: string[];              // RRULE(s)
+    eventId: string;             // Same as gEventId for base events
+  }
+}
 
-2. **Handle Series Modifications**
+// For instances:
+{
+  gEventId: string;              // Google's instance ID
+  recurrence: {
+    eventId: string;             // Points to base event's gEventId
+  }
+}
 
-   - Check for `UNTIL` rules to identify series endings
-   - Look for `_R` suffix in IDs for new series
-   - Preserve original series data until new series is confirmed
-
-3. **Instance Management**
-
-   - Use `originalStartTime` for instance identification
-   - Keep track of modified instances separately
-   - Handle timezone conversions consistently
-
-4. **Error Handling**
-
-   - Validate recurrence rules
-   - Handle missing or malformed data gracefully
-   - Maintain data consistency across modifications
-
-5. **Performance Considerations**
-   - Limit instance expansion to reasonable time windows
-   - Batch database operations
-   - Cache frequently accessed series data
+// For modified instances:
+{
+  gEventId: string;              // Google's instance ID
+  recurrence: {
+    eventId: string;             // Points to base event's gEventId
+  }
+  originalStartDate?: string;    // Original time before modification
+}
+```
