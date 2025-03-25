@@ -78,5 +78,12 @@ declare module "styled-components" {
     shape: {
       borderRadius: string;
     };
+    spacing: {
+      xs: string;
+      s: string;
+      m: string;
+      l: string;
+      xl: string;
+    };
   }
 }
