@@ -1,36 +1,5 @@
 import { DefaultTheme } from "styled-components";
-
-export const c = {
-  black: "hsla(0 0 0 / 25%)",
-  blue300: "hsl(195 78 56)",
-  blue200: "hsl(196 60 59)",
-  blue100: "hsl(202 100 67)",
-  blueGray400: "hsl(207 14 57)",
-  blueGray300: "hsl(205 33 61)",
-  blueGray200: "hsl(205 36 62)",
-  blueGray100: "hsl(196 45 78)",
-  darkBlue500: "hsl(220 29 6)",
-  darkBlue400: "hsl(222 28 7)",
-  darkBlue300: "hsl(218 27 8)",
-  darkBlue200: "hsl(218 24 9)",
-  darkBlue100: "hsl(223 27 10)",
-  gray900: "hsl(0 0 0 / 50.2%)",
-  gray800: "hsl(219 18 34 / 20%)",
-  gray700: "hsl(219 18 34 25.1%)",
-  gray600: "hsl(219 8 46 / 20%)",
-  gray500: "hsl(219 8 46 / 20%)",
-  gray400: "hsl(221 9 37)",
-  gray300: "hsl(219 8 46 / 90.2%)",
-  gray200: "hsl(208 13 71 / 54.9%)",
-  gray100: "hsl(47 7 73)",
-  green: "hsl(105 61 62)",
-  orange: "hsl(25 100 63)",
-  purple: "hsl(270 100 83)",
-  red: "hsl(0 63 60)",
-  teal: "hsl(163 44 67)",
-  white200: "hsl(0 0 98)",
-  white100: "hsl(0 0 100)",
-};
+import { c, textDark, textLight } from "./colors";
 
 export const theme: DefaultTheme = {
   color: {
@@ -76,10 +45,10 @@ export const theme: DefaultTheme = {
     },
     text: {
       accent: c.blue100,
-      light: c.gray100,
+      light: textLight,
       lighter: c.white100,
       lightInactive: c.gray200,
-      dark: c.darkBlue400,
+      dark: textDark,
       darkPlaceholder: c.gray300,
     },
   },
@@ -102,6 +71,22 @@ export const theme: DefaultTheme = {
       bold: 700,
       extraBold: 900,
     },
+  },
+  getContrastText: (
+    backgroundColor: string,
+  ): typeof textLight | typeof textDark => {
+    // Convert hex to RGB
+    const hex = backgroundColor.replace("#", "");
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
+    // Calculate relative luminance using WCAG formula
+    // https://www.w3.org/TR/WCAG20-TECHS/G17.html
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    // Use white text on dark backgrounds, black text on light backgrounds
+    return luminance > 0.5 ? textDark : textLight;
   },
   transition: {
     default: "0.3s",
