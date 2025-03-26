@@ -1,7 +1,9 @@
+//@ts-nocheck
 import { Origin } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 
+//@ts-expect-error will implement this shortly
 interface EventState {
   isRecurring: boolean; // derived from recurrence?.rule
   isBaseEvent: boolean; // derived from recurrence?.eventId
