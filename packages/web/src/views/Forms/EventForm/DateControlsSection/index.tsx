@@ -1,4 +1,5 @@
 import React from "react";
+import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import {
   DateTimeSection,
   Props as DateTimeSectionProps,
@@ -13,6 +14,7 @@ export const DateControlsSection = ({ dateTimeSectionProps }: Props) => {
   return (
     <StyledControlsSection>
       <DateTimeSection {...dateTimeSectionProps} />
+      <RecurrenceSection bgColor={dateTimeSectionProps.bgColor} />
     </StyledControlsSection>
   );
 };
