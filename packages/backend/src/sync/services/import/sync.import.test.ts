@@ -1,10 +1,10 @@
-import { mockGcalEvents } from "@backend/__tests__/factories/gcal.event.factory";
-import { mockGcal } from "@backend/__tests__/factories/gcal.factory";
 import {
   cleanupTestMongo,
   clearCollections,
   setupTestMongo,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import mongoService from "@backend/common/services/mongo.service";
 import { createSyncImport } from "./sync.import";
 

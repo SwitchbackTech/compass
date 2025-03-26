@@ -3,7 +3,7 @@ import {
   Priorities as MockPriorities,
 } from "@core/constants/core.constants";
 import { gSchema$Event } from "@core/types/gcal";
-import { mockGcal } from "@backend/__tests__/factories/gcal.factory";
+import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 
 const TEST_EVENT_ID = "test-event-id";
 

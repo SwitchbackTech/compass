@@ -1,10 +1,10 @@
-import { createNewRecurringEventPayload } from "@backend/__tests__/fixtures/recurring/create/create";
-import { deleteAllPayloads } from "@backend/__tests__/fixtures/recurring/delete/all";
-import { deleteSingleEventPayloads } from "@backend/__tests__/fixtures/recurring/delete/single";
-import { deleteThisAndFollowingPayloads } from "@backend/__tests__/fixtures/recurring/delete/this-and-following";
-import { editAllPayloads } from "@backend/__tests__/fixtures/recurring/edit/all";
-import { editSingleEventPayloads } from "@backend/__tests__/fixtures/recurring/edit/single";
-import { editThisAndFollowingPayloads } from "@backend/__tests__/fixtures/recurring/edit/this-and-following";
+import { createNewRecurringEventPayload } from "@backend/__tests__/mocks.gcal/fixtures/recurring/create/create";
+import { deleteAllPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/delete/all";
+import { deleteSingleEventPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/delete/single";
+import { deleteThisAndFollowingPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/delete/this-and-following";
+import { editAllPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/edit/all";
+import { editSingleEventPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/edit/single";
+import { editThisAndFollowingPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/edit/this-and-following";
 import { determineNextAction } from "@backend/event/services/recur/parse/recur.gcal.parse";
 
 describe("Gcal Recurring Event Payload Analysis", () => {
