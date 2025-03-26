@@ -3,14 +3,14 @@ import {
   RRULE,
   RRULE_COUNT_MONTHS,
   RRULE_COUNT_WEEKS,
-} from "../../../../core/src/constants/core.constants";
+} from "../../../../../core/src/constants/core.constants";
 import {
   childrenUseBaseEventsId,
   includesRecurrenceInBase,
   onlyOrigHasId,
   usesUniqueDates,
-} from "./_recur.util";
-import { assembleInstances } from "./event.service.util";
+} from "./recur.test.util";
+import { assembleInstances } from "./recur.util";
 
 describe("maps RRULE string to object:", () => {
   it("works for week recurrence", () => {

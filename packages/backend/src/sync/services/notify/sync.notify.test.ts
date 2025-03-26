@@ -4,13 +4,13 @@ import {
   Priorities as MockPriorities,
 } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { mockGcalEvent } from "@backend/__tests__/factories/gcal.event.factory";
-import { mockGcal } from "@backend/__tests__/factories/gcal.factory";
 import {
   cleanupTestMongo,
   clearCollections,
   setupTestMongo,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { mockGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import mongoService from "@backend/common/services/mongo.service";
 import {
   ACTIONS_SYNC,
