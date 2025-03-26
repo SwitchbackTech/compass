@@ -4,6 +4,7 @@ import { StyledText } from "@web/components/Text/styled";
 import {
   StyledCaretButton,
   StyledCaretInputContainer,
+  StyledEndsOnDate,
   StyledRecurrenceRepeatCountSelect,
   StyledRecurrenceSection,
   StyledRepeatCountInput,
@@ -27,6 +28,7 @@ export const RecurrenceSection = ({ bgColor }: { bgColor: string }) => {
     <StyledRecurrenceSection>
       <RecurrenceRepeatCountSelect bgColor={bgColor} />
       <WeekDays bgColor={bgColor} />
+      <EndsOnDate />
     </StyledRecurrenceSection>
   );
 };
@@ -90,5 +92,13 @@ const WeekDay = ({ day, bgColor }: { day: string; bgColor: string }) => {
     <StyledWeekDay bgColor={bgColor} selected={day === "monday"}>
       {day.charAt(0).toUpperCase()}
     </StyledWeekDay>
+  );
+};
+
+const EndsOnDate = () => {
+  return (
+    <StyledEndsOnDate>
+      <StyledText size="l">Ends after 12 weeks</StyledText>
+    </StyledEndsOnDate>
   );
 };

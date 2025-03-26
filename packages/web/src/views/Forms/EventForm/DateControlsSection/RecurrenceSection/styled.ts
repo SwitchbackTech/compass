@@ -94,3 +94,9 @@ export const StyledCaretButton = styled.button`
     color: ${({ theme }) => theme.color.text.light};
   }
 `;
+
+export const StyledEndsOnDate = styled.div`
+  display: flex;
+  align-items: center;
+  flex-basis: 100%;
+`;
