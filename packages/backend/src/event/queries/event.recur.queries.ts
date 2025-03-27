@@ -49,12 +49,15 @@ export const deleteInstance = async (gEventId: string) => {
 };
 
 export const deleteInstances = async (userId: string, baseId: string) => {
+  if (typeof baseId !== "string") {
+    throw new Error("Invalid baseId");
+  }
   const response = await mongoService.db
     .collection(Collections.EVENT)
     .deleteMany({
       user: userId,
       _id: { $ne: mongoService.objectId(baseId) },
-      "recurrence.eventId": baseId,
+      "recurrence.eventId": { $eq: baseId },
     });
 
   return response;
