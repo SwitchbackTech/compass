@@ -3,7 +3,7 @@ import {
   RRULE,
   RRULE_COUNT_MONTHS,
   RRULE_COUNT_WEEKS,
-} from "../../../../../core/src/constants/core.constants";
+} from "../../../../../../core/src/constants/core.constants";
 import {
   childrenUseBaseEventsId,
   includesRecurrenceInBase,
