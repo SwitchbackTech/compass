@@ -5,27 +5,17 @@ import {
   Schema_Event_Core,
 } from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
-import {
-  EventError,
-  GenericError,
-} from "@backend/common/constants/error.constants";
+import { EventError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { getIdFilter } from "@backend/common/helpers/mongo.utils";
 import mongoService from "@backend/common/services/mongo.service";
 
 type Ids_Event = "_id" | "gEventId";
 
-export const deleteInstances = async (userId: string, baseId: string) => {
-  const response = await mongoService.db
-    .collection(Collections.EVENT)
-    .deleteMany({
-      user: userId,
-      _id: { $ne: mongoService.objectId(baseId) },
-      "recurrence.eventId": baseId,
-    });
-
-  return response;
-};
+/**
+ * DB operations for Compass's Event collection, focused
+ * on primitive operations
+ */
 
 export const findCompassEventBy = async (key: Ids_Event, value: string) => {
   const filter = getIdFilter(key, value);
@@ -77,33 +67,5 @@ export const updateEvent = async (
   if (!response) {
     throw error(EventError.NoMatchingEvent, "Prompt Redux refresh");
   }
-  return response;
-};
-
-export const updateFutureInstances = async (
-  userId: string,
-  event: Schema_Event,
-) => {
-  const baseId = event.recurrence?.eventId;
-  if (!baseId) {
-    throw error(
-      GenericError.BadRequest,
-      "Failed to update future instances (No base event id)",
-    );
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { _id, startDate, endDate, user, ...eventWithEligibleFields } = event;
-
-  const futureInstances = {
-    user: userId,
-    "recurrence.eventId": baseId,
-    startDate: { $gt: event.startDate },
-  };
-
-  const response = await mongoService.db
-    .collection(Collections.EVENT)
-    .updateMany(futureInstances, { $set: eventWithEligibleFields });
-
   return response;
 };
