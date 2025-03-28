@@ -219,6 +219,13 @@ export const EventForm: React.FC<FormProps> = ({
     setEvent,
   };
 
+  const recurrenceSectionProps = {
+    bgColor: priorityColor,
+    event,
+    startTime,
+    endTime,
+  };
+
   return (
     <StyledEventForm
       {...props}
@@ -278,7 +285,10 @@ export const EventForm: React.FC<FormProps> = ({
         priority={priority || Priorities.UNASSIGNED}
       />
 
-      <DateControlsSection dateTimeSectionProps={dateTimeSectionProps} />
+      <DateControlsSection
+        dateTimeSectionProps={dateTimeSectionProps}
+        recurrenceSectionProps={recurrenceSectionProps}
+      />
 
       <StyledDescription
         underlineColor={priorityColor}

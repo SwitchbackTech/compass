@@ -34,14 +34,19 @@ export const StyledWeekDay = styled.button<{
   border: 1px solid ${({ theme }) => theme.color.bg.primary};
   background-color: ${({ bgColor }) => bgColor};
   cursor: pointer;
+  ${({ selected, theme }) =>
+    !selected &&
+    `
   &:hover {
-    background-color: ${({ theme }) => theme.color.bg.primary};
-    color: ${({ theme }) => theme.color.text.light};
-  }
+    background-color: ${theme.color.bg.primary};
+    color: ${theme.color.text.light};
+    }
+  `}
+
   ${({ selected, bgColor, theme }) =>
     selected &&
     `
-    background-color: ${darken(bgColor, 50)};
+    background-color: ${darken(bgColor, 30)};
     color: ${theme.getContrastText(bgColor)};
   `}
 `;

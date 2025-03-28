@@ -1,6 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
+import { Schema_Event } from "@core/types/event.types";
+import { SelectOption } from "@web/common/types/component.types";
 import { StyledText } from "@web/components/Text/styled";
+import {
+  WEEKDAYS,
+  generateRecurrenceDates,
+  getDefaultWeekDay,
+} from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/utils";
 import {
   StyledCaretButton,
   StyledCaretInputContainer,
@@ -13,31 +20,63 @@ import {
   StyledWeekDaysContainer,
 } from "./styled";
 
-const weekDays = [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-  "sunday",
-];
+export interface RecurrenceSectionProps {
+  bgColor: string;
+  event: Schema_Event;
+  startTime: SelectOption<string>;
+  endTime: SelectOption<string>;
+}
 
-export const RecurrenceSection = ({ bgColor }: { bgColor: string }) => {
+export const RecurrenceSection = ({
+  bgColor,
+  event,
+}: RecurrenceSectionProps) => {
+  const [repeatCount, setRepeatCount] = useState(1);
+  const [weekDays, setWeekDays] = useState<string[]>([
+    getDefaultWeekDay(event),
+  ]);
+
+  useEffect(() => {
+    const recurrenceDates = generateRecurrenceDates({
+      event,
+      repeatCount,
+      weekDays,
+    });
+    console.info("recurrenceDates", recurrenceDates);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repeatCount, weekDays, event.startDate, event.endDate]);
+
   return (
     <StyledRecurrenceSection>
-      <RecurrenceRepeatCountSelect bgColor={bgColor} />
-      <WeekDays bgColor={bgColor} />
-      <EndsOnDate />
+      <RecurrenceRepeatCountSelect
+        bgColor={bgColor}
+        initialValue={repeatCount}
+        onChange={setRepeatCount}
+        min={1}
+        max={12}
+      />
+      <WeekDays bgColor={bgColor} value={weekDays} onChange={setWeekDays} />
+      <EndsOnDate numWeeks={repeatCount} />
     </StyledRecurrenceSection>
   );
 };
 
 export const RecurrenceRepeatCountSelect = ({
   bgColor,
+  initialValue,
+  onChange,
+  min,
+  max,
 }: {
   bgColor: string;
+  initialValue: number;
+  onChange: (repeatCount: number) => void;
+  min: number;
+  max: number;
 }) => {
+  const [value, setValue] = useState(initialValue);
+
   return (
     <StyledRecurrenceRepeatCountSelect>
       <StyledText size="l">Repeat every</StyledText>
@@ -46,19 +85,41 @@ export const RecurrenceRepeatCountSelect = ({
         type="number"
         max={12}
         min={1}
+        value={value}
+        readOnly
       />
-      <CaretInput />
+      <CaretInput
+        onChange={(type) => {
+          if (type === "increase") {
+            if (value < max) {
+              setValue(value + 1);
+              onChange(value + 1);
+            }
+          } else {
+            if (value > min) {
+              setValue(value - 1);
+              onChange(value - 1);
+            }
+          }
+        }}
+      />
+      <StyledText size="l">{value === 1 ? "week" : "weeks"} on:</StyledText>
     </StyledRecurrenceRepeatCountSelect>
   );
 };
 
-const CaretInput = () => {
+const CaretInput = ({
+  onChange,
+}: {
+  onChange: (type: "increase" | "decrease") => void;
+}) => {
   return (
     <StyledCaretInputContainer>
       <StyledCaretButton
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          onChange("increase");
         }}
       >
         <CaretUp size={14} />
@@ -67,6 +128,7 @@ const CaretInput = () => {
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          onChange("decrease");
         }}
       >
         <CaretDown size={14} />
@@ -75,30 +137,69 @@ const CaretInput = () => {
   );
 };
 
-const WeekDays = ({ bgColor }: { bgColor: string }) => {
+const WeekDays = ({
+  bgColor,
+  value,
+  onChange,
+}: {
+  bgColor: string;
+  value: string[];
+  onChange: (days: string[]) => void;
+}) => {
   return (
     <StyledWeekDaysContainer>
-      {weekDays.map((day) => (
+      {WEEKDAYS.map((day) => (
         <StyledWeekDayContainer key={day}>
-          <WeekDay day={day} bgColor={bgColor} />
+          <WeekDay
+            day={day}
+            bgColor={bgColor}
+            onClick={() => {
+              if (value.includes(day)) {
+                onChange(value.filter((d) => d !== day));
+              } else {
+                onChange([...value, day]);
+              }
+            }}
+            selected={value.includes(day)}
+          />
         </StyledWeekDayContainer>
       ))}
     </StyledWeekDaysContainer>
   );
 };
 
-const WeekDay = ({ day, bgColor }: { day: string; bgColor: string }) => {
+const WeekDay = ({
+  day,
+  bgColor,
+  onClick,
+  selected,
+}: {
+  day: string;
+  bgColor: string;
+  onClick: () => void;
+  selected: boolean;
+}) => {
   return (
-    <StyledWeekDay bgColor={bgColor} selected={day === "monday"}>
+    <StyledWeekDay
+      bgColor={bgColor}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick();
+      }}
+      selected={selected}
+    >
       {day.charAt(0).toUpperCase()}
     </StyledWeekDay>
   );
 };
 
-const EndsOnDate = () => {
+const EndsOnDate = ({ numWeeks }: { numWeeks: number }) => {
   return (
     <StyledEndsOnDate>
-      <StyledText size="l">Ends after 12 weeks</StyledText>
+      <StyledText size="l">
+        Ends after {numWeeks} {numWeeks === 1 ? "week" : "weeks"}
+      </StyledText>
     </StyledEndsOnDate>
   );
 };
