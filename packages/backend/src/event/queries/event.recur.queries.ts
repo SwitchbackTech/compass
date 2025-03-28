@@ -1,4 +1,5 @@
 import { error } from "console";
+import { ObjectId } from "mongodb";
 import { Schema_Event } from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
 import { GenericError } from "@backend/common/constants/error.constants";
@@ -10,11 +11,21 @@ import mongoService from "@backend/common/services/mongo.service";
  */
 
 export const insertBaseEvent = async (event: Schema_Event) => {
-  return mongoService.db.collection(Collections.EVENT).insertOne(event);
+  const eventWithId = {
+    ...event,
+    _id: event._id ? new ObjectId(event._id) : new ObjectId(),
+  };
+  return mongoService.db.collection(Collections.EVENT).insertOne(eventWithId);
 };
 
 export const insertEventInstances = async (instances: Schema_Event[]) => {
-  return mongoService.db.collection(Collections.EVENT).insertMany(instances);
+  const instancesWithIds = instances.map((instance) => ({
+    ...instance,
+    _id: instance._id ? new ObjectId(instance._id) : new ObjectId(),
+  }));
+  return mongoService.db
+    .collection(Collections.EVENT)
+    .insertMany(instancesWithIds);
 };
 
 export const updateBaseEventRecurrence = async (
@@ -56,7 +67,7 @@ export const deleteInstances = async (userId: string, baseId: string) => {
     .collection(Collections.EVENT)
     .deleteMany({
       user: userId,
-      _id: { $ne: mongoService.objectId(baseId) },
+      _id: { $ne: new ObjectId(baseId) },
       "recurrence.eventId": { $eq: baseId },
     });
 
@@ -67,22 +78,20 @@ export const updateInstance = async (
   userId: string,
   instance: Schema_Event,
 ) => {
-  // await mongoService.db.collection(Collections.EVENT).updateOne(
-  //   { gEventId: instance.id },
-  //   {
-  //     $set: {
-  //       title: instance.summary,
-  //       startDate: instance.start.dateTime,
-  //       endDate: instance.end.dateTime,
-  //       originalStartDate: instance.originalStartTime?.dateTime,
-  //       updatedAt: instance.updated,
-  //     },
-  //   },
-  // );
+  if (!instance._id) {
+    throw error(
+      GenericError.BadRequest,
+      `Did not update instance because it has has no _id. (Title: ${instance.title})`,
+    );
+  }
+
   const response = await mongoService.db
     .collection(Collections.EVENT)
     .updateOne(
-      { user: userId, _id: mongoService.objectId(instance._id) },
+      {
+        user: userId,
+        _id: new ObjectId(instance._id),
+      },
       { $set: instance },
     );
 
