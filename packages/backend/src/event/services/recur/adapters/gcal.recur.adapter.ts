@@ -2,9 +2,9 @@ import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { Schema_Event } from "@core/types/event.types";
 import { gCalendar, gSchema$Event } from "@core/types/gcal";
+import { RecurringEventManager } from "../manager/recur.manager";
 import { determineNextAction } from "../parse/recur.gcal.parse";
-import { GCalRecurringEventProvider } from "../providers/gcal.recur.provider";
-import { RecurringEventManager } from "../recur.manager";
+import { GCalRecurringEventProvider } from "../providers/gcal/gcal.recur.provider";
 import {
   Summary_SeriesChange_Compass,
   Summary_SeriesChange_Gcal,
@@ -18,10 +18,10 @@ export class GCalRecurringEventAdapter {
   private provider: GCalRecurringEventProvider;
   private userId: string;
 
-  constructor(userId: string, calendarId: string, gcal: gCalendar) {
+  constructor(userId: string, gcal: gCalendar) {
     this.userId = userId;
-    this.provider = new GCalRecurringEventProvider(userId, calendarId, gcal);
-    this.manager = new RecurringEventManager(userId, this.provider);
+    this.provider = new GCalRecurringEventProvider(gcal);
+    this.manager = new RecurringEventManager(this.provider);
   }
 
   /**

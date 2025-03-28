@@ -4,7 +4,7 @@ import { ObjectId } from "mongodb";
 import { RRule } from "rrule";
 import { RRULE } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Schema_Event_Core } from "@core/types/event.types";
+import { Schema_Event, Schema_Event_Core } from "@core/types/event.types";
 import { GenericError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
@@ -29,6 +29,105 @@ export const assembleInstances = (
   const events = _generateInstances(rule, event, baseId);
 
   return events;
+};
+
+/**
+ * Generates instances for a recurring event based on its recurrence rule
+ * @param baseEvent The base event with recurrence rule
+ * @param maxInstances Maximum number of instances to generate (default: 100)
+ * @returns Array of events including the base event and its instances
+ */
+export const generateRecurringInstances = (
+  baseEvent: Schema_Event,
+  maxInstances: number = 100,
+): Schema_Event[] => {
+  if (!baseEvent.recurrence?.rule || baseEvent.recurrence.rule.length === 0) {
+    throw error(
+      GenericError.DeveloperError,
+      "Failed to generate recurring events: no recurrence rule provided",
+    );
+  }
+
+  if (!baseEvent.startDate || !baseEvent.endDate) {
+    throw error(
+      GenericError.DeveloperError,
+      "Failed to generate recurring events: missing start or end date",
+    );
+  }
+
+  const baseId = baseEvent._id || new ObjectId().toString();
+  const ruleString = baseEvent.recurrence.rule[0];
+  if (!ruleString) {
+    throw error(
+      GenericError.DeveloperError,
+      "Failed to generate recurring events: invalid recurrence rule",
+    );
+  }
+
+  // Parse the base event dates with dayjs
+  const baseStart = dayjs.utc(baseEvent.startDate);
+  const baseEnd = dayjs.utc(baseEvent.endDate);
+  const duration = baseEnd.diff(baseStart);
+
+  // Create the RRule with the base event's start date
+  const dtstart = baseStart.format("YYYYMMDDTHHmmss");
+  const fullRuleString = `DTSTART=${dtstart}Z\n${ruleString}`;
+  const rule = RRule.fromString(fullRuleString);
+
+  // Get all dates from the rule
+  const dates = rule.all();
+
+  // Generate instances
+  const instances = dates
+    .slice(0, maxInstances)
+    .map((date, index) => {
+      // Skip the first date as it's the base event
+      if (index === 0) return null;
+
+      // Convert the RRule date to dayjs and maintain the same time as the base event
+      const instanceStart = dayjs
+        .utc(date)
+        .hour(baseStart.hour())
+        .minute(baseStart.minute())
+        .second(0);
+
+      const instanceEnd = instanceStart.add(duration);
+
+      const instance: Schema_Event = {
+        ...baseEvent,
+        _id: undefined, // Let MongoDB generate the ID
+        startDate: instanceStart.toISOString(),
+        endDate: instanceEnd.toISOString(),
+        recurrence: {
+          eventId: baseId,
+          rule: [], // Instances don't have their own recurrence rules
+        },
+      };
+
+      return instance;
+    })
+    .filter((instance): instance is Schema_Event => instance !== null);
+
+  // Create the base event
+  const base: Schema_Event = {
+    ...baseEvent,
+    _id: baseId,
+    recurrence: {
+      ...baseEvent.recurrence,
+      eventId: baseId,
+    },
+  };
+
+  return [base, ...instances];
+};
+
+/**
+ * Instances have an `eventId` and an empty `rule`
+ * @param event
+ * @returns
+ */
+export const isInstance = (event: Schema_Event) => {
+  return event.recurrence?.eventId && event.recurrence?.rule?.length === 0;
 };
 
 const _generateInstances = (
