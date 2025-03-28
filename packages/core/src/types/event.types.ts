@@ -54,6 +54,22 @@ export interface Schema_Event {
   user?: string;
 }
 
+export interface Schema_Event_Recur_Base
+  extends Omit<Schema_Event, "recurrence"> {
+  _id: string;
+  recurrence: {
+    rule: string[]; // No eventId since this is the base recurring event
+  };
+}
+
+export interface Schema_Event_Recur_Instance
+  extends Omit<Schema_Event, "recurrence"> {
+  _id: string;
+  recurrence: {
+    eventId: string; // No rule since this is an instance of the recurring event
+  };
+}
+
 export interface Schema_Event_Core extends Schema_Event {
   startDate: string;
   endDate: string;

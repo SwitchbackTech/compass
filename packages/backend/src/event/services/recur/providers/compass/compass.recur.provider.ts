@@ -1,5 +1,9 @@
-import { Collection } from "mongodb";
-import { Schema_Event } from "@core/types/event.types";
+import { Collection, ObjectId } from "mongodb";
+import {
+  Schema_Event,
+  Schema_Event_Recur_Base,
+  Schema_Event_Recur_Instance,
+} from "@core/types/event.types";
 import { GenericError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { generateRecurringInstances } from "../../util/recur.util";
@@ -11,9 +15,12 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
     private userId: string,
   ) {}
 
-  async createSeries(event: Schema_Event): Promise<{ insertedId: string }> {
+  async createSeries(
+    event: Schema_Event_Recur_Base,
+    maxInstances = 100,
+  ): Promise<{ insertedId: string }> {
     // Generate all instances including the base event
-    const events = generateRecurringInstances(event);
+    const events = generateRecurringInstances(event, maxInstances);
 
     // Convert events to MongoDB format by removing _id and ensuring all fields are strings
     const eventsToInsert = events.map((event) => {
@@ -21,7 +28,7 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
       return {
         ...eventWithoutId,
         _id: undefined, // Let MongoDB generate the _id
-      } as Schema_Event;
+      };
     });
 
     // Insert all events at once
@@ -47,17 +54,6 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
     return { deletedCount: result.deletedCount };
   }
 
-  async deleteFutureInstances(
-    baseEventId: string,
-    fromDate: string,
-  ): Promise<{ deletedCount: number }> {
-    const result = await this.collection.deleteMany({
-      "recurrence.eventId": baseEventId,
-      startDate: { $gte: fromDate },
-    });
-    return { deletedCount: result.deletedCount };
-  }
-
   async deleteInstance(eventId: string): Promise<{ deletedCount: number }> {
     const result = await this.collection.deleteOne({ _id: eventId });
     return { deletedCount: result.deletedCount };
@@ -73,12 +69,12 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
   }
 
   async deleteInstancesFromDate(
-    baseEvent: Schema_Event,
+    baseEvent: Schema_Event_Recur_Base,
     fromDate: string,
   ): Promise<{ deletedCount: number }> {
     const result = await this.collection.deleteMany({
       user: this.userId,
-      "recurrence.eventId": baseEvent.recurrence?.eventId,
+      "recurrence.eventId": baseEvent._id,
       startDate: { $gte: fromDate },
     });
     return { deletedCount: result.deletedCount };
@@ -89,7 +85,10 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
   ): Promise<{ deletedCount: number }> {
     const result = await this.collection.deleteMany({
       user: this.userId,
-      "recurrence.eventId": baseEvent.recurrence?.eventId,
+      $or: [
+        { _id: baseEvent._id }, // Match the base event itself
+        { "recurrence.eventId": baseEvent._id }, // Match all instances
+      ],
     });
     return { deletedCount: result.deletedCount };
   }
@@ -104,19 +103,21 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
     return { deletedCount: result.deletedCount };
   }
 
-  async expandRecurringEvent(baseEvent: Schema_Event): Promise<Schema_Event[]> {
-    return this.collection
+  async expandInstances(baseEvent: Schema_Event_Recur_Base) {
+    const instances = await this.collection
       .find({
         user: this.userId,
-        "recurrence.eventId": baseEvent.recurrence?.eventId,
+        "recurrence.eventId": baseEvent._id,
       })
       .toArray();
+    return instances as Schema_Event_Recur_Instance[];
   }
 
   async insertBaseEvent(event: Schema_Event): Promise<{ insertedId: string }> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _id, ...eventWithoutId } = event;
     const result = await this.collection.insertOne(
-      eventWithoutId as Schema_Event,
+      eventWithoutId as Schema_Event_Recur_Base,
     );
 
     return { insertedId: result.insertedId.toString() };
@@ -127,7 +128,7 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
   ): Promise<{ insertedIds: string[] }> {
     const instancesWithoutIds = instances.map(({ _id, ...rest }) => rest);
     const result = await this.collection.insertMany(
-      instancesWithoutIds as Schema_Event[],
+      instancesWithoutIds as Schema_Event_Recur_Instance[],
     );
 
     return {
@@ -136,7 +137,7 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
   }
 
   async updateInstance(
-    instance: Schema_Event,
+    instance: Schema_Event_Recur_Instance,
   ): Promise<{ matchedCount: number }> {
     const { _id, ...instanceWithoutId } = instance;
     const result = await this.collection.updateOne(
@@ -170,67 +171,170 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
     return { matchedCount: result.matchedCount };
   }
 
-  async updateBaseEventRecurrence(recurrence: {
-    rule: string[];
-    eventId: string;
-  }): Promise<{ matchedCount: number }> {
+  async updateBaseEventRecurrence(
+    baseEventId: string,
+    rule: string[],
+  ): Promise<{ matchedCount: number }> {
     const result = await this.collection.updateOne(
-      { gEventId: recurrence.eventId },
-      { $set: { recurrence } },
+      { _id: baseEventId },
+      { $set: { recurrence: { rule } } },
     );
     return { matchedCount: result.matchedCount };
   }
 
-  async updateSeries(event: Schema_Event): Promise<{ matchedCount: number }> {
-    if (!event.recurrence?.eventId) {
+  async updateSeries(
+    modifiedInstance: Schema_Event_Recur_Instance,
+  ): Promise<{ matchedCount: number }> {
+    if (!modifiedInstance.recurrence?.eventId) {
       throw error(
         GenericError.DeveloperError,
         "Failed to update recurring event series because eventId was missing",
       );
     }
 
-    const { _id, startDate, endDate, user, ...eventWithEligibleFields } = event;
+    // Get the original base event
+    const originalBase = await this.collection.findOne({
+      _id: modifiedInstance.recurrence.eventId,
+    });
+
+    if (
+      !originalBase ||
+      !originalBase.recurrence?.rule ||
+      !modifiedInstance.startDate
+    ) {
+      throw error(
+        GenericError.DeveloperError,
+        "Failed to update recurring event series because required fields were missing",
+      );
+    }
+
+    // Create a new base event starting from the modified instance with updated data
+    const newBase: Schema_Event_Recur_Base = {
+      ...modifiedInstance,
+      _id: new ObjectId().toString(),
+      recurrence: {
+        rule: originalBase.recurrence.rule,
+      },
+    };
+
+    // Update the original base event to end before the modified instance
+    const untilDate =
+      new Date(modifiedInstance.startDate)
+        .toISOString()
+        .replace(/[-:]/g, "")
+        .split(".")[0] + "Z";
+
+    await this.collection.updateOne(
+      { _id: originalBase._id },
+      {
+        $set: {
+          recurrence: {
+            rule: [`RRULE:FREQ=WEEKLY;UNTIL=${untilDate}`],
+          },
+        },
+      },
+    );
+
+    // Insert the new base event
+    const newBaseWithRecurrence = {
+      ...newBase,
+      recurrence: {
+        rule: originalBase.recurrence.rule,
+      },
+    };
+    await this.insertBaseEvent(newBaseWithRecurrence);
+
+    // Update all future instances to point to the new base event and have the modified data
+    const { _id, recurrence, ...modifiedData } = modifiedInstance;
     const result = await this.collection.updateMany(
       {
         user: this.userId,
-        "recurrence.eventId": event.recurrence.eventId,
+        "recurrence.eventId": originalBase._id,
+        startDate: { $gte: modifiedInstance.startDate },
       },
-      { $set: eventWithEligibleFields },
+      {
+        $set: {
+          "recurrence.eventId": newBase._id,
+          ...modifiedData,
+        },
+      },
     );
 
-    return { matchedCount: result.matchedCount };
+    return { matchedCount: result.matchedCount + 2 }; // +2 for the base events
   }
 
   async updateSeriesWithSplit(
-    originalBase: Schema_Event,
-    newBase: Schema_Event,
-    modifiedInstance: Schema_Event,
+    originalBase: Schema_Event_Recur_Base,
+    newBase: Schema_Event_Recur_Base,
+    modifiedInstance: Schema_Event_Recur_Instance,
   ): Promise<{ matchedCount: number }> {
-    // First update the original base event
-    await this.updateBaseEventRecurrence({
-      rule: originalBase.recurrence?.rule || [],
-      eventId: originalBase.recurrence?.eventId || "",
-    });
+    if (!modifiedInstance.startDate || !originalBase.recurrence?.rule) {
+      throw error(
+        GenericError.DeveloperError,
+        "Failed to update recurring event series because required fields were missing",
+      );
+    }
 
-    // Then insert the new base event
-    await this.insertBaseEvent(newBase);
+    // Update the original base event to end before the modified instance
+    const untilDate =
+      new Date(modifiedInstance.startDate)
+        .toISOString()
+        .replace(/[-:]/g, "")
+        .split(".")[0] + "Z";
 
-    // Finally update the modified instance
-    await this.updateInstance(modifiedInstance);
+    await this.collection.updateOne(
+      { _id: originalBase._id },
+      {
+        $set: {
+          recurrence: {
+            rule: [`RRULE:FREQ=WEEKLY;UNTIL=${untilDate}`],
+          },
+        },
+      },
+    );
 
-    return { matchedCount: 3 };
+    // Insert the new base event
+    const newBaseWithRecurrence = {
+      ...newBase,
+      recurrence: {
+        rule: originalBase.recurrence.rule,
+      },
+    };
+    await this.insertBaseEvent(newBaseWithRecurrence);
+
+    // Update all future instances to point to the new base event and have the modified data
+    const { _id, recurrence, ...modifiedData } = modifiedInstance;
+    const result = await this.collection.updateMany(
+      {
+        user: this.userId,
+        "recurrence.eventId": originalBase._id,
+        startDate: { $gte: modifiedInstance.startDate },
+      },
+      {
+        $set: {
+          "recurrence.eventId": newBase._id,
+          ...modifiedData,
+        },
+      },
+    );
+
+    return { matchedCount: result.matchedCount + 2 }; // +2 for the base events
   }
 
   async updateEntireSeries(
     originalBase: Schema_Event,
     updatedBase: Schema_Event,
   ): Promise<{ matchedCount: number }> {
+    const { _id, ...updatedData } = updatedBase;
     const result = await this.collection.updateMany(
       {
         user: this.userId,
-        "recurrence.eventId": originalBase.recurrence?.eventId,
+        $or: [
+          { _id: originalBase._id }, // Match the base event itself
+          { "recurrence.eventId": originalBase._id }, // Match all instances
+        ],
       },
-      { $set: updatedBase },
+      { $set: updatedData },
     );
     return { matchedCount: result.matchedCount };
   }
