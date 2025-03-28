@@ -1,4 +1,8 @@
-import { Schema_Event } from "@core/types/event.types";
+import {
+  Schema_Event,
+  Schema_Event_Recur_Base,
+  Schema_Event_Recur_Instance,
+} from "@core/types/event.types";
 
 /**
  * Interface for recurring event providers
@@ -10,7 +14,7 @@ export interface RecurringEventProvider {
    * @param event The base event to create the series from
    * @returns The inserted event ID
    */
-  createSeries(event: Schema_Event): Promise<{ insertedId: string }>;
+  createSeries(event: Schema_Event_Recur_Base): Promise<{ insertedId: string }>;
 
   /**
    * Deletes all instances of a recurring event
@@ -18,17 +22,6 @@ export interface RecurringEventProvider {
    * @returns Number of deleted instances
    */
   deleteAllInstances(baseEventId: string): Promise<{ deletedCount: number }>;
-
-  /**
-   * Deletes all future instances of a recurring event
-   * @param baseEventId The ID of the base event
-   * @param fromDate The date from which to delete instances
-   * @returns Number of deleted instances
-   */
-  deleteFutureInstances(
-    baseEventId: string,
-    fromDate: string,
-  ): Promise<{ deletedCount: number }>;
 
   /**
    * Deletes a single event instance
@@ -50,7 +43,7 @@ export interface RecurringEventProvider {
    * @returns Number of deleted instances
    */
   deleteInstancesFromDate(
-    baseEvent: Schema_Event,
+    baseEvent: Schema_Event_Recur_Base,
     fromDate: string,
   ): Promise<{ deletedCount: number }>;
 
@@ -59,7 +52,9 @@ export interface RecurringEventProvider {
    * @param baseEvent The base event to delete the series from
    * @returns Number of deleted instances
    */
-  deleteSeries(baseEvent: Schema_Event): Promise<{ deletedCount: number }>;
+  deleteSeries(
+    baseEvent: Schema_Event_Recur_Base,
+  ): Promise<{ deletedCount: number }>;
 
   /**
    * Deletes a single instance  of a recurring event
@@ -67,7 +62,7 @@ export interface RecurringEventProvider {
    * @returns Number of deleted instances
    */
   deleteSingleInstance(
-    instance: Schema_Event,
+    instance: Schema_Event_Recur_Instance,
   ): Promise<{ deletedCount: number }>;
 
   /**
@@ -75,14 +70,18 @@ export interface RecurringEventProvider {
    * @param baseEvent The base recurring event
    * @returns An array of event instances
    */
-  expandRecurringEvent(baseEvent: Schema_Event): Promise<Schema_Event[]>;
+  expandInstances(
+    baseEvent: Schema_Event_Recur_Base,
+  ): Promise<Schema_Event_Recur_Instance[]>;
 
   /**
    * Inserts a base recurring event
    * @param event The base event to insert
    * @returns The inserted event ID
    */
-  insertBaseEvent(event: Schema_Event): Promise<{ insertedId: string }>;
+  insertBaseEvent(
+    event: Schema_Event_Recur_Base,
+  ): Promise<{ insertedId: string }>;
 
   /**
    * Inserts multiple event instances
@@ -90,7 +89,7 @@ export interface RecurringEventProvider {
    * @returns Array of inserted event IDs
    */
   insertEventInstances(
-    instances: Schema_Event[],
+    instances: Schema_Event_Recur_Instance[],
   ): Promise<{ insertedIds: string[] }>;
   /**
    * Updates the recurrence rule of a base event
@@ -98,17 +97,19 @@ export interface RecurringEventProvider {
    * @param recurrence The new recurrence rule and base event ID
    * @returns Number of matched documents
    */
-  updateBaseEventRecurrence(recurrence: {
-    rule: string[];
-    eventId: string;
-  }): Promise<{ matchedCount: number }>;
+  updateBaseEventRecurrence(
+    baseEventId: string,
+    rule: string[],
+  ): Promise<{ matchedCount: number }>;
 
   /**
    * Updates a single event instance
    * @param instance The updated event instance
    * @returns Number of matched documents
    */
-  updateInstance(instance: Schema_Event): Promise<{ matchedCount: number }>;
+  updateInstance(
+    instance: Schema_Event_Recur_Instance,
+  ): Promise<{ matchedCount: number }>;
 
   /**
    * Updates all future instances of a recurring event
@@ -124,9 +125,9 @@ export interface RecurringEventProvider {
    * @returns Number of matched documents
    */
   updateSeriesWithSplit(
-    originalBase: Schema_Event,
-    newBase: Schema_Event,
-    modifiedInstance: Schema_Event,
+    originalBase: Schema_Event_Recur_Base,
+    newBase: Schema_Event_Recur_Base,
+    modifiedInstance: Schema_Event_Recur_Instance,
   ): Promise<{ matchedCount: number }>;
 
   /**
@@ -135,7 +136,7 @@ export interface RecurringEventProvider {
    * @param newBase The new base event
    */
   updateEntireSeries(
-    originalBase: Schema_Event,
-    updatedBase: Schema_Event,
+    originalBase: Schema_Event_Recur_Base,
+    updatedBase: Schema_Event_Recur_Base,
   ): Promise<{ matchedCount: number }>;
 }

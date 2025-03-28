@@ -4,7 +4,12 @@ import { ObjectId } from "mongodb";
 import { RRule } from "rrule";
 import { RRULE } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Schema_Event, Schema_Event_Core } from "@core/types/event.types";
+import {
+  Schema_Event,
+  Schema_Event_Core,
+  Schema_Event_Recur_Base,
+  Schema_Event_Recur_Instance,
+} from "@core/types/event.types";
 import { GenericError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
@@ -93,28 +98,28 @@ export const generateRecurringInstances = (
 
       const instanceEnd = instanceStart.add(duration);
 
-      const instance: Schema_Event = {
+      const instance: Schema_Event_Recur_Instance = {
         ...baseEvent,
         _id: undefined, // Let MongoDB generate the ID
         startDate: instanceStart.toISOString(),
         endDate: instanceEnd.toISOString(),
         recurrence: {
           eventId: baseId,
-          rule: [], // Instances don't have their own recurrence rules
         },
       };
 
       return instance;
     })
-    .filter((instance): instance is Schema_Event => instance !== null);
+    .filter(
+      (instance): instance is Schema_Event_Recur_Instance => instance !== null,
+    );
 
   // Create the base event
-  const base: Schema_Event = {
+  const base: Schema_Event_Recur_Base = {
     ...baseEvent,
     _id: baseId,
     recurrence: {
-      ...baseEvent.recurrence,
-      eventId: baseId,
+      rule: [ruleString],
     },
   };
 
@@ -122,12 +127,23 @@ export const generateRecurringInstances = (
 };
 
 /**
+ * Base events have an `eventId` and an empty `rule`
+ * @param event
+ * @returns
+ */
+export const isBase = (event: Schema_Event) => {
+  return (
+    event.recurrence?.rule !== undefined &&
+    event.recurrence.eventId === undefined
+  );
+};
+/**
  * Instances have an `eventId` and an empty `rule`
  * @param event
  * @returns
  */
 export const isInstance = (event: Schema_Event) => {
-  return event.recurrence?.eventId && event.recurrence?.rule?.length === 0;
+  return event.recurrence?.eventId && event.recurrence?.rule === undefined;
 };
 
 const _generateInstances = (
