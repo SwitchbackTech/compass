@@ -33,13 +33,14 @@ export const generateRecurrenceDates = ({
   event,
   repeatCount,
   weekDays,
-}: GenerateRecurrenceParams) => {
+}: GenerateRecurrenceParams): { startDate: Date; endDate: Date }[] => {
   if (weekDays.length === 0) {
     return [];
   }
 
-  const startDate = dayjs(event.startDate).utc();
-  const endDate = dayjs(event.endDate).utc();
+  const startDate = dayjs(event.startDate);
+  const endDate = dayjs(event.endDate);
+
   const duration = endDate.diff(startDate);
 
   const byWeekDay = weekDays.map(
@@ -49,7 +50,7 @@ export const generateRecurrenceDates = ({
   const untilDate = startDate
     .add(repeatCount - 1, "weeks")
     .endOf("week")
-    .add(1, "day");
+    .add(1, "day"); // Selecting sundays does not work without this.
 
   const rule = new RRule({
     freq: RRule.WEEKLY,
@@ -59,8 +60,8 @@ export const generateRecurrenceDates = ({
   });
 
   const occurrences = rule.all().map((date) => ({
-    startDate: dayjs(date).utc().format(),
-    endDate: dayjs(date).add(duration, "millisecond").utc().format(),
+    startDate: dayjs(date).toDate(),
+    endDate: dayjs(date).add(duration, "millisecond").toDate(),
   }));
 
   return occurrences;
