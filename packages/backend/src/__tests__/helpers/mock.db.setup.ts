@@ -18,7 +18,7 @@ jest.mock("@backend/common/middleware/supertokens.middleware", () => ({
   getSession: jest.fn(),
 }));
 
-export async function setupTestMongo(): Promise<TestSetup> {
+export async function setupTestDb(): Promise<TestSetup> {
   // Setup in-memory MongoDB
   const mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();

@@ -1,7 +1,7 @@
 import {
   cleanupTestMongo,
   clearCollections,
-  setupTestMongo,
+  setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
@@ -18,10 +18,10 @@ const totals = mockGcalEvents().totals;
 
 describe("SyncImport", () => {
   let syncImport: Awaited<ReturnType<typeof createSyncImport>>;
-  let setup: Awaited<ReturnType<typeof setupTestMongo>>;
+  let setup: Awaited<ReturnType<typeof setupTestDb>>;
 
   beforeAll(async () => {
-    setup = await setupTestMongo();
+    setup = await setupTestDb();
     syncImport = await createSyncImport(setup.userId);
   });
 
