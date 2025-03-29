@@ -4,13 +4,13 @@ import { Schema_Event } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 
 export const WEEKDAYS = [
+  "sunday",
   "monday",
   "tuesday",
   "wednesday",
   "thursday",
   "friday",
   "saturday",
-  "sunday",
 ];
 
 const WEEKDAY_RRULE_MAP = {
@@ -80,4 +80,29 @@ export const getDefaultWeekDay = (event: Schema_Event): string => {
   }
 
   return day;
+};
+
+export const getRecurrenceEndsOnDate = (
+  event: Schema_Event,
+  numWeeks: number,
+  weekDays: string[],
+): dayjs.Dayjs => {
+  const startDate = dayjs(event.startDate);
+
+  const lastSelectedWeekDay = weekDays.sort((a, b) => {
+    const aIndex = WEEKDAYS.indexOf(a);
+    const bIndex = WEEKDAYS.indexOf(b);
+    return aIndex - bIndex;
+  })[weekDays.length - 1];
+
+  const startDayIndex = startDate.day();
+  const lastDayIndex = WEEKDAYS.indexOf(lastSelectedWeekDay);
+
+  const daysUntilLastDay = lastDayIndex - startDayIndex;
+
+  const daysToAdd = (numWeeks - 1) * 7 + daysUntilLastDay;
+
+  const endsOnDate = startDate.add(daysToAdd, "day");
+
+  return endsOnDate;
 };

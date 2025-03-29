@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import React, { useEffect, useState } from "react";
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import { Schema_Event } from "@core/types/event.types";
@@ -7,6 +8,7 @@ import {
   WEEKDAYS,
   generateRecurrenceDates,
   getDefaultWeekDay,
+  getRecurrenceEndsOnDate,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/utils";
 import {
   StyledCaretButton,
@@ -57,7 +59,9 @@ export const RecurrenceSection = ({
         max={12}
       />
       <WeekDays bgColor={bgColor} value={weekDays} onChange={setWeekDays} />
-      <EndsOnDate numWeeks={repeatCount} />
+      {weekDays.length > 0 && repeatCount > 1 && (
+        <EndsOnDate event={event} numWeeks={repeatCount} weekDays={weekDays} />
+      )}
     </StyledRecurrenceSection>
   );
 };
@@ -194,11 +198,21 @@ const WeekDay = ({
   );
 };
 
-const EndsOnDate = ({ numWeeks }: { numWeeks: number }) => {
+const EndsOnDate = ({
+  event,
+  numWeeks,
+  weekDays,
+}: {
+  event: Schema_Event;
+  numWeeks: number;
+  weekDays: string[];
+}) => {
+  const endsOnDate = getRecurrenceEndsOnDate(event, numWeeks, weekDays);
+
   return (
     <StyledEndsOnDate>
       <StyledText size="l">
-        Ends after {numWeeks} {numWeeks === 1 ? "week" : "weeks"}
+        Ends on {endsOnDate.format("YYYY-MM-DD")}
       </StyledText>
     </StyledEndsOnDate>
   );
