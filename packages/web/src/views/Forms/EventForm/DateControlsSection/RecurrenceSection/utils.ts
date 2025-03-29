@@ -38,8 +38,8 @@ export const generateRecurrenceDates = ({
     return [];
   }
 
-  const startDate = dayjs(event.startDate);
-  const endDate = dayjs(event.endDate);
+  const startDate = dayjs(event.startDate).utc();
+  const endDate = dayjs(event.endDate).utc();
   const duration = endDate.diff(startDate);
 
   const byWeekDay = weekDays.map(
@@ -56,8 +56,8 @@ export const generateRecurrenceDates = ({
   });
 
   const occurrences = rule.all().map((date) => ({
-    startDate: dayjs(date).format(),
-    endDate: dayjs(date).add(duration, "millisecond").format(),
+    startDate: dayjs(date).utc().format(),
+    endDate: dayjs(date).add(duration, "millisecond").utc().format(),
   }));
 
   return occurrences;
