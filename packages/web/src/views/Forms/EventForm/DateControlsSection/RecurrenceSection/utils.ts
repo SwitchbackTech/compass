@@ -46,7 +46,10 @@ export const generateRecurrenceDates = ({
     (day) => WEEKDAY_RRULE_MAP[day as keyof typeof WEEKDAY_RRULE_MAP],
   );
 
-  const untilDate = startDate.add(repeatCount - 1, "weeks").endOf("week");
+  const untilDate = startDate
+    .add(repeatCount - 1, "weeks")
+    .endOf("week")
+    .add(1, "day");
 
   const rule = new RRule({
     freq: RRule.WEEKLY,
