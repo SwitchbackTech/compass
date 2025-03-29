@@ -4,7 +4,7 @@ import React, { FC } from "react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
 import { AlignItems } from "@web/components/Flex/styled";
-import { SetEventFormField } from "../types";
+import { SetEventFormField } from "@web/views/Forms/EventForm/types";
 import { DatePickers } from "./DatePickers/DatePickers";
 import { TimePickers } from "./TimePicker/TimePickers";
 import { StyledDateTimeFlex } from "./styled";

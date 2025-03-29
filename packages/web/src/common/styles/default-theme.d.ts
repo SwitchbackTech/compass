@@ -1,4 +1,5 @@
 import "styled-components";
+import { textDark, textLight } from "./colors";
 
 declare module "styled-components" {
   export interface DefaultTheme {
@@ -72,11 +73,21 @@ declare module "styled-components" {
         extraBold: number;
       };
     };
+    getContrastText: (
+      backgroundColor: string,
+    ) => typeof textLight | typeof textDark;
     transition: {
       default: string;
     };
     shape: {
       borderRadius: string;
+    };
+    spacing: {
+      xs: string;
+      s: string;
+      m: string;
+      l: string;
+      xl: string;
     };
   }
 }
