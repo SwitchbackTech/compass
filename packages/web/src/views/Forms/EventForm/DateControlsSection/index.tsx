@@ -1,4 +1,5 @@
 import React from "react";
+import { Categories_Event } from "@core/types/event.types";
 import {
   RecurrenceSection,
   RecurrenceSectionProps,
@@ -12,16 +13,20 @@ import { StyledControlsSection } from "./styled";
 interface Props {
   dateTimeSectionProps: DateTimeSectionProps;
   recurrenceSectionProps: RecurrenceSectionProps;
+  eventCategory: Categories_Event;
 }
 
 export const DateControlsSection = ({
   dateTimeSectionProps,
   recurrenceSectionProps,
+  eventCategory,
 }: Props) => {
   return (
     <StyledControlsSection>
       <DateTimeSection {...dateTimeSectionProps} />
-      <RecurrenceSection {...recurrenceSectionProps} />
+      {eventCategory === Categories_Event.TIMED && (
+        <RecurrenceSection {...recurrenceSectionProps} />
+      )}
     </StyledControlsSection>
   );
 };

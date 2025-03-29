@@ -287,6 +287,7 @@ export const EventForm: React.FC<FormProps> = ({
 
       <DateControlsSection
         dateTimeSectionProps={dateTimeSectionProps}
+        eventCategory={category}
         recurrenceSectionProps={recurrenceSectionProps}
       />
 
