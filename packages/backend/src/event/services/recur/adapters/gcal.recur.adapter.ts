@@ -1,6 +1,9 @@
 import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
-import { Schema_Event } from "@core/types/event.types";
+import {
+  Schema_Event_Recur_Base,
+  Schema_Event_Recur_Instance,
+} from "@core/types/event.types";
 import { gCalendar, gSchema$Event } from "@core/types/gcal";
 import { RecurringEventManager } from "../manager/recur.manager";
 import { determineNextAction } from "../parse/recur.gcal.parse";
@@ -49,17 +52,11 @@ export class GCalRecurringEventAdapter {
   /**
    * Maps Google Calendar action analysis to Schema_Event objects
    */
-  private mapActionAnalysisToEvents(
-    actionAnalysis: Summary_SeriesChange_Gcal,
-  ): {
-    baseEvent?: Schema_Event;
-    newBaseEvent?: Schema_Event;
-    modifiedInstance?: Schema_Event;
-  } {
+  private mapActionAnalysisToEvents(actionAnalysis: Summary_SeriesChange_Gcal) {
     const result: {
-      baseEvent?: Schema_Event;
-      newBaseEvent?: Schema_Event;
-      modifiedInstance?: Schema_Event;
+      baseEvent?: Schema_Event_Recur_Base;
+      newBaseEvent?: Schema_Event_Recur_Base;
+      modifiedInstance?: Schema_Event_Recur_Instance;
     } = {};
 
     // Map base event if it exists
@@ -68,7 +65,7 @@ export class GCalRecurringEventAdapter {
         this.userId,
         [actionAnalysis.baseEvent],
         Origin.GOOGLE_IMPORT,
-      )[0];
+      )[0] as Schema_Event_Recur_Base;
     }
 
     // Map new base event if it exists
@@ -77,7 +74,7 @@ export class GCalRecurringEventAdapter {
         this.userId,
         [actionAnalysis.newBaseEvent],
         Origin.GOOGLE_IMPORT,
-      )[0];
+      )[0] as Schema_Event_Recur_Base;
     }
 
     // Map modified instance if it exists
@@ -86,7 +83,7 @@ export class GCalRecurringEventAdapter {
         this.userId,
         [actionAnalysis.modifiedInstance],
         Origin.GOOGLE_IMPORT,
-      )[0];
+      )[0] as Schema_Event_Recur_Instance;
     }
 
     return result;

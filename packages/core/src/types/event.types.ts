@@ -56,7 +56,6 @@ export interface Schema_Event {
 
 export interface Schema_Event_Recur_Base
   extends Omit<Schema_Event, "recurrence"> {
-  _id: string;
   recurrence: {
     rule: string[]; // No eventId since this is the base recurring event
   };
@@ -64,7 +63,6 @@ export interface Schema_Event_Recur_Base
 
 export interface Schema_Event_Recur_Instance
   extends Omit<Schema_Event, "recurrence"> {
-  _id: string;
   recurrence: {
     eventId: string; // No rule since this is an instance of the recurring event
   };

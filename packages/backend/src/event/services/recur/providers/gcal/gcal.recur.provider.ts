@@ -1,12 +1,85 @@
-import { Schema_Event } from "@core/types/event.types";
-import { gCalendar } from "@core/types/gcal";
+import dayjs from "dayjs";
+import { Origin } from "@core/constants/core.constants";
+import { MapEvent } from "@core/mappers/map.event";
+import {
+  Schema_Event,
+  Schema_Event_Core,
+  Schema_Event_Recur_Base,
+  Schema_Event_Recur_Instance,
+} from "@core/types/event.types";
+import { gCalendar, gSchema$Event } from "@core/types/gcal";
+import { EventError } from "@backend/common/constants/error.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import { RecurringEventProvider } from "../recur.provider.interface";
 
 /**
  * Google Calendar specific implementation for handling recurring events
  */
+
+//NOTE: These have not been tested and will
+// fail. They are not being implemented currently
+// but are just here to appease typescript and
+// get it setup for follow up
 export class GCalRecurringEventProvider implements RecurringEventProvider {
   constructor(private gcal: gCalendar) {}
+
+  /**
+   * Fetches all instances of a recurring event series and returns them as Compass events
+   */
+  private async expandRecurringEvent(
+    userId: string,
+    calendarId: string,
+    recurringEventId: string,
+  ): Promise<Schema_Event_Core[]> {
+    const timeMin = new Date().toISOString();
+    const timeMax = dayjs().add(6, "months").toISOString();
+
+    const { data } = await this.gcal.events.instances({
+      calendarId,
+      eventId: recurringEventId,
+      timeMin,
+      timeMax,
+    });
+    const instances = data?.items;
+
+    if (!instances) {
+      throw error(
+        EventError.NoGevents,
+        "No instances found for recurring event",
+      );
+    }
+
+    return MapEvent.toCompass(userId, instances, Origin.GOOGLE_IMPORT);
+  }
+
+  /**
+   * Expands multiple recurring events into their instances
+   */
+  public async expandRecurringEvents(
+    userId: string,
+    calendarId: string,
+    recurringEvents: gSchema$Event[],
+  ): Promise<Schema_Event_Core[]> {
+    const expandedEvents: Schema_Event_Core[] = [];
+
+    for (const event of recurringEvents) {
+      const recurringId = event.recurringEventId || event.id;
+      if (!recurringId) {
+        throw error(
+          EventError.MissingProperty,
+          "Recurring event not expanded due to missing recurrence id",
+        );
+      }
+      const instances = await this.expandRecurringEvent(
+        userId,
+        calendarId,
+        recurringId,
+      );
+      expandedEvents.push(...instances);
+    }
+
+    return expandedEvents;
+  }
 
   async createSeries(event: Schema_Event): Promise<{ insertedId: string }> {
     const googleEvent = await this.gcal.events.insert({
@@ -151,21 +224,30 @@ export class GCalRecurringEventProvider implements RecurringEventProvider {
     return { deletedCount: 1 };
   }
 
-  async expandRecurringEvent(baseEvent: Schema_Event): Promise<Schema_Event[]> {
+  async expandInstances(
+    baseEvent: Schema_Event_Recur_Base,
+  ): Promise<Schema_Event_Recur_Instance[]> {
     // Get the event from Google Calendar
     const event = await this.gcal.events.get({
       calendarId: "primary",
-      eventId: baseEvent.gEventId,
+      eventId: baseEvent.gEventId || "",
     });
 
     if (!event.data.recurrence) {
-      return [baseEvent];
+      return [
+        {
+          ...baseEvent,
+          recurrence: {
+            eventId: baseEvent.gEventId || "",
+          },
+        },
+      ];
     }
 
     // Get all instances of the recurring event
     const instances = await this.gcal.events.instances({
       calendarId: "primary",
-      eventId: baseEvent.gEventId,
+      eventId: baseEvent.gEventId || "",
     });
 
     // Convert Google Calendar events to our schema
@@ -177,8 +259,7 @@ export class GCalRecurringEventProvider implements RecurringEventProvider {
           instance.start?.dateTime || instance.start?.date || undefined,
         endDate: instance.end?.dateTime || instance.end?.date || undefined,
         recurrence: {
-          eventId: baseEvent.gEventId,
-          rule: baseEvent.recurrence?.rule || [],
+          eventId: baseEvent.gEventId || "",
         },
       })) || []
     );
@@ -229,15 +310,15 @@ export class GCalRecurringEventProvider implements RecurringEventProvider {
     return { insertedIds };
   }
 
-  async updateBaseEventRecurrence(recurrence: {
-    rule: string[];
-    eventId: string;
-  }): Promise<{ matchedCount: number }> {
+  async updateBaseEventRecurrence(
+    baseEventId: string,
+    rule: string[],
+  ): Promise<{ matchedCount: number }> {
     await this.gcal.events.patch({
       calendarId: "primary",
-      eventId: recurrence.eventId,
+      eventId: baseEventId,
       requestBody: {
-        recurrence: recurrence.rule,
+        recurrence: rule,
       },
     });
 
@@ -307,10 +388,22 @@ export class GCalRecurringEventProvider implements RecurringEventProvider {
     modifiedInstance: Schema_Event,
   ): Promise<{ matchedCount: number }> {
     // First update the original base event
-    await this.updateBaseEventRecurrence({
-      rule: originalBase.recurrence?.rule || [],
-      eventId: originalBase.recurrence?.eventId || "",
-    });
+    if (!originalBase.recurrence?.eventId) {
+      throw error(
+        EventError.MissingProperty,
+        "Did not update series because no base event id",
+      );
+    }
+    if (!originalBase.recurrence?.rule) {
+      throw error(
+        EventError.MissingProperty,
+        "Did not update series because no recurrence rule",
+      );
+    }
+    await this.updateBaseEventRecurrence(
+      originalBase.recurrence?.eventId,
+      originalBase.recurrence?.rule,
+    );
 
     // Then insert the new base event
     await this.insertBaseEvent(newBase);

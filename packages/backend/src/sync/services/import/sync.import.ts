@@ -1,8 +1,6 @@
-import dayjs from "dayjs";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
-import { Schema_Event_Core } from "@core/types/event.types";
 import {
   gCalendar,
   gParamsImportAllEvents,
@@ -22,6 +20,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
+import { GCalRecurringEventProvider } from "@backend/event/services/recur/providers/gcal/gcal.recur.provider";
 import {
   getSync,
   updateSync,
@@ -65,14 +64,16 @@ export class SyncImport {
     return syncEvents;
   }
 
-  private async categorizeGevents(
+  private async categorizeGcalEvents(
     userId: string,
     gCalendarId: string,
     updatedEvents: gSchema$Event[],
   ): Promise<EventsToModify> {
     const { toUpdate, toDelete } = organizeGcalEventsByType(updatedEvents);
 
-    const expandedEvents = await this.expandRecurringEvents(
+    // Create GCal provider for handling recurring events
+    const gcalProvider = new GCalRecurringEventProvider(this.gcal);
+    const expandedEvents = await gcalProvider.expandRecurringEvents(
       userId,
       gCalendarId,
       toUpdate.recurring,
@@ -98,62 +99,6 @@ export class SyncImport {
       toUpdate: toUpdateCombined,
       toDelete,
     };
-  }
-
-  /**
-   * Fetches all instances of a recurring event series and returns them as Compass events
-   */
-  private async expandRecurringEvent(
-    userId: string,
-    calendarId: string,
-    recurringEventId: string,
-  ): Promise<Schema_Event_Core[]> {
-    const timeMin = new Date().toISOString();
-    const timeMax = dayjs().add(6, "months").toISOString();
-
-    const { data } = await gcalService.getEventInstances(
-      this.gcal,
-      calendarId,
-      recurringEventId,
-      timeMin,
-      timeMax,
-    );
-    const instances = data?.items;
-
-    if (!instances) {
-      throw error(
-        EventError.NoGevents,
-        "No instances found for recurring event",
-      );
-    }
-
-    return MapEvent.toCompass(userId, instances, Origin.GOOGLE_IMPORT);
-  }
-
-  private async expandRecurringEvents(
-    userId: string,
-    calendarId: string,
-    recurringEvents: gSchema$Event[],
-  ): Promise<Schema_Event_Core[]> {
-    const expandedEvents: Schema_Event_Core[] = [];
-
-    for (const event of recurringEvents) {
-      const recurringId = event.recurringEventId || event.id;
-      if (!recurringId) {
-        throw error(
-          EventError.MissingProperty,
-          "Recurring event not expanded due to missing recurrence id",
-        );
-      }
-      const instances = await this.expandRecurringEvent(
-        userId,
-        calendarId,
-        recurringId,
-      );
-      expandedEvents.push(...instances);
-    }
-
-    return expandedEvents;
   }
 
   /**
@@ -332,7 +277,7 @@ export class SyncImport {
         return { created: 0, updated: 0, deleted: 0, nextSyncToken };
       }
 
-      const eventsToModify = await this.categorizeGevents(
+      const eventsToModify = await this.categorizeGcalEvents(
         userId,
         gCalendarId,
         updatedEvents,
