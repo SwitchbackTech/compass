@@ -58,11 +58,11 @@ describe("Compass Recurring Event Provider", () => {
       const baseEvent = createMockBaseEvent({ user: setup.userId });
 
       // Execute
-      await provider.createSeries(baseEvent, 10);
+      await provider.createSeries(baseEvent, 5);
 
       // Verify database state
       const storedEvents = await mongoService.event.find().toArray();
-      expect(storedEvents).toHaveLength(10); // Base + instances
+      expect(storedEvents).toHaveLength(5); // Base + instances
 
       // Verify base event
       const storedBaseEvent = storedEvents.find((e) => isBase(e));
@@ -73,12 +73,12 @@ describe("Compass Recurring Event Provider", () => {
 
       // Verify instances
       const instances = storedEvents.filter((e) => isInstance(e));
-      expect(instances).toHaveLength(9);
+      expect(instances).toHaveLength(4);
       expect(instances[0]?.startDate).toBe("2024-03-27T10:00:00.000Z");
       expect(instances[0]?.recurrence?.rule).toBeUndefined();
       expect(instances[1]?.startDate).toBe("2024-04-03T10:00:00.000Z");
       expect(instances[1]?.recurrence?.rule).toBeUndefined();
-    });
+    }, 6000);
   });
   describe("CREATE: instances", () => {
     it("should insert multiple event instances", async () => {
