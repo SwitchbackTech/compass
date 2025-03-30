@@ -23,7 +23,7 @@ export class GCalNotificationHandler {
     if (!sync) {
       throw error(
         SyncError.NoSyncRecordForUser,
-        `Notification not handled because no sync record found for calendar ${payload.calendarId}`,
+        `Notification not handled because no sync record found for calendarId: ${payload.calendarId}`,
       );
     }
 
@@ -34,7 +34,7 @@ export class GCalNotificationHandler {
     if (!calendarSync?.nextSyncToken) {
       throw error(
         SyncError.NoSyncToken,
-        `Notification not handled because no sync token found for calendar ${payload.calendarId}`,
+        `Notification not handled because no sync token found for calendarId: ${payload.calendarId}`,
       );
     }
 

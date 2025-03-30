@@ -61,24 +61,29 @@ class SyncService {
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
     console.log("++ handleGcalNotification payload:", payload);
+    const { channelId, resourceId, resourceState } = payload;
+    if (resourceState !== "exists") {
+      logger.info(`Sync initialized for channelId: ${payload.channelId}`);
+      return "initialized";
+    }
 
     // Get the sync record to find the calendar ID
-    const sync = await getSync({ resourceId: payload.resourceId });
+    const sync = await getSync({ resourceId });
     if (!sync) {
       throw error(
         SyncError.NoSyncRecordForUser,
-        `Notification not handled because no sync record found for resource ${payload.resourceId}`,
+        `Notification not handled because no sync record found for resource ${resourceId}`,
       );
     }
 
     // Find the calendar sync record
     const calendarSync = sync.google?.events?.find(
-      (event) => event.channelId === payload.channelId,
+      (event) => event.channelId === channelId,
     );
     if (!calendarSync?.gCalendarId) {
       throw error(
         SyncError.NoSyncRecordForUser,
-        `Notification not handled because no calendar found for channel ${payload.channelId}`,
+        `Notification not handled because no calendar found for channel ${channelId}`,
       );
     }
 
@@ -89,7 +94,7 @@ class SyncService {
     const handler = new GCalNotificationHandler(gcal, sync.user);
     return handler.handleNotification({
       calendarId: calendarSync.gCalendarId,
-      resourceId: payload.resourceId,
+      resourceId: resourceId,
     });
   };
 
