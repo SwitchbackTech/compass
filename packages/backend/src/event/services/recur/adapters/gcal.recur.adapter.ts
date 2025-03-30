@@ -42,7 +42,7 @@ export class GCalRecurringEventAdapter {
     const input: Summary_SeriesChange_Compass = {
       action: actionAnalysis.action,
       ...schemaEvents,
-      endDate: actionAnalysis.endDate,
+      deleteFrom: actionAnalysis.deleteFrom,
     };
 
     // 4. Process the action

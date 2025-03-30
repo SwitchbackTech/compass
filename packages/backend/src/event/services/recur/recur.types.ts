@@ -16,7 +16,7 @@ export interface Summary_SeriesChange_Gcal {
   baseEvent?: gSchema$Event;
   modifiedInstance?: gSchema$Event;
   newBaseEvent?: gSchema$Event;
-  endDate?: string;
+  deleteFrom?: string;
   hasInstances?: boolean;
 }
 
@@ -25,5 +25,5 @@ export interface Summary_SeriesChange_Compass {
   baseEvent?: Schema_Event_Recur_Base;
   modifiedInstance?: Schema_Event_Recur_Instance;
   newBaseEvent?: Schema_Event_Recur_Base;
-  endDate?: string;
+  deleteFrom?: string;
 }

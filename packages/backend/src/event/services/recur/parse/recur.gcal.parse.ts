@@ -80,7 +80,7 @@ class GCalParser {
         action: "UPDATE_SERIES",
         baseEvent: this.baseEvent,
         newBaseEvent,
-        endDate,
+        deleteFrom: endDate,
         hasInstances: this.instances.length > 0,
       };
     }

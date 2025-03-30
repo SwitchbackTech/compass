@@ -35,7 +35,7 @@ describe("Gcal Recurring Event Payload Analysis", () => {
         expect(analysis.action).toBe("UPDATE_SERIES");
         expect(analysis.baseEvent).toBeDefined();
         expect(analysis.newBaseEvent).toBeDefined();
-        expect(analysis.endDate).toBeDefined();
+        expect(analysis.deleteFrom).toBeDefined();
         expect(
           analysis.baseEvent?.recurrence?.some((rule) =>
             rule.includes("UNTIL"),

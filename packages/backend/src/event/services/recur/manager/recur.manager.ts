@@ -1,3 +1,4 @@
+import { Logger } from "@core/logger/winston.logger";
 import { GenericError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { RecurringEventProvider } from "../providers/recur.provider.interface";
@@ -6,6 +7,8 @@ import { Summary_SeriesChange_Compass } from "../recur.types";
 /**
  * Manages recurring event operations in a provider-agnostic way
  */
+const logger = Logger("recur.manager");
+
 export class RecurringEventManager {
   private provider: RecurringEventProvider;
 
@@ -18,9 +21,10 @@ export class RecurringEventManager {
    * @param input The action data containing events and action type
    */
   async handleAction(input: Summary_SeriesChange_Compass) {
-    const { action, baseEvent, newBaseEvent, modifiedInstance, endDate } =
+    const { action, baseEvent, newBaseEvent, modifiedInstance, deleteFrom } =
       input;
 
+    logger.debug(input);
     switch (action) {
       case "CREATE_SERIES":
         if (baseEvent) {
@@ -51,8 +55,8 @@ export class RecurringEventManager {
 
       case "DELETE_INSTANCES":
         // Delete this and future
-        if (baseEvent && endDate && modifiedInstance) {
-          return this.provider.deleteInstancesFromDate(baseEvent, endDate);
+        if (baseEvent && deleteFrom && modifiedInstance) {
+          return this.provider.deleteInstancesFromDate(baseEvent, deleteFrom);
         }
         // Delete single instance
         else if (modifiedInstance) {
