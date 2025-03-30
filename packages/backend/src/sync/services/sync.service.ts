@@ -33,7 +33,7 @@ import {
   pruneSync,
   refreshSync,
 } from "./maintain/sync.maintenance";
-import { SyncNotificationService } from "./notify/sync.notify";
+import { GCalNotificationHandler } from "./notify/gcal.notification.handler";
 
 const logger = Logger("app:sync.service");
 class SyncService {
@@ -61,10 +61,36 @@ class SyncService {
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
     console.log("++ handleGcalNotification payload:", payload);
-    const syncNotificationService = new SyncNotificationService();
-    const response =
-      await syncNotificationService.handleGcalNotification(payload);
-    return response;
+
+    // Get the sync record to find the calendar ID
+    const sync = await getSync({ resourceId: payload.resourceId });
+    if (!sync) {
+      throw error(
+        SyncError.NoSyncRecordForUser,
+        `Notification not handled because no sync record found for resource ${payload.resourceId}`,
+      );
+    }
+
+    // Find the calendar sync record
+    const calendarSync = sync.google?.events?.find(
+      (event) => event.channelId === payload.channelId,
+    );
+    if (!calendarSync?.gCalendarId) {
+      throw error(
+        SyncError.NoSyncRecordForUser,
+        `Notification not handled because no calendar found for channel ${payload.channelId}`,
+      );
+    }
+
+    // Get the Google Calendar client
+    const gcal = await getGcalClient(sync.user);
+
+    // Create and use the notification handler
+    const handler = new GCalNotificationHandler(gcal, sync.user);
+    return handler.handleNotification({
+      calendarId: calendarSync.gCalendarId,
+      resourceId: payload.resourceId,
+    });
   };
 
   importFull = async (
