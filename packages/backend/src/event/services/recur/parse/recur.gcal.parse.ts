@@ -123,14 +123,8 @@ class GCalParser {
   };
 
   private isUpdatingInstance = () => {
-    // If we have instances that point to the base event, it's an instance update
-    const answer =
-      this.baseEvent &&
-      this.instances.length > 0 &&
-      this.instances.every(
-        (instance) => instance.recurringEventId === this.baseEvent?.id,
-      );
-    return !!answer;
+    const answer = this.instances.length > 0;
+    return answer;
   };
 
   private isUpdatingSeries = () => {
