@@ -1,5 +1,6 @@
 import { GaxiosError } from "gaxios";
 import { v4 as uuidv4 } from "uuid";
+import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
 import {
@@ -16,6 +17,7 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import {
   deleteWatchData,
@@ -34,6 +36,7 @@ import {
   refreshSync,
 } from "./maintain/sync.maintenance";
 import { GCalNotificationHandler } from "./notify/gcal.notification.handler";
+import { getIdsFromSyncPayload } from "./notify/gcal.notification.util";
 
 const logger = Logger("app:sync.service");
 class SyncService {
@@ -60,42 +63,35 @@ class SyncService {
   };
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    console.log("++ handleGcalNotification payload:", payload);
     const { channelId, resourceId, resourceState } = payload;
     if (resourceState !== "exists") {
       logger.info(`Sync initialized for channelId: ${payload.channelId}`);
-      return "initialized";
+      return "INITIALIZED";
     }
 
-    // Get the sync record to find the calendar ID
-    const sync = await getSync({ resourceId });
-    if (!sync) {
-      throw error(
-        SyncError.NoSyncRecordForUser,
-        `Notification not handled because no sync record found for resource ${resourceId}`,
-      );
-    }
-
-    // Find the calendar sync record
-    const calendarSync = sync.google?.events?.find(
-      (event) => event.channelId === channelId,
+    const { userId, gCalendarId } = await getIdsFromSyncPayload(
+      channelId,
+      resourceId,
     );
-    if (!calendarSync?.gCalendarId) {
-      throw error(
-        SyncError.NoSyncRecordForUser,
-        `Notification not handled because no calendar found for channel ${channelId}`,
-      );
-    }
 
     // Get the Google Calendar client
-    const gcal = await getGcalClient(sync.user);
+    const gcal = await getGcalClient(userId);
 
     // Create and use the notification handler
-    const handler = new GCalNotificationHandler(gcal, sync.user);
-    return handler.handleNotification({
-      calendarId: calendarSync.gCalendarId,
+    const handler = new GCalNotificationHandler(gcal, userId);
+    await handler.handleNotification({
+      calendarId: gCalendarId,
       resourceId: resourceId,
     });
+
+    const wsResult = webSocketServer.handleBackgroundCalendarChange(userId);
+    const result =
+      wsResult === RESULT_NOTIFIED_CLIENT
+        ? "PROCESSED AND NOTIFIED CLIENT"
+        : "PROCESSED IN BACKGROUND";
+    console.log(result, " (", userId, ")");
+
+    return result;
   };
 
   importFull = async (

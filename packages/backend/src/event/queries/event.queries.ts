@@ -1,4 +1,4 @@
-import { AnyBulkWriteOperation } from "mongodb";
+import { AnyBulkWriteOperation, WithId } from "mongodb";
 import {
   Payload_Order,
   Schema_Event,
@@ -22,7 +22,7 @@ export const findCompassEventBy = async (key: Ids_Event, value: string) => {
 
   const event = (await mongoService.db
     .collection(Collections.EVENT)
-    .findOne(filter)) as unknown as Schema_Event;
+    .findOne(filter)) as unknown as WithId<Schema_Event | null>;
 
   return { eventExists: event !== null, event };
 };
@@ -56,16 +56,19 @@ export const updateEvent = async (
     delete _event._id; // mongo doesn't allow changing this field directly
   }
 
-  const response = await mongoService.db
+  const response = (await mongoService.db
     .collection(Collections.EVENT)
     .findOneAndReplace(
       { _id: mongoService.objectId(eventId), user: userId },
       _event,
       { returnDocument: "after" },
-    );
+    )) as unknown as WithId<Schema_Event>;
 
   if (!response) {
-    throw error(EventError.NoMatchingEvent, "Prompt Redux refresh");
+    throw error(
+      EventError.NoMatchingEvent,
+      "Event not updated due to failed DB operation",
+    );
   }
   return response;
 };

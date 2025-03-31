@@ -298,11 +298,11 @@ class EventService {
     userId: string,
     eventId: string,
     event: Schema_Event_Core,
-    query: Query_Event_Update,
+    query?: Query_Event_Update,
   ) => {
     const updateGcal = !event.isSomeday;
-    const action = getUpdateAction(event, query);
     const _baseEvent = updateGcal ? await _updateGcal(userId, event) : event;
+    const action = query ? getUpdateAction(event, query) : "UPDATE";
 
     const _event = { ..._baseEvent, updatedAt: new Date() };
     const baseId = _event.recurrence?.eventId as string;
