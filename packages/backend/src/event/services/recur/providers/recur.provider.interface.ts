@@ -126,7 +126,6 @@ export interface RecurringEventProvider {
    */
   updateSeriesWithSplit(
     originalBase: Schema_Event_Recur_Base,
-    newBase: Schema_Event_Recur_Base,
     modifiedInstance: Schema_Event_Recur_Instance,
   ): Promise<{ modifiedCount: number }>;
 

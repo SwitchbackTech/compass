@@ -282,17 +282,9 @@ describe("Compass Recurring Event Provider", () => {
           eventId: originalBaseId,
         },
       };
-      const newBase = createMockBaseEvent({
-        user: setup.userId,
-        title: "Team Sync - Updated",
-      });
 
       // Execute
-      await provider.updateSeriesWithSplit(
-        originalBase,
-        newBase,
-        modifiedInstance,
-      );
+      await provider.updateSeriesWithSplit(originalBase, modifiedInstance);
 
       // Verify
       const storedEvents = await mongoService.event.find().toArray();

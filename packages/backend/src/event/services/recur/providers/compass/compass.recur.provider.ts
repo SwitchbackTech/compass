@@ -208,15 +208,6 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
       );
     }
 
-    // Create a new base event starting from the modified instance with updated data
-    const newBase: Schema_Event_Recur_Base = {
-      ...modifiedInstance,
-      _id: new ObjectId().toString(),
-      recurrence: {
-        rule: originalBase.recurrence.rule,
-      },
-    };
-
     // Update the original base event to end before the modified instance
     const untilDate =
       new Date(modifiedInstance.startDate)
@@ -235,14 +226,15 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
       },
     );
 
-    // Insert the new base event
-    const newBaseWithRecurrence = {
-      ...newBase,
+    // Create a new base event starting from the modified instance with updated data
+    const newBase: Schema_Event_Recur_Base = {
+      ...modifiedInstance,
+      _id: new ObjectId().toString(),
       recurrence: {
         rule: originalBase.recurrence.rule,
       },
     };
-    await this.insertBaseEvent(newBaseWithRecurrence);
+    await this.insertBaseEvent(newBase);
 
     // Update all future instances to point to the new base event and have the modified data
     const { _id, recurrence, ...modifiedData } = modifiedInstance;
@@ -265,7 +257,6 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
 
   async updateSeriesWithSplit(
     originalBase: Schema_Event_Recur_Base,
-    newBase: Schema_Event_Recur_Base,
     modifiedInstance: Schema_Event_Recur_Instance,
   ): Promise<{ modifiedCount: number }> {
     if (!modifiedInstance.startDate || !originalBase.recurrence?.rule) {

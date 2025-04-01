@@ -384,9 +384,8 @@ export class GCalRecurringEventProvider implements RecurringEventProvider {
 
   async updateSeriesWithSplit(
     originalBase: Schema_Event,
-    newBase: Schema_Event,
     modifiedInstance: Schema_Event,
-  ): Promise<{ matchedCount: number }> {
+  ): Promise<{ modifiedCount: number }> {
     // First update the original base event
     if (!originalBase.recurrence?.eventId) {
       throw error(
@@ -406,12 +405,12 @@ export class GCalRecurringEventProvider implements RecurringEventProvider {
     );
 
     // Then insert the new base event
-    await this.insertBaseEvent(newBase);
+    // await this.insertBaseEvent(newBase);
 
     // Finally update the modified instance
     await this.updateInstance(modifiedInstance);
 
-    return { matchedCount: 3 };
+    return { modifiedCount: 3 };
   }
 
   async updateEntireSeries(

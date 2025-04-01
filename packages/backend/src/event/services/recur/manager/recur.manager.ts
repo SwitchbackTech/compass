@@ -43,7 +43,6 @@ export class RecurringEventManager {
         if (baseEvent && newBaseEvent && modifiedInstance) {
           return this.provider.updateSeriesWithSplit(
             baseEvent,
-            newBaseEvent,
             modifiedInstance,
           );
         }
