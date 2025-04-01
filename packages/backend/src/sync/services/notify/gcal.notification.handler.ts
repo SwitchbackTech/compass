@@ -20,7 +20,7 @@ export class GCalNotificationHandler {
   async handleNotification(payload: {
     calendarId: string;
     resourceId: string;
-  }): Promise<void> {
+  }): Promise<string> {
     const nextSyncToken = await this.getNextSyncTokenForCalendar(payload);
     const { hasChanges, changes } = await this.getLatestChanges(
       payload.calendarId,
@@ -30,6 +30,9 @@ export class GCalNotificationHandler {
     if (hasChanges) {
       const processor = new GCalEventProcessor(this.gcal, this.userId);
       await processor.processEvents(changes);
+      return "CHANGES_PROCESSED";
+    } else {
+      return "NO_CHANGES";
     }
   }
 

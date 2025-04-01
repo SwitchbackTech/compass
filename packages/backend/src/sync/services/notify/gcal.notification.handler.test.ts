@@ -87,7 +87,7 @@ describe("GCalNotificationHandler", () => {
       });
 
       // Execute
-      await handler.handleNotification(mockPayload);
+      const result = await handler.handleNotification(mockPayload);
 
       // Verify
       expect(getSync).toHaveBeenCalledWith({
@@ -98,6 +98,19 @@ describe("GCalNotificationHandler", () => {
         syncToken: "test-sync-token",
       });
       expect(mockProcessor.processEvents).toHaveBeenCalledWith(mockEvents);
+      expect(result).toEqual("CHANGES_PROCESSED");
+    });
+
+    it("should return NO_CHANGES when no changes found", async () => {
+      // Setup
+      (getSync as jest.Mock).mockResolvedValue(mockSync);
+      (gcalService.getEvents as jest.Mock).mockResolvedValue({
+        data: { items: [] },
+      });
+
+      // Execute and verify
+      const result = await handler.handleNotification(mockPayload);
+      expect(result).toEqual("NO_CHANGES");
     });
 
     it("should throw error when no sync record found", async () => {
@@ -127,19 +140,6 @@ describe("GCalNotificationHandler", () => {
       // Execute and verify
       await expect(handler.handleNotification(mockPayload)).rejects.toEqual(
         error(SyncError.NoSyncToken, expect.any(String)),
-      );
-    });
-
-    it("should throw error when no changes found", async () => {
-      // Setup
-      (getSync as jest.Mock).mockResolvedValue(mockSync);
-      (gcalService.getEvents as jest.Mock).mockResolvedValue({
-        data: { items: [] },
-      });
-
-      // Execute and verify
-      await expect(handler.handleNotification(mockPayload)).rejects.toEqual(
-        error(SyncError.NoEventChanges, expect.any(String)),
       );
     });
   });
