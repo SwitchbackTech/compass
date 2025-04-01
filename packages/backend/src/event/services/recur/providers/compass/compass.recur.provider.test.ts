@@ -228,64 +228,110 @@ describe("Compass Recurring Event Provider", () => {
   });
 
   describe("UPDATE: series with split", () => {
-    it("should update the original base event, create a new base event, and update the modified instance", async () => {
+    it("should preserve the instances up to the split and create new instances for the remaining events", async () => {
       // Setup original base event and instance
       const originalBase = createMockBaseEvent({ user: setup.userId });
-      const instance = createMockInstance(originalBase._id, {
+      const originalBaseId = originalBase._id as string;
+      const instance1 = createMockInstance(originalBaseId, {
         user: setup.userId,
+        startDate: "2024-04-03T10:00:00.000Z",
+        endDate: "2024-04-03T11:00:00.000Z",
+      });
+      const instance2 = createMockInstance(originalBaseId, {
+        user: setup.userId,
+        startDate: "2024-04-10T10:00:00.000Z",
+        endDate: "2024-04-10T11:00:00.000Z",
+      });
+      const instance3Modified = createMockInstance(originalBaseId, {
+        user: setup.userId,
+        startDate: "2024-04-17T10:00:00.000Z",
+        endDate: "2024-04-17T11:00:00.000Z",
+      });
+      const instance4 = createMockInstance(originalBaseId, {
+        user: setup.userId,
+        startDate: "2024-04-24T10:00:00.000Z",
+        endDate: "2024-04-24T11:00:00.000Z",
+      });
+      const instance5 = createMockInstance(originalBaseId, {
+        user: setup.userId,
+        startDate: "2024-05-01T10:00:00.000Z",
+        endDate: "2024-05-01T11:00:00.000Z",
+      });
+      const instance6 = createMockInstance(originalBaseId, {
+        user: setup.userId,
+        startDate: "2024-05-08T10:00:00.000Z",
+        endDate: "2024-05-08T11:00:00.000Z",
       });
 
       // Add events to database
-      await mongoService.event.insertOne(originalBase);
-      await mongoService.event.insertOne(instance);
+      await mongoService.event.insertMany([
+        originalBase,
+        instance1,
+        instance2,
+        instance3Modified, // <--- this is the instance that will be split
+        instance4,
+        instance5,
+        instance6,
+      ]);
 
       // Setup new base event and modified instance
-      const newBase = createMockBaseEvent({
-        user: setup.userId,
-        title: "New Team Sync",
-      });
-
       const modifiedInstance: Schema_Event_Recur_Instance = {
-        ...instance,
-        title: "Modified Team Sync",
+        ...instance3Modified,
+        title: "Team Sync - Updated", //<-- user changed title of this instance and applied to following
         recurrence: {
-          eventId: newBase._id,
+          eventId: originalBaseId,
         },
       };
+      const newBase = createMockBaseEvent({
+        user: setup.userId,
+        title: "Team Sync - Updated",
+      });
 
       // Execute
-      const result = await provider.updateSeriesWithSplit(
+      await provider.updateSeriesWithSplit(
         originalBase,
         newBase,
         modifiedInstance,
       );
 
       // Verify
-      expect(result.matchedCount).toBe(3);
       const storedEvents = await mongoService.event.find().toArray();
-      expect(storedEvents).toHaveLength(3);
+      expect(storedEvents).toHaveLength(7); // 1 original base + 2 instances with origial base + 1 new base + 3 instances with new base
 
       // Check original base event was updated
       const updatedOriginalBase = storedEvents.find(
         (e) => e.title === "Weekly Team Sync",
       );
+      const BASE2_START = "20240417T100000Z";
       expect(updatedOriginalBase?.recurrence?.rule).toEqual([
-        "RRULE:FREQ=WEEKLY;UNTIL=20240327T100000Z",
+        `RRULE:FREQ=WEEKLY;UNTIL=${BASE2_START}`,
       ]);
 
-      // Check new base event was created
+      // Check new base event was created from modified instance
       const createdNewBase = storedEvents.find(
-        (e) => e.title === "New Team Sync",
+        (e) => isBase(e) && e.title === "Team Sync - Updated",
       ) as Schema_Event_Recur_Base;
       expect(createdNewBase).toBeDefined();
-      expect(createdNewBase?.title).toBe("New Team Sync");
+      expect(createdNewBase?.title).toBe("Team Sync - Updated");
       expect(createdNewBase?.recurrence?.rule).toEqual(["RRULE:FREQ=WEEKLY"]);
-      expect(isBase(createdNewBase)).toBe(true);
+      expect(createdNewBase?._id).toBe(instance3Modified._id);
 
-      // Check instance was updated
-      const updatedInstance = storedEvents.find((e) => e._id === instance._id);
-      expect(updatedInstance?.title).toBe("Modified Team Sync");
-      expect(updatedInstance?.recurrence?.eventId).toBe(newBase._id);
+      // Check remaining instances were preserved
+      const instancesBeforeSplit = storedEvents.filter(
+        (e) => e.recurrence?.eventId === originalBaseId,
+      );
+      expect(instancesBeforeSplit).toHaveLength(2);
+      instancesBeforeSplit.forEach((instance) => {
+        expect(instance.title).toBe("Weekly Team Sync");
+      });
+
+      const instancesAfterSplit = storedEvents.filter(
+        (e) => e.recurrence?.eventId === createdNewBase._id,
+      );
+      expect(instancesAfterSplit).toHaveLength(3);
+      instancesAfterSplit.forEach((instance) => {
+        expect(instance.title).toBe("Team Sync - Updated");
+      });
     });
   });
 

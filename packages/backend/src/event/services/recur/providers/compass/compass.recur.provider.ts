@@ -267,7 +267,7 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
     originalBase: Schema_Event_Recur_Base,
     newBase: Schema_Event_Recur_Base,
     modifiedInstance: Schema_Event_Recur_Instance,
-  ): Promise<{ matchedCount: number }> {
+  ): Promise<{ modifiedCount: number }> {
     if (!modifiedInstance.startDate || !originalBase.recurrence?.rule) {
       throw error(
         GenericError.DeveloperError,
@@ -293,17 +293,21 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
       },
     );
 
-    // Insert the new base event
-    const newBaseWithRecurrence = {
-      ...newBase,
-      recurrence: {
-        rule: originalBase.recurrence.rule,
-      },
-    };
-    await this.insertBaseEvent(newBaseWithRecurrence);
-
-    // Update all future instances to point to the new base event and have the modified data
+    // Convert the modified instance into the new base event
     const { _id, recurrence, ...modifiedData } = modifiedInstance;
+    await this.collection.updateOne(
+      { _id: modifiedInstance._id },
+      {
+        $set: {
+          ...modifiedData,
+          recurrence: {
+            rule: originalBase.recurrence.rule,
+          },
+        },
+      },
+    );
+
+    // Update all instances from the modified instance onwards to point to the new base
     const result = await this.collection.updateMany(
       {
         user: this.userId,
@@ -312,13 +316,13 @@ export class CompassRecurringEventProvider implements RecurringEventProvider {
       },
       {
         $set: {
-          "recurrence.eventId": newBase._id,
+          "recurrence.eventId": modifiedInstance._id,
           ...modifiedData,
         },
       },
     );
 
-    return { matchedCount: result.matchedCount + 2 }; // +2 for the base events
+    return { modifiedCount: result.modifiedCount };
   }
 
   async updateEntireSeries(

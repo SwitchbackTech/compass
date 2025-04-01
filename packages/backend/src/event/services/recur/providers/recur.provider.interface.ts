@@ -128,7 +128,7 @@ export interface RecurringEventProvider {
     originalBase: Schema_Event_Recur_Base,
     newBase: Schema_Event_Recur_Base,
     modifiedInstance: Schema_Event_Recur_Instance,
-  ): Promise<{ matchedCount: number }>;
+  ): Promise<{ modifiedCount: number }>;
 
   /**
    * Updates the entire series of recurring events

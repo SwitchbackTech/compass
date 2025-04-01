@@ -24,7 +24,7 @@ export class RecurringEventManager {
     const { action, baseEvent, newBaseEvent, modifiedInstance, deleteFrom } =
       input;
 
-    logger.debug(input);
+    logger.debug(JSON.stringify(input, null, 2));
     switch (action) {
       case "CREATE_SERIES":
         if (baseEvent) {
