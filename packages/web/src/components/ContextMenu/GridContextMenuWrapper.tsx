@@ -86,7 +86,9 @@ export const ContextMenuWrapper = ({
       dispatch(
         draftSlice.actions.start({
           activity: "eventRightClick",
-          eventType: Categories_Event.TIMED,
+          eventType: event.isAllDay
+            ? Categories_Event.ALLDAY
+            : Categories_Event.TIMED,
           event,
         }),
       );
