@@ -78,7 +78,7 @@ describe("Compass Recurring Event Provider", () => {
       expect(instances[0]?.recurrence?.rule).toBeUndefined();
       expect(instances[1]?.startDate).toBe("2024-04-03T10:00:00.000Z");
       expect(instances[1]?.recurrence?.rule).toBeUndefined();
-    }, 6000);
+    });
   });
   describe("CREATE: instances", () => {
     it("should insert multiple event instances", async () => {

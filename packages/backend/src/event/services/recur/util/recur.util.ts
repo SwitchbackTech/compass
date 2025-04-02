@@ -76,7 +76,7 @@ export const generateRecurringInstances = (
 
   // Create the RRule with the base event's start date
   const dtstart = baseStart.format("YYYYMMDDTHHmmss");
-  const fullRuleString = `DTSTART=${dtstart}Z\n${ruleString}`;
+  const fullRuleString = `DTSTART=${dtstart}Z\n${ruleString};COUNT=${maxInstances}`;
   const rule = RRule.fromString(fullRuleString);
 
   // Get all dates from the rule
