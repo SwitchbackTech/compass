@@ -5,6 +5,7 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isLeftClick } from "@web/common/utils/mouse/mouse.util";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
+import { selectIsGetWeekEventsProcessing } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
@@ -24,6 +25,7 @@ export const AllDayEvents = ({
   endOfView,
 }: Props) => {
   const allDayEvents = useAppSelector(selectAllDayEvents);
+  const isProcessing = useAppSelector(selectIsGetWeekEventsProcessing);
   const draftId = useAppSelector(selectDraftId);
   const dispatch = useAppDispatch();
 
@@ -54,24 +56,25 @@ export const AllDayEvents = ({
 
   return (
     <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>
-      {allDayEvents.map((event: Schema_GridEvent, i) => {
-        return (
-          <AllDayEventMemo
-            key={`${event.title}-${i}`}
-            isPlaceholder={event._id === draftId}
-            event={event}
-            startOfView={startOfView}
-            endOfView={endOfView}
-            measurements={measurements}
-            onMouseDown={(e, event) => {
-              if (!isLeftClick(e)) {
-                return;
-              }
-              onMouseDown(e, event);
-            }}
-          />
-        );
-      })}
+      {!isProcessing &&
+        allDayEvents.map((event: Schema_GridEvent, i) => {
+          return (
+            <AllDayEventMemo
+              key={`${event.title}-${i}`}
+              isPlaceholder={event._id === draftId}
+              event={event}
+              startOfView={startOfView}
+              endOfView={endOfView}
+              measurements={measurements}
+              onMouseDown={(e, event) => {
+                if (!isLeftClick(e)) {
+                  return;
+                }
+                onMouseDown(e, event);
+              }}
+            />
+          );
+        })}
     </StyledEvents>
   );
 };
