@@ -248,8 +248,10 @@ export class CompassRecurringEventProcessor implements RecurringEventProcessor {
       },
       {
         $set: {
-          "recurrence.eventId": newBase._id,
           ...modifiedData,
+          recurrence: {
+            eventId: newBase._id,
+          },
         },
       },
     );
@@ -274,6 +276,13 @@ export class CompassRecurringEventProcessor implements RecurringEventProcessor {
         .toISOString()
         .replace(/[-:]/g, "")
         .split(".")[0] + "Z";
+
+    if (untilDate === "") {
+      throw error(
+        GenericError.DeveloperError,
+        "Failed to update recurring event series because untilDate was empty",
+      );
+    }
 
     await this.collection.updateOne(
       { _id: originalBase._id },
@@ -309,8 +318,10 @@ export class CompassRecurringEventProcessor implements RecurringEventProcessor {
       },
       {
         $set: {
-          "recurrence.eventId": modifiedInstance._id,
           ...modifiedData,
+          recurrence: {
+            eventId: modifiedInstance._id,
+          },
         },
       },
     );

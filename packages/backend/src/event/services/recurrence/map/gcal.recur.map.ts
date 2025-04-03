@@ -24,9 +24,9 @@ export class GCalRecurringEventMapper {
   /**
    * Maps Google Calendar events to our schemas
    */
-  mapEvents() {
+  mapEvents(): Summary_SeriesChange_Compass {
     const schemaEvents = this.mapActionAnalysisToEvents();
-    const input: Summary_SeriesChange_Compass = {
+    const input = {
       action: this.actionAnalysis.action,
       ...schemaEvents,
       deleteFrom: this.actionAnalysis.deleteFrom,

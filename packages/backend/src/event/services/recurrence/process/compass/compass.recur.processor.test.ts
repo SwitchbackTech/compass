@@ -320,6 +320,7 @@ describe("Compass Recurring Event Processor", () => {
       expect(instancesAfterSplit).toHaveLength(3);
       instancesAfterSplit.forEach((instance) => {
         expect(instance.title).toBe("Team Sync - Updated");
+        expect(instance.recurrence?.rule).toBeUndefined();
       });
     });
   });
