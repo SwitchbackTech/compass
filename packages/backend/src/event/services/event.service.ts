@@ -37,7 +37,7 @@ import {
   getReadAllFilter,
   getUpdateAction,
 } from "./event.service.util";
-import { assembleInstances } from "./recur/util/recur.util";
+import { assembleInstances } from "./recurrence/util/recur.util";
 
 class EventService {
   create = async (userId: string, event: Event_Core) => {

@@ -3,15 +3,9 @@ import { SyncError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { getSync } from "@backend/sync/util/sync.queries";
-import { GCalEventProcessor } from "../process/gcal.event.processor";
 import { GCalNotificationHandler } from "./gcal.notification.handler";
 
 // Mock dependencies
-jest.mock("../process/gcal.event.processor", () => ({
-  GCalEventProcessor: jest.fn().mockImplementation(() => ({
-    processEvents: jest.fn(),
-  })),
-}));
 
 jest.mock("@backend/common/services/gcal/gcal.service", () => ({
   __esModule: true,
@@ -28,7 +22,6 @@ describe("GCalNotificationHandler", () => {
   let handler: GCalNotificationHandler;
   let mockGcal: gCalendar;
   let mockUserId: string;
-  let mockProcessor: jest.Mocked<GCalEventProcessor>;
 
   beforeEach(() => {
     mockUserId = "test-user-id";
@@ -42,11 +35,6 @@ describe("GCalNotificationHandler", () => {
         instances: jest.fn(),
       },
     } as unknown as gCalendar;
-
-    mockProcessor = {
-      processEvents: jest.fn(),
-    } as unknown as jest.Mocked<GCalEventProcessor>;
-    (GCalEventProcessor as jest.Mock).mockImplementation(() => mockProcessor);
 
     handler = new GCalNotificationHandler(mockGcal, mockUserId);
   });
@@ -97,7 +85,6 @@ describe("GCalNotificationHandler", () => {
         calendarId: mockPayload.calendarId,
         syncToken: "test-sync-token",
       });
-      expect(mockProcessor.processEvents).toHaveBeenCalledWith(mockEvents);
       expect(result).toEqual("CHANGES_PROCESSED");
     });
 

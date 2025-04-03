@@ -20,7 +20,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
-import { GCalRecurringEventProvider } from "@backend/event/services/recur/providers/gcal/gcal.recur.provider";
+import { GCalRecurringEventProcessor } from "@backend/event/services/recurrence/process/gcal/gcal.recur.processor";
 import {
   getSync,
   updateSync,
@@ -71,9 +71,8 @@ export class SyncImport {
   ): Promise<EventsToModify> {
     const { toUpdate, toDelete } = organizeGcalEventsByType(updatedEvents);
 
-    // Create GCal provider for handling recurring events
-    const gcalProvider = new GCalRecurringEventProvider(this.gcal);
-    const expandedEvents = await gcalProvider.expandRecurringEvents(
+    const gcalProcessor = new GCalRecurringEventProcessor(this.gcal);
+    const expandedEvents = await gcalProcessor.expandRecurringEvents(
       userId,
       gCalendarId,
       toUpdate.recurring,
@@ -92,7 +91,7 @@ export class SyncImport {
         toUpdate: toUpdateCombined,
         toDelete: toDelete,
       },
-      nextSyncToken: "idk",
+      nextSyncToken: "idk TODO delete",
     });
 
     return {

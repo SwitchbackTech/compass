@@ -10,7 +10,7 @@ import {
 import { gCalendar, gSchema$Event } from "@core/types/gcal";
 import { EventError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { RecurringEventProvider } from "../recur.provider.interface";
+import { RecurringEventProcessor } from "../processor.interface";
 
 /**
  * Google Calendar specific implementation for handling recurring events
@@ -20,7 +20,7 @@ import { RecurringEventProvider } from "../recur.provider.interface";
 // fail. They are not being implemented currently
 // but are just here to appease typescript and
 // get it setup for follow up
-export class GCalRecurringEventProvider implements RecurringEventProvider {
+export class GCalRecurringEventProcessor implements RecurringEventProcessor {
   constructor(private gcal: gCalendar) {}
 
   /**
