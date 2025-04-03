@@ -5,7 +5,7 @@ import { deleteThisAndFollowingPayloads } from "@backend/__tests__/mocks.gcal/fi
 import { editAllPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/edit/all";
 import { editSingleEventPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/edit/single";
 import { editThisAndFollowingPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/edit/this-and-following";
-import { determineNextAction } from "@backend/event/services/recur/parse/recur.gcal.parse";
+import { determineNextAction } from "@backend/event/services/recurrence/parse/recur.gcal.parse";
 
 describe("Gcal Recurring Event Payload Analysis", () => {
   describe("Create", () => {
