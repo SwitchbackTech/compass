@@ -1,4 +1,6 @@
-export const thisAndFollowing0Payload = {
+import { gSchema$Events } from "@core/types/gcal";
+
+export const thisAndFollowing0Payload: gSchema$Events = {
   kind: "calendar#events",
   etag: '"p32vujd53seh8o0o"',
   summary: "test.user@gmail.com",
