@@ -44,6 +44,12 @@ export const createAsyncSlice = <
 
   const reducers = {
     request: (state, _action: PayloadAction<Draft<RequestPayload>>) => {
+      // When running tests, we use mock data, so we don't need to fetch the week events from the API
+      // See comments in https://github.com/SwitchbackTech/compass/pull/338 for dev notes
+      if (process.env.NODE_ENV === "test") {
+        return;
+      }
+
       state.isProcessing = true;
       state.isSuccess = false;
       state.error = null;
