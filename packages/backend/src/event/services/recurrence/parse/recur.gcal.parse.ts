@@ -4,9 +4,9 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { Summary_SeriesChange_Gcal } from "../recurrence.types";
 
 /**
- * Infer changes from Google Calendar events
+ * Determine next action after a Google Calendar event change
  */
-export function inferGcalChange(
+export function determineActionAfterGcalChange(
   events: gSchema$Event[],
 ): Summary_SeriesChange_Gcal {
   const parser = new GCalParser(events);
@@ -71,9 +71,10 @@ class GCalParser {
 
     const { isUpdatingSeries, newBaseEvent } = this.isUpdatingSeries();
     if (isUpdatingSeries) {
-      const endDate = this.baseEvent?.recurrence
-        ?.find((rule) => rule.includes("UNTIL"))
-        ?.split("=")[1];
+      const untilRule = this.baseEvent?.recurrence?.find((rule) =>
+        rule.includes("UNTIL"),
+      );
+      const endDate = untilRule?.split("UNTIL=")?.[1];
 
       return {
         action: "UPDATE_SERIES",

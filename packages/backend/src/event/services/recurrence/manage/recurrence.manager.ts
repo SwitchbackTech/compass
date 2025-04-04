@@ -22,7 +22,7 @@ export class RecurringEventManager {
    * Main entrypoint that handles different recurring event actions
    * @param changes The action data containing events and action type
    */
-  async handleAction(changes: Summary_SeriesChange_Compass) {
+  async handleChanges(changes: Summary_SeriesChange_Compass) {
     const { action, baseEvent, newBaseEvent, modifiedInstance, deleteFrom } =
       changes;
 
@@ -87,18 +87,19 @@ export const shouldSplitSeries = (changes: Summary_SeriesChange_Compass) => {
   console.log("++ checking if shouldSplitSeries using these changes:");
   console.log(JSON.stringify(changes, null, 2));
 
-  // If we have a base event with an UNTIL rule and a new base event with a rule but no UNTIL,
+  // If we have a base event with an UNTIL rule and deleteFrom contains a valid date,
   // we need to split the series
   const baseEventHasUntil =
     changes.baseEvent?.recurrence?.rule?.[0]?.includes("UNTIL");
-  const newBaseEventHasRule =
-    changes.newBaseEvent?.recurrence?.rule?.[0] !== undefined;
-  const newBaseEventHasNoUntil =
-    !changes.newBaseEvent?.recurrence?.rule?.[0]?.includes("UNTIL");
 
-  if (baseEventHasUntil && newBaseEventHasRule && newBaseEventHasNoUntil) {
-    return true;
+  if (baseEventHasUntil) {
+    // Extract the date from the UNTIL rule (e.g. "DAILY;UNTIL=20240320T000000Z" -> "20240320T000000Z")
+    const untilDate = changes.deleteFrom?.split("UNTIL=")?.[1];
+    const hasValidDate = untilDate && /^\d{8}T\d{6}Z$/.test(untilDate);
+
+    if (hasValidDate) {
+      return true;
+    }
   }
-
   return false;
 };

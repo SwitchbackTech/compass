@@ -24,7 +24,7 @@ export class GCalRecurringEventMapper {
   /**
    * Infer changes from Google Calendar events
    */
-  inferChanges(): Summary_SeriesChange_Compass {
+  mapChangesFromGcalToCompass(): Summary_SeriesChange_Compass {
     const schemaEvents = this.mapGcalChangesToCompassChanges();
     const compassChanges = {
       action: this.actionAnalysis.action,
