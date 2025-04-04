@@ -10,6 +10,9 @@ export const selectIsProcessing = (state: RootState) =>
   isProcessing(state.events.createEvent) ||
   isProcessing(state.events.getWeekEvents);
 
+export const selectIsGetWeekEventsProcessing = (state: RootState) =>
+  isProcessing(state.events.getWeekEvents);
+
 export const selectEventIdsBySectionType = (
   state: RootState,
   type: SectionType,

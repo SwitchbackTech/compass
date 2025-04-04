@@ -5,6 +5,7 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
+import { selectIsGetWeekEventsProcessing } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
@@ -21,6 +22,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const dispatch = useAppDispatch();
 
   const timedEvents = useAppSelector(selectGridEvents);
+  const isProcessing = useAppSelector(selectIsGetWeekEventsProcessing);
   const draftId = useAppSelector(selectDraftId);
 
   const adjustedEvents = adjustOverlappingEvents(timedEvents);
@@ -66,32 +68,33 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
   return (
     <div id={ID_GRID_EVENTS_TIMED}>
-      {adjustedEvents.map((event: Schema_GridEvent) => {
-        return (
-          <GridEventMemo
-            event={event}
-            isDragging={false}
-            isDraft={false}
-            isPlaceholder={event._id === draftId}
-            isResizing={false}
-            key={`initial-${event._id}`}
-            measurements={measurements}
-            onEventMouseDown={(event, e) => {
-              onMouseDown(e, event);
-            }}
-            onScalerMouseDown={(
-              event,
-              e,
-              dateToChange: "startDate" | "endDate",
-            ) => {
-              e.stopPropagation();
-              e.preventDefault();
-              resizeTimedEvent(event, dateToChange);
-            }}
-            weekProps={weekProps}
-          />
-        );
-      })}
+      {!isProcessing &&
+        adjustedEvents.map((event: Schema_GridEvent) => {
+          return (
+            <GridEventMemo
+              event={event}
+              isDragging={false}
+              isDraft={false}
+              isPlaceholder={event._id === draftId}
+              isResizing={false}
+              key={`initial-${event._id}`}
+              measurements={measurements}
+              onEventMouseDown={(event, e) => {
+                onMouseDown(e, event);
+              }}
+              onScalerMouseDown={(
+                event,
+                e,
+                dateToChange: "startDate" | "endDate",
+              ) => {
+                e.stopPropagation();
+                e.preventDefault();
+                resizeTimedEvent(event, dateToChange);
+              }}
+              weekProps={weekProps}
+            />
+          );
+        })}
     </div>
   );
 };
