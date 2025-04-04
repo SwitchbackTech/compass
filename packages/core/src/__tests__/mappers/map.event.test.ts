@@ -195,11 +195,11 @@ describe("toCompass", () => {
         updated: "2025-04-03T13:52:14.761Z",
         summary: "r1-i",
         creator: {
-          email: "lance.essert@gmail.com",
+          email: "test.user@gmail.com",
           self: true,
         },
         organizer: {
-          email: "lance.essert@gmail.com",
+          email: "test.user@gmail.com",
           self: true,
         },
         start: {

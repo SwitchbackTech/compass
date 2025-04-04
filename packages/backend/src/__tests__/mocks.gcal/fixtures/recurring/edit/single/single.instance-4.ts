@@ -30,8 +30,8 @@ export const singleInstance4Payload: gSchema$Events = {
         "Was originally 8-9am and a hot dish emoji. \n" +
         "Changed to avacado and 7-8am\n" +
         "Then changed to orange",
-      creator: { email: "lance.essert@gmail.com", self: true },
-      organizer: { email: "lance.essert@gmail.com", self: true },
+      creator: { email: "test.user@gmail.com", self: true },
+      organizer: { email: "test.user@gmail.com", self: true },
       start: {
         dateTime: "2025-03-30T07:00:00-05:00",
         timeZone: "America/Chicago",

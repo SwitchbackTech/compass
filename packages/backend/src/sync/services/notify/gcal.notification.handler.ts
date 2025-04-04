@@ -12,7 +12,7 @@ import { findCompassEventBy } from "@backend/event/queries/event.queries";
 import eventService from "@backend/event/services/event.service";
 import { RecurringEventManager } from "@backend/event/services/recurrence/manage/recurrence.manager";
 import { GCalRecurringEventMapper } from "@backend/event/services/recurrence/map/gcal.recur.map";
-import { inferGcalChange } from "@backend/event/services/recurrence/parse/recur.gcal.parse";
+import { determineActionAfterGcalChange } from "@backend/event/services/recurrence/parse/recur.gcal.parse";
 import { CompassRecurringEventProcessor } from "@backend/event/services/recurrence/process/compass/compass.recur.processor";
 import { getSync, updateSyncTokenFor } from "@backend/sync/util/sync.queries";
 
@@ -196,16 +196,16 @@ export class GCalNotificationHandler {
    */
   private async processRecurringEvents(recurringEvents: gSchema$Event[]) {
     if (recurringEvents.length > 0) {
-      const gcalChanges = inferGcalChange(recurringEvents);
+      const gcalChanges = determineActionAfterGcalChange(recurringEvents);
 
       console.log("++ gcalChanges (sending these to mapper):");
       console.log(JSON.stringify(gcalChanges));
       const mapper = new GCalRecurringEventMapper(this.userId, gcalChanges);
-      const changes = mapper.inferChanges();
+      const changes = mapper.mapChangesFromGcalToCompass();
 
       const processor = new CompassRecurringEventProcessor(this.userId);
       const manager = new RecurringEventManager(processor);
-      const result = await manager.handleAction(changes);
+      const result = await manager.handleChanges(changes);
       console.log("++ result after handling:", gcalChanges.action, ":", result);
     }
   }
