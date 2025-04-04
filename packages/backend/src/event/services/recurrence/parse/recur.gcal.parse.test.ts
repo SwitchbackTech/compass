@@ -4,13 +4,13 @@ import { deleteSingleEventPayloads } from "@backend/__tests__/mocks.gcal/fixture
 import { deleteThisAndFollowingPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/delete/this-and-following";
 import { editAllPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/edit/all";
 import { editSingleEventPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/edit/single";
-import { editThisAndFollowingPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/edit/this-and-following";
-import { determineNextAction } from "@backend/event/services/recurrence/parse/recur.gcal.parse";
+import { thisAndFollowingPayloads } from "@backend/__tests__/mocks.gcal/fixtures/recurring/edit/this-and-following";
+import { inferGcalChange } from "@backend/event/services/recurrence/parse/recur.gcal.parse";
 
 describe("Gcal Recurring Event Payload Analysis", () => {
   describe("Create", () => {
     it("should return CREATE_SERIES after new recurring event creation", () => {
-      const analysis = determineNextAction(
+      const analysis = inferGcalChange(
         createNewRecurringEventPayload.items || [],
       );
       expect(analysis.action).toBe("CREATE_SERIES");
@@ -22,7 +22,7 @@ describe("Gcal Recurring Event Payload Analysis", () => {
   describe("Update", () => {
     it("should return UPDATE_INSTANCE after single instance update", () => {
       for (const instance of editSingleEventPayloads) {
-        const analysis = determineNextAction(instance.items || []);
+        const analysis = inferGcalChange(instance.items || []);
         expect(analysis.action).toBe("UPDATE_INSTANCE");
         expect(analysis.modifiedInstance).toBeDefined();
         expect(analysis.modifiedInstance?.recurringEventId).toBeDefined();
@@ -30,8 +30,8 @@ describe("Gcal Recurring Event Payload Analysis", () => {
     });
 
     it("should return UPDATE_SERIES after series split", () => {
-      for (const payload of editThisAndFollowingPayloads) {
-        const analysis = determineNextAction(payload.items || []);
+      for (const payload of thisAndFollowingPayloads) {
+        const analysis = inferGcalChange(payload.items || []);
         expect(analysis.action).toBe("UPDATE_SERIES");
         expect(analysis.baseEvent).toBeDefined();
         expect(analysis.newBaseEvent).toBeDefined();
@@ -46,7 +46,7 @@ describe("Gcal Recurring Event Payload Analysis", () => {
 
     it("should return UPDATE_SERIES after series update", () => {
       for (const payload of editAllPayloads) {
-        const analysis = determineNextAction(payload.items || []);
+        const analysis = inferGcalChange(payload.items || []);
         expect(analysis.action).toBe("UPDATE_SERIES");
         expect(analysis.baseEvent).toBeDefined();
         expect(analysis.baseEvent?.recurrence).toBeDefined();
@@ -56,7 +56,7 @@ describe("Gcal Recurring Event Payload Analysis", () => {
   describe("Delete", () => {
     it("should return DELETE_SERIES after deleting all instances", () => {
       for (const payload of deleteAllPayloads) {
-        const analysis = determineNextAction(payload.items || []);
+        const analysis = inferGcalChange(payload.items || []);
         expect(analysis.action).toBe("DELETE_SERIES");
         expect(analysis.baseEvent).toBeUndefined();
         expect(analysis.modifiedInstance).toBeUndefined();
@@ -66,7 +66,7 @@ describe("Gcal Recurring Event Payload Analysis", () => {
 
     it("should return DELETE_INSTANCES after deleting single instance", () => {
       for (const payload of deleteSingleEventPayloads) {
-        const analysis = determineNextAction(payload.items || []);
+        const analysis = inferGcalChange(payload.items || []);
         expect(analysis.action).toBe("DELETE_INSTANCES");
         expect(analysis.baseEvent).toBeDefined();
         expect(analysis.modifiedInstance).toBeDefined();
@@ -77,7 +77,7 @@ describe("Gcal Recurring Event Payload Analysis", () => {
 
     it("should return DELETE_INSTANCES after deleting this and following instances", () => {
       for (const payload of deleteThisAndFollowingPayloads) {
-        const analysis = determineNextAction(payload.items || []);
+        const analysis = inferGcalChange(payload.items || []);
         expect(analysis.action).toBe("DELETE_INSTANCES");
         expect(analysis.baseEvent).toBeDefined();
         expect(

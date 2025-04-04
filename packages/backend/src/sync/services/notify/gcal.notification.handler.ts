@@ -12,7 +12,7 @@ import { findCompassEventBy } from "@backend/event/queries/event.queries";
 import eventService from "@backend/event/services/event.service";
 import { RecurringEventManager } from "@backend/event/services/recurrence/manage/recurrence.manager";
 import { GCalRecurringEventMapper } from "@backend/event/services/recurrence/map/gcal.recur.map";
-import { determineNextAction } from "@backend/event/services/recurrence/parse/recur.gcal.parse";
+import { inferGcalChange } from "@backend/event/services/recurrence/parse/recur.gcal.parse";
 import { CompassRecurringEventProcessor } from "@backend/event/services/recurrence/process/compass/compass.recur.processor";
 import { getSync, updateSyncTokenFor } from "@backend/sync/util/sync.queries";
 
@@ -38,6 +38,7 @@ export class GCalNotificationHandler {
     );
 
     if (hasChanges) {
+      console.log("++ processing changes:", changes.length);
       await this.processEvents(changes);
       return "CHANGES_PROCESSED";
     } else {
@@ -53,6 +54,9 @@ export class GCalNotificationHandler {
       calendarId,
       syncToken,
     });
+
+    console.log("++ response after getting latest changes:");
+    console.log(JSON.stringify(response.data, null, 2));
 
     // If the nextSyncToken matches our current syncToken, we've already processed these changes
     if (response.data.nextSyncToken === syncToken) {
@@ -192,15 +196,17 @@ export class GCalNotificationHandler {
    */
   private async processRecurringEvents(recurringEvents: gSchema$Event[]) {
     if (recurringEvents.length > 0) {
-      const nextAction = determineNextAction(recurringEvents);
+      const gcalChanges = inferGcalChange(recurringEvents);
 
-      const mapper = new GCalRecurringEventMapper(this.userId, nextAction);
-      const input = mapper.mapEvents();
+      console.log("++ gcalChanges (sending these to mapper):");
+      console.log(JSON.stringify(gcalChanges));
+      const mapper = new GCalRecurringEventMapper(this.userId, gcalChanges);
+      const changes = mapper.inferChanges();
 
       const processor = new CompassRecurringEventProcessor(this.userId);
       const manager = new RecurringEventManager(processor);
-      const result = await manager.handleAction(input);
-      console.log("++ from processRecurringEvents:", result);
+      const result = await manager.handleAction(changes);
+      console.log("++ result after handling:", gcalChanges.action, ":", result);
     }
   }
 }

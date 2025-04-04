@@ -1,3 +1,7 @@
+import {
+  Schema_Event_Recur_Base,
+  Schema_Event_Recur_Instance,
+} from "@core/types/event.types";
 import { GenericError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { RecurringEventProcessor } from "../process/processor.interface";
@@ -16,13 +20,15 @@ export class RecurringEventManager {
 
   /**
    * Main entrypoint that handles different recurring event actions
-   * @param input The action data containing events and action type
+   * @param changes The action data containing events and action type
    */
-  async handleAction(input: Summary_SeriesChange_Compass) {
+  async handleAction(changes: Summary_SeriesChange_Compass) {
     const { action, baseEvent, newBaseEvent, modifiedInstance, deleteFrom } =
-      input;
+      changes;
 
-    console.log(input);
+    console.log("handling changes:");
+    console.log(JSON.stringify(changes, null, 2));
+
     switch (action) {
       case "CREATE_SERIES":
         if (baseEvent) {
@@ -38,14 +44,16 @@ export class RecurringEventManager {
 
       case "UPDATE_SERIES":
         // Series update with split (this and future)
-        if (baseEvent && newBaseEvent && modifiedInstance) {
+        if (shouldSplitSeries(changes)) {
+          console.log("++ updating series with split");
           return this.processor.updateSeriesWithSplit(
-            baseEvent,
-            modifiedInstance,
+            baseEvent as Schema_Event_Recur_Base,
+            modifiedInstance as Schema_Event_Recur_Instance,
           );
         }
         // Update entire series
         else if (baseEvent && newBaseEvent) {
+          console.log("++ updating entire series");
           return this.processor.updateEntireSeries(baseEvent, newBaseEvent);
         }
         break;
@@ -74,3 +82,23 @@ export class RecurringEventManager {
     );
   }
 }
+
+export const shouldSplitSeries = (changes: Summary_SeriesChange_Compass) => {
+  console.log("++ checking if shouldSplitSeries using these changes:");
+  console.log(JSON.stringify(changes, null, 2));
+
+  // If we have a base event with an UNTIL rule and a new base event with a rule but no UNTIL,
+  // we need to split the series
+  const baseEventHasUntil =
+    changes.baseEvent?.recurrence?.rule?.[0]?.includes("UNTIL");
+  const newBaseEventHasRule =
+    changes.newBaseEvent?.recurrence?.rule?.[0] !== undefined;
+  const newBaseEventHasNoUntil =
+    !changes.newBaseEvent?.recurrence?.rule?.[0]?.includes("UNTIL");
+
+  if (baseEventHasUntil && newBaseEventHasRule && newBaseEventHasNoUntil) {
+    return true;
+  }
+
+  return false;
+};

@@ -283,6 +283,7 @@ export class CompassRecurringEventProcessor implements RecurringEventProcessor {
         "Failed to update recurring event series because untilDate was empty",
       );
     }
+    console.log("untilDate:", untilDate, typeof untilDate);
 
     await this.collection.updateOne(
       { _id: originalBase._id },

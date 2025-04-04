@@ -4,10 +4,9 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { Summary_SeriesChange_Gcal } from "../recurrence.types";
 
 /**
- * Analyzes an array of events from Google Calendar to determine the next action needed
- * to sync the database with Google Calendar's state.
+ * Infer changes from Google Calendar events
  */
-export function determineNextAction(
+export function inferGcalChange(
   events: gSchema$Event[],
 ): Summary_SeriesChange_Gcal {
   const parser = new GCalParser(events);

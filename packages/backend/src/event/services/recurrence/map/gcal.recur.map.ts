@@ -22,23 +22,25 @@ export class GCalRecurringEventMapper {
   }
 
   /**
-   * Maps Google Calendar events to our schemas
+   * Infer changes from Google Calendar events
    */
-  mapEvents(): Summary_SeriesChange_Compass {
-    const schemaEvents = this.mapActionAnalysisToEvents();
-    const input = {
+  inferChanges(): Summary_SeriesChange_Compass {
+    const schemaEvents = this.mapGcalChangesToCompassChanges();
+    const compassChanges = {
       action: this.actionAnalysis.action,
       ...schemaEvents,
       deleteFrom: this.actionAnalysis.deleteFrom,
     };
 
-    return input;
+    console.log("++ compassChanges (returning these from mapper):");
+    console.log(JSON.stringify(compassChanges));
+    return compassChanges;
   }
 
   /**
-   * Maps Google Calendar action analysis to Schema_Event objects
+   * Maps Google Calendar changes to Compass changes
    */
-  private mapActionAnalysisToEvents() {
+  private mapGcalChangesToCompassChanges() {
     const result: {
       baseEvent?: Schema_Event_Recur_Base;
       newBaseEvent?: Schema_Event_Recur_Base;
