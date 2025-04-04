@@ -1,6 +1,7 @@
 jest.mock("@core/logger/winston.logger", () => {
   const mockLogger = {
     debug: jest.fn(),
+    info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
   };

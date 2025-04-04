@@ -1,5 +1,6 @@
 import { GaxiosError } from "gaxios";
 import { v4 as uuidv4 } from "uuid";
+import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
 import {
@@ -16,6 +17,7 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import {
   deleteWatchData,
@@ -33,7 +35,8 @@ import {
   pruneSync,
   refreshSync,
 } from "./maintain/sync.maintenance";
-import { SyncNotificationService } from "./notify/sync.notify";
+import { GCalNotificationHandler } from "./notify/gcal.notification.handler";
+import { getIdsFromSyncPayload } from "./notify/gcal.notification.util";
 
 const logger = Logger("app:sync.service");
 class SyncService {
@@ -60,11 +63,35 @@ class SyncService {
   };
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    console.log("++ handleGcalNotification payload:", payload);
-    const syncNotificationService = new SyncNotificationService();
-    const response =
-      await syncNotificationService.handleGcalNotification(payload);
-    return response;
+    const { channelId, resourceId, resourceState } = payload;
+    if (resourceState !== "exists") {
+      logger.info(`Sync initialized for channelId: ${payload.channelId}`);
+      return "INITIALIZED";
+    }
+
+    const { userId, gCalendarId } = await getIdsFromSyncPayload(
+      channelId,
+      resourceId,
+    );
+
+    // Get the Google Calendar client
+    const gcal = await getGcalClient(userId);
+
+    // Create and use the notification handler
+    const handler = new GCalNotificationHandler(gcal, userId);
+    await handler.handleNotification({
+      calendarId: gCalendarId,
+      resourceId: resourceId,
+    });
+
+    const wsResult = webSocketServer.handleBackgroundCalendarChange(userId);
+    const result =
+      wsResult === RESULT_NOTIFIED_CLIENT
+        ? "PROCESSED AND NOTIFIED CLIENT"
+        : "PROCESSED IN BACKGROUND";
+    console.log(result, " (", userId, ")");
+
+    return result;
   };
 
   importFull = async (

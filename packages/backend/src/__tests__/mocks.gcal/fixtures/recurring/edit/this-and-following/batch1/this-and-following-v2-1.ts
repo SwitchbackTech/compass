@@ -1,7 +1,9 @@
+import { gSchema$Events } from "@core/types/gcal";
+
 /**
  * Scenario: After editing a recurrence that was previously edited
  */
-export const thisAndFollowing1Payload = {
+export const thisAndFollowing1Payload: gSchema$Events = {
   kind: "calendar#events",
   etag: '"p33vrvivsseh8o0o"',
   summary: "test.user@gmail.com",

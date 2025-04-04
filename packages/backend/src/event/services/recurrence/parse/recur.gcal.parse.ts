@@ -1,28 +1,14 @@
 import { gSchema$Event } from "@core/types/gcal";
 import { GenericError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
-
-type SeriesAction =
-  | "CREATE_SERIES" // New recurring event
-  | "UPDATE_SERIES" // Series modification (could be split or update)
-  | "UPDATE_INSTANCE" // Single instance update
-  | "DELETE_SERIES" // Delete entire series
-  | "DELETE_INSTANCES"; // Delete one or more instances
-
-export interface ActionAnalysis {
-  action: SeriesAction;
-  baseEvent?: gSchema$Event;
-  modifiedInstance?: gSchema$Event;
-  newBaseEvent?: gSchema$Event;
-  endDate?: string;
-  hasInstances?: boolean;
-}
+import { Summary_SeriesChange_Gcal } from "../recurrence.types";
 
 /**
- * Analyzes an array of events from Google Calendar to determine the next action needed
- * to sync the database with Google Calendar's state.
+ * Infer changes from Google Calendar events
  */
-export function determineNextAction(events: gSchema$Event[]): ActionAnalysis {
+export function inferGcalChange(
+  events: gSchema$Event[],
+): Summary_SeriesChange_Gcal {
   const parser = new GCalParser(events);
   const action = parser.determineNextAction();
   return action;
@@ -61,7 +47,7 @@ class GCalParser {
     return { baseEvent, instances, cancelledEvents };
   };
 
-  public determineNextAction = (): ActionAnalysis => {
+  public determineNextAction = (): Summary_SeriesChange_Gcal => {
     // Reminder: the order of these checks is important
     if (this.isCreatingSeries()) {
       return {
@@ -93,7 +79,7 @@ class GCalParser {
         action: "UPDATE_SERIES",
         baseEvent: this.baseEvent,
         newBaseEvent,
-        endDate,
+        deleteFrom: endDate,
         hasInstances: this.instances.length > 0,
       };
     }
@@ -136,14 +122,8 @@ class GCalParser {
   };
 
   private isUpdatingInstance = () => {
-    // If we have instances that point to the base event, it's an instance update
-    const answer =
-      this.baseEvent &&
-      this.instances.length > 0 &&
-      this.instances.every(
-        (instance) => instance.recurringEventId === this.baseEvent?.id,
-      );
-    return !!answer;
+    const answer = this.instances.length > 0;
+    return answer;
   };
 
   private isUpdatingSeries = () => {

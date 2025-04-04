@@ -42,7 +42,6 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
 
   if (e instanceof GaxiosError) {
     if ("syncToken" in e.config.params) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const syncToken = e.config.params.syncToken as string;
       const sync = await getSyncByToken(syncToken);
 
@@ -82,6 +81,7 @@ export const handleExpressError = async (
       logger.error(
         "Express error occured, but couldn't handle due to missing userId",
       );
+      logger.debug("Session response:", res);
       res.status(Status.BAD_REQUEST).send(UserError.MissingUserIdField);
       return;
     }

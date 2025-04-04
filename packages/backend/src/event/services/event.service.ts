@@ -29,18 +29,15 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import {
-  deleteInstances,
-  reorderEvents,
-  updateEvent,
-} from "../queries/event.queries";
+import { reorderEvents, updateEvent } from "../queries/event.queries";
+import { deleteInstances } from "../queries/event.recur.queries";
 import {
   getCreateParams,
   getDeleteByIdFilter,
   getReadAllFilter,
   getUpdateAction,
 } from "./event.service.util";
-import { assembleInstances } from "./recur/recur.util";
+import { assembleInstances } from "./recurrence/util/recur.util";
 
 class EventService {
   create = async (userId: string, event: Event_Core) => {
@@ -301,11 +298,11 @@ class EventService {
     userId: string,
     eventId: string,
     event: Schema_Event_Core,
-    query: Query_Event_Update,
+    query?: Query_Event_Update,
   ) => {
     const updateGcal = !event.isSomeday;
-    const action = getUpdateAction(event, query);
     const _baseEvent = updateGcal ? await _updateGcal(userId, event) : event;
+    const action = query ? getUpdateAction(event, query) : "UPDATE";
 
     const _event = { ..._baseEvent, updatedAt: new Date() };
     const baseId = _event.recurrence?.eventId as string;

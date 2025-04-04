@@ -1,11 +1,8 @@
-import { WithId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { Schema_Sync } from "@core/types/sync.types";
 import { minutesFromNow } from "@core/util/date.utils";
 import { SYNC_BUFFER_DAYS } from "@backend/common/constants/backend.constants";
 import { ENV } from "@backend/common/constants/env.constants";
-import { SyncError } from "@backend/common/constants/error.constants";
-import { error } from "@backend/common/errors/handlers/error.handler";
 
 const logger = Logger("app:sync.helpers");
 
@@ -13,28 +10,6 @@ const logger = Logger("app:sync.helpers");
  * Helper functions that are used by the sync service
  * or multiple parts of the sync service's components
  */
-
-export const getCalendarInfo = (
-  sync: WithId<Schema_Sync>,
-  resourceId: string,
-) => {
-  const matches = sync.google.events.filter((g) => {
-    return g.resourceId === resourceId;
-  });
-
-  if (!matches[0]) {
-    throw error(SyncError.NoSyncRecordForUser, "Sync Failed");
-  }
-
-  const gCalendarId = matches[0].gCalendarId;
-  const nextSyncToken = matches[0].nextSyncToken;
-
-  return {
-    userId: sync.user,
-    gCalendarId,
-    nextSyncToken,
-  };
-};
 
 export const getChannelExpiration = () => {
   const numMin = parseInt(ENV.CHANNEL_EXPIRATION_MIN);
@@ -103,24 +78,3 @@ export const syncExpiresSoon = (expiry: string) => {
   const expiresSoon = expiration < deadline;
   return expiresSoon;
 };
-
-// TODO remove this
-// export const findCalendarId = (resourceId: string, sync: Schema_Sync) => {
-//   const matches = sync.google.events.filter((g) => {
-//     return g.resourceId === resourceId;
-//   });
-
-//   if (matches.length !== 1) {
-//     logger.error(`No calendar has resourceId: ${resourceId}`);
-//   }
-
-//   if (matches.length > 1) {
-//     throw new BaseError(
-//       "Duplicate resourceIds",
-//       `Multiple calendars share resourceId: ${resourceId}`,
-//       Status.BAD_REQUEST,
-//       false,
-//     );
-//   }
-// return matches[0]?.gCalendarId;
-// };

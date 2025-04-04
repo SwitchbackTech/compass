@@ -83,11 +83,13 @@ const _toCompass = (
       ? Priorities.UNASSIGNED
       : (_origPriority as Priority);
 
-  const recurrence =
-    gEvent.recurrence || gEvent.recurringEventId
+  const recurrence = gEvent.recurrence
+    ? {
+        rule: gEvent.recurrence,
+      }
+    : gEvent.recurringEventId
       ? {
-          rule: gEvent.recurrence || [],
-          eventId: gEvent.recurringEventId || gEvent.id,
+          eventId: gEvent.recurringEventId,
         }
       : undefined;
 
