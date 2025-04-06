@@ -73,7 +73,7 @@ class GCalParser {
       this.isUpdatingSeries();
     if (isUpdatingSeries) {
       return {
-        action,
+        action: action as Action_Series,
         baseEvent: this.baseEvent,
         newBaseEvent,
         splitDate,
@@ -130,7 +130,7 @@ class GCalParser {
       rule.includes("UNTIL"),
     );
     if (!hasUntil) {
-      return false;
+      return { isUpdatingSeries: false };
     }
     // Find the new base event - it should have recurrence but no UNTIL
     const newBaseEvent = this.events.find(

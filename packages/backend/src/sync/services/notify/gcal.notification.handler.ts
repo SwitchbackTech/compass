@@ -10,10 +10,10 @@ import mongoService from "@backend/common/services/mongo.service";
 import { updateEvent } from "@backend/event/queries/event.queries";
 import { findCompassEventBy } from "@backend/event/queries/event.queries";
 import eventService from "@backend/event/services/event.service";
-import { RecurringEventManager } from "@backend/event/services/recurrence/manage/recurrence.manager";
+// import { RecurringEventManager } from "@backend/event/services/recurrence/manage/recurrence.manager";
 import { GCalRecurringEventMapper } from "@backend/event/services/recurrence/map/gcal.recur.map";
 import { determineActionAfterGcalChange } from "@backend/event/services/recurrence/parse/recur.gcal.parse";
-import { CompassRecurringEventProcessor } from "@backend/event/services/recurrence/process/compass/compass.recur.processor";
+// import { CompassRecurringEventProcessor } from "@backend/event/services/recurrence/process/compass/compass.recur.processor";
 import { getSync, updateSyncTokenFor } from "@backend/sync/util/sync.queries";
 
 const logger = Logger("app:gcal.notification.handler");
@@ -204,13 +204,16 @@ export class GCalNotificationHandler {
       const mapper = new GCalRecurringEventMapper(this.userId, gcalChanges);
       const changes = mapper.mapChangesFromGcalToCompass();
 
-      console.log("++ changes (sending these to manager):");
+      console.log("changes summary:");
       console.log(JSON.stringify(changes));
 
-      const processor = new CompassRecurringEventProcessor(this.userId);
-      const manager = new RecurringEventManager(processor);
-      const result = await manager.handleChanges(changes);
-      console.log("++ result after handling:", gcalChanges.action, ":", result);
+      console.log(
+        "stopping here, because we're not processing things correctly",
+      );
+      // const processor = new CompassRecurringEventProcessor(this.userId);
+      // const manager = new RecurringEventManager(processor);
+      // const result = await manager.handleChanges(changes);
+      // console.log("++ result after handling:", gcalChanges.action, ":", result);
     }
   }
 }
