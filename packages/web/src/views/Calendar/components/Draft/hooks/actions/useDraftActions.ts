@@ -411,6 +411,7 @@ export const useDraftActions = (
     openForm,
     reset,
     resize,
+    startDragging,
     stopDragging,
     stopResizing,
   };
