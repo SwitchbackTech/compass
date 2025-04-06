@@ -39,7 +39,6 @@ describe("shouldSplitSeries", () => {
         updatedAt: "2025-04-03T13:39:59.196Z",
         user: "67ee8f9dda653b114194d127",
       },
-      deleteFrom: "DAILY;UNTIL",
     };
 
     const result = shouldSplitSeries(changes);

@@ -119,14 +119,16 @@ export interface RecurringEventProcessor {
   updateFutureInstances(event: Schema_Event): Promise<{ matchedCount: number }>;
 
   /**
-   * Updates the entire series of recurring events
+   * Updates a series of recurring events with a split at the given date
    * @param originalBase The original base event
-   * @param newBase The new base event
-   * @returns Number of matched documents
+   * @param splitDate The date at which to split the series
+   * @param newBase The new base event that starts at the split date
+   * @returns Number of modified documents
    */
   updateSeriesWithSplit(
     originalBase: Schema_Event_Recur_Base,
-    modifiedInstance: Schema_Event_Recur_Instance,
+    splitDate: string,
+    newBase: Schema_Event_Recur_Base,
   ): Promise<{ modifiedCount: number }>;
 
   /**

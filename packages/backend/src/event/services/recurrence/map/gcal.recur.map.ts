@@ -25,16 +25,15 @@ export class GCalRecurringEventMapper {
    * Infer changes from Google Calendar events
    */
   mapChangesFromGcalToCompass(): Summary_SeriesChange_Compass {
-    const schemaEvents = this.mapGcalChangesToCompassChanges();
-    const compassChanges = {
+    const events = this.mapGcalChangesToCompassChanges();
+    const changes = {
       action: this.actionAnalysis.action,
-      ...schemaEvents,
-      deleteFrom: this.actionAnalysis.deleteFrom,
+      ...events,
     };
 
     console.log("++ compassChanges (returning these from mapper):");
-    console.log(JSON.stringify(compassChanges));
-    return compassChanges;
+    console.log(JSON.stringify(changes));
+    return changes;
   }
 
   /**

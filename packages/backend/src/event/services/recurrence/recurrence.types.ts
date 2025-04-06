@@ -6,8 +6,9 @@ import { gSchema$Event } from "@core/types/gcal";
 
 export type Action_Series =
   | "CREATE_SERIES" // New recurring event
-  | "UPDATE_SERIES" // Series modification (could be split or update)
+  | "UPDATE_SERIES" // Updates entire series
   | "UPDATE_INSTANCE" // Single instance update
+  | "SPLIT_SERIES" // Series split
   | "DELETE_SERIES" // Delete entire series
   | "DELETE_INSTANCES"; // Delete one or more instances
 
@@ -16,8 +17,8 @@ export interface Summary_SeriesChange_Gcal {
   baseEvent?: gSchema$Event;
   modifiedInstance?: gSchema$Event;
   newBaseEvent?: gSchema$Event;
-  deleteFrom?: string;
   hasInstances?: boolean;
+  splitDate?: string;
 }
 
 export interface Summary_SeriesChange_Compass {
@@ -25,5 +26,5 @@ export interface Summary_SeriesChange_Compass {
   baseEvent?: Schema_Event_Recur_Base;
   modifiedInstance?: Schema_Event_Recur_Instance;
   newBaseEvent?: Schema_Event_Recur_Base;
-  deleteFrom?: string;
+  splitDate?: string;
 }

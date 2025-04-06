@@ -200,8 +200,12 @@ export class GCalNotificationHandler {
 
       console.log("++ gcalChanges (sending these to mapper):");
       console.log(JSON.stringify(gcalChanges));
+
       const mapper = new GCalRecurringEventMapper(this.userId, gcalChanges);
       const changes = mapper.mapChangesFromGcalToCompass();
+
+      console.log("++ changes (sending these to manager):");
+      console.log(JSON.stringify(changes));
 
       const processor = new CompassRecurringEventProcessor(this.userId);
       const manager = new RecurringEventManager(processor);

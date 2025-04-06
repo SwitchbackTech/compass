@@ -10,6 +10,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 import { generateRecurringInstances } from "../../util/recur.util";
 import { RecurringEventProcessor } from "../processor.interface";
+import { getUntilValue } from "./compass.recur.processor.util";
 
 export class CompassRecurringEventProcessor implements RecurringEventProcessor {
   private collection = mongoService.db.collection<Schema_Event>(
@@ -187,18 +188,9 @@ export class CompassRecurringEventProcessor implements RecurringEventProcessor {
   async updateSeries(
     modifiedInstance: Schema_Event_Recur_Instance,
   ): Promise<{ matchedCount: number }> {
-    if (!modifiedInstance.recurrence?.eventId) {
-      throw error(
-        GenericError.DeveloperError,
-        "Failed to update recurring event series because eventId was missing",
-      );
-    }
-
-    // Get the original base event
     const originalBase = await this.collection.findOne({
       _id: modifiedInstance.recurrence.eventId,
     });
-
     if (
       !originalBase ||
       !originalBase.recurrence?.rule ||
@@ -211,11 +203,10 @@ export class CompassRecurringEventProcessor implements RecurringEventProcessor {
     }
 
     // Update the original base event to end before the modified instance
-    const untilDate =
-      new Date(modifiedInstance.startDate)
-        .toISOString()
-        .replace(/[-:]/g, "")
-        .split(".")[0] + "Z";
+    const untilDate = await getUntilValue(
+      originalBase as Schema_Event_Recur_Base,
+      modifiedInstance as Schema_Event_Recur_Instance,
+    );
 
     await this.collection.updateOne(
       { _id: originalBase._id },
@@ -261,73 +252,49 @@ export class CompassRecurringEventProcessor implements RecurringEventProcessor {
 
   async updateSeriesWithSplit(
     originalBase: Schema_Event_Recur_Base,
-    modifiedInstance: Schema_Event_Recur_Instance,
+    splitDate: string,
+    newBase: Schema_Event_Recur_Base,
   ): Promise<{ modifiedCount: number }> {
-    if (!modifiedInstance.startDate || !originalBase.recurrence?.rule) {
+    if (!originalBase?.recurrence?.rule) {
       throw error(
         GenericError.DeveloperError,
-        "Failed to update recurring event series because required fields were missing",
+        "Failed to update recurring event because original base recurrence rule was missing",
       );
     }
 
-    // Update the original base event to end before the modified instance
-    const untilDate =
-      new Date(modifiedInstance.startDate)
-        .toISOString()
-        .replace(/[-:]/g, "")
-        .split(".")[0] + "Z";
-
-    if (untilDate === "") {
-      throw error(
-        GenericError.DeveloperError,
-        "Failed to update recurring event series because untilDate was empty",
-      );
-    }
-    console.log("untilDate:", untilDate, typeof untilDate);
-
+    // Update the original base event to end at the split date
     await this.collection.updateOne(
       { _id: originalBase._id },
       {
         $set: {
           recurrence: {
-            rule: [`RRULE:FREQ=WEEKLY;UNTIL=${untilDate}`],
+            rule: [`RRULE:FREQ=WEEKLY;UNTIL=${splitDate}`],
           },
         },
       },
     );
 
-    // Convert the modified instance into the new base event
-    const { _id, recurrence, ...modifiedData } = modifiedInstance;
-    await this.collection.updateOne(
-      { _id: modifiedInstance._id },
-      {
-        $set: {
-          ...modifiedData,
-          recurrence: {
-            rule: originalBase.recurrence.rule,
-          },
-        },
-      },
-    );
+    // Create the new base event
+    await this.insertBaseEvent(newBase);
 
-    // Update all instances from the modified instance onwards to point to the new base
+    // Update all instances from the split date onwards to point to the new base
     const result = await this.collection.updateMany(
       {
         user: this.userId,
         "recurrence.eventId": originalBase._id,
-        startDate: { $gte: modifiedInstance.startDate },
+        startDate: { $gte: splitDate },
       },
       {
         $set: {
-          ...modifiedData,
+          ...newBase,
           recurrence: {
-            eventId: modifiedInstance._id,
+            eventId: newBase._id,
           },
         },
       },
     );
 
-    return { modifiedCount: result.modifiedCount };
+    return { modifiedCount: result.modifiedCount + 2 }; // +2 for the base events
   }
 
   async updateEntireSeries(

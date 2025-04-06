@@ -1,7 +1,7 @@
 import { gSchema$Event } from "@core/types/gcal";
 import { GenericError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { Summary_SeriesChange_Gcal } from "../recurrence.types";
+import { Action_Series, Summary_SeriesChange_Gcal } from "../recurrence.types";
 
 /**
  * Determine next action after a Google Calendar event change
@@ -69,18 +69,14 @@ class GCalParser {
       };
     }
 
-    const { isUpdatingSeries, newBaseEvent } = this.isUpdatingSeries();
+    const { isUpdatingSeries, newBaseEvent, splitDate, action } =
+      this.isUpdatingSeries();
     if (isUpdatingSeries) {
-      const untilRule = this.baseEvent?.recurrence?.find((rule) =>
-        rule.includes("UNTIL"),
-      );
-      const endDate = untilRule?.split("UNTIL=")?.[1];
-
       return {
-        action: "UPDATE_SERIES",
+        action,
         baseEvent: this.baseEvent,
         newBaseEvent,
-        deleteFrom: endDate,
+        splitDate,
         hasInstances: this.instances.length > 0,
       };
     }
@@ -134,7 +130,7 @@ class GCalParser {
       rule.includes("UNTIL"),
     );
     if (!hasUntil) {
-      return { isUpdatingSeries: false };
+      return false;
     }
     // Find the new base event - it should have recurrence but no UNTIL
     const newBaseEvent = this.events.find(
@@ -145,10 +141,25 @@ class GCalParser {
         !event.recurrence.some((rule) => rule.includes("UNTIL")),
     );
 
-    if (newBaseEvent) {
-      return { isUpdatingSeries: true, newBaseEvent };
-    }
+    const action: Action_Series = newBaseEvent
+      ? "SPLIT_SERIES"
+      : "UPDATE_SERIES";
 
+    if (action === "SPLIT_SERIES") {
+      const untilRule = this.baseEvent?.recurrence?.find((rule) =>
+        rule.includes("UNTIL"),
+      );
+      const endDate = untilRule?.split("UNTIL=")?.[1];
+
+      return {
+        isUpdatingSeries: true,
+        action,
+        newBaseEvent,
+        splitDate: endDate,
+      };
+    } else if (action === "UPDATE_SERIES") {
+      return { isUpdatingSeries: true, action, newBaseEvent };
+    }
     return { isUpdatingSeries: false };
   };
 }

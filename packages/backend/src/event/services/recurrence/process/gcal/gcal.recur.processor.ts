@@ -384,7 +384,8 @@ export class GCalRecurringEventProcessor implements RecurringEventProcessor {
 
   async updateSeriesWithSplit(
     originalBase: Schema_Event,
-    modifiedInstance: Schema_Event,
+    splitDate: string,
+    newBase: Schema_Event,
   ): Promise<{ modifiedCount: number }> {
     // First update the original base event
     if (!originalBase.recurrence?.eventId) {
@@ -399,18 +400,43 @@ export class GCalRecurringEventProcessor implements RecurringEventProcessor {
         "Did not update series because no recurrence rule",
       );
     }
-    await this.updateBaseEventRecurrence(
-      originalBase.recurrence?.eventId,
-      originalBase.recurrence?.rule,
+
+    // Update the original base event to end at the split date
+    await this.updateBaseEventRecurrence(originalBase.recurrence.eventId, [
+      `RRULE:FREQ=WEEKLY;UNTIL=${splitDate}`,
+    ]);
+
+    // Create the new base event
+    await this.insertBaseEvent(newBase);
+
+    // Update all instances after the split date to point to the new base event
+    const instances = await this.gcal.events.instances({
+      calendarId: "primary",
+      eventId: originalBase.recurrence.eventId,
+      timeMin: splitDate,
+    });
+
+    await Promise.all(
+      instances.data.items?.map((instance) =>
+        this.gcal.events.patch({
+          calendarId: "primary",
+          eventId: instance.id || "",
+          requestBody: {
+            summary: newBase.title,
+            description: newBase.description || undefined,
+            start: {
+              dateTime: instance.start?.dateTime,
+            },
+            end: {
+              dateTime: instance.end?.dateTime,
+            },
+            recurrence: newBase.recurrence?.rule,
+          },
+        }),
+      ) || [],
     );
 
-    // Then insert the new base event
-    // await this.insertBaseEvent(newBase);
-
-    // Finally update the modified instance
-    await this.updateInstance(modifiedInstance);
-
-    return { modifiedCount: 3 };
+    return { modifiedCount: (instances.data.items?.length || 0) + 2 }; // +2 for the base events
   }
 
   async updateEntireSeries(

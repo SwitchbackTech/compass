@@ -19,11 +19,11 @@ export class RecurringEventManager {
   }
 
   /**
-   * Main entrypoint that handles different recurring event actions
+   * Main entrypoint that handles different recurring event operations
    * @param changes The action data containing events and action type
    */
   async handleChanges(changes: Summary_SeriesChange_Compass) {
-    const { action, baseEvent, newBaseEvent, modifiedInstance, deleteFrom } =
+    const { action, baseEvent, newBaseEvent, modifiedInstance, splitDate } =
       changes;
 
     console.log("handling changes:");
@@ -43,13 +43,18 @@ export class RecurringEventManager {
         break;
 
       case "UPDATE_SERIES":
-        // Series update with split (this and future)
+        // Series update with split (AKA: this and future)
         if (shouldSplitSeries(changes)) {
-          console.log("++ updating series with split");
-          return this.processor.updateSeriesWithSplit(
-            baseEvent as Schema_Event_Recur_Base,
-            modifiedInstance as Schema_Event_Recur_Instance,
-          );
+          console.log("++ updating series with split use these:");
+          console.log("base", baseEvent);
+          console.log("splitDate", splitDate);
+          if (baseEvent && newBaseEvent && splitDate) {
+            return this.processor.updateSeriesWithSplit(
+              baseEvent,
+              splitDate,
+              newBaseEvent,
+            );
+          }
         }
         // Update entire series
         else if (baseEvent && newBaseEvent) {
@@ -60,8 +65,9 @@ export class RecurringEventManager {
 
       case "DELETE_INSTANCES":
         // Delete this and future
-        if (baseEvent && deleteFrom && modifiedInstance) {
-          return this.processor.deleteInstancesFromDate(baseEvent, deleteFrom);
+        if (baseEvent && modifiedInstance) {
+          throw new Error("DELETE_INSTANCES is not implemented yet");
+          // return this.processor.deleteInstancesFromDate(baseEvent, deleteFrom);
         }
         // Delete single instance
         else if (modifiedInstance) {
@@ -87,19 +93,6 @@ export const shouldSplitSeries = (changes: Summary_SeriesChange_Compass) => {
   console.log("++ checking if shouldSplitSeries using these changes:");
   console.log(JSON.stringify(changes, null, 2));
 
-  // If we have a base event with an UNTIL rule and deleteFrom contains a valid date,
-  // we need to split the series
-  const baseEventHasUntil =
-    changes.baseEvent?.recurrence?.rule?.[0]?.includes("UNTIL");
-
-  if (baseEventHasUntil) {
-    // Extract the date from the UNTIL rule (e.g. "DAILY;UNTIL=20240320T000000Z" -> "20240320T000000Z")
-    const untilDate = changes.deleteFrom?.split("UNTIL=")?.[1];
-    const hasValidDate = untilDate && /^\d{8}T\d{6}Z$/.test(untilDate);
-
-    if (hasValidDate) {
-      return true;
-    }
-  }
-  return false;
+  // If we have a splitDate, we need to split the series
+  return !!changes.splitDate;
 };
