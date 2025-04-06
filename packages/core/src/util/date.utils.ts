@@ -43,3 +43,15 @@ export const minutesFromNow = (numMin: number, format: string) => {
     return -666;
   }
 };
+
+/**
+ * Extract the UNTIL value from a recurrence date string
+ * @param date - The date to get the until value for
+ * @returns The until value for the base event
+ */
+export const getUntilValue = (date: string) => {
+  // Update the original base event to end before the modified instance
+  const untilDate =
+    new Date(date).toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  return untilDate;
+};
