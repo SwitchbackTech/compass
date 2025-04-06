@@ -1,127 +1,74 @@
-import { error } from "console";
-import { ObjectId } from "mongodb";
-import { Schema_Event } from "@core/types/event.types";
+import { AnyBulkWriteOperation, WithId } from "mongodb";
+import {
+  Payload_Order,
+  Schema_Event,
+  Schema_Event_Core,
+} from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
-import { GenericError } from "@backend/common/constants/error.constants";
+import { EventError } from "@backend/common/constants/error.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { getIdFilter } from "@backend/common/helpers/mongo.utils";
 import mongoService from "@backend/common/services/mongo.service";
+
+type Ids_Event = "_id" | "gEventId";
 
 /**
  * DB operations for Compass's Event collection, focused
- * on recurring event operations
+ * on primitive operations
  */
 
-export const insertBaseEvent = async (event: Schema_Event) => {
-  const eventWithId = {
-    ...event,
-    _id: event._id ? new ObjectId(event._id) : new ObjectId(),
-  };
-  return mongoService.db.collection(Collections.EVENT).insertOne(eventWithId);
-};
+export const findCompassEventBy = async (key: Ids_Event, value: string) => {
+  const filter = getIdFilter(key, value);
 
-export const insertEventInstances = async (instances: Schema_Event[]) => {
-  const instancesWithIds = instances.map((instance) => ({
-    ...instance,
-    _id: instance._id ? new ObjectId(instance._id) : new ObjectId(),
-  }));
-  return mongoService.db
+  const event = (await mongoService.db
     .collection(Collections.EVENT)
-    .insertMany(instancesWithIds);
+    .findOne(filter)) as unknown as WithId<Schema_Event | null>;
+
+  return { eventExists: event !== null, event };
 };
 
-export const updateBaseEventRecurrence = async (
-  gEventId: string,
-  recurrence: { rule: string[]; eventId: string },
-) => {
-  return mongoService.db
-    .collection(Collections.EVENT)
-    .updateOne({ gEventId }, { $set: { recurrence } });
-};
-
-export const deleteFutureInstances = async (
-  baseEventId: string,
-  fromDate: string,
-) => {
-  return mongoService.db.collection(Collections.EVENT).deleteMany({
-    "recurrence.eventId": baseEventId,
-    startDate: { $gte: fromDate },
-  });
-};
-
-export const deleteAllInstances = async (baseEventId: string) => {
-  return mongoService.db.collection(Collections.EVENT).deleteMany({
-    "recurrence.eventId": baseEventId,
-  });
-};
-
-export const deleteInstance = async (gEventId: string) => {
-  return mongoService.db.collection(Collections.EVENT).deleteOne({
-    gEventId,
-  });
-};
-
-export const deleteInstances = async (userId: string, baseId: string) => {
-  if (typeof baseId !== "string") {
-    throw new Error("Invalid baseId");
-  }
-  const response = await mongoService.db
-    .collection(Collections.EVENT)
-    .deleteMany({
-      user: userId,
-      _id: { $ne: new ObjectId(baseId) },
-      "recurrence.eventId": { $eq: baseId },
-    });
-
-  return response;
-};
-
-export const updateInstance = async (
-  userId: string,
-  instance: Schema_Event,
-) => {
-  if (!instance._id) {
-    throw error(
-      GenericError.BadRequest,
-      `Did not update instance because it has has no _id. (Title: ${instance.title})`,
-    );
-  }
-
-  const response = await mongoService.db
-    .collection(Collections.EVENT)
-    .updateOne(
-      {
-        user: userId,
-        _id: new ObjectId(instance._id),
+export const reorderEvents = async (userId: string, order: Payload_Order[]) => {
+  const ops: AnyBulkWriteOperation[] = [];
+  order.forEach((item) => {
+    ops.push({
+      updateOne: {
+        filter: { _id: mongoService.objectId(item._id), user: userId },
+        update: { $set: { order: item.order } },
       },
-      { $set: instance },
-    );
+    });
+  });
 
-  return response;
+  const result = await mongoService.event.bulkWrite(ops);
+  return result;
 };
 
-export const updateFutureInstances = async (
+export const updateEvent = async (
   userId: string,
-  event: Schema_Event,
+  eventId: string,
+  event: Schema_Event_Core,
 ) => {
-  const baseId = event.recurrence?.eventId;
-  if (!baseId) {
-    throw error(
-      GenericError.BadRequest,
-      "Failed to update future instances (No base event id)",
-    );
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { _id, startDate, endDate, user, ...eventWithEligibleFields } = event;
-
-  const futureInstances = {
+  const _event = {
+    ...event,
     user: userId,
-    "recurrence.eventId": baseId,
-    startDate: { $gt: event.startDate },
   };
 
-  const response = await mongoService.db
-    .collection(Collections.EVENT)
-    .updateMany(futureInstances, { $set: eventWithEligibleFields });
+  if ("_id" in event) {
+    delete _event._id; // mongo doesn't allow changing this field directly
+  }
 
+  const response = (await mongoService.db
+    .collection(Collections.EVENT)
+    .findOneAndReplace(
+      { _id: mongoService.objectId(eventId), user: userId },
+      _event,
+      { returnDocument: "after" },
+    )) as unknown as WithId<Schema_Event>;
+
+  if (!response) {
+    throw error(
+      EventError.NoMatchingEvent,
+      "Event not updated due to failed DB operation",
+    );
+  }
   return response;
 };
