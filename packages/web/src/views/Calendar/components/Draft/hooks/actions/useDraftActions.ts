@@ -47,6 +47,7 @@ export const useDraftActions = (
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
   const reduxDraft = useAppSelector(selectDraft);
+
   const {
     activity,
     dateToResize,
@@ -61,6 +62,8 @@ export const useDraftActions = (
     isDragging,
     isResizing,
     resizeStatus,
+    isFormOpen,
+    isFormOpenBeforeDragging,
   } = draftState;
 
   const {
@@ -71,6 +74,7 @@ export const useDraftActions = (
     setDateBeingChanged,
     setDraft,
     setIsFormOpen,
+    setIsFormOpenBeforeDragging,
   } = setters;
 
   const startDragging = useCallback(() => {
@@ -87,6 +91,7 @@ export const useDraftActions = (
   const stopDragging = () => {
     setIsDragging(false);
     setDragStatus(null);
+    setIsFormOpenBeforeDragging(null);
   };
 
   const stopResizing = () => {
@@ -122,7 +127,11 @@ export const useDraftActions = (
       dispatch(createEventSlice.actions.request(event));
     }
 
-    discard();
+    if (isFormOpenBeforeDragging) {
+      openForm();
+    } else {
+      discard();
+    }
   };
 
   const closeForm = () => {
@@ -411,6 +420,14 @@ export const useDraftActions = (
     openForm,
     reset,
     resize,
+    startDragging: () => {
+      // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
+      // because `setIsFormOpenBeforeDragging` depends on `isFormOpen` and re-calculates
+      // `startDragging` (due to it being a react callback) which causes issues.
+      // This is a hacky solution to the issue.
+      setIsFormOpenBeforeDragging(isFormOpen);
+      startDragging();
+    },
     stopDragging,
     stopResizing,
   };

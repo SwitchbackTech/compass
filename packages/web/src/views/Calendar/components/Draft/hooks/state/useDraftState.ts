@@ -16,6 +16,7 @@ export interface State_Draft_Local {
   isDragging: boolean;
   isResizing: boolean;
   isFormOpen: boolean;
+  isFormOpenBeforeDragging: boolean | null;
   resizeStatus: Status_Resize | null;
 }
 
@@ -27,6 +28,7 @@ export interface Setters_Draft {
   setResizeStatus: (value: Status_Resize | null) => void;
   setDateBeingChanged: (value: "startDate" | "endDate" | null) => void;
   setIsFormOpen: (value: boolean) => void;
+  setIsFormOpenBeforeDragging: (value: boolean | null) => void;
 }
 
 export const useDraftState = () => {
@@ -39,6 +41,9 @@ export const useDraftState = () => {
     "startDate" | "endDate" | null
   >("endDate");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isFormOpenBeforeDragging, setIsFormOpenBeforeDragging] = useState<
+    boolean | null
+  >(null);
 
   const state: State_Draft_Local = {
     draft,
@@ -48,6 +53,7 @@ export const useDraftState = () => {
     isResizing,
     resizeStatus,
     dateBeingChanged,
+    isFormOpenBeforeDragging,
   };
 
   const setters: Setters_Draft = {
@@ -58,6 +64,7 @@ export const useDraftState = () => {
     setResizeStatus,
     setDateBeingChanged,
     setIsFormOpen,
+    setIsFormOpenBeforeDragging,
   };
 
   return { state, setters };

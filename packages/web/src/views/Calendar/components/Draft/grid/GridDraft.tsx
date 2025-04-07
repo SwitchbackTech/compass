@@ -21,9 +21,8 @@ interface Props {
 
 export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   const { actions, setters, state } = useDraftContext();
-  const { discard, deleteEvent, submit } = actions;
-  const { setDraft, setDateBeingChanged, setIsDragging, setIsResizing } =
-    setters;
+  const { discard, deleteEvent, submit, startDragging } = actions;
+  const { setDraft, setDateBeingChanged, setIsResizing } = setters;
   const { draft, isDragging, formProps, isFormOpen, isResizing } = state;
   const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
     formProps;
@@ -37,7 +36,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
 
   const handleClick = () => {};
   const handleDrag = () => {
-    setIsDragging(true);
+    startDragging();
   };
 
   const { onMouseDown } = useGridEventMouseDown(
