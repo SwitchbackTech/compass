@@ -35,8 +35,8 @@ import {
   pruneSync,
   refreshSync,
 } from "./maintain/sync.maintenance";
-import { GCalNotificationHandler } from "./notify/gcal.notification.handler";
 import { getIdsFromSyncPayload } from "./notify/gcal.notification.util";
+import { GCalNotificationHandler } from "./notify/handler/gcal.notification.handler";
 
 const logger = Logger("app:sync.service");
 class SyncService {

@@ -29,18 +29,15 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import {
-  deleteInstances,
-  reorderEvents,
-  updateEvent,
-} from "../queries/event.queries";
+import { reorderEvents, updateEvent } from "../queries/event.queries";
 import {
   getCreateParams,
   getDeleteByIdFilter,
   getReadAllFilter,
   getUpdateAction,
 } from "./event.service.util";
-import { assembleInstances } from "./recur/recur.util";
+import { deleteInstances } from "./recur/queries/event.recur.queries";
+import { assembleInstances } from "./recur/util/recur.util";
 
 class EventService {
   create = async (userId: string, event: Event_Core) => {

@@ -10,7 +10,7 @@ import {
   onlyOrigHasId,
   usesUniqueDates,
 } from "./recur.test.util";
-import { assembleInstances } from "./recur.util";
+import { assembleInstances } from "./util/recur.util";
 
 describe("maps RRULE string to object:", () => {
   it("works for week recurrence", () => {

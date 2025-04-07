@@ -78,7 +78,7 @@ describe("GCalNotificationHandler", () => {
       },
     ];
 
-    it("should process events successfully", async () => {
+    it("should process events after changes", async () => {
       // Setup
       (getSync as jest.Mock).mockResolvedValue(mockSync);
       (gcalService.getEvents as jest.Mock).mockResolvedValue({
@@ -96,10 +96,10 @@ describe("GCalNotificationHandler", () => {
         calendarId: mockPayload.calendarId,
         syncToken: "test-sync-token",
       });
-      expect(result).toEqual("CHANGES_PROCESSED");
+      expect(result.summary).toEqual("PROCESSED");
     });
 
-    it("should return NO_CHANGES when no changes found", async () => {
+    it("should return IGNORED when no changes found", async () => {
       // Setup
       (getSync as jest.Mock).mockResolvedValue(mockSync);
       (gcalService.getEvents as jest.Mock).mockResolvedValue({
@@ -108,7 +108,7 @@ describe("GCalNotificationHandler", () => {
 
       // Execute and verify
       const result = await handler.handleNotification(mockPayload);
-      expect(result).toEqual("NO_CHANGES");
+      expect(result.summary).toEqual("IGNORED");
     });
 
     it("should throw error when no sync record found", async () => {

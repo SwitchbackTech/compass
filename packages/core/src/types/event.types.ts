@@ -2,11 +2,18 @@ import { Query } from "express-serve-static-core";
 import { z } from "zod";
 import { Origin, Priorities, Priority } from "@core/constants/core.constants";
 
+//TODO rename to Categories_Event_Compass or Categories_CompassEvent
 export enum Categories_Event {
   ALLDAY = "allday",
   TIMED = "timed",
   SOMEDAY_WEEK = "sidebarWeek",
   SOMEDAY_MONTH = "sidebarMonth",
+}
+
+export enum Category_Event {
+  STANDALONE = "STANDALONE",
+  RECURRENCE_BASE = "RECURRENCE_BASE",
+  RECURRENCE_INSTANCE = "RECURRENCE_INSTANCE",
 }
 
 export type Categories_Recur = "all" | "future";

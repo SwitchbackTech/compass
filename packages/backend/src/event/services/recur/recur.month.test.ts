@@ -1,6 +1,6 @@
 import { Schema_Event_Core } from "@core/types/event.types";
 import { RRULE } from "../../../../../core/src/constants/core.constants";
-import { assembleInstances } from "./recur.util";
+import { assembleInstances } from "./util/recur.util";
 
 describe("Event Recurrence: Month", () => {
   it("uses first and last of month", () => {
