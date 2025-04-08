@@ -1,4 +1,4 @@
-import { Category_Event } from "@core/types/event.types";
+import { Categories_Recurrence } from "@core/types/event.types";
 import { mockGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { GcalSyncProcessor } from "./gcal.sync.processor";
@@ -23,7 +23,7 @@ describe("GcalSyncProcessor", () => {
       expect(changes).toHaveLength(1);
       expect(changes[0]).toEqual({
         title: regularEvent.summary,
-        category: Category_Event.STANDALONE,
+        category: Categories_Recurrence.STANDALONE,
         changeType: "ACTIVE",
         operation: "UPSERTED",
       });
@@ -39,7 +39,7 @@ describe("GcalSyncProcessor", () => {
       expect(changes).toHaveLength(1);
       expect(changes[0]).toEqual({
         title: cancelledEvent.summary,
-        category: Category_Event.RECURRENCE_BASE,
+        category: Categories_Recurrence.RECURRENCE_BASE,
         changeType: "CANCELLED",
         operation: "CANCELLED",
       });
@@ -54,7 +54,7 @@ describe("GcalSyncProcessor", () => {
       expect(changes).toHaveLength(1);
       expect(changes[0]).toEqual({
         title: recurringEvent.summary,
-        category: Category_Event.RECURRENCE_BASE,
+        category: Categories_Recurrence.RECURRENCE_BASE,
         changeType: "ACTIVE",
         operation: "UPSERTED",
       });
@@ -76,7 +76,7 @@ describe("GcalSyncProcessor", () => {
       expect(changes).toHaveLength(1);
       expect(changes[0]).toEqual({
         title: instance.summary,
-        category: Category_Event.RECURRENCE_INSTANCE,
+        category: Categories_Recurrence.RECURRENCE_INSTANCE,
         changeType: "ACTIVE",
         operation: "UPSERTED",
       });
@@ -112,25 +112,25 @@ describe("GcalSyncProcessor", () => {
         expect.arrayContaining([
           expect.objectContaining({
             title: regularEvent.summary,
-            category: Category_Event.STANDALONE,
+            category: Categories_Recurrence.STANDALONE,
             changeType: "ACTIVE",
             operation: "UPSERTED",
           }),
           expect.objectContaining({
             title: cancelledInstance.summary,
-            category: Category_Event.RECURRENCE_INSTANCE,
+            category: Categories_Recurrence.RECURRENCE_INSTANCE,
             changeType: "CANCELLED",
             operation: "CANCELLED",
           }),
           expect.objectContaining({
             title: recurrenceBase.summary,
-            category: Category_Event.RECURRENCE_BASE,
+            category: Categories_Recurrence.RECURRENCE_BASE,
             changeType: "ACTIVE",
             operation: "UPSERTED",
           }),
           expect.objectContaining({
             title: recurrenceInstance.summary,
-            category: Category_Event.RECURRENCE_INSTANCE,
+            category: Categories_Recurrence.RECURRENCE_INSTANCE,
             changeType: "ACTIVE",
             operation: "UPSERTED",
           }),

@@ -1,4 +1,4 @@
-import { Category_Event } from "@core/types/event.types";
+import { Categories_Recurrence } from "@core/types/event.types";
 
 export type Summary_Sync = {
   summary: "PROCESSED" | "IGNORED";
@@ -8,6 +8,6 @@ export type Summary_Sync = {
 export type Operation_Sync = "CANCELLED" | "UPSERTED" | null;
 export type Change_Gcal = {
   title: string;
-  category: Category_Event;
+  category: Categories_Recurrence;
   operation: Operation_Sync;
 };

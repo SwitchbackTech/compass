@@ -1,4 +1,4 @@
-import { Category_Event } from "@core/types/event.types";
+import { Categories_Recurrence } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 
 export class GcalParser {
@@ -6,7 +6,7 @@ export class GcalParser {
     this.category = this.getCategory();
     this.status = this.getStatus();
   }
-  public category: Category_Event;
+  public category: Categories_Recurrence;
   public status: "CANCELLED" | "ACTIVE";
 
   public summarize() {
@@ -18,11 +18,11 @@ export class GcalParser {
   }
   private getCategory() {
     if (this.isRecurrenceBase()) {
-      return Category_Event.RECURRENCE_BASE;
+      return Categories_Recurrence.RECURRENCE_BASE;
     } else if (this.isRecurrenceInstance()) {
-      return Category_Event.RECURRENCE_INSTANCE;
+      return Categories_Recurrence.RECURRENCE_INSTANCE;
     } else {
-      return Category_Event.STANDALONE;
+      return Categories_Recurrence.STANDALONE;
     }
   }
   private getStatus() {

@@ -2,7 +2,13 @@ import { Query } from "express-serve-static-core";
 import { z } from "zod";
 import { Origin, Priorities, Priority } from "@core/constants/core.constants";
 
-//TODO rename to Categories_Event_Compass or Categories_CompassEvent
+/**
+ * Event category, based on its display type
+ * - ALLDAY: An all-day event
+ * - TIMED: A timed event
+ * - SOMEDAY_WEEK: A someday event that is displayed in the sidebarWeek view
+ * - SOMEDAY_MONTH: A someday event that is displayed in the sidebarMonth view
+ */
 export enum Categories_Event {
   ALLDAY = "allday",
   TIMED = "timed",
@@ -10,7 +16,13 @@ export enum Categories_Event {
   SOMEDAY_MONTH = "sidebarMonth",
 }
 
-export enum Category_Event {
+/**
+ * Event category, based on its recurrence status
+ * - STANDALONE: A single event that is not recurring
+ * - RECURRENCE_BASE: A base event that is the parent of a recurring series
+ * - RECURRENCE_INSTANCE: An instance of a recurring event
+ */
+export enum Categories_Recurrence {
   STANDALONE = "STANDALONE",
   RECURRENCE_BASE = "RECURRENCE_BASE",
   RECURRENCE_INSTANCE = "RECURRENCE_INSTANCE",
