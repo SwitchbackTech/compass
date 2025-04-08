@@ -1,0 +1,50 @@
+import { Categories_Recurrence } from "@core/types/event.types";
+import { gSchema$Event } from "@core/types/gcal";
+
+export class GcalParser {
+  constructor(private event: gSchema$Event) {
+    this.category = this.getCategory();
+    this.status = this.getStatus();
+  }
+  public category: Categories_Recurrence;
+  public status: "CANCELLED" | "ACTIVE";
+
+  public summarize() {
+    return {
+      title: this.event.summary || this.event.id || "unknown",
+      category: this.category,
+      changeType: this.status,
+    };
+  }
+  private getCategory() {
+    if (this.isRecurrenceBase()) {
+      return Categories_Recurrence.RECURRENCE_BASE;
+    } else if (this.isRecurrenceInstance()) {
+      return Categories_Recurrence.RECURRENCE_INSTANCE;
+    } else {
+      return Categories_Recurrence.STANDALONE;
+    }
+  }
+  private getStatus() {
+    if (this.isCancelled()) {
+      return "CANCELLED";
+    } else {
+      return "ACTIVE";
+    }
+  }
+  private isRecurrenceBase() {
+    return (
+      this.event.recurrence !== undefined &&
+      this.event.recurringEventId === undefined
+    );
+  }
+  private isRecurrenceInstance() {
+    return (
+      this.event.recurrence === undefined &&
+      this.event.recurringEventId !== undefined
+    );
+  }
+  private isCancelled() {
+    return this.event.status === "cancelled";
+  }
+}
