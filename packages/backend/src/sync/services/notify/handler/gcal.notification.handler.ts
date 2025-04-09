@@ -11,11 +11,13 @@ import { GcalSyncProcessor } from "../../sync/gcal.sync.processor";
 const logger = Logger("app:gcal.notification.handler");
 
 export class GCalNotificationHandler {
+  private repo: RecurringEventRepository;
   constructor(
     private gcal: gCalendar,
     private userId: string,
-    private repo: RecurringEventRepository,
-  ) {}
+  ) {
+    this.repo = new RecurringEventRepository(userId);
+  }
 
   /**
    * Handle a Google Calendar notification
