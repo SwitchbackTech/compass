@@ -1,5 +1,7 @@
+import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker/.";
 import {
+  Schema_Event,
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
@@ -18,11 +20,13 @@ export const createRecurrenceSeries = async (
     ...baseOverrides,
   });
 
-  const instance1 = createMockInstance(baseEvent._id as string, {
+  const baseId = baseEvent._id;
+  if (!baseId) throw Error("Base event id is required");
+  const instance1 = createMockInstance(baseId, {
     ...instanceOverrides,
   });
 
-  const instance2 = createMockInstance(baseEvent._id as string, {
+  const instance2 = createMockInstance(baseId, {
     ...instanceOverrides,
     // prevents collision with instance1
     gEventId: `mock-instance-id-${faker.string.uuid()}`,
@@ -30,16 +34,26 @@ export const createRecurrenceSeries = async (
 
   await setup.db
     .collection(Collections.EVENT)
-    .insertMany([baseEvent, instance1, instance2]);
-  console.log(baseEvent, instance1, instance2);
+    .insertMany([
+      withObjectId(baseEvent),
+      withObjectId(instance1),
+      withObjectId(instance2),
+    ]);
 
   const status = await setup.db.collection(Collections.EVENT).find().toArray();
   const meta = { createdCount: status.length };
   return {
     state: {
-      baseEvent,
-      instances: [instance1, instance2],
+      baseEvent: baseEvent,
+      instances: [],
     },
     meta,
+  };
+};
+
+const withObjectId = (event: Schema_Event) => {
+  return {
+    ...event,
+    _id: event._id ? new ObjectId(event._id) : new ObjectId(),
   };
 };

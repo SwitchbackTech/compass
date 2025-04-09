@@ -41,7 +41,7 @@ export class GcalSyncProcessor {
           console.log(
             `Matched these ids: ${result.event._id}(Compass) and ${event.id} (Gcal)`,
           );
-          await this.repo.cancelSeries(result.event._id as string);
+          await this.repo.cancelSeries(result.event._id.toString());
           operation = "CANCELLED";
         } else {
           await this.repo.cancelInstance(event.id, { idKey: "gEventId" });
