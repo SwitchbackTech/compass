@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import { Ids_Event } from "./event.queries";
@@ -17,7 +18,7 @@ export class RecurringEventRepository {
       .collection(Collections.EVENT)
       .deleteMany({
         $or: [
-          { _id: baseId, user: this.userId }, // Base event
+          { _id: new ObjectId(baseId), user: this.userId }, // Base event
           { "recurrence.eventId": baseId, user: this.userId }, // All instances
         ],
       });
