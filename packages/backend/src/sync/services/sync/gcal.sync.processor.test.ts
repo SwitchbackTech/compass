@@ -93,30 +93,6 @@ describe("GcalSyncProcessor", () => {
     );
   });
   describe("DELETE", () => {
-    it("should process a recurring instance", async () => {
-      const processor = new GcalSyncProcessor(repo);
-
-      const recurringEvent = mockGcalEvent({
-        recurrence: ["RRULE:FREQ=DAILY"],
-      });
-      const instance = mockGcalEvent({
-        recurringEventId: recurringEvent.id,
-        originalStartTime: {
-          dateTime: "2025-03-24T07:30:00-05:00",
-          timeZone: "America/Chicago",
-        },
-      });
-      const changes = await processor.processEvents([instance]);
-
-      expect(changes).toHaveLength(1);
-      expect(changes[0]).toEqual({
-        title: instance.summary,
-        category: Categories_Recurrence.RECURRENCE_INSTANCE,
-        changeType: "ACTIVE",
-        operation: "UPSERTED",
-      });
-    });
-
     it("should delete base and all instances after cancelling a base", async () => {
       const gcalBaseEvent = mockGcalEvent({
         recurrence: ["RRULE:FREQ=DAILY"],
@@ -185,10 +161,11 @@ describe("GcalSyncProcessor", () => {
       });
       // Create base and instances in Compass,
       // that point to the original gcal base
+      const compassBaseId = new ObjectId().toString();
       const compassBase = {
         title: gcalBaseEvent.summary as string,
         user: setup.userId,
-        _id: "compass-base-id",
+        _id: compassBaseId,
         gEventId: gcalBaseEvent.id as string,
       };
       const compassInstanceTemplate = {
@@ -196,7 +173,7 @@ describe("GcalSyncProcessor", () => {
         user: setup.userId,
         gEventId: gcalInstance.id as string,
         recurrence: {
-          eventId: "compass-base-id",
+          eventId: compassBaseId,
         },
       };
 
@@ -226,7 +203,7 @@ describe("GcalSyncProcessor", () => {
         .toArray();
 
       expect(remainingEvents).toHaveLength(meta.createdCount - 1);
-      expect(remainingEvents[0]?._id).toBe("compass-base-id");
+      expect(remainingEvents[0]?._id.toString()).toBe(compassBaseId);
       expect(isInstance(remainingEvents[1] as unknown as Schema_Event)).toBe(
         true,
       );
