@@ -6,7 +6,7 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { EventForm } from "@web/views/Forms/EventForm";
+import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { GridEvent } from "../../Event/Grid";
 import { useDraftContext } from "../context/useDraftContext";
