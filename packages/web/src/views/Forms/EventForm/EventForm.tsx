@@ -1,14 +1,14 @@
 import dayjs from "dayjs";
 import React, {
   KeyboardEvent,
-  KeyboardEventHandler,
   useCallback,
   useEffect,
   useRef,
   useState,
 } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { Key } from "ts-key-enum";
-import { Trash } from "@phosphor-icons/react";
 import { Priorities } from "@core/constants/core.constants";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
@@ -18,9 +18,9 @@ import {
 import { SelectOption } from "@web/common/types/component.types";
 import { getCategory } from "@web/common/utils/event.util";
 import { mapToBackend } from "@web/common/utils/web.date.util";
-import IconButton from "@web/components/IconButton/IconButton";
-import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/styled";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection";
+import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
+import { MoveToSidebarButton } from "@web/views/Forms/EventForm/MoveToSidebarButton";
 import { getFormDates } from "./DateControlsSection/DateTimeSection/form.datetime.util";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
@@ -31,6 +31,10 @@ import {
   StyledTitle,
 } from "./styled";
 import { FormProps, SetEventFormField } from "./types";
+
+const hotkeysOptions: OptionsOrDependencyArray = {
+  enableOnFormTags: ["input"],
+};
 
 export const EventForm: React.FC<FormProps> = ({
   event,
@@ -169,33 +173,6 @@ export const EventForm: React.FC<FormProps> = ({
     setEvent({ ...event, ...field });
   };
 
-  const onFormKeyDown: KeyboardEventHandler<HTMLFormElement> = (e) => {
-    if (e.key === Key.Backspace || e.key == Key.Delete) {
-      if (isDraft) {
-        onClose();
-        return;
-      }
-
-      const confirmed = window.confirm(
-        `Delete ${event.title || "this event"}?`,
-      );
-      if (confirmed) {
-        onDeleteForm();
-        return;
-      }
-    }
-
-    const shouldIgnore = isShiftKeyPressed || e.key !== Key.Enter;
-    if (shouldIgnore) {
-      return;
-    }
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    onSubmitForm();
-  };
-
   const dateTimeSectionProps = {
     bgColor: priorityColor,
     displayEndDate,
@@ -226,12 +203,46 @@ export const EventForm: React.FC<FormProps> = ({
     endTime,
   };
 
+  useHotkeys(
+    "meta+shift+<",
+    () => {
+      onConvert?.();
+    },
+    hotkeysOptions,
+  );
+
+  useHotkeys(
+    "delete",
+    () => {
+      if (isDraft) {
+        onClose();
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `Delete ${event.title || "this event"}?`,
+      );
+
+      if (confirmed) {
+        onDeleteForm();
+      }
+    },
+    hotkeysOptions,
+  );
+
+  useHotkeys(
+    "enter",
+    () => {
+      onSubmitForm();
+    },
+    hotkeysOptions,
+  );
+
   return (
     <StyledEventForm
       {...props}
       isOpen={isFormOpen}
       name={ID_EVENT_FORM}
-      onKeyDown={onFormKeyDown}
       onMouseUp={() => {
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
@@ -249,24 +260,13 @@ export const EventForm: React.FC<FormProps> = ({
     >
       <StyledIconRow>
         {!isDraft && (
-          <StyledMigrateArrowInForm
-            onClick={(e) => {
-              e.stopPropagation();
+          <MoveToSidebarButton
+            onClick={() => {
               onConvert?.();
             }}
-            role="button"
-            title="Move to sidebar"
-          >
-            {"<"}
-          </StyledMigrateArrowInForm>
+          />
         )}
-        <IconButton
-          onClick={onDeleteForm}
-          aria-label="Delete Event"
-          type="button"
-        >
-          <Trash />
-        </IconButton>
+        <DeleteButton onClick={onDeleteForm} />
       </StyledIconRow>
 
       <StyledTitle

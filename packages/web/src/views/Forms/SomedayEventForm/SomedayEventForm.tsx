@@ -2,12 +2,11 @@ import React, { KeyboardEvent, MouseEvent, useRef } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
-import { Trash } from "@phosphor-icons/react";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import IconButton from "@web/components/IconButton/IconButton";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import {
@@ -122,13 +121,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       role="form"
     >
       <StyledIconRow>
-        <IconButton
-          onClick={onDelete}
-          aria-label="Delete Someday Event"
-          type="button"
-        >
-          <Trash />
-        </IconButton>
+        <DeleteButton onClick={onDelete} />
       </StyledIconRow>
 
       <StyledTitle

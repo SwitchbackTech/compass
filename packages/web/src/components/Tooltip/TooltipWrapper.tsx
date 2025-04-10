@@ -14,7 +14,7 @@ export interface Props {
   children: ReactNode;
   description?: string;
   onClick: () => void;
-  shortcut?: string;
+  shortcut?: string | ReactNode;
 }
 
 export const TooltipWrapper: React.FC<Props> = ({
@@ -41,7 +41,11 @@ export const TooltipWrapper: React.FC<Props> = ({
           {description && <TooltipDescription description={description} />}
           {shortcut && (
             <StyledShortcutTip>
-              <Text size="m">{shortcut}</Text>
+              {typeof shortcut === "string" ? (
+                <Text size="m">{shortcut}</Text>
+              ) : (
+                shortcut
+              )}
             </StyledShortcutTip>
           )}
         </Flex>
