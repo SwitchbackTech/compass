@@ -39,7 +39,7 @@ describe("Event Form", () => {
     await act(async () => {
       await user.click(
         within(form).getByRole("button", {
-          name: /delete someday event/i,
+          name: /delete event/i,
         }),
       );
     });
