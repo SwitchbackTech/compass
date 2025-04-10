@@ -261,8 +261,7 @@ export const EventForm: React.FC<FormProps> = ({
       <StyledIconRow>
         {!isDraft && (
           <MoveToSidebarButton
-            onClick={(e) => {
-              e.stopPropagation();
+            onClick={() => {
               onConvert?.();
             }}
           />

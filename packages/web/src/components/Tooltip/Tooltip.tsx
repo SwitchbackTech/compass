@@ -78,7 +78,7 @@ export const TooltipContent = forwardRef<
             position: context.strategy,
             top: context.y ?? 0,
             visibility: context.x == null ? "hidden" : "visible",
-            zIndex: ZIndex.LAYER_1,
+            zIndex: ZIndex.LAYER_3,
             ...props.style,
           }}
           {...context.getFloatingProps(props)}
