@@ -13,7 +13,6 @@ export class GcalParser {
     return {
       title: this.event.summary || this.event.id || "unknown",
       category: this.category,
-      changeType: this.status,
     };
   }
   private getCategory() {
@@ -33,10 +32,12 @@ export class GcalParser {
     }
   }
   private isRecurrenceBase() {
-    return (
-      this.event.recurrence !== undefined &&
-      this.event.recurringEventId === undefined
-    );
+    const isBase = this.event.recurrence !== undefined;
+    // Recurring cancellations include the recurringEventId;
+    // base cancellations do not
+    const isBaseCancellation =
+      this.event.status === "cancelled" && !this.event.recurringEventId;
+    return isBase || isBaseCancellation;
   }
   private isRecurrenceInstance() {
     return (

@@ -6,6 +6,10 @@ import {
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import {
+  getEventsInDb,
+  isEventCollectionEmpty,
+} from "@backend/__tests__/helpers/mock.db.queries";
+import {
   TestSetup,
   cleanupTestMongo,
   clearCollections,
@@ -13,10 +17,9 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.ccal/ccal.mock.db.util";
 import { mockGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { Collections } from "@backend/common/constants/collections";
-import mongoService from "@backend/common/services/mongo.service";
 import { RecurringEventRepository } from "@backend/event/queries/event.recur.queries";
 import { isInstance } from "@backend/event/services/recur/util/recur.util";
+import { Change_Gcal } from "@backend/sync/sync.types";
 import { GcalSyncProcessor } from "./gcal.sync.processor";
 
 describe("GcalSyncProcessor", () => {
@@ -39,15 +42,11 @@ describe("GcalSyncProcessor", () => {
     const processor = new GcalSyncProcessor(repo);
 
     const regularEvent = mockGcalEvent();
-    const cancelledInstance = mockGcalEvent({
-      status: "cancelled",
-      summary: "Cancelled Instance",
-      recurringEventId: "some-recurrence-id", // this makes it an instance
-    });
     const recurrenceBase = mockGcalEvent({
       recurrence: ["RRULE:FREQ=DAILY"], // this makes it a base
     });
     const recurrenceInstance = mockGcalEvent({
+      id: "1234567890",
       recurringEventId: recurrenceBase.id,
       originalStartTime: {
         dateTime: "2025-03-24T07:30:00-05:00",
@@ -57,36 +56,26 @@ describe("GcalSyncProcessor", () => {
 
     const changes = await processor.processEvents([
       regularEvent,
-      cancelledInstance,
       recurrenceBase,
       recurrenceInstance,
     ]);
 
-    expect(changes).toHaveLength(4);
+    expect(changes).toHaveLength(3);
     expect(changes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           title: regularEvent.summary,
           category: Categories_Recurrence.STANDALONE,
-          changeType: "ACTIVE",
           operation: "UPSERTED",
-        }),
-        expect.objectContaining({
-          title: cancelledInstance.summary,
-          category: Categories_Recurrence.RECURRENCE_INSTANCE,
-          changeType: "CANCELLED",
-          operation: "CANCELLED",
         }),
         expect.objectContaining({
           title: recurrenceBase.summary,
           category: Categories_Recurrence.RECURRENCE_BASE,
-          changeType: "ACTIVE",
           operation: "UPSERTED",
         }),
         expect.objectContaining({
           title: recurrenceInstance.summary,
           category: Categories_Recurrence.RECURRENCE_INSTANCE,
-          changeType: "ACTIVE",
           operation: "UPSERTED",
         }),
       ]),
@@ -130,26 +119,27 @@ describe("GcalSyncProcessor", () => {
         compassInstanceTemplate,
       );
 
-      // Cancel the series
-      const cancelledBase = { ...gcalBaseEvent, status: "cancelled" };
+      // Cancel the entire series
+      const cancelledBase = {
+        kind: "calendar#event",
+        id: gcalBaseEvent.id,
+        status: "cancelled",
+      };
+
       const processor = new GcalSyncProcessor(repo);
       const changes = await processor.processEvents([cancelledBase]);
 
       expect(changes).toHaveLength(1);
-      expect(changes[0]).toEqual({
-        title: cancelledBase.summary,
+      const expected: Change_Gcal = {
+        title: cancelledBase.id as string,
         category: Categories_Recurrence.RECURRENCE_BASE,
-        changeType: "CANCELLED",
-        operation: "CANCELLED",
-      });
+        operation: "DELETED",
+      };
+      expect(changes[0]).toEqual(expected);
 
       // Verify all Compass events that match the gcal base were deleted
-      const remainingEvents = await mongoService.db
-        .collection(Collections.EVENT)
-        .find()
-        .toArray();
-
-      expect(remainingEvents).toHaveLength(0);
+      const isEmpty = await isEventCollectionEmpty();
+      expect(isEmpty).toBe(true);
     });
 
     it("should delete an instance after cancelling it", async () => {
@@ -183,25 +173,32 @@ describe("GcalSyncProcessor", () => {
         compassInstanceTemplate,
       );
 
-      // Cancel just the instance
-      const cancelledGcalInstance = { ...gcalInstance, status: "cancelled" };
+      // This happens when cancelling one instance
+      // or 'this and following'
+      const cancelledGcalInstance = {
+        kind: "calendar#event",
+        id: gcalInstance.id,
+        status: "cancelled",
+        recurringEventId: gcalBaseEvent.id,
+        originalStartTime: {
+          date: "2025-04-10",
+        },
+      };
       const processor = new GcalSyncProcessor(repo);
       const changes = await processor.processEvents([cancelledGcalInstance]);
 
       expect(changes).toHaveLength(1);
-      expect(changes[0]).toEqual({
-        title: cancelledGcalInstance.summary,
+      const expected: Change_Gcal = {
+        title: cancelledGcalInstance.id as string,
         category: Categories_Recurrence.RECURRENCE_INSTANCE,
-        changeType: "CANCELLED",
-        operation: "CANCELLED",
-      });
+        operation: "DELETED",
+      };
+      expect(changes[0]).toEqual(expected);
+
+      const remainingEvents = await getEventsInDb();
 
       // Verify only the instance was deleted
-      const remainingEvents = await mongoService.db
-        .collection(Collections.EVENT)
-        .find()
-        .toArray();
-
+      expect(remainingEvents).toHaveLength(meta.createdCount - 1);
       expect(remainingEvents).toHaveLength(meta.createdCount - 1);
       expect(remainingEvents[0]?._id.toString()).toBe(compassBaseId);
       expect(isInstance(remainingEvents[1] as unknown as Schema_Event)).toBe(
@@ -221,12 +218,12 @@ describe("GcalSyncProcessor", () => {
       const changes = await processor.processEvents([recurringEvent]);
 
       expect(changes).toHaveLength(1);
-      expect(changes[0]).toEqual({
-        title: recurringEvent.summary,
+      const expected: Change_Gcal = {
+        title: recurringEvent.summary as string,
         category: Categories_Recurrence.RECURRENCE_BASE,
-        changeType: "ACTIVE",
         operation: "UPSERTED",
-      });
+      };
+      expect(changes[0]).toEqual(expected);
     });
     it.todo("should create an instance");
     it.todo("should edit an instance");

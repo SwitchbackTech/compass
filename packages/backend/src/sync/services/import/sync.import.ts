@@ -72,7 +72,7 @@ export class SyncImport {
   ): Promise<EventsToModify> {
     const { toUpdate, toDelete } = organizeGcalEventsByType(updatedEvents);
 
-    const expandedEvents = await this.expandRecurringEvents(
+    const recurringEvents = await this.expandRecurringEvents(
       userId,
       gCalendarId,
       toUpdate.recurring,
@@ -84,7 +84,7 @@ export class SyncImport {
       Origin.GOOGLE_IMPORT,
     );
 
-    const toUpdateCombined = [...regularEvents, ...expandedEvents];
+    const toUpdateCombined = [...regularEvents, ...recurringEvents];
     await logSyncOperation(userId, gCalendarId, {
       updatedEvents,
       summary: {
@@ -138,6 +138,20 @@ export class SyncImport {
     const expandedEvents: Schema_Event_Core[] = [];
 
     for (const event of recurringEvents) {
+      // If it's a base event with recurrence rules, just add it and continue
+      if (event.recurrence) {
+        const baseEvent = MapEvent.toCompass(
+          userId,
+          [event],
+          Origin.GOOGLE_IMPORT,
+        );
+        expandedEvents.push(...baseEvent);
+        console.log("found recurrence");
+        logger.info("foudn recurrence", event.recurrence);
+        continue; // Skip instance expansion for base events
+      }
+
+      // Otherwise, it's an instance that needs to be expanded
       const recurringId = event.recurringEventId || event.id;
       if (!recurringId) {
         throw error(
@@ -204,7 +218,50 @@ export class SyncImport {
     let nextPageToken: string | undefined = undefined;
     let nextSyncToken: string | undefined = undefined;
     let total = 0;
+    const baseRecurrenceIds = new Set<string>();
 
+    // First fetch with singleEvents: false to get base recurring events
+    do {
+      const params: gParamsImportAllEvents = {
+        calendarId,
+        singleEvents: false,
+        pageToken: nextPageToken,
+      };
+
+      const gEvents = await gcalService.getEvents(this.gcal, params);
+
+      if (!gEvents || !gEvents.data.items) {
+        throw error(EventError.NoGevents, "Potentially missing events");
+      }
+
+      if (gEvents.data.items.length > 0) {
+        total += gEvents.data.items.length;
+
+        // Only track IDs for base recurrences
+        gEvents.data.items.forEach((event) => {
+          if (event.id && event.recurrence) {
+            baseRecurrenceIds.add(event.id);
+          }
+        });
+
+        const cEvents = MapEvent.toCompass(
+          userId,
+          gEvents.data.items,
+          Origin.GOOGLE_IMPORT,
+        );
+        if (cEvents.length > 0) {
+          await eventService.createMany(cEvents);
+        }
+      }
+
+      nextPageToken = gEvents.data.nextPageToken ?? undefined;
+      nextSyncToken = gEvents.data.nextSyncToken ?? undefined;
+    } while (nextPageToken !== undefined);
+
+    // Reset pagination for the second fetch
+    nextPageToken = undefined;
+
+    // Then fetch with singleEvents: true to get instances
     do {
       const params: gParamsImportAllEvents = {
         calendarId,
@@ -219,20 +276,30 @@ export class SyncImport {
       }
 
       if (gEvents.data.items.length > 0) {
-        total += gEvents.data.items.length;
-
-        const cEvents = MapEvent.toCompass(
-          userId,
-          gEvents.data.items,
-          Origin.GOOGLE_IMPORT,
+        // Filter out instances that are actually base events
+        const instances = gEvents.data.items.filter(
+          (event) => !baseRecurrenceIds.has(event.id || ""),
         );
-        if (cEvents.length > 0) {
-          await eventService.createMany(cEvents);
+
+        if (instances.length > 0) {
+          total += instances.length;
+
+          const cEvents = MapEvent.toCompass(
+            userId,
+            instances,
+            Origin.GOOGLE_IMPORT,
+          );
+          if (cEvents.length > 0) {
+            await eventService.createMany(cEvents);
+          }
         }
       }
 
       nextPageToken = gEvents.data.nextPageToken ?? undefined;
-      nextSyncToken = gEvents.data.nextSyncToken ?? undefined;
+      // Only update nextSyncToken from the last fetch
+      if (!nextPageToken) {
+        nextSyncToken = gEvents.data.nextSyncToken ?? undefined;
+      }
     } while (nextPageToken !== undefined);
 
     // nextSyncToken is defined when there are no more events
