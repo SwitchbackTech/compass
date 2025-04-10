@@ -73,18 +73,40 @@ export const mockGcal = ({
         events: {
           list: jest
             .fn()
-            .mockImplementation(async (params: { pageToken?: string }) => {
-              const eventsPage = generatePaginatedEvents(
-                events,
-                nextSyncToken,
-                pageSize,
-                params.pageToken,
-              );
+            .mockImplementation(
+              async (params: {
+                pageToken?: string;
+                singleEvents?: boolean;
+              }) => {
+                // When singleEvents is false, only return base events
+                if (params.singleEvents === false) {
+                  const baseEvents = events.filter((event) => event.recurrence);
+                  const eventsPage = generatePaginatedEvents(
+                    baseEvents,
+                    nextSyncToken,
+                    pageSize,
+                    params.pageToken,
+                  );
+                  return {
+                    data: eventsPage,
+                  };
+                }
 
-              return {
-                data: eventsPage,
-              };
-            }),
+                // When singleEvents is true, return instances and non-recurring events
+                const instancesAndNonRecurring = events.filter(
+                  (event) => !event.recurrence || event.recurringEventId,
+                );
+                const eventsPage = generatePaginatedEvents(
+                  instancesAndNonRecurring,
+                  nextSyncToken,
+                  pageSize,
+                  params.pageToken,
+                );
+                return {
+                  data: eventsPage,
+                };
+              },
+            ),
           instances: jest
             .fn()
             .mockImplementation(async (params: { eventId: string }) => {
