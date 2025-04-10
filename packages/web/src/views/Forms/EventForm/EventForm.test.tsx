@@ -43,6 +43,48 @@ test("start date picker opens and then closes when clicking the end input", asyn
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
+test("should call onConvert when meta+shift+< keyboard shortcut is used", async () => {
+  const sampleEvent: Schema_Event = {
+    _id: "event123",
+    title: "Test Event for Hotkey",
+    startDate: "2025-04-10",
+    endDate: "2025-04-10",
+    isAllDay: false,
+  };
+  const mockOnClose = jest.fn();
+  const mockOnConvert = jest.fn();
+  const mockOnSubmit = jest.fn();
+  const mockSetEvent = jest.fn();
+  const mockOnDelete = jest.fn();
+
+  render(
+    <div>
+      <EventForm
+        event={sampleEvent}
+        onClose={mockOnClose}
+        onConvert={mockOnConvert}
+        onSubmit={mockOnSubmit}
+        setEvent={mockSetEvent}
+        onDelete={mockOnDelete}
+      />
+    </div>,
+  );
+
+  // Ensure the form is rendered (optional, good sanity check)
+  expect(screen.getByRole("form")).toBeInTheDocument();
+
+  await act(async () => {
+    // Simulate pressing Meta, then Shift, then '<', then releasing them
+    await userEvent.keyboard("{Meta>}{Shift>}{<}{/Shift}{/Meta}");
+  });
+
+  expect(mockOnConvert).toHaveBeenCalledTimes(1);
+
+  expect(mockOnClose).not.toHaveBeenCalled();
+  expect(mockOnSubmit).not.toHaveBeenCalled();
+  expect(mockOnDelete).not.toHaveBeenCalled();
+});
+
 const _clickStartInput = async () => {
   const startDateInput = screen.getByRole("textbox", {
     name: /pick start date/i,
