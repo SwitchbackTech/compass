@@ -155,6 +155,7 @@ class EventService {
         `Only ${response.insertedCount}/${events.length} saved`,
       );
     }
+    return response;
   };
 
   /* 

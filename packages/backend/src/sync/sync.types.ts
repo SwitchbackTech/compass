@@ -5,7 +5,7 @@ export type Summary_Sync = {
   changes: Change_Gcal[];
 };
 
-export type Operation_Sync = "CANCELLED" | "UPSERTED" | null;
+export type Operation_Sync = "DELETED" | "UPSERTED" | null;
 export type Change_Gcal = {
   title: string;
   category: Categories_Recurrence;

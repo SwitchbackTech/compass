@@ -4,6 +4,7 @@ jest.mock("@core/logger/winston.logger", () => {
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
+    verbose: jest.fn(),
   };
 
   return {
