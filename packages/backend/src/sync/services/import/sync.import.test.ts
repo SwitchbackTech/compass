@@ -8,7 +8,6 @@ import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import mongoService from "@backend/common/services/mongo.service";
 import { createSyncImport } from "./sync.import";
 
-//TODO replace with mockGcalEvents -- donthey're both doing the same thing (?)
 // Create specific test data
 const createTestEvents = () => {
   // Create a base recurring event
@@ -22,6 +21,8 @@ const createTestEvents = () => {
     mockGcalEvent({
       id: "recurring-1-instance-1",
       recurringEventId: "recurring-1",
+      // the first instance shares the same start date as the base event
+      start: baseRecurringEvent.start,
     }),
     mockGcalEvent({
       id: "recurring-1-instance-2",
@@ -75,13 +76,14 @@ describe("SyncImport", () => {
 
   describe("Full import", () => {
     it("should include regular and recurring events and skip cancelled events", async () => {
-      const { total: totalProcessed, nextSyncToken } =
+      const { totalProcessed, totalChanged, nextSyncToken } =
         await syncImport.importAllEvents(setup.userId, "test-calendar");
 
       const currentEventsInDb = await mongoService.event.find().toArray();
 
       expect(totalProcessed).toBe(5); // base + 2 instances + regular + cancelled
-      expect(currentEventsInDb).toHaveLength(4); // base + 2 instances + regular - cancelled
+      expect(totalChanged).toBe(3); // base + 1 instances + regular - cancelled
+      expect(currentEventsInDb).toHaveLength(3); // base + 1 instance + regular - cancelled
       // Verify we have the base recurring event
       const baseEvents = currentEventsInDb.filter(
         (e) => e.recurrence?.rule !== undefined,
@@ -89,16 +91,13 @@ describe("SyncImport", () => {
       expect(baseEvents).toHaveLength(1);
       expect(baseEvents[0]?.gEventId).toBe("recurring-1");
 
-      // Verify we have the instances
+      // Verify we have the correct instance
       const instanceEvents = currentEventsInDb.filter(
         (e) => e.recurrence?.eventId !== undefined,
       );
-      expect(instanceEvents).toHaveLength(2);
+      expect(instanceEvents).toHaveLength(1); // 2 instances total, but 1 is skipped
       expect(instanceEvents.map((e) => e.gEventId)).toEqual(
-        expect.arrayContaining([
-          "recurring-1-instance-1",
-          "recurring-1-instance-2",
-        ]),
+        expect.arrayContaining(["recurring-1-instance-2"]),
       );
 
       // Verify we have the regular event
@@ -135,5 +134,19 @@ describe("SyncImport", () => {
 
       expect(duplicateEvents).toHaveLength(0);
     });
+  });
+  it("should not import the first instance of a recurring event (just the base)", async () => {
+    // including the first instance would result in 2 events with the same start date
+    await syncImport.importAllEvents(setup.userId, "test-calendar");
+
+    const currentEventsInDb = await mongoService.event.find().toArray();
+
+    const recurringEvents = currentEventsInDb.filter(
+      (e) => e.recurrence !== undefined,
+    );
+
+    const baseStart = recurringEvents[0]?.startDate;
+    const firstInstanceStart = recurringEvents[1]?.startDate;
+    expect(baseStart).not.toEqual(firstInstanceStart);
   });
 });

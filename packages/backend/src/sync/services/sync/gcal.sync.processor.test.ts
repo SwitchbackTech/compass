@@ -147,7 +147,7 @@ describe("GcalSyncProcessor", () => {
         recurrence: ["RRULE:FREQ=DAILY"],
       });
       const gcalInstance = mockGcalEvent({
-        recurringEventId: gcalBaseEvent.id,
+        recurringEventId: gcalBaseEvent.id + "_20250325T130000Z",
       });
       // Create base and instances in Compass,
       // that point to the original gcal base
@@ -179,7 +179,7 @@ describe("GcalSyncProcessor", () => {
         kind: "calendar#event",
         id: gcalInstance.id,
         status: "cancelled",
-        recurringEventId: gcalBaseEvent.id,
+        recurringEventId: gcalBaseEvent.id + "_20250325T130000Z",
         originalStartTime: {
           date: "2025-04-10",
         },
@@ -198,7 +198,6 @@ describe("GcalSyncProcessor", () => {
       const remainingEvents = await getEventsInDb();
 
       // Verify only the instance was deleted
-      expect(remainingEvents).toHaveLength(meta.createdCount - 1);
       expect(remainingEvents).toHaveLength(meta.createdCount - 1);
       expect(remainingEvents[0]?._id.toString()).toBe(compassBaseId);
       expect(isInstance(remainingEvents[1] as unknown as Schema_Event)).toBe(
