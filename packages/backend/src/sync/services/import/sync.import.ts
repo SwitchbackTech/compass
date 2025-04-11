@@ -1,13 +1,8 @@
-import dayjs from "dayjs";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
 import { Schema_Event_Core } from "@core/types/event.types";
-import {
-  gCalendar,
-  gParamsImportAllEvents,
-  gSchema$Event,
-} from "@core/types/gcal";
+import { gCalendar, gSchema$Event } from "@core/types/gcal";
 import { Schema_Sync } from "@core/types/sync.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
@@ -21,7 +16,6 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import eventService from "@backend/event/services/event.service";
 import {
   getSync,
   updateSync,
@@ -34,23 +28,16 @@ import {
 import { getCalendarsToSync } from "../init/sync.init";
 import syncService from "../sync.service";
 import { assembleEventWatchPayloads } from "../watch/sync.watch";
-import { EventsToModify } from "./sync.import.types";
+import { fetchAndProcessEventsPageByPage } from "./all/import.all.gcal";
+import {
+  shouldProcessDuringPass1,
+  shouldProcessDuringPass2,
+} from "./all/import.all.util";
+import { EventsToModify, Map_ImportAll } from "./sync.import.types";
 import { organizeGcalEventsByType } from "./sync.import.util";
 
 const logger = Logger("app:sync.import");
 
-// Helper function to get a consistent start time string from a Google Event
-const getStartTimeString = (event: gSchema$Event): string | null => {
-  if (event.start?.dateTime) {
-    return event.start.dateTime;
-  }
-  if (event.start?.date) {
-    // For all-day events, represent the start as the beginning of that day in UTC
-    // This assumes MapEvent.toCompass handles all-day events similarly. Adjust if needed.
-    return dayjs(event.start.date).startOf("day").toISOString();
-  }
-  return null;
-};
 export class SyncImport {
   private gcal: gCalendar;
 
@@ -124,7 +111,6 @@ export class SyncImport {
     const instances = data?.items;
 
     if (!instances) {
-      // It might be valid for a recurring event to have no instances in the time range
       logger.warn(
         `No instances found for recurring event ${recurringEventId} in calendar ${calendarId}`,
       );
@@ -159,17 +145,13 @@ export class SyncImport {
       if (event.recurrence && event.id) {
         const baseEvent = MapEvent.toCompass(
           userId,
-          [event], // Map just this one event
+          [event],
           Origin.GOOGLE_IMPORT,
         );
         expandedEvents.push(...baseEvent);
         logger.debug(
           `Mapped base recurring event ${event.id} from incremental update.`,
         );
-        // We don't expand instances here because the sync logic assumes
-        // that modified *instances* will also appear in the `updatedEvents` list
-        // if they were changed individually. Fetching all instances here could be redundant
-        // or conflict with specific instance updates received via syncToken.
         continue;
       }
 
@@ -182,10 +164,9 @@ export class SyncImport {
       // If an event here *doesn't* have `event.recurrence` but *does* have `recurringEventId`,
       // it's likely an individual instance received from the sync feed.
       if (event.recurringEventId && event.id) {
-        // Map this single instance directly, as it represents a specific change.
         const singleInstance = MapEvent.toCompass(
           userId,
-          [event], // Map just this one instance
+          [event],
           Origin.GOOGLE_IMPORT,
         );
         expandedEvents.push(...singleInstance);
@@ -211,7 +192,7 @@ export class SyncImport {
       // This part might be unreachable if the above conditions handle all cases.
       // If reached, it implies fetching all instances, which might be wrong for incremental sync.
       logger.warn(
-        `Unexpectedly expanding all instances for ${recurringId} during incremental sync. Review logic.`,
+        `Unexpectedly expanding all instances for ${recurringId} during incremental sync. Review logic if this occurs frequently.`,
       );
       const instances = await this.expandRecurringEvent(
         userId,
@@ -225,31 +206,26 @@ export class SyncImport {
   }
 
   /**
-   * Gets the appropriate sync token for the current operation
+   * Gets the appropriate sync token for the current operation (incremental sync)
    */
   private getSyncToken(
     pageToken: string | null | undefined,
     syncToken: string | null | undefined,
   ) {
-    // Incremental sync uses syncToken first, then pageToken for subsequent pages of that sync result
     if (pageToken !== undefined && pageToken !== null) {
-      // When paging through results from a previous syncToken request
       return pageToken;
     }
-
     if (syncToken === undefined || syncToken === null) {
-      // Should not happen if called from importEventsByCalendar which provides initialSyncToken
       throw error(
         GenericError.DeveloperError,
         "Incremental sync failed because no sync token was found",
       );
     }
-    // First call for an incremental sync uses the stored syncToken
     return syncToken;
   }
 
   /**
-   * Fetches updated events from Google Calendar using a sync token
+   * Fetches updated events from Google Calendar using a sync token (for incremental sync)
    */
   private async getUpdatedEvents(gCalendarId: string, syncToken: string) {
     // This function is specifically for *incremental* sync
@@ -290,219 +266,56 @@ export class SyncImport {
    * Imports ALL events for a calendar (Full Sync).
    */
   public async importAllEvents(userId: string, calendarId: string) {
-    let nextPageToken: string | undefined = undefined;
-    let nextSyncToken: string | undefined = undefined;
-    let totalProcessed = 0; // Track total events processed across passes
-    let baseEventsSavedCount = 0;
-    let instanceEventsSavedCount = 0;
-
-    // Store base event IDs and their start times (for first instance check)
-    const baseEventStartTimes = new Map<string, string | null>();
-
-    // Store IDs of ALL events processed in Pass 1
-    const processedEventIdsPass1 = new Set<string>();
-
     logger.info(
-      `Starting importAllEvents for user ${userId}, calendar ${calendarId}. Pass 1: Fetching base recurring & single events.`, // Log reflects scope
+      `Starting importAllEvents for user ${userId}, calendar ${calendarId}.`,
     );
 
-    // Pass 1: Fetch with singleEvents: false
-    do {
-      const params: gParamsImportAllEvents = {
-        calendarId,
-        singleEvents: false, // Get master recurring events
-        pageToken: nextPageToken,
-        maxResults: 250, // Fetch in reasonable batches
-      };
+    // Shared state needed by both passes
+    const importMap: Map_ImportAll = {
+      baseEventStartTimes: new Map<string, string | null>(),
+      processedEventIdsPass1: new Set<string>(),
+    };
 
-      const gEventsResponse = await gcalService.getEvents(this.gcal, params);
-
-      if (!gEventsResponse || !gEventsResponse.data.items) {
-        logger.warn(
-          `No events found or error fetching base events page for calendar ${calendarId}. PageToken: ${nextPageToken}`,
-        );
-        if (!nextPageToken && totalProcessed === 0) {
-          throw error(
-            EventError.NoGevents,
-            `Initial fetch for base events failed for calendar ${calendarId}`,
-          );
-        }
-        break;
-      }
-
-      const eventsFromPass1 = gEventsResponse.data.items;
-      totalProcessed += eventsFromPass1.length;
-
-      if (eventsFromPass1.length > 0) {
-        const eventsToSavePass1: gSchema$Event[] = [];
-        eventsFromPass1.forEach((event) => {
-          if (event.id && event.recurrence) {
-            // It's a base recurring event, store its ID and start time
-            const startTime = getStartTimeString(event);
-            baseEventStartTimes.set(event.id, startTime);
-            eventsToSavePass1.push(event);
-            processedEventIdsPass1.add(event.id);
-            logger.debug(
-              `Pass 1: Identified base event ${event.id}, start: ${startTime}`,
-            );
-          } else if (event.id && !event.recurringEventId) {
-            // It's a regular single event
-            eventsToSavePass1.push(event);
-            processedEventIdsPass1.add(event.id);
-            logger.debug(`Pass 1: Identified single event ${event.id}`);
-          }
-          // Ignore detached instances in this pass
-        });
-
-        if (eventsToSavePass1.length > 0) {
-          const cEvents = MapEvent.toCompass(
-            userId,
-            eventsToSavePass1,
-            Origin.GOOGLE_IMPORT,
-          );
-          if (cEvents.length > 0) {
-            const result = await eventService.createMany(cEvents);
-            baseEventsSavedCount += result.insertedCount;
-            logger.debug(
-              `Saved ${result.insertedCount || 0} base/single events from Pass 1.`,
-            );
-          }
-        }
-      }
-
-      nextPageToken = gEventsResponse.data.nextPageToken ?? undefined;
-      // Sync token from singleEvents=false is generally not useful for starting incremental sync
-      // We need the one from singleEvents=true later.
-      // nextSyncToken = gEventsResponse.data.nextSyncToken ?? undefined;
-    } while (nextPageToken !== undefined);
-
-    logger.info(
-      `Completed Pass 1 for ${calendarId}. Processed ${totalProcessed} API events. Saved ${baseEventsSavedCount} base/single events. ${processedEventIdsPass1.size} unique events recorded from Pass 1.`,
+    // Execute Pass 1
+    const pass1Result = await fetchAndProcessEventsPageByPage(
+      userId,
+      this.gcal,
+      calendarId,
+      { singleEvents: false },
+      shouldProcessDuringPass1,
+      importMap,
+      false, // Don't capture sync token in Pass 1
     );
 
-    // Reset pagination for the second fetch
-    nextPageToken = undefined;
-
-    logger.info(
-      `Starting Pass 2: Fetching instances & single events within range.`,
+    // Execute Pass 2
+    const pass2Result = await fetchAndProcessEventsPageByPage(
+      userId,
+      this.gcal,
+      calendarId,
+      { singleEvents: true },
+      shouldProcessDuringPass2,
+      importMap,
+      true, // Capture sync token in Pass 2
     );
 
-    // Pass 2: Fetch with singleEvents: true
-    do {
-      const params: gParamsImportAllEvents = {
-        calendarId,
-        singleEvents: true, // Expand recurring events into instances
-        pageToken: nextPageToken,
-        maxResults: 250,
-        // be aware that not including timeMin/Max affects which instances/single events are fetched
-      };
-
-      const gEventsResponse = await gcalService.getEvents(this.gcal, params);
-
-      if (!gEventsResponse || !gEventsResponse.data.items) {
-        logger.warn(
-          `No events found or error fetching instances page for calendar ${calendarId}. PageToken: ${nextPageToken}`,
-        );
-        if (!nextPageToken && instanceEventsSavedCount === 0) {
-          logger.error(
-            `Initial fetch for instances failed for calendar ${calendarId}. Full sync may be incomplete.`,
-          );
-          throw error(EventError.NoGevents, "Potentially missing events");
-        }
-        break;
-      }
-
-      const allItemsPass2 = gEventsResponse.data.items;
-      totalProcessed += allItemsPass2.length;
-
-      if (allItemsPass2.length > 0) {
-        const instancesToSave: gSchema$Event[] = [];
-
-        allItemsPass2.forEach((event) => {
-          // --- Filter Logic ---
-          // Filter 1: Skip ANY event already processed in Pass 1
-          if (processedEventIdsPass1.has(event.id || "")) {
-            logger.verbose(
-              `Skipping event ${event.id} in Pass 2: Already processed in Pass 1.`,
-            );
-            return;
-          }
-
-          // Filter 2: Skip the first instance if it matches the base event's start time
-          if (event.recurringEventId && event.id) {
-            const baseStartTime = baseEventStartTimes.get(
-              event.recurringEventId,
-            );
-            if (baseStartTime !== undefined) {
-              const instanceStartTime = getStartTimeString(event);
-              const isFirstInstance =
-                baseStartTime &&
-                instanceStartTime &&
-                baseStartTime === instanceStartTime;
-
-              if (isFirstInstance) {
-                logger.verbose(
-                  `Skipping event ${event.id} (instance): Start time matches base event ${event.recurringEventId}.`,
-                );
-                return; // Skip: It's the first instance duplicating the base event's time
-              }
-            } else {
-              logger.warn(
-                `Instance ${event.id} found, but its base event ${event.recurringEventId} was not recorded in Pass 1. Saving instance.`,
-              );
-            }
-          }
-          // --- End Filter Logic ---
-
-          // If not filtered out, add to the list to be saved
-          instancesToSave.push(event);
-        });
-
-        if (instancesToSave.length > 0) {
-          const cEvents = MapEvent.toCompass(
-            userId,
-            instancesToSave,
-            Origin.GOOGLE_IMPORT,
-          );
-          if (cEvents.length > 0) {
-            const result = await eventService.createMany(cEvents);
-            const savedCount = result.insertedCount ?? 0;
-            instanceEventsSavedCount += savedCount;
-            logger.debug(
-              `Saved ${savedCount} instances/single events from Pass 2.`,
-            );
-          }
-        }
-      }
-
-      nextPageToken = gEventsResponse.data.nextPageToken ?? undefined;
-      // *** CRITICAL: Get the sync token from the *last* page of the singleEvents=true fetch ***
-      if (!nextPageToken) {
-        nextSyncToken = gEventsResponse.data.nextSyncToken ?? undefined;
-        logger.info(
-          `Reached last page of instances fetch. Got nextSyncToken: ${
-            nextSyncToken ? "..." : "null"
-          }`,
-        );
-      }
-    } while (nextPageToken !== undefined);
-
-    logger.info(
-      `Completed Pass 2 for ${calendarId}. Processed ${totalProcessed} API events. Saved ${instanceEventsSavedCount} new instances/single events.`, // Updated log
-    );
-
-    // A nextSyncToken is essential to start incremental sync later.
+    // --- Finalization ---
+    const nextSyncToken = pass2Result.nextSyncToken;
     if (!nextSyncToken) {
-      // This can happen if the calendar is empty or if there was an error on the last page fetch.
+      // If Pass 2 ran but yielded no sync token (e.g., empty calendar or API issue on last page)
       throw error(
         GcalError.NoSyncToken,
-        `Failed to finalize import full import because nextSyncToken was not found for ${calendarId}. Incremental sync may not work correctly.`,
+        `Failed to finalize full import because nextSyncToken was not found for ${calendarId}. Incremental sync may not work correctly.`,
       );
     }
 
+    const baseEventsSavedCount = pass1Result.savedCount;
+    const instanceEventsSavedCount = pass2Result.savedCount;
     const totalChanged = baseEventsSavedCount + instanceEventsSavedCount;
+    const totalProcessed =
+      pass1Result.processedCount + pass2Result.processedCount;
+
     logger.info(
-      `importAllEvents completed for ${calendarId}. Total base/single saved in Pass 1: ${baseEventsSavedCount}, Total new instances/single saved in Pass 2: ${instanceEventsSavedCount}. Total Saved: ${totalChanged}. Final nextSyncToken acquired.`, // Updated log
+      `importAllEvents completed for ${calendarId}. Total API events processed: ${totalProcessed}. Total base/single saved in Pass 1: ${baseEventsSavedCount}, Total new instances/single saved in Pass 2: ${instanceEventsSavedCount}. Total Saved/Changed: ${totalChanged}. Final nextSyncToken acquired.`,
     );
 
     return {
@@ -517,6 +330,12 @@ export class SyncImport {
    */
   public async importLatestEvents(userId: string) {
     const eventSyncPayloads = await this.prepIncrementalImport(userId);
+    if (eventSyncPayloads.length === 0) {
+      logger.info(
+        `No calendars configured or ready for incremental sync for user ${userId}.`,
+      );
+      return []; // Return empty array if nothing to sync
+    }
     const syncEvents = this.assembleIncrementalEventImports(
       userId,
       eventSyncPayloads,
@@ -707,6 +526,10 @@ export class SyncImport {
 
     return { updated, deleted, created };
   }
+
+  // ================================================================
+  // Generic Helper Method for Page-by-Page Fetching and Processing (for importAllEvents)
+  // ================================================================
 }
 
 // Factory function to create instances

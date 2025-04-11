@@ -27,14 +27,14 @@ export class RecurringEventRepository {
       { _id: baseId, user: this.userId },
       { "recurrence.eventId": baseId, user: this.userId },
     ];
-    console.log(filters);
+    console.log("series filters", filters);
     return result;
   }
 
   async cancelInstance(id: string, params?: { idKey: Ids_Event }) {
     const idKey = params?.idKey || "_id";
     const filter = { [idKey]: id, user: this.userId };
-    console.log(filter);
+    console.log("instance filter:", filter);
     // Delete just this specific instance
     const result = await mongoService.db
       .collection(Collections.EVENT)
