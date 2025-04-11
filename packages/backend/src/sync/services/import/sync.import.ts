@@ -296,67 +296,68 @@ export class SyncImport {
     let baseEventsSavedCount = 0;
     let instanceEventsSavedCount = 0;
 
-    // Store base event IDs and their start times to detect the duplicate first instance later
-    const baseEventStartTimes = new Map<string, string | null>(); // Map GCal Event ID -> Start Time ISO String or null
+    // Store base event IDs and their start times (for first instance check)
+    const baseEventStartTimes = new Map<string, string | null>();
+
+    // Store IDs of ALL events processed in Pass 1
+    const processedEventIdsPass1 = new Set<string>();
 
     logger.info(
-      `Starting importAllEvents for user ${userId}, calendar ${calendarId}. Pass 1: Fetching base recurring events.`,
+      `Starting importAllEvents for user ${userId}, calendar ${calendarId}. Pass 1: Fetching base recurring & single events.`, // Log reflects scope
     );
 
-    // Pass 1: Fetch with singleEvents: false to get base recurring events
+    // Pass 1: Fetch with singleEvents: false
     do {
       const params: gParamsImportAllEvents = {
         calendarId,
         singleEvents: false, // Get master recurring events
         pageToken: nextPageToken,
-        // Consider adding timeMin/timeMax if needed, but usually not for base events
         maxResults: 250, // Fetch in reasonable batches
       };
 
       const gEventsResponse = await gcalService.getEvents(this.gcal, params);
 
       if (!gEventsResponse || !gEventsResponse.data.items) {
-        // Log warning but continue if possible, maybe some events were fetched before error
         logger.warn(
           `No events found or error fetching base events page for calendar ${calendarId}. PageToken: ${nextPageToken}`,
         );
-        // If nextPageToken exists, the loop might continue, otherwise it breaks.
-        // If it's the *first* fetch, throwing might be appropriate.
         if (!nextPageToken && totalProcessed === 0) {
           throw error(
             EventError.NoGevents,
             `Initial fetch for base events failed for calendar ${calendarId}`,
           );
         }
-        // If not the first fetch, break the loop for this pass
         break;
       }
 
-      const baseEvents = gEventsResponse.data.items;
-      totalProcessed += baseEvents.length; // Count events received from API
+      const eventsFromPass1 = gEventsResponse.data.items;
+      totalProcessed += eventsFromPass1.length;
 
-      if (baseEvents.length > 0) {
-        const eventsToSave: gSchema$Event[] = [];
-        baseEvents.forEach((event) => {
+      if (eventsFromPass1.length > 0) {
+        const eventsToSavePass1: gSchema$Event[] = [];
+        eventsFromPass1.forEach((event) => {
           if (event.id && event.recurrence) {
             // It's a base recurring event, store its ID and start time
             const startTime = getStartTimeString(event);
             baseEventStartTimes.set(event.id, startTime);
-            eventsToSave.push(event); // Add to list to be saved
+            eventsToSavePass1.push(event);
+            processedEventIdsPass1.add(event.id);
             logger.debug(
-              `Identified base event ${event.id}, start: ${startTime}`,
+              `Pass 1: Identified base event ${event.id}, start: ${startTime}`,
             );
           } else if (event.id && !event.recurringEventId) {
-            // It's a regular single event, add it to be saved
-            eventsToSave.push(event);
+            // It's a regular single event
+            eventsToSavePass1.push(event);
+            processedEventIdsPass1.add(event.id);
+            logger.debug(`Pass 1: Identified single event ${event.id}`);
           }
-          // Ignore detached instances (event.recurringEventId exists) in this pass
+          // Ignore detached instances in this pass
         });
 
-        if (eventsToSave.length > 0) {
+        if (eventsToSavePass1.length > 0) {
           const cEvents = MapEvent.toCompass(
             userId,
-            eventsToSave,
+            eventsToSavePass1,
             Origin.GOOGLE_IMPORT,
           );
           if (cEvents.length > 0) {
@@ -376,25 +377,24 @@ export class SyncImport {
     } while (nextPageToken !== undefined);
 
     logger.info(
-      `Completed Pass 1 for ${calendarId}. Processed ${totalProcessed} events from API. Saved ${baseEventsSavedCount} base/single events. ${baseEventStartTimes.size} base recurring events identified.`,
+      `Completed Pass 1 for ${calendarId}. Processed ${totalProcessed} API events. Saved ${baseEventsSavedCount} base/single events. ${processedEventIdsPass1.size} unique events recorded from Pass 1.`,
     );
 
     // Reset pagination for the second fetch
     nextPageToken = undefined;
-    // totalProcessed = 0; // Reset counter for Pass 2
 
-    logger.info(`Starting Pass 2: Fetching instances.`);
+    logger.info(
+      `Starting Pass 2: Fetching instances & single events within range.`,
+    );
 
-    // Pass 2: Fetch with singleEvents: true to get instances
+    // Pass 2: Fetch with singleEvents: true
     do {
       const params: gParamsImportAllEvents = {
         calendarId,
         singleEvents: true, // Expand recurring events into instances
         pageToken: nextPageToken,
-        maxResults: 250, // Fetch in reasonable batches
-        // IMPORTANT: Define a time range for instances, otherwise it defaults! (or dont, cuz those prevent nextSyncToken from being found)
-        // timeMin: dayjs().subtract(6, "months").toISOString(), // Fetch from now...
-        // timeMax: dayjs().add(1, "year").toISOString(), // ...to 1 year ahead. Adjust as needed.
+        maxResults: 250,
+        // be aware that not including timeMin/Max affects which instances/single events are fetched
       };
 
       const gEventsResponse = await gcalService.getEvents(this.gcal, params);
@@ -404,38 +404,36 @@ export class SyncImport {
           `No events found or error fetching instances page for calendar ${calendarId}. PageToken: ${nextPageToken}`,
         );
         if (!nextPageToken && instanceEventsSavedCount === 0) {
-          // Only error if it's the first fetch of instances
           logger.error(
             `Initial fetch for instances failed for calendar ${calendarId}. Full sync may be incomplete.`,
           );
           throw error(EventError.NoGevents, "Potentially missing events");
         }
-        break; // Break loop for this pass
+        break;
       }
 
-      const allItems = gEventsResponse.data.items;
-      totalProcessed += allItems.length;
+      const allItemsPass2 = gEventsResponse.data.items;
+      totalProcessed += allItemsPass2.length;
 
-      if (allItems.length > 0) {
+      if (allItemsPass2.length > 0) {
         const instancesToSave: gSchema$Event[] = [];
 
-        allItems.forEach((event) => {
+        allItemsPass2.forEach((event) => {
           // --- Filter Logic ---
-          // 1. Skip base recurring events (we already saved them or their ID is stored)
-          if (baseEventStartTimes.has(event.id || "")) {
+          // Filter 1: Skip ANY event already processed in Pass 1
+          if (processedEventIdsPass1.has(event.id || "")) {
             logger.verbose(
-              `Skipping event ${event.id} in Pass 2: Is a base event.`,
+              `Skipping event ${event.id} in Pass 2: Already processed in Pass 1.`,
             );
-            return; // Skip: it's a base event we tracked
+            return;
           }
 
-          // 2. Skip the first instance if it matches the base event's start time
+          // Filter 2: Skip the first instance if it matches the base event's start time
           if (event.recurringEventId && event.id) {
             const baseStartTime = baseEventStartTimes.get(
               event.recurringEventId,
             );
             if (baseStartTime !== undefined) {
-              // Check if we know the base event
               const instanceStartTime = getStartTimeString(event);
               const isFirstInstance =
                 baseStartTime &&
@@ -449,7 +447,6 @@ export class SyncImport {
                 return; // Skip: It's the first instance duplicating the base event's time
               }
             } else {
-              // Base event wasn't found in our map - shouldn't happen in full sync unless event started long ago.
               logger.warn(
                 `Instance ${event.id} found, but its base event ${event.recurringEventId} was not recorded in Pass 1. Saving instance.`,
               );
@@ -469,9 +466,10 @@ export class SyncImport {
           );
           if (cEvents.length > 0) {
             const result = await eventService.createMany(cEvents);
-            instanceEventsSavedCount += result.insertedCount;
+            const savedCount = result.insertedCount ?? 0;
+            instanceEventsSavedCount += savedCount;
             logger.debug(
-              `Saved ${instanceEventsSavedCount} instances/single events from Pass 2.`,
+              `Saved ${savedCount} instances/single events from Pass 2.`,
             );
           }
         }
@@ -490,7 +488,7 @@ export class SyncImport {
     } while (nextPageToken !== undefined);
 
     logger.info(
-      `Completed Pass 2 for ${calendarId}. Processed ${totalProcessed} events from API. Saved ${instanceEventsSavedCount} instances/single events.`,
+      `Completed Pass 2 for ${calendarId}. Processed ${totalProcessed} API events. Saved ${instanceEventsSavedCount} new instances/single events.`, // Updated log
     );
 
     // A nextSyncToken is essential to start incremental sync later.
@@ -502,13 +500,14 @@ export class SyncImport {
       );
     }
 
+    const totalChanged = baseEventsSavedCount + instanceEventsSavedCount;
     logger.info(
-      `importAllEvents completed for ${calendarId}. Total base/single saved: ${baseEventsSavedCount}, Total instances saved: ${instanceEventsSavedCount}. Final nextSyncToken acquired.`,
+      `importAllEvents completed for ${calendarId}. Total base/single saved in Pass 1: ${baseEventsSavedCount}, Total new instances/single saved in Pass 2: ${instanceEventsSavedCount}. Total Saved: ${totalChanged}. Final nextSyncToken acquired.`, // Updated log
     );
 
     return {
-      totalProcessed: totalProcessed,
-      totalChanged: baseEventsSavedCount + instanceEventsSavedCount, // Return total actually saved
+      totalProcessed,
+      totalChanged,
       nextSyncToken,
     };
   }
