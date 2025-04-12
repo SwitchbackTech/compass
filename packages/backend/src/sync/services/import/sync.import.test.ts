@@ -20,13 +20,13 @@ const createTestEvents = () => {
   const instances = [
     mockGcalEvent({
       id: "recurring-1-instance-1",
-      recurringEventId: "recurring-1",
+      recurringEventId: baseRecurringEvent.id,
       // the first instance shares the same start date as the base event
       start: baseRecurringEvent.start,
     }),
     mockGcalEvent({
       id: "recurring-1-instance-2",
-      recurringEventId: "recurring-1",
+      recurringEventId: baseRecurringEvent.id,
     }),
   ];
 
@@ -95,7 +95,7 @@ describe("SyncImport", () => {
       const instanceEvents = currentEventsInDb.filter(
         (e) => e.recurrence?.eventId !== undefined,
       );
-      expect(instanceEvents).toHaveLength(1); // 2 instances total, but 1 is skipped
+      expect(instanceEvents).toHaveLength(1); // 2 instances total, but 1 is skipped because it has the same start date as the base event
       expect(instanceEvents.map((e) => e.gEventId)).toEqual(
         expect.arrayContaining(["recurring-1-instance-2"]),
       );

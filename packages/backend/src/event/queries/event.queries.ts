@@ -10,7 +10,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { getIdFilter } from "@backend/common/helpers/mongo.utils";
 import mongoService from "@backend/common/services/mongo.service";
 
-export type Ids_Event = "_id" | "gEventId";
+export type Ids_Event = "_id" | "gEventId" | "gRecurringEventId";
 
 /**
  * DB operations for Compass's Event collection, focused

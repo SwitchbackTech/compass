@@ -60,6 +60,7 @@ export const createMockInstance = (
     isSomeday: false,
     updatedAt: now,
     gEventId: `mock-gcal-id-${faker.string.uuid()}`,
+    gRecurringEventId: baseEventId,
     ...overrides,
   };
 };
