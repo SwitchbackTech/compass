@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { faker } from "@faker-js/faker/.";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
   Schema_Event_Recur_Base,
@@ -58,6 +59,7 @@ export const createMockInstance = (
     isAllDay: false,
     isSomeday: false,
     updatedAt: now,
+    gEventId: `mock-gcal-id-${faker.string.uuid()}`,
     ...overrides,
   };
 };

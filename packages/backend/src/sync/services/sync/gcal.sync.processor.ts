@@ -1,44 +1,64 @@
-import { gCalendar, gSchema$Event } from "@core/types/gcal";
+import { Logger } from "@core/logger/winston.logger";
+import { Schema_Event } from "@core/types/event.types";
+import { gSchema$Event } from "@core/types/gcal";
+import { EventError } from "@backend/common/constants/error.constants";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { findCompassEventBy } from "@backend/event/queries/event.queries";
+import { RecurringEventRepository } from "@backend/event/queries/event.recur.queries";
 import { GcalParser } from "@backend/event/services/recur/util/recur.gcal.util";
+import { isBase } from "@backend/event/services/recur/util/recur.util";
 import { Change_Gcal, Operation_Sync } from "../../sync.types";
 
+const logger = Logger("app.sync.processor");
 export class GcalSyncProcessor {
-  constructor(
-    private gcal: gCalendar,
-    private userId: string,
-  ) {}
+  constructor(private repo: RecurringEventRepository) {}
 
   async processEvents(events: gSchema$Event[]): Promise<Change_Gcal[]> {
-    console.log(
-      "gcal",
-      this.gcal?.settings?.context?._options?.auth?.toString(),
-      this.userId,
-    );
     const summary: Change_Gcal[] = [];
-    console.log(`Processing ${events.length} events...`);
+    console.log(`Processing ${events.length} event(s)...`);
     for (const event of events) {
       const parser = new GcalParser(event);
       const category = parser.category;
       const status = parser.status;
       const change = parser.summarize();
       let operation: Operation_Sync = null;
-      // --- Cancellation Logic ---
+
+      if (!event.id) {
+        throw error(
+          EventError.MissingGevents,
+          "Event not processed due to missing id",
+        );
+      }
+
+      // --- Handle cancellation ---
       if (status === "CANCELLED") {
-        if (category === "RECURRENCE_BASE") {
-          // Cancelled Master Event
-          // console.log(`Processing cancelled base: ${event.summary}`);
-          operation = "CANCELLED";
-          // TODO: delete base + linked instances
+        const compassEvent = await this.getCompassEvent(event.id);
+        if (!compassEvent) {
+          logger.warn(
+            "Not processing this event, because it was not found in DB:",
+            event.summary,
+          );
+          continue;
+        }
+
+        if (isBase(compassEvent as Schema_Event)) {
+          console.log(
+            `Cancelling series: ${compassEvent._id} (Compass) | ${event.id} (Gcal)`,
+          );
+          await this.repo.cancelSeries(compassEvent._id.toString());
+          operation = "DELETED";
         } else {
-          // console.log(`Processing cancelled instance: ${event.summary}`);
-          operation = "CANCELLED";
+          console.log(
+            `Cancelling instance: ${compassEvent._id} (Compass) | ${event.id} (Gcal)`,
+          );
+          await this.repo.cancelInstance(event.id, { idKey: "gEventId" });
+          operation = "DELETED";
         }
       }
 
-      // --- Upsert Logic for Active Events ---
+      // --- Handle upsert for active event ---
       else {
         /*
-        START HERE ON TUESDAY
         - init a mapper
         - map to compass schema (base or instance)
         - upsert (see ref file)
@@ -53,5 +73,13 @@ export class GcalSyncProcessor {
       summary.push({ ...change, operation });
     }
     return summary;
+  }
+
+  private async getCompassEvent(gEventId: string) {
+    const { event: compassEvent } = await findCompassEventBy(
+      "gEventId",
+      gEventId,
+    );
+    return compassEvent;
   }
 }
