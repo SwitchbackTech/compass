@@ -66,10 +66,10 @@ export const fetchAndProcessEventsPageByPage = async (
           `${passIdentifier}: Initial fetch failed or returned invalid data for ${calendarId}`,
         );
       }
-      break; // Stop processing this pass/call
+      break;
     }
 
-    const eventsFromApi = gEventsResponse.data.items || []; // Ensure items is an array
+    const eventsFromApi = gEventsResponse.data.items || [];
     totalProcessedApi += eventsFromApi.length;
 
     if (eventsFromApi.length > 0) {
@@ -89,23 +89,12 @@ export const fetchAndProcessEventsPageByPage = async (
           Origin.GOOGLE_IMPORT,
         );
         if (cEvents.length > 0) {
-          try {
-            const result = await eventService.createMany(cEvents);
-            // Safely access insertedCount (assuming result object structure)
-            const savedCount =
-              result && typeof result.insertedCount === "number"
-                ? result.insertedCount
-                : 0;
-            totalSaved += savedCount;
-            // logger.debug(`${passIdentifier}: Saved ${savedCount} events this page.`); // Reduce noise
-          } catch (dbError) {
-            logger.error(
-              `${passIdentifier}: Error saving events to database.`,
-              { error: dbError, count: cEvents.length },
-            );
-            // Potentially re-throw if database errors should halt the entire sync
-            // throw dbError;
-          }
+          const result = await eventService.createMany(cEvents);
+          const savedCount =
+            result && typeof result.insertedCount === "number"
+              ? result.insertedCount
+              : 0;
+          totalSaved += savedCount;
         }
       }
     }
