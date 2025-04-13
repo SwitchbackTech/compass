@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
@@ -11,6 +12,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import eventService from "@backend/event/services/event.service";
 import { Callback_EventProcessor, Map_ImportAll } from "../sync.import.types";
+import { assignIds } from "./import.all.util";
 
 const logger = Logger("sync.import.all.gcal");
 
@@ -23,7 +25,7 @@ export const fetchAndProcessEventsPageByPage = async (
   calendarId: string,
   gcalApiParams: gParamsImportAllEvents,
   // Callback function to process each event and decide if it should be saved
-  eventProcessor: Callback_EventProcessor,
+  shouldSave: Callback_EventProcessor,
   // Shared state accessible/modifiable by the processor
   sharedState: Map_ImportAll,
   captureSyncToken: boolean,
@@ -31,12 +33,14 @@ export const fetchAndProcessEventsPageByPage = async (
   savedCount: number;
   processedCount: number;
   nextSyncToken: string | undefined;
+  baseEventMap: Map<string, ObjectId>;
 }> => {
   let nextPageToken: string | undefined = undefined;
   let finalNextSyncToken: string | undefined = undefined;
   let totalProcessedApi = 0;
   let totalSaved = 0;
   const passIdentifier = gcalApiParams.singleEvents ? "Pass 2" : "Pass 1"; // For logging
+  let baseEventMap = sharedState.baseEventMap;
 
   logger.info(
     `${passIdentifier}: Fetching events for ${calendarId}. Params: ${JSON.stringify(gcalApiParams)}`,
@@ -69,15 +73,15 @@ export const fetchAndProcessEventsPageByPage = async (
       break;
     }
 
-    const eventsFromApi = gEventsResponse.data.items || [];
-    totalProcessedApi += eventsFromApi.length;
+    const gEvents = gEventsResponse.data.items || [];
+    totalProcessedApi += gEvents.length;
 
-    if (eventsFromApi.length > 0) {
+    if (gEvents.length > 0) {
       const eventsToSave: gSchema$Event[] = [];
-      eventsFromApi.forEach((event) => {
+      gEvents.forEach((event) => {
         // Call the provided processor function
-        const shouldSave = eventProcessor(event, sharedState);
-        if (shouldSave) {
+        const _shouldSave = shouldSave(event, sharedState);
+        if (_shouldSave) {
           eventsToSave.push(event);
         }
       });
@@ -88,8 +92,16 @@ export const fetchAndProcessEventsPageByPage = async (
           eventsToSave,
           Origin.GOOGLE_IMPORT,
         );
+        baseEventMap = assignIds(cEvents, baseEventMap);
+        console.log(
+          "creating ids:",
+          cEvents.map((e) => e._id?.toString()),
+        );
         if (cEvents.length > 0) {
-          const result = await eventService.createMany(cEvents);
+          console.log("creating:", cEvents);
+          const result = await eventService.createMany(cEvents, {
+            stripIds: false, // Preserve our generated ids in order to match the gcal ids
+          });
           const savedCount =
             result && typeof result.insertedCount === "number"
               ? result.insertedCount
@@ -117,5 +129,6 @@ export const fetchAndProcessEventsPageByPage = async (
     savedCount: totalSaved,
     processedCount: totalProcessedApi,
     nextSyncToken: finalNextSyncToken, // Will be undefined if captureSyncToken was false
+    baseEventMap,
   };
 };

@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
@@ -236,6 +237,7 @@ export class SyncImport {
     const importMap: Map_ImportAll = {
       baseEventStartTimes: new Map<string, string | null>(),
       processedEventIdsPass1: new Set<string>(),
+      baseEventMap: new Map<string, ObjectId>(),
     };
 
     // Execute Pass 1
@@ -248,6 +250,9 @@ export class SyncImport {
       importMap,
       false, // Don't capture sync token in Pass 1
     );
+
+    // Update the shared state with the map from Pass 1
+    importMap.baseEventMap = pass1Result.baseEventMap;
 
     // Execute Pass 2
     const pass2Result = await fetchAndProcessEventsPageByPage(

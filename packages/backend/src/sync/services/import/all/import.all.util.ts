@@ -1,5 +1,7 @@
 import dayjs from "dayjs";
+import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
+import { Event_Core } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import { Callback_EventProcessor } from "../sync.import.types";
 
@@ -70,4 +72,52 @@ export const shouldProcessDuringPass2: Callback_EventProcessor = (
   }
   // Event passed filters
   return true; // Save this event
+};
+
+/**
+ * Assigns Mongo ObjectIds to events and links instances to their base events
+ * @param events - The events to assign ids to
+ */
+export const assignIds = (
+  events: Event_Core[],
+  existingBaseEventMap: Map<string, ObjectId> = new Map(),
+): Map<string, ObjectId> => {
+  // First pass: identify base events and assign their IDs
+  const baseEventMap = new Map(existingBaseEventMap);
+
+  // Handle base events first
+  events.forEach((event) => {
+    const id = new ObjectId();
+    if (event.recurrence?.rule && !event.gRecurringEventId) {
+      // This is a base event
+      // const baseEventId = new ObjectId();
+      //@ts-expect-error - we are setting the _id as an ObjectId
+      event._id = id;
+      console.log(id, event._id, " (", event.title, ")");
+      if (event.gEventId) {
+        baseEventMap.set(event.gEventId, id);
+      }
+    } else {
+      // This is a regular event or instance
+      //@ts-expect-error - we are setting the _id as an ObjectId
+      event._id = id;
+      console.log(id, event._id, " (", event.title, ")");
+    }
+  });
+
+  // Second pass: assign IDs to instances and link them to their base events
+  events.forEach((event) => {
+    if (event.gRecurringEventId) {
+      // This is an instance
+      const baseEventId = baseEventMap.get(event.gRecurringEventId);
+      if (baseEventId) {
+        event.recurrence = {
+          eventId: baseEventId.toString(),
+        };
+        console.log(event._id, " (", event.title, ")");
+      }
+    }
+  });
+
+  return baseEventMap;
 };

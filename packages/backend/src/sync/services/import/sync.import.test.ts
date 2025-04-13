@@ -1,3 +1,4 @@
+import { getCategorizedEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupTestMongo,
   clearCollections,
@@ -13,6 +14,7 @@ const createTestEvents = () => {
   // Create a base recurring event
   const baseRecurringEvent = mockGcalEvent({
     id: "recurring-1",
+    summary: "Recurrence Base",
     recurrence: ["RRULE:FREQ=WEEKLY"],
   });
 
@@ -20,12 +22,14 @@ const createTestEvents = () => {
   const instances = [
     mockGcalEvent({
       id: "recurring-1-instance-1",
+      summary: "Recurrence Instance 1",
       recurringEventId: baseRecurringEvent.id,
       // the first instance shares the same start date as the base event
       start: baseRecurringEvent.start,
     }),
     mockGcalEvent({
       id: "recurring-1-instance-2",
+      summary: "Recurrence Instance 2",
       recurringEventId: baseRecurringEvent.id,
     }),
   ];
@@ -33,12 +37,14 @@ const createTestEvents = () => {
   // Create a regular event
   const regularEvent = mockGcalEvent({
     id: "regular-1",
+    summary: "Regular Event",
   });
 
   // Create a cancelled event
   const cancelledEvent = mockGcalEvent({
     id: "cancelled-1",
     status: "cancelled",
+    summary: "Cancelled Event",
   });
 
   return {
@@ -148,5 +154,15 @@ describe("SyncImport", () => {
     const baseStart = recurringEvents[0]?.startDate;
     const firstInstanceStart = recurringEvents[1]?.startDate;
     expect(baseStart).not.toEqual(firstInstanceStart);
+  });
+
+  it("should connect instances to their base events", async () => {
+    await syncImport.importAllEvents(setup.userId, "test-calendar");
+    const { baseEvents, instanceEvents } = await getCategorizedEventsInDb();
+
+    expect(instanceEvents).toHaveLength(1); // 2 instances total, but 1 is skipped because it has the same start date as the base event
+    expect(instanceEvents[0]?.recurrence?.eventId).toBe(
+      baseEvents[0]?._id?.toString(),
+    );
   });
 });
