@@ -59,7 +59,10 @@ const _toCompass = (
       ? origin
       : gEvent.extendedProperties?.private?.["origin"] || Origin.UNSURE;
 
-  const gEventId = gEvent.id ? gEvent.id : "uh oh";
+  const gEventId = gEvent.id ? gEvent.id : undefined;
+  const gRecurringEventId = gEvent.recurringEventId
+    ? gEvent.recurringEventId
+    : undefined;
   const title = gEvent.summary ? gEvent.summary : "untitled";
   const description = gEvent.description ? gEvent.description : "";
 
@@ -83,18 +86,9 @@ const _toCompass = (
       ? Priorities.UNASSIGNED
       : (_origPriority as Priority);
 
-  const recurrence = gEvent.recurrence
-    ? {
-        rule: gEvent.recurrence,
-      }
-    : gEvent.recurringEventId
-      ? {
-          eventId: gEvent.recurringEventId,
-        }
-      : undefined;
-
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
+    gRecurringEventId,
     user: userId,
     origin: _origin as Origin,
     title: title,
@@ -107,10 +101,26 @@ const _toCompass = (
     // @ts-ignore
     endDate: _isAllDay ? _end.date : _end.dateTime,
     priority: _priority,
-    ...(recurrence ? { recurrence } : {}),
     updatedAt: new Date(),
   };
 
+  const recurrence = getRecurrence(gEvent);
+  // Only add recurrence if it's defined
+  if (recurrence) {
+    compassEvent.recurrence = recurrence;
+  }
+
   const validatedCompassEvent = validateEvent(compassEvent);
   return validatedCompassEvent;
+};
+
+const getRecurrence = (gEvent: gSchema$Event) => {
+  const recurrenceExists =
+    gEvent.recurrence !== undefined && gEvent.recurrence !== null;
+  if (recurrenceExists) {
+    return {
+      rule: gEvent.recurrence as string[],
+    };
+  }
+  return undefined;
 };
