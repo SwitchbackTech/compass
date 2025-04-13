@@ -1,6 +1,8 @@
 import { recurring } from "@core/__mocks__/events/gcal/gcal.recurring";
+import { timed } from "@core/__mocks__/events/gcal/gcal.timed";
 import { Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
+import { mockGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { gcalEvents } from "../__mocks__/events/gcal/gcal.event";
 import { Origin, Priorities } from "../constants/core.constants";
 import { MapEvent } from "./map.event";
@@ -183,6 +185,19 @@ describe("toCompass", () => {
   });
 
   describe("recurrence", () => {
+    it("does not include gRecurringEventId for regular events", () => {
+      const regularGEvent = timed[0] as gSchema$Event;
+      const cEvent = MapEvent.toCompass(
+        "user1",
+        [regularGEvent],
+        Origin.COMPASS,
+      )[0];
+      if (!cEvent) {
+        throw new Error("Failed to map event");
+      }
+
+      expect(cEvent.gRecurringEventId).toBeUndefined();
+    });
     it("includes recurrence when rule is present", () => {
       const gEvent = recurring[0]?.items[0] as gSchema$Event | undefined;
       if (!gEvent) {
