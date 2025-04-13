@@ -23,7 +23,9 @@ class EventController {
           return validated;
         });
 
-        const response = await eventService.createMany(validatedEvents);
+        const response = await eventService.createMany(validatedEvents, {
+          stripIds: true, // Don't use client-generated ids (in case they are invalid)
+        });
         res.promise(response);
         return;
       }

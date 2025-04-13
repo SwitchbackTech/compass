@@ -1,3 +1,4 @@
+import { OptionalId } from "mongodb";
 import {
   Origin,
   Priorities,
@@ -136,18 +137,21 @@ class EventService {
     return await this.create(userId, defaultWeekly);
   };
 
-  createMany = async (events: Event_Core[]) => {
-    const parsedEvents = events.map((e) => {
-      const cleanedEvent = {
-        ...e,
-        _id: undefined,
-      };
-      return cleanedEvent;
-    });
-
+  createMany = async (events: Event_Core[], params: { stripIds: boolean }) => {
+    let eventsToInsert = events;
+    if (params.stripIds) {
+      eventsToInsert = events.map((e) => {
+        const cleanedEvent = {
+          ...e,
+          _id: undefined,
+        };
+        return cleanedEvent;
+      });
+    }
+    // TODO come back to this, adding a type for when the id is an ObjectId
     const response = await mongoService.db
       .collection(Collections.EVENT)
-      .insertMany(parsedEvents);
+      .insertMany(eventsToInsert as unknown as OptionalId<Event_Core[]>[]);
 
     if (response.acknowledged && response.insertedCount !== events.length) {
       throw error(
