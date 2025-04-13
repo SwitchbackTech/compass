@@ -35,6 +35,8 @@ export function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
 
     const gridEvent = yield* _assembleGridEvent(_id, updatedFields);
 
+    delete gridEvent.recurrence;
+
     const optimisticId = yield* _createOptimisticGridEvent(gridEvent);
     const persistentId = yield* _convertEvent(gridEvent);
     yield* replaceOptimisticId(optimisticId, persistentId as string, false);
