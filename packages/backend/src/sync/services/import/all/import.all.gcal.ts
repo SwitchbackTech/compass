@@ -93,12 +93,7 @@ export const fetchAndProcessEventsPageByPage = async (
           Origin.GOOGLE_IMPORT,
         );
         baseEventMap = assignIds(cEvents, baseEventMap);
-        console.log(
-          "creating ids:",
-          cEvents.map((e) => e._id?.toString()),
-        );
         if (cEvents.length > 0) {
-          console.log("creating:", cEvents);
           const result = await eventService.createMany(cEvents, {
             stripIds: false, // Preserve our generated ids in order to match the gcal ids
           });

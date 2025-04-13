@@ -439,21 +439,6 @@ export class SyncImport {
 
     // Handle updates/creations (Upserts)
     if (toUpdate.length > 0) {
-      //TODO delete
-      // First check what documents exist
-      // const existingDocs = await mongoService.db
-      //   .collection(Collections.EVENT)
-      //   .find({
-      //     user: userId,
-      //     gEventId: { $in: toUpdate.map((e) => e["gEventId"]) },
-      //   })
-      //   .toArray();
-
-      // console.log(`Found ${existingDocs.length} existing events`);
-      // console.log(
-      //   `Existing event IDs: ${existingDocs.map((e) => e["gEventId"]).join(", ")}`,
-      // );
-
       const bulkOps = toUpdate.map((event) => ({
         updateOne: {
           filter: {
@@ -468,20 +453,6 @@ export class SyncImport {
       const result = await mongoService.db
         .collection(Collections.EVENT)
         .bulkWrite(bulkOps);
-
-      //TODo delete
-      // console.log(
-      //   `Bulk write result: ${JSON.stringify(
-      //     {
-      //       modifiedCount: result.modifiedCount,
-      //       upsertedCount: result.upsertedCount,
-      //       matchedCount: result.matchedCount,
-      //       upsertedIds: result.upsertedIds,
-      //     },
-      //     null,
-      //     2,
-      //   )}`,
-      // );
 
       // For upserts:
       // - modifiedCount: number of existing documents that were updated
