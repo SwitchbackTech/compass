@@ -13,21 +13,17 @@ export class RecurringEventRepository {
 
   async cancelSeries(baseId: string) {
     // Delete all events in the series (both base and instances)
-
+    console.log("Deleting all matching id or recurrence.eventId", baseId);
     const result = await mongoService.db
       .collection(Collections.EVENT)
       .deleteMany({
         $or: [
-          { _id: new ObjectId(baseId), user: this.userId }, // Base event
-          { "recurrence.eventId": baseId, user: this.userId }, // All instances
+          { _id: new ObjectId(baseId) },
+          { recurrence: { eventId: baseId } },
         ],
+        user: this.userId,
       });
 
-    const filters = [
-      { _id: baseId, user: this.userId },
-      { "recurrence.eventId": baseId, user: this.userId },
-    ];
-    console.log("series filters", filters);
     return result;
   }
 
