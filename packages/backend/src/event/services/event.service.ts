@@ -1,3 +1,4 @@
+import { OptionalId } from "mongodb";
 import {
   Origin,
   Priorities,
@@ -29,6 +30,7 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { Event_Core_WithObjectId } from "@backend/sync/sync.types";
 import { reorderEvents, updateEvent } from "../queries/event.queries";
 import {
   getCreateParams,
@@ -136,18 +138,23 @@ class EventService {
     return await this.create(userId, defaultWeekly);
   };
 
-  createMany = async (events: Event_Core[]) => {
-    const parsedEvents = events.map((e) => {
-      const cleanedEvent = {
-        ...e,
-        _id: undefined,
-      };
-      return cleanedEvent;
-    });
-
+  createMany = async (
+    events: Event_Core[] | Event_Core_WithObjectId[],
+    params: { stripIds: boolean },
+  ) => {
+    let eventsToInsert = events;
+    if (params.stripIds) {
+      eventsToInsert = events.map((e) => {
+        const cleanedEvent = {
+          ...e,
+          _id: undefined,
+        };
+        return cleanedEvent;
+      });
+    }
     const response = await mongoService.db
       .collection(Collections.EVENT)
-      .insertMany(parsedEvents);
+      .insertMany(eventsToInsert as unknown as OptionalId<Event_Core[]>[]);
 
     if (response.acknowledged && response.insertedCount !== events.length) {
       throw error(

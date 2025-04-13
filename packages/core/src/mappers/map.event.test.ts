@@ -1,9 +1,11 @@
 import { recurring } from "@core/__mocks__/events/gcal/gcal.recurring";
+import { timed } from "@core/__mocks__/events/gcal/gcal.timed";
 import { Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
-import { gcalEvents } from "../../__mocks__/events/gcal/gcal.event";
-import { Origin, Priorities } from "../../constants/core.constants";
-import { MapEvent } from "../../mappers/map.event";
+import { mockGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { gcalEvents } from "../__mocks__/events/gcal/gcal.event";
+import { Origin, Priorities } from "../constants/core.constants";
+import { MapEvent } from "./map.event";
 
 describe("toGcal", () => {
   const validGcalDates = [
@@ -183,6 +185,40 @@ describe("toCompass", () => {
   });
 
   describe("recurrence", () => {
+    it("does not include gRecurringEventId for regular events", () => {
+      const regularGEvent = timed[0] as gSchema$Event;
+      const cEvent = MapEvent.toCompass(
+        "user1",
+        [regularGEvent],
+        Origin.COMPASS,
+      )[0];
+      if (!cEvent) {
+        throw new Error("Failed to map event");
+      }
+
+      expect(cEvent.gRecurringEventId).toBeUndefined();
+    });
+    it("includes recurrence when rule is present", () => {
+      const gEvent = recurring[0]?.items[0] as gSchema$Event | undefined;
+      if (!gEvent) {
+        throw new Error("Test event not found in mock data");
+      }
+
+      const cEvent = MapEvent.toCompass(
+        "user1",
+        [gEvent],
+        Origin.GOOGLE_IMPORT,
+      )[0];
+
+      if (!cEvent) {
+        throw new Error("Failed to map event");
+      }
+
+      expect(cEvent.recurrence).toBeDefined();
+      expect(cEvent.recurrence).not.toBeNull();
+      expect(cEvent.recurrence?.rule).toEqual(["RRULE:FREQ=DAILY"]);
+      expect(cEvent.recurrence?.eventId).toBeUndefined();
+    });
     it("does not include both recurrence rule and id simultaneously", () => {
       const gEvent = {
         kind: "calendar#event",
@@ -227,15 +263,15 @@ describe("toCompass", () => {
       expect(cEvent.recurrence).toBeDefined();
       expect(cEvent.recurrence?.eventId).toBeUndefined();
     });
-    it("includes recurrence for instances of recurring events", () => {
-      const gEvent = recurring[0]?.items[1] as gSchema$Event | undefined;
-      if (!gEvent) {
+    it("stores the recurringEventId (gcal) as gRecurringEventId (Compass)", () => {
+      const gEventInstance = recurring[0]?.items[1] as gSchema$Event;
+      if (!gEventInstance) {
         throw new Error("Test event not found in mock data");
       }
 
       const cEvent = MapEvent.toCompass(
         "user1",
-        [gEvent],
+        [gEventInstance],
         Origin.GOOGLE_IMPORT,
       )[0];
 
@@ -243,29 +279,12 @@ describe("toCompass", () => {
         throw new Error("Failed to map event");
       }
 
-      expect(cEvent.recurrence).toBeDefined();
+      expect(cEvent.recurrence).toBeUndefined();
       expect(cEvent.recurrence?.rule).toBeUndefined();
-      expect(cEvent.recurrence?.eventId).toBe(gEvent.recurringEventId);
-    });
-    it("includes recurrence when rule is present", () => {
-      const gEvent = recurring[0]?.items[0] as gSchema$Event | undefined;
-      if (!gEvent) {
-        throw new Error("Test event not found in mock data");
-      }
-
-      const cEvent = MapEvent.toCompass(
-        "user1",
-        [gEvent],
-        Origin.GOOGLE_IMPORT,
-      )[0];
-
-      if (!cEvent) {
-        throw new Error("Failed to map event");
-      }
-
-      expect(cEvent.recurrence).toBeDefined();
-      expect(cEvent.recurrence?.rule).toEqual(["RRULE:FREQ=DAILY"]);
-      expect(cEvent.recurrence?.eventId).toBeUndefined();
+      expect(cEvent.recurrence?.eventId).not.toBe(
+        gEventInstance.recurringEventId,
+      );
+      expect(cEvent.gRecurringEventId).toBe(gEventInstance.recurringEventId);
     });
   });
 });

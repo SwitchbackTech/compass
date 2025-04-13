@@ -1,5 +1,5 @@
-import { BaseError } from "../../errors/errors.base";
-import { mapUserToCompass } from "../../mappers/map.user";
+import { BaseError } from "../errors/errors.base";
+import { mapUserToCompass } from "./map.user";
 
 describe("Map to Compass", () => {
   it("adds placeholders for acceptible fields", () => {

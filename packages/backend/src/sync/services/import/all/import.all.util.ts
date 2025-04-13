@@ -1,6 +1,9 @@
 import dayjs from "dayjs";
+import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
+import { Event_Core } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
+import { Event_Core_WithObjectId } from "@backend/sync/sync.types";
 import { Callback_EventProcessor } from "../sync.import.types";
 
 const logger = Logger("sync.import.all.util");
@@ -19,17 +22,17 @@ const getStartTimeString = (event: gSchema$Event): string | null => {
 
 // Processor for Pass 1: Identifies base/single events
 export const shouldProcessDuringPass1: Callback_EventProcessor = (
-  event,
+  gEvent,
   state,
 ) => {
-  if (event.id) {
-    if (event.recurrence) {
-      const startTime = getStartTimeString(event);
-      state.baseEventStartTimes.set(event.id, startTime);
-      state.processedEventIdsPass1.add(event.id);
+  if (gEvent.id) {
+    if (gEvent.recurrence) {
+      const startTime = getStartTimeString(gEvent);
+      state.baseEventStartTimes.set(gEvent.id, startTime);
+      state.processedEventIdsPass1.add(gEvent.id);
       return true; // Save base event
-    } else if (!event.recurringEventId) {
-      state.processedEventIdsPass1.add(event.id);
+    } else if (!gEvent.recurringEventId) {
+      state.processedEventIdsPass1.add(gEvent.id);
       return true; // Save single event
     }
   }
@@ -38,36 +41,82 @@ export const shouldProcessDuringPass1: Callback_EventProcessor = (
 
 // Processor for Pass 2: Filters events based on shared state
 export const shouldProcessDuringPass2: Callback_EventProcessor = (
-  event,
+  gEvent,
   state,
 ) => {
   // Filter 1: Skip event if already processed in Pass 1
-  if (state.processedEventIdsPass1.has(event.id || "")) {
-    logger.verbose(`Pass 2: Skipping event ${event.id} (processed in Pass 1).`); // Reduce noise
+  if (gEvent.id && state.processedEventIdsPass1.has(gEvent.id || "")) {
+    logger.verbose(
+      `Pass 2: Skipping  base event: ${gEvent.summary} (processed in Pass 1).`,
+    );
     return false; // Don't save
   }
 
   // Filter 2: Skip first instance if start matches base event start
-  if (event.recurringEventId && event.id) {
-    const baseStartTime = state.baseEventStartTimes.get(event.recurringEventId);
+  if (gEvent.recurringEventId && gEvent.id) {
+    const baseStartTime = state.baseEventStartTimes.get(
+      gEvent.recurringEventId,
+    );
     if (baseStartTime !== undefined) {
-      const instanceStartTime = getStartTimeString(event);
+      const instanceStartTime = getStartTimeString(gEvent);
       const isFirstInstance =
         baseStartTime &&
         instanceStartTime &&
         baseStartTime === instanceStartTime;
       if (isFirstInstance) {
         logger.verbose(
-          `Pass 2: Skipping event ${event.id} (first instance match).`,
+          `Pass 2: Skipping event ${gEvent.summary} (first instance match).`,
         ); // Reduce noise
         return false; // Don't save
       }
     } else {
       logger.warn(
-        `Pass 2: Instance ${event.id} found, base ${event.recurringEventId} unknown. Saving.`,
+        `Pass 2: Instance ${gEvent.id} found, base ${gEvent.recurringEventId} unknown. Saving.`,
       );
     }
   }
   // Event passed filters
   return true; // Save this event
+};
+
+/**
+ * Assigns Mongo ObjectIds to events (in-place) and links instances to their base events
+ * @param events - The events to assign ids to
+ */
+export const assignIds = (
+  events: Event_Core[] | Event_Core_WithObjectId[], // union type to allow for in-place id mutation in this function
+  existingBaseEventMap: Map<string, ObjectId> = new Map(),
+): Map<string, ObjectId> => {
+  // First pass: identify base events and assign their IDs
+  const baseEventMap = new Map(existingBaseEventMap);
+
+  // Handle base events first
+  events.forEach((event) => {
+    const id = new ObjectId();
+    if (event.recurrence?.rule && !event.gRecurringEventId) {
+      // This is a base event
+      event._id = id;
+      if (event.gEventId) {
+        baseEventMap.set(event.gEventId, id);
+      }
+    } else {
+      // This is a regular event or instance
+      event._id = id;
+    }
+  });
+
+  // Second pass: assign IDs to instances and link them to their base events
+  events.forEach((event) => {
+    if (event.gRecurringEventId) {
+      // This is an instance
+      const baseEventId = baseEventMap.get(event.gRecurringEventId);
+      if (baseEventId) {
+        event.recurrence = {
+          eventId: baseEventId.toString(),
+        };
+      }
+    }
+  });
+
+  return baseEventMap;
 };

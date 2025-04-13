@@ -33,13 +33,12 @@ export class GCalNotificationHandler {
     );
 
     if (hasChanges) {
-      console.log("\nCHANGES TO PROCESS:", changes.length);
       const processor = new GcalSyncProcessor(this.repo);
       const changeSummary = await processor.processEvents(changes);
-      console.log("\nRESULT:", changeSummary);
+      console.log("PROCESSESD:", changeSummary);
       return { summary: "PROCESSED", changes: changeSummary };
     } else {
-      console.log("\nNO CHANGES TO PROCESS");
+      console.log("NO CHANGES TO PROCESS");
       return { summary: "IGNORED", changes: [] };
     }
   }
@@ -53,7 +52,7 @@ export class GCalNotificationHandler {
       syncToken,
     });
 
-    console.log("\nLATEST CHANGES:");
+    console.log("LATEST CHANGES (from gcal):");
     console.log(JSON.stringify(response.data, null, 2));
 
     // If the nextSyncToken matches our current syncToken, we've already processed these changes

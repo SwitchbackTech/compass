@@ -60,6 +60,7 @@ export interface Schema_Event {
   isAllDay?: boolean;
   isSomeday?: boolean;
   gEventId?: string;
+  gRecurringEventId?: string;
   order?: number;
   origin?: Origin;
   priority?: Priority;
@@ -117,6 +118,7 @@ export const CoreEventSchema = z.object({
   isAllDay: z.boolean().optional(),
   isSomeday: z.boolean().optional(),
   gEventId: z.string().optional(),
+  gRecurringEventId: z.string().optional(),
   origin: z.nativeEnum(Origin),
   priority: z.nativeEnum(Priorities),
   recurrence: Recurrence.optional(),

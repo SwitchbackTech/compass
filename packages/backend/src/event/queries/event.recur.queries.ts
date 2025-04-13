@@ -11,30 +11,28 @@ import { Ids_Event } from "./event.queries";
 export class RecurringEventRepository {
   constructor(private userId: string) {}
 
+  /**
+   * Delete all events in the series (both base and instances)
+   * @param baseId - The _id of the base event
+   * @returns The result of the deleteMany operation
+   */
   async cancelSeries(baseId: string) {
-    // Delete all events in the series (both base and instances)
-
     const result = await mongoService.db
       .collection(Collections.EVENT)
       .deleteMany({
         $or: [
-          { _id: new ObjectId(baseId), user: this.userId }, // Base event
-          { "recurrence.eventId": baseId, user: this.userId }, // All instances
+          { _id: new ObjectId(baseId) },
+          { recurrence: { eventId: baseId } },
         ],
+        user: this.userId,
       });
 
-    const filters = [
-      { _id: baseId, user: this.userId },
-      { "recurrence.eventId": baseId, user: this.userId },
-    ];
-    console.log("series filters", filters);
     return result;
   }
 
   async cancelInstance(id: string, params?: { idKey: Ids_Event }) {
     const idKey = params?.idKey || "_id";
     const filter = { [idKey]: id, user: this.userId };
-    console.log("instance filter:", filter);
     // Delete just this specific instance
     const result = await mongoService.db
       .collection(Collections.EVENT)

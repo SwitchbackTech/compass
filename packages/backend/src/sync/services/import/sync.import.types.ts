@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { Schema_Event_Core } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 
@@ -11,7 +12,8 @@ export type Callback_EventProcessor = (
   sharedState: Map_ImportAll,
 ) => boolean; // Returns true if event should be saved
 
-export type Map_ImportAll = {
+export interface Map_ImportAll {
   baseEventStartTimes: Map<string, string | null>;
   processedEventIdsPass1: Set<string>;
-};
+  baseEventMap: Map<string, ObjectId>;
+}

@@ -12,7 +12,6 @@ class SyncDebugController {
     try {
       const userId = process.env["SOCKET_USER"];
       if (!userId) {
-        console.log("No demo user");
         throw new Error("No demo user");
       }
       const startDate = new Date();
@@ -96,7 +95,6 @@ class SyncDebugController {
         gcal,
       );
 
-      console.log("++ watchResult", watchResult);
       res.promise(watchResult);
     } catch (e) {
       res.promise(Promise.reject(e));
