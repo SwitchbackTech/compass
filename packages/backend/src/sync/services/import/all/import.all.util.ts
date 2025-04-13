@@ -21,17 +21,17 @@ const getStartTimeString = (event: gSchema$Event): string | null => {
 
 // Processor for Pass 1: Identifies base/single events
 export const shouldProcessDuringPass1: Callback_EventProcessor = (
-  event,
+  gEvent,
   state,
 ) => {
-  if (event.id) {
-    if (event.recurrence) {
-      const startTime = getStartTimeString(event);
-      state.baseEventStartTimes.set(event.id, startTime);
-      state.processedEventIdsPass1.add(event.id);
+  if (gEvent.id) {
+    if (gEvent.recurrence) {
+      const startTime = getStartTimeString(gEvent);
+      state.baseEventStartTimes.set(gEvent.id, startTime);
+      state.processedEventIdsPass1.add(gEvent.id);
       return true; // Save base event
-    } else if (!event.recurringEventId) {
-      state.processedEventIdsPass1.add(event.id);
+    } else if (!gEvent.recurringEventId) {
+      state.processedEventIdsPass1.add(gEvent.id);
       return true; // Save single event
     }
   }
@@ -40,33 +40,37 @@ export const shouldProcessDuringPass1: Callback_EventProcessor = (
 
 // Processor for Pass 2: Filters events based on shared state
 export const shouldProcessDuringPass2: Callback_EventProcessor = (
-  event,
+  gEvent,
   state,
 ) => {
   // Filter 1: Skip event if already processed in Pass 1
-  if (state.processedEventIdsPass1.has(event.id || "")) {
-    logger.verbose(`Pass 2: Skipping event ${event.id} (processed in Pass 1).`); // Reduce noise
+  if (gEvent.id && state.processedEventIdsPass1.has(gEvent.id || "")) {
+    logger.verbose(
+      `Pass 2: Skipping  base event: ${gEvent.summary} (processed in Pass 1).`,
+    );
     return false; // Don't save
   }
 
   // Filter 2: Skip first instance if start matches base event start
-  if (event.recurringEventId && event.id) {
-    const baseStartTime = state.baseEventStartTimes.get(event.recurringEventId);
+  if (gEvent.recurringEventId && gEvent.id) {
+    const baseStartTime = state.baseEventStartTimes.get(
+      gEvent.recurringEventId,
+    );
     if (baseStartTime !== undefined) {
-      const instanceStartTime = getStartTimeString(event);
+      const instanceStartTime = getStartTimeString(gEvent);
       const isFirstInstance =
         baseStartTime &&
         instanceStartTime &&
         baseStartTime === instanceStartTime;
       if (isFirstInstance) {
         logger.verbose(
-          `Pass 2: Skipping event ${event.id} (first instance match).`,
+          `Pass 2: Skipping event ${gEvent.summary} (first instance match).`,
         ); // Reduce noise
         return false; // Don't save
       }
     } else {
       logger.warn(
-        `Pass 2: Instance ${event.id} found, base ${event.recurringEventId} unknown. Saving.`,
+        `Pass 2: Instance ${gEvent.id} found, base ${gEvent.recurringEventId} unknown. Saving.`,
       );
     }
   }
