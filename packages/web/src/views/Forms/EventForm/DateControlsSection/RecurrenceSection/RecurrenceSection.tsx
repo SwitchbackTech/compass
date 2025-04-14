@@ -13,10 +13,12 @@ import {
 import {
   StyledCaretButton,
   StyledCaretInputContainer,
+  StyledDisabledOverlay,
   StyledEndsOnDate,
   StyledRecurrenceRepeatCountSelect,
   StyledRecurrenceSection,
   StyledRepeatCountInput,
+  StyledUpcomingFeature,
   StyledWeekDay,
   StyledWeekDayContainer,
   StyledWeekDaysContainer,
@@ -62,6 +64,11 @@ export const RecurrenceSection = ({
       {weekDays.length > 0 && repeatCount > 1 && (
         <EndsOnDate event={event} numWeeks={repeatCount} weekDays={weekDays} />
       )}
+      <StyledDisabledOverlay>
+        <StyledUpcomingFeature>
+          Recurring events coming soon!
+        </StyledUpcomingFeature>
+      </StyledDisabledOverlay>
     </StyledRecurrenceSection>
   );
 };
