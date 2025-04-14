@@ -18,7 +18,10 @@ import compassAuthService from "@backend/auth/services/compass.auth.service";
 import GoogleAuthService, {
   getGAuthClientForUser,
 } from "@backend/auth/services/google.auth.service";
-import { GcalError } from "@backend/common/constants/error.constants";
+import {
+  GcalError,
+  SyncError,
+} from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import {
@@ -148,7 +151,19 @@ class AuthController {
       await updateGoogleRefreshToken(cUserId, gRefreshToken);
     }
 
-    await syncService.importIncremental(cUserId, gcal);
+    try {
+      await syncService.importIncremental(cUserId, gcal);
+    } catch (e) {
+      if (
+        e instanceof Error &&
+        e.message === SyncError.NoSyncToken.description
+      ) {
+        logger.info(
+          `Resyncing google data due to missing sync for user: ${cUserId}`,
+        );
+        await userService.reSyncGoogleData(cUserId);
+      }
+    }
 
     await userService.saveTimeFor("lastLoggedInAt", cUserId);
 
