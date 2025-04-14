@@ -53,6 +53,12 @@ const AllDayEvent = ({
     left: position.left,
     lineClamp: 1,
     onMouseDown: (e: MouseEvent) => {
+      if (isRecurring) {
+        console.log(event);
+        alert("Can't edit recurring events (yet)");
+        e.stopPropagation();
+        return;
+      }
       onMouseDown(e, event);
     },
     priority: event.priority || Priorities.UNASSIGNED,
