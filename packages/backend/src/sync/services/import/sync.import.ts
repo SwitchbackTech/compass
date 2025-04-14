@@ -11,7 +11,6 @@ import { ENV } from "@backend/common/constants/env.constants";
 import {
   EventError,
   GcalError,
-  GenericError,
   SyncError,
 } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
@@ -182,7 +181,7 @@ export class SyncImport {
     }
     if (syncToken === undefined || syncToken === null) {
       throw error(
-        GenericError.DeveloperError,
+        SyncError.NoSyncToken,
         "Incremental sync failed because no sync token was found",
       );
     }
