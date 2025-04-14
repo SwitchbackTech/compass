@@ -6,6 +6,8 @@ export const StyledRecurrenceSection = styled.div`
   flex-basis: 100%;
   flex-wrap: wrap;
   gap: ${({ theme }) => theme.spacing.xs};
+  position: relative;
+  opacity: 0.7;
 `;
 
 export const StyledRecurrenceRepeatCountSelect = styled.div`
@@ -104,4 +106,26 @@ export const StyledEndsOnDate = styled.div`
   display: flex;
   align-items: center;
   flex-basis: 100%;
+`;
+
+export const StyledDisabledOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+`;
+
+export const StyledUpcomingFeature = styled.div`
+  background-color: ${({ theme }) => theme.color.bg.primary};
+  color: ${({ theme }) => theme.color.text.light};
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s};
+  border-radius: 4px;
+  font-size: 0.9em;
+  text-align: center;
 `;
