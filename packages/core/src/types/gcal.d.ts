@@ -5,6 +5,10 @@ export declare type WithGcalId<T> = T & {
   id: string;
 };
 
+export declare type WithRecurrenceRule<T> = T & {
+  recurrence: string[];
+};
+
 /* Google API */
 export declare type gCalendar = calendar_v3.Calendar;
 export declare type gSchema$CalendarList = calendar_v3.Schema$CalendarList;
