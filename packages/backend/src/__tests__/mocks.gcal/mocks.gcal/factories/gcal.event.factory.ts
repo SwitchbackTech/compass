@@ -44,6 +44,7 @@ const mockRecurringInstances = (
     const instance = {
       ...event,
       id: `${event.id}-${index}`,
+      summary: `${event.summary}: Instance ${index}`,
       recurringEventId: event.id,
       start: {
         dateTime: instanceDate.toISOString(),
@@ -96,9 +97,10 @@ export const mockGcalEvent = (
 };
 
 export const mockGcalEvents = (repeatIntervalInDays = 7) => {
-  const regularEvent = mockGcalEvent();
+  const regularEvent = mockGcalEvent({ summary: "Regular Event" });
   const cancelledEvent = mockGcalEvent({ status: "cancelled" });
   const recurringEvent = mockGcalEvent({
+    summary: "Recurring Event",
     recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
   });
 
