@@ -65,6 +65,9 @@ export const mockGcalEvent = (
   overrides: Partial<gSchema$Event> = {},
 ): gSchema$Event => {
   const id = faker.string.uuid();
+  const start = faker.date.future();
+  const end = new Date(start);
+  end.setHours(start.getHours() + 1);
   return {
     id,
     summary: faker.lorem.sentence(),
@@ -73,11 +76,11 @@ export const mockGcalEvent = (
     created: faker.date.past().toISOString(),
     updated: faker.date.recent().toISOString(),
     start: {
-      dateTime: faker.date.future().toISOString(),
+      dateTime: start.toISOString(),
       timeZone: "America/Chicago",
     },
     end: {
-      dateTime: faker.date.future().toISOString(),
+      dateTime: end.toISOString(),
       timeZone: "America/Chicago",
     },
     iCalUID: faker.string.uuid() + "@google.com",
