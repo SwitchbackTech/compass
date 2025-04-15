@@ -1,4 +1,4 @@
-import { Event_Core } from "@core/types/event.types";
+import { Event_Core, WithCompassId } from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 
@@ -13,7 +13,10 @@ export const getCategorizedEventsInDb = async () => {
 };
 
 export const getEventsInDb = async () => {
-  return await mongoService.db.collection(Collections.EVENT).find().toArray();
+  return (await mongoService.db
+    .collection(Collections.EVENT)
+    .find()
+    .toArray()) as unknown as WithCompassId<Event_Core>[];
 };
 
 export const isEventCollectionEmpty = async () => {

@@ -1,6 +1,10 @@
 import { calendar_v3 } from "googleapis";
 import calendar from "googleapis/build/src/apis/calendar";
 
+export declare type WithGcalId<T> = T & {
+  id: string;
+};
+
 /* Google API */
 export declare type gCalendar = calendar_v3.Calendar;
 export declare type gSchema$CalendarList = calendar_v3.Schema$CalendarList;

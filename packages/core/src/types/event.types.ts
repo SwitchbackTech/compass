@@ -132,3 +132,5 @@ export const CoreEventSchema = z.object({
 });
 
 export type Event_Core = z.infer<typeof CoreEventSchema>;
+
+export type WithCompassId<T> = T & { _id: string };
