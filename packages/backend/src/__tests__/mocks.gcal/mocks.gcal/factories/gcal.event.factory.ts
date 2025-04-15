@@ -41,7 +41,7 @@ const mockRecurringInstances = (
     const endDate = new Date(endDateTime);
     endDate.setDate(endDate.getDate() + index * repeatIntervalInDays);
 
-    return {
+    const instance = {
       ...event,
       id: `${event.id}-${index}`,
       recurringEventId: event.id,
@@ -54,6 +54,9 @@ const mockRecurringInstances = (
         timeZone: endTimeZone,
       },
     };
+    delete instance.recurrence;
+
+    return instance;
   });
 };
 
@@ -105,7 +108,7 @@ export const mockGcalEvents = (repeatIntervalInDays = 7) => {
     repeatIntervalInDays,
   );
 
-  const gcalEvents = [
+  const allGcalEvents = [
     regularEvent,
     cancelledEvent,
     recurringEvent,
@@ -113,9 +116,15 @@ export const mockGcalEvents = (repeatIntervalInDays = 7) => {
   ];
 
   return {
-    gcalEvents,
+    gcalEvents: {
+      all: allGcalEvents,
+      regular: regularEvent,
+      cancelled: cancelledEvent,
+      recurring: recurringEvent,
+      instances: recurringInstances,
+    },
     totals: {
-      total: gcalEvents.length,
+      total: allGcalEvents.length,
       cancelled: 1,
       recurring: 1 + recurringInstances.length,
     },

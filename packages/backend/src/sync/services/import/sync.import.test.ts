@@ -1,7 +1,7 @@
 import { getCategorizedEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
+  cleanupCollections,
   cleanupTestMongo,
-  clearCollections,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
@@ -73,7 +73,7 @@ describe("SyncImport", () => {
   });
 
   beforeEach(async () => {
-    await clearCollections(setup.db);
+    await cleanupCollections(setup.db);
   });
 
   afterAll(async () => {
