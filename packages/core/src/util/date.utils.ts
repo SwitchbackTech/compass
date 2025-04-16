@@ -1,8 +1,12 @@
 import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import utc from "dayjs/plugin/utc";
 import weekOfYear from "dayjs/plugin/weekOfYear";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 
+dayjs.extend(utc);
 dayjs.extend(weekOfYear);
+dayjs.extend(customParseFormat); // for RFC5545 iCalendar format
 
 export const getCurrentRangeDates = () => {
   const now = dayjs();
@@ -45,13 +49,15 @@ export const minutesFromNow = (numMin: number, format: string) => {
 };
 
 /**
- * Extract the UNTIL value from a recurrence date string
- * @param date - The date to get the until value for
- * @returns The until value for the base event
+ * Convert RFC5545 iCalendar format to ISO string
+ * @param orig - The original string in RFC5545 (e.g., "20251207T155933Z")
+ * @returns Parsed date as ISO string
  */
-export const getUntilValue = (date: string) => {
-  // Update the original base event to end before the modified instance
-  const untilDate =
-    new Date(date).toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  return untilDate;
+export const convertRfc5545ToIso = (orig: string) => {
+  const RFC5545_FORMAT = "YYYYMMDD[T]HHmmss[Z]";
+  const untilParsed = dayjs.utc(orig, RFC5545_FORMAT);
+
+  if (!untilParsed.isValid()) return null;
+
+  return untilParsed.toISOString();
 };

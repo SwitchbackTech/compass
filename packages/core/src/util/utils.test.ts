@@ -10,7 +10,7 @@ const daysFromNowTimestamp = (numDays: number, format: string) => {
 };
 
 describe("xDaysFromNow Tests", () => {
-  test("returns correct format and value", () => {
+  it("returns correct format and value", () => {
     const now = Date.now();
     const twoDaysFromNow = daysFromNowTimestamp(2, "ms");
     expect(twoDaysFromNow).toBeGreaterThan(now);
