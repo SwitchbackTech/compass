@@ -1,11 +1,10 @@
 import { ObjectId } from "mongodb";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
-import { Ids_Event } from "./event.queries";
+import { Ids_Event } from "../../../queries/event.queries";
 
 /**
- * DB operations for Compass's Event collection, focused
- * on recurring event operations
+ * Recurring event DB operations repo for Compass's Event collection
  */
 
 export class RecurringEventRepository {

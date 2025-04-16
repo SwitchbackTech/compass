@@ -17,7 +17,7 @@ import {
   findCompassEventBy,
   updateEvent,
 } from "@backend/event/queries/event.queries";
-import { RecurringEventRepository } from "@backend/event/queries/event.recur.queries";
+import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalParser } from "@backend/event/services/recur/util/recur.gcal.util";
 import { isBase } from "@backend/event/services/recur/util/recur.util";
 import { Change_Gcal, Operation_Sync } from "../../sync.types";
