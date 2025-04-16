@@ -53,7 +53,9 @@ export const updateEvent = async (
   };
 
   if ("_id" in event) {
-    delete _event._id; // mongo doesn't allow changing this field directly
+    // WARNING: This is a hack to avoid the _id field from being updated
+    // This may result in unexpected behavior
+    delete _event._id;
   }
 
   const response = (await mongoService.db
