@@ -9,7 +9,7 @@ import { Ids_Event } from "./event.queries";
  */
 
 export class RecurringEventRepository {
-  constructor(private userId: string) {}
+  constructor(public userId: string) {}
 
   /**
    * Delete all events in the series (both base and instances)
@@ -38,6 +38,17 @@ export class RecurringEventRepository {
       .collection(Collections.EVENT)
       .deleteOne(filter);
 
+    return result;
+  }
+
+  async deleteInstancesAfter(baseId: string, afterDate: string) {
+    const result = await mongoService.db
+      .collection(Collections.EVENT)
+      .deleteMany({
+        "recurrence.eventId": baseId,
+        startDate: { $gt: afterDate },
+        user: this.userId,
+      });
     return result;
   }
 }
