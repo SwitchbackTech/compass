@@ -35,7 +35,7 @@ export class GCalNotificationHandler {
     if (hasChanges) {
       const processor = new GcalSyncProcessor(this.repo);
       const changeSummary = await processor.processEvents(changes);
-      console.log("PROCESSESD:", changeSummary);
+      console.log("PROCESSED:", changeSummary);
       return { summary: "PROCESSED", changes: changeSummary };
     } else {
       console.log("NO CHANGES TO PROCESS");

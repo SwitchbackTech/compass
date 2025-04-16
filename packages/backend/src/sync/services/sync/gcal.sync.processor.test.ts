@@ -26,7 +26,7 @@ import {
   baseHasRecurrenceRule,
   noInstancesAfterSplitDate,
   updateBasePayloadToExpireOneDayAfterFirstInstance,
-} from "./gcal.sync.processor.util.test";
+} from "./gcal.sync.processor.test.util";
 
 describe("GcalSyncProcessor", () => {
   let setup: TestSetup;
