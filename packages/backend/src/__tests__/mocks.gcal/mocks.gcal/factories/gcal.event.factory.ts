@@ -1,6 +1,10 @@
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { gSchema$Event } from "@core/types/gcal";
+import {
+  gSchema$BaseEvent,
+  gSchema$Event,
+  gSchema$InstanceEvent,
+} from "@core/types/gcal";
 
 export const mockRegularEvent = (): gSchema$Event => ({
   id: faker.string.uuid(),
@@ -12,8 +16,9 @@ export const mockRegularEvent = (): gSchema$Event => ({
 
 export const mockRecurringEvent = (
   overrides: Partial<gSchema$Event> = {},
-): gSchema$Event => ({
+): gSchema$BaseEvent => ({
   ...mockRegularEvent(),
+  // @ts-expect-error overriding the null type
   recurrence: ["RRULE:FREQ=WEEKLY"],
   ...overrides,
 });
@@ -22,7 +27,7 @@ const mockRecurringInstances = (
   event: gSchema$Event,
   count: number,
   repeatIntervalInDays: number,
-): gSchema$Event[] => {
+): gSchema$InstanceEvent[] => {
   if (!event.start?.dateTime || !event.end?.dateTime) {
     throw new Error("Event must have start and end dates");
   }
@@ -102,13 +107,13 @@ export const mockGcalEvent = (
 export const mockGcalEvents = (repeatIntervalInDays = 7) => {
   const regularEvent = mockGcalEvent({ summary: "Regular Event" });
   const cancelledEvent = mockGcalEvent({ status: "cancelled" });
-  const recurringEvent = mockGcalEvent({
+  const baseRecurrence = mockRecurringEvent({
     summary: "Recurring Event",
     recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
   });
 
   const recurringInstances = mockRecurringInstances(
-    recurringEvent,
+    baseRecurrence,
     3,
     repeatIntervalInDays,
   );
@@ -116,7 +121,7 @@ export const mockGcalEvents = (repeatIntervalInDays = 7) => {
   const allGcalEvents = [
     regularEvent,
     cancelledEvent,
-    recurringEvent,
+    baseRecurrence,
     ...recurringInstances,
   ];
 
@@ -125,7 +130,7 @@ export const mockGcalEvents = (repeatIntervalInDays = 7) => {
       all: allGcalEvents,
       regular: regularEvent,
       cancelled: cancelledEvent,
-      recurring: recurringEvent,
+      recurring: baseRecurrence,
       instances: recurringInstances,
     },
     totals: {
