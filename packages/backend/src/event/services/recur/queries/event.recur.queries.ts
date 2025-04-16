@@ -74,30 +74,6 @@ export const deleteInstances = async (userId: string, baseId: string) => {
   return response;
 };
 
-export const updateInstance = async (
-  userId: string,
-  instance: Schema_Event,
-) => {
-  if (!instance._id) {
-    throw error(
-      GenericError.BadRequest,
-      `Did not update instance because it has has no _id. (Title: ${instance.title})`,
-    );
-  }
-
-  const response = await mongoService.db
-    .collection(Collections.EVENT)
-    .updateOne(
-      {
-        user: userId,
-        _id: new ObjectId(instance._id),
-      },
-      { $set: instance },
-    );
-
-  return response;
-};
-
 export const updateFutureInstances = async (
   userId: string,
   event: Schema_Event,
