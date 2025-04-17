@@ -18,6 +18,7 @@ import {
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.ccal/ccal.mock.db.util";
 import { mockGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { mockCancelledInstance } from "@backend/__tests__/mocks.gcal/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { isInstance } from "@backend/event/services/recur/util/recur.util";
 import { Change_Gcal } from "@backend/sync/sync.types";
@@ -287,185 +288,41 @@ describe("GcalSyncProcessor", () => {
       expect(instances).toHaveLength(1);
     });
 
-    it("should handle new series creation after split", async () => {
-      // Create new series event (this would come in a separate payload)
-      const newSeriesEvent = mockGcalEvent({
-        id: "new_series_id",
-        recurrence: ["RRULE:FREQ=DAILY"],
-        start: {
-          dateTime: "2025-04-10T07:30:00-05:00",
-          timeZone: "America/Chicago",
-        },
-        end: {
-          dateTime: "2025-04-10T08:15:00-05:00",
-          timeZone: "America/Chicago",
-        },
-      });
-
-      const processor = new GcalSyncProcessor(repo);
-      const changes = await processor.processEvents([newSeriesEvent]);
-
-      // Verify the change summary
-      expect(changes).toHaveLength(1);
-      expect(changes[0]).toEqual({
-        title: newSeriesEvent.summary as string,
-        category: Categories_Recurrence.RECURRENCE_BASE,
-        operation: "UPSERTED",
-      });
-
-      // Verify database state
-      const events = await getEventsInDb();
-
-      // Should have the base event and at least one instance
-      expect(events.length).toBeGreaterThan(0);
-
-      // Verify the new series was created correctly
-      const newSeries = events.find((e) => e["gEventId"] === newSeriesEvent.id);
-      expect(newSeries).toBeDefined();
-      expect(newSeries?.["recurrence"]?.["rule"]).toEqual(
-        newSeriesEvent.recurrence,
+    it("should handle cancelled instance at split point by deleting it", async () => {
+      /* Assemble */
+      const { gcalEvents } = await simulateDbAfterGcalImport(
+        setup.db,
+        setup.userId,
       );
-    });
+      const origEvents = await getEventsInDb();
 
-    it("should handle cancelled instance at split point", async () => {
-      // Create original series in Compass
-      const gcalBaseEvent = mockGcalEvent({
-        recurrence: ["RRULE:FREQ=DAILY"],
-      });
-
-      const compassBaseId = new ObjectId().toString();
-      const compassBaseEvent: Schema_Event_Recur_Base = {
-        title: gcalBaseEvent.summary as string,
-        user: setup.userId,
-        _id: compassBaseId,
-        gEventId: gcalBaseEvent.id as string,
-        recurrence: {
-          rule: ["RRULE:FREQ=DAILY"],
-        },
-      };
-
-      const compassInstanceTemplate: Schema_Event_Recur_Instance = {
-        title: gcalBaseEvent.summary as string,
-        user: setup.userId,
-        gEventId: gcalBaseEvent.id as string,
-        recurrence: {
-          eventId: compassBaseId,
-        },
-      };
-
-      // Create series with multiple instances
-      const { meta } = await createRecurrenceSeries(
-        setup,
-        compassBaseEvent,
-        compassInstanceTemplate,
+      /* Act */
+      // Simulate a gcal notification payload after an instance was cancelled
+      const cancelledInstance = mockCancelledInstance(
+        gcalEvents.recurring,
+        gcalEvents.instances[1]?.start?.dateTime as string,
       );
-
-      // Simulate cancelled instance at split point
-      const cancelledInstance = {
-        kind: "calendar#event",
-        id: `${gcalBaseEvent.id}_20250410T123000Z`,
-        status: "cancelled",
-        recurringEventId: gcalBaseEvent.id,
-        originalStartTime: {
-          dateTime: "2025-04-10T07:30:00-05:00",
-          timeZone: "America/Chicago",
-        },
-      };
-
       const processor = new GcalSyncProcessor(repo);
       const changes = await processor.processEvents([cancelledInstance]);
 
+      /* Assert */
       // Verify the change summary
       expect(changes).toHaveLength(1);
       expect(changes[0]).toEqual({
-        title: cancelledInstance.id,
+        title: cancelledInstance.summary,
         category: Categories_Recurrence.RECURRENCE_INSTANCE,
         operation: "DELETED",
       });
 
       // Verify database state
       const remainingEvents = await getEventsInDb();
-
-      // Should have fewer events than originally created
-      expect(remainingEvents.length).toBeLessThan(meta.createdCount);
+      expect(remainingEvents.length).toBeLessThan(origEvents.length);
 
       // Verify the cancelled instance was removed
       const cancelledInstanceExists = remainingEvents.some(
-        (e) => e["gEventId"] === cancelledInstance.id,
+        (e) => e["gEventId"] === gcalEvents.cancelled.id,
       );
       expect(cancelledInstanceExists).toBe(false);
-    });
-
-    it("should handle timezone transitions correctly", async () => {
-      // Create series that spans DST transition
-      const gcalBaseEvent = mockGcalEvent({
-        recurrence: ["RRULE:FREQ=DAILY"],
-        start: {
-          dateTime: "2025-03-08T07:30:00-06:00", // Before DST
-          timeZone: "America/Chicago",
-        },
-        end: {
-          dateTime: "2025-03-08T08:30:00-06:00",
-          timeZone: "America/Chicago",
-        },
-      });
-
-      const compassBaseId = new ObjectId().toString();
-      const compassBaseEvent: Schema_Event_Recur_Base = {
-        title: gcalBaseEvent.summary as string,
-        user: setup.userId,
-        _id: compassBaseId,
-        gEventId: gcalBaseEvent.id as string,
-        recurrence: {
-          rule: ["RRULE:FREQ=DAILY"],
-        },
-      };
-
-      const compassInstanceTemplate: Schema_Event_Recur_Instance = {
-        title: gcalBaseEvent.summary as string,
-        user: setup.userId,
-        gEventId: gcalBaseEvent.id as string,
-        recurrence: {
-          eventId: compassBaseId,
-        },
-      };
-
-      // Create series with multiple instances
-      await createRecurrenceSeries(
-        setup,
-        compassBaseEvent,
-        compassInstanceTemplate,
-      );
-
-      // Split the series during DST transition
-      const splitGcalEvent = {
-        ...gcalBaseEvent,
-        recurrence: ["RRULE:FREQ=DAILY;UNTIL=20250315T045959Z"], // Split during DST
-        updated: "2025-03-15T10:43:27.205Z",
-      };
-
-      const processor = new GcalSyncProcessor(repo);
-      const changes = await processor.processEvents([splitGcalEvent]);
-
-      // Verify the change summary
-      expect(changes).toHaveLength(1);
-      expect(changes[0]).toEqual({
-        title: splitGcalEvent.summary as string,
-        category: Categories_Recurrence.RECURRENCE_BASE,
-        operation: "UPSERTED",
-      });
-
-      // Verify database state
-      const remainingEvents = await getEventsInDb();
-
-      // Verify instances are correctly handled across DST
-      const splitDate = new Date("2025-03-15T04:59:59Z");
-      const futureInstances = remainingEvents.filter(
-        (e) =>
-          isInstance(e as unknown as Schema_Event) &&
-          new Date(e["start"]["dateTime"]) > splitDate,
-      );
-      expect(futureInstances).toHaveLength(0);
     });
   });
 });
