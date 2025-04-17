@@ -1,9 +1,9 @@
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
-  gSchema$BaseEvent,
   gSchema$Event,
-  gSchema$InstanceEvent,
+  gSchema$EventBase,
+  gSchema$EventInstance,
 } from "@core/types/gcal";
 import { convertToRfc5545 } from "@core/util/date.utils";
 
@@ -14,9 +14,9 @@ import { convertToRfc5545 } from "@core/util/date.utils";
  * @returns A cancelled instance of the base event
  */
 export const mockCancelledInstance = (
-  baseEvent: gSchema$BaseEvent,
+  baseEvent: gSchema$EventBase,
   instanceStart: string,
-): gSchema$InstanceEvent => {
+): gSchema$EventInstance => {
   const instanceStartRfc5545 = convertToRfc5545(instanceStart);
   if (!instanceStartRfc5545) {
     throw new Error("Invalid instance start date");
@@ -44,9 +44,8 @@ export const mockRegularEvent = (): gSchema$Event => ({
 
 export const mockRecurringEvent = (
   overrides: Partial<gSchema$Event> = {},
-): gSchema$BaseEvent => ({
+): gSchema$EventBase => ({
   ...mockRegularEvent(),
-  // @ts-expect-error overriding the null type
   recurrence: ["RRULE:FREQ=WEEKLY"],
   ...overrides,
 });
@@ -55,7 +54,7 @@ const mockRecurringInstances = (
   event: gSchema$Event,
   count: number,
   repeatIntervalInDays: number,
-): gSchema$InstanceEvent[] => {
+): gSchema$EventInstance[] => {
   if (!event.start?.dateTime || !event.end?.dateTime) {
     throw new Error("Event must have start and end dates");
   }
@@ -80,7 +79,7 @@ const mockRecurringInstances = (
       ...event,
       id: `${event.id}_${instanceStart}`, // matches gcal id format
       summary: `${event.summary}: Instance ${index}`,
-      recurringEventId: event.id,
+      recurringEventId: event.id as string,
       start: {
         dateTime: instanceDate.toISOString(),
         timeZone: startTimeZone,

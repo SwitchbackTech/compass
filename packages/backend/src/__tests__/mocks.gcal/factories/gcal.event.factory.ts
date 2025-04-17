@@ -1,9 +1,14 @@
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { gSchema$Event } from "@core/types/gcal";
+import {
+  WithGcalId,
+  gSchema$Event,
+  gSchema$EventBase,
+  gSchema$EventInstance,
+} from "@core/types/gcal";
 
-export const mockRegularEvent = (): gSchema$Event => ({
-  id: faker.string.uuid(),
+export const mockRegularEvent = (): WithGcalId<gSchema$Event> => ({
+  id: faker.string.nanoid(),
   summary: faker.lorem.sentence(),
   start: { dateTime: faker.date.future().toISOString() },
   end: { dateTime: faker.date.future().toISOString() },
@@ -11,18 +16,18 @@ export const mockRegularEvent = (): gSchema$Event => ({
 });
 
 export const mockRecurringEvent = (
-  overrides: Partial<gSchema$Event> = {},
-): gSchema$Event => ({
+  overrides: Partial<gSchema$EventBase> = {},
+): gSchema$EventBase => ({
   ...mockRegularEvent(),
   recurrence: ["RRULE:FREQ=WEEKLY"],
   ...overrides,
 });
 
 const mockRecurringInstances = (
-  event: gSchema$Event,
+  event: gSchema$EventBase,
   count: number,
   repeatIntervalInDays: number,
-): gSchema$Event[] => {
+): gSchema$EventInstance[] => {
   if (!event.start?.dateTime || !event.end?.dateTime) {
     throw new Error("Event must have start and end dates");
   }
@@ -57,7 +62,7 @@ const mockRecurringInstances = (
   });
 };
 
-export const mockGcalEvent = (
+export const mockRegularGcalEvent = (
   overrides: Partial<gSchema$Event> = {},
 ): gSchema$Event => {
   const id = faker.string.uuid();
@@ -93,9 +98,9 @@ export const mockGcalEvent = (
 };
 
 export const mockGcalEvents = (repeatIntervalInDays = 7) => {
-  const regularEvent = mockGcalEvent();
-  const cancelledEvent = mockGcalEvent({ status: "cancelled" });
-  const recurringEvent = mockGcalEvent({
+  const regularEvent = mockRegularGcalEvent();
+  const cancelledEvent = mockRegularGcalEvent({ status: "cancelled" });
+  const recurringEvent = mockRecurringEvent({
     recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
   });
 
