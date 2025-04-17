@@ -72,7 +72,7 @@ export class GcalSyncProcessor {
     if (!compassEvent) {
       throw error(
         EventError.MissingCompassEvent,
-        "Not processing this event, because it was not found in DB:",
+        `Not processing, because there is no Compass event with matching gEventId: ${gEventId}`,
       );
     }
     return compassEvent as WithCompassId<Schema_Event>;
@@ -123,6 +123,7 @@ export class GcalSyncProcessor {
 
       return "UPSERTED";
     } else {
+      logger.error("Not a series split, so just returning for now");
       // Create or update series
       return "UPSERTED";
     }
@@ -131,24 +132,32 @@ export class GcalSyncProcessor {
     gEvent: WithGcalId<gSchema$Event>,
     cEvent: WithCompassId<Schema_Event>,
   ): boolean {
-    if (
+    const isNotBase =
       !gEvent.recurrence ||
       !cEvent ||
       !isBase(cEvent) ||
-      !cEvent.recurrence?.rule
-    ) {
+      !cEvent.recurrence?.rule;
+
+    if (isNotBase) {
+      console.log("gEvent.recurrence", gEvent.recurrence);
+      console.log("cEvent", cEvent);
       return false;
     }
 
-    const newUntil = this.extractUntilValue(gEvent.recurrence[0] as string);
     const currentUntil = this.extractUntilValue(
-      cEvent.recurrence.rule[0] as string,
+      cEvent.recurrence?.rule?.[0] as string,
     );
+    const newUntil = this.extractUntilValue(gEvent?.recurrence?.[0] as string);
+
+    if (!newUntil) {
+      return false;
+    }
 
     // Split detected if:
     // 1. New UNTIL date is earlier than current
     // 2. No UNTIL date existed before
-    return !currentUntil || !!(newUntil && newUntil < currentUntil);
+    const isSplit = currentUntil ? newUntil < currentUntil : true;
+    return isSplit;
   }
 
   private extractUntilValue(recurrenceRule: string): string | null {
