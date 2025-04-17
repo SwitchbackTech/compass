@@ -31,7 +31,7 @@ export class GcalParser {
       return "ACTIVE";
     }
   }
-  private isRecurrenceBase() {
+  public isRecurrenceBase() {
     const isBase = this.event.recurrence !== undefined;
     // Recurring cancellations include the recurringEventId;
     // base cancellations do not
@@ -42,7 +42,8 @@ export class GcalParser {
   private isRecurrenceInstance() {
     return (
       this.event.recurrence === undefined &&
-      this.event.recurringEventId !== undefined
+      this.event.recurringEventId !== undefined &&
+      this.event.recurringEventId !== null
     );
   }
   private isCancelled() {

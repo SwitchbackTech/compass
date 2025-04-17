@@ -1,6 +1,17 @@
 import { calendar_v3 } from "googleapis";
 import calendar from "googleapis/build/src/apis/calendar";
 
+export declare type WithGcalId<T> = T & {
+  id: string;
+};
+
+export declare type WithRecurrenceRule<T> = T & {
+  recurrence: string[];
+};
+export declare type WithRecurrencePointer<T> = T & {
+  recurringEventId: string;
+};
+
 /* Google API */
 export declare type gCalendar = calendar_v3.Calendar;
 export declare type gSchema$CalendarList = calendar_v3.Schema$CalendarList;
@@ -8,6 +19,10 @@ export declare type gSchema$CalendarListEntry =
   calendar_v3.Schema$CalendarListEntry;
 export declare type gSchema$Channel = calendar.calendar_v3.Schema$Channel;
 export declare type gSchema$Event = calendar.calendar_v3.Schema$Event;
+export declare type gSchema$BaseEvent = WithGcalId<
+  WithRecurrenceRule<gSchema$Event>
+>;
+export declare type gSchema$InstanceEvent = WithGcalId<gSchema$Event>;
 
 export declare type gSchema$Events = calendar.calendar_v3.Schema$Events;
 export declare type gSchema$Events$Union = gSchema$Events | gSchema$Events[];

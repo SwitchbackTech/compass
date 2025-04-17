@@ -56,6 +56,16 @@ export const EventError = {
     status: Status.GONE,
     isOperational: true,
   },
+  InvalidRecurrence: {
+    description: "Invalid recurrence",
+    status: Status.BAD_REQUEST,
+    isOperational: true,
+  },
+  MissingCompassEvent: {
+    description: "Compass event not found",
+    status: Status.NOT_FOUND,
+    isOperational: true,
+  },
   MissingGevents: {
     description: "# of created events !== # saved in DB",
     status: Status.INTERNAL_SERVER,

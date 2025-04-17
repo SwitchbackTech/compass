@@ -60,9 +60,7 @@ const _toCompass = (
       : gEvent.extendedProperties?.private?.["origin"] || Origin.UNSURE;
 
   const gEventId = gEvent.id ? gEvent.id : undefined;
-  const gRecurringEventId = gEvent.recurringEventId
-    ? gEvent.recurringEventId
-    : undefined;
+
   const title = gEvent.summary ? gEvent.summary : "untitled";
   const description = gEvent.description ? gEvent.description : "";
 
@@ -88,7 +86,6 @@ const _toCompass = (
 
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
-    gRecurringEventId,
     user: userId,
     origin: _origin as Origin,
     title: title,
@@ -108,6 +105,10 @@ const _toCompass = (
   // Only add recurrence if it's defined
   if (recurrence) {
     compassEvent.recurrence = recurrence;
+  }
+  const gRecurringEventId = gEvent.recurringEventId;
+  if (gRecurringEventId) {
+    compassEvent.gRecurringEventId = gRecurringEventId;
   }
 
   const validatedCompassEvent = validateEvent(compassEvent);

@@ -1,15 +1,14 @@
 import { ObjectId } from "mongodb";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
-import { Ids_Event } from "./event.queries";
+import { Ids_Event } from "../../../queries/event.queries";
 
 /**
- * DB operations for Compass's Event collection, focused
- * on recurring event operations
+ * Recurring event DB operations repo for Compass's Event collection
  */
 
 export class RecurringEventRepository {
-  constructor(private userId: string) {}
+  constructor(public userId: string) {}
 
   /**
    * Delete all events in the series (both base and instances)
@@ -38,6 +37,17 @@ export class RecurringEventRepository {
       .collection(Collections.EVENT)
       .deleteOne(filter);
 
+    return result;
+  }
+
+  async deleteInstancesAfter(baseId: string, afterDate: string) {
+    const result = await mongoService.db
+      .collection(Collections.EVENT)
+      .deleteMany({
+        "recurrence.eventId": baseId,
+        startDate: { $gt: afterDate },
+        user: this.userId,
+      });
     return result;
   }
 }

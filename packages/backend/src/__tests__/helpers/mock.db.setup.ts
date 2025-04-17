@@ -18,6 +18,11 @@ jest.mock("@backend/common/middleware/supertokens.middleware", () => ({
   getSession: jest.fn(),
 }));
 
+/**
+ * Setup a test database with a test user and a
+ * sync record that points to the test user
+ * @returns {Promise<TestSetup>} - The test setup object
+ */
 export async function setupTestDb(): Promise<TestSetup> {
   // Setup in-memory MongoDB
   const mongoServer = await MongoMemoryServer.create();
@@ -81,17 +86,7 @@ export async function setupTestDb(): Promise<TestSetup> {
   return { mongoServer, mongoClient, db, userId: userId.toString() };
 }
 
-export async function cleanupTestMongo(setup: TestSetup): Promise<void> {
-  try {
-    await mongoService.cleanup();
-    await setup.mongoClient.close(true);
-    await setup.mongoServer.stop({ force: true });
-  } catch (err) {
-    console.error("Error during cleanup:", err);
-  }
-}
-
-export async function clearCollections(db: Db): Promise<void> {
+export async function cleanupCollections(db: Db): Promise<void> {
   const collections = await db.collections();
   const SKIP_COLLECTIONS = [Collections.USER, Collections.SYNC];
 
@@ -101,4 +96,14 @@ export async function clearCollections(db: Db): Promise<void> {
     )
     .map((collection) => collection.deleteMany({}));
   await Promise.all(clearPromises);
+}
+
+export async function cleanupTestMongo(setup: TestSetup): Promise<void> {
+  try {
+    await mongoService.cleanup();
+    await setup.mongoClient.close(true);
+    await setup.mongoServer.stop({ force: true });
+  } catch (err) {
+    console.error("Error during cleanup:", err);
+  }
 }
