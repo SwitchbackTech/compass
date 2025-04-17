@@ -8,6 +8,8 @@ dayjs.extend(utc);
 dayjs.extend(weekOfYear);
 dayjs.extend(customParseFormat); // for RFC5545 iCalendar format
 
+const RFC5545_FORMAT = "YYYYMMDD[T]HHmmss[Z]";
+
 export const getCurrentRangeDates = () => {
   const now = dayjs();
 
@@ -54,10 +56,21 @@ export const minutesFromNow = (numMin: number, format: string) => {
  * @returns Parsed date as ISO string
  */
 export const convertRfc5545ToIso = (orig: string) => {
-  const RFC5545_FORMAT = "YYYYMMDD[T]HHmmss[Z]";
   const untilParsed = dayjs.utc(orig, RFC5545_FORMAT);
 
   if (!untilParsed.isValid()) return null;
 
   return untilParsed.toISOString();
+};
+
+/**
+ * Convert ISO string to RFC5545 iCalendar format
+ * @param orig - The original ISO string (e.g., "2025-12-07T15:59:33Z")
+ * @returns Converted string in RFC5545 format
+ */
+export const convertToRfc5545 = (orig: string) => {
+  const iso = dayjs.utc(orig);
+  if (!iso.isValid()) return null;
+
+  return iso.format(RFC5545_FORMAT);
 };

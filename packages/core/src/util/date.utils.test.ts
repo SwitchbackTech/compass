@@ -1,4 +1,4 @@
-import { convertRfc5545ToIso } from "./date.utils";
+import { convertRfc5545ToIso, convertToRfc5545 } from "./date.utils";
 
 describe("convertRfc5545ToIso", () => {
   it("parses RFC5545 iCalendar dates with Z suffix", () => {
@@ -13,6 +13,18 @@ describe("convertRfc5545ToIso", () => {
 
   it("returns null for invalid dates", () => {
     const date = convertRfc5545ToIso("invalid");
+    expect(date).toBeNull();
+  });
+});
+
+describe("convertToRfc5545", () => {
+  it("converts ISO string to RFC5545 iCalendar format", () => {
+    const rfc5545 = convertToRfc5545("2025-12-07T15:59:33.000Z");
+    expect(rfc5545).toEqual("20251207T155933Z");
+  });
+
+  it("returns null for invalid dates", () => {
+    const date = convertToRfc5545("invalid");
     expect(date).toBeNull();
   });
 });
