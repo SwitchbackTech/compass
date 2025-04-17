@@ -8,6 +8,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { devAlert } from "@core/util/app.util";
 import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
+import { PartialMouseEvent } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleDefaultEvent,
@@ -174,8 +175,10 @@ export const useDraftActions = (
   }, [dispatch, draft, reduxDraft, reduxDraftType, setDraft]);
 
   const drag = useCallback(
-    (e: MouseEvent) => {
-      const updateTimesDuringDrag = (e: MouseEvent) => {
+    (e: Omit<PartialMouseEvent, "currentTarget">) => {
+      const updateTimesDuringDrag = (
+        e: Omit<PartialMouseEvent, "currentTarget">,
+      ) => {
         if (!draft) return;
 
         const x = getX(e, isSidebarOpen);
@@ -183,7 +186,7 @@ export const useDraftActions = (
 
         let eventStart = dateCalcs.getDateByXY(
           x,
-          e.clientY,
+          e.clientY - draft.position.dragOffset.y,
           weekProps.component.startOfView,
         );
 
@@ -408,9 +411,7 @@ export const useDraftActions = (
     }
   }, [activity, startDragging, startResizing, create, isDrafting]);
 
-  useDraftEffects(draftState, setters, weekProps, isDrafting, handleChange);
-
-  return {
+  const actions = {
     closeForm,
     submit,
     convert,
@@ -431,5 +432,9 @@ export const useDraftActions = (
     stopDragging,
     stopResizing,
   };
+
+  useDraftEffects(draftState, setters, weekProps, isDrafting, handleChange);
+
+  return actions;
 };
 export type Actions_Draft = ReturnType<typeof useDraftActions>;

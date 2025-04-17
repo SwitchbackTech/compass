@@ -1,7 +1,9 @@
 import React from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
+import { PartialMouseEvent } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { getEventDragOffset } from "@web/common/utils/event.util";
 import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
@@ -38,11 +40,22 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     );
   };
 
-  const handleDrag = (event: Schema_GridEvent) => {
+  const handleDrag = (
+    event: Schema_GridEvent,
+    moveEvent: PartialMouseEvent,
+  ) => {
     dispatch(
       draftSlice.actions.startDragging({
         category,
-        event,
+        event: {
+          ...event,
+          position: {
+            ...event.position,
+            dragOffset: getEventDragOffset(event, moveEvent),
+            initialX: moveEvent.clientX,
+            initialY: moveEvent.clientY,
+          },
+        },
       }),
     );
   };
