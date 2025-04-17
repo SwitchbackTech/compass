@@ -5,9 +5,37 @@ import {
   gSchema$Event,
   gSchema$InstanceEvent,
 } from "@core/types/gcal";
+import { convertToRfc5545 } from "@core/util/date.utils";
+
+/**
+ * Creates a cancelled instance of a recurring event,
+ * matching the payload from gcal when a recurring event is cancelled
+ * @param baseEvent - The base event to create the cancelled instance for
+ * @returns A cancelled instance of the base event
+ */
+export const mockCancelledInstance = (
+  baseEvent: gSchema$BaseEvent,
+  instanceStart: string,
+): gSchema$InstanceEvent => {
+  const instanceStartRfc5545 = convertToRfc5545(instanceStart);
+  if (!instanceStartRfc5545) {
+    throw new Error("Invalid instance start date");
+  }
+  return {
+    id: `${baseEvent.id}_${instanceStartRfc5545}`,
+    kind: "calendar#event",
+    status: "cancelled",
+    summary: `Cancelled Instance - ${baseEvent.summary}`,
+    recurringEventId: baseEvent.id,
+    originalStartTime: {
+      dateTime: baseEvent.start?.dateTime,
+      timeZone: baseEvent.start?.timeZone,
+    },
+  };
+};
 
 export const mockRegularEvent = (): gSchema$Event => ({
-  id: faker.string.uuid(),
+  id: faker.string.nanoid(),
   summary: faker.lorem.sentence(),
   start: { dateTime: faker.date.future().toISOString() },
   end: { dateTime: faker.date.future().toISOString() },
@@ -46,9 +74,11 @@ const mockRecurringInstances = (
     const endDate = new Date(endDateTime);
     endDate.setDate(endDate.getDate() + index * repeatIntervalInDays);
 
+    const instanceStart = convertToRfc5545(instanceDate.toISOString());
+
     const instance = {
       ...event,
-      id: `${event.id}-${index}`,
+      id: `${event.id}_${instanceStart}`, // matches gcal id format
       summary: `${event.summary}: Instance ${index}`,
       recurringEventId: event.id,
       start: {
@@ -106,7 +136,6 @@ export const mockGcalEvent = (
 
 export const mockGcalEvents = (repeatIntervalInDays = 7) => {
   const regularEvent = mockGcalEvent({ summary: "Regular Event" });
-  const cancelledEvent = mockGcalEvent({ status: "cancelled" });
   const baseRecurrence = mockRecurringEvent({
     summary: "Recurring Event",
     recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
@@ -116,6 +145,11 @@ export const mockGcalEvents = (repeatIntervalInDays = 7) => {
     baseRecurrence,
     3,
     repeatIntervalInDays,
+  );
+
+  const cancelledEvent = mockCancelledInstance(
+    baseRecurrence,
+    "2025-04-10T12:30:00Z",
   );
 
   const allGcalEvents = [
