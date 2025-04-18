@@ -41,17 +41,22 @@ export const mockRecurringInstances = (
 
   return Array.from({ length: count }, (_, index) => {
     const instanceDate = new Date(baseDate);
-    // Prevent the first instance from being the same as the base date
-    instanceDate.setDate(
-      instanceDate.getDate() + (index + 1) * repeatIntervalInDays,
-    );
+    // For index 0, keep the same date as base
+    // For subsequent instances, add the interval
+    if (index > 0) {
+      instanceDate.setDate(
+        instanceDate.getDate() + index * repeatIntervalInDays,
+      );
+    }
 
     const endDate = new Date(endDateTime);
-    endDate.setDate(endDate.getDate() + (index + 1) * repeatIntervalInDays);
+    if (index > 0) {
+      endDate.setDate(endDate.getDate() + index * repeatIntervalInDays);
+    }
 
     const instance = {
       ...base,
-      id: `${base.id}-${index}`,
+      id: `${base.id}-instance-${index + 1}`,
       summary: `${base.summary}-instance-${index + 1}`,
       recurringEventId: base.id,
       start: {

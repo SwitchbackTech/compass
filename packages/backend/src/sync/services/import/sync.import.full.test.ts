@@ -4,35 +4,19 @@ import {
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import {
-  mockGcalEventsv2,
-  mockRecurringEvent,
-} from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory.set";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import mongoService from "@backend/common/services/mongo.service";
 import { createSyncImport } from "./sync.import";
 
-// Mock Google Calendar API responses
+// Mock Google Calendar API responses,
 jest.mock("googleapis", () => {
-  const { allEvents: gcalEvents } = mockGcalEventsv2();
-  const googleapis = mockGcal({ events: gcalEvents });
+  const { gcalEvents } = mockGcalEvents();
+  const googleapis = mockGcal({ events: gcalEvents.all });
   return googleapis;
 });
 
-// Mock Gcal Instances API response
-// jest.mock("@backend/common/services/gcal/gcal.service", () => ({
-//   __esModule: true,
-//   default: {
-//     getEvents: jest.fn().mockResolvedValue({
-//       data: { items: mockGcalEventsv2().allEvents },
-//     }),
-//     getEventInstances: jest.fn().mockResolvedValue({
-//       data: { items: mockGcalEventsv2().instances },
-//     }),
-//   },
-// }));
-
-describe("SyncImport", () => {
+describe("SyncImport: Full", () => {
   let syncImport: Awaited<ReturnType<typeof createSyncImport>>;
   let setup: Awaited<ReturnType<typeof setupTestDb>>;
 
@@ -132,18 +116,6 @@ describe("SyncImport", () => {
       });
 
       expect(duplicateEvents).toHaveLength(0);
-    });
-  });
-
-  describe("Series Import", () => {
-    it("should import a series when provided a gcal base event", async () => {
-      const baseRecurringGcalEvent = mockRecurringEvent();
-      const result = await syncImport.importSeries(
-        setup.userId,
-        "test-calendar",
-        baseRecurringGcalEvent,
-      );
-      expect(result).toHaveLength(100);
     });
   });
 });
