@@ -31,6 +31,13 @@ describe("useGridEventMouseDown", () => {
     stopPropagation,
   } as unknown as React.MouseEvent;
 
+  // Create partial mouse event object for assertion matching
+  const partialMouseEvent = {
+    clientX: 0,
+    clientY: 0,
+    currentTarget: undefined,
+  };
+
   beforeEach(() => {
     jest.useFakeTimers();
     onClick.mockClear();
@@ -72,7 +79,7 @@ describe("useGridEventMouseDown", () => {
     result.current.onMouseDown(mockMouseEvent, mockEvent);
     jest.advanceTimersByTime(GRID_EVENT_MOUSE_HOLD_DELAY + 1);
 
-    expect(onDrag).toHaveBeenCalledWith(mockEvent);
+    expect(onDrag).toHaveBeenCalledWith(mockEvent, partialMouseEvent);
     expect(onClick).not.toHaveBeenCalled();
   });
 
@@ -93,7 +100,14 @@ describe("useGridEventMouseDown", () => {
     });
     mockGridElement.dispatchEvent(mousemoveEvent);
 
-    expect(onDrag).toHaveBeenCalledWith(mockEvent);
+    // expect.objectContaining to match the mousemoveEvent properties
+    expect(onDrag).toHaveBeenCalledWith(
+      mockEvent,
+      expect.objectContaining({
+        clientX: GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD + 1,
+        clientY: GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD + 1,
+      }),
+    );
     expect(onClick).not.toHaveBeenCalled();
   });
 
@@ -115,7 +129,7 @@ describe("useGridEventMouseDown", () => {
       result.current.onMouseDown(mockMouseEvent, mockEvent);
       jest.advanceTimersByTime(GRID_EVENT_MOUSE_HOLD_DELAY + 1);
 
-      expect(onDrag).toHaveBeenCalledWith(mockEvent);
+      expect(onDrag).toHaveBeenCalledWith(mockEvent, partialMouseEvent);
       expect(onClick).not.toHaveBeenCalled();
     });
 
