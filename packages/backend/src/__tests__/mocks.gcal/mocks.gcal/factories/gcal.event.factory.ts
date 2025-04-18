@@ -44,11 +44,15 @@ export const mockRegularEvent = (): gSchema$Event => ({
 
 export const mockRecurringEvent = (
   overrides: Partial<gSchema$Event> = {},
-): gSchema$EventBase => ({
-  ...mockRegularEvent(),
-  recurrence: ["RRULE:FREQ=WEEKLY"],
-  ...overrides,
-});
+): gSchema$EventBase => {
+  const regular = mockRegularEvent();
+  const base = {
+    ...regular,
+    recurrence: ["RRULE:FREQ=WEEKLY"],
+    ...overrides,
+  };
+  return base as gSchema$EventBase;
+};
 
 const mockRecurringInstances = (
   event: gSchema$Event,

@@ -36,6 +36,13 @@ export const assembleEventOperations = (
   return bulkOperations;
 };
 
+/**
+ * Organizes gcal events by type and returns the events to delete and the events to update
+ * @param events - The events, organized by type. The 'toUpdate' object contains two arrays:
+ * - 'recurring': A *subset* of the events to update, which does not include all expanded instances
+ * - 'nonRecurring': The non-recurring events
+ * @returns The events to delete and the events to update
+ */
 export const organizeGcalEventsByType = (events: gSchema$Event[]) => {
   const toDelete = cancelledEventsIds(events);
 

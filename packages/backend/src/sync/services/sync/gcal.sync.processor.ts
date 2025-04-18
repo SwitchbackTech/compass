@@ -9,9 +9,14 @@ import {
   WithGcalId,
   WithRecurrenceRule,
   gSchema$Event,
+  gSchema$EventBase,
 } from "@core/types/gcal";
 import { convertRfc5545ToIso } from "@core/util/date.utils";
-import { EventError } from "@backend/common/constants/error.constants";
+import { isBase } from "@core/util/event.util";
+import {
+  EventError,
+  GenericError,
+} from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import {
   findCompassEventBy,
@@ -19,8 +24,8 @@ import {
 } from "@backend/event/queries/event.queries";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalParser } from "@backend/event/services/recur/util/recur.gcal.util";
-import { isBase } from "@backend/event/services/recur/util/recur.util";
 import { Change_Gcal, Operation_Sync } from "../../sync.types";
+import { createSyncImport } from "../import/sync.import";
 
 const logger = Logger("app.sync.processor");
 export class GcalSyncProcessor {
@@ -52,7 +57,7 @@ export class GcalSyncProcessor {
           break;
         case "RECURRENCE_BASE":
           operation = await this.handleSeriesChange(
-            gEvent as WithGcalId<WithRecurrenceRule<gSchema$Event>>,
+            gEvent as gSchema$EventBase,
             parser,
           );
           break;
@@ -69,13 +74,8 @@ export class GcalSyncProcessor {
       "gEventId",
       gEventId,
     );
-    if (!compassEvent) {
-      throw error(
-        EventError.MissingCompassEvent,
-        `Not processing, because there is no Compass event with matching gEventId: ${gEventId}`,
-      );
-    }
-    return compassEvent as WithCompassId<Schema_Event>;
+
+    return compassEvent;
   }
 
   private async handleInstanceChange(
@@ -96,12 +96,17 @@ export class GcalSyncProcessor {
   }
 
   private async handleSeriesChange(
-    gEvent: WithGcalId<WithRecurrenceRule<gSchema$Event>>,
+    gEvent: gSchema$EventBase,
     parser: GcalParser,
   ): Promise<Operation_Sync> {
     const status = parser.status;
 
     const compassEvent = await this.getCompassEvent(gEvent.id);
+    if (!compassEvent) {
+      const syncImport = await createSyncImport(this.repo.userId);
+      await syncImport.importSeries(this.repo.userId, "primary", gEvent);
+      return "UPSERTED";
+    }
     if (status === "CANCELLED") {
       logger.info(
         `Cancelling SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
@@ -110,23 +115,33 @@ export class GcalSyncProcessor {
       return "DELETED";
     }
 
-    if (this.isSeriesSplit(gEvent, compassEvent)) {
+    if (
+      this.isSeriesSplit(gEvent, compassEvent as WithCompassId<Schema_Event>)
+    ) {
       logger.info(
         `Splitting SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
       );
 
-      await this.updateBaseEvent(compassEvent, gEvent);
+      await this.updateBaseEvent(
+        compassEvent as WithCompassId<Schema_Event>,
+        gEvent,
+      );
       await this.deleteInstancesAfterNewBase(
         compassEvent._id.toString(),
         gEvent,
       );
 
       return "UPSERTED";
-    } else {
-      logger.error("Not a series split, so just returning for now");
-      // Create or update series
+    }
+    // if (this.isSeriesUpdate(gEvent, compassEvent)) {
+    if (this.isSeriesUpdate()) {
+      logger.info(
+        `TODO Updating SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
+      );
       return "UPSERTED";
     }
+
+    throw error(GenericError.DeveloperError, "Series change not handled");
   }
   private isSeriesSplit(
     gEvent: WithGcalId<gSchema$Event>,
@@ -160,6 +175,10 @@ export class GcalSyncProcessor {
     return isSplit;
   }
 
+  private isSeriesUpdate(): boolean {
+    return true;
+  }
+
   private extractUntilValue(recurrenceRule: string): string | null {
     const untilMatch = recurrenceRule.match(/UNTIL=([^;]+)/);
     if (!untilMatch) return null;
@@ -167,6 +186,22 @@ export class GcalSyncProcessor {
     // Handle both date-only and datetime formats
     const untilStr = untilMatch[1] as string;
     return untilStr;
+  }
+
+  private async deleteInstancesAfterNewBase(
+    cBaseId: string,
+    gEvent: WithGcalId<WithRecurrenceRule<gSchema$Event>>,
+  ) {
+    const untilValue = convertRfc5545ToIso(gEvent.recurrence[0] as string);
+    if (!untilValue) {
+      throw error(
+        EventError.InvalidRecurrence,
+        "Did not delete instances during split, because no UNTIL date found",
+      );
+    }
+    // Delete all instances after the UNTIL date
+    const result = await this.repo.deleteInstancesAfter(cBaseId, untilValue);
+    return result;
   }
 
   private async updateBaseEvent(
@@ -182,20 +217,5 @@ export class GcalSyncProcessor {
       compassEvent._id,
       newCompassBase,
     );
-  }
-  private async deleteInstancesAfterNewBase(
-    cBaseId: string,
-    gEvent: WithGcalId<WithRecurrenceRule<gSchema$Event>>,
-  ) {
-    const untilValue = convertRfc5545ToIso(gEvent.recurrence[0] as string);
-    if (!untilValue) {
-      throw error(
-        EventError.InvalidRecurrence,
-        "Did not delete instances during split, because no UNTIL date found",
-      );
-    }
-    // Delete all instances after the UNTIL date
-    const result = await this.repo.deleteInstancesAfter(cBaseId, untilValue);
-    return result;
   }
 }
