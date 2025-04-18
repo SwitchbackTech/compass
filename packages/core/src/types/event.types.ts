@@ -111,6 +111,14 @@ const Recurrence = z.object({
   eventId: z.string().optional(),
 });
 
+export type Recurrence = Schema_Event_Recur_Base | Schema_Event_Recur_Instance;
+export type RecurrenceWithId =
+  | WithCompassId<Schema_Event_Recur_Instance>
+  | WithCompassId<Schema_Event_Recur_Base>;
+export type RecurrenceWithoutId =
+  | WithoutCompassId<Schema_Event_Recur_Instance>
+  | WithoutCompassId<Schema_Event_Recur_Base>;
+
 export const CoreEventSchema = z.object({
   _id: z.string().optional(),
   description: z.string().nullable().optional(),
@@ -134,3 +142,4 @@ export const CoreEventSchema = z.object({
 export type Event_Core = z.infer<typeof CoreEventSchema>;
 
 export type WithCompassId<T> = T & { _id: string };
+export type WithoutCompassId<T> = Omit<T, "_id">;
