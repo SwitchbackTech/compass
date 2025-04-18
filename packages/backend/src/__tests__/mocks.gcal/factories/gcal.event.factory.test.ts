@@ -1,3 +1,4 @@
+import { gSchema$EventInstance } from "@core/types/gcal";
 import {
   mockRecurringBaseEvent,
   mockRecurringInstances,
@@ -23,11 +24,20 @@ describe("mockRecurringInstances", () => {
       expect(instance.recurringEventId).toBe(base.id);
     });
   });
-  it("should make instances times in the future from the base time", () => {
+  it("should make the first instance start and end at the same time as the base event", () => {
+    const base = mockRecurringBaseEvent();
+    const instances = mockRecurringInstances(base, 2, 7);
+    const firstInstance = instances[0] as gSchema$EventInstance;
+
+    expect(firstInstance.start?.dateTime).toBe(base.start?.dateTime);
+    expect(firstInstance.end?.dateTime).toBe(base.end?.dateTime);
+  });
+  it("should make instances start and end in the future from the base time (except for the first one)", () => {
     const base = mockRecurringBaseEvent();
     const instances = mockRecurringInstances(base, 2, 7);
     const baseStart = new Date(base.start?.dateTime as string);
-    instances.forEach((instance) => {
+    instances.forEach((instance, index) => {
+      if (index === 0) return; // first instance is the same as the base
       const instanceStart = new Date(instance.start?.dateTime as string);
       expect(instanceStart.getTime()).toBeGreaterThan(baseStart.getTime());
 
