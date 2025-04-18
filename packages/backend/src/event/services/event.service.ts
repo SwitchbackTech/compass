@@ -1,4 +1,4 @@
-import { OptionalId } from "mongodb";
+import { Document, Filter, OptionalId } from "mongodb";
 import {
   Origin,
   Priorities,
@@ -252,7 +252,7 @@ class EventService {
     userId: string,
     query: Query_Event,
   ): Promise<Schema_Event_Core[] | BaseError> => {
-    const filter = getReadAllFilter(userId, query);
+    const filter = getReadAllFilter(userId, query) as Filter<Document>;
 
     if (query.someday) {
       const response = (await mongoService.db

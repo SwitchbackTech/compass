@@ -5,6 +5,7 @@ import { Filter, ObjectId } from "mongodb";
 import {
   Query_Event,
   Query_Event_Update,
+  Schema_Event,
   Schema_Event_Core,
 } from "@core/types/event.types";
 import { isSameMonth } from "@core/util/date.utils";
@@ -72,27 +73,29 @@ export const getDeleteByIdFilter = (
 export const getReadAllFilter = (
   userId: string,
   query: Query_Event,
-): Filter<object> => {
+): Filter<Schema_Event> => {
   const { end, someday, start, priorities } = query;
   const isSomeday = someday === "true";
 
-  let filter = { user: userId };
+  // Start with basic user filter
+  const filter: Filter<Schema_Event> = { user: userId };
 
-  if (isSomeday) {
-    filter = { ...filter, ...{ isSomeday: true } };
-  } else {
-    filter = { ...filter, ...{ isSomeday: false } };
-  }
+  // Add isSomeday condition
+  filter["isSomeday"] = isSomeday;
 
+  // Add priorities if specified
   if (priorities) {
-    const _priorities = priorities.split(",");
-    filter = { ...filter, ...{ priorities: { $in: _priorities } } };
+    filter["priorities"] = { $in: priorities.split(",") };
   }
 
+  // Add date filters if specified
   if (start && end) {
     const dateFilters = _getDateFilters(isSomeday, start, end);
-    filter = { ...filter, ...dateFilters };
+    Object.assign(filter, dateFilters);
   }
+
+  // Exclude base recurring events (those with recurrence.rule)
+  filter["recurrence.rule"] = { $exists: false };
 
   return filter;
 };
