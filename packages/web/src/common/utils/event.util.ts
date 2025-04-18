@@ -10,6 +10,7 @@ import { Status } from "@core/errors/status.codes";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
+import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
@@ -44,6 +45,15 @@ export const assembleBaseEvent = (
   };
 
   return baseEvent;
+};
+
+const gridEventDefaultPosition = {
+  isOverlapping: false,
+  widthMultiplier: 1,
+  horizontalOrder: 1,
+  initialX: null,
+  initialY: null,
+  dragOffset: { y: 0 },
 };
 
 export const assembleDefaultEvent = async (
@@ -85,11 +95,7 @@ export const assembleDefaultEvent = async (
         isSomeday: false,
         startDate,
         endDate,
-        position: {
-          isOverlapping: false,
-          widthMultiplier: 1,
-          horizontalOrder: 1,
-        },
+        position: gridEventDefaultPosition,
       };
       return defaultTimed;
     }
@@ -101,13 +107,22 @@ export const assembleDefaultEvent = async (
 export const assembleGridEvent = (event: Schema_Event): Schema_GridEvent => {
   const gridEvent = {
     ...event,
-    position: {
-      isOverlapping: false,
-      widthMultiplier: 1,
-      horizontalOrder: 1,
-    },
+    position: gridEventDefaultPosition,
   };
   return gridEvent;
+};
+
+export const getEventDragOffset = (
+  event?: Schema_GridEvent,
+  e?: PartialMouseEvent,
+): Schema_GridEvent["position"]["dragOffset"] => {
+  if (!event || !e) return { y: 0 };
+
+  const target = e.currentTarget as HTMLElement;
+  const rect = target.getBoundingClientRect();
+  return {
+    y: e.clientY - rect.top,
+  };
 };
 
 export const categorizeSomedayEvents = (
