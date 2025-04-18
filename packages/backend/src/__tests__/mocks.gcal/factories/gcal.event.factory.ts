@@ -15,6 +15,21 @@ export const mockRegularEvent = (): WithGcalId<gSchema$Event> => ({
   status: "confirmed",
 });
 
+/**
+ * Returns a base event and its instances
+ * @param count - The number of instances to create
+ * @param repeatIntervalInDays - The interval between instances
+ * @returns An array containing the base event and its instances
+ */
+export const mockRecurringEvents = (
+  count: number,
+  repeatIntervalInDays: number,
+): (gSchema$EventBase | gSchema$EventInstance)[] => {
+  const base = mockRecurringBaseEvent();
+  const instances = mockRecurringInstances(base, count, repeatIntervalInDays);
+  return [base, ...instances];
+};
+
 export const mockRecurringBaseEvent = (
   overrides: Partial<gSchema$EventBase> = {},
 ): gSchema$EventBase => ({
