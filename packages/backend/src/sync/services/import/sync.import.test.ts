@@ -4,64 +4,33 @@ import {
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { mockGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import {
+  mockGcalEventsv2,
+  mockRecurringEvent,
+} from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import mongoService from "@backend/common/services/mongo.service";
 import { createSyncImport } from "./sync.import";
 
-// Create specific test data
-const createTestEvents = () => {
-  // Create a base recurring event
-  const baseRecurringEvent = mockGcalEvent({
-    id: "recurring-1",
-    summary: "Recurrence Base",
-    recurrence: ["RRULE:FREQ=WEEKLY"],
-  });
-
-  // Create instances of the recurring event
-  const instances = [
-    mockGcalEvent({
-      id: "recurring-1-instance-1",
-      summary: "Recurrence Instance 1",
-      recurringEventId: baseRecurringEvent.id,
-      // the first instance shares the same start date as the base event
-      start: baseRecurringEvent.start,
-    }),
-    mockGcalEvent({
-      id: "recurring-1-instance-2",
-      summary: "Recurrence Instance 2",
-      recurringEventId: baseRecurringEvent.id,
-    }),
-  ];
-
-  // Create a regular event
-  const regularEvent = mockGcalEvent({
-    id: "regular-1",
-    summary: "Regular Event",
-  });
-
-  // Create a cancelled event
-  const cancelledEvent = mockGcalEvent({
-    id: "cancelled-1",
-    status: "cancelled",
-    summary: "Cancelled Event",
-  });
-
-  return {
-    baseRecurringEvent,
-    instances,
-    regularEvent,
-    cancelledEvent,
-    allEvents: [baseRecurringEvent, ...instances, regularEvent, cancelledEvent],
-  };
-};
-
 // Mock Google Calendar API responses
 jest.mock("googleapis", () => {
-  const { allEvents: gcalEvents } = createTestEvents();
+  const { allEvents: gcalEvents } = mockGcalEventsv2();
   const googleapis = mockGcal({ events: gcalEvents });
   return googleapis;
 });
+
+// Mock Gcal Instances API response
+// jest.mock("@backend/common/services/gcal/gcal.service", () => ({
+//   __esModule: true,
+//   default: {
+//     getEvents: jest.fn().mockResolvedValue({
+//       data: { items: mockGcalEventsv2().allEvents },
+//     }),
+//     getEventInstances: jest.fn().mockResolvedValue({
+//       data: { items: mockGcalEventsv2().instances },
+//     }),
+//   },
+// }));
 
 describe("SyncImport", () => {
   let syncImport: Awaited<ReturnType<typeof createSyncImport>>;
@@ -81,6 +50,30 @@ describe("SyncImport", () => {
   });
 
   describe("Full import", () => {
+    it("should not import the first instance of a recurring event (just the base)", async () => {
+      // including the first instance would result in 2 events with the same start date
+      await syncImport.importAllEvents(setup.userId, "test-calendar");
+
+      const currentEventsInDb = await mongoService.event.find().toArray();
+
+      const recurringEvents = currentEventsInDb.filter(
+        (e) => e.recurrence !== undefined,
+      );
+
+      const baseStart = recurringEvents[0]?.startDate;
+      const firstInstanceStart = recurringEvents[1]?.startDate;
+      expect(baseStart).not.toEqual(firstInstanceStart);
+    });
+
+    it("should connect instances to their base events", async () => {
+      await syncImport.importAllEvents(setup.userId, "test-calendar");
+      const { baseEvents, instanceEvents } = await getCategorizedEventsInDb();
+
+      expect(instanceEvents).toHaveLength(1); // 2 instances total, but 1 is skipped because it has the same start date as the base event
+      expect(instanceEvents[0]?.recurrence?.eventId).toBe(
+        baseEvents[0]?._id?.toString(),
+      );
+    });
     it("should include regular and recurring events and skip cancelled events", async () => {
       const { totalProcessed, totalChanged, nextSyncToken } =
         await syncImport.importAllEvents(setup.userId, "test-calendar");
@@ -141,28 +134,16 @@ describe("SyncImport", () => {
       expect(duplicateEvents).toHaveLength(0);
     });
   });
-  it("should not import the first instance of a recurring event (just the base)", async () => {
-    // including the first instance would result in 2 events with the same start date
-    await syncImport.importAllEvents(setup.userId, "test-calendar");
 
-    const currentEventsInDb = await mongoService.event.find().toArray();
-
-    const recurringEvents = currentEventsInDb.filter(
-      (e) => e.recurrence !== undefined,
-    );
-
-    const baseStart = recurringEvents[0]?.startDate;
-    const firstInstanceStart = recurringEvents[1]?.startDate;
-    expect(baseStart).not.toEqual(firstInstanceStart);
-  });
-
-  it("should connect instances to their base events", async () => {
-    await syncImport.importAllEvents(setup.userId, "test-calendar");
-    const { baseEvents, instanceEvents } = await getCategorizedEventsInDb();
-
-    expect(instanceEvents).toHaveLength(1); // 2 instances total, but 1 is skipped because it has the same start date as the base event
-    expect(instanceEvents[0]?.recurrence?.eventId).toBe(
-      baseEvents[0]?._id?.toString(),
-    );
+  describe("Series Import", () => {
+    it("should import a series when provided a gcal base event", async () => {
+      const baseRecurringGcalEvent = mockRecurringEvent();
+      const result = await syncImport.importSeries(
+        setup.userId,
+        "test-calendar",
+        baseRecurringGcalEvent,
+      );
+      expect(result).toHaveLength(100);
+    });
   });
 });

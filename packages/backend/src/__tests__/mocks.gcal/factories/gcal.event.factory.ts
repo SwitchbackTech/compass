@@ -15,7 +15,7 @@ export const mockRegularEvent = (): WithGcalId<gSchema$Event> => ({
   status: "confirmed",
 });
 
-export const mockRecurringEvent = (
+export const mockRecurringBaseEvent = (
   overrides: Partial<gSchema$EventBase> = {},
 ): gSchema$EventBase => ({
   ...mockRegularEvent(),
@@ -23,33 +23,37 @@ export const mockRecurringEvent = (
   ...overrides,
 });
 
-const mockRecurringInstances = (
-  event: gSchema$EventBase,
+export const mockRecurringInstances = (
+  base: gSchema$EventBase,
   count: number,
   repeatIntervalInDays: number,
 ): gSchema$EventInstance[] => {
-  if (!event.start?.dateTime || !event.end?.dateTime) {
+  if (!base.start?.dateTime || !base.end?.dateTime) {
     throw new Error("Event must have start and end dates");
   }
 
-  const startDateTime = event.start.dateTime;
-  const endDateTime = event.end.dateTime;
-  const startTimeZone = event.start.timeZone;
-  const endTimeZone = event.end.timeZone;
+  const startDateTime = base.start.dateTime;
+  const endDateTime = base.end.dateTime;
+  const startTimeZone = base.start.timeZone;
+  const endTimeZone = base.end.timeZone;
 
   const baseDate = new Date(startDateTime);
 
   return Array.from({ length: count }, (_, index) => {
     const instanceDate = new Date(baseDate);
-    instanceDate.setDate(instanceDate.getDate() + index * repeatIntervalInDays);
+    // Prevent the first instance from being the same as the base date
+    instanceDate.setDate(
+      instanceDate.getDate() + (index + 1) * repeatIntervalInDays,
+    );
 
     const endDate = new Date(endDateTime);
-    endDate.setDate(endDate.getDate() + index * repeatIntervalInDays);
+    endDate.setDate(endDate.getDate() + (index + 1) * repeatIntervalInDays);
 
-    return {
-      ...event,
-      id: `${event.id}-${index}`,
-      recurringEventId: event.id,
+    const instance = {
+      ...base,
+      id: `${base.id}-${index}`,
+      summary: `${base.summary}-instance-${index + 1}`,
+      recurringEventId: base.id,
       start: {
         dateTime: instanceDate.toISOString(),
         timeZone: startTimeZone,
@@ -59,6 +63,9 @@ const mockRecurringInstances = (
         timeZone: endTimeZone,
       },
     };
+    // remove properties that are reserved for the base event
+    const { recurrence, ...instanceWithoutRecurrence } = instance;
+    return instanceWithoutRecurrence;
   });
 };
 
@@ -94,35 +101,5 @@ export const mockRegularGcalEvent = (
     },
     eventType: "default",
     ...overrides,
-  };
-};
-
-export const mockGcalEvents = (repeatIntervalInDays = 7) => {
-  const regularEvent = mockRegularGcalEvent();
-  const cancelledEvent = mockRegularGcalEvent({ status: "cancelled" });
-  const recurringEvent = mockRecurringEvent({
-    recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
-  });
-
-  const recurringInstances = mockRecurringInstances(
-    recurringEvent,
-    3,
-    repeatIntervalInDays,
-  );
-
-  const gcalEvents = [
-    regularEvent,
-    cancelledEvent,
-    recurringEvent,
-    ...recurringInstances,
-  ];
-
-  return {
-    gcalEvents,
-    totals: {
-      total: gcalEvents.length,
-      cancelled: 1,
-      recurring: 1 + recurringInstances.length,
-    },
   };
 };
