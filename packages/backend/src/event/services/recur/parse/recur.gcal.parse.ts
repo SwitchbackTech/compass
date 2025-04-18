@@ -1,6 +1,7 @@
 import { gSchema$Event } from "@core/types/gcal";
 import { GenericError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { categorizeGcalEvents } from "@backend/common/services/gcal/gcal.utils";
 
 type SeriesAction =
   | "CREATE_SERIES" // New recurring event
@@ -50,15 +51,7 @@ class GCalParser {
         "Next action not determine because no events provided",
       );
     }
-    const baseEvent = events.find(
-      (event) => event.recurrence && !event.recurringEventId,
-    );
-    const instances = events.filter((event) => event.recurringEventId);
-
-    const cancelledEvents = events.filter(
-      (event) => event.status === "cancelled",
-    );
-    return { baseEvent, instances, cancelledEvents };
+    return categorizeGcalEvents(events);
   };
 
   public determineNextAction = (): ActionAnalysis => {

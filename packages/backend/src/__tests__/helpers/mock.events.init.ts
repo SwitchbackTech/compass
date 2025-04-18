@@ -7,8 +7,8 @@ import {
   gSchema$EventBase,
   gSchema$EventInstance,
 } from "@core/types/gcal";
+import { isBase } from "@core/util/event.util";
 import { Collections } from "@backend/common/constants/collections";
-import { isBase } from "@backend/event/services/recur/util/recur.util";
 import { mockGcalEvents } from "../mocks.gcal/mocks.gcal/factories/gcal.event.factory";
 
 export interface State_AfterGcalImport {

@@ -35,26 +35,6 @@ export const assembleInstances = (
 
   return events;
 };
-/**
- * Base events have an `eventId` and an empty `rule`
- * @param event
- * @returns
- */
-export const isBase = (event: Schema_Event) => {
-  return (
-    event.recurrence?.rule !== undefined &&
-    event.recurrence.eventId === undefined
-  );
-};
-
-/**
- * Instances have an `eventId` and an empty `rule`
- * @param event
- * @returns
- */
-export const isInstance = (event: Schema_Event) => {
-  return event.recurrence?.eventId && event.recurrence?.rule === undefined;
-};
 
 const _generateInstances = (
   rule: string,
