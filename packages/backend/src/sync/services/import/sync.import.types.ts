@@ -1,9 +1,9 @@
 import { ObjectId } from "mongodb";
-import { Schema_Event_Core } from "@core/types/event.types";
+import { Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 
 export interface EventsToModify {
-  toUpdate: Schema_Event_Core[];
+  toUpdate: Schema_Event[];
   toDelete: string[];
 }
 

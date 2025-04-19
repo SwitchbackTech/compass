@@ -3,21 +3,21 @@ import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { Schema_Event, WithCompassId } from "@core/types/event.types";
 import {
-  gSchema$BaseEvent,
   gSchema$Event,
-  gSchema$InstanceEvent,
+  gSchema$EventBase,
+  gSchema$EventInstance,
 } from "@core/types/gcal";
+import { isBase } from "@core/util/event.util";
 import { Collections } from "@backend/common/constants/collections";
-import { isBase } from "@backend/event/services/recur/util/recur.util";
 import { mockGcalEvents } from "../mocks.gcal/mocks.gcal/factories/gcal.event.factory";
 
 export interface State_AfterGcalImport {
   gcalEvents: {
-    all: (gSchema$Event | gSchema$BaseEvent | gSchema$InstanceEvent)[];
+    all: (gSchema$Event | gSchema$EventBase | gSchema$EventInstance)[];
     regular: gSchema$Event;
     cancelled: gSchema$Event;
-    recurring: gSchema$BaseEvent;
-    instances: gSchema$InstanceEvent[];
+    recurring: gSchema$EventBase;
+    instances: gSchema$EventInstance[];
   };
   compassEvents: WithCompassId<Schema_Event>[];
 }

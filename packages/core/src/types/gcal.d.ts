@@ -19,10 +19,12 @@ export declare type gSchema$CalendarListEntry =
   calendar_v3.Schema$CalendarListEntry;
 export declare type gSchema$Channel = calendar.calendar_v3.Schema$Channel;
 export declare type gSchema$Event = calendar.calendar_v3.Schema$Event;
-export declare type gSchema$BaseEvent = WithGcalId<
+export declare type gSchema$EventBase = WithGcalId<
   WithRecurrenceRule<gSchema$Event>
 >;
-export declare type gSchema$InstanceEvent = WithGcalId<gSchema$Event>;
+export declare type gSchema$EventInstance = WithGcalId<
+  WithRecurrencePointer<gSchema$Event>
+>;
 
 export declare type gSchema$Events = calendar.calendar_v3.Schema$Events;
 export declare type gSchema$Events$Union = gSchema$Events | gSchema$Events[];

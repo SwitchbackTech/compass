@@ -1,9 +1,6 @@
 import { Event_Core, Schema_Event } from "@core/types/event.types";
+import { isBase, isExistingInstance } from "@core/util/event.util";
 import { State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import {
-  isBase,
-  isInstance,
-} from "@backend/event/services/recur/util/recur.util";
 
 /** Utility assertions for the gcal sync processor tests */
 export const baseHasRecurrenceRule = async (
@@ -23,7 +20,7 @@ export const noInstancesAfterSplitDate = async (
   const splitDate = new Date(splitDateStr);
   const futureInstances = events.filter(
     (e) =>
-      isInstance(e as unknown as Schema_Event) &&
+      isExistingInstance(e as unknown as Schema_Event) &&
       new Date(e.startDate) > splitDate,
   );
   expect(futureInstances).toHaveLength(0);

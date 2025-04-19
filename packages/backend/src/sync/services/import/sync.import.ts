@@ -2,9 +2,17 @@ import { ObjectId } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
-import { Schema_Event_Core } from "@core/types/event.types";
-import { gCalendar, gSchema$Event } from "@core/types/gcal";
+import {
+  RecurrenceWithId,
+  RecurrenceWithoutId,
+  Schema_Event_Recur_Base,
+  Schema_Event_Recur_Instance,
+  WithCompassId,
+  WithoutCompassId,
+} from "@core/types/event.types";
+import { gCalendar, gSchema$Event, gSchema$EventBase } from "@core/types/gcal";
 import { Schema_Sync } from "@core/types/sync.types";
+import { categorizeRecurringEvents } from "@core/util/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -40,6 +48,7 @@ const logger = Logger("app:sync.import");
 
 export class SyncImport {
   private gcal: gCalendar;
+  // TODO make userid constructor
 
   constructor(gcal: gCalendar) {
     this.gcal = gcal;
@@ -63,23 +72,50 @@ export class SyncImport {
     return syncEvents;
   }
 
-  private async categorizeGevents(
+  /**
+   * Assigns IDs to recurring events
+   * @param events - The events to assign IDs to (** assumes each event belongs to the same series **)
+   * @returns The events with IDs assigned
+   */
+  private assignIdsToRecurringEvents(
+    events: RecurrenceWithoutId[],
+  ): RecurrenceWithId[] {
+    const { baseEvent, instances } = categorizeRecurringEvents(events);
+
+    const baseId = new ObjectId();
+    const newBase = {
+      ...baseEvent,
+      _id: baseId.toString(),
+    };
+
+    const instancesWithIds = instances.map((instance) => ({
+      ...instance,
+      _id: new ObjectId().toString(),
+      recurrence: {
+        ...instance.recurrence,
+        eventId: baseId.toString(),
+      },
+    }));
+
+    return [newBase, ...instancesWithIds];
+  }
+
+  private async fetchAndCategorizeEventsToModify(
     userId: string,
     gCalendarId: string,
     updatedEvents: gSchema$Event[],
   ): Promise<EventsToModify> {
     const { toUpdate, toDelete } = organizeGcalEventsByType(updatedEvents);
 
-    const recurringEvents = await this.expandRecurringEvents(
-      userId,
-      gCalendarId,
-      toUpdate.recurring,
-    );
-
     const regularEvents = MapEvent.toCompass(
       userId,
       toUpdate.nonRecurring,
       Origin.GOOGLE_IMPORT,
+    );
+    const recurringEvents = await this.expandRecurringEvents(
+      userId,
+      gCalendarId,
+      toUpdate.recurring,
     );
 
     const toUpdateCombined = [...regularEvents, ...recurringEvents];
@@ -97,7 +133,7 @@ export class SyncImport {
     userId: string,
     calendarId: string,
     recurringEventId: string,
-  ): Promise<Schema_Event_Core[]> {
+  ): Promise<WithoutCompassId<Schema_Event_Recur_Instance>[]> {
     const { data } = await gcalService.getEventInstances(
       this.gcal,
       calendarId,
@@ -112,37 +148,50 @@ export class SyncImport {
       return [];
     }
 
-    return MapEvent.toCompass(userId, instances, Origin.GOOGLE_IMPORT);
+    const compassInstances = MapEvent.toCompass(
+      userId,
+      instances,
+      Origin.GOOGLE_IMPORT,
+    ) as WithCompassId<Schema_Event_Recur_Instance>[];
+    return compassInstances;
   }
+
+  /**
+   * Expands recurring events and returns the base and instances
+   * @param userId - The user ID
+   * @param calendarId - The calendar ID
+   * @param recurringEvents - A *subset* of therecurring events to expand
+   * @returns The base and instances, including *all* expanded instances
+   */
 
   private async expandRecurringEvents(
     userId: string,
     calendarId: string,
     recurringEvents: gSchema$Event[],
-  ): Promise<Schema_Event_Core[]> {
-    const expandedEvents: Schema_Event_Core[] = [];
+  ): Promise<RecurrenceWithoutId[]> {
+    const baseAndInstances: RecurrenceWithoutId[] = [];
 
     for (const event of recurringEvents) {
-      if (event.recurrence && event.id) {
+      const isBase = event.recurrence && event.id;
+      if (isBase) {
         const baseEvent = MapEvent.toCompass(
           userId,
           [event],
           Origin.GOOGLE_IMPORT,
-        );
-        expandedEvents.push(...baseEvent);
-        logger.debug(
-          `Mapped base recurring event ${event.id} from incremental update.`,
-        );
+        )[0] as WithoutCompassId<Schema_Event_Recur_Base>;
+        baseAndInstances.push(baseEvent);
+        logger.debug(`Found base event during expansion ${event.id}`);
         continue;
       }
 
-      if (event.recurringEventId && event.id) {
+      const isInstance = event.recurringEventId && event.id;
+      if (isInstance) {
         const singleInstance = MapEvent.toCompass(
           userId,
           [event],
           Origin.GOOGLE_IMPORT,
-        );
-        expandedEvents.push(...singleInstance);
+        ) as WithoutCompassId<Schema_Event_Recur_Instance>[];
+        baseAndInstances.push(...singleInstance);
         logger.debug(
           `Mapped single instance ${event.id} (from base ${event.recurringEventId}) from incremental update.`,
         );
@@ -150,8 +199,8 @@ export class SyncImport {
       }
 
       // Fallback/Error case: If it's marked recurring but lacks necessary info
-      const recurringId = event.recurringEventId || event.id;
-      if (!recurringId) {
+      const baseId = event.recurringEventId || event.id;
+      if (!baseId) {
         throw error(
           EventError.MissingProperty,
           "Recurring event not expanded due to missing recurrence id",
@@ -161,12 +210,12 @@ export class SyncImport {
       const instances = await this.expandRecurringEvent(
         userId,
         calendarId,
-        recurringId,
+        baseId,
       );
-      expandedEvents.push(...instances);
+      baseAndInstances.push(...instances);
     }
 
-    return expandedEvents;
+    return baseAndInstances;
   }
 
   /**
@@ -244,7 +293,7 @@ export class SyncImport {
       userId,
       this.gcal,
       calendarId,
-      { singleEvents: false },
+      { singleEvents: false }, // regular and base events (no instances)
       shouldProcessDuringPass1,
       importMap,
       false, // Don't capture sync token in Pass 1
@@ -258,7 +307,7 @@ export class SyncImport {
       userId,
       this.gcal,
       calendarId,
-      { singleEvents: true },
+      { singleEvents: true }, // regular and instance events (no base)
       shouldProcessDuringPass2,
       importMap,
       true, // Capture sync token in Pass 2
@@ -307,6 +356,39 @@ export class SyncImport {
     );
 
     const result = await Promise.all(syncEvents);
+    return result;
+  }
+
+  public async importSeries(
+    userId: string,
+    calendarId: string,
+    gEvent: gSchema$EventBase,
+  ) {
+    // assemble base event
+    const cBase = MapEvent.toCompass(
+      userId,
+      [gEvent],
+      Origin.GOOGLE_IMPORT,
+    )[0] as WithoutCompassId<Schema_Event_Recur_Base>;
+
+    // assemble instances
+    const recurringId = gEvent.id;
+    const cInstances = await this.expandRecurringEvent(
+      userId,
+      calendarId,
+      recurringId,
+    );
+
+    const series = [cBase, ...cInstances];
+
+    // assign ids and link instances to base
+    const compassSeries = this.assignIdsToRecurringEvents(series);
+
+    const result = await mongoService.db
+      .collection(Collections.EVENT)
+      // @ts-expect-error sending _id as string for ease of testing
+      .insertMany(compassSeries);
+
     return result;
   }
 
@@ -382,7 +464,7 @@ export class SyncImport {
         return { created: 0, updated: 0, deleted: 0, nextSyncToken };
       }
 
-      const eventsToModify = await this.categorizeGevents(
+      const eventsToModify = await this.fetchAndCategorizeEventsToModify(
         userId,
         gCalendarId,
         updatedEvents,

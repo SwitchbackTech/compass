@@ -21,6 +21,18 @@ export const cancelledEventsIds = (events: gSchema$Event[]) => {
   return cancelledIds;
 };
 
+export const categorizeGcalEvents = (events: gSchema$Event[]) => {
+  const baseEvent = events.find(
+    (event) => event.recurrence && !event.recurringEventId,
+  );
+  const instances = events.filter((event) => event.recurringEventId);
+
+  const cancelledEvents = events.filter(
+    (event) => event.status === "cancelled",
+  );
+  return { baseEvent, instances, cancelledEvents };
+};
+
 export const getEmailFromUrl = (url: string) => {
   const emailMatch = url.match(/\/calendars\/([^/]+)\/events/);
 

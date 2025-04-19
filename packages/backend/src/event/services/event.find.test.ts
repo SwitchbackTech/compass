@@ -1,9 +1,27 @@
 import { Collection, Db, MongoClient } from "mongodb";
+import { MapEvent } from "@core/mappers/map.event";
 import { Schema_Event } from "@core/types/event.types";
+import { isBase, isExistingInstance } from "@core/util/event.util";
+import {
+  mockRecurringBaseEvent,
+  mockRecurringInstances,
+} from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { mockEventSetJan22 } from "../../../../core/src/__mocks__/events/events.22jan";
 import { mockEventSetSomeday1 } from "../../../../core/src/__mocks__/events/events.someday.1";
 import { getReadAllFilter } from "./event.service.util";
 
+const gBase = mockRecurringBaseEvent();
+const gInstances = mockRecurringInstances(gBase, 10, 7);
+
+const base = MapEvent.toCompass("user1", [gBase])[0];
+const instances = MapEvent.toCompass("user1", gInstances);
+// link instances to base
+instances.forEach((i) => {
+  i["recurrence"] = { eventId: gBase.id };
+});
+
+const recurring = [base, ...instances];
+const allEvents = [...mockEventSetJan22, ...mockEventSetSomeday1, ...recurring];
 describe("Jan 2022: Many Formats", () => {
   let connection: MongoClient;
   let db: Db;
@@ -15,10 +33,7 @@ describe("Jan 2022: Many Formats", () => {
     db = await connection.db();
     eventCollection = db.collection("event.find.test");
 
-    await eventCollection.insertMany([
-      ...mockEventSetJan22,
-      ...mockEventSetSomeday1,
-    ]);
+    await eventCollection.insertMany(allEvents);
   });
 
   afterAll(async () => {
@@ -49,6 +64,25 @@ describe("Jan 2022: Many Formats", () => {
     const flatFilter = _flatten(filter, {});
     expect(flatFilter["$lte"]).not.toEqual(new Date(start).toISOString());
     expect(flatFilter["$gte"]).not.toEqual(new Date(end).toISOString());
+  });
+
+  describe("Recurring Events", () => {
+    it("Does not return the base event - just instances", async () => {
+      const filter = getReadAllFilter("user1", {
+        start: "1999-01-01",
+        end: "2099-01-01",
+      });
+
+      const result = await eventCollection.find(filter).toArray();
+
+      // base is not returned
+      const baseEvents = result.filter(isBase);
+      expect(baseEvents).toHaveLength(0);
+      expect(result.some((e) => e.title === gBase.summary)).toBe(false);
+
+      const instances = result.filter(isExistingInstance);
+      expect(instances).toHaveLength(gInstances.length);
+    });
   });
 
   describe("finds events with exact same timestamps", () => {

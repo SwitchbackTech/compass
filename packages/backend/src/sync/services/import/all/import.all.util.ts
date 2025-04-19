@@ -52,30 +52,6 @@ export const shouldProcessDuringPass2: Callback_EventProcessor = (
     return false; // Don't save
   }
 
-  // Filter 2: Skip first instance if start matches base event start
-  if (gEvent.recurringEventId && gEvent.id) {
-    const baseStartTime = state.baseEventStartTimes.get(
-      gEvent.recurringEventId,
-    );
-    if (baseStartTime !== undefined) {
-      const instanceStartTime = getStartTimeString(gEvent);
-      const isFirstInstance =
-        baseStartTime &&
-        instanceStartTime &&
-        baseStartTime === instanceStartTime;
-      if (isFirstInstance) {
-        logger.verbose(
-          `Pass 2: Skipping event ${gEvent.summary} (first instance match).`,
-        ); // Reduce noise
-        return false; // Don't save
-      }
-    } else {
-      logger.warn(
-        `Pass 2: Instance ${gEvent.id} found, base ${gEvent.recurringEventId} unknown. Saving.`,
-      );
-    }
-  }
-  // Event passed filters
   return true; // Save this event
 };
 
