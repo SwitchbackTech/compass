@@ -1,7 +1,7 @@
 import { gSchema$EventBase } from "@core/types/gcal";
 import {
-  mockRecurringBaseEvent,
-  mockRecurringInstances,
+  mockRecurringGcalBaseEvent,
+  mockRecurringGcalInstances,
   mockRegularGcalEvent,
 } from "./gcal.event.factory";
 
@@ -9,14 +9,14 @@ import {
 
 export const mockGcalEvents = () => {
   // Create a base recurring event
-  const baseRecurringEvent = mockRecurringBaseEvent({
+  const baseRecurringEvent = mockRecurringGcalBaseEvent({
     id: "recurring-1",
     summary: "Recurrence",
     recurrence: ["RRULE:FREQ=WEEKLY"],
   }) as gSchema$EventBase;
 
   // Create instances of the recurring event
-  const instances = mockRecurringInstances(baseRecurringEvent, 2, 7);
+  const instances = mockRecurringGcalInstances(baseRecurringEvent, 2, 7);
 
   // Create a regular event
   const regularEvent = mockRegularGcalEvent({

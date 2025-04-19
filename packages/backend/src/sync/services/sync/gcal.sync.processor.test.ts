@@ -19,7 +19,8 @@ import {
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.ccal/ccal.mock.db.util";
 import {
-  mockRecurringBaseEvent,
+  mockRecurringGcalBaseEvent,
+  mockRecurringGcalInstances,
   mockRegularGcalEvent,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import {
@@ -230,7 +231,7 @@ describe("GcalSyncProcessor", () => {
     it("should handle CREATING a SERIES from a BASE", async () => {
       await simulateDbAfterGcalImport(setup.db);
 
-      const newBase = mockRecurringBaseEvent();
+      const newBase = mockRecurringGcalBaseEvent();
 
       const processor = new GcalSyncProcessor(repo);
       const changes = await processor.processEvents([newBase]);
@@ -242,44 +243,46 @@ describe("GcalSyncProcessor", () => {
         operation: "UPSERTED",
       });
     });
-    it.todo("should handle UPDATING recurring BASE and REGULAR events");
-    // TODO: This is the instance when user changes all events in the series
-    // , async () => {
-    //   const { gcalEvents } = await simulateDbAfterGcalImport(setup.db);
+    it("should handle UPDATING recurring BASE and REGULAR events", async () => {
+      const { gcalEvents } = await simulateDbAfterGcalImport(setup.db);
 
-    //   const updatedRegularGcalEvent = {
-    //     ...gcalEvents.regular,
-    //     summary: "Updated Regular Event",
-    //   };
-    //   const updatedRecurringGcalEvent = {
-    //     ...gcalEvents.recurring,
-    //     summary: "Updated Recurring Base Event",
-    //   };
+      const updatedRegularGcalEvent = {
+        ...gcalEvents.regular,
+        summary: "Updated Regular Event",
+      };
+      const updatedRecurringGcalEvent = {
+        ...gcalEvents.recurring,
+        summary: "Updated Recurring Base Event",
+      };
+      const updatedInstance = mockRecurringGcalInstances(
+        updatedRecurringGcalEvent,
+        updatedRegularGcalEvent,
+      );
 
-    //   const updatedGcalEvents = [
-    //     updatedRegularGcalEvent,
-    //     updatedRecurringGcalEvent,
-    //   ];
+      const updatedGcalEvents = [
+        updatedRegularGcalEvent,
+        updatedRecurringGcalEvent,
+      ];
 
-    //   const processor = new GcalSyncProcessor(repo);
-    //   const changes = await processor.processEvents(updatedGcalEvents);
+      const processor = new GcalSyncProcessor(repo);
+      const changes = await processor.processEvents(updatedGcalEvents);
 
-    //   expect(changes).toHaveLength(2);
-    //   expect(changes).toEqual(
-    //     expect.arrayContaining([
-    //       expect.objectContaining({
-    //         title: updatedRegularGcalEvent.summary,
-    //         category: Categories_Recurrence.STANDALONE,
-    //         operation: "UPSERTED",
-    //       }),
-    //       expect.objectContaining({
-    //         title: updatedRecurringGcalEvent.summary,
-    //         category: Categories_Recurrence.RECURRENCE_BASE,
-    //         operation: "UPSERTED",
-    //       }),
-    //     ]),
-    //   );
-    // });
+      expect(changes).toHaveLength(2);
+      expect(changes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            title: updatedRegularGcalEvent.summary,
+            category: Categories_Recurrence.STANDALONE,
+            operation: "UPSERTED",
+          }),
+          expect.objectContaining({
+            title: updatedRecurringGcalEvent.summary,
+            category: Categories_Recurrence.RECURRENCE_BASE,
+            operation: "UPSERTED",
+          }),
+        ]),
+      );
+    });
   });
 
   describe("UPSERT: BASE SPLIT", () => {
