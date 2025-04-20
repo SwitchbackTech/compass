@@ -6,6 +6,15 @@ import {
 } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 
+export const categorizeEvents = (events: Schema_Event[]) => {
+  const baseEvents = events.filter(isBase);
+  const instances = events.filter(isExistingInstance);
+  const regularEvents = events.filter(
+    (e) => !isBase(e) && !isExistingInstance(e),
+  );
+  return { baseEvents, instances, regularEvents };
+};
+
 export const categorizeRecurringEvents = (events: Recurrence[]) => {
   const baseEvent = events.find(isBase) as Schema_Event_Recur_Base;
   const instances = events.filter(

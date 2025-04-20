@@ -3,8 +3,8 @@ import { Origin, Priorities, Priority } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Event_Core, Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
-import { isAllDay, notCancelled } from "@core/util/event.util";
 import { validateEvent } from "@core/validators/event.validator";
+import { isAllDay, notCancelled } from "@backend/event/util/event.util";
 
 export namespace MapEvent {
   export const toCompass = (

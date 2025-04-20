@@ -1,8 +1,4 @@
 import {
-  filterBaseEvents,
-  filterExistingInstances,
-} from "@core/util/event.util";
-import {
   cleanupCollections,
   cleanupTestMongo,
   setupTestDb,
@@ -10,6 +6,10 @@ import {
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory.set";
 import mongoService from "@backend/common/services/mongo.service";
+import {
+  filterBaseEvents,
+  filterExistingInstances,
+} from "@backend/event/util/event.util";
 import { createSyncImport } from "./sync.import";
 
 // Mock Gcal Instances API response
