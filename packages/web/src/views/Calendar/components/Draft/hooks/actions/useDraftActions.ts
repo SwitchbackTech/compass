@@ -184,9 +184,13 @@ export const useDraftActions = (
         const x = getX(e, isSidebarOpen);
         const startEndDurationMin = dragStatus?.durationMin || 0;
 
+        const y = draft.isAllDay
+          ? e.clientY
+          : e.clientY - draft.position.dragOffset.y;
+
         let eventStart = dateCalcs.getDateByXY(
           x,
-          e.clientY - draft.position.dragOffset.y,
+          y,
           weekProps.component.startOfView,
         );
 
