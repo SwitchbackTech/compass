@@ -5,7 +5,6 @@ import {
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
-import { isExistingInstance } from "@core/util/event.util";
 import {
   getEventsInDb,
   isEventCollectionEmpty,
@@ -20,7 +19,6 @@ import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.event
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.ccal/ccal.mock.db.util";
 import {
   mockRecurringGcalBaseEvent,
-  mockRecurringGcalInstances,
   mockRegularGcalEvent,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import {
@@ -28,6 +26,10 @@ import {
   mockGcalEvents,
 } from "@backend/__tests__/mocks.gcal/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
+import {
+  categorizeEvents,
+  isExistingInstance,
+} from "@backend/event/util/event.util";
 import { Change_Gcal } from "@backend/sync/sync.types";
 import { GcalSyncProcessor } from "./gcal.sync.processor";
 import {
@@ -192,8 +194,48 @@ describe("GcalSyncProcessor", () => {
     });
   });
   describe("UPSERT: INSTANCE", () => {
+    it("should handle UPSERTING an INSTANCE", async () => {
+      /* Assemble */
+      const { gcalEvents } = await simulateDbAfterGcalImport(
+        setup.db,
+        setup.userId,
+      );
+
+      // Simulate a change to the instance in GCal
+      const origInstance = gcalEvents.instances[1];
+      const origTitle = origInstance?.summary;
+      const instance = {
+        ...origInstance,
+        summary: origTitle + " - Changed in GCal",
+      };
+      const instanceTitle = instance.summary;
+
+      const processor = new GcalSyncProcessor(repo);
+      const changes = await processor.processEvents([instance]);
+
+      // Verify the correct change was detected
+      expect(changes).toHaveLength(1);
+      expect(changes[0]).toEqual({
+        title: instanceTitle,
+        category: Categories_Recurrence.RECURRENCE_INSTANCE,
+        operation: "UPSERTED",
+      });
+
+      // Verify no other events were deleted
+      const remainingEvents = await getEventsInDb();
+      expect(remainingEvents).toHaveLength(gcalEvents.all.length - 1); // exclude cancelled instance
+
+      // Verify the instance was updated
+      const { instances } = categorizeEvents(remainingEvents);
+      const updatedInstance = instances.find((i) => i.title === instanceTitle);
+      expect(updatedInstance).toBeDefined();
+      expect(updatedInstance?.title).toEqual(instanceTitle);
+    });
     it("should handle updating recurring INSTANCE gcal event", async () => {
-      const { gcalEvents } = await simulateDbAfterGcalImport(setup.db);
+      const { gcalEvents } = await simulateDbAfterGcalImport(
+        setup.db,
+        setup.userId,
+      );
 
       const updatedRegular = {
         ...gcalEvents.regular,
@@ -229,7 +271,7 @@ describe("GcalSyncProcessor", () => {
 
   describe("UPSERT: BASE", () => {
     it("should handle CREATING a SERIES from a BASE", async () => {
-      await simulateDbAfterGcalImport(setup.db);
+      await simulateDbAfterGcalImport(setup.db, setup.userId);
 
       const newBase = mockRecurringGcalBaseEvent();
 
@@ -244,7 +286,10 @@ describe("GcalSyncProcessor", () => {
       });
     });
     it("should handle UPDATING recurring BASE and REGULAR events", async () => {
-      const { gcalEvents } = await simulateDbAfterGcalImport(setup.db);
+      const { gcalEvents } = await simulateDbAfterGcalImport(
+        setup.db,
+        setup.userId,
+      );
 
       const updatedRegularGcalEvent = {
         ...gcalEvents.regular,
@@ -254,10 +299,6 @@ describe("GcalSyncProcessor", () => {
         ...gcalEvents.recurring,
         summary: "Updated Recurring Base Event",
       };
-      const updatedInstance = mockRecurringGcalInstances(
-        updatedRecurringGcalEvent,
-        updatedRegularGcalEvent,
-      );
 
       const updatedGcalEvents = [
         updatedRegularGcalEvent,

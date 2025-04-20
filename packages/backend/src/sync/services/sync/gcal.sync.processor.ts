@@ -1,6 +1,7 @@
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
 import {
+  Event_Core,
   Schema_Event,
   Schema_Event_Core,
   WithCompassId,
@@ -12,7 +13,6 @@ import {
   gSchema$EventBase,
 } from "@core/types/gcal";
 import { convertRfc5545ToIso } from "@core/util/date.utils";
-import { isBase } from "@core/util/event.util";
 import {
   EventError,
   GenericError,
@@ -24,6 +24,7 @@ import {
 } from "@backend/event/queries/event.queries";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalParser } from "@backend/event/services/recur/util/recur.gcal.util";
+import { isBase } from "@backend/event/util/event.util";
 import { Change_Gcal, Operation_Sync } from "../../sync.types";
 import { createSyncImport } from "../import/sync.import";
 
@@ -47,6 +48,7 @@ export class GcalSyncProcessor {
 
       switch (category) {
         case "STANDALONE":
+          console.log("TODO: HANDLE STANDALONE CHANGE");
           operation = "UPSERTED";
           break;
         case "RECURRENCE_INSTANCE":
@@ -82,16 +84,18 @@ export class GcalSyncProcessor {
     gEvent: WithGcalId<gSchema$Event>,
     parser: GcalParser,
   ): Promise<Operation_Sync> {
-    console.log("Instance change", gEvent.summary);
     const status = parser.status;
 
     if (status === "CANCELLED") {
-      logger.info(`Cancelling INSTANCE: | ${gEvent.id} (Gcal)`);
+      logger.info(`Cancelling INSTANCE: ${gEvent.id} (Gcal)`);
       await this.repo.cancelInstance(gEvent.id, { idKey: "gEventId" });
       return "DELETED";
     }
-    // Update instance - regular instance change
-    console.log("TODO: UPSERT");
+    logger.info(`Updating INSTANCE: ${gEvent.summary}`);
+    const updatedInstance = MapEvent.toCompass(this.repo.userId, [
+      gEvent,
+    ])[0] as Event_Core;
+    await this.repo.updateInstance(updatedInstance);
     return "UPSERTED";
   }
 
@@ -133,7 +137,6 @@ export class GcalSyncProcessor {
 
       return "UPSERTED";
     }
-    // if (this.isSeriesUpdate(gEvent, compassEvent)) {
     if (this.isSeriesUpdate()) {
       logger.info(
         `TODO Updating SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
