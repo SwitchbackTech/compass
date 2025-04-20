@@ -32,8 +32,8 @@ export const shouldProcessDuringPass1: Callback_EventProcessor = (
       state.processedEventIdsPass1.add(gEvent.id);
       return true; // Save base event
     } else if (!gEvent.recurringEventId) {
-      state.processedEventIdsPass1.add(gEvent.id);
-      return true; // Save single event
+      // Save single event. No need to add to the map, because it won't show up in pass two
+      return true;
     }
   }
   return false; // Don't save (e.g., instances encountered in Pass 1)
