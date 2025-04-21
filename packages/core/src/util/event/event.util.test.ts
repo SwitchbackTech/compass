@@ -1,9 +1,9 @@
 import {
+  createMockBaseEvent,
   createMockInstance,
   createMockStandaloneEvent,
-} from "@backend/__tests__/mocks.ccal/ccal.event.factory";
-import { createMockBaseEvent } from "@backend/__tests__/mocks.ccal/ccal.event.factory";
-import { categorizeEvents } from "./event.util";
+} from "@core/__mocks__/mocks.ccal/ccal.event.factory";
+import { categorizeEvents } from "@core/util/event/event.util";
 
 describe("categorizeEvents", () => {
   it("should categorize events correctly", () => {

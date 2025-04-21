@@ -12,6 +12,7 @@ import {
 } from "@core/types/event.types";
 import { gCalendar, gSchema$Event, gSchema$EventBase } from "@core/types/gcal";
 import { Schema_Sync } from "@core/types/sync.types";
+import { categorizeRecurringEvents } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -23,7 +24,6 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { categorizeRecurringEvents } from "@backend/event/util/event.util";
 import {
   getSync,
   updateSync,

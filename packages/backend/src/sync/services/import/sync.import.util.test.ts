@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { gcalEvents } from "../../../../../core/src/__mocks__/events/gcal/gcal.event";
+import { gcalEvents } from "../../../../../core/src/__mocks__/v1/events/gcal/gcal.event";
 import { cancelledEventsIds } from "../../../common/services/gcal/gcal.utils";
 import { syncExpired, syncExpiresSoon } from "../../util/sync.util";
 import { organizeGcalEventsByType } from "./sync.import.util";

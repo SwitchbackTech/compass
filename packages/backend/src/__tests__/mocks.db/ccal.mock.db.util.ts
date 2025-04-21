@@ -1,13 +1,16 @@
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker/.";
 import {
+  createMockBaseEvent,
+  createMockInstance,
+} from "@core/__mocks__/mocks.ccal/ccal.event.factory";
+import {
   Schema_Event,
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
 import { TestSetup } from "../helpers/mock.db.setup";
-import { createMockBaseEvent, createMockInstance } from "./ccal.event.factory";
 
 export const createRecurrenceSeries = async (
   setup: TestSetup,

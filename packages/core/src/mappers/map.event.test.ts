@@ -1,8 +1,8 @@
-import { recurring } from "@core/__mocks__/events/gcal/gcal.recurring";
-import { timed } from "@core/__mocks__/events/gcal/gcal.timed";
+import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
+import { timed } from "@core/__mocks__/v1/events/gcal/gcal.timed";
 import { Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
-import { gcalEvents } from "../__mocks__/events/gcal/gcal.event";
+import { gcalEvents } from "../__mocks__/v1/events/gcal/gcal.event";
 import { Origin, Priorities } from "../constants/core.constants";
 import { MapEvent } from "./map.event";
 

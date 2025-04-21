@@ -4,7 +4,8 @@ import {
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
-import { gSchema$Event } from "@core/types/gcal";
+
+/** Event utilities for Compass events */
 
 export const categorizeEvents = (events: Schema_Event[]) => {
   const baseEvents = events.filter(isBase);
@@ -48,10 +49,6 @@ export const isBase = (event: Schema_Event) => {
  */
 export const isExistingInstance = (event: Schema_Event) => {
   return event.recurrence?.eventId && event.recurrence?.rule === undefined;
-};
-
-export const notCancelled = (e: gSchema$Event) => {
-  return e.status && e.status !== "cancelled";
 };
 
 /**

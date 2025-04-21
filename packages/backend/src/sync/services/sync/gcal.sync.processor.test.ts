@@ -6,6 +6,10 @@ import {
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import {
+  categorizeEvents,
+  isExistingInstance,
+} from "@core/util/event/event.util";
+import {
   getEventsInDb,
   isEventCollectionEmpty,
 } from "@backend/__tests__/helpers/mock.db.queries";
@@ -16,7 +20,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import { createRecurrenceSeries } from "@backend/__tests__/mocks.ccal/ccal.mock.db.util";
+import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
 import {
   mockRecurringGcalBaseEvent,
   mockRegularGcalEvent,
@@ -26,10 +30,6 @@ import {
   mockGcalEvents,
 } from "@backend/__tests__/mocks.gcal/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
-import {
-  categorizeEvents,
-  isExistingInstance,
-} from "@backend/event/util/event.util";
 import { Change_Gcal } from "@backend/sync/sync.types";
 import { GcalSyncProcessor } from "./gcal.sync.processor";
 import {

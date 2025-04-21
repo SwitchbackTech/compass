@@ -4,7 +4,7 @@ import { Schema_Event } from "@core/types/event.types";
 import {
   mockSomedayRecurrences,
   newsletterId,
-} from "../../../../core/src/__mocks__/events/events.someday.recur";
+} from "../../../../core/src/__mocks__/v1/events/events.someday.recur";
 import { YEAR_MONTH_DAY_FORMAT } from "../../../../core/src/constants/date.constants";
 import { getDeleteByIdFilter } from "./event.service.util";
 

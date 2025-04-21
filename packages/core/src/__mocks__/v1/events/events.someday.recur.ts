@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
-import { YEAR_MONTH_DAY_FORMAT } from "../../constants/date.constants";
-import { Schema_Event } from "../../types/event.types";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { Schema_Event } from "@core/types/event.types";
 
 const userId = "user1";
 export const newsletterId = "64c266a87866ebd0a2bda49b";

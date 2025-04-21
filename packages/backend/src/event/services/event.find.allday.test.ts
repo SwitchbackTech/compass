@@ -1,6 +1,6 @@
 import { Collection, Db, Filter, MongoClient } from "mongodb";
 import { Schema_Event } from "@core/types/event.types";
-import { mockEventSetMar22 } from "../../../../core/src/__mocks__/events/events.22mar";
+import { mockEventSetMar22 } from "../../../../core/src/__mocks__/v1/events/events.22mar";
 import { getReadAllFilter } from "./event.service.util";
 
 describe("Mar 6 - 12, 2022: All-Day Events", () => {
