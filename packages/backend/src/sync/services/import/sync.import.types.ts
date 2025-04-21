@@ -9,10 +9,10 @@ export interface EventsToModify {
 
 export type Callback_EventProcessor = (
   event: gSchema$Event,
-  sharedState: Map_ImportAll,
+  sharedState: Map_Recurrences,
 ) => boolean; // Returns true if event should be saved
 
-export interface Map_ImportAll {
+export interface Map_Recurrences {
   baseEventStartTimes: Map<string, string | null>;
   processedEventIdsPass1: Set<string>;
   baseEventMap: Map<string, ObjectId>;

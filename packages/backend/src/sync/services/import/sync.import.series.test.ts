@@ -1,15 +1,15 @@
 import {
-  filterBaseEvents,
-  filterExistingInstances,
-} from "@core/util/event.util";
-import {
   cleanupCollections,
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { mockRecurringBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory.set";
 import mongoService from "@backend/common/services/mongo.service";
+import {
+  filterBaseEvents,
+  filterExistingInstances,
+} from "@backend/event/util/event.util";
 import { createSyncImport } from "./sync.import";
 
 // Mock Gcal Instances API response
@@ -41,7 +41,7 @@ describe("SyncImport: Series", () => {
 
   it("should import a series when provided a gcal base event", async () => {
     /* Assemble */
-    const baseRecurringGcalEvent = mockRecurringBaseEvent();
+    const baseRecurringGcalEvent = mockRecurringGcalBaseEvent();
 
     /* Act */
     // trigger a series import with base event

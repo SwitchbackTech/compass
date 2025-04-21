@@ -11,7 +11,7 @@ import { EventError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import eventService from "@backend/event/services/event.service";
-import { Callback_EventProcessor, Map_ImportAll } from "../sync.import.types";
+import { Callback_EventProcessor, Map_Recurrences } from "../sync.import.types";
 import { assignIds } from "./import.all.util";
 
 const logger = Logger("sync.import.all.gcal");
@@ -27,7 +27,7 @@ export const fetchAndProcessEventsPageByPage = async (
   // Callback function to process each event and decide if it should be saved
   shouldSave: Callback_EventProcessor,
   // Shared state accessible/modifiable by the processor
-  sharedState: Map_ImportAll,
+  sharedState: Map_Recurrences,
   captureSyncToken: boolean,
 ): Promise<{
   savedCount: number;

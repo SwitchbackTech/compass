@@ -12,7 +12,6 @@ import {
 } from "@core/types/event.types";
 import { gCalendar, gSchema$Event, gSchema$EventBase } from "@core/types/gcal";
 import { Schema_Sync } from "@core/types/sync.types";
-import { categorizeRecurringEvents } from "@core/util/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -24,6 +23,7 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { categorizeRecurringEvents } from "@backend/event/util/event.util";
 import {
   getSync,
   updateSync,
@@ -41,7 +41,7 @@ import {
   shouldProcessDuringPass1,
   shouldProcessDuringPass2,
 } from "./all/import.all.util";
-import { EventsToModify, Map_ImportAll } from "./sync.import.types";
+import { EventsToModify, Map_Recurrences } from "./sync.import.types";
 import { organizeGcalEventsByType } from "./sync.import.util";
 
 const logger = Logger("app:sync.import");
@@ -282,7 +282,7 @@ export class SyncImport {
     );
 
     // Shared state needed by both passes
-    const importMap: Map_ImportAll = {
+    const recurrencesMap: Map_Recurrences = {
       baseEventStartTimes: new Map<string, string | null>(),
       processedEventIdsPass1: new Set<string>(),
       baseEventMap: new Map<string, ObjectId>(),
@@ -295,12 +295,12 @@ export class SyncImport {
       calendarId,
       { singleEvents: false }, // regular and base events (no instances)
       shouldProcessDuringPass1,
-      importMap,
+      recurrencesMap,
       false, // Don't capture sync token in Pass 1
     );
 
     // Update the shared state with the map from Pass 1
-    importMap.baseEventMap = pass1Result.baseEventMap;
+    recurrencesMap.baseEventMap = pass1Result.baseEventMap;
 
     // Execute Pass 2
     const pass2Result = await fetchAndProcessEventsPageByPage(
@@ -309,7 +309,7 @@ export class SyncImport {
       calendarId,
       { singleEvents: true }, // regular and instance events (no base)
       shouldProcessDuringPass2,
-      importMap,
+      recurrencesMap,
       true, // Capture sync token in Pass 2
     );
 

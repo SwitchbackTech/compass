@@ -1,6 +1,6 @@
 import { Event_Core, Schema_Event } from "@core/types/event.types";
-import { isBase, isExistingInstance } from "@core/util/event.util";
 import { State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
+import { isBase, isExistingInstance } from "@backend/event/util/event.util";
 
 /** Utility assertions for the gcal sync processor tests */
 export const baseHasRecurrenceRule = async (

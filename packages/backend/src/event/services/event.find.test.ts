@@ -1,17 +1,17 @@
 import { Collection, Db, MongoClient } from "mongodb";
 import { MapEvent } from "@core/mappers/map.event";
 import { Schema_Event } from "@core/types/event.types";
-import { isBase, isExistingInstance } from "@core/util/event.util";
 import {
-  mockRecurringBaseEvent,
-  mockRecurringInstances,
+  mockRecurringGcalBaseEvent,
+  mockRecurringGcalInstances,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { mockEventSetJan22 } from "../../../../core/src/__mocks__/events/events.22jan";
 import { mockEventSetSomeday1 } from "../../../../core/src/__mocks__/events/events.someday.1";
+import { isBase, isExistingInstance } from "../util/event.util";
 import { getReadAllFilter } from "./event.service.util";
 
-const gBase = mockRecurringBaseEvent();
-const gInstances = mockRecurringInstances(gBase, 10, 7);
+const gBase = mockRecurringGcalBaseEvent();
+const gInstances = mockRecurringGcalInstances(gBase, 10, 7);
 
 const base = MapEvent.toCompass("user1", [gBase])[0];
 const instances = MapEvent.toCompass("user1", gInstances);

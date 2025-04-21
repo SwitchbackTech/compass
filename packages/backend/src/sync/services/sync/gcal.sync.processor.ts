@@ -1,6 +1,7 @@
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
 import {
+  Event_Core,
   Schema_Event,
   Schema_Event_Core,
   WithCompassId,
@@ -12,7 +13,6 @@ import {
   gSchema$EventBase,
 } from "@core/types/gcal";
 import { convertRfc5545ToIso } from "@core/util/date.utils";
-import { isBase } from "@core/util/event.util";
 import {
   EventError,
   GenericError,
@@ -22,14 +22,19 @@ import {
   findCompassEventBy,
   updateEvent,
 } from "@backend/event/queries/event.queries";
+import { EventRepository } from "@backend/event/services/recur/repo/event.repo";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalParser } from "@backend/event/services/recur/util/recur.gcal.util";
+import { isBase } from "@backend/event/util/event.util";
 import { Change_Gcal, Operation_Sync } from "../../sync.types";
 import { createSyncImport } from "../import/sync.import";
 
 const logger = Logger("app.sync.processor");
 export class GcalSyncProcessor {
-  constructor(private repo: RecurringEventRepository) {}
+  private eventRepo: EventRepository;
+  constructor(private recurringEventRepo: RecurringEventRepository) {
+    this.eventRepo = new EventRepository(recurringEventRepo.userId);
+  }
 
   async processEvents(events: gSchema$Event[]): Promise<Change_Gcal[]> {
     const summary: Change_Gcal[] = [];
@@ -47,7 +52,10 @@ export class GcalSyncProcessor {
 
       switch (category) {
         case "STANDALONE":
-          operation = "UPSERTED";
+          console.log("Processing STANDALONE event:", gEvent.summary);
+          operation = await this.handleStandaloneChange(
+            gEvent as WithGcalId<gSchema$Event>,
+          );
           break;
         case "RECURRENCE_INSTANCE":
           operation = await this.handleInstanceChange(
@@ -82,16 +90,20 @@ export class GcalSyncProcessor {
     gEvent: WithGcalId<gSchema$Event>,
     parser: GcalParser,
   ): Promise<Operation_Sync> {
-    console.log("Instance change", gEvent.summary);
     const status = parser.status;
 
     if (status === "CANCELLED") {
-      logger.info(`Cancelling INSTANCE: | ${gEvent.id} (Gcal)`);
-      await this.repo.cancelInstance(gEvent.id, { idKey: "gEventId" });
+      logger.info(`Cancelling INSTANCE: ${gEvent.id} (Gcal)`);
+      await this.recurringEventRepo.cancelInstance(gEvent.id, {
+        idKey: "gEventId",
+      });
       return "DELETED";
     }
-    // Update instance - regular instance change
-    console.log("TODO: UPSERT");
+    logger.info(`Updating INSTANCE: ${gEvent.summary}`);
+    const updatedInstance = MapEvent.toCompass(this.recurringEventRepo.userId, [
+      gEvent,
+    ])[0] as Event_Core;
+    await this.recurringEventRepo.updateInstance(updatedInstance);
     return "UPSERTED";
   }
 
@@ -103,15 +115,19 @@ export class GcalSyncProcessor {
 
     const compassEvent = await this.getCompassEvent(gEvent.id);
     if (!compassEvent) {
-      const syncImport = await createSyncImport(this.repo.userId);
-      await syncImport.importSeries(this.repo.userId, "primary", gEvent);
+      const syncImport = await createSyncImport(this.recurringEventRepo.userId);
+      await syncImport.importSeries(
+        this.recurringEventRepo.userId,
+        "primary",
+        gEvent,
+      );
       return "UPSERTED";
     }
     if (status === "CANCELLED") {
       logger.info(
         `Cancelling SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
       );
-      await this.repo.cancelSeries(compassEvent._id.toString());
+      await this.recurringEventRepo.cancelSeries(compassEvent._id.toString());
       return "DELETED";
     }
 
@@ -133,7 +149,6 @@ export class GcalSyncProcessor {
 
       return "UPSERTED";
     }
-    // if (this.isSeriesUpdate(gEvent, compassEvent)) {
     if (this.isSeriesUpdate()) {
       logger.info(
         `TODO Updating SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
@@ -142,6 +157,15 @@ export class GcalSyncProcessor {
     }
 
     throw error(GenericError.DeveloperError, "Series change not handled");
+  }
+  private async handleStandaloneChange(
+    gEvent: WithGcalId<gSchema$Event>,
+  ): Promise<Operation_Sync> {
+    const compassEvent = MapEvent.toCompass(this.recurringEventRepo.userId, [
+      gEvent,
+    ])[0] as Event_Core;
+    await this.eventRepo.updateById("gEventId", compassEvent);
+    return "UPSERTED";
   }
   private isSeriesSplit(
     gEvent: WithGcalId<gSchema$Event>,
@@ -200,7 +224,10 @@ export class GcalSyncProcessor {
       );
     }
     // Delete all instances after the UNTIL date
-    const result = await this.repo.deleteInstancesAfter(cBaseId, untilValue);
+    const result = await this.recurringEventRepo.deleteInstancesAfter(
+      cBaseId,
+      untilValue,
+    );
     return result;
   }
 

@@ -3,6 +3,7 @@ import {
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { mockRegularGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { SyncError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
@@ -70,12 +71,9 @@ describe("GCalNotificationHandler", () => {
     };
 
     const mockEvents = [
-      {
-        id: "event-1",
-        summary: "Test Event",
-        start: { dateTime: "2024-03-20T10:00:00Z" },
-        end: { dateTime: "2024-03-20T11:00:00Z" },
-      },
+      mockRegularGcalEvent({
+        summary: "Standalone Gcal",
+      }),
     ];
 
     it("should process events after changes", async () => {

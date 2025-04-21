@@ -7,38 +7,34 @@ import {
   gSchema$EventInstance,
 } from "@core/types/gcal";
 
-export const mockRegularEvent = (): WithGcalId<gSchema$Event> => ({
-  id: faker.string.nanoid(),
-  summary: faker.lorem.sentence(),
-  start: { dateTime: faker.date.future().toISOString() },
-  end: { dateTime: faker.date.future().toISOString() },
-  status: "confirmed",
-});
-
 /**
  * Returns a base event and its instances
  * @param count - The number of instances to create
  * @param repeatIntervalInDays - The interval between instances
  * @returns An array containing the base event and its instances
  */
-export const mockRecurringEvents = (
+export const mockRecurringGcalEvents = (
   count: number,
   repeatIntervalInDays: number,
 ): (gSchema$EventBase | gSchema$EventInstance)[] => {
-  const base = mockRecurringBaseEvent();
-  const instances = mockRecurringInstances(base, count, repeatIntervalInDays);
+  const base = mockRecurringGcalBaseEvent();
+  const instances = mockRecurringGcalInstances(
+    base,
+    count,
+    repeatIntervalInDays,
+  );
   return [base, ...instances];
 };
 
-export const mockRecurringBaseEvent = (
+export const mockRecurringGcalBaseEvent = (
   overrides: Partial<gSchema$EventBase> = {},
 ): gSchema$EventBase => ({
-  ...mockRegularEvent(),
+  ...mockRegularGcalEvent(),
   recurrence: ["RRULE:FREQ=WEEKLY"],
   ...overrides,
 });
 
-export const mockRecurringInstances = (
+export const mockRecurringGcalInstances = (
   base: gSchema$EventBase,
   count: number,
   repeatIntervalInDays: number,
@@ -90,9 +86,10 @@ export const mockRecurringInstances = (
 };
 
 export const mockRegularGcalEvent = (
-  overrides: Partial<gSchema$Event> = {},
-): gSchema$Event => {
-  const id = faker.string.uuid();
+  overrides: Partial<WithGcalId<gSchema$Event>> = {},
+): WithGcalId<gSchema$Event> => {
+  const id = faker.string.nanoid();
+  const tz = faker.location.timeZone();
   return {
     id,
     summary: faker.lorem.sentence(),
@@ -102,11 +99,11 @@ export const mockRegularGcalEvent = (
     updated: faker.date.recent().toISOString(),
     start: {
       dateTime: faker.date.future().toISOString(),
-      timeZone: "America/Chicago",
+      timeZone: tz,
     },
     end: {
       dateTime: faker.date.future().toISOString(),
-      timeZone: "America/Chicago",
+      timeZone: tz,
     },
     iCalUID: faker.string.uuid() + "@google.com",
     sequence: 0,

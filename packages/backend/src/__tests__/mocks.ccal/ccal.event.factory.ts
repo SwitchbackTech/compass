@@ -1,10 +1,30 @@
+import dayjs from "dayjs";
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker/.";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
+  Schema_Event,
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
+  WithCompassId,
 } from "@core/types/event.types";
+
+export const createMockStandaloneEvent = (
+  overrides: Partial<Schema_Event> = {},
+): WithCompassId<Schema_Event> => {
+  const start = faker.date.future();
+  const end = dayjs(start).add(1, "hour");
+  return {
+    _id: new ObjectId().toString(),
+    title: faker.lorem.sentence(),
+    startDate: start.toISOString(),
+    endDate: end.toISOString(),
+    user: "test-user-id",
+    origin: Origin.COMPASS,
+    priority: Priorities.WORK,
+    ...overrides,
+  };
+};
 
 /**
  * Creates a base recurring event with default values that can be overridden.
@@ -13,7 +33,7 @@ import {
  */
 export const createMockBaseEvent = (
   overrides: Partial<Schema_Event_Recur_Base> = {},
-): Schema_Event_Recur_Base => {
+): WithCompassId<Schema_Event_Recur_Base> => {
   const now = new Date();
   return {
     _id: new ObjectId().toString(),
@@ -43,7 +63,7 @@ export const createMockBaseEvent = (
 export const createMockInstance = (
   baseEventId: string,
   overrides: Partial<Schema_Event_Recur_Instance> = {},
-): Schema_Event_Recur_Instance => {
+): WithCompassId<Schema_Event_Recur_Instance> => {
   const now = new Date();
   return {
     _id: new ObjectId().toString(),
@@ -76,8 +96,8 @@ export const createMockInstances = (
   baseEvent: Schema_Event_Recur_Base,
   count: number,
   overrides: Partial<Schema_Event_Recur_Instance> = {},
-): Schema_Event_Recur_Instance[] => {
-  const instances: Schema_Event_Recur_Instance[] = [];
+): WithCompassId<Schema_Event_Recur_Instance>[] => {
+  const instances: WithCompassId<Schema_Event_Recur_Instance>[] = [];
   const baseDate = new Date(baseEvent.startDate || "2024-03-20T10:00:00Z");
 
   for (let i = 0; i < count; i++) {

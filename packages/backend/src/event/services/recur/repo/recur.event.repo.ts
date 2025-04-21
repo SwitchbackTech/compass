@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { Event_Core } from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import { Ids_Event } from "../../../queries/event.queries";
@@ -48,6 +49,23 @@ export class RecurringEventRepository {
         startDate: { $gt: afterDate },
         user: this.userId,
       });
+    return result;
+  }
+
+  /**
+   * Update an instance by its gEventId
+   * @param updatedInstance - The updated instance
+   * @returns The result of the update operation
+   */
+  async updateInstance(updatedInstance: Event_Core) {
+    const gEventId = updatedInstance.gEventId;
+
+    const result = await mongoService.db
+      .collection(Collections.EVENT)
+      .updateOne(
+        { gEventId: gEventId, user: this.userId },
+        { $set: updatedInstance },
+      );
     return result;
   }
 }
