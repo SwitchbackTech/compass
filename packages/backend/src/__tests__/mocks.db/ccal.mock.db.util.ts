@@ -1,14 +1,14 @@
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker/.";
 import {
-  createMockBaseEvent,
-  createMockInstance,
-} from "@core/__mocks__/mocks.ccal/ccal.event.factory";
-import {
   Schema_Event,
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
+import {
+  createMockBaseEvent,
+  createMockInstance,
+} from "@core/util/test/ccal.event.factory";
 import { Collections } from "@backend/common/constants/collections";
 import { TestSetup } from "../helpers/mock.db.setup";
 

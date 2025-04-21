@@ -1,10 +1,16 @@
 import { ObjectId } from "mongodb";
+import { Event_Core } from "@core/types/event.types";
+import { gSchema$EventInstance } from "@core/types/gcal";
 import {
   createMockBaseEvent,
   createMockInstance,
-} from "@core/__mocks__/mocks.ccal/ccal.event.factory";
-import { Event_Core } from "@core/types/event.types";
-import { assignIds } from "./import.all.util";
+} from "@core/util/test/ccal.event.factory";
+import {
+  mockRecurringGcalBaseEvent,
+  mockRecurringGcalInstances,
+  mockRegularGcalEvent,
+} from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { assignIds, shouldProcessDuringPass1 } from "./import.all.util";
 
 const getEventsWithoutIds = () => {
   // Create a base event with a Google ID
@@ -48,5 +54,29 @@ describe("assignIds", () => {
       const baseEventId = baseEvent[0]!._id?.toString();
       expect(instance.recurrence?.eventId).toBe(baseEventId);
     }
+  });
+});
+
+describe("shouldProcessDuringPass1", () => {
+  const state = {
+    processedEventIdsPass1: new Set<string>(),
+    baseEventStartTimes: new Map<string, string>(),
+    baseEventMap: new Map<string, ObjectId>(),
+  };
+  it("returns true for base events", () => {
+    const baseEvent = mockRecurringGcalBaseEvent();
+    expect(shouldProcessDuringPass1(baseEvent, state)).toBe(true);
+  });
+  it("returns false for instances", () => {
+    const instance = mockRecurringGcalInstances(
+      mockRecurringGcalBaseEvent(),
+      1,
+      1,
+    )[0] as gSchema$EventInstance;
+    expect(shouldProcessDuringPass1(instance, state)).toBe(false);
+  });
+  it("returns false for regular events", () => {
+    const regularEvent = mockRegularGcalEvent();
+    expect(shouldProcessDuringPass1(regularEvent, state)).toBe(false);
   });
 });

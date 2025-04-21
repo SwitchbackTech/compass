@@ -26,14 +26,12 @@ export const shouldProcessDuringPass1: Callback_EventProcessor = (
   state,
 ) => {
   if (gEvent.id) {
-    if (gEvent.recurrence) {
+    const isRecurringBase = gEvent.recurrence;
+    if (isRecurringBase) {
       const startTime = getStartTimeString(gEvent);
       state.baseEventStartTimes.set(gEvent.id, startTime);
       state.processedEventIdsPass1.add(gEvent.id);
       return true; // Save base event
-    } else if (!gEvent.recurringEventId) {
-      // Save single event. No need to add to the map, because it won't show up in pass two
-      return true;
     }
   }
   return false; // Don't save (e.g., instances encountered in Pass 1)
@@ -47,11 +45,10 @@ export const shouldProcessDuringPass2: Callback_EventProcessor = (
   // Filter 1: Skip event if already processed in Pass 1
   if (gEvent.id && state.processedEventIdsPass1.has(gEvent.id || "")) {
     logger.verbose(
-      `Pass 2: Skipping  base event: ${gEvent.summary} (processed in Pass 1).`,
+      `Pass 2: Skipping  base event: ${gEvent.summary} (processed in Pass 2).`,
     );
     return false; // Don't save
   }
-
   return true; // Save this event
 };
 
