@@ -1,9 +1,9 @@
 import { ObjectId } from "mongodb";
+import { Event_Core } from "@core/types/event.types";
 import {
   createMockBaseEvent,
   createMockInstance,
-} from "@core/__mocks__/mocks.ccal/ccal.event.factory";
-import { Event_Core } from "@core/types/event.types";
+} from "@core/util/test/ccal.event.factory";
 import { assignIds } from "./import.all.util";
 
 const getEventsWithoutIds = () => {
