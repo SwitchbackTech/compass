@@ -79,12 +79,10 @@ export const useDraftActions = (
   } = setters;
 
   const startDragging = useCallback(() => {
-    setDraft(reduxDraft);
     setIsDragging(true);
   }, [reduxDraft]);
 
   const startResizing = useCallback(() => {
-    setDraft(reduxDraft);
     setIsResizing(true);
     setDateBeingChanged(dateToResize);
   }, [reduxDraft, dateToResize]);
@@ -406,11 +404,13 @@ export const useDraftActions = (
     }
 
     if (activity === "dragging") {
+      setDraft(reduxDraft as Schema_GridEvent);
       startDragging();
       return;
     }
 
     if (activity === "resizing") {
+      setDraft(reduxDraft as Schema_GridEvent);
       startResizing();
     }
   }, [activity, startDragging, startResizing, create, isDrafting]);
