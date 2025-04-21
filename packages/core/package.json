@@ -11,7 +11,8 @@
   },
   "devDependencies": {
     "@types/tinycolor2": "^1.4.6",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "@faker-js/faker": "^9.6.0"
   },
   "dependencies": {
     "tinycolor2": "^1.6.0",

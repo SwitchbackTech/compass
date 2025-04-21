@@ -1,4 +1,4 @@
-import { gcalCalendarList } from "../__mocks__/calendarlist/gcal.calendarlist";
+import { gcalCalendarList } from "../__mocks__/v1/calendarlist/gcal.calendarlist";
 import { MapCalendarList } from "./map.calendarlist";
 
 it("supports multiple calendars", () => {

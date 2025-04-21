@@ -2,7 +2,7 @@ import React, { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CLIMB } from "@core/__mocks__/events/events.misc";
+import { CLIMB } from "@core/__mocks__/v1/events/events.misc";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { CalendarView } from "@web/views/Calendar";

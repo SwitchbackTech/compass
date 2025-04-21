@@ -6,7 +6,7 @@ import {
   MARCH_1,
   MULTI_WEEK,
   TY_TIM,
-} from "@core/__mocks__/events/events.misc";
+} from "@core/__mocks__/v1/events/events.misc";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 
 export const globalHandlers = [

@@ -13,6 +13,7 @@ import {
   gSchema$EventBase,
 } from "@core/types/gcal";
 import { convertRfc5545ToIso } from "@core/util/date.utils";
+import { isBase } from "@core/util/event/event.util";
 import {
   EventError,
   GenericError,
@@ -25,7 +26,6 @@ import {
 import { EventRepository } from "@backend/event/services/recur/repo/event.repo";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalParser } from "@backend/event/services/recur/util/recur.gcal.util";
-import { isBase } from "@backend/event/util/event.util";
 import { Change_Gcal, Operation_Sync } from "../../sync.types";
 import { createSyncImport } from "../import/sync.import";
 
