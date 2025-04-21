@@ -151,8 +151,9 @@ export class GcalSyncProcessor {
     }
     if (this.isSeriesUpdate()) {
       logger.info(
-        `TODO Updating SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
+        `Updating SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
       );
+      await this.updateSeries();
       return "UPSERTED";
     }
 
@@ -178,8 +179,6 @@ export class GcalSyncProcessor {
       !cEvent.recurrence?.rule;
 
     if (isNotBase) {
-      console.log("gEvent.recurrence", gEvent.recurrence);
-      console.log("cEvent", cEvent);
       return false;
     }
 
@@ -200,6 +199,7 @@ export class GcalSyncProcessor {
   }
 
   private isSeriesUpdate(): boolean {
+    console.log("TODO: parse payload for full update");
     return true;
   }
 
@@ -244,5 +244,9 @@ export class GcalSyncProcessor {
       compassEvent._id,
       newCompassBase,
     );
+  }
+
+  private async updateSeries() {
+    console.log("TODO");
   }
 }
