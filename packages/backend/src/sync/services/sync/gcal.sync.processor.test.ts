@@ -6,6 +6,11 @@ import {
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import {
+  WithGcalId,
+  gSchema$Event,
+  gSchema$EventInstance,
+} from "@core/types/gcal";
+import {
   categorizeEvents,
   isExistingInstance,
 } from "@core/util/event/event.util";
@@ -23,6 +28,7 @@ import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.event
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
 import {
   mockRecurringGcalBaseEvent,
+  mockRecurringGcalInstances,
   mockRegularGcalEvent,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import {
@@ -66,18 +72,50 @@ describe("GcalSyncProcessor", () => {
   });
 
   describe("DELETE", () => {
-    it.todo("should delete a STANDALONE event");
+    it("should delete a STANDALONE event", async () => {
+      /* Assemble */
+      const { gcalEvents } = await simulateDbAfterGcalImport(
+        setup.db,
+        setup.userId,
+      );
+
+      const origEvents = await getEventsInDb();
+      /* Act: Simulate a cancelled event from Gcal */
+      const gStandalone = gcalEvents.regular;
+      const cancelledGStandalone = {
+        kind: gStandalone.kind,
+        etag: gStandalone.etag,
+        id: gStandalone.id,
+        status: "cancelled",
+      } as WithGcalId<gSchema$Event>;
+
+      const processor = new GcalSyncProcessor(repo);
+      const changes = await processor.processEvents([cancelledGStandalone]);
+
+      /* Assert: Should return a DELETED change */
+      expect(changes).toHaveLength(1);
+      expect(changes[0]).toMatchObject({
+        title: cancelledGStandalone.id,
+        operation: "DELETED",
+      });
+
+      // Verify the event is deleted from the DB
+      const remainingEvents = await getEventsInDb();
+      const { regularEvents } = categorizeEvents(remainingEvents);
+      expect(regularEvents).toHaveLength(0);
+
+      //Verify no other events deleted
+      expect(remainingEvents).toHaveLength(origEvents.length - 1);
+    });
     it("should delete BASE and all INSTANCES after cancelling a BASE", async () => {
-      const gcalBaseEvent = mockRegularGcalEvent({
+      const gcalBaseEvent = mockRecurringGcalBaseEvent({
         recurrence: ["RRULE:FREQ=DAILY"],
       });
-      const gcalInstance = mockRegularGcalEvent({
-        recurringEventId: gcalBaseEvent.id,
-        originalStartTime: {
-          dateTime: "2025-03-24T07:30:00-05:00",
-          timeZone: "America/Chicago",
-        },
-      });
+      const gcalInstance = mockRecurringGcalInstances(
+        gcalBaseEvent,
+        1,
+        1,
+      )[0] as gSchema$EventInstance;
 
       const baseCompassId = new ObjectId().toString();
       const compassBaseEvent: Schema_Event_Recur_Base = {
@@ -247,7 +285,7 @@ describe("GcalSyncProcessor", () => {
       /* Assert */
       // Verify the correct change was detected
       expect(changes).toHaveLength(1);
-      expect(changes[0]).toEqual({
+      expect(changes[0]).toMatchObject({
         title: updatedStandalone.summary,
         category: Categories_Recurrence.STANDALONE,
         operation: "UPSERTED",

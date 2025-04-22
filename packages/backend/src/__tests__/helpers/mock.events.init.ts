@@ -62,6 +62,8 @@ export const mockGcalAndCompassEvents = (userId?: string) => {
   if (!compassBase) {
     throw new Error("No base event found");
   }
+
+  // Link instances to their base
   const baseId = new ObjectId();
   // @ts-expect-error pre-assigning the id as ObjectId is OK if you insert it afterwards
   compassBase._id = baseId;

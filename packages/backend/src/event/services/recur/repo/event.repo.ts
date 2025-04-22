@@ -10,6 +10,13 @@ import { Ids_Event } from "@backend/event/queries/event.queries";
 export class EventRepository {
   constructor(private userId: string) {}
 
+  async deleteById(key: Ids_Event, id: string) {
+    const result = await mongoService.db
+      .collection(Collections.EVENT)
+      .deleteOne({ [key]: id, user: this.userId });
+    return result;
+  }
+
   /**
    * Update an event, creating it if it doesn't exist
    */
