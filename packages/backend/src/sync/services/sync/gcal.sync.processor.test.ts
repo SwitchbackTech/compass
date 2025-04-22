@@ -402,6 +402,9 @@ describe("GcalSyncProcessor", () => {
         setup.db,
         setup.userId,
       );
+      const origEvents = await getEventsInDb();
+      const { baseEvents: origBaseEvents } = categorizeEvents(origEvents);
+      const origBase = origBaseEvents[0];
 
       /* Act */
       const updatedBase = {
@@ -434,13 +437,18 @@ describe("GcalSyncProcessor", () => {
       const base = baseEvents[0];
       const baseId = String(base?._id);
 
-      expect(instances.length).toBeGreaterThan(0);
-      for (const i of instances) {
+      const validateEventHasNewData = (i: Schema_Event) => {
         expect(i.title).toEqual(updatedBase.summary); // matches gcal payload
         expect(i.description).toEqual(updatedBase.description); // matches gcal payload
+        expect(i.updatedAt).not.toEqual(origBase?.updatedAt); // unique timestamp
+      };
+
+      validateEventHasNewData(base!);
+      expect(instances.length).toBeGreaterThan(0);
+      for (const i of instances) {
+        validateEventHasNewData(i);
         expect(i.title).toEqual(base?.title); // matches compass base
         expect(i.recurrence?.eventId).toEqual(baseId); // still points to base
-        expect(i.updatedAt).not.toEqual(base?.updatedAt); // unique timestamp
       }
     });
   });

@@ -97,27 +97,31 @@ export class RecurringEventRepository {
         { $set: { ...updatedBase, updatedAt: new Date() } },
       );
 
-    // Update all instances by merging updatedBase into each instance (preserving instance-specific fields)
-    const instances = await mongoService.db
-      .collection(Collections.EVENT)
-      .find({ "recurrence.eventId": String(baseId), user: this.userId })
-      .toArray();
+    // Strip the properties that should not change
+    const {
+      recurrence,
+      updatedAt,
+      _id,
+      startDate,
+      endDate,
+      user,
+      ...baseForUpdate
+    } = updatedBase;
 
-    for (const instance of instances) {
-      // Merge: instance fields override base fields
-      // Merge all fields from base, then all from instance, but always preserve instance.recurrence
-      const { recurrence, updatedAt, ...baseForMerge } = updatedBase; // TODO turn into zod to strip there
-      const merged = {
-        ...baseForMerge,
-        // ...instance,
-        _id: instance._id,
-        recurrence: { eventId: String(baseId) }, // always link to Compass base _id
-        updatedAt: new Date(),
-      };
-      const result = await mongoService.db
-        .collection(Collections.EVENT)
-        .updateOne({ _id: instance._id, user: this.userId }, { $set: merged });
-      console.log(result);
-    }
+    // Update instances
+    const instResult = await mongoService.db
+      .collection(Collections.EVENT)
+      .updateMany(
+        { "recurrence.eventId": String(baseId), user: this.userId },
+        {
+          $set: {
+            ...baseForUpdate,
+            updatedAt: new Date(),
+          },
+        },
+      );
+    console.log(
+      `[updateSeries] Bulk updated ${instResult.modifiedCount} instances for base ${baseId}`,
+    );
   }
 }
