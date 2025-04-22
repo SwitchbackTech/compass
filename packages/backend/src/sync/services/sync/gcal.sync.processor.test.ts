@@ -396,44 +396,52 @@ describe("GcalSyncProcessor", () => {
         operation: "UPSERTED",
       });
     });
-    it("should handle UPDATING recurring BASE and REGULAR events", async () => {
+    it("should handle UPDATING a SERIES", async () => {
+      /* Assemble */
       const { gcalEvents } = await simulateDbAfterGcalImport(
         setup.db,
         setup.userId,
       );
 
-      const updatedRegularGcalEvent = {
-        ...gcalEvents.regular,
-        summary: "Updated Regular Event",
-      };
-      const updatedRecurringGcalEvent = {
+      /* Act */
+      const updatedBase = {
         ...gcalEvents.recurring,
-        summary: "Updated Recurring Base Event",
+        summary: gcalEvents.recurring.summary + " - UPDATED IN GCAL",
+        description: "Description adjusted in Gcal",
       };
 
-      const updatedGcalEvents = [
-        updatedRegularGcalEvent,
-        updatedRecurringGcalEvent,
-      ];
+      const updatedGcalEvents = [updatedBase];
 
       const processor = new GcalSyncProcessor(repo);
       const changes = await processor.processEvents(updatedGcalEvents);
 
-      expect(changes).toHaveLength(2);
+      /* Assert */
+      // Validate the correct change was detected
+      expect(changes).toHaveLength(1);
       expect(changes).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            title: updatedRegularGcalEvent.summary,
-            category: Categories_Recurrence.STANDALONE,
-            operation: "UPSERTED",
-          }),
-          expect.objectContaining({
-            title: updatedRecurringGcalEvent.summary,
-            category: Categories_Recurrence.RECURRENCE_BASE,
+            title: updatedBase.summary,
+            category: Categories_Recurrence.RECURRENCE_BASE, // TODO change to series for clarity?
             operation: "UPSERTED",
           }),
         ]),
       );
+
+      // Validate that all events in the series (base and instances) were updated
+      const updatedEvents = await getEventsInDb();
+      const { baseEvents, instances } = categorizeEvents(updatedEvents);
+      const base = baseEvents[0];
+      const baseId = String(base?._id);
+
+      expect(instances.length).toBeGreaterThan(0);
+      for (const i of instances) {
+        expect(i.title).toEqual(updatedBase.summary); // matches gcal payload
+        expect(i.description).toEqual(updatedBase.description); // matches gcal payload
+        expect(i.title).toEqual(base?.title); // matches compass base
+        expect(i.recurrence?.eventId).toEqual(baseId); // still points to base
+        expect(i.updatedAt).not.toEqual(base?.updatedAt); // unique timestamp
+      }
     });
   });
 

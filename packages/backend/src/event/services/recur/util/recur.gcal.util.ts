@@ -42,7 +42,7 @@ export class GcalParser {
       return "ACTIVE";
     }
   }
-  private isRecurrenceBase() {
+  public isRecurrenceBase() {
     const isBase =
       this.event.recurrence !== undefined && !this.event.recurringEventId;
     return isBase;

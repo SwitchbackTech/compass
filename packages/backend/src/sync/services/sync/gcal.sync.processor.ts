@@ -4,6 +4,7 @@ import {
   Event_Core,
   Schema_Event,
   Schema_Event_Core,
+  Schema_Event_Recur_Base,
   WithCompassId,
 } from "@core/types/event.types";
 import {
@@ -152,11 +153,16 @@ export class GcalSyncProcessor {
 
       return "UPSERTED";
     }
-    if (this.isSeriesUpdate()) {
+
+    const isSeriesUpdate = parser.isRecurrenceBase();
+    if (isSeriesUpdate) {
       logger.info(
         `Updating SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
       );
-      await this.updateSeries();
+      await this.updateSeries(
+        compassEvent as WithCompassId<Schema_Event>,
+        gEvent,
+      );
       return "UPSERTED";
     }
 
@@ -207,11 +213,6 @@ export class GcalSyncProcessor {
     return isSplit;
   }
 
-  private isSeriesUpdate(): boolean {
-    console.log("TODO: parse payload for full update");
-    return true;
-  }
-
   private extractUntilValue(recurrenceRule: string): string | null {
     const untilMatch = recurrenceRule.match(/UNTIL=([^;]+)/);
     if (!untilMatch) return null;
@@ -255,7 +256,14 @@ export class GcalSyncProcessor {
     );
   }
 
-  private async updateSeries() {
-    console.log("TODO");
+  private async updateSeries(
+    origCompassEvent: WithCompassId<Schema_Event>,
+    gEvent: WithGcalId<gSchema$Event>,
+  ) {
+    const updatedCompassBase = MapEvent.toCompass(
+      origCompassEvent.user as string,
+      [gEvent],
+    )[0] as Schema_Event_Recur_Base;
+    await this.recurringEventRepo.updateSeries(updatedCompassBase, "gEventId");
   }
 }
