@@ -204,7 +204,7 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   useHotkeys(
-    "meta+shift+<",
+    "meta+[",
     () => {
       onConvert?.();
     },

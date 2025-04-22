@@ -74,8 +74,8 @@ test("should call onConvert when meta+shift+< keyboard shortcut is used", async 
   expect(screen.getByRole("form")).toBeInTheDocument();
 
   await act(async () => {
-    // Simulate pressing Meta, then Shift, then '<', then releasing them
-    await userEvent.keyboard("{Meta>}{Shift>}{<}{/Shift}{/Meta}");
+    // Simulate pressing Meta, then '[', then releasing them
+    await userEvent.keyboard("{Meta>}{[}{/Meta}");
   });
 
   expect(mockOnConvert).toHaveBeenCalledTimes(1);
