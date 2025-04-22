@@ -52,7 +52,10 @@ export class GcalSyncProcessor {
 
       switch (category) {
         case "STANDALONE":
-          console.log("Processing STANDALONE event:", gEvent.summary);
+          console.log(
+            "Processing STANDALONE event:",
+            gEvent.summary || gEvent.id,
+          );
           operation = await this.handleStandaloneChange(
             gEvent as WithGcalId<gSchema$Event>,
           );
@@ -162,6 +165,12 @@ export class GcalSyncProcessor {
   private async handleStandaloneChange(
     gEvent: WithGcalId<gSchema$Event>,
   ): Promise<Operation_Sync> {
+    const shouldDelete = gEvent.status === "cancelled";
+    if (shouldDelete) {
+      logger.info(`DELETING STANDALONE: ${gEvent.id} (Gcal)`);
+      await this.eventRepo.deleteById("gEventId", gEvent.id);
+      return "DELETED";
+    }
     const compassEvent = MapEvent.toCompass(this.recurringEventRepo.userId, [
       gEvent,
     ])[0] as Event_Core;
