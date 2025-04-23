@@ -43,6 +43,12 @@ export class RecurringEventRepository {
     return result;
   }
 
+  /**
+   * Delete all instances after a specific date
+   * @param baseId - The _id of the base event
+   * @param afterDate - ISO 8601 date string
+   * @returns The result of the deleteMany operation
+   */
   async deleteInstancesAfter(baseId: string, afterDate: string) {
     const result = await mongoService.db
       .collection(Collections.EVENT)

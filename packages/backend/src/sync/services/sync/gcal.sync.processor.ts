@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
 import {
@@ -13,7 +14,7 @@ import {
   gSchema$Event,
   gSchema$EventBase,
 } from "@core/types/gcal";
-import { convertRfc5545ToIso } from "@core/util/date.utils";
+import { convertRruleWithUntilToDate } from "@core/util/date/date.util";
 import { isBase } from "@core/util/event/event.util";
 import {
   EventError,
@@ -226,8 +227,10 @@ export class GcalSyncProcessor {
     cBaseId: string,
     gEvent: WithGcalId<WithRecurrenceRule<gSchema$Event>>,
   ) {
-    const untilValue = convertRfc5545ToIso(gEvent.recurrence[0] as string);
-    if (!untilValue) {
+    const afterDateIso = convertRruleWithUntilToDate(
+      gEvent.recurrence[0] as string,
+    );
+    if (!afterDateIso) {
       throw error(
         EventError.InvalidRecurrence,
         "Did not delete instances during split, because no UNTIL date found",
@@ -236,7 +239,7 @@ export class GcalSyncProcessor {
     // Delete all instances after the UNTIL date
     const result = await this.recurringEventRepo.deleteInstancesAfter(
       cBaseId,
-      untilValue,
+      afterDateIso,
     );
     return result;
   }
