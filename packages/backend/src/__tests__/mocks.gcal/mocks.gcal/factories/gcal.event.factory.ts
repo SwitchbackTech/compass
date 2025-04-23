@@ -5,7 +5,7 @@ import {
   gSchema$EventBase,
   gSchema$EventInstance,
 } from "@core/types/gcal";
-import { convertToRfc5545 } from "@core/util/date.utils";
+import { formatAs } from "@core/util/date/date.util";
 
 /**
  * Creates a cancelled instance of a recurring event,
@@ -17,7 +17,7 @@ export const mockCancelledInstance = (
   baseEvent: gSchema$EventBase,
   instanceStart: string,
 ): gSchema$EventInstance => {
-  const instanceStartRfc5545 = convertToRfc5545(instanceStart);
+  const instanceStartRfc5545 = formatAs("RFC5545", instanceStart);
   if (!instanceStartRfc5545) {
     throw new Error("Invalid instance start date");
   }
@@ -54,7 +54,7 @@ export const mockRecurringEvent = (
   return base as gSchema$EventBase;
 };
 
-const mockRecurringInstances = (
+export const mockRecurringInstances = (
   event: gSchema$Event,
   count: number,
   repeatIntervalInDays: number,
@@ -64,32 +64,36 @@ const mockRecurringInstances = (
   }
 
   const startDateTime = event.start.dateTime;
-  const endDateTime = event.end.dateTime;
   const startTimeZone = event.start.timeZone;
   const endTimeZone = event.end.timeZone;
 
   const baseDate = new Date(startDateTime);
 
   return Array.from({ length: count }, (_, index) => {
-    const instanceDate = new Date(baseDate);
-    instanceDate.setDate(instanceDate.getDate() + index * repeatIntervalInDays);
+    const startDate = new Date(baseDate);
+    startDate.setDate(startDate.getDate() + index * repeatIntervalInDays);
+    const startDateIso = startDate.toISOString();
+    const startDateTime = formatAs("RFC3339_OFFSET", startDateIso);
 
-    const endDate = new Date(endDateTime);
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hr after start
     endDate.setDate(endDate.getDate() + index * repeatIntervalInDays);
+    const endDateIso = endDate.toISOString();
+    const endDateTime = formatAs("RFC3339_OFFSET", endDateIso);
 
-    const instanceStart = convertToRfc5545(instanceDate.toISOString());
+    const startRfc5545 = formatAs("RFC5545", startDateIso);
+    const id = `${event.id}_${startRfc5545}`; // matches gcal id format
 
     const instance = {
       ...event,
-      id: `${event.id}_${instanceStart}`, // matches gcal id format
+      id,
       summary: `${event.summary}: Instance ${index}`,
       recurringEventId: event.id as string,
       start: {
-        dateTime: instanceDate.toISOString(),
+        dateTime: startDateTime,
         timeZone: startTimeZone,
       },
       end: {
-        dateTime: endDate.toISOString(),
+        dateTime: endDateTime,
         timeZone: endTimeZone,
       },
     };
