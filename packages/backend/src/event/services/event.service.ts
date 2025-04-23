@@ -20,7 +20,7 @@ import {
   Result_DeleteMany,
   Schema_Event_Core,
 } from "@core/types/event.types";
-import { getCurrentRangeDates } from "@core/util/date.utils";
+import { getCurrentRangeDates } from "@core/util/date/date.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import {
