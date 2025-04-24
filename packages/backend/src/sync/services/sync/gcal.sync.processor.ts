@@ -20,10 +20,7 @@ import {
   GenericError,
 } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import {
-  findCompassEventBy,
-  updateEvent,
-} from "@backend/event/queries/event.queries";
+import { findCompassEventBy } from "@backend/event/queries/event.queries";
 import { EventRepository } from "@backend/event/services/recur/repo/event.repo";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalParser } from "@backend/event/services/recur/util/recur.gcal.util";
@@ -251,11 +248,7 @@ export class GcalSyncProcessor {
       gEvent,
     ]) as unknown as Schema_Event_Core[];
     const newCompassBase = _newCompassBase[0] as Schema_Event_Core;
-    await updateEvent(
-      compassEvent.user as string,
-      compassEvent._id,
-      newCompassBase,
-    );
+    await this.eventRepo.updateEvent(compassEvent._id, newCompassBase);
   }
 
   private async updateSeries(

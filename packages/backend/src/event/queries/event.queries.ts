@@ -1,12 +1,6 @@
 import { AnyBulkWriteOperation, WithId } from "mongodb";
-import {
-  Payload_Order,
-  Schema_Event,
-  Schema_Event_Core,
-} from "@core/types/event.types";
+import { Payload_Order, Schema_Event } from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
-import { EventError } from "@backend/common/constants/error.constants";
-import { error } from "@backend/common/errors/handlers/error.handler";
 import { getIdFilter } from "@backend/common/helpers/mongo.utils";
 import mongoService from "@backend/common/services/mongo.service";
 
@@ -40,37 +34,4 @@ export const reorderEvents = async (userId: string, order: Payload_Order[]) => {
 
   const result = await mongoService.event.bulkWrite(ops);
   return result;
-};
-
-export const updateEvent = async (
-  userId: string,
-  eventId: string,
-  event: Schema_Event_Core,
-) => {
-  const _event = {
-    ...event,
-    user: userId,
-  };
-
-  if ("_id" in event) {
-    // WARNING: This is a hack to avoid the _id field from being updated
-    // This may result in unexpected behavior
-    delete _event._id;
-  }
-
-  const response = (await mongoService.db
-    .collection(Collections.EVENT)
-    .findOneAndReplace(
-      { _id: mongoService.objectId(eventId), user: userId },
-      _event,
-      { returnDocument: "after" },
-    )) as unknown as WithId<Schema_Event>;
-
-  if (!response) {
-    throw error(
-      EventError.NoMatchingEvent,
-      "Event not updated due to failed DB operation",
-    );
-  }
-  return response;
 };
