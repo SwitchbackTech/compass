@@ -1,3 +1,6 @@
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
@@ -7,6 +10,8 @@ import {
   gSchema$EventInstance,
 } from "@core/types/gcal";
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
 /**
  * Returns a base event and its instances
  * @param count - The number of instances to create
@@ -90,19 +95,24 @@ export const mockRegularGcalEvent = (
 ): WithGcalId<gSchema$Event> => {
   const id = faker.string.nanoid();
   const tz = faker.location.timeZone();
+  // Generate times dynamically but in the right tz
+  const start = dayjs.tz(faker.date.future(), tz);
+  const end = start.add(1, "hour");
+  const created = dayjs.tz(faker.date.past(), tz);
+  const updated = dayjs.tz(faker.date.recent(), tz);
   return {
     id,
     summary: faker.lorem.sentence(),
     status: "confirmed",
     htmlLink: `https://www.google.com/calendar/event?eid=${id}`,
-    created: faker.date.past().toISOString(),
-    updated: faker.date.recent().toISOString(),
+    created: created.toISOString(),
+    updated: updated.toISOString(),
     start: {
-      dateTime: faker.date.future().toISOString(),
+      dateTime: start.toISOString(),
       timeZone: tz,
     },
     end: {
-      dateTime: faker.date.future().toISOString(),
+      dateTime: end.toISOString(),
       timeZone: tz,
     },
     iCalUID: faker.string.uuid() + "@google.com",

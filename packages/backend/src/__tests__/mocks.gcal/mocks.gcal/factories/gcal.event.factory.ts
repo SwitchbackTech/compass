@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
@@ -34,7 +35,7 @@ export const mockCancelledInstance = (
   };
 };
 
-export const mockRegularEvent = (): gSchema$Event => ({
+export const mockTimedEvent = (): gSchema$Event => ({
   id: faker.string.nanoid(),
   summary: faker.lorem.sentence(),
   start: { dateTime: faker.date.future().toISOString() },
@@ -42,12 +43,12 @@ export const mockRegularEvent = (): gSchema$Event => ({
   status: "confirmed",
 });
 
-export const mockRecurringEvent = (
+export const mockTimedRecurrence = (
   overrides: Partial<gSchema$Event> = {},
 ): gSchema$EventBase => {
-  const regular = mockRegularEvent();
+  const timed = mockTimedEvent();
   const base = {
-    ...regular,
+    ...timed,
     recurrence: ["RRULE:FREQ=WEEKLY"],
     ...overrides,
   };
@@ -103,20 +104,36 @@ export const mockRecurringInstances = (
   });
 };
 
-export const mockGcalEvent = (
+export const mockAlldayGcalEvent = (
   overrides: Partial<gSchema$Event> = {},
 ): gSchema$Event => {
-  const id = faker.string.uuid();
+  const core = _mockGcalCoreEvent();
+  const _start = faker.date.future();
+  const start = dayjs(_start).format("YYYY-MM-DD"); // matches gcal format for all day events
+  const end = dayjs(_start).add(1, "day").format("YYYY-MM-DD");
+  return {
+    ...core,
+    start: {
+      date: start,
+      timeZone: "America/Chicago",
+    },
+    end: {
+      date: end,
+      timeZone: "America/Chicago",
+    },
+    ...overrides,
+  };
+};
+
+export const mockTimedGcalEvent = (
+  overrides: Partial<gSchema$Event> = {},
+): gSchema$Event => {
+  const core = _mockGcalCoreEvent();
   const start = faker.date.future();
   const end = new Date(start);
   end.setHours(start.getHours() + 1);
-  return {
-    id,
-    summary: faker.lorem.sentence(),
-    status: "confirmed",
-    htmlLink: `https://www.google.com/calendar/event?eid=${id}`,
-    created: faker.date.past().toISOString(),
-    updated: faker.date.recent().toISOString(),
+  const timedEvent = {
+    ...core,
     start: {
       dateTime: start.toISOString(),
       timeZone: "America/Chicago",
@@ -125,25 +142,16 @@ export const mockGcalEvent = (
       dateTime: end.toISOString(),
       timeZone: "America/Chicago",
     },
-    iCalUID: faker.string.uuid() + "@google.com",
-    sequence: 0,
-    extendedProperties: {
-      private: {
-        origin: Origin.GOOGLE_IMPORT,
-        priority: Priorities.UNASSIGNED,
-      },
-    },
-    reminders: {
-      useDefault: true,
-    },
-    eventType: "default",
+  };
+  return {
+    ...timedEvent,
     ...overrides,
   };
 };
 
 export const mockGcalEvents = (repeatIntervalInDays = 7) => {
-  const regularEvent = mockGcalEvent({ summary: "Regular Event" });
-  const baseRecurrence = mockRecurringEvent({
+  const timedEvent = mockTimedGcalEvent({ summary: "Regular Event" });
+  const baseRecurrence = mockTimedRecurrence({
     summary: "Recurring Event",
     recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
   });
@@ -160,7 +168,7 @@ export const mockGcalEvents = (repeatIntervalInDays = 7) => {
   );
 
   const allGcalEvents = [
-    regularEvent,
+    timedEvent,
     cancelledEvent,
     baseRecurrence,
     ...recurringInstances,
@@ -169,7 +177,7 @@ export const mockGcalEvents = (repeatIntervalInDays = 7) => {
   return {
     gcalEvents: {
       all: allGcalEvents,
-      regular: regularEvent,
+      regular: timedEvent,
       cancelled: cancelledEvent,
       recurring: baseRecurrence,
       instances: recurringInstances,
@@ -179,5 +187,35 @@ export const mockGcalEvents = (repeatIntervalInDays = 7) => {
       cancelled: 1,
       recurring: 1 + recurringInstances.length,
     },
+  };
+};
+
+/**
+ * Creates a minimal gcal event payload with properties that
+ * are the same regardless of whether its an all-day or timed
+ * event
+ * @returns gcal event with core propertie
+ */
+const _mockGcalCoreEvent = (): gSchema$Event => {
+  const id = faker.string.uuid();
+  return {
+    id,
+    summary: faker.lorem.sentence(),
+    status: "confirmed",
+    htmlLink: `https://www.google.com/calendar/event?eid=${id}`,
+    created: faker.date.past().toISOString(),
+    updated: faker.date.recent().toISOString(),
+    iCalUID: faker.string.uuid() + "@google.com",
+    sequence: 0,
+    extendedProperties: {
+      private: {
+        origin: Origin.GOOGLE_IMPORT,
+        priority: Priorities.UNASSIGNED,
+      },
+    },
+    reminders: {
+      useDefault: true,
+    },
+    eventType: "default",
   };
 };
