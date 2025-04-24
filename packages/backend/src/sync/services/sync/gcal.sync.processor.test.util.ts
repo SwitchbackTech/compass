@@ -106,7 +106,41 @@ export const updateBasePayloadToExpireOneDayAfterFirstInstance = (
   return { gBaseWithUntil, untilDateStr };
 };
 
-export const validateInstanceDataMatchesGoogleBase = (
+export const datesAreInUtcOffset = (instance: Schema_Event_Recur_Instance) => {
+  const instanceStart = instance.startDate;
+  const instanceEnd = instance.endDate;
+  expect(typeof instanceStart).toBe("string");
+  expect(typeof instanceEnd).toBe("string");
+
+  // Use dayjs to check parsing and offset
+  const start = dayjs(instanceStart);
+  const end = dayjs(instanceEnd);
+  expect(start.isValid()).toBe(true);
+  expect(end.isValid()).toBe(true);
+
+  // Confirm offset is present (not Z/UTC)
+  expect(instanceStart?.endsWith("Z")).toBe(false);
+  expect(instanceEnd?.endsWith("Z")).toBe(false);
+
+  // Confirm format matches YYYY-MM-DDTHH:mm:ss±HHmm
+  const isoOffsetRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{4}$/;
+  expect(instanceStart).toMatch(isoOffsetRegex);
+  expect(instanceEnd).toMatch(isoOffsetRegex);
+
+  // Confirm that the instant in time is correct (string and dayjs agree)
+  expect(start.valueOf()).toBe(dayjs(instanceStart).valueOf());
+  expect(end.valueOf()).toBe(dayjs(instanceEnd).valueOf());
+};
+
+export const hasNewUpdatedAtTimestamp = (
+  newInstance: Schema_Event_Recur_Instance,
+  oldInstances: Schema_Event_Recur_Instance[],
+) => {
+  const origInstance = oldInstances.find((i) => i._id === newInstance._id);
+  expect(newInstance.updatedAt).not.toEqual(origInstance?.updatedAt);
+};
+
+export const instanceDataMatchesGcalBase = (
   cInstance: Schema_Event_Recur_Instance,
   gBase: gSchema$EventBase,
 ) => {
@@ -119,7 +153,7 @@ export const validateInstanceDataMatchesGoogleBase = (
   }
 };
 
-export const validateInstanceDataMatchCompassBase = (
+export const instanceDataMatchCompassBase = (
   cInstance: Schema_Event_Recur_Instance,
   cBase: Schema_Event_Recur_Base,
 ) => {
@@ -128,15 +162,6 @@ export const validateInstanceDataMatchCompassBase = (
   const cBaseId = String(cBase?._id);
   expect(cInstance.recurrence?.eventId).toEqual(cBaseId); // still points to base
 };
-
-export const validateHasNewUpdatedAtTimestamp = (
-  newInstance: Schema_Event_Recur_Instance,
-  oldInstances: Schema_Event_Recur_Instance[],
-) => {
-  const origInstance = oldInstances.find((i) => i._id === newInstance._id);
-  expect(newInstance.updatedAt).not.toEqual(origInstance?.updatedAt);
-};
-
 const _getCompassDays = (e: Schema_Event) => {
   const start = dayjs.tz(e.startDate as string, "UTC");
   const end = dayjs.tz(e.endDate as string, "UTC");

@@ -40,12 +40,13 @@ import { Change_Gcal } from "@backend/sync/sync.types";
 import { GcalSyncProcessor } from "./gcal.sync.processor";
 import {
   baseHasRecurrenceRule,
+  datesAreInUtcOffset,
   getLatestEventsFromDb,
+  hasNewUpdatedAtTimestamp,
+  instanceDataMatchCompassBase,
+  instanceDataMatchesGcalBase,
   noInstancesAfterSplitDate,
   updateBasePayloadToExpireOneDayAfterFirstInstance,
-  validateHasNewUpdatedAtTimestamp,
-  validateInstanceDataMatchCompassBase,
-  validateInstanceDataMatchesGoogleBase,
 } from "./gcal.sync.processor.test.util";
 
 // Mock Gcal Instances API response
@@ -449,9 +450,9 @@ describe("GcalSyncProcessor", () => {
 
       expect(instances.length).toBeGreaterThan(0);
       for (const i of instances) {
-        validateInstanceDataMatchesGoogleBase(i, updatedGcalBase);
-        validateInstanceDataMatchCompassBase(i, base);
-        validateHasNewUpdatedAtTimestamp(i, origInstances);
+        instanceDataMatchesGcalBase(i, updatedGcalBase);
+        instanceDataMatchCompassBase(i, base);
+        hasNewUpdatedAtTimestamp(i, origInstances);
       }
     });
 
@@ -500,9 +501,10 @@ describe("GcalSyncProcessor", () => {
 
       expect(instances.length).toBeGreaterThan(0);
       for (const i of instances) {
-        validateInstanceDataMatchesGoogleBase(i, updatedGcalBase);
-        validateInstanceDataMatchCompassBase(i, base);
-        validateHasNewUpdatedAtTimestamp(i, origInstances);
+        instanceDataMatchesGcalBase(i, updatedGcalBase);
+        instanceDataMatchCompassBase(i, base);
+        hasNewUpdatedAtTimestamp(i, origInstances);
+        datesAreInUtcOffset(i);
       }
     });
   });

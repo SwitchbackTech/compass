@@ -13,10 +13,6 @@ export const FORMAT = {
     key: "RFC5545",
     value: "YYYYMMDD[T]HHmmss[Z]",
   },
-  RFC5545_NO_Z: {
-    key: "RFC5545_NO_Z",
-    value: "YYYYMMDD[T]HHmmss",
-  },
   RFC3339: {
     key: "RFC3339",
     value: "YYYY-MM-DD[T]HH:mm:ss[Z]",

@@ -116,7 +116,7 @@ export class RecurringEventRepository {
 
     // Only works for timed events (not all-day)
     if (updatedBase.isAllDay) {
-      // For all-day events, just do a bulk update as before
+      // No need to adjust year/month/day value for all-day events
       const instResult = await mongoService.db
         .collection(Collections.EVENT)
         .updateMany(
@@ -133,8 +133,9 @@ export class RecurringEventRepository {
       );
     } else {
       // Update instances using MongoDB aggregation pipeline
-      // to maintain year and day while updating the time
+      // to maintain year/day/month while updating the time
       const baseStartDate = new Date(updatedBase.startDate as string);
+      const DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z";
       const baseEndDate = new Date(updatedBase.endDate as string);
       const instResult = await mongoService.db
         .collection(Collections.EVENT)
@@ -145,25 +146,39 @@ export class RecurringEventRepository {
               $set: {
                 ...baseForUpdate,
                 startDate: {
-                  $dateFromParts: {
-                    year: { $year: { $toDate: "$startDate" } },
-                    month: { $month: { $toDate: "$startDate" } },
-                    day: { $dayOfMonth: { $toDate: "$startDate" } },
-                    hour: { $hour: { $literal: baseStartDate } },
-                    minute: { $minute: { $literal: baseStartDate } },
-                    second: { $second: { $literal: baseStartDate } },
-                    millisecond: { $millisecond: { $literal: baseStartDate } },
+                  $dateToString: {
+                    date: {
+                      $dateFromParts: {
+                        year: { $year: { $toDate: "$startDate" } },
+                        month: { $month: { $toDate: "$startDate" } },
+                        day: { $dayOfMonth: { $toDate: "$startDate" } },
+                        hour: { $hour: { $literal: baseStartDate } },
+                        minute: { $minute: { $literal: baseStartDate } },
+                        second: { $second: { $literal: baseStartDate } },
+                        millisecond: {
+                          $millisecond: { $literal: baseStartDate },
+                        },
+                      },
+                    },
+                    format: DATE_FORMAT,
                   },
                 },
                 endDate: {
-                  $dateFromParts: {
-                    year: { $year: { $toDate: "$endDate" } },
-                    month: { $month: { $toDate: "$endDate" } },
-                    day: { $dayOfMonth: { $toDate: "$endDate" } },
-                    hour: { $hour: { $literal: baseEndDate } },
-                    minute: { $minute: { $literal: baseEndDate } },
-                    second: { $second: { $literal: baseEndDate } },
-                    millisecond: { $millisecond: { $literal: baseEndDate } },
+                  $dateToString: {
+                    date: {
+                      $dateFromParts: {
+                        year: { $year: { $toDate: "$endDate" } },
+                        month: { $month: { $toDate: "$endDate" } },
+                        day: { $dayOfMonth: { $toDate: "$endDate" } },
+                        hour: { $hour: { $literal: baseEndDate } },
+                        minute: { $minute: { $literal: baseEndDate } },
+                        second: { $second: { $literal: baseEndDate } },
+                        millisecond: {
+                          $millisecond: { $literal: baseEndDate },
+                        },
+                      },
+                    },
+                    format: DATE_FORMAT,
                   },
                 },
                 updatedAt: new Date(),
@@ -172,7 +187,7 @@ export class RecurringEventRepository {
           ],
         );
       console.log(
-        `[updateSeries] Bulk updated ${instResult.modifiedCount} instances for base ${baseId} using aggregation pipeline`,
+        `[updateSeries] Bulk updated ${instResult.modifiedCount} timed instances for base ${baseId} using aggregation pipeline`,
       );
     }
   }
