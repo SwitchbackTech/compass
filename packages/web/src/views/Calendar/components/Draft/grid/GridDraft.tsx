@@ -55,7 +55,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   };
 
   const { onMouseDown } = useGridEventMouseDown(
-    Categories_Event.TIMED,
+    draft?.isAllDay ? Categories_Event.ALLDAY : Categories_Event.TIMED,
     handleClick,
     handleDrag,
   );
