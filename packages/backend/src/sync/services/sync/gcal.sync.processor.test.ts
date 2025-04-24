@@ -105,8 +105,11 @@ describe("GcalSyncProcessor", () => {
 
       // Verify the event is deleted from the DB
       const remainingEvents = await getEventsInDb();
-      const { regularEvents } = categorizeEvents(remainingEvents);
-      expect(regularEvents).toHaveLength(0);
+      const { standaloneEvents } = categorizeEvents(remainingEvents);
+      const eventIsGone =
+        standaloneEvents.find((e) => e.gEventId === gStandalone.id) ===
+        undefined;
+      expect(eventIsGone).toBe(true);
 
       //Verify no other events deleted
       expect(remainingEvents).toHaveLength(origEvents.length - 1);
@@ -400,6 +403,58 @@ describe("GcalSyncProcessor", () => {
         operation: "UPSERTED",
       });
     });
+
+    it("should handle UPDATING an ALL-DAY SERIES", async () => {
+      /* Assemble */
+      const { gcalEvents } = await simulateDbAfterGcalImport(
+        setup.db,
+        setup.userId,
+      );
+      const origEvents = await getEventsInDb();
+      const { instances: origInstances } = categorizeEvents(origEvents);
+
+      /* Act */
+      const updatedGcalBase = {
+        ...gcalEvents.recurring,
+        summary: `${gcalEvents.recurring.summary} - UPDATED IN GCAL`,
+        description: "ALL-DAY Description adjusted in Gcal",
+        start: {
+          date: "2025-04-21",
+          timeZone: "America/Chicago",
+        },
+        end: {
+          date: "2025-04-23",
+          timeZone: "America/Chicago",
+        },
+      };
+
+      const processor = new GcalSyncProcessor(repo);
+      const changes = await processor.processEvents([updatedGcalBase]);
+
+      /* Assert */
+      // Validate the correct change was detected
+      expect(changes).toHaveLength(1);
+      expect(changes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            title: updatedGcalBase.summary,
+            category: Categories_Recurrence.RECURRENCE_BASE, // TODO change to series for clarity?
+            operation: "UPSERTED",
+          }),
+        ]),
+      );
+
+      // Validate that all events in the series (base and instances) were updated
+      const { base, instances } = await getLatestEventsFromDb();
+
+      expect(instances.length).toBeGreaterThan(0);
+      for (const i of instances) {
+        validateInstanceDataMatchesGoogleBase(i, updatedGcalBase);
+        validateInstanceDataMatchCompassBase(i, base);
+        validateHasNewUpdatedAtTimestamp(i, origInstances);
+      }
+    });
+
     it("should handle UPDATING a TIMED SERIES", async () => {
       /* Assemble */
       const { gcalEvents } = await simulateDbAfterGcalImport(

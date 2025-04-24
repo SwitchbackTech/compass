@@ -1,16 +1,16 @@
 import {
-  mockRecurringEvent,
   mockRecurringInstances,
+  mockTimedRecurrence,
 } from "./gcal.event.factory";
 
 describe("mockRecurringInstances", () => {
   it("should create recurring instances", () => {
-    const event = mockRecurringEvent();
+    const event = mockTimedRecurrence();
     const instances = mockRecurringInstances(event, 3, 7);
     expect(instances).toHaveLength(3);
   });
   it("should use RFC3339_OFFSET for start and end times", () => {
-    const event = mockRecurringEvent();
+    const event = mockTimedRecurrence();
     const instances = mockRecurringInstances(event, 3, 7);
     const hasTZOffset = (ts: string) => {
       return (

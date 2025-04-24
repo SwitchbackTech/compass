@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
 import {

@@ -150,42 +150,48 @@ export const mockTimedGcalEvent = (
 };
 
 export const mockGcalEvents = (repeatIntervalInDays = 7) => {
-  const timedEvent = mockTimedGcalEvent({ summary: "Regular Event" });
-  const baseRecurrence = mockTimedRecurrence({
+  const timedStandalone = mockTimedGcalEvent({
+    summary: "STANDALONE: Regular Event",
+  });
+  const allDayStandalone = mockAlldayGcalEvent({
+    summary: "STANDALONE:All Day Event",
+  });
+  const baseTimedRecurrence = mockTimedRecurrence({
     summary: "Recurring Event",
     recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
   });
 
-  const recurringInstances = mockRecurringInstances(
-    baseRecurrence,
+  const timedInstances = mockRecurringInstances(
+    baseTimedRecurrence,
     3,
     repeatIntervalInDays,
   );
 
-  const cancelledEvent = mockCancelledInstance(
-    baseRecurrence,
+  const cancelledTimedEvent = mockCancelledInstance(
+    baseTimedRecurrence,
     "2025-04-10T12:30:00Z",
   );
 
   const allGcalEvents = [
-    timedEvent,
-    cancelledEvent,
-    baseRecurrence,
-    ...recurringInstances,
+    timedStandalone,
+    allDayStandalone,
+    cancelledTimedEvent,
+    baseTimedRecurrence,
+    ...timedInstances,
   ];
 
   return {
     gcalEvents: {
       all: allGcalEvents,
-      regular: timedEvent,
-      cancelled: cancelledEvent,
-      recurring: baseRecurrence,
-      instances: recurringInstances,
+      regular: timedStandalone,
+      cancelled: cancelledTimedEvent,
+      recurring: baseTimedRecurrence,
+      instances: timedInstances,
     },
     totals: {
       total: allGcalEvents.length,
       cancelled: 1,
-      recurring: 1 + recurringInstances.length,
+      recurring: 1 + timedInstances.length,
     },
   };
 };

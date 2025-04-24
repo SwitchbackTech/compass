@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
 import {
   Event_Core,
   Schema_Event,
@@ -12,6 +14,8 @@ import {
 } from "@core/util/event/event.util";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import { State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
+
+dayjs.extend(timezone);
 
 /** Utility assertions for the gcal sync processor tests */
 export const baseHasRecurrenceRule = async (
@@ -31,21 +35,36 @@ export const getLatestEventsFromDb = async () => {
   return { base, instances };
 };
 
+export const hasDifferentDatesAsBase = (
+  instance: Schema_Event_Recur_Instance,
+  updatedBase: gSchema$EventBase,
+) => {
+  const gTimes = _getGcalDays(updatedBase);
+  const cTimes = _getCompassDays(instance);
+  const diffStartMonthAndDay =
+    gTimes.start.month !== cTimes.start.month &&
+    gTimes.start.date !== cTimes.start.date;
+
+  const diffEndMonthAndDay =
+    gTimes.end.month !== cTimes.end.month &&
+    gTimes.end.date !== cTimes.end.date;
+
+  return diffStartMonthAndDay && diffEndMonthAndDay;
+};
+
 export const hasSameHourAndMinAsBase = (
   instance: Schema_Event_Recur_Instance,
   updatedBase: gSchema$EventBase,
 ) => {
-  const gBaseStart = new Date(updatedBase.start?.dateTime as string);
-  const cInstanceStart = new Date(instance.startDate as string);
+  const gTimes = _getGcalTimes(updatedBase);
+  const cTimes = _getCompassTimes(instance);
   const sameStartHourAndMin =
-    gBaseStart.getHours() === cInstanceStart.getHours() &&
-    gBaseStart.getMinutes() === cInstanceStart.getMinutes();
+    gTimes.start.hour === cTimes.start.hour &&
+    gTimes.start.minute === cTimes.start.minute;
 
-  const gBaseEnd = new Date(updatedBase.end?.dateTime as string);
-  const cInstanceEnd = new Date(instance.endDate as string);
   const sameEndHourAndMin =
-    gBaseEnd.getHours() === cInstanceEnd.getHours() &&
-    gBaseEnd.getMinutes() === cInstanceEnd.getMinutes();
+    gTimes.end.hour === cTimes.end.hour &&
+    gTimes.end.minute === cTimes.end.minute;
 
   return sameStartHourAndMin && sameEndHourAndMin;
 };
@@ -93,7 +112,11 @@ export const validateInstanceDataMatchesGoogleBase = (
 ) => {
   expect(cInstance.title).toEqual(gBase.summary); // matches gcal payload
   expect(cInstance.description).toEqual(gBase.description); // matches gcal payload
-  expect(hasSameHourAndMinAsBase(cInstance, gBase)).toBe(true); // times should be same (days will be different)
+  if (cInstance.isAllDay) {
+    expect(hasDifferentDatesAsBase(cInstance, gBase)).toBe(true); // days should be different
+  } else {
+    expect(hasSameHourAndMinAsBase(cInstance, gBase)).toBe(true); // times should be same (days will be different)
+  }
 };
 
 export const validateInstanceDataMatchCompassBase = (
@@ -112,4 +135,44 @@ export const validateHasNewUpdatedAtTimestamp = (
 ) => {
   const origInstance = oldInstances.find((i) => i._id === newInstance._id);
   expect(newInstance.updatedAt).not.toEqual(origInstance?.updatedAt);
+};
+
+const _getCompassDays = (e: Schema_Event) => {
+  const start = dayjs.tz(e.startDate as string, "UTC");
+  const end = dayjs.tz(e.endDate as string, "UTC");
+  return {
+    start: { year: start.year(), month: start.month(), date: start.date() },
+    end: { year: end.year(), month: end.month(), date: end.date() },
+  };
+};
+
+const _getGcalDays = (e: gSchema$EventBase) => {
+  const start = dayjs.tz(
+    e.start?.dateTime as string,
+    e.start?.timeZone as string,
+  );
+  const end = dayjs.tz(e.end?.dateTime as string, e.end?.timeZone as string);
+  return {
+    start: { year: start.year(), month: start.month(), date: start.date() },
+    end: { year: end.year(), month: end.month(), date: end.date() },
+  };
+};
+
+const _getCompassTimes = (e: Schema_Event) => {
+  const start = dayjs.tz(e.startDate as string, "UTC");
+  const end = dayjs.tz(e.endDate as string, "UTC");
+  return {
+    start: { hour: start.hour(), minute: start.minute() },
+    end: { hour: end.hour(), minute: end.minute() },
+  };
+};
+
+const _getGcalTimes = (e: gSchema$EventBase) => {
+  const tz = e.start?.timeZone as string;
+  const start = dayjs.tz(e.start?.dateTime as string, tz);
+  const end = dayjs.tz(e.end?.dateTime as string, tz);
+  return {
+    start: { hour: start.hour(), minute: start.minute() },
+    end: { hour: end.hour(), minute: end.minute() },
+  };
 };
