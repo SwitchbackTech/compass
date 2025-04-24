@@ -114,20 +114,66 @@ export class RecurringEventRepository {
       ...baseForUpdate
     } = updatedBase;
 
-    // Update instances
-    const instResult = await mongoService.db
-      .collection(Collections.EVENT)
-      .updateMany(
-        { "recurrence.eventId": String(baseId), user: this.userId },
-        {
-          $set: {
-            ...baseForUpdate,
-            updatedAt: new Date(),
+    // Only works for timed events (not all-day)
+    if (updatedBase.isAllDay) {
+      // For all-day events, just do a bulk update as before
+      const instResult = await mongoService.db
+        .collection(Collections.EVENT)
+        .updateMany(
+          { "recurrence.eventId": String(baseId), user: this.userId },
+          {
+            $set: {
+              ...baseForUpdate,
+              updatedAt: new Date(),
+            },
           },
-        },
+        );
+      console.log(
+        `[updateSeries] Bulk updated ${instResult.modifiedCount} all-day instances for base ${baseId}`,
       );
-    console.log(
-      `[updateSeries] Bulk updated ${instResult.modifiedCount} instances for base ${baseId}`,
-    );
+    } else {
+      // Update instances using MongoDB aggregation pipeline
+      // to maintain year and day while updating the time
+      const baseStartDate = new Date(updatedBase.startDate as string);
+      const baseEndDate = new Date(updatedBase.endDate as string);
+      const instResult = await mongoService.db
+        .collection(Collections.EVENT)
+        .updateMany(
+          { "recurrence.eventId": String(baseId), user: this.userId },
+          [
+            {
+              $set: {
+                ...baseForUpdate,
+                startDate: {
+                  $dateFromParts: {
+                    year: { $year: { $toDate: "$startDate" } },
+                    month: { $month: { $toDate: "$startDate" } },
+                    day: { $dayOfMonth: { $toDate: "$startDate" } },
+                    hour: { $hour: { $literal: baseStartDate } },
+                    minute: { $minute: { $literal: baseStartDate } },
+                    second: { $second: { $literal: baseStartDate } },
+                    millisecond: { $millisecond: { $literal: baseStartDate } },
+                  },
+                },
+                endDate: {
+                  $dateFromParts: {
+                    year: { $year: { $toDate: "$endDate" } },
+                    month: { $month: { $toDate: "$endDate" } },
+                    day: { $dayOfMonth: { $toDate: "$endDate" } },
+                    hour: { $hour: { $literal: baseEndDate } },
+                    minute: { $minute: { $literal: baseEndDate } },
+                    second: { $second: { $literal: baseEndDate } },
+                    millisecond: { $millisecond: { $literal: baseEndDate } },
+                  },
+                },
+                updatedAt: new Date(),
+              },
+            },
+          ],
+        );
+      console.log(
+        `[updateSeries] Bulk updated ${instResult.modifiedCount} instances for base ${baseId} using aggregation pipeline`,
+      );
+    }
   }
 }
