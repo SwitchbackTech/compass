@@ -8,8 +8,10 @@ import {
 /** Event utilities for Compass events */
 
 export const categorizeEvents = (events: Schema_Event[]) => {
-  const baseEvents = events.filter(isBase);
-  const instances = events.filter(isExistingInstance);
+  const baseEvents = events.filter(isBase) as Schema_Event_Recur_Base[];
+  const instances = events.filter(
+    isExistingInstance,
+  ) as Schema_Event_Recur_Instance[];
   const regularEvents = events.filter(
     (e) => !isBase(e) && !isExistingInstance(e),
   );

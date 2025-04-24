@@ -1,5 +1,16 @@
-import { Event_Core, Schema_Event } from "@core/types/event.types";
-import { isBase, isExistingInstance } from "@core/util/event/event.util";
+import {
+  Event_Core,
+  Schema_Event,
+  Schema_Event_Recur_Base,
+  Schema_Event_Recur_Instance,
+} from "@core/types/event.types";
+import { gSchema$EventBase } from "@core/types/gcal";
+import {
+  categorizeEvents,
+  isBase,
+  isExistingInstance,
+} from "@core/util/event/event.util";
+import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import { State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 
 /** Utility assertions for the gcal sync processor tests */
@@ -11,6 +22,32 @@ export const baseHasRecurrenceRule = async (
 
   expect(baseEventsInDb).toBeDefined();
   expect(baseEventsInDb?.["recurrence"]?.["rule"]).toEqual(rule);
+};
+
+export const getLatestEventsFromDb = async () => {
+  const updatedEvents = await getEventsInDb();
+  const { baseEvents, instances } = categorizeEvents(updatedEvents);
+  const base = baseEvents[0] as Schema_Event_Recur_Base;
+  return { base, instances };
+};
+
+export const hasSameHourAndMinAsBase = (
+  instance: Schema_Event_Recur_Instance,
+  updatedBase: gSchema$EventBase,
+) => {
+  const gBaseStart = new Date(updatedBase.start?.dateTime as string);
+  const cInstanceStart = new Date(instance.startDate as string);
+  const sameStartHourAndMin =
+    gBaseStart.getHours() === cInstanceStart.getHours() &&
+    gBaseStart.getMinutes() === cInstanceStart.getMinutes();
+
+  const gBaseEnd = new Date(updatedBase.end?.dateTime as string);
+  const cInstanceEnd = new Date(instance.endDate as string);
+  const sameEndHourAndMin =
+    gBaseEnd.getHours() === cInstanceEnd.getHours() &&
+    gBaseEnd.getMinutes() === cInstanceEnd.getMinutes();
+
+  return sameStartHourAndMin && sameEndHourAndMin;
 };
 
 export const noInstancesAfterSplitDate = async (
@@ -48,4 +85,31 @@ export const updateBasePayloadToExpireOneDayAfterFirstInstance = (
   };
 
   return { gBaseWithUntil, untilDateStr };
+};
+
+export const validateInstanceDataMatchesGoogleBase = (
+  cInstance: Schema_Event_Recur_Instance,
+  gBase: gSchema$EventBase,
+) => {
+  expect(cInstance.title).toEqual(gBase.summary); // matches gcal payload
+  expect(cInstance.description).toEqual(gBase.description); // matches gcal payload
+  expect(hasSameHourAndMinAsBase(cInstance, gBase)).toBe(true); // times should be same (days will be different)
+};
+
+export const validateInstanceDataMatchCompassBase = (
+  cInstance: Schema_Event_Recur_Instance,
+  cBase: Schema_Event_Recur_Base,
+) => {
+  expect(cInstance.title).toEqual(cBase?.title); // matches compass base
+
+  const cBaseId = String(cBase?._id);
+  expect(cInstance.recurrence?.eventId).toEqual(cBaseId); // still points to base
+};
+
+export const validateHasNewUpdatedAtTimestamp = (
+  newInstance: Schema_Event_Recur_Instance,
+  oldInstances: Schema_Event_Recur_Instance[],
+) => {
+  const origInstance = oldInstances.find((i) => i._id === newInstance._id);
+  expect(newInstance.updatedAt).not.toEqual(origInstance?.updatedAt);
 };

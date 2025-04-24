@@ -40,8 +40,12 @@ import { Change_Gcal } from "@backend/sync/sync.types";
 import { GcalSyncProcessor } from "./gcal.sync.processor";
 import {
   baseHasRecurrenceRule,
+  getLatestEventsFromDb,
   noInstancesAfterSplitDate,
   updateBasePayloadToExpireOneDayAfterFirstInstance,
+  validateHasNewUpdatedAtTimestamp,
+  validateInstanceDataMatchCompassBase,
+  validateInstanceDataMatchesGoogleBase,
 } from "./gcal.sync.processor.test.util";
 
 // Mock Gcal Instances API response
@@ -396,27 +400,32 @@ describe("GcalSyncProcessor", () => {
         operation: "UPSERTED",
       });
     });
-    it("should handle UPDATING a SERIES", async () => {
+    it("should handle UPDATING a TIMED SERIES", async () => {
       /* Assemble */
       const { gcalEvents } = await simulateDbAfterGcalImport(
         setup.db,
         setup.userId,
       );
       const origEvents = await getEventsInDb();
-      const { baseEvents: origBaseEvents } = categorizeEvents(origEvents);
-      const origBase = origBaseEvents[0];
+      const { instances: origInstances } = categorizeEvents(origEvents);
 
       /* Act */
-      const updatedBase = {
+      const updatedGcalBase = {
         ...gcalEvents.recurring,
         summary: gcalEvents.recurring.summary + " - UPDATED IN GCAL",
         description: "Description adjusted in Gcal",
+        start: {
+          dateTime: "2025-04-21T19:15:00-05:00",
+          timeZone: "America/Chicago",
+        },
+        end: {
+          dateTime: "2025-04-21T20:30:00-05:00",
+          timeZone: "America/Chicago",
+        },
       };
 
-      const updatedGcalEvents = [updatedBase];
-
       const processor = new GcalSyncProcessor(repo);
-      const changes = await processor.processEvents(updatedGcalEvents);
+      const changes = await processor.processEvents([updatedGcalBase]);
 
       /* Assert */
       // Validate the correct change was detected
@@ -424,7 +433,7 @@ describe("GcalSyncProcessor", () => {
       expect(changes).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            title: updatedBase.summary,
+            title: updatedGcalBase.summary,
             category: Categories_Recurrence.RECURRENCE_BASE, // TODO change to series for clarity?
             operation: "UPSERTED",
           }),
@@ -432,23 +441,13 @@ describe("GcalSyncProcessor", () => {
       );
 
       // Validate that all events in the series (base and instances) were updated
-      const updatedEvents = await getEventsInDb();
-      const { baseEvents, instances } = categorizeEvents(updatedEvents);
-      const base = baseEvents[0];
-      const baseId = String(base?._id);
+      const { base, instances } = await getLatestEventsFromDb();
 
-      const validateEventHasNewData = (i: Schema_Event) => {
-        expect(i.title).toEqual(updatedBase.summary); // matches gcal payload
-        expect(i.description).toEqual(updatedBase.description); // matches gcal payload
-        expect(i.updatedAt).not.toEqual(origBase?.updatedAt); // unique timestamp
-      };
-
-      validateEventHasNewData(base!);
       expect(instances.length).toBeGreaterThan(0);
       for (const i of instances) {
-        validateEventHasNewData(i);
-        expect(i.title).toEqual(base?.title); // matches compass base
-        expect(i.recurrence?.eventId).toEqual(baseId); // still points to base
+        validateInstanceDataMatchesGoogleBase(i, updatedGcalBase);
+        validateInstanceDataMatchCompassBase(i, base);
+        validateHasNewUpdatedAtTimestamp(i, origInstances);
       }
     });
   });
