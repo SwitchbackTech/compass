@@ -415,7 +415,7 @@ describe("GcalSyncProcessor", () => {
       const { instances: origInstances } = categorizeEvents(origEvents);
 
       /* Act */
-      const updatedGcalBase = {
+      const updatedGcalAllDayBase = {
         ...gcalEvents.recurring,
         summary: `${gcalEvents.recurring.summary} - UPDATED IN GCAL`,
         description: "ALL-DAY Description adjusted in Gcal",
@@ -430,7 +430,7 @@ describe("GcalSyncProcessor", () => {
       };
 
       const processor = new GcalSyncProcessor(repo);
-      const changes = await processor.processEvents([updatedGcalBase]);
+      const changes = await processor.processEvents([updatedGcalAllDayBase]);
 
       /* Assert */
       // Validate the correct change was detected
@@ -438,7 +438,7 @@ describe("GcalSyncProcessor", () => {
       expect(changes).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            title: updatedGcalBase.summary,
+            title: updatedGcalAllDayBase.summary,
             category: Categories_Recurrence.RECURRENCE_BASE, // TODO change to series for clarity?
             operation: "UPSERTED",
           }),
@@ -450,7 +450,7 @@ describe("GcalSyncProcessor", () => {
 
       expect(instances.length).toBeGreaterThan(0);
       for (const i of instances) {
-        instanceDataMatchesGcalBase(i, updatedGcalBase);
+        instanceDataMatchesGcalBase(i, updatedGcalAllDayBase);
         instanceDataMatchCompassBase(i, base);
         hasNewUpdatedAtTimestamp(i, origInstances);
       }

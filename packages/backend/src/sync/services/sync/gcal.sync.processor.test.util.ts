@@ -41,15 +41,14 @@ export const hasDifferentDatesAsBase = (
 ) => {
   const gTimes = _getGcalDays(updatedBase);
   const cTimes = _getCompassDays(instance);
-  const diffStartMonthAndDay =
-    gTimes.start.month !== cTimes.start.month &&
-    gTimes.start.date !== cTimes.start.date;
+  const diffStart = gTimes.start !== cTimes.start;
+  const diffEnd = gTimes.end !== cTimes.end;
 
-  const diffEndMonthAndDay =
-    gTimes.end.month !== cTimes.end.month &&
-    gTimes.end.date !== cTimes.end.date;
+  if (!diffStart || !diffEnd) {
+    console.error("Dates/Times are the same:", gTimes, cTimes);
+  }
 
-  return diffStartMonthAndDay && diffEndMonthAndDay;
+  return diffStart && diffEnd;
 };
 
 export const hasSameHourAndMinAsBase = (
