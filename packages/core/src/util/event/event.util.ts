@@ -39,8 +39,8 @@ export const isAllDay = (event: Schema_Event) =>
  */
 export const isBase = (event: Schema_Event) => {
   return (
-    event.recurrence?.rule !== undefined &&
-    event.recurrence.eventId === undefined
+    event?.recurrence?.rule !== undefined &&
+    event?.recurrence?.eventId === undefined
   );
 };
 
