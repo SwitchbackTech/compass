@@ -98,13 +98,41 @@ export const convertRfc5545ToIso = (orig: string) => {
 
 /**
  * Convert supported RFC date string (RFC5545, RFC3339, etc) to ISO string
- * @param orig - The original string in any supported RFC format
+ * @param orig - The original string in a supported RFC format
  * @returns Parsed date as ISO string (e.g., "2025-12-07T15:59:33.000Z")
  */
 export const formatAsIso8601 = (orig: string) => {
-  const utcDate = dayjs.utc(orig);
-  if (utcDate.isValid()) {
-    return utcDate.toISOString();
+  // Try native Date/ISO parse first
+  const d = new Date(orig);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString();
+  }
+
+  // Try to normalize compact RFC5545 (YYYYMMDDTHHmmss or YYYYMMDDTHHmmssZ)
+  const compactMatch = orig.match(
+    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/,
+  );
+  if (compactMatch) {
+    const [_, y, m, d, h, min, s, z] = compactMatch;
+    if (z) {
+      // Z: treat as UTC
+      const norm = `${y}-${m}-${d}T${h}:${min}:${s}Z`;
+      const d2 = new Date(norm);
+      if (!isNaN(d2.getTime())) {
+        return d2.toISOString();
+      }
+    } else {
+      // No Z: treat as UTC (not local!)
+      const utcMs = Date.UTC(
+        Number(y),
+        Number(m) - 1,
+        Number(d),
+        Number(h),
+        Number(min),
+        Number(s),
+      );
+      return new Date(utcMs).toISOString();
+    }
   }
 
   return null;
