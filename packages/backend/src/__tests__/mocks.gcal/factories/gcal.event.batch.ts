@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker/.";
 import { gSchema$EventBase } from "@core/types/gcal";
 import {
   generateGcalId,
@@ -6,9 +7,9 @@ import {
   mockRegularGcalEvent,
 } from "./gcal.event.factory";
 
-/* Sets of events, pre-organized as a convenience for testing */
+/* Batch of events, pre-organized as a convenience for testing */
 
-export const mockGcalEvents = (
+export const mockAndCategorizeGcalEvents = (
   baseId?: string,
   fixedStart?: string,
   fixedEnd?: string,
@@ -18,14 +19,14 @@ export const mockGcalEvents = (
   const endDateTime = fixedEnd || "2025-07-16T10:56:29.000Z";
 
   // Create a base recurring event
+  const tz = faker.location.timeZone();
   const baseRecurringEvent = mockRecurringGcalBaseEvent({
     id: baseId || generateGcalId(),
     summary: "Recurrence",
     recurrence: ["RRULE:FREQ=WEEKLY"],
-    start: { dateTime: startDateTime, timeZone: "UTC" },
-    end: { dateTime: endDateTime, timeZone: "UTC" },
+    start: { dateTime: startDateTime, timeZone: tz },
+    end: { dateTime: endDateTime, timeZone: tz },
   }) as gSchema$EventBase;
-  console.log("mocked base with:", baseId);
 
   // Create instances of the recurring event
   const instances = mockRecurringGcalInstances(baseRecurringEvent, 2, 7);
@@ -44,9 +45,6 @@ export const mockGcalEvents = (
   });
 
   const all = [baseRecurringEvent, ...instances, regularEvent, cancelledEvent];
-
-  const instanceIds = instances.map((i) => i.id);
-  console.log("mocked instanceIds:", instanceIds);
 
   return {
     gcalEvents: {

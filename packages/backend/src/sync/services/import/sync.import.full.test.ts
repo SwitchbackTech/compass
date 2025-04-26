@@ -4,14 +4,14 @@ import {
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory.set";
+import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import mongoService from "@backend/common/services/mongo.service";
 import { createSyncImport } from "./sync.import";
 
 // Mock Google Calendar API responses,
 jest.mock("googleapis", () => {
-  const { gcalEvents } = mockGcalEvents();
+  const { gcalEvents } = mockAndCategorizeGcalEvents();
   const googleapis = mockGcal({ events: gcalEvents.all });
   return googleapis;
 });

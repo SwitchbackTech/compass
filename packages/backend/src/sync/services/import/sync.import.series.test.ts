@@ -7,8 +7,8 @@ import {
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory.set";
 import mongoService from "@backend/common/services/mongo.service";
 import { createSyncImport } from "./sync.import";
 
@@ -17,7 +17,7 @@ jest.mock("@backend/common/services/gcal/gcal.service", () => ({
   __esModule: true,
   default: {
     getEventInstances: jest.fn().mockResolvedValue({
-      data: { items: mockGcalEvents().gcalEvents.instances },
+      data: { items: mockAndCategorizeGcalEvents().gcalEvents.instances },
     }),
   },
 }));
@@ -53,7 +53,8 @@ describe("SyncImport: Series", () => {
 
     /* Assert */
     // make sure this is the same function being used in the mock at the top of this file
-    const expectedInstances = mockGcalEvents().gcalEvents.instances.length;
+    const expectedInstances =
+      mockAndCategorizeGcalEvents().gcalEvents.instances.length;
     // validate return value
     expect(result.insertedCount).toEqual(1 + expectedInstances);
 

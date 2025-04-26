@@ -104,6 +104,7 @@ export const mockRecurringGcalInstances = (
       },
     };
     // remove properties that are reserved for the base event
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { recurrence, ...instanceWithoutRecurrence } = instance;
     return instanceWithoutRecurrence;
   });

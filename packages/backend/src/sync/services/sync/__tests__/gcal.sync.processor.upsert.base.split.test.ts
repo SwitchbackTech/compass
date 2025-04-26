@@ -8,7 +8,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory.set";
+import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockCancelledInstance } from "@backend/__tests__/mocks.gcal/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalSyncProcessor } from "../gcal.sync.processor";
@@ -23,7 +23,7 @@ jest.mock("@backend/common/services/gcal/gcal.service", () => ({
   __esModule: true,
   default: {
     getEventInstances: jest.fn().mockResolvedValue({
-      data: { items: mockGcalEvents().gcalEvents.instances },
+      data: { items: mockAndCategorizeGcalEvents().gcalEvents.instances },
     }),
   },
 }));

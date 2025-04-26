@@ -17,11 +17,11 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
+import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import {
   mockRecurringGcalBaseEvent,
   mockRecurringGcalEvents,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory.set";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { Change_Gcal } from "@backend/sync/sync.types";
 import { GcalSyncProcessor } from "../gcal.sync.processor";
@@ -38,7 +38,7 @@ jest.mock("@backend/common/services/gcal/gcal.service", () => ({
       // because you'll need to use the timestamp as the id as part
       // of the cancellation payload
       data: {
-        items: mockGcalEvents(
+        items: mockAndCategorizeGcalEvents(
           "ggvs54k2i7tco3vo",
           "2025-07-16T09:56:29.000Z",
           "2025-07-16T10:56:29.000Z",
@@ -130,7 +130,7 @@ describe("GcalSyncProcessor: DELETE", () => {
     );
 
     // Also log the GCal mock instance IDs for comparison
-    const mockInstanceIds = mockGcalEvents(
+    const mockInstanceIds = mockAndCategorizeGcalEvents(
       MOCK_BASE_GCAL_ID,
       fixedStart,
       fixedEnd,

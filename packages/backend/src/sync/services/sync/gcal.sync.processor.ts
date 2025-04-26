@@ -91,7 +91,6 @@ export class GcalSyncProcessor {
 
     if (status === "CANCELLED") {
       logger.info(`Cancelling INSTANCE: ${gEvent.id} (Gcal)`);
-      console.log("trying to delete via gEventId:", gEvent.id);
       await this.recurringEventRepo.cancelInstance(gEvent.id, {
         idKey: "gEventId",
       });

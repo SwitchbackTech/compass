@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker/.";
 import { Origin, Priorities } from "@core/constants/core.constants";
@@ -9,6 +10,8 @@ import {
   WithCompassId,
 } from "@core/types/event.types";
 import { appendWithRfc5545Timestamp } from "@core/util/date/date.util";
+
+dayjs.extend(timezone);
 
 export const createMockStandaloneEvent = (
   overrides: Partial<Schema_Event> = {},
