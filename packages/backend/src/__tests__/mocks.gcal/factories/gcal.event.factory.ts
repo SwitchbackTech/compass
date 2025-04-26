@@ -115,7 +115,7 @@ export const mockRegularGcalEvent = (
 ): WithGcalId<gSchema$Event> => {
   const id = generateGcalId();
   const tz = faker.location.timeZone();
-  // Generate times dynamically but in the right tz
+  // Dynamically generate timezone-aware times
   const start = dayjs.tz(faker.date.future(), tz);
   const end = start.add(1, "hour");
   const created = dayjs.tz(faker.date.past(), tz);

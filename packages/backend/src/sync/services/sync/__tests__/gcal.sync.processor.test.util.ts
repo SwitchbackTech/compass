@@ -202,6 +202,7 @@ export const instanceDataMatchCompassBase = (
   const cBaseId = String(cBase?._id);
   expect(cInstance.recurrence?.eventId).toEqual(cBaseId); // still points to base
 };
+
 const _getCompassDays = (e: Schema_Event) => {
   const start = dayjs.tz(e.startDate as string, "UTC");
   const end = dayjs.tz(e.endDate as string, "UTC");

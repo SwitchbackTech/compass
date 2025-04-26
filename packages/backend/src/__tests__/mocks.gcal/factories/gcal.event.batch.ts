@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { faker } from "@faker-js/faker/.";
 import { gSchema$EventBase } from "@core/types/gcal";
 import {
@@ -15,8 +16,9 @@ export const mockAndCategorizeGcalEvents = (
   fixedEnd?: string,
 ) => {
   // Use fixed times if provided, otherwise fallback to defaults
-  const startDateTime = fixedStart || "2025-07-16T09:56:29.000Z";
-  const endDateTime = fixedEnd || "2025-07-16T10:56:29.000Z";
+  const startDateTime = fixedStart || faker.date.future().toISOString();
+  const endDateTime =
+    fixedEnd || dayjs(startDateTime).add(1, "hour").toISOString();
 
   // Create a base recurring event
   const tz = faker.location.timeZone();

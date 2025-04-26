@@ -1,10 +1,13 @@
-import { error } from "console";
 import { ObjectId } from "mongodb";
 import { Event_Core, Schema_Event_Recur_Base } from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
-import { EventError } from "@backend/common/constants/error.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { Ids_Event } from "../../../queries/event.queries";
+import {
+  getOldBaseId,
+  updateAllDayInstances,
+  updateTimedInstances,
+} from "./recur.event.repo.util";
 
 /**
  * Recurring event DB operations repo for Compass's Event collection
@@ -83,17 +86,7 @@ export class RecurringEventRepository {
    */
   async updateSeries(updatedBase: Schema_Event_Recur_Base, idKey: Ids_Event) {
     // Find base event
-    const oldBase = await mongoService.db
-      .collection(Collections.EVENT)
-      .findOne({ [idKey]: updatedBase[idKey], user: this.userId });
-    if (!oldBase) {
-      throw error(
-        EventError.MissingGevents,
-        `Did not update series due to missing key-value (${idKey})`,
-      );
-    }
-
-    const baseId = oldBase._id;
+    const baseId = await getOldBaseId(updatedBase, idKey, this.userId);
 
     // Update base event
     await mongoService.db
@@ -103,92 +96,10 @@ export class RecurringEventRepository {
         { $set: { ...updatedBase, updatedAt: new Date() } },
       );
 
-    // Strip the properties that should not change
-    const {
-      recurrence,
-      updatedAt,
-      _id,
-      startDate,
-      endDate,
-      user,
-      ...baseForUpdate
-    } = updatedBase;
-
-    // Only works for timed events (not all-day)
     if (updatedBase.isAllDay) {
-      // No need to adjust year/month/day value for all-day events
-      const instResult = await mongoService.db
-        .collection(Collections.EVENT)
-        .updateMany(
-          { "recurrence.eventId": String(baseId), user: this.userId },
-          {
-            $set: {
-              ...baseForUpdate,
-              updatedAt: new Date(),
-            },
-          },
-        );
-      console.log(
-        `[updateSeries] Bulk updated ${instResult.modifiedCount} all-day instances for base ${baseId}`,
-      );
+      await updateAllDayInstances(baseId, updatedBase, this.userId);
     } else {
-      // Update instances using MongoDB aggregation pipeline
-      // to maintain year/day/month while updating the time
-      const baseStartDate = new Date(updatedBase.startDate as string);
-      const DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z";
-      const baseEndDate = new Date(updatedBase.endDate as string);
-      const instResult = await mongoService.db
-        .collection(Collections.EVENT)
-        .updateMany(
-          { "recurrence.eventId": String(baseId), user: this.userId },
-          [
-            {
-              $set: {
-                ...baseForUpdate,
-                startDate: {
-                  $dateToString: {
-                    date: {
-                      $dateFromParts: {
-                        year: { $year: { $toDate: "$startDate" } },
-                        month: { $month: { $toDate: "$startDate" } },
-                        day: { $dayOfMonth: { $toDate: "$startDate" } },
-                        hour: { $hour: { $literal: baseStartDate } },
-                        minute: { $minute: { $literal: baseStartDate } },
-                        second: { $second: { $literal: baseStartDate } },
-                        millisecond: {
-                          $millisecond: { $literal: baseStartDate },
-                        },
-                      },
-                    },
-                    format: DATE_FORMAT,
-                  },
-                },
-                endDate: {
-                  $dateToString: {
-                    date: {
-                      $dateFromParts: {
-                        year: { $year: { $toDate: "$endDate" } },
-                        month: { $month: { $toDate: "$endDate" } },
-                        day: { $dayOfMonth: { $toDate: "$endDate" } },
-                        hour: { $hour: { $literal: baseEndDate } },
-                        minute: { $minute: { $literal: baseEndDate } },
-                        second: { $second: { $literal: baseEndDate } },
-                        millisecond: {
-                          $millisecond: { $literal: baseEndDate },
-                        },
-                      },
-                    },
-                    format: DATE_FORMAT,
-                  },
-                },
-                updatedAt: new Date(),
-              },
-            },
-          ],
-        );
-      console.log(
-        `[updateSeries] Bulk updated ${instResult.modifiedCount} timed instances for base ${baseId} using aggregation pipeline`,
-      );
+      await updateTimedInstances(baseId, updatedBase, this.userId);
     }
   }
 }
