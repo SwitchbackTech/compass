@@ -1,19 +1,23 @@
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
+import { ObjectId } from "mongodb";
 import {
   Event_Core,
   Schema_Event,
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
-import { gSchema$EventBase } from "@core/types/gcal";
+import { gSchema$EventBase, gSchema$EventInstance } from "@core/types/gcal";
 import {
   categorizeEvents,
   isBase,
   isExistingInstance,
 } from "@core/util/event/event.util";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
+import { TestSetup } from "@backend/__tests__/helpers/mock.db.setup";
 import { State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
+import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
+import { mockRecurringGcalInstances } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 
 dayjs.extend(timezone);
 
@@ -26,6 +30,43 @@ export const baseHasRecurrenceRule = async (
 
   expect(baseEventsInDb).toBeDefined();
   expect(baseEventsInDb?.["recurrence"]?.["rule"]).toEqual(rule);
+};
+
+export const createCompassSeriesFromGcalBase = async (
+  setup: TestSetup,
+  gBase: gSchema$EventBase,
+) => {
+  const gcalInstance = mockRecurringGcalInstances(
+    gBase,
+    1,
+    1,
+  )[0] as gSchema$EventInstance;
+
+  const baseCompassId = new ObjectId().toString();
+  const compassBaseEvent: Schema_Event_Recur_Base = {
+    title: gBase.summary as string,
+    user: setup.userId,
+    _id: baseCompassId,
+    gEventId: gBase.id as string,
+    recurrence: {
+      rule: ["RRULE:FREQ=DAILY"],
+    },
+  };
+
+  const compassInstanceTemplate: Schema_Event_Recur_Instance = {
+    title: gcalInstance.summary as string,
+    user: setup.userId,
+    // gEventId: generateGcalInstanceId(gBase.start?.dateTime as string),
+    recurrence: {
+      eventId: baseCompassId,
+    },
+  };
+  const result = await createRecurrenceSeries(
+    setup,
+    compassBaseEvent,
+    compassInstanceTemplate,
+  );
+  return result;
 };
 
 export const getLatestEventsFromDb = async () => {

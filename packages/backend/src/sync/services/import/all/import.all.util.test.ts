@@ -6,6 +6,7 @@ import {
   createMockInstance,
 } from "@core/util/test/ccal.event.factory";
 import {
+  generateGcalId,
   mockRecurringGcalBaseEvent,
   mockRecurringGcalInstances,
   mockRegularGcalEvent,
@@ -15,12 +16,15 @@ import { assignIds, shouldProcessDuringPass1 } from "./import.all.util";
 const getEventsWithoutIds = () => {
   // Create a base event with a Google ID
   const baseEvent = createMockBaseEvent();
-  baseEvent.gEventId = "google_base_id";
+  const baseGEventId = generateGcalId();
+  baseEvent.gEventId = baseGEventId;
   delete baseEvent._id;
 
+  const gEventId = baseEvent.gEventId as string;
+
   // Create instances that reference the base event's Google ID
-  const instance1 = createMockInstance("google_base_id");
-  const instance2 = createMockInstance("google_base_id");
+  const instance1 = createMockInstance(baseGEventId, gEventId, {});
+  const instance2 = createMockInstance(baseGEventId, gEventId, {});
   // delete _ids to simulate a newly mapped event
   delete instance1._id;
   delete instance2._id;

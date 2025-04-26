@@ -58,9 +58,19 @@ export class GcalParser {
     return this.event.status === "cancelled";
   }
   private isCancelledInstance() {
-    return (
+    const hasInstancesPropertiesThatAreUndefined =
       this.event.originalStartTime !== undefined &&
-      this.event.recurringEventId !== undefined
-    );
+      this.event.recurringEventId !== undefined;
+    if (hasInstancesPropertiesThatAreUndefined) {
+      return true;
+    }
+
+    const hasInstanceId =
+      this.event.id?.includes("_") && this.event.id?.endsWith("Z");
+    if (hasInstanceId) {
+      return true;
+    }
+
+    return false;
   }
 }

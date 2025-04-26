@@ -50,10 +50,6 @@ export class GcalSyncProcessor {
 
       switch (category) {
         case "STANDALONE":
-          console.log(
-            "Processing STANDALONE event:",
-            gEvent.summary || gEvent.id,
-          );
           operation = await this.handleStandaloneChange(
             gEvent as WithGcalId<gSchema$Event>,
           );
@@ -95,6 +91,7 @@ export class GcalSyncProcessor {
 
     if (status === "CANCELLED") {
       logger.info(`Cancelling INSTANCE: ${gEvent.id} (Gcal)`);
+      console.log("trying to delete via gEventId:", gEvent.id);
       await this.recurringEventRepo.cancelInstance(gEvent.id, {
         idKey: "gEventId",
       });

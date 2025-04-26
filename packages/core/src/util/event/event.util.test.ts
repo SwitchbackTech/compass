@@ -9,7 +9,7 @@ describe("categorizeEvents", () => {
   it("should categorize events correctly", () => {
     const standalone = createMockStandaloneEvent();
     const base = createMockBaseEvent();
-    const instance = createMockInstance(base._id);
+    const instance = createMockInstance(base._id, base.gEventId as string);
     const events = [base, instance, standalone];
 
     const { baseEvents, instances, standaloneEvents } =

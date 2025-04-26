@@ -28,20 +28,25 @@ import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.event
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
 import {
   mockRecurringGcalBaseEvent,
-  mockRecurringGcalInstances,
-  mockRegularGcalEvent,
+  mockRecurringGcalEvents,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory.set";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { Change_Gcal } from "@backend/sync/sync.types";
 import { GcalSyncProcessor } from "../gcal.sync.processor";
+import { createCompassSeriesFromGcalBase } from "./gcal.sync.processor.test.util";
 
 // Mock Gcal Instances API response
+const MOCK_BASE_GCAL_ID = "ggvs54k2i7tco3vo"; // make sure this matches the mock
+console.log("mocked base with:", MOCK_BASE_GCAL_ID);
 jest.mock("@backend/common/services/gcal/gcal.service", () => ({
   __esModule: true,
   default: {
     getEventInstances: jest.fn().mockResolvedValue({
-      data: { items: mockGcalEvents().gcalEvents.instances },
+      // TODO hard-code the instances here with the known timestamps,
+      // because you'll need to use the timestamp as the id as part
+      // of the cancellation payload
+      data: { items: mockGcalEvents("ggvs54k2i7tco3vo").gcalEvents.instances },
     }),
   },
 }));
@@ -99,90 +104,37 @@ describe("GcalSyncProcessor: DELETE", () => {
     //Verify no other events deleted
     expect(remainingEvents).toHaveLength(origEvents.length - 1);
   });
-  it("should delete BASE and all INSTANCES after cancelling a BASE", async () => {
-    const gcalBaseEvent = mockRecurringGcalBaseEvent({
-      recurrence: ["RRULE:FREQ=DAILY"],
-    });
-    const gcalInstance = mockRecurringGcalInstances(
-      gcalBaseEvent,
-      1,
-      1,
-    )[0] as gSchema$EventInstance;
-
-    const baseCompassId = new ObjectId().toString();
-    const compassBaseEvent: Schema_Event_Recur_Base = {
-      title: gcalBaseEvent.summary as string,
-      user: setup.userId,
-      _id: baseCompassId,
-      gEventId: gcalBaseEvent.id as string,
-      recurrence: {
-        rule: ["RRULE:FREQ=DAILY"],
-      },
-    };
-
-    const compassInstanceTemplate: Schema_Event_Recur_Instance = {
-      title: gcalInstance.summary as string,
-      user: setup.userId,
-      gEventId: gcalInstance.id as string,
-      recurrence: {
-        eventId: baseCompassId,
-      },
-    };
-    await createRecurrenceSeries(
-      setup,
-      compassBaseEvent,
-      compassInstanceTemplate,
-    );
-
-    // Cancel the entire series
-    const cancelledBase = {
-      kind: "calendar#event",
-      id: gcalBaseEvent.id,
-      status: "cancelled",
-    };
-
-    const processor = new GcalSyncProcessor(repo);
-    const changes = await processor.processEvents([cancelledBase]);
-
-    expect(changes).toHaveLength(1);
-    const expected: Change_Gcal = {
-      title: cancelledBase.id as string,
-      category: Categories_Recurrence.RECURRENCE_BASE,
-      operation: "DELETED",
-    };
-    expect(changes[0]).toEqual(expected);
-
-    // Verify all Compass events that match the gcal base were deleted
-    const isEmpty = await isEventCollectionEmpty();
-    expect(isEmpty).toBe(true);
-  });
-
   it("should delete an INSTANCE after cancelling it", async () => {
     /* Assemble */
-    const gcalBaseEvent = mockRegularGcalEvent({
-      recurrence: ["RRULE:FREQ=DAILY"],
-    });
-    const gcalInstance = mockRegularGcalEvent({
-      recurringEventId: gcalBaseEvent.id + "_20250325T130000Z",
-    });
+    // const gcalBaseEvent = mockRecurringGcalBaseEvent({
+    //   recurrence: ["RRULE:FREQ=DAILY"],
+    // });
+    // // const gcalInstance = mockRegularGcalEvent({
+    // //   recurringEventId: gcalBaseEvent.id + "_20250325T130000Z",
+    // // });
+    // const gcalInstance = mockRecurringGcalInstances(gcalBaseEvent, 1, 7);
+
     // Create base and instances in Compass,
     // that point to the original gcal base
+    const { base: gcalBase, instances: gInstances } = mockRecurringGcalEvents(
+      { id: MOCK_BASE_GCAL_ID },
+      2,
+      7,
+    );
     const compassBaseId = new ObjectId().toString();
     const compassBase = {
-      title: gcalBaseEvent.summary as string,
+      title: gcalBase.summary as string,
       user: setup.userId,
       _id: compassBaseId,
-      gEventId: gcalBaseEvent.id as string,
+      gEventId: gcalBase.id,
     };
     const compassInstanceTemplate = {
-      title: gcalInstance.summary as string,
+      title: gcalBase.summary as string,
       user: setup.userId,
-      gEventId: gcalInstance.id as string,
       recurrence: {
         eventId: compassBaseId,
       },
     };
-
     const { meta } = await createRecurrenceSeries(
       setup,
       compassBase,
@@ -193,13 +145,14 @@ describe("GcalSyncProcessor: DELETE", () => {
     // or 'this and following'
     const cancelledGcalInstance = {
       kind: "calendar#event",
-      id: gcalInstance.id,
+      id: gInstances[0]?.id,
       status: "cancelled",
-      recurringEventId: gcalBaseEvent.id + "_20250325T130000Z",
+      recurringEventId: gcalBase.id,
       originalStartTime: {
         date: "2025-04-10",
       },
     };
+    console.log("gEventId to cancel: ", cancelledGcalInstance.id);
 
     /* Act */
     const processor = new GcalSyncProcessor(repo);
@@ -222,5 +175,78 @@ describe("GcalSyncProcessor: DELETE", () => {
     expect(
       isExistingInstance(remainingEvents[1] as unknown as Schema_Event),
     ).toBe(true);
+  });
+
+  it("should handle a mixed payload of multiple INSTANCE DELETIONS and one BASE UPSERT", async () => {
+    // This scenario happens when a user updates a series that includes multiple instance exceptions
+
+    /* Assemble */
+    const gcalBaseEvent = mockRecurringGcalBaseEvent({
+      recurrence: ["RRULE:FREQ=DAILY"],
+    });
+
+    const { state } = await createCompassSeriesFromGcalBase(
+      setup,
+      gcalBaseEvent,
+    );
+
+    // Create cancellation payloads for each instance
+    const cancellations = state.instances.map((i) => ({
+      kind: "calendar#event",
+      id: i.gEventId,
+      status: "cancelled",
+    }));
+
+    /* Act */
+    const processor = new GcalSyncProcessor(repo);
+    const changes = await processor.processEvents([
+      gcalBaseEvent,
+      ...cancellations,
+    ]);
+
+    /* Assert */
+    // Validate all changes detected
+    expect(changes).toHaveLength(3);
+
+    // Validate change types
+    const deletions = changes.filter((c) => c.operation === "DELETED");
+    const upserts = changes.filter((c) => c.operation === "UPSERTED");
+    expect(deletions).toHaveLength(2);
+    expect(upserts).toHaveLength(1);
+
+    // Validate DB state
+    const remainingEvents = await getEventsInDb();
+    const { baseEvents, instances } = categorizeEvents(remainingEvents);
+    expect(baseEvents).toHaveLength(1);
+    // All instances should be from the new base and not from the old series
+  });
+
+  it("should delete BASE and all INSTANCES after cancelling a BASE", async () => {
+    const gcalBaseEvent = mockRecurringGcalBaseEvent({
+      recurrence: ["RRULE:FREQ=DAILY"],
+    });
+    await createCompassSeriesFromGcalBase(setup, gcalBaseEvent);
+
+    // Cancel the entire series
+    const cancelledBase = {
+      kind: "calendar#event",
+      id: gcalBaseEvent.id,
+      status: "cancelled",
+    };
+
+    const processor = new GcalSyncProcessor(repo);
+    const changes = await processor.processEvents([cancelledBase]);
+
+    expect(changes).toHaveLength(1);
+    const expected: Change_Gcal = {
+      title: cancelledBase.id as string,
+      category: Categories_Recurrence.RECURRENCE_BASE,
+      operation: "DELETED",
+    };
+    expect(changes[0]).toEqual(expected);
+
+    // Verify all Compass events that match the gcal base were deleted
+    const isEmpty = await isEventCollectionEmpty();
+    expect(isEmpty).toBe(true);
   });
 });

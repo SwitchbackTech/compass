@@ -72,15 +72,16 @@ describe("SyncImport: Full", () => {
       (e) => e.recurrence?.rule !== undefined,
     );
     expect(baseEvents).toHaveLength(1);
-    expect(baseEvents[0]?.gEventId).toBe("recurring-1");
+    expect(baseEvents[0]?.title).toBe("Recurrence");
 
     // Verify we have the correct instance
     const instanceEvents = currentEventsInDb.filter(
       (e) => e.recurrence?.eventId !== undefined,
     );
     expect(instanceEvents).toHaveLength(2);
+    const baseGevId = baseEvents[0]?.gEventId as string;
     expect(instanceEvents.map((e) => e.gEventId)).toEqual(
-      expect.arrayContaining(["recurring-1-instance-2"]),
+      expect.arrayContaining([expect.stringMatching(baseGevId)]),
     );
 
     // Verify we have the regular event
