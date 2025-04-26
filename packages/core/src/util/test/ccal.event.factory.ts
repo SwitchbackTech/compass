@@ -8,6 +8,7 @@ import {
   Schema_Event_Recur_Instance,
   WithCompassId,
 } from "@core/types/event.types";
+import { appendWithRfc5545Timestamp } from "@core/util/date/date.util";
 
 export const createMockStandaloneEvent = (
   overrides: Partial<Schema_Event> = {},
@@ -62,14 +63,23 @@ export const createMockBaseEvent = (
  */
 export const createMockInstance = (
   baseEventId: string,
+  gBaseId: string,
   overrides: Partial<Schema_Event_Recur_Instance> = {},
 ): WithCompassId<Schema_Event_Recur_Instance> => {
   const now = new Date();
-  return {
+  const tz = faker.location.timeZone();
+  // Generate times dynamically but in the right tz
+  const start = dayjs.tz(faker.date.future(), tz);
+  const startIso = start.toISOString();
+  const end = start.add(1, "hour");
+
+  const gEventId = appendWithRfc5545Timestamp(gBaseId, startIso);
+
+  const instance = {
     _id: new ObjectId().toString(),
     title: "Weekly Team Sync",
-    startDate: "2024-03-27T10:00:00Z",
-    endDate: "2024-03-27T11:00:00Z",
+    startDate: startIso,
+    endDate: end.toISOString(),
     recurrence: {
       eventId: baseEventId,
     },
@@ -79,10 +89,11 @@ export const createMockInstance = (
     isAllDay: false,
     isSomeday: false,
     updatedAt: now,
-    gEventId: `mock-gcal-id-${faker.string.uuid()}`,
+    gEventId,
     gRecurringEventId: baseEventId,
     ...overrides,
   };
+  return instance;
 };
 
 /**
@@ -105,7 +116,7 @@ export const createMockInstances = (
     instanceDate.setDate(instanceDate.getDate() + (i + 1) * 7); // Weekly recurrence
 
     instances.push(
-      createMockInstance(baseEvent._id || "", {
+      createMockInstance(baseEvent._id || "", baseEvent.gEventId as string, {
         startDate: instanceDate.toISOString(),
         endDate: new Date(instanceDate.getTime() + 3600000).toISOString(), // 1 hour later
         ...overrides,
