@@ -1,15 +1,6 @@
 import { ObjectId } from "mongodb";
-import {
-  Categories_Recurrence,
-  Schema_Event,
-  Schema_Event_Recur_Base,
-  Schema_Event_Recur_Instance,
-} from "@core/types/event.types";
-import {
-  WithGcalId,
-  gSchema$Event,
-  gSchema$EventInstance,
-} from "@core/types/gcal";
+import { Categories_Recurrence, Schema_Event } from "@core/types/event.types";
+import { WithGcalId, gSchema$Event } from "@core/types/gcal";
 import {
   categorizeEvents,
   isExistingInstance,
@@ -46,7 +37,13 @@ jest.mock("@backend/common/services/gcal/gcal.service", () => ({
       // TODO hard-code the instances here with the known timestamps,
       // because you'll need to use the timestamp as the id as part
       // of the cancellation payload
-      data: { items: mockGcalEvents("ggvs54k2i7tco3vo").gcalEvents.instances },
+      data: {
+        items: mockGcalEvents(
+          "ggvs54k2i7tco3vo",
+          "2025-07-16T09:56:29.000Z",
+          "2025-07-16T10:56:29.000Z",
+        ).gcalEvents.instances,
+      },
     }),
   },
 }));
@@ -116,11 +113,29 @@ describe("GcalSyncProcessor: DELETE", () => {
 
     // Create base and instances in Compass,
     // that point to the original gcal base
+    const fixedStart = "2025-07-16T09:56:29.000Z";
+    const fixedEnd = "2025-07-16T10:56:29.000Z";
     const { base: gcalBase, instances: gInstances } = mockRecurringGcalEvents(
-      { id: MOCK_BASE_GCAL_ID },
+      {
+        id: MOCK_BASE_GCAL_ID,
+        start: { dateTime: fixedStart, timeZone: "UTC" },
+        end: { dateTime: fixedEnd, timeZone: "UTC" },
+      },
       2,
       7,
     );
+    console.log(
+      "Compass instance IDs:",
+      gInstances.map((i) => i.id),
+    );
+
+    // Also log the GCal mock instance IDs for comparison
+    const mockInstanceIds = mockGcalEvents(
+      MOCK_BASE_GCAL_ID,
+      fixedStart,
+      fixedEnd,
+    ).gcalEvents.instances.map((i) => i.id);
+    console.log("GCal mock instance IDs:", mockInstanceIds);
     const compassBaseId = new ObjectId().toString();
     const compassBase = {
       title: gcalBase.summary as string,
@@ -141,17 +156,24 @@ describe("GcalSyncProcessor: DELETE", () => {
       compassInstanceTemplate,
     );
 
-    // This happens when cancelling one instance
-    // or 'this and following'
+    // Query the Compass DB for actual recurring instances
+    const allEvents = await getEventsInDb();
+    // Filter to get only instance events (not the base)
+    const instanceEvents = allEvents.filter(
+      (e) => e.gRecurringEventId === compassBaseId,
+    );
+    const compassInstanceId = instanceEvents[0]?.gEventId;
+
     const cancelledGcalInstance = {
       kind: "calendar#event",
-      id: gInstances[0]?.id,
+      id: compassInstanceId,
       status: "cancelled",
       recurringEventId: gcalBase.id,
       originalStartTime: {
-        date: "2025-04-10",
+        date: instanceEvents[0]?.startDate?.slice(0, 10) || "2025-04-10",
       },
     };
+    console.log("Cancelling instance ID:", compassInstanceId);
     console.log("gEventId to cancel: ", cancelledGcalInstance.id);
 
     /* Act */

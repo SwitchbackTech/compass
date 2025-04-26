@@ -8,12 +8,22 @@ import {
 
 /* Sets of events, pre-organized as a convenience for testing */
 
-export const mockGcalEvents = (baseId?: string) => {
+export const mockGcalEvents = (
+  baseId?: string,
+  fixedStart?: string,
+  fixedEnd?: string,
+) => {
+  // Use fixed times if provided, otherwise fallback to defaults
+  const startDateTime = fixedStart || "2025-07-16T09:56:29.000Z";
+  const endDateTime = fixedEnd || "2025-07-16T10:56:29.000Z";
+
   // Create a base recurring event
   const baseRecurringEvent = mockRecurringGcalBaseEvent({
     id: baseId || generateGcalId(),
     summary: "Recurrence",
     recurrence: ["RRULE:FREQ=WEEKLY"],
+    start: { dateTime: startDateTime, timeZone: "UTC" },
+    end: { dateTime: endDateTime, timeZone: "UTC" },
   }) as gSchema$EventBase;
   console.log("mocked base with:", baseId);
 
