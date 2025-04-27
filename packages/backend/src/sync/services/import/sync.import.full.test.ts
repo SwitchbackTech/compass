@@ -4,14 +4,14 @@ import {
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory.set";
+import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import mongoService from "@backend/common/services/mongo.service";
 import { createSyncImport } from "./sync.import";
 
 // Mock Google Calendar API responses,
 jest.mock("googleapis", () => {
-  const { gcalEvents } = mockGcalEvents();
+  const { gcalEvents } = mockAndCategorizeGcalEvents();
   const googleapis = mockGcal({ events: gcalEvents.all });
   return googleapis;
 });
@@ -72,15 +72,16 @@ describe("SyncImport: Full", () => {
       (e) => e.recurrence?.rule !== undefined,
     );
     expect(baseEvents).toHaveLength(1);
-    expect(baseEvents[0]?.gEventId).toBe("recurring-1");
+    expect(baseEvents[0]?.title).toBe("Recurrence");
 
     // Verify we have the correct instance
     const instanceEvents = currentEventsInDb.filter(
       (e) => e.recurrence?.eventId !== undefined,
     );
     expect(instanceEvents).toHaveLength(2);
+    const baseGevId = baseEvents[0]?.gEventId as string;
     expect(instanceEvents.map((e) => e.gEventId)).toEqual(
-      expect.arrayContaining(["recurring-1-instance-2"]),
+      expect.arrayContaining([expect.stringMatching(baseGevId)]),
     );
 
     // Verify we have the regular event

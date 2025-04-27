@@ -1,6 +1,6 @@
 import { Logger } from "@core/logger/winston.logger";
 import { Schema_Sync } from "@core/types/sync.types";
-import { minutesFromNow } from "@core/util/date.utils";
+import { minutesFromNow } from "@core/util/date/date.util";
 import { SYNC_BUFFER_DAYS } from "@backend/common/constants/backend.constants";
 import { ENV } from "@backend/common/constants/env.constants";
 

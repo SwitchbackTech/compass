@@ -8,12 +8,14 @@ import {
 /** Event utilities for Compass events */
 
 export const categorizeEvents = (events: Schema_Event[]) => {
-  const baseEvents = events.filter(isBase);
-  const instances = events.filter(isExistingInstance);
-  const regularEvents = events.filter(
+  const baseEvents = events.filter(isBase) as Schema_Event_Recur_Base[];
+  const instances = events.filter(
+    isExistingInstance,
+  ) as Schema_Event_Recur_Instance[];
+  const standaloneEvents = events.filter(
     (e) => !isBase(e) && !isExistingInstance(e),
   );
-  return { baseEvents, instances, regularEvents };
+  return { baseEvents, instances, standaloneEvents };
 };
 
 export const categorizeRecurringEvents = (events: Recurrence[]) => {
@@ -37,8 +39,8 @@ export const isAllDay = (event: Schema_Event) =>
  */
 export const isBase = (event: Schema_Event) => {
   return (
-    event.recurrence?.rule !== undefined &&
-    event.recurrence.eventId === undefined
+    event?.recurrence?.rule !== undefined &&
+    event?.recurrence?.eventId === undefined
   );
 };
 

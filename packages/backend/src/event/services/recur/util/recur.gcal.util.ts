@@ -16,6 +16,17 @@ export class GcalParser {
     };
   }
   private getCategory() {
+    if (this.isCancelled()) {
+      if (this.isCancelledInstance()) {
+        return Categories_Recurrence.RECURRENCE_INSTANCE;
+      }
+      // Fall back to base recurrence, but could also be standalone.
+      // Unable to determine the difference from payload alone, so
+      // so using this default for simplicity to avoid a DB lookup.
+      // This ambiguity means that the processor needs to base its
+      // conditional logic primarily on the status, not category
+      return Categories_Recurrence.RECURRENCE_BASE;
+    }
     if (this.isRecurrenceBase()) {
       return Categories_Recurrence.RECURRENCE_BASE;
     } else if (this.isRecurrenceInstance()) {
@@ -32,12 +43,9 @@ export class GcalParser {
     }
   }
   public isRecurrenceBase() {
-    const isBase = this.event.recurrence !== undefined;
-    // Recurring cancellations include the recurringEventId;
-    // base cancellations do not
-    const isBaseCancellation =
-      this.event.status === "cancelled" && !this.event.recurringEventId;
-    return isBase || isBaseCancellation;
+    const isBase =
+      this.event.recurrence !== undefined && !this.event.recurringEventId;
+    return isBase;
   }
   private isRecurrenceInstance() {
     return (
@@ -48,5 +56,21 @@ export class GcalParser {
   }
   private isCancelled() {
     return this.event.status === "cancelled";
+  }
+  private isCancelledInstance() {
+    const hasInstancesPropertiesThatAreUndefined =
+      this.event.originalStartTime !== undefined &&
+      this.event.recurringEventId !== undefined;
+    if (hasInstancesPropertiesThatAreUndefined) {
+      return true;
+    }
+
+    const hasInstanceId =
+      this.event.id?.includes("_") && this.event.id?.endsWith("Z");
+    if (hasInstanceId) {
+      return true;
+    }
+
+    return false;
   }
 }

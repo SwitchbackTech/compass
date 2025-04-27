@@ -20,7 +20,7 @@ import {
   Result_DeleteMany,
   Schema_Event_Core,
 } from "@core/types/event.types";
-import { getCurrentRangeDates } from "@core/util/date.utils";
+import { getCurrentRangeDates } from "@core/util/date/date.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import {
@@ -31,7 +31,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { Event_Core_WithObjectId } from "@backend/sync/sync.types";
-import { reorderEvents, updateEvent } from "../queries/event.queries";
+import { reorderEvents } from "../queries/event.queries";
 import {
   getCreateParams,
   getDeleteByIdFilter,
@@ -39,6 +39,7 @@ import {
   getUpdateAction,
 } from "./event.service.util";
 import { deleteInstances } from "./recur/queries/event.recur.queries";
+import { EventRepository } from "./recur/repo/event.repo";
 import { assembleInstances } from "./recur/util/recur.util";
 
 class EventService {
@@ -315,6 +316,7 @@ class EventService {
     const _event = { ..._baseEvent, updatedAt: new Date() };
     const baseId = _event.recurrence?.eventId as string;
 
+    const repo = new EventRepository(userId);
     switch (action) {
       case "CREATE_INSTANCES": {
         await _createInstances(_event, eventId);
@@ -326,27 +328,27 @@ class EventService {
             rule: _event?.recurrence?.rule,
           },
         };
-        await updateEvent(userId, eventId, eventWithRecur);
+        await repo.updateEvent(eventId, eventWithRecur);
         return _event;
         break;
       }
       case "DELETE_INSTANCES_ALL": {
         const eventWithoutRecur = _removeRecurrence(_event);
 
-        await updateEvent(userId, eventId, eventWithoutRecur);
+        await repo.updateEvent(eventId, eventWithoutRecur);
         await deleteInstances(userId, baseId);
 
         return eventWithoutRecur;
         break;
       }
       case "UPDATE": {
-        await updateEvent(userId, eventId, _event);
+        await repo.updateEvent(eventId, _event);
         return _event;
         break;
       }
       case "UPDATE_ALL": {
         await deleteInstances(userId, baseId);
-        await updateEvent(userId, baseId, _event);
+        await repo.updateEvent(baseId, _event);
         await _createInstances(_event, eventId);
 
         return _event;

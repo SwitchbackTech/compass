@@ -8,7 +8,7 @@ import {
   Schema_Event,
   Schema_Event_Core,
 } from "@core/types/event.types";
-import { isSameMonth } from "@core/util/date.utils";
+import { isSameMonth } from "@core/util/date/date.util";
 import { GenericError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 

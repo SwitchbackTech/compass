@@ -1,3 +1,6 @@
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
@@ -6,6 +9,25 @@ import {
   gSchema$EventBase,
   gSchema$EventInstance,
 } from "@core/types/gcal";
+import { formatAs } from "@core/util/date/date.util";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+/**
+ * Generates a random base32 hex string according to gcal id's requirement:
+ * https://developers.google.com/workspace/calendar/api/v3/reference/events
+ * @param length - The length of the string to generate
+ * @returns A random base32 hex string
+ */
+export const generateGcalId = (length: number = 16) => {
+  const allowed = "abcdefghijklmnopqrstuvwxyz".slice(0, 22) + "0123456789"; // a-v and 0-9
+  let id = "";
+  for (let i = 0; i < length; i++) {
+    id += allowed.charAt(Math.floor(Math.random() * allowed.length));
+  }
+  return id;
+};
 
 /**
  * Returns a base event and its instances
@@ -14,16 +36,17 @@ import {
  * @returns An array containing the base event and its instances
  */
 export const mockRecurringGcalEvents = (
+  baseOverrides: Partial<gSchema$EventBase> = {},
   count: number,
   repeatIntervalInDays: number,
-): (gSchema$EventBase | gSchema$EventInstance)[] => {
-  const base = mockRecurringGcalBaseEvent();
+): { base: gSchema$EventBase; instances: gSchema$EventInstance[] } => {
+  const base = mockRecurringGcalBaseEvent(baseOverrides);
   const instances = mockRecurringGcalInstances(
     base,
     count,
     repeatIntervalInDays,
   );
-  return [base, ...instances];
+  return { base, instances };
 };
 
 export const mockRecurringGcalBaseEvent = (
@@ -65,9 +88,10 @@ export const mockRecurringGcalInstances = (
       endDate.setDate(endDate.getDate() + index * repeatIntervalInDays);
     }
 
+    const startAsRfc5545 = formatAs("RFC5545", instanceDate.toISOString());
     const instance = {
       ...base,
-      id: `${base.id}-instance-${index + 1}`,
+      id: `${base.id}_${startAsRfc5545}`,
       summary: `${base.summary}-instance-${index + 1}`,
       recurringEventId: base.id,
       start: {
@@ -80,6 +104,7 @@ export const mockRecurringGcalInstances = (
       },
     };
     // remove properties that are reserved for the base event
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { recurrence, ...instanceWithoutRecurrence } = instance;
     return instanceWithoutRecurrence;
   });
@@ -88,21 +113,26 @@ export const mockRecurringGcalInstances = (
 export const mockRegularGcalEvent = (
   overrides: Partial<WithGcalId<gSchema$Event>> = {},
 ): WithGcalId<gSchema$Event> => {
-  const id = faker.string.nanoid();
+  const id = generateGcalId();
   const tz = faker.location.timeZone();
+  // Dynamically generate timezone-aware times
+  const start = dayjs.tz(faker.date.future(), tz);
+  const end = start.add(1, "hour");
+  const created = dayjs.tz(faker.date.past(), tz);
+  const updated = dayjs.tz(faker.date.recent(), tz);
   return {
     id,
     summary: faker.lorem.sentence(),
     status: "confirmed",
     htmlLink: `https://www.google.com/calendar/event?eid=${id}`,
-    created: faker.date.past().toISOString(),
-    updated: faker.date.recent().toISOString(),
+    created: created.toISOString(),
+    updated: updated.toISOString(),
     start: {
-      dateTime: faker.date.future().toISOString(),
+      dateTime: start.toISOString(),
       timeZone: tz,
     },
     end: {
-      dateTime: faker.date.future().toISOString(),
+      dateTime: end.toISOString(),
       timeZone: tz,
     },
     iCalUID: faker.string.uuid() + "@google.com",

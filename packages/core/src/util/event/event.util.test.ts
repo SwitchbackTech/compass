@@ -9,13 +9,14 @@ describe("categorizeEvents", () => {
   it("should categorize events correctly", () => {
     const standalone = createMockStandaloneEvent();
     const base = createMockBaseEvent();
-    const instance = createMockInstance(base._id);
+    const instance = createMockInstance(base._id, base.gEventId as string);
     const events = [base, instance, standalone];
 
-    const { baseEvents, instances, regularEvents } = categorizeEvents(events);
+    const { baseEvents, instances, standaloneEvents } =
+      categorizeEvents(events);
 
     expect(baseEvents).toEqual([base]);
     expect(instances).toEqual([instance]);
-    expect(regularEvents).toEqual([standalone]);
+    expect(standaloneEvents).toEqual([standalone]);
   });
 });

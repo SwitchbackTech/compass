@@ -1,5 +1,4 @@
 import { ObjectId } from "mongodb";
-import { faker } from "@faker-js/faker/.";
 import {
   Schema_Event,
   Schema_Event_Recur_Base,
@@ -25,14 +24,14 @@ export const createRecurrenceSeries = async (
 
   const baseId = baseEvent._id;
   if (!baseId) throw Error("Base event id is required");
-  const instance1 = createMockInstance(baseId, {
+  const gEventId = baseEvent.gEventId;
+  if (!gEventId) throw Error("Base event gEventId is required");
+  const instance1 = createMockInstance(baseId, gEventId, {
     ...instanceOverrides,
   });
 
-  const instance2 = createMockInstance(baseId, {
+  const instance2 = createMockInstance(baseId, gEventId, {
     ...instanceOverrides,
-    // prevents collision with instance1
-    gEventId: `mock-instance-id-${faker.string.uuid()}`,
   });
 
   await setup.db
@@ -48,7 +47,7 @@ export const createRecurrenceSeries = async (
   return {
     state: {
       baseEvent: baseEvent,
-      instances: [],
+      instances: [instance1, instance2],
     },
     meta,
   };

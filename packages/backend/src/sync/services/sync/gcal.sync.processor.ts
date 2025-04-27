@@ -4,6 +4,7 @@ import {
   Event_Core,
   Schema_Event,
   Schema_Event_Core,
+  Schema_Event_Recur_Base,
   WithCompassId,
 } from "@core/types/event.types";
 import {
@@ -12,17 +13,14 @@ import {
   gSchema$Event,
   gSchema$EventBase,
 } from "@core/types/gcal";
-import { convertRfc5545ToIso } from "@core/util/date.utils";
+import { convertRruleWithUntilToDate } from "@core/util/date/date.util";
 import { isBase } from "@core/util/event/event.util";
 import {
   EventError,
   GenericError,
 } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import {
-  findCompassEventBy,
-  updateEvent,
-} from "@backend/event/queries/event.queries";
+import { findCompassEventBy } from "@backend/event/queries/event.queries";
 import { EventRepository } from "@backend/event/services/recur/repo/event.repo";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalParser } from "@backend/event/services/recur/util/recur.gcal.util";
@@ -52,7 +50,6 @@ export class GcalSyncProcessor {
 
       switch (category) {
         case "STANDALONE":
-          console.log("Processing STANDALONE event:", gEvent.summary);
           operation = await this.handleStandaloneChange(
             gEvent as WithGcalId<gSchema$Event>,
           );
@@ -149,9 +146,15 @@ export class GcalSyncProcessor {
 
       return "UPSERTED";
     }
-    if (this.isSeriesUpdate()) {
+
+    const isSeriesUpdate = parser.isRecurrenceBase();
+    if (isSeriesUpdate) {
       logger.info(
-        `TODO Updating SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
+        `Updating SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
+      );
+      await this.updateSeries(
+        compassEvent as WithCompassId<Schema_Event>,
+        gEvent,
       );
       return "UPSERTED";
     }
@@ -161,6 +164,12 @@ export class GcalSyncProcessor {
   private async handleStandaloneChange(
     gEvent: WithGcalId<gSchema$Event>,
   ): Promise<Operation_Sync> {
+    const shouldDelete = gEvent.status === "cancelled";
+    if (shouldDelete) {
+      logger.info(`DELETING STANDALONE: ${gEvent.id} (Gcal)`);
+      await this.eventRepo.deleteById("gEventId", gEvent.id);
+      return "DELETED";
+    }
     const compassEvent = MapEvent.toCompass(this.recurringEventRepo.userId, [
       gEvent,
     ])[0] as Event_Core;
@@ -178,8 +187,6 @@ export class GcalSyncProcessor {
       !cEvent.recurrence?.rule;
 
     if (isNotBase) {
-      console.log("gEvent.recurrence", gEvent.recurrence);
-      console.log("cEvent", cEvent);
       return false;
     }
 
@@ -199,10 +206,6 @@ export class GcalSyncProcessor {
     return isSplit;
   }
 
-  private isSeriesUpdate(): boolean {
-    return true;
-  }
-
   private extractUntilValue(recurrenceRule: string): string | null {
     const untilMatch = recurrenceRule.match(/UNTIL=([^;]+)/);
     if (!untilMatch) return null;
@@ -216,8 +219,10 @@ export class GcalSyncProcessor {
     cBaseId: string,
     gEvent: WithGcalId<WithRecurrenceRule<gSchema$Event>>,
   ) {
-    const untilValue = convertRfc5545ToIso(gEvent.recurrence[0] as string);
-    if (!untilValue) {
+    const afterDateIso = convertRruleWithUntilToDate(
+      gEvent.recurrence[0] as string,
+    );
+    if (!afterDateIso) {
       throw error(
         EventError.InvalidRecurrence,
         "Did not delete instances during split, because no UNTIL date found",
@@ -226,7 +231,7 @@ export class GcalSyncProcessor {
     // Delete all instances after the UNTIL date
     const result = await this.recurringEventRepo.deleteInstancesAfter(
       cBaseId,
-      untilValue,
+      afterDateIso,
     );
     return result;
   }
@@ -239,10 +244,17 @@ export class GcalSyncProcessor {
       gEvent,
     ]) as unknown as Schema_Event_Core[];
     const newCompassBase = _newCompassBase[0] as Schema_Event_Core;
-    await updateEvent(
-      compassEvent.user as string,
-      compassEvent._id,
-      newCompassBase,
-    );
+    await this.eventRepo.updateEvent(compassEvent._id, newCompassBase);
+  }
+
+  private async updateSeries(
+    origCompassEvent: WithCompassId<Schema_Event>,
+    gEvent: WithGcalId<gSchema$Event>,
+  ) {
+    const updatedCompassBase = MapEvent.toCompass(
+      origCompassEvent.user as string,
+      [gEvent],
+    )[0] as Schema_Event_Recur_Base;
+    await this.recurringEventRepo.updateSeries(updatedCompassBase, "gEventId");
   }
 }

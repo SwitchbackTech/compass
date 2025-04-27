@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
@@ -5,7 +6,7 @@ import {
   gSchema$EventBase,
   gSchema$EventInstance,
 } from "@core/types/gcal";
-import { convertToRfc5545 } from "@core/util/date.utils";
+import { formatAs } from "@core/util/date/date.util";
 
 /**
  * Creates a cancelled instance of a recurring event,
@@ -17,7 +18,7 @@ export const mockCancelledInstance = (
   baseEvent: gSchema$EventBase,
   instanceStart: string,
 ): gSchema$EventInstance => {
-  const instanceStartRfc5545 = convertToRfc5545(instanceStart);
+  const instanceStartRfc5545 = formatAs("RFC5545", instanceStart);
   if (!instanceStartRfc5545) {
     throw new Error("Invalid instance start date");
   }
@@ -34,7 +35,7 @@ export const mockCancelledInstance = (
   };
 };
 
-export const mockRegularEvent = (): gSchema$Event => ({
+export const mockTimedEvent = (): gSchema$Event => ({
   id: faker.string.nanoid(),
   summary: faker.lorem.sentence(),
   start: { dateTime: faker.date.future().toISOString() },
@@ -42,19 +43,19 @@ export const mockRegularEvent = (): gSchema$Event => ({
   status: "confirmed",
 });
 
-export const mockRecurringEvent = (
+export const mockTimedRecurrence = (
   overrides: Partial<gSchema$Event> = {},
 ): gSchema$EventBase => {
-  const regular = mockRegularEvent();
+  const timed = mockTimedEvent();
   const base = {
-    ...regular,
+    ...timed,
     recurrence: ["RRULE:FREQ=WEEKLY"],
     ...overrides,
   };
   return base as gSchema$EventBase;
 };
 
-const mockRecurringInstances = (
+export const mockRecurringInstances = (
   event: gSchema$Event,
   count: number,
   repeatIntervalInDays: number,
@@ -64,32 +65,36 @@ const mockRecurringInstances = (
   }
 
   const startDateTime = event.start.dateTime;
-  const endDateTime = event.end.dateTime;
   const startTimeZone = event.start.timeZone;
   const endTimeZone = event.end.timeZone;
 
   const baseDate = new Date(startDateTime);
 
   return Array.from({ length: count }, (_, index) => {
-    const instanceDate = new Date(baseDate);
-    instanceDate.setDate(instanceDate.getDate() + index * repeatIntervalInDays);
+    const startDate = new Date(baseDate);
+    startDate.setDate(startDate.getDate() + index * repeatIntervalInDays);
+    const startDateIso = startDate.toISOString();
+    const startDateTime = formatAs("RFC3339_OFFSET", startDateIso);
 
-    const endDate = new Date(endDateTime);
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hr after start
     endDate.setDate(endDate.getDate() + index * repeatIntervalInDays);
+    const endDateIso = endDate.toISOString();
+    const endDateTime = formatAs("RFC3339_OFFSET", endDateIso);
 
-    const instanceStart = convertToRfc5545(instanceDate.toISOString());
+    const startRfc5545 = formatAs("RFC5545", startDateIso);
+    const id = `${event.id}_${startRfc5545}`; // matches gcal id format
 
     const instance = {
       ...event,
-      id: `${event.id}_${instanceStart}`, // matches gcal id format
+      id,
       summary: `${event.summary}: Instance ${index}`,
       recurringEventId: event.id as string,
       start: {
-        dateTime: instanceDate.toISOString(),
+        dateTime: startDateTime,
         timeZone: startTimeZone,
       },
       end: {
-        dateTime: endDate.toISOString(),
+        dateTime: endDateTime,
         timeZone: endTimeZone,
       },
     };
@@ -99,20 +104,36 @@ const mockRecurringInstances = (
   });
 };
 
-export const mockGcalEvent = (
+export const mockAlldayGcalEvent = (
   overrides: Partial<gSchema$Event> = {},
 ): gSchema$Event => {
-  const id = faker.string.uuid();
+  const core = _mockGcalCoreEvent();
+  const _start = faker.date.future();
+  const start = dayjs(_start).format("YYYY-MM-DD"); // matches gcal format for all day events
+  const end = dayjs(_start).add(1, "day").format("YYYY-MM-DD");
+  return {
+    ...core,
+    start: {
+      date: start,
+      timeZone: "America/Chicago",
+    },
+    end: {
+      date: end,
+      timeZone: "America/Chicago",
+    },
+    ...overrides,
+  };
+};
+
+export const mockTimedGcalEvent = (
+  overrides: Partial<gSchema$Event> = {},
+): gSchema$Event => {
+  const core = _mockGcalCoreEvent();
   const start = faker.date.future();
   const end = new Date(start);
   end.setHours(start.getHours() + 1);
-  return {
-    id,
-    summary: faker.lorem.sentence(),
-    status: "confirmed",
-    htmlLink: `https://www.google.com/calendar/event?eid=${id}`,
-    created: faker.date.past().toISOString(),
-    updated: faker.date.recent().toISOString(),
+  const timedEvent = {
+    ...core,
     start: {
       dateTime: start.toISOString(),
       timeZone: "America/Chicago",
@@ -121,6 +142,75 @@ export const mockGcalEvent = (
       dateTime: end.toISOString(),
       timeZone: "America/Chicago",
     },
+  };
+  return {
+    ...timedEvent,
+    ...overrides,
+  };
+};
+
+export const mockGcalEvents = (repeatIntervalInDays = 7) => {
+  const timedStandalone = mockTimedGcalEvent({
+    summary: "STANDALONE: Regular Event",
+  });
+  const allDayStandalone = mockAlldayGcalEvent({
+    summary: "STANDALONE:All Day Event",
+  });
+  const baseTimedRecurrence = mockTimedRecurrence({
+    summary: "Recurring Event",
+    recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
+  });
+
+  const timedInstances = mockRecurringInstances(
+    baseTimedRecurrence,
+    3,
+    repeatIntervalInDays,
+  );
+
+  const cancelledTimedEvent = mockCancelledInstance(
+    baseTimedRecurrence,
+    "2025-04-10T12:30:00Z",
+  );
+
+  const allGcalEvents = [
+    timedStandalone,
+    allDayStandalone,
+    cancelledTimedEvent,
+    baseTimedRecurrence,
+    ...timedInstances,
+  ];
+
+  return {
+    gcalEvents: {
+      all: allGcalEvents,
+      regular: timedStandalone,
+      cancelled: cancelledTimedEvent,
+      recurring: baseTimedRecurrence,
+      instances: timedInstances,
+    },
+    totals: {
+      total: allGcalEvents.length,
+      cancelled: 1,
+      recurring: 1 + timedInstances.length,
+    },
+  };
+};
+
+/**
+ * Creates a minimal gcal event payload with properties that
+ * are the same regardless of whether its an all-day or timed
+ * event
+ * @returns gcal event with core propertie
+ */
+const _mockGcalCoreEvent = (): gSchema$Event => {
+  const id = faker.string.uuid();
+  return {
+    id,
+    summary: faker.lorem.sentence(),
+    status: "confirmed",
+    htmlLink: `https://www.google.com/calendar/event?eid=${id}`,
+    created: faker.date.past().toISOString(),
+    updated: faker.date.recent().toISOString(),
     iCalUID: faker.string.uuid() + "@google.com",
     sequence: 0,
     extendedProperties: {
@@ -133,47 +223,5 @@ export const mockGcalEvent = (
       useDefault: true,
     },
     eventType: "default",
-    ...overrides,
-  };
-};
-
-export const mockGcalEvents = (repeatIntervalInDays = 7) => {
-  const regularEvent = mockGcalEvent({ summary: "Regular Event" });
-  const baseRecurrence = mockRecurringEvent({
-    summary: "Recurring Event",
-    recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
-  });
-
-  const recurringInstances = mockRecurringInstances(
-    baseRecurrence,
-    3,
-    repeatIntervalInDays,
-  );
-
-  const cancelledEvent = mockCancelledInstance(
-    baseRecurrence,
-    "2025-04-10T12:30:00Z",
-  );
-
-  const allGcalEvents = [
-    regularEvent,
-    cancelledEvent,
-    baseRecurrence,
-    ...recurringInstances,
-  ];
-
-  return {
-    gcalEvents: {
-      all: allGcalEvents,
-      regular: regularEvent,
-      cancelled: cancelledEvent,
-      recurring: baseRecurrence,
-      instances: recurringInstances,
-    },
-    totals: {
-      total: allGcalEvents.length,
-      cancelled: 1,
-      recurring: 1 + recurringInstances.length,
-    },
   };
 };
