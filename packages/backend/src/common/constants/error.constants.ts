@@ -186,7 +186,7 @@ export const SyncError = {
   },
   NoSyncToken: {
     description: "No syncToken",
-    status: Status.NO_CONTENT,
+    status: Status.INTERNAL_SERVER,
     isOperational: true,
   },
   NoEventChanges: {
