@@ -2,7 +2,10 @@ import { Request } from "express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { Payload_Sync_Notif } from "@core/types/sync.types";
-import { UserError } from "@backend/common/constants/error.constants";
+import {
+  SyncError,
+  UserError,
+} from "@backend/common/constants/error.constants";
 import {
   isFullSyncRequired,
   isInvalidGoogleToken,
@@ -59,6 +62,18 @@ class SyncController {
       if (isFullSyncRequired(e as Error)) {
         const result = await userService.reSyncGoogleData(userId);
         res.status(Status.OK).send(result);
+        return;
+      }
+      if (
+        e instanceof Error &&
+        e.message === SyncError.NoSyncToken.description
+      ) {
+        logger.debug(
+          `Ignored notification due to missing sync token for resourceId: ${resourceId}`,
+        );
+        // returning 204 instead of 500 so client doesn't
+        // attempt to retry
+        res.status(Status.NO_CONTENT).send();
         return;
       }
 
