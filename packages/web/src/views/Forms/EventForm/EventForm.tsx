@@ -141,7 +141,7 @@ export const EventForm: React.FC<FormProps> = ({
       e.stopPropagation();
     }
 
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "<") {
       e.preventDefault();
     }
   };
@@ -208,7 +208,7 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   useHotkeys(
-    "meta+k",
+    "meta+<",
     () => {
       if (isDraft) {
         return;

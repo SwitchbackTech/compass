@@ -43,7 +43,7 @@ test("start date picker opens and then closes when clicking the end input", asyn
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
-test("should call onConvert when meta+shift+< keyboard shortcut is used", async () => {
+test("should call onConvert when meta+< keyboard shortcut is used", async () => {
   const sampleEvent: Schema_Event = {
     _id: "event123",
     title: "Test Event for Hotkey",
@@ -74,8 +74,8 @@ test("should call onConvert when meta+shift+< keyboard shortcut is used", async 
   expect(screen.getByRole("form")).toBeInTheDocument();
 
   await act(async () => {
-    // Simulate pressing Meta, then 'K', then releasing them
-    await userEvent.keyboard("{Meta>}{K}{/Meta}");
+    // Simulate pressing Meta, then '<', then releasing them
+    await userEvent.keyboard("{Meta>}{<}{/Meta}");
   });
 
   expect(mockOnConvert).toHaveBeenCalledTimes(1);
