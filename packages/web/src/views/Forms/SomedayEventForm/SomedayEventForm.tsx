@@ -1,4 +1,6 @@
 import React, { KeyboardEvent, MouseEvent, useRef } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
@@ -18,6 +20,10 @@ import {
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 import { RepeatSection } from "../EventForm/RepeatSection";
 
+const hotkeysOptions: OptionsOrDependencyArray = {
+  enableOnFormTags: ["input"],
+};
+
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
   onClose,
@@ -33,7 +39,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const origRecurrence = useRef(event?.recurrence).current;
 
   const ignoreDelete = (e: KeyboardEvent) => {
-    if (e.key === Key.Backspace || e.key == Key.Delete) {
+    if (e.key === Key.Backspace) {
       e.stopPropagation();
     }
   };
@@ -73,7 +79,15 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === Key.Backspace || e.key == Key.Delete) {
+    if (e.key === Key.Backspace) {
+      e.stopPropagation();
+    }
+  };
+
+  useHotkeys(
+    "delete",
+    () => {
+      console.log("delete");
       const confirmed = window.confirm(
         `Delete ${event.title || "this event"}?`,
       );
@@ -82,15 +96,17 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         onDelete();
         onClose();
       }
-    }
+    },
+    hotkeysOptions,
+  );
 
-    if (e.key === Key.Enter) {
-      e.stopPropagation();
-      if (e.metaKey) {
-        _onSubmit();
-      }
-    }
-  };
+  useHotkeys(
+    "enter",
+    () => {
+      _onSubmit();
+    },
+    hotkeysOptions,
+  );
 
   const onSetEventField: SetEventFormField = (field) => {
     const newEvent = { ...event, ...field };
