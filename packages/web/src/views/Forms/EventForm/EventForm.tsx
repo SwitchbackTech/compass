@@ -136,9 +136,13 @@ export const EventForm: React.FC<FormProps> = ({
     onClose();
   };
 
-  const ignoreDelete = (e: KeyboardEvent) => {
+  const handleIgnoredKeys = (e: KeyboardEvent) => {
     if (e.key === Key.Backspace) {
       e.stopPropagation();
+    }
+
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "<") {
+      e.preventDefault();
     }
   };
 
@@ -204,8 +208,12 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   useHotkeys(
-    "meta+[",
+    "meta+shift+comma",
     () => {
+      if (isDraft) {
+        return;
+      }
+
       onConvert?.();
     },
     hotkeysOptions,
@@ -272,7 +280,7 @@ export const EventForm: React.FC<FormProps> = ({
       <StyledTitle
         autoFocus
         onChange={onChangeEventTextField("title")}
-        onKeyDown={ignoreDelete}
+        onKeyDown={handleIgnoredKeys}
         placeholder="Title"
         role="textarea"
         name="Event Title"
@@ -294,7 +302,7 @@ export const EventForm: React.FC<FormProps> = ({
       <StyledDescription
         underlineColor={priorityColor}
         onChange={onChangeEventTextField("description")}
-        onKeyDown={ignoreDelete}
+        onKeyDown={handleIgnoredKeys}
         placeholder="Description"
         ref={descriptionRef}
         value={event.description || ""}
