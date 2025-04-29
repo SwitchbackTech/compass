@@ -5,6 +5,7 @@ import { EventError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 import { Ids_Event } from "../../../queries/event.queries";
+import { stripBaseProps } from "../util/recur.util";
 
 export const getOldBaseId = async (
   updatedBase: Schema_Event_Recur_Base,
@@ -23,20 +24,6 @@ export const getOldBaseId = async (
 
   const baseId = oldBase._id;
   return baseId;
-};
-
-export const stripBaseProps = (base: Schema_Event_Recur_Base) => {
-  const {
-    recurrence,
-    updatedAt,
-    _id,
-    startDate,
-    endDate,
-    order,
-    user,
-    ...baseForUpdate
-  } = base;
-  return baseForUpdate;
 };
 
 export const updateAllDayInstances = async (
