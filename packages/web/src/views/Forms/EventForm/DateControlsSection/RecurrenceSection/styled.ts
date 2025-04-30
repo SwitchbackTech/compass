@@ -1,6 +1,13 @@
 import styled from "styled-components";
 import { darken } from "@core/util/color.utils";
 
+export const StyledEditRecurrence = styled.div`
+  display: flex;
+  align-items: center;
+  flex-basis: 100%;
+  cursor: pointer;
+`;
+
 export const StyledRecurrenceSection = styled.div`
   display: flex;
   flex-basis: 100%;

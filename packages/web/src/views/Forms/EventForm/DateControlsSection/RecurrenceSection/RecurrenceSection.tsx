@@ -14,6 +14,7 @@ import {
   StyledCaretButton,
   StyledCaretInputContainer,
   StyledDisabledOverlay,
+  StyledEditRecurrence,
   StyledEndsOnDate,
   StyledRecurrenceRepeatCountSelect,
   StyledRecurrenceSection,
@@ -31,6 +32,16 @@ export interface RecurrenceSectionProps {
   endTime: SelectOption<string>;
 }
 
+const EditRecurrence = ({ onClick }: { onClick: () => void }) => {
+  return (
+    <StyledEditRecurrence onClick={onClick}>
+      <StyledText size="l" withBottomBorder>
+        Edit Event Recurrence
+      </StyledText>
+    </StyledEditRecurrence>
+  );
+};
+
 export const RecurrenceSection = ({
   bgColor,
   event,
@@ -39,6 +50,7 @@ export const RecurrenceSection = ({
   const [weekDays, setWeekDays] = useState<string[]>([
     getDefaultWeekDay(event),
   ]);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const recurrenceDates = generateRecurrenceDates({
@@ -50,6 +62,10 @@ export const RecurrenceSection = ({
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repeatCount, weekDays, event.startDate, event.endDate]);
+
+  if (!isEditing) {
+    return <EditRecurrence onClick={() => setIsEditing(true)} />;
+  }
 
   return (
     <StyledRecurrenceSection>

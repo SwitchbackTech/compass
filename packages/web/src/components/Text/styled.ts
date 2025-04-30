@@ -4,6 +4,7 @@ import { blueGradient, getGradient } from "@web/common/styles/theme.util";
 
 export interface Props {
   bgColor?: string;
+  withBottomBorder?: boolean;
   color?: string;
   cursor?: string;
   fontWeight?: number | "normal" | "bold" | "bolder" | "lighter";
@@ -21,6 +22,9 @@ export const StyledText = styled.span<Props>`
   ${({ cursor }) => cursor && `cursor: ${cursor};`}
   ${({ lineHeight }) => lineHeight && `line-height: ${lineHeight}px;`}
   ${({ size }) => size && `font-size: ${theme.text.size[size]};`} 
+  ${({ withBottomBorder }) =>
+    withBottomBorder && `border-bottom: 1px solid #5f5f5f;`}
+  
   
   font-weight: ${({ fontWeight = "normal" }) => fontWeight};
   position: relative;
