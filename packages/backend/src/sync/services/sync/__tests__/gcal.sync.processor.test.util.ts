@@ -18,6 +18,8 @@ import { TestSetup } from "@backend/__tests__/helpers/mock.db.setup";
 import { State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
 import { mockRecurringGcalInstances } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { Event_API } from "@backend/common/types/backend.event.types";
+import { validateEventSafely } from "@backend/common/validators/validate.event";
 
 dayjs.extend(timezone);
 
@@ -69,8 +71,41 @@ export const createCompassSeriesFromGcalBase = async (
   return result;
 };
 
+export const datesAreInUtcOffset = (instance: Schema_Event_Recur_Instance) => {
+  const instanceStart = instance.startDate;
+  const instanceEnd = instance.endDate;
+  expect(typeof instanceStart).toBe("string");
+  expect(typeof instanceEnd).toBe("string");
+
+  // Use dayjs to check parsing and offset
+  const start = dayjs(instanceStart);
+  const end = dayjs(instanceEnd);
+  expect(start.isValid()).toBe(true);
+  expect(end.isValid()).toBe(true);
+
+  // Confirm offset is present (not Z/UTC)
+  expect(instanceStart?.endsWith("Z")).toBe(false);
+  expect(instanceEnd?.endsWith("Z")).toBe(false);
+
+  // Confirm format matches YYYY-MM-DDTHH:mm:ss±HHmm
+  const isoOffsetRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{4}$/;
+  expect(instanceStart).toMatch(isoOffsetRegex);
+  expect(instanceEnd).toMatch(isoOffsetRegex);
+
+  // Confirm that the instant in time is correct (string and dayjs agree)
+  expect(start.valueOf()).toBe(dayjs(instanceStart).valueOf());
+  expect(end.valueOf()).toBe(dayjs(instanceEnd).valueOf());
+};
+
+export const eventsMatchSchema = (events: Event_API[]) => {
+  events.forEach((e) => {
+    const result = validateEventSafely(e);
+    expect(result.success).toBe(true);
+  });
+};
+
 export const getLatestEventsFromDb = async () => {
-  const updatedEvents = await getEventsInDb();
+  const updatedEvents = (await getEventsInDb()) as Schema_Event[];
   const { baseEvents, instances } = categorizeEvents(updatedEvents);
   const base = baseEvents[0] as Schema_Event_Recur_Base;
   return { base, instances };
@@ -122,56 +157,6 @@ export const noInstancesAfterSplitDate = async (
   expect(futureInstances).toHaveLength(0);
 };
 
-export const updateBasePayloadToExpireOneDayAfterFirstInstance = (
-  gEvents: State_AfterGcalImport["gcalEvents"],
-) => {
-  if (!gEvents.recurring?.start?.dateTime) {
-    throw new Error("Base event missing start date");
-  }
-  // Get the first instance's start date and add 1 day for the UNTIL date
-  const firstInstanceStart = new Date(
-    gEvents.instances?.[0]?.start?.dateTime as string,
-  );
-  const untilDate = new Date(firstInstanceStart);
-  untilDate.setDate(untilDate.getDate() + 1);
-  const untilDateStr =
-    untilDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-
-  const gBaseWithUntil = {
-    ...gEvents.recurring,
-    summary: "Base with UNTIL",
-    recurrence: [`RRULE:FREQ=DAILY;UNTIL=${untilDateStr}`], // this event previously had no UNTIL
-  };
-
-  return { gBaseWithUntil, untilDateStr };
-};
-
-export const datesAreInUtcOffset = (instance: Schema_Event_Recur_Instance) => {
-  const instanceStart = instance.startDate;
-  const instanceEnd = instance.endDate;
-  expect(typeof instanceStart).toBe("string");
-  expect(typeof instanceEnd).toBe("string");
-
-  // Use dayjs to check parsing and offset
-  const start = dayjs(instanceStart);
-  const end = dayjs(instanceEnd);
-  expect(start.isValid()).toBe(true);
-  expect(end.isValid()).toBe(true);
-
-  // Confirm offset is present (not Z/UTC)
-  expect(instanceStart?.endsWith("Z")).toBe(false);
-  expect(instanceEnd?.endsWith("Z")).toBe(false);
-
-  // Confirm format matches YYYY-MM-DDTHH:mm:ss±HHmm
-  const isoOffsetRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{4}$/;
-  expect(instanceStart).toMatch(isoOffsetRegex);
-  expect(instanceEnd).toMatch(isoOffsetRegex);
-
-  // Confirm that the instant in time is correct (string and dayjs agree)
-  expect(start.valueOf()).toBe(dayjs(instanceStart).valueOf());
-  expect(end.valueOf()).toBe(dayjs(instanceEnd).valueOf());
-};
-
 export const hasNewUpdatedAtTimestamp = (
   newInstance: Schema_Event_Recur_Instance,
   oldInstances: Schema_Event_Recur_Instance[],
@@ -201,6 +186,30 @@ export const instanceDataMatchCompassBase = (
 
   const cBaseId = String(cBase?._id);
   expect(cInstance.recurrence?.eventId).toEqual(cBaseId); // still points to base
+};
+
+export const updateBasePayloadToExpireOneDayAfterFirstInstance = (
+  gEvents: State_AfterGcalImport["gcalEvents"],
+) => {
+  if (!gEvents.recurring?.start?.dateTime) {
+    throw new Error("Base event missing start date");
+  }
+  // Get the first instance's start date and add 1 day for the UNTIL date
+  const firstInstanceStart = new Date(
+    gEvents.instances?.[0]?.start?.dateTime as string,
+  );
+  const untilDate = new Date(firstInstanceStart);
+  untilDate.setDate(untilDate.getDate() + 1);
+  const untilDateStr =
+    untilDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+
+  const gBaseWithUntil = {
+    ...gEvents.recurring,
+    summary: "Base with UNTIL",
+    recurrence: [`RRULE:FREQ=DAILY;UNTIL=${untilDateStr}`], // this event previously had no UNTIL
+  };
+
+  return { gBaseWithUntil, untilDateStr };
 };
 
 const _getCompassDays = (e: Schema_Event) => {

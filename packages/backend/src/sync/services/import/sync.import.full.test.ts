@@ -123,5 +123,10 @@ describe("SyncImport: Full", () => {
     await syncImport.importAllEvents(setup.userId, "test-calendar");
 
     const currentEventsInDb = await mongoService.event.find().toArray();
+    const regularEvents = currentEventsInDb.filter(
+      (e) => e.recurrence === undefined,
+    );
+    expect(regularEvents).toHaveLength(1);
+    expect(regularEvents[0]?.gEventId).toBe("regular-1");
   });
 });

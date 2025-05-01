@@ -14,6 +14,7 @@ import { RecurringEventRepository } from "@backend/event/services/recur/repo/rec
 import { GcalSyncProcessor } from "../gcal.sync.processor";
 import {
   datesAreInUtcOffset,
+  eventsMatchSchema,
   getLatestEventsFromDb,
   hasNewUpdatedAtTimestamp,
   instanceDataMatchCompassBase,
@@ -59,6 +60,8 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
       category: Categories_Recurrence.RECURRENCE_BASE,
       operation: "UPSERTED",
     });
+    const updatedEvents = await getEventsInDb();
+    eventsMatchSchema(updatedEvents);
   });
 
   it("should handle UPDATING an ALL-DAY SERIES", async () => {

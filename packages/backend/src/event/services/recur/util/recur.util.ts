@@ -36,6 +36,21 @@ export const assembleInstances = (
   return events;
 };
 
+export const stripBaseProps = (base: Schema_Event_Recur_Base) => {
+  const {
+    _id, // preserve existing event
+    gEventId, // strip this so instances remain unique
+    startDate, // dates changed during DB update
+    endDate, // dates changed during DB update
+    order, // preserve order
+    recurrence, // recurrence change during DB update
+    user, // preserve user
+    updatedAt, // changed during DB update
+    ...baseForUpdate // remaining event
+  } = base;
+  return baseForUpdate;
+};
+
 const _generateInstances = (
   rule: string,
   orig: Schema_Event_Core,
