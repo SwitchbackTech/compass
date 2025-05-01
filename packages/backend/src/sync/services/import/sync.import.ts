@@ -3,7 +3,6 @@ import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
 import {
-  RecurrenceWithId,
   RecurrenceWithoutId,
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
@@ -46,6 +45,12 @@ import { organizeGcalEventsByType } from "./sync.import.util";
 
 const logger = Logger("app:sync.import");
 
+export type WithCompassObjectId<T> = Omit<T, "_id"> & { _id: ObjectId };
+
+export type RecurrenceWithObjectId =
+  | WithCompassObjectId<Schema_Event_Recur_Instance>
+  | WithCompassObjectId<Schema_Event_Recur_Base>;
+
 export class SyncImport {
   private gcal: gCalendar;
   // TODO make userid constructor
@@ -79,18 +84,18 @@ export class SyncImport {
    */
   private assignIdsToRecurringEvents(
     events: RecurrenceWithoutId[],
-  ): RecurrenceWithId[] {
+  ): RecurrenceWithObjectId[] {
     const { baseEvent, instances } = categorizeRecurringEvents(events);
 
     const baseId = new ObjectId();
-    const newBase = {
+    const newBase: RecurrenceWithObjectId = {
       ...baseEvent,
-      _id: baseId.toString(),
+      _id: baseId,
     };
 
     const instancesWithIds = instances.map((instance) => ({
       ...instance,
-      _id: new ObjectId().toString(),
+      _id: new ObjectId(),
       recurrence: {
         ...instance.recurrence,
         eventId: baseId.toString(),
@@ -386,7 +391,6 @@ export class SyncImport {
 
     const result = await mongoService.db
       .collection(Collections.EVENT)
-      // @ts-expect-error sending _id as string for ease of testing
       .insertMany(compassSeries);
 
     return result;

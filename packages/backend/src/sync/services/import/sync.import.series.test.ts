@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import {
   filterBaseEvents,
   filterExistingInstances,
@@ -66,6 +67,10 @@ describe("SyncImport: Series", () => {
 
     const instancesInDb = filterExistingInstances(currentEventsInDb);
     expect(instancesInDb).toHaveLength(expectedInstances);
-    // expect(recurringEvents[0]?.gEventId).toBe(baseRecurringGcalEvent.id);
+
+    // validate ids
+    currentEventsInDb.forEach((event) => {
+      expect(event._id).toBeInstanceOf(ObjectId);
+    });
   });
 });
