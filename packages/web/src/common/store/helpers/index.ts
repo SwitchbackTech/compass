@@ -1,4 +1,3 @@
-import { Draft } from "immer";
 import {
   PayloadAction,
   SliceCaseReducers,
@@ -11,11 +10,13 @@ export interface AsyncState<SuccessPayload, ErrorPayload> {
   isSuccess?: boolean;
   error?: ErrorPayload | null;
   value?: SuccessPayload | null;
+  reason?: string | null;
   [key: string]: unknown;
 }
 
 export interface _AsyncState<SuccessPayload, ErrorPayload> {
   isProcessing: boolean;
+  reason: string | null;
   isSuccess: boolean;
   error: ErrorPayload | null;
   value: SuccessPayload | null;
@@ -28,6 +29,19 @@ export interface _CreateSliceOptions<State> {
   reducers?: ValidateSliceCaseReducers<State, SliceCaseReducers<State>>;
 }
 
+export interface SliceStateContext {
+  /**
+   * Special object that is used to pass additional context to the slice reducers.
+   * Persisted for a single action, and cleared on the next action.
+   */
+  __context?: {
+    /**
+     * The reason for the action, could be anything
+     */
+    reason?: string;
+  };
+}
+
 export const createAsyncSlice = <
   RequestPayload,
   SuccessPayload = undefined,
@@ -35,32 +49,66 @@ export const createAsyncSlice = <
 >(
   options: _CreateSliceOptions<AsyncState<SuccessPayload, ErrorPayload>>,
 ) => {
-  const initialState: _AsyncState<SuccessPayload, ErrorPayload> = {
+  type StateType = _AsyncState<SuccessPayload, ErrorPayload>;
+
+  const initialState: StateType = {
     isProcessing: false,
+    reason: null,
     isSuccess: false,
     error: null,
     value: null,
   };
 
+  const setContext = (
+    state: StateType,
+    action: PayloadAction<SliceStateContext>,
+  ) => {
+    if (action.payload?.__context?.reason) {
+      state.reason = action.payload.__context.reason;
+    }
+  };
+
+  const resetContext = (state: StateType) => {
+    state.reason = null;
+  };
+
   const reducers = {
-    request: (state, _action: PayloadAction<Draft<RequestPayload>>) => {
+    request(
+      state: StateType,
+      _action: PayloadAction<RequestPayload & SliceStateContext>,
+    ) {
       // When running tests, we use mock data, so we don't need to fetch the week events from the API
       // See comments in https://github.com/SwitchbackTech/compass/pull/338 for dev notes
       if (process.env.NODE_ENV === "test") {
         return;
       }
 
+      resetContext(state);
+      setContext(state, _action);
+
       state.isProcessing = true;
       state.isSuccess = false;
       state.error = null;
     },
-    success: (state, action: PayloadAction<Draft<SuccessPayload>>) => {
+    success(
+      state: StateType,
+      action: PayloadAction<SuccessPayload & SliceStateContext>,
+    ) {
+      resetContext(state);
+      setContext(state, action);
+
       state.isProcessing = false;
       state.isSuccess = true;
       state.value = action.payload;
       state.error = null;
     },
-    error: (state, action: PayloadAction<Draft<ErrorPayload>>) => {
+    error(
+      state: StateType,
+      action: PayloadAction<ErrorPayload & SliceStateContext>,
+    ) {
+      resetContext(state);
+      setContext(state, action);
+
       state.isProcessing = false;
       state.isSuccess = false;
       state.error = action.payload;
@@ -69,10 +117,13 @@ export const createAsyncSlice = <
   };
 
   const actionKeys = Object.keys(reducers);
-  const actionNames = actionKeys.reduce((result, name) => {
-    result[name] = `async/${options.name}/${name}`;
-    return result;
-  }, {});
+  const actionNames = actionKeys.reduce<Record<string, string>>(
+    (result, name) => {
+      result[name] = `async/${options.name}/${name}`;
+      return result;
+    },
+    {},
+  );
 
   return {
     ...createSlice({
@@ -82,7 +133,11 @@ export const createAsyncSlice = <
         ...options.initialState,
       },
       name: `async/${options.name}`,
-      reducers,
+      // TS has bad time figuring out the dynamic nature of the reducers object
+      // so need to assert it.
+      reducers: reducers as SliceCaseReducers<
+        _AsyncState<SuccessPayload, ErrorPayload>
+      >,
     }),
     actionNames,
   };
