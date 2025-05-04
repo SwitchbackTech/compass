@@ -3,9 +3,10 @@ import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isLeftClick } from "@web/common/utils/mouse/mouse.util";
+import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
-import { selectIsGetWeekEventsProcessing } from "@web/ducks/events/selectors/util.selectors";
+import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
@@ -25,7 +26,10 @@ export const AllDayEvents = ({
   endOfView,
 }: Props) => {
   const allDayEvents = useAppSelector(selectAllDayEvents);
-  const isProcessing = useAppSelector(selectIsGetWeekEventsProcessing);
+  const { isProcessing, reason } = useAppSelector(
+    selectIsGetWeekEventsProcessingWithReason,
+  );
+
   const draftId = useAppSelector(selectDraftId);
   const dispatch = useAppDispatch();
 
@@ -54,27 +58,35 @@ export const AllDayEvents = ({
     handleDrag,
   );
 
+  const renderEvents = () => {
+    if (
+      isProcessing &&
+      reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE
+    ) {
+      return null;
+    }
+
+    return allDayEvents.map((event: Schema_GridEvent, i) => {
+      return (
+        <AllDayEventMemo
+          key={`${event.title}-${i}`}
+          isPlaceholder={event._id === draftId}
+          event={event}
+          startOfView={startOfView}
+          endOfView={endOfView}
+          measurements={measurements}
+          onMouseDown={(e, event) => {
+            if (!isLeftClick(e)) {
+              return;
+            }
+            onMouseDown(e, event);
+          }}
+        />
+      );
+    });
+  };
+
   return (
-    <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>
-      {!isProcessing &&
-        allDayEvents.map((event: Schema_GridEvent, i) => {
-          return (
-            <AllDayEventMemo
-              key={`${event.title}-${i}`}
-              isPlaceholder={event._id === draftId}
-              event={event}
-              startOfView={startOfView}
-              endOfView={endOfView}
-              measurements={measurements}
-              onMouseDown={(e, event) => {
-                if (!isLeftClick(e)) {
-                  return;
-                }
-                onMouseDown(e, event);
-              }}
-            />
-          );
-        })}
-    </StyledEvents>
+    <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>{renderEvents()}</StyledEvents>
   );
 };

@@ -5,6 +5,7 @@ import { EVENT_CHANGED } from "@core/constants/websocket.constants";
 import { ServerToClientEvents } from "@core/types/websocket.types";
 import { useUser } from "@web/auth/UserContext";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 
 const SocketProvider = ({ children }: { children: ReactNode }) => {
@@ -27,7 +28,11 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
   });
 
   socket.on(EVENT_CHANGED, () => {
-    dispatch(triggerFetch());
+    dispatch(
+      triggerFetch({
+        reason: Sync_AsyncStateContextReason.SOCKET_EVENT_CHANGED,
+      }),
+    );
   });
 
   return children;

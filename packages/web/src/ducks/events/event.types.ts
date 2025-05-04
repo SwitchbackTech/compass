@@ -1,6 +1,7 @@
 import { Action } from "redux";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Recur, Schema_Event } from "@core/types/event.types";
+import { SliceStateContext } from "@web/common/store/helpers";
 import {
   Filters_Pagination,
   Response_HttpPaginatedSuccess,
@@ -93,7 +94,7 @@ export interface Payload_GetPaginatedEvents extends Filters_Pagination {
   priorities: Priorities[];
 }
 
-export interface Payload_GetEvents {
+export interface Payload_GetEvents extends SliceStateContext {
   startDate: string;
   endDate: string;
 }

@@ -2,6 +2,7 @@ import { Dayjs } from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
+import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { updateDates } from "@web/ducks/events/slices/view.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
@@ -31,6 +32,9 @@ export const useWeek = (today: Dayjs) => {
       getWeekEventsSlice.actions.request({
         startDate: toUTCOffset(start),
         endDate: toUTCOffset(end),
+        __context: {
+          reason: Week_AsyncStateContextReason.WEEK_VIEW_CHANGE,
+        },
       }),
     );
   }, [dispatch, end, start]);

@@ -1,0 +1,4 @@
+export enum Week_AsyncStateContextReason {
+  WEEK_VIEW_CHANGE = "WEEK_VIEW_CHANGE",
+  SOCKET_EVENT_CHANGED = "SOCKET_EVENT_CHANGED",
+}
