@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { Origin, Priorities, Priority } from "@core/constants/core.constants";
+import { Origin, Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Event_Core, Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
@@ -79,11 +79,7 @@ const _toCompass = (
   const _start = gEvent.start == undefined ? placeHolder.start : gEvent.start;
   const _end = gEvent.end === undefined ? placeHolder.end : gEvent.end;
   const _isAllDay = gEvent.start !== undefined && "date" in gEvent.start;
-  const _origPriority = gEvent.extendedProperties?.private?.["priority"];
-  const _priority =
-    _origPriority === undefined
-      ? Priorities.UNASSIGNED
-      : (_origPriority as Priority);
+  const priority = getPriority(gEvent);
 
   const compassEvent: Schema_Event = {
     gEventId: gEventId,
@@ -98,7 +94,7 @@ const _toCompass = (
     startDate: _isAllDay ? _start.date : _start.dateTime,
     // @ts-ignore
     endDate: _isAllDay ? _end.date : _end.dateTime,
-    priority: _priority,
+    priority,
     updatedAt: new Date(),
   };
 
@@ -114,6 +110,28 @@ const _toCompass = (
 
   const validatedCompassEvent = validateEvent(compassEvent);
   return validatedCompassEvent;
+};
+
+const getPriority = (gEvent: gSchema$Event): Priorities => {
+  const priorityExists =
+    gEvent.extendedProperties?.private?.["priority"] !== undefined &&
+    gEvent.extendedProperties?.private?.["priority"] !== null;
+  if (priorityExists) {
+    const priority = gEvent.extendedProperties?.private?.["priority"];
+    if (
+      priority &&
+      Object.values(Priorities).includes(priority as Priorities)
+    ) {
+      return priority as Priorities;
+    }
+    // Found a priority that doesn't match enum, set to unassigned
+    console.warn(
+      `Found a priority that doesn't match enum: ${priority}`,
+      gEvent,
+    );
+    return Priorities.UNASSIGNED;
+  }
+  return Priorities.UNASSIGNED;
 };
 
 const getRecurrence = (gEvent: gSchema$Event) => {
