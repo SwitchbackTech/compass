@@ -213,7 +213,22 @@ export const HeaderNote = () => {
             isVisible={showPlaceholderUnderline}
             preserveAspectRatio="none"
           >
-            <path d={placeholderUnderlinePath} />
+            <defs>
+              <linearGradient
+                id="placeholderUnderlineGradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor={c.blue100} />
+                <stop offset="100%" stopColor={c.blueGray100} />
+              </linearGradient>
+            </defs>
+            <path
+              d={placeholderUnderlinePath}
+              stroke="url(#placeholderUnderlineGradient)"
+            />
           </StyledPlaceholderUnderline>
         </StyledNoteWrapper>
       )}

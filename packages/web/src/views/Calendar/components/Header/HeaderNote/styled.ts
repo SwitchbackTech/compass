@@ -70,9 +70,14 @@ export const StyledNotePlaceholder = styled.div`
   animation: ${fadeIn} 0.5s ease-out;
   position: relative;
   padding: 0 10px;
+
+  &:hover {
+    color: ${({ theme }) => theme.color.text.light};
+    transition: color 0.3s ease;
+  }
 `;
 
-export const StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
+export const _StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
   position: absolute;
   bottom: 0;
   left: -5px;
@@ -84,6 +89,28 @@ export const StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
   path {
     fill: none;
     stroke: ${c.gray200};
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: ${({ isVisible }) => (isVisible ? 0 : 1000)};
+    animation: ${({ isVisible }) =>
+        isVisible ? drawHandwrittenUnderline : "none"}
+      0.8s ease-out forwards;
+  }
+`;
+export const StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
+  position: absolute;
+  bottom: 0;
+  left: -5px;
+  width: calc(100% + 10px);
+  height: 20px;
+  pointer-events: none;
+  opacity: ${({ isVisible }) => (isVisible ? 1 : 0)};
+
+  path {
+    fill: none;
+    /* Changed from a single color to match the active focus underline */
     stroke-width: 2.5;
     stroke-linecap: round;
     stroke-linejoin: round;
