@@ -2,13 +2,11 @@ import styled from "styled-components";
 import { Flex } from "@web/components/Flex";
 
 export const StyledTodayButton = styled(Flex)`
-  align-items: center;
   color: ${({ theme }) => theme.color.text.light};
   cursor: pointer;
   display: flex;
   font-size: ${({ theme }) => theme.text.size.l};
   min-width: 80px;
-  padding: 0 10px;
 
   &:hover {
     filter: brightness(160%);

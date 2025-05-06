@@ -9,6 +9,7 @@ import {
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ID_HEADER_NOTE_INPUT } from "@web/common/constants/web.constants";
 import { isEventFormOpen } from "@web/common/utils";
 import { createTimedDraft } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
@@ -90,7 +91,12 @@ export const useShortcuts = ({
     };
 
     const keyDownHandler = (e: KeyboardEvent) => {
+      // Prevent shortcuts from triggering unexpectedly
       if (isEventFormOpen()) return;
+
+      const isEditingHeader =
+        document.getElementById(ID_HEADER_NOTE_INPUT) !== null;
+      if (isEditingHeader) return;
 
       const isCmdPaletteOpen =
         document.getElementById("headlessui-portal-root") !== null;
@@ -98,6 +104,7 @@ export const useShortcuts = ({
 
       if (e.metaKey) return;
 
+      // map shortcuts to handler
       const handlersByKey = {
         [Key.OpenBracket]: () => dispatch(viewSlice.actions.toggleSidebar()),
         [Key.C]: () =>
