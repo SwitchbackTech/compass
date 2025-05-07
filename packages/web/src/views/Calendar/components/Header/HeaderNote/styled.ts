@@ -122,7 +122,6 @@ export const StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
 `;
 
 export const StyledNoteContainer = styled.div`
-  position: absolute;
   left: 0;
   right: 0;
   display: flex;
