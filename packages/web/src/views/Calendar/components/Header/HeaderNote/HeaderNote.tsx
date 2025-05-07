@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import React from "react";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { ID_HEADER_NOTE_INPUT } from "@web/common/constants/web.constants";
-import { c } from "@web/common/styles/colors";
-import { useNote } from "../context/HeaderNoteContext";
+import { theme } from "@web/common/styles/theme";
 import { generateHandDrawnUnderline } from "./header-note.util";
 import {
   StyledCharCounter,
@@ -14,14 +14,12 @@ import {
   StyledUnderline,
 } from "./styled";
 
-// import { theme } from "@web/common/styles/theme";
-
-export const MAX_FOCUS_CHARS = 150; // Maximum characters for focus text
+const MAX_NOTE_CHARS = 80;
 
 export const HeaderNote = () => {
-  const { note, setNote } = useNote();
+  const [note, setNote] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [noteValue, setNoteValue] = useState(note);
+
   const [showUnderline, setShowUnderline] = useState(false);
   const [showPlaceholderUnderline, setShowPlaceholderUnderline] =
     useState(false);
@@ -30,6 +28,14 @@ export const HeaderNote = () => {
   const focusRef = useRef<HTMLDivElement>(null);
   const focusWrapperRef = useRef<HTMLDivElement>(null);
   const placeholderRef = useRef<HTMLDivElement>(null);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const savedNote = localStorage.getItem(STORAGE_KEYS.HEADER_NOTE);
+    if (savedNote !== null) {
+      setNote(savedNote);
+    }
+  }, []);
 
   // Generate underline paths when components mount or resize
   useEffect(() => {
@@ -80,6 +86,8 @@ export const HeaderNote = () => {
   // Effect for focus editing
   useEffect(() => {
     if (isEditing && focusRef.current) {
+      // Set content to current note value when entering edit mode
+      focusRef.current.textContent = note;
       focusRef.current.focus();
 
       // Place cursor at the end
@@ -90,14 +98,19 @@ export const HeaderNote = () => {
       sel?.removeAllRanges();
       sel?.addRange(range);
     }
-  }, [isEditing]);
+  }, [isEditing, note]);
 
   // Effect to handle ESC key
   useEffect(() => {
     const handleEscKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isEditing) {
         setIsEditing(false);
-        setNote(noteValue);
+        // Save to localStorage on ESC
+        if (focusRef.current) {
+          const value = focusRef.current.textContent || "";
+          setNote(value);
+          localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, value);
+        }
       }
     };
 
@@ -105,23 +118,30 @@ export const HeaderNote = () => {
     return () => {
       window.removeEventListener("keydown", handleEscKey);
     };
-  }, [isEditing, noteValue, setNote]);
+  }, [isEditing]);
 
   const handleNoteClick = () => {
     setIsEditing(true);
-    setNoteValue(note);
   };
 
   const handleNoteBlur = () => {
     setIsEditing(false);
-    setNote(noteValue);
+    // Save to localStorage on blur
+    if (focusRef.current) {
+      const value = focusRef.current.textContent || "";
+      setNote(value);
+      localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, value);
+    }
   };
 
-  const handleNoteKeyDown = (e: React.KeyboardEvent) => {
+  const handleNoteKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
       setIsEditing(false);
-      setNote(noteValue);
+      // Save to localStorage on ENTER
+      const latestValue = e.currentTarget.textContent || "";
+      setNote(latestValue);
+      localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, latestValue);
     }
   };
 
@@ -129,12 +149,13 @@ export const HeaderNote = () => {
     const newText = e.currentTarget.textContent || "";
 
     // Limit text length
-    if (newText.length <= MAX_FOCUS_CHARS) {
-      setNoteValue(newText);
+    if (newText.length <= MAX_NOTE_CHARS) {
+      setNote(newText);
     } else {
       // If text is too long, truncate it and update the DOM element
-      setNoteValue(newText.substring(0, MAX_FOCUS_CHARS));
-      e.currentTarget.textContent = newText.substring(0, MAX_FOCUS_CHARS);
+      const truncated = newText.substring(0, MAX_NOTE_CHARS);
+      setNote(truncated);
+      e.currentTarget.textContent = truncated;
 
       // Place cursor at the end after truncating
       const range = document.createRange();
@@ -157,18 +178,14 @@ export const HeaderNote = () => {
               contentEditable
               suppressContentEditableWarning
               isEditing={true}
-              textLength={noteValue.length}
+              textLength={note.length}
               onBlur={handleNoteBlur}
               onKeyDown={handleNoteKeyDown}
               onInput={handleNoteChange}
-            >
-              {note}
-            </StyledNoteText>
+            />
           </StyledNoteWrapper>
-          <StyledCharCounter
-            isNearLimit={noteValue.length > MAX_FOCUS_CHARS * 0.8}
-          >
-            {noteValue.length}/{MAX_FOCUS_CHARS}
+          <StyledCharCounter isNearLimit={note.length > MAX_NOTE_CHARS * 0.8}>
+            {note.length}/{MAX_NOTE_CHARS}
           </StyledCharCounter>
         </>
       ) : note ? (
@@ -193,8 +210,14 @@ export const HeaderNote = () => {
                 x2="100%"
                 y2="0%"
               >
-                <stop offset="0%" stopColor={c.blue100} />
-                <stop offset="100%" stopColor={c.blueGray100} />
+                <stop
+                  offset="0%"
+                  stopColor={theme.color.gradient.accentLight.start}
+                />
+                <stop
+                  offset="100%"
+                  stopColor={theme.color.gradient.accentLight.end}
+                />
               </linearGradient>
             </defs>
             <path d={underlinePath} stroke="url(#underlineGradient)" />
@@ -221,8 +244,14 @@ export const HeaderNote = () => {
                 x2="100%"
                 y2="0%"
               >
-                <stop offset="0%" stopColor={c.blue100} />
-                <stop offset="100%" stopColor={c.blueGray100} />
+                <stop
+                  offset="0%"
+                  stopColor={theme.color.gradient.accentLight.start}
+                />
+                <stop
+                  offset="100%"
+                  stopColor={theme.color.gradient.accentLight.end}
+                />
               </linearGradient>
             </defs>
             <path
