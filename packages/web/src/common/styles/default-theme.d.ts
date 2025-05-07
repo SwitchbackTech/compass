@@ -17,6 +17,12 @@ declare module "styled-components" {
         primary: string;
         primaryDark: string;
       };
+      gradient: {
+        accentLight: {
+          start: string;
+          end: string;
+        };
+      };
       gridLine: {
         primary: string;
       };

@@ -1,5 +1,5 @@
 import styled, { css, keyframes } from "styled-components";
-import { c } from "@web/common/styles/colors";
+import { theme } from "@web/common/styles/theme";
 
 // Hand-drawn underline animation
 const drawHandwrittenUnderline = keyframes`
@@ -27,10 +27,10 @@ const fadeIn = keyframes`
 
 const subtle = keyframes`
   0%, 100% {
-    filter: brightness(100%) drop-shadow(0 0 2px rgba(51, 153, 255, 0.3));
+    filter: brightness(100%);
   }
   50% {
-    filter: brightness(110%) drop-shadow(0 0 4px rgba(51, 153, 255, 0.5));
+    filter: brightness(110%);
   }
 `;
 
@@ -88,7 +88,7 @@ export const _StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
 
   path {
     fill: none;
-    stroke: ${c.gray200};
+    stroke: ${({ theme }) => theme.color.border.primary};
     stroke-width: 2.5;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -110,7 +110,6 @@ export const StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
 
   path {
     fill: none;
-    /* Changed from a single color to match the active focus underline */
     stroke-width: 2.5;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -145,12 +144,14 @@ export const StyledNoteText = styled.div<{
     if (props.textLength > 50) return "24px";
     return "28px";
   }};
-  background: linear-gradient(90deg, ${c.blue100}, ${c.blueGray100});
+  background: ${({ theme }) =>
+    `linear-gradient(90deg, ${theme.color.gradient.accentLight.start}, ${theme.color.gradient.accentLight.end})`};
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-align: center;
   font-weight: 600;
+  filter: ${({ theme }) => `drop-shadow(0 0 2px ${theme.color.bg.primary})`};
   animation:
     ${fadeIn} 0.5s ease-out,
     ${subtle} 5s ease-in-out infinite,
@@ -159,6 +160,30 @@ export const StyledNoteText = styled.div<{
   min-width: 200px;
   max-width: 500px;
   position: relative;
+
+  /* Animate drop-shadow color at 50% using bg.secondary */
+  @media (prefers-reduced-motion: no-preference) {
+    & {
+      animation-name: ${fadeIn}, ${subtle}, ${gradientWave};
+      animation-duration: 0.5s, 5s, 15s;
+      animation-timing-function: ease-out, ease-in-out, ease;
+      animation-iteration-count: 1, infinite, infinite;
+    }
+    /* Use a CSS animation step for 50% */
+    @keyframes subtleShadowColor {
+      0%,
+      100% {
+        filter: drop-shadow(0 0 2px ${theme.color.bg.primary});
+      }
+      50% {
+        filter: drop-shadow(0 0 4px ${theme.color.bg.secondary});
+      }
+    }
+    animation-name: subtleShadowColor, ${fadeIn}, ${gradientWave};
+    animation-duration: 5s, 0.5s, 15s;
+    animation-timing-function: ease-in-out, ease-out, ease;
+    animation-iteration-count: infinite, 1, infinite;
+  }
 
   ${({ isEditing }) =>
     isEditing
