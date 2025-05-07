@@ -9,11 +9,12 @@ import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { RootProps } from "@web/views/Calendar/calendarView.types";
-import { TodayButton } from "@web/views/Calendar/components/TodayButton";
-import { Util_Scroll } from "@web/views/Calendar/hooks/grid/useScroll";
-import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { RootProps } from "../../calendarView.types";
+import { Util_Scroll } from "../../hooks/grid/useScroll";
+import { WeekProps } from "../../hooks/useWeek";
+import { TodayButton } from "../TodayButton";
 import { DayLabels } from "./DayLabels";
+import { HeaderNote } from "./HeaderNote/HeaderNote";
 import {
   ArrowNavigationButton,
   StyledHeaderLabel,
@@ -30,18 +31,16 @@ interface Props {
   today: Dayjs;
   weekProps: WeekProps;
 }
-
-export const Header: FC<Props> = ({
-  rootProps,
-  scrollUtil,
-  today,
-  weekProps,
-}) => {
-  const dispatch = useAppDispatch();
+export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
   const { scrollToNow } = scrollUtil;
 
-  const { startOfView, endOfView } = weekProps.component;
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
+  const dispatch = useAppDispatch();
+  const headerLabel = getCalendarHeadingLabel(
+    weekProps.component.startOfView,
+    weekProps.component.endOfView,
+    dayjs(),
+  );
 
   const onTodayClick = () => {
     if (!weekProps.component.isCurrentWeek) {
@@ -50,75 +49,73 @@ export const Header: FC<Props> = ({
     scrollToNow();
   };
 
-  const headerLabel = getCalendarHeadingLabel(startOfView, endOfView, dayjs());
-
   return (
     <>
       <StyledHeaderRow alignItems={AlignItems.BASELINE}>
-        <TooltipWrapper
-          description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-          onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
-          shortcut="["
-        >
-          <SidebarIcon
-            color={
-              isSidebarOpen
-                ? theme.color.text.light
-                : theme.color.text.lightInactive
-            }
-          />
-        </TooltipWrapper>
         <StyledLeftGroup>
-          <StyledHeaderLabel aria-level={1} role="heading">
-            <Text size="4xl">{headerLabel}</Text>
-          </StyledHeaderLabel>
+          <TooltipWrapper
+            description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+            onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
+            shortcut="["
+          >
+            <SidebarIcon
+              color={
+                isSidebarOpen
+                  ? theme.color.text.light
+                  : theme.color.text.lightInactive
+              }
+            />
+          </TooltipWrapper>
         </StyledLeftGroup>
-
+        <HeaderNote />
         <StyledRightGroup>
-          <StyledNavigationGroup>
-            <TooltipWrapper
-              description={today.format("dddd, MMMM D")}
-              onClick={onTodayClick}
-              shortcut="T"
-            >
-              <TodayButton />
-            </TooltipWrapper>
-
-            <StyledNavigationArrows>
+          <StyledHeaderLabel aria-level={1} role="heading">
+            <Text size="xl">{headerLabel}</Text>
+          </StyledHeaderLabel>
+          <div>
+            <StyledNavigationGroup>
               <TooltipWrapper
-                onClick={() => weekProps.util.decrementWeek()}
-                shortcut="J"
+                description={today.format("dddd, MMMM D")}
+                onClick={onTodayClick}
+                shortcut="T"
               >
-                <ArrowNavigationButton
-                  cursor="pointer"
-                  role="navigation"
-                  size="xxl"
-                  title="previous week"
-                >
-                  {"<"}
-                </ArrowNavigationButton>
+                <TodayButton />
               </TooltipWrapper>
+              <StyledNavigationArrows>
+                <TooltipWrapper
+                  onClick={() => weekProps.util.decrementWeek()}
+                  shortcut="J"
+                >
+                  <ArrowNavigationButton
+                    cursor="pointer"
+                    role="navigation"
+                    size="xxl"
+                    title="previous week"
+                  >
+                    {"<"}
+                  </ArrowNavigationButton>
+                </TooltipWrapper>
 
-              <TooltipWrapper
-                onClick={() => weekProps.util.incrementWeek()}
-                shortcut="K"
-              >
-                <ArrowNavigationButton
-                  cursor="pointer"
-                  role="navigation"
-                  size="xxl"
-                  title="next week"
+                <TooltipWrapper
+                  onClick={() => weekProps.util.incrementWeek()}
+                  shortcut="K"
                 >
-                  {">"}
-                </ArrowNavigationButton>
-              </TooltipWrapper>
-            </StyledNavigationArrows>
-          </StyledNavigationGroup>
+                  <ArrowNavigationButton
+                    cursor="pointer"
+                    role="navigation"
+                    size="xxl"
+                    title="next week"
+                  >
+                    {">"}
+                  </ArrowNavigationButton>
+                </TooltipWrapper>
+              </StyledNavigationArrows>
+            </StyledNavigationGroup>
+          </div>
         </StyledRightGroup>
       </StyledHeaderRow>
 
       <DayLabels
-        rootProps={rootProps}
         startOfView={weekProps.component.startOfView}
         today={today}
         week={weekProps.component.week}

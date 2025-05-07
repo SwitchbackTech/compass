@@ -11,6 +11,7 @@ export const ID_GRID_ALLDAY_ROW = "allDayRow";
 export const ID_GRID_EVENTS_ALLDAY = "allDayEvents";
 export const ID_GRID_EVENTS_TIMED = "timedEvents";
 export const ID_GRID_MAIN = "mainGrid";
+export const ID_HEADER_NOTE_INPUT = "headerNoteInput";
 export const ID_MAIN = "mainSection";
 export const ID_DATEPICKER_SIDEBAR = "sidebarDatePicker";
 export const ID_SIDEBAR = "sidebar";

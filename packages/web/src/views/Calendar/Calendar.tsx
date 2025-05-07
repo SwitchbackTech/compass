@@ -11,7 +11,7 @@ import { Draft } from "./components/Draft/Draft";
 import { DraftProvider } from "./components/Draft/context/DraftProvider";
 import { SidebarDraftProvider } from "./components/Draft/sidebar/context/SidebarDraftProvider";
 import { Grid } from "./components/Grid/";
-import { Header } from "./components/Header";
+import { Header } from "./components/Header/Header";
 import { Sidebar } from "./components/Sidebar/Sidebar";
 import { useDateCalcs } from "./hooks/grid/useDateCalcs";
 import { useGridLayout } from "./hooks/grid/useGridLayout";

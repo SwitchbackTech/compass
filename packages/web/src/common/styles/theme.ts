@@ -16,6 +16,12 @@ export const theme: DefaultTheme = {
       primary: c.gray100,
       primaryDark: c.gray200,
     },
+    gradient: {
+      accentLight: {
+        start: c.blue100,
+        end: c.blueGray100,
+      },
+    },
     gridLine: {
       primary: c.gray800,
     },

@@ -20,20 +20,7 @@ describe("getWeekRangeLabel", () => {
 });
 
 describe("getCalendarHeadingLabel", () => {
-  it("should return month only when week is within a single month and today is in the same year", () => {
-    const today = dayjs("2025-01-08");
-    const weekInViewStart = dayjs("2025-01-05");
-    const weekInViewEnd = dayjs("2025-01-11");
-    const label = getCalendarHeadingLabel(
-      weekInViewStart,
-      weekInViewEnd,
-      today,
-    );
-    const expectedlabel = "January";
-    expect(label).toBe(expectedlabel);
-  });
-
-  it("should return month and year when week is within a single month and today is in a different year", () => {
+  it("should return month and year", () => {
     const today = dayjs("2024-12-30");
     const weekInViewStart = dayjs("2025-01-05");
     const weekInViewEnd = dayjs("2025-01-11");

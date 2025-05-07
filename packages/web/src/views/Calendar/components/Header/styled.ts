@@ -1,16 +1,54 @@
 import styled from "styled-components";
+import { c } from "@web/common/styles/colors";
 import { Flex } from "@web/components/Flex";
-import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
+import { JustifyContent } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
-import {
-  EVENT_WIDTH_MINIMUM,
-  PAGE_MARGIN_X,
-} from "@web/views/Calendar/layout.constants";
-import {
-  GRID_MARGIN_LEFT,
-  HEADER_HEIGHT,
-  WEEK_DAYS_MARGIN_Y,
-} from "@web/views/Calendar/layout.constants";
+
+// Constants
+export const HEADER_HEIGHT = 80;
+export const GRID_MARGIN_LEFT = 60;
+export const WEEK_DAYS_MARGIN_Y = 10;
+export const EVENT_WIDTH_MINIMUM = 100;
+
+// Header components
+export const StyledHeaderRow = styled(Flex)`
+  color: ${c.gray100};
+  font-size: 40px;
+  justify-content: ${JustifyContent.SPACE_BETWEEN};
+  height: ${HEADER_HEIGHT}px;
+  width: 100%;
+  position: relative;
+  padding: 0 20px;
+  align-items: center; /* Center align all items in the header */
+`;
+
+export const StyledLeftGroup = styled(Flex)`
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+`;
+
+export const StyledRightGroup = styled(Flex)`
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  z-index: 2;
+`;
+
+export const StyledHeaderLabel = styled(Flex)`
+  color: ${c.gray100};
+`;
+
+export const StyledNavigationGroup = styled(Flex)`
+  align-items: center;
+  justify-content: space-between;
+  margin-right: 20px;
+`;
+
+export const StyledNavigationArrows = styled(Flex)`
+  padding-left: 20px;
+  align-items: center;
+`;
 
 export const ArrowNavigationButton = styled(Text)`
   display: flex;
@@ -30,46 +68,35 @@ export const ArrowNavigationButton = styled(Text)`
   }
 `;
 
-export const StyledHeaderLabel = styled.div`
-  padding-right: 60px;
-`;
-
-export const StyledLeftGroup = styled(Flex)`
-  align-items: ${AlignItems.BASELINE};
-`;
-
-export const StyledHeaderRow = styled(Flex)`
-  color: ${({ theme }) => theme.color.text.light};
-  font-size: 40px;
-  justify-content: ${JustifyContent.SPACE_BETWEEN};
-  height: ${HEADER_HEIGHT}px;
-  width: 100%;
-`;
-
-export const StyledNavigationArrows = styled(Flex)`
-  padding-left: 20px;
-`;
-
-export const StyledNavigationGroup = styled(Flex)`
-  align-items: baseline;
-  justify-content: space-between;
-  margin-right: 20px;
-`;
-
-export const StyledRightGroup = styled(Flex)``;
-
+// Week days components
 export const StyledWeekDaysFlex = styled(Flex)`
-  width: calc(100% - ${GRID_MARGIN_LEFT}px);
+  width: 100%;
   margin: ${WEEK_DAYS_MARGIN_Y}px 0 0 0;
-  margin-left: ${GRID_MARGIN_LEFT}px;
+  /* margin-left: ${GRID_MARGIN_LEFT}px; */
 `;
 
-interface WeekDayFlexProps {
-  color: string;
-}
-
-export const StyledWeekDayFlex = styled(Flex)<WeekDayFlexProps>`
+export const StyledWeekDayFlex = styled(Flex)<{ color: string }>`
   color: ${({ color }) => color};
   flex-basis: 100%;
   min-width: ${EVENT_WIDTH_MINIMUM}px;
+`;
+
+export const StyledMonthLabel = styled(Text)`
+  font-size: 24px;
+  color: ${c.gray100};
+  margin-left: 20px;
+`;
+
+// Today button
+export const StyledTodayButton = styled.button`
+  background: transparent;
+  color: ${c.gray100};
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 14px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
 `;

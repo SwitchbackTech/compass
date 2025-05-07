@@ -5,11 +5,9 @@ import { getWeekDayLabel } from "@web/common/utils/event.util";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
-import { RootProps } from "../../calendarView.types";
 import { StyledWeekDayFlex, StyledWeekDaysFlex } from "./styled";
 
 interface Props {
-  rootProps: RootProps;
   today: Dayjs;
   startOfView: Dayjs;
   week: number;

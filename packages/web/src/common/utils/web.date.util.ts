@@ -221,7 +221,7 @@ export const getCalendarHeadingLabel = (
   const endsThisYear = now.year() === end.year();
 
   if (startsThisYear && endsThisYear) {
-    return start.format("MMMM");
+    return start.format("MMMM YYYY");
   } else if (startsThisYear || endsThisYear) {
     const startLabel = start.format("MMM YY");
     const endLabel = end.format("MMM YY");
