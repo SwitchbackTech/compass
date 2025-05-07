@@ -126,7 +126,7 @@ export const StyledNoteContainer = styled.div`
   right: 0;
   display: flex;
   justify-content: center;
-  align-items: center; /* Center align vertically */
+  align-items: center;
   z-index: 1;
   height: 100%;
   width: 100%;
