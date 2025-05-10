@@ -1,8 +1,8 @@
 # 🧭 Compass Calendar
 
 _Compass is a weekly planner that integrates with Google Calendar._
+<img width="1494" alt="Glimpsed" src="https://github.com/user-attachments/assets/c0a22b46-f0eb-4b0c-8a7b-942f142947a5" />
 
-<img width="1494" alt="Glimpsed" src="https://github.com/user-attachments/assets/da694600-7393-4604-927a-e6969dffbdf6" />
 
 ---
 
