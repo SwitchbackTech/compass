@@ -37,15 +37,20 @@ export const DbError = {
 };
 
 export const EmailerError = {
+  AddToListFailed: {
+    description: "Failed to add email to list",
+    status: Status.UNSURE,
+    isOperational: true,
+  },
   IncorrectApiKey: {
     description:
       "Incorrect API key. Please make sure environment variables beginning with EMAILER_ are correct",
     status: Status.BAD_REQUEST,
     isOperational: true,
   },
-  AddToListFailed: {
-    description: "Failed to add email to list",
-    status: Status.UNSURE,
+  InvalidSubscriberData: {
+    description: "Subscriber data is missing or incorrect",
+    status: Status.BAD_REQUEST,
     isOperational: true,
   },
 };
