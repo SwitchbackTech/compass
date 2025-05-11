@@ -36,9 +36,11 @@
     "@types/module-alias": "^2.0.1",
     "@types/morgan": "^1.9.4",
     "@types/node": "^22.13.10",
+    "@types/supertest": "^6.0.3",
     "alias-hq": "^6.1.0",
     "jest-environment-node": "^29.7.0",
     "socket.io-client": "^4.7.5",
+    "supertest": "^7.1.0",
     "tsconfig-paths": "^4.1.2"
   }
 }
