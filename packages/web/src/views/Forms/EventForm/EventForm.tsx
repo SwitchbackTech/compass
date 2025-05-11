@@ -145,7 +145,7 @@ export const EventForm: React.FC<FormProps> = ({
       e.preventDefault();
     }
 
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+    if (e.metaKey && e.key === Key.Enter) {
       e.preventDefault();
       onSubmitForm();
     }
