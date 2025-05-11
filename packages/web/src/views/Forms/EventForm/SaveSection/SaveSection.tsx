@@ -2,6 +2,7 @@ import React from "react";
 import { Priority } from "@core/constants/core.constants";
 import { StyledSaveBtn } from "@web/components/Button/styled";
 import { StyledSubmitRow } from "../styled";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 interface Props {
   onSubmit: () => void;
@@ -14,6 +15,7 @@ export const SaveSection: React.FC<Props> = ({
 }) => {
   return (
     <StyledSubmitRow>
+    <TooltipWrapper onClick={_onSubmit} shortcut="⌘ + Enter" description="Save event">
       <StyledSaveBtn
         minWidth={110}
         priority={priority}
@@ -24,6 +26,7 @@ export const SaveSection: React.FC<Props> = ({
       >
         Save
       </StyledSaveBtn>
+    </TooltipWrapper>
     </StyledSubmitRow>
   );
 };
