@@ -16,6 +16,11 @@ import {
 
 const MAX_NOTE_CHARS = 80;
 
+type CursorPosition = {
+  startOffset: number;
+  endOffset: number;
+};
+
 export const HeaderNote = () => {
   const [note, setNote] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -28,6 +33,52 @@ export const HeaderNote = () => {
   const focusRef = useRef<HTMLDivElement>(null);
   const focusWrapperRef = useRef<HTMLDivElement>(null);
   const placeholderRef = useRef<HTMLDivElement>(null);
+  const cursorPositionRef = useRef<CursorPosition | null>(null);
+
+  // Helper functions to save and restore cursor position
+  const saveCursorPosition = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || !focusRef.current) return;
+
+    const range = selection.getRangeAt(0);
+    if (focusRef.current.contains(range.commonAncestorContainer)) {
+      cursorPositionRef.current = {
+        startOffset: range.startOffset,
+        endOffset: range.endOffset,
+      };
+    }
+  };
+
+  const restoreCursorPosition = () => {
+    if (!cursorPositionRef.current || !focusRef.current) return;
+
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    try {
+      const range = document.createRange();
+      const textNode = focusRef.current.firstChild || focusRef.current;
+
+      // Ensure offsets are within the valid range
+      const textLength = textNode.textContent?.length || 0;
+      const startOffset = Math.min(
+        cursorPositionRef.current.startOffset,
+        textLength,
+      );
+      const endOffset = Math.min(
+        cursorPositionRef.current.endOffset,
+        textLength,
+      );
+
+      range.setStart(textNode, startOffset);
+      range.setEnd(textNode, endOffset);
+
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } catch (e) {
+      console.error("Failed to restore cursor position", e);
+    }
+  };
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -83,22 +134,49 @@ export const HeaderNote = () => {
     }
   };
 
-  // Effect for focus editing
+  // Effect for initial focus when editing starts
   useEffect(() => {
     if (isEditing && focusRef.current) {
-      // Set content to current note value when entering edit mode
-      focusRef.current.textContent = note;
+      // Only set content when first entering edit mode
+      if (focusRef.current.textContent !== note) {
+        focusRef.current.textContent = note;
+      }
       focusRef.current.focus();
 
-      // Place cursor at the end
-      const range = document.createRange();
-      const sel = window.getSelection();
-      range.selectNodeContents(focusRef.current);
-      range.collapse(false);
-      sel?.removeAllRanges();
-      sel?.addRange(range);
+      // Only place cursor at the end when first entering edit mode
+      if (!cursorPositionRef.current) {
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(focusRef.current);
+        range.collapse(false);
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      } else {
+        // Restore previously saved cursor position
+        restoreCursorPosition();
+      }
     }
-  }, [isEditing, note]);
+  }, [isEditing]);
+
+  // Effect to sync note content after state updates
+  useEffect(() => {
+    if (
+      isEditing &&
+      focusRef.current &&
+      focusRef.current.textContent !== note
+    ) {
+      // Remember cursor position
+      saveCursorPosition();
+
+      // Update text content only if it's different
+      if (focusRef.current.textContent !== note) {
+        focusRef.current.textContent = note;
+      }
+
+      // Restore cursor position
+      setTimeout(restoreCursorPosition, 0);
+    }
+  }, [note, isEditing]);
 
   // Effect to handle ESC key
   useEffect(() => {
@@ -121,6 +199,7 @@ export const HeaderNote = () => {
   }, [isEditing]);
 
   const handleNoteClick = () => {
+    cursorPositionRef.current = null; // Reset cursor position
     setIsEditing(true);
   };
 
@@ -148,6 +227,9 @@ export const HeaderNote = () => {
   const handleNoteChange = (e: React.FormEvent<HTMLDivElement>) => {
     const newText = e.currentTarget.textContent || "";
 
+    // Save cursor position before updating state
+    saveCursorPosition();
+
     // Limit text length
     if (newText.length <= MAX_NOTE_CHARS) {
       setNote(newText);
@@ -155,15 +237,27 @@ export const HeaderNote = () => {
       // If text is too long, truncate it and update the DOM element
       const truncated = newText.substring(0, MAX_NOTE_CHARS);
       setNote(truncated);
-      e.currentTarget.textContent = truncated;
 
-      // Place cursor at the end after truncating
-      const range = document.createRange();
-      const sel = window.getSelection();
-      range.selectNodeContents(e.currentTarget);
-      range.collapse(false);
-      sel?.removeAllRanges();
-      sel?.addRange(range);
+      // Only manually update DOM and cursor if truncation happened
+      if (newText !== truncated) {
+        e.currentTarget.textContent = truncated;
+
+        // Place cursor at the end after truncating
+        const range = document.createRange();
+        const sel = window.getSelection();
+        if (sel) {
+          range.selectNodeContents(e.currentTarget);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+
+          // Update saved cursor position
+          cursorPositionRef.current = {
+            startOffset: truncated.length,
+            endOffset: truncated.length,
+          };
+        }
+      }
     }
   };
 
