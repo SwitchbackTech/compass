@@ -15,8 +15,8 @@ export const MoveToSidebarButton = ({ onClick }: { onClick: () => void }) => {
     }
 
     return (
-      <Text size="m" style={{ display: "flex", alignItems: "center" }}>
-        {isMacOS ? <Command size={16} /> : <WindowsLogo size={16} />} +
+      <Text size="s" style={{ display: "flex", alignItems: "center" }}>
+        {isMacOS ? <Command size={14} /> : <WindowsLogo size={14} />} +
         {" SHIFT "} + {","}
       </Text>
     );

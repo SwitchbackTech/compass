@@ -42,7 +42,7 @@ export const TooltipWrapper: React.FC<Props> = ({
           {shortcut && (
             <StyledShortcutTip>
               {typeof shortcut === "string" ? (
-                <Text size="m">{shortcut}</Text>
+                <Text size="s">{shortcut}</Text>
               ) : (
                 shortcut
               )}
