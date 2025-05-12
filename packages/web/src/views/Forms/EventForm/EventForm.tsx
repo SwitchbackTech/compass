@@ -144,6 +144,11 @@ export const EventForm: React.FC<FormProps> = ({
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "<") {
       e.preventDefault();
     }
+
+    if (e.metaKey && e.key === Key.Enter) {
+      e.preventDefault();
+      onSubmitForm();
+    }
   };
 
   const onSubmitForm = () => {
