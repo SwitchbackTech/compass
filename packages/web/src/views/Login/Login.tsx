@@ -6,8 +6,8 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { useAuthCheck } from "@web/auth/useAuthCheck";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
+import { LoginAbsoluteOverflowLoader } from "@web/components/LoginAbsoluteOverflowLoader/LoginAbsoluteOverflowLoader";
 import {
   Card,
   CardHeader,
@@ -95,7 +95,7 @@ export const LoginView = () => {
           alignItems={AlignItems.CENTER}
           direction={FlexDirections.COLUMN}
         >
-          {isAuthenticating && <AbsoluteOverflowLoader />}
+          {isAuthenticating && <LoginAbsoluteOverflowLoader />}
 
           <Card>
             <CardHeader>
