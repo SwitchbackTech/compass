@@ -23,16 +23,3 @@ export class BaseError extends Error {
     Error.captureStackTrace(this);
   }
 }
-
-/*example of how to extend
-export class APIError extends BaseError {
-  constructor(
-    name: string,
-    statusCode = StatusCodes.INTERNAL_SERVER,
-    description = "Internal server error",
-    isOperational = true
-  ) {
-    super(name, statusCode, description, isOperational);
-  }
-}
-*/
