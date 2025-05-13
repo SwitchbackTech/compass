@@ -17,7 +17,7 @@ import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
-import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
+import { selectSidebarTab, selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -50,6 +50,7 @@ export const useShortcuts = ({
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const tab = useAppSelector(selectSidebarTab);
+  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
   useHotkeys("shift+1", () => {
     dispatch(viewSlice.actions.updateSidebarTab("tasks"));
@@ -69,6 +70,11 @@ export const useShortcuts = ({
       if (category === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
         alert(SOMEDAY_MONTH_LIMIT_MSG);
         return;
+      }
+
+        // If sidebar is closed, open it first
+      if (!isSidebarOpen) {
+        dispatch(viewSlice.actions.toggleSidebar());
       }
 
       await createSomedayDraft(
