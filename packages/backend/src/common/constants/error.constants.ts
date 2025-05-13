@@ -53,6 +53,11 @@ export const EmailerError = {
     status: Status.BAD_REQUEST,
     isOperational: true,
   },
+  MissingSecret: {
+    description: "Missing API Secret",
+    status: Status.INTERNAL_SERVER,
+    isOperational: true,
+  },
 };
 
 export const EventError = {
