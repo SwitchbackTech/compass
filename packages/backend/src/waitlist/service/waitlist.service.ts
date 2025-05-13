@@ -1,8 +1,6 @@
+import { Subscriber } from "@core/types/email/email.types";
 import { ENV } from "@backend/common/constants/env.constants";
-import {
-  RequestBody_CreateSubscriber,
-  Response_TagSubscriber,
-} from "@backend/email/email.types";
+import { Response_TagSubscriber } from "@backend/email/email.types";
 import EmailService from "../../email/email.service";
 import { Answers_v0 } from "../types/waitlist.types";
 
@@ -11,12 +9,7 @@ class WaitlistService {
     email: string,
     answer: Answers_v0,
   ): Promise<Response_TagSubscriber["subscriber"]> {
-    console.log("Saving to waitlist:", email, answer.firstName);
-    const emailService = new EmailService(
-      ENV.EMAILER_SECRET as string,
-      ENV.EMAILER_LIST_ID as string,
-    );
-    const subscriber: RequestBody_CreateSubscriber = {
+    const subscriber: Subscriber = {
       email_address: email,
       first_name: answer.firstName,
       state: "active",
@@ -27,9 +20,14 @@ class WaitlistService {
       },
     };
 
-    const result = await emailService.addTagToSubscriber(
+    if (!ENV.EMAILER_SECRET || !ENV.EMAILER_TAG_ID) {
+      throw new Error(
+        "Missing one or more of the required email environment variables: EMAILER_SECRET, EMAILER_TAG_ID",
+      );
+    }
+    const result = await EmailService.addTagToSubscriber(
       subscriber,
-      answer.firstName,
+      ENV.EMAILER_TAG_ID,
     );
     return result.subscriber;
   }

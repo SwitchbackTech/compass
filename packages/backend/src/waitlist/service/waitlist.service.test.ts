@@ -23,7 +23,7 @@ describe("WaitlistService.addToWaitlist", () => {
       workingTowardsMainGoal: "yes",
       isWillingToShare: false,
     };
-    jest.spyOn(EmailService.prototype, "upsertSubscriber").mockResolvedValue({
+    jest.spyOn(EmailService, "upsertSubscriber").mockResolvedValue({
       subscriber: {
         id: 1,
         first_name: answers.firstName,
@@ -37,7 +37,7 @@ describe("WaitlistService.addToWaitlist", () => {
         },
       },
     });
-    jest.spyOn(EmailService.prototype, "addTagToSubscriber").mockResolvedValue({
+    jest.spyOn(EmailService, "addTagToSubscriber").mockResolvedValue({
       subscriber: {
         id: 1,
         first_name: answers.firstName,
