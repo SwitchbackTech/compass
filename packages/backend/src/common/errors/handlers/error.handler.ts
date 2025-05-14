@@ -5,6 +5,12 @@ import { ErrorMetadata } from "@backend/common/types/error.types";
 
 const logger = Logger("app:error.handler");
 
+/**
+ * Transforms error metadata into a BaseError class
+ * @param cause The cause of the error
+ * @param result The result of the error
+ * @returns
+ */
 export const error = (cause: ErrorMetadata, result: string) => {
   return new BaseError(
     result,

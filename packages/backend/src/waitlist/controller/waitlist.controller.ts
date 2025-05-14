@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
+import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { ENV } from "@backend/common/constants/env.constants";
-import { EmailerError } from "@backend/common/constants/error.constants";
 import WaitlistService from "../service/waitlist.service";
 import { Answers_v0, Schema_Waitlist } from "../types/waitlist.types";
 
@@ -30,16 +30,19 @@ export class WaitlistController {
         answers,
       );
       return res.status(200).json(result);
-    } catch (err: unknown) {
-      logger.error(err);
-      const maybeError = err as { description?: string; status?: number };
-      if (
-        maybeError?.description ===
-          EmailerError.InvalidSubscriberData.description ||
-        maybeError?.status === EmailerError.InvalidSubscriberData.status
-      ) {
-        return res.status(400).json({ error: "Invalid subscriber data" });
+    } catch (err) {
+      // If the error is a BaseError (including EmailerError), return its status and description
+      if (err instanceof BaseError) {
+        logger.error(err);
+        return res.status(err.statusCode).json({ error: err.description });
       }
+      // If it's a generic Error, return its message
+      if (err instanceof Error) {
+        logger.error(err);
+        return res.status(500).json({ error: err.message });
+      }
+      // Otherwise, return a generic server error
+      logger.error("caught unknown error");
       return res.status(500).json({ error: "Server error" });
     }
   }

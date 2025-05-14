@@ -1,6 +1,7 @@
+import { ErrorConstant } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 
-export const AuthError = {
+export const AuthError: ErrorConstant = {
   DevOnly: {
     description: "Only available during development",
     status: Status.FORBIDDEN,
@@ -28,7 +29,7 @@ export const AuthError = {
   },
 };
 
-export const DbError = {
+export const DbError: ErrorConstant = {
   InvalidId: {
     description: "id is invalid (according to Mongo)",
     status: Status.BAD_REQUEST,
@@ -36,31 +37,7 @@ export const DbError = {
   },
 };
 
-export const EmailerError = {
-  AddToListFailed: {
-    description: "Failed to add email to list",
-    status: Status.UNSURE,
-    isOperational: true,
-  },
-  IncorrectApiKey: {
-    description:
-      "Incorrect API key. Please make sure environment variables beginning with EMAILER_ are correct",
-    status: Status.BAD_REQUEST,
-    isOperational: true,
-  },
-  InvalidSubscriberData: {
-    description: "Subscriber data is missing or incorrect",
-    status: Status.BAD_REQUEST,
-    isOperational: true,
-  },
-  MissingSecret: {
-    description: "Missing API Secret",
-    status: Status.INTERNAL_SERVER,
-    isOperational: true,
-  },
-};
-
-export const EventError = {
+export const EventError: ErrorConstant = {
   Gone: {
     description: "Resource is gone",
     status: Status.GONE,
@@ -98,7 +75,7 @@ export const EventError = {
   },
 };
 
-export const GenericError = {
+export const GenericError: ErrorConstant = {
   BadRequest: {
     description: "Request is malformed",
     status: Status.BAD_REQUEST,
@@ -121,7 +98,7 @@ export const GenericError = {
   },
 };
 
-export const GcalError = {
+export const GcalError: ErrorConstant = {
   CalendarlistMissing: {
     description: "No calendarlist",
     status: Status.BAD_REQUEST,
@@ -159,7 +136,7 @@ export const GcalError = {
   },
 };
 
-export const SocketError = {
+export const SocketError: ErrorConstant = {
   InvalidSocketId: {
     description: "Invalid socket id",
     status: Status.BAD_REQUEST,
@@ -173,7 +150,7 @@ export const SocketError = {
   },
 };
 
-export const SyncError = {
+export const SyncError: ErrorConstant = {
   AccessRevoked: {
     description: "User revoked access to their 3rd-party calendar (GCal)",
     status: Status.GONE,
@@ -211,7 +188,7 @@ export const SyncError = {
   },
 };
 
-export const UserError = {
+export const UserError: ErrorConstant = {
   InvalidValue: {
     description: "User has an invalid value",
     status: Status.BAD_REQUEST,

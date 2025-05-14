@@ -1,5 +1,7 @@
 import { Subscriber } from "@core/types/email/email.types";
 import { ENV } from "@backend/common/constants/env.constants";
+import { EmailerError } from "@backend/common/errors/emailer/emailer.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import { Response_TagSubscriber } from "@backend/email/email.types";
 import EmailService from "../../email/email.service";
 import { Answers_v0 } from "../types/waitlist.types";
@@ -9,6 +11,13 @@ class WaitlistService {
     email: string,
     answer: Answers_v0,
   ): Promise<Response_TagSubscriber["subscriber"]> {
+    if (!ENV.EMAILER_SECRET) {
+      throw error(EmailerError.InvalidSecret, "Subscriber was not tagged");
+    }
+    if (!ENV.EMAILER_TAG_ID) {
+      throw error(EmailerError.InvalidTagId, "Subscriber was not tagged");
+    }
+
     const subscriber: Subscriber = {
       email_address: email,
       first_name: answer.firstName,
@@ -20,11 +29,6 @@ class WaitlistService {
       },
     };
 
-    if (!ENV.EMAILER_SECRET || !ENV.EMAILER_TAG_ID) {
-      throw new Error(
-        "Missing one or more of the required email environment variables: EMAILER_SECRET, EMAILER_TAG_ID",
-      );
-    }
     const result = await EmailService.addTagToSubscriber(
       subscriber,
       ENV.EMAILER_TAG_ID,
