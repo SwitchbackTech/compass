@@ -1,22 +1,25 @@
 import { Request, Response } from "express";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
+import {
+  Schema_Waitlist,
+  WaitlistMap,
+} from "@core/types/waitlist/waitlist.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import WaitlistService from "../service/waitlist.service";
-import { Answers_v0, Schema_Waitlist } from "../types/waitlist.types";
 
 const logger = Logger("app:waitlist.controller");
 
 export class WaitlistController {
   static async addToWaitlist(
-    req: Request<unknown, unknown, Answers_v0>,
+    req: Request<unknown, unknown, Schema_Waitlist>,
     res: Response,
   ) {
     if (!ENV.EMAILER_SECRET || !ENV.EMAILER_TAG_ID) {
       return res.status(500).json({ error: "Emailer values are missing" });
     }
 
-    const parseResult = Schema_Waitlist.v0.safeParse(req.body);
+    const parseResult = WaitlistMap.v0.safeParse(req.body);
     if (!parseResult.success) {
       return res
         .status(400)
