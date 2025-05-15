@@ -3,6 +3,7 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
+import { Schema_Waitlist_v0 } from "@core/types/waitlist/waitlist.types";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 
@@ -11,6 +12,7 @@ export interface TestSetup {
   mongoClient: MongoClient;
   db: Db;
   userId: string;
+  email: string;
 }
 
 jest.mock("@backend/common/middleware/supertokens.middleware", () => ({
@@ -34,19 +36,24 @@ export async function setupTestDb(): Promise<TestSetup> {
   await db.createCollection(Collections.USER);
   await db.createCollection(Collections.SYNC);
   await db.createCollection(Collections.EVENT);
+  await db.createCollection(Collections.WAITLIST);
 
   // Setup mongoService mock to use our test collections
   (mongoService as any).db = db;
   (mongoService as any).user = db.collection<Schema_User>(Collections.USER);
   (mongoService as any).sync = db.collection<Schema_Sync>(Collections.SYNC);
   (mongoService as any).event = db.collection<Schema_Event>(Collections.EVENT);
+  (mongoService as any).waitlist = db.collection<Schema_Waitlist_v0>(
+    Collections.WAITLIST,
+  );
 
   // Create test user
   const userId = new ObjectId();
+  const email = "test@example.com";
   const user: Schema_User = {
     //@ts-expect-error - overriding the _id to simulate a pre-populated collection
     _id: userId,
-    email: "test@example.com",
+    email,
     firstName: "Test",
     lastName: "User",
     name: "Test User",
@@ -83,12 +90,30 @@ export async function setupTestDb(): Promise<TestSetup> {
   };
   await mongoService.sync.insertOne(syncRecord);
 
-  return { mongoServer, mongoClient, db, userId: userId.toString() };
+  // Create waitlist user
+  await mongoService.waitlist.insertOne({
+    email,
+    waitlistedAt: new Date().toISOString(),
+    schemaVersion: "v0",
+    source: "other",
+    firstName: "Test",
+    lastName: "User",
+    currentlyPayingFor: ["superhuman", "notion"],
+    howClearAboutValues: "not-clear",
+    workingTowardsMainGoal: "yes",
+    isWillingToShare: false,
+  });
+
+  return { mongoServer, mongoClient, db, userId: userId.toString(), email };
 }
 
 export async function cleanupCollections(db: Db): Promise<void> {
   const collections = await db.collections();
-  const SKIP_COLLECTIONS = [Collections.USER, Collections.SYNC];
+  const SKIP_COLLECTIONS = [
+    Collections.USER,
+    Collections.SYNC,
+    Collections.WAITLIST,
+  ];
 
   const clearPromises = collections
     .filter(

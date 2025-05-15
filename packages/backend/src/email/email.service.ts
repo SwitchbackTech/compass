@@ -71,7 +71,7 @@ class EmailService {
     }
   }
 
-  private static async upsertSubscriber(
+  static async upsertSubscriber(
     subscriber: Subscriber,
   ): Promise<Response_UpsertSubscriber> {
     const { data, success } = SubscriberSchema.safeParse(subscriber);

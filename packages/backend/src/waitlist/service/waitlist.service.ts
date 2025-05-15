@@ -1,39 +1,49 @@
+import { Logger } from "@core/logger/winston.logger";
 import { Subscriber } from "@core/types/email/email.types";
+import {
+  Result_Waitlist,
+  Schema_Waitlist,
+} from "@core/types/waitlist/waitlist.types";
 import { ENV } from "@backend/common/constants/env.constants";
-import { EmailerError } from "@backend/common/errors/emailer/emailer.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import { Response_TagSubscriber } from "@backend/email/email.types";
 import EmailService from "../../email/email.service";
-import { Answers_v0 } from "../types/waitlist.types";
+import { WaitlistRepository } from "../repo/waitlist.repo";
 
+const logger = Logger("app:waitlist.service");
 class WaitlistService {
   static async addToWaitlist(
     email: string,
-    answer: Answers_v0,
-  ): Promise<Response_TagSubscriber["subscriber"]> {
-    if (!ENV.EMAILER_SECRET) {
-      throw error(EmailerError.InvalidSecret, "Subscriber was not tagged");
-    }
-    if (!ENV.EMAILER_TAG_ID) {
-      throw error(EmailerError.InvalidTagId, "Subscriber was not tagged");
+    answer: Schema_Waitlist,
+  ): Promise<Result_Waitlist> {
+    if (ENV.EMAILER_SECRET && ENV.EMAILER_TAG_ID) {
+      const subscriber: Subscriber = {
+        email_address: email,
+        first_name: answer.firstName,
+        state: "active",
+        fields: {
+          "Last name": answer.lastName,
+          Birthday: "1970-01-01",
+          Source: answer.source,
+        },
+      };
+      await EmailService.addTagToSubscriber(subscriber, ENV.EMAILER_TAG_ID);
+    } else {
+      logger.warn("Did not tag subscriber due to missing EMAILER env values");
     }
 
-    const subscriber: Subscriber = {
-      email_address: email,
-      first_name: answer.firstName,
-      state: "active",
-      fields: {
-        "Last name": answer.lastName,
-        Birthday: "1970-01-01",
-        Source: answer.source,
-      },
+    // Save to DB
+    const isAlreadyWaitlisted =
+      await WaitlistRepository.isAlreadyOnWaitlist(email);
+    if (isAlreadyWaitlisted) {
+      return {
+        status: "ignored",
+      };
+    }
+
+    await WaitlistRepository.addToWaitlist(answer);
+
+    return {
+      status: "waitlisted",
     };
-
-    const result = await EmailService.addTagToSubscriber(
-      subscriber,
-      ENV.EMAILER_TAG_ID,
-    );
-    return result.subscriber;
   }
 }
 
