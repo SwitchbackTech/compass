@@ -2,7 +2,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { Subscriber } from "@core/types/email/email.types";
 import {
   Result_Waitlist,
-  Schema_Waitlist,
+  Schema_Answers,
 } from "@core/types/waitlist/waitlist.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import EmailService from "../../email/email.service";
@@ -12,7 +12,7 @@ const logger = Logger("app:waitlist.service");
 class WaitlistService {
   static async addToWaitlist(
     email: string,
-    answer: Schema_Waitlist,
+    answer: Schema_Answers,
   ): Promise<Result_Waitlist> {
     if (ENV.EMAILER_SECRET && ENV.EMAILER_TAG_ID) {
       const subscriber: Subscriber = {
@@ -39,7 +39,10 @@ class WaitlistService {
       };
     }
 
-    await WaitlistRepository.addToWaitlist(answer);
+    await WaitlistRepository.addToWaitlist({
+      ...answer,
+      waitlistedAt: new Date().toISOString(),
+    });
 
     return {
       status: "waitlisted",

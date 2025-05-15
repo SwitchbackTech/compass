@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import {
+  AnswerMap,
   Schema_Waitlist,
-  WaitlistMap,
 } from "@core/types/waitlist/waitlist.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import WaitlistService from "../service/waitlist.service";
@@ -19,7 +19,7 @@ export class WaitlistController {
       return res.status(500).json({ error: "Emailer values are missing" });
     }
 
-    const parseResult = WaitlistMap.v0.safeParse(req.body);
+    const parseResult = AnswerMap.v0.safeParse(req.body);
     if (!parseResult.success) {
       return res
         .status(400)
