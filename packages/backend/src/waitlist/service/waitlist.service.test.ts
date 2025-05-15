@@ -24,7 +24,7 @@ const answer: Schema_Waitlist = {
   workingTowardsMainGoal: "yes",
   isWillingToShare: false,
   waitlistedAt: new Date().toISOString(),
-  schemaVersion: "v0",
+  schemaVersion: "0",
 };
 
 // Mock emailer API calls
@@ -123,7 +123,7 @@ describe("addToWaitlist", () => {
       workingTowardsMainGoal: "yes",
       isWillingToShare: false,
       waitlistedAt: new Date().toISOString(),
-      schemaVersion: "v0",
+      schemaVersion: "0",
     };
 
     // Act

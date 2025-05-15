@@ -94,7 +94,7 @@ export async function setupTestDb(): Promise<TestSetup> {
   await mongoService.waitlist.insertOne({
     email,
     waitlistedAt: new Date().toISOString(),
-    schemaVersion: "v0",
+    schemaVersion: "0",
     source: "other",
     firstName: "Test",
     lastName: "User",

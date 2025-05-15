@@ -7,7 +7,7 @@ export interface Result_Waitlist {
 /* v0 */
 export const Schema_Answers_v0 = z.object({
   email: z.string().email(),
-  schemaVersion: z.literal("v0"),
+  schemaVersion: z.literal("0"),
   source: z.enum(["search-engine", "social-media", "friend", "other"]),
   firstName: z.string().min(2),
   lastName: z.string().min(2),
