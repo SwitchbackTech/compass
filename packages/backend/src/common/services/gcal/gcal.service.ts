@@ -3,8 +3,8 @@ import { gCalendar, gParamsEventsList, gSchema$Event } from "@core/types/gcal";
 import { Params_WatchEvents } from "@core/types/sync.types";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { ENV } from "@backend/common/constants/env.constants";
-import { GcalError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 
 class GCalService {
   async createEvent(gcal: gCalendar, event: gSchema$Event) {
