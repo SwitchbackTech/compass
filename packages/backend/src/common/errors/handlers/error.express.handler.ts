@@ -4,7 +4,7 @@ import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { IS_DEV } from "@backend/common/constants/env.constants";
-import { UserError } from "@backend/common/constants/error.constants";
+import { UserError } from "@backend/common/errors/user/user.errors";
 import {
   getEmailFromUrl,
   isFullSyncRequired,

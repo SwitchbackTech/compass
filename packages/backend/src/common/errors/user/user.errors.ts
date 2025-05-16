@@ -1,7 +1,14 @@
-import { ErrorConstant } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
+import { ErrorMetadata } from "@backend/common/types/error.types";
 
-export const UserError: ErrorConstant = {
+interface UserErrors {
+  InvalidValue: ErrorMetadata;
+  MissingGoogleUserField: ErrorMetadata;
+  MissingUserIdField: ErrorMetadata;
+  UserNotFound: ErrorMetadata;
+}
+
+export const UserError: UserErrors = {
   InvalidValue: {
     description: "User has an invalid value",
     status: Status.BAD_REQUEST,

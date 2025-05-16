@@ -8,9 +8,9 @@ import { UserInfo_Google } from "@core/types/auth.types";
 import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
 import { ENV } from "@backend/common/constants/env.constants";
-import { UserError } from "@backend/common/constants/error.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { UserError } from "@backend/common/errors/user/user.errors";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import compassAuthService from "./compass.auth.service";
 
