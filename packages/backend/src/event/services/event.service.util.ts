@@ -9,7 +9,7 @@ import {
   Schema_Event_Core,
 } from "@core/types/event.types";
 import { isSameMonth } from "@core/util/date/date.util";
-import { GenericError } from "@backend/common/constants/error.constants";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
 dayjs.extend(tz);

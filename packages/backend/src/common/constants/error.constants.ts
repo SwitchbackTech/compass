@@ -1,67 +1,6 @@
 import { ErrorConstant } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 
-export const GenericError: ErrorConstant = {
-  BadRequest: {
-    description: "Request is malformed",
-    status: Status.BAD_REQUEST,
-    isOperational: true,
-  },
-  DeveloperError: {
-    description: "Developer made a logic error",
-    status: Status.INTERNAL_SERVER,
-    isOperational: true,
-  },
-  NotImplemented: {
-    description: "Not implemented yet",
-    status: Status.UNSURE,
-    isOperational: true,
-  },
-  NotSure: {
-    description: "Not sure why error occured. See logs",
-    status: Status.UNSURE,
-    isOperational: true,
-  },
-};
-
-export const GcalError: ErrorConstant = {
-  CalendarlistMissing: {
-    description: "No calendarlist",
-    status: Status.BAD_REQUEST,
-    isOperational: true,
-  },
-  CodeInvalid: {
-    description: "Invalid gAPI code",
-    status: Status.BAD_REQUEST,
-    isOperational: true,
-  },
-  CodeMissing: {
-    description: "Missing gAPI code",
-    status: Status.FORBIDDEN,
-    isOperational: true,
-  },
-  NoSyncToken: {
-    description: "nextSyncToken is missing",
-    status: Status.INTERNAL_SERVER,
-    isOperational: true,
-  },
-  PaginationNotSupported: {
-    description: "Compass doesn't support pagination yet",
-    status: Status.INTERNAL_SERVER,
-    isOperational: true,
-  },
-  Unauthorized: {
-    description: "Not Authorized",
-    status: Status.FORBIDDEN,
-    isOperational: true,
-  },
-  Unsure: {
-    description: "generic gCal API Error",
-    status: Status.UNSURE,
-    isOperational: true,
-  },
-};
-
 export const SocketError: ErrorConstant = {
   InvalidSocketId: {
     description: "Invalid socket id",

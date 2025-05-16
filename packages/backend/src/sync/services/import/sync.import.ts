@@ -15,12 +15,10 @@ import { categorizeRecurringEvents } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
-import {
-  GcalError,
-  SyncError,
-} from "@backend/common/constants/error.constants";
+import { SyncError } from "@backend/common/constants/error.constants";
 import { EventError } from "@backend/common/errors/event/event.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import {

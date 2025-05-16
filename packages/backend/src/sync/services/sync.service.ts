@@ -10,10 +10,8 @@ import {
 } from "@core/types/sync.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
-import {
-  GenericError,
-  SyncError,
-} from "@backend/common/constants/error.constants";
+import { SyncError } from "@backend/common/constants/error.constants";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";

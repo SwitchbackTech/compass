@@ -8,8 +8,8 @@ import {
 } from "@core/types/gcal";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { ENV } from "@backend/common/constants/env.constants";
-import { GcalError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { createSync } from "@backend/sync/util/sync.queries";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
