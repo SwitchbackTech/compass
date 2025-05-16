@@ -15,10 +15,8 @@ import {
 } from "@core/types/gcal";
 import { convertRruleWithUntilToDate } from "@core/util/date/date.util";
 import { isBase } from "@core/util/event/event.util";
-import {
-  EventError,
-  GenericError,
-} from "@backend/common/constants/error.constants";
+import { EventError } from "@backend/common/errors/event/event.errors";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { findCompassEventBy } from "@backend/event/queries/event.queries";
 import { EventRepository } from "@backend/event/services/recur/repo/event.repo";

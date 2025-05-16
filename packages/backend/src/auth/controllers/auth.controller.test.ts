@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import { WithId } from "mongodb";
 import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
-import { SyncError } from "@backend/common/constants/error.constants";
+import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
 import userService from "@backend/user/services/user.service";

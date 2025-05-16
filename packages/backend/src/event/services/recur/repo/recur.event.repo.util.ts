@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { Schema_Event_Recur_Base } from "@core/types/event.types";
 import { Collections } from "@backend/common/constants/collections";
-import { EventError } from "@backend/common/constants/error.constants";
+import { EventError } from "@backend/common/errors/event/event.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 import { Ids_Event } from "../../../queries/event.queries";

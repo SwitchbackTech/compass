@@ -10,7 +10,7 @@ import {
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
-import { GenericError } from "@backend/common/constants/error.constants";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
 dayjs.extend(utc);

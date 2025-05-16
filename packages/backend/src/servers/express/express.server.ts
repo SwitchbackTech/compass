@@ -22,6 +22,7 @@ export const initExpressServer = () => {
 
   // initialize middleware before routes, because
   // some routes depend on them
+  //@ts-expect-error this middleware isn't typed correctly
   app.use(requestMiddleware());
   app.use(supertokensCors());
   app.use(supertokensMiddleware());

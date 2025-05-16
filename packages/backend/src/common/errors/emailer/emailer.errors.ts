@@ -1,13 +1,13 @@
 import { Status } from "@core/errors/status.codes";
 import { ErrorMetadata } from "@backend/common/types/error.types";
 
-interface EmailerErrorMap {
+interface EmailerErrors {
   InvalidTagId: ErrorMetadata;
   InvalidSecret: ErrorMetadata;
   InvalidSubscriberData: ErrorMetadata;
 }
 
-export const EmailerError: EmailerErrorMap = {
+export const EmailerError: EmailerErrors = {
   InvalidSubscriberData: {
     description: "Subscriber data is missing or incorrect",
     status: Status.BAD_REQUEST,

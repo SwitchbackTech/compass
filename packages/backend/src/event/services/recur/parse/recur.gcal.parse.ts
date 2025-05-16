@@ -1,5 +1,5 @@
 import { gSchema$Event } from "@core/types/gcal";
-import { GenericError } from "@backend/common/constants/error.constants";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { categorizeGcalEvents } from "@backend/common/services/gcal/gcal.utils";
 

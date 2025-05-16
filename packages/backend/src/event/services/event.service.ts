@@ -23,10 +23,8 @@ import {
 import { getCurrentRangeDates } from "@core/util/date/date.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
-import {
-  EventError,
-  GenericError,
-} from "@backend/common/constants/error.constants";
+import { EventError } from "@backend/common/errors/event/event.errors";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";

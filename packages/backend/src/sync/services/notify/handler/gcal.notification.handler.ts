@@ -1,7 +1,7 @@
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
-import { SyncError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { getSync, updateSyncTokenFor } from "@backend/sync/util/sync.queries";
