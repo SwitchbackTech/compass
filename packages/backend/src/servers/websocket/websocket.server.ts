@@ -15,8 +15,8 @@ import {
   SocketData,
 } from "@core/types/websocket.types";
 import { ENV } from "@backend/common/constants/env.constants";
-import { SocketError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { SocketError } from "@backend/common/errors/socket/socket.errors";
 import { handleWsError } from "./websocket.util";
 
 const logger = Logger("app:websocket.server");

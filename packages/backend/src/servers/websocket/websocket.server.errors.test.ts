@@ -2,7 +2,7 @@ import { Server as HttpServer } from "node:http";
 import { createServer } from "node:http";
 import { Server as IoServer } from "socket.io";
 import { type Socket as ClientSocket, io as ioc } from "socket.io-client";
-import { SocketError } from "@backend/common/constants/error.constants";
+import { SocketError } from "@backend/common/errors/socket/socket.errors";
 import { WebSocketServer } from "./websocket.server";
 import { getServerUri } from "./websocket.util";
 
