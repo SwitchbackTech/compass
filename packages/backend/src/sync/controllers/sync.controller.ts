@@ -2,10 +2,8 @@ import { Request } from "express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { Payload_Sync_Notif } from "@core/types/sync.types";
-import {
-  SyncError,
-  UserError,
-} from "@backend/common/constants/error.constants";
+import { UserError } from "@backend/common/constants/error.constants";
+import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import {
   isFullSyncRequired,
   isInvalidGoogleToken,

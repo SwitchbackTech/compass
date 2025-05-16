@@ -1,6 +1,6 @@
 import Session from "supertokens-node/recipe/session";
-import { SyncError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { canDoIncrementalSync } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";

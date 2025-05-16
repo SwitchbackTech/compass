@@ -1,9 +1,9 @@
 import { Origin } from "@core/constants/core.constants";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { Payload_Resource_Events, Resource_Sync } from "@core/types/sync.types";
-import { SyncError } from "@backend/common/constants/error.constants";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { getPrimaryGcalId } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 

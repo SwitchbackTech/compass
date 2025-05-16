@@ -1,5 +1,5 @@
-import { SyncError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { getSync } from "@backend/sync/util/sync.queries";
 
 /**

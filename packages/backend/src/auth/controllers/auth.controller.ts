@@ -18,9 +18,9 @@ import compassAuthService from "@backend/auth/services/compass.auth.service";
 import GoogleAuthService, {
   getGAuthClientForUser,
 } from "@backend/auth/services/google.auth.service";
-import { SyncError } from "@backend/common/constants/error.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
+import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import {
   ReqBody,
