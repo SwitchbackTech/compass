@@ -35,6 +35,8 @@ export const fetchAndProcessEventsPageByPage = async (
   nextSyncToken: string | undefined;
   baseEventMap: Map<string, ObjectId>;
 }> => {
+  const start = Date.now();
+
   try {
     let nextPageToken: string | undefined = undefined;
     let finalNextSyncToken: string | undefined = undefined;
@@ -47,11 +49,12 @@ export const fetchAndProcessEventsPageByPage = async (
       `${passIdentifier}: Fetching events for ${calendarId}. Params: ${JSON.stringify(gcalApiParams)}`,
     );
 
+    const maxResults = gcalApiParams.maxResults || 1000;
     do {
       const params: gParamsImportAllEvents = {
         calendarId,
         pageToken: nextPageToken,
-        maxResults: 250, // Consider making configurable
+        maxResults,
         ...gcalApiParams, // Spread specific parameters like singleEvents
       };
 
@@ -117,8 +120,13 @@ export const fetchAndProcessEventsPageByPage = async (
       }
     } while (nextPageToken !== undefined);
 
-    logger.info(
-      `${passIdentifier} completed for ${calendarId}. Processed ${totalProcessedApi} API events. Saved ${totalSaved} total events.`,
+    logSummary(
+      passIdentifier,
+      calendarId,
+      maxResults,
+      totalProcessedApi,
+      totalSaved,
+      start,
     );
 
     return {
@@ -133,4 +141,24 @@ export const fetchAndProcessEventsPageByPage = async (
     );
     throw err;
   }
+};
+
+const logSummary = (
+  passIdentifier: string,
+  calendarId: string,
+  maxResults: number,
+  totalProcessedApi: number,
+  totalSaved: number,
+  start: number,
+) => {
+  const end = Date.now();
+  const seconds = (end - start) / 1000;
+  logger.info(
+    `${passIdentifier} completed for ${calendarId}.
+    Max results / page: ${maxResults}
+    Processed Gcal events: ${totalProcessedApi}
+    Saved Compass events: ${totalSaved}
+    Duration: ${seconds.toFixed(2)}s 
+    `,
+  );
 };
