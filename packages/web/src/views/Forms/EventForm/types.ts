@@ -9,6 +9,7 @@ export interface FormProps {
   onCloseEventForm?: () => void;
   onConvert?: () => void;
   onDelete?: (eventId?: string) => void;
+  onDuplicate?: (event: Schema_Event) => void;
   onSubmit: (event?: Schema_Event) => void;
   onSubmitEventForm?: (event: Schema_Event) => void;
   priority?: Priority;

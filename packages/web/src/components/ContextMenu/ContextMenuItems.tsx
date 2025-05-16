@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { PenNib, Trash } from "@phosphor-icons/react";
+import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import { Priorities } from "@core/constants/core.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -27,7 +27,7 @@ interface ContextMenuItemsProps {
 
 export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   const { actions, setters } = useDraftContext();
-  const { openForm, deleteEvent, submit } = actions;
+  const { openForm, deleteEvent, duplicateEvent, submit } = actions;
   const { setDraft } = setters;
 
   const [selectedPriority, setSelectedPriority] = useState(event.priority);
@@ -74,6 +74,16 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
       ),
     },
     {
+      id: "duplicate",
+      label: "Duplicate",
+      onClick: duplicateEvent,
+      icon: (
+        <IconButton>
+          <Copy />
+        </IconButton>
+      ),
+    },
+    {
       id: "delete",
       label: "Delete",
       onClick: deleteEvent,
@@ -102,6 +112,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
           key={item.id}
           onClick={() => {
             item.onClick();
+            close();
           }}
         >
           {item.icon}

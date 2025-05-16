@@ -164,6 +164,14 @@ export const useDraftActions = (
     discard();
   };
 
+  const duplicateEvent = () => {
+    const draft = { ...reduxDraft } as Schema_GridEvent;
+    delete draft._id;
+    draft.title = `${draft.title} (copy)`;
+    submit(draft);
+    discard();
+  };
+
   const discard = useCallback(() => {
     reset();
 
@@ -420,6 +428,7 @@ export const useDraftActions = (
     submit,
     convert,
     deleteEvent,
+    duplicateEvent,
     discard,
     drag,
     openForm,

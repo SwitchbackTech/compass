@@ -42,6 +42,7 @@ export const EventForm: React.FC<FormProps> = ({
   onConvert,
   onDelete,
   onSubmit,
+  onDuplicate,
   setEvent,
   ...props
 }) => {
@@ -137,11 +138,18 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   const handleIgnoredKeys = (e: KeyboardEvent) => {
+    // Ignores certain keys and key combinations to prevent default behavior.
+    // Allows some of them to be used as hotkeys
+
     if (e.key === Key.Backspace) {
       e.stopPropagation();
     }
 
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "<") {
+      e.preventDefault();
+    }
+
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
       e.preventDefault();
     }
 
@@ -247,6 +255,14 @@ export const EventForm: React.FC<FormProps> = ({
     "enter",
     () => {
       onSubmitForm();
+    },
+    hotkeysOptions,
+  );
+
+  useHotkeys(
+    "ctrl+d",
+    () => {
+      onDuplicate?.(event);
     },
     hotkeysOptions,
   );
