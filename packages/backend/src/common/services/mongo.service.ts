@@ -3,6 +3,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
+import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
 import { Collections } from "../constants/collections";
 import { ENV } from "../constants/env.constants";
 
@@ -18,6 +19,7 @@ class MongoService {
   public event!: Collection<Schema_Event>;
   public sync!: Collection<Schema_Sync>;
   public user!: Collection<Schema_User>;
+  public waitlist!: Collection<Schema_Waitlist>;
 
   constructor() {
     this._connect();
@@ -35,6 +37,9 @@ class MongoService {
         this.event = this.db.collection<Schema_Event>(Collections.EVENT);
         this.sync = this.db.collection<Schema_Sync>(Collections.SYNC);
         this.user = this.db.collection<Schema_User>(Collections.USER);
+        this.waitlist = this.db.collection<Schema_Waitlist>(
+          Collections.WAITLIST,
+        );
       })
       .catch((err) => {
         const retrySeconds = 5;
@@ -64,6 +69,7 @@ class MongoService {
       this.event = undefined as any;
       this.sync = undefined as any;
       this.user = undefined as any;
+      this.waitlist = undefined as any;
     }
 
     this.count = 0;

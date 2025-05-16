@@ -12,6 +12,6 @@ process.env.CHANNEL_EXPIRATION_MIN = 5;
 process.env.SUPERTOKENS_URI = "sTUri";
 process.env.SUPERTOKENS_KEY = "sTKey";
 process.env.EMAILER_API_SECRET = "emailerApiSecret";
-process.env.EMAILER_LIST_ID = 1234567;
+process.env.EMAILER_TAG_ID = 1234567;
 process.env.TOKEN_GCAL_NOTIFICATION = "secretToken1";
 process.env.TOKEN_COMPASS_SYNC = "secretToken2";

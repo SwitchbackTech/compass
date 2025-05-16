@@ -1,11 +1,11 @@
 import dayjs from "dayjs";
 import { Collection, Db, MongoClient, ObjectId } from "mongodb";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_Event } from "@core/types/event.types";
 import {
   mockSomedayRecurrences,
   newsletterId,
 } from "../../../../core/src/__mocks__/v1/events/events.someday.recur";
-import { YEAR_MONTH_DAY_FORMAT } from "../../../../core/src/constants/date.constants";
 import { getDeleteByIdFilter } from "./event.service.util";
 
 describe("Delete Events", () => {

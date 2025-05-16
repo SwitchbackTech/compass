@@ -14,6 +14,7 @@ import {
 import { EventRoutes } from "@backend/event/event.routes.config";
 import { PriorityRoutes } from "@backend/priority/priority.routes.config";
 import { SyncRoutes } from "@backend/sync/sync.routes.config";
+import { WaitlistRoutes } from "@backend/waitlist/waitlist.routes.config";
 
 export const initExpressServer = () => {
   /* Express Configuration */
@@ -21,10 +22,8 @@ export const initExpressServer = () => {
 
   // initialize middleware before routes, because
   // some routes depend on them
-  //@ts-ignore
   app.use(requestMiddleware());
   app.use(supertokensCors());
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
   app.use(supertokensMiddleware());
   app.use(corsWhitelist);
   app.use(helmet());
@@ -37,8 +36,8 @@ export const initExpressServer = () => {
   routes.push(new EventRoutes(app));
   routes.push(new SyncRoutes(app));
   routes.push(new CalendarRoutes(app));
+  routes.push(new WaitlistRoutes(app));
 
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
   app.use(supertokensErrorHandler()); // Keep this after routes
 
   return app;

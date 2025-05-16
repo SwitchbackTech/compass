@@ -148,6 +148,7 @@ module.exports = {
           "<rootDir>/packages/backend/src/calendar/$1",
         "^@backend/common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
         "^@backend/dev/(.*)$": "<rootDir>/packages/backend/src/dev/$1",
+        "^@backend/email/(.*)$": "<rootDir>/packages/backend/src/email/$1",
         "^@backend/event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
         "^@backend/priority/(.*)$":
           "<rootDir>/packages/backend/src/priority/$1",
