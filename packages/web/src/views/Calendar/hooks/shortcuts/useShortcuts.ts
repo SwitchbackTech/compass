@@ -17,7 +17,10 @@ import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
-import { selectSidebarTab, selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
+import {
+  selectIsSidebarOpen,
+  selectSidebarTab,
+} from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -72,7 +75,7 @@ export const useShortcuts = ({
         return;
       }
 
-        // If sidebar is closed, open it first
+      // If sidebar is closed, open it first
       if (!isSidebarOpen) {
         dispatch(viewSlice.actions.toggleSidebar());
       }

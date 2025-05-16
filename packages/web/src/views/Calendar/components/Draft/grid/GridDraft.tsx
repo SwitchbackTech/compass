@@ -23,7 +23,8 @@ interface Props {
 
 export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   const { actions, setters, state } = useDraftContext();
-  const { discard, deleteEvent, submit, startDragging } = actions;
+  const { discard, deleteEvent, duplicateEvent, submit, startDragging } =
+    actions;
   const { setDraft, setDateBeingChanged, setIsResizing } = setters;
   const { draft, isDragging, formProps, isFormOpen, isResizing } = state;
   const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
@@ -106,6 +107,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
                 onClose={discard}
                 onConvert={onConvert}
                 onDelete={deleteEvent}
+                onDuplicate={duplicateEvent}
                 onSubmit={(_draft: Schema_GridEvent) => submit(_draft)}
                 setEvent={setDraft}
               />
