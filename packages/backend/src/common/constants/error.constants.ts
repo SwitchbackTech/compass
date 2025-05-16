@@ -1,14 +1,6 @@
 import { ErrorConstant } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 
-export const DbError: ErrorConstant = {
-  InvalidId: {
-    description: "id is invalid (according to Mongo)",
-    status: Status.BAD_REQUEST,
-    isOperational: true,
-  },
-};
-
 export const EventError: ErrorConstant = {
   Gone: {
     description: "Resource is gone",
