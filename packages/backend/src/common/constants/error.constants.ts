@@ -1,34 +1,6 @@
 import { ErrorConstant } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 
-export const AuthError: ErrorConstant = {
-  DevOnly: {
-    description: "Only available during development",
-    status: Status.FORBIDDEN,
-    isOperational: true,
-  },
-  InadequatePermissions: {
-    description: "You don't have permission to do that",
-    status: Status.FORBIDDEN,
-    isOperational: true,
-  },
-  MissingRefreshToken: {
-    description: "No refresh token",
-    status: Status.BAD_REQUEST,
-    isOperational: true,
-  },
-  NoUserId: {
-    description: "Compass user was not created",
-    status: Status.INTERNAL_SERVER,
-    isOperational: false,
-  },
-  NoGAuthAccessToken: {
-    description: "No gauth access token",
-    status: Status.BAD_REQUEST,
-    isOperational: true,
-  },
-};
-
 export const DbError: ErrorConstant = {
   InvalidId: {
     description: "id is invalid (according to Mongo)",

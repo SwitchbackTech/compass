@@ -1,10 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { Status } from "@core/errors/status.codes";
 import { ENV, IS_DEV } from "@backend/common/constants/env.constants";
-import {
-  AuthError,
-  GcalError,
-} from "@backend/common/constants/error.constants";
+import { GcalError } from "@backend/common/constants/error.constants";
+import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SReqBody } from "@backend/common/types/express.types";
 import { hasGoogleHeaders } from "@backend/sync/util/sync.util";

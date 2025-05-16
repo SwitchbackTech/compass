@@ -2,7 +2,7 @@ import { SessionRequest } from "supertokens-node/framework/express";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
-import { AuthError } from "@backend/common/constants/error.constants";
+import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { Res_Promise } from "@backend/common/types/express.types";
