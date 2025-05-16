@@ -27,6 +27,10 @@ export const MonthSection: FC<Props> = ({
 }) => {
   const monthLabel = getMonthListLabel(viewStart);
 
+  const currentMonth = new Date().toLocaleString("default", { month: "long" });
+
+  const isCurrentMonth = monthLabel === currentMonth;
+
   return (
     <SidebarSection>
       <SidebarHeader
@@ -34,7 +38,7 @@ export const MonthSection: FC<Props> = ({
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
         <Text role="heading" size="xl">
-          {monthLabel}
+          {isCurrentMonth ? "This Month" : monthLabel}
         </Text>
       </SidebarHeader>
 
