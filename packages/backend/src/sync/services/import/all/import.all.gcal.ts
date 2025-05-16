@@ -7,7 +7,7 @@ import {
   gParamsImportAllEvents,
   gSchema$Event,
 } from "@core/types/gcal";
-import { EventError } from "@backend/common/constants/error.constants";
+import { EventError } from "@backend/common/errors/event/event.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import eventService from "@backend/event/services/event.service";
