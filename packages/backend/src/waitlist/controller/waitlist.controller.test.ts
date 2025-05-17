@@ -80,7 +80,7 @@ describe("POST /api/waitlist", () => {
       workingTowardsMainGoal: "yes",
       isWillingToShare: false,
       waitlistedAt: new Date().toISOString(),
-      schemaVersion: 0,
+      schemaVersion: "0",
     };
     const res = await request(app).post("/api/waitlist").send(answers);
     expect(res.status).toBe(500);
