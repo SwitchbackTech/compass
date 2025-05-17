@@ -1,8 +1,10 @@
 # 🧭 Compass Calendar
 
-## Overview
+_Compass is a weekly planner that integrates with Google Calendar._
+<img width="1494" alt="Glimpsed" src="https://github.com/user-attachments/assets/c0a22b46-f0eb-4b0c-8a7b-942f142947a5" />
 
-_Compass is a weekly calendar app that integrates with Google Calendar._
+
+---
 
 ![Build](https://github.com/SwitchbackTech/compass/actions/workflows/test.yml/badge.svg)
 
@@ -11,10 +13,9 @@ _Compass is a weekly calendar app that integrates with Google Calendar._
 ![Jest](https://img.shields.io/badge/-jest-%23C21325?style=for-the-badge&logo=jest&logoColor=white)
 ![Testing-Library](https://img.shields.io/badge/-TestingLibrary-%23E33332?style=for-the-badge&logo=testing-library&logoColor=white)
 
-![Compass_Highlights](https://github.com/SwitchbackTech/compass/assets/30163055/00543d34-5dfc-47d5-9b83-d84d4c748391)
-
 ## Features
 
+- ✍️ Display your custom note-to-self
 - 🔄 2-way sync with Google Calendar
 - 🔄 Recurring events
 - ⚡ Command palette
@@ -27,8 +28,6 @@ _Compass is a weekly calendar app that integrates with Google Calendar._
 - ✉️ Email capture
 - 🔐 Google OAuth authentication
 - 🔐 User session management
-
-Visit [app.compasscalendar.com](https://app.compasscalendar.com) to see them all in action with your own events
 
 ## Limitations
 
