@@ -131,7 +131,6 @@ class UserService {
         "Did not tag subscriber due to missing EMAILER_ ENV value(s)",
       );
     } else {
-      logger.debug("Adding tag to subscriber");
       const subscriber = mapCompassUserToEmailSubscriber(cUser);
       await EmailService.addTagToSubscriber(subscriber, ENV.EMAILER_TAG_ID);
     }
