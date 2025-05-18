@@ -10,6 +10,7 @@ import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { ENV } from "@backend/common/constants/env.constants";
+import { isMissingUserTagId } from "@backend/common/constants/env.util";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
@@ -126,13 +127,16 @@ class UserService {
     const cUser = await this.createUser(gUser, gRefreshToken);
     const { userId } = cUser;
 
-    if (!ENV.EMAILER_TAG_ID || !ENV.EMAILER_SECRET) {
+    if (isMissingUserTagId()) {
       logger.warn(
         "Did not tag subscriber due to missing EMAILER_ ENV value(s)",
       );
     } else {
       const subscriber = mapCompassUserToEmailSubscriber(cUser);
-      await EmailService.addTagToSubscriber(subscriber, ENV.EMAILER_TAG_ID);
+      await EmailService.addTagToSubscriber(
+        subscriber,
+        ENV.EMAILER_USER_TAG_ID!,
+      );
     }
 
     const gCalendarIds = await initSync(gcalClient, userId);

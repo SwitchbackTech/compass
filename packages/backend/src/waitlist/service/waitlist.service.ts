@@ -14,7 +14,7 @@ class WaitlistService {
     email: string,
     answer: Schema_Answers,
   ): Promise<Result_Waitlist> {
-    if (ENV.EMAILER_SECRET && ENV.EMAILER_TAG_ID) {
+    if (ENV.EMAILER_SECRET && ENV.EMAILER_WAITLIST_TAG_ID) {
       const subscriber: Subscriber = {
         email_address: email,
         first_name: answer.firstName,
@@ -25,7 +25,10 @@ class WaitlistService {
           Source: answer.source,
         },
       };
-      await EmailService.addTagToSubscriber(subscriber, ENV.EMAILER_TAG_ID);
+      await EmailService.addTagToSubscriber(
+        subscriber,
+        ENV.EMAILER_WAITLIST_TAG_ID,
+      );
     } else {
       logger.warn("Did not tag subscriber due to missing EMAILER env values");
     }
