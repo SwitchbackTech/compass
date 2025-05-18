@@ -5,7 +5,7 @@ import {
   AnswerMap,
   Schema_Waitlist,
 } from "@core/types/waitlist/waitlist.types";
-import { ENV } from "@backend/common/constants/env.constants";
+import { isMissingWaitlistTagId } from "@backend/common/constants/env.util";
 import WaitlistService from "../service/waitlist.service";
 
 const logger = Logger("app:waitlist.controller");
@@ -15,7 +15,7 @@ export class WaitlistController {
     req: Request<unknown, unknown, Schema_Waitlist>,
     res: Response,
   ) {
-    if (!ENV.EMAILER_SECRET || !ENV.EMAILER_TAG_ID) {
+    if (isMissingWaitlistTagId()) {
       return res.status(500).json({ error: "Emailer values are missing" });
     }
 
