@@ -54,7 +54,7 @@ you need yet, including:
 
 All the info you'd need to get started is at [docs.compasscalendar.com](https://docs.compasscalendar.com), including guides on how to install, test, build, deploy, and contribute.
 
-[![TheDocs](https://github.com/SwitchbackTech/compass/assets/30163055/b9577876-43af-49eb-830b-df0644c1af8f)](https://docs.compasscalendar.com)
+[![NextStep-TheDocs](https://github.com/user-attachments/assets/3a41c035-6058-4cb0-97d0-4a03388355aa)](https://docs.compasscalendar.com)
 
 ## Links
 
