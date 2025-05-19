@@ -3,7 +3,6 @@
 _Compass is a weekly planner that integrates with Google Calendar._
 <img width="1494" alt="Glimpsed" src="https://github.com/user-attachments/assets/c0a22b46-f0eb-4b0c-8a7b-942f142947a5" />
 
-
 ---
 
 ![Build](https://github.com/SwitchbackTech/compass/actions/workflows/test.yml/badge.svg)
@@ -15,19 +14,30 @@ _Compass is a weekly planner that integrates with Google Calendar._
 
 ## Features
 
-- ✍️ Display your custom note-to-self
-- 🔄 2-way sync with Google Calendar
-- 🔄 Recurring events
+The basics:
+
+- 🔄 Recurring events (limited support)
 - ⚡ Command palette
 - ⚡ Shortcuts
 - 🕒 Display events in local time
 - 🏷️ Tagging events
 - 🖍️ Resizing events
+- 🖍️ Duplicating events
 - 🖍️ Reordering tasks
 - 🖍️ Drag & drop
-- ✉️ Email capture
+
+The unique stuff:
+
+- ✍️ Display your custom note-to-self
+- ☑️ Someday / Maybe todo list
+- ⏩ Move an event forward/back with one click
+
+Integrations:
+
+- 🔄 2-way sync with Google Calendar
 - 🔐 Google OAuth authentication
-- 🔐 User session management
+- 🔐 User session management (Supertokens)
+- ✉️ Email capture (Kit)
 
 ## Limitations
 
@@ -40,9 +50,9 @@ you need yet, including:
 - Reminders
 - Mobile app
 
-## Documentation
+## Get Started
 
-All the docs are at [docs.compasscalendar.com](https://docs.compasscalendar.com), including guides on how to install, test, build, deploy, and contribute
+All the info you'd need to get started is at [docs.compasscalendar.com](https://docs.compasscalendar.com), including guides on how to install, test, build, deploy, and contribute.
 
 [![TheDocs](https://github.com/SwitchbackTech/compass/assets/30163055/b9577876-43af-49eb-830b-df0644c1af8f)](https://docs.compasscalendar.com)
 
@@ -50,7 +60,7 @@ All the docs are at [docs.compasscalendar.com](https://docs.compasscalendar.com)
 
 📃 [Compass Docs](https://docs.compasscalendar.com)
 
-🔵 [Production App](https://app.compasscalendar.com)
+🔵 [Production App](https://app.compasscalendar.com) (Closed beta)
 
 🎬 [Compass on YouTube](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w)
 
