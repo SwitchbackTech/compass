@@ -126,8 +126,7 @@ const getPriority = (gEvent: gSchema$Event): Priorities => {
     }
     // Found a priority that doesn't match enum, set to unassigned
     console.warn(
-      `Found a priority that doesn't match enum: ${priority}`,
-      gEvent,
+      `Found a priority that doesn't match enum: ${priority}. Using ${Priorities.UNASSIGNED} instead. (gEvent.id: ${gEvent.id})`,
     );
     return Priorities.UNASSIGNED;
   }
