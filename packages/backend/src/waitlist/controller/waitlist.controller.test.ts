@@ -1,5 +1,5 @@
 import request from "supertest";
-import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
+import type { Answers } from "@core/types/waitlist/waitlist.answer.types";
 
 describe("POST /api/waitlist", () => {
   beforeEach(() => {
@@ -41,7 +41,7 @@ describe("POST /api/waitlist", () => {
     app.use(express.json());
     app.post("/api/waitlist", WaitlistController.addToWaitlist);
 
-    const answers: Schema_Waitlist = {
+    const answers: Answers = {
       source: "social-media",
       firstName: "Jo",
       lastName: "Schmo",
@@ -50,7 +50,6 @@ describe("POST /api/waitlist", () => {
       howClearAboutValues: "not-clear",
       workingTowardsMainGoal: "yes",
       isWillingToShare: false,
-      waitlistedAt: new Date().toISOString(),
       schemaVersion: "0",
     };
     const res = await request(app).post("/api/waitlist").send(answers);
@@ -70,7 +69,7 @@ describe("POST /api/waitlist", () => {
     app.use(express.json());
     app.post("/api/waitlist", WaitlistController.addToWaitlist);
 
-    const answers: Schema_Waitlist = {
+    const answers: Answers = {
       source: "other",
       firstName: "Jo",
       lastName: "Schmo",
@@ -79,7 +78,6 @@ describe("POST /api/waitlist", () => {
       howClearAboutValues: "not-clear",
       workingTowardsMainGoal: "yes",
       isWillingToShare: false,
-      waitlistedAt: new Date().toISOString(),
       schemaVersion: "0",
     };
     const res = await request(app).post("/api/waitlist").send(answers);

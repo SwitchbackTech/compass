@@ -1,7 +1,5 @@
-import {
-  Result_Waitlist,
-  Schema_Waitlist,
-} from "@core/types/waitlist/waitlist.types";
+import { Answers } from "@core/types/waitlist/waitlist.answer.types";
+import { Result_Waitlist } from "@core/types/waitlist/waitlist.types";
 import {
   getEmailsOnWaitlist,
   isEmailOnWaitlist,
@@ -14,7 +12,7 @@ import {
 import EmailService from "../../email/email.service";
 import WaitlistService from "./waitlist.service";
 
-const answer: Schema_Waitlist = {
+const answer: Answers = {
   firstName: "Jo",
   lastName: "Schmo",
   source: "other",
@@ -23,7 +21,6 @@ const answer: Schema_Waitlist = {
   howClearAboutValues: "not-clear",
   workingTowardsMainGoal: "yes",
   isWillingToShare: false,
-  waitlistedAt: new Date().toISOString(),
   schemaVersion: "0",
 };
 

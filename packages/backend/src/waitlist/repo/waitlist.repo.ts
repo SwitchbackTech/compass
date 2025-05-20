@@ -10,4 +10,10 @@ export class WaitlistRepository {
     const match = await mongoService.waitlist.find({ email }).toArray();
     return match.length > 0;
   }
+
+  //TODO change to include an 'invited' status
+  static async isInvited(email: string) {
+    const match = await mongoService.waitlist.find({ email }).toArray();
+    return match.length > 0;
+  }
 }

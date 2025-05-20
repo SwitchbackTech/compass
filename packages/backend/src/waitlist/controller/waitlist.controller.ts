@@ -1,10 +1,8 @@
 import { Request, Response } from "express";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
-import {
-  AnswerMap,
-  Schema_Waitlist,
-} from "@core/types/waitlist/waitlist.types";
+import { AnswerMap } from "@core/types/waitlist/waitlist.answer.types";
+import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
 import { isMissingWaitlistTagId } from "@backend/common/constants/env.util";
 import WaitlistService from "../service/waitlist.service";
 
