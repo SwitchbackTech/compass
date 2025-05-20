@@ -47,4 +47,20 @@ export class WaitlistController {
       return res.status(500).json({ error: "Server error" });
     }
   }
+
+  static async isInvited(
+    req: Request<unknown, unknown, unknown, { email: string }>,
+    res: Response<{ isInvited: boolean }>,
+  ) {
+    const email = req.query.email;
+    if (!email) {
+      logger.error("Could not check if invited due to missing request email");
+      return res.status(400).json({
+        isInvited: false,
+      });
+    }
+
+    const isInvited = await WaitlistService.isInvited(email);
+    return res.status(200).json({ isInvited });
+  }
 }
