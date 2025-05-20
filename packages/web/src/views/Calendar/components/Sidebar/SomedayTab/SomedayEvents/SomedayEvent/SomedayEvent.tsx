@@ -2,6 +2,7 @@ import React from "react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { Props_DraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
 import { Actions_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarActions";
 import { SomedayEventRectangle } from "../SomedayEventContainer/SomedayEventRectangle";
@@ -43,23 +44,26 @@ export const SomedayEvent = ({
 }: Props) => {
   const style = getStyle(snapshot, isOverGrid, provided.draggableProps.style);
 
+  const somedayEventProps = {
+    [DATA_EVENT_ELEMENT_ID]: event._id,
+    ...provided.draggableProps,
+    ...provided.dragHandleProps,
+    style,
+    isDragging,
+    isDrafting,
+    isOverGrid,
+    isFocused,
+    onBlur,
+    onClick,
+    onFocus,
+    onKeyDown,
+    priority,
+    role: "button",
+    ref: provided.innerRef,
+  };
+
   return (
-    <StyledNewSomedayEvent
-      {...provided.draggableProps}
-      {...provided.dragHandleProps}
-      style={style}
-      isDragging={isDragging}
-      isDrafting={isDrafting}
-      isOverGrid={isOverGrid}
-      isFocused={isFocused}
-      onBlur={onBlur}
-      onClick={onClick}
-      onFocus={onFocus}
-      onKeyDown={onKeyDown}
-      priority={priority}
-      role="button"
-      ref={provided.innerRef}
-    >
+    <StyledNewSomedayEvent {...somedayEventProps}>
       <SomedayEventRectangle
         category={category}
         event={event}

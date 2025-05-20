@@ -69,15 +69,17 @@ export const CalendarView = () => {
         isSidebarOpen={isSidebarOpen}
       >
         <SidebarDraftProvider dateCalcs={dateCalcs} measurements={measurements}>
-          <Draft measurements={measurements} weekProps={weekProps} />
-          {isSidebarOpen && (
-            <Sidebar
-              dateCalcs={dateCalcs}
-              measurements={measurements}
-              weekProps={weekProps}
-              gridRefs={gridRefs}
-            />
-          )}
+          <ContextMenuWrapper>
+            <Draft measurements={measurements} weekProps={weekProps} />
+            {isSidebarOpen && (
+              <Sidebar
+                dateCalcs={dateCalcs}
+                measurements={measurements}
+                weekProps={weekProps}
+                gridRefs={gridRefs}
+              />
+            )}
+          </ContextMenuWrapper>
         </SidebarDraftProvider>
         <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
           <Header

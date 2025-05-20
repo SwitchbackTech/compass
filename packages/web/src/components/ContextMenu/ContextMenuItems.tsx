@@ -3,9 +3,13 @@ import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import { Priorities } from "@core/constants/core.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleGridEvent } from "@web/common/utils/event.util";
+import {
+  assembleGridEvent,
+  getSomedayEventCategory,
+} from "@web/common/utils/event.util";
 import IconButton from "@web/components/IconButton/IconButton";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
+import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import {
   MenuItem,
   MenuItemLabel,
@@ -29,6 +33,8 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   const { actions, setters } = useDraftContext();
   const { openForm, deleteEvent, duplicateEvent, submit } = actions;
   const { setDraft } = setters;
+
+  const sidebarContext = useSidebarContext(true);
 
   const [selectedPriority, setSelectedPriority] = useState(event.priority);
 
@@ -57,9 +63,17 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   };
 
   const handleEdit = () => {
-    setDraft(assembleGridEvent(event));
-    openForm();
-    close();
+    if (!event.isSomeday) {
+      setDraft(assembleGridEvent(event));
+      openForm();
+      close();
+    } else {
+      const sidebarActions = sidebarContext?.actions;
+      if (!sidebarActions) return; // TS Guard
+      const category = getSomedayEventCategory(event);
+      sidebarActions.onDraft(event, category);
+      close();
+    }
   };
 
   const menuActions: ContextMenuAction[] = [

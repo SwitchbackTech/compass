@@ -237,9 +237,29 @@ export const isEventInRange = (
   return isStartDateInRange || isEndDateInRange;
 };
 
-export const isOptimisticEvent = (event: Schema_GridEvent) => {
+export const isOptimisticEvent = (event: Schema_Event) => {
   const isOptimistic = event._id?.startsWith(ID_OPTIMISTIC_PREFIX) || false;
   return isOptimistic;
+};
+
+export const getSomedayEventCategory = (
+  event: Schema_Event,
+): Categories_Event.SOMEDAY_MONTH | Categories_Event.SOMEDAY_WEEK => {
+  if (!event.isSomeday) {
+    throw new Error(
+      `Event is not a someday event. Event: ${JSON.stringify(event)}`,
+    );
+  }
+
+  const startDate = dayjs(event.startDate);
+  const endDate = dayjs(event.endDate);
+
+  const diffInDays = endDate.diff(startDate, "day");
+
+  if (diffInDays > 7) {
+    return Categories_Event.SOMEDAY_MONTH;
+  }
+  return Categories_Event.SOMEDAY_WEEK;
 };
 
 export const prepEvtAfterDraftDrop = (
