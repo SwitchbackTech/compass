@@ -59,7 +59,9 @@ export const SomedayEventContainer = ({
         isOverGrid={isOverGrid}
         isFocused={isFocused}
         onBlur={() => setIsFocused(false)}
-        onClick={() => actions.onDraft(event, category)}
+        onClick={() => {
+          actions.onDraft(event, category);
+        }}
         onFocus={() => setIsFocused(true)}
         onKeyDown={() => console.log("onKeyDown")}
         priority={event.priority || Priorities.UNASSIGNED}

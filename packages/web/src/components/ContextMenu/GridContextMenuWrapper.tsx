@@ -17,6 +17,7 @@ import {
   selectAllDayEvents,
   selectGridEvents,
 } from "@web/ducks/events/selectors/event.selectors";
+import { selectSomedayEvents } from "@web/ducks/events/selectors/someday.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { ContextMenu } from "./ContextMenu";
@@ -29,6 +30,8 @@ export const ContextMenuWrapper = ({
   const dispatch = useAppDispatch();
   const timedEvents = useAppSelector(selectGridEvents);
   const allDayEvents = useAppSelector(selectAllDayEvents);
+  const somedayEvents = useAppSelector(selectSomedayEvents);
+
   const draftEvent = useAppSelector(selectDraft);
 
   const [isOpen, setIsOpen] = useState(false);
@@ -49,7 +52,8 @@ export const ContextMenuWrapper = ({
   const getSelectedEvent = (eventId: string) => {
     const selectedEvent =
       timedEvents.find((ev) => ev._id === eventId) ||
-      allDayEvents.find((ev) => ev._id === eventId);
+      allDayEvents.find((ev) => ev._id === eventId) ||
+      Object.values(somedayEvents).find((ev) => ev._id === eventId);
 
     if (!selectedEvent) {
       throw new Error("Selected event not found");
