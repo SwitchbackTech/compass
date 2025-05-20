@@ -1,4 +1,3 @@
-import { Answers } from "@core/types/waitlist/waitlist.answer.types";
 import { Result_Waitlist } from "@core/types/waitlist/waitlist.types";
 import {
   getEmailsOnWaitlist,
@@ -9,51 +8,8 @@ import {
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import EmailService from "../../email/email.service";
 import WaitlistService from "./waitlist.service";
-
-const answer: Answers = {
-  firstName: "Jo",
-  lastName: "Schmo",
-  source: "other",
-  email: "joe@schmo.com",
-  currentlyPayingFor: undefined,
-  howClearAboutValues: "not-clear",
-  workingTowardsMainGoal: "yes",
-  isWillingToShare: false,
-  schemaVersion: "0",
-};
-
-// Mock emailer API calls
-jest.spyOn(EmailService, "upsertSubscriber").mockResolvedValue({
-  subscriber: {
-    id: 1,
-    first_name: answer.firstName,
-    email_address: answer.email,
-    state: "active",
-    created_at: new Date().toISOString(),
-    fields: {
-      "Last name": answer.lastName,
-      Birthday: "1970-01-01",
-      Source: answer.source,
-    },
-  },
-});
-jest.spyOn(EmailService, "addTagToSubscriber").mockResolvedValue({
-  subscriber: {
-    id: 1,
-    first_name: answer.firstName,
-    email_address: answer.email,
-    state: "active",
-    created_at: new Date().toISOString(),
-    tagged_at: new Date().toISOString(),
-    fields: {
-      "Last name": answer.lastName,
-      Birthday: "1970-01-01",
-      Source: answer.source,
-    },
-  },
-});
+import { answer } from "./waitlist.service.test-setup";
 
 describe("addToWaitlist", () => {
   let setup: Awaited<ReturnType<typeof setupTestDb>>;

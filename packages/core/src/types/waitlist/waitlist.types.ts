@@ -5,6 +5,10 @@ export interface Result_Waitlist {
   status: "waitlisted" | "ignored";
 }
 
+export interface Result_InviteToWaitlist {
+  status: "invited" | "ignored";
+}
+
 const Schema_Status = z.enum(["waitlisted", "invited", "active"]);
 
 const Schema_Waitlist_v0 = Schema_Answers_v0.extend({
