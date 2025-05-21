@@ -80,7 +80,7 @@ export const handleExpressError = async (
     const userId = await parseUserId(res, e);
     if (!userId) {
       logger.error(
-        "Express error occured, but couldn't handle due to missing userId",
+        "Express error occurred, but couldn't handle due to missing userId",
       );
       res.status(Status.BAD_REQUEST).send(UserError.MissingUserIdField);
       return;

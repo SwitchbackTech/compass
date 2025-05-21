@@ -48,7 +48,7 @@ class ErrorHandler {
 
   exitAfterProgrammerError(): void {
     logger.error(
-      "Programmer error occured. Exiting to prevent app instability",
+      "Programmer error occurred. Exiting to prevent app instability",
     );
     // uses 500 as code for the response error, but if the error is one of our own,
     // then a more accurate code will be given in the payload
