@@ -1,6 +1,6 @@
 import request from "supertest";
 
-describe("GET /api/invited", () => {
+describe("GET /api/waitlist", () => {
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
@@ -18,10 +18,10 @@ describe("GET /api/invited", () => {
     const express = (await import("express")).default;
     const app = express();
     app.use(express.json());
-    app.get("/api/invited", WaitlistController.isInvited);
+    app.get("/api/waitlist", WaitlistController.isInvited);
 
     // Act
-    const res = await request(app).get("/api/invited").query({ email: "" });
+    const res = await request(app).get("/api/waitlist").query({ email: "" });
 
     // Assert
     expect(res.status).toBe(400);
@@ -40,11 +40,11 @@ describe("GET /api/invited", () => {
     const express = (await import("express")).default;
     const app = express();
     app.use(express.json());
-    app.get("/api/invited", WaitlistController.isInvited);
+    app.get("/api/waitlist", WaitlistController.isInvited);
 
     // Act
     const res = await request(app)
-      .get("/api/invited")
+      .get("/api/waitlist")
       .query({ email: "was-invited@bar.com" });
 
     // Assert
@@ -66,11 +66,11 @@ describe("GET /api/invited", () => {
     const express = (await import("express")).default;
     const app = express();
     app.use(express.json());
-    app.get("/api/invited", WaitlistController.isInvited);
+    app.get("/api/waitlist", WaitlistController.isInvited);
 
     // Act
     const res = await request(app)
-      .get("/api/invited")
+      .get("/api/waitlist")
       .query({ email: "not-invited@bar.com" });
 
     // Assert

@@ -63,4 +63,18 @@ export class WaitlistController {
     const isInvited = await WaitlistService.isInvited(email);
     return res.status(200).json({ isInvited });
   }
+
+  static async isOnWaitlist(
+    req: Request<unknown, unknown, unknown, { email: string }>,
+    res: Response<{ isOnWaitlist: boolean }>,
+  ) {
+    const email = req.query.email;
+    if (!email) {
+      logger.error("Could not check waitlist due to missing request email");
+      return res.status(400).json({ isOnWaitlist: false });
+    }
+
+    const isOnWaitlist = await WaitlistService.isOnWaitlist(email);
+    return res.status(200).json({ isOnWaitlist });
+  }
 }
