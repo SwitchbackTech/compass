@@ -7,7 +7,6 @@ describe("GET /api/waitlist", () => {
   });
 
   it("should return 400 if email is invalid", async () => {
-    // Arrange
     jest.doMock("../service/waitlist.service", () => ({
       __esModule: true,
       default: {
@@ -20,20 +19,17 @@ describe("GET /api/waitlist", () => {
     app.use(express.json());
     app.get("/api/waitlist", WaitlistController.isInvited);
 
-    // Act
     const res = await request(app).get("/api/waitlist").query({ email: "" });
 
-    // Assert
     expect(res.status).toBe(400);
     expect(res.error).toBeDefined();
   });
 
-  it("should return true if email was invited", async () => {
-    // Arrange
+  it("should return true if email is on waitlist", async () => {
     jest.doMock("../service/waitlist.service", () => ({
       __esModule: true,
       default: {
-        isInvited: jest.fn().mockResolvedValue(true), // user is invited
+        isInvited: jest.fn().mockResolvedValue(true),
       },
     }));
     const { WaitlistController } = await import("./waitlist.controller");
@@ -42,24 +38,21 @@ describe("GET /api/waitlist", () => {
     app.use(express.json());
     app.get("/api/waitlist", WaitlistController.isInvited);
 
-    // Act
     const res = await request(app)
       .get("/api/waitlist")
-      .query({ email: "was-invited@bar.com" });
+      .query({ email: "waitlisted@bar.com" });
 
-    // Assert
     expect(res.status).toBe(200);
     const data = res.body;
     expect(data.isInvited).toBeDefined();
     expect(data.isInvited).toBe(true);
   });
 
-  it("should return false if email was not invited", async () => {
-    // Arrange
+  it("should return false if email is not on waitlist", async () => {
     jest.doMock("../service/waitlist.service", () => ({
       __esModule: true,
       default: {
-        isInvited: jest.fn().mockResolvedValue(false), // user is not invited
+        isInvited: jest.fn().mockResolvedValue(false),
       },
     }));
     const { WaitlistController } = await import("./waitlist.controller");
@@ -68,12 +61,10 @@ describe("GET /api/waitlist", () => {
     app.use(express.json());
     app.get("/api/waitlist", WaitlistController.isInvited);
 
-    // Act
     const res = await request(app)
       .get("/api/waitlist")
-      .query({ email: "not-invited@bar.com" });
+      .query({ email: "nope@bar.com" });
 
-    // Assert
     expect(res.status).toBe(200);
     const data = res.body;
     expect(data.isInvited).toBeDefined();

@@ -69,6 +69,10 @@ class WaitlistService {
   static async isInvited(email: string): Promise<boolean> {
     return WaitlistRepository.isInvited(email);
   }
+
+  static async isOnWaitlist(email: string): Promise<boolean> {
+    return WaitlistRepository.isAlreadyOnWaitlist(email);
+  }
 }
 
 export default WaitlistService;
