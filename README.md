@@ -62,6 +62,10 @@ All the info you'd need to get started is at [docs.compasscalendar.com](https://
 
 🔵 [Production App](https://app.compasscalendar.com) (Closed beta)
 
+Compass sign in is currently limited to emails on our waitlist. If you're
+running the app locally, this restriction is skipped so contributors can get
+started right away.
+
 🎬 [Compass on YouTube](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w)
 
 ✍ [Compass Blog](https://www.compasscalendar.com/post/compass-is-open-source)
