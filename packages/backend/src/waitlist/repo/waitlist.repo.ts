@@ -18,7 +18,7 @@ export class WaitlistRepository {
     }
 
     const result = await mongoService.waitlist.updateOne(
-      { email },
+      { email: { $eq: email } },
       { $set: { status: "invited" } },
     );
 
@@ -29,7 +29,9 @@ export class WaitlistRepository {
   }
 
   static async isAlreadyOnWaitlist(email: string) {
-    const match = await mongoService.waitlist.find({ email }).toArray();
+    const match = await mongoService.waitlist
+      .find({ email: { $eq: email } })
+      .toArray();
     return match.length > 0;
   }
 
@@ -48,7 +50,7 @@ export class WaitlistRepository {
   ): Promise<Schema_Waitlist | null> {
     // Fetch up to 2 records to efficiently check for duplicates.
     const matches = await mongoService.waitlist
-      .find({ email })
+      .find({ email: { $eq: email } })
       .limit(2)
       .toArray();
 
