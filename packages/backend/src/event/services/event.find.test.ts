@@ -90,7 +90,7 @@ describe("Jan 2022: Many Formats", () => {
       const filter = getReadAllFilter("user1", {
         // make sure these match text data exactly
         start: "2022-01-01T00:00:00+03:00",
-        end: "2022-01-020T11:11:11+03:00",
+        end: "2022-01-20T11:11:11+03:00",
       });
 
       const result = await eventCollection.find(filter).toArray();
