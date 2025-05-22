@@ -23,22 +23,21 @@ import {
 
 export const LoginView = () => {
   const navigate = useNavigate();
-
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [waitlistState, setWaitlistState] = useState<
     null | "not_on_list" | "waitlisted"
   >(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const { isAuthenticated: isAlreadyAuthenticated } = useAuthCheck();
+  const antiCsrfToken = useRef(uuidv4()).current;
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate(ROOT_ROUTES.ROOT);
     }
   }, [isAuthenticated, navigate]);
-
-  const antiCsrfToken = useRef(uuidv4()).current;
 
   const SCOPES_REQUIRED = [
     "email",
@@ -48,63 +47,15 @@ export const LoginView = () => {
 
   const isMissingPermissions = (scope: string) => {
     const scopesGranted = scope.split(" ");
-
     return SCOPES_REQUIRED.some((s) => !scopesGranted.includes(s));
   };
 
-  const checkWaitlistAndLogin = useGoogleLogin({
-    scope: "email profile",
-    onSuccess: async ({ access_token }) => {
-      try {
-        const res = await fetch(
-          "https://www.googleapis.com/oauth2/v3/userinfo",
-          {
-            headers: { Authorization: `Bearer ${access_token}` },
-          },
-        );
-        const profile = (await res.json()) as { email?: string };
-        const email = profile.email;
-        if (!email) {
-          alert("Could not retrieve email from Google");
-          return;
-        }
-        const { isInvited, isOnWaitlist } =
-          await WaitlistApi.getWaitlistStatus(email);
-        if (isInvited) {
-          setWaitlistState(null);
-          login();
-          return;
-        }
-
-        setWaitlistState(isOnWaitlist ? "waitlisted" : "not_on_list");
-      } catch (e) {
-        alert("Failed to check waitlist status");
-        console.error(e);
-      }
-    },
-    onError: (error) => {
-      alert(`Login failed because: ${error.error}`);
-      console.error(error);
-    },
-  });
-
-  const handleButtonClick = () => {
-    if (isAlreadyAuthenticated) {
-      navigate(ROOT_ROUTES.ROOT);
-    } else {
-      login();
-      checkWaitlistAndLogin();
-    }
-  };
-
-  const login = useGoogleLogin({
+  const startLoginFlow = useGoogleLogin({
     flow: "auth-code",
     scope: SCOPES_REQUIRED.join(" "),
     state: antiCsrfToken,
-
     onSuccess: async ({ code, scope, state }) => {
       const isFromHacker = state !== antiCsrfToken;
-
       if (isFromHacker) {
         alert("Nice try, hacker");
         return;
@@ -116,11 +67,13 @@ export const LoginView = () => {
       }
 
       setIsAuthenticating(true);
-
       try {
         await AuthApi.loginOrSignup(code);
         setIsAuthenticated(true);
       } catch (e) {
+        console.error(e);
+        alert("Login failed. Please try again.");
+      } finally {
         setIsAuthenticating(false);
       }
     },
@@ -129,6 +82,59 @@ export const LoginView = () => {
       console.error(error);
     },
   });
+
+  const checkWaitlistAndLogin = useGoogleLogin({
+    scope: "email",
+    state: antiCsrfToken,
+    onSuccess: async ({ access_token, state }) => {
+      const isFromHacker = state !== antiCsrfToken;
+      if (isFromHacker) {
+        alert("Nice try, hacker");
+        return;
+      }
+      try {
+        const res = await fetch(
+          "https://www.googleapis.com/oauth2/v3/userinfo",
+          {
+            headers: { Authorization: `Bearer ${access_token}` },
+          },
+        );
+        const profile = (await res.json()) as { email?: string };
+        const email = profile.email;
+
+        if (!email) {
+          alert("Could not retrieve email from Google");
+          return;
+        }
+
+        setUserEmail(email);
+        const { isInvited, isOnWaitlist } =
+          await WaitlistApi.getWaitlistStatus(email);
+
+        if (isInvited) {
+          startLoginFlow();
+          return;
+        }
+
+        setWaitlistState(isOnWaitlist ? "waitlisted" : "not_on_list");
+      } catch (e) {
+        console.error(e);
+        alert("Failed to check waitlist status");
+      }
+    },
+    onError: (error) => {
+      alert(`Login failed because: ${error.error}`);
+      console.error(error);
+    },
+  });
+
+  const handleButtonClick = () => {
+    if (isAlreadyAuthenticated) {
+      navigate(ROOT_ROUTES.ROOT);
+      return;
+    }
+    checkWaitlistAndLogin();
+  };
 
   return (
     <>
