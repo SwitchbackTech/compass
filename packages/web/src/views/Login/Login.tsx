@@ -10,9 +10,14 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { LoginAbsoluteOverflowLoader } from "@web/components/LoginAbsoluteOverflowLoader/LoginAbsoluteOverflowLoader";
 import {
+  ActionButton,
   Card,
   CardHeader,
+  ClosedBetaBadge,
   Description,
+  EmailFormContainer,
+  EmailInputField,
+  InfoText,
   NavLinkContainer,
   NavLinkIcon,
   NavLinkText,
@@ -20,21 +25,40 @@ import {
   StyledLogin,
   StyledLoginContainer,
   Subtitle,
+  TertiaryButton,
   Title,
   WaitlistBtn,
 } from "./styled";
+import * as S from "./styled";
+
+const { NavLink: NavLinkStyled, ...RemainingS } = S; // Alias S.NavLink to avoid conflict if react-router-dom NavLink is used
+
+type FlowStep = "initial" | "checkingWaitlist" | "waitlistStatusKnown";
 
 export const LoginView = () => {
+  const emailInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [waitlistState, setWaitlistState] = useState<
-    null | "not_on_list" | "waitlisted"
-  >(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false); // For Google Login process
+
+  // New state for the waitlist check flow
+  const [emailInput, setEmailInput] = useState("");
+  const [flowStep, setFlowStep] = useState<FlowStep>("initial");
+  const [waitlistCheckResult, setWaitlistCheckResult] = useState<{
+    isOnWaitlist: boolean;
+    isInvited: boolean;
+  } | null>(null);
+  const [isLoadingWaitlistStatus, setIsLoadingWaitlistStatus] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const { isAuthenticated: isAlreadyAuthenticated } = useAuthCheck();
   const antiCsrfToken = useRef(uuidv4()).current;
+
+  useEffect(() => {
+    if (flowStep === "initial" && emailInputRef.current) {
+      emailInputRef.current.focus();
+    }
+  }, [flowStep]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -110,7 +134,6 @@ export const LoginView = () => {
           return;
         }
 
-        setUserEmail(email);
         const { isInvited, isOnWaitlist } =
           await WaitlistApi.getWaitlistStatus(email);
 
@@ -119,7 +142,8 @@ export const LoginView = () => {
           return;
         }
 
-        setWaitlistState(isOnWaitlist ? "waitlisted" : "not_on_list");
+        setWaitlistCheckResult({ isOnWaitlist, isInvited });
+        setFlowStep("waitlistStatusKnown");
       } catch (e) {
         console.error(e);
         alert("Failed to check waitlist status");
@@ -131,13 +155,39 @@ export const LoginView = () => {
     },
   });
 
+  const handleCheckWaitlistSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput.trim()) {
+      setApiError("Please enter your email address.");
+      return;
+    }
+    setIsLoadingWaitlistStatus(true);
+    setApiError(null);
+    setFlowStep("checkingWaitlist");
+    try {
+      const data = await WaitlistApi.getWaitlistStatus(emailInput);
+      setWaitlistCheckResult(data);
+      setFlowStep("waitlistStatusKnown");
+    } catch (error) {
+      console.error("Error checking waitlist status:", error);
+      setApiError("Failed to check waitlist status. Please try again.");
+      setFlowStep("initial"); // Revert to initial to allow retry
+    } finally {
+      setIsLoadingWaitlistStatus(false);
+    }
+  };
+
   const handleButtonClick = () => {
+    // This is for the Google Sign-In button
     if (isAlreadyAuthenticated) {
       navigate(ROOT_ROUTES.ROOT);
       return;
     }
-    checkWaitlistAndLogin();
+    // If this button is visible, it means the user is invited.
+    // Proceed directly to the main login flow.
+    startLoginFlow();
   };
+
   return (
     <>
       <StyledLoginContainer>
@@ -149,65 +199,128 @@ export const LoginView = () => {
 
           <Card>
             <CardHeader>
-              <Title>Welcome to Compass</Title>
-              <Subtitle>The weekly planner for minimalists</Subtitle>
+              <Title>Compass</Title>
+              <Subtitle>The weekly planner for ambitious minimalists</Subtitle>
             </CardHeader>
-            <Description>You're almost ready to start planning!</Description>
-            <Description>
-              Now let's import your events from Google Calendar
-            </Description>
-            <SignInButtonWrapper>
-              <GoogleButton
-                aria-label="Sign in with Google"
-                type="light"
-                onClick={handleButtonClick}
-              />
-            </SignInButtonWrapper>
-            {waitlistState === "not_on_list" && (
+
+            {flowStep === "initial" && (
               <>
-                <Description>You're not on the waitlist yet.</Description>
-                <WaitlistBtn
-                  as="a"
-                  href="https://www.compasscalendar.com/waitlist"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Join Waitlist
-                </WaitlistBtn>
+                <InfoText>
+                  Compass is currently invite-only. Please enter your email to
+                  check your waitlist status.
+                </InfoText>
+                <EmailFormContainer onSubmit={handleCheckWaitlistSubmit}>
+                  <EmailInputField
+                    type="email"
+                    placeholder="Enter your email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    disabled={isLoadingWaitlistStatus}
+                    ref={emailInputRef}
+                  />
+                  <ActionButton
+                    type="submit"
+                    disabled={
+                      isLoadingWaitlistStatus || emailInput.trim() === ""
+                    }
+                  >
+                    {isLoadingWaitlistStatus
+                      ? "Checking..."
+                      : "Check Waitlist Status"}
+                  </ActionButton>
+                </EmailFormContainer>
+                {apiError && (
+                  <InfoText style={{ color: "red" }}>{apiError}</InfoText>
+                )}
               </>
             )}
-            {waitlistState === "waitlisted" && (
+
+            {flowStep === "checkingWaitlist" && (
+              <InfoText>Checking your status on the waitlist...</InfoText>
+            )}
+
+            {flowStep === "waitlistStatusKnown" && waitlistCheckResult && (
               <>
-                <Description>
-                  You're on the list, but haven't been invited yet.
-                </Description>
-                <NavLinkContainer>
-                  <NavLink
-                    to="https://github.com/SwitchbackTech/compass"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <NavLinkIcon>👨‍💻</NavLinkIcon>
-                    <NavLinkText>Contribute to the codebase</NavLinkText>
-                  </NavLink>
-                  <NavLink
-                    to="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=ypf5Jg8tZt6Tez36"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <NavLinkIcon>📺</NavLinkIcon>
-                    <NavLinkText>Watch Compass on YouTube</NavLinkText>
-                  </NavLink>
-                  <NavLink
-                    to="https://buymeacoffee.com/tylerdane"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <NavLinkIcon>☕</NavLinkIcon>
-                    <NavLinkText>Support with a donation</NavLinkText>
-                  </NavLink>
-                </NavLinkContainer>
+                {!waitlistCheckResult.isOnWaitlist && (
+                  <>
+                    <InfoText>
+                      You are not on the waitlist yet. Sign up to get notified
+                      when a spot opens up!
+                    </InfoText>
+                    <TertiaryButton
+                      href="https://www.compasscalendar.com/waitlist"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Sign Up for Waitlist
+                    </TertiaryButton>
+                  </>
+                )}
+
+                {waitlistCheckResult.isOnWaitlist &&
+                  !waitlistCheckResult.isInvited && (
+                    <>
+                      <InfoText>
+                        You're on the waitlist! We're carefully reviewing
+                        applicants and will notify you once you're invited. In
+                        the meantime, you can engage with us in these ways:
+                      </InfoText>
+                      <NavLinkContainer>
+                        <NavLinkStyled
+                          href="https://github.com/SwitchbackTech/compass"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <NavLinkIcon>👨‍💻</NavLinkIcon>
+                          <NavLinkText>
+                            View the code (we're open source!)
+                          </NavLinkText>
+                        </NavLinkStyled>
+                        <NavLinkStyled
+                          href="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=ypf5Jg8tZt6Tez36"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <NavLinkIcon>📺</NavLinkIcon>
+                          <NavLinkText>Watch Compass on YouTube</NavLinkText>
+                        </NavLinkStyled>
+                        <NavLinkStyled
+                          href="https://buymeacoffee.com/tylerdane"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <NavLinkIcon>☕</NavLinkIcon>
+                          <NavLinkText>Support with a donation</NavLinkText>
+                        </NavLinkStyled>
+                      </NavLinkContainer>
+                    </>
+                  )}
+
+                {waitlistCheckResult.isOnWaitlist &&
+                  waitlistCheckResult.isInvited && (
+                    <>
+                      <InfoText>
+                        Great news! You're invited to join Compass. Sign in with
+                        Google to get started.
+                      </InfoText>
+                      <SignInButtonWrapper>
+                        <GoogleButton
+                          aria-label="Sign in with Google"
+                          type="light"
+                          onClick={handleButtonClick}
+                          disabled={isAuthenticating}
+                        />
+                      </SignInButtonWrapper>
+                      {isAuthenticating && (
+                        <InfoText>Connecting to Google...</InfoText>
+                      )}
+                    </>
+                  )}
               </>
+            )}
+            {/* Render API error if it occurred during the Google login phase, distinct from waitlist check error */}
+            {isAuthenticating && apiError && (
+              <InfoText style={{ color: "red" }}>{apiError}</InfoText>
             )}
           </Card>
         </StyledLogin>
