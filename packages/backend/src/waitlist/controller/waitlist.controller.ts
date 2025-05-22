@@ -77,7 +77,6 @@ export class WaitlistController {
     const isOnWaitlist = await WaitlistService.isOnWaitlist(email);
     return res.status(200).json({ isOnWaitlist });
   }
-
   static async status(
     req: Request<unknown, unknown, unknown, { email: string }>,
     res: Response<{ isOnWaitlist: boolean; isInvited: boolean }>,

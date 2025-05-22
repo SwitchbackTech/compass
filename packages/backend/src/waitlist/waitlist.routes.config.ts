@@ -12,6 +12,7 @@ export class WaitlistRoutes extends CommonRoutesConfig {
       .route("/api/waitlist")
       .post(WaitlistController.addToWaitlist)
       .get(WaitlistController.status);
+      .get(WaitlistController.isInvited);
     return this.app;
   }
 }
