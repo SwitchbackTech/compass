@@ -77,4 +77,20 @@ export class WaitlistController {
     const isOnWaitlist = await WaitlistService.isOnWaitlist(email);
     return res.status(200).json({ isOnWaitlist });
   }
+  static async status(
+    req: Request<unknown, unknown, unknown, { email: string }>,
+    res: Response<{ isOnWaitlist: boolean; isInvited: boolean }>,
+  ) {
+    const email = req.query.email;
+    if (!email) {
+      logger.error("Could not check waitlist due to missing request email");
+      return res.status(400).json({ isOnWaitlist: false, isInvited: false });
+    }
+
+    const [isOnWaitlist, isInvited] = await Promise.all([
+      WaitlistService.isOnWaitlist(email),
+      WaitlistService.isInvited(email),
+    ]);
+    return res.status(200).json({ isOnWaitlist, isInvited });
+  }
 }
