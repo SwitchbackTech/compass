@@ -32,7 +32,7 @@ class SyncController {
       const sync = await getSync({ resourceId });
       if (!sync || !sync.user) {
         logger.error(
-          `Sync error occured, but couldnt find user based on this resourceId: ${resourceId}`,
+          `Sync error occurred, but couldnt find user based on this resourceId: ${resourceId}`,
         );
         logger.debug(res);
         res.status(Status.BAD_REQUEST).send(UserError.MissingUserIdField);

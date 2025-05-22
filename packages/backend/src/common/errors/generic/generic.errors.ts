@@ -25,7 +25,7 @@ export const GenericError: GenericErrors = {
     isOperational: true,
   },
   NotSure: {
-    description: "Not sure why error occured. See logs",
+    description: "Not sure why error occurred. See logs",
     status: Status.UNSURE,
     isOperational: true,
   },

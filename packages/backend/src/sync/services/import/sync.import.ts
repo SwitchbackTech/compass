@@ -266,7 +266,7 @@ export class SyncImport {
     if (!response) {
       throw error(
         SyncError.NoEventChanges,
-        "Import ignorede due to no response from gcal",
+        "Import ignored due to no response from gcal",
       );
     }
 
