@@ -71,7 +71,6 @@ describe("GET /api/waitlist", () => {
     app.use(express.json());
     app.get("/api/waitlist", WaitlistController.status);
 
-
     // Act
     const res = await request(app)
       .get("/api/waitlist")
