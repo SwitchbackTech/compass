@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useAuthCheck } from "@web/auth/useAuthCheck";
 import { AuthApi } from "@web/common/apis/auth.api";
+import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { LoginAbsoluteOverflowLoader } from "@web/components/LoginAbsoluteOverflowLoader/LoginAbsoluteOverflowLoader";
@@ -17,6 +18,7 @@ import {
   StyledLoginContainer,
   Subtitle,
   Title,
+  WaitlistBtn,
 } from "./styled";
 
 export const LoginView = () => {
@@ -24,6 +26,9 @@ export const LoginView = () => {
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [waitlistState, setWaitlistState] = useState<
+    null | "not_on_list" | "waitlisted"
+  >(null);
 
   const { isAuthenticated: isAlreadyAuthenticated } = useAuthCheck();
 
@@ -47,11 +52,48 @@ export const LoginView = () => {
     return SCOPES_REQUIRED.some((s) => !scopesGranted.includes(s));
   };
 
+  const checkWaitlistAndLogin = useGoogleLogin({
+    scope: "email profile",
+    onSuccess: async ({ access_token }) => {
+      try {
+        const res = await fetch(
+          "https://www.googleapis.com/oauth2/v3/userinfo",
+          {
+            headers: { Authorization: `Bearer ${access_token}` },
+          },
+        );
+        const profile = (await res.json()) as { email?: string };
+        const email = profile.email;
+        if (!email) {
+          alert("Could not retrieve email from Google");
+          return;
+        }
+        const { isInvited, isOnWaitlist } =
+          await WaitlistApi.getWaitlistStatus(email);
+        if (isInvited) {
+          setWaitlistState(null);
+          login();
+          return;
+        }
+
+        setWaitlistState(isOnWaitlist ? "waitlisted" : "not_on_list");
+      } catch (e) {
+        alert("Failed to check waitlist status");
+        console.error(e);
+      }
+    },
+    onError: (error) => {
+      alert(`Login failed because: ${error.error}`);
+      console.error(error);
+    },
+  });
+
   const handleButtonClick = () => {
     if (isAlreadyAuthenticated) {
       navigate(ROOT_ROUTES.ROOT);
     } else {
       login();
+      checkWaitlistAndLogin();
     }
   };
 
@@ -113,6 +155,52 @@ export const LoginView = () => {
                 onClick={handleButtonClick}
               />
             </SignInButtonWrapper>
+            {waitlistState === "not_on_list" && (
+              <>
+                <Description>You're not on the waitlist yet.</Description>
+                <WaitlistBtn
+                  as="a"
+                  href="https://www.compasscalendar.com/waitlist"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Join Waitlist
+                </WaitlistBtn>
+              </>
+            )}
+            {waitlistState === "waitlisted" && (
+              <>
+                <Description>
+                  You're on the list, but haven't been invited yet.
+                </Description>
+                <Description>
+                  <a
+                    href="https://github.com/SwitchbackTech/compass"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Contribute to the codebase
+                  </a>
+                  ,&nbsp;
+                  <a
+                    href="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=ypf5Jg8tZt6Tez36"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Watch Compass on YouTube
+                  </a>
+                  , or&nbsp;
+                  <a
+                    href="https://buymeacoffee.com/tylerdane"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    donate
+                  </a>
+                  .
+                </Description>
+              </>
+            )}
           </Card>
         </StyledLogin>
       </StyledLoginContainer>

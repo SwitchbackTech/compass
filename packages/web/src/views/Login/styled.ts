@@ -1,4 +1,5 @@
 import styled, { keyframes } from "styled-components";
+import { Btn } from "@web/components/Button/styled";
 import { Flex } from "@web/components/Flex";
 import { darkBlueGradient } from "../../common/styles/theme.util";
 
@@ -85,4 +86,14 @@ export const SignInButtonWrapper = styled.div`
   justify-content: center;
   width: 100%;
   padding: 2.625rem 1rem;
+`;
+
+export const WaitlistBtn = styled(Btn)`
+  background: ${({ theme }) => theme.color.status.info};
+  color: ${({ theme }) => theme.color.text.dark};
+  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+  &:hover {
+    filter: brightness(120%);
+  }
 `;

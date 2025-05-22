@@ -12,13 +12,14 @@ describe("GET /api/waitlist", () => {
       __esModule: true,
       default: {
         isInvited: jest.fn(),
+        isOnWaitlist: jest.fn(),
       },
     }));
     const { WaitlistController } = await import("./waitlist.controller");
     const express = (await import("express")).default;
     const app = express();
     app.use(express.json());
-    app.get("/api/waitlist", WaitlistController.isInvited);
+    app.get("/api/waitlist", WaitlistController.status);
 
     // Act
     const res = await request(app).get("/api/waitlist").query({ email: "" });
@@ -34,13 +35,14 @@ describe("GET /api/waitlist", () => {
       __esModule: true,
       default: {
         isInvited: jest.fn().mockResolvedValue(true), // user is invited
+        isOnWaitlist: jest.fn().mockResolvedValue(true), // user is waitlisted
       },
     }));
     const { WaitlistController } = await import("./waitlist.controller");
     const express = (await import("express")).default;
     const app = express();
     app.use(express.json());
-    app.get("/api/waitlist", WaitlistController.isInvited);
+    app.get("/api/waitlist", WaitlistController.status);
 
     // Act
     const res = await request(app)
@@ -60,13 +62,14 @@ describe("GET /api/waitlist", () => {
       __esModule: true,
       default: {
         isInvited: jest.fn().mockResolvedValue(false), // user is not invited
+        isOnWaitlist: jest.fn().mockResolvedValue(false), // user is not waitlisted
       },
     }));
     const { WaitlistController } = await import("./waitlist.controller");
     const express = (await import("express")).default;
     const app = express();
     app.use(express.json());
-    app.get("/api/waitlist", WaitlistController.isInvited);
+    app.get("/api/waitlist", WaitlistController.status);
 
     // Act
     const res = await request(app)
@@ -78,5 +81,6 @@ describe("GET /api/waitlist", () => {
     const data = res.body;
     expect(data.isInvited).toBeDefined();
     expect(data.isInvited).toBe(false);
+    expect(data.isOnWaitlist).toBe(false);
   });
 });
