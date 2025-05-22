@@ -1,8 +1,9 @@
 import { Logger } from "@core/logger/winston.logger";
 import { Subscriber } from "@core/types/email/email.types";
+import { Answers } from "@core/types/waitlist/waitlist.answer.types";
 import {
+  Result_InviteToWaitlist,
   Result_Waitlist,
-  Schema_Answers,
 } from "@core/types/waitlist/waitlist.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import EmailService from "../../email/email.service";
@@ -12,7 +13,7 @@ const logger = Logger("app:waitlist.service");
 class WaitlistService {
   static async addToWaitlist(
     email: string,
-    answer: Schema_Answers,
+    answer: Answers,
   ): Promise<Result_Waitlist> {
     if (ENV.EMAILER_SECRET && ENV.EMAILER_WAITLIST_TAG_ID) {
       const subscriber: Subscriber = {
@@ -45,11 +46,32 @@ class WaitlistService {
     await WaitlistRepository.addToWaitlist({
       ...answer,
       waitlistedAt: new Date().toISOString(),
+      status: "waitlisted",
     });
 
     return {
       status: "waitlisted",
     };
+  }
+
+  static async invite(email: string): Promise<Result_InviteToWaitlist> {
+    try {
+      const result = await WaitlistRepository.invite(email);
+      return result;
+    } catch (error) {
+      logger.error("Failed to invite email to waitlist", error);
+      return {
+        status: "ignored",
+      };
+    }
+  }
+
+  static async isInvited(email: string): Promise<boolean> {
+    return WaitlistRepository.isInvited(email);
+  }
+
+  static async isOnWaitlist(email: string): Promise<boolean> {
+    return WaitlistRepository.isAlreadyOnWaitlist(email);
   }
 }
 

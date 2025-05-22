@@ -93,7 +93,6 @@ export async function setupTestDb(): Promise<TestSetup> {
   // Create waitlist user
   await mongoService.waitlist.insertOne({
     email,
-    waitlistedAt: new Date().toISOString(),
     schemaVersion: "0",
     source: "other",
     firstName: "Test",
@@ -102,6 +101,8 @@ export async function setupTestDb(): Promise<TestSetup> {
     howClearAboutValues: "not-clear",
     workingTowardsMainGoal: "yes",
     isWillingToShare: false,
+    status: "waitlisted",
+    waitlistedAt: new Date().toISOString(),
   });
 
   return { mongoServer, mongoClient, db, userId: userId.toString(), email };

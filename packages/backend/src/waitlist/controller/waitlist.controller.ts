@@ -1,10 +1,8 @@
 import { Request, Response } from "express";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
-import {
-  AnswerMap,
-  Schema_Waitlist,
-} from "@core/types/waitlist/waitlist.types";
+import { AnswerMap } from "@core/types/waitlist/waitlist.answer.types";
+import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
 import { isMissingWaitlistTagId } from "@backend/common/constants/env.util";
 import WaitlistService from "../service/waitlist.service";
 
@@ -48,5 +46,51 @@ export class WaitlistController {
       logger.error("caught unknown error");
       return res.status(500).json({ error: "Server error" });
     }
+  }
+
+  static async isInvited(
+    req: Request<unknown, unknown, unknown, { email: string }>,
+    res: Response<{ isInvited: boolean }>,
+  ) {
+    const email = req.query.email;
+    if (!email) {
+      logger.error("Could not check if invited due to missing request email");
+      return res.status(400).json({
+        isInvited: false,
+      });
+    }
+
+    const isInvited = await WaitlistService.isInvited(email);
+    return res.status(200).json({ isInvited });
+  }
+
+  static async isOnWaitlist(
+    req: Request<unknown, unknown, unknown, { email: string }>,
+    res: Response<{ isOnWaitlist: boolean }>,
+  ) {
+    const email = req.query.email;
+    if (!email) {
+      logger.error("Could not check waitlist due to missing request email");
+      return res.status(400).json({ isOnWaitlist: false });
+    }
+
+    const isOnWaitlist = await WaitlistService.isOnWaitlist(email);
+    return res.status(200).json({ isOnWaitlist });
+  }
+  static async status(
+    req: Request<unknown, unknown, unknown, { email: string }>,
+    res: Response<{ isOnWaitlist: boolean; isInvited: boolean }>,
+  ) {
+    const email = req.query.email;
+    if (!email) {
+      logger.error("Could not check waitlist due to missing request email");
+      return res.status(400).json({ isOnWaitlist: false, isInvited: false });
+    }
+
+    const [isOnWaitlist, isInvited] = await Promise.all([
+      WaitlistService.isOnWaitlist(email),
+      WaitlistService.isInvited(email),
+    ]);
+    return res.status(200).json({ isOnWaitlist, isInvited });
   }
 }

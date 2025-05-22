@@ -8,7 +8,10 @@ export class WaitlistRoutes extends CommonRoutesConfig {
   }
 
   configureRoutes() {
-    this.app.post("/api/waitlist/v0", WaitlistController.addToWaitlist);
+    this.app
+      .route("/api/waitlist")
+      .post(WaitlistController.addToWaitlist)
+      .get(WaitlistController.status);
     return this.app;
   }
 }
