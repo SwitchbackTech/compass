@@ -97,3 +97,56 @@ export const WaitlistBtn = styled(Btn)`
     filter: brightness(120%);
   }
 `;
+
+export const NavLinkContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+export const NavLink = styled.a`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: ${({ theme }) => theme.color.status.info};
+  text-decoration: none;
+  font-weight: ${({ theme }) => theme.text.weight.medium};
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  width: 100%;
+
+  &:hover,
+  &:focus {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+export const NavLinkIcon = styled.span`
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const NavLinkText = styled.span`
+  font-size: 1rem;
+`;

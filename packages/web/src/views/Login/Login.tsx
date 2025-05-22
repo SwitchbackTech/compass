@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import GoogleButton from "react-google-button";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useAuthCheck } from "@web/auth/useAuthCheck";
@@ -13,6 +13,9 @@ import {
   Card,
   CardHeader,
   Description,
+  NavLinkContainer,
+  NavLinkIcon,
+  NavLinkText,
   SignInButtonWrapper,
   StyledLogin,
   StyledLoginContainer,
@@ -135,7 +138,6 @@ export const LoginView = () => {
     }
     checkWaitlistAndLogin();
   };
-
   return (
     <>
       <StyledLoginContainer>
@@ -179,32 +181,32 @@ export const LoginView = () => {
                 <Description>
                   You're on the list, but haven't been invited yet.
                 </Description>
-                <Description>
-                  <a
-                    href="https://github.com/SwitchbackTech/compass"
+                <NavLinkContainer>
+                  <NavLink
+                    to="https://github.com/SwitchbackTech/compass"
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Contribute to the codebase
-                  </a>
-                  ,&nbsp;
-                  <a
-                    href="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=ypf5Jg8tZt6Tez36"
+                    <NavLinkIcon>👨‍💻</NavLinkIcon>
+                    <NavLinkText>Contribute to the codebase</NavLinkText>
+                  </NavLink>
+                  <NavLink
+                    to="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=ypf5Jg8tZt6Tez36"
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Watch Compass on YouTube
-                  </a>
-                  , or&nbsp;
-                  <a
-                    href="https://buymeacoffee.com/tylerdane"
+                    <NavLinkIcon>📺</NavLinkIcon>
+                    <NavLinkText>Watch Compass on YouTube</NavLinkText>
+                  </NavLink>
+                  <NavLink
+                    to="https://buymeacoffee.com/tylerdane"
                     target="_blank"
                     rel="noreferrer"
                   >
-                    donate
-                  </a>
-                  .
-                </Description>
+                    <NavLinkIcon>☕</NavLinkIcon>
+                    <NavLinkText>Support with a donation</NavLinkText>
+                  </NavLink>
+                </NavLinkContainer>
               </>
             )}
           </Card>
