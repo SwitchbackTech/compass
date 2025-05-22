@@ -116,7 +116,7 @@ export const NavLinkContainer = styled.div`
   }
 `;
 
-export const NavLink = styled.a`
+export const StyledNavLink = styled.a`
   display: flex;
   align-items: center;
   gap: 0.75rem;

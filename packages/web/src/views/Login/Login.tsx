@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import GoogleButton from "react-google-button";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useAuthCheck } from "@web/auth/useAuthCheck";
@@ -22,13 +22,11 @@ import {
   SignInButtonWrapper,
   StyledLogin,
   StyledLoginContainer,
+  StyledNavLink,
   Subtitle,
   TertiaryButton,
   Title,
 } from "./styled";
-import * as S from "./styled";
-
-const { NavLink: NavLinkStyled, ...RemainingS } = S; // Alias S.NavLink to avoid conflict if react-router-dom NavLink is used
 
 type FlowStep = "initial" | "checkingWaitlist" | "waitlistStatusKnown";
 
@@ -50,6 +48,13 @@ export const LoginView = () => {
 
   const { isAuthenticated: isAlreadyAuthenticated } = useAuthCheck();
   const antiCsrfToken = useRef(uuidv4()).current;
+
+  useEffect(() => {
+    if (window.location.hostname === "localhost") {
+      setWaitlistCheckResult({ isOnWaitlist: true, isInvited: true });
+      setFlowStep("waitlistStatusKnown");
+    }
+  }, []);
 
   useEffect(() => {
     if (flowStep === "initial" && emailInputRef.current) {
@@ -272,7 +277,7 @@ export const LoginView = () => {
                         the meantime, you can engage with us in these ways:
                       </InfoText>
                       <NavLinkContainer>
-                        <NavLinkStyled
+                        <StyledNavLink
                           href="https://github.com/SwitchbackTech/compass"
                           target="_blank"
                           rel="noreferrer"
@@ -281,23 +286,23 @@ export const LoginView = () => {
                           <NavLinkText>
                             View the code (we're open source!)
                           </NavLinkText>
-                        </NavLinkStyled>
-                        <NavLinkStyled
+                        </StyledNavLink>
+                        <StyledNavLink
                           href="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=ypf5Jg8tZt6Tez36"
                           target="_blank"
                           rel="noreferrer"
                         >
                           <NavLinkIcon>📺</NavLinkIcon>
                           <NavLinkText>Watch Compass on YouTube</NavLinkText>
-                        </NavLinkStyled>
-                        <NavLinkStyled
+                        </StyledNavLink>
+                        <StyledNavLink
                           href="https://buymeacoffee.com/tylerdane"
                           target="_blank"
                           rel="noreferrer"
                         >
                           <NavLinkIcon>☕</NavLinkIcon>
                           <NavLinkText>Support with a donation</NavLinkText>
-                        </NavLinkStyled>
+                        </StyledNavLink>
                       </NavLinkContainer>
                     </>
                   )}
