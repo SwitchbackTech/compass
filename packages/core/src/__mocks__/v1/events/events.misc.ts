@@ -16,8 +16,8 @@ export const CHILL_ALL_DAY: Schema_Event = {
   description: "just chillin",
   priorities: [],
   isAllDay: true,
-  startDate: "2022-09-23",
-  endDate: "2022-09-24",
+  startDate: "2022-09-23T00:00:00+12:00",
+  endDate: "2022-09-24T00:00:00+12:00",
   priority: Priorities.RELATIONS,
 };
 export const CLIMB: Schema_Event = {
@@ -29,8 +29,8 @@ export const CLIMB: Schema_Event = {
   description: "",
   priorities: [],
   isAllDay: false,
-  startDate: "2022-03-01T17:00:00-06:00",
-  endDate: "2022-03-01T19:00:00-06:00",
+  startDate: "2022-03-01T17:00:00+12:00",
+  endDate: "2022-03-01T19:00:00+12:00",
   priority: Priorities.WORK,
 };
 export const EUROPE_TRIP: Schema_Event = {
@@ -60,8 +60,8 @@ export const MARCH_1: Schema_Event = {
   description: "",
   priorities: [],
   isAllDay: true,
-  startDate: "2022-03-01",
-  endDate: "2022-03-02",
+  startDate: "2022-03-01T00:00:00+12:00",
+  endDate: "2022-03-02T00:00:00+12:00",
   priority: Priorities.WORK,
 };
 export const GROCERIES: Schema_Event = {
@@ -73,8 +73,8 @@ export const GROCERIES: Schema_Event = {
   description: "foo",
   priorities: [],
   isAllDay: false,
-  startDate: "2022-02-21T11:45:00-06:00",
-  endDate: "2022-02-212T12:45:00-06:00",
+  startDate: "2022-02-21T11:45:00+12:00",
+  endDate: "2022-02-21T12:45:00+12:00",
   priority: Priorities.RELATIONS,
 };
 export const MULTI_WEEK: Schema_Event = {
@@ -87,8 +87,8 @@ export const MULTI_WEEK: Schema_Event = {
   priorities: [],
   isAllDay: true,
   isSomeday: false,
-  startDate: "2022-09-01T00:00:00-06:00",
-  endDate: "2022-09-22T00:00:00-06:00",
+  startDate: "2022-09-01T00:00:00+12:00",
+  endDate: "2022-09-22T00:00:00+12:00",
   priority: Priorities.WORK,
 };
 export const TY_TIM: Schema_Event = {
@@ -102,7 +102,7 @@ export const TY_TIM: Schema_Event = {
   priorities: [],
   isAllDay: false,
   isSomeday: false,
-  startDate: "2022-03-01T12:15:00-06:00",
-  endDate: "2022-03-01T12:45:00-06:00",
+  startDate: "2022-03-01T12:15:00+12:00",
+  endDate: "2022-03-01T12:45:00+12:00",
   priority: Priorities.WORK,
 };
