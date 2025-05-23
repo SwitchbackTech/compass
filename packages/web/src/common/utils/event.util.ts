@@ -11,6 +11,7 @@ import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
 import { PartialMouseEvent } from "@web/common/types/util.types";
+import { toUTCOffset } from "@web/common/utils/web.date.util";
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
@@ -286,10 +287,13 @@ export const prepEvtBeforeSubmit = (
   draft: Schema_Event | Schema_GridEvent,
   userId: string,
 ) => {
-  const _event = {
+  const _event: Schema_Event = {
     ...draft,
     origin: Origin.COMPASS,
     user: userId,
+    // All-day events do not have times, so we need to ensure submitted dates are ISO 8601
+    startDate: toUTCOffset(draft.startDate as string),
+    endDate: toUTCOffset(draft.endDate as string),
   };
 
   const event = validateEvent(_event);
