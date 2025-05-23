@@ -15,6 +15,16 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 dayjs.extend(tz);
 dayjs.extend(utc);
 
+const validateDateFilters = (start: string, end: string) => {
+  const _isValidDate = (date: string) => {
+    return dayjs(date).isValid();
+  };
+
+  if (!_isValidDate(start) || !_isValidDate(end)) {
+    throw error(GenericError.BadRequest, "Invalid date format");
+  }
+};
+
 export const getCreateParams = (userId: string, event: Schema_Event_Core) => {
   const _event = {
     ...event,
@@ -90,6 +100,7 @@ export const getReadAllFilter = (
 
   // Add date filters if specified
   if (start && end) {
+    validateDateFilters(start, end);
     const dateFilters = _getDateFilters(isSomeday, start, end);
     Object.assign(filter, dateFilters);
   }

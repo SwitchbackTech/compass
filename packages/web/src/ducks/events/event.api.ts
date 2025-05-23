@@ -32,7 +32,7 @@ const EventApi = {
       );
     } else {
       return CompassApi.get(
-        `/event?start=${params.startDate}&end=${params.endDate}`,
+        `/event?start=${encodeURIComponent(params.startDate)}&end=${encodeURIComponent(params.endDate)}`,
       );
     }
   },

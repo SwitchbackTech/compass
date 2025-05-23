@@ -39,6 +39,7 @@
     "@types/supertest": "^6.0.3",
     "alias-hq": "^6.1.0",
     "jest-environment-node": "^29.7.0",
+    "luxon": "^3.6.1",
     "socket.io-client": "^4.7.5",
     "supertest": "^7.1.0",
     "tsconfig-paths": "^4.1.2"
