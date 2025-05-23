@@ -292,6 +292,58 @@ describe("Jan 2022: Many Formats", () => {
   });
 });
 
+describe("Edge Cases", () => {
+  let connection: MongoClient;
+  let db: Db;
+  let eventCollection: Collection<Schema_Event>;
+
+  beforeAll(async () => {
+    connection = await MongoClient.connect(process.env["MONGO_URL"] as string);
+    db = await connection.db();
+    eventCollection = db.collection("event");
+  });
+
+  afterAll(async () => {
+    await connection.close();
+  });
+
+  it("should return both timed and all-day events when filtering by date range that includes both", async () => {
+    await eventCollection.deleteMany({});
+    await eventCollection.insertMany([
+      {
+        _id: "timed-event-id",
+        user: "test-user",
+        title: "Timed Event",
+        isAllDay: false,
+        isSomeday: false,
+        startDate: "2025-02-02T00:00:00+03:00",
+        endDate: "2025-02-02T01:01:00+03:00",
+      },
+      {
+        _id: "allday-event-id",
+        user: "test-user",
+        title: "All-day Event",
+        isAllDay: true,
+        isSomeday: false,
+        startDate: "2025-02-02T00:00:00+03:00",
+        endDate: "2025-02-02T01:00:00+03:00",
+      },
+    ]);
+
+    const filter = getReadAllFilter("test-user", {
+      start: "2025-02-02T00:00:00+03:00",
+      end: "2025-02-08T23:59:59+03:00",
+    });
+
+    const result = await eventCollection.find(filter).toArray();
+    const titles = result.map((e) => e.title);
+
+    expect(titles.includes("Timed Event")).toBe(true);
+    expect(titles.includes("All-day Event")).toBe(true);
+    expect(result).toHaveLength(2);
+  });
+});
+
 const _jan1ToJan3Assertions = (result: []) => {
   const titles = result.map((e) => e.title);
 
