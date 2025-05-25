@@ -11,6 +11,10 @@ import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
 import { PartialMouseEvent } from "@web/common/types/util.types";
+import { toUTCOffset } from "@web/common/utils/web.date.util";
+import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
+import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
+import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
@@ -325,4 +329,29 @@ const _assembleBaseEvent = (
   };
 
   return baseEvent;
+};
+
+export const handleDispatchGetWeekEvents = (
+  startDate: string | Dayjs,
+  endDate: string | Dayjs,
+  reason: Sync_AsyncStateContextReason | Week_AsyncStateContextReason | null,
+) => {
+  const getRefreshWeekEventsReason = () => {
+    if (reason === Sync_AsyncStateContextReason.SOCKET_EVENT_CHANGED) {
+      // Hardcode enum return value for consistency and readability.
+      return Week_AsyncStateContextReason.SOCKET_EVENT_CHANGED;
+    } else if (reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE) {
+      return Week_AsyncStateContextReason.WEEK_VIEW_CHANGE;
+    }
+
+    return reason;
+  };
+
+  return getWeekEventsSlice.actions.request({
+    startDate: toUTCOffset(startDate),
+    endDate: toUTCOffset(endDate),
+    __context: {
+      reason: getRefreshWeekEventsReason(),
+    },
+  });
 };
