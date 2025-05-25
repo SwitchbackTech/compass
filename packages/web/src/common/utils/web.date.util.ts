@@ -253,6 +253,11 @@ export const toUTCOffset = (date: string | Dayjs | Date) => {
   } else return date.format(); // then already a DayJs object
 };
 
+// Given an ISO string, return a string in the format of YEAR_MONTH_DAY_FORMAT
+export const fromUTCOffset = (date: string) => {
+  return dayjs(date).format(YEAR_MONTH_DAY_FORMAT);
+};
+
 const _addTimesToDates = (dt: Schema_SelectedDates) => {
   const start = getDayjsByTimeValue(dt.startTime.value);
   const startDate = dayjs(dt.startDate)

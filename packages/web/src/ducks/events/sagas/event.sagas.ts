@@ -11,6 +11,7 @@ import {
   handleError,
   replaceIdWithOptimisticId,
 } from "@web/common/utils/event.util";
+import { fromUTCOffset } from "@web/common/utils/web.date.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
@@ -161,12 +162,34 @@ function* getEvents(
       yield put(eventsEntitiesSlice.actions.insert(payload.data));
       return { data: payload.data };
     }
-    const res: Response_GetEventsSuccess = (yield call(
-      EventApi.get,
-      payload,
-    )) as Response_GetEventsSuccess;
 
-    const normalizedEvents = normalize<Schema_Event>(res.data, [
+    // Hotfix to address issue where timed events and all-day events fetch
+    // result does not return the correct events due to inconsistencies.
+    // in the DB model in terms of how dates are saved.
+    //
+    // This hotfix works by sending 2 requests, one to handle timed events (filter is ISO-8601 date string)
+    // and one to handle all-day events (filter is YYYY-MM-DD date string).
+    //
+    // The drawback is that we now send 2 requests instead of 1.
+    //
+    // See https://github.com/SwitchbackTech/compass/pull/440 for more details.
+    const res: Response_GetEventsSuccess = (yield call(EventApi.get, {
+      startDate: payload.startDate,
+      endDate: payload.endDate,
+    })) as Response_GetEventsSuccess;
+    const alldayRes: Response_GetEventsSuccess = (yield call(EventApi.get, {
+      startDate: fromUTCOffset(payload.startDate as string),
+      endDate: fromUTCOffset(payload.endDate as string),
+    })) as Response_GetEventsSuccess;
+
+    // Separating timed and all-day events removes duplicates
+    const timedEvents = res.data.filter((event) => event.isAllDay === false);
+    const alldayEvents = alldayRes.data.filter(
+      (event) => event.isAllDay === true,
+    );
+    const events = [...timedEvents, ...alldayEvents];
+
+    const normalizedEvents = normalize<Schema_Event>(events, [
       normalizedEventsSchema(),
     ]);
 
