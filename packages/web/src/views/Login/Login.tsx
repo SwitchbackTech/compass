@@ -136,10 +136,10 @@ export const LoginView = () => {
           return;
         }
 
-        const { isInvited, isOnWaitlist } =
+        const { isInvited, isOnWaitlist, isActive } =
           await WaitlistApi.getWaitlistStatus(email);
 
-        if (isInvited) {
+        if (isInvited || isActive) {
           startLoginFlow();
           return;
         }

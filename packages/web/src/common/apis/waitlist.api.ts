@@ -5,6 +5,7 @@ export const WaitlistApi = {
     const { data } = await CompassApi.get<{
       isOnWaitlist: boolean;
       isInvited: boolean;
+      isActive: boolean;
     }>(`/waitlist`, { params: { email } });
     return data;
   },
