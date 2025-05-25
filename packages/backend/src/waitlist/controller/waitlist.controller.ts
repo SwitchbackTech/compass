@@ -4,6 +4,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { AnswerMap } from "@core/types/waitlist/waitlist.answer.types";
 import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
 import { isMissingWaitlistTagId } from "@backend/common/constants/env.util";
+import { findCompassUserBy } from "../../user/queries/user.queries";
 import WaitlistService from "../service/waitlist.service";
 
 const logger = Logger("app:waitlist.controller");
@@ -77,20 +78,31 @@ export class WaitlistController {
     const isOnWaitlist = await WaitlistService.isOnWaitlist(email);
     return res.status(200).json({ isOnWaitlist });
   }
+
   static async status(
     req: Request<unknown, unknown, unknown, { email: string }>,
-    res: Response<{ isOnWaitlist: boolean; isInvited: boolean }>,
+    res: Response<{
+      isOnWaitlist: boolean;
+      isInvited: boolean;
+      isActive: boolean;
+    }>,
   ) {
     const email = req.query.email;
     if (!email) {
       logger.error("Could not check waitlist due to missing request email");
-      return res.status(400).json({ isOnWaitlist: false, isInvited: false });
+      return res.status(400).json({
+        isOnWaitlist: false,
+        isInvited: false,
+        isActive: false,
+      });
     }
 
-    const [isOnWaitlist, isInvited] = await Promise.all([
+    const [isOnWaitlist, isInvited, existingUser] = await Promise.all([
       WaitlistService.isOnWaitlist(email),
       WaitlistService.isInvited(email),
+      findCompassUserBy("email", email),
     ]);
-    return res.status(200).json({ isOnWaitlist, isInvited });
+    const isActive = !!existingUser;
+    return res.status(200).json({ isOnWaitlist, isInvited, isActive });
   }
 }

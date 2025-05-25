@@ -26,7 +26,11 @@ describe("GET /api/waitlist", () => {
 
     // Assert
     expect(res.status).toBe(400);
-    expect(res.error).toBeDefined();
+    expect(res.body).toEqual({
+      isOnWaitlist: false,
+      isInvited: false,
+      isActive: false,
+    });
   });
 
   it("should return true if email was invited", async () => {
@@ -37,6 +41,10 @@ describe("GET /api/waitlist", () => {
         isInvited: jest.fn().mockResolvedValue(true), // user is invited
         isOnWaitlist: jest.fn().mockResolvedValue(true), // user is waitlisted
       },
+    }));
+    jest.doMock("../../user/queries/user.queries", () => ({
+      __esModule: true,
+      findCompassUserBy: jest.fn().mockResolvedValue(null), // Simulate user not found, so isActive will be false
     }));
     const { WaitlistController } = await import("./waitlist.controller");
     const express = (await import("express")).default;
@@ -65,6 +73,10 @@ describe("GET /api/waitlist", () => {
         isOnWaitlist: jest.fn().mockResolvedValue(false), // user is not waitlisted
       },
     }));
+    jest.doMock("../../user/queries/user.queries", () => ({
+      __esModule: true,
+      findCompassUserBy: jest.fn().mockResolvedValue(null), // Simulate user not found, so isActive will be false
+    }));
     const { WaitlistController } = await import("./waitlist.controller");
     const express = (await import("express")).default;
     const app = express();
@@ -82,5 +94,6 @@ describe("GET /api/waitlist", () => {
     expect(data.isInvited).toBeDefined();
     expect(data.isInvited).toBe(false);
     expect(data.isOnWaitlist).toBe(false);
+    expect(data.isActive).toBe(false);
   });
 });
