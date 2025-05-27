@@ -42,6 +42,7 @@ export const LoginView = () => {
   const [waitlistCheckResult, setWaitlistCheckResult] = useState<{
     isOnWaitlist: boolean;
     isInvited: boolean;
+    isActive: boolean;
   } | null>(null);
   const [isLoadingWaitlistStatus, setIsLoadingWaitlistStatus] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -51,7 +52,11 @@ export const LoginView = () => {
 
   useEffect(() => {
     if (window.location.hostname === "localhost") {
-      setWaitlistCheckResult({ isOnWaitlist: true, isInvited: true });
+      setWaitlistCheckResult({
+        isOnWaitlist: true,
+        isInvited: true,
+        isActive: true,
+      });
       setFlowStep("waitlistStatusKnown");
     }
   }, []);
@@ -112,58 +117,17 @@ export const LoginView = () => {
     },
   });
 
-  const checkWaitlistAndLogin = useGoogleLogin({
-    scope: "email",
-    state: antiCsrfToken,
-    onSuccess: async ({ access_token, state }) => {
-      const isFromHacker = state !== antiCsrfToken;
-      if (isFromHacker) {
-        alert("Nice try, hacker");
-        return;
-      }
-      try {
-        const res = await fetch(
-          "https://www.googleapis.com/oauth2/v3/userinfo",
-          {
-            headers: { Authorization: `Bearer ${access_token}` },
-          },
-        );
-        const profile = (await res.json()) as { email?: string };
-        const email = profile.email;
-
-        if (!email) {
-          alert("Could not retrieve email from Google");
-          return;
-        }
-
-        const { isInvited, isOnWaitlist, isActive } =
-          await WaitlistApi.getWaitlistStatus(email);
-
-        if (isInvited || isActive) {
-          startLoginFlow();
-          return;
-        }
-
-        setWaitlistCheckResult({ isOnWaitlist, isInvited });
-        setFlowStep("waitlistStatusKnown");
-      } catch (e) {
-        console.error(e);
-        alert("Failed to check waitlist status");
-      }
-    },
-    onError: (error) => {
-      alert(`Login failed because: ${error.error}`);
-      console.error(error);
-    },
-  });
-
   const handleCheckWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const processedInput = emailInput.trim().toLowerCase();
 
     if (processedInput === "marco@polo.co") {
       setApiError(null); // Clear any previous error
-      setWaitlistCheckResult({ isOnWaitlist: true, isInvited: true });
+      setWaitlistCheckResult({
+        isOnWaitlist: true,
+        isInvited: true,
+        isActive: true,
+      });
       setFlowStep("waitlistStatusKnown");
       return;
     }
@@ -307,26 +271,28 @@ export const LoginView = () => {
                     </>
                   )}
 
-                {waitlistCheckResult.isOnWaitlist &&
-                  waitlistCheckResult.isInvited && (
-                    <>
-                      <InfoText>
-                        Great news! You're invited to join Compass. Sign in with
-                        Google to get started.
-                      </InfoText>
-                      <SignInButtonWrapper>
-                        <GoogleButton
-                          aria-label="Sign in with Google"
-                          type="light"
-                          onClick={handleButtonClick}
-                          disabled={isAuthenticating}
-                        />
-                      </SignInButtonWrapper>
-                      {isAuthenticating && (
-                        <InfoText>Connecting to Google...</InfoText>
-                      )}
-                    </>
-                  )}
+                {(waitlistCheckResult.isActive ||
+                  (waitlistCheckResult.isOnWaitlist &&
+                    waitlistCheckResult.isInvited)) && (
+                  <>
+                    <InfoText>
+                      {waitlistCheckResult.isActive
+                        ? "Welcome back! Sign in to continue."
+                        : "Great news! You're invited to join Compass. Sign in with Google to get started."}
+                    </InfoText>
+                    <SignInButtonWrapper>
+                      <GoogleButton
+                        aria-label="Sign in with Google"
+                        type="light"
+                        onClick={handleButtonClick}
+                        disabled={isAuthenticating}
+                      />
+                    </SignInButtonWrapper>
+                    {isAuthenticating && (
+                      <InfoText>Connecting to Google...</InfoText>
+                    )}
+                  </>
+                )}
               </>
             )}
             {/* Render API error if it occurred during the Google login phase, distinct from waitlist check error */}
