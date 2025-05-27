@@ -39,7 +39,7 @@ export const LoginView = () => {
   // New state for the waitlist check flow
   const [emailInput, setEmailInput] = useState("");
   const [flowStep, setFlowStep] = useState<FlowStep>("initial");
-  const [waitlistCheckResult, setWaitlistCheckResult] = useState<{
+  const [waitlistStatus, setWaitlistStatus] = useState<{
     isOnWaitlist: boolean;
     isInvited: boolean;
     isActive: boolean;
@@ -52,7 +52,7 @@ export const LoginView = () => {
 
   useEffect(() => {
     if (window.location.hostname === "localhost") {
-      setWaitlistCheckResult({
+      setWaitlistStatus({
         isOnWaitlist: true,
         isInvited: true,
         isActive: true,
@@ -123,7 +123,7 @@ export const LoginView = () => {
 
     if (processedInput === "marco@polo.co") {
       setApiError(null); // Clear any previous error
-      setWaitlistCheckResult({
+      setWaitlistStatus({
         isOnWaitlist: true,
         isInvited: true,
         isActive: true,
@@ -141,7 +141,7 @@ export const LoginView = () => {
     setFlowStep("checkingWaitlist");
     try {
       const data = await WaitlistApi.getWaitlistStatus(emailInput.trim());
-      setWaitlistCheckResult(data);
+      setWaitlistStatus(data);
       setFlowStep("waitlistStatusKnown");
     } catch (error) {
       console.error("Error checking waitlist status:", error);
@@ -214,9 +214,9 @@ export const LoginView = () => {
               <InfoText>Checking your status on the waitlist...</InfoText>
             )}
 
-            {flowStep === "waitlistStatusKnown" && waitlistCheckResult && (
+            {flowStep === "waitlistStatusKnown" && waitlistStatus && (
               <>
-                {!waitlistCheckResult.isOnWaitlist && (
+                {!waitlistStatus.isActive && !waitlistStatus.isOnWaitlist && (
                   <>
                     <InfoText>
                       You are not on the waitlist yet. Sign up to get notified
@@ -232,51 +232,50 @@ export const LoginView = () => {
                   </>
                 )}
 
-                {waitlistCheckResult.isOnWaitlist &&
-                  !waitlistCheckResult.isInvited && (
-                    <>
-                      <InfoText>
-                        You're on the waitlist! We're carefully reviewing
-                        applicants and will notify you once you're invited. In
-                        the meantime, you can engage with us in these ways:
-                      </InfoText>
-                      <NavLinkContainer>
-                        <StyledNavLink
-                          href="https://github.com/SwitchbackTech/compass"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <NavLinkIcon>👨‍💻</NavLinkIcon>
-                          <NavLinkText>
-                            View the code (we're open source!)
-                          </NavLinkText>
-                        </StyledNavLink>
-                        <StyledNavLink
-                          href="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=ypf5Jg8tZt6Tez36"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <NavLinkIcon>📺</NavLinkIcon>
-                          <NavLinkText>Watch Compass on YouTube</NavLinkText>
-                        </StyledNavLink>
-                        <StyledNavLink
-                          href="https://buymeacoffee.com/tylerdane"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <NavLinkIcon>☕</NavLinkIcon>
-                          <NavLinkText>Support with a donation</NavLinkText>
-                        </StyledNavLink>
-                      </NavLinkContainer>
-                    </>
-                  )}
-
-                {(waitlistCheckResult.isActive ||
-                  (waitlistCheckResult.isOnWaitlist &&
-                    waitlistCheckResult.isInvited)) && (
+                {waitlistStatus.isOnWaitlist && !waitlistStatus.isInvited && (
                   <>
                     <InfoText>
-                      {waitlistCheckResult.isActive
+                      You're on the waitlist! We're carefully reviewing
+                      applicants and will notify you once you're invited. In the
+                      meantime, you can engage with us in these ways:
+                    </InfoText>
+                    <NavLinkContainer>
+                      <StyledNavLink
+                        href="https://github.com/SwitchbackTech/compass"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <NavLinkIcon>👨‍💻</NavLinkIcon>
+                        <NavLinkText>
+                          View the code (we're open source!)
+                        </NavLinkText>
+                      </StyledNavLink>
+                      <StyledNavLink
+                        href="https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=ypf5Jg8tZt6Tez36"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <NavLinkIcon>📺</NavLinkIcon>
+                        <NavLinkText>Watch Compass on YouTube</NavLinkText>
+                      </StyledNavLink>
+                      <StyledNavLink
+                        href="https://buymeacoffee.com/tylerdane"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <NavLinkIcon>☕</NavLinkIcon>
+                        <NavLinkText>Support with a donation</NavLinkText>
+                      </StyledNavLink>
+                    </NavLinkContainer>
+                  </>
+                )}
+
+                {(waitlistStatus.isActive ||
+                  (waitlistStatus.isOnWaitlist &&
+                    waitlistStatus.isInvited)) && (
+                  <>
+                    <InfoText>
+                      {waitlistStatus.isActive
                         ? "Welcome back! Sign in to continue."
                         : "Great news! You're invited to join Compass. Sign in with Google to get started."}
                     </InfoText>
