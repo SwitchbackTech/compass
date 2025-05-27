@@ -39,14 +39,25 @@ export const useWeek = (today: Dayjs) => {
     );
   }, [dispatch, end, start]);
 
+  const somedayEventsRequestFilter = useMemo(() => {
+    return {
+      startDate: monthStart.format(YEAR_MONTH_DAY_FORMAT),
+      endDate: monthEnd.format(YEAR_MONTH_DAY_FORMAT),
+    };
+  }, [monthEnd, monthStart]);
+
   useEffect(() => {
     dispatch(
       getSomedayEventsSlice.actions.request({
-        startDate: monthStart.format(YEAR_MONTH_DAY_FORMAT),
-        endDate: monthEnd.format(YEAR_MONTH_DAY_FORMAT),
+        ...somedayEventsRequestFilter,
       }),
     );
-  }, [dispatch, monthEnd, monthStart]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    dispatch,
+    somedayEventsRequestFilter.startDate,
+    somedayEventsRequestFilter.endDate,
+  ]);
 
   useEffect(() => {
     dispatch(
