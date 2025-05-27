@@ -42,6 +42,7 @@ export const LoginView = () => {
   const [waitlistCheckResult, setWaitlistCheckResult] = useState<{
     isOnWaitlist: boolean;
     isInvited: boolean;
+    isActive: boolean;
   } | null>(null);
   const [isLoadingWaitlistStatus, setIsLoadingWaitlistStatus] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -51,7 +52,11 @@ export const LoginView = () => {
 
   useEffect(() => {
     if (window.location.hostname === "localhost") {
-      setWaitlistCheckResult({ isOnWaitlist: true, isInvited: true });
+      setWaitlistCheckResult({
+        isOnWaitlist: true,
+        isInvited: true,
+        isActive: true,
+      });
       setFlowStep("waitlistStatusKnown");
     }
   }, []);
@@ -118,7 +123,11 @@ export const LoginView = () => {
 
     if (processedInput === "marco@polo.co") {
       setApiError(null); // Clear any previous error
-      setWaitlistCheckResult({ isOnWaitlist: true, isInvited: true });
+      setWaitlistCheckResult({
+        isOnWaitlist: true,
+        isInvited: true,
+        isActive: true,
+      });
       setFlowStep("waitlistStatusKnown");
       return;
     }
@@ -262,26 +271,28 @@ export const LoginView = () => {
                     </>
                   )}
 
-                {waitlistCheckResult.isOnWaitlist &&
-                  waitlistCheckResult.isInvited && (
-                    <>
-                      <InfoText>
-                        Great news! You're invited to join Compass. Sign in with
-                        Google to get started.
-                      </InfoText>
-                      <SignInButtonWrapper>
-                        <GoogleButton
-                          aria-label="Sign in with Google"
-                          type="light"
-                          onClick={handleButtonClick}
-                          disabled={isAuthenticating}
-                        />
-                      </SignInButtonWrapper>
-                      {isAuthenticating && (
-                        <InfoText>Connecting to Google...</InfoText>
-                      )}
-                    </>
-                  )}
+                {(waitlistCheckResult.isActive ||
+                  (waitlistCheckResult.isOnWaitlist &&
+                    waitlistCheckResult.isInvited)) && (
+                  <>
+                    <InfoText>
+                      {waitlistCheckResult.isActive
+                        ? "Welcome back! Sign in to continue."
+                        : "Great news! You're invited to join Compass. Sign in with Google to get started."}
+                    </InfoText>
+                    <SignInButtonWrapper>
+                      <GoogleButton
+                        aria-label="Sign in with Google"
+                        type="light"
+                        onClick={handleButtonClick}
+                        disabled={isAuthenticating}
+                      />
+                    </SignInButtonWrapper>
+                    {isAuthenticating && (
+                      <InfoText>Connecting to Google...</InfoText>
+                    )}
+                  </>
+                )}
               </>
             )}
             {/* Render API error if it occurred during the Google login phase, distinct from waitlist check error */}
