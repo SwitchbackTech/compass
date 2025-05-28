@@ -69,7 +69,7 @@ export const CalendarView = () => {
         isSidebarOpen={isSidebarOpen}
       >
         <SidebarDraftProvider dateCalcs={dateCalcs} measurements={measurements}>
-          <ContextMenuWrapper>
+          <ContextMenuWrapper id="sidebar-context-menu">
             <Draft measurements={measurements} weekProps={weekProps} />
             {isSidebarOpen && (
               <Sidebar
@@ -89,7 +89,7 @@ export const CalendarView = () => {
             weekProps={weekProps}
           />
 
-          <ContextMenuWrapper>
+          <ContextMenuWrapper id="grid-context-menu">
             <Grid
               dateCalcs={dateCalcs}
               isSidebarOpen={isSidebarOpen}
