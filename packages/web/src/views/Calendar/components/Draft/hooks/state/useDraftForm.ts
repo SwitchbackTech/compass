@@ -1,5 +1,6 @@
 import { OpenChangeReason } from "@floating-ui/react";
 import { Categories_Event } from "@core/types/event.types";
+import { isContextMenuOpen } from "@web/common/utils";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 
 export const useDraftForm = (
@@ -10,6 +11,14 @@ export const useDraftForm = (
   setIsFormOpen: (isOpen: boolean) => void,
 ) => {
   const handleDiscard = (reason?: OpenChangeReason) => {
+    if (isContextMenuOpen()) {
+      // Prevent discard if context menu is open.
+      // Discarding the event will mess with the context menu
+      // logic flow because the context menu depends on having
+      // a draft event selected.
+      return;
+    }
+
     reset();
 
     if (reason === "escape-key") {
