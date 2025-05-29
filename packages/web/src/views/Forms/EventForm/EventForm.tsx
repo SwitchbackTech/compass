@@ -260,7 +260,7 @@ export const EventForm: React.FC<FormProps> = ({
   );
 
   useHotkeys(
-    "ctrl+d",
+    "meta+d",
     () => {
       onDuplicate?.(event);
     },

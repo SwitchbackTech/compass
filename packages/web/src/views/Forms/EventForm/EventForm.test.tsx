@@ -85,6 +85,52 @@ test("should call onConvert when meta+< (meta + shift + comma) keyboard shortcut
   expect(mockOnDelete).not.toHaveBeenCalled();
 });
 
+test("should call onDuplicate when meta+d keyboard shortcut is used", async () => {
+  const sampleEvent: Schema_Event = {
+    _id: "event123",
+    title: "Test Event for Duplication",
+    startDate: "2025-04-10",
+    endDate: "2025-04-10",
+    isAllDay: false,
+  };
+  const mockOnClose = jest.fn();
+  const mockOnConvert = jest.fn();
+  const mockOnSubmit = jest.fn();
+  const mockSetEvent = jest.fn();
+  const mockOnDelete = jest.fn();
+  const mockOnDuplicate = jest.fn();
+
+  render(
+    <div>
+      <EventForm
+        event={sampleEvent}
+        onClose={mockOnClose}
+        onConvert={mockOnConvert}
+        onSubmit={mockOnSubmit}
+        setEvent={mockSetEvent}
+        onDelete={mockOnDelete}
+        onDuplicate={mockOnDuplicate}
+      />
+    </div>,
+  );
+
+  // Ensure the form is rendered
+  expect(screen.getByRole("form")).toBeInTheDocument();
+
+  await act(async () => {
+    // Simulate pressing Meta + d
+    await userEvent.keyboard("{Meta>}d{/Meta}");
+  });
+
+  expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
+  expect(mockOnDuplicate).toHaveBeenCalledWith(sampleEvent);
+
+  expect(mockOnClose).not.toHaveBeenCalled();
+  expect(mockOnSubmit).not.toHaveBeenCalled();
+  expect(mockOnDelete).not.toHaveBeenCalled();
+  expect(mockOnConvert).not.toHaveBeenCalled();
+});
+
 const _clickStartInput = async () => {
   const startDateInput = screen.getByRole("textbox", {
     name: /pick start date/i,
