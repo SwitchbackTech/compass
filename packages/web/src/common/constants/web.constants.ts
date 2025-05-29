@@ -20,6 +20,7 @@ export const ID_SOMEDAY_EVENTS = "ID_SOMEDAY_EVENTS";
 export const ID_SOMEDAY_EVENT_FORM = "Someday Event Form";
 export const ID_OPTIMISTIC_PREFIX = "optimistic";
 export const DATA_EVENT_ELEMENT_ID = "data-event-id";
+export const ID_CONTEXT_MENU_ITEMS = "context-menu-items";
 
 export const OPTIONS_RECURRENCE = {
   WEEK: { value: Recurrence_Selection.WEEK, label: "week" },

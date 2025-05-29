@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import { Priorities } from "@core/constants/core.constants";
+import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -110,7 +111,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   ];
 
   return (
-    <>
+    <div id={ID_CONTEXT_MENU_ITEMS}>
       <PriorityContainer>
         {priorities.map((priority) => (
           <PriorityCircle
@@ -133,6 +134,6 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
           <MenuItemLabel>{item.label}</MenuItemLabel>
         </MenuItem>
       ))}
-    </>
+    </div>
   );
 }

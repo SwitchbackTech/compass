@@ -23,8 +23,10 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { ContextMenu } from "./ContextMenu";
 
 export const ContextMenuWrapper = ({
+  id,
   children,
 }: {
+  id: string;
   children: React.ReactNode;
 }) => {
   const dispatch = useAppDispatch();
@@ -106,7 +108,11 @@ export const ContextMenuWrapper = ({
   };
 
   return (
-    <div style={{ display: "contents" }} onContextMenu={handleContextMenu}>
+    <div
+      id={id}
+      style={{ display: "contents" }}
+      onContextMenu={handleContextMenu}
+    >
       {children}
       {isOpen && (
         <ContextMenu
