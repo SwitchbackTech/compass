@@ -21,7 +21,7 @@ import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 import { RepeatSection } from "../EventForm/RepeatSection";
 
 const hotkeysOptions: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input"],
+  enableOnFormTags: ["input", "textarea", "button", "select"],
 };
 
 export const SomedayEventForm: React.FC<FormProps> = ({
@@ -38,14 +38,14 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
   const origRecurrence = useRef(event?.recurrence).current;
 
-  const ignoreDelete = (e: KeyboardEvent) => {
+  const handleIgnoredKeys = (e: KeyboardEvent) => {
     if (e.key === Key.Backspace) {
       e.stopPropagation();
     }
-    if (e.metaKey && e.key === Key.Enter) {
-      e.preventDefault();
-      _onSubmit();
-    }
+  };
+
+  const stopPropagation = (e: MouseEvent) => {
+    e.stopPropagation();
   };
 
   const _onSubmit = () => {
@@ -82,7 +82,17 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     onClose();
   };
 
-  const onKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
+  const onSetEventField: SetEventFormField = (field) => {
+    setEvent({ ...event, ...field });
+  };
+
+  const handleFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
+    // Handle form-wide keyboard events
+    if ((e.metaKey || e.ctrlKey) && e.key === Key.Enter) {
+      e.preventDefault();
+      _onSubmit();
+    }
+
     if (e.key === Key.Backspace) {
       e.stopPropagation();
     }
@@ -91,7 +101,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   useHotkeys(
     "delete",
     () => {
-      console.log("delete");
       const confirmed = window.confirm(
         `Delete ${event.title || "this event"}?`,
       );
@@ -104,39 +113,15 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     hotkeysOptions,
   );
 
-  useHotkeys(
-    "enter",
-    () => {
-      _onSubmit();
-    },
-    hotkeysOptions,
-  );
-
-  const onSetEventField: SetEventFormField = (field) => {
-    const newEvent = { ...event, ...field };
-
-    if (field === null) {
-      delete newEvent[field];
-    }
-
-    setEvent(newEvent);
-  };
-
-  const stopPropagation = (e: MouseEvent) => {
-    e.stopPropagation();
-  };
-
   return (
     <StyledEventForm
       {...props}
       name={ID_SOMEDAY_EVENT_FORM}
       isOpen={true}
       onClick={stopPropagation}
-      onKeyDown={onKeyDown}
+      onKeyDown={handleFormKeyDown}
       onMouseDown={stopPropagation}
-      onMouseUp={(e) => {
-        e.stopPropagation();
-      }}
+      onMouseUp={stopPropagation}
       priority={priority}
       role="form"
     >
@@ -147,27 +132,26 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       <StyledTitle
         autoFocus
         onChange={onChangeEventTextField("title")}
-        onKeyDown={ignoreDelete}
+        onKeyDown={handleIgnoredKeys}
         placeholder="Title"
-        role="input"
-        title="title"
-        underlineColor={colorByPriority[priority]}
+        role="textarea"
+        name="Event Title"
+        underlineColor={bgColor}
         value={title}
       />
 
-      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
-
-      <RepeatSection
-        bgColor={bgColor}
+      <PrioritySection
         onSetEventField={onSetEventField}
-        recurrence={event.recurrence}
+        priority={priority}
       />
 
+      <RepeatSection event={event} onSetEventField={onSetEventField} />
+
       <StyledDescription
+        underlineColor={bgColor}
         onChange={onChangeEventTextField("description")}
-        onKeyDown={ignoreDelete}
+        onKeyDown={handleIgnoredKeys}
         placeholder="Description"
-        underlineColor={colorByPriority[priority]}
         value={event.description || ""}
       />
 
