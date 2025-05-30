@@ -33,7 +33,7 @@ import {
 import { FormProps, SetEventFormField } from "./types";
 
 const hotkeysOptions: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input"],
+  enableOnFormTags: ["input", "textarea", "button", "select"],
 };
 
 export const EventForm: React.FC<FormProps> = ({
@@ -97,7 +97,7 @@ export const EventForm: React.FC<FormProps> = ({
 
     return () => {
       window.removeEventListener("keydown", keyDownHandler);
-      window.addEventListener("keyup", keyUpHandler);
+      window.removeEventListener("keyup", keyUpHandler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -138,9 +138,6 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   const handleIgnoredKeys = (e: KeyboardEvent) => {
-    // Ignores certain keys and key combinations to prevent default behavior.
-    // Allows some of them to be used as hotkeys
-
     if (e.key === Key.Backspace) {
       e.stopPropagation();
     }
@@ -151,11 +148,6 @@ export const EventForm: React.FC<FormProps> = ({
 
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
       e.preventDefault();
-    }
-
-    if (e.metaKey && e.key === Key.Enter) {
-      e.preventDefault();
-      onSubmitForm();
     }
   };
 
@@ -252,14 +244,6 @@ export const EventForm: React.FC<FormProps> = ({
   );
 
   useHotkeys(
-    "enter",
-    () => {
-      onSubmitForm();
-    },
-    hotkeysOptions,
-  );
-
-  useHotkeys(
     "meta+d",
     () => {
       onDuplicate?.(event);
@@ -267,11 +251,24 @@ export const EventForm: React.FC<FormProps> = ({
     hotkeysOptions,
   );
 
+  const handleFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
+    // Handle form-wide keyboard events
+    if ((e.metaKey || e.ctrlKey) && e.key === Key.Enter) {
+      e.preventDefault();
+      onSubmitForm();
+    }
+
+    if (e.key === Key.Backspace) {
+      e.stopPropagation();
+    }
+  };
+
   return (
     <StyledEventForm
       {...props}
       isOpen={isFormOpen}
       name={ID_EVENT_FORM}
+      onKeyDown={handleFormKeyDown}
       onMouseUp={() => {
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
