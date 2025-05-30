@@ -1,7 +1,8 @@
+import dayjs from "dayjs";
 import { schema } from "normalizr";
 import { normalize } from "normalizr";
 import { put, select } from "redux-saga/effects";
-import { Schema_Event } from "@core/types/event.types";
+import { Params_Events, Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { RootState } from "@web/store";
 import { selectEventById } from "../selectors/event.selectors";
@@ -63,3 +64,43 @@ export function* replaceOptimisticId(
 
 export const normalizedEventsSchema = () =>
   new schema.Entity("events", {}, { idAttribute: "_id" });
+
+// Meant to be a hotfix to address issue where backend returns date
+// filtered events in an inconsistent way.
+// See https://github.com/SwitchbackTech/compass/issues/428
+// Should be removed after backend is fixed
+export const EventDateUtils = {
+  /**
+   * Adjusts start and end dates for event queries
+   */
+  adjustStartEndDate: (payload: Params_Events) => {
+    if (payload.someday) return payload;
+
+    // Make start date 1 day before the start date
+    const startDate = dayjs(payload.startDate).subtract(1, "day").format();
+    const endDate = payload.endDate;
+
+    return {
+      ...payload,
+      startDate,
+      endDate,
+    };
+  },
+
+  /**
+   * Filters events by start and end date range
+   * Handles comparison between different date formats (raw dates vs ISO 8601)
+   */
+  filterEventsByStartEndDate: (
+    events: Schema_Event[],
+    startDate: string,
+    endDate: string,
+  ) => {
+    return events.filter((event) => {
+      return (
+        dayjs(event.startDate).isSameOrAfter(startDate) &&
+        dayjs(event.endDate).isSameOrBefore(endDate)
+      );
+    });
+  },
+} as const;
