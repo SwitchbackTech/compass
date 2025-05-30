@@ -6,8 +6,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
-import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
@@ -31,10 +29,6 @@ import {
   StyledTitle,
 } from "./styled";
 import { FormProps, SetEventFormField } from "./types";
-
-const hotkeysOptions: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input", "textarea", "button", "select"],
-};
 
 export const EventForm: React.FC<FormProps> = ({
   event,
@@ -75,7 +69,6 @@ export const EventForm: React.FC<FormProps> = ({
   /*********
    * Effects
    *********/
-
   const keyDownHandler = useCallback(
     (e: globalThis.KeyboardEvent) => {
       if (e.key === Key.Shift) {
@@ -99,8 +92,7 @@ export const EventForm: React.FC<FormProps> = ({
       window.removeEventListener("keydown", keyDownHandler);
       window.removeEventListener("keyup", keyUpHandler);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [keyDownHandler, keyUpHandler]);
 
   useEffect(() => {
     setEvent(event || {});
@@ -126,7 +118,6 @@ export const EventForm: React.FC<FormProps> = ({
 
   const onClose = () => {
     setIsFormOpen(false);
-
     setTimeout(() => {
       _onClose();
     }, 120);
@@ -135,20 +126,6 @@ export const EventForm: React.FC<FormProps> = ({
   const onDeleteForm = () => {
     onDelete?.(event._id);
     onClose();
-  };
-
-  const handleIgnoredKeys = (e: KeyboardEvent) => {
-    if (e.key === Key.Backspace) {
-      e.stopPropagation();
-    }
-
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "<") {
-      e.preventDefault();
-    }
-
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
-      e.preventDefault();
-    }
   };
 
   const onSubmitForm = () => {
@@ -182,6 +159,54 @@ export const EventForm: React.FC<FormProps> = ({
     setEvent({ ...event, ...field });
   };
 
+  const handleFormKeyDown = useCallback((e: KeyboardEvent<HTMLFormElement>) => {
+    // Stop backspace propagation for all form inputs
+    if (e.key === Key.Backspace) {
+      e.stopPropagation();
+      return;
+    }
+
+    // Handle command/ctrl key combinations
+    if (e.metaKey || e.ctrlKey) {
+      switch (e.key.toLowerCase()) {
+        case Key.Enter:
+          e.preventDefault();
+          onSubmitForm();
+          break;
+        case 'd':
+          e.preventDefault();
+          onDuplicate?.(event);
+          break;
+        case ',':
+          if (e.shiftKey && !isDraft) {
+            e.preventDefault();
+            onConvert?.();
+          }
+          break;
+        case '<':
+          e.preventDefault();
+          break;
+      }
+      return;
+    }
+
+    // Handle delete key
+    if (e.key === 'Delete') {
+      if (isDraft) {
+        onClose();
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `Delete ${event.title || "this event"}?`,
+      );
+
+      if (confirmed) {
+        onDeleteForm();
+      }
+    }
+  }, [event, isDraft, onSubmitForm, onDuplicate, onConvert, onClose, onDeleteForm]);
+
   const dateTimeSectionProps = {
     bgColor: priorityColor,
     displayEndDate,
@@ -212,57 +237,6 @@ export const EventForm: React.FC<FormProps> = ({
     endTime,
   };
 
-  useHotkeys(
-    "meta+shift+comma",
-    () => {
-      if (isDraft) {
-        return;
-      }
-
-      onConvert?.();
-    },
-    hotkeysOptions,
-  );
-
-  useHotkeys(
-    "delete",
-    () => {
-      if (isDraft) {
-        onClose();
-        return;
-      }
-
-      const confirmed = window.confirm(
-        `Delete ${event.title || "this event"}?`,
-      );
-
-      if (confirmed) {
-        onDeleteForm();
-      }
-    },
-    hotkeysOptions,
-  );
-
-  useHotkeys(
-    "meta+d",
-    () => {
-      onDuplicate?.(event);
-    },
-    hotkeysOptions,
-  );
-
-  const handleFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    // Handle form-wide keyboard events
-    if ((e.metaKey || e.ctrlKey) && e.key === Key.Enter) {
-      e.preventDefault();
-      onSubmitForm();
-    }
-
-    if (e.key === Key.Backspace) {
-      e.stopPropagation();
-    }
-  };
-
   return (
     <StyledEventForm
       {...props}
@@ -273,7 +247,6 @@ export const EventForm: React.FC<FormProps> = ({
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
         }
-
         if (isEndDatePickerOpen) {
           setIsEndDatePickerOpen(false);
         }
@@ -298,7 +271,6 @@ export const EventForm: React.FC<FormProps> = ({
       <StyledTitle
         autoFocus
         onChange={onChangeEventTextField("title")}
-        onKeyDown={handleIgnoredKeys}
         placeholder="Title"
         role="textarea"
         name="Event Title"
@@ -320,7 +292,6 @@ export const EventForm: React.FC<FormProps> = ({
       <StyledDescription
         underlineColor={priorityColor}
         onChange={onChangeEventTextField("description")}
-        onKeyDown={handleIgnoredKeys}
         placeholder="Description"
         ref={descriptionRef}
         value={event.description || ""}
