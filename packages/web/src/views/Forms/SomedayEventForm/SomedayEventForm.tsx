@@ -1,4 +1,4 @@
-import React, { KeyboardEvent, MouseEvent, useCallback, useRef } from "react";
+import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
@@ -22,6 +22,8 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   event,
   onClose,
   onSubmit,
+  onDuplicate,
+  onConvert,
   setEvent,
   ...props
 }) => {
@@ -29,6 +31,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const { priority, title } = event || {};
   const bgColor = colorByPriority[priority];
   const origRecurrence = useRef(event?.recurrence).current;
+  const formRef = useRef<HTMLFormElement>(null);
 
   const stopPropagation = (e: MouseEvent) => {
     e.stopPropagation();
@@ -72,44 +75,79 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     setEvent({ ...event, ...field });
   };
 
-  const handleFormKeyDown = useCallback((e: KeyboardEvent<HTMLFormElement>) => {
-    // Stop backspace propagation for all form inputs
-    if (e.key === Key.Backspace) {
-      e.stopPropagation();
-      return;
-    }
+  // Centralized keyboard handler: add more hotkeys if desired
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!(e.target instanceof HTMLElement)) return;
 
-    // Handle command/ctrl + enter for submit
-    if ((e.metaKey || e.ctrlKey) && e.key === Key.Enter) {
-      e.preventDefault();
-      _onSubmit();
-      return;
-    }
+      const isTextInput = ["INPUT", "TEXTAREA"].includes(e.target.tagName);
+      if (isTextInput && !(e.metaKey || e.ctrlKey)) return;
 
-    // Handle delete key
-    if (e.key === 'Delete') {
-      const confirmed = window.confirm(
-        `Delete ${event.title || "this event"}?`,
-      );
+      switch (true) {
+        // Submit (CMD/CTRL+Enter)
+        case (e.metaKey || e.ctrlKey) && e.key === Key.Enter:
+          e.preventDefault();
+          _onSubmit();
+          break;
 
-      if (confirmed) {
-        onDelete();
-        onClose();
+        // Duplicate (CMD/CTRL+D)
+        case (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d":
+          e.preventDefault();
+          onDuplicate?.(event);
+          break;
+
+        // Convert (CMD/CTRL+Shift+,)
+        case (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === ",":
+          e.preventDefault();
+          onConvert?.();
+          break;
+
+        // Delete (Delete key)
+        case e.key === "Delete":
+          {
+            const confirmed = window.confirm(
+              `Delete ${event.title || "this event"}?`
+            );
+            if (confirmed) {
+              onDelete();
+            }
+          }
+          break;
+
+        // Backspace (stop propagation)
+        case e.key === Key.Backspace:
+          e.stopPropagation();
+          break;
       }
-    }
-  }, [event, _onSubmit, onDelete, onClose]);
+    },
+    [event, _onSubmit, onDelete, onDuplicate, onConvert]
+  );
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    form.addEventListener("keydown", handleKeyDown as EventListener, true);
+    return () => {
+      form.removeEventListener("keydown", handleKeyDown as EventListener, true);
+    };
+  }, [handleKeyDown]);
 
   return (
     <StyledEventForm
       {...props}
+      ref={formRef}
       name={ID_SOMEDAY_EVENT_FORM}
       isOpen={true}
       onClick={stopPropagation}
-      onKeyDown={handleFormKeyDown}
       onMouseDown={stopPropagation}
       onMouseUp={stopPropagation}
       priority={priority}
       role="form"
+      tabIndex={-1}
+      onSubmit={e => {
+        e.preventDefault();
+        _onSubmit();
+      }}
     >
       <StyledIconRow>
         <DeleteButton onClick={onDelete} />
