@@ -49,6 +49,7 @@
     "styled-components": "^5.3.1",
     "styled-theming": "^2.2.0",
     "supertokens-auth-react": "^0.46.0",
+    "supertokens-node": "22.1.0",
     "supertokens-web-js": "^0.13.0",
     "ts-keycode-enum": "^1.0.6",
     "uuid": "^9.0.0",
@@ -74,20 +75,24 @@
     "@types/styled-components": "^5.1.14",
     "babel-jest": "^29.3.1",
     "babel-plugin-styled-components": "^2.0.2",
+    "dotenv-webpack": "^8.1.0",
     "eslint-plugin-jest-dom": "^4.0.3",
     "eslint-plugin-jsx-a11y": "^6.5.1",
     "eslint-plugin-react": "^7.28.0",
-    "eslint-plugin-testing-library": "^5.0.5",
     "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-testing-library": "^5.0.5",
     "jest": "^29.0.3",
     "jest-environment-jsdom": "^29.7.0",
     "jest-styled-components": "^7.0.5",
-    "msw": "^1.0.1",
+    "msw": "^2.8.6",
     "ts-key-enum": "^2.0.12",
     "typescript-plugin-css-modules": "^5.0.1",
     "webpack": "^5.76.0",
     "webpack-bundle-analyzer": "^4.5.0",
     "webpack-cli": "^5.0.1",
     "webpack-dev-server": "^4.2.1"
+  },
+  "scripts": {
+    "webpack-serve": "webpack serve"
   }
 }

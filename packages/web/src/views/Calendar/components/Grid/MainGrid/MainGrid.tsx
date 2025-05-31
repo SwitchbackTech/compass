@@ -1,5 +1,5 @@
 import { Dayjs } from "dayjs";
-import React, { FC, MouseEvent, MutableRefObject } from "react";
+import React, { FC, MouseEvent, MutableRefObject, useEffect } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
@@ -58,6 +58,21 @@ export const MainGrid: FC<Props> = ({
 
     await startTimedDraft(e);
   };
+  //   useEffect(() => {
+  //   const handleKeyDown = async (e: KeyboardEvent) => {
+  //     // Shift+A for all-day event
+  //     if (e.shiftKey && e.key.toLowerCase() === "a") {
+  //       e.preventDefault();
+  //       // Create a new all-day event draft (customize as needed)
+  //       const allDayDraft = await assembleDefaultEvent(Categories_Event.ALLDAY);
+  //       // Dispatch or set state to open the event form with this draft
+  //       // Example: dispatch(draftSlice.actions.setDraft(allDayDraft));
+  //       // Example: openEventForm(allDayDraft);
+  //     }
+  //   };
+  //   window.addEventListener("keydown", handleKeyDown);
+  //   return () => window.removeEventListener("keydown", handleKeyDown);
+  // }, []);
 
   const startTimedDraft = async (e: MouseEvent) => {
     const x = getX(e, isSidebarOpen);
