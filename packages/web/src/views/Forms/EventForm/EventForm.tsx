@@ -1,11 +1,5 @@
 import dayjs from "dayjs";
-import React, {
-  KeyboardEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
@@ -45,14 +39,11 @@ export const EventForm: React.FC<FormProps> = ({
   const category = getCategory(event);
   const isDraft = !event._id;
 
-  /********
-   * State
-   ********/
+  // Date/time and picker state management
   const [endTime, setEndTime] = useState<SelectOption<string>>({
     label: "1 AM",
     value: "01:00 AM",
   });
-  const [isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
@@ -65,51 +56,21 @@ export const EventForm: React.FC<FormProps> = ({
   const [displayEndDate, setDisplayEndDate] = useState(selectedStartDate);
 
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
-  /*********
-   * Effects
-   *********/
-  const keyDownHandler = useCallback(
-    (e: globalThis.KeyboardEvent) => {
-      if (e.key === Key.Shift) {
-        setIsShiftKeyPressed(true);
-      }
-    },
-    [_onClose],
-  );
-
-  const keyUpHandler = useCallback((e: globalThis.KeyboardEvent) => {
-    if (e.key === Key.Shift) {
-      setIsShiftKeyPressed(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("keydown", keyDownHandler);
-    window.addEventListener("keyup", keyUpHandler);
-
-    return () => {
-      window.removeEventListener("keydown", keyDownHandler);
-      window.removeEventListener("keyup", keyUpHandler);
-    };
-  }, [keyDownHandler, keyUpHandler]);
-
+  // Populate state from event on mount/update
   useEffect(() => {
     setEvent(event || {});
-
     const dt = getFormDates(event.startDate as string, event.endDate as string);
     setStartTime(dt.startTime);
     setSelectedStartDate(dt.startDate);
     setDisplayEndDate(dayjs(dt.displayEndDate).toDate());
     setEndTime(dt.endTime);
     setSelectedEndDate(dt.endDate);
-
     setIsFormOpen(true);
   }, [event, setEvent]);
 
-  /***********
-   * Handlers
-   **********/
+  // Controlled field change
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -128,6 +89,7 @@ export const EventForm: React.FC<FormProps> = ({
     onClose();
   };
 
+  // Submit with validation
   const onSubmitForm = () => {
     const selectedDateTimes = {
       startDate: selectedStartDate,
@@ -159,53 +121,62 @@ export const EventForm: React.FC<FormProps> = ({
     setEvent({ ...event, ...field });
   };
 
-  const handleFormKeyDown = useCallback((e: KeyboardEvent<HTMLFormElement>) => {
-    // Stop backspace propagation for all form inputs
-    if (e.key === Key.Backspace) {
-      e.stopPropagation();
-      return;
-    }
+  // Centralized keyboard shortcut handler
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!(e.target instanceof HTMLElement)) return;
 
-    // Handle command/ctrl key combinations
-    if (e.metaKey || e.ctrlKey) {
-      switch (e.key.toLowerCase()) {
-        case Key.Enter:
+      // Allow typing in text fields unless modifier is pressed
+      const isTextInput = ["INPUT", "TEXTAREA"].includes(e.target.tagName);
+      if (isTextInput && !(e.metaKey || e.ctrlKey)) return;
+
+      switch (true) {
+        // Submit (CMD/CTRL+Enter)
+        case (e.metaKey || e.ctrlKey) && e.key === Key.Enter:
           e.preventDefault();
           onSubmitForm();
           break;
-        case 'd':
+        // Duplicate (CMD/CTRL+D)
+        case (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d":
           e.preventDefault();
           onDuplicate?.(event);
           break;
-        case ',':
-          if (e.shiftKey && !isDraft) {
-            e.preventDefault();
-            onConvert?.();
+        // Convert (CMD/CTRL+Shift+,)
+        case (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === ",":
+          e.preventDefault();
+          !isDraft && onConvert?.();
+          break;
+        // Delete (Delete key)
+        case e.key === "Delete":
+          if (isDraft) {
+            onClose();
+          } else {
+            const confirmed = window.confirm(
+              `Delete ${event.title || "this event"}?`
+            );
+            if (confirmed) {
+              onDeleteForm();
+            }
           }
           break;
-        case '<':
-          e.preventDefault();
+        // Backspace (stop propagation)
+        case e.key === Key.Backspace:
+          e.stopPropagation();
           break;
       }
-      return;
-    }
+    },
+    [event, isDraft, onDuplicate, onConvert, onSubmitForm, onClose, onDeleteForm]
+  );
 
-    // Handle delete key
-    if (e.key === 'Delete') {
-      if (isDraft) {
-        onClose();
-        return;
-      }
-
-      const confirmed = window.confirm(
-        `Delete ${event.title || "this event"}?`,
-      );
-
-      if (confirmed) {
-        onDeleteForm();
-      }
-    }
-  }, [event, isDraft, onSubmitForm, onDuplicate, onConvert, onClose, onDeleteForm]);
+  // Attach handler only to form
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    form.addEventListener("keydown", handleKeyDown as EventListener, true);
+    return () => {
+      form.removeEventListener("keydown", handleKeyDown as EventListener, true);
+    };
+  }, [handleKeyDown]);
 
   const dateTimeSectionProps = {
     bgColor: priorityColor,
@@ -237,25 +208,31 @@ export const EventForm: React.FC<FormProps> = ({
     endTime,
   };
 
+  // Mouse events for pickers
+  const handleMouseUp = () => {
+    if (isStartDatePickerOpen) setIsStartDatePickerOpen(false);
+    if (isEndDatePickerOpen) setIsEndDatePickerOpen(false);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <StyledEventForm
       {...props}
+      ref={formRef}
       isOpen={isFormOpen}
       name={ID_EVENT_FORM}
-      onKeyDown={handleFormKeyDown}
-      onMouseUp={() => {
-        if (isStartDatePickerOpen) {
-          setIsStartDatePickerOpen(false);
-        }
-        if (isEndDatePickerOpen) {
-          setIsEndDatePickerOpen(false);
-        }
-      }}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-      }}
+      onMouseUp={handleMouseUp}
+      onMouseDown={handleMouseDown}
       priority={priority}
       role="form"
+      tabIndex={-1}
+      onSubmit={e => {
+        e.preventDefault();
+        onSubmitForm();
+      }}
     >
       <StyledIconRow>
         {!isDraft && (
