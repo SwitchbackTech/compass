@@ -1,7 +1,6 @@
-import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useRef } from "react";
+import React, { MouseEvent, useRef } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Key } from "ts-key-enum";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
@@ -17,6 +16,7 @@ import {
 } from "@web/views/Forms/EventForm/styled";
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 import { RepeatSection } from "../EventForm/RepeatSection";
+import { useEventFormHotkeys } from "../hooks/useEventFormHotkeys";
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
@@ -30,7 +30,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const dispatch = useAppDispatch();
   const { priority, title } = event || {};
   const bgColor = colorByPriority[priority];
-  const origRecurrence = useRef(event?.recurrence).current;
+  const origRecurrence = React.useRef(event?.recurrence).current;
   const formRef = useRef<HTMLFormElement>(null);
 
   const stopPropagation = (e: MouseEvent) => {
@@ -75,62 +75,16 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     setEvent({ ...event, ...field });
   };
 
-  // Centralized keyboard handler: add more hotkeys if desired
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!(e.target instanceof HTMLElement)) return;
-
-      const isTextInput = ["INPUT", "TEXTAREA"].includes(e.target.tagName);
-      if (isTextInput && !(e.metaKey || e.ctrlKey)) return;
-
-      switch (true) {
-        // Submit (CMD/CTRL+Enter)
-        case (e.metaKey || e.ctrlKey) && e.key === Key.Enter:
-          e.preventDefault();
-          _onSubmit();
-          break;
-
-        // Duplicate (CMD/CTRL+D)
-        case (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d":
-          e.preventDefault();
-          onDuplicate?.(event);
-          break;
-
-        // Convert (CMD/CTRL+Shift+,)
-        case (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === ",":
-          e.preventDefault();
-          onConvert?.();
-          break;
-
-        // Delete (Delete key)
-        case e.key === "Delete":
-          {
-            const confirmed = window.confirm(
-              `Delete ${event.title || "this event"}?`
-            );
-            if (confirmed) {
-              onDelete();
-            }
-          }
-          break;
-
-        // Backspace (stop propagation)
-        case e.key === Key.Backspace:
-          e.stopPropagation();
-          break;
-      }
-    },
-    [event, _onSubmit, onDelete, onDuplicate, onConvert]
-  );
-
-  useEffect(() => {
-    const form = formRef.current;
-    if (!form) return;
-    form.addEventListener("keydown", handleKeyDown as EventListener, true);
-    return () => {
-      form.removeEventListener("keydown", handleKeyDown as EventListener, true);
-    };
-  }, [handleKeyDown]);
+  // Integrate hotkey hook
+  useEventFormHotkeys(formRef, {
+    event,
+    onSubmit: _onSubmit,
+    onDuplicate,
+    onConvert,
+    onDelete,
+    onClose,
+    isDraft: !event._id,
+  });
 
   return (
     <StyledEventForm
