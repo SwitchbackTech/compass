@@ -1,9 +1,6 @@
-import React, { KeyboardEvent, MouseEvent, useRef } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
-import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
+import React, { MouseEvent, useRef } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Key } from "ts-key-enum";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
@@ -19,33 +16,41 @@ import {
 } from "@web/views/Forms/EventForm/styled";
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 import { RepeatSection } from "../EventForm/RepeatSection";
-
-const hotkeysOptions: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input"],
-};
+import { useEventFormHotkeys } from "../hooks/useEventFormHotkeys";
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
   onClose,
   onSubmit,
+  onDuplicate,
+  onConvert,
   setEvent,
   ...props
 }) => {
   const dispatch = useAppDispatch();
-
   const { priority, title } = event || {};
   const bgColor = colorByPriority[priority];
+  const origRecurrence = React.useRef(event?.recurrence).current;
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const origRecurrence = useRef(event?.recurrence).current;
+  const stopPropagation = (e: MouseEvent) => {
+    e.stopPropagation();
+  };
 
-  const ignoreDelete = (e: KeyboardEvent) => {
-    if (e.key === Key.Backspace) {
-      e.stopPropagation();
+  const onDelete = () => {
+    if (event._id) {
+      dispatch(getSomedayEventsSlice.actions.delete({ _id: event._id }));
+
+      const isRecurrence = event?.recurrence?.rule?.length > 0;
+      const title = event.title || "event";
+      const recurTitle = event.title ? `"${event.title}"s` : "events";
+      const eventTitle = isRecurrence
+        ? `Deleted all future ${recurTitle}`
+        : `Deleted ${title}`;
+      toast(eventTitle);
     }
-    if (e.metaKey && e.key === Key.Enter) {
-      e.preventDefault();
-      _onSubmit();
-    }
+
+    onClose();
   };
 
   const _onSubmit = () => {
@@ -66,79 +71,37 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       onSetEventField({ [fieldName]: e.target.value });
     };
 
-  const onDelete = () => {
-    if (event._id) {
-      dispatch(getSomedayEventsSlice.actions.delete({ _id: event._id }));
-
-      const isRecurrence = event?.recurrence?.rule?.length > 0;
-      const title = event.title || "event";
-      const recurTitle = event.title ? `"${event.title}"s` : "events";
-      const eventTitle = isRecurrence
-        ? `Deleted all future ${recurTitle}`
-        : `Deleted ${title}`;
-      toast(eventTitle);
-    }
-
-    onClose();
-  };
-
-  const onKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === Key.Backspace) {
-      e.stopPropagation();
-    }
-  };
-
-  useHotkeys(
-    "delete",
-    () => {
-      console.log("delete");
-      const confirmed = window.confirm(
-        `Delete ${event.title || "this event"}?`,
-      );
-
-      if (confirmed) {
-        onDelete();
-        onClose();
-      }
-    },
-    hotkeysOptions,
-  );
-
-  useHotkeys(
-    "enter",
-    () => {
-      _onSubmit();
-    },
-    hotkeysOptions,
-  );
-
   const onSetEventField: SetEventFormField = (field) => {
-    const newEvent = { ...event, ...field };
-
-    if (field === null) {
-      delete newEvent[field];
-    }
-
-    setEvent(newEvent);
+    setEvent({ ...event, ...field });
   };
 
-  const stopPropagation = (e: MouseEvent) => {
-    e.stopPropagation();
-  };
+  // Integrate hotkey hook
+  useEventFormHotkeys(formRef, {
+    event,
+    onSubmit: _onSubmit,
+    onDuplicate,
+    onConvert,
+    onDelete,
+    onClose,
+    isDraft: !event._id,
+  });
 
   return (
     <StyledEventForm
       {...props}
+      ref={formRef}
       name={ID_SOMEDAY_EVENT_FORM}
       isOpen={true}
       onClick={stopPropagation}
-      onKeyDown={onKeyDown}
       onMouseDown={stopPropagation}
-      onMouseUp={(e) => {
-        e.stopPropagation();
-      }}
+      onMouseUp={stopPropagation}
       priority={priority}
       role="form"
+      tabIndex={-1}
+      onSubmit={e => {
+        e.preventDefault();
+        _onSubmit();
+      }}
     >
       <StyledIconRow>
         <DeleteButton onClick={onDelete} />
@@ -147,27 +110,24 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       <StyledTitle
         autoFocus
         onChange={onChangeEventTextField("title")}
-        onKeyDown={ignoreDelete}
         placeholder="Title"
-        role="input"
-        title="title"
-        underlineColor={colorByPriority[priority]}
+        role="textarea"
+        name="Event Title"
+        underlineColor={bgColor}
         value={title}
       />
 
-      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
-
-      <RepeatSection
-        bgColor={bgColor}
+      <PrioritySection
         onSetEventField={onSetEventField}
-        recurrence={event.recurrence}
+        priority={priority}
       />
 
+      <RepeatSection event={event} onSetEventField={onSetEventField} />
+
       <StyledDescription
+        underlineColor={bgColor}
         onChange={onChangeEventTextField("description")}
-        onKeyDown={ignoreDelete}
         placeholder="Description"
-        underlineColor={colorByPriority[priority]}
         value={event.description || ""}
       />
 
