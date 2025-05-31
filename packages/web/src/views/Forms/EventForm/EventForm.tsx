@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Key } from "ts-key-enum";
+import React, { useEffect, useRef, useState } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
@@ -23,6 +22,7 @@ import {
   StyledTitle,
 } from "./styled";
 import { FormProps, SetEventFormField } from "./types";
+import { useEventFormHotkeys } from "../hooks/useEventFormHotkeys";
 
 export const EventForm: React.FC<FormProps> = ({
   event,
@@ -121,62 +121,16 @@ export const EventForm: React.FC<FormProps> = ({
     setEvent({ ...event, ...field });
   };
 
-  // Centralized keyboard shortcut handler
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!(e.target instanceof HTMLElement)) return;
-
-      // Allow typing in text fields unless modifier is pressed
-      const isTextInput = ["INPUT", "TEXTAREA"].includes(e.target.tagName);
-      if (isTextInput && !(e.metaKey || e.ctrlKey)) return;
-
-      switch (true) {
-        // Submit (CMD/CTRL+Enter)
-        case (e.metaKey || e.ctrlKey) && e.key === Key.Enter:
-          e.preventDefault();
-          onSubmitForm();
-          break;
-        // Duplicate (CMD/CTRL+D)
-        case (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d":
-          e.preventDefault();
-          onDuplicate?.(event);
-          break;
-        // Convert (CMD/CTRL+Shift+,)
-        case (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === ",":
-          e.preventDefault();
-          !isDraft && onConvert?.();
-          break;
-        // Delete (Delete key)
-        case e.key === "Delete":
-          if (isDraft) {
-            onClose();
-          } else {
-            const confirmed = window.confirm(
-              `Delete ${event.title || "this event"}?`
-            );
-            if (confirmed) {
-              onDeleteForm();
-            }
-          }
-          break;
-        // Backspace (stop propagation)
-        case e.key === Key.Backspace:
-          e.stopPropagation();
-          break;
-      }
-    },
-    [event, isDraft, onDuplicate, onConvert, onSubmitForm, onClose, onDeleteForm]
-  );
-
-  // Attach handler only to form
-  useEffect(() => {
-    const form = formRef.current;
-    if (!form) return;
-    form.addEventListener("keydown", handleKeyDown as EventListener, true);
-    return () => {
-      form.removeEventListener("keydown", handleKeyDown as EventListener, true);
-    };
-  }, [handleKeyDown]);
+  // Integrate hotkey hook
+  useEventFormHotkeys(formRef, {
+    event,
+    onSubmit: onSubmitForm,
+    onDuplicate,
+    onConvert,
+    onDelete: onDeleteForm,
+    onClose,
+    isDraft,
+  });
 
   const dateTimeSectionProps = {
     bgColor: priorityColor,
