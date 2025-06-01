@@ -7,6 +7,7 @@ import { useAuthCheck } from "@web/auth/useAuthCheck";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { toastWithoutDuplication } from "@web/common/utils/toast";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { LoginAbsoluteOverflowLoader } from "@web/components/LoginAbsoluteOverflowLoader/LoginAbsoluteOverflowLoader";
 import {
@@ -91,12 +92,14 @@ export const LoginView = () => {
     onSuccess: async ({ code, scope, state }) => {
       const isFromHacker = state !== antiCsrfToken;
       if (isFromHacker) {
-        alert("Nice try, hacker");
+        toastWithoutDuplication("Nice try, hacker");
         return;
       }
 
       if (isMissingPermissions(scope)) {
-        alert("Missing permissions, please click all the checkboxes");
+        toastWithoutDuplication(
+          "Missing permissions, please click all the checkboxes",
+        );
         return;
       }
 
@@ -106,13 +109,13 @@ export const LoginView = () => {
         setIsAuthenticated(true);
       } catch (e) {
         console.error(e);
-        alert("Login failed. Please try again.");
+        toastWithoutDuplication("Login failed. Please try again.");
       } finally {
         setIsAuthenticating(false);
       }
     },
     onError: (error) => {
-      alert(`Login failed because: ${error.error}`);
+      toastWithoutDuplication(`Login failed because: ${error.error}`);
       console.error(error);
     },
   });

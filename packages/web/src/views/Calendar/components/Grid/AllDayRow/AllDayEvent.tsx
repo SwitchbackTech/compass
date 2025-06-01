@@ -1,10 +1,12 @@
 import dayjs from "dayjs";
 import React, { MouseEvent, memo } from "react";
+import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isOptimisticEvent } from "@web/common/utils/event.util";
 import { getEventPosition } from "@web/common/utils/position.util";
+import { toastWithoutDuplication } from "@web/common/utils/toast";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
@@ -55,7 +57,7 @@ const AllDayEvent = ({
     onMouseDown: (e: MouseEvent) => {
       if (isRecurring) {
         console.log(event);
-        alert("Can't edit recurring events (yet)");
+        toastWithoutDuplication("Can't edit recurring events (yet)...");
         e.stopPropagation();
         return;
       }

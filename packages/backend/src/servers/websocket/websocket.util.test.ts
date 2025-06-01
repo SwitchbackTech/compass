@@ -40,9 +40,8 @@ describe("handleBackgroundCalendarChange", () => {
     webSocketServer.addConnection(userId, socketId);
     webSocketServer.handleBackgroundCalendarChange(userId);
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(mockIo.to).toHaveBeenCalledWith(socketId);
-    // eslint-disable-next-line @typescript-eslint/unbound-method
+
     expect(mockIo.emit).toHaveBeenCalledWith(EVENT_CHANGED);
   });
   it("ignores change if no connection between client and ws server", () => {

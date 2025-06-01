@@ -1,7 +1,7 @@
 // sort-imports-ignore
 import { Command } from "commander";
 import "./init";
-// eslint-disable-next-line prettier/prettier
+
 import { CliValidator } from "./cli.validator";
 import { runBuild } from "./commands/build";
 import { startDeleteFlow } from "./commands/delete";

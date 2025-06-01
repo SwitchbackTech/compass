@@ -28,7 +28,7 @@ export class AuthRoutes extends CommonRoutesConfig {
       .route(`/api/auth/session`)
       .all(authMiddleware.verifyIsDev)
       //@ts-expect-error res.promise is not returning response types correctly
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+
       .post(authController.createSession)
       .get([
         verifySession(),

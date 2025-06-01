@@ -36,7 +36,7 @@ const buildNodePckgs = async (options: Options_Cli) => {
   log.info("Compiling node packages ...");
   shell.exec(
     "yarn tsc --project tsconfig.build.json",
-    // eslint-disable-next-line @typescript-eslint/require-await
+
     async function (code: number) {
       if (code !== 0) {
         log.error("Exiting because of compilation errors");

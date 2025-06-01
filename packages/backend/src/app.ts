@@ -1,7 +1,7 @@
 // sort-imports-ignore
 import * as http from "http";
 import { logger } from "./init";
-// eslint-disable-next-line prettier/prettier
+
 import { ENV } from "./common/constants/env.constants";
 import mongoService from "./common/services/mongo.service";
 import { initExpressServer } from "./servers/express/express.server";

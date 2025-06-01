@@ -29,7 +29,8 @@
     "test": "yarn jest",
     "test:backend": "yarn jest backend",
     "test:core": "yarn test core",
-    "test:web": "yarn test web"
+    "test:web": "yarn test web",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
   },
   "dependencies": {
     "@compass/backend": "*",
