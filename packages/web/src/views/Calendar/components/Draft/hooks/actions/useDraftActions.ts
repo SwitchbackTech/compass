@@ -15,6 +15,7 @@ import {
   prepEvtBeforeSubmit,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
+import { toastWithoutDuplication } from "@web/common/utils/toast";
 import {
   selectDraft,
   selectDraftStatus,
@@ -139,7 +140,7 @@ export const useDraftActions = (
 
   const convert = (start: string, end: string) => {
     if (isAtWeeklyLimit) {
-      alert(SOMEDAY_WEEK_LIMIT_MSG);
+      toastWithoutDuplication(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
 

@@ -6,7 +6,7 @@ moduleAlias.addAliases({
   "@backend": `${__dirname}`,
   "@core": `${path.resolve(__dirname, "../../core/src")}`,
 });
-// eslint-disable-next-line prettier/prettier
+
 import { Logger } from "@core/logger/winston.logger";
 
 const dotenvResult = dotenv.config();

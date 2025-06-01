@@ -42,7 +42,6 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
 
   if (e instanceof GaxiosError) {
     if ("syncToken" in e.config.params) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const syncToken = e.config.params.syncToken as string;
       const sync = await getSyncByToken(syncToken);
 

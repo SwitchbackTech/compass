@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Session, { signOut } from "supertokens-auth-react/recipe/session";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { toastWithoutDuplication } from "@web/common/utils/toast";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { StyledLogin } from "../Login/styled";
@@ -17,13 +18,13 @@ export const LogoutView = () => {
     const checkSession = async () => {
       const isLoggedIn = await Session.doesSessionExist();
       if (!isLoggedIn) {
-        alert("You're not logged in");
+        toastWithoutDuplication("You're not logged in");
         navigate(ROOT_ROUTES.LOGIN);
       }
     };
 
     checkSession().catch((e) => {
-      alert(e);
+      toastWithoutDuplication(e);
       console.error(e);
     });
   }, [navigate]);
@@ -36,7 +37,7 @@ export const LogoutView = () => {
 
     setIsLoggingOut(false);
 
-    alert("You logged out - see ya! ✌");
+    toastWithoutDuplication("You logged out - see ya! ✌");
     navigate(ROOT_ROUTES.LOGIN);
   };
 

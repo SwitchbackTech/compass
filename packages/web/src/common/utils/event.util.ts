@@ -22,6 +22,7 @@ import {
   Schema_OptimisticEvent,
   Schema_SomedayEventsColumn,
 } from "../types/web.event.types";
+import { toastWithoutDuplication } from "./toast";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -210,7 +211,9 @@ export const handleError = (error: Error) => {
   }
 
   if (code === Status.INTERNAL_SERVER) {
-    alert("Something went wrong behind the scenes. Please try again later.");
+    toastWithoutDuplication(
+      "Something went wrong behind the scenes. Please try again later.",
+    );
     window.location.reload();
   }
 

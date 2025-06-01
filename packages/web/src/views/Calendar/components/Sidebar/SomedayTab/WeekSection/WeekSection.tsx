@@ -26,7 +26,7 @@ export const WeekSection: FC<Props> = ({
   weekLabel,
   gridRefs,
 }) => {
-  const isCurrentWeek = (label: String): boolean => {
+  const isCurrentWeek = (label: string): boolean => {
     const [start, end] = label.split(" - ");
     const [month, startDay] = start.split(".").map(Number);
     const endDay = Number(end);

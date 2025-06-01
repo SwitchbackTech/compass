@@ -1,5 +1,7 @@
 import React from "react";
+import { toast } from "react-toastify";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { toastWithoutDuplication } from "@web/common/utils/toast";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { FlexDirections } from "@web/components/Flex/styled";
@@ -62,7 +64,7 @@ export const SomedayEventRectangle = ({
             <StyledRecurrenceText
               onClick={(e) => {
                 e.stopPropagation();
-                alert("Can't migrate recurring events");
+                toastWithoutDuplication("Can't migrate recurring events");
               }}
               title="Can't migrate recurring events"
             >
