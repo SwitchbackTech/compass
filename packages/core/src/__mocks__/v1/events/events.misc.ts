@@ -74,7 +74,7 @@ export const GROCERIES: Schema_Event = {
   priorities: [],
   isAllDay: false,
   startDate: "2022-02-21T11:45:00-06:00",
-  endDate: "2022-02-212T12:45:00-06:00",
+  endDate: "2022-02-21T12:45:00-06:00",
   priority: Priorities.RELATIONS,
 };
 export const MULTI_WEEK: Schema_Event = {
