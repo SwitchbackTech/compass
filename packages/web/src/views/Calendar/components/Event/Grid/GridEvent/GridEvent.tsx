@@ -6,7 +6,6 @@ import React, {
   memo,
   useMemo,
 } from "react";
-import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
 import {
   DATA_EVENT_ELEMENT_ID,
