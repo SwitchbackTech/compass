@@ -37,6 +37,7 @@ import {
 import { getSomedayEventsSlice } from "../slices/someday.slice";
 import { getWeekEventsSlice } from "../slices/week.slice";
 import {
+  EventDateUtils,
   insertOptimisticEvent,
   normalizedEventsSchema,
   replaceOptimisticId,
@@ -161,12 +162,21 @@ function* getEvents(
       yield put(eventsEntitiesSlice.actions.insert(payload.data));
       return { data: payload.data };
     }
+
+    const _payload = EventDateUtils.adjustStartEndDate(payload);
+
     const res: Response_GetEventsSuccess = (yield call(
       EventApi.get,
-      payload,
+      _payload,
     )) as Response_GetEventsSuccess;
 
-    const normalizedEvents = normalize<Schema_Event>(res.data, [
+    const events = EventDateUtils.filterEventsByStartEndDate(
+      res.data,
+      payload.startDate,
+      payload.endDate,
+    );
+
+    const normalizedEvents = normalize<Schema_Event>(events, [
       normalizedEventsSchema(),
     ]);
 
