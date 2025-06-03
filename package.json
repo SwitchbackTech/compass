@@ -25,7 +25,7 @@
     "dev:web": "node packages/scripts/src/commands/devWeb.js",
     "lint -f": "cross-env yarn workspaces run lint-fix",
     "lint:css": "stylelint 'packages/web/src/**/*.ts'",
-    "postinstall": "husky install",
+    "postinstall": "husky install | chmod ug+x .husky/*",
     "test": "yarn jest",
     "test:backend": "yarn jest backend",
     "test:core": "yarn test core",
