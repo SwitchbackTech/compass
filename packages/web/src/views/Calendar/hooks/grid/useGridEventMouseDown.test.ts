@@ -165,7 +165,7 @@ describe("useGridEventMouseDown", () => {
       });
       mockGridElement.dispatchEvent(mousemoveEvent);
 
-      // expect(onDrag).not.toHaveBeenCalled();
+      expect(onDrag).not.toHaveBeenCalled();
       expect(onClick).not.toHaveBeenCalled();
     });
   });
