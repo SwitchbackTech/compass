@@ -66,7 +66,7 @@ export const preloadedState: InitialReduxState = {
     },
     sidebar: {
       tab: "tasks",
-      isOpen: false,
+      isOpen: true,
     },
   },
 };
