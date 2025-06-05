@@ -1,5 +1,4 @@
 import React, { FC } from "react";
-import { DragDropContext } from "@hello-pangea/dnd";
 import { Categories_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { Text } from "@web/components/Text";
@@ -48,10 +47,7 @@ export const SomedayEvents: FC<Props> = ({
   const isDraftingNew = state.isDraftingNew && draftCategory === category;
 
   return (
-    <DragDropContext
-      onDragEnd={actions.onDragEnd}
-      onDragStart={actions.onDragStart}
-    >
+    <>
       {state.shouldPreviewOnGrid && state.draft && (
         <GridEventPreview
           dateCalcs={dateCalcs}
@@ -90,6 +86,6 @@ export const SomedayEvents: FC<Props> = ({
           </TooltipWrapper>
         )}
       </SidebarList>
-    </DragDropContext>
+    </>
   );
 };
