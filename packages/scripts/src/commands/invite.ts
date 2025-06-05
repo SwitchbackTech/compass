@@ -5,7 +5,6 @@ import WaitlistService from "@backend/waitlist/service/waitlist.service";
 mongoService;
 
 export const inviteWaitlist = async () => {
-  log.info("Connecting to db...");
   await mongoService.waitUntilConnected();
 
   const waitlisted = await WaitlistService.getAllWaitlisted();
@@ -21,8 +20,8 @@ export const inviteWaitlist = async () => {
     const shouldInvite = await _confirm("Invite this user?");
     if (shouldInvite) {
       console.log("Adding to waitlist...");
-      const result = await WaitlistService.invite(record.email);
-      console.log(result.tagResponse);
+      await WaitlistService.invite(record.email);
     }
   }
+  process.exit(0);
 };

@@ -1,4 +1,5 @@
 import { Logger } from "@core/logger/winston.logger";
+import { mapWaitlistUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { Subscriber } from "@core/types/email/email.types";
 import { Answers } from "@core/types/waitlist/waitlist.answer.types";
 import {
@@ -66,16 +67,7 @@ class WaitlistService {
       if (!isMissingWaitlistInviteTagId()) {
         const record = await WaitlistRepository.getWaitlistRecord(email);
         if (record) {
-          const subscriber: Subscriber = {
-            email_address: record.email,
-            first_name: record.firstName,
-            state: "active",
-            fields: {
-              "Last name": record.lastName,
-              Birthday: "1970-01-01",
-              Source: record.source,
-            },
-          };
+          const subscriber = mapWaitlistUserToEmailSubscriber(record);
           tagResponse = await EmailService.addTagToSubscriber(
             subscriber,
             ENV.EMAILER_WAITLIST_INVITE_TAG_ID as string,

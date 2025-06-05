@@ -5,7 +5,7 @@ import "./init";
 import { CliValidator } from "./cli.validator";
 import { runBuild } from "./commands/build";
 import { startDeleteFlow } from "./commands/delete";
-import { inviteWaitlist } from "./commands/waitlist";
+import { inviteWaitlist } from "./commands/invite";
 import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
 
 class CompassCli {
