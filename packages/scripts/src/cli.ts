@@ -34,7 +34,7 @@ class CompassCli {
         await startDeleteFlow(user as string, force);
         break;
       }
-      case cmd === "waitlist": {
+      case cmd === "invite": {
         await inviteWaitlist();
         break;
       }
@@ -75,7 +75,7 @@ class CompassCli {
         "specify which user to run script for",
       );
 
-    program.command("waitlist").description("invite users from the waitlist");
+    program.command("invite").description("invite users from the waitlist");
     return program;
   }
 }
