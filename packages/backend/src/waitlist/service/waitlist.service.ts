@@ -6,6 +6,8 @@ import {
   Result_Waitlist,
 } from "@core/types/waitlist/waitlist.types";
 import { ENV } from "@backend/common/constants/env.constants";
+import { isMissingWaitlistInviteTagId } from "@backend/common/constants/env.util";
+import { Response_TagSubscriber } from "@backend/email/email.types";
 import EmailService from "../../email/email.service";
 import { WaitlistRepository } from "../repo/waitlist.repo";
 
@@ -54,10 +56,37 @@ class WaitlistService {
     };
   }
 
-  static async invite(email: string): Promise<Result_InviteToWaitlist> {
+  static async invite(
+    email: string,
+  ): Promise<
+    Result_InviteToWaitlist & { tagResponse?: Response_TagSubscriber }
+  > {
     try {
+      let tagResponse;
+      if (!isMissingWaitlistInviteTagId()) {
+        const record = await WaitlistRepository.getWaitlistRecord(email);
+        if (record) {
+          const subscriber: Subscriber = {
+            email_address: record.email,
+            first_name: record.firstName,
+            state: "active",
+            fields: {
+              "Last name": record.lastName,
+              Birthday: "1970-01-01",
+              Source: record.source,
+            },
+          };
+          tagResponse = await EmailService.addTagToSubscriber(
+            subscriber,
+            ENV.EMAILER_WAITLIST_INVITE_TAG_ID as string,
+          );
+        }
+      } else {
+        logger.warn("Did not tag subscriber due to missing EMAILER env values");
+      }
+
       const result = await WaitlistRepository.invite(email);
-      return result;
+      return { ...result, tagResponse };
     } catch (error) {
       logger.error("Failed to invite email to waitlist", error);
       return {
@@ -72,6 +101,10 @@ class WaitlistService {
 
   static async isOnWaitlist(email: string): Promise<boolean> {
     return WaitlistRepository.isAlreadyOnWaitlist(email);
+  }
+
+  static async getAllWaitlisted() {
+    return WaitlistRepository.getAllWaitlisted();
   }
 }
 
