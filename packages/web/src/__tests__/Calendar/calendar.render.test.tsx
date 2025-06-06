@@ -27,10 +27,6 @@ describe("Calendar: Display without State", () => {
       render(<CalendarView />);
     });
 
-    /* current year in YYYY format */
-    // const currentYear = new Date().getFullYear().toString(); // YYYY
-    // expect(screen.getByText(currentYear)).toBeInTheDocument();
-
     /* week nav arrows */
     expect(
       screen.getByRole("navigation", {
@@ -68,9 +64,5 @@ describe("Calendar: Display with State", () => {
     expect(
       screen.getByRole("button", { name: /groceries/i }),
     ).toBeInTheDocument();
-
-    //   expect(
-    //     screen.getByRole("button", { name: /chill all day/i })
-    //   ).toBeInTheDocument();
   });
 });
