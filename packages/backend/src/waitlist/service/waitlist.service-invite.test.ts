@@ -3,6 +3,7 @@ import {
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { ENV } from "@backend/common/constants/env.constants";
 import WaitlistService from "./waitlist.service";
 import { answer } from "./waitlist.service.test-setup";
 
@@ -72,5 +73,37 @@ describe("invite", () => {
 
     // Assert
     expect(result.status).toBe("ignored");
+  });
+
+  it("should add tag to subscriber when inviting", async () => {
+    await WaitlistService.addToWaitlist(answer.email, answer);
+    const EmailService = require("../../email/email.service").default;
+    const spy = jest.spyOn(EmailService, "addTagToSubscriber");
+    const result = await WaitlistService.invite(answer.email);
+    expect(spy).toHaveBeenCalled();
+    expect(result.tagResponse).toBeDefined();
+  });
+
+  it("should skip tagging if EMAILER env vars missing", async () => {
+    const oldSecret = ENV.EMAILER_SECRET;
+    const oldInviteTag = ENV.EMAILER_WAITLIST_INVITE_TAG_ID;
+    const oldWaitlistTag = ENV.EMAILER_WAITLIST_TAG_ID;
+    ENV.EMAILER_SECRET = undefined as any;
+    ENV.EMAILER_WAITLIST_INVITE_TAG_ID = undefined as any;
+    ENV.EMAILER_WAITLIST_TAG_ID = undefined as any;
+
+    const EmailService = require("../../email/email.service").default;
+    const spy = jest.spyOn(EmailService, "addTagToSubscriber");
+    spy.mockClear();
+
+    await WaitlistService.addToWaitlist(answer.email, answer);
+    const result = await WaitlistService.invite(answer.email);
+
+    expect(spy).not.toHaveBeenCalled();
+    expect(result.tagResponse).toBeUndefined();
+
+    ENV.EMAILER_SECRET = oldSecret;
+    ENV.EMAILER_WAITLIST_INVITE_TAG_ID = oldInviteTag;
+    ENV.EMAILER_WAITLIST_TAG_ID = oldWaitlistTag;
   });
 });

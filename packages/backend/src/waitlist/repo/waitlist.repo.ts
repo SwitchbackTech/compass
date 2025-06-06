@@ -28,6 +28,16 @@ export class WaitlistRepository {
     };
   }
 
+  static async getAllWaitlisted() {
+    return mongoService.waitlist
+      .find({ status: { $eq: "waitlisted" } })
+      .toArray();
+  }
+
+  static async getWaitlistRecord(email: string) {
+    return this._getWaitlistRecord(email);
+  }
+
   static async isAlreadyOnWaitlist(email: string) {
     const match = await mongoService.waitlist
       .find({ email: { $eq: email } })

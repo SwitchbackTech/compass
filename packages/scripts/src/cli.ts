@@ -5,6 +5,7 @@ import "./init";
 import { CliValidator } from "./cli.validator";
 import { runBuild } from "./commands/build";
 import { startDeleteFlow } from "./commands/delete";
+import { inviteWaitlist } from "./commands/invite";
 import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
 
 class CompassCli {
@@ -31,6 +32,10 @@ class CompassCli {
       case cmd === "delete": {
         this.validator.validateDelete(options);
         await startDeleteFlow(user as string, force);
+        break;
+      }
+      case cmd === "invite": {
+        await inviteWaitlist();
         break;
       }
       default:
@@ -69,6 +74,8 @@ class CompassCli {
         "-u, --user [id | email]",
         "specify which user to run script for",
       );
+
+    program.command("invite").description("invite users from the waitlist");
     return program;
   }
 }
