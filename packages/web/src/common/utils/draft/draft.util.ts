@@ -79,6 +79,31 @@ export const createTimedDraft = async (
   );
 };
 
+export const createAlldayDraft = async (
+  startOfView: Dayjs,
+  endOfView: Dayjs,
+  activity: Activity_DraftEvent,
+  dispatch: Dispatch,
+) => {
+  const startDate = startOfView.startOf("day").format();
+  // Use the end of the current view as the all-day event's end date
+  const endDate = endOfView.startOf("day").add(1, "day").format();
+
+  const event = (await assembleDefaultEvent(
+    Categories_Event.ALLDAY,
+    startDate,
+    endDate,
+  )) as Schema_GridEvent;
+
+  dispatch(
+    draftSlice.actions.start({
+      activity,
+      eventType: Categories_Event.ALLDAY,
+      event,
+    }),
+  );
+};
+
 const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
   const currentMinute = dayjs().minute();
   const nextMinuteInterval = roundToNext(currentMinute, GRID_TIME_STEP);

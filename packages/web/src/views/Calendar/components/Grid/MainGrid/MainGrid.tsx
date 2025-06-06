@@ -1,5 +1,5 @@
 import { Dayjs } from "dayjs";
-import React, { FC, MouseEvent, MutableRefObject } from "react";
+import React, { FC, MouseEvent, MutableRefObject, useEffect } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
