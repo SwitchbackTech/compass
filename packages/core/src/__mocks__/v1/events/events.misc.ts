@@ -14,11 +14,10 @@ export const CHILL_ALL_DAY: Schema_Event = {
   origin: Origin.GOOGLE_IMPORT,
   title: "chill all day",
   description: "just chillin",
-  priorities: [],
+  priority: Priorities.RELATIONS,
   isAllDay: true,
   startDate: "2022-09-23",
   endDate: "2022-09-24",
-  priority: Priorities.RELATIONS,
 };
 export const CLIMB: Schema_Event = {
   _id: "62322b127837957382660217",
@@ -27,11 +26,10 @@ export const CLIMB: Schema_Event = {
   origin: Origin.GOOGLE_IMPORT,
   title: "Climb",
   description: "",
-  priorities: [],
+  priority: Priorities.WORK,
   isAllDay: false,
   startDate: "2022-03-01T17:00:00-06:00",
   endDate: "2022-03-01T19:00:00-06:00",
-  priority: Priorities.WORK,
 };
 export const EUROPE_TRIP: Schema_Event = {
   _id: "6262d2840138892cb743444a",
@@ -58,11 +56,10 @@ export const MARCH_1: Schema_Event = {
   origin: Origin.GOOGLE_IMPORT,
   title: "Mar 1",
   description: "",
-  priorities: [],
+  priority: Priorities.WORK,
   isAllDay: true,
   startDate: "2022-03-01",
   endDate: "2022-03-02",
-  priority: Priorities.WORK,
 };
 export const GROCERIES: Schema_Event = {
   _id: "620c177bfadfdec705cdd70a",
@@ -71,11 +68,10 @@ export const GROCERIES: Schema_Event = {
   origin: Origin.GOOGLE_IMPORT,
   title: "groceries",
   description: "foo",
-  priorities: [],
+  priority: Priorities.RELATIONS,
   isAllDay: false,
   startDate: "2022-02-21T11:45:00-06:00",
   endDate: "2022-02-21T12:45:00-06:00",
-  priority: Priorities.RELATIONS,
 };
 export const MULTI_WEEK: Schema_Event = {
   _id: "62322b12783795738266022e",
@@ -84,12 +80,11 @@ export const MULTI_WEEK: Schema_Event = {
   origin: Origin.GOOGLE_IMPORT,
   title: "multiweek event",
   description: "",
-  priorities: [],
+  priority: Priorities.WORK,
   isAllDay: true,
   isSomeday: false,
   startDate: "2022-09-01T00:00:00-06:00",
   endDate: "2022-09-22T00:00:00-06:00",
-  priority: Priorities.WORK,
 };
 export const TY_TIM: Schema_Event = {
   _id: "62322b127837957382660231",
@@ -98,8 +93,7 @@ export const TY_TIM: Schema_Event = {
   origin: Origin.GOOGLE_IMPORT,
   title: "Ty & Tim",
   description:
-    "──────────\n\nTim Schuster is inviting you to a scheduled Zoom meeting.\n\nJoin Zoom Meeting\nhttps://us02web.zoom.us/j/87324397243?pwd=ZmpuYitCelZYVll0aDdiVUNXejdzdz09\n\nMeeting ID: 873 2439 7243\nPasscode: 305275\nOne tap mobile\n+16465588656,,87324397243#,,,,*305275# US (New York)\n+13017158592,,87324397243#,,,,*305275# US (Washington DC)\n\nDial by your location\n        +1 646 558 8656 US (New York)\n        +1 301 715 8592 US (Washington DC)\n        +1 312 626 6799 US (Chicago)\n        +1 669 900 9128 US (San Jose)\n        +1 253 215 8782 US (Tacoma)\n        +1 346 248 7799 US (Houston)\nMeeting ID: 873 2439 7243\nPasscode: 305275\nFind your local number: https://us02web.zoom.us/u/kdbALZcOSa\n\n\n──────────",
-  priorities: [],
+    "──────────\n\nTim S is inviting you to a scheduled Zoom meeting.\n\nJoin Zoom Meeting\nhttps://us02web.zoom.us/j/87324397243?pwd=ZmpuYitCelZYVll0aDdiVUNXejdzdz09\n\nMeeting ID: 873 2439 7243\nPasscode: 305275\nOne tap mobile\n+16465588656,,87324397243#,,,,*305275# US (New York)\n+13017158592,,87324397243#,,,,*305275# US (Washington DC)\n\nDial by your location\n        +1 646 558 8656 US (New York)\n        +1 301 715 8592 US (Washington DC)\n        +1 312 626 6799 US (Chicago)\n        +1 669 900 9128 US (San Jose)\n        +1 253 215 8782 US (Tacoma)\n        +1 346 248 7799 US (Houston)\nMeeting ID: 873 2439 7243\nPasscode: 305275\nFind your local number: https://us02web.zoom.us/u/kdbALZcOSa\n\n\n──────────",
   isAllDay: false,
   isSomeday: false,
   startDate: "2022-03-01T12:15:00-06:00",
