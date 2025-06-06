@@ -21,9 +21,11 @@ import { mapToBackend } from "@web/common/utils/web.date.util";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection";
 import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
 import { MoveToSidebarButton } from "@web/views/Forms/EventForm/MoveToSidebarButton";
+import { useFormKeyboardSubmit } from "../hooks/useFormKeyboardSubmit";
 import { getFormDates } from "./DateControlsSection/DateTimeSection/form.datetime.util";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
+// Import the custom hook
 import {
   StyledDescription,
   StyledEventForm,
@@ -32,8 +34,9 @@ import {
 } from "./styled";
 import { FormProps, SetEventFormField } from "./types";
 
+// Updated hotkeys options - removed "button" to fix TypeScript error
 const hotkeysOptions: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input"],
+  enableOnFormTags: ["input", "textarea"],
 };
 
 export const EventForm: React.FC<FormProps> = ({
@@ -47,7 +50,10 @@ export const EventForm: React.FC<FormProps> = ({
   ...props
 }) => {
   const { priority, title } = event || {};
-  const priorityColor = colorByPriority[priority || Priorities.UNASSIGNED];
+
+  // Create a safe priority that defaults to UNASSIGNED if undefined
+  const safePriority = priority || Priorities.UNASSIGNED;
+  const priorityColor = colorByPriority[safePriority];
   const category = getCategory(event);
   const isDraft = !event._id;
 
@@ -71,6 +77,38 @@ export const EventForm: React.FC<FormProps> = ({
   const [displayEndDate, setDisplayEndDate] = useState(selectedStartDate);
 
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  /***********
+   * Handlers
+   **********/
+
+  // Move onSetEventField here, before the callbacks that use it
+  const onSetEventField: SetEventFormField = (field) => {
+    setEvent({ ...event, ...field });
+  };
+
+  const onChangeEventTextField =
+    (fieldName: "title" | "description") =>
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onSetEventField({ [fieldName]: e.target.value });
+    };
+
+  // Split handlers by input type
+  const onChangeTextField = useCallback(
+    (fieldName: "title") => (e: React.ChangeEvent<HTMLInputElement>) => {
+      onSetEventField({ [fieldName]: e.target.value });
+    },
+    [onSetEventField],
+  );
+
+  const onChangeTextArea = useCallback(
+    (fieldName: "description") =>
+      (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        onSetEventField({ [fieldName]: e.target.value });
+      },
+    [onSetEventField],
+  );
 
   /*********
    * Effects
@@ -97,10 +135,9 @@ export const EventForm: React.FC<FormProps> = ({
 
     return () => {
       window.removeEventListener("keydown", keyDownHandler);
-      window.addEventListener("keyup", keyUpHandler);
+      window.removeEventListener("keyup", keyUpHandler);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [keyDownHandler, keyUpHandler]);
 
   useEffect(() => {
     setEvent(event || {});
@@ -115,15 +152,6 @@ export const EventForm: React.FC<FormProps> = ({
     setIsFormOpen(true);
   }, [event, setEvent]);
 
-  /***********
-   * Handlers
-   **********/
-  const onChangeEventTextField =
-    (fieldName: "title" | "description") =>
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onSetEventField({ [fieldName]: e.target.value });
-    };
-
   const onClose = () => {
     setIsFormOpen(false);
 
@@ -137,29 +165,7 @@ export const EventForm: React.FC<FormProps> = ({
     onClose();
   };
 
-  const handleIgnoredKeys = (e: KeyboardEvent) => {
-    // Ignores certain keys and key combinations to prevent default behavior.
-    // Allows some of them to be used as hotkeys
-
-    if (e.key === Key.Backspace) {
-      e.stopPropagation();
-    }
-
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "<") {
-      e.preventDefault();
-    }
-
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
-      e.preventDefault();
-    }
-
-    if (e.metaKey && e.key === Key.Enter) {
-      e.preventDefault();
-      onSubmitForm();
-    }
-  };
-
-  const onSubmitForm = () => {
+  const onSubmitForm = useCallback(() => {
     const selectedDateTimes = {
       startDate: selectedStartDate,
       startTime,
@@ -184,11 +190,36 @@ export const EventForm: React.FC<FormProps> = ({
 
     onSubmit(finalEvent);
     onClose();
-  };
+  }, [
+    selectedStartDate,
+    startTime,
+    selectedEndDate,
+    endTime,
+    event,
+    onSubmit,
+    onClose,
+  ]);
 
-  const onSetEventField: SetEventFormField = (field) => {
-    setEvent({ ...event, ...field });
-  };
+  // Updated handleIgnoredKeys function - no longer handles META+ENTER
+  const handleIgnoredKeys = useCallback((e: KeyboardEvent) => {
+    // Ignores certain keys and key combinations to prevent default behavior.
+    // Allows some of them to be used as hotkeys
+
+    if (e.key === Key.Backspace) {
+      e.stopPropagation();
+    }
+
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "<") {
+      e.preventDefault();
+    }
+
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") {
+      e.preventDefault();
+    }
+
+    // Don't handle META+ENTER here anymore - it's handled by useFormKeyboardSubmit
+    // But we can still prevent other unwanted key combinations if needed
+  }, []);
 
   const dateTimeSectionProps = {
     bgColor: priorityColor,
@@ -196,7 +227,7 @@ export const EventForm: React.FC<FormProps> = ({
     event,
     category,
     endTime,
-    inputColor: hoverColorByPriority[priority || Priorities.UNASSIGNED],
+    inputColor: hoverColorByPriority[safePriority], // Updated
     isEndDatePickerOpen,
     isStartDatePickerOpen,
     onSetEventField,
@@ -220,6 +251,16 @@ export const EventForm: React.FC<FormProps> = ({
     endTime,
   };
 
+  // Use the custom hook for form keyboard submission
+  useFormKeyboardSubmit({
+    onSubmit: onSubmitForm,
+    isFormOpen,
+    formRef,
+  });
+
+  /***********
+   * Hotkeys
+   **********/
   useHotkeys(
     "meta+shift+comma",
     () => {
@@ -251,13 +292,8 @@ export const EventForm: React.FC<FormProps> = ({
     hotkeysOptions,
   );
 
-  useHotkeys(
-    "enter",
-    () => {
-      onSubmitForm();
-    },
-    hotkeysOptions,
-  );
+  // REMOVED: Conflicting useHotkeys("enter", ...) call
+  // This is now handled by useFormKeyboardSubmit hook
 
   useHotkeys(
     "meta+d",
@@ -269,6 +305,7 @@ export const EventForm: React.FC<FormProps> = ({
 
   return (
     <StyledEventForm
+      ref={formRef}
       {...props}
       isOpen={isFormOpen}
       name={ID_EVENT_FORM}
@@ -276,15 +313,12 @@ export const EventForm: React.FC<FormProps> = ({
         if (isStartDatePickerOpen) {
           setIsStartDatePickerOpen(false);
         }
-
         if (isEndDatePickerOpen) {
           setIsEndDatePickerOpen(false);
         }
       }}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-      }}
-      priority={priority}
+      onMouseDown={(e) => e.stopPropagation()}
+      priority={safePriority} // Updated to use safePriority
       role="form"
     >
       <StyledIconRow>
@@ -300,7 +334,7 @@ export const EventForm: React.FC<FormProps> = ({
 
       <StyledTitle
         autoFocus
-        onChange={onChangeEventTextField("title")}
+        onChange={onChangeTextField("title")} // Use input handler
         onKeyDown={handleIgnoredKeys}
         placeholder="Title"
         role="textarea"
@@ -311,7 +345,7 @@ export const EventForm: React.FC<FormProps> = ({
 
       <PrioritySection
         onSetEventField={onSetEventField}
-        priority={priority || Priorities.UNASSIGNED}
+        priority={safePriority} // Updated
       />
 
       <DateControlsSection
@@ -322,7 +356,7 @@ export const EventForm: React.FC<FormProps> = ({
 
       <StyledDescription
         underlineColor={priorityColor}
-        onChange={onChangeEventTextField("description")}
+        onChange={onChangeTextArea("description")} // Use textarea handler
         onKeyDown={handleIgnoredKeys}
         placeholder="Description"
         ref={descriptionRef}
@@ -330,7 +364,7 @@ export const EventForm: React.FC<FormProps> = ({
       />
 
       <SaveSection
-        priority={priority || Priorities.UNASSIGNED}
+        priority={safePriority} // Updated
         onSubmit={onSubmitForm}
       />
     </StyledEventForm>

@@ -3,6 +3,9 @@
   /* Web module excluded because webpack handles packaging */
   "include": [
     "packages/core/src/**/*.ts",
+    "packages/core/src/**/*.tsx",
+    "packages/web/src/**/*.ts",
+    "packages/web/src/**/*.tsx" /* Add web package TypeScript/React files */,
     "packages/backend/src/**/*.ts",
     "packages/scripts/src/**/*.ts",
     "packages/scripts/src/commands/dev.js"
@@ -48,25 +51,19 @@
     /* Module Resolution Options */
     // "moduleResolution": "node" /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */,
     // "baseUrl": "./packages" /* Base directory to resolve non-absolute module names. */,
-    "baseUrl": "./" /* Base directory to resolve non-absolute module names. */,
+    "baseUrl": "." /* Base directory to resolve non-absolute module names. */,
     "paths": {
       /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
       /* include all packages so cross-imports work */
-      "@core/*": ["./packages/core/src/*"],
-      "@web/*": ["./packages/web/src/*"],
+      "@core/*": ["packages/core/src/*"],
+      "@web/*": ["packages/web/src/*"] /* Keep this path mapping */,
       "@backend/*": ["./packages/backend/src/*"],
       "@scripts/*": ["./packages/scripts/src/*"]
     },
-    // "rootDirs": [],                              /* List of root folders whose combined content represents the structure of the project at runtime. */
-    // "typeRoots": [],                             /* List of folders to include type definitions from. */
-    // "types": [],                                 /* Type declaration files to be included in compilation. */
-    "allowUnreachableCode": true,
-    "allowSyntheticDefaultImports": true /* Allow default imports from modules with no default export. This does not affect code emit, just typechecking. */,
-    "esModuleInterop": true /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */,
-    // "preserveSymlinks": true,                    /* Do not resolve the real path of symlinks. */
-    // "allowUmdGlobalAccess": true,                /* Allow accessing UMD globals from modules. */
 
-    /* Source Map Options */
+    "jsx": "react-jsx",
+
+    // Add JSX support since we're including web files
     // "sourceRoot": "",                            /* Specify the location where debugger should locate TypeScript files instead of source locations. */
     // "mapRoot": "",                               /* Specify the location where debugger should locate map files instead of generated locations. */
     // "inlineSourceMap": true,                     /* Emit a single file with source maps instead of having a separate file. */
