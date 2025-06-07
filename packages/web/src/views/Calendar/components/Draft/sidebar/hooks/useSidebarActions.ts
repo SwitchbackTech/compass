@@ -13,6 +13,7 @@ import {
 } from "@core/types/event.types";
 import { getUserId } from "@web/auth/auth.util";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
+import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
 import { Coordinates } from "@web/common/types/util.types";
 import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
@@ -46,6 +47,17 @@ import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { Setters_Sidebar, State_Sidebar } from "./useSidebarState";
+
+interface SomedayEventsColumns {
+  [COLUMN_WEEK]: {
+    id: string;
+    eventIds: string[];
+  };
+  [COLUMN_MONTH]: {
+    id: string;
+    eventIds: string[];
+  };
+}
 
 export const useSidebarActions = (
   dateCalcs: DateCalcs,
@@ -388,10 +400,55 @@ export const useSidebarActions = (
     close();
   };
 
-  const reorder = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
+  const handleCrossColumnDragging = (
+    source: { droppableId: string; index: number },
+    destination: { droppableId: string; index: number },
+    draggableId: string,
+  ) => {
+    const sourceColumn =
+      state.somedayEvents.columns[
+        source.droppableId as keyof SomedayEventsColumns
+      ];
+    const destColumn =
+      state.somedayEvents.columns[
+        destination.droppableId as keyof SomedayEventsColumns
+      ];
 
-    const column = state.somedayEvents.columns[source.droppableId];
+    // Remove from source column
+    const sourceEventIds = Array.from(sourceColumn.eventIds);
+    sourceEventIds.splice(source.index, 1);
+
+    // Add to destination column
+    const destEventIds = Array.from(destColumn.eventIds);
+    destEventIds.splice(destination.index, 0, draggableId);
+
+    const newState = {
+      ...state.somedayEvents,
+      columns: {
+        ...state.somedayEvents.columns,
+        [sourceColumn.id]: {
+          ...sourceColumn,
+          eventIds: sourceEventIds,
+        },
+        [destColumn.id]: {
+          ...destColumn,
+          eventIds: destEventIds,
+        },
+      },
+    };
+
+    setSomedayEvents(newState);
+  };
+
+  const handleSameColumnReordering = (
+    source: { droppableId: string; index: number },
+    destination: { droppableId: string; index: number },
+    draggableId: string,
+  ) => {
+    const column =
+      state.somedayEvents.columns[
+        source.droppableId as keyof SomedayEventsColumns
+      ];
     const newEventIds = Array.from(column.eventIds);
     newEventIds.splice(source.index, 1);
     newEventIds.splice(destination.index, 0, draggableId);
@@ -410,10 +467,25 @@ export const useSidebarActions = (
 
     setSomedayEvents(newState);
 
-    const newOrder = newEventIds.map((_id, index) => {
-      return { _id, order: index };
-    });
+    const newOrder = newEventIds.map((_id, index) => ({
+      _id,
+      order: index,
+    }));
     dispatch(getSomedayEventsSlice.actions.reorder(newOrder));
+  };
+
+  const reorder = (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) {
+      return;
+    }
+
+    if (source.droppableId === destination.droppableId) {
+      handleSameColumnReordering(source, destination, draggableId);
+    } else {
+      handleCrossColumnDragging(source, destination, draggableId);
+    }
   };
 
   const _updateEventAfterMigration = (

@@ -7,6 +7,7 @@ import {
   MULTI_WEEK,
   TY_TIM,
 } from "@core/__mocks__/v1/events/events.misc";
+import { freshenEventStartEndDate } from "@web/__tests__/Calendar/calendar.render.test.utils";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 
 export const globalHandlers = [
@@ -28,7 +29,14 @@ export const globalHandlers = [
       );
     }
 
-    const events = [CLIMB, MARCH_1, MULTI_WEEK, TY_TIM, GROCERIES];
+    const events = [
+      CLIMB,
+      MARCH_1,
+      MULTI_WEEK,
+      TY_TIM,
+      // TODO: Need some way to inject the event into globalHandlers.events in a more dynamic way.
+      freshenEventStartEndDate(GROCERIES),
+    ];
     return res(ctx.json(events));
   }),
   rest.delete(`${ENV_WEB.API_BASEURL}/event/:id`, (req, res, ctx) => {

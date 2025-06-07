@@ -13,6 +13,11 @@ import { GlobalStyle } from "@web/components/GlobalStyle";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
 
+type CustomRenderOptions = Omit<RenderOptions, "wrapper"> & {
+  state?: any;
+  store?: ReturnType<typeof configureStore>;
+};
+
 const customRender = (
   ui: ReactElement,
   {
@@ -23,9 +28,8 @@ const customRender = (
       reducer: reducers,
       preloadedState: state,
     }),
-
     ...renderOptions
-  } = {},
+  }: CustomRenderOptions = {},
 ) => {
   sagaMiddleware.run(sagas);
 
