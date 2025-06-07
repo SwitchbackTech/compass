@@ -1,13 +1,13 @@
 import dayjs from "dayjs";
 import { createSelector } from "reselect";
 import {
-  RRULE,
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { isProcessing } from "@web/common/store/helpers";
 import { Schema_SomedayEventsColumn } from "@web/common/types/web.event.types";
+import { categorizeSomedayEvents } from "@web/common/utils/someday.util";
 import { RootState } from "@web/store";
 import { selectEventEntities } from "./event.selectors";
 import { selectDatesInView } from "./view.selectors";
@@ -37,56 +37,10 @@ export const selectSomedayEvents = createSelector(
 export const selectCategorizedEvents = createSelector(
   [selectSomedayEvents, selectDatesInView],
   (somedayEvents, dates) => {
-    const start = dayjs(dates.start);
-    const end = dayjs(dates.end);
-
-    const sortedEvents = Object.values(somedayEvents).sort(
-      (a, b) => a.order - b.order,
-    );
-
-    const weekIds = [];
-    const monthIds = [];
-
-    sortedEvents.forEach((e) => {
-      const eventStart = dayjs(e.startDate);
-      const isWeek = eventStart.isBetween(start, end, null, "[]");
-      if (isWeek) {
-        const isMonthRepeat = e?.recurrence?.rule?.includes(RRULE.MONTH);
-        if (!isMonthRepeat) {
-          weekIds.push(e._id);
-          return;
-        }
-      }
-
-      const isFutureWeekThisMonth = e?.recurrence?.rule?.includes(RRULE.WEEK);
-      if (isFutureWeekThisMonth) {
-        return;
-      }
-
-      const monthStart = start.startOf("month");
-      const monthEnd = start.endOf("month");
-      const isMonth = eventStart.isBetween(monthStart, monthEnd, null, "[]");
-
-      if (isMonth) {
-        monthIds.push(e._id);
-      }
+    return categorizeSomedayEvents(somedayEvents, {
+      start: dayjs(dates.start),
+      end: dayjs(dates.end),
     });
-
-    const sortedData = {
-      columns: {
-        [COLUMN_WEEK]: {
-          id: `${COLUMN_WEEK}`,
-          eventIds: weekIds,
-        },
-        [COLUMN_MONTH]: {
-          id: `${COLUMN_MONTH}`,
-          eventIds: monthIds,
-        },
-      },
-      columnOrder: [COLUMN_WEEK, COLUMN_MONTH],
-      events: somedayEvents,
-    };
-    return sortedData;
   },
 );
 

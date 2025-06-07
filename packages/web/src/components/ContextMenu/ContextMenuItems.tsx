@@ -4,10 +4,8 @@ import { Priorities } from "@core/constants/core.constants";
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  assembleGridEvent,
-  getSomedayEventCategory,
-} from "@web/common/utils/event.util";
+import { assembleGridEvent } from "@web/common/utils/event.util";
+import { getSomedayEventCategory } from "@web/common/utils/someday.util";
 import IconButton from "@web/components/IconButton/IconButton";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";

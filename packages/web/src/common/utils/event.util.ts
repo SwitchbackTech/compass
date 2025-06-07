@@ -12,15 +12,12 @@ import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
-  COLUMN_MONTH,
-  COLUMN_WEEK,
   DATA_EVENT_ELEMENT_ID,
   ID_OPTIMISTIC_PREFIX,
 } from "../constants/web.constants";
 import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
-  Schema_SomedayEventsColumn,
 } from "../types/web.event.types";
 
 dayjs.extend(isSameOrAfter);
@@ -125,56 +122,6 @@ export const getEventDragOffset = (
   };
 };
 
-export const categorizeSomedayEvents = (
-  somedayEvents: Schema_SomedayEventsColumn["events"],
-  dates: { startDate: Dayjs; endDate: Dayjs },
-): Schema_SomedayEventsColumn => {
-  const sortedEvents = Object.values(somedayEvents).sort(
-    (a, b) => a.order - b.order,
-  );
-  const weekIds: string[] = [];
-  const monthIds: string[] = [];
-
-  sortedEvents.forEach((e) => {
-    const eventStart = dayjs(e.startDate);
-    const isWeek = eventStart.isBetween(
-      dates.startDate,
-      dates.endDate,
-      null,
-      "[]",
-    );
-    if (isWeek) {
-      weekIds.push(e._id);
-      return;
-    }
-
-    const monthStartDate = dates.startDate.startOf("month");
-    const monthEndDate = dates.startDate.endOf("month");
-    const isMonthButNotWeek =
-      !isWeek && eventStart.isBetween(monthStartDate, monthEndDate, null, "[]");
-
-    if (isMonthButNotWeek) {
-      monthIds.push(e._id);
-    }
-  });
-
-  const sortedData: Schema_SomedayEventsColumn = {
-    columns: {
-      [`${COLUMN_WEEK}`]: {
-        id: `${COLUMN_WEEK}`,
-        eventIds: weekIds,
-      },
-      [`${COLUMN_MONTH}`]: {
-        id: `${COLUMN_MONTH}`,
-        eventIds: monthIds,
-      },
-    },
-    columnOrder: [COLUMN_WEEK, COLUMN_MONTH],
-    events: somedayEvents,
-  };
-  return sortedData;
-};
-
 export const getCategory = (event: Schema_Event) => {
   if (event?.isAllDay) {
     return Categories_Event.ALLDAY;
@@ -240,26 +187,6 @@ export const isEventInRange = (
 export const isOptimisticEvent = (event: Schema_Event) => {
   const isOptimistic = event._id?.startsWith(ID_OPTIMISTIC_PREFIX) || false;
   return isOptimistic;
-};
-
-export const getSomedayEventCategory = (
-  event: Schema_Event,
-): Categories_Event.SOMEDAY_MONTH | Categories_Event.SOMEDAY_WEEK => {
-  if (!event.isSomeday) {
-    throw new Error(
-      `Event is not a someday event. Event: ${JSON.stringify(event)}`,
-    );
-  }
-
-  const startDate = dayjs(event.startDate);
-  const endDate = dayjs(event.endDate);
-
-  const diffInDays = endDate.diff(startDate, "day");
-
-  if (diffInDays > 7) {
-    return Categories_Event.SOMEDAY_MONTH;
-  }
-  return Categories_Event.SOMEDAY_WEEK;
 };
 
 export const prepEvtAfterDraftDrop = (
