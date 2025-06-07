@@ -126,9 +126,6 @@ export const useShortcuts = ({
         [Key.A]: () => {
           createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
         },
-        [Key.A]: () => {
-          createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
-        },
         [Key.T]: () => {
           scrollUtil.scrollToNow();
           _discardDraft();
