@@ -1,11 +1,11 @@
 import React, { KeyboardEvent, MouseEvent, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
-import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
+import { customToast } from "@web/common/utils/toast";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
@@ -76,7 +76,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       const eventTitle = isRecurrence
         ? `Deleted all future ${recurTitle}`
         : `Deleted ${title}`;
-      toast(eventTitle);
+      customToast(eventTitle);
     }
 
     onClose();

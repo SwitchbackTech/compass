@@ -6,6 +6,7 @@ import React, {
   memo,
   useMemo,
 } from "react";
+import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
 import {
   DATA_EVENT_ELEMENT_ID,
@@ -16,6 +17,7 @@ import { isOptimisticEvent } from "@web/common/utils/event.util";
 import { getLineClamp } from "@web/common/utils/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { getEventPosition } from "@web/common/utils/position.util";
+import { customToast } from "@web/common/utils/toast";
 import { getTimesLabel } from "@web/common/utils/web.date.util";
 import { Flex } from "@web/components/Flex";
 import {
@@ -93,7 +95,9 @@ const _GridEvent = (
     onMouseDown: (e: MouseEvent) => {
       if (isRecurring) {
         console.log(event);
-        alert("Can't edit recurring events (yet)");
+        customToast("Can't edit recurring events (yet)", {
+          preventDuplicate: true,
+        });
         e.stopPropagation();
         return;
       }
@@ -140,7 +144,9 @@ const _GridEvent = (
                 showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
                 onMouseDown={(e) => {
                   if (isRecurring) {
-                    alert("Can't edit recurring events (yet)");
+                    customToast("Can't edit recurring events (yet)", {
+                      preventDuplicate: true,
+                    });
                     e.stopPropagation();
                     return;
                   }
@@ -155,7 +161,9 @@ const _GridEvent = (
                 showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
                 onMouseDown={(e) => {
                   if (isRecurring) {
-                    alert("Can't edit recurring events (yet)");
+                    customToast("Can't edit recurring events (yet)", {
+                      preventDuplicate: true,
+                    });
                     e.stopPropagation();
                     return;
                   }

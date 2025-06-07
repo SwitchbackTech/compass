@@ -24,10 +24,15 @@ interface StyledEventProps {
   priority: Priority;
   top: number;
   width: number;
+  isRecurring: boolean;
 }
 
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   const getBgColor = () => {
+    if (props.isRecurring || props.isInPast) {
+      return darken(colorByPriority[props.priority], 50);
+    }
+
     if (props.isResizing || props.isDragging) {
       return brighten(colorByPriority[props.priority]);
     }

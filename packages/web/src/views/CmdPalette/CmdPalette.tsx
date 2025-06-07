@@ -6,6 +6,7 @@ import CommandPalette, {
 } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -15,6 +16,7 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { isEventFormOpen } from "@web/common/utils";
 import { createTimedDraft } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
+import { customToast } from "@web/common/utils/toast";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
@@ -54,11 +56,11 @@ const CmdPalette = ({
     category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
   ) => {
     if (category === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
-      alert(SOMEDAY_WEEK_LIMIT_MSG);
+      customToast(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
     if (category === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
-      alert(SOMEDAY_MONTH_LIMIT_MSG);
+      customToast(SOMEDAY_MONTH_LIMIT_MSG);
       return;
     }
 

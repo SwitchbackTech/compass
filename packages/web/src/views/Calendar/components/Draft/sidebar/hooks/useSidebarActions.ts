@@ -22,6 +22,7 @@ import {
   prepEvtBeforeSubmit,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
+import { customToast } from "@web/common/utils/toast";
 import {
   getDatesByCategory,
   getMigrationDates,
@@ -320,12 +321,12 @@ export const useSidebarActions = (
     }
 
     if (section === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
-      alert(SOMEDAY_WEEK_LIMIT_MSG);
+      customToast(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
 
     if (section === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
-      alert(SOMEDAY_MONTH_LIMIT_MSG);
+      customToast(SOMEDAY_MONTH_LIMIT_MSG);
       return;
     }
 
