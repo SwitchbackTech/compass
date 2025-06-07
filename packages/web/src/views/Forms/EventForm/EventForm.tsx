@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
+import { toast } from "react-toastify";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
@@ -17,6 +18,7 @@ import {
 } from "@web/common/styles/theme.util";
 import { SelectOption } from "@web/common/types/component.types";
 import { getCategory } from "@web/common/utils/event.util";
+import { customToast } from "@web/common/utils/toast";
 import { mapToBackend } from "@web/common/utils/web.date.util";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection";
 import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
@@ -171,7 +173,7 @@ export const EventForm: React.FC<FormProps> = ({
     const { startDate, endDate } = mapToBackend(selectedDateTimes);
 
     if (dayjs(startDate).isAfter(dayjs(endDate))) {
-      alert("uff-dah, looks like you got the start & end times mixed up");
+      customToast("uff-dah, looks like you got the start & end times mixed up");
       return;
     }
 

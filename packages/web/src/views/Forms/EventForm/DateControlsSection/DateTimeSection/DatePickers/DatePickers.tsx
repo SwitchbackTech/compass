@@ -4,6 +4,7 @@ import { Key } from "ts-key-enum";
 import { MONTH_DAY_YEAR } from "@core/constants/date.constants";
 import { darken } from "@core/util/color.utils";
 import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
+import { customToast } from "@web/common/utils/toast";
 import { dateIsValid } from "@web/common/utils/web.date.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
@@ -76,7 +77,7 @@ export const DatePickers: FC<Props> = ({
         const isInvalid = val !== undefined && !dateIsValid(val);
 
         if (isInvalid) {
-          alert(`Sorry, IDK what to do with a ${picker} date of '${val}'
+          customToast(`Sorry, IDK what to do with a ${picker} date of '${val}'
           Make sure it's in '${MONTH_DAY_YEAR}' and try again`);
           return;
         }
