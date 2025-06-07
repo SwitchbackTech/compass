@@ -30,10 +30,9 @@ export const getSomedayEventCategory = (
 
 export const categorizeSomedayEvents = (
   somedayEvents: Schema_SomedayEventsColumn["events"],
-  dates: { start: Dayjs; end: Dayjs },
+  weekDates: { start: Dayjs; end: Dayjs },
 ): Schema_SomedayEventsColumn => {
-  const start = dayjs(dates.start);
-  const end = dayjs(dates.end);
+  const { start: weekStart, end: weekEnd } = weekDates;
 
   const events = Object.values(somedayEvents) as Schema_SomedayGridEvent[];
   const sortedEvents = events.sort((a, b) => a.order - b.order);
@@ -45,7 +44,8 @@ export const categorizeSomedayEvents = (
     const eventStart = dayjs(e.startDate);
     const eventEnd = dayjs(e.endDate);
     const isWeek =
-      eventStart.isBetween(start, end, null, "[]") && eventEnd.isAfter(end);
+      eventStart.isSameOrAfter(weekStart) && eventEnd.isSameOrBefore(weekEnd);
+
     if (isWeek) {
       const isMonthRepeat = e?.recurrence?.rule?.includes(RRULE.MONTH);
       if (!isMonthRepeat) {
@@ -59,8 +59,8 @@ export const categorizeSomedayEvents = (
       return;
     }
 
-    const monthStart = start.startOf("month");
-    const monthEnd = start.endOf("month");
+    const monthStart = weekStart.startOf("month");
+    const monthEnd = weekStart.endOf("month");
     const isMonth = eventStart.isBetween(monthStart, monthEnd, null, "[]");
 
     if (isMonth) {
