@@ -93,7 +93,6 @@ export const useShortcuts = ({
         dispatch(viewSlice.actions.updateSidebarTab("tasks"));
       }
     };
-
     const _discardDraft = () => {
       if (isEventFormOpen()) {
         dispatch(draftSlice.actions.discard());
@@ -124,6 +123,9 @@ export const useShortcuts = ({
             "createShortcut",
             dispatch,
           ),
+        [Key.A]: () => {
+          createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
+        },
         [Key.A]: () => {
           createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
         },
