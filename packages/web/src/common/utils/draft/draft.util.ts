@@ -118,6 +118,7 @@ const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
   return { startDate, endDate };
 };
 
+
 export const getDraftContainer = (category: Categories_Event) => {
   switch (category) {
     case Categories_Event.ALLDAY:
