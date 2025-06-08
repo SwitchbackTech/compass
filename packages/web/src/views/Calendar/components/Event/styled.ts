@@ -29,10 +29,6 @@ interface StyledEventProps {
 
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   const getBgColor = () => {
-    if (props.isRecurring || props.isInPast) {
-      return darken(colorByPriority[props.priority], 30);
-    }
-
     if (props.isResizing || props.isDragging) {
       return brighten(colorByPriority[props.priority]);
     }
@@ -57,7 +53,9 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
 })<StyledEventProps>`
   background-color: ${(props) => props.backgroundColor};
   border-radius: 2px;
-  filter: brightness(${({ isInPast }) => (isInPast ? 0.7 : null)});
+filter: brightness(
+  ${({ isInPast, isRecurring }) => (isInPast || isRecurring ? 0.7 : null)}
+)
   height: ${({ height }) => height}px;
   left: ${(props) => props.left}px;
   opacity: ${(props) => props.opacity};
