@@ -30,7 +30,7 @@ interface StyledEventProps {
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   const getBgColor = () => {
     if (props.isRecurring || props.isInPast) {
-      return darken(colorByPriority[props.priority], 50);
+      return darken(colorByPriority[props.priority], 30);
     }
 
     if (props.isResizing || props.isDragging) {
