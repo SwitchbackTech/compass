@@ -13,6 +13,8 @@ import { ID_HEADER_NOTE_INPUT } from "@web/common/constants/web.constants";
 import { isEventFormOpen } from "@web/common/utils";
 import { createAlldayDraft } from "@web/common/utils/draft/draft.util";
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
 // <-- Add this import if you have such a utility
 =======
 >>>>>>> e6c27e19 (feat: add create all-day draft functionality and shortcut integration)
