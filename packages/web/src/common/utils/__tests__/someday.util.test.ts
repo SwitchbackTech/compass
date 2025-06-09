@@ -4,6 +4,7 @@ import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
+import { Origin, Priorities } from "@core/constants/core.constants";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { Schema_SomedayGridEvent } from "@web/common/types/web.event.types";
 import { categorizeSomedayEvents } from "../someday.util";
@@ -16,9 +17,17 @@ dayjs.extend(isBetween);
 
 describe("categorizeSomedayEvents", () => {
   const baseEvent: Partial<Schema_SomedayGridEvent> = {
+    title: "test-title",
+    description: "test-description",
+    isAllDay: false,
+    origin: Origin.COMPASS,
     _id: "test-id",
     order: 0,
     isSomeday: true,
+    user: "test-user",
+    priority: Priorities.UNASSIGNED,
+    startDate: "2024-03-19",
+    endDate: "2024-03-20",
   };
 
   const weekDates = {

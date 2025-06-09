@@ -2,7 +2,11 @@ import React, { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CLIMB } from "@core/__mocks__/v1/events/events.misc";
+import { CLIMB, EUROPE_TRIP } from "@core/__mocks__/v1/events/events.misc";
+import {
+  findAndUpdateEventInPreloadedState,
+  freshenEventStartEndDate,
+} from "@web/__tests__/Calendar/calendar.render.test.utils";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { CalendarView } from "@web/views/Calendar";
@@ -28,7 +32,13 @@ describe("Event Form", () => {
   });
   it("closes after clicking trash icon", async () => {
     const user = userEvent.setup();
-    render(<CalendarView />, { state: preloadedState });
+    render(<CalendarView />, {
+      state: findAndUpdateEventInPreloadedState(
+        preloadedState,
+        EUROPE_TRIP._id as string,
+        freshenEventStartEndDate,
+      ),
+    });
 
     await act(async () => {
       await user.click(screen.getByRole("button", { name: "Europe Trip < >" }));
