@@ -1,5 +1,5 @@
 import { rest } from "msw";
-import React from "react";
+import React, { act } from "react";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -35,19 +35,23 @@ describe("Calendar Interactions", () => {
   describe("Now Line", () => {
     it("appears/disappears when viewing future or past week", async () => {
       const user = userEvent.setup();
-      render(<CalendarView />);
 
-      /* current week */
+      await act(async () => {
+        render(<CalendarView />);
+      });
+
+      // Check current week
       const nowLine = screen.queryByRole("separator", { name: /now line/i });
-
       expect(nowLine).toBeInTheDocument();
 
-      /* future week */
-      await user.click(
-        screen.getByRole("navigation", {
-          name: /next week/i,
-        }),
-      );
+      // Check future week
+      await act(async () => {
+        await user.click(
+          screen.getByRole("navigation", {
+            name: /next week/i,
+          }),
+        );
+      });
 
       expect(nowLine).not.toBeInTheDocument();
     });

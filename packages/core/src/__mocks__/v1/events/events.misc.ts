@@ -39,6 +39,9 @@ export const EUROPE_TRIP: Schema_Event = {
   description: "Italy, Germany",
   isSomeday: true,
   priority: Priorities.SELF,
+  startDate: "2025-12-01",
+  endDate: "2025-12-31",
+  order: 2,
 };
 export const LEARN_CHINESE: Schema_Event = {
   _id: "awk92akknm",
@@ -48,6 +51,9 @@ export const LEARN_CHINESE: Schema_Event = {
   priority: Priorities.UNASSIGNED,
   title: "Learn Chinese",
   user: USER,
+  startDate: "2025-06-09",
+  endDate: "2025-06-09",
+  order: 1,
 };
 export const MARCH_1: Schema_Event = {
   _id: "62322b127837957382660212",
