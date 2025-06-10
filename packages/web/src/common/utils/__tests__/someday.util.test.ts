@@ -6,7 +6,7 @@ import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { Schema_SomedayGridEvent } from "@web/common/types/web.event.types";
+import { Schema_SomedayEvent } from "@web/common/types/web.event.types";
 import { categorizeSomedayEvents } from "../someday.util";
 
 dayjs.extend(utc);
@@ -16,7 +16,7 @@ dayjs.extend(isSameOrBefore);
 dayjs.extend(isBetween);
 
 describe("categorizeSomedayEvents", () => {
-  const baseEvent: Partial<Schema_SomedayGridEvent> = {
+  const baseEvent: Partial<Schema_SomedayEvent> = {
     title: "test-title",
     description: "test-description",
     isAllDay: false,
