@@ -186,20 +186,6 @@ export const EventForm: React.FC<FormProps> = ({
     onClose();
   };
 
-  useEffect(() => {
-    if (!isFormOpen) return;
-    const handleMetaEnter = (e: KeyboardEvent) => {
-      if (e.metaKey && e.key === "Enter") {
-        e.preventDefault();
-        onSubmitForm();
-      }
-    };
-    document.addEventListener("keydown", handleMetaEnter);
-    return () => {
-      document.removeEventListener("keydown", handleMetaEnter);
-    };
-  }, [isFormOpen, onSubmitForm]);
-
   const onSetEventField: SetEventFormField = (field) => {
     setEvent({ ...event, ...field });
   };
@@ -281,6 +267,18 @@ export const EventForm: React.FC<FormProps> = ({
     hotkeysOptions,
   );
 
+  useHotkeys(
+    "meta+enter",
+    (e) => {
+      e.preventDefault();
+      onSubmitForm();
+    },
+    {
+      enabled: isFormOpen,
+      enableOnFormTags: true,
+    },
+    [isFormOpen, onSubmitForm],
+  );
   return (
     <StyledEventForm
       {...props}
