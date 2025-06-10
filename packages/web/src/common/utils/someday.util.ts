@@ -7,7 +7,6 @@ import {
   Schema_SomedayEventsColumn,
   Schema_SomedayGridEvent,
 } from "@web/common/types/web.event.types";
-import { validateSomedayEvents } from "@web/common/validators/someday.event.validator";
 
 export const getSomedayEventCategory = (
   event: Schema_Event,
@@ -35,9 +34,7 @@ export const categorizeSomedayEvents = (
 ): Schema_SomedayEventsColumn => {
   const { start: weekStart, end: weekEnd } = weekDates;
 
-  let events = Object.values(somedayEvents) as Schema_SomedayGridEvent[];
-
-  events = validateSomedayEvents(events);
+  const events = Object.values(somedayEvents) as Schema_SomedayGridEvent[];
 
   const sortedEvents = events.sort((a, b) => a.order - b.order);
 
