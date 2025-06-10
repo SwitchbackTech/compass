@@ -11,6 +11,7 @@ import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ID_HEADER_NOTE_INPUT } from "@web/common/constants/web.constants";
 import { isEventFormOpen } from "@web/common/utils";
+import { createAlldayDraft } from "@web/common/utils/draft/draft.util";
 import { createTimedDraft } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import {
@@ -123,6 +124,9 @@ export const useShortcuts = ({
             "createShortcut",
             dispatch,
           ),
+        [Key.A]: () => {
+          createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
+        },
         [Key.T]: () => {
           scrollUtil.scrollToNow();
           _discardDraft();
