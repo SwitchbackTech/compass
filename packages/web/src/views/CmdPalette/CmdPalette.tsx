@@ -13,6 +13,7 @@ import {
 import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { isEventFormOpen } from "@web/common/utils";
+import { createAlldayDraft } from "@web/common/utils/draft/draft.util";
 import { createTimedDraft } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import {
@@ -91,6 +92,18 @@ const CmdPalette = ({
               createTimedDraft(
                 isCurrentWeek,
                 startOfView,
+                "createShortcut",
+                dispatch,
+              ),
+          },
+          {
+            id: "create-allday-event",
+            children: "Create All-Day Event [a]",
+            icon: "PlusIcon",
+            onClick: () =>
+              createAlldayDraft(
+                startOfView,
+                endOfView,
                 "createShortcut",
                 dispatch,
               ),
