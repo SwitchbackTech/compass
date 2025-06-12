@@ -6,6 +6,7 @@ import { CliValidator } from "./cli.validator";
 import { runBuild } from "./commands/build";
 import { startDeleteFlow } from "./commands/delete";
 import { inviteWaitlist } from "./commands/invite";
+import { startSeedFlow } from "./commands/seed";
 import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
 
 class CompassCli {
@@ -36,6 +37,10 @@ class CompassCli {
       }
       case cmd === "invite": {
         await inviteWaitlist();
+        break;
+      }
+      case cmd === "seed": {
+        await startSeedFlow(force);
         break;
       }
       default:
@@ -76,6 +81,14 @@ class CompassCli {
       );
 
     program.command("invite").description("invite users from the waitlist");
+
+    program
+      .command("seed")
+      .description(
+        "create sample events in bulk in Compass and Google Calendar",
+      )
+      .option("-f, --force", "skip confirmation prompt");
+
     return program;
   }
 }
