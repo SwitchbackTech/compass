@@ -112,6 +112,16 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     hotkeysOptions,
   );
 
+  useHotkeys(
+    "meta+enter",
+    (e) => {
+      e.preventDefault();
+      _onSubmit();
+    },
+    hotkeysOptions,
+    [_onSubmit],
+  );
+
   const onSetEventField: SetEventFormField = (field) => {
     const newEvent = { ...event, ...field };
 
