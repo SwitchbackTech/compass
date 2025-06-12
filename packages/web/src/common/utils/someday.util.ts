@@ -4,8 +4,8 @@ import { Schema_Event } from "@core/types/event.types";
 import { Categories_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import {
+  Schema_SomedayEvent,
   Schema_SomedayEventsColumn,
-  Schema_SomedayGridEvent,
 } from "@web/common/types/web.event.types";
 
 export const getSomedayEventCategory = (
@@ -34,7 +34,7 @@ export const categorizeSomedayEvents = (
 ): Schema_SomedayEventsColumn => {
   const { start: weekStart, end: weekEnd } = weekDates;
 
-  const events = Object.values(somedayEvents) as Schema_SomedayGridEvent[];
+  const events = Object.values(somedayEvents) as Schema_SomedayEvent[];
 
   const sortedEvents = events.sort((a, b) => a.order - b.order);
 
