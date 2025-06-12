@@ -267,6 +267,18 @@ export const EventForm: React.FC<FormProps> = ({
     hotkeysOptions,
   );
 
+  useHotkeys(
+    "meta+enter",
+    (e) => {
+      e.preventDefault();
+      onSubmitForm();
+    },
+    {
+      enabled: isFormOpen,
+      enableOnFormTags: true,
+    },
+    [isFormOpen, onSubmitForm],
+  );
   return (
     <StyledEventForm
       {...props}
