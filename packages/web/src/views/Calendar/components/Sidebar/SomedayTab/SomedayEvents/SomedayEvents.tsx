@@ -1,8 +1,6 @@
 import React, { FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { Text } from "@web/components/Text";
-import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { GridEventPreview } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/GridEventPreview";
@@ -17,7 +15,7 @@ import {
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 import { useSidebarContext } from "../../../Draft/sidebar/context/useSidebarContext";
-import { EventPlaceholder, SidebarList } from "../../styled";
+import { SidebarList } from "../../styled";
 import { SomedayEventsContainer } from "./SomedayEventsContainer/SomedayEventsContainer";
 
 interface Props {
@@ -68,23 +66,10 @@ export const SomedayEvents: FC<Props> = ({
             category={category}
             column={column}
             key={COLUMN_WEEK}
+            onPlaceholderClick={actions.onPlaceholderClick}
+            isDraftingNew={isDraftingNew}
           />
         </div>
-        {!isDraftingNew && (
-          <TooltipWrapper
-            description={
-              category === Categories_Event.SOMEDAY_MONTH
-                ? "Add to month"
-                : "Add to week"
-            }
-            onClick={() => actions.onPlaceholderClick(category)}
-            shortcut={category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"}
-          >
-            <EventPlaceholder>
-              <Text size="l">+</Text>
-            </EventPlaceholder>
-          </TooltipWrapper>
-        )}
       </SidebarList>
     </>
   );
