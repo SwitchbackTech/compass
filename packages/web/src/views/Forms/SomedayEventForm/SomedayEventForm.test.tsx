@@ -1,4 +1,4 @@
-import React, { act } from "react";
+import React, { act, useContext } from "react";
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom/extend-expect";
 import { screen } from "@testing-library/react";
@@ -31,6 +31,18 @@ const sampleSomedayEvent: Schema_Event = {
 const mockOnClose = jest.fn();
 const mockOnSubmit = jest.fn();
 const mockSetEvent = jest.fn();
+const mockDuplicateEvent = jest.fn();
+
+jest.mock(
+  "@web/views/Calendar/components/Draft/context/useDraftContext",
+  () => ({
+    useDraftContext: () => ({
+      actions: {
+        duplicateEvent: mockDuplicateEvent,
+      },
+    }),
+  }),
+);
 
 describe("SomedayEventForm Hotkeys", () => {
   beforeEach(() => {
@@ -129,5 +141,64 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(toast).not.toHaveBeenCalled();
     expect(mockOnClose).not.toHaveBeenCalled();
     expect(mockOnSubmit).not.toHaveBeenCalled();
+  });
+
+  test("should call duplicateEvent when duplicate icon btn is clicked", async () => {
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+          setEvent={mockSetEvent}
+        />
+      </div>,
+    );
+
+    const eventForm = screen.getByRole("form");
+
+    // Ensure the form is rendered (good sanity check)
+    expect(eventForm).toBeInTheDocument();
+
+    const duplicateEventButton = eventForm.querySelector(
+      '[type="button"][aria-label="Duplicate Event [Meta+D]"]',
+    );
+
+    // Ensure the form is rendered (good sanity check)
+    expect(duplicateEventButton).toBeInTheDocument();
+
+    await act(async () => userEvent.click(duplicateEventButton!));
+
+    expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
+
+    expect(mockOnClose).not.toHaveBeenCalled();
+    expect(mockDispatch).not.toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
+  });
+
+  test("should call duplicateEvent when meta+d keyboard shortcut is used", async () => {
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+          setEvent={mockSetEvent}
+        />
+      </div>,
+    );
+
+    // Ensure the form is rendered (good sanity check)
+    expect(screen.getByRole("form")).toBeInTheDocument();
+
+    await act(async () => userEvent.keyboard("{Meta>}d{/Meta}"));
+
+    expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
+
+    expect(mockOnClose).not.toHaveBeenCalled();
+    expect(mockDispatch).not.toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
   });
 });
