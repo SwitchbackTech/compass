@@ -18,8 +18,10 @@ import {
 import { SelectOption } from "@web/common/types/component.types";
 import { getCategory } from "@web/common/utils/event.util";
 import { mapToBackend } from "@web/common/utils/web.date.util";
+import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection";
 import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
+import { DuplicateButton } from "@web/views/Forms/EventForm/DuplicateButton";
 import { MoveToSidebarButton } from "@web/views/Forms/EventForm/MoveToSidebarButton";
 import { getFormDates } from "./DateControlsSection/DateTimeSection/form.datetime.util";
 import { PrioritySection } from "./PrioritySection";
@@ -46,6 +48,7 @@ export const EventForm: React.FC<FormProps> = ({
   setEvent,
   ...props
 }) => {
+  const { actions } = useDraftContext();
   const { priority, title } = event || {};
   const priorityColor = colorByPriority[priority || Priorities.UNASSIGNED];
   const category = getCategory(event);
@@ -136,6 +139,11 @@ export const EventForm: React.FC<FormProps> = ({
     onDelete?.(event._id);
     onClose();
   };
+
+  const onDuplicateEvent = useCallback(() => {
+    actions.duplicateEvent();
+    onClose();
+  }, [actions.duplicateEvent, onClose]);
 
   const handleIgnoredKeys = (e: KeyboardEvent) => {
     // Ignores certain keys and key combinations to prevent default behavior.
@@ -308,6 +316,7 @@ export const EventForm: React.FC<FormProps> = ({
           />
         )}
         <DeleteButton onClick={onDeleteForm} />
+        <DuplicateButton onClick={onDuplicateEvent} />
       </StyledIconRow>
 
       <StyledTitle

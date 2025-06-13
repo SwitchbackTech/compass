@@ -1,4 +1,4 @@
-import React, { KeyboardEvent, MouseEvent, useRef } from "react";
+import React, { KeyboardEvent, MouseEvent, useCallback, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { toast } from "react-toastify";
@@ -139,6 +139,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     e.stopPropagation();
   };
 
+  const onDuplicateEvent = useCallback(() => {
+    actions.duplicateEvent();
+    onClose();
+  }, [actions.duplicateEvent, onClose]);
+
   return (
     <StyledEventForm
       {...props}
@@ -155,7 +160,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     >
       <StyledIconRow>
         <DeleteButton onClick={onDelete} />
-        <DuplicateButton onClick={actions.duplicateEvent} />
+        <DuplicateButton onClick={onDuplicateEvent} />
       </StyledIconRow>
 
       <StyledTitle
