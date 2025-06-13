@@ -8,7 +8,7 @@ export const DuplicateButton = ({ onClick }: { onClick: () => void }) => {
       icon={<Copy />}
       buttonProps={{ "aria-label": "Duplicate Event [Meta+D]" }}
       tooltipProps={{
-        shortcut: "DUP",
+        shortcut: "Meta+D",
         description: "Duplicate Event",
         onClick,
       }}
