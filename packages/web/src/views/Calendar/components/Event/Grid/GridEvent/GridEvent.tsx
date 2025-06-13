@@ -114,56 +114,51 @@ const _GridEvent = (
     width: position.width || 0,
   };
 
+  const eventDurationMinutes = dayjs(event.endDate).diff(
+    dayjs(event.startDate),
+    "minute",
+  );
+  const isShortEvent = eventDurationMinutes <= 15;
+  const showTime = !event.isAllDay && (isDraft || !isInPast);
+  const eventTitleSize = eventDurationMinutes <= 15 ? "s" : "m";
+  const timeLabel = getTimesLabel(
+    event.startDate as string,
+    event.endDate as string,
+  );
+
   return (
     <StyledEvent {...styledEventProps}>
       <Flex
-        alignItems={AlignItems.FLEX_START}
+        alignItems={AlignItems.CENTER}
         direction={FlexDirections.COLUMN}
         flexWrap={FlexWrap.WRAP}
       >
-        <StyledEventTitle size="m" role="textbox">
-          {event.title}
-          {isRecurring && "*"}
-        </StyledEventTitle>
-        {!event.isAllDay && (
+        {isShortEvent && showTime ? (
+          <Flex alignItems={AlignItems.CENTER} direction={FlexDirections.ROW}>
+            <StyledEventTitle size="s" role="textbox">
+              {event.title}
+              {isRecurring && "*"}
+            </StyledEventTitle>
+            <Text
+              role="textbox"
+              size="xs"
+              zIndex={ZIndex.LAYER_3}
+              style={{ marginLeft: 6 }}
+            >
+              {timeLabel}
+            </Text>
+          </Flex>
+        ) : (
           <>
-            {(isDraft || !isInPast) && (
-              <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
-                {getTimesLabel(
-                  event.startDate as string,
-                  event.endDate as string,
-                )}
+            <StyledEventTitle size={eventTitleSize} role="textbox">
+              {event.title}
+              {isRecurring && "*"}
+            </StyledEventTitle>
+            {showTime && (
+              <Text role="textbox" size="s" zIndex={ZIndex.LAYER_3}>
+                {timeLabel}
               </Text>
             )}
-            <>
-              <StyledEventScaler
-                showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
-                onMouseDown={(e) => {
-                  if (isRecurring) {
-                    alert("Can't edit recurring events (yet)");
-                    e.stopPropagation();
-                    return;
-                  }
-                  onScalerMouseDown(event, e, "startDate");
-                }}
-                top="-0.25px"
-                zIndex={ZIndex.LAYER_4}
-              />
-
-              <StyledEventScaler
-                bottom="-0.25px"
-                showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
-                onMouseDown={(e) => {
-                  if (isRecurring) {
-                    alert("Can't edit recurring events (yet)");
-                    e.stopPropagation();
-                    return;
-                  }
-                  onScalerMouseDown(event, e, "endDate");
-                }}
-                zIndex={ZIndex.LAYER_4}
-              />
-            </>
           </>
         )}
       </Flex>
