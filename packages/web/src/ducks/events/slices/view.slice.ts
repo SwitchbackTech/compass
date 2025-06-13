@@ -11,6 +11,11 @@ interface State_View {
     tab: "monthWidget" | "tasks";
     isOpen: boolean;
   };
+  header: {
+    note: {
+      focus: boolean;
+    };
+  };
 }
 
 interface Action_DatesChange extends Action {
@@ -21,12 +26,17 @@ interface Action_SidebarViewChange extends Action {
   payload: State_View["sidebar"]["tab"];
 }
 
+interface Action_FocusHeaderNoteChange extends Action {
+  payload: State_View["header"]["note"]["focus"];
+}
+
 const initialState: State_View = {
   dates: {
     start: dayjs().format(),
     end: dayjs().endOf("week").format(),
   },
   sidebar: { tab: "tasks", isOpen: true },
+  header: { note: { focus: false } },
 };
 
 export const viewSlice = createSlice({
@@ -41,6 +51,9 @@ export const viewSlice = createSlice({
     },
     updateSidebarTab: (state, action: Action_SidebarViewChange) => {
       state.sidebar.tab = action.payload;
+    },
+    focusHeaderNote: (state, action: Action_FocusHeaderNoteChange) => {
+      state.header.note.focus = action?.payload ?? !state.header.note.focus;
     },
   },
 });
