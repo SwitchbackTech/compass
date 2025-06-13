@@ -5,9 +5,11 @@ import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { Schema_SomedayEvent } from "@web/common/types/web.event.types";
 import { categorizeSomedayEvents } from "../someday.util";
+import { setSomedayEventsOrder } from "../someday.util";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -189,5 +191,108 @@ describe("categorizeSomedayEvents", () => {
       expect(result.columns[COLUMN_MONTH].eventIds).toEqual([]);
       expect(result.columnOrder).toEqual([COLUMN_WEEK, COLUMN_MONTH]);
     });
+  });
+});
+
+describe("setSomedayEventsOrder", () => {
+  const createEvent = (id: string, order?: number): Schema_Event => ({
+    _id: id,
+    ...(order !== undefined && { order }),
+  });
+
+  it("should return empty array for empty input", () => {
+    expect(setSomedayEventsOrder([])).toEqual([]);
+  });
+
+  it("should assign sequential orders starting from 0 when no events have orders", () => {
+    const events = [createEvent("1"), createEvent("2"), createEvent("3")];
+
+    const result = setSomedayEventsOrder(events);
+
+    expect(result).toEqual([
+      { ...events[0], order: 0 },
+      { ...events[1], order: 1 },
+      { ...events[2], order: 2 },
+    ]);
+  });
+
+  it("should preserve existing valid orders", () => {
+    const events = [
+      createEvent("1", 5),
+      createEvent("2", 2),
+      createEvent("3", 8),
+    ];
+
+    const result = setSomedayEventsOrder(events);
+
+    expect(result).toEqual(events);
+  });
+
+  it("should fill gaps in order sequence", () => {
+    const events = [
+      createEvent("1", 0),
+      createEvent("2"), // Should get order 1
+      createEvent("3", 3),
+      createEvent("4"), // Should get order 2
+      createEvent("5", 5),
+    ];
+
+    const result = setSomedayEventsOrder(events);
+
+    expect(result).toEqual([
+      { ...events[0], order: 0 },
+      { ...events[1], order: 1 },
+      { ...events[2], order: 3 },
+      { ...events[3], order: 2 },
+      { ...events[4], order: 5 },
+    ]);
+  });
+
+  it("should append to end when no gaps available", () => {
+    const events = [
+      createEvent("1", 0),
+      createEvent("2", 1),
+      createEvent("3"), // Should get order 3
+      createEvent("4", 2),
+      createEvent("5"), // Should get order 4
+    ];
+
+    const result = setSomedayEventsOrder(events);
+
+    expect(result).toEqual([
+      { ...events[0], order: 0 },
+      { ...events[1], order: 1 },
+      { ...events[2], order: 3 },
+      { ...events[3], order: 2 },
+      { ...events[4], order: 4 },
+    ]);
+  });
+
+  it("should handle mix of valid and invalid order values", () => {
+    const events = [
+      createEvent("1", 1),
+      { ...createEvent("2"), order: Number.NaN }, // Should get order 0
+      { ...createEvent("3"), order: undefined }, // Should get order 2
+      createEvent("4", 4),
+      { ...createEvent("5"), order: undefined }, // Should get order 3
+    ];
+
+    const result = setSomedayEventsOrder(events);
+
+    expect(result).toEqual([
+      { ...events[0], order: 1 },
+      { ...events[1], order: 0 },
+      { ...events[2], order: 2 },
+      { ...events[3], order: 4 },
+      { ...events[4], order: 3 },
+    ]);
+  });
+
+  it("should handle single event without order", () => {
+    const events = [createEvent("1")];
+
+    const result = setSomedayEventsOrder(events);
+
+    expect(result).toEqual([{ ...events[0], order: 0 }]);
   });
 });

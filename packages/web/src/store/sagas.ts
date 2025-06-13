@@ -12,7 +12,7 @@ import {
   deleteSomedayEvent,
   getSomedayEvents,
   reorderSomedayEvents,
-} from "@web/ducks/events/sagas/somday.sagas";
+} from "@web/ducks/events/sagas/someday.sagas";
 import {
   createEventSlice,
   deleteEventSlice,

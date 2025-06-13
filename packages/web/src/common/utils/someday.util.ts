@@ -7,6 +7,7 @@ import {
   Schema_SomedayEvent,
   Schema_SomedayEventsColumn,
 } from "@web/common/types/web.event.types";
+import { validateSomedayEvents } from "@web/common/validators/someday.event.validator";
 
 export const getSomedayEventCategory = (
   event: Schema_Event,
@@ -34,7 +35,9 @@ export const categorizeSomedayEvents = (
 ): Schema_SomedayEventsColumn => {
   const { start: weekStart, end: weekEnd } = weekDates;
 
-  const events = Object.values(somedayEvents) as Schema_SomedayEvent[];
+  let events = Object.values(somedayEvents) as Schema_SomedayEvent[];
+
+  events = validateSomedayEvents(events);
 
   const sortedEvents = events.sort((a, b) => a.order - b.order);
 
@@ -84,4 +87,55 @@ export const categorizeSomedayEvents = (
     events: somedayEvents,
   };
   return sortedData;
+};
+
+/**
+ * See https://github.com/SwitchbackTech/compass/issues/512 for more context.
+ * Should be removed after we ensure that backend sets the order field for all someday events.
+ */
+export const setSomedayEventsOrder = (
+  events: Schema_Event[],
+): Schema_Event[] => {
+  if (events.length === 0) return [];
+
+  // Get existing valid orders
+  const existingOrders = events
+    .map((e) => e.order)
+    .filter(
+      (order): order is number => typeof order === "number" && !isNaN(order),
+    )
+    .sort((a, b) => a - b);
+
+  // If no valid orders exist, assign sequential orders starting from 0
+  if (existingOrders.length === 0) {
+    return events.map((event, index) => ({ ...event, order: index }));
+  }
+
+  const lowestOrder = Math.min(0, existingOrders[0]); // Ensure we start at least from 0
+  const highestOrder = existingOrders[existingOrders.length - 1];
+
+  // Create a set of used orders for faster lookup
+  const usedOrders = new Set(existingOrders);
+
+  // Find all available orders in the range
+  const availableOrders: number[] = [];
+  for (let i = lowestOrder; i <= highestOrder; i++) {
+    if (!usedOrders.has(i)) {
+      availableOrders.push(i);
+    }
+  }
+
+  // Process each event that needs an order
+  let nextNewOrder = highestOrder + 1;
+  return events.map((event) => {
+    // Keep existing valid orders
+    if (typeof event.order === "number" && !isNaN(event.order)) {
+      return event;
+    }
+
+    // Assign next available order or append to end
+    const order =
+      availableOrders.length > 0 ? availableOrders.shift()! : nextNewOrder++;
+    return { ...event, order };
+  });
 };
