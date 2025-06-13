@@ -436,8 +436,42 @@ export const useSidebarActions = (
         },
       },
     };
-
     setSomedayEvents(newState);
+
+    const draggedEvent = state.somedayEvents.events[draggableId];
+
+    const draggedToMonthColumn = destColumn.id === COLUMN_MONTH;
+
+    let newStartDate;
+    let newEndDate;
+
+    if (draggedToMonthColumn) {
+      // set month start-end to current month
+      const monthStart = dayjs(new Date()).startOf("month");
+      const monthEnd = dayjs(new Date()).endOf("month");
+      newStartDate = monthStart.format();
+      newEndDate = monthEnd.format();
+    } else {
+      // set week start-end to current week
+      const weekStart = dayjs(new Date()).startOf("week");
+      const weekEnd = dayjs(new Date()).endOf("week");
+      newStartDate = weekStart.format();
+      newEndDate = weekEnd.format();
+    }
+
+    const newOrder = destEventIds.indexOf(draggableId);
+
+    dispatch(
+      editEventSlice.actions.request({
+        _id: draggedEvent._id,
+        event: {
+          ...draggedEvent,
+          startDate: newStartDate,
+          endDate: newEndDate,
+          order: newOrder,
+        },
+      }),
+    );
   };
 
   const handleSameColumnReordering = (
