@@ -22,6 +22,7 @@ import {
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -126,6 +127,22 @@ const CmdPalette = ({
             onClick: onEventTargetVisibility(() =>
               handleCreateSomedayDraft(Categories_Event.SOMEDAY_MONTH),
             ),
+          },
+          {
+            id: "edit-focus-note",
+            children: `Edit Focus Note [f]`,
+            icon: "PencilSquareIcon",
+            onClick: (event) => {
+              _discardDraft();
+
+              const observer = new IntersectionObserver(([entry]) => {
+                if (entry.isIntersecting) return;
+                observer.disconnect();
+                dispatch(viewSlice.actions.focusHeaderNote(true));
+              });
+
+              observer.observe(event.currentTarget);
+            },
           },
           {
             id: "today",
