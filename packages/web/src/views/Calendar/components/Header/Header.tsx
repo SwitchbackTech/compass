@@ -1,5 +1,5 @@
 import dayjs, { Dayjs } from "dayjs";
-import React, { FC } from "react";
+import React, { FC, useRef } from "react";
 import { theme } from "@web/common/styles/theme";
 import { getCalendarHeadingLabel } from "@web/common/utils/web.date.util";
 import { AlignItems } from "@web/components/Flex/styled";
@@ -11,6 +11,7 @@ import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { RootProps } from "../../calendarView.types";
 import { Util_Scroll } from "../../hooks/grid/useScroll";
+import { useFocusHotkey } from "../../hooks/shortcuts/useFocusHotkey";
 import { WeekProps } from "../../hooks/useWeek";
 import { TodayButton } from "../TodayButton";
 import { DayLabels } from "./DayLabels";
@@ -49,6 +50,10 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
     scrollToNow();
   };
 
+  const headerNoteRef = useRef<HTMLDivElement>(null);
+
+  useFocusHotkey(() => headerNoteRef.current?.focus(), [headerNoteRef]);
+
   return (
     <>
       <StyledHeaderRow alignItems={AlignItems.BASELINE}>
@@ -67,7 +72,7 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
             />
           </TooltipWrapper>
         </StyledLeftGroup>
-        <HeaderNote />
+        <HeaderNote ref={headerNoteRef} />
         <StyledRightGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
             <Text size="xl">{headerLabel}</Text>
