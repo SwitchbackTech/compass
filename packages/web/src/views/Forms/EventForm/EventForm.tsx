@@ -48,7 +48,6 @@ export const EventForm: React.FC<FormProps> = ({
   setEvent,
   ...props
 }) => {
-  const { actions } = useDraftContext();
   const { priority, title } = event || {};
   const priorityColor = colorByPriority[priority || Priorities.UNASSIGNED];
   const category = getCategory(event);
@@ -141,9 +140,9 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   const onDuplicateEvent = useCallback(() => {
-    actions.duplicateEvent();
+    onDuplicate?.(event);
     onClose();
-  }, [actions.duplicateEvent, onClose]);
+  }, [onDuplicate, onClose]);
 
   const handleIgnoredKeys = (e: KeyboardEvent) => {
     // Ignores certain keys and key combinations to prevent default behavior.

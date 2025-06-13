@@ -171,7 +171,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
 
-    expect(mockOnClose).not.toHaveBeenCalled();
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
     expect(mockDispatch).not.toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
     expect(mockConfirm).not.toHaveBeenCalled();
