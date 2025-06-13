@@ -8,7 +8,9 @@ import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
+import { DuplicateButton } from "@web/views/Forms/EventForm/DuplicateButton";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import {
@@ -32,6 +34,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   ...props
 }) => {
   const dispatch = useAppDispatch();
+  const { actions } = useDraftContext();
 
   const { priority, title } = event || {};
   const bgColor = colorByPriority[priority];
@@ -142,6 +145,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     >
       <StyledIconRow>
         <DeleteButton onClick={onDelete} />
+        <DuplicateButton onClick={actions.duplicateEvent} />
       </StyledIconRow>
 
       <StyledTitle
