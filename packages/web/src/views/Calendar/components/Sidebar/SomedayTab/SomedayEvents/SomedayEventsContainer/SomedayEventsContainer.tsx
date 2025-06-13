@@ -15,6 +15,7 @@ import { State_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hook
 import { EventPlaceholder } from "../../../styled";
 import { DraggableSomedayEvent } from "../DraggableSomedayEvent/DraggableSomedayEvent";
 import { DraggableSomedayEvents } from "../DraggableSomedayEvent/DraggableSomedayEvents";
+import { DropZone } from "./Dropzone";
 
 const getSomedayEvents = (
   category: Categories_Event,
@@ -57,36 +58,42 @@ export const SomedayEventsContainer: FC<Props> = ({
   return (
     <>
       <Droppable droppableId={column.id}>
-        {(provided) => {
+        {(provided, snapshot) => {
           return (
-            <div id="somedayColumn">
-              <div ref={provided.innerRef} {...provided.droppableProps}>
-                <DraggableSomedayEvents
-                  category={category}
-                  draft={state.draft}
-                  events={events}
-                  isOverGrid={state.isOverGrid}
-                />
-                {provided.placeholder}
+            <DropZone
+              id="somedayColumn"
+              ref={provided.innerRef}
+              isActive={
+                snapshot.isDraggingOver ||
+                (state.isDragging && !state.isSomedayFormOpen)
+              }
+              {...provided.droppableProps}
+            >
+              <DraggableSomedayEvents
+                category={category}
+                draft={state.draft}
+                events={events}
+                isOverGrid={state.isOverGrid}
+              />
+              {provided.placeholder}
 
-                {!isDraftingNew && (
-                  <TooltipWrapper
-                    description={
-                      category === Categories_Event.SOMEDAY_MONTH
-                        ? "Add to month"
-                        : "Add to week"
-                    }
-                    onClick={() => onPlaceholderClick(category)}
-                    shortcut={
-                      category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"
-                    }
-                  >
-                    <EventPlaceholder>
-                      <Text size="l">+</Text>
-                    </EventPlaceholder>
-                  </TooltipWrapper>
-                )}
-              </div>
+              {!isDraftingNew && (
+                <TooltipWrapper
+                  description={
+                    category === Categories_Event.SOMEDAY_MONTH
+                      ? "Add to month"
+                      : "Add to week"
+                  }
+                  onClick={() => onPlaceholderClick(category)}
+                  shortcut={
+                    category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"
+                  }
+                >
+                  <EventPlaceholder>
+                    <Text size="l">+</Text>
+                  </EventPlaceholder>
+                </TooltipWrapper>
+              )}
 
               {isDraftingThisCategory && state.draft && (
                 <DraggableSomedayEvent
@@ -99,7 +106,7 @@ export const SomedayEventsContainer: FC<Props> = ({
                   key={ID_SOMEDAY_DRAFT}
                 />
               )}
-            </div>
+            </DropZone>
           );
         }}
       </Droppable>

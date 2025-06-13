@@ -8,6 +8,7 @@ import {
   handleError,
   replaceIdWithOptimisticId,
 } from "@web/common/utils/event.util";
+import { setSomedayEventsOrder } from "@web/common/utils/someday.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 import { EventApi } from "../event.api";
 import {
@@ -70,7 +71,9 @@ export function* getSomedayEvents({ payload }: Action_GetEvents) {
       endDate: payload.endDate,
     })) as Response_GetEventsSuccess;
 
-    const normalizedEvents = normalize<Schema_Event>(res.data, [
+    const events = setSomedayEventsOrder(res.data);
+
+    const normalizedEvents = normalize<Schema_Event>(events, [
       normalizedEventsSchema(),
     ]);
     yield put(
