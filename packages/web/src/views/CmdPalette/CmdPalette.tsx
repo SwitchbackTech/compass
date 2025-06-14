@@ -24,6 +24,7 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { onEventTargetVisibility } from "../../common/utils/onEventTargetVisibility";
 import { ShortcutProps } from "../Calendar/hooks/shortcuts/useShortcuts";
 
 const CmdPalette = ({
@@ -88,39 +89,43 @@ const CmdPalette = ({
             id: "create-event",
             children: "Create Event [c]",
             icon: "PlusIcon",
-            onClick: () =>
+            onClick: onEventTargetVisibility(() =>
               createTimedDraft(
                 isCurrentWeek,
                 startOfView,
                 "createShortcut",
                 dispatch,
               ),
+            ),
           },
           {
             id: "create-allday-event",
             children: "Create All-Day Event [a]",
             icon: "PlusIcon",
-            onClick: () =>
+            onClick: onEventTargetVisibility(() =>
               createAlldayDraft(
                 startOfView,
                 endOfView,
                 "createShortcut",
                 dispatch,
               ),
+            ),
           },
           {
             id: "create-someday-week-event",
             children: "Create Week Event [w]",
             icon: "PlusIcon",
-            onClick: () =>
+            onClick: onEventTargetVisibility(() =>
               handleCreateSomedayDraft(Categories_Event.SOMEDAY_WEEK),
+            ),
           },
           {
             id: "create-someday-month-event",
             children: "Create Month Event [m]",
             icon: "PlusIcon",
-            onClick: () =>
+            onClick: onEventTargetVisibility(() =>
               handleCreateSomedayDraft(Categories_Event.SOMEDAY_MONTH),
+            ),
           },
           {
             id: "today",
