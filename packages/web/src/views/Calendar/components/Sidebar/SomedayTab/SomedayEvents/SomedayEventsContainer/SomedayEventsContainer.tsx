@@ -78,21 +78,23 @@ export const SomedayEventsContainer: FC<Props> = ({
               {provided.placeholder}
 
               {!isDraftingNew && (
-                <TooltipWrapper
-                  description={
-                    category === Categories_Event.SOMEDAY_MONTH
-                      ? "Add to month"
-                      : "Add to week"
-                  }
-                  onClick={() => onPlaceholderClick(category)}
-                  shortcut={
-                    category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"
-                  }
-                >
-                  <EventPlaceholder>
-                    <Text size="l">+</Text>
-                  </EventPlaceholder>
-                </TooltipWrapper>
+                <div style={{ opacity: state.isDragging ? 0 : 1 }}>
+                  <TooltipWrapper
+                    description={
+                      category === Categories_Event.SOMEDAY_MONTH
+                        ? "Add to month"
+                        : "Add to week"
+                    }
+                    onClick={() => onPlaceholderClick(category)}
+                    shortcut={
+                      category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"
+                    }
+                  >
+                    <EventPlaceholder>
+                      <Text size="l">+</Text>
+                    </EventPlaceholder>
+                  </TooltipWrapper>
+                </div>
               )}
 
               {isDraftingThisCategory && state.draft && (
