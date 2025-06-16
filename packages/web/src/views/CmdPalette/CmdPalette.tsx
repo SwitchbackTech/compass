@@ -16,6 +16,7 @@ import { isEventFormOpen } from "@web/common/utils";
 import { createAlldayDraft } from "@web/common/utils/draft/draft.util";
 import { createTimedDraft } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
+import { onEventTargetVisibility } from "@web/common/utils/event-target-visibility.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
@@ -24,7 +25,6 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { onEventTargetVisibility } from "../../common/utils/onEventTargetVisibility";
 import { ShortcutProps } from "../Calendar/hooks/shortcuts/useShortcuts";
 
 const CmdPalette = ({
