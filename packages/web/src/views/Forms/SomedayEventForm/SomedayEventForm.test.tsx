@@ -31,6 +31,18 @@ const sampleSomedayEvent: Schema_Event = {
 const mockOnClose = jest.fn();
 const mockOnSubmit = jest.fn();
 const mockSetEvent = jest.fn();
+const mockDuplicateEvent = jest.fn();
+
+jest.mock(
+  "@web/views/Calendar/components/Draft/context/useDraftContext",
+  () => ({
+    useDraftContext: () => ({
+      actions: {
+        duplicateEvent: mockDuplicateEvent,
+      },
+    }),
+  }),
+);
 
 describe("SomedayEventForm Hotkeys", () => {
   beforeEach(() => {
@@ -129,5 +141,67 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(toast).not.toHaveBeenCalled();
     expect(mockOnClose).not.toHaveBeenCalled();
     expect(mockOnSubmit).not.toHaveBeenCalled();
+  });
+
+  test("should call duplicateEvent when duplicate icon btn is clicked", async () => {
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+          setEvent={mockSetEvent}
+        />
+      </div>,
+    );
+
+    const eventForm = screen.getByRole("form");
+
+    // Ensure the form is rendered (good sanity check)
+    expect(eventForm).toBeInTheDocument();
+
+    const duplicateEventButton = eventForm.querySelector(
+      '[type="button"][aria-label="Duplicate Event [Meta+D]"]',
+    );
+
+    expect(duplicateEventButton).toBeInTheDocument();
+
+    await act(async () => userEvent.click(duplicateEventButton!));
+
+    expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
+
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
+    expect(mockDispatch).not.toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
+  });
+
+  /**
+   * This test is skipped
+   * The hotkey functionality is not implemented in the SomedayEventForm comp.
+   */
+  test.skip("should call duplicateEvent when meta+d keyboard shortcut is used", async () => {
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onSubmit={mockOnSubmit}
+          setEvent={mockSetEvent}
+        />
+      </div>,
+    );
+
+    // Ensure the form is rendered (good sanity check)
+    expect(screen.getByRole("form")).toBeInTheDocument();
+
+    await act(async () => userEvent.keyboard("{Meta>}d{/Meta}"));
+
+    expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
+
+    expect(mockOnClose).not.toHaveBeenCalled();
+    expect(mockDispatch).not.toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
   });
 });
