@@ -6,15 +6,14 @@ import {
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
-import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { State_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
-import { EventPlaceholder } from "../../../styled";
 import { DraggableSomedayEvent } from "../DraggableSomedayEvent/DraggableSomedayEvent";
 import { DraggableSomedayEvents } from "../DraggableSomedayEvent/DraggableSomedayEvents";
+import { AddSomedayEvent } from "./AddSomedayEvent";
 import { DropZone } from "./Dropzone";
 
 const getSomedayEvents = (
@@ -55,6 +54,23 @@ export const SomedayEventsContainer: FC<Props> = ({
   const isDraftingThisCategory =
     state.isDraftingNew && category === draftCategory;
 
+  // Render add someday event tooltip
+  const renderWithTooltip = (children: React.ReactNode) => {
+    return (
+      <TooltipWrapper
+        description={
+          category === Categories_Event.SOMEDAY_MONTH
+            ? "Add to month"
+            : "Add to week"
+        }
+        onClick={() => onPlaceholderClick(category)}
+        shortcut={category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"}
+      >
+        {children}
+      </TooltipWrapper>
+    );
+  };
+
   return (
     <>
       <Droppable droppableId={column.id}>
@@ -79,21 +95,11 @@ export const SomedayEventsContainer: FC<Props> = ({
 
               {!isDraftingNew && (
                 <div style={{ opacity: state.isDragging ? 0 : 1 }}>
-                  <TooltipWrapper
-                    description={
-                      category === Categories_Event.SOMEDAY_MONTH
-                        ? "Add to month"
-                        : "Add to week"
-                    }
-                    onClick={() => onPlaceholderClick(category)}
-                    shortcut={
-                      category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"
-                    }
-                  >
-                    <EventPlaceholder>
-                      <Text size="l">+</Text>
-                    </EventPlaceholder>
-                  </TooltipWrapper>
+                  {state.isDragging ? (
+                    <AddSomedayEvent />
+                  ) : (
+                    renderWithTooltip(<AddSomedayEvent />)
+                  )}
                 </div>
               )}
 
