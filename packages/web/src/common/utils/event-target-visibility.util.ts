@@ -4,6 +4,7 @@ import { SyntheticEvent } from "react";
  * onEventTargetVisibility
  * Monitors the visibility of an event target
  * and executes a callback when the visibility changes.
+ * See this link for additional context: https://github.com/SwitchbackTech/compass/pull/520#discussion_r2148965613
  * @param callback
  * @param visible execute the callback when the target is hidden or visible
  * @param visible defaults to false
