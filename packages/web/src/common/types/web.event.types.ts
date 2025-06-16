@@ -16,7 +16,7 @@ export const GridEventSchema = CoreEventSchema.extend({
 
 export const SomedayEventSchema = CoreEventSchema.extend({
   _id: z.string(),
-  order: z.number(),
+  order: z.number().optional(),
   isSomeday: z.literal(true),
 });
 
