@@ -1,13 +1,11 @@
-import {
+import React, {
   ForwardedRef,
-  RefObject,
   forwardRef,
   useEffect,
   useImperativeHandle,
   useRef,
   useState,
 } from "react";
-import React from "react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { ID_HEADER_NOTE_INPUT } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
@@ -404,3 +402,5 @@ export const HeaderNote = forwardRef(
     );
   },
 );
+
+HeaderNote.displayName = "HeaderNote";
