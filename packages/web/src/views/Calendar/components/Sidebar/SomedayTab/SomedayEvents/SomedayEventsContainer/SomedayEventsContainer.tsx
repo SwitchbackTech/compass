@@ -54,6 +54,23 @@ export const SomedayEventsContainer: FC<Props> = ({
   const isDraftingThisCategory =
     state.isDraftingNew && category === draftCategory;
 
+  // Render add someday event tooltip
+  const renderWithTooltip = (children: React.ReactNode) => {
+    return (
+      <TooltipWrapper
+        description={
+          category === Categories_Event.SOMEDAY_MONTH
+            ? "Add to month"
+            : "Add to week"
+        }
+        onClick={() => onPlaceholderClick(category)}
+        shortcut={category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"}
+      >
+        {children}
+      </TooltipWrapper>
+    );
+  };
+
   return (
     <>
       <Droppable droppableId={column.id}>
@@ -78,19 +95,11 @@ export const SomedayEventsContainer: FC<Props> = ({
 
               {!isDraftingNew && (
                 <div style={{ opacity: state.isDragging ? 0 : 1 }}>
-                  <TooltipWrapper
-                    description={
-                      category === Categories_Event.SOMEDAY_MONTH
-                        ? "Add to month"
-                        : "Add to week"
-                    }
-                    onClick={() => onPlaceholderClick(category)}
-                    shortcut={
-                      category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"
-                    }
-                  >
+                  {state.isDragging ? (
                     <AddSomedayEvent />
-                  </TooltipWrapper>
+                  ) : (
+                    renderWithTooltip(<AddSomedayEvent />)
+                  )}
                 </div>
               )}
 
