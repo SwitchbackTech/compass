@@ -16,6 +16,7 @@ import { isEventFormOpen } from "@web/common/utils";
 import { createAlldayDraft } from "@web/common/utils/draft/draft.util";
 import { createTimedDraft } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
+import { onEventTargetVisibility } from "@web/common/utils/event-target-visibility.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
@@ -88,39 +89,43 @@ const CmdPalette = ({
             id: "create-event",
             children: "Create Event [c]",
             icon: "PlusIcon",
-            onClick: () =>
+            onClick: onEventTargetVisibility(() =>
               createTimedDraft(
                 isCurrentWeek,
                 startOfView,
                 "createShortcut",
                 dispatch,
               ),
+            ),
           },
           {
             id: "create-allday-event",
             children: "Create All-Day Event [a]",
             icon: "PlusIcon",
-            onClick: () =>
+            onClick: onEventTargetVisibility(() =>
               createAlldayDraft(
                 startOfView,
                 endOfView,
                 "createShortcut",
                 dispatch,
               ),
+            ),
           },
           {
             id: "create-someday-week-event",
             children: "Create Week Event [w]",
             icon: "PlusIcon",
-            onClick: () =>
+            onClick: onEventTargetVisibility(() =>
               handleCreateSomedayDraft(Categories_Event.SOMEDAY_WEEK),
+            ),
           },
           {
             id: "create-someday-month-event",
             children: "Create Month Event [m]",
             icon: "PlusIcon",
-            onClick: () =>
+            onClick: onEventTargetVisibility(() =>
               handleCreateSomedayDraft(Categories_Event.SOMEDAY_MONTH),
+            ),
           },
           {
             id: "today",
