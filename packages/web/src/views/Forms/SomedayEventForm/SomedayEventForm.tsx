@@ -1,4 +1,4 @@
-import React, { KeyboardEvent, MouseEvent, useRef } from "react";
+import React, { KeyboardEvent, MouseEvent, useCallback, useRef } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { toast } from "react-toastify";
@@ -8,7 +8,9 @@ import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
+import { DuplicateButton } from "@web/views/Forms/EventForm/DuplicateButton";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import {
@@ -32,6 +34,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   ...props
 }) => {
   const dispatch = useAppDispatch();
+  const { actions } = useDraftContext();
 
   const { priority, title } = event || {};
   const bgColor = colorByPriority[priority];
@@ -112,6 +115,16 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     hotkeysOptions,
   );
 
+  useHotkeys(
+    "meta+enter",
+    (e) => {
+      e.preventDefault();
+      _onSubmit();
+    },
+    hotkeysOptions,
+    [_onSubmit],
+  );
+
   const onSetEventField: SetEventFormField = (field) => {
     const newEvent = { ...event, ...field };
 
@@ -125,6 +138,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const stopPropagation = (e: MouseEvent) => {
     e.stopPropagation();
   };
+
+  const onDuplicateEvent = useCallback(() => {
+    actions.duplicateEvent();
+    onClose();
+  }, [actions.duplicateEvent, onClose]);
 
   return (
     <StyledEventForm
@@ -142,6 +160,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     >
       <StyledIconRow>
         <DeleteButton onClick={onDelete} />
+        <DuplicateButton onClick={onDuplicateEvent} />
       </StyledIconRow>
 
       <StyledTitle

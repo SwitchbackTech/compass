@@ -131,6 +131,63 @@ test("should call onDuplicate when meta+d keyboard shortcut is used", async () =
   expect(mockOnConvert).not.toHaveBeenCalled();
 });
 
+test("should call duplicateEvent when duplicate icon btn is clicked", async () => {
+  const sampleEvent: Schema_Event = {
+    _id: "event123",
+    title: "Test Event for Duplication",
+    startDate: "2025-04-10",
+    endDate: "2025-04-10",
+    isAllDay: false,
+  };
+  const mockOnClose = jest.fn();
+  const mockOnConvert = jest.fn();
+  const mockOnSubmit = jest.fn();
+  const mockSetEvent = jest.fn();
+  const mockOnDelete = jest.fn();
+  const mockOnDuplicate = jest.fn();
+
+  render(
+    <div>
+      <EventForm
+        event={sampleEvent}
+        onClose={mockOnClose}
+        onConvert={mockOnConvert}
+        onSubmit={mockOnSubmit}
+        setEvent={mockSetEvent}
+        onDelete={mockOnDelete}
+        onDuplicate={mockOnDuplicate}
+      />
+    </div>,
+  );
+
+  const eventForm = screen.getByRole("form");
+
+  // Ensure the form is rendered (good sanity check)
+  expect(eventForm).toBeInTheDocument();
+
+  const duplicateEventButton = eventForm.querySelector(
+    '[type="button"][aria-label="Duplicate Event [Meta+D]"]',
+  );
+
+  // Ensure the form is rendered (good sanity check)
+  expect(duplicateEventButton).toBeInTheDocument();
+
+  await act(async () => userEvent.click(duplicateEventButton!));
+
+  expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
+  expect(mockOnDuplicate).toHaveBeenCalledWith(sampleEvent);
+
+  // the form waits for 120ms before calling onClose
+  await new Promise((resolve) => {
+    const timeout = setTimeout(() => resolve(clearTimeout(timeout)), 120);
+  });
+
+  expect(mockOnClose).toHaveBeenCalledTimes(1);
+  expect(mockOnSubmit).not.toHaveBeenCalled();
+  expect(mockOnDelete).not.toHaveBeenCalled();
+  expect(mockOnConvert).not.toHaveBeenCalled();
+});
+
 const _clickStartInput = async () => {
   const startDateInput = screen.getByRole("textbox", {
     name: /pick start date/i,

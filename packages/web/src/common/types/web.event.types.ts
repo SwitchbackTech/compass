@@ -16,9 +16,11 @@ export const GridEventSchema = CoreEventSchema.extend({
 
 export const SomedayEventSchema = CoreEventSchema.extend({
   _id: z.string(),
-  order: z.number(),
+  order: z.number().optional(),
   isSomeday: z.literal(true),
 });
+
+export type Schema_SomedayEvent = z.infer<typeof SomedayEventSchema>;
 
 export interface Schema_GridEvent extends Schema_Event {
   hasFlipped?: boolean;
@@ -32,12 +34,6 @@ export interface Schema_GridEvent extends Schema_Event {
     initialX: number | null;
     initialY: number | null;
   };
-}
-
-export interface Schema_SomedayGridEvent extends Schema_Event {
-  _id: string;
-  order: number;
-  isSomeday: true;
 }
 
 export interface Schema_OptimisticEvent extends Schema_Event {
