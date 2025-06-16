@@ -164,7 +164,6 @@ describe("SomedayEventForm Hotkeys", () => {
       '[type="button"][aria-label="Duplicate Event [Meta+D]"]',
     );
 
-    // Ensure the form is rendered (good sanity check)
     expect(duplicateEventButton).toBeInTheDocument();
 
     await act(async () => userEvent.click(duplicateEventButton!));
