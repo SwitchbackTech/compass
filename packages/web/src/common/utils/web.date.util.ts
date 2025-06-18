@@ -7,7 +7,11 @@ import {
   YMDHAM_FORMAT,
   YMDHM_FORMAT,
 } from "@core/constants/date.constants";
-import { Categories_Event, Direction_Migrate } from "@core/types/event.types";
+import {
+  Categories_Event,
+  Direction_Migrate,
+  Schema_Event,
+} from "@core/types/event.types";
 import { Option_Time } from "@web/common/types/util.types";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { roundToNext } from ".";
@@ -344,4 +348,30 @@ const _getWeeklyMigrationDates = (
   const endDate = dayjs(origDates.endDate).add(diff, "days");
 
   return { startDate, endDate };
+};
+
+export const setEventStartEndDatesToCurrentWeek = (
+  event: Schema_Event,
+): Schema_Event => {
+  const weekStart = dayjs(new Date()).startOf("week");
+  const weekEnd = dayjs(new Date()).endOf("week");
+
+  return {
+    ...event,
+    startDate: weekStart.format(),
+    endDate: weekEnd.format(),
+  };
+};
+
+export const setEventStartEndDatesToCurrentMonth = (
+  event: Schema_Event,
+): Schema_Event => {
+  const monthStart = dayjs(new Date()).startOf("month");
+  const monthEnd = dayjs(new Date()).endOf("month");
+
+  return {
+    ...event,
+    startDate: monthStart.format(),
+    endDate: monthEnd.format(),
+  };
 };

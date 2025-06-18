@@ -26,6 +26,8 @@ import { getX } from "@web/common/utils/grid.util";
 import {
   getDatesByCategory,
   getMigrationDates,
+  setEventStartEndDatesToCurrentMonth,
+  setEventStartEndDatesToCurrentWeek,
 } from "@web/common/utils/web.date.util";
 import {
   selectDraft,
@@ -359,28 +361,37 @@ export const useSidebarActions = (
     createDefaultSomeday();
   };
 
-  const onSubmit = async (category: Categories_Event) => {
-    if (!state.draft) return;
+  const onSubmit = async (
+    category: Categories_Event,
+    event: Schema_Event | null = state.draft,
+  ) => {
+    if (!event) return;
 
-    const { startDate, endDate } = getDatesByCategory(
-      category,
-      viewStart,
-      viewEnd,
-    );
-    const _event = { ...state.draft, startDate, endDate };
+    let _event = { ...event };
+
+    if (!_event.startDate || !_event.endDate) {
+      // This probably means we are creating a new event, hence why we don't have start/end dates
+      const { startDate, endDate } = getDatesByCategory(
+        category,
+        viewStart,
+        viewEnd,
+      );
+      _event.startDate = startDate;
+      _event.endDate = endDate;
+    }
 
     const userId = await getUserId();
-    const event = prepEvtBeforeSubmit(_event, userId);
+    _event = prepEvtBeforeSubmit(_event, userId);
 
-    const isExisting = event._id;
+    const isExisting = _event._id;
     if (isExisting) {
-      const isRecurring = event.recurrence?.rule;
-      const wasRecurring = event.recurrence?.rule === null;
+      const isRecurring = _event.recurrence?.rule;
+      const wasRecurring = _event.recurrence?.rule === null;
 
       dispatch(
         editEventSlice.actions.request({
-          _id: event._id,
-          event,
+          _id: _event._id,
+          event: _event,
           applyTo: isRecurring || wasRecurring ? "all" : null,
         }),
       );
@@ -391,7 +402,7 @@ export const useSidebarActions = (
           : state.somedayMonthIds.length;
 
       const eventWithOrder = {
-        ...event,
+        ..._event,
         order,
       };
       dispatch(createEventSlice.actions.request(eventWithOrder));
@@ -438,38 +449,24 @@ export const useSidebarActions = (
     };
     setSomedayEvents(newState);
 
-    const draggedEvent = state.somedayEvents.events[draggableId];
+    let draggedEvent = state.somedayEvents.events[draggableId];
 
     const draggedToMonthColumn = destColumn.id === COLUMN_MONTH;
 
-    let newStartDate;
-    let newEndDate;
-
     if (draggedToMonthColumn) {
-      // set month start-end to current month
-      const monthStart = dayjs(new Date()).startOf("month");
-      const monthEnd = dayjs(new Date()).endOf("month");
-      newStartDate = monthStart.format();
-      newEndDate = monthEnd.format();
+      draggedEvent = setEventStartEndDatesToCurrentMonth(draggedEvent);
     } else {
-      // set week start-end to current week
-      const weekStart = dayjs(new Date()).startOf("week");
-      const weekEnd = dayjs(new Date()).endOf("week");
-      newStartDate = weekStart.format();
-      newEndDate = weekEnd.format();
+      draggedEvent = setEventStartEndDatesToCurrentWeek(draggedEvent);
     }
 
     const newOrder = destEventIds.indexOf(draggableId);
 
+    draggedEvent.order = newOrder;
+
     dispatch(
       editEventSlice.actions.request({
         _id: draggedEvent._id,
-        event: {
-          ...draggedEvent,
-          startDate: newStartDate,
-          endDate: newEndDate,
-          order: newOrder,
-        },
+        event: draggedEvent,
       }),
     );
   };
