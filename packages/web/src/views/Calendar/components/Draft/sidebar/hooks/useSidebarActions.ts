@@ -361,28 +361,37 @@ export const useSidebarActions = (
     createDefaultSomeday();
   };
 
-  const onSubmit = async (category: Categories_Event) => {
-    if (!state.draft) return;
+  const onSubmit = async (
+    category: Categories_Event,
+    event: Schema_Event | null = state.draft,
+  ) => {
+    if (!event) return;
 
-    const { startDate, endDate } = getDatesByCategory(
-      category,
-      viewStart,
-      viewEnd,
-    );
-    const _event = { ...state.draft, startDate, endDate };
+    let _event = { ...event };
+
+    if (!_event.startDate || !_event.endDate) {
+      // This probably means we are creating a new event, hence why we don't have start/end dates
+      const { startDate, endDate } = getDatesByCategory(
+        category,
+        viewStart,
+        viewEnd,
+      );
+      _event.startDate = startDate;
+      _event.endDate = endDate;
+    }
 
     const userId = await getUserId();
-    const event = prepEvtBeforeSubmit(_event, userId);
+    _event = prepEvtBeforeSubmit(_event, userId);
 
-    const isExisting = event._id;
+    const isExisting = _event._id;
     if (isExisting) {
-      const isRecurring = event.recurrence?.rule;
-      const wasRecurring = event.recurrence?.rule === null;
+      const isRecurring = _event.recurrence?.rule;
+      const wasRecurring = _event.recurrence?.rule === null;
 
       dispatch(
         editEventSlice.actions.request({
-          _id: event._id,
-          event,
+          _id: _event._id,
+          event: _event,
           applyTo: isRecurring || wasRecurring ? "all" : null,
         }),
       );
@@ -393,7 +402,7 @@ export const useSidebarActions = (
           : state.somedayMonthIds.length;
 
       const eventWithOrder = {
-        ...event,
+        ..._event,
         order,
       };
       dispatch(createEventSlice.actions.request(eventWithOrder));

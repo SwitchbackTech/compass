@@ -6,6 +6,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
+import {
+  setEventStartEndDatesToCurrentMonth,
+  setEventStartEndDatesToCurrentWeek,
+} from "@web/common/utils/web.date.util";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
@@ -123,6 +127,28 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     },
     hotkeysOptions,
     [_onSubmit],
+  );
+
+  useHotkeys(
+    "ctrl+meta+up",
+    (e) => {
+      e.preventDefault();
+      const updatedEvent = setEventStartEndDatesToCurrentWeek(event);
+      onSubmit(updatedEvent);
+    },
+    hotkeysOptions,
+    [event],
+  );
+
+  useHotkeys(
+    "ctrl+meta+down",
+    async (e) => {
+      e.preventDefault();
+      const updatedEvent = setEventStartEndDatesToCurrentMonth(event);
+      onSubmit(updatedEvent);
+    },
+    hotkeysOptions,
+    [event],
   );
 
   const onSetEventField: SetEventFormField = (field) => {
