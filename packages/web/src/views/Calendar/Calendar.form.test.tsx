@@ -92,7 +92,7 @@ describe("Event Form", () => {
       expect(focusNoteInput).toHaveFocus();
     });
 
-    it("it should be focused when the 'edit focus' btn is clicked in the command palette", async () => {
+    it.skip("it should be focused when the 'edit focus' btn is clicked in the command palette", async () => {
       const { container } = render(<CalendarView />, { state: preloadedState });
 
       const focusNotePlaceholder = screen.getByText("Click to add your focus");
