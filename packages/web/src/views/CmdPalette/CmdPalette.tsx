@@ -13,8 +13,10 @@ import {
 import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { isEventFormOpen } from "@web/common/utils";
-import { createAlldayDraft } from "@web/common/utils/draft/draft.util";
-import { createTimedDraft } from "@web/common/utils/draft/draft.util";
+import {
+  createAlldayDraft,
+  createTimedDraft,
+} from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import { onEventTargetVisibility } from "@web/common/utils/event-target-visibility.util";
 import {
@@ -132,17 +134,9 @@ const CmdPalette = ({
             id: "edit-focus-note",
             children: `Edit Focus Note [f]`,
             icon: "PencilSquareIcon",
-            onClick: (event) => {
-              _discardDraft();
-
-              const observer = new IntersectionObserver(([entry]) => {
-                if (entry.isIntersecting) return;
-                observer.disconnect();
-                dispatch(viewSlice.actions.focusHeaderNote(true));
-              });
-
-              observer.observe(event.currentTarget);
-            },
+            onClick: onEventTargetVisibility(() =>
+              dispatch(viewSlice.actions.focusHeaderNote(true)),
+            ),
           },
           {
             id: "today",
