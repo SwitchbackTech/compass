@@ -6,6 +6,9 @@
   "private": true,
   "browserslist": "last 2 Chrome versions",
   "main": "",
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
   },
