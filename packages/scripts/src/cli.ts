@@ -6,6 +6,7 @@ import { CliValidator } from "./cli.validator";
 import { runBuild } from "./commands/build";
 import { startDeleteFlow } from "./commands/delete";
 import { inviteWaitlist } from "./commands/invite";
+import { runSeed } from "./commands/seed";
 import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
 
 class CompassCli {
@@ -36,6 +37,11 @@ class CompassCli {
       }
       case cmd === "invite": {
         await inviteWaitlist();
+        break;
+      }
+      case cmd === "seed": {
+        this.validator.validateSeed(options);
+        await runSeed(user as string, force);
         break;
       }
       default:
@@ -76,6 +82,14 @@ class CompassCli {
       );
 
     program.command("invite").description("invite users from the waitlist");
+
+    program
+      .command("seed")
+      .description("seed the database with events")
+      .option(
+        "-u, --user [id | email]",
+        "specify which user to seed events for",
+      );
     return program;
   }
 }

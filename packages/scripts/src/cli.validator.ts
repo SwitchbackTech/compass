@@ -17,7 +17,10 @@ export class CliValidator {
     this.program = program;
   }
 
-  public exitHelpfully(cmd: "root" | "build" | "delete", msg?: string) {
+  public exitHelpfully(
+    cmd: "root" | "build" | "delete" | "seed",
+    msg?: string,
+  ) {
     msg && log.error(msg);
 
     if (cmd === "root") {
@@ -59,6 +62,13 @@ export class CliValidator {
     const { user } = options;
     if (!user || typeof user !== "string") {
       this.exitHelpfully("delete", "You must supply a user");
+    }
+  }
+
+  public validateSeed(options: Options_Cli) {
+    const { user } = options;
+    if (!user || typeof user !== "string") {
+      this.exitHelpfully("seed", "You must supply a user");
     }
   }
 
@@ -107,6 +117,20 @@ export class CliValidator {
     return deleteOpts;
   }
 
+  private _getSeedOptions() {
+    const seedOpts: Options_Cli_Delete = {};
+
+    const seedCmd = this.program.commands.find((cmd) => cmd.name() === "seed");
+    if (seedCmd) {
+      const user = seedCmd?.opts()["user"] as Options_Cli["user"];
+      if (user) {
+        seedOpts.user = user;
+      }
+    }
+
+    return seedOpts;
+  }
+
   private _mergeOptions = (): Options_Cli => {
     const _options = this.program.opts();
     let options: Options_Cli = {
@@ -127,6 +151,14 @@ export class CliValidator {
       options = {
         ...options,
         ...deleteOptions,
+      };
+    }
+
+    const seedOptions = this._getSeedOptions();
+    if (Object.keys(seedOptions).length > 0) {
+      options = {
+        ...options,
+        ...seedOptions,
       };
     }
 
