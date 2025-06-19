@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import { ObjectId } from "mongodb";
-import { faker } from "@faker-js/faker/.";
+import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
   Schema_Event,

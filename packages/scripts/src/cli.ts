@@ -41,7 +41,7 @@ class CompassCli {
       }
       case cmd === "seed": {
         this.validator.validateSeed(options);
-        await runSeed(user as string);
+        await runSeed(user as string, force);
         break;
       }
       default:
