@@ -172,8 +172,8 @@ function* getEvents(
 
     const events = EventDateUtils.filterEventsByStartEndDate(
       res.data,
-      payload.startDate,
-      payload.endDate,
+      payload.startDate as string,
+      payload.endDate as string,
     );
 
     const normalizedEvents = normalize<Schema_Event>(events, [
