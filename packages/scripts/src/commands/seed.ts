@@ -2,11 +2,11 @@ import axios from "axios";
 import dayjs from "dayjs";
 import pkg from "inquirer";
 import { faker } from "@faker-js/faker";
-import { createSession } from "@scripts/common/cli.auth";
 import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { FORMAT } from "@core/util/date/date.util";
+import compassAuthService from "@backend/auth/services/compass.auth.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
@@ -14,12 +14,12 @@ const { prompt } = pkg;
 
 async function createEvent(events: Schema_Event[], email: string) {
   try {
-    const accessToken = await createSession(email);
+    const session = await compassAuthService.createSessionForUser(email);
     const baseUrl = await getApiBaseUrl("local");
     const response = await axios.post(`${baseUrl}/event`, events, {
       headers: {
         "Content-Type": "application/json",
-        Cookie: `sAccessToken=${accessToken}`,
+        Cookie: `sAccessToken=${session.accessToken}`,
       },
     });
     return response.data;
