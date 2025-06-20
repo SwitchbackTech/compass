@@ -97,6 +97,17 @@ export const EventDateUtils = {
     endDate: string,
   ) => {
     return events.filter((event) => {
+      if (event.isAllDay) {
+        const belongsInRange =
+          dayjs(event.startDate).isSameOrAfter(startDate) ||
+          dayjs(event.endDate).isSameOrBefore(endDate) ||
+          // is between start and end date
+          (dayjs(startDate).isBetween(event.startDate, event.endDate) &&
+            dayjs(endDate).isBetween(event.startDate, event.endDate));
+
+        return belongsInRange;
+      }
+
       return (
         dayjs(event.startDate).isSameOrAfter(startDate) &&
         dayjs(event.endDate).isSameOrBefore(endDate)
