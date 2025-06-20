@@ -12,9 +12,9 @@ export const fileExists = (file: string) => {
 
 export const getApiBaseUrl = async (environment: Environment_Cli) => {
   const category = environment ? environment : await getEnvironmentAnswer();
-  const isStaging = category === "staging";
-  const domain = await getDomainAnswer(isStaging);
-  const baseUrl = `https://${domain}/api`;
+  const domain = await getDomainAnswer(category);
+  const baseUrl =
+    environment === "local" ? `http://${domain}/api` : `https://${domain}/api`;
 
   return baseUrl;
 };
@@ -41,7 +41,14 @@ export const getClientId = async (environment: Environment_Cli) => {
   throw Error("Invalid destination");
 };
 
-const getDomainAnswer = async (isStaging: boolean) => {
+const getDomainAnswer = async (env: string) => {
+  const isLocal = env === "local";
+  const isStaging = env === "staging";
+
+  if (isLocal && CLI_ENV.LOCAL_DOMAIN !== undefined) {
+    return CLI_ENV.LOCAL_DOMAIN;
+  }
+
   if (isStaging && CLI_ENV.STAGING_DOMAIN !== undefined) {
     return CLI_ENV.STAGING_DOMAIN;
   }

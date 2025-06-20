@@ -1,9 +1,31 @@
+import axios from "axios";
 import pkg from "inquirer";
-import { log } from "@scripts/common/cli.utils";
+import { createSession } from "@scripts/common/cli.auth";
+import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
+import { Origin, Priorities } from "@core/constants/core.constants";
+import { Schema_Event } from "@core/types/event.types";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const { prompt } = pkg;
+
+async function createEvent(events: Schema_Event[], email: string) {
+  try {
+    // Create session
+    const accessToken = await createSession(email);
+    const baseUrl = await getApiBaseUrl("local");
+    const response = await axios.post(`${baseUrl}/event`, events, {
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: `sAccessToken=${accessToken}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to create events:", error);
+    throw error;
+  }
+}
 
 async function seedEvents(userInput: string) {
   try {
@@ -22,11 +44,28 @@ async function seedEvents(userInput: string) {
     }
 
     const userId = user._id.toString();
-    log.info(`Running seed command for user: ${userId}...`);
+    log.info(`Running seed command for user: ${user.email}...`);
 
-    // TODO: Add logic to create events
+    // Create a test event
+    const event: Schema_Event[] = [
+      {
+        title: "Test Event",
+        description: "This is a test event created by the seed script",
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
+        origin: Origin.COMPASS,
+        priority: Priorities.UNASSIGNED,
+        user: userId,
+        isAllDay: false,
+        isSomeday: false,
+      },
+    ];
+    const createdEvents = await createEvent(event, user.email);
+    console.log(createdEvents, "createdEvents");
 
-    log.success(`Successfully created events for user: ${userInput}`);
+    log.success(
+      `Successfully created events for user: ${user.email} with id: ${userId}`,
+    );
   } catch (error) {
     log.error("Failed to seed events:");
     console.error(error);
