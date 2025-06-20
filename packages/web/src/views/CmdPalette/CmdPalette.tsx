@@ -13,8 +13,10 @@ import {
 import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { isEventFormOpen } from "@web/common/utils";
-import { createAlldayDraft } from "@web/common/utils/draft/draft.util";
-import { createTimedDraft } from "@web/common/utils/draft/draft.util";
+import {
+  createAlldayDraft,
+  createTimedDraft,
+} from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import { onEventTargetVisibility } from "@web/common/utils/event-target-visibility.util";
 import {
@@ -22,6 +24,7 @@ import {
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -125,6 +128,14 @@ const CmdPalette = ({
             icon: "PlusIcon",
             onClick: onEventTargetVisibility(() =>
               handleCreateSomedayDraft(Categories_Event.SOMEDAY_MONTH),
+            ),
+          },
+          {
+            id: "edit-focus-note",
+            children: `Edit Focus Note [f]`,
+            icon: "PencilSquareIcon",
+            onClick: onEventTargetVisibility(() =>
+              dispatch(viewSlice.actions.focusHeaderNote(true)),
             ),
           },
           {

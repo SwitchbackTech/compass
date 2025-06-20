@@ -68,5 +68,10 @@ export const preloadedState: InitialReduxState = {
       tab: "tasks",
       isOpen: true,
     },
+    header: {
+      note: {
+        focus: false,
+      },
+    },
   },
 };
