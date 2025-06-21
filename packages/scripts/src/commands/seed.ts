@@ -1,9 +1,33 @@
+import axios from "axios";
+import dayjs from "dayjs";
 import pkg from "inquirer";
-import { log } from "@scripts/common/cli.utils";
+import { faker } from "@faker-js/faker";
+import { createSession } from "@scripts/common/cli.auth";
+import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
+import { Origin, Priorities } from "@core/constants/core.constants";
+import { Schema_Event } from "@core/types/event.types";
+import { FORMAT } from "@core/util/date/date.util";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const { prompt } = pkg;
+
+async function createEvent(events: Schema_Event[], email: string) {
+  try {
+    const accessToken = await createSession(email);
+    const baseUrl = await getApiBaseUrl("local");
+    const response = await axios.post(`${baseUrl}/event`, events, {
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: `sAccessToken=${accessToken}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to create events:", error);
+    throw error;
+  }
+}
 
 async function seedEvents(userInput: string) {
   try {
@@ -22,11 +46,42 @@ async function seedEvents(userInput: string) {
     }
 
     const userId = user._id.toString();
-    log.info(`Running seed command for user: ${userId}...`);
+    log.info(`Running seed command for user: ${user.email}...`);
 
-    // TODO: Add logic to create events
+    // Base event
+    const baseEvent = {
+      user: userId,
+      title: faker.lorem.sentence(),
+      description: faker.lorem.sentence(),
+      priority: Priorities.UNASSIGNED,
+      origin: Origin.COMPASS,
+    };
 
-    log.success(`Successfully created events for user: ${userInput}`);
+    // TODO: Create a variety of events for seeding
+
+    // Test event (10:00 - 11:00)
+    const event: Schema_Event[] = [
+      {
+        ...baseEvent,
+        isAllDay: false,
+        isSomeday: false,
+        startDate: dayjs()
+          .hour(10)
+          .minute(0)
+          .second(0)
+          .format(FORMAT.RFC3339_OFFSET.value),
+        endDate: dayjs()
+          .hour(11)
+          .minute(0)
+          .second(0)
+          .format(FORMAT.RFC3339_OFFSET.value),
+      },
+    ];
+    await createEvent(event, user.email);
+
+    log.success(
+      `Successfully created events for user: ${user.email} with id: ${userId}`,
+    );
   } catch (error) {
     log.error("Failed to seed events:");
     console.error(error);
