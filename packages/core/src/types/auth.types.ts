@@ -23,10 +23,6 @@ export interface User_Google {
   tokens: Credentials;
 }
 
-export interface UserInfo_Compass {
-  cUserId?: string;
-  email?: string;
-}
 export interface UserInfo_Google {
   gUser: TokenPayload;
   tokens: Credentials;

@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { GaxiosError } from "gaxios";
 import { TokenPayload } from "google-auth-library";
-import { WithId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import supertokens from "supertokens-node";
 import { SessionRequest } from "supertokens-node/framework/express";
 import Session from "supertokens-node/recipe/session";
@@ -10,7 +10,6 @@ import { Logger } from "@core/logger/winston.logger";
 import {
   Result_Auth_Compass,
   Result_VerifyGToken,
-  UserInfo_Compass,
 } from "@core/types/auth.types";
 import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
@@ -38,28 +37,34 @@ import { initGoogleClient } from "../services/auth.utils";
 const logger = Logger("app:auth.controller");
 
 class AuthController {
-  createSession = async (req: ReqBody<UserInfo_Compass>, res: Res_Promise) => {
-    const { cUserId, email } = req.body;
+  createSession = async (
+    req: ReqBody<{ cUserId: string }>,
+    res: Res_Promise,
+  ) => {
+    const { cUserId } = req.body;
+
+    if (!ObjectId.isValid(cUserId)) {
+      res.promise({ error: "Invalid user ID" });
+      return;
+    }
 
     if (cUserId) {
       const sUserId = supertokens.convertToRecipeUserId(cUserId);
       await Session.createNewSession(req, res, "public", sUserId);
     }
 
-    if (email) {
-      const user = await findCompassUserBy("email", email);
+    const user = await findCompassUserBy("_id", cUserId);
 
-      if (!user) {
-        res.promise({ error: "user doesn't exist" });
-        return;
-      }
-
-      const sUserId = supertokens.convertToRecipeUserId(user._id.toString());
-      await Session.createNewSession(req, res, "public", sUserId);
+    if (!user) {
+      res.promise({ error: "User doesn't exist" });
+      return;
     }
 
+    const sUserId = supertokens.convertToRecipeUserId(user._id.toString());
+    await Session.createNewSession(req, res, "public", sUserId);
+
     res.promise({
-      message: `user session created for ${JSON.stringify(req.body)}`,
+      message: `User session created for ${cUserId}`,
     });
   };
 
