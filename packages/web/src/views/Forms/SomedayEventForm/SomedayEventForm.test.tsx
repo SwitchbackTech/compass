@@ -29,6 +29,7 @@ const sampleSomedayEvent: Schema_Event = {
 };
 
 const mockOnClose = jest.fn();
+const mockOnMigrate = jest.fn();
 const mockOnSubmit = jest.fn();
 const mockSetEvent = jest.fn();
 const mockDuplicateEvent = jest.fn();
@@ -57,6 +58,7 @@ describe("SomedayEventForm Hotkeys", () => {
         <SomedayEventForm
           event={sampleSomedayEvent}
           onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -86,6 +88,7 @@ describe("SomedayEventForm Hotkeys", () => {
         <SomedayEventForm
           event={sampleSomedayEvent}
           onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -122,6 +125,7 @@ describe("SomedayEventForm Hotkeys", () => {
         <SomedayEventForm
           event={sampleSomedayEvent}
           onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -154,6 +158,7 @@ describe("SomedayEventForm Hotkeys", () => {
         <SomedayEventForm
           event={sampleSomedayEvent}
           onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
           setEvent={mockSetEvent}
           category={defaultCategory}
@@ -182,6 +187,70 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
+  test("should call onMigrate when migrate backward icon btn is clicked", async () => {
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
+          onSubmit={mockOnSubmit}
+          setEvent={mockSetEvent}
+          category={defaultCategory}
+        />
+      </div>,
+    );
+
+    const eventForm = screen.getByRole("form");
+
+    const migrateBackwardButton = eventForm.querySelector(
+      '[id="migrate-backward-button"]',
+    );
+
+    expect(migrateBackwardButton).toBeInTheDocument();
+
+    await act(async () => userEvent.click(migrateBackwardButton!));
+
+    expect(mockOnMigrate).toHaveBeenCalledTimes(1);
+    expect(mockOnMigrate).toHaveBeenCalledWith(
+      sampleSomedayEvent,
+      defaultCategory,
+      "back",
+    );
+  });
+
+  test("should call onMigrate when migrate forward icon btn is clicked", async () => {
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
+          onSubmit={mockOnSubmit}
+          setEvent={mockSetEvent}
+          category={defaultCategory}
+        />
+      </div>,
+    );
+
+    const eventForm = screen.getByRole("form");
+
+    const migrateForwardButton = eventForm.querySelector(
+      '[id="migrate-forward-button"]',
+    );
+
+    expect(migrateForwardButton).toBeInTheDocument();
+
+    await act(async () => userEvent.click(migrateForwardButton!));
+
+    expect(mockOnMigrate).toHaveBeenCalledTimes(1);
+    expect(mockOnMigrate).toHaveBeenCalledWith(
+      sampleSomedayEvent,
+      defaultCategory,
+      "forward",
+    );
+  });
+
   /**
    * This test is skipped
    * The hotkey functionality is not implemented in the SomedayEventForm comp.
@@ -192,6 +261,7 @@ describe("SomedayEventForm Hotkeys", () => {
         <SomedayEventForm
           event={sampleSomedayEvent}
           onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
           setEvent={mockSetEvent}
           category={defaultCategory}
