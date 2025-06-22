@@ -4,7 +4,7 @@ import "@testing-library/jest-dom/extend-expect";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { SomedayEventForm } from "./SomedayEventForm";
@@ -44,6 +44,8 @@ jest.mock(
   }),
 );
 
+const defaultCategory = Categories_Event.SOMEDAY_WEEK;
+
 describe("SomedayEventForm Hotkeys", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -57,6 +59,7 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
           setEvent={mockSetEvent}
+          category={defaultCategory}
         />
       </div>,
     );
@@ -85,6 +88,7 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
           setEvent={mockSetEvent}
+          category={defaultCategory}
         />
       </div>,
     );
@@ -120,6 +124,7 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
           setEvent={mockSetEvent}
+          category={defaultCategory}
         />
       </div>,
     );
@@ -151,6 +156,7 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
           setEvent={mockSetEvent}
+          category={defaultCategory}
         />
       </div>,
     );
@@ -188,6 +194,7 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onSubmit={mockOnSubmit}
           setEvent={mockSetEvent}
+          category={defaultCategory}
         />
       </div>,
     );
