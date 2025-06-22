@@ -19,7 +19,7 @@ export const MigrateForwardButton = ({
   return (
     <TooltipIconButton
       component={
-        <StyledMigrateForwardButton role="button">
+        <StyledMigrateForwardButton id="migrate-forward-button" role="button">
           {">"}
         </StyledMigrateForwardButton>
       }

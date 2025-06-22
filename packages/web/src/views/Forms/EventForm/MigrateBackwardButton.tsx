@@ -19,7 +19,7 @@ export const MigrateBackwardButton = ({
   return (
     <TooltipIconButton
       component={
-        <StyledMigrateBackwardButton role="button">
+        <StyledMigrateBackwardButton id="migrate-backward-button" role="button">
           {"<"}
         </StyledMigrateBackwardButton>
       }
