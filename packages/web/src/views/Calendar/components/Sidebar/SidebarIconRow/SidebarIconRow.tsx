@@ -1,9 +1,11 @@
 import React from "react";
-import { Command } from "@phosphor-icons/react";
+import { Command, WindowsLogo } from "@phosphor-icons/react";
 import { theme } from "@web/common/styles/theme";
+import { DesktopOS, getDesktopOS } from "@web/common/utils/device.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
 import { TodoIcon } from "@web/components/Icons/Todo";
+import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
@@ -26,12 +28,23 @@ export const SidebarIconRow = () => {
     }
   };
 
+  const getCommandPaletteShortcut = () => {
+    const desktopOS = getDesktopOS();
+    const isMacOS = desktopOS === DesktopOS.MacOS;
+
+    return (
+      <Text size="s" style={{ display: "flex", alignItems: "center" }}>
+        {isMacOS ? <Command size={14} /> : <WindowsLogo size={14} />} + K
+      </Text>
+    );
+  };
+
   return (
     <IconRow>
       <LeftIconGroup>
         <TooltipWrapper
           description="Open command palette"
-          shortcut="CMD + K"
+          shortcut={getCommandPaletteShortcut()}
           onClick={toggleCmdPalette}
         >
           <CommandIcon
