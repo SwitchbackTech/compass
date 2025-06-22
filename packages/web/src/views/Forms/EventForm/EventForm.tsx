@@ -314,8 +314,8 @@ export const EventForm: React.FC<FormProps> = ({
             }}
           />
         )}
-        <DeleteButton onClick={onDeleteForm} />
         <DuplicateButton onClick={onDuplicateEvent} />
+        <DeleteButton onClick={onDeleteForm} />
       </StyledIconRow>
 
       <StyledTitle

@@ -204,8 +204,8 @@ export const SomedayEventForm: React.FC<FormProps> = ({
             onMigrate(event, category, "forward");
           }}
         />
-        <DeleteButton onClick={onDelete} />
         <DuplicateButton onClick={onDuplicateEvent} />
+        <DeleteButton onClick={onDelete} />
       </StyledIconRow>
 
       <StyledTitle
