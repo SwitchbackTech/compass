@@ -87,6 +87,7 @@ export const SomedayEventContainer = ({
                   actions.closeForm();
                   actions.close();
                 }}
+                onMigrate={actions.onMigrate}
                 onSubmit={onSubmit}
                 setEvent={setEvent}
               />

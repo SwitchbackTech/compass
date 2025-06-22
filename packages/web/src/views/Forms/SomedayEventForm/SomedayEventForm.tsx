@@ -14,7 +14,6 @@ import {
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
-import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
 import { DuplicateButton } from "@web/views/Forms/EventForm/DuplicateButton";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
@@ -38,15 +37,13 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   event,
   category,
   onClose,
+  onMigrate,
   onSubmit,
   setEvent,
   ...props
 }) => {
   const dispatch = useAppDispatch();
   const { actions } = useDraftContext();
-  const {
-    actions: { onMigrate },
-  } = useSidebarContext();
 
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
 

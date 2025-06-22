@@ -1,6 +1,10 @@
 import { SetStateAction } from "react";
 import { Priority } from "@core/constants/core.constants";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import {
+  Categories_Event,
+  Direction_Migrate,
+  Schema_Event,
+} from "@core/types/event.types";
 
 export interface FormProps {
   event: Schema_Event;
@@ -11,6 +15,11 @@ export interface FormProps {
   onConvert?: () => void;
   onDelete?: (eventId?: string) => void;
   onDuplicate?: (event: Schema_Event) => void;
+  onMigrate?: (
+    event: Schema_Event,
+    category: Categories_Event,
+    direction: Direction_Migrate,
+  ) => void;
   onSubmit: (event?: Schema_Event) => void;
   onSubmitEventForm?: (event: Schema_Event) => void;
   priority?: Priority;
