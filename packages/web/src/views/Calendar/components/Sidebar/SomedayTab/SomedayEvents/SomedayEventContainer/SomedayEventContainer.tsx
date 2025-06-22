@@ -82,6 +82,7 @@ export const SomedayEventContainer = ({
             >
               <SomedayEventForm
                 event={event}
+                category={category}
                 onClose={() => {
                   actions.closeForm();
                   actions.close();

@@ -4,6 +4,7 @@ import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
+import { Categories_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import {
@@ -13,6 +14,7 @@ import {
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
+import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
 import { DuplicateButton } from "@web/views/Forms/EventForm/DuplicateButton";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
@@ -24,6 +26,8 @@ import {
   StyledTitle,
 } from "@web/views/Forms/EventForm/styled";
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
+import { MigrateBackwardButton } from "../EventForm/MigrateBackwardButton";
+import { MigrateForwardButton } from "../EventForm/MigrateForwardButton";
 import { RepeatSection } from "../EventForm/RepeatSection";
 
 const hotkeysOptions: OptionsOrDependencyArray = {
@@ -32,6 +36,7 @@ const hotkeysOptions: OptionsOrDependencyArray = {
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
+  category,
   onClose,
   onSubmit,
   setEvent,
@@ -39,6 +44,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { actions } = useDraftContext();
+  const {
+    actions: { onMigrate },
+  } = useSidebarContext();
+
+  const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
 
   const { priority, title } = event || {};
   const bgColor = colorByPriority[priority];
@@ -185,6 +195,18 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       role="form"
     >
       <StyledIconRow>
+        <MigrateBackwardButton
+          tooltipText={`Migrate to previous ${target}`}
+          onClick={() => {
+            onMigrate(event, category, "back");
+          }}
+        />
+        <MigrateForwardButton
+          tooltipText={`Migrate to next ${target}`}
+          onClick={() => {
+            onMigrate(event, category, "forward");
+          }}
+        />
         <DeleteButton onClick={onDelete} />
         <DuplicateButton onClick={onDuplicateEvent} />
       </StyledIconRow>

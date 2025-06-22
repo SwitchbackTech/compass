@@ -1,9 +1,10 @@
 import { SetStateAction } from "react";
 import { Priority } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 
 export interface FormProps {
   event: Schema_Event;
+  category: Categories_Event;
   isOpen?: boolean;
   onClose: () => void;
   onCloseEventForm?: () => void;
