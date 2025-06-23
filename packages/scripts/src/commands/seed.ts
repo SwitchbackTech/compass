@@ -40,9 +40,8 @@ async function seedEvents(userInput: string) {
     log.info(`Running seed command for user: ${user.email}...`);
 
     // Creates user session
-    const { accessToken } = await compassAuthService.createSessionForUser(
-      user.email,
-    );
+    const { accessToken } =
+      await compassAuthService.createSessionForUser(userId);
     const baseUrl = await getApiBaseUrl("local");
 
     // Test Event
