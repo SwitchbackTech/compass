@@ -4,6 +4,7 @@ import pkg from "inquirer";
 import { ObjectId } from "mongodb";
 import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
 import { Schema_Event } from "@core/types/event.types";
+import { FORMAT } from "@core/util/date/date.util";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import mongoService from "@backend/common/services/mongo.service";
@@ -50,20 +51,79 @@ async function seedEvents(userInput: string) {
       await compassAuthService.createSessionForUser(userId);
     const baseUrl = await getApiBaseUrl("local");
 
-    // Test Event
-    const eventOverrides = {
+    // Creates a variety of events for seeding
+
+    // Get current month's start and end dates
+    const now = dayjs();
+    const monthStart = now.startOf("month").format(FORMAT.RFC3339_OFFSET.value);
+    const monthEnd = now.endOf("month").format(FORMAT.RFC3339_OFFSET.value);
+
+    // Get current week's start and end dates
+    const weekStart = now.startOf("week").format(FORMAT.RFC3339_OFFSET.value);
+    const weekEnd = now.endOf("week").format(FORMAT.RFC3339_OFFSET.value);
+
+    // Create 8 monthly someday events
+    const monthlyEvents = [];
+    for (let i = 0; i < 8; i++) {
+      const monthlyEvent = createMockStandaloneEvent({
+        user: userId,
+        isSomeday: true,
+        startDate: monthStart,
+        endDate: monthEnd,
+      });
+      monthlyEvents.push(monthlyEvent);
+    }
+
+    // Create 8 weekly someday events
+    const weeklyEvents = [];
+    for (let i = 0; i < 8; i++) {
+      const weeklyEvent = createMockStandaloneEvent({
+        user: userId,
+        isSomeday: true,
+        startDate: weekStart,
+        endDate: weekEnd,
+      });
+      weeklyEvents.push(weeklyEvent);
+    }
+
+    // Create 2 all-day events for the week
+    const allDayEvents: Schema_Event[] = [];
+    // const weekStartDay = dayjs(weekStart).add(1, "day");
+
+    const fourDayEvent = createMockStandaloneEvent({
       user: userId,
-      isAllDay: false,
+      title: "🏕️ UX Conference",
+      description: "A special conference lasting four days",
+      isAllDay: true,
       isSomeday: false,
-      startDate: dayjs().hour(10).minute(0).second(0).toISOString(),
-      endDate: dayjs().hour(11).minute(0).second(0).toISOString(),
-    };
-    const event = createMockStandaloneEvent(eventOverrides);
-    const events: Schema_Event[] = [event];
+      startDate: weekStart,
+      endDate: dayjs(weekStart)
+        .add(4, "day")
+        .format(FORMAT.RFC3339_OFFSET.value),
+    });
+    allDayEvents.push(fourDayEvent);
+    const oneDayEvent = createMockStandaloneEvent({
+      user: userId,
+      title: "🍿 State fair w/family",
+      description: "A fun day at the state fair with family",
+      isAllDay: true,
+      isSomeday: false,
+      startDate: dayjs(weekStart)
+        .add(6, "day")
+        .format(FORMAT.RFC3339_OFFSET.value),
+      endDate: dayjs(weekStart)
+        .add(7, "day")
+        .format(FORMAT.RFC3339_OFFSET.value),
+    });
+    allDayEvents.push(oneDayEvent);
+
+    const events: Schema_Event[] = [
+      ...monthlyEvents,
+      ...weeklyEvents,
+      ...allDayEvents,
+    ];
 
     await createEvent(events, baseUrl, accessToken);
-
-    // TODO: Create a variety of events for seeding
 
     log.success(
       `Successfully created events for user: ${user.email} with id: ${userId}`,
