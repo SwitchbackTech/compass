@@ -2,25 +2,15 @@ import axios from "axios";
 import dayjs from "dayjs";
 import pkg from "inquirer";
 import { ObjectId } from "mongodb";
+import eventTemplates from "@scripts/common/cli.event.templates";
 import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
 import { Schema_Event } from "@core/types/event.types";
-import { FORMAT } from "@core/util/date/date.util";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const { prompt } = pkg;
-
-async function createEvent(
-  events: Schema_Event[],
-  baseUrl: string,
-  accessToken: string,
-) {
-  await axios.post(`${baseUrl}/event`, events, {
-    headers: { Cookie: `sAccessToken=${accessToken}` },
-  });
-}
 
 async function seedEvents(userInput: string) {
   try {
@@ -51,79 +41,31 @@ async function seedEvents(userInput: string) {
       await compassAuthService.createSessionForUser(userId);
     const baseUrl = await getApiBaseUrl("local");
 
-    // Creates a variety of events for seeding
-
-    // Get current month's start and end dates
+    // Get current time
     const now = dayjs();
-    const monthStart = now.startOf("month").format(FORMAT.RFC3339_OFFSET.value);
-    const monthEnd = now.endOf("month").format(FORMAT.RFC3339_OFFSET.value);
 
-    // Get current week's start and end dates
-    const weekStart = now.startOf("week").format(FORMAT.RFC3339_OFFSET.value);
-    const weekEnd = now.endOf("week").format(FORMAT.RFC3339_OFFSET.value);
-
-    // Create 8 monthly someday events
-    const monthlyEvents = [];
-    for (let i = 0; i < 8; i++) {
-      const monthlyEvent = createMockStandaloneEvent({
+    // Create events from templates
+    const events: Schema_Event[] = eventTemplates.flatMap((template) => {
+      const event = {
         user: userId,
-        isSomeday: true,
-        startDate: monthStart,
-        endDate: monthEnd,
-      });
-      monthlyEvents.push(monthlyEvent);
-    }
+        isSomeday: template.isSomeday,
+        isAllDay: template.isAllDay,
+        startDate: template.start(now),
+        endDate: template.end(now),
+        ...(template.title && { title: template.title }),
+        ...(template.description && { description: template.description }),
+        ...(template.recurrence && { recurrence: template.recurrence }),
+      };
 
-    // Create 8 weekly someday events
-    const weeklyEvents = [];
-    for (let i = 0; i < 8; i++) {
-      const weeklyEvent = createMockStandaloneEvent({
-        user: userId,
-        isSomeday: true,
-        startDate: weekStart,
-        endDate: weekEnd,
-      });
-      weeklyEvents.push(weeklyEvent);
-    }
-
-    // Create 2 all-day events for the week
-    const allDayEvents: Schema_Event[] = [];
-    // const weekStartDay = dayjs(weekStart).add(1, "day");
-
-    const fourDayEvent = createMockStandaloneEvent({
-      user: userId,
-      title: "🏕️ UX Conference",
-      description: "A special conference lasting four days",
-      isAllDay: true,
-      isSomeday: false,
-      startDate: weekStart,
-      endDate: dayjs(weekStart)
-        .add(4, "day")
-        .format(FORMAT.RFC3339_OFFSET.value),
+      return Array(template.count)
+        .fill(null)
+        .map(() => createMockStandaloneEvent(event));
     });
-    allDayEvents.push(fourDayEvent);
-    const oneDayEvent = createMockStandaloneEvent({
-      user: userId,
-      title: "🍿 State fair w/family",
-      description: "A fun day at the state fair with family",
-      isAllDay: true,
-      isSomeday: false,
-      startDate: dayjs(weekStart)
-        .add(6, "day")
-        .format(FORMAT.RFC3339_OFFSET.value),
-      endDate: dayjs(weekStart)
-        .add(7, "day")
-        .format(FORMAT.RFC3339_OFFSET.value),
+
+    // Calls Event.Controller
+    await axios.post(`${baseUrl}/event`, events, {
+      headers: { Cookie: `sAccessToken=${accessToken}` },
     });
-    allDayEvents.push(oneDayEvent);
-
-    const events: Schema_Event[] = [
-      ...monthlyEvents,
-      ...weeklyEvents,
-      ...allDayEvents,
-    ];
-
-    await createEvent(events, baseUrl, accessToken);
 
     log.success(
       `Successfully created events for user: ${user.email} with id: ${userId}`,
@@ -171,11 +113,11 @@ export async function runSeed(userInput: string, force = false) {
     .then((answer: { proceed: boolean }) => {
       if (answer.proceed) {
         log.info("Starting event seeding process...");
-        seedEvents(userInput).catch((e) => console.log(e));
+        seedEvents(userInput).catch((e: Error) => console.log(e));
       } else {
         log.info("Operation cancelled. No events were created.");
         process.exit(0);
       }
     })
-    .catch((err) => console.log(err));
+    .catch((err: Error) => console.log(err));
 }
