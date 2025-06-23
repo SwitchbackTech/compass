@@ -1,32 +1,23 @@
 import axios from "axios";
 import dayjs from "dayjs";
 import pkg from "inquirer";
-import { faker } from "@faker-js/faker";
 import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
-import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { FORMAT } from "@core/util/date/date.util";
+import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const { prompt } = pkg;
 
-async function createEvent(events: Schema_Event[], email: string) {
-  try {
-    const session = await compassAuthService.createSessionForUser(email);
-    const baseUrl = await getApiBaseUrl("local");
-    const response = await axios.post(`${baseUrl}/event`, events, {
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: `sAccessToken=${session.accessToken}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Failed to create events:", error);
-    throw error;
-  }
+async function createEvent(
+  events: Schema_Event[],
+  baseUrl: string,
+  accessToken: string,
+) {
+  await axios.post(`${baseUrl}/event`, events, {
+    headers: { Cookie: `sAccessToken=${accessToken}` },
+  });
 }
 
 async function seedEvents(userInput: string) {
@@ -48,36 +39,26 @@ async function seedEvents(userInput: string) {
     const userId = user._id.toString();
     log.info(`Running seed command for user: ${user.email}...`);
 
-    // Base event
-    const baseEvent = {
+    // Creates user session
+    const { accessToken } = await compassAuthService.createSessionForUser(
+      user.email,
+    );
+    const baseUrl = await getApiBaseUrl("local");
+
+    // Test Event
+    const eventOverrides = {
       user: userId,
-      title: faker.lorem.sentence(),
-      description: faker.lorem.sentence(),
-      priority: Priorities.UNASSIGNED,
-      origin: Origin.COMPASS,
+      isAllDay: false,
+      isSomeday: false,
+      startDate: dayjs().hour(10).minute(0).second(0).toISOString(),
+      endDate: dayjs().hour(11).minute(0).second(0).toISOString(),
     };
+    const event = createMockStandaloneEvent(eventOverrides);
+    const events: Schema_Event[] = [event];
+
+    await createEvent(events, baseUrl, accessToken);
 
     // TODO: Create a variety of events for seeding
-
-    // Test event (10:00 - 11:00)
-    const event: Schema_Event[] = [
-      {
-        ...baseEvent,
-        isAllDay: false,
-        isSomeday: false,
-        startDate: dayjs()
-          .hour(10)
-          .minute(0)
-          .second(0)
-          .format(FORMAT.RFC3339_OFFSET.value),
-        endDate: dayjs()
-          .hour(11)
-          .minute(0)
-          .second(0)
-          .format(FORMAT.RFC3339_OFFSET.value),
-      },
-    ];
-    await createEvent(event, user.email);
 
     log.success(
       `Successfully created events for user: ${user.email} with id: ${userId}`,
