@@ -151,9 +151,36 @@ class EventService {
         return cleanedEvent;
       });
     }
+
+    // Process each event to handle Google Calendar integration
+    const processedEvents = await Promise.all(
+      eventsToInsert.map(async (event) => {
+        // Convert ObjectId to string if present
+        const eventToProcess = {
+          ...event,
+          _id: event._id ? event._id.toString() : undefined,
+        } as Event_Core;
+
+        const { _event, syncToGcal } = getCreateParams(
+          eventToProcess.user,
+          eventToProcess,
+        );
+
+        if (syncToGcal) {
+          const gEvent = await _createGcalEvent(
+            eventToProcess.user,
+            eventToProcess,
+          );
+          _event.gEventId = gEvent.id as string;
+        }
+
+        return _event;
+      }),
+    );
+
     const response = await mongoService.db
       .collection(Collections.EVENT)
-      .insertMany(eventsToInsert as unknown as OptionalId<Event_Core[]>[]);
+      .insertMany(processedEvents as unknown as OptionalId<Event_Core[]>[]);
 
     if (response.acknowledged && response.insertedCount !== events.length) {
       throw error(
