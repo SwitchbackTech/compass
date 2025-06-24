@@ -375,3 +375,48 @@ export const setEventStartEndDatesToCurrentMonth = (
     endDate: monthEnd.format(),
   };
 };
+
+export const setEventStartEndDates = (
+  to: {
+    direction: "prev" | "next" | "current";
+    duration: "week" | "month";
+  },
+  event: Schema_Event,
+): Schema_Event => {
+  const reference =
+    to.direction === "current" ? dayjs(new Date()) : dayjs(event.startDate);
+
+  let start: Dayjs;
+  let end: Dayjs;
+
+  if (to.duration === "week") {
+    start = reference.startOf("week");
+    end = reference.endOf("week");
+
+    if (to.direction === "prev") {
+      start = start.subtract(1, "week");
+      end = end.subtract(1, "week");
+    } else if (to.direction === "next") {
+      start = start.add(1, "week");
+      end = end.add(1, "week");
+    }
+  } else {
+    // duration is month
+    start = reference.startOf("month");
+    end = reference.endOf("month");
+
+    if (to.direction === "prev") {
+      start = start.subtract(1, "month");
+      end = end.subtract(1, "month");
+    } else if (to.direction === "next") {
+      start = start.add(1, "month");
+      end = end.add(1, "month");
+    }
+  }
+
+  return {
+    ...event,
+    startDate: start.format(),
+    endDate: end.format(),
+  };
+};
