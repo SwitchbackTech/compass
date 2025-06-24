@@ -32,25 +32,9 @@ class CompassAuthService {
     return { authMethod, user };
   };
 
-  createSessionForUser = async (cUserId?: string, email?: string) => {
-    if (!cUserId && !email) {
-      throw new Error("Either cUserId or email must be provided");
-    }
-
-    let userId: string;
-    if (cUserId) {
-      userId = cUserId;
-    } else if (email) {
-      const user = await findCompassUserBy("email", email);
-      if (!user) {
-        throw new Error("User doesn't exist");
-      }
-      userId = user._id.toString();
-    } else {
-      throw new Error("Unable to determine user ID");
-    }
-
-    const sUserId = supertokens.convertToRecipeUserId(userId);
+  createSessionForUser = async (cUserId: string) => {
+    const userId = cUserId;
+    const sUserId = supertokens.convertToRecipeUserId(cUserId);
 
     try {
       const session = await Session.createNewSessionWithoutRequestResponse(
