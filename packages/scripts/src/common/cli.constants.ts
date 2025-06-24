@@ -15,8 +15,7 @@ export const CATEGORY_VM = {
 };
 
 export const CLI_ENV = {
-  LOCAL_DOMAIN:
-    process.env["LOCAL_DOMAIN"] || `localhost:${process.env["PORT"]}`,
+  LOCAL_DOMAIN: process.env["LOCAL_DOMAIN"] || `localhost:3000`,
   STAGING_DOMAIN: process.env["STAGING_DOMAIN"],
   PROD_DOMAIN: process.env["PROD_DOMAIN"],
 };
