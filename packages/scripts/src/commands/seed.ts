@@ -1,6 +1,7 @@
 import axios from "axios";
 import dayjs from "dayjs";
 import pkg from "inquirer";
+import { ObjectId } from "mongodb";
 import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
 import { Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
@@ -22,22 +23,27 @@ async function createEvent(
 
 async function seedEvents(userInput: string) {
   try {
-    // Connect to MongoDB
-    await mongoService.waitUntilConnected();
-
-    // Determine if input is email or ID and get the user ID
-    const isEmail = userInput.includes("@");
-    const user = await findCompassUserBy(isEmail ? "email" : "_id", userInput);
-
-    if (!user) {
+    // Validate userInput as ObjectId
+    if (!ObjectId.isValid(userInput)) {
       log.error(
-        `User not found with ${isEmail ? "email" : "ID"}: ${userInput}`,
+        `Provided user id is not a valid ObjectId: ${userInput}.
+        Please provide your Compass user's _id value.`,
       );
       process.exit(1);
     }
 
+    // Connect to MongoDB
+    await mongoService.waitUntilConnected();
+
+    const user = await findCompassUserBy("_id", userInput);
+
+    if (!user) {
+      log.error(`User not found with Compass ID: ${userInput}`);
+      process.exit(1);
+    }
+
     const userId = user._id.toString();
-    log.info(`Running seed command for user: ${user.email}...`);
+    log.info(`Running seed command for user: ${userId} (${user.email})...`);
 
     // Creates user session
     const { accessToken } =
