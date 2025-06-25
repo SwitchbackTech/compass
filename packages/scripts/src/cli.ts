@@ -1,7 +1,7 @@
 // sort-imports-ignore
 import { Command } from "commander";
 import "./init";
-// eslint-disable-next-line prettier/prettier
+
 import { CliValidator } from "./cli.validator";
 import { runBuild } from "./commands/build";
 import { startDeleteFlow } from "./commands/delete";
@@ -86,10 +86,7 @@ class CompassCli {
     program
       .command("seed")
       .description("seed the database with events")
-      .option(
-        "-u, --user [id | email]",
-        "specify which user to seed events for",
-      );
+      .option("-u, --user <id>", "specify which user to seed events for");
     return program;
   }
 }
