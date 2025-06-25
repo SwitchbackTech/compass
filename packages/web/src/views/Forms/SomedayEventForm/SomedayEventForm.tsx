@@ -7,10 +7,7 @@ import { Key } from "ts-key-enum";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import {
-  setEventStartEndDatesToCurrentMonth,
-  setEventStartEndDatesToCurrentWeek,
-} from "@web/common/utils/web.date.util";
+import { setEventStartEndDates } from "@web/common/utils/web.date.util";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
@@ -105,7 +102,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   useHotkeys(
     "delete",
     () => {
-      console.log("delete");
       const confirmed = window.confirm(
         `Delete ${event.title || "this event"}?`,
       );
@@ -140,7 +136,13 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     "ctrl+meta+up",
     (e) => {
       e.preventDefault();
-      const updatedEvent = setEventStartEndDatesToCurrentWeek(event);
+      const updatedEvent = setEventStartEndDates(
+        {
+          direction: "current",
+          duration: "week",
+        },
+        event,
+      );
       onSubmit(updatedEvent);
     },
     hotkeysOptions,
@@ -151,7 +153,47 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     "ctrl+meta+down",
     async (e) => {
       e.preventDefault();
-      const updatedEvent = setEventStartEndDatesToCurrentMonth(event);
+      const updatedEvent = setEventStartEndDates(
+        {
+          direction: "current",
+          duration: "month",
+        },
+        event,
+      );
+      onSubmit(updatedEvent);
+    },
+    hotkeysOptions,
+    [event],
+  );
+
+  useHotkeys(
+    "ctrl+meta+right",
+    async (e) => {
+      e.preventDefault();
+      const updatedEvent = setEventStartEndDates(
+        {
+          direction: "next",
+          duration: target,
+        },
+        event,
+      );
+      onSubmit(updatedEvent);
+    },
+    hotkeysOptions,
+    [event],
+  );
+
+  useHotkeys(
+    "ctrl+meta+left",
+    async (e) => {
+      e.preventDefault();
+      const updatedEvent = setEventStartEndDates(
+        {
+          direction: "prev",
+          duration: target,
+        },
+        event,
+      );
       onSubmit(updatedEvent);
     },
     hotkeysOptions,
