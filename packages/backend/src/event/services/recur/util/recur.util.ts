@@ -10,6 +10,7 @@ import {
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
+import { FORMAT } from "@core/util/date/date.util";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
@@ -69,13 +70,25 @@ const _generateInstances = (
   const instances = dates.map((date) => {
     const { startDate, endDate } = _getDates(rule, date);
 
+    // Adds original start/end hours to the instance
+    const origStart = dayjs.utc(orig.startDate);
+    const origEnd = dayjs.utc(orig.endDate);
+
+    const start = dayjs
+      .utc(startDate)
+      .hour(origStart.hour())
+      .minute(origStart.minute());
+    const end = dayjs
+      .utc(endDate)
+      .hour(origEnd.hour())
+      .minute(origEnd.minute());
+
     const event = {
       ...orig,
       _id: undefined,
-      startDate,
-      endDate,
+      startDate: start.format(FORMAT.RFC3339_OFFSET.value),
+      endDate: end.format(FORMAT.RFC3339_OFFSET.value),
       recurrence: {
-        rule: [rule],
         eventId: _id,
       },
     };
@@ -195,6 +208,9 @@ const _getDates = (rule: string, nextInstance: Date) => {
   } else if (rule === RRULE.MONTH) {
     start = start.startOf("month");
     end = start.endOf("month");
+  } else if (rule === RRULE.DAILY) {
+    start = dayjs.utc(nextInstance);
+    end = dayjs.utc(nextInstance);
   } else {
     throw error(
       GenericError.DeveloperError,
@@ -222,10 +238,10 @@ const _getNextStart = (rule: string, startDate: string, endDate: string) => {
   switch (rule) {
     case RRULE.WEEK:
       return _getNextSunday(startDate);
-      break;
     case RRULE.MONTH:
       return _getNextMonth(endDate);
-      break;
+    case RRULE.DAILY:
+      return dayjs.utc(startDate);
     default:
       throw error(GenericError.DeveloperError, "Failed to get next start");
   }
