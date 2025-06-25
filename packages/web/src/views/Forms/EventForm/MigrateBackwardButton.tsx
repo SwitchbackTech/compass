@@ -1,5 +1,7 @@
 import React from "react";
 import styled from "styled-components";
+import { getMetaKey } from "@web/common/utils/shortcut.util";
+import { Text } from "@web/components/Text";
 import TooltipIconButton from "@web/components/TooltipIconButton/TooltipIconButton";
 
 const StyledMigrateBackwardButton = styled.div`
@@ -27,6 +29,11 @@ export const MigrateBackwardButton = ({
       tooltipProps={{
         description: tooltipText,
         onClick,
+        shortcut: (
+          <Text size="s" style={{ display: "flex", alignItems: "center" }}>
+            Ctrl + {getMetaKey()} + Left
+          </Text>
+        ),
       }}
     />
   );
