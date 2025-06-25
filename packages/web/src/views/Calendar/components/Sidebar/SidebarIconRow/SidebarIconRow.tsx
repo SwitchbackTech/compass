@@ -1,7 +1,6 @@
 import React from "react";
-import { Command, WindowsLogo } from "@phosphor-icons/react";
 import { theme } from "@web/common/styles/theme";
-import { DesktopOS, getDesktopOS } from "@web/common/utils/device.util";
+import { getMetaKey } from "@web/common/utils/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
 import { TodoIcon } from "@web/components/Icons/Todo";
@@ -29,12 +28,9 @@ export const SidebarIconRow = () => {
   };
 
   const getCommandPaletteShortcut = () => {
-    const desktopOS = getDesktopOS();
-    const isMacOS = desktopOS === DesktopOS.MacOS;
-
     return (
       <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-        {isMacOS ? <Command size={14} /> : <WindowsLogo size={14} />} + K
+        {getMetaKey()} + K
       </Text>
     );
   };
