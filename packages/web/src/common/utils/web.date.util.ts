@@ -350,32 +350,6 @@ const _getWeeklyMigrationDates = (
   return { startDate, endDate };
 };
 
-export const setEventStartEndDatesToCurrentWeek = (
-  event: Schema_Event,
-): Schema_Event => {
-  const weekStart = dayjs(new Date()).startOf("week");
-  const weekEnd = dayjs(new Date()).endOf("week");
-
-  return {
-    ...event,
-    startDate: weekStart.format(),
-    endDate: weekEnd.format(),
-  };
-};
-
-export const setEventStartEndDatesToCurrentMonth = (
-  event: Schema_Event,
-): Schema_Event => {
-  const monthStart = dayjs(new Date()).startOf("month");
-  const monthEnd = dayjs(new Date()).endOf("month");
-
-  return {
-    ...event,
-    startDate: monthStart.format(),
-    endDate: monthEnd.format(),
-  };
-};
-
 export const computeEventDateRange = (
   to: {
     direction: "prev" | "next" | "current";

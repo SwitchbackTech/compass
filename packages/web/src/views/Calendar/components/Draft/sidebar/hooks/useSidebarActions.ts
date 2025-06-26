@@ -24,10 +24,9 @@ import {
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import {
+  computeEventDateRange,
   getDatesByCategory,
   getMigrationDates,
-  setEventStartEndDatesToCurrentMonth,
-  setEventStartEndDatesToCurrentWeek,
 } from "@web/common/utils/web.date.util";
 import {
   selectDraft,
@@ -454,9 +453,15 @@ export const useSidebarActions = (
     const draggedToMonthColumn = destColumn.id === COLUMN_MONTH;
 
     if (draggedToMonthColumn) {
-      draggedEvent = setEventStartEndDatesToCurrentMonth(draggedEvent);
+      draggedEvent = computeEventDateRange(
+        { direction: "current", duration: "month" },
+        draggedEvent,
+      );
     } else {
-      draggedEvent = setEventStartEndDatesToCurrentWeek(draggedEvent);
+      draggedEvent = computeEventDateRange(
+        { direction: "current", duration: "week" },
+        draggedEvent,
+      );
     }
 
     const newOrder = destEventIds.indexOf(draggableId);
