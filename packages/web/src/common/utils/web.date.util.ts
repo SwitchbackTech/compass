@@ -376,7 +376,7 @@ export const setEventStartEndDatesToCurrentMonth = (
   };
 };
 
-export const setEventStartEndDates = (
+export const computeEventDateRange = (
   to: {
     direction: "prev" | "next" | "current";
     duration: "week" | "month";
