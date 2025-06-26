@@ -5,9 +5,11 @@ import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { Schema_SomedayEvent } from "@web/common/types/web.event.types";
+import { computeEventDateRange } from "@web/common/utils/web.date.util";
 import { categorizeSomedayEvents } from "../someday.util";
 import { setSomedayEventsOrder } from "../someday.util";
 
@@ -294,5 +296,145 @@ describe("setSomedayEventsOrder", () => {
     const result = setSomedayEventsOrder(events);
 
     expect(result).toEqual([{ ...events[0], order: 0 }]);
+  });
+});
+
+describe("computeEventDateRange", () => {
+  const baseEvent: Schema_Event = {
+    _id: "test-id",
+    startDate: "2024-03-19", // A Tuesday
+    endDate: "2024-03-20",
+  };
+
+  // Helper function to format dates to YYYY-MM-DD
+  const formatDate = (date: string | undefined) =>
+    dayjs(date as string).format(YEAR_MONTH_DAY_FORMAT);
+
+  // Set up fake timers
+  beforeAll(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2024-03-15")); // A Friday
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
+  describe("Week duration", () => {
+    it("should set current week dates", () => {
+      const result = computeEventDateRange(
+        { direction: "current", duration: "week" },
+        baseEvent,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-03-10");
+      expect(formatDate(result.endDate)).toBe("2024-03-16");
+    });
+
+    it("should set previous week dates", () => {
+      const result = computeEventDateRange(
+        { direction: "prev", duration: "week" },
+        baseEvent,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-03-10");
+      expect(formatDate(result.endDate)).toBe("2024-03-16");
+    });
+
+    it("should set next week dates", () => {
+      const result = computeEventDateRange(
+        { direction: "next", duration: "week" },
+        baseEvent,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-03-24");
+      expect(formatDate(result.endDate)).toBe("2024-03-30");
+    });
+  });
+
+  describe("Month duration", () => {
+    it("should set current month dates", () => {
+      const result = computeEventDateRange(
+        { direction: "current", duration: "month" },
+        baseEvent,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-03-01");
+      expect(formatDate(result.endDate)).toBe("2024-03-31");
+    });
+
+    it("should set previous month dates", () => {
+      const result = computeEventDateRange(
+        { direction: "prev", duration: "month" },
+        baseEvent,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-02-01");
+      expect(formatDate(result.endDate)).toBe("2024-02-29");
+    });
+
+    it("should set next month dates", () => {
+      const result = computeEventDateRange(
+        { direction: "next", duration: "month" },
+        baseEvent,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-04-01");
+      expect(formatDate(result.endDate)).toBe("2024-04-30");
+    });
+  });
+
+  describe("Edge cases", () => {
+    it("should preserve other event properties", () => {
+      const eventWithProps = {
+        ...baseEvent,
+        title: "Test Event",
+        description: "Test Description",
+        isAllDay: true,
+      };
+
+      const result = computeEventDateRange(
+        { direction: "current", duration: "week" },
+        eventWithProps,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-03-10");
+      expect(formatDate(result.endDate)).toBe("2024-03-16");
+      expect(result.title).toBe(eventWithProps.title);
+      expect(result.description).toBe(eventWithProps.description);
+      expect(result.isAllDay).toBe(eventWithProps.isAllDay);
+    });
+
+    it("should handle month transitions correctly", () => {
+      const eventAtMonthEnd = {
+        ...baseEvent,
+        startDate: "2024-03-31", // Last day of March
+        endDate: "2024-03-31",
+      };
+
+      const result = computeEventDateRange(
+        { direction: "next", duration: "month" },
+        eventAtMonthEnd,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-04-01");
+      expect(formatDate(result.endDate)).toBe("2024-04-30");
+    });
+
+    it("should handle week transitions across months", () => {
+      const eventAtMonthTransition = {
+        ...baseEvent,
+        startDate: "2024-03-31", // Sunday, last day of March
+        endDate: "2024-03-31",
+      };
+
+      const result = computeEventDateRange(
+        { direction: "next", duration: "week" },
+        eventAtMonthTransition,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-04-07");
+      expect(formatDate(result.endDate)).toBe("2024-04-13");
+    });
   });
 });
