@@ -1,3 +1,6 @@
 import { RootState } from "@web/store";
 
-export const selectSyncState = (state: RootState) => state.sync;
+export const selectImportLatestState = ({ sync }: RootState) =>
+  sync.importLatest;
+
+export const selectImportGCalState = ({ sync }: RootState) => sync.importGCal;
