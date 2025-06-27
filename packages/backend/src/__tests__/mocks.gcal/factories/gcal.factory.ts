@@ -1,8 +1,15 @@
 import {
   gSchema$CalendarListEntry,
   gSchema$Event,
+  gSchema$EventBase,
   gSchema$Events,
 } from "@core/types/gcal";
+import {
+  isBaseGCalEvent,
+  isInstanceGCalEvent,
+  isRegularGCalEvent,
+} from "@core/util/event/gcal.event.util";
+import { mockRecurringGcalEvents } from "./gcal.event.factory";
 
 /**
  * Generates a paginated events object for the Google Calendar API.
@@ -78,9 +85,12 @@ export const mockGcal = ({
                 pageToken?: string;
                 singleEvents?: boolean;
               }) => {
-                // When singleEvents is false, only return base events
-                if (params.singleEvents === false) {
-                  const baseEvents = events.filter((event) => event.recurrence);
+                // When singleEvents is false, only return base events and regular events - without instance events
+                if (!params.singleEvents) {
+                  const baseEvents = events.filter(
+                    (e) => isBaseGCalEvent(e) || isRegularGCalEvent(e),
+                  );
+
                   const eventsPage = generatePaginatedEvents(
                     baseEvents,
                     nextSyncToken,
@@ -88,21 +98,26 @@ export const mockGcal = ({
                     params.pageToken,
                   );
                   return {
+                    statusText: "OK",
+                    status: 200,
                     data: eventsPage,
                   };
                 }
 
-                // When singleEvents is true, return instances and non-recurring events
-                const instancesAndNonRecurring = events.filter(
-                  (event) => !event.recurrence || event.recurringEventId,
+                // When singleEvents is true, return instance events and regular events - without base events
+                const instanceAndRegularEvents = events.filter(
+                  (e) => isRegularGCalEvent(e) || isInstanceGCalEvent(e),
                 );
+
                 const eventsPage = generatePaginatedEvents(
-                  instancesAndNonRecurring,
+                  instanceAndRegularEvents,
                   nextSyncToken,
                   pageSize,
                   params.pageToken,
                 );
                 return {
+                  statusText: "OK",
+                  status: 200,
                   data: eventsPage,
                 };
               },
@@ -110,17 +125,19 @@ export const mockGcal = ({
           instances: jest
             .fn()
             .mockImplementation(async (params: { eventId: string }) => {
-              const { eventId } = params;
-              const instances = Array(3)
-                .fill(null)
-                .map(() => ({
-                  ...events[0],
-                  recurringEventId: eventId,
-                }));
+              const { eventId: id } = params;
+
+              const baseEvent = events.find(
+                isBaseGCalEvent,
+              ) as gSchema$EventBase;
+
+              const data = mockRecurringGcalEvents({ ...baseEvent, id }, 3, 7);
 
               return {
+                statusText: "OK",
+                status: 200,
                 data: {
-                  items: instances,
+                  items: data.instances,
                 },
               };
             }),
