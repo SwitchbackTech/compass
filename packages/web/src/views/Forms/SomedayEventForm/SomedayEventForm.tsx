@@ -7,7 +7,10 @@ import { Key } from "ts-key-enum";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import { setEventStartEndDates } from "@web/common/utils/web.date.util";
+import {
+  computeCurrentEventDateRange,
+  computeRelativeEventDateRange,
+} from "@web/common/utils/web.date.util";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
@@ -37,6 +40,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   onMigrate,
   onSubmit,
   setEvent,
+  weekViewRange,
   ...props
 }) => {
   const dispatch = useAppDispatch();
@@ -136,29 +140,29 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     "ctrl+meta+up",
     (e) => {
       e.preventDefault();
-      const updatedEvent = setEventStartEndDates(
+      const updatedEvent = computeCurrentEventDateRange(
         {
-          direction: "current",
           duration: "week",
         },
         event,
+        weekViewRange,
       );
       onSubmit(updatedEvent);
     },
     hotkeysOptions,
-    [event],
+    [event, weekViewRange],
   );
 
   useHotkeys(
     "ctrl+meta+down",
     async (e) => {
       e.preventDefault();
-      const updatedEvent = setEventStartEndDates(
+      const updatedEvent = computeCurrentEventDateRange(
         {
-          direction: "current",
           duration: "month",
         },
         event,
+        weekViewRange,
       );
       onSubmit(updatedEvent);
     },
@@ -170,7 +174,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     "ctrl+meta+right",
     async (e) => {
       e.preventDefault();
-      const updatedEvent = setEventStartEndDates(
+      const updatedEvent = computeRelativeEventDateRange(
         {
           direction: "next",
           duration: target,
@@ -187,7 +191,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     "ctrl+meta+left",
     async (e) => {
       e.preventDefault();
-      const updatedEvent = setEventStartEndDates(
+      const updatedEvent = computeRelativeEventDateRange(
         {
           direction: "prev",
           duration: target,
