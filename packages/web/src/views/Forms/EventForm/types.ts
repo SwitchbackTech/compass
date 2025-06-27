@@ -24,6 +24,10 @@ export interface FormProps {
   onSubmitEventForm?: (event: Schema_Event) => void;
   priority?: Priority;
   setEvent: (event: Schema_Event) => SetStateAction<Schema_Event> | void;
+  weekViewRange: {
+    startDate: string;
+    endDate: string;
+  };
 }
 
 type EventField =

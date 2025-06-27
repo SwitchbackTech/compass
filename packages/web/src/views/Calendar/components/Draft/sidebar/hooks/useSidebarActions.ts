@@ -24,10 +24,9 @@ import {
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import {
+  computeCurrentEventDateRange,
+  computeRelativeEventDateRange,
   getDatesByCategory,
-  getMigrationDates,
-  setEventStartEndDatesToCurrentMonth,
-  setEventStartEndDatesToCurrentWeek,
 } from "@web/common/utils/web.date.util";
 import {
   selectDraft,
@@ -309,7 +308,13 @@ export const useSidebarActions = (
     category: Categories_Event,
     direction: Direction_Migrate,
   ) => {
-    const _event = _updateEventAfterMigration(event, category, direction);
+    const _event = computeRelativeEventDateRange(
+      {
+        direction: direction === "forward" ? "next" : "prev",
+        duration: category === Categories_Event.SOMEDAY_WEEK ? "week" : "month",
+      },
+      event,
+    );
 
     const isExisting = _event._id;
     if (isExisting) {
@@ -453,10 +458,22 @@ export const useSidebarActions = (
 
     const draggedToMonthColumn = destColumn.id === COLUMN_MONTH;
 
+    const weekViewRange = {
+      startDate: start,
+      endDate: end,
+    };
     if (draggedToMonthColumn) {
-      draggedEvent = setEventStartEndDatesToCurrentMonth(draggedEvent);
+      draggedEvent = computeCurrentEventDateRange(
+        { duration: "month" },
+        draggedEvent,
+        weekViewRange,
+      );
     } else {
-      draggedEvent = setEventStartEndDatesToCurrentWeek(draggedEvent);
+      draggedEvent = computeCurrentEventDateRange(
+        { duration: "week" },
+        draggedEvent,
+        weekViewRange,
+      );
     }
 
     const newOrder = destEventIds.indexOf(draggableId);
@@ -517,22 +534,6 @@ export const useSidebarActions = (
     } else {
       handleCrossColumnDragging(source, destination, draggableId);
     }
-  };
-
-  const _updateEventAfterMigration = (
-    event: Schema_Event,
-    category: Categories_Event,
-    direction: Direction_Migrate,
-  ) => {
-    const origDates = { startDate: event.startDate, endDate: event.endDate };
-    const { startDate, endDate } = getMigrationDates(
-      origDates,
-      category,
-      direction,
-    );
-
-    const newEvent = { ...event, startDate, endDate, isOpen: false };
-    return newEvent;
   };
 
   const reset = () => {

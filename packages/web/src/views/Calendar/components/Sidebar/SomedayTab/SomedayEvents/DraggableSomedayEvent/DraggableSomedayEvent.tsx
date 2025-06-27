@@ -1,6 +1,8 @@
 import React, { FC } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { SomedayEventContainer } from "../SomedayEventContainer/SomedayEventContainer";
 
@@ -23,6 +25,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
 }) => {
   const isDraftingThisEvent = isDrafting && draftId === event._id;
   const { actions, setters } = useSidebarContext();
+  const { start, end } = useAppSelector(selectDatesInView);
 
   return (
     <div>
@@ -46,6 +49,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
                 provided={provided}
                 snapshot={snapshot}
                 setEvent={setters.setDraft}
+                weekViewRange={{ startDate: start, endDate: end }}
               />
             </>
           );

@@ -21,6 +21,10 @@ export interface Props {
   provided: DraggableProvided;
   snapshot: DraggableStateSnapshot;
   setEvent: Setters_Sidebar["setDraft"];
+  weekViewRange: {
+    startDate: string;
+    endDate: string;
+  };
 }
 
 export const SomedayEventContainer = ({
@@ -33,6 +37,7 @@ export const SomedayEventContainer = ({
   provided,
   snapshot,
   setEvent,
+  weekViewRange,
 }: Props) => {
   const { actions, setters, state } = useSidebarContext();
 
@@ -90,6 +95,7 @@ export const SomedayEventContainer = ({
                 onMigrate={actions.onMigrate}
                 onSubmit={onSubmit}
                 setEvent={setEvent}
+                weekViewRange={weekViewRange}
               />
             </StyledFloatContainer>
           </FloatingFocusManager>
