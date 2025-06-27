@@ -17,6 +17,7 @@ export interface InterServerEvents {
 
 export interface ServerToClientEvents {
   EVENT_CHANGED: () => void;
+  IMPORT_GCAL: () => void;
 }
 
 export interface SocketData {
