@@ -1,3 +1,4 @@
+import { isBase, isExistingInstance } from "@core/util/event/event.util";
 import { getCategorizedEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
@@ -39,55 +40,56 @@ describe("SyncImport: Full", () => {
     await syncImport.importAllEvents(setup.userId, "test-calendar");
 
     const currentEventsInDb = await mongoService.event.find().toArray();
+    const baseEvent = currentEventsInDb.find(isBase)!;
+    const firstInstance = currentEventsInDb.find(isExistingInstance)!;
 
-    const recurringEvents = currentEventsInDb.filter(
-      (e) => e.recurrence !== undefined,
-    );
+    expect(baseEvent).toBeDefined();
+    expect(firstInstance).toBeDefined();
 
-    const baseStart = recurringEvents[0]?.startDate;
-    const firstInstanceStart = recurringEvents[1]?.startDate;
-    expect(baseStart).toEqual(firstInstanceStart);
+    expect(baseEvent.startDate).toEqual(firstInstance.startDate);
   });
 
   it("should connect instances to their base events", async () => {
     await syncImport.importAllEvents(setup.userId, "test-calendar");
     const { baseEvents, instanceEvents } = await getCategorizedEventsInDb();
 
-    expect(instanceEvents).toHaveLength(2);
+    expect(instanceEvents).toHaveLength(3);
     instanceEvents.forEach((instance) => {
       expect(instance.recurrence?.eventId).toBe(baseEvents[0]?._id?.toString());
     });
   });
+
   it("should include regular and recurring events and skip cancelled events", async () => {
     const { totalProcessed, totalChanged, nextSyncToken } =
       await syncImport.importAllEvents(setup.userId, "test-calendar");
 
     const currentEventsInDb = await mongoService.event.find().toArray();
 
-    expect(totalProcessed).toBe(5); // base + 2 instances + regular + cancelled
-    expect(totalChanged).toBe(4); // base + 2 instances + regular - cancelled
-    expect(currentEventsInDb).toHaveLength(4); // base + 2 instances + regular - cancelled
-    // Verify we have the base recurring event
-    const baseEvents = currentEventsInDb.filter(
-      (e) => e.recurrence?.rule !== undefined,
-    );
+    expect(totalProcessed).toBe(6); // base + 3 instances + regular + cancelled
+    expect(totalChanged).toBe(5); // base + 3 instances + regular
+    expect(currentEventsInDb).toHaveLength(5); // base + 3 instances + regular
+    // Verify we have the base event
+    const baseEvents = currentEventsInDb.filter(isBase);
+
     expect(baseEvents).toHaveLength(1);
     expect(baseEvents[0]?.title).toBe("Recurrence");
 
     // Verify we have the correct instance
-    const instanceEvents = currentEventsInDb.filter(
-      (e) => e.recurrence?.eventId !== undefined,
-    );
-    expect(instanceEvents).toHaveLength(2);
+    const instanceEvents = currentEventsInDb.filter(isExistingInstance);
+
+    expect(instanceEvents).toHaveLength(3);
+
     const baseGevId = baseEvents[0]?.gEventId as string;
+
     expect(instanceEvents.map((e) => e.gEventId)).toEqual(
       expect.arrayContaining([expect.stringMatching(baseGevId)]),
     );
 
     // Verify we have the regular event
     const regularEvents = currentEventsInDb.filter(
-      (e) => e.recurrence === undefined,
+      ({ recurrence }) => recurrence === undefined || recurrence === null,
     );
+
     expect(regularEvents).toHaveLength(1);
     expect(regularEvents[0]?.gEventId).toBe("regular-1");
 
@@ -100,14 +102,12 @@ describe("SyncImport: Full", () => {
 
     const currentEventsInDb = await mongoService.event.find().toArray();
 
-    // Get all recurring events
-    const recurringEvents = currentEventsInDb.filter(
-      (e) => e.recurrence !== undefined,
-    );
+    // Get all instance events
+    const instances = currentEventsInDb.filter(isExistingInstance);
 
-    // For each recurring event, verify there are no duplicates
+    // For each instance event, verify there are no duplicates
     const eventIds = new Set<string>();
-    const duplicateEvents = recurringEvents.filter((event) => {
+    const duplicateEvents = instances.filter((event) => {
       if (!event.gEventId) return false; // Skip events without IDs
       if (eventIds.has(event.gEventId)) {
         return true;
@@ -123,9 +123,11 @@ describe("SyncImport: Full", () => {
     await syncImport.importAllEvents(setup.userId, "test-calendar");
 
     const currentEventsInDb = await mongoService.event.find().toArray();
+
     const regularEvents = currentEventsInDb.filter(
-      (e) => e.recurrence === undefined,
+      ({ recurrence }) => recurrence === undefined || recurrence === null,
     );
+
     expect(regularEvents).toHaveLength(1);
     expect(regularEvents[0]?.gEventId).toBe("regular-1");
   });
