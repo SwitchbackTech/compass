@@ -114,22 +114,6 @@ export const getHourLabels = () => {
   });
 };
 
-export const getMigrationDates = (
-  origDates: { startDate: string; endDate: string },
-  category: Categories_Event,
-  direction: Direction_Migrate,
-) => {
-  const dates =
-    category === Categories_Event.SOMEDAY_WEEK
-      ? _getWeeklyMigrationDates(origDates, direction)
-      : _getMonthlyMigrationDates(origDates, direction);
-
-  return {
-    startDate: dates.startDate.format(YEAR_MONTH_DAY_FORMAT),
-    endDate: dates.endDate.format(YEAR_MONTH_DAY_FORMAT),
-  };
-};
-
 export const getNextIntervalTimes = () => {
   const currentMinute = dayjs().minute();
   const nextInterval = roundToNext(currentMinute, GRID_TIME_STEP);
@@ -305,67 +289,54 @@ const _getTimeLabel = (date: string) => {
   return orig.replace(":00", "");
 };
 
-const _getMonthlyMigrationDates = (
-  origDates: { startDate: string; endDate: string },
-  direction: Direction_Migrate,
-) => {
-  const WEEK_START = 0;
-  let startDate: Dayjs;
-
-  if (direction === "forward") {
-    const nextMonth = dayjs(origDates.startDate)
-      .startOf("month")
-      .add(1, "month");
-    const buffer = 7; //ensures it's in the next month
-    const firstXOfNextMonth = nextMonth.day(WEEK_START + buffer);
-    startDate = firstXOfNextMonth;
-  } else {
-    const prevMonth = dayjs(origDates.startDate)
-      .startOf("month")
-      .subtract(1, "month");
-    const lastDayOfMonth = prevMonth.endOf("month");
-    const lastXOfMonth = lastDayOfMonth.day(WEEK_START);
-
-    if (lastDayOfMonth.date() < lastXOfMonth.date()) {
-      lastXOfMonth.subtract(7, "days");
-    }
-
-    startDate = lastXOfMonth;
-  }
-
-  const endDate = startDate.add(6, "days");
-
-  return { startDate, endDate };
-};
-
-const _getWeeklyMigrationDates = (
-  origDates: { startDate: string; endDate: string },
-  direction: Direction_Migrate,
-) => {
-  const diff = direction === "forward" ? 7 : -7;
-
-  const startDate = dayjs(origDates.startDate).add(diff, "days");
-  const endDate = dayjs(origDates.endDate).add(diff, "days");
-
-  return { startDate, endDate };
-};
-
-export const computeEventDateRange = (
+export const computeCurrentEventDateRange = (
   to: {
-    direction: "prev" | "next" | "current";
     duration: "week" | "month";
   },
   event: Schema_Event,
+  weekViewRange: {
+    startDate: string;
+    endDate: string;
+  },
 ): Schema_Event => {
-  const reference =
-    to.direction === "current" ? dayjs(new Date()) : dayjs(event.startDate);
+  const reference = dayjs(weekViewRange.startDate);
 
   let start: Dayjs;
   let end: Dayjs;
 
   if (to.duration === "week") {
-    start = reference.startOf("week");
-    end = reference.endOf("week");
+    start = dayjs(weekViewRange.startDate);
+    end = dayjs(weekViewRange.endDate);
+  } else {
+    // duration is month
+    start = reference.startOf("month");
+    end = reference.endOf("month");
+  }
+
+  return {
+    ...event,
+    startDate: start.format(),
+    endDate: end.format(),
+  };
+};
+
+export const computeRelativeEventDateRange = (
+  to: {
+    direction: "prev" | "next";
+    duration: "week" | "month";
+  },
+  event: Schema_Event,
+): Schema_Event => {
+  const reference = dayjs(event.startDate);
+
+  let start: Dayjs;
+  let end: Dayjs;
+
+  if (to.duration === "week") {
+    // For prev/next, use the provided week range as reference if available
+    const weekRef = reference;
+    start = weekRef.startOf("week");
+    end = weekRef.endOf("week");
 
     if (to.direction === "prev") {
       start = start.subtract(1, "week");
