@@ -9,7 +9,8 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { Schema_SomedayEvent } from "@web/common/types/web.event.types";
-import { computeEventDateRange } from "@web/common/utils/web.date.util";
+import { computeRelativeEventDateRange } from "@web/common/utils/web.date.util";
+import { computeCurrentEventDateRange } from "@web/common/utils/web.date.util";
 import { categorizeSomedayEvents } from "../someday.util";
 import { setSomedayEventsOrder } from "../someday.util";
 
@@ -299,7 +300,7 @@ describe("setSomedayEventsOrder", () => {
   });
 });
 
-describe("computeEventDateRange", () => {
+describe("computeRelativeEventDateRange", () => {
   const baseEvent: Schema_Event = {
     _id: "test-id",
     startDate: "2024-03-19", // A Tuesday
@@ -321,18 +322,8 @@ describe("computeEventDateRange", () => {
   });
 
   describe("Week duration", () => {
-    it("should set current week dates", () => {
-      const result = computeEventDateRange(
-        { direction: "current", duration: "week" },
-        baseEvent,
-      );
-
-      expect(formatDate(result.startDate)).toBe("2024-03-10");
-      expect(formatDate(result.endDate)).toBe("2024-03-16");
-    });
-
     it("should set previous week dates", () => {
-      const result = computeEventDateRange(
+      const result = computeRelativeEventDateRange(
         { direction: "prev", duration: "week" },
         baseEvent,
       );
@@ -342,7 +333,7 @@ describe("computeEventDateRange", () => {
     });
 
     it("should set next week dates", () => {
-      const result = computeEventDateRange(
+      const result = computeRelativeEventDateRange(
         { direction: "next", duration: "week" },
         baseEvent,
       );
@@ -353,18 +344,8 @@ describe("computeEventDateRange", () => {
   });
 
   describe("Month duration", () => {
-    it("should set current month dates", () => {
-      const result = computeEventDateRange(
-        { direction: "current", duration: "month" },
-        baseEvent,
-      );
-
-      expect(formatDate(result.startDate)).toBe("2024-03-01");
-      expect(formatDate(result.endDate)).toBe("2024-03-31");
-    });
-
     it("should set previous month dates", () => {
-      const result = computeEventDateRange(
+      const result = computeRelativeEventDateRange(
         { direction: "prev", duration: "month" },
         baseEvent,
       );
@@ -374,7 +355,7 @@ describe("computeEventDateRange", () => {
     });
 
     it("should set next month dates", () => {
-      const result = computeEventDateRange(
+      const result = computeRelativeEventDateRange(
         { direction: "next", duration: "month" },
         baseEvent,
       );
@@ -385,26 +366,6 @@ describe("computeEventDateRange", () => {
   });
 
   describe("Edge cases", () => {
-    it("should preserve other event properties", () => {
-      const eventWithProps = {
-        ...baseEvent,
-        title: "Test Event",
-        description: "Test Description",
-        isAllDay: true,
-      };
-
-      const result = computeEventDateRange(
-        { direction: "current", duration: "week" },
-        eventWithProps,
-      );
-
-      expect(formatDate(result.startDate)).toBe("2024-03-10");
-      expect(formatDate(result.endDate)).toBe("2024-03-16");
-      expect(result.title).toBe(eventWithProps.title);
-      expect(result.description).toBe(eventWithProps.description);
-      expect(result.isAllDay).toBe(eventWithProps.isAllDay);
-    });
-
     it("should handle month transitions correctly", () => {
       const eventAtMonthEnd = {
         ...baseEvent,
@@ -412,7 +373,7 @@ describe("computeEventDateRange", () => {
         endDate: "2024-03-31",
       };
 
-      const result = computeEventDateRange(
+      const result = computeRelativeEventDateRange(
         { direction: "next", duration: "month" },
         eventAtMonthEnd,
       );
@@ -428,13 +389,99 @@ describe("computeEventDateRange", () => {
         endDate: "2024-03-31",
       };
 
-      const result = computeEventDateRange(
+      const result = computeRelativeEventDateRange(
         { direction: "next", duration: "week" },
         eventAtMonthTransition,
       );
 
       expect(formatDate(result.startDate)).toBe("2024-04-07");
       expect(formatDate(result.endDate)).toBe("2024-04-13");
+    });
+  });
+});
+
+describe("computeCurrentEventDateRange", () => {
+  const baseEvent: Schema_Event = {
+    _id: "test-id",
+    startDate: "2024-03-19", // A Tuesday
+    endDate: "2024-03-20",
+  };
+
+  // Helper function to format dates to YYYY-MM-DD
+  const formatDate = (date: string | undefined) =>
+    dayjs(date as string).format(YEAR_MONTH_DAY_FORMAT);
+
+  // Set up fake timers
+  beforeAll(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2024-03-15")); // A Friday
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
+  describe("Week duration", () => {
+    it("should use exact week range provided", () => {
+      const weekViewRange = {
+        startDate: "2024-06-30",
+        endDate: "2024-07-06",
+      };
+
+      const result = computeCurrentEventDateRange(
+        { duration: "week" },
+        baseEvent,
+        weekViewRange,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-06-30");
+      expect(formatDate(result.endDate)).toBe("2024-07-06");
+    });
+  });
+
+  describe("Month duration", () => {
+    it("should set current month dates", () => {
+      const weekViewRange = {
+        startDate: "2024-06-30",
+        endDate: "2024-07-06",
+      };
+
+      const result = computeCurrentEventDateRange(
+        { duration: "month" },
+        baseEvent,
+        weekViewRange,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-06-01");
+      expect(formatDate(result.endDate)).toBe("2024-06-30");
+    });
+  });
+
+  describe("Edge cases", () => {
+    it("should preserve other event properties", () => {
+      const eventWithProps = {
+        ...baseEvent,
+        title: "Test Event",
+        description: "Test Description",
+        isAllDay: true,
+      };
+
+      const weekViewRange = {
+        startDate: "2024-06-30",
+        endDate: "2024-07-06",
+      };
+
+      const result = computeCurrentEventDateRange(
+        { duration: "week" },
+        eventWithProps,
+        weekViewRange,
+      );
+
+      expect(formatDate(result.startDate)).toBe("2024-06-30");
+      expect(formatDate(result.endDate)).toBe("2024-07-06");
+      expect(result.title).toBe(eventWithProps.title);
+      expect(result.description).toBe(eventWithProps.description);
+      expect(result.isAllDay).toBe(eventWithProps.isAllDay);
     });
   });
 });
