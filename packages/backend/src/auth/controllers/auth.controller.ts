@@ -27,10 +27,7 @@ import {
   SReqBody,
 } from "@backend/common/types/express.types";
 import syncService from "@backend/sync/services/sync.service";
-import {
-  findCompassUserBy,
-  updateGoogleRefreshToken,
-} from "@backend/user/queries/user.queries";
+import { updateGoogleRefreshToken } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 import { initGoogleClient } from "../services/auth.utils";
 
