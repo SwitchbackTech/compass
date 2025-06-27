@@ -49,19 +49,11 @@ class AuthController {
     }
 
     if (cUserId) {
-      const sUserId = supertokens.convertToRecipeUserId(cUserId);
-      await Session.createNewSession(req, res, "public", sUserId);
-    }
-
-    const user = await findCompassUserBy("_id", cUserId);
-
-    if (!user) {
+      await compassAuthService.createSessionForUser(cUserId);
+    } else {
       res.promise({ error: "User doesn't exist" });
       return;
     }
-
-    const sUserId = supertokens.convertToRecipeUserId(user._id.toString());
-    await Session.createNewSession(req, res, "public", sUserId);
 
     res.promise({
       message: `User session created for ${cUserId}`,
