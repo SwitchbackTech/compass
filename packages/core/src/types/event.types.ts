@@ -49,7 +49,7 @@ export interface Payload_Order {
 
 export interface Result_DeleteMany {
   deletedCount: number;
-  errors: any[];
+  errors: unknown[];
 }
 
 export interface Schema_Event {
@@ -73,6 +73,11 @@ export interface Schema_Event {
   updatedAt?: Date | string;
   user?: string;
 }
+
+export type Schema_Event_Regular = Omit<
+  Schema_Event,
+  "recurrence" | "gRecurringEventId"
+>;
 
 export interface Schema_Event_Recur_Base
   extends Omit<Schema_Event, "recurrence"> {

@@ -33,7 +33,7 @@ export const isAllDay = (event: Schema_Event) =>
   event.endDate?.length === 10;
 
 /**
- * Base events have an `eventId` and an empty `rule`
+ * Base compass events have no `eventId` and an non-empty `rule` within their `recurrence` field
  * @param event
  * @returns
  */
@@ -45,7 +45,20 @@ export const isBase = (event: Schema_Event) => {
 };
 
 /**
- * Instances have an `eventId` and an empty `rule`
+ * Instance compass events have an `eventId` and an empty `rule` within their `recurrence` field
+ * @param event
+ * @returns
+ */
+export const isInstanceWithoutId = (event: Schema_Event) => {
+  return (
+    event?.recurrence?.rule === undefined &&
+    event?.recurrence?.eventId === undefined &&
+    typeof event.gRecurringEventId === "string"
+  );
+};
+
+/**
+ * Instances with mongo Ids have an `eventId` and an empty `rule` within their `recurrence` field
  * @param event
  * @returns
  */

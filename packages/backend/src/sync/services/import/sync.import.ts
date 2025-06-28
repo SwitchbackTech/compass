@@ -11,7 +11,7 @@ import {
 } from "@core/types/event.types";
 import { gCalendar, gSchema$Event, gSchema$EventBase } from "@core/types/gcal";
 import { Schema_Sync } from "@core/types/sync.types";
-import { categorizeRecurringEvents } from "@core/util/event/event.util";
+import { isBaseGCalEvent } from "@core/util/event/gcal.event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -21,6 +21,12 @@ import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import eventService from "@backend/event/services/event.service";
+import { EventsToModify } from "@backend/sync/services/import/sync.import.types";
+import {
+  assignIdsToEvents,
+  organizeGcalEventsByType,
+} from "@backend/sync/services/import/sync.import.util";
 import {
   getSync,
   updateSync,
@@ -33,13 +39,6 @@ import {
 import { getCalendarsToSync } from "../init/sync.init";
 import syncService from "../sync.service";
 import { assembleEventWatchPayloads } from "../watch/sync.watch";
-import { fetchAndProcessEventsPageByPage } from "./all/import.all.gcal";
-import {
-  shouldProcessDuringPass1,
-  shouldProcessDuringPass2,
-} from "./all/import.all.util";
-import { EventsToModify, Map_Recurrences } from "./sync.import.types";
-import { organizeGcalEventsByType } from "./sync.import.util";
 
 const logger = Logger("app:sync.import");
 
@@ -73,34 +72,6 @@ export class SyncImport {
     );
 
     return syncEvents;
-  }
-
-  /**
-   * Assigns IDs to recurring events
-   * @param events - The events to assign IDs to (** assumes each event belongs to the same series **)
-   * @returns The events with IDs assigned
-   */
-  private assignIdsToRecurringEvents(
-    events: RecurrenceWithoutId[],
-  ): RecurrenceWithObjectId[] {
-    const { baseEvent, instances } = categorizeRecurringEvents(events);
-
-    const baseId = new ObjectId();
-    const newBase: RecurrenceWithObjectId = {
-      ...baseEvent,
-      _id: baseId,
-    };
-
-    const instancesWithIds = instances.map((instance) => ({
-      ...instance,
-      _id: new ObjectId(),
-      recurrence: {
-        ...instance.recurrence,
-        eventId: baseId.toString(),
-      },
-    }));
-
-    return [newBase, ...instancesWithIds];
   }
 
   private async fetchAndCategorizeEventsToModify(
@@ -276,70 +247,139 @@ export class SyncImport {
     return response.data;
   }
 
+  async importEventInstances(
+    userId: string,
+    calendarId: string,
+    baseEvent: gSchema$Event,
+    perPage = 1000,
+  ): Promise<{
+    totalProcessed: number;
+    totalSaved: number;
+    totalInstancesSaved: number;
+  }> {
+    const isBaseEvent = isBaseGCalEvent(baseEvent);
+    const instances: gSchema$Event[] = [baseEvent];
+
+    if (isBaseEvent) {
+      const gCalResponse = gcalService.getBaseRecurringEventInstances({
+        gCal: this.gcal,
+        calendarId,
+        eventId: baseEvent.id!,
+        maxResults: perPage,
+      });
+
+      for await (const { items = [] } of gCalResponse) {
+        instances.push(...items);
+      }
+    }
+
+    const cEvents = MapEvent.toCompass(userId, instances, Origin.GOOGLE_IMPORT);
+
+    const compassSeries = assignIdsToEvents(cEvents);
+
+    let insertedCount = 0;
+
+    if (compassSeries.length > 0) {
+      const createResponse = await eventService.createMany(compassSeries, {
+        stripIds: false, // Preserve our generated ids in order to match the gcal ids
+      });
+
+      insertedCount = createResponse.insertedCount;
+    }
+
+    return {
+      totalProcessed: instances.length,
+      totalSaved: insertedCount,
+      totalInstancesSaved: Math.max(insertedCount - 1, 0),
+    };
+  }
+
   /**
-   * Imports ALL events for a calendar (Full Sync).
+   * importAllEvents
+   * Import ALL events for a calendar (Full Sync).
    */
-  public async importAllEvents(userId: string, calendarId: string) {
+  async importAllEvents(
+    userId: string,
+    calendarId: string,
+    perPage = 1000,
+  ): Promise<{
+    totalProcessed: number;
+    totalBaseEventsChanged: number;
+    totalChanged: number;
+    nextSyncToken: string;
+  }> {
     logger.info(
       `Starting importAllEvents for user ${userId}, calendar ${calendarId}.`,
     );
 
-    // Shared state needed by both passes
-    const recurrencesMap: Map_Recurrences = {
-      baseEventStartTimes: new Map<string, string | null>(),
-      processedEventIdsPass1: new Set<string>(),
-      baseEventMap: new Map<string, ObjectId>(),
+    const startTime = performance.now();
+
+    let syncToken: string | undefined = undefined;
+
+    const stats: {
+      totalProcessed: number;
+      totalBaseEventsChanged: number;
+      totalChanged: number;
+    } = {
+      totalProcessed: 0,
+      totalBaseEventsChanged: 0,
+      totalChanged: 0,
     };
 
-    // Execute Pass 1
-    const pass1Result = await fetchAndProcessEventsPageByPage(
-      userId,
-      this.gcal,
+    const gCalResponse = gcalService.getAllEvents({
+      gCal: this.gcal,
       calendarId,
-      { singleEvents: false }, // regular and base events (no instances)
-      shouldProcessDuringPass1,
-      recurrencesMap,
-      false, // Don't capture sync token in Pass 1
-    );
+      maxResults: perPage,
+      syncToken,
+    });
 
-    // Update the shared state with the map from Pass 1
-    recurrencesMap.baseEventMap = pass1Result.baseEventMap;
+    for await (const { items = [], nextSyncToken } of gCalResponse) {
+      await Promise.allSettled(
+        items.map(async (baseEvent) => {
+          const instanceStats = await this.importEventInstances(
+            userId,
+            calendarId,
+            baseEvent,
+            perPage,
+          );
 
-    // Execute Pass 2
-    const pass2Result = await fetchAndProcessEventsPageByPage(
-      userId,
-      this.gcal,
-      calendarId,
-      { singleEvents: true }, // regular and instance events (no base)
-      shouldProcessDuringPass2,
-      recurrencesMap,
-      true, // Capture sync token in Pass 2
-    );
+          const totalBaseEventsSaved =
+            instanceStats.totalSaved - instanceStats.totalInstancesSaved;
 
-    const nextSyncToken = pass2Result.nextSyncToken;
-    if (!nextSyncToken) {
-      // If Pass 2 ran but yielded no sync token (e.g., empty calendar or API issue on last page)
+          stats.totalChanged += instanceStats.totalSaved;
+          stats.totalProcessed += instanceStats.totalProcessed;
+          stats.totalBaseEventsChanged += totalBaseEventsSaved;
+        }),
+      );
+
+      if (nextSyncToken) syncToken = nextSyncToken;
+    }
+
+    if (!syncToken) {
+      // If no sync token (e.g., empty calendar or sync did not reach last page)
       throw error(
         GcalError.NoSyncToken,
         `Failed to finalize full import because nextSyncToken was not found for ${calendarId}. Incremental sync may not work correctly.`,
       );
     }
 
-    const baseEventsSavedCount = pass1Result.savedCount;
-    const instanceEventsSavedCount = pass2Result.savedCount;
-    const totalChanged = baseEventsSavedCount + instanceEventsSavedCount;
-    const totalProcessed =
-      pass1Result.processedCount + pass2Result.processedCount;
+    const baseEventsSavedCount = stats.totalBaseEventsChanged;
+    const instanceEventsSavedCount = stats.totalChanged - baseEventsSavedCount;
+    const endTime = performance.now();
+    const duration = (endTime - startTime) / 1000;
 
     logger.info(
-      `importAllEvents completed for ${calendarId}. Total API events processed: ${totalProcessed}. Total base/single saved in Pass 1: ${baseEventsSavedCount}, Total new instances/single saved in Pass 2: ${instanceEventsSavedCount}. Total Saved/Changed: ${totalChanged}. Final nextSyncToken acquired.`,
+      `importAllEvents completed for ${calendarId}.
+      Max results / page: ${perPage}
+      Total GCal events processed: ${stats.totalProcessed}.
+      Total base/single saved: ${baseEventsSavedCount},
+      Total instances saved: ${instanceEventsSavedCount}.
+      Total Saved/Changed Compass Events: ${stats.totalChanged}.
+      Duration: ${duration.toFixed(2)}s
+      Final nextSyncToken acquired.`,
     );
 
-    return {
-      totalProcessed,
-      totalChanged,
-      nextSyncToken,
-    };
+    return { ...stats, nextSyncToken: syncToken };
   }
 
   /**
@@ -385,7 +425,7 @@ export class SyncImport {
     const series = [cBase, ...cInstances];
 
     // assign ids and link instances to base
-    const compassSeries = this.assignIdsToRecurringEvents(series);
+    const compassSeries = assignIdsToEvents(series);
 
     const result = await mongoService.db
       .collection(Collections.EVENT)

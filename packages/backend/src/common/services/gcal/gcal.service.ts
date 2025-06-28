@@ -1,12 +1,31 @@
+import type { GaxiosResponse } from "gaxios";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
-import { gCalendar, gParamsEventsList, gSchema$Event } from "@core/types/gcal";
-import { Params_WatchEvents } from "@core/types/sync.types";
+import type {
+  gCalendar,
+  gParamsEventsList,
+  gSchema$Event,
+  gSchema$Events,
+} from "@core/types/gcal";
+import type { Params_WatchEvents } from "@core/types/sync.types";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { ENV } from "@backend/common/constants/env.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 
 class GCalService {
+  private validateGCalResponse<T>(
+    response: GaxiosResponse<T>,
+    message = "Gcal request failed.",
+  ) {
+    const { status, statusText } = response;
+
+    if (status !== 200 || statusText !== "OK") {
+      throw new Error(message);
+    }
+
+    return response;
+  }
+
   async createEvent(gcal: gCalendar, event: gSchema$Event) {
     const response = await gcal.events.insert({
       calendarId: "primary",
@@ -31,12 +50,16 @@ class GCalService {
     eventId: string,
     timeMin?: string,
     timeMax?: string,
+    pageToken?: string,
+    maxResults?: number,
   ) {
     const response = await gcal.events.instances({
       calendarId,
       eventId,
       timeMin,
       timeMax,
+      pageToken,
+      maxResults,
     });
     return response;
   }
@@ -44,6 +67,104 @@ class GCalService {
   async getEvents(gcal: gCalendar, params: gParamsEventsList) {
     const response = await gcal.events.list(params);
     return response;
+  }
+
+  async *getBaseRecurringEventInstances({
+    gCal,
+    calendarId,
+    eventId,
+    maxResults = 1000,
+    timeMin,
+    timeMax,
+    pageToken,
+  }: {
+    gCal: gCalendar;
+    calendarId: string;
+    eventId: string;
+    maxResults?: number;
+    timeMin?: string;
+    timeMax?: string;
+    pageToken?: string;
+  }): AsyncGenerator<
+    Pick<gSchema$Events, "nextPageToken" | "nextSyncToken" | "items">
+  > {
+    let hasNextPage = false;
+
+    do {
+      const { data = {} } = await this.getEventInstances(
+        gCal,
+        calendarId,
+        eventId,
+        timeMin,
+        timeMax,
+        pageToken,
+        maxResults,
+      ).then((res) =>
+        this.validateGCalResponse(
+          res,
+          `Failed to fetch gcal instances for base event ${eventId}`,
+        ),
+      );
+
+      const { nextPageToken, nextSyncToken, items = [] } = data;
+
+      pageToken = nextPageToken === null ? undefined : nextPageToken;
+
+      hasNextPage =
+        typeof nextPageToken === "string" && nextPageToken.length > 0;
+
+      yield { nextPageToken, nextSyncToken, items };
+    } while (hasNextPage);
+  }
+
+  /**
+   * getAllEvents
+   * generator function to list all google calendar events
+   */
+  async *getAllEvents({
+    gCal,
+    calendarId,
+    maxResults = 1000,
+    singleEvents = false,
+    pageToken,
+    syncToken,
+  }: {
+    gCal: gCalendar;
+    calendarId: string;
+    maxResults?: number;
+    singleEvents?: boolean;
+    pageToken?: string;
+    syncToken?: string;
+  }): AsyncGenerator<
+    Pick<gSchema$Events, "nextPageToken" | "nextSyncToken" | "items">
+  > {
+    let hasNextPage = false;
+    let isLastPage = true;
+
+    do {
+      const { data = {} } = await this.getEvents(gCal, {
+        calendarId,
+        singleEvents,
+        maxResults,
+        pageToken,
+        syncToken,
+      }).then((res) =>
+        this.validateGCalResponse(res, `Failed to fetch gcal events`),
+      );
+
+      const { nextPageToken, nextSyncToken, items = [] } = data;
+
+      pageToken = nextPageToken === null ? undefined : nextPageToken;
+      syncToken = nextSyncToken === null ? undefined : nextSyncToken;
+
+      hasNextPage =
+        typeof nextPageToken === "string" && nextPageToken.length > 0;
+
+      isLastPage =
+        typeof nextSyncToken === "string" && nextSyncToken.length > 0;
+
+      yield { nextPageToken, nextSyncToken, items };
+    } while (hasNextPage || !isLastPage);
   }
 
   async getCalendarlist(gcal: gCalendar) {

@@ -102,6 +102,7 @@ class SyncService {
       const { nextSyncToken } = await syncImport.importAllEvents(
         userId,
         gCalId,
+        2500,
       );
       if (isUsingHttps()) {
         await updateSyncTokenFor("events", userId, nextSyncToken, gCalId);
@@ -161,7 +162,7 @@ class SyncService {
     const resynced = refreshResult.filter((r) => r.resynced);
 
     logger.debug(`Sync Maintenance Results:
-      IGNORED: ${ignored.length} 
+      IGNORED: ${ignored.length}
       PRUNED: ${pruned.map((p) => p.user).toString()}
       REFRESHED: ${refreshed.map((r) => r.user).toString()}
 
