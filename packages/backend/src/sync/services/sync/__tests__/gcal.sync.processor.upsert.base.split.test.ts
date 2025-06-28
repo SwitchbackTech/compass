@@ -8,7 +8,6 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockCancelledInstance } from "@backend/__tests__/mocks.gcal/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalSyncProcessor } from "../gcal.sync.processor";
@@ -17,16 +16,6 @@ import {
   noInstancesAfterSplitDate,
   updateBasePayloadToExpireOneDayAfterFirstInstance,
 } from "./gcal.sync.processor.test.util";
-
-// Mock Gcal Instances API response
-jest.mock("@backend/common/services/gcal/gcal.service", () => ({
-  __esModule: true,
-  default: {
-    getEventInstances: jest.fn().mockResolvedValue({
-      data: { items: mockAndCategorizeGcalEvents().gcalEvents.instances },
-    }),
-  },
-}));
 
 describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
   let setup: TestSetup;
@@ -69,7 +58,10 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
     });
 
     // Verify DB changed
-    const remainingEvents = await getEventsInDb();
+    const remainingEvents = await getEventsInDb().then((events) =>
+      events.map((event) => ({ ...event, _id: event._id?.toString() })),
+    );
+
     expect(remainingEvents).not.toHaveLength(origEvents.length);
 
     // Verify base has new recurrence rule

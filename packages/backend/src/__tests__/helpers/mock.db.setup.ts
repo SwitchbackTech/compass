@@ -15,11 +15,6 @@ export interface TestSetup {
   email: string;
 }
 
-jest.mock("@backend/common/middleware/supertokens.middleware", () => ({
-  initSupertokens: jest.fn(),
-  getSession: jest.fn(),
-}));
-
 /**
  * Setup a test database with a test user and a
  * sync record that points to the test user

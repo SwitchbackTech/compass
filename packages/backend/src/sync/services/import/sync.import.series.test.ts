@@ -8,20 +8,9 @@ import {
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import mongoService from "@backend/common/services/mongo.service";
-import { createSyncImport } from "./sync.import";
-
-// Mock Gcal Instances API response
-jest.mock("@backend/common/services/gcal/gcal.service", () => ({
-  __esModule: true,
-  default: {
-    getEventInstances: jest.fn().mockResolvedValue({
-      data: { items: mockAndCategorizeGcalEvents().gcalEvents.instances },
-    }),
-  },
-}));
+import { createSyncImport } from "@backend/sync/services/import/sync.import";
 
 describe("SyncImport: Series", () => {
   let syncImport: Awaited<ReturnType<typeof createSyncImport>>;
@@ -52,21 +41,23 @@ describe("SyncImport: Series", () => {
       baseRecurringGcalEvent,
     );
 
-    /* Assert */
-    // make sure this is the same function being used in the mock at the top of this file
-    const expectedInstances =
-      mockAndCategorizeGcalEvents().gcalEvents.instances.length;
-    // validate return value
-    expect(result.insertedCount).toEqual(1 + expectedInstances);
+    // validate return value - base + 3 instances
+    expect(result.insertedCount).toEqual(4);
 
     // validate DB state
     const currentEventsInDb = await mongoService.event.find().toArray();
 
     const baseEvents = filterBaseEvents(currentEventsInDb);
+
+    // the number of base events created within the gcal.event.batch.ts file
+    // https://github.com/SwitchbackTech/compass/blob/188d32c80036bcc2c70c6282a3d48080b7eb1057/packages/backend/src/__tests__/mocks.gcal/factories/gcal.event.batch.ts#L13
     expect(baseEvents).toHaveLength(1);
 
     const instancesInDb = filterExistingInstances(currentEventsInDb);
-    expect(instancesInDb).toHaveLength(expectedInstances);
+
+    // the number of instances created within the gcal.factory.ts file
+    // https://github.com/SwitchbackTech/compass/blob/188d32c80036bcc2c70c6282a3d48080b7eb1057/packages/backend/src/__tests__/mocks.gcal/factories/gcal.factory.ts#L123
+    expect(instancesInDb).toHaveLength(3);
 
     // validate ids
     currentEventsInDb.forEach((event) => {
