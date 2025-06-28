@@ -9,7 +9,6 @@ type Payload_TriggerFetch = {
 interface State_Sync {
   isFetchNeeded: boolean;
   reason: null | Sync_AsyncStateContextReason;
-  importGCal?: unknown;
 }
 
 const initialState: State_Sync = {
