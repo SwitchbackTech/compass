@@ -151,16 +151,68 @@ class EventService {
         return cleanedEvent;
       });
     }
-    const response = await mongoService.db
-      .collection(Collections.EVENT)
-      .insertMany(eventsToInsert as unknown as OptionalId<Event_Core[]>[]);
 
-    if (response.acknowledged && response.insertedCount !== events.length) {
-      throw error(
-        EventError.MissingGevents,
-        `Only ${response.insertedCount}/${events.length} saved`,
-      );
-    }
+    // Creates events in GCal
+    const processedEvents = await Promise.all(
+      eventsToInsert.map(async (event) => {
+        // Convert ObjectId to string if present
+        const eventToProcess = {
+          ...event,
+          _id: event._id ? event._id.toString() : undefined,
+        } as Event_Core;
+
+        const { _event, isRecurring, syncToGcal } = getCreateParams(
+          eventToProcess.user,
+          eventToProcess,
+        );
+
+        if (syncToGcal) {
+          const gEvent = await _createGcalEvent(
+            eventToProcess.user,
+            eventToProcess,
+          );
+          _event.gEventId = gEvent.id as string;
+        }
+        return { _event, isRecurring };
+      }),
+    );
+
+    const recurringEvents = processedEvents
+      .filter((e) => e.isRecurring)
+      .map((e) => e._event);
+    const nonRecurringEvents = processedEvents
+      .filter((e) => !e.isRecurring)
+      .map((e) => e._event);
+
+    // Handle non-recurring events with insertMany
+    const nonRecurringResponse =
+      nonRecurringEvents.length > 0
+        ? await mongoService.db
+            .collection(Collections.EVENT)
+            .insertMany(nonRecurringEvents as unknown as OptionalId<Document>[])
+        : { insertedIds: {} };
+
+    // Handle recurring events with Promise.all
+    const recurringResponses = await Promise.all(
+      recurringEvents.map(async (event) => {
+        try {
+          const eventId = await _createInstances(event);
+          return {
+            _event: event,
+            _id: eventId,
+            recurrence: { eventId, rule: event.recurrence?.rule },
+          };
+        } catch (error) {
+          throw error;
+        }
+      }),
+    );
+
+    const response = {
+      ...nonRecurringResponse,
+      recurringEvents: recurringResponses,
+    };
+
     return response;
   };
 
