@@ -13,8 +13,19 @@ export const createSomedayDraft = async (
   activity: Activity_DraftEvent,
   dispatch: Dispatch,
 ) => {
-  const startDate = startOfView.format(YEAR_MONTH_DAY_FORMAT);
-  const endDate = endOfView.format(YEAR_MONTH_DAY_FORMAT);
+  let startDate: string;
+  let endDate: string;
+
+  if (category === Categories_Event.SOMEDAY_WEEK) {
+    startDate = startOfView.format(YEAR_MONTH_DAY_FORMAT);
+    endDate = endOfView.format(YEAR_MONTH_DAY_FORMAT);
+  } else {
+    // Someday month
+    startDate = startOfView.startOf("month").format(YEAR_MONTH_DAY_FORMAT);
+    // `endDate` is the last day of the month, hence why we need to use `startOfView`, because
+    // `endOfView` could be in the next month relative to `startOfView`
+    endDate = startOfView.endOf("month").format(YEAR_MONTH_DAY_FORMAT);
+  }
 
   const event = await assembleDefaultEvent(category, startDate, endDate);
 
