@@ -111,7 +111,7 @@ class AuthController {
               gcalClient,
               gRefreshToken,
             )
-          : await this.signup(gUser, gcalClient, gRefreshToken);
+          : await this.signup(gUser, gRefreshToken);
 
       const sUserId = supertokens.convertToRecipeUserId(cUserId);
       await Session.createNewSession(req, res, "public", sUserId);
@@ -178,16 +178,8 @@ class AuthController {
     res.send(revokeResult);
   };
 
-  signup = async (
-    gUser: TokenPayload,
-    gcalClient: gCalendar,
-    gRefreshToken: string,
-  ) => {
-    const userId = await userService.initUserData(
-      gUser,
-      gcalClient,
-      gRefreshToken,
-    );
+  signup = async (gUser: TokenPayload, gRefreshToken: string) => {
+    const userId = await userService.initUserData(gUser, gRefreshToken);
 
     return { cUserId: userId };
   };

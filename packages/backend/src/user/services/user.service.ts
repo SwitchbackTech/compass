@@ -4,7 +4,6 @@ import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { UserInfo_Google } from "@core/types/auth.types";
-import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
@@ -20,10 +19,7 @@ import { Summary_Resync } from "@backend/common/types/sync.types";
 import EmailService from "@backend/email/email.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import {
-  getCalendarsToSync,
-  initSync,
-} from "@backend/sync/services/init/sync.init";
+import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
 import syncService from "@backend/sync/services/sync.service";
 import { watchEventsByGcalIds } from "@backend/sync/services/watch/sync.watch";
 import { reInitSyncByIntegration } from "@backend/sync/util/sync.queries";
@@ -119,11 +115,7 @@ class UserService {
     return response;
   };
 
-  initUserData = async (
-    gUser: TokenPayload,
-    gcalClient: gCalendar,
-    gRefreshToken: string,
-  ) => {
+  initUserData = async (gUser: TokenPayload, gRefreshToken: string) => {
     const cUser = await this.createUser(gUser, gRefreshToken);
     const { userId } = cUser;
 
@@ -138,9 +130,6 @@ class UserService {
         ENV.EMAILER_USER_TAG_ID!,
       );
     }
-
-    const gCalendarIds = await initSync(gcalClient, userId);
-    await syncService.importFull(gcalClient, gCalendarIds, userId);
 
     await priorityService.createDefaultPriorities(userId);
 

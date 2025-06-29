@@ -8,7 +8,6 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalSyncProcessor } from "../gcal.sync.processor";
@@ -21,15 +20,6 @@ import {
   instanceDataMatchesGcalBase,
 } from "./gcal.sync.processor.test.util";
 
-// Mock Gcal Instances API response
-jest.mock("@backend/common/services/gcal/gcal.service", () => ({
-  __esModule: true,
-  default: {
-    getEventInstances: jest.fn().mockResolvedValue({
-      data: { items: mockAndCategorizeGcalEvents().gcalEvents.instances },
-    }),
-  },
-}));
 describe("GcalSyncProcessor UPSERT: BASE", () => {
   let setup: TestSetup;
   let repo: RecurringEventRepository;
@@ -70,7 +60,10 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
       setup.db,
       setup.userId,
     );
-    const origEvents = await getEventsInDb();
+    const origEvents = await getEventsInDb().then((events) =>
+      events.map((event) => ({ ...event, _id: event._id?.toString() })),
+    );
+
     const { instances: origInstances } = categorizeEvents(origEvents);
 
     /* Act */
@@ -121,7 +114,10 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
       setup.db,
       setup.userId,
     );
-    const origEvents = await getEventsInDb();
+    const origEvents = await getEventsInDb().then((events) =>
+      events.map((event) => ({ ...event, _id: event._id?.toString() })),
+    );
+
     const { instances: origInstances } = categorizeEvents(origEvents);
 
     /* Act */

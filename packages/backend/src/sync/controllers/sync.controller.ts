@@ -1,4 +1,4 @@
-import { Request } from "express";
+import { Request, Response } from "express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { Payload_Sync_Notif } from "@core/types/sync.types";
@@ -8,14 +8,16 @@ import {
   isFullSyncRequired,
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
-import { Res_Promise } from "@backend/common/types/express.types";
 import userService from "@backend/user/services/user.service";
+import { getGcalClient } from "../../auth/services/google.auth.service";
+import { webSocketServer } from "../../servers/websocket/websocket.server";
+import { initSync } from "../services/init/sync.init";
 import syncService from "../services/sync.service";
 import { getSync } from "../util/sync.queries";
 
 const logger = Logger("app:sync.controller");
 class SyncController {
-  handleGoogleNotification = async (req: Request, res: Res_Promise) => {
+  handleGoogleNotification = async (req: Request, res: Response) => {
     try {
       const syncPayload = {
         channelId: req.headers["x-goog-channel-id"],
@@ -81,7 +83,7 @@ class SyncController {
     }
   };
 
-  maintain = async (_req: Request, res: Res_Promise) => {
+  maintain = async (_req: Request, res: Response) => {
     try {
       const result = await syncService.runMaintenance();
       res.promise(result);
@@ -89,6 +91,20 @@ class SyncController {
       logger.error(e);
       res.promise(e);
     }
+  };
+
+  importGCal = async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.session!.getUserId()!;
+    const gcalClient = await getGcalClient(userId);
+    const gCalendarIds = await initSync(gcalClient, userId);
+
+    // We will not await this promise
+    syncService
+      .importFull(gcalClient, gCalendarIds, userId)
+      .then(() => webSocketServer.handleBackgroundCalendarChange(userId))
+      .catch(logger.error);
+
+    return res.status(204);
   };
 }
 

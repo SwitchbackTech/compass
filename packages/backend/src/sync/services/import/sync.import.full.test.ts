@@ -5,17 +5,8 @@ import {
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
-import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import mongoService from "@backend/common/services/mongo.service";
 import { createSyncImport } from "./sync.import";
-
-// Mock Google Calendar API responses,
-jest.mock("googleapis", () => {
-  const { gcalEvents } = mockAndCategorizeGcalEvents();
-  const googleapis = mockGcal({ events: gcalEvents.all });
-  return googleapis;
-});
 
 describe("SyncImport: Full", () => {
   let syncImport: Awaited<ReturnType<typeof createSyncImport>>;

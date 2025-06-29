@@ -1,5 +1,9 @@
 import express, { Application } from "express";
 import helmet from "helmet";
+import {
+  errorHandler as supertokensErrorHandler,
+  middleware as supertokensMiddleware,
+} from "supertokens-node/framework/express";
 import { AuthRoutes } from "@backend/auth/auth.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
@@ -7,9 +11,8 @@ import corsWhitelist from "@backend/common/middleware/cors.middleware";
 import { httpLoggingMiddleware } from "@backend/common/middleware/http.logger.middleware";
 import { requestMiddleware } from "@backend/common/middleware/promise.middleware";
 import {
+  initSupertokens,
   supertokensCors,
-  supertokensErrorHandler,
-  supertokensMiddleware,
 } from "@backend/common/middleware/supertokens.middleware";
 import { EventRoutes } from "@backend/event/event.routes.config";
 import { PriorityRoutes } from "@backend/priority/priority.routes.config";
@@ -20,9 +23,10 @@ export const initExpressServer = () => {
   /* Express Configuration */
   const app: Application = express();
 
+  initSupertokens();
+
   // initialize middleware before routes, because
   // some routes depend on them
-  //@ts-expect-error this middleware isn't typed correctly
   app.use(requestMiddleware());
   app.use(supertokensCors());
   app.use(supertokensMiddleware());

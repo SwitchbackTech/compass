@@ -15,7 +15,6 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { Change_Gcal } from "@backend/sync/sync.types";
@@ -26,17 +25,6 @@ import {
 } from "./gcal.sync.processor.delete.util";
 import { createCompassSeriesFromGcalBase } from "./gcal.sync.processor.test.util";
 
-// Mock Gcal Instances API response
-jest.mock("@backend/common/services/gcal/gcal.service", () => ({
-  __esModule: true,
-  default: {
-    getEventInstances: jest.fn().mockResolvedValue({
-      data: {
-        items: mockAndCategorizeGcalEvents().gcalEvents.instances,
-      },
-    }),
-  },
-}));
 describe("GcalSyncProcessor: DELETE", () => {
   let setup: TestSetup;
   let repo: RecurringEventRepository;
@@ -83,7 +71,10 @@ describe("GcalSyncProcessor: DELETE", () => {
     });
 
     // Verify the event is deleted from the DB
-    const remainingEvents = await getEventsInDb();
+    const remainingEvents = await getEventsInDb().then((events) =>
+      events.map((event) => ({ ...event, _id: event._id?.toString() })),
+    );
+
     const { standaloneEvents } = categorizeEvents(remainingEvents);
     const eventIsGone =
       standaloneEvents.find((e) => e.gEventId === gStandalone.id) === undefined;
@@ -92,6 +83,7 @@ describe("GcalSyncProcessor: DELETE", () => {
     // Verify no other events deleted
     expect(remainingEvents).toHaveLength(origEvents.length - 1);
   });
+
   it("should delete an INSTANCE after cancelling it", async () => {
     /* Assemble */
     const { compassBaseId, gcalBaseId, meta } = await createSeries(setup);
@@ -126,7 +118,8 @@ describe("GcalSyncProcessor: DELETE", () => {
 
     // Verify only the instance was deleted
     expect(remainingEvents).toHaveLength(meta.createdCount - 1);
-    expect(remainingEvents[0]?._id.toString()).toBe(compassBaseId);
+    expect(remainingEvents[0]?._id?.toString()).toBe(compassBaseId);
+
     expect(
       isExistingInstance(remainingEvents[1] as unknown as Schema_Event),
     ).toBe(true);
@@ -170,7 +163,10 @@ describe("GcalSyncProcessor: DELETE", () => {
     expect(upserts).toHaveLength(1);
 
     // Validate DB state
-    const remainingEvents = await getEventsInDb();
+    const remainingEvents = await getEventsInDb().then((events) =>
+      events.map((event) => ({ ...event, _id: event._id?.toString() })),
+    );
+
     const { baseEvents, instances } = categorizeEvents(remainingEvents);
     // Validate base exists
     expect(baseEvents).toHaveLength(1);
