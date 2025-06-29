@@ -117,15 +117,20 @@ export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
 
       &--selected {
         background-color: ${({ selectedColor }) => selectedColor};
+        color: white;
       }
 
-      &--today {
+      &--today:not(.react-datepicker__day--selected) {
         color: ${({ view }) =>
           view === "sidebar" ? theme.color.text.accent : theme.color.text.dark};
         text-decoration: underline;
         text-decoration-color: ${({ view }) =>
           view === "sidebar" ? theme.color.text.accent : theme.color.text.dark};
         text-underline-offset: 3px;
+
+        &:hover {
+          color: ${({ theme }) => theme.color.text.dark};
+        }
       }
 
       &--keyboard-selected {
