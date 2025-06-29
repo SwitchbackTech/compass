@@ -5,6 +5,10 @@ const SyncApi = {
     const response = await CompassApi.post(`/sync/stop-all`);
     return response;
   },
+
+  async importGCal() {
+    return CompassApi.post<void>(`/sync/import-gcal`);
+  },
 };
 
 export { SyncApi };

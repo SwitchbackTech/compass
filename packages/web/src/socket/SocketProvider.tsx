@@ -1,12 +1,18 @@
 import { ReactNode } from "react";
 import { useDispatch } from "react-redux";
 import { Socket, io } from "socket.io-client";
-import { EVENT_CHANGED } from "@core/constants/websocket.constants";
+import {
+  EVENT_CHANGED,
+  IMPORT_GCAL,
+} from "@core/constants/websocket.constants";
 import { ServerToClientEvents } from "@core/types/websocket.types";
 import { useUser } from "@web/auth/UserContext";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
+import {
+  importGCalSlice,
+  triggerFetch,
+} from "@web/ducks/events/slices/sync.slice";
 
 const SocketProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();
@@ -33,6 +39,10 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
         reason: Sync_AsyncStateContextReason.SOCKET_EVENT_CHANGED,
       }),
     );
+  });
+
+  socket.on(IMPORT_GCAL, () => {
+    dispatch(importGCalSlice.actions.request(undefined));
   });
 
   return children;

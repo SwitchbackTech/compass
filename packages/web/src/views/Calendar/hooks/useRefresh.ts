@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
-import { selectSyncState } from "@web/ducks/events/selectors/sync.selector";
+import { selectImportLatestState } from "@web/ducks/events/selectors/sync.selector";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { resetIsFetchNeeded } from "@web/ducks/events/slices/sync.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
@@ -10,7 +10,7 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 export const useRefresh = () => {
   const dispatch = useAppDispatch();
-  const { isFetchNeeded, reason } = useAppSelector(selectSyncState);
+  const { isFetchNeeded, reason } = useAppSelector(selectImportLatestState);
   const { start, end } = useAppSelector(selectDatesInView);
 
   useEffect(() => {

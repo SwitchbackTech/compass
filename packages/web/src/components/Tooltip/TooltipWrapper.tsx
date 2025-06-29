@@ -13,14 +13,14 @@ import { StyledShortcutTip } from "./styled";
 export interface Props {
   children: ReactNode;
   description?: string;
-  onClick: () => void;
+  onClick?: () => void;
   shortcut?: string | ReactNode;
 }
 
 export const TooltipWrapper: React.FC<Props> = ({
   children,
   description,
-  onClick,
+  onClick = () => {},
   shortcut,
 }) => {
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);

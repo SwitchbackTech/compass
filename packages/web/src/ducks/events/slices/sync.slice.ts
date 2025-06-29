@@ -1,5 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
+import { createAsyncSlice } from "../../../common/store/helpers";
 
 type Payload_TriggerFetch = {
   reason?: Sync_AsyncStateContextReason;
@@ -15,8 +16,12 @@ const initialState: State_Sync = {
   reason: null,
 };
 
-export const syncSlice = createSlice({
-  name: "sync",
+export const importGCalSlice = createAsyncSlice<never>({
+  name: "importGCal",
+});
+
+export const importLatestSlice = createSlice({
+  name: "importLatest",
   initialState,
   reducers: {
     triggerFetch: {
@@ -47,4 +52,4 @@ export const syncSlice = createSlice({
   },
 });
 
-export const { triggerFetch, resetIsFetchNeeded } = syncSlice.actions;
+export const { triggerFetch, resetIsFetchNeeded } = importLatestSlice.actions;
