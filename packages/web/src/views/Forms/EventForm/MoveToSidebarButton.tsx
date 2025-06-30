@@ -1,25 +1,31 @@
 import React from "react";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { getMetaKey } from "@web/common/utils/shortcut.util";
 import { Text } from "@web/components/Text";
-import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/styled";
+import TooltipIconButton from "@web/components/TooltipIconButton/TooltipIconButton";
 
-export const MoveToSidebarButton = ({ onClick }: { onClick: () => void }) => {
-  const getShortcut = () => {
-    return (
-      <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-        {getMetaKey()} +{" SHIFT "} + {","}
-      </Text>
-    );
-  };
-
+export const MoveToSidebarButton = ({
+  onClick,
+  tooltipText = "Migrate Backward",
+  size = undefined,
+}: {
+  onClick: () => void;
+  tooltipText: string;
+  size?: number;
+}) => {
   return (
-    <TooltipWrapper
-      onClick={onClick}
-      description="Move to sidebar"
-      shortcut={getShortcut()}
-    >
-      <StyledMigrateArrowInForm role="button">{"<"}</StyledMigrateArrowInForm>
-    </TooltipWrapper>
+    <TooltipIconButton
+      icon={<ArrowLeft id="migrate-backward-button" size={size} />}
+      buttonProps={{ "aria-label": tooltipText }}
+      tooltipProps={{
+        description: tooltipText,
+        onClick,
+        shortcut: (
+          <Text size="s" style={{ display: "flex", alignItems: "center" }}>
+            CTRL + {getMetaKey()} + Left
+          </Text>
+        ),
+      }}
+    />
   );
 };
