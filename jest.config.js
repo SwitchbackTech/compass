@@ -2,7 +2,7 @@
  * For a detailed explanation regarding each configuration property, visit:
  * https://jestjs.io/docs/configuration
  */
-
+/** @type { import("jest").Config } */
 module.exports = {
   // All imported modules in your tests should be mocked automatically
   // automock: false,
@@ -155,12 +155,14 @@ module.exports = {
         "^@backend/servers/(.*)$": "<rootDir>/packages/backend/src/servers/$1",
         "^@backend/sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
         "^@backend/user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
+        "^@backend/waitlist/(.*)$":
+          "<rootDir>/packages/backend/src/waitlist/$1",
         "^@backend/__tests__/(.*)$":
           "<rootDir>/packages/backend/src/__tests__/$1",
       },
 
       setupFiles: [
-        "<rootDir>/packages/backend/src/__tests__/backend.test.init.js",
+        "<rootDir>/packages/backend/src/__tests__/backend.test.init.ts",
       ],
       setupFilesAfterEnv: [
         "<rootDir>/packages/backend/src/__tests__/backend.test.start.js",

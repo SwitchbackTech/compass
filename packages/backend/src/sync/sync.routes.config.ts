@@ -18,20 +18,23 @@ export class SyncRoutes extends CommonRoutesConfig {
     /***************
      * PROD ROUTES
      ***************/
-    this.app.route(`/api${GCAL_NOTIFICATION_ENDPOINT}`).post([
-      authMiddleware.verifyIsFromGoogle,
-      //@ts-ignore
-      syncController.handleGoogleNotification,
-    ]);
+    this.app
+      .route(`/api${GCAL_NOTIFICATION_ENDPOINT}`)
+      .post([
+        authMiddleware.verifyIsFromGoogle,
+        syncController.handleGoogleNotification,
+      ]);
 
     this.app
       .route(`/api/sync/maintain-all`)
-      //@ts-ignore
       .post([authMiddleware.verifyIsFromCompass, syncController.maintain]);
 
     this.app
+      .route(`/api/sync/import-gcal`)
+      .post(verifySession(), syncController.importGCal);
+
+    this.app
       .route(`/api/sync/stop-all`)
-      //@ts-ignore
       .post([verifySession(), syncDebugController.stopAllChannelWatches]);
 
     /***************
@@ -41,41 +44,47 @@ export class SyncRoutes extends CommonRoutesConfig {
       .route(`/api/event-change-demo`)
       .post([syncDebugController.dispatchEventToClient]);
 
-    this.app.route(`${SYNC_DEBUG}/import-incremental/:userId`).post([
-      authMiddleware.verifyIsFromCompass,
-      //@ts-ignore
-      syncDebugController.importIncremental,
-    ]);
+    this.app
+      .route(`${SYNC_DEBUG}/import-incremental/:userId`)
+      .post([
+        authMiddleware.verifyIsFromCompass,
+        syncDebugController.importIncremental,
+      ]);
 
-    this.app.route(`${SYNC_DEBUG}/maintain/:userId`).post([
-      authMiddleware.verifyIsFromCompass,
-      //@ts-ignore
-      syncDebugController.maintainByUser,
-    ]);
+    this.app
+      .route(`${SYNC_DEBUG}/maintain/:userId`)
+      .post([
+        authMiddleware.verifyIsFromCompass,
+        syncDebugController.maintainByUser,
+      ]);
 
-    this.app.route(`${SYNC_DEBUG}/refresh/:userId`).post([
-      authMiddleware.verifyIsFromCompass,
-      //@ts-ignore
-      syncDebugController.refreshEventWatch,
-    ]);
+    this.app
+      .route(`${SYNC_DEBUG}/refresh/:userId`)
+      .post([
+        authMiddleware.verifyIsFromCompass,
+        syncDebugController.refreshEventWatch,
+      ]);
 
-    this.app.route(`${SYNC_DEBUG}/start`).post([
-      authMiddleware.verifyIsFromCompass,
-      //@ts-ignore
-      syncDebugController.startEventWatch,
-    ]);
+    this.app
+      .route(`${SYNC_DEBUG}/start`)
+      .post([
+        authMiddleware.verifyIsFromCompass,
+        syncDebugController.startEventWatch,
+      ]);
 
-    this.app.route(`${SYNC_DEBUG}/stop`).post([
-      authMiddleware.verifyIsFromCompass,
-      //@ts-ignore
-      syncDebugController.stopWatching,
-    ]);
+    this.app
+      .route(`${SYNC_DEBUG}/stop`)
+      .post([
+        authMiddleware.verifyIsFromCompass,
+        syncDebugController.stopWatching,
+      ]);
 
-    this.app.route(`${SYNC_DEBUG}/stop-all/:userId`).post([
-      authMiddleware.verifyIsFromCompass,
-      //@ts-ignore
-      syncDebugController.stopAllChannelWatches,
-    ]);
+    this.app
+      .route(`${SYNC_DEBUG}/stop-all/:userId`)
+      .post([
+        authMiddleware.verifyIsFromCompass,
+        syncDebugController.stopAllChannelWatches,
+      ]);
 
     return this.app;
   }

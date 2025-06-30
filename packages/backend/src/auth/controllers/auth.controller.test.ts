@@ -1,5 +1,4 @@
-import { ObjectId } from "mongodb";
-import { WithId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
@@ -14,10 +13,6 @@ jest.mock("@backend/common/services/mongo.service", () => ({
   user: {
     findOneAndUpdate: jest.fn(),
   },
-}));
-jest.mock("@backend/common/middleware/supertokens.middleware", () => ({
-  initSupertokens: jest.fn(),
-  getSession: jest.fn(),
 }));
 
 describe("AuthController", () => {

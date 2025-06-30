@@ -37,10 +37,3 @@ export const supertokensCors = () =>
     ],
     credentials: true,
   });
-
-initSupertokens();
-
-export {
-  errorHandler as supertokensErrorHandler,
-  middleware as supertokensMiddleware,
-} from "supertokens-node/framework/express";
