@@ -13,7 +13,7 @@ export const MigrateForwardButton = ({
 }) => {
   return (
     <TooltipIconButton
-      icon={<ArrowRight />}
+      icon={<ArrowRight id="migrate-forward-button" />}
       buttonProps={{ "aria-label": tooltipText }}
       tooltipProps={{
         description: tooltipText,
