@@ -1,15 +1,8 @@
 import React from "react";
-import styled from "styled-components";
+import { ArrowRight } from "@phosphor-icons/react";
 import { getMetaKey } from "@web/common/utils/shortcut.util";
 import { Text } from "@web/components/Text";
 import TooltipIconButton from "@web/components/TooltipIconButton/TooltipIconButton";
-
-const StyledMigrateForwardButton = styled.div`
-  font-size: 25px;
-  &:hover {
-    cursor: pointer;
-  }
-`;
 
 export const MigrateForwardButton = ({
   onClick,
@@ -20,18 +13,14 @@ export const MigrateForwardButton = ({
 }) => {
   return (
     <TooltipIconButton
-      component={
-        <StyledMigrateForwardButton id="migrate-forward-button" role="button">
-          {">"}
-        </StyledMigrateForwardButton>
-      }
+      icon={<ArrowRight />}
       buttonProps={{ "aria-label": tooltipText }}
       tooltipProps={{
         description: tooltipText,
         onClick,
         shortcut: (
           <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-            Ctrl + {getMetaKey()} + Right
+            CTRL + {getMetaKey()} + Right
           </Text>
         ),
       }}
