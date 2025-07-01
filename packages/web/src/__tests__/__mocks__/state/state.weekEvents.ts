@@ -56,8 +56,10 @@ export const preloadedState: InitialReduxState = {
     isCmdPaletteOpen: false,
   },
   sync: {
-    isFetchNeeded: false,
-    reason: null,
+    importLatest: {
+      isFetchNeeded: false,
+      reason: null,
+    },
   },
   view: {
     dates: {

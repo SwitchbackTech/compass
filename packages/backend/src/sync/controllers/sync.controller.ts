@@ -101,7 +101,10 @@ class SyncController {
     // We will not await this promise
     syncService
       .importFull(gcalClient, gCalendarIds, userId)
-      .then(() => webSocketServer.handleBackgroundCalendarChange(userId))
+      .then(() => {
+        webSocketServer.handleImportGCalEnd(userId);
+        webSocketServer.handleBackgroundCalendarChange(userId);
+      })
       .catch(logger.error);
 
     return res.status(204);

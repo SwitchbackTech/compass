@@ -3,6 +3,8 @@ import { Server as SocketIOServer } from "socket.io";
 import {
   EVENT_CHANGED,
   EVENT_CHANGE_PROCESSED,
+  IMPORT_GCAL_END,
+  IMPORT_GCAL_START,
   RESULT_IGNORED,
   RESULT_NOTIFIED_CLIENT,
 } from "@core/constants/websocket.constants";
@@ -87,6 +89,26 @@ export class WebSocketServer {
     });
 
     return this.wsServer;
+  }
+
+  public handleImportGCalStart(userId: string) {
+    const socketId = this.connections.get(userId);
+
+    const isClientConnected = socketId !== undefined;
+    if (!isClientConnected) return RESULT_IGNORED;
+
+    this.notifyClient(socketId, IMPORT_GCAL_START);
+    return RESULT_NOTIFIED_CLIENT;
+  }
+
+  public handleImportGCalEnd(userId: string) {
+    const socketId = this.connections.get(userId);
+
+    const isClientConnected = socketId !== undefined;
+    if (!isClientConnected) return RESULT_IGNORED;
+
+    this.notifyClient(socketId, IMPORT_GCAL_END);
+    return RESULT_NOTIFIED_CLIENT;
   }
 
   public handleBackgroundCalendarChange(userId: string) {
