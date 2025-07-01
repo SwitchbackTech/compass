@@ -46,18 +46,21 @@ export const createAsyncSlice = <
   RequestPayload,
   SuccessPayload = undefined,
   ErrorPayload = undefined,
+  ExtraState = never,
 >(
-  options: _CreateSliceOptions<AsyncState<SuccessPayload, ErrorPayload>>,
+  options: _CreateSliceOptions<
+    AsyncState<SuccessPayload, ErrorPayload> & ExtraState
+  >,
 ) => {
-  type StateType = _AsyncState<SuccessPayload, ErrorPayload>;
+  type StateType = Exclude<typeof options.initialState, undefined>;
 
-  const initialState: StateType = {
+  const initialState = {
     isProcessing: false,
     reason: null,
     isSuccess: false,
     error: null,
     value: null,
-  };
+  } as unknown as StateType;
 
   const setContext = (
     state: StateType,
@@ -135,9 +138,7 @@ export const createAsyncSlice = <
       name: `async/${options.name}`,
       // TS has bad time figuring out the dynamic nature of the reducers object
       // so need to assert it.
-      reducers: reducers as SliceCaseReducers<
-        _AsyncState<SuccessPayload, ErrorPayload>
-      >,
+      reducers: reducers as SliceCaseReducers<StateType>,
     }),
     actionNames,
   };

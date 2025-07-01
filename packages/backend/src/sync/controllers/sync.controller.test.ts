@@ -1,4 +1,7 @@
-import { EVENT_CHANGED } from "@core/constants/websocket.constants";
+import {
+  EVENT_CHANGED,
+  IMPORT_GCAL_END,
+} from "@core/constants/websocket.constants";
 import { isBase, isExistingInstance } from "@core/util/event/event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { SyncControllerDriver } from "@backend/__tests__/drivers/sync.controller.driver";
@@ -141,8 +144,12 @@ describe("SyncController", () => {
       expect(regularEvents[0]?.gEventId).toBe("regular-1");
     });
 
+    it("should notify the frontend that the import is complete", async () => {
+      expect(notifySpy).toHaveBeenNthCalledWith(1, IMPORT_GCAL_END, socketId);
+    });
+
     it("should notify the frontend to refetch the calendar events on completion", async () => {
-      expect(notifySpy).toHaveBeenNthCalledWith(1, EVENT_CHANGED, socketId);
+      expect(notifySpy).toHaveBeenLastCalledWith(EVENT_CHANGED, socketId);
     });
   });
 });
