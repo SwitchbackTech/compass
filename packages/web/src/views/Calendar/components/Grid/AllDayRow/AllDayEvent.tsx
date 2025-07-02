@@ -49,6 +49,7 @@ const AllDayEvent = ({
     isInPast: dayjs().isAfter(dayjs(event.endDate)),
     isPlaceholder,
     isOptimistic,
+    isRecurring,
     isResizing: false,
     left: position.left,
     lineClamp: 1,
