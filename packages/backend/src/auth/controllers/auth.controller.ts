@@ -13,6 +13,7 @@ import {
 } from "@core/types/auth.types";
 import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
+import { initGoogleClient } from "@backend/auth/services/auth.utils";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import GoogleAuthService, {
   getGAuthClientForUser,
@@ -29,8 +30,6 @@ import {
 import syncService from "@backend/sync/services/sync.service";
 import { updateGoogleRefreshToken } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
-import { webSocketServer } from "../../servers/websocket/websocket.server";
-import { initGoogleClient } from "../services/auth.utils";
 
 const logger = Logger("app:auth.controller");
 
@@ -181,13 +180,6 @@ class AuthController {
 
   signup = async (gUser: TokenPayload, gRefreshToken: string) => {
     const userId = await userService.initUserData(gUser, gRefreshToken);
-
-    // @TODO - create a permanent notification trigger for gCal import
-    // temporary trigger for gCal import
-    // we will not await this promise
-    new Promise((resolve) => {
-      const timeout = setTimeout(() => resolve(clearTimeout(timeout)), 5000);
-    }).then(() => webSocketServer.handleImportGCalStart(userId));
 
     return { cUserId: userId };
   };

@@ -83,10 +83,9 @@ class SyncService {
     });
 
     const wsResult = webSocketServer.handleBackgroundCalendarChange(userId);
-    const result =
-      wsResult === RESULT_NOTIFIED_CLIENT
-        ? "PROCESSED AND NOTIFIED CLIENT"
-        : "PROCESSED IN BACKGROUND";
+    const result = wsResult?.includes(RESULT_NOTIFIED_CLIENT)
+      ? "PROCESSED AND NOTIFIED CLIENT"
+      : "PROCESSED IN BACKGROUND";
     console.log(result, " (", userId, ")");
 
     return result;
