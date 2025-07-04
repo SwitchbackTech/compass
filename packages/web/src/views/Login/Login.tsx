@@ -9,7 +9,6 @@ import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { LoginAbsoluteOverflowLoader } from "@web/components/LoginAbsoluteOverflowLoader/LoginAbsoluteOverflowLoader";
-import { onceConnected, socket } from "@web/socket/SocketProvider";
 import {
   ActionButton,
   Card,
