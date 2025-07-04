@@ -1,7 +1,7 @@
 import { useLayoutEffect, useState } from "react";
 import Session from "supertokens-auth-react/recipe/session";
 import { AuthApi } from "@web/common/apis/auth.api";
-import { socket } from "@web/socket/SocketProvider";
+import { onceConnected, socket } from "@web/socket/SocketProvider";
 
 export const useAuthCheck = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
@@ -22,7 +22,10 @@ export const useAuthCheck = () => {
         setIsGoogleTokenActive(_isGoogleTokenActive);
 
         setIsAuthenticated(isSessionActive && isGoogleTokenActive);
-        if (isSessionActive && isGoogleTokenActive) socket.connect();
+        if (isSessionActive && isGoogleTokenActive) {
+          socket.once("connect", onceConnected);
+          socket.connect();
+        }
       } catch (error) {
         console.error("Error checking authentication:", error);
       } finally {

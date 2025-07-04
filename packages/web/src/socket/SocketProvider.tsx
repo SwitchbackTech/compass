@@ -34,7 +34,7 @@ const onConnect = () => {
   console.log(`socket with id(${socket.id}) connected`);
 };
 
-const onceConnected = () => {
+export const onceConnected = () => {
   console.log("run these the first time socket connects");
   socket.emit(FETCH_USER_METADATA);
 };
@@ -74,8 +74,6 @@ socket.on("connect_error", onConnectError);
 socket.on("disconnect", onDisconnect);
 socket.on(USER_REFRESH_TOKEN, onUserRefreshToken);
 socket.on(USER_SIGN_OUT, onUserSignOut);
-
-socket.once("connect", onceConnected);
 
 const SocketProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();
