@@ -9,6 +9,7 @@ import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { LoginAbsoluteOverflowLoader } from "@web/components/LoginAbsoluteOverflowLoader/LoginAbsoluteOverflowLoader";
+import { socket } from "@web/socket/SocketProvider";
 import {
   ActionButton,
   Card,
@@ -104,6 +105,7 @@ export const LoginView = () => {
       try {
         await AuthApi.loginOrSignup(code);
         setIsAuthenticated(true);
+        socket.connect();
       } catch (e) {
         console.error(e);
         alert("Login failed. Please try again.");
