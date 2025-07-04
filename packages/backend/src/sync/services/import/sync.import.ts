@@ -294,6 +294,23 @@ export class SyncImport {
     };
   }
 
+  // @TODO ? - move to @backend/src/sync/util/sync.queries.ts
+  async getImportAllEventsLastPageToken(
+    userId: string,
+  ): Promise<string | undefined> {
+    // @TODO - get nextPageToken from db
+    return userId;
+  }
+
+  // @TODO ? - move to @backend/src/sync/util/sync.queries.ts
+  async saveImportAllEventsLastPageToken(
+    userId: string,
+    nextPageToken: string | undefined | null = null,
+  ): Promise<boolean> {
+    // @TODO - get nextPageToken from db
+    return Boolean(userId && nextPageToken);
+  }
+
   /**
    * importAllEvents
    * Import ALL events for a calendar (Full Sync).
@@ -326,14 +343,21 @@ export class SyncImport {
       totalChanged: 0,
     };
 
+    const pageToken = await this.getImportAllEventsLastPageToken(userId);
+
     const gCalResponse = gcalService.getAllEvents({
       gCal: this.gcal,
       calendarId,
       maxResults: perPage,
       syncToken,
+      pageToken,
     });
 
-    for await (const { items = [], nextSyncToken } of gCalResponse) {
+    for await (const {
+      items = [],
+      nextSyncToken,
+      nextPageToken,
+    } of gCalResponse) {
       await Promise.allSettled(
         items.map(async (baseEvent) => {
           const instanceStats = await this.importEventInstances(
@@ -351,6 +375,8 @@ export class SyncImport {
           stats.totalBaseEventsChanged += totalBaseEventsSaved;
         }),
       );
+
+      await this.saveImportAllEventsLastPageToken(userId, nextPageToken);
 
       if (nextSyncToken) syncToken = nextSyncToken;
     }
