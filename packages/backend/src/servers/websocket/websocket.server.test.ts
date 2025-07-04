@@ -65,7 +65,10 @@ describe("WebSocket Server", () => {
             client,
             "connect_error",
             async () => client.connect(),
-            (error) => Promise.resolve({ error, connected: client.connected }),
+            (error) => {
+              client.disconnect();
+              return Promise.resolve({ error, connected: client.connected });
+            },
           ),
         ).resolves.toEqual(
           expect.objectContaining({
@@ -87,7 +90,10 @@ describe("WebSocket Server", () => {
             client,
             "connect_error",
             async () => client.connect(),
-            (error) => Promise.resolve({ error, connected: client.connected }),
+            (error) => {
+              client.disconnect();
+              return Promise.resolve({ error, connected: client.connected });
+            },
           ),
         ).resolves.toEqual(
           expect.objectContaining({

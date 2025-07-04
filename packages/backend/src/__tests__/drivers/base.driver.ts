@@ -103,15 +103,9 @@ export class BaseDriver {
 
       await this.websocketServer?.close();
 
-      if (this.http.listening) {
-        await new Promise((resolve, reject) =>
-          this.http.close((error) =>
-            error ? reject(error) : resolve(undefined),
-          ),
-        );
+      this.http.removeAllListeners();
 
-        this.http.closeAllConnections();
-      }
+      this.http.closeAllConnections();
     } catch (error) {
       console.error(error);
     }
