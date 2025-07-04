@@ -4,6 +4,7 @@ import { ErrorMetadata } from "@backend/common/types/error.types";
 interface SocketErrors {
   InvalidSocketId: ErrorMetadata;
   ServerNotReady: ErrorMetadata;
+  SessionNotFound: ErrorMetadata;
 }
 
 export const SocketError: SocketErrors = {
@@ -16,6 +17,11 @@ export const SocketError: SocketErrors = {
     description:
       "WebSocket server not ready (Did you forget to initialize it?)",
     status: Status.INTERNAL_SERVER,
+    isOperational: false,
+  },
+  SessionNotFound: {
+    description: "Websocket session not found(Did you forget to login?)",
+    status: Status.UNAUTHORIZED,
     isOperational: false,
   },
 };
