@@ -33,7 +33,7 @@ async function seedEvents(userInput: string) {
     }
 
     // Connect to MongoDB
-    await mongoService.waitUntilConnected();
+    await mongoService.start();
 
     const user = await findCompassUserBy("_id", userInput);
 
@@ -77,8 +77,7 @@ async function seedEvents(userInput: string) {
 }
 
 export async function runSeed(userInput: string, force = false) {
-  log.info("Connecting to db...");
-  await mongoService.waitUntilConnected();
+  await mongoService.start();
 
   if (force === true) {
     await seedEvents(userInput);
