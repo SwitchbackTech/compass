@@ -1,15 +1,16 @@
 import { Request, Response } from "express";
 import { GoogleApis } from "googleapis";
-import SocketIO from "socket.io";
+import { randomUUID } from "node:crypto";
 import type SuperTokens from "supertokens-node";
 import {
   BaseRequest,
   BaseResponse,
 } from "supertokens-node/lib/build/framework";
 import { SessionContainerInterface } from "supertokens-node/lib/build/recipe/session/types";
+import { UserMetadata } from "@core/types/user.types";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
-import { mockEventEmitter } from "./event-emitter";
+import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 
 function mockGoogleapis() {
   mockModule("googleapis", () => {
@@ -28,38 +29,8 @@ function mockGoogleapis() {
   });
 }
 
-function mockSocketIO() {
-  jest.mock("socket.io", () => {
-    const socketIO = jest.requireActual<typeof SocketIO>("socket.io");
-
-    socketIO.Server = class Server extends socketIO.Server {
-      to = jest.fn(function (
-        this: Server,
-        room: string | string[],
-      ): ReturnType<SocketIO.Server["to"]> {
-        const result = socketIO.Server.prototype.to.apply(this, [room]);
-
-        result.emit = (ev, ...args) => this.emit(ev, ...args, room);
-
-        return result;
-      });
-
-      emit = jest.fn((ev, ...args): boolean =>
-        mockEventEmitter.emit(ev, ...args),
-      );
-    };
-
-    return socketIO;
-  });
-}
-
 function mockSuperToken() {
-  mockModule("supertokens-node", () => {
-    const superTokens =
-      jest.requireActual<typeof SuperTokens>("supertokens-node");
-
-    return { default: superTokens.default };
-  });
+  const userMetadata = new Map<string, UserMetadata>();
 
   function verifySession() {
     return (
@@ -80,8 +51,11 @@ function mockSuperToken() {
         );
 
         const sessionString = cookies["session"];
+        const now = new Date();
+        const tId = randomUUID();
+        const sessionHandle = randomUUID();
 
-        const session: { userId: string } | undefined =
+        const session: { userId: string; sessionId?: string } | undefined =
           typeof sessionString === "string"
             ? JSON.parse(sessionString)
             : undefined;
@@ -90,6 +64,20 @@ function mockSuperToken() {
           req.session = {
             getUserId() {
               return session.userId;
+            },
+            getAccessTokenPayload(): SupertokensAccessTokenPayload {
+              return {
+                iat: now.getMilliseconds(),
+                exp: now.getMilliseconds() + 5000,
+                iss: req.headers.origin ?? "http://localhost",
+                sub: session.userId,
+                rsub: session.userId,
+                tId,
+                sessionHandle: session.sessionId ?? sessionHandle,
+                refreshTokenHash1: null,
+                parentRefreshTokenHash1: null,
+                antiCsrfToken: null,
+              };
             },
           } as SessionContainerInterface;
 
@@ -107,11 +95,48 @@ function mockSuperToken() {
     };
   }
 
+  async function getUserMetadata(
+    userId: string,
+  ): Promise<{ status: "OK"; metadata: UserMetadata }> {
+    return Promise.resolve({
+      status: "OK",
+      metadata: userMetadata.get(userId) ?? {},
+    });
+  }
+
+  async function updateUserMetadata(
+    userId: string,
+    data: Partial<UserMetadata>,
+  ): Promise<{ status: "OK"; metadata: UserMetadata }> {
+    const existingMetadata = userMetadata.get(userId) ?? {};
+
+    return Promise.resolve({
+      status: "OK",
+      metadata: userMetadata
+        .set(userId, { ...existingMetadata, ...data })
+        .get(userId)!,
+    });
+  }
+
   mockModule("supertokens-node/recipe/session/framework/express", () => {
     const frameworkExpress = jest.requireActual<typeof SuperTokens>(
       "supertokens-node/recipe/session/framework/express",
     );
-    return { ...frameworkExpress, verifySession };
+    return { ...frameworkExpress, verifySession: jest.fn(verifySession) };
+  });
+
+  mockModule("supertokens-node/recipe/usermetadata", () => {
+    const recipeUserMetadata = jest.requireActual<typeof SuperTokens>(
+      "supertokens-node/recipe/usermetadata",
+    );
+
+    const userMetadataModule = {
+      ...recipeUserMetadata,
+      updateUserMetadata: jest.fn(updateUserMetadata),
+      getUserMetadata: jest.fn(getUserMetadata),
+    };
+
+    return { ...userMetadataModule, default: userMetadataModule };
   });
 }
 
@@ -133,6 +158,5 @@ export function mockModule(
 
 export function mockNodeModules() {
   mockGoogleapis();
-  mockSocketIO();
   mockSuperToken();
 }
