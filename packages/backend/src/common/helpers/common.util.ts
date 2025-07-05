@@ -6,6 +6,8 @@ import {
   CompassSocket,
   CompassSocketServer,
 } from "@core/types/websocket.types";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
 
 export const yearsAgo = (numYears: number) => {
   return new Date(new Date().setFullYear(new Date().getFullYear() - numYears));
@@ -33,7 +35,12 @@ export async function waitUntilEvent<
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       clearTimeout(timeout);
-      reject(new Error(`wait for ${String(event)} timed out`));
+      reject(
+        error(
+          GenericError.OperationTimeout,
+          `wait for ${String(event)} timed out`,
+        ),
+      );
     }, timeoutMs);
 
     (emitter as EventEmitter).once(event, (...payload: Payload) => {

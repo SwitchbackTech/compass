@@ -1,5 +1,6 @@
 import EventEmitter from "node:events";
 import { waitUntilEvent, yearsAgo } from "@backend/common/helpers/common.util";
+import { GenericError } from "../errors/generic/generic.errors";
 
 test("yearsAgo is a Date object", () => {
   const twoYrs = yearsAgo(2);
@@ -33,7 +34,7 @@ describe("waitUntilEvent", () => {
             }, 2);
           }),
       ),
-    ).rejects.toThrow("wait for test-event timed out");
+    ).rejects.toThrow(GenericError.OperationTimeout.description);
   });
 
   it("it transforms the result using the `afterEvent` callback", async () => {
