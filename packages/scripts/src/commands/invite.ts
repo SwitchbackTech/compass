@@ -2,10 +2,8 @@ import { _confirm, log } from "@scripts/common/cli.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import WaitlistService from "@backend/waitlist/service/waitlist.service";
 
-mongoService;
-
 export const inviteWaitlist = async () => {
-  await mongoService.waitUntilConnected();
+  await mongoService.start();
 
   const waitlisted = await WaitlistService.getAllWaitlisted();
   log.success(`Total on waitlist: ${waitlisted.length}`);

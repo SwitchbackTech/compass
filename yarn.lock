@@ -5658,6 +5658,11 @@ expect@^29.0.0, expect@^29.7.0:
     jest-message-util "^29.7.0"
     jest-util "^29.7.0"
 
+exponential-backoff@^3.1.2:
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/exponential-backoff/-/exponential-backoff-3.1.2.tgz#a8f26adb96bf78e8cd8ad1037928d5e5c0679d91"
+  integrity sha512-8QxYTVXUkuy7fIIoitQkPwGonB8F3Zj8eEO8Sqg9Zv/bkI7RJAzowee4gr81Hak/dUTpA2Z7VfQgoijjPNlUZA==
+
 express-validator@^6.12.2:
   version "6.15.0"
   resolved "https://registry.yarnpkg.com/express-validator/-/express-validator-6.15.0.tgz#5e4601428960b0d66f5f4ae09cb32ed2077374a4"
