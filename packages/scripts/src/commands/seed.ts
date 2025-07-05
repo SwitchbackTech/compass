@@ -2,6 +2,7 @@ import axios from "axios";
 import dayjs from "dayjs";
 import pkg from "inquirer";
 import { ObjectId } from "mongodb";
+import eventTemplates from "@scripts/common/cli.event.templates";
 import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
 import { Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
@@ -10,16 +11,6 @@ import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const { prompt } = pkg;
-
-async function createEvent(
-  events: Schema_Event[],
-  baseUrl: string,
-  accessToken: string,
-) {
-  await axios.post(`${baseUrl}/event`, events, {
-    headers: { Cookie: `sAccessToken=${accessToken}` },
-  });
-}
 
 async function seedEvents(userInput: string) {
   try {
@@ -50,20 +41,31 @@ async function seedEvents(userInput: string) {
       await compassAuthService.createSessionForUser(userId);
     const baseUrl = await getApiBaseUrl("local");
 
-    // Test Event
-    const eventOverrides = {
-      user: userId,
-      isAllDay: false,
-      isSomeday: false,
-      startDate: dayjs().hour(10).minute(0).second(0).toISOString(),
-      endDate: dayjs().hour(11).minute(0).second(0).toISOString(),
-    };
-    const event = createMockStandaloneEvent(eventOverrides);
-    const events: Schema_Event[] = [event];
+    // Get current time
+    const now = dayjs();
 
-    await createEvent(events, baseUrl, accessToken);
+    // Create events from templates
+    const events: Schema_Event[] = eventTemplates.flatMap((template) => {
+      const event = {
+        user: userId,
+        isSomeday: template.isSomeday,
+        isAllDay: template.isAllDay,
+        startDate: template.start(now),
+        endDate: template.end(now),
+        ...(template.title && { title: template.title }),
+        ...(template.description && { description: template.description }),
+        ...(template.recurrence && { recurrence: template.recurrence }),
+      };
 
-    // TODO: Create a variety of events for seeding
+      return Array(template.count)
+        .fill(null)
+        .map(() => createMockStandaloneEvent(event));
+    });
+
+    // Calls Event.Controller
+    await axios.post(`${baseUrl}/event`, events, {
+      headers: { Cookie: `sAccessToken=${accessToken}` },
+    });
 
     log.success(
       `Successfully created events for user: ${user.email} with id: ${userId}`,
@@ -110,11 +112,11 @@ export async function runSeed(userInput: string, force = false) {
     .then((answer: { proceed: boolean }) => {
       if (answer.proceed) {
         log.info("Starting event seeding process...");
-        seedEvents(userInput).catch((e) => console.log(e));
+        seedEvents(userInput).catch((e: Error) => console.log(e));
       } else {
         log.info("Operation cancelled. No events were created.");
         process.exit(0);
       }
     })
-    .catch((err) => console.log(err));
+    .catch((err: Error) => console.log(err));
 }
