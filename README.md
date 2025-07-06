@@ -69,6 +69,3 @@ To skip the waitlist, enter `marco@polo.co` when prompted for an email at the lo
 🎬 [Compass on YouTube](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w)
 
 ✍ [Compass Blog](https://www.compasscalendar.com/post/compass-is-open-source)
-
-🤝 [Backend Engineer Job Description](https://alpaca-ty.notion.site/Senior-Backend-Engineer-Part-time-Open-source-1f9237bde8f480658f93ea33e6e55481?pvs=4)
-(We're hiring!)
