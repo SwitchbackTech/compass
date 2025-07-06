@@ -50,6 +50,7 @@ export const DraggableSomedayEvent: FC<Props> = ({
                 snapshot={snapshot}
                 setEvent={setters.setDraft}
                 weekViewRange={{ startDate: start, endDate: end }}
+                index={index}
               />
             </>
           );
