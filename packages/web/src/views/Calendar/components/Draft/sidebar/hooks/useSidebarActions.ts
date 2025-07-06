@@ -555,6 +555,7 @@ export const useSidebarActions = (
     onPlaceholderClick,
     onSubmit,
     reset,
+    onReorder: reorder,
     resetLocalDraftStateIfNeeded,
     setDraft,
   };
