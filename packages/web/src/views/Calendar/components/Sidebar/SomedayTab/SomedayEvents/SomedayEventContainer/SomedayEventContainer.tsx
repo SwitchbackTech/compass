@@ -55,6 +55,7 @@ export const SomedayEventContainer = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === Key.Enter) {
       e.preventDefault();
+      e.stopPropagation();
       actions.onDraft(event, category);
     }
   };
