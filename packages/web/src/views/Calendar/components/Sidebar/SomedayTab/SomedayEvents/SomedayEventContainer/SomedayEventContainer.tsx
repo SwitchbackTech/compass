@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Key } from "ts-key-enum";
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
@@ -51,6 +52,13 @@ export const SomedayEventContainer = ({
 
   const [isFocused, setIsFocused] = useState(false);
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === Key.Enter) {
+      e.preventDefault();
+      actions.onDraft(event, category);
+    }
+  };
+
   const isDraftingThisEvent =
     state.isDrafting && state.draft?._id === event._id;
 
@@ -68,7 +76,7 @@ export const SomedayEventContainer = ({
           actions.onDraft(event, category);
         }}
         onFocus={() => setIsFocused(true)}
-        onKeyDown={() => console.log("onKeyDown")}
+        onKeyDown={handleKeyDown}
         priority={event.priority || Priorities.UNASSIGNED}
         provided={provided}
         snapshot={snapshot}
