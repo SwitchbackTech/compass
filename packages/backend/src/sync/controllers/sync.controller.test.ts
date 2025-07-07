@@ -8,7 +8,9 @@ import {
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import * as syncQueries from "@backend/sync/util/sync.queries";
 
 describe("SyncController", () => {
   const baseDriver = new BaseDriver();
@@ -133,6 +135,28 @@ describe("SyncController", () => {
 
         expect(regularEvents).toHaveLength(1);
         expect(regularEvents[0]?.gEventId).toBe("regular-1");
+      });
+
+      it("should resume import using stored nextPageToken", async () => {
+        const getGCalEventsSyncPageTokenSpy = jest
+          .spyOn(syncQueries, "getGCalEventsSyncPageToken")
+          .mockResolvedValue("5");
+
+        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+        const { userId } = setup;
+
+        const websocketClient = baseDriver.createWebsocketClient({ userId });
+
+        await syncDriver.waitUntilImportGCalEnd(websocketClient, () =>
+          syncDriver.importGCal({ userId }),
+        );
+
+        expect(getAllEventsSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ pageToken: "5" }),
+        );
+
+        getAllEventsSpy.mockRestore();
+        getGCalEventsSyncPageTokenSpy.mockRestore();
       });
     });
 

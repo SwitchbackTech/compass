@@ -27,8 +27,13 @@ import {
   assignIdsToEvents,
   organizeGcalEventsByType,
 } from "@backend/sync/services/import/sync.import.util";
+import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
+import syncService from "@backend/sync/services/sync.service";
+import { assembleEventWatchPayloads } from "@backend/sync/services/watch/sync.watch";
 import {
+  getGCalEventsSyncPageToken,
   getSync,
+  updateGCalEventsSyncPageToken,
   updateSync,
   updateSyncTokenFor,
 } from "@backend/sync/util/sync.queries";
@@ -36,9 +41,6 @@ import {
   hasAnyActiveEventSync,
   isUsingHttps,
 } from "@backend/sync/util/sync.util";
-import { getCalendarsToSync } from "../init/sync.init";
-import syncService from "../sync.service";
-import { assembleEventWatchPayloads } from "../watch/sync.watch";
 
 const logger = Logger("app:sync.import");
 
@@ -326,14 +328,21 @@ export class SyncImport {
       totalChanged: 0,
     };
 
+    const pageToken = await getGCalEventsSyncPageToken(userId, calendarId);
+
     const gCalResponse = gcalService.getAllEvents({
       gCal: this.gcal,
       calendarId,
       maxResults: perPage,
       syncToken,
+      pageToken,
     });
 
-    for await (const { items = [], nextSyncToken } of gCalResponse) {
+    for await (const {
+      items = [],
+      nextSyncToken,
+      nextPageToken,
+    } of gCalResponse) {
       await Promise.allSettled(
         items.map(async (baseEvent) => {
           const instanceStats = await this.importEventInstances(
@@ -351,6 +360,8 @@ export class SyncImport {
           stats.totalBaseEventsChanged += totalBaseEventsSaved;
         }),
       );
+
+      await updateGCalEventsSyncPageToken(userId, calendarId, nextPageToken);
 
       if (nextSyncToken) syncToken = nextSyncToken;
     }
