@@ -42,6 +42,7 @@ export const StyledIconRow = styled(Flex)`
   align-items: center;
   gap: 30px;
   justify-content: end;
+  margin-bottom: 10px;
 `;
 
 export const StyledSubmitButton = styled(PriorityButton)`

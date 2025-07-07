@@ -1,25 +1,46 @@
 import React from "react";
+import styled from "styled-components";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { getMetaKey } from "@web/common/utils/shortcut.util";
 import { Text } from "@web/components/Text";
-import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { StyledMigrateArrowInForm } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/styled";
+import TooltipIconButton from "@web/components/TooltipIconButton/TooltipIconButton";
 
-export const MoveToSidebarButton = ({ onClick }: { onClick: () => void }) => {
-  const getShortcut = () => {
-    return (
-      <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-        {getMetaKey()} +{" SHIFT "} + {","}
-      </Text>
-    );
-  };
+const StyledMoveToSidebarButton = styled.div`
+  font-size: 25px;
+  &:hover {
+    cursor: pointer;
+  }
+`;
 
+const StyledArrowLeft = styled(ArrowLeft)`
+  width: 15px;
+  height: 15px;
+`;
+
+export const MoveToSidebarButton = ({
+  onClick,
+  tooltipText = "Move To Sidebar",
+}: {
+  onClick: () => void;
+  tooltipText?: string;
+}) => {
   return (
-    <TooltipWrapper
-      onClick={onClick}
-      description="Move to sidebar"
-      shortcut={getShortcut()}
-    >
-      <StyledMigrateArrowInForm role="button">{"<"}</StyledMigrateArrowInForm>
-    </TooltipWrapper>
+    <TooltipIconButton
+      component={
+        <StyledMoveToSidebarButton id="migrate-backward-button" role="button">
+          {"<"}
+        </StyledMoveToSidebarButton>
+      }
+      buttonProps={{ "aria-label": tooltipText }}
+      tooltipProps={{
+        description: tooltipText,
+        onClick,
+        shortcut: (
+          <Text size="s" style={{ display: "flex", alignItems: "center" }}>
+            CTRL + {getMetaKey()} + <StyledArrowLeft />
+          </Text>
+        ),
+      }}
+    />
   );
 };
