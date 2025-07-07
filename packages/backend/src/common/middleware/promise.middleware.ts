@@ -30,7 +30,7 @@ export const requestMiddleware = () => {
     res: Res_Promise,
     next: express.NextFunction,
   ) => {
-    res.promise = (p: Promise<any> | SyncFunction) => {
+    res.promise = (p: Promise<any> | SyncFunction | unknown) => {
       let toResolve: Promise<unknown> | (() => any);
 
       if (p instanceof Promise) {
@@ -41,9 +41,11 @@ export const requestMiddleware = () => {
         toResolve = Promise.resolve(p);
       }
 
-      return toResolve
+      toResolve
         .then((data) => sendResponse(res, data as D))
         .catch((e) => handleExpressError(res, e));
+
+      return res;
     };
 
     return next();

@@ -18,23 +18,16 @@ export class AuthRoutes extends CommonRoutesConfig {
     /**
      * Checks whether user's google access token is still valid
      */
-    this.app.route(`/api/auth/google`).get([
-      verifySession(),
-      //@ts-expect-error res.promise is not returning response types correctly
-      authController.verifyGToken,
-    ]);
+    this.app
+      .route(`/api/auth/google`)
+      .get([verifySession(), authController.verifyGToken]);
 
     this.app
       .route(`/api/auth/session`)
       .all(authMiddleware.verifyIsDev)
-      //@ts-expect-error res.promise is not returning response types correctly
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       .post(authController.createSession)
-      .get([
-        verifySession(),
-        //@ts-expect-error res.promise is not returning response types correctly
-        authController.getUserIdFromSession,
-      ]);
+      .get([verifySession(), authController.getUserIdFromSession]);
 
     this.app
       .route(`/api/auth/session/revoke`)
@@ -44,11 +37,12 @@ export class AuthRoutes extends CommonRoutesConfig {
     /**
      * Google calls this route after successful oauth
      */
-    this.app.route(`/api/oauth/google`).post([
-      authMiddleware.verifyGoogleOauthCode,
-      //@ts-expect-error res.promise is not returning response types correctly
-      authController.loginOrSignup,
-    ]);
+    this.app
+      .route(`/api/oauth/google`)
+      .post([
+        authMiddleware.verifyGoogleOauthCode,
+        authController.loginOrSignup,
+      ]);
 
     return this.app;
   }
