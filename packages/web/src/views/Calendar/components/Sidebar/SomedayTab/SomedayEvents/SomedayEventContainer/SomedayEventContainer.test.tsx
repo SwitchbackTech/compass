@@ -1,13 +1,9 @@
 import React from "react";
+import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import "@testing-library/jest-dom";
-import userEvent from "@testing-library/user-event";
 import { LEARN_CHINESE } from "@core/__mocks__/v1/events/events.misc";
 import { Categories_Event } from "@core/types/event.types";
-import {
-  fireEvent,
-  render,
-  screen,
-} from "@web/__tests__/__mocks__/mock.render";
+import { fireEvent, render } from "@web/__tests__/__mocks__/mock.render";
 import { SidebarDraftContext } from "../../../../Draft/sidebar/context/SidebarDraftContext";
 import { SomedayEventContainer } from "./SomedayEventContainer";
 
@@ -60,12 +56,16 @@ describe("SomedayEventContainer keyboard interactions", () => {
           onSubmit={jest.fn()}
           provided={
             {
-              draggableProps: {},
+              draggableProps: {
+                "data-rfd-draggable-context-id": "mock-context",
+                "data-rfd-draggable-id": "mock-id",
+                style: {},
+              },
               dragHandleProps: null,
               innerRef: jest.fn(),
-            } as any
+            } as DraggableProvided
           }
-          snapshot={{ isDragging: false } as any}
+          snapshot={{ isDragging: false } as DraggableStateSnapshot}
           setEvent={jest.fn()}
           weekViewRange={{ startDate: "2020-01-01", endDate: "2020-01-07" }}
         />
