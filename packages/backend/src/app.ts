@@ -1,17 +1,35 @@
 // sort-imports-ignore
-import * as http from "http";
-import { logger } from "./init";
+import { logger } from "@backend/init"; //must be first import
 
-import { ENV } from "./common/constants/env.constants";
-import mongoService from "./common/services/mongo.service";
-import { initExpressServer } from "./servers/express/express.server";
-import { webSocketServer } from "./servers/websocket/websocket.server";
+import { ENV } from "@backend/common/constants/env.constants";
+import mongoService from "@backend/common/services/mongo.service";
+import { initExpressServer } from "@backend/servers/express/express.server";
+import { initNgrokServer } from "@backend/servers/ngrok/ngrok.server";
+import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import ngrok, { type Listener } from "@ngrok/ngrok";
+import { createServer, type Server } from "node:http";
 
 const app = initExpressServer();
-const httpServer: http.Server = http.createServer(app);
+const httpServer: Server = createServer(app);
+const ngrokServer = initNgrokServer(httpServer);
 
 function onClose() {
   logger.info(`Http server terminated`);
+}
+
+function onNgrokConnected(listener: Listener): void {
+  Object.assign(process.env, { NGROK_DOMAIN_FULL: listener.url() });
+
+  logger.info("NGrok server connected");
+  logger.info(`NGrok server url: ${process.env["NGROK_DOMAIN_FULL"]}`);
+}
+
+function onNgrokClose() {
+  logger.info(`NGrok server terminated`);
+}
+
+function onNgrokError(error: Error): void {
+  logger.error("NGrok server errored: ", error);
 }
 
 async function start() {
@@ -23,6 +41,7 @@ async function start() {
     await new Promise((resolve) =>
       httpServer.listen(ENV.PORT, () => {
         logger.info(`Server running on port: ${ENV.PORT}`);
+        ngrokServer?.emit("connect");
         resolve(undefined);
       }),
     );
@@ -33,31 +52,43 @@ async function start() {
   }
 }
 
-async function terminateServices(): Promise<number> {
+async function closeHttpServer(): Promise<void> {
   if (httpServer.listening) {
+    httpServer.closeAllConnections();
+
     await new Promise((resolve, reject) =>
       httpServer.close((error) => (error ? reject(error) : resolve(undefined))),
     );
   }
-
-  await mongoService.stop();
-
-  return 0;
 }
 
-async function gracefulShutdown(): Promise<number> {
-  try {
-    const exitCode = await terminateServices();
+async function closeNGrokServer(): Promise<void> {
+  const url = process.env["NGROK_DOMAIN_FULL"];
+  const ngrokListener = url ? await ngrok.getListenerByUrl(url) : undefined;
 
-    process.exit(exitCode);
+  if (ngrokListener) {
+    // do not wait for this promise,
+    // underlying rust process termination not finished
+    ngrokListener.close();
+    ngrokServer?.emit("close");
+  }
+}
+
+async function gracefulShutdown(): Promise<void> {
+  try {
+    await closeHttpServer();
+    await mongoService.stop();
+    await closeNGrokServer();
   } catch (error) {
     logger.error("Problems encountered while shutting down", error);
-
-    process.exit(0);
   }
 }
 
 httpServer.on("close", onClose);
+
+ngrokServer?.on("connected", onNgrokConnected);
+ngrokServer?.on("error", onNgrokError);
+ngrokServer?.on("close", onNgrokClose);
 
 // gracefully shutdown server - mostly for development respawn with ts-node
 process.on("SIGTERM", gracefulShutdown);
