@@ -31,8 +31,22 @@ const EnvSchema = z
     SUPERTOKENS_KEY: z.string().nonempty(),
     TOKEN_GCAL_NOTIFICATION: z.string().nonempty(),
     TOKEN_COMPASS_SYNC: z.string().nonempty(),
+    NGROK_AUTHTOKEN: z.string().nonempty().optional(),
+    NGROK_DOMAIN: z.string().nonempty().optional(),
   })
-  .strict();
+  .strict()
+  .superRefine(({ NGROK_AUTHTOKEN, NGROK_DOMAIN }, context) => {
+    if (!NGROK_AUTHTOKEN) return;
+    if (NGROK_AUTHTOKEN && NGROK_DOMAIN) return;
+
+    return context.addIssue({
+      code: z.ZodIssueCode.invalid_string,
+      fatal: true,
+      validation: "url",
+      message: "you need to supply a static ngrok domain",
+      path: ["NGROK_DOMAIN"],
+    });
+  });
 
 type Env = z.infer<typeof EnvSchema>;
 
@@ -54,6 +68,8 @@ export const ENV = {
   SUPERTOKENS_KEY: process.env["SUPERTOKENS_KEY"],
   TOKEN_GCAL_NOTIFICATION: process.env["TOKEN_GCAL_NOTIFICATION"],
   TOKEN_COMPASS_SYNC: process.env["TOKEN_COMPASS_SYNC"],
+  NGROK_AUTHTOKEN: process.env["NGROK_AUTHTOKEN"],
+  NGROK_DOMAIN: process.env["NGROK_DOMAIN"],
 } as Env;
 
 const parsedEnv = EnvSchema.safeParse(ENV);

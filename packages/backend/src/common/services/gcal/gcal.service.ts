@@ -11,6 +11,7 @@ import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { ENV } from "@backend/common/constants/env.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
+import { getBaseURL } from "@backend/servers/ngrok/ngrok.utils";
 
 class GCalService {
   private validateGCalResponse<T>(
@@ -197,7 +198,7 @@ class GCalService {
       calendarId: params.gCalendarId,
       requestBody: {
         // reminder: address always needs to be HTTPS
-        address: ENV.BASEURL + GCAL_NOTIFICATION_ENDPOINT,
+        address: getBaseURL() + GCAL_NOTIFICATION_ENDPOINT,
         expiration: params.expiration,
         id: params.channelId,
         token: ENV.TOKEN_GCAL_NOTIFICATION,

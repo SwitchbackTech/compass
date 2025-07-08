@@ -1,8 +1,9 @@
 import { Logger } from "@core/logger/winston.logger";
-import { Schema_Sync } from "@core/types/sync.types";
+import type { Schema_Sync } from "@core/types/sync.types";
 import { minutesFromNow } from "@core/util/date/date.util";
 import { SYNC_BUFFER_DAYS } from "@backend/common/constants/backend.constants";
 import { ENV } from "@backend/common/constants/env.constants";
+import { getBaseURL } from "@backend/servers/ngrok/ngrok.utils";
 
 const logger = Logger("app:sync.helpers");
 
@@ -50,8 +51,7 @@ export const hasAnyActiveEventSync = (sync: Schema_Sync) => {
   return false;
 };
 
-export const isUsingHttps = () =>
-  ENV.BASEURL !== undefined && ENV.BASEURL.includes("https");
+export const isUsingHttps = () => getBaseURL().includes("https");
 
 export const logExpirationReminder = (min: number) => {
   const hours = Math.round((min / 60) * 100) / 100;
