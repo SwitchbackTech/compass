@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import { ArrowLeft } from "@phosphor-icons/react";
 import { getMetaKey } from "@web/common/utils/shortcut.util";
 import { Text } from "@web/components/Text";
 import TooltipIconButton from "@web/components/TooltipIconButton/TooltipIconButton";
@@ -9,6 +10,11 @@ const StyledMigrateBackwardButton = styled.div`
   &:hover {
     cursor: pointer;
   }
+`;
+
+const StyledArrowLeft = styled(ArrowLeft)`
+  width: 15px;
+  height: 15px;
 `;
 
 export const MigrateBackwardButton = ({
@@ -31,7 +37,7 @@ export const MigrateBackwardButton = ({
         onClick,
         shortcut: (
           <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-            Ctrl + {getMetaKey()} + Left
+            CTRL + {getMetaKey()} + <StyledArrowLeft />
           </Text>
         ),
       }}

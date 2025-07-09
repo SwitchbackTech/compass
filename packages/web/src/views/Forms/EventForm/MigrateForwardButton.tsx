@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import { ArrowRight } from "@phosphor-icons/react";
 import { getMetaKey } from "@web/common/utils/shortcut.util";
 import { Text } from "@web/components/Text";
 import TooltipIconButton from "@web/components/TooltipIconButton/TooltipIconButton";
@@ -9,6 +10,11 @@ const StyledMigrateForwardButton = styled.div`
   &:hover {
     cursor: pointer;
   }
+`;
+
+const StyledArrowRight = styled(ArrowRight)`
+  width: 15px;
+  height: 15px;
 `;
 
 export const MigrateForwardButton = ({
@@ -31,7 +37,7 @@ export const MigrateForwardButton = ({
         onClick,
         shortcut: (
           <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-            Ctrl + {getMetaKey()} + Right
+            CTRL + {getMetaKey()} + <StyledArrowRight />
           </Text>
         ),
       }}

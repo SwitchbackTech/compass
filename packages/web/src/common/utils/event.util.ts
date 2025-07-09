@@ -11,6 +11,7 @@ import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
 import { PartialMouseEvent } from "@web/common/types/util.types";
+import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
 import {
   DATA_EVENT_ELEMENT_ID,
   ID_OPTIMISTIC_PREFIX,
@@ -220,6 +221,20 @@ export const prepEvtBeforeSubmit = (
   };
 
   const event = validateEvent(_event);
+  return event;
+};
+
+export const prepSomedayEventBeforeSubmit = (
+  draft: Schema_Event | Schema_GridEvent,
+  userId: string,
+) => {
+  const _event = {
+    ...draft,
+    origin: Origin.COMPASS,
+    user: userId,
+  };
+
+  const event = validateSomedayEvent(_event);
   return event;
 };
 

@@ -21,6 +21,7 @@ export interface Payload_Resource_Events {
 
 export interface Payload_Sync_Events extends Payload_Resource_Events {
   nextSyncToken: string;
+  nextPageToken?: string;
   lastRefreshedAt?: Date;
   lastSyncedAt?: Date;
 }

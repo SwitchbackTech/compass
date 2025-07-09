@@ -21,7 +21,10 @@ describe("Event Form", () => {
     const user = userEvent.setup();
 
     await act(async () => {
-      await user.click(screen.getByRole("button", { name: CLIMB.title }));
+      const climbBtn = document.querySelector(
+        `[data-event-id="${CLIMB._id}"]`,
+      ) as HTMLElement;
+      await user.click(climbBtn);
     });
 
     await act(async () => {
@@ -64,11 +67,10 @@ describe("Event Form", () => {
       const { container } = render(<CalendarView />, { state: preloadedState });
 
       await act(async () => {
-        await user.click(
-          screen.getByRole("button", {
-            name: /climb/i,
-          }),
-        );
+        const climbBtn = document.querySelector(
+          `[data-event-id="${CLIMB._id}"]`,
+        ) as HTMLElement;
+        await user.click(climbBtn);
       });
 
       expect(container.getElementsByClassName("startDatePicker")).toHaveLength(
