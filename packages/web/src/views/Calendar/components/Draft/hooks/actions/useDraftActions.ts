@@ -6,7 +6,6 @@ import {
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { devAlert } from "@core/util/app.util";
-import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -15,6 +14,7 @@ import {
   prepEvtBeforeSubmit,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
+import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
 import {
   selectDraft,
   selectDraftStatus,
@@ -151,7 +151,7 @@ export const useDraftActions = (
       endDate: end,
       order: somedayWeekCount,
     };
-    const event = validateEvent(_draft);
+    const event = validateSomedayEvent(_draft);
     dispatch(getWeekEventsSlice.actions.convert({ event }));
 
     discard();
