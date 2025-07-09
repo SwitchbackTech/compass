@@ -8,7 +8,7 @@ export const MoveToSidebarButton = ({ onClick }: { onClick: () => void }) => {
   const getShortcut = () => {
     return (
       <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-        {getMetaKey()} +{" SHIFT "} + {","}
+        {getMetaKey()} +{" SHIFT "} + {"left"}
       </Text>
     );
   };
