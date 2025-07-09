@@ -1,12 +1,12 @@
 // sort-imports-ignore
-import { logger } from "@backend/init"; //must be first import
+import { logger } from "./init"; //must be first import
 
 import { ENV } from "@backend/common/constants/env.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
 import { initNgrokServer } from "@backend/servers/ngrok/ngrok.server";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
-import ngrok, { type Listener } from "@ngrok/ngrok";
+import { type Listener } from "@ngrok/ngrok";
 import { createServer, type Server } from "node:http";
 
 const app = initExpressServer();
@@ -64,6 +64,7 @@ async function closeHttpServer(): Promise<void> {
 
 async function closeNGrokServer(): Promise<void> {
   const url = process.env["NGROK_DOMAIN_FULL"];
+  const ngrok = await import("@ngrok/ngrok");
   const ngrokListener = url ? await ngrok.getListenerByUrl(url) : undefined;
 
   if (ngrokListener) {
