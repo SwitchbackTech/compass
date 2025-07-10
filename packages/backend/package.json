@@ -9,6 +9,7 @@
     "chalk": "4.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
+    "exponential-backoff": "^3.1.2",
     "express": "^4.17.1",
     "express-validator": "^6.12.2",
     "express-winston": "^4.2.0",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
+    "@ngrok/ngrok": "^1.5.1",
     "@shelf/jest-mongodb": "^4.1.4",
     "@types/cors": "^2.8.12",
     "@types/debug": "^4.1.7",

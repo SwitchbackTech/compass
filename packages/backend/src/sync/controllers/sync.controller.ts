@@ -1,21 +1,23 @@
-import { Request } from "express";
+import { Request, Response } from "express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { Payload_Sync_Notif } from "@core/types/sync.types";
+import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import {
   isFullSyncRequired,
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
-import { Res_Promise } from "@backend/common/types/express.types";
+import { webSocketServer } from "@backend/servers/websocket/websocket.server";
+import { initSync } from "@backend/sync/services/init/sync.init";
+import syncService from "@backend/sync/services/sync.service";
+import { getSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
-import syncService from "../services/sync.service";
-import { getSync } from "../util/sync.queries";
 
 const logger = Logger("app:sync.controller");
 class SyncController {
-  handleGoogleNotification = async (req: Request, res: Res_Promise) => {
+  handleGoogleNotification = async (req: Request, res: Response) => {
     try {
       const syncPayload = {
         channelId: req.headers["x-goog-channel-id"],
@@ -81,7 +83,7 @@ class SyncController {
     }
   };
 
-  maintain = async (_req: Request, res: Res_Promise) => {
+  maintain = async (_req: Request, res: Response) => {
     try {
       const result = await syncService.runMaintenance();
       res.promise(result);
@@ -89,6 +91,54 @@ class SyncController {
       logger.error(e);
       res.promise(e);
     }
+  };
+
+  importGCal = async (req: Request, res: Response): Promise<Response> => {
+    const userId = req.session!.getUserId()!;
+    const gcalClient = await getGcalClient(userId);
+    const gCalendarIds = await initSync(gcalClient, userId);
+    const lastGCalSync = new Date().toUTCString();
+
+    webSocketServer.handleImportGCalStart(userId);
+
+    userService
+      .fetchUserMetadata(userId)
+      .then(async (metadata) => {
+        const sync = metadata.sync ?? {};
+
+        if (sync?.importGCal?.importing) {
+          webSocketServer.handleImportGCalEnd(
+            userId,
+            `User ${userId} is already importing GCal, ignoring this request`,
+          );
+
+          return;
+        }
+
+        await userService.updateUserMetadata({
+          userId,
+          data: { sync: { importGCal: { importing: true, lastGCalSync } } },
+        });
+
+        await syncService.importFull(gcalClient, gCalendarIds, userId);
+
+        await userService.updateUserMetadata({
+          userId,
+          data: { sync: { importGCal: { importing: false } } },
+        });
+
+        webSocketServer.handleImportGCalEnd(userId);
+        webSocketServer.handleBackgroundCalendarChange(userId);
+      })
+      .catch((err) => {
+        const message = `Import gCal failed for user: ${userId}`;
+
+        webSocketServer.handleImportGCalEnd(userId, message);
+
+        logger.error(message, err);
+      });
+
+    return res.status(204);
   };
 }
 

@@ -13,6 +13,7 @@ import {
 } from "@core/types/auth.types";
 import { gCalendar } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
+import { initGoogleClient } from "@backend/auth/services/auth.utils";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import GoogleAuthService, {
   getGAuthClientForUser,
@@ -29,7 +30,6 @@ import {
 import syncService from "@backend/sync/services/sync.service";
 import { updateGoogleRefreshToken } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
-import { initGoogleClient } from "../services/auth.utils";
 
 const logger = Logger("app:auth.controller");
 
@@ -111,7 +111,7 @@ class AuthController {
               gcalClient,
               gRefreshToken,
             )
-          : await this.signup(gUser, gcalClient, gRefreshToken);
+          : await this.signup(gUser, gRefreshToken);
 
       const sUserId = supertokens.convertToRecipeUserId(cUserId);
       await Session.createNewSession(req, res, "public", sUserId);
@@ -178,16 +178,8 @@ class AuthController {
     res.send(revokeResult);
   };
 
-  signup = async (
-    gUser: TokenPayload,
-    gcalClient: gCalendar,
-    gRefreshToken: string,
-  ) => {
-    const userId = await userService.initUserData(
-      gUser,
-      gcalClient,
-      gRefreshToken,
-    );
+  signup = async (gUser: TokenPayload, gRefreshToken: string) => {
+    const userId = await userService.initUserData(gUser, gRefreshToken);
 
     return { cUserId: userId };
   };

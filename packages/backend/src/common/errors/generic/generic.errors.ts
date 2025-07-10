@@ -6,6 +6,7 @@ interface GenericErrors {
   DeveloperError: ErrorMetadata;
   NotImplemented: ErrorMetadata;
   NotSure: ErrorMetadata;
+  OperationTimeout: ErrorMetadata;
 }
 
 export const GenericError: GenericErrors = {
@@ -26,6 +27,11 @@ export const GenericError: GenericErrors = {
   },
   NotSure: {
     description: "Not sure why error occurred. See logs",
+    status: Status.UNSURE,
+    isOperational: true,
+  },
+  OperationTimeout: {
+    description: "Operation timed out",
     status: Status.UNSURE,
     isOperational: true,
   },

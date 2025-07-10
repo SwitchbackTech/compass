@@ -20,7 +20,7 @@ import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
 import {
   assembleDefaultEvent,
   prepEvtAfterDraftDrop,
-  prepEvtBeforeSubmit,
+  prepSomedayEventBeforeSubmit,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import {
@@ -386,7 +386,7 @@ export const useSidebarActions = (
     }
 
     const userId = await getUserId();
-    _event = prepEvtBeforeSubmit(_event, userId);
+    _event = prepSomedayEventBeforeSubmit(_event, userId);
 
     const isExisting = _event._id;
     if (isExisting) {

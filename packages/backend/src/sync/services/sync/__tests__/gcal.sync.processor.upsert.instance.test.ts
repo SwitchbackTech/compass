@@ -8,19 +8,8 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalSyncProcessor } from "../gcal.sync.processor";
-
-// Mock Gcal Instances API response
-jest.mock("@backend/common/services/gcal/gcal.service", () => ({
-  __esModule: true,
-  default: {
-    getEventInstances: jest.fn().mockResolvedValue({
-      data: { items: mockGcalEvents().gcalEvents.instances },
-    }),
-  },
-}));
 
 describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
   let setup: TestSetup;
@@ -67,7 +56,10 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
     });
 
     // Verify no other events were deleted
-    const remainingEvents = await getEventsInDb();
+    const remainingEvents = await getEventsInDb().then((events) =>
+      events.map((event) => ({ ...event, _id: event._id?.toString() })),
+    );
+
     expect(remainingEvents).toHaveLength(gcalEvents.all.length - 1); // exclude cancelled instance
 
     // Verify the instance was updated

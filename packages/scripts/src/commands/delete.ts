@@ -7,8 +7,6 @@ import { Summary_Delete } from "@backend/user/types/user.types";
 
 const { prompt } = pkg;
 
-mongoService;
-
 export const deleteCompassDataForMatchingUsers = async (user: string) => {
   log.info(`Deleting Compass data for users matching: ${user}`);
 
@@ -28,8 +26,7 @@ export const deleteCompassDataForMatchingUsers = async (user: string) => {
 };
 
 export const startDeleteFlow = async (user: string, force = false) => {
-  log.info("Connecting to db...");
-  await mongoService.waitUntilConnected();
+  await mongoService.start();
 
   if (force === true) {
     log.info(`Deleting ${user}'s Compass data ...`);

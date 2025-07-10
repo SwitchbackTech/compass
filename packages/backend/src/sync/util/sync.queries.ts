@@ -270,6 +270,33 @@ export const updateSyncTokenFor = async (
   }
 };
 
+export const getGCalEventsSyncPageToken = async (
+  userId: string,
+  gCalendarId: string,
+): Promise<string | undefined> => {
+  const response = await mongoService.sync.findOne({
+    user: userId,
+    "google.events.gCalendarId": gCalendarId,
+  });
+
+  return response?.google.events.find((e) => e.gCalendarId === gCalendarId)
+    ?.nextPageToken;
+};
+
+export const updateGCalEventsSyncPageToken = async (
+  userId: string,
+  gCalendarId: string,
+  nextPageToken?: string | null,
+) => {
+  const response = await mongoService.sync.findOneAndUpdate(
+    { user: userId, "google.events.gCalendarId": gCalendarId },
+    { $set: { "google.events.$.nextPageToken": nextPageToken } },
+    { upsert: true },
+  );
+
+  return response;
+};
+
 /**
  * Update sync tokens and timestamps
  */

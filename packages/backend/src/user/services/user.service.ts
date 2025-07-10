@@ -1,11 +1,14 @@
 import { TokenPayload } from "google-auth-library";
+import mergeWith from "lodash.mergewith";
+import SupertokensUserMetadata, {
+  JSONObject,
+} from "supertokens-node/recipe/usermetadata";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { UserInfo_Google } from "@core/types/auth.types";
-import { gCalendar } from "@core/types/gcal";
-import { Schema_User } from "@core/types/user.types";
+import { Schema_User, UserMetadata } from "@core/types/user.types";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -20,15 +23,12 @@ import { Summary_Resync } from "@backend/common/types/sync.types";
 import EmailService from "@backend/email/email.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import {
-  getCalendarsToSync,
-  initSync,
-} from "@backend/sync/services/init/sync.init";
+import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
 import syncService from "@backend/sync/services/sync.service";
 import { watchEventsByGcalIds } from "@backend/sync/services/watch/sync.watch";
 import { reInitSyncByIntegration } from "@backend/sync/util/sync.queries";
-import { findCompassUserBy } from "../queries/user.queries";
-import { Summary_Delete } from "../types/user.types";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { Summary_Delete } from "@backend/user/types/user.types";
 
 const logger = Logger("app:user.service");
 
@@ -119,11 +119,7 @@ class UserService {
     return response;
   };
 
-  initUserData = async (
-    gUser: TokenPayload,
-    gcalClient: gCalendar,
-    gRefreshToken: string,
-  ) => {
+  initUserData = async (gUser: TokenPayload, gRefreshToken: string) => {
     const cUser = await this.createUser(gUser, gRefreshToken);
     const { userId } = cUser;
 
@@ -138,9 +134,6 @@ class UserService {
         ENV.EMAILER_USER_TAG_ID!,
       );
     }
-
-    const gCalendarIds = await initSync(gcalClient, userId);
-    await syncService.importFull(gcalClient, gCalendarIds, userId);
 
     await priorityService.createDefaultPriorities(userId);
 
@@ -220,6 +213,46 @@ class UserService {
     await syncService.importFull(gcal, gCalendarIds, userId);
 
     return { calendarlist, eventWatches, events: "success", sync };
+  };
+
+  /*
+   * updateUserMetadata
+   *
+   * Nested objects and all lower-level properties
+   * will merge with existing ones.
+   *
+   * @memberOf UserService
+   */
+  updateUserMetadata = async ({
+    userId,
+    data,
+  }: {
+    userId: string;
+    data: Partial<UserMetadata>;
+  }): Promise<UserMetadata> => {
+    const value = await this.fetchUserMetadata(userId);
+    const update = mergeWith(value, data);
+
+    const { status, metadata } =
+      await SupertokensUserMetadata.updateUserMetadata(userId, update);
+
+    if (status !== "OK") throw new Error("Failed to update user metadata");
+
+    return metadata;
+  };
+
+  fetchUserMetadata = async (
+    userId: string,
+    userContext?: Record<string, JSONObject>,
+  ): Promise<UserMetadata> => {
+    const { status, metadata } = await SupertokensUserMetadata.getUserMetadata(
+      userId,
+      userContext,
+    );
+
+    if (status !== "OK") throw new Error("Failed to fetch user metadata");
+
+    return metadata;
   };
 }
 

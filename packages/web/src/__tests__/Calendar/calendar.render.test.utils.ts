@@ -115,13 +115,20 @@ export const createInitialState = (
         tab: "tasks",
         isOpen: true,
       },
+      header: {
+        note: {
+          focus: false,
+        },
+      },
     },
     settings: {
       isCmdPaletteOpen: false,
     },
     sync: {
-      isFetchNeeded: false,
-      reason: null,
+      importLatest: {
+        isFetchNeeded: false,
+        reason: null,
+      },
     },
     ...partialState,
   };

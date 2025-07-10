@@ -1,8 +1,11 @@
-import { Server as SocketIOServer } from "socket.io";
-import { Schema_Event } from "./event.types";
+import { Request } from "express";
+import { Socket, Server as SocketIOServer } from "socket.io";
+import { Schema_Event } from "@core/types/event.types";
+import { UserMetadata } from "@core/types/user.types";
 
 export interface ClientToServerEvents {
-  EVENT_CHANGE_PROCESSED: (clientId: string) => void;
+  EVENT_CHANGE_PROCESSED: () => void;
+  FETCH_USER_METADATA: () => void;
 }
 
 export type CompassSocketServer = SocketIOServer<
@@ -11,14 +14,27 @@ export type CompassSocketServer = SocketIOServer<
   InterServerEvents,
   SocketData
 >;
+
+export type CompassSocket = Socket<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>;
+
 export interface InterServerEvents {
   EVENT_RECEIVED: (data: Schema_Event) => Schema_Event;
 }
 
 export interface ServerToClientEvents {
   EVENT_CHANGED: () => void;
+  USER_SIGN_OUT: () => void;
+  USER_REFRESH_TOKEN: () => void;
+  USER_METADATA: (data: UserMetadata) => void;
+  IMPORT_GCAL_START: () => void;
+  IMPORT_GCAL_END: (reason?: string) => void;
 }
 
 export interface SocketData {
-  userId: string;
+  session: Exclude<Request["session"], undefined>;
 }

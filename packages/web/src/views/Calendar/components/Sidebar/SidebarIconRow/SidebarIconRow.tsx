@@ -3,9 +3,11 @@ import { theme } from "@web/common/styles/theme";
 import { getMetaKey } from "@web/common/utils/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
+import { SpinnerIcon } from "@web/components/Icons/Spinner";
 import { TodoIcon } from "@web/components/Icons/Todo";
 import { Text } from "@web/components/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { selectImportGCalState } from "@web/ducks/events/selectors/sync.selector";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
@@ -16,6 +18,7 @@ import { IconRow, LeftIconGroup } from "../styled";
 export const SidebarIconRow = () => {
   const dispatch = useAppDispatch();
   const tab = useAppSelector(selectSidebarTab);
+  const gCalImport = useAppSelector(selectImportGCalState);
 
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
 
@@ -79,6 +82,11 @@ export const SidebarIconRow = () => {
             }
           />
         </TooltipWrapper>
+        {gCalImport.importing ? (
+          <TooltipWrapper description="Importing your calendar events in the background">
+            <SpinnerIcon disabled />
+          </TooltipWrapper>
+        ) : undefined}
       </LeftIconGroup>
     </IconRow>
   );
