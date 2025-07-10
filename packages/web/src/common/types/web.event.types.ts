@@ -25,7 +25,6 @@ export type Schema_SomedayEvent = z.infer<typeof SomedayEventSchema>;
 export interface Schema_GridEvent extends Schema_Event {
   hasFlipped?: boolean;
   isOpen?: boolean;
-  isRecurring: boolean;
   row?: number;
   position: {
     isOverlapping: boolean;
