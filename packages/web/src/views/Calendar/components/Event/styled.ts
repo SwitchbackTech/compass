@@ -53,9 +53,8 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
 })<StyledEventProps>`
   background-color: ${(props) => props.backgroundColor};
   border-radius: 2px;
-  filter: brightness(
-    ${({ isInPast, isRecurring }) => (isInPast || isRecurring ? 0.7 : null)}
-  );
+  filter: ${({ isRecurring, isInPast }) =>
+    isRecurring || isInPast ? "brightness(0.7)" : "brightness(1)"};
   height: ${({ height }) => height}px;
   left: ${(props) => props.left}px;
   opacity: ${(props) => props.opacity};
