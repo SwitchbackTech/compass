@@ -84,4 +84,126 @@ describe("SomedayEventContainer keyboard interactions", () => {
       Categories_Event.SOMEDAY_WEEK,
     );
   });
+
+  it("migrates event to Someday Week when Meta+Ctrl+ArrowUp is pressed", async () => {
+    const onSubmit = jest.fn();
+    const contextValue = {
+      state: {
+        draft: null,
+        isDrafting: false,
+        isOverGrid: false,
+        isSomedayFormOpen: false,
+      } as any,
+      setters: {
+        setIsSomedayFormOpen: jest.fn(),
+      } as any,
+      actions: {
+        onDraft: jest.fn(),
+        onMigrate: jest.fn(),
+        discard: jest.fn(),
+        reset: jest.fn(),
+        closeForm: jest.fn(),
+        close: jest.fn(),
+        onSubmit,
+      } as any,
+    };
+
+    const weekViewRange = { startDate: "2020-01-05", endDate: "2020-01-11" };
+
+    render(
+      <SidebarDraftContext.Provider value={contextValue as any}>
+        <SomedayEventContainer
+          category={Categories_Event.SOMEDAY_MONTH}
+          event={LEARN_CHINESE}
+          isDrafting={false}
+          isDragging={false}
+          isOverGrid={false}
+          onSubmit={onSubmit}
+          provided={
+            {
+              draggableProps: {
+                "data-rfd-draggable-context-id": "mock-context",
+                "data-rfd-draggable-id": "mock-id",
+                style: {},
+              },
+              dragHandleProps: null,
+              innerRef: jest.fn(),
+            } as DraggableProvided
+          }
+          snapshot={{ isDragging: false } as DraggableStateSnapshot}
+          setEvent={jest.fn()}
+          weekViewRange={weekViewRange}
+        />
+      </SidebarDraftContext.Provider>,
+    );
+
+    const btn = document.querySelector(
+      `[data-event-id="${LEARN_CHINESE._id}"]`,
+    )! as HTMLElement;
+    btn.focus();
+    fireEvent.keyDown(btn, { key: "ArrowUp", metaKey: true, ctrlKey: true });
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it("migrates event to Someday Month when Meta+Ctrl+ArrowDown is pressed", async () => {
+    const onSubmit = jest.fn();
+    const contextValue = {
+      state: {
+        draft: null,
+        isDrafting: false,
+        isOverGrid: false,
+        isSomedayFormOpen: false,
+      } as any,
+      setters: {
+        setIsSomedayFormOpen: jest.fn(),
+      } as any,
+      actions: {
+        onDraft: jest.fn(),
+        onMigrate: jest.fn(),
+        discard: jest.fn(),
+        reset: jest.fn(),
+        closeForm: jest.fn(),
+        close: jest.fn(),
+        onSubmit,
+      } as any,
+    };
+
+    const weekViewRange = { startDate: "2020-01-01", endDate: "2020-01-07" };
+
+    render(
+      <SidebarDraftContext.Provider value={contextValue as any}>
+        <SomedayEventContainer
+          category={Categories_Event.SOMEDAY_WEEK}
+          event={LEARN_CHINESE}
+          isDrafting={false}
+          isDragging={false}
+          isOverGrid={false}
+          onSubmit={onSubmit}
+          provided={
+            {
+              draggableProps: {
+                "data-rfd-draggable-context-id": "mock-context",
+                "data-rfd-draggable-id": "mock-id",
+                style: {},
+              },
+              dragHandleProps: null,
+              innerRef: jest.fn(),
+            } as DraggableProvided
+          }
+          snapshot={{ isDragging: false } as DraggableStateSnapshot}
+          setEvent={jest.fn()}
+          weekViewRange={weekViewRange}
+        />
+      </SidebarDraftContext.Provider>,
+    );
+
+    const btn = document.querySelector(
+      `[data-event-id="${LEARN_CHINESE._id}"]`,
+    )! as HTMLElement;
+    btn.focus();
+    fireEvent.keyDown(btn, { key: "ArrowDown", metaKey: true, ctrlKey: true });
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
 });
