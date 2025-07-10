@@ -144,6 +144,8 @@ describe("SomedayEventContainer keyboard interactions", () => {
     fireEvent.keyDown(btn, { key: "ArrowUp", metaKey: true, ctrlKey: true });
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
+
+    // TODO: Do a date validation
   });
 
   it("migrates event to Someday Month when Meta+Ctrl+ArrowDown is pressed", async () => {
@@ -205,5 +207,7 @@ describe("SomedayEventContainer keyboard interactions", () => {
     fireEvent.keyDown(btn, { key: "ArrowDown", metaKey: true, ctrlKey: true });
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
+
+    // TODO: Do a date validation
   });
 });
