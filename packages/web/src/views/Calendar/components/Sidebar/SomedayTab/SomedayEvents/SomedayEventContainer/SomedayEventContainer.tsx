@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { toast } from "react-toastify";
 import { Key } from "ts-key-enum";
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import { computeCurrentEventDateRange } from "@web/common/utils/web.date.util";
 import { useDraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { Setters_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
@@ -53,10 +55,44 @@ export const SomedayEventContainer = ({
   const [isFocused, setIsFocused] = useState(false);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // ENTER opens the edit form
     if (e.key === Key.Enter) {
       e.preventDefault();
       e.stopPropagation();
       actions.onDraft(event, category);
+      return;
+    }
+
+    // META + CTRL + UP/DOWN should migrate the event between Someday lists
+    const isMetaCtrl = e.metaKey && e.ctrlKey;
+    const isArrowUp = e.key === "ArrowUp";
+    const isArrowDown = e.key === "ArrowDown";
+
+    if (isMetaCtrl && (isArrowUp || isArrowDown)) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Prevent migrating recurring events
+      const canMigrate =
+        !event.recurrence?.rule || event.recurrence?.rule.length === 0;
+
+      if (!canMigrate) {
+        toast.error("Can't migrate recurring events");
+        return;
+      }
+
+      const duration = isArrowUp ? "week" : "month";
+      const targetCategory = isArrowUp
+        ? Categories_Event.SOMEDAY_WEEK
+        : Categories_Event.SOMEDAY_MONTH;
+
+      const updatedEvent = computeCurrentEventDateRange(
+        { duration },
+        event,
+        weekViewRange,
+      );
+
+      actions.onSubmit(targetCategory, updatedEvent);
     }
   };
 
