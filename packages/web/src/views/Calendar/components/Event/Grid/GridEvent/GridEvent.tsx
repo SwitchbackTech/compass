@@ -6,6 +6,7 @@ import React, {
   memo,
   useMemo,
 } from "react";
+import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
 import {
   DATA_EVENT_ELEMENT_ID,
@@ -34,6 +35,8 @@ interface Props {
   isDragging: boolean;
   isPlaceholder: boolean;
   isResizing: boolean;
+  isRecurring: boolean;
+  isInPast: boolean;
   measurements: Measurements_Grid;
   onEventMouseDown: (event: Schema_GridEvent, e: MouseEvent) => void;
   onScalerMouseDown: (
@@ -47,6 +50,7 @@ interface Props {
 const _GridEvent = (
   {
     event: _event,
+
     isDraft,
     isDragging,
     isPlaceholder,
@@ -83,6 +87,7 @@ const _GridEvent = (
     allDay: event.isAllDay || false,
     className: isDraft ? "active" : undefined,
     height: position.height || 0,
+    isRecurring,
     isDragging,
     isInPast,
     isPlaceholder,
@@ -93,7 +98,7 @@ const _GridEvent = (
     onMouseDown: (e: MouseEvent) => {
       if (isRecurring) {
         console.log(event);
-        alert("Can't edit recurring events (yet)");
+        toast("Can't edit recurring events (yet)");
         e.stopPropagation();
         return;
       }
@@ -140,7 +145,7 @@ const _GridEvent = (
                 showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
                 onMouseDown={(e) => {
                   if (isRecurring) {
-                    alert("Can't edit recurring events (yet)");
+                    toast("Can't edit recurring events (yet)");
                     e.stopPropagation();
                     return;
                   }
