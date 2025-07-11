@@ -4,6 +4,7 @@ import {
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
+import { UserMetadata } from "@core/types/user.types";
 
 /** Event utilities for Compass events */
 
@@ -83,3 +84,17 @@ export const filterBaseEvents = (e: Schema_Event[]) => {
  */
 export const filterExistingInstances = (e: Schema_Event[]) =>
   e.filter(isExistingInstance);
+
+export const shouldImportGCal = (metadata: UserMetadata): boolean => {
+  const sync = metadata.sync;
+
+  switch (sync?.importGCal) {
+    case "importing":
+    case "completed":
+      return false;
+    case "restart":
+    case "errored":
+    default:
+      return true;
+  }
+};

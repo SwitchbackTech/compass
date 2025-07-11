@@ -16,10 +16,5 @@ export interface Schema_User {
 }
 
 export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
-  sync?: {
-    importGCal?: {
-      importing?: boolean; // gCal import in progress
-      lastGCalSync?: string; // utc Date string
-    };
-  };
+  sync?: { importGCal?: "importing" | "errored" | "completed" | "restart" };
 }

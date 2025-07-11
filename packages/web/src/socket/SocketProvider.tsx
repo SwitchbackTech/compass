@@ -11,6 +11,7 @@ import {
   USER_SIGN_OUT,
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
+import { shouldImportGCal } from "@core/util/event/event.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import {
@@ -98,12 +99,12 @@ const SocketProvider = ({ children }: { children: ReactNode }) => {
   }, [dispatch]);
 
   const onMetadataFetch = useCallback(
-    (data: UserMetadata) => {
-      const { importing, lastGCalSync } = data.sync?.importGCal ?? {};
+    (metadata: UserMetadata) => {
+      const importGcal = shouldImportGCal(metadata);
 
-      onImportStart(importing);
+      onImportStart(metadata.sync?.importGCal === "importing");
 
-      if (!importing && !lastGCalSync) {
+      if (importGcal) {
         dispatch(importGCalSlice.actions.request(undefined));
       }
     },
