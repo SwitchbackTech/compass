@@ -276,7 +276,7 @@ export const EventForm: React.FC<FormProps> = ({
   );
 
   useHotkeys(
-    "meta+shift+left",
+    "meta+ctrl+left",
     () => {
       if (isDraft) {
         return;

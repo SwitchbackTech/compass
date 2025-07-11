@@ -26,12 +26,12 @@ export const SomedayEventRectangle = ({
   const canMigrate =
     !event.recurrence?.rule || event.recurrence?.rule.length === 0;
 
-  useHotkeys("ctrl+meta+arrowleft", () => {
-    onMigrate(event, category, "back");
-  });
-  useHotkeys("ctrl+meta+arrowright", () => {
-    onMigrate(event, category, "forward");
-  });
+  // useHotkeys("ctrl+meta+arrowleft", () => {
+  //   onMigrate(event, category, "back");
+  // });
+  // useHotkeys("ctrl+meta+arrowright", () => {
+  //   onMigrate(event, category, "forward");
+  // });
 
   return (
     <div ref={formProps.refs.setReference} {...formProps.getReferenceProps()}>
