@@ -1,4 +1,5 @@
 import React from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
@@ -24,6 +25,13 @@ export const SomedayEventRectangle = ({
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
   const canMigrate =
     !event.recurrence?.rule || event.recurrence?.rule.length === 0;
+
+  // useHotkeys("ctrl+meta+arrowleft", () => {
+  //   onMigrate(event, category, "back");
+  // });
+  // useHotkeys("ctrl+meta+arrowright", () => {
+  //   onMigrate(event, category, "forward");
+  // });
 
   return (
     <div ref={formProps.refs.setReference} {...formProps.getReferenceProps()}>
