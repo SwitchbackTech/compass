@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { EVENT_CHANGED } from "@core/constants/websocket.constants";
 import { isBase, isExistingInstance } from "@core/util/event/event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -11,6 +12,10 @@ import {
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
+import { SyncDriver } from "../../__tests__/drivers/sync.driver";
+import { UserDriver } from "../../__tests__/drivers/user.driver";
+import { waitUntilEvent } from "../../common/helpers/common.util";
+import userService from "../../user/services/user.service";
 
 describe("SyncController", () => {
   const baseDriver = new BaseDriver();
@@ -37,6 +42,7 @@ describe("SyncController", () => {
       beforeAll(async () => {
         const websocketClient = baseDriver.createWebsocketClient({
           userId: setup.userId,
+          sessionId: randomUUID(),
         });
 
         await cleanupCollections(setup.db);
@@ -145,7 +151,19 @@ describe("SyncController", () => {
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
         const { userId } = setup;
 
-        const websocketClient = baseDriver.createWebsocketClient({ userId });
+        const websocketClient = baseDriver.createWebsocketClient({
+          userId,
+          sessionId: randomUUID(),
+        });
+
+        const { sync } = await userService.fetchUserMetadata(userId);
+
+        expect(sync?.importGCal).toEqual("completed");
+
+        await userService.updateUserMetadata({
+          userId,
+          data: { sync: { importGCal: "restart" } },
+        });
 
         await syncDriver.waitUntilImportGCalEnd(websocketClient, () =>
           syncDriver.importGCal({ userId }),
@@ -160,50 +178,282 @@ describe("SyncController", () => {
       });
     });
 
+    describe("Import Status: ", () => {
+      it("should not retry import once it has completed", async () => {
+        const user = await UserDriver.createUser();
+        const userId = user._id.toString();
+
+        await SyncDriver.createSync(user);
+
+        const websocketClient = baseDriver.createWebsocketClient(
+          { userId, sessionId: randomUUID() },
+          { autoConnect: false },
+        );
+
+        await waitUntilEvent(websocketClient, "connect", 100, () =>
+          Promise.resolve(websocketClient.connect()),
+        );
+
+        const reason = await syncDriver.waitUntilImportGCalEnd(
+          websocketClient,
+          () => syncDriver.importGCal({ userId }),
+          (reason) => Promise.resolve(reason),
+        );
+
+        expect(reason).toBeNull();
+
+        const { sync } = await userService.fetchUserMetadata(userId);
+
+        expect(sync?.importGCal).toEqual("completed");
+
+        const getGCalEventsSyncPageTokenSpy = jest
+          .spyOn(syncQueries, "getGCalEventsSyncPageToken")
+          .mockResolvedValue("5");
+
+        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+
+        const failReason = await syncDriver.waitUntilImportGCalEnd(
+          websocketClient,
+          () => syncDriver.importGCal({ userId }),
+          (reason) => Promise.resolve(reason),
+        );
+
+        expect(failReason).toEqual(
+          `User ${userId} gcal import is in progress or completed, ignoring this request`,
+        );
+
+        expect(getAllEventsSpy).not.toHaveBeenCalled();
+
+        await waitUntilEvent(websocketClient, "disconnect", 100, () =>
+          Promise.resolve(websocketClient.disconnect()),
+        );
+
+        getAllEventsSpy.mockRestore();
+        getGCalEventsSyncPageTokenSpy.mockRestore();
+      });
+
+      it("should not retry import if it is in progress", async () => {
+        const getGCalEventsSyncPageTokenSpy = jest
+          .spyOn(syncQueries, "getGCalEventsSyncPageToken")
+          .mockResolvedValue("5");
+
+        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+        const user = await UserDriver.createUser();
+        const userId = user._id.toString();
+
+        await SyncDriver.createSync(user);
+
+        const websocketClient = baseDriver.createWebsocketClient(
+          { userId, sessionId: randomUUID() },
+          { autoConnect: false },
+        );
+
+        await waitUntilEvent(websocketClient, "connect", 100, () =>
+          Promise.resolve(websocketClient.connect()),
+        );
+
+        await userService.updateUserMetadata({
+          userId,
+          data: { sync: { importGCal: "importing" } },
+        });
+
+        const failReason = await syncDriver.waitUntilImportGCalEnd(
+          websocketClient,
+          () => syncDriver.importGCal({ userId }),
+          (reason) => Promise.resolve(reason),
+        );
+
+        expect(failReason).toEqual(
+          `User ${userId} gcal import is in progress or completed, ignoring this request`,
+        );
+
+        expect(getAllEventsSpy).not.toHaveBeenCalled();
+
+        await waitUntilEvent(websocketClient, "disconnect", 100, () =>
+          Promise.resolve(websocketClient.disconnect()),
+        );
+
+        getAllEventsSpy.mockRestore();
+        getGCalEventsSyncPageTokenSpy.mockRestore();
+      });
+
+      it("should retry import if it is restarted", async () => {
+        const getGCalEventsSyncPageTokenSpy = jest
+          .spyOn(syncQueries, "getGCalEventsSyncPageToken")
+          .mockResolvedValue("5");
+
+        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+        const user = await UserDriver.createUser();
+        const userId = user._id.toString();
+
+        await SyncDriver.createSync(user);
+
+        const websocketClient = baseDriver.createWebsocketClient(
+          { userId, sessionId: randomUUID() },
+          { autoConnect: false },
+        );
+
+        await waitUntilEvent(websocketClient, "connect", 100, () =>
+          Promise.resolve(websocketClient.connect()),
+        );
+
+        await userService.updateUserMetadata({
+          userId,
+          data: { sync: { importGCal: "restart" } },
+        });
+
+        const failReason = await syncDriver.waitUntilImportGCalEnd(
+          websocketClient,
+          () => syncDriver.importGCal({ userId }),
+          (reason) => Promise.resolve(reason),
+        );
+
+        expect(failReason).toBeNull();
+
+        expect(getAllEventsSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ pageToken: "5" }),
+        );
+
+        await waitUntilEvent(websocketClient, "disconnect", 100, () =>
+          Promise.resolve(websocketClient.disconnect()),
+        );
+
+        getAllEventsSpy.mockRestore();
+        getGCalEventsSyncPageTokenSpy.mockRestore();
+      });
+
+      it("should retry import if it failed", async () => {
+        const getGCalEventsSyncPageTokenSpy = jest
+          .spyOn(syncQueries, "getGCalEventsSyncPageToken")
+          .mockResolvedValue("5");
+
+        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+        const user = await UserDriver.createUser();
+        const userId = user._id.toString();
+
+        await SyncDriver.createSync(user);
+
+        const websocketClient = baseDriver.createWebsocketClient(
+          { userId, sessionId: randomUUID() },
+          { autoConnect: false },
+        );
+
+        await waitUntilEvent(websocketClient, "connect", 100, () =>
+          Promise.resolve(websocketClient.connect()),
+        );
+
+        await userService.updateUserMetadata({
+          userId,
+          data: { sync: { importGCal: "errored" } },
+        });
+
+        const failReason = await syncDriver.waitUntilImportGCalEnd(
+          websocketClient,
+          () => syncDriver.importGCal({ userId }),
+          (reason) => Promise.resolve(reason),
+        );
+
+        expect(failReason).toBeNull();
+
+        expect(getAllEventsSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ pageToken: "5" }),
+        );
+
+        await waitUntilEvent(websocketClient, "disconnect", 100, () =>
+          Promise.resolve(websocketClient.disconnect()),
+        );
+
+        getAllEventsSpy.mockRestore();
+        getGCalEventsSyncPageTokenSpy.mockRestore();
+      });
+    });
+
     describe("Frontend Notifications", () => {
       beforeEach(() => cleanupCollections(setup.db));
 
       it("should notify the frontend that the import has started", async () => {
-        const websocketClient = baseDriver.createWebsocketClient({
-          userId: setup.userId,
-        });
+        const user = await UserDriver.createUser();
+        const userId = user._id.toString();
+
+        await SyncDriver.createSync(user);
+
+        const websocketClient = baseDriver.createWebsocketClient(
+          { userId },
+          { autoConnect: false },
+        );
+
+        await waitUntilEvent(websocketClient, "connect", 100, () =>
+          Promise.resolve(websocketClient.connect()),
+        );
 
         await expect(
           syncDriver.waitUntilImportGCalStart<boolean>(
             websocketClient,
-            () => syncDriver.importGCal({ userId: setup.userId }),
+            () => syncDriver.importGCal({ userId }),
             () => Promise.resolve(true),
           ),
         ).resolves.toBeTruthy();
+
+        await waitUntilEvent(websocketClient, "disconnect", 100, () =>
+          Promise.resolve(websocketClient.disconnect()),
+        );
       });
 
       it("should notify the frontend that the import is complete", async () => {
-        const websocketClient = baseDriver.createWebsocketClient({
-          userId: setup.userId,
-        });
+        const user = await UserDriver.createUser();
+        const userId = user._id.toString();
+
+        await SyncDriver.createSync(user);
+
+        const websocketClient = baseDriver.createWebsocketClient(
+          { userId },
+          { autoConnect: false },
+        );
+
+        await waitUntilEvent(websocketClient, "connect", 100, () =>
+          Promise.resolve(websocketClient.connect()),
+        );
 
         await expect(
           syncDriver.waitUntilImportGCalEnd(
             websocketClient,
-            () => syncDriver.importGCal({ userId: setup.userId }),
+            () => syncDriver.importGCal({ userId }),
             (reason) => Promise.resolve(reason),
           ),
         ).resolves.toBeNull();
+
+        await waitUntilEvent(websocketClient, "disconnect", 100, () =>
+          Promise.resolve(websocketClient.disconnect()),
+        );
       });
 
       it("should notify the frontend to refetch the calendar events on completion", async () => {
-        const websocketClient = baseDriver.createWebsocketClient({
-          userId: setup.userId,
-        });
+        const user = await UserDriver.createUser();
+        const userId = user._id.toString();
+
+        await SyncDriver.createSync(user);
+
+        const websocketClient = baseDriver.createWebsocketClient(
+          { userId },
+          { autoConnect: false },
+        );
+
+        await waitUntilEvent(websocketClient, "connect", 100, () =>
+          Promise.resolve(websocketClient.connect()),
+        );
 
         await expect(
           baseDriver.waitUntilWebsocketEvent(
             websocketClient,
             EVENT_CHANGED,
-            () => syncDriver.importGCal({ userId: setup.userId }),
+            () => syncDriver.importGCal({ userId }),
             () => Promise.resolve(true),
           ),
         ).resolves.toBeTruthy();
+
+        await waitUntilEvent(websocketClient, "disconnect", 100, () =>
+          Promise.resolve(websocketClient.disconnect()),
+        );
       });
     });
   });

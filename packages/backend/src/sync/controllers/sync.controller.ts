@@ -117,7 +117,7 @@ class SyncController {
         if (!proceed) {
           webSocketServer.handleImportGCalEnd(
             userId,
-            `User ${userId} is already importing GCal, ignoring this request`,
+            `User ${userId} gcal import is in progress or completed, ignoring this request`,
           );
 
           return;
