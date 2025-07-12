@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { Payload_Sync_Notif } from "@core/types/sync.types";
+import { shouldImportGCal } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
@@ -96,20 +97,27 @@ class SyncController {
   importGCal = async (req: Request, res: Response): Promise<Response> => {
     const userId = req.session!.getUserId()!;
     const gcalClient = await getGcalClient(userId);
-    const gCalendarIds = await initSync(gcalClient, userId);
-    const lastGCalSync = new Date().toUTCString();
+    const sync = await getSync({ userId });
+
+    let gCalendarIds: string[] =
+      sync?.google.calendarlist.map((item) => item.gCalendarId) ?? [];
+
+    if (!sync) gCalendarIds = await initSync(gcalClient, userId);
+
+    logger.debug(
+      `starting gCal(${gCalendarIds.toString()}) imports for user(${userId})`,
+    );
 
     webSocketServer.handleImportGCalStart(userId);
 
     userService
       .fetchUserMetadata(userId)
-      .then(async (metadata) => {
-        const sync = metadata.sync ?? {};
-
-        if (sync?.importGCal?.importing) {
+      .then(shouldImportGCal)
+      .then(async (proceed) => {
+        if (!proceed) {
           webSocketServer.handleImportGCalEnd(
             userId,
-            `User ${userId} is already importing GCal, ignoring this request`,
+            `User ${userId} gcal import is in progress or completed, ignoring this request`,
           );
 
           return;
@@ -117,21 +125,26 @@ class SyncController {
 
         await userService.updateUserMetadata({
           userId,
-          data: { sync: { importGCal: { importing: true, lastGCalSync } } },
+          data: { sync: { importGCal: "importing" } },
         });
 
         await syncService.importFull(gcalClient, gCalendarIds, userId);
 
         await userService.updateUserMetadata({
           userId,
-          data: { sync: { importGCal: { importing: false } } },
+          data: { sync: { importGCal: "completed" } },
         });
 
         webSocketServer.handleImportGCalEnd(userId);
         webSocketServer.handleBackgroundCalendarChange(userId);
       })
-      .catch((err) => {
+      .catch(async (err) => {
         const message = `Import gCal failed for user: ${userId}`;
+
+        await userService.updateUserMetadata({
+          userId,
+          data: { sync: { importGCal: "errored" } },
+        });
 
         webSocketServer.handleImportGCalEnd(userId, message);
 
