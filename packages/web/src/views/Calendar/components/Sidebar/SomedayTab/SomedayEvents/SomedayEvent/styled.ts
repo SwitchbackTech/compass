@@ -59,10 +59,7 @@ export const StyledNewSomedayEvent = styled.div<Props>`
   border-radius: 2px;
   color: ${({ theme }) => theme.color.text.dark};
   height: ${SOMEDAY_EVENT_HEIGHT}px;
-  filter: brightness(
-    ${({ isDragging, isFocused }) =>
-      isFocused && !isDragging ? "160%" : "100%"}
-  );
+  filter: brightness(${({ isFocused }) => (isFocused ? "160%" : "100%")});
   margin-bottom: 2px;
   opacity: ${({ isDragging, isOverGrid }) => {
     if (isDragging && isOverGrid) return 0;
