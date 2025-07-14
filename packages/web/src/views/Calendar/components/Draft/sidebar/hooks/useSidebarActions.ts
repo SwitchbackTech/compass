@@ -373,6 +373,10 @@ export const useSidebarActions = (
     if (!event) return;
 
     let _event = { ...event };
+    // We need to provide it to pass zod validation.
+    // Order is already corrected after the event is submitted
+    // so its okay to provide any random int (hence -1)
+    _event.order = -1;
 
     if (!_event.startDate || !_event.endDate) {
       // This probably means we are creating a new event, hence why we don't have start/end dates
