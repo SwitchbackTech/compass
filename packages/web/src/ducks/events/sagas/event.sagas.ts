@@ -81,10 +81,12 @@ export function* createEvent({ payload }: Action_CreateEvent) {
   try {
     yield* insertOptimisticEvent(event, payload.isSomeday);
 
-    const res = (yield call(
-      EventApi.create,
-      payload,
-    )) as Response_CreateEventSaga;
+    const res = (yield call(EventApi.create, {
+      data: payload,
+      options: {
+        noSyncToGcal: true, // THIS SHOULD BE DYNAMIC BASED ON USER SETTING
+      },
+    })) as Response_CreateEventSaga;
 
     yield* replaceOptimisticId(optimisticId, res.data._id, payload.isSomeday);
 
