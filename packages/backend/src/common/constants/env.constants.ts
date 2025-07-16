@@ -6,6 +6,7 @@ import { isDev } from "@core/util/env.util";
 const logger = Logger("app:constants");
 
 const _nodeEnv = process.env["NODE_ENV"] as NodeEnv;
+
 if (!Object.values(NodeEnv).includes(_nodeEnv)) {
   throw new Error(`Invalid NODE_ENV value: '${_nodeEnv}'`);
 }
@@ -25,6 +26,7 @@ const EnvSchema = z
     EMAILER_USER_TAG_ID: z.string().nonempty().optional(),
     MONGO_URI: z.string().nonempty(),
     NODE_ENV: z.nativeEnum(NodeEnv),
+    TZ: z.string().nonempty().default("UTC"),
     ORIGINS_ALLOWED: z.array(z.string().nonempty()).default([]),
     PORT: z.string().nonempty().default(PORT_DEFAULT_BACKEND.toString()),
     SUPERTOKENS_URI: z.string().nonempty(),
@@ -62,6 +64,7 @@ export const ENV = {
   EMAILER_USER_TAG_ID: process.env["EMAILER_USER_TAG_ID"],
   MONGO_URI: process.env["MONGO_URI"],
   NODE_ENV: _nodeEnv,
+  TZ: process.env.TZ,
   ORIGINS_ALLOWED: process.env["CORS"] ? process.env["CORS"].split(",") : [],
   PORT: process.env["PORT"],
   SUPERTOKENS_URI: process.env["SUPERTOKENS_URI"],
