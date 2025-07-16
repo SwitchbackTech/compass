@@ -56,6 +56,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   filter: ${({ isRecurring, isInPast }) =>
     isRecurring || isInPast ? "brightness(0.7)" : "brightness(1)"};
   height: ${({ height }) => height}px;
+  min-height: 10px;
   left: ${(props) => props.left}px;
   opacity: ${(props) => props.opacity};
   overflow: hidden;
