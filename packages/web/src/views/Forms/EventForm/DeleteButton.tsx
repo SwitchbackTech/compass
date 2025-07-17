@@ -1,17 +1,21 @@
 import React from "react";
 import { Trash } from "@phosphor-icons/react";
-import TooltipIconButton from "@web/components/TooltipIconButton/TooltipIconButton";
+import MenuItem from "../ActionsMenu/MenuItem";
 
-export const DeleteButton = ({ onClick }: { onClick: () => void }) => {
+interface Props {
+  onClick: () => void;
+}
+
+export const DeleteButton: React.FC<Props> = ({ onClick }) => {
   return (
-    <TooltipIconButton
-      icon={<Trash />}
-      buttonProps={{ "aria-label": "Delete Event [DEL]" }}
-      tooltipProps={{
-        shortcut: "DEL",
-        description: "Delete Event",
-        onClick,
-      }}
-    />
+    <MenuItem
+      role="menuitem"
+      onClick={onClick}
+      aria-label="Delete Event"
+      tooltipContent={<span>DEL</span>}
+    >
+      <Trash size={16} />
+      <span>Delete</span>
+    </MenuItem>
   );
 };
