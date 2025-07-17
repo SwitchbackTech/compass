@@ -11,12 +11,20 @@ import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
 import eventService from "@backend/event/services/event.service";
 
 class EventController {
-  create = async (req: SReqBody<Schema_Event>, res: Res_Promise) => {
+  create = async (
+    req: SReqBody<{
+      options: {
+        noSyncToGcal?: boolean;
+      };
+      data: Schema_Event | Schema_Event[];
+    }>,
+    res: Res_Promise,
+  ) => {
     const userId = req.session?.getUserId() as string;
 
     try {
-      if (req.body instanceof Array) {
-        const events = req.body as Schema_Event[];
+      if (req.body.data instanceof Array) {
+        const events = req.body.data as Schema_Event[];
 
         const validatedEvents = events.map((event) => {
           const validated = validateEvent(event);
@@ -30,10 +38,14 @@ class EventController {
         return;
       }
 
-      const event = req.body;
+      const event = req.body.data as Schema_Event;
       validateEvent(event);
 
-      const response = await eventService.create(userId, event as Event_Core);
+      const response = await eventService.create(
+        userId,
+        event as Event_Core,
+        req.body.options.noSyncToGcal,
+      );
 
       res.promise(response);
     } catch (e) {

@@ -15,7 +15,11 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 dayjs.extend(tz);
 dayjs.extend(utc);
 
-export const getCreateParams = (userId: string, event: Schema_Event_Core) => {
+export const getCreateParams = (
+  userId: string,
+  event: Schema_Event_Core,
+  noSyncToGcal?: boolean,
+) => {
   const _event = {
     ...event,
     _id: undefined,
@@ -23,7 +27,7 @@ export const getCreateParams = (userId: string, event: Schema_Event_Core) => {
     user: userId,
   };
 
-  const syncToGcal = !event.isSomeday;
+  const syncToGcal = !event.isSomeday && !noSyncToGcal;
   const isRecurring = !event?.recurrence?.rule
     ? false
     : event.recurrence.rule.length > 0;
