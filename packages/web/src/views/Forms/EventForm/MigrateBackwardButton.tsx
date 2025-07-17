@@ -3,44 +3,35 @@ import styled from "styled-components";
 import { ArrowLeft } from "@phosphor-icons/react";
 import { getMetaKey } from "@web/common/utils/shortcut.util";
 import { Text } from "@web/components/Text";
-import TooltipIconButton from "@web/components/TooltipIconButton/TooltipIconButton";
-
-const StyledMigrateBackwardButton = styled.div`
-  font-size: 25px;
-  &:hover {
-    cursor: pointer;
-  }
-`;
+import MenuItem from "../ActionsMenu/MenuItem";
 
 const StyledArrowLeft = styled(ArrowLeft)`
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
 `;
 
-export const MigrateBackwardButton = ({
+interface Props {
+  onClick: () => void;
+  tooltipText?: string;
+}
+
+export const MigrateBackwardButton: React.FC<Props> = ({
   onClick,
   tooltipText = "Migrate Backward",
-}: {
-  onClick: () => void;
-  tooltipText: string;
 }) => {
   return (
-    <TooltipIconButton
-      component={
-        <StyledMigrateBackwardButton id="migrate-backward-button" role="button">
-          {"<"}
-        </StyledMigrateBackwardButton>
+    <MenuItem
+      role="menuitem"
+      onClick={onClick}
+      aria-label={tooltipText}
+      tooltipContent={
+        <Text size="s" style={{ display: "flex", alignItems: "center" }}>
+          CTRL + {getMetaKey()} + <StyledArrowLeft />
+        </Text>
       }
-      buttonProps={{ "aria-label": tooltipText }}
-      tooltipProps={{
-        description: tooltipText,
-        onClick,
-        shortcut: (
-          <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-            CTRL + {getMetaKey()} + <StyledArrowLeft />
-          </Text>
-        ),
-      }}
-    />
+    >
+      <ArrowLeft size={16} />
+      <span>{tooltipText}</span>
+    </MenuItem>
   );
 };

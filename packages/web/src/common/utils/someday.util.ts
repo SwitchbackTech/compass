@@ -8,6 +8,7 @@ import {
   Schema_SomedayEventsColumn,
 } from "@web/common/types/web.event.types";
 import { validateSomedayEvents } from "@web/common/validators/someday.event.validator";
+import { ID_SOMEDAY_EVENT_ACTION_MENU } from "@web/views/Forms/SomedayEventForm/SomedayEventActionMenu";
 
 export const getSomedayEventCategory = (
   event: Schema_Event,
@@ -138,4 +139,9 @@ export const setSomedayEventsOrder = (
       availableOrders.length > 0 ? availableOrders.shift()! : nextNewOrder++;
     return { ...event, order };
   });
+};
+
+export const isSomedayEventActionMenuOpen = () => {
+  const actionMenu = document.getElementById(ID_SOMEDAY_EVENT_ACTION_MENU);
+  return !!actionMenu;
 };
