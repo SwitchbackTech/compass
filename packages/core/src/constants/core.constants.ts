@@ -12,6 +12,7 @@ export const SYNC_DEBUG = "/api/sync/debug";
 
 export enum NodeEnv {
   Development = "development",
+  Staging = "staging",
   Production = "production",
   Test = "test",
 }
