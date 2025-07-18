@@ -51,11 +51,14 @@ describe("Event Form", () => {
 
     await act(async () => {
       await user.click(
-        within(form).getByRole("button", {
-          name: /delete event/i,
-        }),
+        within(form).getByRole("button", { name: /open actions menu/i }),
       );
     });
+
+    await waitFor(() => {
+      expect(screen.getByText("Delete")).toBeInTheDocument();
+    });
+    await user.click(screen.getByText("Delete"));
 
     await waitFor(() => {
       expect(screen.queryByRole("form")).not.toBeInTheDocument();
