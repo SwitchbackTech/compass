@@ -225,18 +225,6 @@ export const EventForm: React.FC<FormProps> = ({
   };
 
   useHotkeys(
-    "meta+shift+comma",
-    () => {
-      if (isDraft) {
-        return;
-      }
-
-      onConvert?.();
-    },
-    hotkeysOptions,
-  );
-
-  useHotkeys(
     "delete",
     () => {
       if (isDraft) {
@@ -282,6 +270,22 @@ export const EventForm: React.FC<FormProps> = ({
       enableOnFormTags: true,
     },
     [isFormOpen, onSubmitForm],
+  );
+
+  useHotkeys(
+    "ctrl+meta+left",
+    () => {
+      if (isDraft) {
+        return;
+      }
+
+      onConvert?.();
+    },
+    {
+      enabled: isFormOpen,
+      enableOnFormTags: true,
+    },
+    [isFormOpen],
   );
   return (
     <StyledEventForm
