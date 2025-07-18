@@ -14,8 +14,6 @@ import {
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
-import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
-import { DuplicateButton } from "@web/views/Forms/EventForm/DuplicateButton";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import {
@@ -25,9 +23,8 @@ import {
   StyledTitle,
 } from "@web/views/Forms/EventForm/styled";
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
-import { MigrateBackwardButton } from "../EventForm/MigrateBackwardButton";
-import { MigrateForwardButton } from "../EventForm/MigrateForwardButton";
 import { RepeatSection } from "../EventForm/RepeatSection";
+import { SomedayEventActionMenu } from "./SomedayEventActionMenu";
 
 const hotkeysOptions: OptionsOrDependencyArray = {
   enableOnFormTags: ["input"],
@@ -238,20 +235,17 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       role="form"
     >
       <StyledIconRow>
-        <MigrateBackwardButton
-          tooltipText={`Migrate to previous ${target}`}
-          onClick={() => {
+        <SomedayEventActionMenu
+          target={target}
+          onMigrateBackwardClick={() => {
             onMigrate(event, category, "back");
           }}
-        />
-        <MigrateForwardButton
-          tooltipText={`Migrate to next ${target}`}
-          onClick={() => {
+          onMigrateForwardClick={() => {
             onMigrate(event, category, "forward");
           }}
+          onDuplicateClick={onDuplicateEvent}
+          onDeleteClick={onDelete}
         />
-        <DuplicateButton onClick={onDuplicateEvent} />
-        <DeleteButton onClick={onDelete} />
       </StyledIconRow>
 
       <StyledTitle

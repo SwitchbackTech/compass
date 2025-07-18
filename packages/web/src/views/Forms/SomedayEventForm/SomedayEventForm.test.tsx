@@ -1,7 +1,7 @@
 import React, { act } from "react";
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom/extend-expect";
-import { screen } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
@@ -153,6 +153,7 @@ describe("SomedayEventForm Hotkeys", () => {
   });
 
   test("should call duplicateEvent when duplicate icon btn is clicked", async () => {
+    const user = userEvent.setup();
     render(
       <div>
         <SomedayEventForm
@@ -166,18 +167,18 @@ describe("SomedayEventForm Hotkeys", () => {
       </div>,
     );
 
-    const eventForm = screen.getByRole("form");
+    const form = screen.getByRole("form");
 
-    // Ensure the form is rendered (good sanity check)
-    expect(eventForm).toBeInTheDocument();
+    await act(async () => {
+      await user.click(
+        within(form).getByRole("button", { name: /open actions menu/i }),
+      );
+    });
 
-    const duplicateEventButton = eventForm.querySelector(
-      '[type="button"][aria-label="Duplicate Event [Meta+D]"]',
-    );
-
-    expect(duplicateEventButton).toBeInTheDocument();
-
-    await act(async () => userEvent.click(duplicateEventButton!));
+    await waitFor(() => {
+      expect(screen.getByText("Duplicate")).toBeInTheDocument();
+    });
+    await user.click(screen.getByText("Duplicate"));
 
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
 
@@ -188,6 +189,7 @@ describe("SomedayEventForm Hotkeys", () => {
   });
 
   test("should call onMigrate when migrate backward icon btn is clicked", async () => {
+    const user = userEvent.setup();
     render(
       <div>
         <SomedayEventForm
@@ -201,15 +203,18 @@ describe("SomedayEventForm Hotkeys", () => {
       </div>,
     );
 
-    const eventForm = screen.getByRole("form");
+    const form = screen.getByRole("form");
 
-    const migrateBackwardButton = eventForm.querySelector(
-      '[id="migrate-backward-button"]',
-    );
+    await act(async () => {
+      await user.click(
+        within(form).getByRole("button", { name: /open actions menu/i }),
+      );
+    });
 
-    expect(migrateBackwardButton).toBeInTheDocument();
-
-    await act(async () => userEvent.click(migrateBackwardButton!));
+    await waitFor(() => {
+      expect(screen.getByText("Migrate to previous week")).toBeInTheDocument();
+    });
+    await user.click(screen.getByText("Migrate to previous week"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(
@@ -220,6 +225,8 @@ describe("SomedayEventForm Hotkeys", () => {
   });
 
   test("should call onMigrate when migrate forward icon btn is clicked", async () => {
+    const user = userEvent.setup();
+
     render(
       <div>
         <SomedayEventForm
@@ -233,15 +240,18 @@ describe("SomedayEventForm Hotkeys", () => {
       </div>,
     );
 
-    const eventForm = screen.getByRole("form");
+    const form = screen.getByRole("form");
 
-    const migrateForwardButton = eventForm.querySelector(
-      '[id="migrate-forward-button"]',
-    );
+    await act(async () => {
+      await user.click(
+        within(form).getByRole("button", { name: /open actions menu/i }),
+      );
+    });
 
-    expect(migrateForwardButton).toBeInTheDocument();
-
-    await act(async () => userEvent.click(migrateForwardButton!));
+    await waitFor(() => {
+      expect(screen.getByText("Migrate to next week")).toBeInTheDocument();
+    });
+    await user.click(screen.getByText("Migrate to next week"));
 
     expect(mockOnMigrate).toHaveBeenCalledTimes(1);
     expect(mockOnMigrate).toHaveBeenCalledWith(

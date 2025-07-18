@@ -2,22 +2,26 @@ import React from "react";
 import { Copy } from "@phosphor-icons/react";
 import { getMetaKey } from "@web/common/utils/shortcut.util";
 import { Text } from "@web/components/Text";
-import TooltipIconButton from "@web/components/TooltipIconButton/TooltipIconButton";
+import MenuItem from "../ActionsMenu/MenuItem";
 
-export const DuplicateButton = ({ onClick }: { onClick: () => void }) => {
+interface Props {
+  onClick: () => void;
+}
+
+export const DuplicateButton: React.FC<Props> = ({ onClick }) => {
   return (
-    <TooltipIconButton
-      icon={<Copy />}
-      buttonProps={{ "aria-label": "Duplicate Event [Meta+D]" }}
-      tooltipProps={{
-        shortcut: (
-          <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-            {getMetaKey()} + D
-          </Text>
-        ),
-        description: "Duplicate Event",
-        onClick,
-      }}
-    />
+    <MenuItem
+      role="menuitem"
+      onClick={onClick}
+      aria-label="Duplicate Event"
+      tooltipContent={
+        <Text size="s" style={{ display: "flex", alignItems: "center" }}>
+          {getMetaKey()} + D
+        </Text>
+      }
+    >
+      <Copy size={16} />
+      <span>Duplicate</span>
+    </MenuItem>
   );
 };

@@ -3,44 +3,35 @@ import styled from "styled-components";
 import { ArrowLeft } from "@phosphor-icons/react";
 import { getMetaKey } from "@web/common/utils/shortcut.util";
 import { Text } from "@web/components/Text";
-import TooltipIconButton from "@web/components/TooltipIconButton/TooltipIconButton";
+import MenuItem from "../ActionsMenu/MenuItem";
 
-const StyledMoveToSidebarButton = styled.div`
-  font-size: 25px;
-  &:hover {
-    cursor: pointer;
-  }
-`;
+interface Props {
+  onClick: () => void;
+  label?: string;
+}
 
 const StyledArrowLeft = styled(ArrowLeft)`
   width: 15px;
   height: 15px;
 `;
 
-export const MoveToSidebarButton = ({
+export const MoveToSidebarButton: React.FC<Props> = ({
   onClick,
-  tooltipText = "Move To Sidebar",
-}: {
-  onClick: () => void;
-  tooltipText?: string;
+  label = "Move To Sidebar",
 }) => {
   return (
-    <TooltipIconButton
-      component={
-        <StyledMoveToSidebarButton id="migrate-backward-button" role="button">
-          {"<"}
-        </StyledMoveToSidebarButton>
+    <MenuItem
+      role="menuitem"
+      onClick={onClick}
+      aria-label={label}
+      tooltipContent={
+        <Text size="s" style={{ display: "flex", alignItems: "center" }}>
+          CTRL + {getMetaKey()} + <StyledArrowLeft />
+        </Text>
       }
-      buttonProps={{ "aria-label": tooltipText }}
-      tooltipProps={{
-        description: tooltipText,
-        onClick,
-        shortcut: (
-          <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-            CTRL + {getMetaKey()} + <StyledArrowLeft />
-          </Text>
-        ),
-      }}
-    />
+    >
+      <ArrowLeft size={16} />
+      <span>{label}</span>
+    </MenuItem>
   );
 };

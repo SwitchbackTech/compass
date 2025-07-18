@@ -1,6 +1,6 @@
 import React, { act } from "react";
 import "@testing-library/jest-dom/extend-expect";
-import { screen } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Schema_Event } from "@core/types/event.types";
 import { render } from "@web/__tests__/__mocks__/mock.render";
@@ -132,6 +132,8 @@ test("should call onDuplicate when meta+d keyboard shortcut is used", async () =
 });
 
 test("should call duplicateEvent when duplicate icon btn is clicked", async () => {
+  const user = userEvent.setup();
+
   const sampleEvent: Schema_Event = {
     _id: "event123",
     title: "Test Event for Duplication",
@@ -165,14 +167,18 @@ test("should call duplicateEvent when duplicate icon btn is clicked", async () =
   // Ensure the form is rendered (good sanity check)
   expect(eventForm).toBeInTheDocument();
 
-  const duplicateEventButton = eventForm.querySelector(
-    '[type="button"][aria-label="Duplicate Event [Meta+D]"]',
-  );
+  const form = screen.getByRole("form");
 
-  // Ensure the form is rendered (good sanity check)
-  expect(duplicateEventButton).toBeInTheDocument();
+  await act(async () => {
+    await user.click(
+      within(form).getByRole("button", { name: /open actions menu/i }),
+    );
+  });
 
-  await act(async () => userEvent.click(duplicateEventButton!));
+  await waitFor(() => {
+    expect(screen.getByText("Duplicate")).toBeInTheDocument();
+  });
+  await user.click(screen.getByText("Duplicate"));
 
   expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
   expect(mockOnDuplicate).toHaveBeenCalledWith(sampleEvent);

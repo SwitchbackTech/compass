@@ -18,12 +18,9 @@ import {
 import { SelectOption } from "@web/common/types/component.types";
 import { getCategory } from "@web/common/utils/event.util";
 import { mapToBackend } from "@web/common/utils/web.date.util";
-import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection";
-import { DeleteButton } from "@web/views/Forms/EventForm/DeleteButton";
-import { DuplicateButton } from "@web/views/Forms/EventForm/DuplicateButton";
-import { MoveToSidebarButton } from "@web/views/Forms/EventForm/MoveToSidebarButton";
 import { getFormDates } from "./DateControlsSection/DateTimeSection/form.datetime.util";
+import { EventActionMenu } from "./EventActionMenu";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
 import {
@@ -307,15 +304,14 @@ export const EventForm: React.FC<FormProps> = ({
       role="form"
     >
       <StyledIconRow>
-        {!isDraft && (
-          <MoveToSidebarButton
-            onClick={() => {
-              onConvert?.();
-            }}
-          />
-        )}
-        <DuplicateButton onClick={onDuplicateEvent} />
-        <DeleteButton onClick={onDeleteForm} />
+        <EventActionMenu
+          isDraft={isDraft}
+          onConvert={() => {
+            onConvert?.();
+          }}
+          onDuplicate={onDuplicateEvent}
+          onDelete={onDeleteForm}
+        />
       </StyledIconRow>
 
       <StyledTitle
