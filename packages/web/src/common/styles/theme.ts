@@ -62,6 +62,7 @@ export const theme: DefaultTheme = {
     size: {
       xs: "0.563rem",
       s: "0.688rem",
+      smFluid: "clamp(11px, 1vw, 12px)", // New size
       m: "0.8125rem",
       l: "1rem",
       xl: "1.125rem",
