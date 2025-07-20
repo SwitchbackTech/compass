@@ -92,8 +92,6 @@ module.exports = {
 
   // An enum that specifies notification mode. Requires { notify: true }
   // notifyMode: "failure-change",
-  // A preset that is used as a base for Jest's configuration
-  preset: "@shelf/jest-mongodb", // https://jestjs.io/docs/mongodb
 
   projects: [
     {
@@ -178,6 +176,8 @@ module.exports = {
       ],
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],
+      // A preset that is used as a base for Jest's configuration
+      preset: "@shelf/jest-mongodb", // https://jestjs.io/docs/mongodb,
     },
   ],
   // Use this configuration option to add custom reporters to Jest
