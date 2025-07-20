@@ -1,3 +1,5 @@
+import { mockNodeModules } from "@backend/__tests__/helpers/mock.setup";
+
 jest.mock("@core/logger/winston.logger", () => {
   const mockLogger = {
     debug: jest.fn(),
@@ -12,6 +14,6 @@ jest.mock("@core/logger/winston.logger", () => {
   };
 });
 
-afterAll(() => {
-  jest.clearAllMocks();
-});
+mockNodeModules();
+
+afterAll(() => jest.clearAllMocks());
