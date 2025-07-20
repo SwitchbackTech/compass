@@ -12,6 +12,7 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleDefaultEvent,
   prepEvtBeforeSubmit,
+  prepSomedayEventBeforeSubmit,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
@@ -101,7 +102,15 @@ export const useDraftActions = (
 
   const submit = async (draft: Schema_GridEvent) => {
     const userId = await getUserId();
-    const event = prepEvtBeforeSubmit(draft, userId);
+
+    let event = null;
+    if (draft.isSomeday) {
+      event = prepSomedayEventBeforeSubmit(draft, userId);
+      event.order = -1; // Provide it to prevent zod validation error since zod expects it
+    } else {
+      event = prepEvtBeforeSubmit(draft, userId);
+    }
+
     const { startOfView, endOfView } = weekProps.component;
 
     const isExisting = event._id;
