@@ -1,4 +1,5 @@
 import {
+  cleanupCollections,
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
@@ -6,32 +7,36 @@ import {
   getGCalEventsSyncPageToken,
   updateGCalEventsSyncPageToken,
 } from "@backend/sync/util/sync.queries";
+import { UtilDriver } from "../../__tests__/drivers/util.driver";
 
 describe("sync.queries nextPageToken", () => {
-  let setup: Awaited<ReturnType<typeof setupTestDb>>;
+  beforeAll(setupTestDb);
 
-  beforeAll(async () => {
-    setup = await setupTestDb();
-  });
+  beforeEach(cleanupCollections);
 
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestMongo);
 
   it("updates and retrieves nextPageToken", async () => {
+    const { user } = await UtilDriver.setupTestUser();
     const token = "page123";
     const gCalendarId = "test-calendar";
 
-    await updateGCalEventsSyncPageToken(setup.userId, gCalendarId, token);
+    await updateGCalEventsSyncPageToken(
+      user._id.toString(),
+      gCalendarId,
+      token,
+    );
 
     await expect(
-      getGCalEventsSyncPageToken(setup.userId, gCalendarId),
+      getGCalEventsSyncPageToken(user._id.toString(), gCalendarId),
     ).resolves.toBe(token);
   });
 
   it("returns undefined when token not found", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+
     await expect(
-      getGCalEventsSyncPageToken(setup.userId, "missing-cal"),
+      getGCalEventsSyncPageToken(user._id.toString(), "missing-cal"),
     ).resolves.toBeUndefined();
   });
 });

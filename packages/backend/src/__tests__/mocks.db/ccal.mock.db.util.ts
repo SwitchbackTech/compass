@@ -9,10 +9,9 @@ import {
   createMockInstance,
 } from "@core/util/test/ccal.event.factory";
 import { Collections } from "@backend/common/constants/collections";
-import { TestSetup } from "../helpers/mock.db.setup";
+import mongoService from "../../common/services/mongo.service";
 
 export const createRecurrenceSeries = async (
-  setup: TestSetup,
   baseOverrides: Partial<Schema_Event_Recur_Base>,
   instanceOverrides?: Partial<Schema_Event_Recur_Instance>,
 ) => {
@@ -34,7 +33,7 @@ export const createRecurrenceSeries = async (
     ...instanceOverrides,
   });
 
-  await setup.db
+  await mongoService.db
     .collection(Collections.EVENT)
     .insertMany([
       withObjectId(baseEvent),
@@ -42,7 +41,10 @@ export const createRecurrenceSeries = async (
       withObjectId(instance2),
     ]);
 
-  const status = await setup.db.collection(Collections.EVENT).find().toArray();
+  const status = await mongoService.db
+    .collection(Collections.EVENT)
+    .find()
+    .toArray();
   const meta = { createdCount: status.length };
   return {
     state: {

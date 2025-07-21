@@ -2,38 +2,28 @@ import { Categories_Recurrence } from "@core/types/event.types";
 import { categorizeEvents } from "@core/util/event/event.util";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
-  TestSetup,
   cleanupCollections,
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
+import { UtilDriver } from "../../../../__tests__/drivers/util.driver";
 import { GcalSyncProcessor } from "../gcal.sync.processor";
 
 describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
-  let setup: TestSetup;
-  let repo: RecurringEventRepository;
+  beforeAll(setupTestDb);
 
-  beforeAll(async () => {
-    setup = await setupTestDb();
-    repo = new RecurringEventRepository(setup.userId);
-  });
+  beforeEach(cleanupCollections);
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
-
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestMongo);
 
   it("should handle UPSERTING a TIMED INSTANCE", async () => {
     /* Assemble */
-    const { gcalEvents } = await simulateDbAfterGcalImport(
-      setup.db,
-      setup.userId,
-    );
+    const { user } = await UtilDriver.setupTestUser();
+    const repo = new RecurringEventRepository(user._id.toString());
+
+    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
     // Simulate a change to the instance in GCal
     const origInstance = gcalEvents.instances[1];
@@ -56,7 +46,9 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
     });
 
     // Verify no other events were deleted
-    const remainingEvents = await getEventsInDb().then((events) =>
+    const remainingEvents = await getEventsInDb({
+      user: user._id.toString(),
+    }).then((events) =>
       events.map((event) => ({ ...event, _id: event._id?.toString() })),
     );
 
@@ -69,10 +61,10 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
     expect(updatedInstance?.title).toEqual(instanceTitle);
   });
   it("should handle UPDATING a TIMED INSTANCE", async () => {
-    const { gcalEvents } = await simulateDbAfterGcalImport(
-      setup.db,
-      setup.userId,
-    );
+    const { user } = await UtilDriver.setupTestUser();
+    const repo = new RecurringEventRepository(user._id.toString());
+
+    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
     const updatedRegular = {
       ...gcalEvents.regular,

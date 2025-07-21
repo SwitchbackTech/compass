@@ -16,9 +16,7 @@ import { error } from "../../common/errors/handlers/error.handler";
 describe("WebSocket Server", () => {
   const baseDriver = new BaseDriver();
 
-  const userMetadata: UserMetadata = {
-    sync: { importGCal: { importing: false } },
-  };
+  const userMetadata: UserMetadata = { sync: { importGCal: null } };
 
   beforeAll(async () => {
     baseDriver.initWebsocketServer();

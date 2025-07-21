@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Handler, Request, Response } from "express";
 import { GoogleApis } from "googleapis";
 import { randomUUID } from "node:crypto";
 import type SuperTokens from "supertokens-node";
@@ -140,6 +140,30 @@ function mockSuperToken() {
   });
 }
 
+function mockWinstonLogger() {
+  jest.mock("@core/logger/winston.logger", () => {
+    const mockLogger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      verbose: jest.fn(),
+    };
+
+    return {
+      Logger: jest.fn().mockImplementation(() => mockLogger),
+    };
+  });
+}
+
+function mockHttpLoggingMiddleware() {
+  mockModule("@backend/common/middleware/http.logger.middleware", () => ({
+    httpLoggingMiddleware: jest.fn<void, Parameters<Handler>>((...args) =>
+      args[2](),
+    ),
+  }));
+}
+
 export function mockModule(
   mockPath: string,
   mockFactory?: (...args: unknown[]) => object,
@@ -157,6 +181,8 @@ export function mockModule(
 }
 
 export function mockNodeModules() {
+  mockWinstonLogger();
+  mockHttpLoggingMiddleware();
   mockGoogleapis();
   mockSuperToken();
 }

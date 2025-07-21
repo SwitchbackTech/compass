@@ -1,36 +1,41 @@
+import { faker } from "@faker-js/faker";
 import {
   cleanupCollections,
   cleanupTestMongo,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import WaitlistService from "./waitlist.service";
-import { answer } from "./waitlist.service.test-setup";
+import WaitlistService from "@backend/waitlist/service/waitlist.service";
+import { EmailDriver } from "../../__tests__/drivers/email.driver";
+import { WaitListDriver } from "../../__tests__/drivers/waitlist.driver";
 
 describe("isOnWaitlist", () => {
-  let setup: Awaited<ReturnType<typeof setupTestDb>>;
+  beforeAll(setupTestDb);
 
-  beforeAll(async () => {
-    setup = await setupTestDb();
-  });
+  beforeEach(cleanupCollections);
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
-
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestMongo);
 
   it("should return false if email is not waitlisted", async () => {
-    const result = await WaitlistService.isOnWaitlist(answer.email);
+    const result = await WaitlistService.isOnWaitlist(faker.internet.email());
     expect(result).toBe(false);
   });
 
   it("should return true if email is waitlisted", async () => {
-    await WaitlistService.addToWaitlist(answer.email, answer);
+    const emailSpies = EmailDriver.mockEmailServiceResponse();
 
-    const result = await WaitlistService.isOnWaitlist(answer.email);
+    const record = WaitListDriver.createWaitListRecord({
+      email: faker.internet.email(),
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+    });
+
+    await WaitlistService.addToWaitlist(record.email, record);
+
+    const result = await WaitlistService.isOnWaitlist(record.email);
 
     expect(result).toBe(true);
+
+    emailSpies.addTagToSubscriber.mockClear();
+    emailSpies.upsertSubscriber.mockClear();
   });
 });

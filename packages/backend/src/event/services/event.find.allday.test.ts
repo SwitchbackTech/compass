@@ -1,20 +1,23 @@
-import { Collection, Db, Filter, MongoClient } from "mongodb";
+import { Collection, Filter } from "mongodb";
 import { Schema_Event } from "@core/types/event.types";
 import { mockEventSetMar22 } from "../../../../core/src/__mocks__/v1/events/events.22mar";
+import {
+  cleanupTestMongo,
+  setupTestDb,
+} from "../../__tests__/helpers/mock.db.setup";
+import mongoService from "../../common/services/mongo.service";
 import { getReadAllFilter } from "./event.service.util";
 
 describe("Mar 6 - 12, 2022: All-Day Events", () => {
-  let connection: MongoClient;
-  let db: Db;
   let eventCollection: Collection<Schema_Event>;
   let filter: Filter<Schema_Event>;
   let titles: string[];
 
   beforeAll(async () => {
-    // setup in-memory connection using jest-mongodb
-    connection = await MongoClient.connect(process.env["MONGO_URL"] as string);
-    db = await connection.db();
-    eventCollection = db.collection("event");
+    await setupTestDb();
+
+    eventCollection = mongoService.event;
+
     await eventCollection.insertMany(mockEventSetMar22);
 
     filter = getReadAllFilter("user1", {
@@ -25,9 +28,7 @@ describe("Mar 6 - 12, 2022: All-Day Events", () => {
     titles = result.map((e) => e.title);
   });
 
-  afterAll(async () => {
-    await connection.close();
-  });
+  afterAll(cleanupTestMongo);
 
   it("finds overlapping multi-week event", async () => {
     expect(titles.includes("Feb 14 - Mar 8")).toBe(true);

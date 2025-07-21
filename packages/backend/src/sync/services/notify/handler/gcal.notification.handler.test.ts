@@ -27,10 +27,8 @@ describe("GCalNotificationHandler", () => {
   let handler: GCalNotificationHandler;
   let mockGcal: gCalendar;
   let mockUserId: string;
-  let setup: Awaited<ReturnType<typeof setupTestDb>>;
-  beforeAll(async () => {
-    setup = await setupTestDb();
-  });
+
+  beforeAll(setupTestDb);
 
   beforeEach(() => {
     mockUserId = "test-user-id";
@@ -47,9 +45,8 @@ describe("GCalNotificationHandler", () => {
 
     handler = new GCalNotificationHandler(mockGcal, mockUserId);
   });
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+
+  afterAll(cleanupTestMongo);
 
   describe("handleNotification", () => {
     const mockPayload = {

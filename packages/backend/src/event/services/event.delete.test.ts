@@ -1,23 +1,24 @@
 import dayjs from "dayjs";
-import { Collection, Db, MongoClient, ObjectId } from "mongodb";
+import { Collection, ObjectId } from "mongodb";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_Event } from "@core/types/event.types";
 import {
   mockSomedayRecurrences,
   newsletterId,
 } from "../../../../core/src/__mocks__/v1/events/events.someday.recur";
+import {
+  cleanupTestMongo,
+  setupTestDb,
+} from "../../__tests__/helpers/mock.db.setup";
+import mongoService from "../../common/services/mongo.service";
 import { getDeleteByIdFilter } from "./event.service.util";
 
 describe("Delete Events", () => {
-  let connection: MongoClient;
-  let db: Db;
   let eventCollection: Collection<Schema_Event>;
 
   beforeAll(async () => {
-    // setup in-memory connection using jest-mongodb
-    connection = await MongoClient.connect(process.env["MONGO_URL"] as string);
-    db = await connection.db();
-    eventCollection = db.collection("event.delete.test");
+    await setupTestDb();
+    eventCollection = mongoService.db.collection("event.delete.test");
   });
 
   beforeEach(async () => {
@@ -25,9 +26,7 @@ describe("Delete Events", () => {
     await eventCollection.insertMany([...mockSomedayRecurrences]);
   });
 
-  afterAll(async () => {
-    await connection.close();
-  });
+  afterAll(cleanupTestMongo);
 
   describe("Recurring events: someday", () => {
     it("only deletes future instances", async () => {

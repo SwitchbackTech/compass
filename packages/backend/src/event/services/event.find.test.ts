@@ -1,4 +1,4 @@
-import { Collection, Db, MongoClient } from "mongodb";
+import { Collection, Filter } from "mongodb";
 import { MapEvent } from "@core/mappers/map.event";
 import { Schema_Event } from "@core/types/event.types";
 import { isBase, isExistingInstance } from "@core/util/event/event.util";
@@ -8,6 +8,11 @@ import {
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { mockEventSetJan22 } from "../../../../core/src/__mocks__/v1/events/events.22jan";
 import { mockEventSetSomeday1 } from "../../../../core/src/__mocks__/v1/events/events.someday.1";
+import {
+  cleanupTestMongo,
+  setupTestDb,
+} from "../../__tests__/helpers/mock.db.setup";
+import mongoService from "../../common/services/mongo.service";
 import { getReadAllFilter } from "./event.service.util";
 
 const gBase = mockRecurringGcalBaseEvent();
@@ -21,24 +26,24 @@ instances.forEach((i) => {
 });
 
 const recurring = [base, ...instances];
-const allEvents = [...mockEventSetJan22, ...mockEventSetSomeday1, ...recurring];
+const allEvents = [
+  ...mockEventSetJan22,
+  ...mockEventSetSomeday1,
+  ...recurring,
+] as Schema_Event[];
+
 describe("Jan 2022: Many Formats", () => {
-  let connection: MongoClient;
-  let db: Db;
   let eventCollection: Collection<Schema_Event>;
 
   beforeAll(async () => {
-    // setup in-memory connection using jest-mongodb
-    connection = await MongoClient.connect(process.env["MONGO_URL"] as string);
-    db = await connection.db();
-    eventCollection = db.collection("event.find.test");
+    await setupTestDb();
+
+    eventCollection = mongoService.db.collection("event.find.test");
 
     await eventCollection.insertMany(allEvents);
   });
 
-  afterAll(async () => {
-    await connection.close();
-  });
+  afterAll(cleanupTestMongo);
 
   it("returns events by provided user only", async () => {
     const filter = getReadAllFilter("user1", {
@@ -49,11 +54,11 @@ describe("Jan 2022: Many Formats", () => {
     events.forEach((e) => expect(e.user).toBe("user1"));
   });
   it("does NOT transform query dates to ISO format", () => {
-    /* 
+    /*
     it shouldn't transform the format, because mongo
     will do that during its date comparison
 
-    this depends on the frontend passing the date values in the correct format 
+    this depends on the frontend passing the date values in the correct format
      */
     const start = "2011-10-20T00:00:00-10:00";
     const end = "2011-11-26T00:00:00-10:00";
@@ -61,7 +66,7 @@ describe("Jan 2022: Many Formats", () => {
       start,
       end,
     });
-    const flatFilter = _flatten(filter, {});
+    const flatFilter = _flatten(filter, {}) as Filter<Schema_Event>;
     expect(flatFilter["$lte"]).not.toEqual(new Date(start).toISOString());
     expect(flatFilter["$gte"]).not.toEqual(new Date(end).toISOString());
   });
