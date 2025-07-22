@@ -17,7 +17,7 @@ describe("WebSocket Server", () => {
   const baseDriver = new BaseDriver();
 
   const userMetadata: UserMetadata = {
-    sync: { importGCal: { importing: false } },
+    sync: { importGCal: null },
   };
 
   beforeAll(async () => {
