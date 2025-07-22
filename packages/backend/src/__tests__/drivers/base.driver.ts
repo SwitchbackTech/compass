@@ -104,8 +104,6 @@ export class BaseDriver {
       await this.websocketServer?.close();
 
       this.http.removeAllListeners();
-
-      this.http.closeAllConnections();
     } catch (error) {
       console.error(error);
     }
