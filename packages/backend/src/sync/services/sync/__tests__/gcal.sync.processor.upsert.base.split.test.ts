@@ -1,8 +1,8 @@
 import { Categories_Recurrence, Schema_Event } from "@core/types/event.types";
 import { isExistingInstance } from "@core/util/event/event.util";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
-  TestSetup,
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
@@ -18,13 +18,9 @@ import {
 } from "./gcal.sync.processor.test.util";
 
 describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
-  let setup: TestSetup;
-  let repo: RecurringEventRepository;
+  beforeAll(setupTestDb);
 
-  beforeAll(async () => {
-    setup = await setupTestDb();
-    repo = new RecurringEventRepository(setup.userId);
-  });
+  beforeEach(cleanupCollections);
 
   beforeEach(cleanupCollections);
 
@@ -32,16 +28,16 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
 
   it("should handle new UNTIL in BASE by updating BASE rule and DELETING instances after the UNTIL date", async () => {
     /* Assemble */
-    const { gcalEvents } = await simulateDbAfterGcalImport(
-      setup.db,
-      setup.userId,
-    );
+    const { user } = await UtilDriver.setupTestUser();
+    const repo = new RecurringEventRepository(user._id.toString());
+
+    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
     const { gBaseWithUntil, untilDateStr } =
       updateBasePayloadToExpireOneDayAfterFirstInstance(gcalEvents);
 
     /* Act */
-    const origEvents = await getEventsInDb();
+    const origEvents = await getEventsInDb({ user: user._id.toString() });
     const processor = new GcalSyncProcessor(repo);
     const changes = await processor.processEvents([gBaseWithUntil]);
 
@@ -55,7 +51,9 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
     });
 
     // Verify DB changed
-    const remainingEvents = await getEventsInDb().then((events) =>
+    const remainingEvents = await getEventsInDb({
+      user: user._id.toString(),
+    }).then((events) =>
       events.map((event) => ({ ...event, _id: event._id?.toString() })),
     );
 
@@ -76,11 +74,12 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
 
   it("should handle cancelled instance at split point by deleting it", async () => {
     /* Assemble */
-    const { gcalEvents } = await simulateDbAfterGcalImport(
-      setup.db,
-      setup.userId,
-    );
-    const origEvents = await getEventsInDb();
+    const { user } = await UtilDriver.setupTestUser();
+    const repo = new RecurringEventRepository(user._id.toString());
+
+    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
+
+    const origEvents = await getEventsInDb({ user: user._id.toString() });
 
     /* Act */
     // Simulate a gcal notification payload after an instance was cancelled
@@ -101,7 +100,7 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
     });
 
     // Verify database state
-    const remainingEvents = await getEventsInDb();
+    const remainingEvents = await getEventsInDb({ user: user._id.toString() });
     expect(remainingEvents.length).toBeLessThan(origEvents.length);
 
     // Verify the cancelled instance was removed

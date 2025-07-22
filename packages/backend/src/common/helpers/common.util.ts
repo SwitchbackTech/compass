@@ -33,8 +33,13 @@ export async function waitUntilEvent<
     Promise.resolve(args as unknown as Result),
 ): Promise<Result> {
   return new Promise((resolve, reject) => {
+    const eventEmitter = emitter as EventEmitter;
+
     const timeout = setTimeout(() => {
       clearTimeout(timeout);
+
+      eventEmitter.removeListener(event, listener);
+
       reject(
         error(
           GenericError.OperationTimeout,
@@ -43,11 +48,16 @@ export async function waitUntilEvent<
       );
     }, timeoutMs);
 
-    (emitter as EventEmitter).once(event, (...payload: Payload) => {
+    const listener = (...payload: Payload) => {
       afterEvent(...payload).then(resolve);
       clearTimeout(timeout);
-    });
+    };
 
-    beforeEvent().catch(reject);
+    eventEmitter.once(event, listener);
+
+    beforeEvent().catch((error) => {
+      eventEmitter.removeListener(event, listener);
+      reject(error);
+    });
   });
 }

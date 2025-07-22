@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId, WithId } from "mongodb";
 import {
   Event_Core,
   Schema_Event,
@@ -14,12 +14,12 @@ import {
   isExistingInstance,
 } from "@core/util/event/event.util";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
-import { TestSetup } from "@backend/__tests__/helpers/mock.db.setup";
 import { State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
 import { mockRecurringGcalInstances } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { Event_API } from "@backend/common/types/backend.event.types";
 import { validateEventSafely } from "@backend/common/validators/validate.event";
+import { Schema_User } from "../../../../../../core/src/types/user.types";
 
 dayjs.extend(timezone);
 
@@ -35,7 +35,7 @@ export const baseHasRecurrenceRule = async (
 };
 
 export const createCompassSeriesFromGcalBase = async (
-  setup: TestSetup,
+  user: WithId<Schema_User>,
   gBase: gSchema$EventBase,
 ) => {
   const gcalInstance = mockRecurringGcalInstances(
@@ -47,7 +47,7 @@ export const createCompassSeriesFromGcalBase = async (
   const baseCompassId = new ObjectId().toString();
   const compassBaseEvent: Schema_Event_Recur_Base = {
     title: gBase.summary as string,
-    user: setup.userId,
+    user: user._id.toString(),
     _id: baseCompassId,
     gEventId: gBase.id as string,
     recurrence: {
@@ -57,14 +57,13 @@ export const createCompassSeriesFromGcalBase = async (
 
   const compassInstanceTemplate: Schema_Event_Recur_Instance = {
     title: gcalInstance.summary as string,
-    user: setup.userId,
+    user: user._id.toString(),
     // gEventId: generateGcalInstanceId(gBase.start?.dateTime as string),
     recurrence: {
       eventId: baseCompassId,
     },
   };
   const result = await createRecurrenceSeries(
-    setup,
     compassBaseEvent,
     compassInstanceTemplate,
   );
@@ -104,8 +103,10 @@ export const eventsMatchSchema = (events: Event_API[]) => {
   });
 };
 
-export const getLatestEventsFromDb = async () => {
-  const updatedEvents = (await getEventsInDb()) as Schema_Event[];
+export const getLatestEventsFromDb = async (
+  filter?: Filter<Omit<Schema_Event, "_id">>,
+) => {
+  const updatedEvents = (await getEventsInDb(filter)) as Schema_Event[];
   const { baseEvents, instances } = categorizeEvents(updatedEvents);
   const base = baseEvents[0] as Schema_Event_Recur_Base;
   return { base, instances };

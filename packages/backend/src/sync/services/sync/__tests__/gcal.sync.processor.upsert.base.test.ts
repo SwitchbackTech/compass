@@ -1,8 +1,8 @@
 import { Categories_Recurrence } from "@core/types/event.types";
 import { categorizeEvents } from "@core/util/event/event.util";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
-  TestSetup,
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
@@ -21,20 +21,19 @@ import {
 import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 
 describe("GcalSyncProcessor UPSERT: BASE", () => {
-  let setup: TestSetup;
-  let repo: RecurringEventRepository;
+  beforeAll(setupTestDb);
 
-  beforeAll(async () => {
-    setup = await setupTestDb();
-    repo = new RecurringEventRepository(setup.userId);
-  });
+  beforeEach(cleanupCollections);
 
   beforeEach(cleanupCollections);
 
   afterAll(cleanupTestDb);
 
   it("should handle CREATING a TIMED SERIES from a BASE", async () => {
-    await simulateDbAfterGcalImport(setup.db, setup.userId);
+    const { user } = await UtilDriver.setupTestUser();
+    const repo = new RecurringEventRepository(user._id.toString());
+
+    await simulateDbAfterGcalImport(user._id.toString());
 
     const newBase = mockRecurringGcalBaseEvent();
 
@@ -47,18 +46,19 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
       category: Categories_Recurrence.RECURRENCE_BASE,
       operation: "UPSERTED",
     });
-    const updatedEvents = await getEventsInDb();
+    const updatedEvents = await getEventsInDb({ user: user._id.toString() });
     eventsMatchSchema(updatedEvents);
   });
 
   it("should handle UPDATING an ALL-DAY SERIES", async () => {
     /* Assemble */
-    const { gcalEvents } = await simulateDbAfterGcalImport(
-      setup.db,
-      setup.userId,
-    );
-    const origEvents = await getEventsInDb().then((events) =>
-      events.map((event) => ({ ...event, _id: event._id?.toString() })),
+    const { user } = await UtilDriver.setupTestUser();
+    const repo = new RecurringEventRepository(user._id.toString());
+    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
+
+    const origEvents = await getEventsInDb({ user: user._id.toString() }).then(
+      (events) =>
+        events.map((event) => ({ ...event, _id: event._id?.toString() })),
     );
 
     const { instances: origInstances } = categorizeEvents(origEvents);
@@ -95,7 +95,9 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
     );
 
     // Validate that all events in the series (base and instances) were updated
-    const { base, instances } = await getLatestEventsFromDb();
+    const { base, instances } = await getLatestEventsFromDb({
+      user: user._id.toString(),
+    });
 
     expect(instances.length).toBeGreaterThan(0);
     for (const i of instances) {
@@ -107,12 +109,14 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
 
   it("should handle UPDATING a TIMED SERIES", async () => {
     /* Assemble */
-    const { gcalEvents } = await simulateDbAfterGcalImport(
-      setup.db,
-      setup.userId,
-    );
-    const origEvents = await getEventsInDb().then((events) =>
-      events.map((event) => ({ ...event, _id: event._id?.toString() })),
+    const { user } = await UtilDriver.setupTestUser();
+    const repo = new RecurringEventRepository(user._id.toString());
+
+    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
+
+    const origEvents = await getEventsInDb({ user: user._id.toString() }).then(
+      (events) =>
+        events.map((event) => ({ ...event, _id: event._id?.toString() })),
     );
 
     const { instances: origInstances } = categorizeEvents(origEvents);
@@ -149,7 +153,9 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
     );
 
     // Validate that all events in the series (base and instances) were updated
-    const { base, instances } = await getLatestEventsFromDb();
+    const { base, instances } = await getLatestEventsFromDb({
+      user: user._id.toString(),
+    });
 
     expect(instances.length).toBeGreaterThan(0);
     for (const i of instances) {
