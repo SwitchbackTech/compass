@@ -1,22 +1,22 @@
 import { isBase, isExistingInstance } from "@core/util/event/event.util";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   getCategorizedEventsInDb,
   getEventsInDb,
 } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { UtilDriver } from "../../../__tests__/drivers/util.driver";
-import { createSyncImport } from "./sync.import";
+import { createSyncImport } from "@backend/sync/services/import/sync.import";
 
 describe("SyncImport: Full", () => {
   beforeAll(setupTestDb);
 
   beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   it("should import the first instance of a recurring event (and the base)", async () => {
     const { user } = await UtilDriver.setupTestUser();

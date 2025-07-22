@@ -7,10 +7,6 @@ import { Key } from "ts-key-enum";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import {
-  computeCurrentEventDateRange,
-  computeRelativeEventDateRange,
-} from "@web/common/utils/web.date.util";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
@@ -137,68 +133,40 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     "ctrl+meta+up",
     (e) => {
       e.preventDefault();
-      const updatedEvent = computeCurrentEventDateRange(
-        {
-          duration: "week",
-        },
-        event,
-        weekViewRange,
-      );
-      onSubmit(updatedEvent);
+      onMigrate(event, category, "up");
     },
     hotkeysOptions,
-    [event, weekViewRange],
+    [event, category, onMigrate],
   );
 
   useHotkeys(
     "ctrl+meta+down",
     async (e) => {
       e.preventDefault();
-      const updatedEvent = computeCurrentEventDateRange(
-        {
-          duration: "month",
-        },
-        event,
-        weekViewRange,
-      );
-      onSubmit(updatedEvent);
+      onMigrate(event, category, "down");
     },
     hotkeysOptions,
-    [event],
+    [event, category, onMigrate],
   );
 
   useHotkeys(
     "ctrl+meta+right",
     async (e) => {
       e.preventDefault();
-      const updatedEvent = computeRelativeEventDateRange(
-        {
-          direction: "next",
-          duration: target,
-        },
-        event,
-      );
-      onSubmit(updatedEvent);
+      onMigrate(event, category, "forward");
     },
     hotkeysOptions,
-    [event],
+    [event, category, onMigrate],
   );
 
   useHotkeys(
     "ctrl+meta+left",
     async (e) => {
       e.preventDefault();
-      const updatedEvent = computeRelativeEventDateRange(
-        {
-          direction: "prev",
-          duration: target,
-        },
-        event,
-      );
-      onSubmit(updatedEvent);
+      onMigrate(event, category, "back");
     },
     hotkeysOptions,
-    [event],
+    [event, category, onMigrate],
   );
 
   const onSetEventField: SetEventFormField = (field) => {
@@ -242,6 +210,12 @@ export const SomedayEventForm: React.FC<FormProps> = ({
           }}
           onMigrateForwardClick={() => {
             onMigrate(event, category, "forward");
+          }}
+          onMigrateAboveClick={() => {
+            onMigrate(event, category, "up");
+          }}
+          onMigrateBelowClick={() => {
+            onMigrate(event, category, "down");
           }}
           onDuplicateClick={onDuplicateEvent}
           onDeleteClick={onDelete}

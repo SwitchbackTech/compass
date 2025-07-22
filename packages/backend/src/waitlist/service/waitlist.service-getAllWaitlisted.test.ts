@@ -1,19 +1,19 @@
 import { faker } from "@faker-js/faker";
+import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
+import { WaitListDriver } from "@backend/__tests__/drivers/waitlist.driver";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import WaitlistService from "@backend/waitlist/service/waitlist.service";
-import { EmailDriver } from "../../__tests__/drivers/email.driver";
-import { WaitListDriver } from "../../__tests__/drivers/waitlist.driver";
 
 describe("getAllWaitlisted", () => {
   beforeAll(setupTestDb);
 
   beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   it("should return all waitlisted records", async () => {
     const emailSpies = EmailDriver.mockEmailServiceResponse();

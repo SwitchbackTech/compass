@@ -7,8 +7,6 @@ import mongoService from "@backend/common/services/mongo.service";
 export async function setupTestDb(): Promise<void> {
   try {
     await mongoService.start(true);
-
-    console.log(mongoService.db.databaseName, "database started");
   } catch (err) {
     const error = err as Error;
 
@@ -35,10 +33,10 @@ export async function cleanupCollections(): Promise<void> {
   );
 }
 
-export async function cleanupTestMongo(): Promise<void> {
+export async function cleanupTestDb(): Promise<void> {
   try {
     await mongoService.stop();
   } catch (err) {
-    console.error("Error during cleanup:", err);
+    console.error("Error during test db cleanup:", err);
   }
 }

@@ -1,34 +1,31 @@
-import { Collection, Filter } from "mongodb";
+import { Filter } from "mongodb";
+import { mockEventSetMar22 } from "@core/__mocks__/v1/events/events.22mar";
 import { Schema_Event } from "@core/types/event.types";
-import { mockEventSetMar22 } from "../../../../core/src/__mocks__/v1/events/events.22mar";
 import {
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
-} from "../../__tests__/helpers/mock.db.setup";
-import mongoService from "../../common/services/mongo.service";
-import { getReadAllFilter } from "./event.service.util";
+} from "@backend/__tests__/helpers/mock.db.setup";
+import mongoService from "@backend/common/services/mongo.service";
+import { getReadAllFilter } from "@backend/event/services/event.service.util";
 
 describe("Mar 6 - 12, 2022: All-Day Events", () => {
-  let eventCollection: Collection<Schema_Event>;
   let filter: Filter<Schema_Event>;
   let titles: string[];
 
   beforeAll(async () => {
     await setupTestDb();
 
-    eventCollection = mongoService.event;
-
-    await eventCollection.insertMany(mockEventSetMar22);
+    await mongoService.event.insertMany(mockEventSetMar22);
 
     filter = getReadAllFilter("user1", {
       start: "2022-03-06T00:00:00-07:00",
       end: "2022-03-12T23:59:59-07:00",
     });
-    const result = await eventCollection.find(filter).toArray();
+    const result = await mongoService.event.find(filter).toArray();
     titles = result.map((e) => e.title);
   });
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   it("finds overlapping multi-week event", async () => {
     expect(titles.includes("Feb 14 - Mar 8")).toBe(true);

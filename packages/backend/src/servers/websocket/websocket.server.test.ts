@@ -1,3 +1,8 @@
+/**
+ * @jest-environment node
+ *
+ * we do not need the database for this test
+ */
 import { randomUUID } from "node:crypto";
 import { updateUserMetadata } from "supertokens-node/recipe/usermetadata";
 import {
@@ -9,9 +14,9 @@ import {
 } from "@core/constants/websocket.constants";
 import { UserMetadata } from "@core/types/user.types";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
-import { GenericError } from "../../common/errors/generic/generic.errors";
-import { error } from "../../common/errors/handlers/error.handler";
 
 describe("WebSocket Server", () => {
   const baseDriver = new BaseDriver();

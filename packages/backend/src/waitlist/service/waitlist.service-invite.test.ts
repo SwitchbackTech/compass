@@ -3,7 +3,7 @@ import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
 import { WaitListDriver } from "@backend/__tests__/drivers/waitlist.driver";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockEnv } from "@backend/__tests__/helpers/mock.env";
@@ -14,7 +14,7 @@ describe("isInvited", () => {
 
   beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   it("should return false if email is not invited", async () => {
     // simulates when user was waitlisted but not invited
@@ -51,7 +51,7 @@ describe("invite", () => {
 
   beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   it("should invite email to waitlist", async () => {
     // Arrange

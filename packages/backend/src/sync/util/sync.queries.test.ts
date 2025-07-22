@@ -1,6 +1,6 @@
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import {
@@ -14,7 +14,7 @@ describe("sync.queries nextPageToken", () => {
 
   beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   it("updates and retrieves nextPageToken", async () => {
     const { user } = await UtilDriver.setupTestUser();

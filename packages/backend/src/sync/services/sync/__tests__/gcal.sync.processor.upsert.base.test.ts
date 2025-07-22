@@ -1,16 +1,15 @@
 import { Categories_Recurrence } from "@core/types/event.types";
 import { categorizeEvents } from "@core/util/event/event.util";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
-import { UtilDriver } from "../../../../__tests__/drivers/util.driver";
-import { GcalSyncProcessor } from "../gcal.sync.processor";
 import {
   datesAreInUtcOffset,
   eventsMatchSchema,
@@ -18,14 +17,17 @@ import {
   hasNewUpdatedAtTimestamp,
   instanceDataMatchCompassBase,
   instanceDataMatchesGcalBase,
-} from "./gcal.sync.processor.test.util";
+} from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 
 describe("GcalSyncProcessor UPSERT: BASE", () => {
   beforeAll(setupTestDb);
 
   beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestMongo);
+  beforeEach(cleanupCollections);
+
+  afterAll(cleanupTestDb);
 
   it("should handle CREATING a TIMED SERIES from a BASE", async () => {
     const { user } = await UtilDriver.setupTestUser();

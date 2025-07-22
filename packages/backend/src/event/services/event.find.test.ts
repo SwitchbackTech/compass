@@ -1,19 +1,19 @@
 import { Collection, Filter } from "mongodb";
+import { mockEventSetJan22 } from "@core/__mocks__/v1/events/events.22jan";
+import { mockEventSetSomeday1 } from "@core/__mocks__/v1/events/events.someday.1";
 import { MapEvent } from "@core/mappers/map.event";
 import { Schema_Event } from "@core/types/event.types";
 import { isBase, isExistingInstance } from "@core/util/event/event.util";
 import {
+  cleanupTestDb,
+  setupTestDb,
+} from "@backend/__tests__/helpers/mock.db.setup";
+import {
   mockRecurringGcalBaseEvent,
   mockRecurringGcalInstances,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { mockEventSetJan22 } from "../../../../core/src/__mocks__/v1/events/events.22jan";
-import { mockEventSetSomeday1 } from "../../../../core/src/__mocks__/v1/events/events.someday.1";
-import {
-  cleanupTestMongo,
-  setupTestDb,
-} from "../../__tests__/helpers/mock.db.setup";
-import mongoService from "../../common/services/mongo.service";
-import { getReadAllFilter } from "./event.service.util";
+import mongoService from "@backend/common/services/mongo.service";
+import { getReadAllFilter } from "@backend/event/services/event.service.util";
 
 const gBase = mockRecurringGcalBaseEvent();
 const gInstances = mockRecurringGcalInstances(gBase, 10, 7);
@@ -43,7 +43,7 @@ describe("Jan 2022: Many Formats", () => {
     await eventCollection.insertMany(allEvents);
   });
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   it("returns events by provided user only", async () => {
     const filter = getReadAllFilter("user1", {

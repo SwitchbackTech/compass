@@ -1,23 +1,24 @@
 import dayjs from "dayjs";
 import { Collection, ObjectId } from "mongodb";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Schema_Event } from "@core/types/event.types";
 import {
   mockSomedayRecurrences,
   newsletterId,
-} from "../../../../core/src/__mocks__/v1/events/events.someday.recur";
+} from "@core/__mocks__/v1/events/events.someday.recur";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { Schema_Event } from "@core/types/event.types";
 import {
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
-} from "../../__tests__/helpers/mock.db.setup";
-import mongoService from "../../common/services/mongo.service";
-import { getDeleteByIdFilter } from "./event.service.util";
+} from "@backend/__tests__/helpers/mock.db.setup";
+import mongoService from "@backend/common/services/mongo.service";
+import { getDeleteByIdFilter } from "@backend/event/services/event.service.util";
 
 describe("Delete Events", () => {
   let eventCollection: Collection<Schema_Event>;
 
   beforeAll(async () => {
     await setupTestDb();
+
     eventCollection = mongoService.db.collection("event.delete.test");
   });
 
@@ -26,7 +27,7 @@ describe("Delete Events", () => {
     await eventCollection.insertMany([...mockSomedayRecurrences]);
   });
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   describe("Recurring events: someday", () => {
     it("only deletes future instances", async () => {

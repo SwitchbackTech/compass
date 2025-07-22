@@ -1,16 +1,16 @@
 import { Categories_Recurrence, Schema_Event } from "@core/types/event.types";
 import { isExistingInstance } from "@core/util/event/event.util";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockCancelledInstance } from "@backend/__tests__/mocks.gcal/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
-import { UtilDriver } from "../../../../__tests__/drivers/util.driver";
-import { GcalSyncProcessor } from "../gcal.sync.processor";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 import {
   baseHasRecurrenceRule,
   noInstancesAfterSplitDate,
@@ -22,7 +22,9 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
 
   beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestMongo);
+  beforeEach(cleanupCollections);
+
+  afterAll(cleanupTestDb);
 
   it("should handle new UNTIL in BASE by updating BASE rule and DELETING instances after the UNTIL date", async () => {
     /* Assemble */

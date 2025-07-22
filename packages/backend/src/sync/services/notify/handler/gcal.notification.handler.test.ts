@@ -1,14 +1,14 @@
 import { gCalendar } from "@core/types/gcal";
 import {
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockRegularGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
+import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
 import { getSync } from "@backend/sync/util/sync.queries";
-import { GCalNotificationHandler } from "./gcal.notification.handler";
 
 // Mock dependencies
 
@@ -46,7 +46,7 @@ describe("GCalNotificationHandler", () => {
     handler = new GCalNotificationHandler(mockGcal, mockUserId);
   });
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   describe("handleNotification", () => {
     const mockPayload = {

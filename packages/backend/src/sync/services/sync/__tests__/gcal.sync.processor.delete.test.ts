@@ -4,30 +4,30 @@ import {
   categorizeEvents,
   isExistingInstance,
 } from "@core/util/event/event.util";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   getEventsInDb,
   isEventCollectionEmpty,
 } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
+import { createSeries } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.delete.util";
+import { createCompassSeriesFromGcalBase } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 import { Change_Gcal } from "@backend/sync/sync.types";
-import { UtilDriver } from "../../../../__tests__/drivers/util.driver";
-import { GcalSyncProcessor } from "../gcal.sync.processor";
-import { createSeries } from "./gcal.sync.processor.delete.util";
-import { createCompassSeriesFromGcalBase } from "./gcal.sync.processor.test.util";
 
 describe("GcalSyncProcessor: DELETE", () => {
   beforeAll(setupTestDb);
 
   beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   it("should delete a STANDALONE event", async () => {
     /* Assemble */

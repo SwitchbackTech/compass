@@ -1,22 +1,22 @@
 import { Categories_Recurrence } from "@core/types/event.types";
 import { categorizeEvents } from "@core/util/event/event.util";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
-import { UtilDriver } from "../../../../__tests__/drivers/util.driver";
-import { GcalSyncProcessor } from "../gcal.sync.processor";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 
 describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
   beforeAll(setupTestDb);
 
   beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   it("should handle UPSERTING a TIMED INSTANCE", async () => {
     /* Assemble */

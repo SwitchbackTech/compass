@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { Result_Waitlist } from "@core/types/waitlist/waitlist.types";
 import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { WaitListDriver } from "@backend/__tests__/drivers/waitlist.driver";
 import {
   getEmailsOnWaitlist,
@@ -8,19 +9,18 @@ import {
 } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { mockEnv } from "@backend/__tests__/helpers/mock.env";
 import WaitlistService from "@backend/waitlist/service/waitlist.service";
-import { UtilDriver } from "../../__tests__/drivers/util.driver";
+import { mockEnv } from "../../__tests__/helpers/mock.env";
 
 describe("addToWaitlist", () => {
   beforeAll(setupTestDb);
 
   beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   it("should add to waitlist", async () => {
     // Act

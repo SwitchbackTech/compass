@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import WaitlistService from "@backend/waitlist/service/waitlist.service";
@@ -13,7 +13,7 @@ describe("isOnWaitlist", () => {
 
   beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestMongo);
+  afterAll(cleanupTestDb);
 
   it("should return false if email is not waitlisted", async () => {
     const result = await WaitlistService.isOnWaitlist(faker.internet.email());

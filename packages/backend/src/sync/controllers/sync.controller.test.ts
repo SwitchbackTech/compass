@@ -16,7 +16,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { waitUntilEvent } from "@backend/common/helpers/common.util";
@@ -59,8 +59,6 @@ describe("SyncController", () => {
 
     if (waitForEventChanged) expect(eventChanged?.status).toEqual("fulfilled");
 
-    console.log(eventChanged);
-
     return { user, websocketClient };
   }
 
@@ -74,7 +72,7 @@ describe("SyncController", () => {
 
   afterAll(async () => {
     await baseDriver.teardown();
-    await cleanupTestMongo();
+    await cleanupTestDb();
     jest.clearAllMocks();
   });
 
@@ -394,7 +392,7 @@ describe("SyncController", () => {
     });
 
     describe("Frontend Notifications", () => {
-      beforeEach(() => cleanupCollections());
+      beforeEach(cleanupCollections);
 
       it("should notify the frontend that the import has started", async () => {
         const user = await UserDriver.createUser();
