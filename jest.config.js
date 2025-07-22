@@ -93,9 +93,6 @@ module.exports = {
   // An enum that specifies notification mode. Requires { notify: true }
   // notifyMode: "failure-change",
 
-  // A preset that is used as a base for Jest's configuration
-  preset: "@shelf/jest-mongodb", // https://jestjs.io/docs/mongodb
-
   projects: [
     {
       displayName: "core",
@@ -104,6 +101,10 @@ module.exports = {
       },
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
+      setupFiles: ["<rootDir>/packages/core/src/__tests__/core.test.init.ts"],
+      setupFilesAfterEnv: [
+        "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
+      ],
     },
     {
       displayName: "web",
@@ -128,8 +129,12 @@ module.exports = {
           "<rootDir>/packages/web/src/__tests__/__mocks__/svg.stub.js",
         "^uuid$": "uuid",
       },
-      setupFiles: ["<rootDir>/packages/web/src/__tests__/web.test.init.js"],
+      setupFiles: [
+        "<rootDir>/packages/core/src/__tests__/core.test.init.ts",
+        "<rootDir>/packages/web/src/__tests__/web.test.init.js",
+      ],
       setupFilesAfterEnv: [
+        "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
         "<rootDir>/packages/web/src/__tests__/web.test.start.js",
       ],
       testEnvironment: "jsdom",
@@ -162,13 +167,17 @@ module.exports = {
       },
 
       setupFiles: [
+        "<rootDir>/packages/core/src/__tests__/core.test.init.ts",
         "<rootDir>/packages/backend/src/__tests__/backend.test.init.ts",
       ],
       setupFilesAfterEnv: [
-        "<rootDir>/packages/backend/src/__tests__/backend.test.start.js",
+        "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
+        "<rootDir>/packages/backend/src/__tests__/backend.test.start.ts",
       ],
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],
+      // A preset that is used as a base for Jest's configuration
+      preset: "@shelf/jest-mongodb", // https://jestjs.io/docs/mongodb,
     },
   ],
   // Use this configuration option to add custom reporters to Jest
