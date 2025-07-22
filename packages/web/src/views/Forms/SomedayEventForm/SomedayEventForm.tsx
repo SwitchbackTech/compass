@@ -243,6 +243,12 @@ export const SomedayEventForm: React.FC<FormProps> = ({
           onMigrateForwardClick={() => {
             onMigrate(event, category, "forward");
           }}
+          onMigrateAboveClick={() => {
+            onMigrate(event, category, "up");
+          }}
+          onMigrateBelowClick={() => {
+            onMigrate(event, category, "down");
+          }}
           onDuplicateClick={onDuplicateEvent}
           onDeleteClick={onDelete}
         />

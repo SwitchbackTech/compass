@@ -308,13 +308,31 @@ export const useSidebarActions = (
     category: Categories_Event,
     direction: Direction_Migrate,
   ) => {
-    const _event = computeRelativeEventDateRange(
-      {
-        direction: direction === "forward" ? "next" : "prev",
-        duration: category === Categories_Event.SOMEDAY_WEEK ? "week" : "month",
-      },
-      event,
-    );
+    const weekViewRange = {
+      startDate: start,
+      endDate: end,
+    };
+
+    let _event: Schema_Event;
+
+    if (direction === "forward" || direction === "back") {
+      _event = computeRelativeEventDateRange(
+        {
+          direction: direction === "forward" ? "next" : "prev",
+          duration:
+            category === Categories_Event.SOMEDAY_WEEK ? "week" : "month",
+        },
+        event,
+      );
+    } else {
+      _event = computeCurrentEventDateRange(
+        {
+          duration: direction === "up" ? "week" : "month",
+        },
+        event,
+        weekViewRange,
+      );
+    }
 
     const isExisting = _event._id;
     if (isExisting) {
