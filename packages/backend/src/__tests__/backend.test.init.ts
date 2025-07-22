@@ -1,8 +1,10 @@
-process.env["BASEURL"] = "https://foo.yourdomain.app";
+const mongoUri = (global as unknown as { __MONGO_URI__: string }).__MONGO_URI__;
+
+process.env["BASEURL"] = "http;s://foo.yourdomain.app";
 process.env["CORS"] =
   "https://foo.yourdomain.app,http://localhost:3000,http://localhost:9080";
 process.env["PORT"] = "3000";
-process.env["MONGO_URI"] = process.env["MONGO_URL"];
+process.env["MONGO_URI"] = mongoUri ?? process.env["MONGO_URL"];
 process.env["DB"] = "test-db";
 process.env["CLIENT_ID"] = "googleClientId";
 process.env["CLIENT_SECRET"] = "googleSecret";

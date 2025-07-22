@@ -1,26 +1,18 @@
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { ENV } from "@backend/common/constants/env.constants";
-import WaitlistService from "./waitlist.service";
-import { answer } from "./waitlist.service.test-setup";
+import WaitlistService from "@backend/waitlist/service/waitlist.service";
+import { answer } from "@backend/waitlist/service/waitlist.service.test-setup";
 
 describe("isInvited", () => {
-  let setup: Awaited<ReturnType<typeof setupTestDb>>;
+  beforeAll(setupTestDb);
 
-  beforeAll(async () => {
-    setup = await setupTestDb();
-  });
+  beforeEach(cleanupCollections);
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
-
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestDb);
 
   it("should return false if email is not invited", async () => {
     // simulates when user was waitlisted but not invited
@@ -42,19 +34,11 @@ describe("isInvited", () => {
 });
 
 describe("invite", () => {
-  let setup: Awaited<ReturnType<typeof setupTestDb>>;
+  beforeAll(setupTestDb);
 
-  beforeAll(async () => {
-    setup = await setupTestDb();
-  });
+  beforeEach(cleanupCollections);
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
-
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestDb);
 
   it("should invite email to waitlist", async () => {
     // Arrange
@@ -62,6 +46,8 @@ describe("invite", () => {
 
     // Act
     const result = await WaitlistService.invite(answer.email);
+
+    console.log(result);
 
     // Assert
     expect(result.status).toBe("invited");

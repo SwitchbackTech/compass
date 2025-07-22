@@ -11,19 +11,19 @@ import {
 import {
   TestSetup,
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
-import { Change_Gcal } from "@backend/sync/sync.types";
-import { GcalSyncProcessor } from "../gcal.sync.processor";
 import {
   createSeries,
   getCompassInstance,
-} from "./gcal.sync.processor.delete.util";
-import { createCompassSeriesFromGcalBase } from "./gcal.sync.processor.test.util";
+} from "@backend/sync/services/sync/__tests__/gcal.sync.processor.delete.util";
+import { createCompassSeriesFromGcalBase } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { Change_Gcal } from "@backend/sync/sync.types";
 
 describe("GcalSyncProcessor: DELETE", () => {
   let setup: TestSetup;
@@ -34,13 +34,9 @@ describe("GcalSyncProcessor: DELETE", () => {
     repo = new RecurringEventRepository(setup.userId);
   });
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
+  beforeEach(cleanupCollections);
 
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestDb);
 
   it("should delete a STANDALONE event", async () => {
     /* Assemble */

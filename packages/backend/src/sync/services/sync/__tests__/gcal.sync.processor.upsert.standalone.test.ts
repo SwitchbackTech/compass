@@ -3,13 +3,13 @@ import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   TestSetup,
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRegularGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
-import { GcalSyncProcessor } from "../gcal.sync.processor";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 
 describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
   let setup: TestSetup;
@@ -20,13 +20,9 @@ describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
     repo = new RecurringEventRepository(setup.userId);
   });
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
+  beforeEach(cleanupCollections);
 
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestDb);
 
   it("should handle UPSERTING a new STANDALONE event", async () => {
     /* Assemble */

@@ -1,5 +1,5 @@
 import {
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import {
@@ -14,9 +14,7 @@ describe("sync.queries nextPageToken", () => {
     setup = await setupTestDb();
   });
 
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestDb);
 
   it("updates and retrieves nextPageToken", async () => {
     const token = "page123";

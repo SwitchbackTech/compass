@@ -21,7 +21,7 @@ const logger = Logger("app:mongo.service");
 interface InternalClient {
   db: Db;
   client: MongoClient;
-  event: Collection<Schema_Event>;
+  event: Collection<Omit<Schema_Event, "_id">>;
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
   waitlist: Collection<Schema_Waitlist>;
@@ -39,7 +39,7 @@ class MongoService {
    *
    * mongo collection
    */
-  get event(): Collection<Schema_Event> {
+  get event(): InternalClient["event"] {
     return this.#accessInternalCollectionProps("event");
   }
 
@@ -48,7 +48,7 @@ class MongoService {
    *
    * mongo collection
    */
-  get sync(): Collection<Schema_Sync> {
+  get sync(): InternalClient["sync"] {
     return this.#accessInternalCollectionProps("sync");
   }
 
@@ -57,7 +57,7 @@ class MongoService {
    *
    * mongo collection
    */
-  get user(): Collection<Schema_User> {
+  get user(): InternalClient["user"] {
     return this.#accessInternalCollectionProps("user");
   }
 
@@ -66,12 +66,12 @@ class MongoService {
    *
    * mongo collection
    */
-  get waitlist(): Collection<Schema_Waitlist> {
+  get waitlist(): InternalClient["waitlist"] {
     return this.#accessInternalCollectionProps("waitlist");
   }
 
-  private onConnect(client: MongoClient) {
-    this.#internalClient = this.createInternalClient(client);
+  private onConnect(client: MongoClient, useDynamicDb = false) {
+    this.#internalClient = this.createInternalClient(client, useDynamicDb);
 
     Object.seal(this);
   }
@@ -81,7 +81,6 @@ class MongoService {
   }
 
   private onError(error: Error): void {
-    console.log("hey there!");
     logger.error(error.message, error);
   }
 
@@ -93,13 +92,16 @@ class MongoService {
     logger.debug(`Connection to database: '${event.address}' closed`);
   }
 
-  private createInternalClient(client: MongoClient): InternalClient {
-    const db = client.db(ENV.DB);
+  private createInternalClient(
+    client: MongoClient,
+    useDynamicDb = false,
+  ): InternalClient {
+    const db = client.db(useDynamicDb ? undefined : ENV.DB);
 
     return {
       db,
       client,
-      event: db.collection<Schema_Event>(Collections.EVENT),
+      event: db.collection<Omit<Schema_Event, "_id">>(Collections.EVENT),
       sync: db.collection<Schema_Sync>(Collections.SYNC),
       user: db.collection<Schema_User>(Collections.USER),
       waitlist: db.collection<Schema_Waitlist>(Collections.WAITLIST),
@@ -134,14 +136,14 @@ class MongoService {
     return retry;
   }
 
-  async start(uri: string = ENV.MONGO_URI): Promise<MongoService> {
+  async start(useDynamicDb = false): Promise<MongoService> {
     if (this.#internalClient) return this;
 
-    const client = new MongoClient(uri, {
+    const client = new MongoClient(ENV.MONGO_URI, {
       serverApi: { strict: true, version: "1" },
     });
 
-    client.on("open", this.onConnect.bind(this));
+    client.on("open", (client) => this.onConnect(client, useDynamicDb));
     client.on("close", this.onDisconnect.bind(this));
     client.on("error", this.onError.bind(this));
     client.on("connectionClosed", this.onClose.bind(this));

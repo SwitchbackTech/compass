@@ -2,11 +2,11 @@ import { isBase, isExistingInstance } from "@core/util/event/event.util";
 import { getCategorizedEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import mongoService from "@backend/common/services/mongo.service";
-import { createSyncImport } from "./sync.import";
+import { createSyncImport } from "@backend/sync/services/import/sync.import";
 
 describe("SyncImport: Full", () => {
   let syncImport: Awaited<ReturnType<typeof createSyncImport>>;
@@ -17,13 +17,9 @@ describe("SyncImport: Full", () => {
     syncImport = await createSyncImport(setup.userId);
   });
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
+  beforeEach(cleanupCollections);
 
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestDb);
 
   it("should import the first instance of a recurring event (and the base)", async () => {
     // Importing both the bae and first instance helps us find the series recurrence rule.
