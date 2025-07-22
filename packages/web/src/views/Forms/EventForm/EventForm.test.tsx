@@ -55,6 +55,7 @@ test("should call onConvert when meta+< (meta + shift + comma) keyboard shortcut
   const mockOnConvert = jest.fn();
   const mockOnSubmit = jest.fn();
   const mockSetEvent = jest.fn();
+
   const mockOnDelete = jest.fn();
 
   render(
@@ -74,8 +75,9 @@ test("should call onConvert when meta+< (meta + shift + comma) keyboard shortcut
   expect(screen.getByRole("form")).toBeInTheDocument();
 
   await act(async () => {
-    // Simulate pressing & holding Meta, then Shift, then comma (AKA '<'), then releasing
-    await userEvent.keyboard("{Meta>}{Shift>}{Comma}");
+    // Simulate pressing & holding control then shift then left arrow
+
+    await userEvent.keyboard("{Control>}{Meta>}{ArrowLeft}");
   });
 
   expect(mockOnConvert).toHaveBeenCalledTimes(1);
