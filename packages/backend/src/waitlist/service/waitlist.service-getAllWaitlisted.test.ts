@@ -1,25 +1,17 @@
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import WaitlistService from "./waitlist.service";
-import { answer } from "./waitlist.service.test-setup";
+import WaitlistService from "@backend/waitlist/service/waitlist.service";
+import { answer } from "@backend/waitlist/service/waitlist.service.test-setup";
 
 describe("getAllWaitlisted", () => {
-  let setup: Awaited<ReturnType<typeof setupTestDb>>;
+  beforeAll(setupTestDb);
 
-  beforeAll(async () => {
-    setup = await setupTestDb();
-  });
+  beforeEach(cleanupCollections);
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
-
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestDb);
 
   it("should return all waitlisted records", async () => {
     await WaitlistService.addToWaitlist(answer.email, answer);

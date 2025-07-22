@@ -3,19 +3,19 @@ import { EVENT_CHANGED } from "@core/constants/websocket.constants";
 import { isBase, isExistingInstance } from "@core/util/event/event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { SyncControllerDriver } from "@backend/__tests__/drivers/sync.controller.driver";
+import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
+import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { getCategorizedEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { waitUntilEvent } from "@backend/common/helpers/common.util";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
-import { SyncDriver } from "../../__tests__/drivers/sync.driver";
-import { UserDriver } from "../../__tests__/drivers/user.driver";
-import { waitUntilEvent } from "../../common/helpers/common.util";
-import userService from "../../user/services/user.service";
+import userService from "@backend/user/services/user.service";
 
 describe("SyncController", () => {
   const baseDriver = new BaseDriver();
@@ -33,7 +33,7 @@ describe("SyncController", () => {
 
   afterAll(async () => {
     await baseDriver.teardown();
-    await cleanupTestMongo(setup);
+    await cleanupTestDb();
     jest.clearAllMocks();
   });
 
@@ -45,7 +45,7 @@ describe("SyncController", () => {
           sessionId: randomUUID(),
         });
 
-        await cleanupCollections(setup.db);
+        await cleanupCollections();
 
         const failReason = await syncDriver.waitUntilImportGCalEnd(
           websocketClient,
@@ -369,7 +369,7 @@ describe("SyncController", () => {
     });
 
     describe("Frontend Notifications", () => {
-      beforeEach(() => cleanupCollections(setup.db));
+      beforeEach(cleanupCollections);
 
       it("should notify the frontend that the import has started", async () => {
         const user = await UserDriver.createUser();

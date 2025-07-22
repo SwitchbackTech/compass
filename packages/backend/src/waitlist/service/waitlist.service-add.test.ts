@@ -5,11 +5,11 @@ import {
 } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import WaitlistService from "./waitlist.service";
-import { answer } from "./waitlist.service.test-setup";
+import WaitlistService from "@backend/waitlist/service/waitlist.service";
+import { answer } from "@backend/waitlist/service/waitlist.service.test-setup";
 
 describe("addToWaitlist", () => {
   let setup: Awaited<ReturnType<typeof setupTestDb>>;
@@ -18,13 +18,9 @@ describe("addToWaitlist", () => {
     setup = await setupTestDb();
   });
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
+  beforeEach(cleanupCollections);
 
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestDb);
 
   it("should add to waitlist", async () => {
     // Act
