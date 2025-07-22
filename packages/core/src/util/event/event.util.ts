@@ -5,10 +5,11 @@ import {
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import { UserMetadata } from "@core/types/user.types";
+import { Event_API } from "@backend/common/types/backend.event.types";
 
 /** Event utilities for Compass events */
 
-export const categorizeEvents = (events: Schema_Event[]) => {
+export const categorizeEvents = (events: Array<Schema_Event | Event_API>) => {
   const baseEvents = events.filter(isBase) as Schema_Event_Recur_Base[];
   const instances = events.filter(
     isExistingInstance,
@@ -27,7 +28,7 @@ export const categorizeRecurringEvents = (events: Recurrence[]) => {
   return { baseEvent, instances };
 };
 
-export const isAllDay = (event: Schema_Event) =>
+export const isAllDay = (event: Schema_Event | Event_API) =>
   event !== undefined &&
   // 'YYYY-MM-DD' has 10 chars
   event.startDate?.length === 10 &&
@@ -38,7 +39,7 @@ export const isAllDay = (event: Schema_Event) =>
  * @param event
  * @returns
  */
-export const isBase = (event: Schema_Event) => {
+export const isBase = (event: Schema_Event | Event_API) => {
   return (
     event?.recurrence?.rule !== undefined &&
     event?.recurrence?.eventId === undefined
@@ -50,7 +51,7 @@ export const isBase = (event: Schema_Event) => {
  * @param event
  * @returns
  */
-export const isInstanceWithoutId = (event: Schema_Event) => {
+export const isInstanceWithoutId = (event: Schema_Event | Event_API) => {
   return (
     event?.recurrence?.rule === undefined &&
     event?.recurrence?.eventId === undefined &&
@@ -63,7 +64,7 @@ export const isInstanceWithoutId = (event: Schema_Event) => {
  * @param event
  * @returns
  */
-export const isExistingInstance = (event: Schema_Event) => {
+export const isExistingInstance = (event: Schema_Event | Event_API) => {
   return event.recurrence?.eventId && event.recurrence?.rule === undefined;
 };
 
@@ -72,7 +73,7 @@ export const isExistingInstance = (event: Schema_Event) => {
  * @param e - The events array
  * @returns The base events
  */
-export const filterBaseEvents = (e: Schema_Event[]) => {
+export const filterBaseEvents = (e: Array<Schema_Event | Event_API>) => {
   const baseEvents = e.filter((e) => e.recurrence?.rule !== undefined);
   return baseEvents as Schema_Event_Recur_Base[];
 };
@@ -82,7 +83,7 @@ export const filterBaseEvents = (e: Schema_Event[]) => {
  * @param e - The events array
  * @returns The recurring events (base or instance)
  */
-export const filterExistingInstances = (e: Schema_Event[]) =>
+export const filterExistingInstances = (e: Array<Schema_Event | Event_API>) =>
   e.filter(isExistingInstance);
 
 export const shouldImportGCal = (metadata: UserMetadata): boolean => {

@@ -4,10 +4,10 @@ import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
 import mongoService from "@backend/common/services/mongo.service";
 
 export class WaitListDriver {
-  static async createWaitListRecord(
+  static createWaitListRecord(
     user: Pick<WithId<Schema_User>, "email" | "firstName" | "lastName">,
-  ): Promise<WithId<Schema_Waitlist>> {
-    const waitListRecord: Schema_Waitlist = {
+  ): Schema_Waitlist {
+    return {
       email: user.email,
       schemaVersion: "0",
       source: "other",
@@ -20,7 +20,11 @@ export class WaitListDriver {
       status: "waitlisted",
       waitlistedAt: new Date().toISOString(),
     };
+  }
 
+  static async saveWaitListRecord(
+    waitListRecord: Schema_Waitlist,
+  ): Promise<WithId<Schema_Waitlist>> {
     const created = await mongoService.waitlist.insertOne(waitListRecord);
 
     return { _id: created.insertedId, ...waitListRecord };

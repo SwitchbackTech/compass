@@ -1,37 +1,12 @@
-import { Db } from "mongodb";
-import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
-import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { WaitListDriver } from "@backend/__tests__/drivers/waitlist.driver";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 
-export interface TestSetup {
-  db: Db;
-  userId: string;
-  email: string;
-}
-
 /**
- * Setup a test database with a test user and a
- * sync record that points to the test user
- * @returns {Promise<TestSetup>} - The test setup object
+ * Setup a test database
  */
-export async function setupTestDb(): Promise<TestSetup> {
+export async function setupTestDb(): Promise<void> {
   try {
-    await mongoService.start();
-
-    const user = await UserDriver.createUser();
-
-    await Promise.all([
-      SyncDriver.createSync(user, true),
-      WaitListDriver.createWaitListRecord(user),
-    ]);
-
-    return {
-      db: mongoService.db,
-      userId: user._id.toString(),
-      email: user.email,
-    };
+    await mongoService.start(true);
   } catch (err) {
     const error = err as Error;
 

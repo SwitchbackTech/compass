@@ -1,4 +1,4 @@
-import { Collection } from "mongodb";
+import { Collection, Filter } from "mongodb";
 import { mockEventSetJan22 } from "@core/__mocks__/v1/events/events.22jan";
 import { mockEventSetSomeday1 } from "@core/__mocks__/v1/events/events.someday.1";
 import { MapEvent } from "@core/mappers/map.event";
@@ -26,7 +26,12 @@ instances.forEach((i) => {
 });
 
 const recurring = [base, ...instances];
-const allEvents = [...mockEventSetJan22, ...mockEventSetSomeday1, ...recurring];
+const allEvents = [
+  ...mockEventSetJan22,
+  ...mockEventSetSomeday1,
+  ...recurring,
+] as Schema_Event[];
+
 describe("Jan 2022: Many Formats", () => {
   let eventCollection: Collection<Schema_Event>;
 
@@ -61,7 +66,7 @@ describe("Jan 2022: Many Formats", () => {
       start,
       end,
     });
-    const flatFilter = _flatten(filter, {});
+    const flatFilter = _flatten(filter, {}) as Filter<Schema_Event>;
     expect(flatFilter["$lte"]).not.toEqual(new Date(start).toISOString());
     expect(flatFilter["$gte"]).not.toEqual(new Date(end).toISOString());
   });

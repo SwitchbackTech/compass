@@ -1,32 +1,34 @@
 import { isBase, isExistingInstance } from "@core/util/event/event.util";
-import { getCategorizedEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import {
+  getCategorizedEventsInDb,
+  getEventsInDb,
+} from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import mongoService from "@backend/common/services/mongo.service";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
 
 describe("SyncImport: Full", () => {
-  let syncImport: Awaited<ReturnType<typeof createSyncImport>>;
-  let setup: Awaited<ReturnType<typeof setupTestDb>>;
-
-  beforeAll(async () => {
-    setup = await setupTestDb();
-    syncImport = await createSyncImport(setup.userId);
-  });
+  beforeAll(setupTestDb);
 
   beforeEach(cleanupCollections);
 
   afterAll(cleanupTestDb);
 
   it("should import the first instance of a recurring event (and the base)", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const syncImport = await createSyncImport(user._id.toString());
     // Importing both the bae and first instance helps us find the series recurrence rule.
     // To prevent duplicates in the UI, the GET API will not return the base event
-    await syncImport.importAllEvents(setup.userId, "test-calendar");
+    await syncImport.importAllEvents(user._id.toString(), "test-calendar");
 
-    const currentEventsInDb = await mongoService.event.find().toArray();
+    const currentEventsInDb = await getEventsInDb({
+      user: user._id.toString(),
+    });
+
     const baseEvent = currentEventsInDb.find(isBase)!;
     const firstInstance = currentEventsInDb.find(isExistingInstance)!;
 
@@ -37,8 +39,14 @@ describe("SyncImport: Full", () => {
   });
 
   it("should connect instances to their base events", async () => {
-    await syncImport.importAllEvents(setup.userId, "test-calendar");
-    const { baseEvents, instanceEvents } = await getCategorizedEventsInDb();
+    const { user } = await UtilDriver.setupTestUser();
+    const syncImport = await createSyncImport(user._id.toString());
+
+    await syncImport.importAllEvents(user._id.toString(), "test-calendar");
+
+    const { baseEvents, instanceEvents } = await getCategorizedEventsInDb({
+      user: user._id.toString(),
+    });
 
     expect(instanceEvents).toHaveLength(3);
     instanceEvents.forEach((instance) => {
@@ -47,10 +55,15 @@ describe("SyncImport: Full", () => {
   });
 
   it("should include regular and recurring events and skip cancelled events", async () => {
-    const { totalProcessed, totalChanged, nextSyncToken } =
-      await syncImport.importAllEvents(setup.userId, "test-calendar");
+    const { user } = await UtilDriver.setupTestUser();
+    const syncImport = await createSyncImport(user._id.toString());
 
-    const currentEventsInDb = await mongoService.event.find().toArray();
+    const { totalProcessed, totalChanged, nextSyncToken } =
+      await syncImport.importAllEvents(user._id.toString(), "test-calendar");
+
+    const currentEventsInDb = await getEventsInDb({
+      user: user._id.toString(),
+    });
 
     expect(totalProcessed).toBe(6); // base + 3 instances + regular + cancelled
     expect(totalChanged).toBe(5); // base + 3 instances + regular
@@ -85,9 +98,14 @@ describe("SyncImport: Full", () => {
   });
 
   it("should not create duplicate events for recurring events", async () => {
-    await syncImport.importAllEvents(setup.userId, "test-calendar");
+    const { user } = await UtilDriver.setupTestUser();
+    const syncImport = await createSyncImport(user._id.toString());
 
-    const currentEventsInDb = await mongoService.event.find().toArray();
+    await syncImport.importAllEvents(user._id.toString(), "test-calendar");
+
+    const currentEventsInDb = await getEventsInDb({
+      user: user._id.toString(),
+    });
 
     // Get all instance events
     const instances = currentEventsInDb.filter(isExistingInstance);
@@ -107,9 +125,14 @@ describe("SyncImport: Full", () => {
   });
 
   it("should not create duplicate events for regular events", async () => {
-    await syncImport.importAllEvents(setup.userId, "test-calendar");
+    const { user } = await UtilDriver.setupTestUser();
+    const syncImport = await createSyncImport(user._id.toString());
 
-    const currentEventsInDb = await mongoService.event.find().toArray();
+    await syncImport.importAllEvents(user._id.toString(), "test-calendar");
+
+    const currentEventsInDb = await getEventsInDb({
+      user: user._id.toString(),
+    });
 
     const regularEvents = currentEventsInDb.filter(
       ({ recurrence }) => recurrence === undefined || recurrence === null,
