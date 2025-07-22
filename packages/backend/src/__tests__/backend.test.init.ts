@@ -1,6 +1,6 @@
 const mongoUri = (global as unknown as { __MONGO_URI__: string }).__MONGO_URI__;
 
-process.env["BASEURL"] = "http;s://foo.yourdomain.app";
+process.env["BASEURL"] = "https://foo.yourdomain.app";
 process.env["CORS"] =
   "https://foo.yourdomain.app,http://localhost:3000,http://localhost:9080";
 process.env["PORT"] = "3000";

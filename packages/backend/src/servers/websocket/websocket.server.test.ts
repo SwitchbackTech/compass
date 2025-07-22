@@ -1,3 +1,8 @@
+/**
+ * @jest-environment node
+ *
+ * we do not need the database for this test
+ */
 import { randomUUID } from "node:crypto";
 import { updateUserMetadata } from "supertokens-node/recipe/usermetadata";
 import {
@@ -17,7 +22,7 @@ describe("WebSocket Server", () => {
   const baseDriver = new BaseDriver();
 
   const userMetadata: UserMetadata = {
-    sync: { importGCal: { importing: false } },
+    sync: { importGCal: null },
   };
 
   beforeAll(async () => {

@@ -5,7 +5,7 @@ import {
 } from "@core/util/event/event.util";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
@@ -21,13 +21,9 @@ describe("SyncImport: Series", () => {
     syncImport = await createSyncImport(setup.userId);
   });
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
+  beforeEach(cleanupCollections);
 
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestDb);
 
   it("should import a series when provided a gcal base event", async () => {
     /* Assemble */
