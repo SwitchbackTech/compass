@@ -1,3 +1,8 @@
+/**
+ * @jest-environment node
+ *
+ * we do not need the database for this test
+ */
 import { randomUUID } from "node:crypto";
 import { updateUserMetadata } from "supertokens-node/recipe/usermetadata";
 import {
