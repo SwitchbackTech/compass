@@ -30,7 +30,7 @@ export enum Categories_Recurrence {
 
 export type Categories_Recur = "all" | "future";
 
-export type Direction_Migrate = "forward" | "back";
+export type Direction_Migrate = "forward" | "back" | "up" | "down";
 
 export interface Params_DeleteMany {
   key: string;
