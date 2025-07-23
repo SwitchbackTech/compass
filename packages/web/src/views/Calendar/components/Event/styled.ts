@@ -108,6 +108,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
 `;
 
 export const StyledEventTitle = styled(Text)`
+  line-height: 0.9;
   min-height: 3px;
 `;
 
