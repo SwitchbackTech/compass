@@ -2,10 +2,6 @@
 import { logger } from "./init"; //must be first import
 
 import { ENV } from "@backend/common/constants/env.constants";
-import dayjs from "@core/util/date/dayjs";
-
-dayjs.tz.setDefault(ENV.TZ);
-
 import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
 import { initNgrokServer } from "@backend/servers/ngrok/ngrok.server";
