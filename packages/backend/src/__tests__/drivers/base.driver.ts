@@ -23,6 +23,11 @@ export class BaseDriver {
     return `session=${JSON.stringify(session)}`;
   }
 
+  constructor() {
+    this.http.timeout = 3000;
+    this.http.keepAliveTimeout = 4000;
+  }
+
   /**
    * listen
    *
@@ -104,8 +109,6 @@ export class BaseDriver {
       await this.websocketServer?.close();
 
       this.http.removeAllListeners();
-
-      this.http.closeAllConnections();
     } catch (error) {
       console.error(error);
     }

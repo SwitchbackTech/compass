@@ -4,52 +4,39 @@ import {
   categorizeEvents,
   isExistingInstance,
 } from "@core/util/event/event.util";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   getEventsInDb,
   isEventCollectionEmpty,
 } from "@backend/__tests__/helpers/mock.db.queries";
 import {
-  TestSetup,
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
+import { createSeries } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.delete.util";
+import { createCompassSeriesFromGcalBase } from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 import { Change_Gcal } from "@backend/sync/sync.types";
-import { GcalSyncProcessor } from "../gcal.sync.processor";
-import {
-  createSeries,
-  getCompassInstance,
-} from "./gcal.sync.processor.delete.util";
-import { createCompassSeriesFromGcalBase } from "./gcal.sync.processor.test.util";
 
 describe("GcalSyncProcessor: DELETE", () => {
-  let setup: TestSetup;
-  let repo: RecurringEventRepository;
+  beforeAll(setupTestDb);
 
-  beforeAll(async () => {
-    setup = await setupTestDb();
-    repo = new RecurringEventRepository(setup.userId);
-  });
+  beforeEach(cleanupCollections);
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
-
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestDb);
 
   it("should delete a STANDALONE event", async () => {
     /* Assemble */
-    const { gcalEvents } = await simulateDbAfterGcalImport(
-      setup.db,
-      setup.userId,
-    );
+    const { user } = await UtilDriver.setupTestUser();
+    const repo = new RecurringEventRepository(user._id.toString());
 
-    const origEvents = await getEventsInDb();
+    const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
+
+    const origEvents = await getEventsInDb({ user: user._id.toString() });
 
     /* Act: Simulate a cancelled event from Gcal */
     const gStandalone = gcalEvents.regular;
@@ -71,7 +58,9 @@ describe("GcalSyncProcessor: DELETE", () => {
     });
 
     // Verify the event is deleted from the DB
-    const remainingEvents = await getEventsInDb().then((events) =>
+    const remainingEvents = await getEventsInDb({
+      user: user._id.toString(),
+    }).then((events) =>
       events.map((event) => ({ ...event, _id: event._id?.toString() })),
     );
 
@@ -86,10 +75,16 @@ describe("GcalSyncProcessor: DELETE", () => {
 
   it("should delete an INSTANCE after cancelling it", async () => {
     /* Assemble */
-    const { compassBaseId, gcalBaseId, meta } = await createSeries(setup);
+    const { user } = await UtilDriver.setupTestUser();
+    const repo = new RecurringEventRepository(user._id.toString());
+    const { compassBaseId, gcalBaseId, meta } = await createSeries(user);
 
     // Query the Compass DB for actual recurring instances
-    const compassInstance = await getCompassInstance(compassBaseId);
+    const compassInstances = await getEventsInDb({
+      gRecurringEventId: compassBaseId,
+    });
+
+    const compassInstance = compassInstances[0];
 
     const cancelledGcalInstance = {
       kind: "calendar#event",
@@ -114,7 +109,7 @@ describe("GcalSyncProcessor: DELETE", () => {
     };
     expect(changes[0]).toEqual(expected);
 
-    const remainingEvents = await getEventsInDb();
+    const remainingEvents = await getEventsInDb({ user: user._id.toString() });
 
     // Verify only the instance was deleted
     expect(remainingEvents).toHaveLength(meta.createdCount - 1);
@@ -133,8 +128,11 @@ describe("GcalSyncProcessor: DELETE", () => {
       recurrence: ["RRULE:FREQ=DAILY"],
     });
 
+    const { user } = await UtilDriver.setupTestUser();
+    const repo = new RecurringEventRepository(user._id.toString());
+
     const { state } = await createCompassSeriesFromGcalBase(
-      setup,
+      user,
       gcalBaseEvent,
     );
 
@@ -163,7 +161,9 @@ describe("GcalSyncProcessor: DELETE", () => {
     expect(upserts).toHaveLength(1);
 
     // Validate DB state
-    const remainingEvents = await getEventsInDb().then((events) =>
+    const remainingEvents = await getEventsInDb({
+      user: user._id.toString(),
+    }).then((events) =>
       events.map((event) => ({ ...event, _id: event._id?.toString() })),
     );
 
@@ -179,10 +179,14 @@ describe("GcalSyncProcessor: DELETE", () => {
   });
 
   it("should delete BASE and all INSTANCES after cancelling a BASE", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const repo = new RecurringEventRepository(user._id.toString());
+
     const gcalBaseEvent = mockRecurringGcalBaseEvent({
       recurrence: ["RRULE:FREQ=DAILY"],
     });
-    await createCompassSeriesFromGcalBase(setup, gcalBaseEvent);
+
+    await createCompassSeriesFromGcalBase(user, gcalBaseEvent);
 
     // Cancel the entire series
     const cancelledBase = {

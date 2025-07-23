@@ -164,8 +164,8 @@ class EventService {
     return response;
   };
 
-  /* 
-  Deletes all of a user's events 
+  /*
+  Deletes all of a user's events
   REMINDER: this should only delete a user's *Compass* events --
             don't ever delete their events in gcal or any other 3rd party calendar
   */
@@ -402,8 +402,8 @@ const _deleteFromCompass = async (event: Schema_Event_Core) => {
   const filter = getDeleteByIdFilter(event);
 
   const response = isRecurring
-    ? await mongoService.db.collection(Collections.EVENT).deleteMany(filter)
-    : await mongoService.db.collection(Collections.EVENT).deleteOne(filter);
+    ? await mongoService.event.deleteMany(filter)
+    : await mongoService.event.deleteOne(filter);
 
   return response;
 };

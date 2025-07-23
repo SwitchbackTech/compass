@@ -1,48 +1,12 @@
-import { Db } from "mongodb";
-import { MongoMemoryServer } from "mongodb-memory-server";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
-import { SyncDriver } from "../drivers/sync.driver";
-import { UserDriver } from "../drivers/user.driver";
-import { WaitListDriver } from "../drivers/waitlist.driver";
-
-export interface TestSetup {
-  mongoServer: MongoMemoryServer;
-  mongoClient: typeof mongoService;
-  db: Db;
-  userId: string;
-  email: string;
-}
 
 /**
- * Setup a test database with a test user and a
- * sync record that points to the test user
- * @returns {Promise<TestSetup>} - The test setup object
+ * Setup a test database
  */
-export async function setupTestDb(): Promise<TestSetup> {
+export async function setupTestDb(): Promise<void> {
   try {
-    const dbName = process.env["DB"];
-
-    // Setup in-memory MongoDB
-    const mongoServer = new MongoMemoryServer({ instance: { dbName } });
-
-    await mongoServer.start();
-    await mongoService.start(mongoServer.getUri());
-
-    const user = await UserDriver.createUser();
-
-    await Promise.all([
-      SyncDriver.createSync(user, true),
-      WaitListDriver.createWaitListRecord(user),
-    ]);
-
-    return {
-      mongoServer,
-      mongoClient: mongoService,
-      db: mongoService.db,
-      userId: user._id.toString(),
-      email: user.email,
-    };
+    await mongoService.start(true);
   } catch (err) {
     const error = err as Error;
 
@@ -55,14 +19,10 @@ export async function setupTestDb(): Promise<TestSetup> {
   }
 }
 
-export async function cleanupCollections(db: Db): Promise<void> {
-  const collections = await db.collections();
+export async function cleanupCollections(): Promise<void> {
+  const collections = await mongoService.db.collections();
 
-  const SKIP_COLLECTIONS = [
-    Collections.USER,
-    Collections.SYNC,
-    Collections.WAITLIST,
-  ];
+  const SKIP_COLLECTIONS = [Collections.USER, Collections.SYNC];
 
   const selectedCollections = collections.filter(
     (collection) => !SKIP_COLLECTIONS.includes(collection.collectionName),
@@ -73,14 +33,10 @@ export async function cleanupCollections(db: Db): Promise<void> {
   );
 }
 
-export async function cleanupTestMongo({
-  mongoServer,
-  mongoClient,
-}: TestSetup): Promise<void> {
+export async function cleanupTestDb(): Promise<void> {
   try {
-    await mongoClient.stop();
-    await mongoServer.stop({ force: true, doCleanup: true });
+    await mongoService.stop();
   } catch (err) {
-    console.error("Error during cleanup:", err);
+    console.error("Error during test db cleanup:", err);
   }
 }

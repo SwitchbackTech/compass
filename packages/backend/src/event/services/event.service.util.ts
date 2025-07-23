@@ -11,6 +11,7 @@ import {
 import { isSameMonth } from "@core/util/date/date.util";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import mongoService from "../../common/services/mongo.service";
 
 dayjs.extend(tz);
 dayjs.extend(utc);
@@ -33,7 +34,7 @@ export const getCreateParams = (userId: string, event: Schema_Event_Core) => {
 
 export const getDeleteByIdFilter = (
   event: Schema_Event_Core,
-): Filter<object> => {
+): Parameters<typeof mongoService.event.find>[0] => {
   if (!event._id) {
     throw error(
       GenericError.BadRequest,

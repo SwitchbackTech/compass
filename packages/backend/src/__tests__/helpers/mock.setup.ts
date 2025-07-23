@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Handler, Request, Response } from "express";
 import { GoogleApis } from "googleapis";
 import { randomUUID } from "node:crypto";
 import type SuperTokens from "supertokens-node";
@@ -10,6 +10,7 @@ import { SessionContainerInterface } from "supertokens-node/lib/build/recipe/ses
 import { UserMetadata } from "@core/types/user.types";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
+import { ENV } from "@backend/common/constants/env.constants";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 
 function mockGoogleapis() {
@@ -140,6 +141,44 @@ function mockSuperToken() {
   });
 }
 
+function mockWinstonLogger() {
+  jest.mock("@core/logger/winston.logger", () => {
+    const mockLogger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      verbose: jest.fn(),
+    };
+
+    return {
+      Logger: jest.fn().mockImplementation(() => mockLogger),
+    };
+  });
+}
+
+function mockHttpLoggingMiddleware() {
+  mockModule("@backend/common/middleware/http.logger.middleware", () => ({
+    httpLoggingMiddleware: jest.fn<void, Parameters<Handler>>((...args) =>
+      args[2](),
+    ),
+  }));
+}
+
+export function mockEnv(env: Partial<typeof ENV>) {
+  const entries = Object.entries(env) as Array<
+    [keyof typeof env, (typeof env)[keyof typeof env]]
+  >;
+
+  return entries.reduce(
+    (newEnv, [key, value]) => ({
+      ...newEnv,
+      [key]: jest.replaceProperty(ENV, key, value),
+    }),
+    {} as Record<keyof typeof env, jest.ReplaceProperty<keyof typeof env>>,
+  );
+}
+
 export function mockModule(
   mockPath: string,
   mockFactory?: (...args: unknown[]) => object,
@@ -157,6 +196,8 @@ export function mockModule(
 }
 
 export function mockNodeModules() {
+  mockWinstonLogger();
+  mockHttpLoggingMiddleware();
   mockGoogleapis();
   mockSuperToken();
 }

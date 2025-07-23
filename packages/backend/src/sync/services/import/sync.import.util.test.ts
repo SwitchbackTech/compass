@@ -145,8 +145,6 @@ describe("assignIdsToEvents", () => {
 
     expect(baseEvent).toBeDefined();
 
-    console.log(events);
-
     const instances = events.filter((event) => event.recurrence?.eventId);
 
     expect(instances).toHaveLength(2);

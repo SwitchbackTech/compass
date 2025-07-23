@@ -1,4 +1,4 @@
-import { Db, ObjectId, WithoutId } from "mongodb";
+import { ObjectId, WithoutId } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { Schema_Event, WithCompassId } from "@core/types/event.types";
@@ -9,6 +9,7 @@ import {
 } from "@core/types/gcal";
 import { isBase } from "@core/util/event/event.util";
 import { Collections } from "@backend/common/constants/collections";
+import mongoService from "../../common/services/mongo.service";
 import { mockGcalEvents } from "../mocks.gcal/mocks.gcal/factories/gcal.event.factory";
 
 export interface State_AfterGcalImport {
@@ -29,15 +30,14 @@ export interface State_AfterGcalImport {
  * @returns {Object} - The gcal and compass events
  */
 export const simulateDbAfterGcalImport = async (
-  db: Db,
   userId: string,
 ): Promise<State_AfterGcalImport> => {
   const { gcalEvents, compassEvents } = mockGcalAndCompassEvents(userId);
-  await db
+  await mongoService.db
     .collection(Collections.EVENT)
     .insertMany(compassEvents as unknown as WithoutId<Schema_Event>[]);
 
-  const compassEventsInDb = (await db
+  const compassEventsInDb = (await mongoService.db
     .collection(Collections.EVENT)
     .find({})
     .toArray()) as unknown as WithCompassId<Schema_Event>[];

@@ -58,8 +58,6 @@ async function start() {
 
 async function closeHttpServer(): Promise<void> {
   if (httpServer.listening) {
-    httpServer.closeAllConnections();
-
     await new Promise((resolve, reject) =>
       httpServer.close((error) => (error ? reject(error) : resolve(undefined))),
     );

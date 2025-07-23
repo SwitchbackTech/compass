@@ -5,38 +5,32 @@ import {
 } from "@core/util/event/event.util";
 import {
   cleanupCollections,
-  cleanupTestMongo,
+  cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import mongoService from "@backend/common/services/mongo.service";
-import { createSyncImport } from "@backend/sync/services/import/sync.import";
+import { UtilDriver } from "../../../__tests__/drivers/util.driver";
+import { getEventsInDb } from "../../../__tests__/helpers/mock.db.queries";
+import { createSyncImport } from "./sync.import";
 
 describe("SyncImport: Series", () => {
-  let syncImport: Awaited<ReturnType<typeof createSyncImport>>;
-  let setup: Awaited<ReturnType<typeof setupTestDb>>;
+  beforeAll(setupTestDb);
 
-  beforeAll(async () => {
-    setup = await setupTestDb();
-    syncImport = await createSyncImport(setup.userId);
-  });
+  beforeEach(cleanupCollections);
 
-  beforeEach(async () => {
-    await cleanupCollections(setup.db);
-  });
-
-  afterAll(async () => {
-    await cleanupTestMongo(setup);
-  });
+  afterAll(cleanupTestDb);
 
   it("should import a series when provided a gcal base event", async () => {
     /* Assemble */
+    const { user } = await UtilDriver.setupTestUser();
+    const syncImport = await createSyncImport(user._id.toString());
+
     const baseRecurringGcalEvent = mockRecurringGcalBaseEvent();
 
     /* Act */
     // trigger a series import with base event
     const result = await syncImport.importSeries(
-      setup.userId,
+      user._id.toString(),
       "test-calendar",
       baseRecurringGcalEvent,
     );
@@ -45,7 +39,9 @@ describe("SyncImport: Series", () => {
     expect(result.insertedCount).toEqual(4);
 
     // validate DB state
-    const currentEventsInDb = await mongoService.event.find().toArray();
+    const currentEventsInDb = await getEventsInDb({
+      user: user._id.toString(),
+    });
 
     const baseEvents = filterBaseEvents(currentEventsInDb);
 
