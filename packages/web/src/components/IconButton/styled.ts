@@ -30,8 +30,10 @@ export const StyledIconButton = styled.button<IconButtonProps>`
   justify-content: center;
   transition:
     background-color 0.3s ease,
-    transform 0.2s ease;
+    transform 0.2s ease,
+    border-color 0.2s ease;
   font-size: ${({ size = "medium" }) => sizeMap[size]}px;
+  border: 2px solid transparent;
 
   &:hover {
     transform: scale(1.05);
@@ -44,5 +46,9 @@ export const StyledIconButton = styled.button<IconButtonProps>`
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    border-color: ${({ theme }) => theme.color.border.primary};
   }
 `;
