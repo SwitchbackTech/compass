@@ -1,11 +1,11 @@
 import React from "react";
 import { ActionsMenu } from "../ActionsMenu/ActionsMenu";
-import { DeleteButton } from "../EventForm/DeleteButton";
-import { DuplicateButton } from "../EventForm/DuplicateButton";
-import { MigrateAboveButton } from "../EventForm/MigrateAboveButton";
-import { MigrateBackwardButton } from "../EventForm/MigrateBackwardButton";
-import { MigrateBelowButton } from "../EventForm/MigrateBelowButton";
-import { MigrateForwardButton } from "../EventForm/MigrateForwardButton";
+import { DeleteMenuButton } from "../EventForm/DeleteMenuButton";
+import { DuplicateMenuButton } from "../EventForm/DuplicateMenuButton";
+import { MigrateAboveMenuButton } from "../EventForm/MigrateAboveMenuButton";
+import { MigrateBackwardMenuButton } from "../EventForm/MigrateBackwardMenuButton";
+import { MigrateBelowMenuButton } from "../EventForm/MigrateBelowMenuButton";
+import { MigrateForwardMenuButton } from "../EventForm/MigrateForwardMenuButton";
 
 interface Props {
   target: string;
@@ -32,15 +32,14 @@ export const SomedayEventActionMenu: React.FC<Props> = ({
     <ActionsMenu id={ID_SOMEDAY_EVENT_ACTION_MENU}>
       {(close) => (
         <>
-          <MigrateBackwardButton
+          <MigrateBackwardMenuButton
             tooltipText={`Migrate to previous ${target}`}
             onClick={() => {
-              console.log("migrate backward");
               onMigrateBackwardClick();
               close();
             }}
           />
-          <MigrateForwardButton
+          <MigrateForwardMenuButton
             tooltipText={`Migrate to next ${target}`}
             onClick={() => {
               onMigrateForwardClick();
@@ -48,7 +47,7 @@ export const SomedayEventActionMenu: React.FC<Props> = ({
             }}
           />
           {target === "month" && (
-            <MigrateAboveButton
+            <MigrateAboveMenuButton
               tooltipText="Migrate to this week"
               onClick={() => {
                 onMigrateAboveClick();
@@ -57,7 +56,7 @@ export const SomedayEventActionMenu: React.FC<Props> = ({
             />
           )}
           {target === "week" && (
-            <MigrateBelowButton
+            <MigrateBelowMenuButton
               tooltipText="Migrate to this month"
               onClick={() => {
                 onMigrateBelowClick();
@@ -66,13 +65,13 @@ export const SomedayEventActionMenu: React.FC<Props> = ({
             />
           )}
 
-          <DuplicateButton
+          <DuplicateMenuButton
             onClick={() => {
               onDuplicateClick();
               close();
             }}
           />
-          <DeleteButton
+          <DeleteMenuButton
             onClick={() => {
               onDeleteClick();
               close();

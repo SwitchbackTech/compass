@@ -1,11 +1,11 @@
 import React from "react";
 import styled from "styled-components";
-import { ArrowDown } from "@phosphor-icons/react";
+import { ArrowUp } from "@phosphor-icons/react";
 import { getMetaKey } from "@web/common/utils/shortcut.util";
 import { Text } from "@web/components/Text";
 import MenuItem from "../ActionsMenu/MenuItem";
 
-const StyledArrowDown = styled(ArrowDown)`
+const StyledArrowUp = styled(ArrowUp)`
   width: 16px;
   height: 16px;
 `;
@@ -15,9 +15,9 @@ interface Props {
   tooltipText?: string;
 }
 
-export const MigrateBelowButton: React.FC<Props> = ({
+export const MigrateAboveMenuButton: React.FC<Props> = ({
   onClick,
-  tooltipText = "Migrate Below",
+  tooltipText = "Migrate Above",
 }) => {
   return (
     <MenuItem
@@ -26,11 +26,11 @@ export const MigrateBelowButton: React.FC<Props> = ({
       aria-label={tooltipText}
       tooltipContent={
         <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-          CTRL + {getMetaKey()} + <StyledArrowDown />
+          CTRL + {getMetaKey()} + <StyledArrowUp />
         </Text>
       }
     >
-      <ArrowDown size={16} />
+      <ArrowUp size={16} />
       <span>{tooltipText}</span>
     </MenuItem>
   );
