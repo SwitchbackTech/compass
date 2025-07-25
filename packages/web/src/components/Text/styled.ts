@@ -15,7 +15,17 @@ export interface Props {
   zIndex?: number;
 }
 
-type FontSize = "xs" | "s" | "m" | "l" | "xl" | "xxl" | "xxxl" | "4xl" | "5xl";
+type FontSize =
+  | "xs"
+  | "s"
+  | "m"
+  | "smFluid"
+  | "l"
+  | "xl"
+  | "xxl"
+  | "xxxl"
+  | "4xl"
+  | "5xl";
 
 export const StyledText = styled.span<Props>`
   ${({ color }) => color && `color: ${color};`}
