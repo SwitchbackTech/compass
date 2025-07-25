@@ -8,8 +8,11 @@ import {
 import { CompassApi } from "@web/common/apis/compass.api";
 
 const EventApi = {
-  create: (event: Schema_Event) => {
-    return CompassApi.post(`/event`, event);
+  create: (payload: {
+    data: Schema_Event;
+    options: { noSyncToGcal?: boolean };
+  }) => {
+    return CompassApi.post(`/event`, payload);
   },
   delete: (_id: string) => {
     return CompassApi.delete(`/event/${_id}`);
