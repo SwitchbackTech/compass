@@ -6,7 +6,7 @@ interface Props {
   onClick: () => void;
 }
 
-export const DeleteButton: React.FC<Props> = ({ onClick }) => {
+export const DeleteMenuButton: React.FC<Props> = ({ onClick }) => {
   return (
     <MenuItem
       role="menuitem"

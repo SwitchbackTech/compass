@@ -8,7 +8,7 @@ interface Props {
   onClick: () => void;
 }
 
-export const DuplicateButton: React.FC<Props> = ({ onClick }) => {
+export const DuplicateMenuButton: React.FC<Props> = ({ onClick }) => {
   return (
     <MenuItem
       role="menuitem"
