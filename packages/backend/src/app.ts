@@ -62,8 +62,8 @@ async function closeHttpServer(): Promise<void> {
 
 async function closeNGrokServer(): Promise<void> {
   const url = process.env["NGROK_DOMAIN_FULL"];
-  const ngrok = await import("@ngrok/ngrok");
-  const ngrokListener = url ? await ngrok.getListenerByUrl(url) : undefined;
+  const ngrok = await import("@ngrok/ngrok").catch(() => undefined);
+  const ngrokListener = url ? await ngrok?.getListenerByUrl(url) : undefined;
 
   if (ngrokListener) {
     // do not wait for this promise,

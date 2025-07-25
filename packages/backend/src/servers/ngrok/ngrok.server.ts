@@ -29,10 +29,10 @@ export function initNgrokServer(
 
   listener.on("connect", async () => {
     try {
-      const ngrok = await import("@ngrok/ngrok");
+      const ngrok = await import("@ngrok/ngrok").catch(() => undefined);
       const addr = getServerUri(httpServer);
 
-      const server = await ngrok.connect({
+      const server = await ngrok?.connect({
         addr,
         authtoken_from_env: true,
         authtoken,
@@ -41,7 +41,7 @@ export function initNgrokServer(
         domain,
       });
 
-      listener.emit("connected", server);
+      if (server) listener.emit("connected", server);
     } catch (error) {
       listener.emit("error", error as Error);
     }
