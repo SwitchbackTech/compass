@@ -35,7 +35,6 @@ export const SomedayEventActionMenu: React.FC<Props> = ({
           <MigrateBackwardButton
             tooltipText={`Migrate to previous ${target}`}
             onClick={() => {
-              console.log("migrate backward");
               onMigrateBackwardClick();
               close();
             }}

@@ -1,4 +1,4 @@
-import React, { MouseEvent, useState } from "react";
+import React, { MouseEvent, useRef, useState } from "react";
 import styled from "styled-components";
 import {
   FloatingFocusManager,
@@ -23,11 +23,16 @@ interface ActionsMenuProps {
 
 export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
   const [open, setOpen] = useState(false);
+  const openedByMouseRef = useRef(false);
 
   const { x, y, refs, strategy, context } = useFloating({
     open,
     onOpenChange: (open) => {
       setOpen(open);
+      if (!open) {
+        // Reset the flag when menu closes
+        openedByMouseRef.current = false;
+      }
     },
     middleware: [offset(8), flip(), shift({ padding: 8 })],
     placement: "bottom-end",
@@ -54,6 +59,8 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
             // Prevent default behaviour (like focusing inputs) and stop bubbling to parent form
             e.preventDefault();
             e.stopPropagation();
+            // Only set the flag for actual mouse clicks (detail > 0 indicates mouse click)
+            openedByMouseRef.current = e.detail > 0;
           },
         })}
       >
@@ -63,7 +70,11 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
       </TriggerWrapper>
       {open && (
         <FloatingPortal>
-          <FloatingFocusManager context={context} modal={false}>
+          <FloatingFocusManager
+            context={context}
+            modal={false}
+            initialFocus={openedByMouseRef.current ? -1 : 0}
+          >
             <StyledMenu
               ref={refs.setFloating}
               style={{ position: strategy, top: y ?? 0, left: x ?? 0 }}
