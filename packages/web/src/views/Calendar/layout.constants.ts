@@ -6,6 +6,10 @@ export const DRAFT_DURATION_MIN = 15;
 export const DRAFT_PADDING_BOTTOM = 3;
 
 export const EVENT_ALLDAY_HEIGHT = 20;
+/** Gap between each allday event, found by experimenting with what 'looked right' */
+export const EVENT_ALLDAY_GAP = 3;
+/** Height of the row containing the all-day event. Not to be confused with `EVENT_ALLDAY_HEIGHT` */
+export const EVENT_ALLDAY_ROW_HEIGHT = EVENT_ALLDAY_HEIGHT + EVENT_ALLDAY_GAP;
 export const EVENT_PADDING_RIGHT = 10;
 export const EVENT_WIDTH_MINIMUM = 80;
 
