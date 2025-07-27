@@ -94,7 +94,7 @@ export const assignIdsToEvents = (
     const isBaseEvent = isBase(event);
     const isInstance = isInstanceWithoutId(event);
     const isRegularEvent = !isBaseEvent && !isInstance;
-    const baseEventId = event?.gRecurringEventId ?? event.gEventId!;
+    const baseEventId = event?.gRecurringEventId ?? event?.gEventId!;
 
     if (!idMaps.get(baseEventId)) idMaps.set(baseEventId, new ObjectId());
 

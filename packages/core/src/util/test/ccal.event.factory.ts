@@ -9,7 +9,6 @@ import {
   Schema_Event_Recur_Instance,
   WithCompassId,
 } from "@core/types/event.types";
-import { appendWithRfc5545Timestamp } from "@core/util/date/date.util";
 
 dayjs.extend(timezone);
 
@@ -76,7 +75,7 @@ export const createMockInstance = (
   const startIso = start.toISOString();
   const end = start.add(1, "hour");
 
-  const gEventId = appendWithRfc5545Timestamp(gBaseId, startIso);
+  const gEventId = `${gBaseId}_${start.toRFC5545String()}`;
 
   const instance = {
     _id: new ObjectId().toString(),

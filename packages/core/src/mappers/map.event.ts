@@ -4,7 +4,7 @@ import { BaseError } from "@core/errors/errors.base";
 import { Event_Core, Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import { isAllDay } from "@core/util/event/event.util";
-import { notCancelled } from "@core/util/event/gcal.event.util";
+import { isCancelledGCalEvent } from "@core/util/event/gcal.event.util";
 import { validateEvent } from "@core/validators/event.validator";
 
 export namespace MapEvent {
@@ -14,7 +14,7 @@ export namespace MapEvent {
     origin?: Origin,
   ): Event_Core[] => {
     const mapped = events
-      .filter(notCancelled)
+      .filter((event) => !isCancelledGCalEvent(event))
       .map((e: gSchema$Event) => _toCompass(userId, e, origin));
 
     return mapped;
