@@ -25,6 +25,7 @@ interface StyledEventProps {
   priority: Priority;
   top: number;
   width: number;
+  eventHeight: number;
 }
 
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
@@ -107,8 +108,9 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   }
 `;
 
-export const StyledEventTitle = styled(Text)`
-  line-height: 0.9;
+export const StyledEventTitle = styled(Text)<StyledEventProps>`
+  font-size: ${({ eventHeight }) => (eventHeight <= 15 ? "10px" : "13px")};
+  line-height: ${({ eventHeight }) => (eventHeight <= 15 ? "1.1" : "")};
   min-height: 3px;
 `;
 

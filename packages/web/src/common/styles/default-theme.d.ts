@@ -64,7 +64,6 @@ declare module "styled-components" {
         xs: string;
         s: string;
         m: string;
-        smFluid: string;
         l: string;
         xl: string;
         xxl: string;
