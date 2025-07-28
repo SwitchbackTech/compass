@@ -5,10 +5,13 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { getElemById } from "@web/common/utils/grid.util";
+import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 
 export type MeasureableElement = "mainGrid" | "allDayRow";
 
 export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
+  const alldayRowsCount = useAppSelector(selectRowCount);
   const [allDayMeasurements, setAllDayMeasurements] = useState<DOMRect | null>(
     null,
   );
@@ -31,6 +34,10 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
+  useEffect(() => {
+    _measureAllDayRow();
+  }, [alldayRowsCount]);
 
   const allDayRef = useCallback((node: HTMLDivElement) => {
     if (node !== null) {
