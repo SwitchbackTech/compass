@@ -81,11 +81,20 @@ export const snapToGrid = (
   // Check if the cursor is within the bounds of the main grid
   const isCursorWithinGrid = cursorY > measurements.mainGrid.top;
 
+  // Check if the cursor is within the bounds of the all-day row
+  const isCursorWithinAllDayRow =
+    !!measurements.allDayRow &&
+    cursorY > measurements.allDayRow.top &&
+    cursorY < measurements.allDayRow.bottom;
+
   let snappedY = cursorY;
   let snappedX = cursorX;
 
   if (isCursorWithinGrid) {
     snappedY = snapYToGrid(cursorY, measurements, scrollTop);
+    snappedX = snapXToGrid(cursorX, measurements);
+  } else if (isCursorWithinAllDayRow) {
+    // Only snap horizontally when over the all-day row
     snappedX = snapXToGrid(cursorX, measurements);
   }
 

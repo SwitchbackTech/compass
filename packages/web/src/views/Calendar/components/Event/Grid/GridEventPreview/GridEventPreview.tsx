@@ -7,6 +7,8 @@ import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
+import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { snapToGrid } from "@web/views/Calendar/components/Event/Grid/GridEventPreview/snap.grid";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
@@ -14,7 +16,10 @@ import {
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { EVENT_ALLDAY_HEIGHT } from "@web/views/Calendar/layout.constants";
+import {
+  EVENT_ALLDAY_GAP,
+  EVENT_ALLDAY_HEIGHT,
+} from "@web/views/Calendar/layout.constants";
 import { SOMEDAY_EVENT_HEIGHT } from "../../../Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { StyledGridEventPreview, getItemStyles, layerStyles } from "./styled";
 
@@ -41,6 +46,9 @@ const _GridEventPreview: FC<Props> = ({
   startOfView,
   mainGridRef,
 }) => {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const allDayRowCount = useAppSelector(selectRowCount);
+
   const { colWidths } = measurements;
   const { x, y } = mouseCoords;
 
@@ -85,9 +93,30 @@ const _GridEventPreview: FC<Props> = ({
     mainGridRef.current?.scrollTop || 0,
   );
 
+  /*
+   * If we are over the all-day row, override the snapped Y so that the preview
+   * is positioned directly beneath the existing events in that column. We do
+   * this by calculating the row height (the same height used when rendering
+   * real all-day events) and multiplying it by the number of rows that already
+   * exist, then offsetting from the top of the all-day row element.
+   */
+  const getSnappedYForAllDay = (): number => {
+    if (!measurements.allDayRow) return snappedY;
+
+    // The top offset each row uses when rendered (see getAllDayEventPosition)
+    const ROW_HEIGHT = EVENT_ALLDAY_HEIGHT + EVENT_ALLDAY_GAP;
+
+    // Index for the new row (existing rows + 1)
+    const nextRowIndex = allDayRowCount + 1;
+
+    return measurements.allDayRow.top + ROW_HEIGHT * nextRowIndex;
+  };
+
+  const finalY = isOverAllDayRow ? getSnappedYForAllDay() : snappedY;
+
   return (
     <div style={layerStyles}>
-      <div style={getItemStyles({ x: snappedX, y: snappedY })}>
+      <div style={getItemStyles({ x: snappedX, y: finalY })}>
         <StyledGridEventPreview
           className={"active"}
           duration={1}
