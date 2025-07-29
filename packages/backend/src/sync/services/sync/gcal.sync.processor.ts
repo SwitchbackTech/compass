@@ -1,3 +1,4 @@
+import { WithId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
 import {
@@ -66,7 +67,7 @@ export class GcalSyncProcessor {
           break;
       }
 
-      const change = parser.summarize();
+      const change = parser.summary;
       summary.push({ ...change, operation });
     }
     return summary;
@@ -106,25 +107,13 @@ export class GcalSyncProcessor {
     gEvent: gSchema$EventBase,
     parser: GcalParser,
   ): Promise<Operation_Sync> {
-    const status = parser.status;
+    const { cancelled, isBase } = parser;
 
     const compassEvent = await this.getCompassEvent(gEvent.id);
-    if (!compassEvent) {
-      const syncImport = await createSyncImport(this.recurringEventRepo.userId);
-      await syncImport.importSeries(
-        this.recurringEventRepo.userId,
-        "primary",
-        gEvent,
-      );
-      return "UPSERTED";
-    }
-    if (status === "CANCELLED") {
-      logger.info(
-        `Cancelling SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
-      );
-      await this.recurringEventRepo.cancelSeries(compassEvent._id.toString());
-      return "DELETED";
-    }
+
+    if (!compassEvent) return this.importNewSeries(gEvent);
+
+    if (cancelled) return this.cancelSeries(gEvent, compassEvent);
 
     if (
       this.isSeriesSplit(gEvent, compassEvent as WithCompassId<Schema_Event>)
@@ -145,7 +134,7 @@ export class GcalSyncProcessor {
       return "UPSERTED";
     }
 
-    const isSeriesUpdate = parser.isRecurrenceBase();
+    const isSeriesUpdate = isBase;
     if (isSeriesUpdate) {
       logger.info(
         `Updating SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
@@ -159,6 +148,7 @@ export class GcalSyncProcessor {
 
     throw error(GenericError.DeveloperError, "Series change not handled");
   }
+
   private async handleStandaloneChange(
     gEvent: WithGcalId<gSchema$Event>,
   ): Promise<Operation_Sync> {
@@ -174,6 +164,34 @@ export class GcalSyncProcessor {
     await this.eventRepo.updateById("gEventId", compassEvent);
     return "UPSERTED";
   }
+
+  private async importNewSeries(
+    gEvent: gSchema$EventBase,
+  ): Promise<"UPSERTED"> {
+    const syncImport = await createSyncImport(this.recurringEventRepo.userId);
+
+    await syncImport.importSeries(
+      this.recurringEventRepo.userId,
+      "primary",
+      gEvent,
+    );
+
+    return "UPSERTED";
+  }
+
+  private async cancelSeries(
+    gEvent: gSchema$EventBase,
+    compassEvent: WithId<Schema_Event | null>,
+  ): Promise<"DELETED"> {
+    logger.info(
+      `Cancelling SERIES: ${compassEvent?._id} (Compass) | ${gEvent.id} (Gcal)`,
+    );
+
+    await this.recurringEventRepo.cancelSeries(compassEvent._id.toString());
+
+    return "DELETED";
+  }
+
   private isSeriesSplit(
     gEvent: WithGcalId<gSchema$Event>,
     cEvent: WithCompassId<Schema_Event>,
