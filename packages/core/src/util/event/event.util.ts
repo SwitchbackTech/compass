@@ -55,7 +55,7 @@ export const isInstanceWithoutId = (event: Schema_Event | Event_API) => {
   return (
     event?.recurrence?.rule === undefined &&
     event?.recurrence?.eventId === undefined &&
-    typeof event.gRecurringEventId === "string"
+    typeof event?.gRecurringEventId === "string"
   );
 };
 
@@ -65,7 +65,7 @@ export const isInstanceWithoutId = (event: Schema_Event | Event_API) => {
  * @returns
  */
 export const isExistingInstance = (event: Schema_Event | Event_API) => {
-  return event.recurrence?.eventId && event.recurrence?.rule === undefined;
+  return event?.recurrence?.eventId && event?.recurrence?.rule === undefined;
 };
 
 /**
