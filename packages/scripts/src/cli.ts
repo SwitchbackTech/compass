@@ -6,6 +6,7 @@ import { CliValidator } from "./cli.validator";
 import { runBuild } from "./commands/build";
 import { startDeleteFlow } from "./commands/delete";
 import { inviteWaitlist } from "./commands/invite";
+import { startSyncDuplicateMergeFlow } from "./commands/merge-sync";
 import { runSeed } from "./commands/seed";
 import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
 
@@ -33,6 +34,10 @@ class CompassCli {
       case cmd === "delete": {
         this.validator.validateDelete(options);
         await startDeleteFlow(user as string, force);
+        break;
+      }
+      case cmd === "merge-duplicate-sync": {
+        await startSyncDuplicateMergeFlow(force);
         break;
       }
       case cmd === "invite": {
@@ -80,6 +85,10 @@ class CompassCli {
         "-u, --user [id | email]",
         "specify which user to run script for",
       );
+
+    program
+      .command("merge-duplicate-sync")
+      .description("merge duplicate users sync data in the compass database");
 
     program.command("invite").description("invite users from the waitlist");
 
