@@ -27,6 +27,10 @@ const StyledMenuItem = styled.button`
     background-color: ${({ theme }) => theme.color.bg.secondary};
     color: ${({ theme }) => theme.color.text.light};
   }
+
+  &:focus {
+    border: 1px solid ${({ theme }) => theme.color.border.primary};
+  }
 `;
 
 export interface MenuItemProps
@@ -40,9 +44,17 @@ export interface MenuItemProps
 const MenuItem: React.FC<MenuItemProps> = ({
   tooltipContent,
   children,
+  onClick,
   ...rest
 }) => {
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "Enter" && onClick) {
+      // @ts-expect-error - onClick is a function that takes a MouseEvent
+      onClick(e);
+    }
+  };
 
   // With tooltip
   return (
@@ -52,7 +64,9 @@ const MenuItem: React.FC<MenuItemProps> = ({
       placement="right-end"
     >
       <TooltipTrigger asChild>
-        <StyledMenuItem {...rest}>{children}</StyledMenuItem>
+        <StyledMenuItem {...rest} onClick={onClick} onKeyDown={handleKeyDown}>
+          {children}
+        </StyledMenuItem>
       </TooltipTrigger>
       <TooltipContent>
         <StyledShortcutTip>{tooltipContent}</StyledShortcutTip>

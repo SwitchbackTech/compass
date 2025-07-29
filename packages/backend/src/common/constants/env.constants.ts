@@ -26,7 +26,7 @@ const EnvSchema = z
     EMAILER_USER_TAG_ID: z.string().nonempty().optional(),
     MONGO_URI: z.string().nonempty(),
     NODE_ENV: z.nativeEnum(NodeEnv),
-    TZ: z.string().nonempty().default("UTC"),
+    TZ: z.enum(["Etc/UTC", "UTC"]),
     ORIGINS_ALLOWED: z.array(z.string().nonempty()).default([]),
     PORT: z.string().nonempty().default(PORT_DEFAULT_BACKEND.toString()),
     SUPERTOKENS_URI: z.string().nonempty(),
@@ -50,9 +50,7 @@ const EnvSchema = z
     });
   });
 
-type Env = z.infer<typeof EnvSchema>;
-
-export const ENV = {
+const processEnv = {
   BASEURL: process.env["BASEURL"],
   CHANNEL_EXPIRATION_MIN: process.env["CHANNEL_EXPIRATION_MIN"],
   CLIENT_ID: process.env["CLIENT_ID"],
@@ -73,12 +71,14 @@ export const ENV = {
   TOKEN_COMPASS_SYNC: process.env["TOKEN_COMPASS_SYNC"],
   NGROK_AUTHTOKEN: process.env["NGROK_AUTHTOKEN"],
   NGROK_DOMAIN: process.env["NGROK_DOMAIN"],
-} as Env;
+};
 
-const parsedEnv = EnvSchema.safeParse(ENV);
+const { success, error, data } = EnvSchema.safeParse(processEnv);
 
-if (!parsedEnv.success) {
+if (!success) {
   logger.error(`Exiting because a critical env value is missing or invalid:`);
-  console.error(parsedEnv.error.issues);
+  console.error(error.issues);
   process.exit(1);
 }
+
+export const ENV = data!;

@@ -2,10 +2,6 @@
 import { logger } from "./init"; //must be first import
 
 import { ENV } from "@backend/common/constants/env.constants";
-import dayjs from "@core/util/date/dayjs";
-
-dayjs.tz.setDefault(ENV.TZ);
-
 import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
 import { initNgrokServer } from "@backend/servers/ngrok/ngrok.server";
@@ -66,8 +62,8 @@ async function closeHttpServer(): Promise<void> {
 
 async function closeNGrokServer(): Promise<void> {
   const url = process.env["NGROK_DOMAIN_FULL"];
-  const ngrok = await import("@ngrok/ngrok");
-  const ngrokListener = url ? await ngrok.getListenerByUrl(url) : undefined;
+  const ngrok = await import("@ngrok/ngrok").catch(() => undefined);
+  const ngrokListener = url ? await ngrok?.getListenerByUrl(url) : undefined;
 
   if (ngrokListener) {
     // do not wait for this promise,

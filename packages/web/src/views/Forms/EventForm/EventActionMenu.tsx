@@ -1,8 +1,8 @@
 import React from "react";
 import { ActionsMenu } from "../ActionsMenu/ActionsMenu";
-import { DeleteButton } from "./DeleteButton";
-import { DuplicateButton } from "./DuplicateButton";
-import { MoveToSidebarButton } from "./MoveToSidebarButton";
+import { DeleteMenuButton } from "./DeleteMenuButton";
+import { DuplicateMenuButton } from "./DuplicateMenuButton";
+import { MoveToSidebarMenuButton } from "./MoveToSidebarMenuButton";
 
 interface Props {
   isDraft: boolean;
@@ -24,20 +24,20 @@ export const EventActionMenu: React.FC<Props> = ({
       {(close) => (
         <>
           {!isDraft && (
-            <MoveToSidebarButton
+            <MoveToSidebarMenuButton
               onClick={() => {
                 onConvert?.();
                 close();
               }}
             />
           )}
-          <DuplicateButton
+          <DuplicateMenuButton
             onClick={() => {
               onDuplicate();
               close();
             }}
           />
-          <DeleteButton
+          <DeleteMenuButton
             onClick={() => {
               onDelete();
               close();

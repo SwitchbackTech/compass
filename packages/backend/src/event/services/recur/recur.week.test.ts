@@ -5,7 +5,7 @@ import { areDatesUnique, haveSharedValues } from "./recur.test.util";
 import { assembleInstances } from "./util/recur.util";
 
 describe("Weekly Recurrence: Basics", () => {
-  it("uses sunday & saturday as start/end dates", () => {
+  it("starts recurrences on the first day and last day of the week", () => {
     const rEvents = assembleInstances({
       startDate: "2023-07-21",
       endDate: "2023-07-22",
@@ -14,8 +14,8 @@ describe("Weekly Recurrence: Basics", () => {
       },
     } as Schema_Event_Core);
 
-    const start = dayjs(rEvents[1].startDate);
-    const end = dayjs(rEvents[rEvents.length - 1].endDate);
+    const start = dayjs(rEvents[1]?.startDate);
+    const end = dayjs(rEvents[rEvents.length - 1]?.endDate);
 
     const isStartSunday = start.day() === 0;
     const isEndSaturday = end.day() === 6;
@@ -33,18 +33,18 @@ describe("Weekly Recurrence: Cases", () => {
       recurrence: { rule: [RRULE.WEEK] },
     } as Schema_Event_Core);
 
-    expect(events[1].startDate).toBe("2023-01-15");
-    expect(events[1].endDate).toBe("2023-01-21");
+    expect(events[1]?.startDate).toBe("2023-01-15");
+    expect(events[1]?.endDate).toBe("2023-01-21");
 
-    expect(events[2].startDate).toBe("2023-01-22");
-    expect(events[2].endDate).toBe("2023-01-28");
+    expect(events[2]?.startDate).toBe("2023-01-22");
+    expect(events[2]?.endDate).toBe("2023-01-28");
   });
   it("uses correct dates: case 3: DST (11.5)", () => {
     const events = assembleInstances({
       startDate: "2023-07-23",
       endDate: "2023-07-29",
       recurrence: { rule: [RRULE.WEEK] },
-    } as Schema_Event_Core);
+    } as Schema_Event_Core).map((e) => ({ ...e, _id: e._id?.toString() }));
 
     expect(areDatesUnique(events)).toBe(true);
     expect(haveSharedValues(events)).toBe(false);

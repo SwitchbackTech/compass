@@ -102,9 +102,6 @@ module.exports = {
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
       setupFiles: ["<rootDir>/packages/core/src/__tests__/core.test.init.ts"],
-      setupFilesAfterEnv: [
-        "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
-      ],
     },
     {
       displayName: "web",
@@ -134,7 +131,6 @@ module.exports = {
         "<rootDir>/packages/web/src/__tests__/web.test.init.js",
       ],
       setupFilesAfterEnv: [
-        "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
         "<rootDir>/packages/web/src/__tests__/web.test.start.js",
       ],
       testEnvironment: "jsdom",
@@ -170,7 +166,6 @@ module.exports = {
       setupFilesAfterEnv: [
         // backend init intentionally here to accommodate @shelf/mongodb preset
         "<rootDir>/packages/backend/src/__tests__/backend.test.init.ts",
-        "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
         "<rootDir>/packages/backend/src/__tests__/backend.test.start.ts",
       ],
       testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],

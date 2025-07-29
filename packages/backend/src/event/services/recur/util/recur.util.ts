@@ -1,5 +1,3 @@
-import dayjs, { Dayjs } from "dayjs";
-import utc from "dayjs/plugin/utc";
 import { ObjectId } from "mongodb";
 import { RRule } from "rrule";
 import { RRULE } from "@core/constants/core.constants";
@@ -10,10 +8,9 @@ import {
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-
-dayjs.extend(utc);
 
 export const assembleInstances = (
   event: Schema_Event_Core,
@@ -36,19 +33,32 @@ export const assembleInstances = (
   return events;
 };
 
-export const stripBaseProps = (base: Schema_Event_Recur_Base) => {
-  const {
-    _id, // preserve existing event
-    gEventId, // strip this so instances remain unique
-    startDate, // dates changed during DB update
-    endDate, // dates changed during DB update
-    order, // preserve order
-    recurrence, // recurrence change during DB update
-    user, // preserve user
-    updatedAt, // changed during DB update
-    ...baseForUpdate // remaining event
-  } = base;
-  return baseForUpdate;
+export const stripBaseProps = (
+  base: Schema_Event_Recur_Base,
+): Omit<
+  Schema_Event_Recur_Base,
+  | "_id"
+  | "gEventId"
+  | "startDate"
+  | "endDate"
+  | "order"
+  | "recurrence"
+  | "user"
+  | "updatedAt"
+> => {
+  const { allDayOrder, description, gRecurringEventId, isAllDay } = base;
+  const { isSomeday, origin, priority, title } = base;
+
+  return {
+    allDayOrder,
+    description,
+    gRecurringEventId,
+    isAllDay,
+    isSomeday,
+    origin,
+    priority,
+    title,
+  };
 };
 
 const _generateInstances = (
@@ -221,36 +231,12 @@ const _getRule = (rule: string, startDate: string, endDate: string) => {
 const _getNextStart = (rule: string, startDate: string, endDate: string) => {
   switch (rule) {
     case RRULE.WEEK:
-      return _getNextSunday(startDate);
+      return dayjs(startDate).startOfNextWeek();
       break;
     case RRULE.MONTH:
-      return _getNextMonth(endDate);
+      return dayjs(endDate).startOfNextMonth();
       break;
     default:
       throw error(GenericError.DeveloperError, "Failed to get next start");
   }
-};
-
-const _getNextMonth = (target: string) => {
-  const date = dayjs(target, YEAR_MONTH_DAY_FORMAT).hour(0).minute(0).second(0);
-
-  const firstOfNextMonth = date.add(1, "month").date(1);
-  return firstOfNextMonth;
-};
-
-const _getNextSunday = (startDate: string) => {
-  const date = dayjs(startDate, YEAR_MONTH_DAY_FORMAT)
-    .hour(0)
-    .minute(0)
-    .second(0);
-
-  const dayOfWeek = date.day();
-
-  let daysUntilNextSunday = (7 - dayOfWeek) % 7;
-  if (daysUntilNextSunday === 0) {
-    daysUntilNextSunday = 7;
-  }
-
-  const nextSunday = date.add(daysUntilNextSunday, "day");
-  return nextSunday;
 };
