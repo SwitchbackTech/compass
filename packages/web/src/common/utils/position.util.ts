@@ -9,6 +9,7 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import {
   DRAFT_PADDING_BOTTOM,
   EVENT_ALLDAY_HEIGHT,
+  EVENT_ALLDAY_ROW_HEIGHT,
   EVENT_PADDING_RIGHT,
   GRID_MARGIN_LEFT,
 } from "@web/views/Calendar/layout.constants";
@@ -151,7 +152,7 @@ export const getAllDayEventPosition = (
   const startIndex = start.get("day");
 
   const height = EVENT_ALLDAY_HEIGHT;
-  const top = 23 * (event?.row || 1); // found by experimenting with what 'looked right'
+  const top = EVENT_ALLDAY_ROW_HEIGHT * (event?.row || 1);
   const width = getAllDayEventWidth(
     category,
     startIndex,
