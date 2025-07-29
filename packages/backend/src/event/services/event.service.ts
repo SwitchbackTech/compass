@@ -41,8 +41,16 @@ import { EventRepository } from "./recur/repo/event.repo";
 import { assembleInstances } from "./recur/util/recur.util";
 
 class EventService {
-  create = async (userId: string, event: Event_Core) => {
-    const { _event, isRecurring, syncToGcal } = getCreateParams(userId, event);
+  create = async (
+    userId: string,
+    event: Event_Core,
+    noSyncToGcal?: boolean,
+  ) => {
+    const { _event, isRecurring, syncToGcal } = getCreateParams(
+      userId,
+      event,
+      noSyncToGcal,
+    );
 
     //  must update gcal's data before Compass's
     //  (see Sync docs for explanation)
