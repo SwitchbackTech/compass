@@ -1,5 +1,7 @@
 import { backOff } from "exponential-backoff";
 import {
+  ClientSession,
+  ClientSessionOptions,
   Collection,
   ConnectionClosedEvent,
   ConnectionReadyEvent,
@@ -180,14 +182,18 @@ class MongoService {
     this.#internalClient = undefined;
   }
 
-  objectId = (id: string): ObjectId => {
-    return new ObjectId(id);
-  };
+  async startSession(options?: ClientSessionOptions): Promise<ClientSession> {
+    return this.#internalClient!.client.startSession(options);
+  }
 
-  recordExists = async (collection: string, filter: object) => {
+  objectId(id: string): ObjectId {
+    return new ObjectId(id);
+  }
+
+  async recordExists(collection: string, filter: object): Promise<boolean> {
     const r = await this.db.collection(collection).findOne(filter);
     return r !== null;
-  };
+  }
 }
 
 export default new MongoService();

@@ -1,4 +1,4 @@
-import { Document, Filter, OptionalId } from "mongodb";
+import { ClientSession, Document, Filter, OptionalId } from "mongodb";
 import {
   Origin,
   Priorities,
@@ -140,6 +140,7 @@ class EventService {
   createMany = async (
     events: Event_Core[] | Event_Core_WithObjectId[],
     params: { stripIds: boolean },
+    session?: ClientSession,
   ) => {
     let eventsToInsert = events;
     if (params.stripIds) {
@@ -153,7 +154,9 @@ class EventService {
     }
     const response = await mongoService.db
       .collection(Collections.EVENT)
-      .insertMany(eventsToInsert as unknown as OptionalId<Event_Core[]>[]);
+      .insertMany(eventsToInsert as unknown as OptionalId<Event_Core[]>[], {
+        session,
+      });
 
     if (response.acknowledged && response.insertedCount !== events.length) {
       throw error(

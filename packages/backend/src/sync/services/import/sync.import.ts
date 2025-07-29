@@ -1,4 +1,4 @@
-import { ObjectId } from "mongodb";
+import { ClientSession, ObjectId } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { MapEvent } from "@core/mappers/map.event";
@@ -254,6 +254,7 @@ export class SyncImport {
     calendarId: string,
     baseEvent: gSchema$Event,
     perPage = 1000,
+    session?: ClientSession,
   ): Promise<{
     totalProcessed: number;
     totalSaved: number;
@@ -282,9 +283,13 @@ export class SyncImport {
     let insertedCount = 0;
 
     if (compassSeries.length > 0) {
-      const createResponse = await eventService.createMany(compassSeries, {
-        stripIds: false, // Preserve our generated ids in order to match the gcal ids
-      });
+      const createResponse = await eventService.createMany(
+        compassSeries,
+        {
+          stripIds: false, // Preserve our generated ids in order to match the gcal ids
+        },
+        session,
+      );
 
       insertedCount = createResponse.insertedCount;
     }
@@ -343,25 +348,43 @@ export class SyncImport {
       nextSyncToken,
       nextPageToken,
     } of gCalResponse) {
-      await Promise.allSettled(
-        items.map(async (baseEvent) => {
-          const instanceStats = await this.importEventInstances(
-            userId,
-            calendarId,
-            baseEvent,
-            perPage,
-          );
+      const session = await mongoService.startSession();
 
-          const totalBaseEventsSaved =
-            instanceStats.totalSaved - instanceStats.totalInstancesSaved;
+      try {
+        session.startTransaction();
 
-          stats.totalChanged += instanceStats.totalSaved;
-          stats.totalProcessed += instanceStats.totalProcessed;
-          stats.totalBaseEventsChanged += totalBaseEventsSaved;
-        }),
-      );
+        await Promise.allSettled(
+          items.map(async (baseEvent) => {
+            const instanceStats = await this.importEventInstances(
+              userId,
+              calendarId,
+              baseEvent,
+              perPage,
+              session,
+            );
 
-      await updateGCalEventsSyncPageToken(userId, calendarId, nextPageToken);
+            const totalBaseEventsSaved =
+              instanceStats.totalSaved - instanceStats.totalInstancesSaved;
+
+            stats.totalChanged += instanceStats.totalSaved;
+            stats.totalProcessed += instanceStats.totalProcessed;
+            stats.totalBaseEventsChanged += totalBaseEventsSaved;
+          }),
+        );
+
+        await updateGCalEventsSyncPageToken(
+          userId,
+          calendarId,
+          nextPageToken,
+          session,
+        );
+
+        await session.commitTransaction();
+      } catch (error: unknown) {
+        await session.abortTransaction();
+
+        throw error;
+      }
 
       if (nextSyncToken) syncToken = nextSyncToken;
     }

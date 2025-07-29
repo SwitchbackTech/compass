@@ -1,3 +1,4 @@
+import { ClientSession } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { Payload_Resource_Events, Resource_Sync } from "@core/types/sync.types";
@@ -287,11 +288,12 @@ export const updateGCalEventsSyncPageToken = async (
   userId: string,
   gCalendarId: string,
   nextPageToken?: string | null,
+  session?: ClientSession,
 ) => {
   const response = await mongoService.sync.findOneAndUpdate(
     { user: userId, "google.events.gCalendarId": gCalendarId },
     { $set: { "google.events.$.nextPageToken": nextPageToken } },
-    { upsert: true },
+    { upsert: true, session },
   );
 
   return response;
