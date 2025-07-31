@@ -6,7 +6,6 @@ import { importGCalSlice } from "../slices/sync.slice";
 export function* importGCal() {
   try {
     yield call(SyncApi.importGCal);
-
     yield put(importGCalSlice.actions.success(undefined));
   } catch (error) {
     yield put(importGCalSlice.actions.error(undefined));

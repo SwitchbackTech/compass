@@ -25,6 +25,7 @@ interface StyledEventProps {
   priority: Priority;
   top: number;
   width: number;
+  eventHeight: number;
 }
 
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
@@ -56,6 +57,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   filter: ${({ isRecurring, isInPast }) =>
     isRecurring || isInPast ? "brightness(0.7)" : "brightness(1)"};
   height: ${({ height }) => height}px;
+  min-height: 10px;
   left: ${(props) => props.left}px;
   opacity: ${(props) => props.opacity};
   overflow: hidden;
@@ -106,7 +108,9 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   }
 `;
 
-export const StyledEventTitle = styled(Text)`
+export const StyledEventTitle = styled(Text)<StyledEventProps>`
+  font-size: ${({ eventHeight }) => (eventHeight <= 15 ? "10px" : "13px")};
+  line-height: ${({ eventHeight }) => (eventHeight <= 15 ? "1.1" : "")};
   min-height: 3px;
 `;
 

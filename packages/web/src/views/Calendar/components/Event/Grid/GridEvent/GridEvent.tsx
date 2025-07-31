@@ -126,7 +126,7 @@ const _GridEvent = (
         direction={FlexDirections.COLUMN}
         flexWrap={FlexWrap.WRAP}
       >
-        <StyledEventTitle size="m" role="textbox">
+        <StyledEventTitle eventHeight={position.height} role="textbox">
           {event.title}
           {isRecurring && "*"}
         </StyledEventTitle>
