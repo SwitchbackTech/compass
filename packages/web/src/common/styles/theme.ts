@@ -3,6 +3,10 @@ import { c, textDark, textLight } from "./colors";
 
 export const theme: DefaultTheme = {
   color: {
+    common: {
+      white: c.white100,
+      black: c.black100,
+    },
     bg: {
       primary: c.darkBlue400,
       secondary: c.darkBlue200,
