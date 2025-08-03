@@ -4,6 +4,7 @@ import { BaseError } from "@core/errors/errors.base";
 export interface Result_Auth_Compass {
   cUserId?: string;
   error?: BaseError;
+  isNewUser?: boolean;
 }
 
 export interface Result_VerifyGToken {

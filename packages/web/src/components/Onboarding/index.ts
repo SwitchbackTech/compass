@@ -1,8 +1,6 @@
-export { Onboarding } from "./Onboarding";
-export { OnboardingStep } from "./OnboardingStep";
-export { EmailStep } from "./steps/EmailStep";
-export { OnboardingButton } from "./styled";
+export { Onboarding } from "./components/Onboarding";
+export { OnboardingStep } from "./components/OnboardingStep";
 export type {
   OnboardingStepProps,
   OnboardingStep as OnboardingStepType,
-} from "./Onboarding";
+} from "./components/Onboarding";

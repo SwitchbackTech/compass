@@ -85,6 +85,8 @@ export class WaitlistController {
       isOnWaitlist: boolean;
       isInvited: boolean;
       isActive: boolean;
+      firstName?: string;
+      lastName?: string;
     }>,
   ) {
     const email = req.query.email;
@@ -103,6 +105,12 @@ export class WaitlistController {
       findCompassUserBy("email", email),
     ]);
     const isActive = !!existingUser;
-    return res.status(200).json({ isOnWaitlist, isInvited, isActive });
+    return res.status(200).json({
+      isOnWaitlist,
+      isInvited,
+      isActive,
+      firstName: existingUser?.firstName,
+      lastName: existingUser?.lastName,
+    });
   }
 }

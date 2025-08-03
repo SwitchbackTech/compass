@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React from "react";
 import GoogleButtonBase from "react-google-button";
 
@@ -6,10 +5,12 @@ export const GoogleButton = ({
   onClick,
   disabled,
   label = "Sign in with Google",
+  style,
 }: {
   onClick: () => void;
   disabled?: boolean;
   label?: string;
+  style?: React.CSSProperties;
 }) => {
   return (
     <GoogleButtonBase
@@ -18,6 +19,7 @@ export const GoogleButton = ({
       type="light"
       onClick={onClick}
       disabled={disabled}
+      style={style}
     />
   );
 };

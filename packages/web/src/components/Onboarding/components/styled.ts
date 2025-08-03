@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import React from "react";
 import styled from "styled-components";
 
 export const OnboardingText = styled.p`
@@ -9,7 +11,7 @@ export const OnboardingText = styled.p`
 export const OnboardingCard = styled.div`
   background-color: #12151b;
   border: 2px solid #ffffff;
-  border-radius: 0;
+  border-radius: 4px;
   padding: ${({ theme }) => theme.spacing.xl};
   width: 500px;
   max-width: 90vw;
@@ -62,6 +64,15 @@ export const OnboardingInput = styled.input`
   }
 `;
 
+export const OnboardingInputWhite = styled(OnboardingInput)`
+  background-color: ${({ theme }) => theme.color.common.white};
+  border-radius: 0;
+  color: ${({ theme }) => theme.color.common.black};
+  box-shadow:
+    rgb(95 95 95) 1px 1px 0px 1px inset,
+    rgb(255 255 255) 1px 1px 0px 1px;
+`;
+
 export const ProgressIndicator = styled.div`
   display: flex;
   align-items: flex-end;
@@ -104,7 +115,33 @@ export const OnboardingButton = styled.button`
   }
 
   &:focus {
-    outline: 2px solid ${({ theme }) => theme.color.text.accent};
-    outline-offset: 2px;
+    outline: 1px solid ${({ theme }) => theme.color.text.accent};
+    outline-offset: 1px;
+  }
+`;
+
+export const OnboardingLink = styled.a`
+  font-family: "VT323", monospace;
+  color: #222222;
+  text-decoration: none;
+  font-size: ${({ theme }) => theme.text.size.m};
+  background: #c0c0c0;
+  padding: 8px 8px;
+  display: inline-block;
+  position: relative;
+  border: none;
+  box-shadow:
+    inset -2px -2px #808080,
+    inset 2px 2px #dfdfdf,
+    inset -1px -1px #0a0a0a,
+    inset 1px 1px #ffffff;
+  cursor: pointer;
+
+  &:active {
+    box-shadow:
+      inset 2px 2px #808080,
+      inset -2px -2px #dfdfdf,
+      inset 1px 1px #0a0a0a,
+      inset -1px -1px #ffffff;
   }
 `;

@@ -26,19 +26,21 @@ export const OnboardingContainer = styled.div`
 export interface OnboardingStepProps {
   currentStep: number;
   totalSteps: number;
-  onNext: () => void;
+  onNext: (data?: Record<string, unknown>) => void;
   onPrevious: () => void;
   onComplete: () => void;
+  onSkip: () => void;
 }
 
 export interface OnboardingStep {
   id: string;
   component: React.ComponentType<OnboardingStepProps>;
+  onNext?: (data?: Record<string, unknown>) => void;
 }
 
 interface Props {
   steps: OnboardingStep[];
-  onComplete: () => void;
+  onComplete: (reason: "skip" | "complete") => void;
   className?: string;
 }
 
@@ -49,11 +51,14 @@ export const Onboarding: React.FC<Props> = ({
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
-  const handleNext = () => {
+  const handleNext = (data?: Record<string, unknown>) => {
+    // Call `onNext` if provided
+    steps[currentStepIndex].onNext?.(data);
+
     if (currentStepIndex < steps.length - 1) {
       setCurrentStepIndex(currentStepIndex + 1);
     } else {
-      onComplete();
+      onComplete("complete");
     }
   };
 
@@ -61,6 +66,14 @@ export const Onboarding: React.FC<Props> = ({
     if (currentStepIndex > 0) {
       setCurrentStepIndex(currentStepIndex - 1);
     }
+  };
+
+  const handleComplete = () => {
+    onComplete("complete");
+  };
+
+  const handleSkip = () => {
+    onComplete("skip");
   };
 
   const currentStep = steps[currentStepIndex];
@@ -75,7 +88,8 @@ export const Onboarding: React.FC<Props> = ({
     totalSteps: steps.length,
     onNext: handleNext,
     onPrevious: handlePrevious,
-    onComplete,
+    onComplete: handleComplete,
+    onSkip: handleSkip,
   };
 
   return (
