@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useGoogleLogin as useGoogleLoginBase } from "@react-oauth/google";
 
@@ -18,13 +18,20 @@ export const useGoogleLogin = ({
   onSuccess,
   onError,
 }: {
-  onStart: () => void;
-  onSuccess: (code: string) => void;
-  onError: (error: unknown) => void;
+  onStart?: () => void;
+  onSuccess?: (code: string) => void;
+  onError?: (error: unknown) => void;
 }) => {
+  const [data, setData] = useState<{
+    code: string;
+    scope: string;
+    state: string | undefined;
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+
   const antiCsrfToken = useRef(uuidv4()).current;
 
-  return useGoogleLoginBase({
+  const login = useGoogleLoginBase({
     flow: "auth-code",
     scope: SCOPES_REQUIRED.join(" "),
     state: antiCsrfToken,
@@ -40,20 +47,25 @@ export const useGoogleLogin = ({
         return;
       }
 
-      onStart();
+      setData({ code, scope, state });
+      setLoading(true);
+
+      onStart?.();
 
       try {
-        onSuccess(code);
+        onSuccess?.(code);
       } catch (e) {
         console.error(e);
         alert("Login failed. Please try again.");
-        onError(e);
+        onError?.(e);
       }
     },
     onError: (error) => {
       alert(`Login failed because: ${error.error}`);
       console.error(error);
-      onError(error);
+      onError?.(error);
     },
   });
+
+  return { login, data, loading };
 };

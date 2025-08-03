@@ -32,8 +32,6 @@ type FlowStep = "initial" | "checkingWaitlist" | "waitlistStatusKnown";
 export const LoginView = () => {
   const emailInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false); // For Google Login process
 
   // New state for the waitlist check flow
   const [emailInput, setEmailInput] = useState("");
@@ -71,17 +69,19 @@ export const LoginView = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const startLoginFlow = useGoogleLogin({
-    onStart: () => setIsAuthenticating(true),
+  const {
+    login: startLoginFlow,
+    data: googleLoginData,
+    loading: isGoogleLoginLoading,
+  } = useGoogleLogin({
     onSuccess: async (code) => {
       await AuthApi.loginOrSignup(code);
-      setIsAuthenticated(true);
     },
     onError: (error) => {
       console.error(error);
-      setIsAuthenticating(false);
     },
   });
+
   const handleCheckWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const processedInput = emailInput.trim().toLowerCase();
@@ -127,6 +127,9 @@ export const LoginView = () => {
     // Proceed directly to the main login flow.
     startLoginFlow();
   };
+
+  const isAuthenticating = isGoogleLoginLoading;
+  const isAuthenticated = !!googleLoginData?.code;
 
   return (
     <>
