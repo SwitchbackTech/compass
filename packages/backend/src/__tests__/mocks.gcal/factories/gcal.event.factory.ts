@@ -1,6 +1,4 @@
-import dayjs from "dayjs";
-import timezone from "dayjs/plugin/timezone";
-import utc from "dayjs/plugin/utc";
+import omit from "lodash.omit";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
@@ -9,10 +7,11 @@ import {
   gSchema$EventBase,
   gSchema$EventInstance,
 } from "@core/types/gcal";
-import { formatAs } from "@core/util/date/date.util";
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import dayjs from "@core/util/date/dayjs";
+import {
+  getGcalEventDateFormat,
+  parseGCalEventDate,
+} from "@core/util/event/gcal.event.util";
 
 /**
  * Generates a random base32 hex string according to gcal id's requirement:
@@ -66,47 +65,36 @@ export const mockRecurringGcalInstances = (
     throw new Error("Event must have start and end dates");
   }
 
-  const startDateTime = base.start.dateTime;
-  const endDateTime = base.end.dateTime;
-  const startTimeZone = base.start.timeZone;
-  const endTimeZone = base.end.timeZone;
-
-  const baseDate = new Date(startDateTime);
+  const baseStartDate = parseGCalEventDate(base.start);
+  const baseEndDate = parseGCalEventDate(base.end);
+  const isAllDay = "date" in base.start;
+  const dateKey = isAllDay ? "date" : "dateTime";
+  const dateFormat = getGcalEventDateFormat(base.start);
 
   return Array.from({ length: count }, (_, index) => {
-    const instanceDate = new Date(baseDate);
+    const offSetDays = index * repeatIntervalInDays;
     // For index 0, keep the same date as base
     // For subsequent instances, add the interval
-    if (index > 0) {
-      instanceDate.setDate(
-        instanceDate.getDate() + index * repeatIntervalInDays,
-      );
-    }
+    const startDate = baseStartDate.add(offSetDays, "days");
+    const endDate = baseEndDate.add(offSetDays, "days");
 
-    const endDate = new Date(endDateTime);
-    if (index > 0) {
-      endDate.setDate(endDate.getDate() + index * repeatIntervalInDays);
-    }
-
-    const startAsRfc5545 = formatAs("RFC5545", instanceDate.toISOString());
     const instance = {
       ...base,
-      id: `${base.id}_${startAsRfc5545}`,
-      summary: `${base.summary}-instance-${index + 1}`,
+      id: `${base.id}_${startDate.toRFC5545String()}`,
+      summary: `${base.summary} instance ${index + 1}`,
       recurringEventId: base.id,
       start: {
-        dateTime: instanceDate.toISOString(),
-        timeZone: startTimeZone,
+        [dateKey]: startDate?.format(dateFormat),
+        timeZone: base.start?.timeZone ?? dayjs.tz.guess(),
       },
       end: {
-        dateTime: endDate.toISOString(),
-        timeZone: endTimeZone,
+        [dateKey]: endDate.format(dateFormat),
+        timeZone: base.end?.timeZone ?? dayjs.tz.guess(),
       },
     };
+
     // remove properties that are reserved for the base event
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { recurrence, ...instanceWithoutRecurrence } = instance;
-    return instanceWithoutRecurrence;
+    return omit(instance, ["recurrence"]);
   });
 };
 
@@ -128,11 +116,11 @@ export const mockRegularGcalEvent = (
     created: created.toISOString(),
     updated: updated.toISOString(),
     start: {
-      dateTime: start.toISOString(),
+      dateTime: start.toRFC3339OffsetString(),
       timeZone: tz,
     },
     end: {
-      dateTime: end.toISOString(),
+      dateTime: end.toRFC3339OffsetString(),
       timeZone: tz,
     },
     iCalUID: faker.string.uuid() + "@google.com",
