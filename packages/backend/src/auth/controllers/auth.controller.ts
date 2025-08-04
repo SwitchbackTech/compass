@@ -116,7 +116,10 @@ class AuthController {
       const sUserId = supertokens.convertToRecipeUserId(cUserId);
       await Session.createNewSession(req, res, "public", sUserId);
 
-      const result: Result_Auth_Compass = { cUserId };
+      const result: Result_Auth_Compass = {
+        cUserId,
+        isNewUser: authMethod === "signup",
+      };
 
       res.promise(result);
     } catch (e) {

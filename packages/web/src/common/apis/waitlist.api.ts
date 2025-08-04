@@ -6,6 +6,8 @@ export const WaitlistApi = {
       isOnWaitlist: boolean;
       isInvited: boolean;
       isActive: boolean;
+      firstName?: string;
+      lastName?: string;
     }>(`/waitlist`, { params: { email } });
     return data;
   },

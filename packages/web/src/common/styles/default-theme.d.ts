@@ -4,6 +4,10 @@ import { textDark, textLight } from "./colors";
 declare module "styled-components" {
   export interface DefaultTheme {
     color: {
+      common: {
+        white: string;
+        black: string;
+      };
       bg: {
         primary: string;
         secondary: string;

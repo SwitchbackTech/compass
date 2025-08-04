@@ -1,14 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import GoogleButton from "react-google-button";
 import { useNavigate } from "react-router-dom";
-import { v4 as uuidv4 } from "uuid";
-import { useGoogleLogin } from "@react-oauth/google";
 import { useAuthCheck } from "@web/auth/useAuthCheck";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { LoginAbsoluteOverflowLoader } from "@web/components/LoginAbsoluteOverflowLoader/LoginAbsoluteOverflowLoader";
+import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
+import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
 import {
   ActionButton,
   Card,
@@ -33,8 +32,6 @@ type FlowStep = "initial" | "checkingWaitlist" | "waitlistStatusKnown";
 export const LoginView = () => {
   const emailInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false); // For Google Login process
 
   // New state for the waitlist check flow
   const [emailInput, setEmailInput] = useState("");
@@ -48,7 +45,6 @@ export const LoginView = () => {
   const [apiError, setApiError] = useState<string | null>(null);
 
   const { isAuthenticated: isAlreadyAuthenticated } = useAuthCheck();
-  const antiCsrfToken = useRef(uuidv4()).current;
 
   useEffect(() => {
     if (window.location.hostname === "localhost") {
@@ -73,46 +69,15 @@ export const LoginView = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const SCOPES_REQUIRED = [
-    "email",
-    "https://www.googleapis.com/auth/calendar.readonly",
-    "https://www.googleapis.com/auth/calendar.events",
-  ];
-
-  const isMissingPermissions = (scope: string) => {
-    const scopesGranted = scope.split(" ");
-    return SCOPES_REQUIRED.some((s) => !scopesGranted.includes(s));
-  };
-
-  const startLoginFlow = useGoogleLogin({
-    flow: "auth-code",
-    scope: SCOPES_REQUIRED.join(" "),
-    state: antiCsrfToken,
-    onSuccess: async ({ code, scope, state }) => {
-      const isFromHacker = state !== antiCsrfToken;
-      if (isFromHacker) {
-        alert("Nice try, hacker");
-        return;
-      }
-
-      if (isMissingPermissions(scope)) {
-        alert("Missing permissions, please click all the checkboxes");
-        return;
-      }
-
-      setIsAuthenticating(true);
-      try {
-        await AuthApi.loginOrSignup(code);
-        setIsAuthenticated(true);
-      } catch (e) {
-        console.error(e);
-        alert("Login failed. Please try again.");
-      } finally {
-        setIsAuthenticating(false);
-      }
+  const {
+    login: startLoginFlow,
+    data: googleLoginData,
+    loading: isGoogleLoginLoading,
+  } = useGoogleLogin({
+    onSuccess: async (code) => {
+      await AuthApi.loginOrSignup(code);
     },
     onError: (error) => {
-      alert(`Login failed because: ${error.error}`);
       console.error(error);
     },
   });
@@ -162,6 +127,9 @@ export const LoginView = () => {
     // Proceed directly to the main login flow.
     startLoginFlow();
   };
+
+  const isAuthenticating = isGoogleLoginLoading;
+  const isAuthenticated = !!googleLoginData?.code;
 
   return (
     <>
@@ -281,8 +249,6 @@ export const LoginView = () => {
                     </InfoText>
                     <SignInButtonWrapper>
                       <GoogleButton
-                        aria-label="Sign in with Google"
-                        type="light"
                         onClick={handleButtonClick}
                         disabled={isAuthenticating}
                       />

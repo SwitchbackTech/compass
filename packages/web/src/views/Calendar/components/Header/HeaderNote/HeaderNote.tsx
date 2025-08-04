@@ -9,6 +9,7 @@ import React, {
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { ID_HEADER_NOTE_INPUT } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
+import { OnboardingHeaderNoteLocalStorage } from "@web/components/Onboarding/utils";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectHeaderNoteFocus } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
@@ -99,6 +100,14 @@ export const HeaderNote = forwardRef(
 
     // Load from localStorage on mount
     useEffect(() => {
+      const onboardingNote = OnboardingHeaderNoteLocalStorage.get();
+      if (onboardingNote) {
+        setNote(onboardingNote);
+        localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, onboardingNote);
+        OnboardingHeaderNoteLocalStorage.clear();
+        return;
+      }
+
       const savedNote = localStorage.getItem(STORAGE_KEYS.HEADER_NOTE);
       if (savedNote !== null) {
         setNote(savedNote);
