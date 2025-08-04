@@ -69,15 +69,8 @@ export const mockGcalAndCompassEvents = (userId?: string) => {
   compassBase._id = baseId;
   const compassEventsWithPointersToBase = compassEvents.map((e) => {
     const isInstance = e.gRecurringEventId !== undefined;
-    if (isInstance) {
-      return {
-        ...e,
-        recurrence: {
-          ...e.recurrence,
-          eventId: baseId.toString(),
-        },
-      };
-    }
+    if (isInstance) return { ...e, recurrence: { eventId: baseId.toString() } };
+
     return e;
   });
   return { gcalEvents, compassEvents: compassEventsWithPointersToBase };
