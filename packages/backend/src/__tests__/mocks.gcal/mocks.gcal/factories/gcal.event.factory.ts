@@ -7,6 +7,7 @@ import {
   gSchema$EventInstance,
 } from "@core/types/gcal";
 import { formatAs } from "@core/util/date/date.util";
+import { mockRecurringGcalInstances } from "../../factories/gcal.event.factory";
 
 /**
  * Creates a cancelled instance of a recurring event,
@@ -35,13 +36,19 @@ export const mockCancelledInstance = (
   };
 };
 
-export const mockTimedEvent = (): gSchema$Event => ({
-  id: faker.string.nanoid(),
-  summary: faker.lorem.sentence(),
-  start: { dateTime: faker.date.future().toISOString() },
-  end: { dateTime: faker.date.future().toISOString() },
-  status: "confirmed",
-});
+export const mockTimedEvent = (): gSchema$Event => {
+  const timeZone = faker.location.timeZone();
+  const start = dayjs.tz(faker.date.future(), timeZone);
+  const end = start.add(1, "hour");
+
+  return {
+    id: faker.string.nanoid(),
+    summary: faker.lorem.sentence(),
+    start: { dateTime: start.toRFC3339OffsetString(), timeZone },
+    end: { dateTime: end.toRFC3339OffsetString(), timeZone },
+    status: "confirmed",
+  };
+};
 
 export const mockTimedRecurrence = (
   overrides: Partial<gSchema$Event> = {},
@@ -55,71 +62,23 @@ export const mockTimedRecurrence = (
   return base as gSchema$EventBase;
 };
 
-export const mockRecurringInstances = (
-  event: gSchema$Event,
-  count: number,
-  repeatIntervalInDays: number,
-): gSchema$EventInstance[] => {
-  if (!event.start?.dateTime || !event.end?.dateTime) {
-    throw new Error("Event must have start and end dates");
-  }
-
-  const startDateTime = event.start.dateTime;
-  const startTimeZone = event.start.timeZone;
-  const endTimeZone = event.end.timeZone;
-
-  const baseDate = new Date(startDateTime);
-
-  return Array.from({ length: count }, (_, index) => {
-    const startDate = new Date(baseDate);
-    startDate.setDate(startDate.getDate() + index * repeatIntervalInDays);
-    const startDateIso = startDate.toISOString();
-    const startDateTime = formatAs("RFC3339_OFFSET", startDateIso);
-
-    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hr after start
-    endDate.setDate(endDate.getDate() + index * repeatIntervalInDays);
-    const endDateIso = endDate.toISOString();
-    const endDateTime = formatAs("RFC3339_OFFSET", endDateIso);
-
-    const startRfc5545 = formatAs("RFC5545", startDateIso);
-    const id = `${event.id}_${startRfc5545}`; // matches gcal id format
-
-    const instance = {
-      ...event,
-      id,
-      summary: `${event.summary}: Instance ${index}`,
-      recurringEventId: event.id as string,
-      start: {
-        dateTime: startDateTime,
-        timeZone: startTimeZone,
-      },
-      end: {
-        dateTime: endDateTime,
-        timeZone: endTimeZone,
-      },
-    };
-    delete instance.recurrence;
-
-    return instance;
-  });
-};
-
 export const mockAlldayGcalEvent = (
   overrides: Partial<gSchema$Event> = {},
 ): gSchema$Event => {
   const core = _mockGcalCoreEvent();
-  const _start = faker.date.future();
-  const start = dayjs(_start).format("YYYY-MM-DD"); // matches gcal format for all day events
-  const end = dayjs(_start).add(1, "day").format("YYYY-MM-DD");
+  const timeZone = faker.location.timeZone();
+  const start = dayjs.tz(faker.date.future(), timeZone);
+  const end = start.add(1, "hour");
+
   return {
     ...core,
     start: {
-      date: start,
-      timeZone: "America/Chicago",
+      date: start.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+      timeZone,
     },
     end: {
-      date: end,
-      timeZone: "America/Chicago",
+      date: end.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+      timeZone,
     },
     ...overrides,
   };
@@ -129,18 +88,20 @@ export const mockTimedGcalEvent = (
   overrides: Partial<gSchema$Event> = {},
 ): gSchema$Event => {
   const core = _mockGcalCoreEvent();
-  const start = faker.date.future();
-  const end = new Date(start);
-  end.setHours(start.getHours() + 1);
+  // Dynamically generate timezone-aware times
+  const tz = faker.location.timeZone();
+  const start = dayjs.tz(faker.date.future(), tz);
+  const end = start.add(1, "hour");
+
   const timedEvent = {
     ...core,
     start: {
-      dateTime: start.toISOString(),
-      timeZone: "America/Chicago",
+      dateTime: start.toRFC3339OffsetString(),
+      timeZone: tz,
     },
     end: {
-      dateTime: end.toISOString(),
-      timeZone: "America/Chicago",
+      dateTime: end.toRFC3339OffsetString(),
+      timeZone: tz,
     },
   };
   return {
@@ -161,7 +122,7 @@ export const mockGcalEvents = (repeatIntervalInDays = 7) => {
     recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
   });
 
-  const timedInstances = mockRecurringInstances(
+  const timedInstances = mockRecurringGcalInstances(
     baseTimedRecurrence,
     3,
     repeatIntervalInDays,
