@@ -9,7 +9,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
 
 describe("Mar 6 - 12, 2022: All-Day Events", () => {
-  let filter: Filter<Schema_Event>;
+  let filter: Filter<Omit<Schema_Event, "_id">>;
   let titles: string[];
 
   beforeAll(async () => {
@@ -22,7 +22,7 @@ describe("Mar 6 - 12, 2022: All-Day Events", () => {
       end: "2022-03-12T23:59:59-07:00",
     });
     const result = await mongoService.event.find(filter).toArray();
-    titles = result.map((e) => e.title);
+    titles = result.map((e) => e.title!);
   });
 
   afterAll(cleanupTestDb);
