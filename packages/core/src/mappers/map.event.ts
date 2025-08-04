@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-namespace */
+import mergeWith from "lodash.mergewith";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Event_Core, Schema_Event } from "@core/types/event.types";
-import { gSchema$Event } from "@core/types/gcal";
+import { WithGcalId, gSchema$Event } from "@core/types/gcal";
+import dayjs from "@core/util/date/dayjs";
 import { isAllDay } from "@core/util/event/event.util";
-import { notCancelled } from "@core/util/event/gcal.event.util";
+import { isCancelledGCalEvent } from "@core/util/event/gcal.event.util";
 import { validateEvent } from "@core/validators/event.validator";
 
 export namespace MapEvent {
@@ -14,8 +16,8 @@ export namespace MapEvent {
     origin?: Origin,
   ): Event_Core[] => {
     const mapped = events
-      .filter(notCancelled)
-      .map((e: gSchema$Event) => _toCompass(userId, e, origin));
+      .filter((event) => !isCancelledGCalEvent(event))
+      .map((e: gSchema$Event) => gEventToCompassEvent(e, userId, origin));
 
     return mapped;
   };
@@ -42,9 +44,22 @@ export namespace MapEvent {
   };
 }
 
-const _toCompass = (
-  userId: string,
+const gEventDefaults = {
+  summary: "untitled",
+  description: "",
+  start: {
+    dateTime: "1990-01-01T00:00:00-10:00",
+    timeZone: dayjs.tz.guess(),
+  },
+  end: {
+    dateTime: "1990-01-01T00:00:00-10:00",
+    timeZone: dayjs.tz.guess(),
+  },
+};
+
+export const gEventToCompassEvent = (
   gEvent: gSchema$Event,
+  userId: string,
   origin?: Origin,
 ): Event_Core => {
   if (!gEvent.id) {
@@ -55,60 +70,64 @@ const _toCompass = (
       false,
     );
   }
+
+  if (typeof gEvent.start === "string" && typeof gEvent.end === "string") {
+    throw new BaseError(
+      "Bad Google Event Date",
+      "You got a google event with start `date` and `dateTime` field, something is off",
+      500,
+      false,
+    );
+  }
+
+  const event: WithGcalId<gSchema$Event> = mergeWith(
+    {},
+    gEventDefaults,
+    gEvent,
+  );
+
+  const { id: gEventId, description } = event;
+  const title = event.summary!;
+  const isAllDay = !!event.start && "date" in event.start;
+  const priority = getPriority(event);
+  // @TODO: - https://github.com/SwitchbackTech/compass/issues/607
+  // we need to save the dates as UTC -and migrate existing event dates
+  // so we can afford to disregard the timezone
+  // we cannot rely on timestamp offset in the event date string;
+  // const startDate = parseGCalEventDate(event.start).format();
+  // const endDate = parseGCalEventDate(event.end).format();
+  // we do this for compatibility for now
+  const startDate = isAllDay ? event.start?.date : event.start?.dateTime;
+  const endDate = isAllDay ? event.end?.date : event.end?.dateTime;
+
   const _origin =
-    origin !== undefined
-      ? origin
-      : gEvent.extendedProperties?.private?.["origin"] || Origin.UNSURE;
-
-  const gEventId = gEvent.id ? gEvent.id : undefined;
-
-  const title = gEvent.summary ? gEvent.summary : "untitled";
-  const description = gEvent.description ? gEvent.description : "";
-
-  const placeHolder = {
-    start: {
-      date: "1990-01-01",
-      dateTime: "1990-01-01T00:00:00-10:00",
-    },
-    end: {
-      date: "1990-01-01",
-      dateTime: "1990-01-01T00:00:00-10:00",
-    },
-  };
-
-  const _start = gEvent.start == undefined ? placeHolder.start : gEvent.start;
-  const _end = gEvent.end === undefined ? placeHolder.end : gEvent.end;
-  const _isAllDay = gEvent.start !== undefined && "date" in gEvent.start;
-  const priority = getPriority(gEvent);
+    origin ?? event.extendedProperties?.private?.["origin"] ?? Origin.UNSURE;
 
   const compassEvent: Schema_Event = {
-    gEventId: gEventId,
+    gEventId,
     user: userId,
     origin: _origin as Origin,
-    title: title,
-    description: description,
-    priorities: [],
-    isAllDay: _isAllDay,
+    title,
+    description,
+    isAllDay,
     isSomeday: false,
-    // @ts-ignore
-    startDate: _isAllDay ? _start.date : _start.dateTime,
-    // @ts-ignore
-    endDate: _isAllDay ? _end.date : _end.dateTime,
+    startDate: startDate!,
+    endDate: endDate!,
     priority,
     updatedAt: new Date(),
   };
 
-  const recurrence = getRecurrence(gEvent);
+  const recurrence = getRecurrence(event);
+
   // Only add recurrence if it's defined
-  if (recurrence) {
-    compassEvent.recurrence = recurrence;
-  }
-  const gRecurringEventId = gEvent.recurringEventId;
-  if (gRecurringEventId) {
-    compassEvent.gRecurringEventId = gRecurringEventId;
-  }
+  if (recurrence) compassEvent.recurrence = recurrence;
+
+  const gRecurringEventId = event.recurringEventId;
+
+  if (gRecurringEventId) compassEvent.gRecurringEventId = gRecurringEventId;
 
   const validatedCompassEvent = validateEvent(compassEvent);
+
   return validatedCompassEvent;
 };
 

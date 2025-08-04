@@ -30,7 +30,7 @@ describe("toCompass", () => {
       );
 
       const hasCancelledEvent = events.some((e: Schema_Event) => {
-        return (e as any).status === "cancelled";
+        return (e as gSchema$Event).status === "cancelled";
       });
 
       expect(hasCancelledEvent).toBe(false);
@@ -127,7 +127,7 @@ describe("toCompass", () => {
       expect(cEvent.gRecurringEventId).toBeUndefined();
     });
     it("includes recurrence when rule is present", () => {
-      const gEvent = recurring[0]?.items[0] as gSchema$Event | undefined;
+      const gEvent = recurring[0] as gSchema$Event | undefined;
       if (!gEvent) {
         throw new Error("Test event not found in mock data");
       }
@@ -192,7 +192,7 @@ describe("toCompass", () => {
       expect(cEvent.recurrence?.eventId).toBeUndefined();
     });
     it("stores the recurringEventId (gcal) as gRecurringEventId (Compass)", () => {
-      const gEventInstance = recurring[0]?.items[1] as gSchema$Event;
+      const gEventInstance = recurring[1] as gSchema$Event;
       if (!gEventInstance) {
         throw new Error("Test event not found in mock data");
       }

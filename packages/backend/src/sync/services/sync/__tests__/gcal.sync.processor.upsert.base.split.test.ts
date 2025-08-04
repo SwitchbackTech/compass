@@ -8,7 +8,6 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import { mockCancelledInstance } from "@backend/__tests__/mocks.gcal/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 import {
@@ -83,10 +82,10 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
 
     /* Act */
     // Simulate a gcal notification payload after an instance was cancelled
-    const cancelledInstance = mockCancelledInstance(
-      gcalEvents.recurring,
-      gcalEvents.instances[1]?.start?.dateTime as string,
-    );
+    const cancelledInstance = Object.assign(gcalEvents.instances[1]!, {
+      status: "cancelled",
+    });
+
     const processor = new GcalSyncProcessor(repo);
     const changes = await processor.processEvents([cancelledInstance]);
 

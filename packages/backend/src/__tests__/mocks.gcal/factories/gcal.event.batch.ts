@@ -16,18 +16,21 @@ export const mockAndCategorizeGcalEvents = (
   fixedEnd?: string,
 ) => {
   // Use fixed times if provided, otherwise fallback to defaults
-  const startDateTime = fixedStart || faker.date.future().toISOString();
+  const tz = faker.location.timeZone();
+  const tzStart = fixedStart ? dayjs.tz.guess() : tz;
+
+  const startDateTime = dayjs.tz(fixedStart ?? faker.date.future(), tzStart);
+
   const endDateTime =
-    fixedEnd || dayjs(startDateTime).add(1, "hour").toISOString();
+    dayjs.tz(fixedEnd, tzStart) || startDateTime.add(1, "hour");
 
   // Create a base recurring event
-  const tz = faker.location.timeZone();
   const baseRecurringEvent = mockRecurringGcalBaseEvent({
     id: baseId || generateGcalId(),
     summary: "Recurrence",
     recurrence: ["RRULE:FREQ=WEEKLY"],
-    start: { dateTime: startDateTime, timeZone: tz },
-    end: { dateTime: endDateTime, timeZone: tz },
+    start: { dateTime: startDateTime.toRFC3339OffsetString(), timeZone: tz },
+    end: { dateTime: endDateTime.toRFC3339OffsetString(), timeZone: tz },
   }) as gSchema$EventBase;
 
   // Create instances of the recurring event
