@@ -11,12 +11,10 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
-    "@types/lodash.mergewith": "^4.6.9",
     "@types/tinycolor2": "^1.4.6",
     "typescript": "^5.1.6"
   },
   "dependencies": {
-    "lodash.mergewith": "^4.6.2",
     "tinycolor2": "^1.6.0",
     "winston": "^3.8.1"
   }
