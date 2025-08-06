@@ -8,9 +8,9 @@ import {
   gSchema$EventInstance,
 } from "@core/types/gcal";
 import { isBase } from "@core/util/event/event.util";
+import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { Collections } from "@backend/common/constants/collections";
-import mongoService from "../../common/services/mongo.service";
-import { mockGcalEvents } from "../mocks.gcal/mocks.gcal/factories/gcal.event.factory";
+import mongoService from "@backend/common/services/mongo.service";
 
 export interface State_AfterGcalImport {
   gcalEvents: {

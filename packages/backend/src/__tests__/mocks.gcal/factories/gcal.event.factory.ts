@@ -7,6 +7,7 @@ import {
   gSchema$EventBase,
   gSchema$EventInstance,
 } from "@core/types/gcal";
+import { formatAs } from "@core/util/date/date.util";
 import dayjs from "@core/util/date/dayjs";
 import {
   getGcalEventDateFormat,
@@ -26,6 +27,60 @@ export const generateGcalId = (length: number = 16) => {
     id += allowed.charAt(Math.floor(Math.random() * allowed.length));
   }
   return id;
+};
+
+const mockGcalCoreEvent = (): WithGcalId<
+  Pick<
+    gSchema$Event,
+    | "id"
+    | "summary"
+    | "status"
+    | "htmlLink"
+    | "created"
+    | "updated"
+    | "iCalUID"
+    | "sequence"
+    | "extendedProperties"
+    | "reminders"
+    | "eventType"
+  >
+> => {
+  const id = generateGcalId();
+
+  return {
+    id,
+    summary: faker.lorem.sentence(),
+    status: "confirmed",
+    htmlLink: `https://www.google.com/calendar/event?eid=${id}`,
+    created: faker.date.past().toISOString(),
+    updated: faker.date.recent().toISOString(),
+    iCalUID: faker.string.uuid() + "@google.com",
+    sequence: 0,
+    extendedProperties: {
+      private: {
+        origin: Origin.GOOGLE_IMPORT,
+        priority: Priorities.UNASSIGNED,
+      },
+    },
+    reminders: {
+      useDefault: true,
+    },
+    eventType: "default",
+  };
+};
+
+export const mockTimedEvent = (): gSchema$Event => {
+  const timeZone = faker.location.timeZone();
+  const start = dayjs.tz(faker.date.future(), timeZone);
+  const end = start.add(1, "hour");
+
+  return {
+    id: faker.string.nanoid(),
+    summary: faker.lorem.sentence(),
+    start: { dateTime: start.toRFC3339OffsetString(), timeZone },
+    end: { dateTime: end.toRFC3339OffsetString(), timeZone },
+    status: "confirmed",
+  };
 };
 
 /**
@@ -50,8 +105,9 @@ export const mockRecurringGcalEvents = (
 
 export const mockRecurringGcalBaseEvent = (
   overrides: Partial<gSchema$EventBase> = {},
+  isAllDay = false,
 ): gSchema$EventBase => ({
-  ...mockRegularGcalEvent(),
+  ...mockRegularGcalEvent({}, isAllDay),
   recurrence: ["RRULE:FREQ=WEEKLY"],
   ...overrides,
 });
@@ -100,41 +156,110 @@ export const mockRecurringGcalInstances = (
 
 export const mockRegularGcalEvent = (
   overrides: Partial<WithGcalId<gSchema$Event>> = {},
+  isAllDay = false,
 ): WithGcalId<gSchema$Event> => {
-  const id = generateGcalId();
   const tz = faker.location.timeZone();
   // Dynamically generate timezone-aware times
   const start = dayjs.tz(faker.date.future(), tz);
   const end = start.add(1, "hour");
-  const created = dayjs.tz(faker.date.past(), tz);
-  const updated = dayjs.tz(faker.date.recent(), tz);
+  const core = mockGcalCoreEvent();
+  const dateKey = isAllDay ? "date" : "dateTime";
+  const dateFormat = getGcalEventDateFormat();
+
   return {
-    id,
-    summary: faker.lorem.sentence(),
-    status: "confirmed",
-    htmlLink: `https://www.google.com/calendar/event?eid=${id}`,
-    created: created.toISOString(),
-    updated: updated.toISOString(),
+    ...core,
     start: {
-      dateTime: start.toRFC3339OffsetString(),
+      [dateKey]: start.format(dateFormat),
       timeZone: tz,
     },
     end: {
-      dateTime: end.toRFC3339OffsetString(),
+      [dateKey]: end.format(dateFormat),
       timeZone: tz,
     },
-    iCalUID: faker.string.uuid() + "@google.com",
-    sequence: 0,
     extendedProperties: {
       private: {
         origin: Origin.GOOGLE_IMPORT,
         priority: Priorities.UNASSIGNED,
       },
     },
-    reminders: {
-      useDefault: true,
-    },
-    eventType: "default",
     ...overrides,
+  };
+};
+
+/**
+ * Creates a cancelled instance of a recurring event,
+ * matching the payload from gcal when a recurring event is cancelled
+ * @param baseEvent - The base event to create the cancelled instance for
+ * @returns A cancelled instance of the base event
+ */
+export const mockCancelledInstance = (
+  baseEvent: gSchema$EventBase,
+  instanceStart: string,
+): gSchema$EventInstance => {
+  const instanceStartRfc5545 = formatAs("RFC5545", instanceStart);
+
+  if (!instanceStartRfc5545) {
+    throw new Error("Invalid instance start date");
+  }
+  return {
+    id: `${baseEvent.id}_${instanceStartRfc5545}`,
+    kind: "calendar#event",
+    status: "cancelled",
+    summary: `Cancelled Instance - ${baseEvent.summary}`,
+    recurringEventId: baseEvent.id,
+    originalStartTime: {
+      dateTime: baseEvent.start?.dateTime,
+      timeZone: baseEvent.start?.timeZone,
+    },
+  };
+};
+
+export const mockGcalEvents = (repeatIntervalInDays = 7) => {
+  const timedStandalone = mockRegularGcalEvent({
+    summary: "STANDALONE: Regular Event",
+  });
+
+  const allDayStandalone = mockRegularGcalEvent(
+    { summary: "STANDALONE:All Day Event" },
+    true,
+  );
+
+  const baseTimedRecurrence = mockRecurringGcalBaseEvent({
+    summary: "Recurring Event",
+    recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
+  });
+
+  const timedInstances = mockRecurringGcalInstances(
+    baseTimedRecurrence,
+    3,
+    repeatIntervalInDays,
+  );
+
+  const cancelledTimedEvent = mockCancelledInstance(
+    baseTimedRecurrence,
+    "2025-04-10T12:30:00Z",
+  );
+
+  const allGcalEvents = [
+    timedStandalone,
+    allDayStandalone,
+    cancelledTimedEvent,
+    baseTimedRecurrence,
+    ...timedInstances,
+  ];
+
+  return {
+    gcalEvents: {
+      all: allGcalEvents,
+      regular: timedStandalone,
+      cancelled: cancelledTimedEvent,
+      recurring: baseTimedRecurrence,
+      instances: timedInstances,
+    },
+    totals: {
+      total: allGcalEvents.length,
+      cancelled: 1,
+      recurring: 1 + timedInstances.length,
+    },
   };
 };
