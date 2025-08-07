@@ -4,8 +4,11 @@ import { Collections } from "@backend/common/constants/collections";
 import { EventError } from "@backend/common/errors/event/event.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
-import { Ids_Event } from "../../../queries/event.queries";
-import { stripBaseProps } from "../util/recur.util";
+import { Ids_Event } from "@backend/event/queries/event.queries";
+import {
+  mongoDateAggregation,
+  stripBaseProps,
+} from "@backend/event/services/recur/util/recur.util";
 
 export const getOldBaseId = async (
   updatedBase: Schema_Event_Recur_Base,
@@ -60,7 +63,6 @@ export const updateTimedInstances = async (
   // Update instances using MongoDB aggregation pipeline
   // to maintain year/day/month while updating the time
   const baseStartDate = new Date(updatedBase.startDate as string);
-  const DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z";
   const baseEndDate = new Date(updatedBase.endDate as string);
   const result = await mongoService.db
     .collection(Collections.EVENT)
@@ -68,42 +70,8 @@ export const updateTimedInstances = async (
       {
         $set: {
           ...baseForUpdate,
-          startDate: {
-            $dateToString: {
-              date: {
-                $dateFromParts: {
-                  year: { $year: { $toDate: "$startDate" } },
-                  month: { $month: { $toDate: "$startDate" } },
-                  day: { $dayOfMonth: { $toDate: "$startDate" } },
-                  hour: { $hour: { $literal: baseStartDate } },
-                  minute: { $minute: { $literal: baseStartDate } },
-                  second: { $second: { $literal: baseStartDate } },
-                  millisecond: {
-                    $millisecond: { $literal: baseStartDate },
-                  },
-                },
-              },
-              format: DATE_FORMAT,
-            },
-          },
-          endDate: {
-            $dateToString: {
-              date: {
-                $dateFromParts: {
-                  year: { $year: { $toDate: "$endDate" } },
-                  month: { $month: { $toDate: "$endDate" } },
-                  day: { $dayOfMonth: { $toDate: "$endDate" } },
-                  hour: { $hour: { $literal: baseEndDate } },
-                  minute: { $minute: { $literal: baseEndDate } },
-                  second: { $second: { $literal: baseEndDate } },
-                  millisecond: {
-                    $millisecond: { $literal: baseEndDate },
-                  },
-                },
-              },
-              format: DATE_FORMAT,
-            },
-          },
+          ...mongoDateAggregation(baseStartDate, "startDate"),
+          ...mongoDateAggregation(baseEndDate, "endDate"),
           updatedAt: new Date(),
         },
       },

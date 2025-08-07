@@ -440,6 +440,8 @@ export class SyncImport {
     userId: string,
     calendarId: string,
     gEvent: gSchema$EventBase,
+    excludeBase = false,
+    session?: ClientSession,
   ) {
     // assemble base event
     const cBase = MapEvent.toCompass(
@@ -456,14 +458,14 @@ export class SyncImport {
       recurringId,
     );
 
-    const series = [cBase, ...cInstances];
+    const series = excludeBase ? cInstances : [cBase, ...cInstances];
 
     // assign ids and link instances to base
     const compassSeries = assignIdsToEvents(series);
 
-    const result = await mongoService.db
-      .collection(Collections.EVENT)
-      .insertMany(compassSeries);
+    const result = await mongoService.event.insertMany(compassSeries, {
+      session,
+    });
 
     return result;
   }
