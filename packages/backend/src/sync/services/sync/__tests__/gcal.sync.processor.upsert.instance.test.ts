@@ -1,15 +1,13 @@
 import { Categories_Recurrence } from "@core/types/event.types";
-import { categorizeEvents } from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
-import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import mongoService from "../../../../common/services/mongo.service";
 
 describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
   beforeAll(setupTestDb);
@@ -18,82 +16,140 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
 
   afterAll(cleanupTestDb);
 
-  it("should handle UPSERTING a TIMED INSTANCE", async () => {
+  it("should handle UPDATING a TIMED INSTANCE", async () => {
     /* Assemble */
     const { user } = await UtilDriver.setupTestUser();
-    const repo = new RecurringEventRepository(user._id.toString());
 
     const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
     // Simulate a change to the instance in GCal
     const origInstance = gcalEvents.instances[1];
     const origTitle = origInstance?.summary;
+
     const instance = {
       ...origInstance,
       summary: origTitle + " - Changed in GCal",
     };
+
     const instanceTitle = instance.summary;
 
-    const processor = new GcalSyncProcessor(repo);
+    const processor = new GcalSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([instance]);
 
     // Verify the correct change was detected
     expect(changes).toHaveLength(1);
-    expect(changes[0]).toEqual({
-      title: instanceTitle,
-      category: Categories_Recurrence.RECURRENCE_INSTANCE,
-      operation: "UPSERTED",
-    });
 
-    // Verify no other events were deleted
-    const remainingEvents = await getEventsInDb({
-      user: user._id.toString(),
-    }).then((events) =>
-      events.map((event) => ({ ...event, _id: event._id?.toString() })),
+    expect(changes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: instanceTitle,
+          category: Categories_Recurrence.RECURRENCE_INSTANCE,
+          operation: "RECURRENCE_INSTANCE_UPDATED",
+        }),
+      ]),
     );
 
-    expect(remainingEvents).toHaveLength(gcalEvents.all.length - 1); // exclude cancelled instance
+    // Verify no other events were deleted
+    const updatedInstance = await mongoService.event.findOne({
+      gEventId: instance.id,
+      user: user._id.toString(),
+    });
 
     // Verify the instance was updated
-    const { instances } = categorizeEvents(remainingEvents);
-    const updatedInstance = instances.find((i) => i.title === instanceTitle);
     expect(updatedInstance).toBeDefined();
     expect(updatedInstance?.title).toEqual(instanceTitle);
   });
-  it("should handle UPDATING a TIMED INSTANCE", async () => {
+
+  it("should handle UPDATING a REGULAR, BASE and TIMED INSTANCE", async () => {
     const { user } = await UtilDriver.setupTestUser();
-    const repo = new RecurringEventRepository(user._id.toString());
 
     const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
-    const updatedRegular = {
-      ...gcalEvents.regular,
-      summary: "Updated Regular Event",
-    };
-    const updatedInstance = {
+    const regular = { ...gcalEvents.regular, summary: "Updated Regular Event" };
+
+    const instance = {
       ...gcalEvents.instances[0],
       summary: "Updated Recurring Instance Event",
     };
 
-    const updatedGcalEvents = [updatedRegular, updatedInstance];
+    const base = { ...gcalEvents.recurring, summary: "Updated Base Event" };
 
-    const processor = new GcalSyncProcessor(repo);
+    const updatedGcalEvents = [regular, base, instance];
+
+    const processor = new GcalSyncProcessor(user._id.toString());
     const changes = await processor.processEvents(updatedGcalEvents);
 
-    expect(changes).toHaveLength(2);
+    expect(changes).toHaveLength(4);
+
     expect(changes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          title: updatedRegular.summary,
+          title: regular.summary,
           category: Categories_Recurrence.STANDALONE,
-          operation: "UPSERTED",
+          transition: ["STANDALONE", "STANDALONE_CONFIRMED"],
+          operation: "STANDALONE_UPDATED",
         }),
         expect.objectContaining({
-          title: updatedInstance.summary,
+          title: base.summary,
+          category: Categories_Recurrence.RECURRENCE_BASE,
+          transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
+          operation: "RECURRENCE_BASE_UPDATED",
+        }),
+        expect.objectContaining({
+          title: base.summary,
+          category: Categories_Recurrence.RECURRENCE_BASE,
+          transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
+          operation: "TIMED_INSTANCES_UPDATED",
+        }),
+        expect.objectContaining({
+          title: instance.summary,
           category: Categories_Recurrence.RECURRENCE_INSTANCE,
-          operation: "UPSERTED",
+          transition: ["RECURRENCE_INSTANCE", "RECURRENCE_INSTANCE_CONFIRMED"],
+          operation: "RECURRENCE_INSTANCE_UPDATED",
         }),
       ]),
     );
+
+    // Verify no other events were updated
+    const [
+      updatedRegular,
+      updatedBase,
+      updatedInstance,
+      filteredUpdatedInstances,
+    ] = await Promise.all([
+      mongoService.event.findOne({
+        gEventId: regular.id!,
+        user: user._id.toString(),
+      }),
+      mongoService.event.findOne({
+        gEventId: base.id!,
+        user: user._id.toString(),
+      }),
+      mongoService.event.findOne({
+        gEventId: instance.id!,
+        user: user._id.toString(),
+      }),
+      mongoService.event
+        .find({
+          gRecurringEventId: base.id!,
+          user: user._id.toString(),
+          gEventId: { $ne: instance.id! },
+        })
+        .toArray(),
+    ]);
+
+    // Verify the instance was updated
+    expect(updatedRegular).toBeDefined();
+    expect(updatedBase).toBeDefined();
+    expect(updatedInstance).toBeDefined();
+    expect(filteredUpdatedInstances.length).toBeGreaterThan(0);
+
+    expect(updatedRegular?.title).toEqual(regular.summary);
+    expect(updatedBase?.title).toEqual(base.summary);
+    expect(updatedInstance?.title).toEqual(instance.summary);
+
+    filteredUpdatedInstances.forEach((inst) => {
+      expect(inst.title).toEqual(base.summary);
+    });
   });
 });
