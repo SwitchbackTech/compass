@@ -1,5 +1,3 @@
-import dayjs from "dayjs";
-import timezone from "dayjs/plugin/timezone";
 import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
@@ -9,9 +7,7 @@ import {
   Schema_Event_Recur_Instance,
   WithCompassId,
 } from "@core/types/event.types";
-import { appendWithRfc5545Timestamp } from "@core/util/date/date.util";
-
-dayjs.extend(timezone);
+import dayjs from "@core/util/date/dayjs";
 
 export const createMockStandaloneEvent = (
   overrides: Partial<Schema_Event> = {},
@@ -76,7 +72,7 @@ export const createMockInstance = (
   const startIso = start.toISOString();
   const end = start.add(1, "hour");
 
-  const gEventId = appendWithRfc5545Timestamp(gBaseId, startIso);
+  const gEventId = `${gBaseId}_${start.toRRuleDTSTARTString()}`;
 
   const instance = {
     _id: new ObjectId().toString(),
@@ -93,7 +89,7 @@ export const createMockInstance = (
     isSomeday: false,
     updatedAt: now,
     gEventId,
-    gRecurringEventId: baseEventId,
+    gRecurringEventId: gBaseId,
     ...overrides,
   };
   return instance;

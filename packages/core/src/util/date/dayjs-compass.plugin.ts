@@ -5,6 +5,7 @@ import { Logger } from "@core/logger/winston.logger";
 
 enum DateFormatEnum {
   RFC5545 = "YYYYMMDD[T]HHmmss[Z]",
+  RFC5545_ZONELESS = "YYYYMMDD[T]HHmmss",
   RFC3339 = "YYYY-MM-DD[T]HH:mm:ss[Z]",
   RFC3339_OFFSET = "YYYY-MM-DDTHH:mm:ssZ", // can also be used as ISO8601
 
@@ -49,6 +50,7 @@ declare module "dayjs" {
     toRFC3339String(this: dayjs.Dayjs): string;
     toRFC3339OffsetString(this: dayjs.Dayjs): string;
     toYearMonthDayString(this: dayjs.Dayjs): string;
+    toRRuleDTSTARTString(this: dayjs.Dayjs, allDay?: boolean): string;
   }
 
   let defaultTimezone: string | undefined;
@@ -103,6 +105,12 @@ function toRFC3339OffsetString(this: Dayjs): string {
 
 function toYearMonthDayString(this: Dayjs): string {
   return this.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
+}
+
+function toRRuleDTSTARTString(this: Dayjs, allDay = false): string {
+  const { RFC5545_ZONELESS, YEAR_MONTH_DAY_COMPACT_FORMAT } = dayjs.DateFormat;
+
+  return this.format(allDay ? YEAR_MONTH_DAY_COMPACT_FORMAT : RFC5545_ZONELESS);
 }
 
 function monthFromZeroIndex(this: typeof dayjs, index: number): number {
@@ -169,6 +177,7 @@ export const dayjsCompassPlugin: PluginFunc<never> = (...params) => {
   dayjsClass.prototype.toRFC3339String = toRFC3339String;
   dayjsClass.prototype.toRFC3339OffsetString = toRFC3339OffsetString;
   dayjsClass.prototype.toYearMonthDayString = toYearMonthDayString;
+  dayjsClass.prototype.toRRuleDTSTARTString = toRRuleDTSTARTString;
   dayjsClass.prototype.weekMonthRange = weekMonthRange;
 
   dayjsStatic.logger = Logger("core.util.date.dayjs");
@@ -177,6 +186,5 @@ export const dayjsCompassPlugin: PluginFunc<never> = (...params) => {
   dayjsStatic.monthFromZeroIndex = monthFromZeroIndex.bind(dayjsStatic);
   dayjsStatic.monthStrFromZeroIndex = monthStrFromZeroIndex.bind(dayjsStatic);
   dayjsStatic.rruleUntilToIsoString = rruleUntilToIsoString.bind(dayjsStatic);
-  dayjsStatic.tz.setDefault = setDefault;
   // dayjsStatic.extend = extend.bind(dayjsStatic);
 };

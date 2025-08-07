@@ -25,17 +25,6 @@ export const FORMAT = {
 type Key_Format = (typeof FORMAT)[keyof typeof FORMAT]["key"];
 
 /**
- * Appends a RFC5545 timestamp to a base ID
- * @param base The base ID to append to
- * @param start The start date of the event
- * @returns The base ID with the RFC5545 timestamp appended
- */
-export const appendWithRfc5545Timestamp = (base: string, start: string) => {
-  const timestamp = formatAs("RFC5545", start);
-  return `${base}_${timestamp}`;
-};
-
-/**
  * Convert a recurrence rule with UNTIL value to  date
  * @param rrule The full recurrence rule with UNTIL value (e.g. "RRULE:FREQ=DAILY;UNTIL=20260108T005808Z")
  * @returns The UNTIL value, parsed as iso8601 (e.g. '2026-01-08T00:58:08.000Z')
@@ -124,7 +113,7 @@ export const formatAsIso8601 = (orig: string) => {
     /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/,
   );
   if (compactMatch) {
-    const [_, y, m, d, h, min, s, z] = compactMatch;
+    const [y, m, d, h, min, s, z] = compactMatch.slice(1);
     if (z) {
       // Z: treat as UTC
       const norm = `${y}-${m}-${d}T${h}:${min}:${s}Z`;
