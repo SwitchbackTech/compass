@@ -4,6 +4,7 @@ import {
 } from "@core/types/waitlist/waitlist.types";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { WaitlistError } from "@backend/common/errors/waitlist/waitlist.errors";
+import { cleanRegex } from "@backend/common/helpers/regex.util";
 import mongoService from "@backend/common/services/mongo.service";
 
 export class WaitlistRepository {
@@ -18,7 +19,7 @@ export class WaitlistRepository {
     }
 
     const result = await mongoService.waitlist.updateOne(
-      { email: { $regex: `^${email}$`, $options: "i" } },
+      { email: { $regex: `^${cleanRegex(email)}$`, $options: "i" } },
       { $set: { status: "invited" } },
     );
 
@@ -40,7 +41,7 @@ export class WaitlistRepository {
 
   static async isAlreadyOnWaitlist(email: string) {
     const match = await mongoService.waitlist
-      .find({ email: { $regex: `^${email}$`, $options: "i" } })
+      .find({ email: { $regex: `^${cleanRegex(email)}$`, $options: "i" } })
       .toArray();
     return match.length > 0;
   }
@@ -60,7 +61,7 @@ export class WaitlistRepository {
   ): Promise<Schema_Waitlist | null> {
     // Fetch up to 2 records to efficiently check for duplicates.
     const matches = await mongoService.waitlist
-      .find({ email: { $regex: `^${email}$`, $options: "i" } })
+      .find({ email: { $regex: `^${cleanRegex(email)}$`, $options: "i" } })
       .limit(2)
       .toArray();
 
