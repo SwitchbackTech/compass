@@ -17,3 +17,4 @@ process.env["EMAILER_WAITLIST_INVITE_TAG_ID"] = "7654321";
 process.env["EMAILER_USER_TAG_ID"] = "910111213";
 process.env["TOKEN_GCAL_NOTIFICATION"] = "secretToken1";
 process.env["TOKEN_COMPASS_SYNC"] = "secretToken2";
+process.env["TZ"] = "UTC";
