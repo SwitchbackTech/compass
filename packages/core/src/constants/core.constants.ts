@@ -43,6 +43,7 @@ export enum Priorities {
 export const RRULE_COUNT_WEEKS = 12;
 export const RRULE_COUNT_MONTHS = 3;
 export const RRULE_WEEK_START = "SU";
+export const GCAL_MAX_RECURRENCES = 730;
 
 export const RRULE = {
   WEEK: `RRULE:FREQ=WEEKLY;COUNT=${RRULE_COUNT_WEEKS};INTERVAL=1;BYDAY=${RRULE_WEEK_START}`,

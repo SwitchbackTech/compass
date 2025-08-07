@@ -8,7 +8,8 @@ export const isCancelledGCalEvent = (e: gSchema$Event): boolean => {
 };
 
 export const isGcalInstanceId = (e: gSchema$Event): boolean =>
-  !!e.id && new RegExp(`^${e.recurringEventId}_\\d+T\\d+Z$`, "i").test(e.id);
+  typeof e.id === "string" &&
+  new RegExp(`^${e.recurringEventId}_\\d+(T\\d+Z?)?$`, "i").test(e.id);
 
 /**
  * isBaseGCalEvent
