@@ -1,20 +1,22 @@
 import type { GaxiosPromise } from "gaxios";
 import type { calendar_v3 } from "googleapis";
 import { GoogleApis } from "googleapis";
-import type { MethodOptions } from "googleapis/build/src/apis/calendar";
+import type {
+  MethodOptions,
+  StreamMethodOptions,
+} from "googleapis/build/src/apis/calendar";
 import type {
   gSchema$CalendarListEntry,
   gSchema$Channel,
   gSchema$Event,
-  gSchema$EventBase,
   gSchema$Events,
 } from "@core/types/gcal";
 import {
   isBaseGCalEvent,
   isInstanceGCalEvent,
   isRegularGCalEvent,
-} from "../../../../../core/src/util/event/gcal.event.util";
-import { mockRecurringGcalEvents } from "./gcal.event.factory";
+} from "@core/util/event/gcal.event.util";
+import { mockRecurringGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 
 /**
  * Generates a paginated events object for the Google Calendar API.
@@ -87,6 +89,79 @@ export const mockGcal = ({
     ...calendar,
     events: {
       ...calendar.events,
+      get: jest.fn(async (params: calendar_v3.Params$Resource$Events$Get) => {
+        const { eventId } = params;
+        const event = events.find((e) => e.id === eventId);
+
+        if (!event) throw new Error(`Event with id ${eventId} not found`);
+
+        return Promise.resolve({
+          statusText: "OK",
+          status: 200,
+          data: event,
+        });
+      }),
+      insert: jest.fn(
+        async (
+          params: calendar_v3.Params$Resource$Events$Insert,
+          options: StreamMethodOptions = { responseType: "stream" },
+        ): GaxiosPromise<gSchema$Event> => {
+          events.push(params.requestBody as gSchema$Event);
+
+          return Promise.resolve({
+            config: options,
+            statusText: "OK",
+            status: 200,
+            data: params.requestBody as gSchema$Event,
+            headers: options.headers!,
+            request: { responseURL: params.requestBody!.id! },
+          });
+        },
+      ),
+      patch: jest.fn(
+        async (
+          params: calendar_v3.Params$Resource$Events$Patch,
+          options: MethodOptions = {},
+        ): GaxiosPromise<gSchema$Event> => {
+          const { eventId } = params;
+          const eventIndex = events.findIndex((e) => e.id === eventId);
+
+          if (eventIndex === -1) {
+            throw new Error(`Event with id ${eventId} not found`);
+          }
+
+          const updatedEvent = { ...events[eventIndex], ...params.requestBody };
+
+          events[eventIndex] = updatedEvent;
+
+          return Promise.resolve({
+            config: options,
+            statusText: "OK",
+            status: 200,
+            data: updatedEvent,
+            headers: options.headers!,
+            request: { responseURL: updatedEvent.id! },
+          });
+        },
+      ),
+      delete: jest.fn(
+        async (params: calendar_v3.Params$Resource$Events$Delete) => {
+          const { eventId } = params;
+          const eventIndex = events.findIndex((e) => e.id === eventId);
+
+          if (eventIndex === -1) {
+            throw new Error(`Event with id ${eventId} not found`);
+          }
+
+          events.splice(eventIndex, 1);
+
+          return Promise.resolve({
+            statusText: "OK",
+            status: 204,
+            data: {},
+          });
+        },
+      ),
       list: jest.fn(
         async (params: { pageToken?: string; singleEvents?: boolean }) => {
           // When singleEvents is false, only return base events and regular events - without instance events
@@ -129,16 +204,16 @@ export const mockGcal = ({
       instances: jest.fn(async (params: { eventId: string }) => {
         const { eventId: id } = params;
 
-        const baseEvent = events.find(isBaseGCalEvent) as gSchema$EventBase;
+        const baseEvent = events.find((e) => e.id === id);
 
-        const data = mockRecurringGcalEvents({ ...baseEvent, id }, 3, 7);
+        if (!baseEvent) throw new Error(`Event with id ${id} not found`);
+
+        const data = mockRecurringGcalEvents({ ...baseEvent, id });
 
         return {
           statusText: "OK",
           status: 200,
-          data: {
-            items: data.instances,
-          },
+          data: { items: data.instances },
         };
       }),
       watch: jest.fn(

@@ -11,7 +11,7 @@ import {
 import { isSameMonth } from "@core/util/date/date.util";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import mongoService from "../../common/services/mongo.service";
+import mongoService from "@backend/common/services/mongo.service";
 
 dayjs.extend(tz);
 dayjs.extend(utc);
@@ -74,12 +74,12 @@ export const getDeleteByIdFilter = (
 export const getReadAllFilter = (
   userId: string,
   query: Query_Event,
-): Filter<Schema_Event> => {
+): Filter<Omit<Schema_Event, "_id">> => {
   const { end, someday, start, priorities } = query;
   const isSomeday = someday === "true";
 
   // Start with basic user filter
-  const filter: Filter<Schema_Event> = { user: userId };
+  const filter: Filter<Omit<Schema_Event, "_id">> = { user: userId };
 
   // Add isSomeday condition
   filter["isSomeday"] = isSomeday;

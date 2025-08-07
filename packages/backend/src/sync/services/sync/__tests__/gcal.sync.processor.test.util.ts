@@ -8,6 +8,7 @@ import {
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import { gSchema$EventBase, gSchema$EventInstance } from "@core/types/gcal";
+import { Schema_User } from "@core/types/user.types";
 import {
   categorizeEvents,
   isBase,
@@ -19,7 +20,6 @@ import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db
 import { mockRecurringGcalInstances } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { Event_API } from "@backend/common/types/backend.event.types";
 import { validateEventSafely } from "@backend/common/validators/validate.event";
-import { Schema_User } from "../../../../../../core/src/types/user.types";
 
 dayjs.extend(timezone);
 
@@ -40,8 +40,6 @@ export const createCompassSeriesFromGcalBase = async (
 ) => {
   const gcalInstance = mockRecurringGcalInstances(
     gBase,
-    1,
-    1,
   )[0] as gSchema$EventInstance;
 
   const baseCompassId = new ObjectId().toString();

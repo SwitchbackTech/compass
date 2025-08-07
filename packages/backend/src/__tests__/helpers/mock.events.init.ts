@@ -1,4 +1,7 @@
+import type { GaxiosPromise } from "gaxios";
+import { calendar_v3, google } from "googleapis";
 import { ObjectId, WithoutId } from "mongodb";
+import { Options } from "rrule";
 import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import { Schema_Event, WithCompassId } from "@core/types/event.types";
@@ -22,6 +25,18 @@ export interface State_AfterGcalImport {
   };
   compassEvents: WithCompassId<Schema_Event>[];
 }
+/**
+ * simulateGoogleCalendarEventCreation
+ *
+ * Simulates the creation of a Google Calendar event.
+ * This is used to mock the Google Calendar API's event creation.
+ * and should be called when a gcal event mock is created.
+ */
+export const simulateGoogleCalendarEventCreation = async (
+  event: gSchema$Event,
+): GaxiosPromise<calendar_v3.Schema$Event> => {
+  return google.calendar("v3").events.insert({ requestBody: event });
+};
 
 /**
  * Simulates the events in the database after gcal import
@@ -31,14 +46,26 @@ export interface State_AfterGcalImport {
  */
 export const simulateDbAfterGcalImport = async (
   userId: string,
+  isAllDayBase = false,
+  recurrenceOptions: Partial<Options> = {},
 ): Promise<State_AfterGcalImport> => {
-  const { gcalEvents, compassEvents } = mockGcalAndCompassEvents(userId);
+  const { gcalEvents, compassEvents } = mockGcalAndCompassEvents(
+    userId,
+    isAllDayBase,
+    recurrenceOptions,
+  );
+
+  const { instances, recurring, regular } = gcalEvents;
+
+  await Promise.all(
+    [regular, recurring, ...instances].map(simulateGoogleCalendarEventCreation),
+  );
+
   await mongoService.db
     .collection(Collections.EVENT)
     .insertMany(compassEvents as unknown as WithoutId<Schema_Event>[]);
 
-  const compassEventsInDb = (await mongoService.db
-    .collection(Collections.EVENT)
+  const compassEventsInDb = (await mongoService.event
     .find({})
     .toArray()) as unknown as WithCompassId<Schema_Event>[];
   return {
@@ -51,8 +78,12 @@ export const simulateDbAfterGcalImport = async (
  * Generates mock compass events from gcal events
  * @returns {Object} - The gcal and compass events
  */
-export const mockGcalAndCompassEvents = (userId?: string) => {
-  const { gcalEvents } = mockGcalEvents();
+export const mockGcalAndCompassEvents = (
+  userId?: string,
+  isAllDayBase = false,
+  recurrenceOptions?: Partial<Options>,
+) => {
+  const { gcalEvents } = mockGcalEvents(isAllDayBase, recurrenceOptions);
   const compassEvents = MapEvent.toCompass(
     userId || "some-user-id",
     gcalEvents.all,

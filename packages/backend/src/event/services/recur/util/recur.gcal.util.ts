@@ -1,5 +1,6 @@
 import { Categories_Recurrence } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
+import { isGcalInstanceId } from "@core/util/event/gcal.event.util";
 
 export class GcalParser {
   constructor(private event: gSchema$Event) {
@@ -61,16 +62,9 @@ export class GcalParser {
     const hasInstancesPropertiesThatAreUndefined =
       this.event.originalStartTime !== undefined &&
       this.event.recurringEventId !== undefined;
-    if (hasInstancesPropertiesThatAreUndefined) {
-      return true;
-    }
 
-    const hasInstanceId =
-      this.event.id?.includes("_") && this.event.id?.endsWith("Z");
-    if (hasInstanceId) {
-      return true;
-    }
+    if (hasInstancesPropertiesThatAreUndefined) return true;
 
-    return false;
+    return isGcalInstanceId(this.event);
   }
 }

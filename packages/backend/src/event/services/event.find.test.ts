@@ -1,4 +1,4 @@
-import { Filter } from "mongodb";
+import { Filter, WithId } from "mongodb";
 import { mockEventSetJan22 } from "@core/__mocks__/v1/events/events.22jan";
 import { mockEventSetSomeday1 } from "@core/__mocks__/v1/events/events.someday.1";
 import { MapEvent, gEventToCompassEvent } from "@core/mappers/map.event";
@@ -16,27 +16,30 @@ import mongoService from "@backend/common/services/mongo.service";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
 
 describe("Jan 2022: Many Formats", () => {
-  const gBase = mockRecurringGcalBaseEvent();
-  const gInstances = mockRecurringGcalInstances(gBase, 10, 7);
+  const gBase = mockRecurringGcalBaseEvent({}, false, { count: 10 });
+  const gInstances = mockRecurringGcalInstances(gBase);
   const userId = "user1";
   const base = gEventToCompassEvent(gBase, userId);
   const instances = MapEvent.toCompass(userId, gInstances);
 
-  // link instances to base
-  instances.forEach((i) =>
-    Object.assign(i, { recurrence: { eventId: gBase.id } }),
-  );
-
-  const recurring = [base, ...instances];
-
   const allEvents: Array<Omit<Schema_Event, "_id">> = [
     ...mockEventSetJan22,
     ...mockEventSetSomeday1,
-    ...recurring,
+    ...instances,
   ];
 
   beforeAll(async () => {
     await setupTestDb();
+
+    const { insertedId } = await mongoService.event.insertOne({
+      ...base,
+      _id: mongoService.objectId(base._id!),
+    });
+
+    // link instances to base
+    instances.forEach((i) =>
+      Object.assign(i, { recurrence: { eventId: insertedId.toString() } }),
+    );
 
     await mongoService.event.insertMany(allEvents);
   });
@@ -81,7 +84,6 @@ describe("Jan 2022: Many Formats", () => {
       // base is not returned
       const baseEvents = result.filter(isBase);
       expect(baseEvents).toHaveLength(0);
-      expect(result.some((e) => e.title === gBase.summary)).toBe(false);
 
       const instances = result.filter(isExistingInstance);
       expect(instances).toHaveLength(gInstances.length);
@@ -213,7 +215,7 @@ describe("Jan 2022: Many Formats", () => {
       const result = await mongoService.event.find(filter).toArray();
 
       expect(result).toHaveLength(1);
-      expect(result[0].title).toBe("Beginning of Month");
+      expect(result[0]?.title).toBe("Beginning of Month");
     });
     it("honors TZ offset: week", async () => {
       const filter = getReadAllFilter(userId, {
@@ -224,7 +226,7 @@ describe("Jan 2022: Many Formats", () => {
 
       const result = await mongoService.event.find(filter).toArray();
       expect(result).toHaveLength(1);
-      expect(result[0].title).toBe("Beginning of Month");
+      expect(result[0]?.title).toBe("Beginning of Month");
 
       const filterOneSecLater = getReadAllFilter(userId, {
         someday: "true",
@@ -247,7 +249,7 @@ describe("Jan 2022: Many Formats", () => {
       const result = await mongoService.event.find(filter).toArray();
 
       expect(result).toHaveLength(1);
-      expect(result[0].title).toBe("First Sunday of New Month");
+      expect(result[0]?.title).toBe("First Sunday of New Month");
     });
 
     describe("Multi-Month Events", () => {
@@ -260,8 +262,8 @@ describe("Jan 2022: Many Formats", () => {
 
         const result = await mongoService.event.find(filter).toArray();
         expect(result).toHaveLength(2);
-        expect(result[0].title).toBe("Multi-Month 1");
-        expect(result[1].title).toBe("Multi-Month 2");
+        expect(result[0]?.title).toBe("Multi-Month 1");
+        expect(result[1]?.title).toBe("Multi-Month 2");
       });
       it("finds events that span 2 months: HMS", async () => {
         const filter = getReadAllFilter(userId, {
@@ -272,7 +274,7 @@ describe("Jan 2022: Many Formats", () => {
 
         const result = await mongoService.event.find(filter).toArray();
         expect(result).toHaveLength(1);
-        expect(result[0].title).toBe("Multi-Month 1");
+        expect(result[0]?.title).toBe("Multi-Month 1");
       });
       it("finds events that span 4 months", async () => {
         const filterYMD = getReadAllFilter(userId, {
@@ -283,7 +285,7 @@ describe("Jan 2022: Many Formats", () => {
 
         const result = await mongoService.event.find(filterYMD).toArray();
         expect(result).toHaveLength(1);
-        expect(result[0].title).toBe("Multi-Month 2");
+        expect(result[0]?.title).toBe("Multi-Month 2");
 
         const filterHMS = getReadAllFilter(userId, {
           someday: "true",
@@ -293,13 +295,15 @@ describe("Jan 2022: Many Formats", () => {
 
         const resultHMS = await mongoService.event.find(filterHMS).toArray();
         expect(resultHMS).toHaveLength(1);
-        expect(result[0].title).toBe("Multi-Month 2");
+        expect(result[0]?.title).toBe("Multi-Month 2");
       });
     });
   });
 });
 
-const _jan1ToJan3Assertions = (result: []) => {
+const _jan1ToJan3Assertions = (
+  result: Array<WithId<Omit<Schema_Event, "_id">>>,
+) => {
   const titles = result.map((e) => e.title!);
 
   expect(titles.includes("Dec 31 - Jan 1")).toBe(true);
@@ -319,10 +323,13 @@ const _jan1ToJan3Assertions = (result: []) => {
 };
 
 /* useful for deeply nested objects, like Mongo filters */
-const _flatten = (obj: object, out: object) => {
+const _flatten = (
+  obj: Record<string, unknown>,
+  out: Record<string, unknown>,
+) => {
   Object.keys(obj).forEach((key) => {
     if (typeof obj[key] == "object") {
-      out = _flatten(obj[key], out); // recursively call for nesteds
+      out = _flatten(obj[key] as Record<string, unknown>, out); // recursively call for nesteds
     } else {
       out[key] = obj[key]; // direct assign for values
     }
