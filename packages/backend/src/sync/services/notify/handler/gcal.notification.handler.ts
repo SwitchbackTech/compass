@@ -3,9 +3,9 @@ import { gCalendar } from "@core/types/gcal";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { Summary_Sync } from "@backend/sync/sync.types";
 import { getSync, updateSyncTokenFor } from "@backend/sync/util/sync.queries";
-import { Summary_Sync } from "../../../sync.types";
-import { GcalSyncProcessor } from "../../sync/gcal.sync.processor";
 
 const logger = Logger("app:gcal.notification.handler");
 

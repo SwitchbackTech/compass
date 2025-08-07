@@ -23,13 +23,13 @@ import {
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
+import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
 import {
   mongoDateAggregation,
   stripReadonlyEventProps,
 } from "@backend/event/services/recur/util/recur.util";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
 import { Change_Gcal, Operation_Sync } from "@backend/sync/sync.types";
-import { GcalEventRRule } from "./gcal.event.rrule";
 
 export class GcalEventParser {
   #logger = Logger("app.event.classes.gcal.parser");

@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import { Categories_Recurrence, Schema_Event } from "@core/types/event.types";
+import { gSchema$Event } from "@core/types/gcal";
 import { isExistingInstance } from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
@@ -9,13 +10,12 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
-import { gSchema$Event } from "../../../../../../core/src/types/gcal";
 import {
   baseHasRecurrenceRule,
   noInstancesAfterSplitDate,
   updateBasePayloadToExpireOneDayAfterFirstInstance,
-} from "./gcal.sync.processor.test.util";
+} from "@backend/sync/services/sync/__tests__/gcal.sync.processor.test.util";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 
 describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
   beforeAll(setupTestDb);

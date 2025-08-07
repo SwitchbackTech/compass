@@ -6,8 +6,8 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
+import mongoService from "@backend/common/services/mongo.service";
 import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
-import mongoService from "../../../../common/services/mongo.service";
 
 describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
   beforeAll(setupTestDb);

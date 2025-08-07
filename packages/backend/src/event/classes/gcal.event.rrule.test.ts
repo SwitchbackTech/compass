@@ -1,13 +1,13 @@
 import { faker } from "@faker-js/faker";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
+import dayjs from "@core/util/date/dayjs";
+import { isInstanceWithoutId } from "@core/util/event/event.util";
 import {
   isInstanceGCalEvent,
   parseGCalEventDate,
 } from "@core/util/event/gcal.event.util";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
-import dayjs from "../../../../core/src/util/date/dayjs";
-import { isInstanceWithoutId } from "../../../../core/src/util/event/event.util";
 
 describe("GcalEventRRule: ", () => {
   it(`should return the correct number of events based on rrule count`, () => {
