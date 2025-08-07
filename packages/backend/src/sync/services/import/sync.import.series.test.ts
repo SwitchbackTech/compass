@@ -3,15 +3,16 @@ import {
   filterBaseEvents,
   filterExistingInstances,
 } from "@core/util/event/event.util";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { simulateGoogleCalendarEventCreation } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { UtilDriver } from "../../../__tests__/drivers/util.driver";
-import { getEventsInDb } from "../../../__tests__/helpers/mock.db.queries";
-import { createSyncImport } from "./sync.import";
+import { createSyncImport } from "@backend/sync/services/import/sync.import";
 
 describe("SyncImport: Series", () => {
   beforeAll(setupTestDb);
@@ -26,6 +27,9 @@ describe("SyncImport: Series", () => {
     const syncImport = await createSyncImport(user._id.toString());
 
     const baseRecurringGcalEvent = mockRecurringGcalBaseEvent();
+
+    //simulate event creation in Google Calendar
+    await simulateGoogleCalendarEventCreation(baseRecurringGcalEvent);
 
     /* Act */
     // trigger a series import with base event

@@ -7,7 +7,10 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
+import {
+  simulateDbAfterGcalImport,
+  simulateGoogleCalendarEventCreation,
+} from "@backend/__tests__/helpers/mock.events.init";
 import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import {
@@ -36,6 +39,8 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
     await simulateDbAfterGcalImport(user._id.toString());
 
     const newBase = mockRecurringGcalBaseEvent();
+
+    await simulateGoogleCalendarEventCreation(newBase);
 
     const processor = new GcalSyncProcessor(repo);
     const changes = await processor.processEvents([newBase]);

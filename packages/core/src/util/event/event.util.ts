@@ -39,7 +39,7 @@ export const isAllDay = (event: Schema_Event | Event_API) =>
  * @param event
  * @returns
  */
-export const isBase = (event: Schema_Event | Event_API) => {
+export const isBase = (event: Pick<Schema_Event | Event_API, "recurrence">) => {
   return (
     event?.recurrence?.rule !== undefined &&
     event?.recurrence?.eventId === undefined
@@ -64,7 +64,9 @@ export const isInstanceWithoutId = (event: Schema_Event | Event_API) => {
  * @param event
  * @returns
  */
-export const isExistingInstance = (event: Schema_Event | Event_API) => {
+export const isExistingInstance = (
+  event: Pick<Schema_Event | Event_API, "recurrence">,
+) => {
   return event?.recurrence?.eventId && event?.recurrence?.rule === undefined;
 };
 

@@ -1,4 +1,4 @@
-import omit from "lodash.omit";
+import { Options, RRule } from "rrule";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
@@ -9,10 +9,7 @@ import {
 } from "@core/types/gcal";
 import { formatAs } from "@core/util/date/date.util";
 import dayjs from "@core/util/date/dayjs";
-import {
-  getGcalEventDateFormat,
-  parseGCalEventDate,
-} from "@core/util/event/gcal.event.util";
+import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
 
 /**
  * Generates a random base32 hex string according to gcal id's requirement:
@@ -90,72 +87,38 @@ export const mockTimedEvent = (): gSchema$Event => {
  * @returns An array containing the base event and its instances
  */
 export const mockRecurringGcalEvents = (
-  baseOverrides: Partial<gSchema$EventBase> = {},
-  count: number,
-  repeatIntervalInDays: number,
+  baseOverrides: Partial<Omit<gSchema$EventBase, "recurrence">> = {},
+  isAllDay = false,
+  options: Partial<Options> = {},
 ): { base: gSchema$EventBase; instances: gSchema$EventInstance[] } => {
-  const base = mockRecurringGcalBaseEvent(baseOverrides);
-  const instances = mockRecurringGcalInstances(
-    base,
-    count,
-    repeatIntervalInDays,
-  );
+  const base = mockRecurringGcalBaseEvent(baseOverrides, isAllDay, options);
+  const instances = mockRecurringGcalInstances(base);
+
   return { base, instances };
 };
 
 export const mockRecurringGcalBaseEvent = (
-  overrides: Partial<gSchema$EventBase> = {},
+  overrides: Partial<Omit<gSchema$EventBase, "recurrence">> = {},
   isAllDay = false,
-): gSchema$EventBase => ({
-  ...mockRegularGcalEvent({}, isAllDay),
-  recurrence: ["RRULE:FREQ=WEEKLY"],
-  ...overrides,
-});
+  rruleOptions: Partial<Options> = {},
+): gSchema$EventBase => {
+  const event = mockRegularGcalEvent(overrides, isAllDay);
+  const ruleOptions = { count: 3, ...rruleOptions };
+  const rrule = new GcalEventRRule(event as gSchema$EventBase, ruleOptions);
+
+  return { ...event, recurrence: rrule.toRecurrence() };
+};
 
 export const mockRecurringGcalInstances = (
   base: gSchema$EventBase,
-  count: number,
-  repeatIntervalInDays: number,
 ): gSchema$EventInstance[] => {
-  if (!base.start?.dateTime || !base.end?.dateTime) {
-    throw new Error("Event must have start and end dates");
-  }
+  const rrule = new GcalEventRRule(base);
 
-  const baseStartDate = parseGCalEventDate(base.start);
-  const baseEndDate = parseGCalEventDate(base.end);
-  const isAllDay = "date" in base.start;
-  const dateKey = isAllDay ? "date" : "dateTime";
-  const dateFormat = getGcalEventDateFormat(base.start);
-
-  return Array.from({ length: count }, (_, index) => {
-    const offSetDays = index * repeatIntervalInDays;
-    // For index 0, keep the same date as base
-    // For subsequent instances, add the interval
-    const startDate = baseStartDate.add(offSetDays, "days");
-    const endDate = baseEndDate.add(offSetDays, "days");
-
-    const instance = {
-      ...base,
-      id: `${base.id}_${startDate.toRFC5545String()}`,
-      summary: `${base.summary} instance ${index + 1}`,
-      recurringEventId: base.id,
-      start: {
-        [dateKey]: startDate?.format(dateFormat),
-        timeZone: base.start?.timeZone ?? dayjs.tz.guess(),
-      },
-      end: {
-        [dateKey]: endDate.format(dateFormat),
-        timeZone: base.end?.timeZone ?? dayjs.tz.guess(),
-      },
-    };
-
-    // remove properties that are reserved for the base event
-    return omit(instance, ["recurrence"]);
-  });
+  return rrule.instances();
 };
 
 export const mockRegularGcalEvent = (
-  overrides: Partial<WithGcalId<gSchema$Event>> = {},
+  overrides: Partial<WithGcalId<Omit<gSchema$Event, "recurrence">>> = {},
   isAllDay = false,
 ): WithGcalId<gSchema$Event> => {
   const tz = faker.location.timeZone();
@@ -164,7 +127,8 @@ export const mockRegularGcalEvent = (
   const end = start.add(1, "hour");
   const core = mockGcalCoreEvent();
   const dateKey = isAllDay ? "date" : "dateTime";
-  const dateFormat = getGcalEventDateFormat();
+  const { YEAR_MONTH_DAY_FORMAT, RFC3339_OFFSET } = dayjs.DateFormat;
+  const dateFormat = isAllDay ? YEAR_MONTH_DAY_FORMAT : RFC3339_OFFSET;
 
   return {
     ...core,
@@ -214,7 +178,10 @@ export const mockCancelledInstance = (
   };
 };
 
-export const mockGcalEvents = (repeatIntervalInDays = 7) => {
+export const mockGcalEvents = (
+  isAllDayBase = false,
+  recurrenceOptions: Partial<Options> = {},
+) => {
   const timedStandalone = mockRegularGcalEvent({
     summary: "STANDALONE: Regular Event",
   });
@@ -224,16 +191,13 @@ export const mockGcalEvents = (repeatIntervalInDays = 7) => {
     true,
   );
 
-  const baseTimedRecurrence = mockRecurringGcalBaseEvent({
-    summary: "Recurring Event",
-    recurrence: ["RRULE:FREQ=DAILY;INTERVAL=7"],
-  });
-
-  const timedInstances = mockRecurringGcalInstances(
-    baseTimedRecurrence,
-    3,
-    repeatIntervalInDays,
+  const baseTimedRecurrence = mockRecurringGcalBaseEvent(
+    { summary: "Recurring Event" },
+    isAllDayBase,
+    { freq: RRule.DAILY, interval: 7, ...recurrenceOptions },
   );
+
+  const timedInstances = mockRecurringGcalInstances(baseTimedRecurrence);
 
   const cancelledTimedEvent = mockCancelledInstance(
     baseTimedRecurrence,

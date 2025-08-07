@@ -1,12 +1,15 @@
 import { ObjectId, WithId } from "mongodb";
+import { Schema_User } from "@core/types/user.types";
 import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db.util";
 import { mockRecurringGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { Schema_User } from "../../../../../../core/src/types/user.types";
 
 export const createSeries = async (user: WithId<Schema_User>) => {
   // Create base and instances in Compass,
   // that point to the original gcal base
-  const { base: gcalBase } = mockRecurringGcalEvents({}, 2, 7);
+  const { base: gcalBase } = mockRecurringGcalEvents({}, false, {
+    count: 2,
+    interval: 7,
+  });
 
   const compassBaseId = new ObjectId().toString();
   const compassBase = {
