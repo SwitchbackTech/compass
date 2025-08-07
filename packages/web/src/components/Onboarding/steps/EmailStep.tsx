@@ -71,17 +71,15 @@ export const EmailStep: React.FC<OnboardingStepProps> = ({
       return;
     }
 
-    if (!email.trim()) {
-      alert("Please enter your email address.");
-      return;
-    }
-
     setIsLoadingWaitlistStatus(true);
     try {
       const data = await WaitlistApi.getWaitlistStatus(email.trim());
       setWaitlistStatus(data);
       setFirstName(data.firstName ?? "Sailor");
-      onNext();
+
+      if (data.isOnWaitlist) {
+        onNext();
+      }
     } catch (error) {
       console.error("Error checking waitlist status:", error);
     } finally {
