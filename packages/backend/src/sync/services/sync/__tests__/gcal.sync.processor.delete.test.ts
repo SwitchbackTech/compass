@@ -81,7 +81,7 @@ describe("GcalSyncProcessor: DELETE", () => {
 
     // Query the Compass DB for actual recurring instances
     const compassInstances = await getEventsInDb({
-      gRecurringEventId: compassBaseId,
+      gRecurringEventId: gcalBaseId,
     });
 
     const compassInstance = compassInstances[0];

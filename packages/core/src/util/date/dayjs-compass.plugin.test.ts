@@ -124,6 +124,20 @@ describe("toYearMonthDayString", () => {
   });
 });
 
+describe("toRRuleDTSTARTString", () => {
+  it("converts dayjs date to RFC5545 iCalendar DTSTART format", () => {
+    const rfc5545 = dayjs("2025-12-07T15:59:33.000Z").toRRuleDTSTARTString();
+
+    expect(rfc5545).toEqual("20251207T155933");
+  });
+
+  it("converts dayjs date to rrule all day format", () => {
+    const date = dayjs("2025-12-07T15:59:33.000Z").toRRuleDTSTARTString(true);
+
+    expect(date).toStrictEqual("20251207");
+  });
+});
+
 describe("monthFromZeroIndex", () => {
   it("it returns the zero indexed month from an index", () => {
     for (let index = -5; index < 20; index++) {
