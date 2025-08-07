@@ -2,7 +2,11 @@
 import mergeWith from "lodash.mergewith";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
-import { Event_Core, Schema_Event } from "@core/types/event.types";
+import {
+  Event_Core,
+  Schema_Event,
+  WithoutCompassId,
+} from "@core/types/event.types";
 import { WithGcalId, gSchema$Event } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
 import { isAllDay } from "@core/util/event/event.util";
@@ -61,7 +65,7 @@ export const gEventToCompassEvent = (
   gEvent: gSchema$Event,
   userId: string,
   origin?: Origin,
-): Event_Core => {
+): WithoutCompassId<Event_Core> => {
   if (!gEvent.id) {
     throw new BaseError(
       "Bad Google Event Id",
@@ -90,13 +94,6 @@ export const gEventToCompassEvent = (
   const title = event.summary!;
   const isAllDay = !!event.start && "date" in event.start;
   const priority = getPriority(event);
-  // @TODO: - https://github.com/SwitchbackTech/compass/issues/607
-  // we need to save the dates as UTC -and migrate existing event dates
-  // so we can afford to disregard the timezone
-  // we cannot rely on timestamp offset in the event date string;
-  // const startDate = parseGCalEventDate(event.start).format();
-  // const endDate = parseGCalEventDate(event.end).format();
-  // we do this for compatibility for now
   const startDate = isAllDay ? event.start?.date : event.start?.dateTime;
   const endDate = isAllDay ? event.end?.date : event.end?.dateTime;
 
