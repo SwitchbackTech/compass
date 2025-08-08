@@ -182,6 +182,13 @@ const CmdPalette = ({
             target: "_blank",
           },
           {
+            id: "discord",
+            children: "Discord",
+            icon: "ChatBubbleLeftRightIcon",
+            href: "https://www.discord.gg/H3DVMnKmUd",
+            target: "_blank",
+          },
+          {
             id: "terms",
             children: "Terms",
             icon: "DocumentTextIcon",
