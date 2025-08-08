@@ -73,7 +73,6 @@ describe("SyncController", () => {
   afterAll(async () => {
     await baseDriver.teardown();
     await cleanupTestDb();
-    jest.clearAllMocks();
   });
 
   describe("importGCal: ", () => {

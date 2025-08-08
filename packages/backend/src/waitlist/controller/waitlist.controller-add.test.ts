@@ -2,11 +2,7 @@ import request from "supertest";
 import type { Answers } from "@core/types/waitlist/waitlist.answer.types";
 
 describe("POST /api/waitlist", () => {
-  beforeEach(() => {
-    jest.resetModules();
-    jest.clearAllMocks();
-  });
-
+  beforeEach(() => jest.resetModules());
   it("should return 400 if answers are invalid", async () => {
     jest.doMock("../service/waitlist.service", () => ({
       __esModule: true,

@@ -28,7 +28,6 @@ describe("AuthController", () => {
     const mockNewRefreshToken = "new-token";
 
     beforeEach(() => {
-      jest.clearAllMocks();
       // Mock mongoService
       (mongoService.user.findOneAndUpdate as jest.Mock).mockResolvedValue({
         value: mockUser,

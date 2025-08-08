@@ -1,13 +1,16 @@
 import { faker } from "@faker-js/faker";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
+import dayjs from "@core/util/date/dayjs";
+import { isInstanceWithoutId } from "@core/util/event/event.util";
 import {
   isInstanceGCalEvent,
   parseGCalEventDate,
 } from "@core/util/event/gcal.event.util";
-import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import {
+  generateGcalEventDate,
+  mockRecurringGcalBaseEvent,
+} from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
-import dayjs from "../../../../core/src/util/date/dayjs";
-import { isInstanceWithoutId } from "../../../../core/src/util/event/event.util";
 
 describe("GcalEventRRule: ", () => {
   it(`should return the correct number of events based on rrule count`, () => {
@@ -104,8 +107,10 @@ describe("GcalEventRRule: ", () => {
     });
 
     it("should return gcal instances with the correct date format and timezone for an ALLDAY base event", () => {
-      const baseEvent = mockRecurringGcalBaseEvent({}, true);
       const recurrence = ["RRULE:FREQ=DAILY;COUNT=10"];
+      const startOfYear = dayjs().startOf("year"); // specific date for testing
+      const dates = generateGcalEventDate({ date: startOfYear, allDay: true });
+      const baseEvent = mockRecurringGcalBaseEvent(dates, true);
       const rrule = new GcalEventRRule({ ...baseEvent, recurrence });
       const instances = rrule.instances();
       const startDate = parseGCalEventDate(baseEvent.start);
@@ -134,8 +139,10 @@ describe("GcalEventRRule: ", () => {
     });
 
     it("should return gcal instances with the correct date format and timezone for a TIMED base event", () => {
-      const baseEvent = mockRecurringGcalBaseEvent();
       const recurrence = ["RRULE:FREQ=DAILY;COUNT=10"];
+      const startOfYear = dayjs().startOf("year"); // specific date for testing
+      const dates = generateGcalEventDate({ date: startOfYear });
+      const baseEvent = mockRecurringGcalBaseEvent(dates);
       const rrule = new GcalEventRRule({ ...baseEvent, recurrence });
       const instances = rrule.instances();
       const startDate = parseGCalEventDate(baseEvent.start);
@@ -166,9 +173,11 @@ describe("GcalEventRRule: ", () => {
 
   describe("compassInstances", () => {
     it("should return compass events based on the rrule instances for a TIMED base event", () => {
-      const userId = faker.string.uuid();
-      const baseEvent = mockRecurringGcalBaseEvent();
       const recurrence = ["RRULE:FREQ=DAILY;COUNT=10"];
+      const startOfYear = dayjs().startOf("year"); // specific date for testing
+      const dates = generateGcalEventDate({ date: startOfYear });
+      const userId = faker.string.uuid();
+      const baseEvent = mockRecurringGcalBaseEvent(dates);
       const rrule = new GcalEventRRule({ ...baseEvent, recurrence });
       const instances = rrule.compassInstances(userId);
       const startDate = parseGCalEventDate(baseEvent.start);
@@ -196,8 +205,10 @@ describe("GcalEventRRule: ", () => {
 
     it("should return compass events based on the rrule instances for an ALLDAY base event", () => {
       const userId = faker.string.uuid();
-      const baseEvent = mockRecurringGcalBaseEvent({}, true);
       const recurrence = ["RRULE:FREQ=DAILY;COUNT=10"];
+      const startOfYear = dayjs().startOf("year"); // specific date for testing
+      const dates = generateGcalEventDate({ date: startOfYear, allDay: true });
+      const baseEvent = mockRecurringGcalBaseEvent(dates, true);
       const rrule = new GcalEventRRule({ ...baseEvent, recurrence });
       const instances = rrule.compassInstances(userId);
       const startDate = parseGCalEventDate(baseEvent.start);

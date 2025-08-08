@@ -1,11 +1,7 @@
 import request from "supertest";
 
 describe("GET /api/waitlist", () => {
-  beforeEach(() => {
-    jest.resetModules();
-    jest.clearAllMocks();
-  });
-
+  beforeEach(() => jest.resetModules());
   it("should return 400 if email is invalid", async () => {
     // Arrange
     jest.doMock("../service/waitlist.service", () => ({
