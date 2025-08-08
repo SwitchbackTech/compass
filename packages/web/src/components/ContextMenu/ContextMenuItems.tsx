@@ -14,6 +14,8 @@ import {
   MenuItemLabel,
   PriorityCircle,
   PriorityContainer,
+  TooltipText,
+  TooltipWrapper,
 } from "./styled";
 
 export interface ContextMenuAction {
@@ -41,16 +43,19 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
     {
       id: "work",
       value: Priorities.WORK,
+      label: "Work",
       color: colorByPriority[Priorities.WORK],
     },
     {
       id: "self",
       value: Priorities.SELF,
+      label: "Self",
       color: colorByPriority[Priorities.SELF],
     },
     {
       id: "relations",
       value: Priorities.RELATIONS,
+      label: "Relations",
       color: colorByPriority[Priorities.RELATIONS],
     },
   ];
@@ -112,12 +117,14 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
     <div id={ID_CONTEXT_MENU_ITEMS}>
       <PriorityContainer>
         {priorities.map((priority) => (
-          <PriorityCircle
-            key={priority.id}
-            color={priority.color}
-            selected={selectedPriority === priority.value}
-            onClick={() => handleEditPriority(priority.value)}
-          />
+          <TooltipWrapper key={priority.id}>
+            <PriorityCircle
+              color={priority.color}
+              selected={selectedPriority === priority.value}
+              onClick={() => handleEditPriority(priority.value)}
+            />
+            <TooltipText>{priority.label}</TooltipText>
+          </TooltipWrapper>
         ))}
       </PriorityContainer>
       {menuActions.map((item) => (
