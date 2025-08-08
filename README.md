@@ -56,16 +56,16 @@ All the info you'd need to get started is at [docs.compasscalendar.com](https://
 
 [![NextStep-TheDocs](https://github.com/user-attachments/assets/3a41c035-6058-4cb0-97d0-4a03388355aa)](https://docs.compasscalendar.com)
 
-## Links
+## Next Steps
 
-📃 [Compass Docs](https://docs.compasscalendar.com)
-
-🔵 [Production App](https://app.compasscalendar.com) (Closed beta)
+🔵 [Use the app](https://app.compasscalendar.com) (Closed beta)
 
 Compass sign in is currently limited to emails that have been invited from our waitlist. If you're running the app locally, this restriction is skipped so contributors can get started right away.
 
 To skip the waitlist, enter `marco@polo.co` when prompted for an email at the login screen. Then enter your Google credentials to sign in. This is a temporary hack to allow contributors to test the app in production before going through the whole local setup process.
 
-🎬 [Compass on YouTube](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w)
+💬 [Join our Discord](https://www.discord.gg/H3DVMnKmUd)
 
-✍ [Compass Blog](https://www.compasscalendar.com/post/compass-is-open-source)
+📃 [Read the Docs](https://docs.compasscalendar.com)
+
+👀 Follow us on [X (Twitter)](https://x.com/CompassCalendar), [YouTube](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w), [LinkedIn](https://www.linkedin.com/company/compass-calendar)
