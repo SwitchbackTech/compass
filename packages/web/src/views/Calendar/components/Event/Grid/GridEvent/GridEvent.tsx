@@ -142,7 +142,9 @@ const _GridEvent = (
             )}
             <>
               <StyledEventScaler
-                showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
+                showResizeCursor={
+                  !isPlaceholder && !isResizing && !isDragging && !isOptimistic
+                }
                 onMouseDown={(e) => {
                   if (isRecurring) {
                     toast("Can't edit recurring events (yet)");
@@ -157,7 +159,9 @@ const _GridEvent = (
 
               <StyledEventScaler
                 bottom="-0.25px"
-                showResizeCursor={!isPlaceholder && !isResizing && !isDragging}
+                showResizeCursor={
+                  !isPlaceholder && !isResizing && !isDragging && !isOptimistic
+                }
                 onMouseDown={(e) => {
                   if (isRecurring) {
                     alert("Can't edit recurring events (yet)");
