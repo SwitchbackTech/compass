@@ -17,22 +17,24 @@ export class GcalSyncProcessor {
 
     logger.debug(`Processing ${events.length} event(s)...`);
 
-    for (const event of events) {
-      const session = await mongoService.startSession();
+    const session = await mongoService.startSession({
+      causalConsistency: true,
+    });
 
-      try {
-        session.startTransaction();
+    session.startTransaction();
 
+    try {
+      for (const event of events) {
         const changes = await this.handleGCalChange(event, session);
 
-        await session.commitTransaction();
-
         summary.push(...changes);
-      } catch (error) {
-        await session.abortTransaction();
-
-        throw error;
       }
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+
+      throw error;
     }
 
     return summary;
