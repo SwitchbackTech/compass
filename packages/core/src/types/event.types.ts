@@ -28,6 +28,11 @@ export enum Categories_Recurrence {
   RECURRENCE_INSTANCE = "RECURRENCE_INSTANCE",
 }
 
+export type TransitionStatus = "CONFIRMED" | "CANCELLED";
+
+export type TransitionCategoriesRecurrence =
+  `${Categories_Recurrence}_${TransitionStatus}`;
+
 export type Categories_Recur = "all" | "future";
 
 export type Direction_Migrate = "forward" | "back" | "up" | "down";

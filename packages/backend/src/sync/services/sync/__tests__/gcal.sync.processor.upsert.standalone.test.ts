@@ -8,7 +8,6 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateDbAfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
 import { mockRegularGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
 import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 
 describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
@@ -18,10 +17,9 @@ describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
 
   afterAll(cleanupTestDb);
 
-  it("should handle UPSERTING a new STANDALONE event", async () => {
+  it("should handle CREATING a new STANDALONE event", async () => {
     /* Assemble */
     const { user } = await UtilDriver.setupTestUser();
-    const repo = new RecurringEventRepository(user._id.toString());
 
     await simulateDbAfterGcalImport(user._id.toString());
 
@@ -33,16 +31,19 @@ describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
     const newStandalone = mockRegularGcalEvent({
       summary: "New Standalone Event",
     });
-    const processor = new GcalSyncProcessor(repo);
+    const processor = new GcalSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([newStandalone]);
 
     /* Assert */
     expect(changes).toHaveLength(1);
-    expect(changes[0]).toEqual({
-      title: newStandalone.summary,
-      category: Categories_Recurrence.STANDALONE,
-      operation: "UPSERTED",
-    });
+    expect(changes[0]).toEqual(
+      expect.objectContaining({
+        title: newStandalone.summary,
+        category: Categories_Recurrence.STANDALONE,
+        operation: "STANDALONE_CREATED",
+        transition: [null, "STANDALONE_CONFIRMED"],
+      }),
+    );
 
     // Verify that a new event was added
     const updatedEvents = await getEventsInDb({ user: user._id.toString() });
@@ -55,10 +56,9 @@ describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
     expect(updatedEvent?.title).toEqual(newStandalone.summary);
   });
 
-  it("should handle UPSERTING an existing STANDALONE event", async () => {
+  it("should handle UPDATING an existing STANDALONE event", async () => {
     /* Assemble */
     const { user } = await UtilDriver.setupTestUser();
-    const repo = new RecurringEventRepository(user._id.toString());
 
     const { gcalEvents } = await simulateDbAfterGcalImport(user._id.toString());
 
@@ -72,7 +72,7 @@ describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
     const origEventsCount = (await getEventsInDb({ user: user._id.toString() }))
       .length;
     /* Act */
-    const processor = new GcalSyncProcessor(repo);
+    const processor = new GcalSyncProcessor(user._id.toString());
     const changes = await processor.processEvents([updatedStandalone]);
 
     /* Assert */
@@ -81,7 +81,7 @@ describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
     expect(changes[0]).toMatchObject({
       title: updatedStandalone.summary,
       category: Categories_Recurrence.STANDALONE,
-      operation: "UPSERTED",
+      operation: "STANDALONE_UPDATED",
     });
 
     const updatedEvents = await getEventsInDb({ user: user._id.toString() });

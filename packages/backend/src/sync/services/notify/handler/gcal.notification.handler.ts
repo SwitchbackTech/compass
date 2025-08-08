@@ -3,21 +3,17 @@ import { gCalendar } from "@core/types/gcal";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
-import { RecurringEventRepository } from "@backend/event/services/recur/repo/recur.event.repo";
+import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
+import { Summary_Sync } from "@backend/sync/sync.types";
 import { getSync, updateSyncTokenFor } from "@backend/sync/util/sync.queries";
-import { Summary_Sync } from "../../../sync.types";
-import { GcalSyncProcessor } from "../../sync/gcal.sync.processor";
 
 const logger = Logger("app:gcal.notification.handler");
 
 export class GCalNotificationHandler {
-  private repo: RecurringEventRepository;
   constructor(
     private gcal: gCalendar,
     private userId: string,
-  ) {
-    this.repo = new RecurringEventRepository(userId);
-  }
+  ) {}
 
   /**
    * Handle a Google Calendar notification
@@ -33,7 +29,7 @@ export class GCalNotificationHandler {
     );
 
     if (hasChanges) {
-      const processor = new GcalSyncProcessor(this.repo);
+      const processor = new GcalSyncProcessor(this.userId);
       const changeSummary = await processor.processEvents(changes);
       console.log("PROCESSED:", changeSummary);
       return { summary: "PROCESSED", changes: changeSummary };

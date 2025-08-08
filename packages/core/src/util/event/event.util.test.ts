@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { categorizeEvents } from "@core/util/event/event.util";
 import {
   createMockBaseEvent,
@@ -8,8 +9,9 @@ import {
 describe("categorizeEvents", () => {
   it("should categorize events correctly", () => {
     const standalone = createMockStandaloneEvent();
-    const base = createMockBaseEvent();
-    const instance = createMockInstance(base._id, base.gEventId as string);
+    const gEventId = faker.string.alphanumeric(16).toLowerCase();
+    const base = createMockBaseEvent({ gEventId });
+    const instance = createMockInstance(base._id, gEventId);
     const events = [base, instance, standalone];
 
     const { baseEvents, instances, standaloneEvents } =

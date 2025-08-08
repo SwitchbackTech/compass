@@ -1,3 +1,4 @@
+import omit from "lodash.omit";
 import { ObjectId } from "mongodb";
 import { RRule } from "rrule";
 import { RRULE } from "@core/constants/core.constants";
@@ -46,19 +47,35 @@ export const stripBaseProps = (
   | "user"
   | "updatedAt"
 > => {
-  const { allDayOrder, description, gRecurringEventId, isAllDay } = base;
-  const { isSomeday, origin, priority, title } = base;
+  return omit(base, [
+    "_id",
+    "gEventId",
+    "startDate",
+    "endDate",
+    "order",
+    "recurrence",
+    "user",
+    "updatedAt",
+  ]);
+};
 
-  return {
-    allDayOrder,
-    description,
-    gRecurringEventId,
-    isAllDay,
-    isSomeday,
-    origin,
-    priority,
-    title,
-  };
+export const stripReadonlyEventProps = (
+  base: Schema_Event,
+): Omit<
+  Schema_Event_Recur_Base,
+  | "_id"
+  | "gEventId"
+  | "gRecurringEventId"
+  | "startDate"
+  | "endDate"
+  | "order"
+  | "recurrence"
+  | "user"
+  | "updatedAt"
+> => {
+  return omit(stripBaseProps(base as Schema_Event_Recur_Base), [
+    "gRecurringEventId",
+  ]);
 };
 
 const _generateInstances = (
@@ -240,3 +257,22 @@ const _getNextStart = (rule: string, startDate: string, endDate: string) => {
       throw error(GenericError.DeveloperError, "Failed to get next start");
   }
 };
+
+export const mongoDateAggregation = (date: Date, field: string) => ({
+  [field]: {
+    $dateToString: {
+      date: {
+        $dateFromParts: {
+          year: { $year: { $toDate: `$${field}` } },
+          month: { $month: { $toDate: `$${field}` } },
+          day: { $dayOfMonth: { $toDate: `$${field}` } },
+          hour: { $hour: { $literal: date } },
+          minute: { $minute: { $literal: date } },
+          second: { $second: { $literal: date } },
+          millisecond: { $millisecond: { $literal: date } },
+        },
+      },
+      format: "%Y-%m-%dT%H:%M:%S%z",
+    },
+  },
+});

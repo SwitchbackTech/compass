@@ -14,9 +14,7 @@ export const categorizeEvents = (events: Array<Schema_Event | Event_API>) => {
   const instances = events.filter(
     isExistingInstance,
   ) as Schema_Event_Recur_Instance[];
-  const standaloneEvents = events.filter(
-    (e) => !isBase(e) && !isExistingInstance(e),
-  );
+  const standaloneEvents = events.filter(isRegularEvent);
   return { baseEvents, instances, standaloneEvents };
 };
 
@@ -28,7 +26,9 @@ export const categorizeRecurringEvents = (events: Recurrence[]) => {
   return { baseEvent, instances };
 };
 
-export const isAllDay = (event: Schema_Event | Event_API) =>
+export const isAllDay = (
+  event: Pick<Schema_Event | Event_API, "startDate" | "endDate">,
+) =>
   event !== undefined &&
   // 'YYYY-MM-DD' has 10 chars
   event.startDate?.length === 10 &&
@@ -39,10 +39,12 @@ export const isAllDay = (event: Schema_Event | Event_API) =>
  * @param event
  * @returns
  */
-export const isBase = (event: Pick<Schema_Event | Event_API, "recurrence">) => {
+export const isBase = (
+  event: Pick<Schema_Event | Event_API, "recurrence">,
+): boolean => {
   return (
-    event?.recurrence?.rule !== undefined &&
-    event?.recurrence?.eventId === undefined
+    Array.isArray(event?.recurrence?.rule) &&
+    typeof event?.recurrence?.eventId !== "string"
   );
 };
 
@@ -51,10 +53,12 @@ export const isBase = (event: Pick<Schema_Event | Event_API, "recurrence">) => {
  * @param event
  * @returns
  */
-export const isInstanceWithoutId = (event: Schema_Event | Event_API) => {
+export const isInstanceWithoutId = (
+  event: Pick<Schema_Event | Event_API, "recurrence" | "gRecurringEventId">,
+): boolean => {
   return (
-    event?.recurrence?.rule === undefined &&
-    event?.recurrence?.eventId === undefined &&
+    !Array.isArray(event?.recurrence?.rule) &&
+    typeof event?.recurrence?.eventId !== "string" &&
     typeof event?.gRecurringEventId === "string"
   );
 };
@@ -65,10 +69,18 @@ export const isInstanceWithoutId = (event: Schema_Event | Event_API) => {
  * @returns
  */
 export const isExistingInstance = (
-  event: Pick<Schema_Event | Event_API, "recurrence">,
-) => {
-  return event?.recurrence?.eventId && event?.recurrence?.rule === undefined;
+  event: Pick<Schema_Event | Event_API, "recurrence" | "gRecurringEventId">,
+): boolean => {
+  return (
+    !Array.isArray(event?.recurrence?.rule) &&
+    typeof event?.recurrence?.eventId === "string" &&
+    typeof event?.gRecurringEventId === "string"
+  );
 };
+
+export const isRegularEvent = (
+  event: Pick<Schema_Event | Event_API, "recurrence">,
+): boolean => !isExistingInstance(event) && !isBase(event);
 
 /**
  * Filters the base events
