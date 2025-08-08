@@ -1,11 +1,9 @@
-import { Handler, Request, Response } from "express";
+import { Handler, Response } from "express";
 import { GoogleApis } from "googleapis";
+import mergeWith, { default as mockMergeWith } from "lodash.mergewith";
 import { randomUUID } from "node:crypto";
-import type SuperTokens from "supertokens-node";
-import {
-  BaseRequest,
-  BaseResponse,
-} from "supertokens-node/lib/build/framework";
+import { SessionRequest } from "supertokens-node/framework/express";
+import { BaseResponse } from "supertokens-node/lib/build/framework";
 import { SessionContainerInterface } from "supertokens-node/lib/build/recipe/session/types";
 import { UserMetadata } from "@core/types/user.types";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
@@ -14,8 +12,7 @@ import { ENV } from "@backend/common/constants/env.constants";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 
 function mockGoogleapis() {
-  mockModule("googleapis", () => {
-    const googleapis = jest.requireActual<{ google: GoogleApis }>("googleapis");
+  mockModule("googleapis", (googleapis: { google: GoogleApis }) => {
     const { gcalEvents } = mockAndCategorizeGcalEvents();
 
     return {
@@ -35,7 +32,7 @@ function mockSuperToken() {
 
   function verifySession() {
     return (
-      req: Request & BaseRequest,
+      req: SessionRequest,
       _res: Response & BaseResponse,
       next?: (err?: unknown) => void,
     ) => {
@@ -119,42 +116,46 @@ function mockSuperToken() {
     });
   }
 
-  mockModule("supertokens-node/recipe/session/framework/express", () => {
-    const frameworkExpress = jest.requireActual<typeof SuperTokens>(
-      "supertokens-node/recipe/session/framework/express",
-    );
-    return { ...frameworkExpress, verifySession: jest.fn(verifySession) };
-  });
+  mockModule(
+    "supertokens-node/recipe/session/framework/express",
+    (
+      frameworkExpress: typeof import("supertokens-node/recipe/session/framework/express"),
+    ) => {
+      const frameworkExpressModule = mergeWith(frameworkExpress, {
+        verifySession: jest.fn(verifySession),
+      });
 
-  mockModule("supertokens-node/recipe/usermetadata", () => {
-    const recipeUserMetadata = jest.requireActual<typeof SuperTokens>(
-      "supertokens-node/recipe/usermetadata",
-    );
+      return mergeWith(frameworkExpressModule, {
+        default: frameworkExpressModule,
+      });
+    },
+  );
 
-    const userMetadataModule = {
-      ...recipeUserMetadata,
-      updateUserMetadata: jest.fn(updateUserMetadata),
-      getUserMetadata: jest.fn(getUserMetadata),
-    };
+  mockModule(
+    "supertokens-node/recipe/usermetadata",
+    (
+      recipeUserMetadata: typeof import("supertokens-node/recipe/usermetadata"),
+    ) => {
+      const userMetadataModule = mergeWith(recipeUserMetadata, {
+        updateUserMetadata: jest.fn(updateUserMetadata),
+        getUserMetadata: jest.fn(getUserMetadata),
+      });
 
-    return { ...userMetadataModule, default: userMetadataModule };
-  });
+      return mergeWith(userMetadataModule, { default: userMetadataModule });
+    },
+  );
 }
 
 function mockWinstonLogger() {
-  jest.mock("@core/logger/winston.logger", () => {
-    const mockLogger = {
+  mockModule("@core/logger/winston.logger", () => ({
+    Logger: jest.fn().mockImplementation(() => ({
       debug: jest.fn(),
       info: jest.fn(),
       warn: jest.fn(),
       error: jest.fn(),
       verbose: jest.fn(),
-    };
-
-    return {
-      Logger: jest.fn().mockImplementation(() => mockLogger),
-    };
-  });
+    })),
+  }));
 }
 
 function mockHttpLoggingMiddleware() {
@@ -179,20 +180,20 @@ export function mockEnv(env: Partial<typeof ENV>) {
   );
 }
 
-export function mockModule(
+export function mockModule<T>(
   mockPath: string,
-  mockFactory?: (...args: unknown[]) => object,
+  mockFactory: (mockedModule: T) => object = () => ({}),
   mockAsEsModule = true,
 ) {
-  if (!mockFactory) {
-    jest.mock(mockPath);
-  } else {
-    jest.mock(mockPath, (...args: unknown[]) => ({
-      __esModule: mockAsEsModule,
-      ...jest.requireActual(mockPath),
-      ...mockFactory(...args),
-    }));
-  }
+  const mockedModule = jest.requireActual(mockPath);
+
+  jest.mock(mockPath, () =>
+    mockMergeWith(
+      { __esModule: mockAsEsModule },
+      mockedModule,
+      mockFactory(mockedModule),
+    ),
+  );
 }
 
 export function mockNodeModules() {

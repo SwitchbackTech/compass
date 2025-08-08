@@ -66,19 +66,12 @@ const mockGcalCoreEvent = (): WithGcalId<
   };
 };
 
-export const mockTimedEvent = (): gSchema$Event => {
-  const timeZone = faker.location.timeZone();
-  const start = dayjs.tz(faker.date.future(), timeZone);
-  const end = start.add(1, "hour");
-
-  return {
-    id: faker.string.nanoid(),
-    summary: faker.lorem.sentence(),
-    start: { dateTime: start.toRFC3339OffsetString(), timeZone },
-    end: { dateTime: end.toRFC3339OffsetString(), timeZone },
-    status: "confirmed",
-  };
-};
+export const mockTimedEvent = (): gSchema$Event => ({
+  id: faker.string.nanoid(),
+  summary: faker.lorem.sentence(),
+  status: "confirmed",
+  ...generateGcalEventDate(),
+});
 
 /**
  * Returns a base event and its instances
@@ -225,5 +218,31 @@ export const mockGcalEvents = (
       cancelled: 1,
       recurring: 1 + timedInstances.length,
     },
+  };
+};
+
+export const generateGcalEventDate = ({
+  date,
+  allDay = false,
+  value = 1,
+  unit = "hours",
+  timezone = faker.location.timeZone(),
+}: {
+  date?: dayjs.ConfigType;
+  value?: number;
+  unit?: dayjs.ManipulateType;
+  allDay?: boolean;
+  timezone?: string;
+} = {}): Pick<gSchema$Event, "start" | "end"> => {
+  const timeZone = timezone ?? faker.location.timeZone();
+  const start = dayjs.tz(date ?? faker.date.future(), timeZone);
+  const end = start.add(value, unit);
+  const dateKey = allDay ? "date" : "dateTime";
+  const { YEAR_MONTH_DAY_FORMAT, RFC3339_OFFSET } = dayjs.DateFormat;
+  const format = allDay ? YEAR_MONTH_DAY_FORMAT : RFC3339_OFFSET;
+
+  return {
+    start: { [dateKey]: start.format(format), timeZone },
+    end: { [dateKey]: end.format(format), timeZone },
   };
 };

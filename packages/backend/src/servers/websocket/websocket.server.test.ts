@@ -29,11 +29,7 @@ describe("WebSocket Server", () => {
     await baseDriver.listen();
   });
 
-  afterAll(async () => {
-    await baseDriver.teardown();
-
-    jest.clearAllMocks();
-  });
+  afterAll(async () => baseDriver.teardown());
 
   describe("Connection: ", () => {
     describe("With Valid Session: ", () => {
