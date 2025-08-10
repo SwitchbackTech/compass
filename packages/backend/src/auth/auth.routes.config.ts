@@ -25,7 +25,7 @@ export class AuthRoutes extends CommonRoutesConfig {
     this.app
       .route(`/api/auth/session`)
       .all(authMiddleware.verifyIsDev)
-
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       .post(authController.createSession)
       .get([verifySession(), authController.getUserIdFromSession]);
 
