@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { z } from "zod";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { AnswerMap } from "@core/types/waitlist/waitlist.answer.types";
@@ -10,6 +11,8 @@ import WaitlistService from "../service/waitlist.service";
 const logger = Logger("app:waitlist.controller");
 
 export class WaitlistController {
+  private static EmailQuerySchema = z.object({ email: z.string().email() });
+
   static async addToWaitlist(
     req: Request<unknown, unknown, Schema_Waitlist>,
     res: Response,
@@ -53,14 +56,13 @@ export class WaitlistController {
     req: Request<unknown, unknown, unknown, { email: string }>,
     res: Response<{ isInvited: boolean }>,
   ) {
-    const email = req.query.email;
-    if (!email) {
-      logger.error("Could not check if invited due to missing request email");
-      return res.status(400).json({
-        isInvited: false,
-      });
+    const parsed = WaitlistController.EmailQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      logger.error("Invalid email provided for invite check");
+      return res.status(400).json({ isInvited: false });
     }
 
+    const { email } = parsed.data;
     const isInvited = await WaitlistService.isInvited(email);
     return res.status(200).json({ isInvited });
   }
@@ -69,12 +71,13 @@ export class WaitlistController {
     req: Request<unknown, unknown, unknown, { email: string }>,
     res: Response<{ isOnWaitlist: boolean }>,
   ) {
-    const email = req.query.email;
-    if (!email) {
-      logger.error("Could not check waitlist due to missing request email");
+    const parsed = WaitlistController.EmailQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      logger.error("Invalid email provided for waitlist check");
       return res.status(400).json({ isOnWaitlist: false });
     }
 
+    const { email } = parsed.data;
     const isOnWaitlist = await WaitlistService.isOnWaitlist(email);
     return res.status(200).json({ isOnWaitlist });
   }
@@ -89,9 +92,9 @@ export class WaitlistController {
       lastName?: string;
     }>,
   ) {
-    const email = req.query.email;
-    if (!email) {
-      logger.error("Could not check waitlist due to missing request email");
+    const parsed = WaitlistController.EmailQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      logger.error("Invalid email provided for waitlist status check");
       return res.status(400).json({
         isOnWaitlist: false,
         isInvited: false,
@@ -99,6 +102,7 @@ export class WaitlistController {
       });
     }
 
+    const { email } = parsed.data;
     const [isOnWaitlist, isInvited, existingUser, waitlistRecord] =
       await Promise.all([
         WaitlistService.isOnWaitlist(email),
