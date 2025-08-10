@@ -99,18 +99,20 @@ export class WaitlistController {
       });
     }
 
-    const [isOnWaitlist, isInvited, existingUser] = await Promise.all([
-      WaitlistService.isOnWaitlist(email),
-      WaitlistService.isInvited(email),
-      findCompassUserBy("email", email),
-    ]);
+    const [isOnWaitlist, isInvited, existingUser, waitlistRecord] =
+      await Promise.all([
+        WaitlistService.isOnWaitlist(email),
+        WaitlistService.isInvited(email),
+        findCompassUserBy("email", email),
+        WaitlistService.getWaitlistRecord(email),
+      ]);
     const isActive = !!existingUser;
     return res.status(200).json({
       isOnWaitlist,
       isInvited,
       isActive,
-      firstName: existingUser?.firstName,
-      lastName: existingUser?.lastName,
+      firstName: waitlistRecord?.firstName,
+      lastName: waitlistRecord?.lastName,
     });
   }
 }
