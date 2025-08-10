@@ -1,4 +1,3 @@
-import omit from "lodash.omit";
 import { ObjectId } from "mongodb";
 import { RRule } from "rrule";
 import { RRULE } from "@core/constants/core.constants";
@@ -47,16 +46,18 @@ export const stripBaseProps = (
   | "user"
   | "updatedAt"
 > => {
-  return omit(base, [
-    "_id",
-    "gEventId",
-    "startDate",
-    "endDate",
-    "order",
-    "recurrence",
-    "user",
-    "updatedAt",
-  ]);
+  const {
+    _id, // eslint-disable-line @typescript-eslint/no-unused-vars
+    gEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
+    startDate, // eslint-disable-line @typescript-eslint/no-unused-vars
+    endDate, // eslint-disable-line @typescript-eslint/no-unused-vars
+    order, // eslint-disable-line @typescript-eslint/no-unused-vars
+    recurrence, // eslint-disable-line @typescript-eslint/no-unused-vars
+    user, // eslint-disable-line @typescript-eslint/no-unused-vars
+    updatedAt, // eslint-disable-line @typescript-eslint/no-unused-vars
+    ...rest
+  } = base;
+  return rest;
 };
 
 export const stripReadonlyEventProps = (
@@ -73,9 +74,10 @@ export const stripReadonlyEventProps = (
   | "user"
   | "updatedAt"
 > => {
-  return omit(stripBaseProps(base as Schema_Event_Recur_Base), [
-    "gRecurringEventId",
-  ]);
+  const strippedBase = stripBaseProps(base as Schema_Event_Recur_Base);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { gRecurringEventId, ...rest } = strippedBase;
+  return rest;
 };
 
 const _generateInstances = (
