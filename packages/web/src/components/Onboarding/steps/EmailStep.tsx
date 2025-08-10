@@ -21,7 +21,7 @@ const SubmitButton = styled(OnboardingButton)`
   margin-top: ${({ theme }) => theme.spacing.l};
 `;
 
-const NotOnWaitlist = () => {
+const NotInvited = () => {
   return (
     <OnboardingStepBoilerplate currentStep={1} totalSteps={1}>
       <OnboardingText>You&apos;re not on the crew list yet.</OnboardingText>
@@ -35,6 +35,19 @@ const NotOnWaitlist = () => {
       >
         JOIN CREW LIST
       </OnboardingLink>
+    </OnboardingStepBoilerplate>
+  );
+};
+
+const OnWaitlistButNotInvited = () => {
+  return (
+    <OnboardingStepBoilerplate currentStep={1} totalSteps={1}>
+      <OnboardingText>
+        You&apos;re on the crew list but not invited yet.
+      </OnboardingText>
+      <OnboardingText>
+        We&apos;ll let you know when you&apos;re invited.
+      </OnboardingText>
     </OnboardingStepBoilerplate>
   );
 };
@@ -77,7 +90,7 @@ export const EmailStep: React.FC<OnboardingStepProps> = ({
       setWaitlistStatus(data);
       setFirstName(data.firstName ?? "Sailor");
 
-      if (data.isOnWaitlist) {
+      if (data.isOnWaitlist && data.isInvited) {
         onNext();
       }
     } catch (error) {
@@ -87,8 +100,20 @@ export const EmailStep: React.FC<OnboardingStepProps> = ({
     }
   };
 
-  if (waitlistStatus && !waitlistStatus?.isOnWaitlist) {
-    return <NotOnWaitlist />;
+  if (
+    waitlistStatus &&
+    !waitlistStatus?.isOnWaitlist &&
+    !waitlistStatus?.isInvited
+  ) {
+    return <NotInvited />;
+  }
+
+  if (
+    waitlistStatus &&
+    waitlistStatus?.isOnWaitlist &&
+    !waitlistStatus?.isInvited
+  ) {
+    return <OnWaitlistButNotInvited />;
   }
 
   return (
