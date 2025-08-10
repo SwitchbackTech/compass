@@ -1,4 +1,3 @@
-import omit from "lodash.omit";
 import { ClientSession, UpdateFilter, WithId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { gEventToCompassEvent } from "@core/mappers/map.event";
@@ -267,10 +266,15 @@ export class GcalEventParser {
     const seriesChanges = await this.cancelSeries(false, session);
     const event = gEventToCompassEvent(this.#event, this.userId);
 
+    const {
+      recurrence, // eslint-disable-line @typescript-eslint/no-unused-vars
+      gRecurringEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
+      ...eventWithoutProps
+    } = event;
     const baseChanges = await this.upsertCompassEvent({
       $unset: { recurrence: 1, gRecurringEventId: 1 },
       $set: {
-        ...omit(event, ["recurrence", "gRecurringEventId"]),
+        ...eventWithoutProps,
         updatedAt: new Date(),
       },
     });
