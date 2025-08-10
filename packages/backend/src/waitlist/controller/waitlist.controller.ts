@@ -7,11 +7,12 @@ import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
 import { isMissingWaitlistTagId } from "@backend/common/constants/env.util";
 import { findCompassUserBy } from "../../user/queries/user.queries";
 import WaitlistService from "../service/waitlist.service";
+import { EmailSchema } from "../types/waitlist.types";
 
 const logger = Logger("app:waitlist.controller");
 
 export class WaitlistController {
-  private static EmailQuerySchema = z.object({ email: z.string().email() });
+  private static EmailQuerySchema = z.object({ email: EmailSchema });
 
   static async addToWaitlist(
     req: Request<unknown, unknown, Schema_Waitlist>,

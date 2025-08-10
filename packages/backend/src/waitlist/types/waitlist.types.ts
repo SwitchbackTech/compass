@@ -1,8 +1,7 @@
 import { z } from "zod";
 
-// Validate and normalize email consistently (trim + lowercase before validation)
 export const EmailSchema = z
   .string()
-  .trim()
-  .toLowerCase()
+  .trim() // trim whitespace
+  .toLowerCase() // normalize case (emails are not case-sensitive)
   .email("Invalid email address");
