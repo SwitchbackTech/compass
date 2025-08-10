@@ -1,0 +1,67 @@
+name: Setup MongoDB for Copilot
+
+# This configuration file defines setup steps that run before GitHub Copilot's
+# firewall restrictions are applied, allowing MongoDB binaries to be pre-downloaded
+# and cached for jest-mongodb testing.
+
+steps:
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: "20"
+      cache: "yarn"
+
+  - name: Create MongoDB binary cache directory
+    run: |
+      mkdir -p ~/.cache/mongodb-binaries
+      echo "MongoDB binary cache directory created"
+
+  - name: Download MongoDB 6.0.14 binary for Ubuntu 22.04
+    run: |
+      # Download the specific MongoDB binary that jest-mongodb needs
+      cd ~/.cache/mongodb-binaries
+      if [ ! -f "mongodb-linux-x86_64-ubuntu2204-6.0.14.tgz" ]; then
+        echo "Downloading MongoDB 6.0.14 binary..."
+        curl -o mongodb-linux-x86_64-ubuntu2204-6.0.14.tgz \
+          "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2204-6.0.14.tgz"
+        echo "MongoDB binary downloaded successfully"
+      else
+        echo "MongoDB binary already cached"
+      fi
+
+  - name: Extract and prepare MongoDB binary
+    run: |
+      cd ~/.cache/mongodb-binaries
+      if [ ! -d "mongodb-linux-x86_64-ubuntu2204-6.0.14" ]; then
+        echo "Extracting MongoDB binary..."
+        tar -xzf mongodb-linux-x86_64-ubuntu2204-6.0.14.tgz
+        echo "MongoDB binary extracted successfully"
+      else
+        echo "MongoDB binary already extracted"
+      fi
+
+  - name: Cache MongoDB binaries for jest-mongodb
+    uses: actions/cache@v4
+    with:
+      path: ~/.cache/mongodb-binaries
+      key: mongodb-binaries-6.0.14-ubuntu2204-${{ runner.os }}
+      restore-keys: |
+        mongodb-binaries-6.0.14-ubuntu2204-
+
+  - name: Set MongoDB binary path environment
+    run: |
+      # Set environment variables for mongodb-memory-server to use cached binaries
+      echo "MONGOMS_DOWNLOAD_DIR=~/.cache/mongodb-binaries" >> $GITHUB_ENV
+      echo "MONGOMS_DISABLE_DOWNLOAD=true" >> $GITHUB_ENV
+      echo "MONGOMS_BINARY_PATH=~/.cache/mongodb-binaries/mongodb-linux-x86_64-ubuntu2204-6.0.14/bin/mongod" >> $GITHUB_ENV
+      echo "MongoDB environment variables set for jest-mongodb"
+
+  - name: Verify MongoDB binary availability
+    run: |
+      if [ -f ~/.cache/mongodb-binaries/mongodb-linux-x86_64-ubuntu2204-6.0.14/bin/mongod ]; then
+        echo "✅ MongoDB binary is available and ready for jest-mongodb"
+        ls -la ~/.cache/mongodb-binaries/mongodb-linux-x86_64-ubuntu2204-6.0.14/bin/mongod
+      else
+        echo "❌ MongoDB binary not found"
+        exit 1
+      fi

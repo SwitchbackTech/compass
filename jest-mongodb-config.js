@@ -3,6 +3,8 @@ module.exports = {
   mongodbMemoryServerOptions: {
     binary: {
       skipMD5: true,
+      // Allow using pre-downloaded binaries to avoid firewall issues
+      downloadDir: process.env.MONGOMS_DOWNLOAD_DIR || undefined,
     },
     instance: {},
     replSet: {
