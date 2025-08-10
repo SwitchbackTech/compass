@@ -53,36 +53,6 @@ export class WaitlistController {
     }
   }
 
-  static async isInvited(
-    req: Request<unknown, unknown, unknown, { email: string }>,
-    res: Response<{ isInvited: boolean }>,
-  ) {
-    const parsed = WaitlistController.EmailQuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      logger.error("Invalid email provided for invite check");
-      return res.status(400).json({ isInvited: false });
-    }
-
-    const { email } = parsed.data;
-    const isInvited = await WaitlistService.isInvited(email);
-    return res.status(200).json({ isInvited });
-  }
-
-  static async isOnWaitlist(
-    req: Request<unknown, unknown, unknown, { email: string }>,
-    res: Response<{ isOnWaitlist: boolean }>,
-  ) {
-    const parsed = WaitlistController.EmailQuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      logger.error("Invalid email provided for waitlist check");
-      return res.status(400).json({ isOnWaitlist: false });
-    }
-
-    const { email } = parsed.data;
-    const isOnWaitlist = await WaitlistService.isOnWaitlist(email);
-    return res.status(200).json({ isOnWaitlist });
-  }
-
   static async status(
     req: Request<unknown, unknown, unknown, { email: string }>,
     res: Response<{
