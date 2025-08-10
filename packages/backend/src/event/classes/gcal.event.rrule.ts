@@ -1,4 +1,3 @@
-import { omit } from "lodash";
 import { Options, RRule, RRuleStrOptions, rrulestr } from "rrule";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { gEventToCompassEvent } from "@core/mappers/map.event";
@@ -75,22 +74,22 @@ export class GcalEventRRule extends RRule {
       const startDate = dayjs(date).tz(tzid);
       const endDate = startDate.add(this.#durationMs, "milliseconds");
 
-      return omit(
-        {
-          ...this.#event,
-          id: `${this.#event.id}_${startDate.toRRuleDTSTARTString(this.#isAllDay)}`,
-          recurringEventId: this.#event.id!,
-          start: {
-            [this.#dateKey]: startDate?.format(this.#dateFormat),
-            timeZone: this.#event.start?.timeZone ?? timezone,
-          },
-          end: {
-            [this.#dateKey]: endDate.format(this.#dateFormat),
-            timeZone: this.#event.end?.timeZone ?? timezone,
-          },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { recurrence, ...eventWithoutRecurrence } = {
+        ...this.#event,
+        id: `${this.#event.id}_${startDate.toRRuleDTSTARTString(this.#isAllDay)}`,
+        recurringEventId: this.#event.id!,
+        start: {
+          [this.#dateKey]: startDate?.format(this.#dateFormat),
+          timeZone: this.#event.start?.timeZone ?? timezone,
         },
-        ["recurrence"],
-      );
+        end: {
+          [this.#dateKey]: endDate.format(this.#dateFormat),
+          timeZone: this.#event.end?.timeZone ?? timezone,
+        },
+      };
+
+      return eventWithoutRecurrence;
     });
   }
 
