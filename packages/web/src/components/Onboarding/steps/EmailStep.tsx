@@ -90,7 +90,7 @@ export const EmailStep: React.FC<OnboardingStepProps> = ({
       setWaitlistStatus(data);
       setFirstName(data.firstName ?? "Sailor");
 
-      if (data.isOnWaitlist && data.isInvited) {
+      if ((data.isOnWaitlist && data.isInvited) || data.isActive) {
         onNext();
       }
     } catch (error) {

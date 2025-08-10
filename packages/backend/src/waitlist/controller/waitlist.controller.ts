@@ -111,8 +111,8 @@ export class WaitlistController {
       isOnWaitlist,
       isInvited,
       isActive,
-      firstName: waitlistRecord?.firstName,
-      lastName: waitlistRecord?.lastName,
+      firstName: waitlistRecord?.firstName ?? existingUser?.firstName,
+      lastName: waitlistRecord?.lastName ?? existingUser?.lastName,
     });
   }
 }
