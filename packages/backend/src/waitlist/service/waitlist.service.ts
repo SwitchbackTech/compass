@@ -98,6 +98,10 @@ class WaitlistService {
   static async getAllWaitlisted() {
     return WaitlistRepository.getAllWaitlisted();
   }
+
+  static async getWaitlistRecord(email: string) {
+    return WaitlistRepository.getWaitlistRecord(email);
+  }
 }
 
 export default WaitlistService;

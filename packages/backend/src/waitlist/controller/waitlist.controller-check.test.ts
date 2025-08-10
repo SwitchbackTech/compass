@@ -36,6 +36,9 @@ describe("GET /api/waitlist", () => {
       default: {
         isInvited: jest.fn().mockResolvedValue(true), // user is invited
         isOnWaitlist: jest.fn().mockResolvedValue(true), // user is waitlisted
+        getWaitlistRecord: jest
+          .fn()
+          .mockResolvedValue({ firstName: "Test", lastName: "User" }),
       },
     }));
     jest.doMock("../../user/queries/user.queries", () => ({
@@ -67,6 +70,7 @@ describe("GET /api/waitlist", () => {
       default: {
         isInvited: jest.fn().mockResolvedValue(false), // user is not invited
         isOnWaitlist: jest.fn().mockResolvedValue(false), // user is not waitlisted
+        getWaitlistRecord: jest.fn().mockResolvedValue(null),
       },
     }));
     jest.doMock("../../user/queries/user.queries", () => ({
