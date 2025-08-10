@@ -1,6 +1,6 @@
 import EventEmitter from "node:events";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { waitUntilEvent, yearsAgo } from "@backend/common/helpers/common.util";
+import { waitUntilEvent } from "@backend/common/helpers/common.util";
 
 describe("waitUntilEvent", () => {
   it("waits for event to complete before resolving", async () => {
@@ -55,9 +55,4 @@ describe("waitUntilEvent", () => {
       }),
     ).rejects.toThrow("reject operation");
   });
-});
-
-test("yearsAgo is a Date object", () => {
-  const twoYrs = yearsAgo(2);
-  expect(() => twoYrs.toISOString()).not.toThrow(Error);
 });
