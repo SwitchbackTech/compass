@@ -9,6 +9,7 @@ describe("GET /api/waitlist", () => {
       default: {
         isInvited: jest.fn(),
         isOnWaitlist: jest.fn(),
+        getWaitlistRecord: jest.fn().mockResolvedValue(null),
       },
     }));
     const { WaitlistController } = await import("./waitlist.controller");
@@ -101,12 +102,14 @@ describe("GET /api/waitlist", () => {
     // Arrange
     const mockIsInvited = jest.fn();
     const mockIsOnWaitlist = jest.fn();
+    const mockGetWaitlistRecord = jest.fn();
 
     jest.doMock("../service/waitlist.service", () => ({
       __esModule: true,
       default: {
         isInvited: mockIsInvited,
         isOnWaitlist: mockIsOnWaitlist,
+        getWaitlistRecord: mockGetWaitlistRecord,
       },
     }));
     jest.doMock("../../user/queries/user.queries", () => ({
@@ -131,6 +134,10 @@ describe("GET /api/waitlist", () => {
       // Reset mocks for each test case
       mockIsInvited.mockResolvedValue(true);
       mockIsOnWaitlist.mockResolvedValue(true);
+      mockGetWaitlistRecord.mockResolvedValue({
+        firstName: "Foo",
+        lastName: "Bar",
+      });
 
       // Act
       const res = await request(app)
@@ -153,12 +160,14 @@ describe("GET /api/waitlist", () => {
     // Arrange
     const mockIsInvited = jest.fn();
     const mockIsOnWaitlist = jest.fn();
+    const mockGetWaitlistRecord = jest.fn();
 
     jest.doMock("../service/waitlist.service", () => ({
       __esModule: true,
       default: {
         isInvited: mockIsInvited,
         isOnWaitlist: mockIsOnWaitlist,
+        getWaitlistRecord: mockGetWaitlistRecord,
       },
     }));
     jest.doMock("../../user/queries/user.queries", () => ({
@@ -183,6 +192,7 @@ describe("GET /api/waitlist", () => {
       // Reset mocks for each test case
       mockIsInvited.mockResolvedValue(false);
       mockIsOnWaitlist.mockResolvedValue(false);
+      mockGetWaitlistRecord.mockResolvedValue(null);
 
       // Act
       const res = await request(app)
