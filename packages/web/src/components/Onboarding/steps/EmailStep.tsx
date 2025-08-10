@@ -93,6 +93,9 @@ export const EmailStep: React.FC<OnboardingStepProps> = ({
       if (data.isOnWaitlist && data.isInvited) {
         onNext();
       }
+      if (data.isActive) {
+        onNext();
+      }
     } catch (error) {
       console.error("Error checking waitlist status:", error);
     } finally {
