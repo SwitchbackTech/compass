@@ -18,19 +18,19 @@
     "@compass/scripts": "packages/scripts/src"
   },
   "scripts": {
-    "cli": "yarn ts-node  --pretty --transpile-only -r tsconfig-paths/register packages/scripts/src/cli",
+    "cli": "cross-env-shell TZ=Etc/UTC yarn ts-node  --pretty --transpile-only -r tsconfig-paths/register packages/scripts/src/cli",
     "debug:supertokens": "export DEBUG=com.supertokens && yarn dev:backend",
     "debug:web": "http-server build/web/",
     "dev:backend": "yarn dev:backend-start",
     "dev:backend -verbose": "export DEBUG=* && yarn dev:backend",
-    "dev:backend-start": "cd packages/backend && ts-node-dev --respawn --pretty --transpile-only -r tsconfig-paths/register src/app.ts",
+    "dev:backend-start": "cd packages/backend && cross-env-shell TZ=Etc/UTC ts-node-dev --respawn --pretty --transpile-only -r tsconfig-paths/register src/app.ts",
     "dev:update": "git checkout main && git pull && yarn",
     "dev:web": "node packages/scripts/src/commands/devWeb.js",
     "lint -f": "cross-env yarn workspaces run lint-fix",
     "lint:css": "stylelint 'packages/web/src/**/*.ts'",
     "postinstall": "husky install | chmod ug+x .husky/*",
-    "test": "yarn jest",
-    "test:backend": "yarn jest backend",
+    "test": "cross-env-shell TZ=Etc/UTC yarn jest",
+    "test:backend": "yarn test backend",
     "test:core": "yarn test core",
     "test:web": "yarn test web"
   },
