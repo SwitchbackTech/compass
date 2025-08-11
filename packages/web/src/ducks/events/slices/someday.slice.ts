@@ -22,7 +22,12 @@ export const getSomedayEventsSlice = createAsyncSlice<
     insert: (state, action: { payload: string }) => {
       // payload is the event id
       if (state.value === null || state.value === undefined) {
-        console.error("error: state.value needs to be initialized");
+        console.warn(
+          "warning: state.value is not initialized, initializing...",
+        );
+        state.value = {
+          data: [action.payload],
+        };
       } else {
         state.value.data.push(action.payload);
       }
