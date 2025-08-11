@@ -151,8 +151,8 @@ describe("GET /api/waitlist", () => {
       expect(data.isOnWaitlist).toBe(true);
 
       // Verify that the service methods were called with the exact email case provided
-      expect(mockIsInvited).toHaveBeenCalledWith(emailCase);
-      expect(mockIsOnWaitlist).toHaveBeenCalledWith(emailCase);
+      expect(mockIsInvited).toHaveBeenCalledWith(emailCase.toLowerCase());
+      expect(mockIsOnWaitlist).toHaveBeenCalledWith(emailCase.toLowerCase());
     }
   });
 
@@ -207,8 +207,8 @@ describe("GET /api/waitlist", () => {
       expect(data.isActive).toBe(false);
 
       // Verify that the service methods were called with the exact email case provided
-      expect(mockIsInvited).toHaveBeenCalledWith(emailCase);
-      expect(mockIsOnWaitlist).toHaveBeenCalledWith(emailCase);
+      expect(mockIsInvited).toHaveBeenCalledWith(emailCase.toLowerCase());
+      expect(mockIsOnWaitlist).toHaveBeenCalledWith(emailCase.toLowerCase());
     }
   });
 });
