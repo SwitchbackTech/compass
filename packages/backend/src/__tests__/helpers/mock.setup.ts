@@ -11,15 +11,28 @@ import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 
+export interface CompassTestState {
+  events: ReturnType<typeof mockAndCategorizeGcalEvents>;
+}
+
+function mockCompassTestState() {
+  jest.mock(
+    "compass-test-state",
+    () => ({ events: { ...mockAndCategorizeGcalEvents() } }),
+    { virtual: true },
+  );
+}
+
+export function compassTestState(): CompassTestState {
+  return jest.requireMock<CompassTestState>("compass-test-state");
+}
+
 function mockGoogleapis() {
   mockModule("googleapis", (googleapis: { google: GoogleApis }) => {
-    const { gcalEvents } = mockAndCategorizeGcalEvents();
-
     return {
       google: {
         ...googleapis.google,
         calendar: mockGcal({
-          events: gcalEvents.all,
           googleapis: googleapis.google,
         }),
       },
@@ -197,6 +210,8 @@ export function mockModule<T>(
 }
 
 export function mockNodeModules() {
+  beforeEach(mockCompassTestState);
+  afterEach(() => jest.unmock("compass-test-state"));
   mockWinstonLogger();
   mockHttpLoggingMiddleware();
   mockGoogleapis();
