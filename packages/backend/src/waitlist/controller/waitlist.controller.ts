@@ -82,12 +82,13 @@ export class WaitlistController {
         WaitlistService.getWaitlistRecord(email),
       ]);
     const isActive = !!existingUser;
-    return res.status(200).json({
+    const status = {
       isOnWaitlist,
       isInvited,
       isActive,
       firstName: waitlistRecord?.firstName ?? existingUser?.firstName,
       lastName: waitlistRecord?.lastName ?? existingUser?.lastName,
-    });
+    };
+    return res.status(200).json(status);
   }
 }
