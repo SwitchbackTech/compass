@@ -5,6 +5,7 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { Schema_Event } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import { getUserId } from "@web/auth/auth.util";
 import { PartialMouseEvent } from "@web/common/types/util.types";
@@ -100,7 +101,38 @@ export const useDraftActions = (
     setDateBeingChanged("endDate");
   };
 
+  const isEventDirty = (
+    currentDraft: Schema_Event,
+    originalEvent: Schema_Event | null,
+  ) => {
+    if (!originalEvent) return true; // New event is always dirty
+
+    // Compare relevant fields that can change in the form
+    const fieldsToCompare = [
+      "title",
+      "description",
+      "startDate",
+      "endDate",
+      "priority",
+    ] as const;
+
+    return fieldsToCompare.some(
+      (field) => currentDraft[field] !== originalEvent[field],
+    );
+  };
+
   const submit = async (draft: Schema_GridEvent) => {
+    // Check if the event has actually changed
+    if (!isEventDirty(draft, reduxDraft)) {
+      // No changes detected, just close the form without making HTTP request
+      if (isFormOpenBeforeDragging) {
+        openForm();
+      } else {
+        discard();
+      }
+      return;
+    }
+
     const userId = await getUserId();
 
     let event = null;
