@@ -9,6 +9,7 @@ describe("GET /api/waitlist", () => {
       default: {
         isInvited: jest.fn(),
         isOnWaitlist: jest.fn(),
+        getWaitlistRecord: jest.fn().mockResolvedValue(null),
       },
     }));
     const { WaitlistController } = await import("./waitlist.controller");
@@ -95,5 +96,119 @@ describe("GET /api/waitlist", () => {
     expect(data.isInvited).toBe(false);
     expect(data.isOnWaitlist).toBe(false);
     expect(data.isActive).toBe(false);
+  });
+
+  it("should handle case-insensitive email matching for invited users", async () => {
+    // Arrange
+    const mockIsInvited = jest.fn();
+    const mockIsOnWaitlist = jest.fn();
+    const mockGetWaitlistRecord = jest.fn();
+
+    jest.doMock("../service/waitlist.service", () => ({
+      __esModule: true,
+      default: {
+        isInvited: mockIsInvited,
+        isOnWaitlist: mockIsOnWaitlist,
+        getWaitlistRecord: mockGetWaitlistRecord,
+      },
+    }));
+    jest.doMock("../../user/queries/user.queries", () => ({
+      __esModule: true,
+      findCompassUserBy: jest.fn().mockResolvedValue(null), // Simulate user not found, so isActive will be false
+    }));
+    const { WaitlistController } = await import("./waitlist.controller");
+    const express = (await import("express")).default;
+    const app = express();
+    app.use(express.json());
+    app.get("/api/waitlist", WaitlistController.status);
+
+    // Test different case variations of the same email
+    const testCases = [
+      "FooBar@gmail.com",
+      "foobar@gmail.com",
+      "FOOBAR@GMAIL.COM",
+      "FooBar@Gmail.com",
+    ];
+
+    for (const emailCase of testCases) {
+      // Reset mocks for each test case
+      mockIsInvited.mockResolvedValue(true);
+      mockIsOnWaitlist.mockResolvedValue(true);
+      mockGetWaitlistRecord.mockResolvedValue({
+        firstName: "Foo",
+        lastName: "Bar",
+      });
+
+      // Act
+      const res = await request(app)
+        .get("/api/waitlist")
+        .query({ email: emailCase });
+
+      // Assert
+      expect(res.status).toBe(200);
+      const data = res.body;
+      expect(data.isInvited).toBe(true);
+      expect(data.isOnWaitlist).toBe(true);
+
+      // Verify that the service methods were called with the exact email case provided
+      expect(mockIsInvited).toHaveBeenCalledWith(emailCase.toLowerCase());
+      expect(mockIsOnWaitlist).toHaveBeenCalledWith(emailCase.toLowerCase());
+    }
+  });
+
+  it("should handle case-insensitive email matching for non-invited users", async () => {
+    // Arrange
+    const mockIsInvited = jest.fn();
+    const mockIsOnWaitlist = jest.fn();
+    const mockGetWaitlistRecord = jest.fn();
+
+    jest.doMock("../service/waitlist.service", () => ({
+      __esModule: true,
+      default: {
+        isInvited: mockIsInvited,
+        isOnWaitlist: mockIsOnWaitlist,
+        getWaitlistRecord: mockGetWaitlistRecord,
+      },
+    }));
+    jest.doMock("../../user/queries/user.queries", () => ({
+      __esModule: true,
+      findCompassUserBy: jest.fn().mockResolvedValue(null), // Simulate user not found, so isActive will be false
+    }));
+    const { WaitlistController } = await import("./waitlist.controller");
+    const express = (await import("express")).default;
+    const app = express();
+    app.use(express.json());
+    app.get("/api/waitlist", WaitlistController.status);
+
+    // Test different case variations of the same email
+    const testCases = [
+      "NotInvited@gmail.com",
+      "notinvited@gmail.com",
+      "NOTINVITED@GMAIL.COM",
+      "NotInvited@Gmail.com",
+    ];
+
+    for (const emailCase of testCases) {
+      // Reset mocks for each test case
+      mockIsInvited.mockResolvedValue(false);
+      mockIsOnWaitlist.mockResolvedValue(false);
+      mockGetWaitlistRecord.mockResolvedValue(null);
+
+      // Act
+      const res = await request(app)
+        .get("/api/waitlist")
+        .query({ email: emailCase });
+
+      // Assert
+      expect(res.status).toBe(200);
+      const data = res.body;
+      expect(data.isInvited).toBe(false);
+      expect(data.isOnWaitlist).toBe(false);
+      expect(data.isActive).toBe(false);
+
+      // Verify that the service methods were called with the exact email case provided
+      expect(mockIsInvited).toHaveBeenCalledWith(emailCase.toLowerCase());
+      expect(mockIsOnWaitlist).toHaveBeenCalledWith(emailCase.toLowerCase());
+    }
   });
 });

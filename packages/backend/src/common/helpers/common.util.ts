@@ -9,10 +9,6 @@ import {
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
-export const yearsAgo = (numYears: number) => {
-  return new Date(new Date().setFullYear(new Date().getFullYear() - numYears));
-};
-
 export async function waitUntilEvent<
   Payload extends unknown[],
   Result = Payload,

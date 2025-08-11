@@ -189,9 +189,11 @@ Always prioritize frontend development with `yarn dev:web` when backend services
 ### Semantic Branch Naming
 
 **ALWAYS** create branches following this pattern based on the GitHub issue:
+
 - `type/action-issue-number` (e.g., `copilot/fix-704`, `feature/add-123`, `bug/resolve-456`)
 
 **Branch Type Prefixes:**
+
 - `feature/` - New features or enhancements
 - `bug/` or `bugfix/` - Bug fixes
 - `hotfix/` - Critical production fixes
@@ -200,6 +202,7 @@ Always prioritize frontend development with `yarn dev:web` when backend services
 - `docs/` - Documentation updates
 
 **Action Keywords:**
+
 - `add-` - Adding new functionality
 - `fix-` - Fixing bugs or issues
 - `update-` - Updating existing features
@@ -207,6 +210,7 @@ Always prioritize frontend development with `yarn dev:web` when backend services
 - `refactor-` - Restructuring code
 
 **Examples:**
+
 - `feature/add-704` - Adding feature for issue #704
 - `bug/fix-123` - Fixing bug reported in issue #123
 - `copilot/fix-704` - Copilot agent addressing issue #704
@@ -216,6 +220,7 @@ Always prioritize frontend development with `yarn dev:web` when backend services
 **ALWAYS** use conventional commit format: `type(scope): description (#issue-number)`
 
 **Commit Types:**
+
 - `feat` - New features
 - `fix` - Bug fixes
 - `docs` - Documentation changes
@@ -225,6 +230,7 @@ Always prioritize frontend development with `yarn dev:web` when backend services
 - `chore` - Maintenance tasks, dependency updates
 
 **Scope Examples:**
+
 - `web` - Frontend/React changes
 - `backend` - Server/API changes
 - `core` - Shared utilities/types
@@ -232,12 +238,14 @@ Always prioritize frontend development with `yarn dev:web` when backend services
 - `config` - Configuration files
 
 **Message Format Rules:**
+
 - Use present tense: "add feature" not "added feature"
 - Keep description under 72 characters
 - Include issue number when applicable
 - Be specific and descriptive
 
 **Examples:**
+
 - `feat(web): add calendar event creation modal (#704)`
 - `fix(backend): resolve authentication timeout issue (#123)`
 - `docs(readme): update installation instructions (#456)`
@@ -247,6 +255,7 @@ Always prioritize frontend development with `yarn dev:web` when backend services
 ### Pre-commit Validation
 
 The repository includes Husky hooks that will:
+
 - Run `yarn lint-staged` on pre-commit (formats code with Prettier)
 - Run `yarn prettier . --write` on pre-push (ensures consistent formatting)
 

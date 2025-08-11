@@ -4,6 +4,7 @@ import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import { Event_API } from "@backend/common/types/backend.event.types";
+import { getNormalizedEmail } from "@backend/waitlist/service/waitlist.service.util";
 
 export const getCategorizedEventsInDb = async (
   filter?: Filter<Omit<Schema_Event, "_id">>,
@@ -36,7 +37,8 @@ export const getEmailsOnWaitlist = async () => {
 };
 
 export const isEmailOnWaitlist = async (email: string) => {
-  return (await getEmailsOnWaitlist()).includes(email);
+  const normalizedEmail = getNormalizedEmail(email);
+  return (await getEmailsOnWaitlist()).includes(normalizedEmail);
 };
 
 export const isEventCollectionEmpty = async (

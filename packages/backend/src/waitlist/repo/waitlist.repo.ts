@@ -5,20 +5,26 @@ import {
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { WaitlistError } from "@backend/common/errors/waitlist/waitlist.errors";
 import mongoService from "@backend/common/services/mongo.service";
+import { getNormalizedEmail } from "../service/waitlist.service.util";
 
 export class WaitlistRepository {
   static async addToWaitlist(record: Schema_Waitlist) {
-    return mongoService.waitlist.insertOne(record);
+    const normalizedEmail = getNormalizedEmail(record.email);
+    return mongoService.waitlist.insertOne({
+      ...record,
+      email: normalizedEmail,
+    });
   }
 
   static async invite(email: string): Promise<Result_InviteToWaitlist> {
-    const isOnWaitlist = await this.isAlreadyOnWaitlist(email);
+    const normalizedEmail = getNormalizedEmail(email);
+    const isOnWaitlist = await this.isAlreadyOnWaitlist(normalizedEmail);
     if (!isOnWaitlist) {
       throw error(WaitlistError.NotOnWaitlist, "Email is not on waitlist");
     }
 
     const result = await mongoService.waitlist.updateOne(
-      { email: { $eq: email } },
+      { email: { $eq: normalizedEmail } },
       { $set: { status: "invited" } },
     );
 
@@ -35,18 +41,21 @@ export class WaitlistRepository {
   }
 
   static async getWaitlistRecord(email: string) {
-    return this._getWaitlistRecord(email);
+    const normalizedEmail = getNormalizedEmail(email);
+    return this._getWaitlistRecord(normalizedEmail);
   }
 
   static async isAlreadyOnWaitlist(email: string) {
+    const normalizedEmail = getNormalizedEmail(email);
     const match = await mongoService.waitlist
-      .find({ email: { $eq: email } })
+      .find({ email: { $eq: normalizedEmail } })
       .toArray();
     return match.length > 0;
   }
 
   static async isInvited(email: string) {
-    const record = await this._getWaitlistRecord(email);
+    const normalizedEmail = getNormalizedEmail(email);
+    const record = await this._getWaitlistRecord(normalizedEmail);
 
     if (!record) {
       return false;
