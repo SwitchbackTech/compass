@@ -10,4 +10,6 @@ export const ENV_WEB = {
   API_BASEURL,
   BACKEND_BASEURL,
   CLIENT_ID: process.env["GOOGLE_CLIENT_ID"],
+  POSTHOG_KEY: process.env["POSTHOG_KEY"],
+  POSTHOG_HOST: process.env["POSTHOG_HOST"],
 };
