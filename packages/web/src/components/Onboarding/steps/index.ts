@@ -1,4 +1,5 @@
 export * from "./EmailStep";
+export * from "./Welcome";
 export * from "./WelcomeScreen";
 export * from "./WelcomeNoteOne";
 export * from "./WelcomeNoteTwo";

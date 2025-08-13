@@ -21,6 +21,59 @@ export const OnboardingContainer = styled.div`
   align-items: center;
   justify-content: center;
   box-shadow: rgb(255 255 255 / 15%) 0px 9px 20px 1px;
+
+  @keyframes flicker {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    2% {
+      opacity: 0.8;
+    }
+    4% {
+      opacity: 1;
+    }
+    8% {
+      opacity: 0.9;
+    }
+    10% {
+      opacity: 1;
+    }
+    12% {
+      opacity: 0.95;
+    }
+    14% {
+      opacity: 1;
+    }
+    16% {
+      opacity: 0.85;
+    }
+    18% {
+      opacity: 1;
+    }
+    20% {
+      opacity: 0.9;
+    }
+    22% {
+      opacity: 1;
+    }
+  }
+
+  animation: flicker 0.5s infinite;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(transparent 50%, rgba(0, 255, 0, 0.03) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 44px;
+  }
 `;
 
 export interface OnboardingStepProps {

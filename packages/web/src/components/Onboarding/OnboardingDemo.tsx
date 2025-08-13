@@ -20,9 +20,14 @@ import {
   WelcomeNoteOne,
   WelcomeNoteTwo,
   WelcomeScreen,
+  WelcomeStep,
 } from "./steps";
 
 const loginSteps: OnboardingStepType[] = [
+  {
+    id: "welcome",
+    component: (props: OnboardingStepProps) => <WelcomeStep {...props} />,
+  },
   {
     id: "email",
     component: EmailStep,
@@ -37,7 +42,7 @@ const OnboardingDemo_: React.FC = () => {
 
   const onboardingSteps: OnboardingStepType[] = [
     {
-      id: "welcome",
+      id: "welcome-screen",
       component: (props: OnboardingStepProps) => (
         <WelcomeScreen firstName="hello" {...props} />
       ),

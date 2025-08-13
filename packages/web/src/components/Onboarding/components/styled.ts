@@ -8,9 +8,9 @@ export const OnboardingText = styled.p`
   color: ${({ theme }) => theme.color.common.white};
 `;
 
-export const OnboardingCard = styled.div`
+export const OnboardingCard = styled.div<{ hideBorder?: boolean }>`
   background-color: #12151b;
-  border: 2px solid #ffffff;
+  border: ${({ hideBorder }) => (hideBorder ? "none" : "2px solid #ffffff")};
   border-radius: 4px;
   padding: ${({ theme }) => theme.spacing.xl};
   width: 500px;
