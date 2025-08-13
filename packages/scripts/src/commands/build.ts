@@ -65,12 +65,15 @@ const buildWeb = async (options: Options_Cli) => {
   const envPath = path.join(__dirname, "..", "..", "..", "backend", envFile);
   dotenv.config({ path: envPath });
 
+  const posthogKey = process.env["POSTHOG_KEY"];
+  const posthogHost = process.env["POSTHOG_HOST"];
+
   removeOldBuildFor(PCKG.WEB);
 
   log.info("Compiling web files...");
   shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
   shell.exec(
-    `webpack --mode=production --env API_BASEURL=${baseUrl} GOOGLE_CLIENT_ID=${gClientId}`,
+    `webpack --mode=production --env API_BASEURL=${baseUrl} GOOGLE_CLIENT_ID=${gClientId} POSTHOG_KEY=${posthogKey} POSTHOG_HOST=${posthogHost}`,
   );
 
   log.success(`Done building web files.`);
