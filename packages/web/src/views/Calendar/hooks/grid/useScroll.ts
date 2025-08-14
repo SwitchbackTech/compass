@@ -20,9 +20,29 @@ export const useScroll = (
     }
   }, [timedGridRef]);
 
+  // Scroll when pressing "c"
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      const isTypingField =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
+
+      if (!isTypingField && !event.ctrlKey && event.key.toLowerCase() === "c") {
+        scrollToNow();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [scrollToNow]);
+
+  // Optional: scroll to now on mount
   useEffect(() => {
     if (!timedGridRef.current) return;
-
     scrollToNow();
   }, [scrollToNow, timedGridRef]);
 
