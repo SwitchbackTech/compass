@@ -23,22 +23,22 @@ import {
   WelcomeStep,
 } from "./steps";
 
-const loginSteps: OnboardingStepType[] = [
-  {
-    id: "welcome",
-    component: (props: OnboardingStepProps) => <WelcomeStep {...props} />,
-  },
-  {
-    id: "email",
-    component: EmailStep,
-  },
-];
-
 const OnboardingDemo_: React.FC = () => {
   const navigate = useNavigate();
   const { setHideSteps } = useOnboarding();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  const loginSteps: OnboardingStepType[] = [
+    {
+      id: "welcome",
+      component: (props: OnboardingStepProps) => <WelcomeStep {...props} />,
+    },
+    {
+      id: "email",
+      component: EmailStep,
+    },
+  ];
 
   const onboardingSteps: OnboardingStepType[] = [
     {
@@ -123,6 +123,7 @@ const OnboardingDemo_: React.FC = () => {
   if (!showOnboarding) {
     return (
       <Onboarding
+        key="login-onboarding"
         steps={loginSteps}
         onComplete={() => {
           setShowOnboarding(true);
@@ -134,6 +135,7 @@ const OnboardingDemo_: React.FC = () => {
 
   return (
     <Onboarding
+      key="main-onboarding"
       steps={onboardingSteps}
       onComplete={() => {
         console.log("onboarding complete");
