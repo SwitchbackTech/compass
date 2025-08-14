@@ -151,7 +151,7 @@ class SyncController {
         logger.error(message, err);
       });
 
-    return res.status(204);
+    return res.status(204).send();
   };
 }
 

@@ -43,7 +43,6 @@ export class SyncControllerDriver {
     return request(this.baseDriver.getServerUri())
       .post("/api/sync/import-gcal")
       .use(this.baseDriver.setSessionPlugin(session))
-      .expect(204)
-      .expect("Content-Type", "application/json");
+      .expect(204);
   }
 }
