@@ -19,6 +19,8 @@ module.exports = (env, argv) => {
 
   const IS_DEV = argv.mode === "development";
   const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
+  const POSTHOG_KEY = env.POSTHOG_KEY;
+  const POSTHOG_HOST = env.POSTHOG_HOST;
 
   if (!argv.mode || GOOGLE_CLIENT_ID === "undefined") {
     console.error(`Oopsies, you're missing a required parameter.
@@ -41,6 +43,8 @@ module.exports = (env, argv) => {
     new DefinePlugin({
       "process.env.API_BASEURL": JSON.stringify(API_BASEURL),
       "process.env.GOOGLE_CLIENT_ID": JSON.stringify(GOOGLE_CLIENT_ID),
+      "process.env.POSTHOG_KEY": JSON.stringify(POSTHOG_KEY),
+      "process.env.POSTHOG_HOST": JSON.stringify(POSTHOG_HOST),
     }),
     new HtmlWebpackPlugin({
       filename: "index.html",
