@@ -37,6 +37,7 @@ const OnboardingDemo_: React.FC = () => {
     {
       id: "email",
       component: EmailStep,
+      disableRightArrow: true,
     },
   ];
 
@@ -66,12 +67,14 @@ const OnboardingDemo_: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <SignInWithGoogle {...props} />
       ),
+      disableRightArrow: true,
     },
     {
       id: "set-someday-events-prelude",
       component: (props: OnboardingStepProps) => (
         <SetSomedayEventsPrelude {...props} />
       ),
+      disableLeftArrow: true,
     },
     {
       id: "set-header-note",
@@ -112,6 +115,8 @@ const OnboardingDemo_: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <FinalOnboardingReminder {...props} />
       ),
+      disableLeftArrow: true,
+      disableRightArrow: true,
     },
   ];
 
