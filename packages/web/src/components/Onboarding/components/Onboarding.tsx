@@ -149,7 +149,7 @@ export const Onboarding: React.FC<Props> = ({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [currentStepIndex, steps.length]);
+  }, [currentStepIndex, steps.length, handleNext, handlePrevious]);
 
   if (!StepComponent) {
     return null;
