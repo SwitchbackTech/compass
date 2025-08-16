@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { IS_DEV } from "@web/common/constants/env.constants";
 import {
   useOnboarding,
   withProvider,
@@ -34,12 +35,17 @@ const OnboardingDemo_: React.FC = () => {
       id: "welcome",
       component: (props: OnboardingStepProps) => <WelcomeStep {...props} />,
     },
-    {
+  ];
+
+  if (!IS_DEV) {
+    // only show email step in prod in order
+    // to allow contributors on localhost through
+    loginSteps.push({
       id: "email",
       component: EmailStep,
       disableRightArrow: true,
-    },
-  ];
+    });
+  }
 
   const onboardingSteps: OnboardingStepType[] = [
     {
