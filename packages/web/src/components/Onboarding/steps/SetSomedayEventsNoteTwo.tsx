@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Logo,
+  DynamicLogo,
   OnboardingButton,
   OnboardingStepBoilerplate,
   OnboardingText,
@@ -26,7 +26,7 @@ export const SetSomedayEventsNoteTwo: React.FC<OnboardingStepProps> = ({
         Your cabin is set up, and the crew is aboard.{" "}
       </OnboardingText>
 
-      <Logo style={{ width: "15vw", height: "auto" }} />
+      <DynamicLogo />
 
       <OnboardingText>It’s finally time.</OnboardingText>
       <OnboardingButton onClick={() => onNext()}>Enter</OnboardingButton>
