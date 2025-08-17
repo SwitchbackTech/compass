@@ -274,11 +274,12 @@ export const updateSyncTokenFor = async (
 export const getGCalEventsSyncPageToken = async (
   userId: string,
   gCalendarId: string,
+  session?: ClientSession,
 ): Promise<string | undefined> => {
-  const response = await mongoService.sync.findOne({
-    user: userId,
-    "google.events.gCalendarId": gCalendarId,
-  });
+  const response = await mongoService.sync.findOne(
+    { user: userId, "google.events.gCalendarId": gCalendarId },
+    { session },
+  );
 
   return response?.google.events.find((e) => e.gCalendarId === gCalendarId)
     ?.nextPageToken;

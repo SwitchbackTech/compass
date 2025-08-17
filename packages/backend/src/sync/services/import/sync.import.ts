@@ -319,40 +319,46 @@ export class SyncImport {
       `Starting importAllEvents for user ${userId}, calendar ${calendarId}.`,
     );
 
-    const startTime = performance.now();
-
-    let syncToken: string | undefined = undefined;
-
-    const stats: {
-      totalProcessed: number;
-      totalBaseEventsChanged: number;
-      totalChanged: number;
-    } = {
-      totalProcessed: 0,
-      totalBaseEventsChanged: 0,
-      totalChanged: 0,
-    };
-
-    const pageToken = await getGCalEventsSyncPageToken(userId, calendarId);
-
-    const gCalResponse = gcalService.getAllEvents({
-      gCal: this.gcal,
-      calendarId,
-      maxResults: perPage,
-      syncToken,
-      pageToken,
+    const session = await mongoService.startSession({
+      causalConsistency: true,
     });
 
-    for await (const {
-      items = [],
-      nextSyncToken,
-      nextPageToken,
-    } of gCalResponse) {
-      const session = await mongoService.startSession();
+    session.startTransaction();
 
-      try {
-        session.startTransaction();
+    try {
+      const startTime = performance.now();
 
+      let syncToken: string | undefined = undefined;
+
+      const stats: {
+        totalProcessed: number;
+        totalBaseEventsChanged: number;
+        totalChanged: number;
+      } = {
+        totalProcessed: 0,
+        totalBaseEventsChanged: 0,
+        totalChanged: 0,
+      };
+
+      const pageToken = await getGCalEventsSyncPageToken(
+        userId,
+        calendarId,
+        session,
+      );
+
+      const gCalResponse = gcalService.getAllEvents({
+        gCal: this.gcal,
+        calendarId,
+        maxResults: perPage,
+        syncToken,
+        pageToken,
+      });
+
+      for await (const {
+        items = [],
+        nextSyncToken,
+        nextPageToken,
+      } of gCalResponse) {
         await Promise.allSettled(
           items.map(async (baseEvent) => {
             const instanceStats = await this.importEventInstances(
@@ -379,31 +385,25 @@ export class SyncImport {
           session,
         );
 
-        await session.commitTransaction();
-      } catch (error: unknown) {
-        await session.abortTransaction();
-
-        throw error;
+        if (nextSyncToken) syncToken = nextSyncToken;
       }
 
-      if (nextSyncToken) syncToken = nextSyncToken;
-    }
+      if (!syncToken) {
+        // If no sync token (e.g., empty calendar or sync did not reach last page)
+        throw error(
+          GcalError.NoSyncToken,
+          `Failed to finalize full import because nextSyncToken was not found for ${calendarId}. Incremental sync may not work correctly.`,
+        );
+      }
 
-    if (!syncToken) {
-      // If no sync token (e.g., empty calendar or sync did not reach last page)
-      throw error(
-        GcalError.NoSyncToken,
-        `Failed to finalize full import because nextSyncToken was not found for ${calendarId}. Incremental sync may not work correctly.`,
-      );
-    }
+      const baseEventsSavedCount = stats.totalBaseEventsChanged;
+      const instanceEventsSavedCount =
+        stats.totalChanged - baseEventsSavedCount;
+      const endTime = performance.now();
+      const duration = (endTime - startTime) / 1000;
 
-    const baseEventsSavedCount = stats.totalBaseEventsChanged;
-    const instanceEventsSavedCount = stats.totalChanged - baseEventsSavedCount;
-    const endTime = performance.now();
-    const duration = (endTime - startTime) / 1000;
-
-    logger.info(
-      `importAllEvents completed for ${calendarId}.
+      logger.info(
+        `importAllEvents completed for ${calendarId}.
       Max results / page: ${perPage}
       Total GCal events processed: ${stats.totalProcessed}.
       Total base/single saved: ${baseEventsSavedCount},
@@ -411,9 +411,16 @@ export class SyncImport {
       Total Saved/Changed Compass Events: ${stats.totalChanged}.
       Duration: ${duration.toFixed(2)}s
       Final nextSyncToken acquired.`,
-    );
+      );
 
-    return { ...stats, nextSyncToken: syncToken };
+      await session.commitTransaction();
+
+      return { ...stats, nextSyncToken: syncToken };
+    } catch (error: unknown) {
+      await session.abortTransaction();
+
+      throw error;
+    }
   }
 
   /**
