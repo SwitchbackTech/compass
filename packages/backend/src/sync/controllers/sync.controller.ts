@@ -95,6 +95,8 @@ class SyncController {
   };
 
   importGCal = async (req: Request, res: Response): Promise<Response> => {
+    req.setTimeout(1000); // set short timeout for this request
+
     const userId = req.session!.getUserId()!;
     const gcalClient = await getGcalClient(userId);
     const sync = await getSync({ userId });
