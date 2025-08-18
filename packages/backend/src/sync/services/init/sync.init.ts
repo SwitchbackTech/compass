@@ -11,9 +11,10 @@ import { ENV } from "@backend/common/constants/env.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
+import { getPrimaryGcalId } from "@backend/common/services/gcal/gcal.utils";
+import { watchEventsByGcalIds } from "@backend/sync/services/watch/sync.watch";
 import { createSync } from "@backend/sync/util/sync.queries";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
-import { watchEventsByGcalIds } from "../watch/sync.watch";
 
 const logger = Logger("app:sync.init");
 
@@ -21,7 +22,12 @@ export const initSync = async (gcal: gCalendar, userId: string) => {
   const { cCalendarList, gCalendarIds, calListNextSyncToken } =
     await getCalendarsToSync(userId, gcal);
 
-  await createSync(userId, cCalendarList, calListNextSyncToken);
+  const gCalendarId = getPrimaryGcalId(cCalendarList);
+
+  await createSync(userId, {
+    calendarlist: [{ gCalendarId, nextSyncToken: calListNextSyncToken }],
+    events: [],
+  });
 
   await calendarService.create(cCalendarList);
 

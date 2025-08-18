@@ -5,7 +5,7 @@ import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 import { Summary_Sync } from "@backend/sync/sync.types";
-import { getSync, updateSyncTokenFor } from "@backend/sync/util/sync.queries";
+import { getSync, updateSync } from "@backend/sync/util/sync.queries";
 
 const logger = Logger("app:gcal.notification.handler");
 
@@ -48,11 +48,13 @@ export class GCalNotificationHandler {
       syncToken,
     });
 
+    const nextSyncToken = response.data.nextSyncToken;
+
     console.log("LATEST CHANGES (from gcal):");
     console.log(JSON.stringify(response.data, null, 2));
 
     // If the nextSyncToken matches our current syncToken, we've already processed these changes
-    if (response.data.nextSyncToken === syncToken) {
+    if (nextSyncToken === syncToken) {
       logger.info(
         `Skipping notification - changes already processed for calendar ${calendarId}`,
       );
@@ -66,13 +68,8 @@ export class GCalNotificationHandler {
     }
 
     // Update the sync token in the database
-    if (response.data.nextSyncToken) {
-      await updateSyncTokenFor(
-        "events",
-        this.userId,
-        response.data.nextSyncToken,
-        calendarId,
-      );
+    if (nextSyncToken) {
+      await updateSync("events", this.userId, calendarId, { nextSyncToken });
     }
 
     return { hasChanges: true, changes };
