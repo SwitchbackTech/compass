@@ -1,9 +1,12 @@
+import { Request } from "express";
 import { GaxiosError } from "googleapis-common";
+import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { IS_DEV } from "@backend/common/constants/env.constants";
+import { errorHandler } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import {
   getEmailFromUrl,
@@ -14,10 +17,9 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import { CompassError, Info_Error } from "@backend/common/types/error.types";
 import { SessionResponse } from "@backend/common/types/express.types";
+import { SyncController } from "@backend/sync/controllers/sync.controller";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import userService from "@backend/user/services/user.service";
-import { errorHandler } from "./error.handler";
 
 const logger = Logger("app:express.handler");
 
@@ -42,7 +44,6 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
 
   if (e instanceof GaxiosError) {
     if ("syncToken" in e.config.params) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const syncToken = e.config.params.syncToken as string;
       const sync = await getSyncByToken(syncToken);
 
@@ -68,6 +69,7 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
 };
 
 export const handleExpressError = async (
+  req: Request | SessionRequest,
   res: SessionResponse,
   e: CompassError,
 ) => {
@@ -87,7 +89,7 @@ export const handleExpressError = async (
     }
 
     if (isGoogleError(e)) {
-      await handleGoogleError(userId, res, e);
+      await handleGoogleError(req, res, userId, e);
     } else {
       const errInfo = assembleErrorInfo(e);
       res.status(e.status || Status.INTERNAL_SERVER).send(errInfo);
@@ -100,8 +102,9 @@ export const handleExpressError = async (
 };
 
 const handleGoogleError = async (
-  userId: string,
+  req: Request | SessionRequest,
   res: SessionResponse,
+  userId: string,
   e: GaxiosError,
 ) => {
   if (isInvalidGoogleToken(e)) {
@@ -113,12 +116,7 @@ const handleGoogleError = async (
     return;
   }
 
-  if (isFullSyncRequired(e)) {
-    const result = await userService.reSyncGoogleData(userId);
-
-    res.status(Status.OK).send(result);
-    return;
-  }
+  if (isFullSyncRequired(e)) return SyncController.importGCal(req, res);
 
   if (isInvalidValue(e)) {
     logger.error(
