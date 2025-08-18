@@ -6,8 +6,10 @@ import {
 } from "@core/constants/core.constants";
 import authMiddleware from "@backend/auth/middleware/auth.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
-import syncController from "./controllers/sync.controller";
-import syncDebugController from "./controllers/sync.debug.controller";
+import syncController, {
+  SyncController,
+} from "@backend/sync/controllers/sync.controller";
+import syncDebugController from "@backend/sync/controllers/sync.debug.controller";
 
 export class SyncRoutes extends CommonRoutesConfig {
   constructor(app: express.Application) {
@@ -31,7 +33,7 @@ export class SyncRoutes extends CommonRoutesConfig {
 
     this.app
       .route(`/api/sync/import-gcal`)
-      .post(verifySession(), syncController.importGCal);
+      .post(verifySession(), SyncController.importGCal);
 
     this.app
       .route(`/api/sync/stop-all`)

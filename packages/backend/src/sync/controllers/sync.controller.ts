@@ -3,7 +3,6 @@ import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { Payload_Sync_Notif } from "@core/types/sync.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
-import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import {
@@ -11,13 +10,13 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
-import { initSync } from "@backend/sync/services/init/sync.init";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
 
 const logger = Logger("app:sync.controller");
-class SyncController {
+
+export class SyncController {
   handleGoogleNotification = async (req: Request, res: Response) => {
     try {
       const syncPayload = {
@@ -61,9 +60,7 @@ class SyncController {
       }
 
       if (isFullSyncRequired(e as Error)) {
-        const result = await userService.reSyncGoogleData(userId);
-        res.status(Status.OK).send(result);
-        return;
+        return SyncController.importGCal(req, res);
       }
       if (
         e instanceof Error &&
@@ -94,21 +91,8 @@ class SyncController {
     }
   };
 
-  importGCal = async (req: Request, res: Response): Promise<Response> => {
-    req.setTimeout(1000); // set short timeout for this request
-
+  static importGCal = async (req: Request, res: Response) => {
     const userId = req.session!.getUserId()!;
-    const gcalClient = await getGcalClient(userId);
-    const sync = await getSync({ userId });
-
-    let gCalendarIds: string[] =
-      sync?.google.calendarlist.map((item) => item.gCalendarId) ?? [];
-
-    if (!sync) gCalendarIds = await initSync(gcalClient, userId);
-
-    logger.debug(
-      `starting gCal(${gCalendarIds.toString()}) imports for user(${userId})`,
-    );
 
     webSocketServer.handleImportGCalStart(userId);
 
@@ -130,7 +114,7 @@ class SyncController {
           data: { sync: { importGCal: "importing" } },
         });
 
-        await syncService.importFull(gcalClient, gCalendarIds, userId);
+        await userService.reSyncGoogleData(userId);
 
         await userService.updateUserMetadata({
           userId,
@@ -153,7 +137,7 @@ class SyncController {
         logger.error(message, err);
       });
 
-    return res.status(204).send();
+    res.status(Status.NO_CONTENT).send();
   };
 }
 
