@@ -12,6 +12,7 @@ import {
   SetHeaderNote,
   SetHeaderNoteNoteOne,
   SetHeaderNoteNoteTwo,
+  SetHeaderNoteSuccess,
   SetSomedayEvents,
   SetSomedayEventsNoteOne,
   SetSomedayEventsNoteTwo,
@@ -85,6 +86,12 @@ const OnboardingDemo_: React.FC = () => {
     {
       id: "set-header-note",
       component: (props: OnboardingStepProps) => <SetHeaderNote {...props} />,
+    },
+    {
+      id: "set-header-note-success",
+      component: (props: OnboardingStepProps) => (
+        <SetHeaderNoteSuccess {...props} />
+      ),
     },
     {
       id: "set-header-note-note-one",
