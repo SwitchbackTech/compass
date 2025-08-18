@@ -16,25 +16,26 @@ import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import {
-  deleteWatchData,
-  getSync,
-  isWatchingEventsByGcalId,
-  updateRefreshedAtFor,
-  updateSyncFor,
-  updateSyncTokenFor,
-} from "../util/sync.queries";
-import { getChannelExpiration, isUsingHttps } from "../util/sync.util";
-import { createSyncImport } from "./import/sync.import";
+import { createSyncImport } from "@backend/sync/services/import/sync.import";
 import {
   prepSyncMaintenance,
   prepSyncMaintenanceForUser,
   pruneSync,
   refreshSync,
-} from "./maintain/sync.maintenance";
-import { getIdsFromSyncPayload } from "./notify/gcal.notification.util";
-import { GCalNotificationHandler } from "./notify/handler/gcal.notification.handler";
+} from "@backend/sync/services/maintain/sync.maintenance";
+import { getIdsFromSyncPayload } from "@backend/sync/services/notify/gcal.notification.util";
+import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
+import {
+  deleteWatchData,
+  getSync,
+  isWatchingEventsByGcalId,
+  updateSync,
+} from "@backend/sync/util/sync.queries";
+import {
+  getChannelExpiration,
+  isUsingHttps,
+} from "@backend/sync/util/sync.util";
+import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const logger = Logger("app:sync.service");
 class SyncService {
@@ -96,23 +97,49 @@ class SyncService {
     gCalendarIds: string[],
     userId: string,
   ) => {
-    const syncImport = await createSyncImport(gcal);
-    const eventImports = gCalendarIds.map(async (gCalId) => {
-      const { nextSyncToken } = await syncImport.importAllEvents(
-        userId,
-        gCalId,
-        2500,
-      );
-      if (isUsingHttps()) {
-        await updateSyncTokenFor("events", userId, nextSyncToken, gCalId);
-      } else {
-        logger.warn(
-          `Skipped updating sync token for user: ${userId} and gCalId: ${gCalId} because not using https`,
-        );
-      }
+    const session = await mongoService.startSession({
+      causalConsistency: true,
     });
 
-    await Promise.all(eventImports);
+    session.startTransaction();
+
+    try {
+      const syncImport = await createSyncImport(gcal);
+
+      const eventImports = Promise.all(
+        gCalendarIds.map(async (gCalId) => {
+          const { nextSyncToken, ...result } = await syncImport.importAllEvents(
+            userId,
+            gCalId,
+            2500,
+          );
+
+          if (isUsingHttps()) {
+            await updateSync(
+              "events",
+              userId,
+              gCalId,
+              { nextSyncToken },
+              session,
+            );
+          } else {
+            logger.warn(
+              `Skipped updating sync token for user: ${userId} and gCalId: ${gCalId} because not using https`,
+            );
+          }
+
+          return { gCalId, ...result };
+        }),
+      );
+
+      await session.commitTransaction();
+
+      return eventImports;
+    } catch (error: unknown) {
+      await session.abortTransaction();
+
+      throw error;
+    }
   };
 
   importIncremental = async (userId: string, gcal?: gCalendar) => {
@@ -132,7 +159,12 @@ class SyncService {
 
     const watchExists = payload.channelId && payload.resourceId;
     if (watchExists) {
-      await this.stopWatch(userId, payload.channelId, payload.resourceId, gcal);
+      await this.stopWatch(
+        userId,
+        payload.channelId!,
+        payload.resourceId!,
+        gcal,
+      );
     }
 
     const watchResult = await this.startWatchingGcalEvents(
@@ -143,7 +175,7 @@ class SyncService {
       gcal,
     );
 
-    await updateRefreshedAtFor("events", userId, payload.gCalendarId);
+    await updateSync("events", userId, payload.gCalendarId);
 
     return watchResult;
   };
@@ -244,8 +276,7 @@ class SyncService {
       throw error(SyncError.NoResourceId, "Calendar Watch Failed");
     }
 
-    const sync = await updateSyncFor("events", userId, {
-      gCalendarId: params.gCalendarId,
+    const sync = await updateSync("events", userId, params.gCalendarId, {
       channelId,
       resourceId,
       expiration,
@@ -265,7 +296,7 @@ class SyncService {
         { gCalendarId: gInfo.gCalId },
         gcal,
       );
-      await updateRefreshedAtFor("events", userId, gInfo.gCalId);
+      await updateSync("events", gInfo.gCalId, userId);
     });
 
     await Promise.all(eventWatches);

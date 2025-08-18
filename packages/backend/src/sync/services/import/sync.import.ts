@@ -33,9 +33,7 @@ import { assembleEventWatchPayloads } from "@backend/sync/services/watch/sync.wa
 import {
   getGCalEventsSyncPageToken,
   getSync,
-  updateGCalEventsSyncPageToken,
   updateSync,
-  updateSyncTokenFor,
 } from "@backend/sync/util/sync.queries";
 import {
   hasAnyActiveEventSync,
@@ -309,6 +307,7 @@ export class SyncImport {
     userId: string,
     calendarId: string,
     perPage = 1000,
+    session?: ClientSession,
   ): Promise<{
     totalProcessed: number;
     totalBaseEventsChanged: number;
@@ -319,108 +318,94 @@ export class SyncImport {
       `Starting importAllEvents for user ${userId}, calendar ${calendarId}.`,
     );
 
-    const session = await mongoService.startSession({
-      causalConsistency: true,
+    const startTime = performance.now();
+
+    let syncToken: string | undefined = undefined;
+
+    const stats: {
+      totalProcessed: number;
+      totalBaseEventsChanged: number;
+      totalChanged: number;
+    } = {
+      totalProcessed: 0,
+      totalBaseEventsChanged: 0,
+      totalChanged: 0,
+    };
+
+    const pageToken = await getGCalEventsSyncPageToken(
+      userId,
+      calendarId,
+      session,
+    );
+
+    const gCalResponse = gcalService.getAllEvents({
+      gCal: this.gcal,
+      calendarId,
+      maxResults: perPage,
+      syncToken,
+      pageToken: pageToken ?? undefined,
     });
 
-    session.startTransaction();
+    for await (const {
+      items = [],
+      nextSyncToken,
+      nextPageToken,
+    } of gCalResponse) {
+      await Promise.allSettled(
+        items.map(async (baseEvent) => {
+          const instanceStats = await this.importEventInstances(
+            userId,
+            calendarId,
+            baseEvent,
+            perPage,
+            session,
+          );
 
-    try {
-      const startTime = performance.now();
+          const totalBaseEventsSaved =
+            instanceStats.totalSaved - instanceStats.totalInstancesSaved;
 
-      let syncToken: string | undefined = undefined;
+          stats.totalChanged += instanceStats.totalSaved;
+          stats.totalProcessed += instanceStats.totalProcessed;
+          stats.totalBaseEventsChanged += totalBaseEventsSaved;
+        }),
+      );
 
-      const stats: {
-        totalProcessed: number;
-        totalBaseEventsChanged: number;
-        totalChanged: number;
-      } = {
-        totalProcessed: 0,
-        totalBaseEventsChanged: 0,
-        totalChanged: 0,
-      };
-
-      const pageToken = await getGCalEventsSyncPageToken(
+      await updateSync(
+        "events",
         userId,
         calendarId,
+        { nextPageToken: nextPageToken ?? undefined },
         session,
       );
 
-      const gCalResponse = gcalService.getAllEvents({
-        gCal: this.gcal,
-        calendarId,
-        maxResults: perPage,
-        syncToken,
-        pageToken,
-      });
-
-      for await (const {
-        items = [],
-        nextSyncToken,
-        nextPageToken,
-      } of gCalResponse) {
-        await Promise.allSettled(
-          items.map(async (baseEvent) => {
-            const instanceStats = await this.importEventInstances(
-              userId,
-              calendarId,
-              baseEvent,
-              perPage,
-              session,
-            );
-
-            const totalBaseEventsSaved =
-              instanceStats.totalSaved - instanceStats.totalInstancesSaved;
-
-            stats.totalChanged += instanceStats.totalSaved;
-            stats.totalProcessed += instanceStats.totalProcessed;
-            stats.totalBaseEventsChanged += totalBaseEventsSaved;
-          }),
-        );
-
-        await updateGCalEventsSyncPageToken(
-          userId,
-          calendarId,
-          nextPageToken,
-          session,
-        );
-
-        if (nextSyncToken) syncToken = nextSyncToken;
-      }
-
-      if (!syncToken) {
-        // If no sync token (e.g., empty calendar or sync did not reach last page)
-        throw error(
-          GcalError.NoSyncToken,
-          `Failed to finalize full import because nextSyncToken was not found for ${calendarId}. Incremental sync may not work correctly.`,
-        );
-      }
-
-      const baseEventsSavedCount = stats.totalBaseEventsChanged;
-      const instanceEventsSavedCount =
-        stats.totalChanged - baseEventsSavedCount;
-      const endTime = performance.now();
-      const duration = (endTime - startTime) / 1000;
-
-      logger.info(
-        `importAllEvents completed for ${calendarId}.
-      Max results / page: ${perPage}
-      Total GCal events processed: ${stats.totalProcessed}.
-      Total base/single saved: ${baseEventsSavedCount},
-      Total instances saved: ${instanceEventsSavedCount}.
-      Total Saved/Changed Compass Events: ${stats.totalChanged}.
-      Duration: ${duration.toFixed(2)}s
-      Final nextSyncToken acquired.`,
-      );
-
-      await session.commitTransaction();
-
-      return { ...stats, nextSyncToken: syncToken };
-    } catch (error: unknown) {
-      await session.abortTransaction();
-
-      throw error;
+      if (nextSyncToken) syncToken = nextSyncToken;
     }
+
+    if (!syncToken) {
+      // If no sync token (e.g., empty calendar or sync did not reach last page)
+      throw error(
+        GcalError.NoSyncToken,
+        `Failed to finalize full import because nextSyncToken was not found for ${calendarId}. Incremental sync may not work correctly.`,
+      );
+    }
+
+    const baseEventsSavedCount = stats.totalBaseEventsChanged;
+    const instanceEventsSavedCount = stats.totalChanged - baseEventsSavedCount;
+    const endTime = performance.now();
+    const duration = (endTime - startTime) / 1000;
+
+    logger.info(
+      `importAllEvents completed for ${calendarId}.
+    Max results / page: ${perPage}
+    Total GCal events processed: ${stats.totalProcessed}.
+    Total base/single saved: ${baseEventsSavedCount},
+    Total instances saved: ${instanceEventsSavedCount}.
+    Total Saved/Changed Compass Events: ${stats.totalChanged}.
+    Duration: ${duration.toFixed(2)}s
+    Final nextSyncToken acquired.`,
+    );
+
+    return { ...stats, nextSyncToken: syncToken };
   }
 
   /**
@@ -512,7 +497,14 @@ export class SyncImport {
       return sync.google.events;
     }
 
-    await updateSyncTokenFor("calendarlist", userId, calListNextSyncToken);
+    await updateSync(
+      "calendarlist",
+      userId,
+      sync.google.calendarlist[0]!.gCalendarId,
+      { nextSyncToken: calListNextSyncToken },
+      undefined,
+    );
+
     const eventWatchPayloads = assembleEventWatchPayloads(
       sync as Schema_Sync,
       gCalendarIds,
@@ -533,7 +525,7 @@ export class SyncImport {
   public async importEventsByCalendar(
     userId: string,
     gCalendarId: string,
-    initialSyncToken: string,
+    initialSyncToken?: string | null,
   ) {
     let nextSyncToken: string | null | undefined = initialSyncToken;
     let nextPageToken: string | null | undefined = undefined;
@@ -574,7 +566,15 @@ export class SyncImport {
       );
     }
 
-    await updateSync(userId, gCalendarId, initialSyncToken, nextSyncToken);
+    const syncToken = nextSyncToken ?? initialSyncToken;
+
+    await updateSync(
+      "events",
+      userId,
+      gCalendarId,
+      syncToken ? { nextSyncToken: syncToken } : {},
+    );
+
     return {
       updated: totalUpdated,
       deleted: totalDeleted,
