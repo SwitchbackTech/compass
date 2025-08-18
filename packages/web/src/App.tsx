@@ -1,3 +1,4 @@
+import { PostHogProvider } from "posthog-js/react";
 import React from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -32,34 +33,59 @@ SuperTokens.init({
 sagaMiddleware.run(sagas);
 
 export const App = () => {
+  const renderRequiredProviders = () => (
+    <DndProvider backend={HTML5Backend}>
+      <Provider store={store}>
+        <GoogleOAuthProvider clientId={ENV_WEB.CLIENT_ID || ""}>
+          <SuperTokensWrapper>
+            <GlobalStyle />
+            <ThemeProvider theme={theme}>
+              <IconProvider>
+                <RootRouter />
+              </IconProvider>
+              <ToastContainer
+                position="bottom-left"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+              />
+            </ThemeProvider>
+          </SuperTokensWrapper>
+        </GoogleOAuthProvider>
+      </Provider>
+    </DndProvider>
+  );
+
+  const renderOptionalProviders = (children: React.ReactNode) => {
+    let wrappedChildren = children;
+
+    if (isPosthogEnabled()) {
+      wrappedChildren = (
+        <PostHogProvider
+          apiKey={ENV_WEB.POSTHOG_KEY as string}
+          options={{ api_host: ENV_WEB.POSTHOG_HOST! }}
+        >
+          {wrappedChildren}
+        </PostHogProvider>
+      );
+    }
+
+    return wrappedChildren;
+  };
+
   return (
     <React.StrictMode>
-      <DndProvider backend={HTML5Backend}>
-        <Provider store={store}>
-          <GoogleOAuthProvider clientId={ENV_WEB.CLIENT_ID}>
-            <SuperTokensWrapper>
-              <GlobalStyle />
-              <ThemeProvider theme={theme}>
-                <IconProvider>
-                  <RootRouter />
-                </IconProvider>
-                <ToastContainer
-                  position="bottom-left"
-                  autoClose={5000}
-                  hideProgressBar={false}
-                  newestOnTop={false}
-                  closeOnClick
-                  rtl={false}
-                  pauseOnFocusLoss
-                  draggable
-                  pauseOnHover
-                  theme="dark"
-                />
-              </ThemeProvider>
-            </SuperTokensWrapper>
-          </GoogleOAuthProvider>
-        </Provider>
-      </DndProvider>
+      {renderOptionalProviders(renderRequiredProviders())}
     </React.StrictMode>
   );
 };
+
+function isPosthogEnabled() {
+  return !!ENV_WEB.POSTHOG_HOST && !!ENV_WEB.POSTHOG_KEY;
+}
