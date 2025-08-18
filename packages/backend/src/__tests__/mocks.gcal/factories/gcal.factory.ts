@@ -5,6 +5,7 @@ import type {
   MethodOptions,
   StreamMethodOptions,
 } from "googleapis/build/src/apis/calendar";
+import { Status } from "@core/errors/status.codes";
 import type {
   WithGcalId,
   gSchema$CalendarListEntry,
@@ -261,6 +262,23 @@ export const mockGcal = ({
           nextSyncToken: calendarListNextSyncToken,
         },
       })),
+    },
+    channels: {
+      ...calendar.channels,
+      stop: jest.fn(
+        async (
+          params: calendar_v3.Params$Resource$Channels$Stop,
+          options: MethodOptions = {},
+        ): GaxiosPromise<gSchema$Channel> =>
+          Promise.resolve({
+            config: options,
+            statusText: "OK",
+            status: Status.NO_CONTENT,
+            data: params.requestBody as gSchema$Channel,
+            headers: options.headers!,
+            request: { responseURL: params.requestBody!.address! },
+          }),
+      ),
     },
   }));
 };

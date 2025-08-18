@@ -1,3 +1,6 @@
+import { faker } from "@faker-js/faker";
+import { UserDriver } from "@backend/__tests__/drivers/user.driver";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -5,38 +8,138 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import {
   getGCalEventsSyncPageToken,
-  updateGCalEventsSyncPageToken,
+  getSync,
+  updateSync,
 } from "@backend/sync/util/sync.queries";
-import { UtilDriver } from "../../__tests__/drivers/util.driver";
 
-describe("sync.queries nextPageToken", () => {
-  beforeAll(setupTestDb);
+describe("sync.queries: ", () => {
+  describe("nextPageToken", () => {
+    beforeAll(setupTestDb);
 
-  beforeEach(cleanupCollections);
+    beforeEach(cleanupCollections);
 
-  afterAll(cleanupTestDb);
+    afterAll(cleanupTestDb);
 
-  it("updates and retrieves nextPageToken", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const token = "page123";
-    const gCalendarId = "test-calendar";
+    it("returns undefined when token not found", async () => {
+      const { user } = await UtilDriver.setupTestUser();
 
-    await updateGCalEventsSyncPageToken(
-      user._id.toString(),
-      gCalendarId,
-      token,
-    );
-
-    await expect(
-      getGCalEventsSyncPageToken(user._id.toString(), gCalendarId),
-    ).resolves.toBe(token);
+      await expect(
+        getGCalEventsSyncPageToken(user._id.toString(), "missing-cal"),
+      ).resolves.toBeUndefined();
+    });
   });
 
-  it("returns undefined when token not found", async () => {
-    const { user } = await UtilDriver.setupTestUser();
+  describe("updateSync", () => {
+    beforeAll(setupTestDb);
 
-    await expect(
-      getGCalEventsSyncPageToken(user._id.toString(), "missing-cal"),
-    ).resolves.toBeUndefined();
+    beforeEach(cleanupCollections);
+
+    afterAll(cleanupTestDb);
+
+    it("should upsert sync data if not populated - calendarlist", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const calendarId = faker.string.uuid();
+      const existingSync = await getSync({ userId });
+
+      expect(existingSync).toBeNull();
+
+      await updateSync("calendarlist", userId, calendarId);
+
+      const sync = await getSync({ userId });
+
+      expect(sync).toEqual(
+        expect.objectContaining({
+          user: userId,
+          google: {
+            calendarlist: [
+              {
+                gCalendarId: calendarId,
+                lastSyncedAt: expect.any(Date),
+              },
+            ],
+          },
+        }),
+      );
+    });
+
+    it("should upsert sync data if not populated - events", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const calendarId = faker.string.uuid();
+      const existingSync = await getSync({ userId });
+
+      expect(existingSync).toBeNull();
+
+      await updateSync("events", userId, calendarId);
+
+      const sync = await getSync({ userId });
+
+      expect(sync).toEqual(
+        expect.objectContaining({
+          user: userId,
+          google: {
+            events: [
+              {
+                gCalendarId: calendarId,
+                lastSyncedAt: expect.any(Date),
+              },
+            ],
+          },
+        }),
+      );
+    });
+
+    it("should update sync data - events", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const calendarId = faker.string.uuid();
+      const nextSyncToken = faker.string.uuid();
+      const nextPageToken = faker.string.uuid();
+
+      await updateSync("events", userId, calendarId);
+
+      const existingSync = await getSync({ userId });
+
+      expect(existingSync).toEqual(
+        expect.objectContaining({
+          user: userId,
+          google: {
+            events: [
+              {
+                gCalendarId: calendarId,
+                lastSyncedAt: expect.any(Date),
+              },
+            ],
+          },
+        }),
+      );
+
+      expect(existingSync?.google.events[0]?.nextSyncToken).toBeUndefined();
+      expect(existingSync?.google.events[0]?.nextPageToken).toBeUndefined();
+
+      await updateSync("events", userId, calendarId, {
+        nextSyncToken,
+        nextPageToken,
+      });
+
+      const sync = await getSync({ userId });
+
+      expect(sync).toEqual(
+        expect.objectContaining({
+          user: userId,
+          google: {
+            events: [
+              {
+                gCalendarId: calendarId,
+                lastSyncedAt: expect.any(Date),
+                nextSyncToken,
+                nextPageToken,
+              },
+            ],
+          },
+        }),
+      );
+    });
   });
 });

@@ -1,10 +1,13 @@
-import { ClientSession } from "mongodb";
+import { ClientSession, UpdateFilter, UpdateResult } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
 import { Schema_CalendarList } from "@core/types/calendar.types";
-import { Payload_Resource_Events, Resource_Sync } from "@core/types/sync.types";
+import {
+  Payload_Sync_Events,
+  Resource_Sync,
+  Schema_Sync,
+} from "@core/types/sync.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { getPrimaryGcalId } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 
@@ -14,24 +17,26 @@ import mongoService from "@backend/common/services/mongo.service";
 
 export const createSync = async (
   userId: string,
-  calendarList: Schema_CalendarList,
-  nextSyncToken: string,
+  data: Schema_Sync["google"],
+  session?: ClientSession,
 ) => {
-  const gCalendarId = getPrimaryGcalId(calendarList);
-
-  const result = await mongoService.sync.insertOne({
-    user: userId,
-    google: {
-      calendarlist: [
-        {
-          gCalendarId,
-          nextSyncToken,
+  const result = await mongoService.sync.insertOne(
+    {
+      user: userId,
+      google: {
+        ...data,
+        calendarlist: data.calendarlist.map((c) => ({
+          ...c,
           lastSyncedAt: new Date(),
-        },
-      ],
-      events: [],
+        })),
+        events: data.events.map((e) => ({
+          ...e,
+          lastSyncedAt: new Date(),
+        })),
+      },
     },
-  });
+    { session },
+  );
 
   return result;
 };
@@ -134,6 +139,20 @@ export const getSyncByToken = async (syncToken: string) => {
   return null;
 };
 
+export const getGCalEventsSyncPageToken = async (
+  userId: string,
+  gCalendarId: string,
+  session?: ClientSession,
+): Promise<string | undefined | null> => {
+  const response = await mongoService.sync.findOne(
+    { user: userId, "google.events.gCalendarId": gCalendarId },
+    { session },
+  );
+
+  return response?.google.events.find((e) => e.gCalendarId === gCalendarId)
+    ?.nextPageToken;
+};
+
 export const hasUpdatedCompassEventRecently = async (
   userId: string,
   deadline: string,
@@ -163,171 +182,48 @@ export const isWatchingEventsByGcalId = async (
   return hasSyncFields;
 };
 
-export const updateSyncFor = async (
-  resource: Resource_Sync,
-  userId: string,
-  data: Payload_Resource_Events,
-) => {
-  if (resource !== "events") {
-    throw error(GenericError.NotImplemented, "Sync Update Failed");
-  }
-
-  const syncData = {
-    gCalendarId: data.gCalendarId,
-    resourceId: data.resourceId,
-    lastSyncedAt: new Date(),
-    channelId: data.channelId,
-    expiration: data.expiration,
-  };
-
-  const matches = await mongoService.sync.countDocuments({
-    user: userId,
-    "google.events.gCalendarId": data.gCalendarId,
-  });
-  const syncExists = matches === 1;
-
-  if (syncExists) {
-    const updateResult = await mongoService.sync.updateOne(
-      { user: userId, "google.events.gCalendarId": data.gCalendarId },
-      { $set: { "google.events.$": syncData } },
-    );
-    return updateResult;
-  }
-
-  const createResult = await mongoService.sync.updateOne(
-    { user: userId },
-    { $push: { "google.events": syncData } },
-  );
-
-  return createResult;
-};
-
-export const updateRefreshedAtFor = async (
-  resource: Resource_Sync,
+export const updateSync = async (
+  resource: Exclude<Resource_Sync, "settings">,
   userId: string,
   gCalendarId: string,
-) => {
-  if (resource !== "events") {
-    throw error(GenericError.NotImplemented, "Update RefreshedAt Failed");
-  }
+  update: Partial<
+    Omit<Payload_Sync_Events, "gCalendarId" | "lastSyncedAt">
+  > = {},
+  session?: ClientSession,
+): Promise<UpdateResult<Schema_Sync>> => {
+  const sync = await getSync({ userId });
 
-  const result = await mongoService.sync.updateOne(
-    { user: userId, "google.events.gCalendarId": gCalendarId },
-    { $set: { "google.events.$.lastRefreshedAt": new Date() } },
-  );
-  return result;
-};
+  const data = sync?.google[resource];
+  const index = data?.findIndex((e) => e.gCalendarId === gCalendarId) ?? -1;
+  const operation: UpdateFilter<Schema_Sync> = {};
 
-const updateSyncTimeBy = async (
-  key: "gCalendarId",
-  value: string,
-  userId: string,
-) => {
-  const result = await mongoService.sync.updateOne(
-    { user: userId, [`google.events.${key}`]: value },
-    { $set: { "google.events.$.lastSyncedAt": new Date() } },
-  );
-  return result;
-};
-
-export const updateSyncTokenFor = async (
-  resource: "calendarlist" | "events",
-  userId: string,
-  nextSyncToken: string,
-  gCalendarId?: string,
-) => {
-  if (resource === "calendarlist") {
-    const result = await mongoService.sync.findOneAndUpdate(
-      {
-        user: userId,
+  if (index === -1) {
+    operation.$push = {
+      [`google.${resource}`]: {
+        ...update,
+        gCalendarId,
+        lastSyncedAt: new Date(),
       },
-      {
-        $set: {
-          "google.calendarlist.0.nextSyncToken": nextSyncToken,
-          "google.calendarlist.0.lastSyncedAt": new Date(),
-        },
-      },
-      { returnDocument: "after", upsert: true },
-    );
-
-    return result;
+    };
   } else {
-    if (!gCalendarId) {
-      throw error(SyncError.NoGCalendarId, "Update Sync Token Failed");
-    }
-
-    const response = await mongoService.sync.findOneAndUpdate(
-      { user: userId, "google.events.gCalendarId": gCalendarId },
-      {
-        $set: {
-          "google.events.$.nextSyncToken": nextSyncToken,
-          "google.events.$.lastSyncedAt": new Date(),
-        },
-      },
-      { upsert: true },
-    );
-
-    return response;
+    operation.$set = {
+      [`google.${resource}.${index}.gCalendarId`]: gCalendarId,
+      ...Object.entries(update).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [`google.${resource}.${index}.${key}`]: value,
+        }),
+        {},
+      ),
+      [`google.${resource}.${index}.lastSyncedAt`]: new Date(),
+    };
   }
-};
 
-export const getGCalEventsSyncPageToken = async (
-  userId: string,
-  gCalendarId: string,
-  session?: ClientSession,
-): Promise<string | undefined> => {
-  const response = await mongoService.sync.findOne(
-    { user: userId, "google.events.gCalendarId": gCalendarId },
-    { session },
-  );
-
-  return response?.google.events.find((e) => e.gCalendarId === gCalendarId)
-    ?.nextPageToken;
-};
-
-export const updateGCalEventsSyncPageToken = async (
-  userId: string,
-  gCalendarId: string,
-  nextPageToken?: string | null,
-  session?: ClientSession,
-) => {
-  const response = await mongoService.sync.findOneAndUpdate(
-    { user: userId, "google.events.gCalendarId": gCalendarId },
-    { $set: { "google.events.$.nextPageToken": nextPageToken } },
-    { upsert: true, session },
+  const response = await mongoService.sync.updateOne(
+    { user: userId },
+    operation,
+    { session, upsert: true },
   );
 
   return response;
-};
-
-/**
- * Update sync tokens and timestamps
- */
-export const updateSync = async (
-  userId: string,
-  gCalendarId: string,
-  prevSyncToken: string,
-  newSyncToken: string | undefined,
-) => {
-  await updateSyncTimeBy("gCalendarId", gCalendarId, userId);
-  await updateSyncTokenIfNeededFor("events", userId, gCalendarId, {
-    prev: prevSyncToken,
-    curr: newSyncToken,
-  });
-};
-
-const updateSyncTokenIfNeededFor = async (
-  resource: "events" | "calendarlist",
-  userId: string,
-  gCalendarId: string,
-  vals: {
-    prev: string;
-    curr: string | undefined;
-  },
-) => {
-  if (vals.curr !== undefined) {
-    if (vals.prev !== vals.curr) {
-      await updateSyncTokenFor(resource, userId, vals.curr, gCalendarId);
-    }
-  }
 };
