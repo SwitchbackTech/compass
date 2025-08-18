@@ -69,7 +69,7 @@ export const App = () => {
       wrappedChildren = (
         <PostHogProvider
           apiKey={ENV_WEB.POSTHOG_KEY as string}
-          options={{ api_host: ENV_WEB.POSTHOG_HOST as string }}
+          options={{ api_host: ENV_WEB.POSTHOG_HOST! }}
         >
           {wrappedChildren}
         </PostHogProvider>
