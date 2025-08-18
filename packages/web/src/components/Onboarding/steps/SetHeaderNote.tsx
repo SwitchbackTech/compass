@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { OnboardingHeaderNoteLocalStorage } from "@web/components/Onboarding/utils";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
   OnboardingFooter,
   OnboardingInputWhite,
@@ -9,8 +9,24 @@ import {
 } from "../components";
 import { OnboardingStepProps } from "../components/Onboarding";
 
-const Input = styled(OnboardingInputWhite)`
+const InputContainer = styled.div`
+  width: 100%;
+  position: relative;
   margin-top: ${({ theme }) => theme.spacing.l};
+  margin-bottom: ${({ theme }) => theme.spacing.l};
+`;
+
+const Input = styled(OnboardingInputWhite)``;
+
+const HelpText = styled(OnboardingText)`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 8px;
+  font-size: ${({ theme }) => theme.text.size.l};
+  color: rgb(87, 193, 255);
+  text-align: center;
 `;
 
 const PLACEHOLDER = "Automate repetitive tasks";
@@ -23,9 +39,21 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
   onPrevious,
 }) => {
   const [headerNote, setHeaderNote] = useState("");
+  const [showHelpText, setShowHelpText] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowHelpText(true);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleNext = () => {
-    OnboardingHeaderNoteLocalStorage.set(headerNote.trim() || PLACEHOLDER);
+    localStorage.setItem(
+      STORAGE_KEYS.HEADER_NOTE,
+      headerNote.trim() || PLACEHOLDER,
+    );
     onNext();
   };
 
@@ -44,11 +72,16 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
         everything else will become easier or unnecessary?
       </OnboardingText>
 
-      <Input
-        placeholder={PLACEHOLDER}
-        value={headerNote}
-        onChange={(e) => setHeaderNote(e.target.value)}
-      />
+      <InputContainer>
+        <Input
+          placeholder={PLACEHOLDER}
+          value={headerNote}
+          onChange={(e) => setHeaderNote(e.target.value)}
+        />
+        {showHelpText && (
+          <HelpText>Fear not, you can always change this later.</HelpText>
+        )}
+      </InputContainer>
 
       <OnboardingFooter
         onSkip={onSkip}
