@@ -23,7 +23,7 @@
     "debug:web": "http-server build/web/",
     "dev:backend": "yarn dev:backend-start",
     "dev:backend -verbose": "export DEBUG=* && yarn dev:backend",
-    "dev:backend-start": "cd packages/backend && cross-env-shell TZ=Etc/UTC ts-node-dev --respawn --pretty --transpile-only -r tsconfig-paths/register src/app.ts",
+    "dev:backend-start": "cd packages/backend && cross-env-shell TZ=Etc/UTC ts-node-dev --respawn --pretty --exit-child --debounce --transpile-only -r tsconfig-paths/register src/app.ts",
     "dev:update": "git checkout main && git pull && yarn",
     "dev:web": "node packages/scripts/src/commands/devWeb.js",
     "lint -f": "cross-env yarn workspaces run lint-fix",
