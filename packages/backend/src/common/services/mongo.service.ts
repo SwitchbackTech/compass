@@ -10,6 +10,7 @@ import {
   ObjectId,
 } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
+import { Schema_CalendarList as Schema_Calendar } from "@core/types/calendar.types";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
@@ -23,6 +24,7 @@ const logger = Logger("app:mongo.service");
 interface InternalClient {
   db: Db;
   client: MongoClient;
+  calendar: Collection<Schema_Calendar>;
   event: Collection<Omit<Schema_Event, "_id">>;
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
@@ -34,6 +36,15 @@ class MongoService {
 
   get db() {
     return this.#internalClient!.db;
+  }
+
+  /**
+   * calendar
+   *
+   * mongo collection
+   */
+  get calendar(): InternalClient["calendar"] {
+    return this.#accessInternalCollectionProps("calendar");
   }
 
   /**
@@ -103,6 +114,7 @@ class MongoService {
     return {
       db,
       client,
+      calendar: db.collection<Schema_Calendar>(Collections.CALENDARLIST),
       event: db.collection<Omit<Schema_Event, "_id">>(Collections.EVENT),
       sync: db.collection<Schema_Sync>(Collections.SYNC),
       user: db.collection<Schema_User>(Collections.USER),
