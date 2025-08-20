@@ -27,6 +27,7 @@ import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
 import syncService from "@backend/sync/services/sync.service";
 import { watchEventsByGcalIds } from "@backend/sync/services/watch/sync.watch";
 import { reInitSyncByIntegration } from "@backend/sync/util/sync.queries";
+import { isUsingHttps } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { Summary_Delete } from "@backend/user/types/user.types";
 
@@ -208,7 +209,9 @@ class UserService {
       calListNextSyncToken,
     );
 
-    const eventWatches = await watchEventsByGcalIds(userId, gCalendarIds, gcal);
+    const eventWatches = await Promise.resolve(isUsingHttps()).then((yes) =>
+      yes ? watchEventsByGcalIds(userId, gCalendarIds, gcal) : [],
+    );
 
     await syncService.importFull(gcal, gCalendarIds, userId);
 
