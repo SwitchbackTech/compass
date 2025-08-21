@@ -22,6 +22,20 @@ export const useDraftEffects = (
   } = setters;
 
   useEffect(() => {
+    if (isDragging || isResizing) {
+      return;
+    }
+
+    // Only skip clearing if we're currently dragging AND the week change was due to drag-to-edge navigation
+    const lastNavigationSource = weekProps.util.getLastNavigationSource();
+    const isDragToEdgeNavigation = lastNavigationSource === "drag-to-edge";
+    const shouldPreserveDuringDrag =
+      (isDragging || isResizing) && isDragToEdgeNavigation;
+
+    if (shouldPreserveDuringDrag) {
+      return;
+    }
+
     setDraft(null);
     setIsDragging(false);
     setIsFormOpen(false);
@@ -30,7 +44,7 @@ export const useDraftEffects = (
     setResizeStatus(null);
     setDateBeingChanged(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekProps.component.week]);
+  }, [weekProps.component.week, isDragging, weekProps.util]);
 
   useEffect(() => {
     if (isResizing) {
