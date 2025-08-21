@@ -17,13 +17,7 @@ import mongoService from "@backend/common/services/mongo.service";
 
 export const createSync = async (
   userId: string,
-  data: {
-    calendarlist: Omit<
-      Schema_Sync["google"]["calendarlist"][0],
-      "lastSyncedAt"
-    >[];
-    events: Payload_Sync_Events[];
-  },
+  data: Schema_Sync["google"],
   session?: ClientSession,
 ) => {
   const result = await mongoService.sync.insertOne(

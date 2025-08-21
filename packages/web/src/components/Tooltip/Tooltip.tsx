@@ -32,7 +32,7 @@ export const TooltipTrigger = forwardRef<
   HTMLProps<HTMLElement> & { asChild?: boolean }
 >(function TooltipTrigger({ children, asChild = false, ...props }, propRef) {
   const context = useTooltipContext();
-
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const childrenRef = (children as any).ref;
   const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
 
