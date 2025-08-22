@@ -1,5 +1,5 @@
 import { Dayjs } from "dayjs";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { toUTCOffset } from "@web/common/utils/web.date.util";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
@@ -9,11 +9,14 @@ import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { Category_View } from "@web/views/Calendar/calendarView.types";
 
+export type WeekNavigationSource = "manual" | "drag-to-edge";
+
 export const useWeek = (today: Dayjs) => {
   const dispatch = useAppDispatch();
 
   const origStart = useMemo(() => today.startOf("week"), [today]);
   const [start, setStartOfView] = useState(origStart);
+  const navigationSourceRef = useRef<WeekNavigationSource>("manual");
   const end = useMemo(() => start.endOf("week"), [start]);
 
   const week = useMemo(() => start.week(), [start]);
@@ -68,19 +71,24 @@ export const useWeek = (today: Dayjs) => {
     );
   }, [dispatch, end, start]);
 
-  const decrementWeek = () => {
+  const decrementWeek = (source: WeekNavigationSource = "manual") => {
+    navigationSourceRef.current = source;
     setStartOfView(start.subtract(7, "day"));
   };
 
   const goToToday = () => {
+    navigationSourceRef.current = "manual";
     if (today.week() !== start.week()) {
       setStartOfView(today.startOf("week"));
     }
   };
 
-  const incrementWeek = () => {
+  const incrementWeek = (source: WeekNavigationSource = "manual") => {
+    navigationSourceRef.current = source;
     setStartOfView(start.add(7, "day"));
   };
+
+  const getLastNavigationSource = () => navigationSourceRef.current;
 
   const weekProps = {
     component: {
@@ -92,7 +100,7 @@ export const useWeek = (today: Dayjs) => {
       weekDays,
     },
     state: { setStartOfView },
-    util: { decrementWeek, goToToday, incrementWeek },
+    util: { decrementWeek, goToToday, incrementWeek, getLastNavigationSource },
   };
   return weekProps;
 };

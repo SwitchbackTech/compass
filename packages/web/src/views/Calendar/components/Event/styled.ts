@@ -68,7 +68,8 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
 
   user-select: none;
   width: ${(props) => props.width}px;
-  z-index: ${ZIndex.LAYER_1};
+  z-index: ${({ isDragging }) =>
+    isDragging ? ZIndex.LAYER_5 : ZIndex.LAYER_1};
 
   &:hover {
     transition: background-color 0.35s linear;
