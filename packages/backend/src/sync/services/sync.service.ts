@@ -7,6 +7,7 @@ import {
   Params_WatchEvents,
   Payload_Sync_Events,
   Payload_Sync_Notif,
+  Resource_Sync,
 } from "@core/types/sync.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
@@ -23,7 +24,6 @@ import {
   pruneSync,
   refreshSync,
 } from "@backend/sync/services/maintain/sync.maintenance";
-import { getIdsFromSyncPayload } from "@backend/sync/services/notify/gcal.notification.util";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
 import {
   deleteWatchData,
@@ -38,6 +38,7 @@ import {
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const logger = Logger("app:sync.service");
+
 class SyncService {
   deleteAllByGcalId = async (gCalendarId: string) => {
     const delRes = await mongoService.db
@@ -63,31 +64,51 @@ class SyncService {
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
     const { channelId, resourceId, resourceState } = payload;
+
     if (resourceState !== "exists") {
       logger.info(`Sync initialized for channelId: ${payload.channelId}`);
       return "INITIALIZED";
     }
 
-    const { userId, gCalendarId } = await getIdsFromSyncPayload(
-      channelId,
-      resourceId,
-    );
+    const sync = await getSync({ channelId, resourceId });
+
+    if (!sync) {
+      throw error(
+        SyncError.NoSyncRecordForUser,
+        `Notification not handled because no sync record found with channel: ${payload.channelId}`,
+      );
+    }
+
+    const userId = sync.user;
+    const channel = sync.google.events.find((e) => e.channelId === channelId)!;
+    const calendarId = channel.gCalendarId;
+    const nextSyncToken = channel.nextSyncToken;
+
+    if (!nextSyncToken) {
+      throw error(
+        SyncError.NoSyncToken,
+        `Notification not handled because no sync token found for calendarId: ${calendarId}`,
+      );
+    }
 
     // Get the Google Calendar client
     const gcal = await getGcalClient(userId);
 
     // Create and use the notification handler
-    const handler = new GCalNotificationHandler(gcal, userId);
-    await handler.handleNotification({
-      calendarId: gCalendarId,
-      resourceId: resourceId,
-    });
+    const handler = new GCalNotificationHandler(
+      gcal,
+      userId,
+      calendarId,
+      nextSyncToken,
+    );
+
+    await handler.handleNotification();
 
     const wsResult = webSocketServer.handleBackgroundCalendarChange(userId);
+
     const result = wsResult?.includes(RESULT_NOTIFIED_CLIENT)
       ? "PROCESSED AND NOTIFIED CLIENT"
       : "PROCESSED IN BACKGROUND";
-    console.log(result, " (", userId, ")");
 
     return result;
   };
@@ -116,7 +137,7 @@ class SyncService {
 
           if (isUsingHttps()) {
             await updateSync(
-              "events",
+              Resource_Sync.EVENTS,
               userId,
               gCalId,
               { nextSyncToken },
@@ -175,7 +196,7 @@ class SyncService {
       gcal,
     );
 
-    await updateSync("events", userId, payload.gCalendarId);
+    await updateSync(Resource_Sync.EVENTS, userId, payload.gCalendarId);
 
     return watchResult;
   };
@@ -276,11 +297,12 @@ class SyncService {
       throw error(SyncError.NoResourceId, "Calendar Watch Failed");
     }
 
-    const sync = await updateSync("events", userId, params.gCalendarId, {
-      channelId,
-      resourceId,
-      expiration,
-    });
+    const sync = await updateSync(
+      Resource_Sync.EVENTS,
+      userId,
+      params.gCalendarId,
+      { channelId, resourceId, expiration },
+    );
 
     return sync;
   };
@@ -296,7 +318,8 @@ class SyncService {
         { gCalendarId: gInfo.gCalId },
         gcal,
       );
-      await updateSync("events", gInfo.gCalId, userId);
+
+      await updateSync(Resource_Sync.EVENTS, gInfo.gCalId, userId);
     });
 
     await Promise.all(eventWatches);
@@ -319,25 +342,25 @@ class SyncService {
 
     try {
       const stopResult = await gcal.channels.stop(params);
+
       if (stopResult.status !== 204) {
         throw error(GenericError.NotSure, "Stop Failed");
       }
 
-      await deleteWatchData(userId, "events", channelId);
+      await deleteWatchData({ events: { channelId, resourceId } });
 
-      return {
-        channelId: channelId,
-        resourceId: resourceId,
-      };
+      return { channelId, resourceId };
     } catch (e) {
       const _e = e as GaxiosError;
       const code = (_e.code as unknown as number) || 0;
 
       if (_e.code === "404" || code === 404) {
-        await deleteWatchData(userId, "events", channelId);
+        await deleteWatchData({ events: { channelId, resourceId } });
+
         logger.warn(
           "Channel no longer exists. Corresponding sync record deleted",
         );
+
         return {};
       }
 

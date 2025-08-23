@@ -38,7 +38,12 @@ export interface Payload_Sync_Refresh {
   payloads: Payload_Sync_Events[];
 }
 
-export type Resource_Sync = "calendarlist" | "events" | "settings";
+export enum Resource_Sync {
+  CALENDAR = "calendarlist",
+  EVENTS = "events",
+  SETTINGS = "settings",
+}
+
 export interface Result_Import_Gcal {
   total: number;
   nextSyncToken: string;

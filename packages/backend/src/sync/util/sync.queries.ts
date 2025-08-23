@@ -1,4 +1,5 @@
 import { ClientSession, UpdateFilter, UpdateResult } from "mongodb";
+import zod from "zod";
 import { Origin } from "@core/constants/core.constants";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import {
@@ -6,14 +7,45 @@ import {
   Resource_Sync,
   Schema_Sync,
 } from "@core/types/sync.types";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
 import { getPrimaryGcalId } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 
 /**
  * Helper funcs that predominately query/update the DB
  */
+
+export const resourceValidationSchema = zod
+  .enum([Resource_Sync.EVENTS, Resource_Sync.CALENDAR])
+  .default(Resource_Sync.EVENTS);
+
+export const syncFilterValidationSchema = zod
+  .object({
+    userId: zod.string(),
+    resource: resourceValidationSchema,
+    gCalendarId: zod.string().optional(),
+  })
+  .transform(({ userId, resource, gCalendarId }) => ({
+    user: userId,
+    ...(gCalendarId ? { [`google.${resource}.gCalendarId`]: gCalendarId } : {}),
+  }));
+
+export const channelFilterValidationSchema = zod
+  .object({
+    resource: resourceValidationSchema,
+    channelId: zod.string(),
+    resourceId: zod.string().optional(),
+    gCalendarId: zod.string().optional(),
+  })
+  .transform(({ resource, channelId, resourceId, gCalendarId }) => ({
+    [`google.${resource}.channelId`]: channelId,
+    ...(resourceId ? { [`google.${resource}.resourceId`]: resourceId } : {}),
+    ...(gCalendarId ? { [`google.${resource}.gCalendarId`]: gCalendarId } : {}),
+  }));
+
+export const getSyncParamsValidationSchema = zod.union([
+  syncFilterValidationSchema,
+  channelFilterValidationSchema,
+]);
 
 export const createSync = async (
   userId: string,
@@ -77,54 +109,51 @@ export const deleteAllSyncData = async (userId: string) => {
 };
 
 export const deleteWatchData = async (
-  userId: string,
-  resource: Resource_Sync,
-  channelId: string,
+  params:
+    | Record<Resource_Sync.CALENDAR, { userId: string; gCalendarId: string }>
+    | Record<
+        Resource_Sync.EVENTS,
+        { channelId: string; resourceId?: string; gCalendarId?: string }
+      >,
 ) => {
-  return await mongoService.sync.updateOne(
-    { user: userId, [`google.${resource}.channelId`]: channelId },
-    {
-      $unset: {
-        [`google.${resource}.$.channelId`]: "",
-        [`google.${resource}.$.expiration`]: "",
-      },
-    },
-  );
+  const [resource, filter] = Object.entries(params)[0]!;
+
+  const watchFilter = getSyncParamsValidationSchema.parse({
+    resource,
+    ...filter,
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { userId, ...pullFilter } = filter;
+
+  return await mongoService.sync.updateOne(watchFilter, {
+    $pull: { [`google.${resource}`]: pullFilter },
+  });
 };
 
-export const getSync = async (params: {
-  userId?: string;
-  gCalendarId?: string;
-  resourceId?: string;
-}) => {
-  let filter = {};
-
-  if (params.userId) {
-    filter = { user: params.userId };
-  }
-
-  if (params.gCalendarId) {
-    filter = { ...filter, "google.events.gCalendarId": params.gCalendarId };
-  }
-
-  if (params.resourceId) {
-    filter = { ...filter, "google.events.resourceId": params.resourceId };
-  }
-
-  if (Object.keys(filter).length === 0) {
-    // prevents Mongo from returning the first
-    // sync record in the DB and Compass
-    // operating on the wrong user's sync
-    error(GenericError.DeveloperError, "Sync record could not be retrieved");
-  }
-
+export const getSync = async (
+  params:
+    | { userId: string }
+    | {
+        userId: string;
+        gCalendarId: string;
+        resource?: Exclude<Resource_Sync, "settings">;
+      }
+    | {
+        channelId: string;
+        resourceId?: string;
+        gCalendarId?: string;
+        resource?: Exclude<Resource_Sync, "settings">;
+      },
+) => {
+  const filter = getSyncParamsValidationSchema.parse(params);
   const sync = await mongoService.sync.findOne(filter);
 
   return sync;
 };
 
 export const getSyncByToken = async (syncToken: string) => {
-  const resources = ["calendarlist", "events"];
+  const resources = [Resource_Sync.CALENDAR, Resource_Sync.EVENTS];
 
   for (const r of resources) {
     const match = await mongoService.sync.findOne({
