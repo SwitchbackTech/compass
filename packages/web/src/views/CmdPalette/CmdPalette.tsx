@@ -202,6 +202,13 @@ const CmdPalette = ({
             href: "https://www.compasscalendar.com/privacy",
             target: "_blank",
           },
+          {
+            id: "donate",
+            children: "Donate",
+            icon: "CreditCardIcon",
+            href: "https://buy.stripe.com/cNi8wQ6pE9gyejz6hZ9sk00",
+            target: "_blank",
+          },
         ],
       },
     ],
