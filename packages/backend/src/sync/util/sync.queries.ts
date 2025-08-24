@@ -47,32 +47,6 @@ export const getSyncParamsValidationSchema = zod.union([
   channelFilterValidationSchema,
 ]);
 
-export const createSync = async (
-  userId: string,
-  data: Schema_Sync["google"],
-  session?: ClientSession,
-) => {
-  const result = await mongoService.sync.insertOne(
-    {
-      user: userId,
-      google: {
-        ...data,
-        calendarlist: data.calendarlist.map((c) => ({
-          ...c,
-          lastSyncedAt: new Date(),
-        })),
-        events: data.events.map((e) => ({
-          ...e,
-          lastSyncedAt: new Date(),
-        })),
-      },
-    },
-    { session },
-  );
-
-  return result;
-};
-
 export const reInitSyncByIntegration = async (
   integration: "google",
   userId: string,
