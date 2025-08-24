@@ -10,7 +10,7 @@ import {
   WithoutCompassId,
 } from "@core/types/event.types";
 import { gCalendar, gSchema$Event, gSchema$EventBase } from "@core/types/gcal";
-import { Schema_Sync } from "@core/types/sync.types";
+import { Resource_Sync, Schema_Sync } from "@core/types/sync.types";
 import { isBaseGCalEvent } from "@core/util/event/gcal.event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
@@ -371,7 +371,7 @@ export class SyncImport {
       );
 
       await updateSync(
-        "events",
+        Resource_Sync.EVENTS,
         userId,
         calendarId,
         { nextPageToken: nextPageToken ?? undefined },
@@ -498,7 +498,7 @@ export class SyncImport {
     }
 
     await updateSync(
-      "calendarlist",
+      Resource_Sync.CALENDAR,
       userId,
       sync.google.calendarlist[0]!.gCalendarId,
       { nextSyncToken: calListNextSyncToken },
@@ -569,7 +569,7 @@ export class SyncImport {
     const syncToken = nextSyncToken ?? initialSyncToken;
 
     await updateSync(
-      "events",
+      Resource_Sync.EVENTS,
       userId,
       gCalendarId,
       syncToken ? { nextSyncToken: syncToken } : {},

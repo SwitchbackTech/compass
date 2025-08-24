@@ -4,11 +4,8 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockRegularGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
-import { getSync } from "@backend/sync/util/sync.queries";
 
 // Mock dependencies
 
@@ -19,19 +16,20 @@ jest.mock("@backend/common/services/gcal/gcal.service", () => ({
   },
 }));
 
-jest.mock("@backend/sync/util/sync.queries", () => ({
-  getSync: jest.fn(),
-}));
-
 describe("GCalNotificationHandler", () => {
   let handler: GCalNotificationHandler;
   let mockGcal: gCalendar;
   let mockUserId: string;
+  let mockCalendarId: string;
+  let mockSyncToken: string;
 
   beforeAll(setupTestDb);
 
   beforeEach(() => {
     mockUserId = "test-user-id";
+    mockCalendarId = "test-calendar-id";
+    mockSyncToken = "test-sync-token";
+
     mockGcal = {
       events: {
         list: jest.fn(),
@@ -43,30 +41,17 @@ describe("GCalNotificationHandler", () => {
       },
     } as unknown as gCalendar;
 
-    handler = new GCalNotificationHandler(mockGcal, mockUserId);
+    handler = new GCalNotificationHandler(
+      mockGcal,
+      mockUserId,
+      mockCalendarId,
+      mockSyncToken,
+    );
   });
 
   afterAll(cleanupTestDb);
 
   describe("handleNotification", () => {
-    const mockPayload = {
-      calendarId: "test-calendar-id",
-      resourceId: "test-channel-id",
-    };
-
-    const mockSync = {
-      user: mockUserId,
-      google: {
-        events: [
-          {
-            channelId: "test-channel-id",
-            gCalendarId: "test-calendar-id",
-            nextSyncToken: "test-sync-token",
-          },
-        ],
-      },
-    };
-
     const mockEvents = [
       mockRegularGcalEvent({
         summary: "Standalone Gcal",
@@ -75,20 +60,16 @@ describe("GCalNotificationHandler", () => {
 
     it("should process events after changes", async () => {
       // Setup
-      (getSync as jest.Mock).mockResolvedValue(mockSync);
       (gcalService.getEvents as jest.Mock).mockResolvedValue({
         data: { items: mockEvents },
       });
 
       // Execute
-      const result = await handler.handleNotification(mockPayload);
+      const result = await handler.handleNotification();
 
       // Verify
-      expect(getSync).toHaveBeenCalledWith({
-        resourceId: mockPayload.resourceId,
-      });
       expect(gcalService.getEvents).toHaveBeenCalledWith(mockGcal, {
-        calendarId: mockPayload.calendarId,
+        calendarId: mockCalendarId,
         syncToken: "test-sync-token",
       });
       expect(result.summary).toEqual("PROCESSED");
@@ -96,44 +77,13 @@ describe("GCalNotificationHandler", () => {
 
     it("should return IGNORED when no changes found", async () => {
       // Setup
-      (getSync as jest.Mock).mockResolvedValue(mockSync);
       (gcalService.getEvents as jest.Mock).mockResolvedValue({
         data: { items: [] },
       });
 
       // Execute and verify
-      const result = await handler.handleNotification(mockPayload);
+      const result = await handler.handleNotification();
       expect(result.summary).toEqual("IGNORED");
-    });
-
-    it("should throw error when no sync record found", async () => {
-      // Setup
-      (getSync as jest.Mock).mockResolvedValue(null);
-
-      // Execute and verify
-      await expect(handler.handleNotification(mockPayload)).rejects.toEqual(
-        error(SyncError.NoSyncRecordForUser, expect.any(String)),
-      );
-    });
-
-    it("should throw error when no sync token found", async () => {
-      // Setup
-      (getSync as jest.Mock).mockResolvedValue({
-        ...mockSync,
-        google: {
-          events: [
-            {
-              channelId: "test-channel-id",
-              gCalendarId: "test-calendar-id",
-            },
-          ],
-        },
-      });
-
-      // Execute and verify
-      await expect(handler.handleNotification(mockPayload)).rejects.toEqual(
-        error(SyncError.NoSyncToken, expect.any(String)),
-      );
     });
   });
 });

@@ -17,7 +17,7 @@ import userService from "@backend/user/services/user.service";
 const logger = Logger("app:sync.controller");
 
 export class SyncController {
-  handleGoogleNotification = async (req: Request, res: Response) => {
+  static handleGoogleNotification = async (req: Request, res: Response) => {
     try {
       const syncPayload = {
         channelId: req.headers["x-goog-channel-id"],
@@ -30,8 +30,10 @@ export class SyncController {
 
       res.promise(response);
     } catch (e) {
+      const channelId = req.headers["x-goog-channel-id"] as string;
       const resourceId = req.headers["x-goog-resource-id"] as string;
-      const sync = await getSync({ resourceId });
+
+      const sync = await getSync({ channelId, resourceId });
       if (!sync || !sync.user) {
         logger.error(
           `Sync error occurred, but couldnt find user based on this resourceId: ${resourceId}`,
@@ -81,7 +83,7 @@ export class SyncController {
     }
   };
 
-  maintain = async (_req: Request, res: Response) => {
+  static maintain = async (_req: Request, res: Response) => {
     try {
       const result = await syncService.runMaintenance();
       res.promise(result);
@@ -140,5 +142,3 @@ export class SyncController {
     res.status(Status.NO_CONTENT).send();
   };
 }
-
-export default new SyncController();
