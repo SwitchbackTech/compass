@@ -176,14 +176,14 @@ const CmdPalette = ({
         items: [
           {
             id: "code",
-            children: "Code",
+            children: "View Code",
             icon: "CodeBracketIcon",
             href: "https://github.com/SwitchbackTech/compass",
             target: "_blank",
           },
           {
             id: "discord",
-            children: "Discord",
+            children: "Join Discord",
             icon: "ChatBubbleLeftRightIcon",
             href: "https://www.discord.gg/H3DVMnKmUd",
             target: "_blank",
