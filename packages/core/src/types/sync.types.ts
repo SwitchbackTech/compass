@@ -82,7 +82,7 @@ export interface Schema_Sync {
     calendarlist: {
       gCalendarId: string;
       nextSyncToken: string;
-      lastSyncedAt?: Date;
+      lastSyncedAt: Date;
     }[];
     events: Payload_Sync_Events[];
   };
