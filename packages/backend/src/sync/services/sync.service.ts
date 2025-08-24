@@ -62,6 +62,45 @@ class SyncService {
     return response;
   };
 
+  async cleanupStaleWatchChannel({
+    channelId,
+    resourceId,
+  }: Payload_Sync_Notif): Promise<boolean> {
+    const syncs = await mongoService.sync
+      .find({
+        "google.events.resourceId": resourceId,
+        "google.events.channelId": { $ne: channelId },
+      })
+      .toArray();
+
+    const deleted = await Promise.all(
+      syncs.map(async (sync): Promise<boolean> => {
+        if (!sync || !sync.user) {
+          logger.error(
+            `Stale watch cleanup failed. Couldn't find user based on this resourceId: ${resourceId}`,
+          );
+
+          return false;
+        }
+
+        const userId = sync.user;
+        const result = await this.stopWatch(userId, channelId, resourceId);
+
+        if (result.channelId) {
+          logger.warn(
+            `Cleaned up stale watch for channelId: ${channelId} with resourceId: ${resourceId}`,
+          );
+
+          return true;
+        }
+
+        return false;
+      }),
+    );
+
+    return deleted.some((d) => d);
+  }
+
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
     const { channelId, resourceId, resourceState } = payload;
 
@@ -73,6 +112,11 @@ class SyncService {
     const sync = await getSync({ channelId, resourceId });
 
     if (!sync) {
+      // clean up stale watch channel;
+      const cleanedUp = await this.cleanupStaleWatchChannel(payload);
+
+      if (cleanedUp) return "IGNORED";
+
       throw error(
         SyncError.NoSyncRecordForUser,
         `Notification not handled because no sync record found with channel: ${payload.channelId}`,
@@ -196,8 +240,6 @@ class SyncService {
       gcal,
     );
 
-    await updateSync(Resource_Sync.EVENTS, userId, payload.gCalendarId);
-
     return watchResult;
   };
 
@@ -319,7 +361,7 @@ class SyncService {
         gcal,
       );
 
-      await updateSync(Resource_Sync.EVENTS, gInfo.gCalId, userId);
+      await updateSync(Resource_Sync.EVENTS, userId, gInfo.gCalId);
     });
 
     await Promise.all(eventWatches);

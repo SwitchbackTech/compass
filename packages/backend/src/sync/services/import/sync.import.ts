@@ -497,18 +497,23 @@ export class SyncImport {
       return sync.google.events;
     }
 
-    await updateSync(
-      Resource_Sync.CALENDAR,
-      userId,
-      sync.google.calendarlist[0]!.gCalendarId,
-      { nextSyncToken: calListNextSyncToken },
-      undefined,
+    await Promise.all(
+      gCalendarIds.map((gCalendarId) =>
+        updateSync(
+          Resource_Sync.CALENDAR,
+          userId,
+          gCalendarId,
+          { nextSyncToken: calListNextSyncToken },
+          undefined,
+        ),
+      ),
     );
 
     const eventWatchPayloads = assembleEventWatchPayloads(
       sync as Schema_Sync,
       gCalendarIds,
     );
+
     await syncService.startWatchingGcalEventsById(
       userId,
       eventWatchPayloads, // Watch all selected calendars
