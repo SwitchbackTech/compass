@@ -72,7 +72,7 @@ export interface Schema_Event {
   recurrence?: {
     rule?: string[];
     eventId?: string;
-  };
+  } | null;
   startDate?: string;
   title?: string;
   updatedAt?: Date | string;

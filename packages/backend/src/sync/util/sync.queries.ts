@@ -123,11 +123,11 @@ export const deleteWatchData = async (
     ...filter,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { userId, ...pullFilter } = filter;
-
   return await mongoService.sync.updateOne(watchFilter, {
-    $pull: { [`google.${resource}`]: pullFilter },
+    $unset: {
+      [`google.${resource}.$.channelId`]: "",
+      [`google.${resource}.$.expiration`]: "",
+    },
   });
 };
 

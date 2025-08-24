@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { Resource_Sync } from "@core/types/sync.types";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
@@ -12,7 +13,6 @@ import {
   getSync,
   updateSync,
 } from "@backend/sync/util/sync.queries";
-import { Resource_Sync } from "../../../../core/src/types/sync.types";
 
 describe("sync.queries: ", () => {
   describe("nextPageToken", () => {
@@ -402,7 +402,17 @@ describe("sync.queries: ", () => {
       expect(updatedSync?.google.events).toBeUndefined();
 
       expect(updatedSync).toEqual(
-        expect.objectContaining({ user: userId, google: { calendarlist: [] } }),
+        expect.objectContaining({
+          user: userId,
+          google: {
+            calendarlist: [
+              expect.objectContaining({
+                gCalendarId: calendarId,
+                lastSyncedAt: expect.any(Date),
+              }),
+            ],
+          },
+        }),
       );
     });
 
@@ -447,7 +457,18 @@ describe("sync.queries: ", () => {
       expect(updatedSync?.google.calendarlist).toBeUndefined();
 
       expect(updatedSync).toEqual(
-        expect.objectContaining({ user: userId, google: { events: [] } }),
+        expect.objectContaining({
+          user: userId,
+          google: {
+            events: [
+              expect.objectContaining({
+                gCalendarId: calendarId,
+                resourceId,
+                lastSyncedAt: expect.any(Date),
+              }),
+            ],
+          },
+        }),
       );
     });
   });

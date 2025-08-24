@@ -2,7 +2,10 @@ import { WithId } from "mongodb";
 import { randomUUID } from "node:crypto";
 import { DefaultEventsMap } from "socket.io";
 import { Socket } from "socket.io-client";
+import { faker } from "@faker-js/faker";
 import { EVENT_CHANGED } from "@core/constants/websocket.constants";
+import { Status } from "@core/errors/status.codes";
+import { Resource_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
 import { isBase, isExistingInstance } from "@core/util/event/event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -19,9 +22,11 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { waitUntilEvent } from "@backend/common/helpers/common.util";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
+import { updateSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
 
 describe("SyncController", () => {
@@ -70,15 +75,71 @@ describe("SyncController", () => {
     await baseDriver.listen();
   });
 
+  beforeEach(cleanupCollections);
+
   afterAll(async () => {
     await baseDriver.teardown();
     await cleanupTestDb();
   });
 
+  describe("handleGoogleNotification", () => {
+    it("should throw error when no sync record found", async () => {
+      const response = await syncDriver.handleGoogleNotification(
+        {
+          channelId: faker.string.uuid(),
+          resourceId: faker.string.uuid(),
+          resourceState: "exists",
+          expiration: faker.date.future().toISOString(),
+        },
+        Status.BAD_REQUEST,
+      );
+
+      expect(response.body).toEqual(SyncError.NoSyncRecordForUser);
+    });
+
+    it("should ignore notification when no sync token found", async () => {
+      // Setup
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const calendarId = "test-calendar";
+      const channelId = faker.string.uuid();
+      const resourceId = faker.string.uuid();
+      const expiration = faker.date.future().toISOString();
+
+      await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
+        channelId,
+        resourceId,
+        expiration,
+        nextSyncToken: undefined,
+      });
+
+      await syncDriver.handleGoogleNotification(
+        { channelId, resourceId, resourceState: "exists", expiration },
+        Status.NO_CONTENT,
+      );
+    });
+
+    it("should cleanup stale gcal watches for unknown channels if resourceId exists", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const calendarId = "test-calendar";
+      const channelId = faker.string.uuid();
+      const resourceId = "test-resource-id";
+      const expiration = faker.date.future().toISOString();
+
+      await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
+        resourceId,
+      });
+
+      await syncDriver.handleGoogleNotification(
+        { channelId, resourceId, resourceState: "exists", expiration },
+        Status.OK,
+      );
+    });
+  });
+
   describe("importGCal: ", () => {
     describe("Imported Data: ", () => {
-      beforeEach(cleanupCollections);
-
       it("should import the first instance of a recurring event (and the base)", async () => {
         // Importing both the base and first instance helps us find the series recurrence rule.
         // To prevent duplicates in the UI, the GET API will not return the base event
@@ -391,8 +452,6 @@ describe("SyncController", () => {
     });
 
     describe("Frontend Notifications", () => {
-      beforeEach(cleanupCollections);
-
       it("should notify the frontend that the import has started", async () => {
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
