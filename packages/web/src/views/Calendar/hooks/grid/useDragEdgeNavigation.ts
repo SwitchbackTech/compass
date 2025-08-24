@@ -1,4 +1,6 @@
 import { MutableRefObject, useEffect, useRef, useState } from "react";
+import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
+import { getElemById } from "@web/common/utils/grid.util";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { WeekProps } from "../useWeek";
 
@@ -27,8 +29,8 @@ export const useDragEdgeNavigation = (
       return;
     }
 
-    // Only handle timed events (not all-day events)
-    if (state.draft?.isAllDay !== false) return;
+    // Handle both timed and all-day events
+    if (!state.draft) return;
 
     const updateMousePosition = (event: MouseEvent) => {
       setMousePosition({ x: event.clientX, y: event.clientY });
@@ -39,19 +41,25 @@ export const useDragEdgeNavigation = (
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
     };
-  }, [state.isDragging, state.draft?.isAllDay]);
+  }, [state.isDragging, state.draft]);
 
   // Check for edge proximity and trigger navigation
   useEffect(() => {
-    if (
-      !mainGridRef.current ||
-      !state.isDragging ||
-      state.draft?.isAllDay !== false
-    ) {
+    if (!state.isDragging || !state.draft) {
       return;
     }
 
-    const container = mainGridRef.current;
+    // Use appropriate container based on event type
+    const isAllDay = state.draft.isAllDay;
+    const container = isAllDay
+      ? getElemById(ID_GRID_ALLDAY_ROW)
+      : mainGridRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    console.log("mousePosition", mousePosition);
     const { left, right } = container.getBoundingClientRect();
     const { x } = mousePosition;
 
@@ -91,12 +99,7 @@ export const useDragEdgeNavigation = (
         navigationTimeoutRef.current = null;
       }
     };
-  }, [
-    state.isDragging,
-    mousePosition.x,
-    weekProps.util,
-    state.draft?.isAllDay,
-  ]);
+  }, [state.isDragging, mousePosition.x, weekProps.util, state.draft]);
 
   // Cleanup on unmount
   useEffect(() => {

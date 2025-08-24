@@ -3,6 +3,7 @@ import React, { FC } from "react";
 import { AllDayRow } from "@web/views/Calendar/components/Grid/AllDayRow";
 import { MainGrid } from "@web/views/Calendar/components/Grid/MainGrid";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { useDragEdgeNavigation } from "@web/views/Calendar/hooks/grid/useDragEdgeNavigation";
 import { Refs_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -25,6 +26,9 @@ export const Grid: FC<Props> = ({
   weekProps,
 }) => {
   const { allDayRef, mainGridRef } = gridRefs;
+
+  // Handle drag-to-edge navigation for both timed and all-day events
+  useDragEdgeNavigation(mainGridRef, weekProps);
 
   return (
     <>
