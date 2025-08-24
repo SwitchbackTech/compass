@@ -189,20 +189,6 @@ const CmdPalette = ({
             target: "_blank",
           },
           {
-            id: "terms",
-            children: "Terms",
-            icon: "DocumentTextIcon",
-            href: "https://www.compasscalendar.com/terms",
-            target: "_blank",
-          },
-          {
-            id: "privacy-policy",
-            children: "Privacy Policy",
-            icon: "LockClosedIcon",
-            href: "https://www.compasscalendar.com/privacy",
-            target: "_blank",
-          },
-          {
             id: "donate",
             children: "Donate",
             icon: "CreditCardIcon",
