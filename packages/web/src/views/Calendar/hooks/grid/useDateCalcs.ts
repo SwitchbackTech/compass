@@ -51,13 +51,18 @@ export const useDateCalcs = (
 
   const getDayNumberByX = (x: number) => {
     let dayNumber = 0;
-    measurements.colWidths.reduce((prev, width, index) => {
+    const totalWidth = measurements.colWidths.reduce((prev, width, index) => {
       if (x >= prev && x < prev + width) {
         dayNumber = index;
       }
 
       return prev + width;
     }, 0);
+
+    // If x is beyond the rightmost column, set to last day (Saturday = 6)
+    if (x >= totalWidth) {
+      dayNumber = measurements.colWidths.length - 1;
+    }
 
     return dayNumber;
   };

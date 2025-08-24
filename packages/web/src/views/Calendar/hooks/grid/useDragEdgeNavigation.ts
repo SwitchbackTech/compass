@@ -50,7 +50,6 @@ export const useDragEdgeNavigation = (
     ) {
       return;
     }
-    console.log("mousePosition", mousePosition);
 
     const container = mainGridRef.current;
     const { left, right } = container.getBoundingClientRect();
@@ -60,10 +59,8 @@ export const useDragEdgeNavigation = (
 
     // Determine which edge we're near
     if (x < left + EDGE_THRESHOLD) {
-      console.log("left");
       currentEdge = "left";
     } else if (x > right - EDGE_THRESHOLD) {
-      console.log("right");
       currentEdge = "right";
     }
 
@@ -78,7 +75,6 @@ export const useDragEdgeNavigation = (
 
     // Start navigation timer if we're at an edge and don't already have a timer
     if (currentEdge && !navigationTimeoutRef.current) {
-      console.log("start navigation");
       navigationTimeoutRef.current = setTimeout(() => {
         if (currentEdge === "left") {
           weekProps.util.decrementWeek("drag-to-edge");
