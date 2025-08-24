@@ -148,25 +148,12 @@ const CmdPalette = ({
               util.goToToday();
             },
           },
-          {
-            id: "report-bug",
-            children: "Report Bug",
-            icon: "BugAntIcon",
-            href: "https://github.com/SwitchbackTech/compass/issues/new?assignees=&labels=bug&projects=&template=2-Bug_report.md&title=",
-            target: "_blank",
-          },
+
           {
             id: "log-out",
             children: "Log Out [z]",
             icon: "ArrowRightOnRectangleIcon",
             onClick: () => navigate(ROOT_ROUTES.LOGOUT),
-          },
-          {
-            id: "share-feedback",
-            children: "Share Feedback",
-            icon: "EnvelopeOpenIcon",
-            href: "mailto:tyler@switchback.tech",
-            target: "_blank",
           },
         ],
       },
@@ -179,6 +166,20 @@ const CmdPalette = ({
             children: "View Code",
             icon: "CodeBracketIcon",
             href: "https://github.com/SwitchbackTech/compass",
+            target: "_blank",
+          },
+          {
+            id: "report-bug",
+            children: "Report Bug",
+            icon: "BugAntIcon",
+            href: "https://github.com/SwitchbackTech/compass/issues/new?assignees=&labels=bug&projects=&template=2-Bug_report.md&title=",
+            target: "_blank",
+          },
+          {
+            id: "share-feedback",
+            children: "Share Feedback",
+            icon: "EnvelopeOpenIcon",
+            href: "mailto:tyler@switchback.tech",
             target: "_blank",
           },
           {
