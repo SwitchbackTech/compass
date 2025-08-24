@@ -10,7 +10,7 @@ import {
   WithoutCompassId,
 } from "@core/types/event.types";
 import { gCalendar, gSchema$Event, gSchema$EventBase } from "@core/types/gcal";
-import { Schema_Sync } from "@core/types/sync.types";
+import { Resource_Sync, Schema_Sync } from "@core/types/sync.types";
 import { isBaseGCalEvent } from "@core/util/event/gcal.event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
@@ -371,7 +371,7 @@ export class SyncImport {
       );
 
       await updateSync(
-        "events",
+        Resource_Sync.EVENTS,
         userId,
         calendarId,
         { nextPageToken: nextPageToken ?? undefined },
@@ -497,18 +497,23 @@ export class SyncImport {
       return sync.google.events;
     }
 
-    await updateSync(
-      "calendarlist",
-      userId,
-      sync.google.calendarlist[0]!.gCalendarId,
-      { nextSyncToken: calListNextSyncToken },
-      undefined,
+    await Promise.all(
+      gCalendarIds.map((gCalendarId) =>
+        updateSync(
+          Resource_Sync.CALENDAR,
+          userId,
+          gCalendarId,
+          { nextSyncToken: calListNextSyncToken },
+          undefined,
+        ),
+      ),
     );
 
     const eventWatchPayloads = assembleEventWatchPayloads(
       sync as Schema_Sync,
       gCalendarIds,
     );
+
     await syncService.startWatchingGcalEventsById(
       userId,
       eventWatchPayloads, // Watch all selected calendars
@@ -569,7 +574,7 @@ export class SyncImport {
     const syncToken = nextSyncToken ?? initialSyncToken;
 
     await updateSync(
-      "events",
+      Resource_Sync.EVENTS,
       userId,
       gCalendarId,
       syncToken ? { nextSyncToken: syncToken } : {},

@@ -1,11 +1,10 @@
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import { SyncError } from "@backend/common/errors/sync/sync.errors";
+import { Resource_Sync } from "@core/types/sync.types";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { GcalSyncProcessor } from "@backend/sync/services/sync/gcal.sync.processor";
 import { Summary_Sync } from "@backend/sync/sync.types";
-import { getSync, updateSync } from "@backend/sync/util/sync.queries";
+import { updateSync } from "@backend/sync/util/sync.queries";
 
 const logger = Logger("app:gcal.notification.handler");
 
@@ -13,20 +12,15 @@ export class GCalNotificationHandler {
   constructor(
     private gcal: gCalendar,
     private userId: string,
+    private calendarId: string,
+    private nextSyncToken: string,
   ) {}
 
   /**
    * Handle a Google Calendar notification
    */
-  async handleNotification(payload: {
-    calendarId: string;
-    resourceId: string;
-  }): Promise<Summary_Sync> {
-    const nextSyncToken = await this.getNextSyncTokenForCalendar(payload);
-    const { hasChanges, changes } = await this.getLatestChanges(
-      payload.calendarId,
-      nextSyncToken,
-    );
+  async handleNotification(): Promise<Summary_Sync> {
+    const { hasChanges, changes } = await this.getLatestChanges();
 
     if (hasChanges) {
       const processor = new GcalSyncProcessor(this.userId);
@@ -42,10 +36,10 @@ export class GCalNotificationHandler {
   /**
    * Get the latest changes from Google Calendar using a sync token
    */
-  private async getLatestChanges(calendarId: string, syncToken: string) {
+  private async getLatestChanges() {
     const response = await gcalService.getEvents(this.gcal, {
-      calendarId,
-      syncToken,
+      calendarId: this.calendarId,
+      syncToken: this.nextSyncToken,
     });
 
     const nextSyncToken = response.data.nextSyncToken;
@@ -54,50 +48,26 @@ export class GCalNotificationHandler {
     console.log(JSON.stringify(response.data, null, 2));
 
     // If the nextSyncToken matches our current syncToken, we've already processed these changes
-    if (nextSyncToken === syncToken) {
+    if (nextSyncToken === this.nextSyncToken) {
       logger.info(
-        `Skipping notification - changes already processed for calendar ${calendarId}`,
+        `Skipping notification - changes already processed for calendar ${this.calendarId}`,
       );
       return { hasChanges: false, changes: [] };
     }
 
     const changes = response.data.items;
     if (!changes || changes.length === 0) {
-      logger.info(`No changes found for calendar ${calendarId}`);
+      logger.info(`No changes found for calendar ${this.calendarId}`);
       return { hasChanges: false, changes: [] };
     }
 
     // Update the sync token in the database
     if (nextSyncToken) {
-      await updateSync("events", this.userId, calendarId, { nextSyncToken });
+      await updateSync(Resource_Sync.EVENTS, this.userId, this.calendarId, {
+        nextSyncToken,
+      });
     }
 
     return { hasChanges: true, changes };
-  }
-
-  private async getNextSyncTokenForCalendar(payload: {
-    calendarId: string;
-    resourceId: string;
-  }) {
-    const sync = await getSync({ resourceId: payload.resourceId });
-    if (!sync) {
-      throw error(
-        SyncError.NoSyncRecordForUser,
-        `Notification not handled because no sync record found for calendarId: ${payload.calendarId}`,
-      );
-    }
-
-    // Get the sync token for this calendar
-    const calendarSync = sync.google.events.find(
-      (event) => event.gCalendarId === payload.calendarId,
-    );
-    if (!calendarSync?.nextSyncToken) {
-      throw error(
-        SyncError.NoSyncToken,
-        `Notification not handled because no sync token found for calendarId: ${payload.calendarId}`,
-      );
-    }
-
-    return calendarSync.nextSyncToken;
   }
 }

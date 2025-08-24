@@ -6,9 +6,7 @@ import {
 } from "@core/constants/core.constants";
 import authMiddleware from "@backend/auth/middleware/auth.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
-import syncController, {
-  SyncController,
-} from "@backend/sync/controllers/sync.controller";
+import { SyncController } from "@backend/sync/controllers/sync.controller";
 import syncDebugController from "@backend/sync/controllers/sync.debug.controller";
 
 export class SyncRoutes extends CommonRoutesConfig {
@@ -24,12 +22,12 @@ export class SyncRoutes extends CommonRoutesConfig {
       .route(`/api${GCAL_NOTIFICATION_ENDPOINT}`)
       .post([
         authMiddleware.verifyIsFromGoogle,
-        syncController.handleGoogleNotification,
+        SyncController.handleGoogleNotification,
       ]);
 
     this.app
       .route(`/api/sync/maintain-all`)
-      .post([authMiddleware.verifyIsFromCompass, syncController.maintain]);
+      .post([authMiddleware.verifyIsFromCompass, SyncController.maintain]);
 
     this.app
       .route(`/api/sync/import-gcal`)

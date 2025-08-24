@@ -72,7 +72,7 @@ export interface Schema_Event {
   recurrence?: {
     rule?: string[];
     eventId?: string;
-  };
+  } | null;
   startDate?: string;
   title?: string;
   updatedAt?: Date | string;
@@ -139,7 +139,7 @@ export const CoreEventSchema = z.object({
   gRecurringEventId: z.string().optional(),
   origin: z.nativeEnum(Origin),
   priority: z.nativeEnum(Priorities),
-  recurrence: Recurrence.optional(),
+  recurrence: Recurrence.nullable().optional(),
   startDate: z.union([
     z.string().datetime({ offset: true }),
     z.string().date(),

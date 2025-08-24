@@ -4,7 +4,6 @@ import { Logger } from "@core/logger/winston.logger";
 import { Payload_Sync_Notif } from "@core/types/sync.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
-import { UserError } from "@backend/common/errors/user/user.errors";
 import {
   isFullSyncRequired,
   isInvalidGoogleToken,
@@ -17,7 +16,7 @@ import userService from "@backend/user/services/user.service";
 const logger = Logger("app:sync.controller");
 
 export class SyncController {
-  handleGoogleNotification = async (req: Request, res: Response) => {
+  static handleGoogleNotification = async (req: Request, res: Response) => {
     try {
       const syncPayload = {
         channelId: req.headers["x-goog-channel-id"],
@@ -30,27 +29,20 @@ export class SyncController {
 
       res.promise(response);
     } catch (e) {
+      const channelId = req.headers["x-goog-channel-id"] as string;
       const resourceId = req.headers["x-goog-resource-id"] as string;
-      const sync = await getSync({ resourceId });
-      if (!sync || !sync.user) {
-        logger.error(
-          `Sync error occurred, but couldnt find user based on this resourceId: ${resourceId}`,
-        );
-        logger.debug(res);
-        res.status(Status.BAD_REQUEST).send(UserError.MissingUserIdField);
-        return;
-      }
-
-      const userId = sync.user;
 
       if (isInvalidGoogleToken(e as Error)) {
+        const sync = await getSync({ channelId, resourceId });
+        const userId = sync!.user;
+
         console.warn(`Cleaning data after this user revoked access: ${userId}`);
-        await userService.deleteCompassDataForUser(sync.user, false);
+        await userService.deleteCompassDataForUser(userId, false);
         res.status(Status.GONE).send("User revoked access, deleted all data");
         return;
 
-        const msg = `Ignored update due to revoked access for resourceId: ${JSON.stringify(
-          resourceId,
+        const msg = `Ignored update due to revoked access for channelId: ${JSON.stringify(
+          channelId,
         )}
         `;
         console.warn(msg);
@@ -62,12 +54,23 @@ export class SyncController {
       if (isFullSyncRequired(e as Error)) {
         return SyncController.importGCal(req, res);
       }
+
+      if (
+        e instanceof Error &&
+        e.message === SyncError.NoSyncRecordForUser.description
+      ) {
+        logger.error(e);
+        logger.debug(res);
+        res.status(Status.BAD_REQUEST).send(SyncError.NoSyncRecordForUser);
+        return;
+      }
+
       if (
         e instanceof Error &&
         e.message === SyncError.NoSyncToken.description
       ) {
         logger.debug(
-          `Ignored notification due to missing sync token for resourceId: ${resourceId}`,
+          `Ignored notification due to missing sync token for channelId: ${channelId}`,
         );
         // returning 204 instead of 500 so client doesn't
         // attempt to retry
@@ -81,7 +84,7 @@ export class SyncController {
     }
   };
 
-  maintain = async (_req: Request, res: Response) => {
+  static maintain = async (_req: Request, res: Response) => {
     try {
       const result = await syncService.runMaintenance();
       res.promise(result);
@@ -140,5 +143,3 @@ export class SyncController {
     res.status(Status.NO_CONTENT).send();
   };
 }
-
-export default new SyncController();

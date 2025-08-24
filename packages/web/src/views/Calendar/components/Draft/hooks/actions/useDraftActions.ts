@@ -25,6 +25,7 @@ import {
   selectIsAtWeeklyLimit,
   selectSomedayWeekCount,
 } from "@web/ducks/events/selectors/someday.selectors";
+import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import {
   createEventSlice,
@@ -50,6 +51,9 @@ export const useDraftActions = (
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
   const reduxDraft = useAppSelector(selectDraft);
+  const currentWeekEvents = useAppSelector((state) =>
+    selectPaginatedEventsBySectionType(state, "week"),
+  );
 
   const {
     activity,
@@ -163,6 +167,21 @@ export const useDraftActions = (
 
       const payload = { _id: event._id, event, shouldRemove };
       dispatch(editEventSlice.actions.request(payload));
+
+      // If this was a drag-to-edge navigation and event moved to current week, ensure it's visible
+      const lastNavigationSource = weekProps.util.getLastNavigationSource();
+      const isDragToEdgeNavigation = lastNavigationSource === "drag-to-edge";
+      const wasEventMovedToCurrentWeek =
+        !shouldRemove &&
+        (isStartDateInView || isEndDateInView || doesEventSpanView);
+
+      if (isDragToEdgeNavigation && wasEventMovedToCurrentWeek) {
+        // Only insert if the event is not already in the current week's event list
+        const isEventAlreadyInWeek = currentWeekEvents.data.includes(event._id);
+        if (!isEventAlreadyInWeek) {
+          dispatch(getWeekEventsSlice.actions.insert(event._id));
+        }
+      }
     } else {
       dispatch(createEventSlice.actions.request(event));
     }
