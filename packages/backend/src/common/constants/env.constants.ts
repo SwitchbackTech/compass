@@ -55,7 +55,7 @@ const processEnv = {
   CHANNEL_EXPIRATION_MIN: process.env["CHANNEL_EXPIRATION_MIN"],
   CLIENT_ID: process.env["CLIENT_ID"],
   CLIENT_SECRET: process.env["CLIENT_SECRET"],
-  DB: IS_DEV ? "dev_calendar" : "prod_calendar",
+  DB: "compass_calendar",
   EMAILER_SECRET: process.env["EMAILER_API_SECRET"],
   EMAILER_WAITLIST_TAG_ID: process.env["EMAILER_WAITLIST_TAG_ID"],
   EMAILER_WAITLIST_INVITE_TAG_ID: process.env["EMAILER_WAITLIST_INVITE_TAG_ID"],
