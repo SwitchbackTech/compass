@@ -59,15 +59,19 @@ export class SyncImport {
   /**
    * Assembles event imports for multiple calendars
    */
-  private assembleIncrementalEventImports(
+  private async assembleIncrementalEventImports(
     userId: string,
     eventSyncPayloads: Schema_Sync["google"]["events"],
+    perPage = 1000,
   ) {
-    const syncEvents = eventSyncPayloads.map((eventSync) =>
-      this.importEventsByCalendar(
-        userId,
-        eventSync.gCalendarId,
-        eventSync.nextSyncToken,
+    const syncEvents = await Promise.all(
+      eventSyncPayloads.map((eventSync) =>
+        this.importEventsByCalendar(
+          userId,
+          eventSync.gCalendarId,
+          eventSync.nextSyncToken,
+          perPage,
+        ),
       ),
     );
 
@@ -78,6 +82,7 @@ export class SyncImport {
     userId: string,
     gCalendarId: string,
     updatedEvents: gSchema$Event[],
+    perPage = 1000,
   ): Promise<EventsToModify> {
     const { toUpdate, toDelete } = organizeGcalEventsByType(updatedEvents);
 
@@ -90,6 +95,7 @@ export class SyncImport {
       userId,
       gCalendarId,
       toUpdate.recurring,
+      perPage,
     );
 
     const toUpdateCombined = [...regularEvents, ...recurringEvents];
@@ -104,30 +110,30 @@ export class SyncImport {
    * Fetches all instances of a recurring event series and returns them as Compass events
    */
   private async expandRecurringEvent(
-    userId: string,
     calendarId: string,
     recurringEventId: string,
-  ): Promise<WithoutCompassId<Schema_Event_Recur_Instance>[]> {
-    const { data } = await gcalService.getEventInstances(
-      this.gcal,
-      calendarId,
-      recurringEventId,
-    );
-    const instances = data?.items;
+    perPage = 1000,
+  ): Promise<gSchema$Event[]> {
+    const instances: gSchema$Event[] = [];
 
-    if (!instances) {
+    const gCalResponse = gcalService.getBaseRecurringEventInstances({
+      gCal: this.gcal,
+      calendarId,
+      eventId: recurringEventId,
+      maxResults: perPage,
+    });
+
+    for await (const { items = [] } of gCalResponse) {
+      instances.push(...items);
+    }
+
+    if (instances.length === 0) {
       logger.warn(
         `No instances found for recurring event ${recurringEventId} in calendar ${calendarId}`,
       );
-      return [];
     }
 
-    const compassInstances = MapEvent.toCompass(
-      userId,
-      instances,
-      Origin.GOOGLE_IMPORT,
-    ) as WithCompassId<Schema_Event_Recur_Instance>[];
-    return compassInstances;
+    return instances;
   }
 
   /**
@@ -142,6 +148,7 @@ export class SyncImport {
     userId: string,
     calendarId: string,
     recurringEvents: gSchema$Event[],
+    perPage = 1000,
   ): Promise<RecurrenceWithoutId[]> {
     const baseAndInstances: RecurrenceWithoutId[] = [];
 
@@ -182,11 +189,18 @@ export class SyncImport {
       }
 
       const instances = await this.expandRecurringEvent(
-        userId,
         calendarId,
         baseId,
+        perPage,
       );
-      baseAndInstances.push(...instances);
+
+      const compassInstances = MapEvent.toCompass(
+        userId,
+        instances,
+        Origin.GOOGLE_IMPORT,
+      ) as WithCompassId<Schema_Event_Recur_Instance>[];
+
+      baseAndInstances.push(...compassInstances);
     }
 
     return baseAndInstances;
@@ -214,11 +228,16 @@ export class SyncImport {
   /**
    * Fetches updated events from Google Calendar using a sync token (for incremental sync)
    */
-  private async getUpdatedEvents(gCalendarId: string, syncToken: string) {
+  private async getUpdatedEvents(
+    gCalendarId: string,
+    syncToken: string,
+    perPage = 1000,
+  ) {
     // This function is specifically for *incremental* sync
     const response = await gcalService.getEvents(this.gcal, {
       calendarId: gCalendarId,
       syncToken, // Use syncToken for incremental updates
+      maxResults: perPage,
     });
 
     // 410 Gone status indicates the sync token is invalid and a full sync is needed.
@@ -241,9 +260,6 @@ export class SyncImport {
       );
     }
 
-    logger.debug(
-      JSON.stringify(response.data, null, 2), // TODO cleanup after testing
-    );
     return response.data;
   }
 
@@ -262,16 +278,13 @@ export class SyncImport {
     const instances: gSchema$Event[] = [baseEvent];
 
     if (isBaseEvent) {
-      const gCalResponse = gcalService.getBaseRecurringEventInstances({
-        gCal: this.gcal,
+      const items = await this.expandRecurringEvent(
         calendarId,
-        eventId: baseEvent.id!,
-        maxResults: perPage,
-      });
+        baseEvent.id!,
+        perPage,
+      );
 
-      for await (const { items = [] } of gCalResponse) {
-        instances.push(...items);
-      }
+      instances.push(...items);
     }
 
     const cEvents = MapEvent.toCompass(userId, instances, Origin.GOOGLE_IMPORT);
@@ -411,20 +424,23 @@ export class SyncImport {
   /**
    * Imports the latest events for a user using incremental sync
    */
-  public async importLatestEvents(userId: string) {
+  public async importLatestEvents(userId: string, perPage = 1000) {
     const eventSyncPayloads = await this.prepIncrementalImport(userId);
+
     if (eventSyncPayloads.length === 0) {
       logger.info(
         `No calendars configured or ready for incremental sync for user ${userId}.`,
       );
+
       return []; // Return empty array if nothing to sync
     }
-    const syncEvents = this.assembleIncrementalEventImports(
+
+    const result = await this.assembleIncrementalEventImports(
       userId,
       eventSyncPayloads,
+      perPage,
     );
 
-    const result = await Promise.all(syncEvents);
     return result;
   }
 
@@ -434,6 +450,7 @@ export class SyncImport {
     gEvent: gSchema$EventBase,
     excludeBase = false,
     session?: ClientSession,
+    perPage = 1000,
   ) {
     // assemble base event
     const cBase = MapEvent.toCompass(
@@ -443,11 +460,16 @@ export class SyncImport {
     )[0] as WithoutCompassId<Schema_Event_Recur_Base>;
 
     // assemble instances
-    const recurringId = gEvent.id;
-    const cInstances = await this.expandRecurringEvent(
-      userId,
+    const instances = await this.expandRecurringEvent(
       calendarId,
-      recurringId,
+      gEvent.id,
+      perPage,
+    );
+
+    const cInstances = MapEvent.toCompass(
+      userId,
+      instances,
+      Origin.GOOGLE_IMPORT,
     );
 
     const series = excludeBase ? cInstances : [cBase, ...cInstances];
@@ -531,6 +553,7 @@ export class SyncImport {
     userId: string,
     gCalendarId: string,
     initialSyncToken?: string | null,
+    perPage = 1000,
   ) {
     let nextSyncToken: string | null | undefined = initialSyncToken;
     let nextPageToken: string | null | undefined = undefined;
@@ -539,7 +562,13 @@ export class SyncImport {
     let totalCreated = 0;
     do {
       const syncToken = this.getSyncToken(nextPageToken, nextSyncToken);
-      const response = await this.getUpdatedEvents(gCalendarId, syncToken);
+
+      const response = await this.getUpdatedEvents(
+        gCalendarId,
+        syncToken,
+        perPage,
+      );
+
       const updatedEvents = response.items || [];
 
       if (updatedEvents.length === 0) {
@@ -550,6 +579,7 @@ export class SyncImport {
         userId,
         gCalendarId,
         updatedEvents,
+        perPage,
       );
 
       const { created, updated, deleted } = await this.updateDatabase(

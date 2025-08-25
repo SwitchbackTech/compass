@@ -5,20 +5,28 @@ import { randomUUID } from "node:crypto";
 import { SessionRequest } from "supertokens-node/framework/express";
 import { BaseResponse } from "supertokens-node/lib/build/framework";
 import { SessionContainerInterface } from "supertokens-node/lib/build/recipe/session/types";
+import { gSchema$CalendarListEntry } from "@core/types/gcal";
 import { UserMetadata } from "@core/types/user.types";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
-import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
+import {
+  createMockCalendarList as mockCalendarListCreate,
+  mockGcal,
+} from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 
 export interface CompassTestState {
   events: ReturnType<typeof mockAndCategorizeGcalEvents>;
+  calendarlist: gSchema$CalendarListEntry[];
 }
 
 function mockCompassTestState() {
   jest.mock(
     "compass-test-state",
-    () => ({ events: { ...mockAndCategorizeGcalEvents() } }),
+    (): CompassTestState => ({
+      events: { ...mockAndCategorizeGcalEvents() },
+      calendarlist: [mockCalendarListCreate()],
+    }),
     { virtual: true },
   );
 }
