@@ -207,11 +207,17 @@ class SyncService {
     }
   };
 
-  importIncremental = async (userId: string, gcal?: gCalendar) => {
+  importIncremental = async (
+    userId: string,
+    gcal?: gCalendar,
+    perPage = 1000,
+  ) => {
     const syncImport = gcal
       ? await createSyncImport(gcal)
       : await createSyncImport(userId);
-    const result = await syncImport.importLatestEvents(userId);
+
+    const result = await syncImport.importLatestEvents(userId, perPage);
+
     return result;
   };
 

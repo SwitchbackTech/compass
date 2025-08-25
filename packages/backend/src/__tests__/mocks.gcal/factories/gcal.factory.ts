@@ -8,6 +8,7 @@ import type {
 import { Status } from "@core/errors/status.codes";
 import type {
   WithGcalId,
+  gSchema$CalendarList,
   gSchema$CalendarListEntry,
   gSchema$Channel,
   gSchema$Event,
@@ -22,31 +23,30 @@ import { compassTestState } from "@backend/__tests__/helpers/mock.setup";
 import { mockRecurringGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 
 /**
- * Generates a paginated events object for the Google Calendar API.
+ * Generates a paginated items for the Google Calendar API.
  *
- * @param events - The total array of events to be split into pages.
- * @param nextSyncToken - The next sync token for the events.
- * @param pageSize - The number of events per page.
- * @param pageToken - The page token for the events.
- * @returns The paginated events object.
+ * @param items - The total array of items to be split into pages.
+ * @param nextSyncToken - The next sync token for the items.
+ * @param pageSize - The number of items per page.
+ * @param pageToken - The page token for the items.
+ * @returns The paginated items object.
  */
-const generatePaginatedEvents = (
-  events: gSchema$Event[],
+const generatePaginatedGcalItems = <Item = gSchema$Event>(
+  items: Item[],
   nextSyncToken: string,
   pageSize: number,
   pageToken?: string,
-): gSchema$Events => {
+): Omit<gSchema$Events, "items"> & { items: Item[] } => {
   const startIndex = pageToken ? parseInt(pageToken) : 0;
   const endIndex = startIndex + pageSize;
-  const pageEvents = events.slice(startIndex, endIndex);
-  const hasMore = endIndex < events.length;
+  const pageEvents = items.slice(startIndex, endIndex);
+  const hasMore = endIndex < items.length;
 
-  const page = {
+  return {
     items: pageEvents,
     nextPageToken: hasMore ? endIndex.toString() : undefined,
     nextSyncToken: hasMore ? undefined : nextSyncToken,
   };
-  return page;
 };
 
 /**
@@ -81,7 +81,6 @@ interface Config_MockGcal {
 export const mockGcal = ({
   pageSize = 3,
   nextSyncToken = "final-sync-token",
-  calendarList = [createMockCalendarList()],
   calendarListNextSyncToken = "calendar-li,st-sync-token",
   googleapis,
 }: Config_MockGcal) => {
@@ -177,41 +176,66 @@ export const mockGcal = ({
           });
         },
       ),
-      list: jest.fn(
-        async (params: { pageToken?: string; singleEvents?: boolean }) => {
-          const testState = compassTestState();
-          const { all: events } = testState.events.gcalEvents;
+      list: jest.fn(async (params: calendar_v3.Params$Resource$Events$List) => {
+        const testState = compassTestState();
+        const { all: events } = testState.events.gcalEvents;
 
-          // When singleEvents is false, only return base events and regular events - without instance events
-          if (!params.singleEvents) {
-            const baseEvents = events.filter(
-              (e) => isBaseGCalEvent(e) || isRegularGCalEvent(e),
-            );
-
-            const eventsPage = generatePaginatedEvents(
-              baseEvents,
-              nextSyncToken,
-              pageSize,
-              params.pageToken,
-            );
-            return {
-              statusText: "OK",
-              status: 200,
-              data: eventsPage,
-            };
-          }
-
-          // When singleEvents is true, return instance events and regular events - without base events
-          const instanceAndRegularEvents = events.filter(
-            (e) => isRegularGCalEvent(e) || isInstanceGCalEvent(e),
+        // When singleEvents is false, only return base events and regular events - without instance events
+        if (!params.singleEvents) {
+          const baseEvents = events.filter(
+            (e) => isBaseGCalEvent(e) || isRegularGCalEvent(e),
           );
 
-          const eventsPage = generatePaginatedEvents(
-            instanceAndRegularEvents,
+          const eventsPage = generatePaginatedGcalItems(
+            baseEvents,
             nextSyncToken,
-            pageSize,
+            params.maxResults ?? pageSize,
             params.pageToken,
           );
+
+          return {
+            statusText: "OK",
+            status: 200,
+            data: eventsPage,
+          };
+        }
+
+        // When singleEvents is true, return instance events and regular events - without base events
+        const instanceAndRegularEvents = events.filter(
+          (e) => isRegularGCalEvent(e) || isInstanceGCalEvent(e),
+        );
+
+        const eventsPage = generatePaginatedGcalItems(
+          instanceAndRegularEvents,
+          nextSyncToken,
+          params.maxResults ?? pageSize,
+          params.pageToken,
+        );
+        return {
+          statusText: "OK",
+          status: 200,
+          data: eventsPage,
+        };
+      }),
+      instances: jest.fn(
+        async (params: calendar_v3.Params$Resource$Events$Instances) => {
+          const testState = compassTestState();
+          const { all: events } = testState.events.gcalEvents;
+          const { eventId: id } = params;
+
+          const baseEvent = events.find((e) => e.id === id);
+
+          if (!baseEvent) throw new Error(`Event with id ${id} not found`);
+
+          const { instances } = mockRecurringGcalEvents({ ...baseEvent, id });
+
+          const eventsPage = generatePaginatedGcalItems(
+            instances,
+            nextSyncToken,
+            params.maxResults ?? pageSize,
+            params.pageToken,
+          );
+
           return {
             statusText: "OK",
             status: 200,
@@ -219,23 +243,6 @@ export const mockGcal = ({
           };
         },
       ),
-      instances: jest.fn(async (params: { eventId: string }) => {
-        const testState = compassTestState();
-        const { all: events } = testState.events.gcalEvents;
-        const { eventId: id } = params;
-
-        const baseEvent = events.find((e) => e.id === id);
-
-        if (!baseEvent) throw new Error(`Event with id ${id} not found`);
-
-        const data = mockRecurringGcalEvents({ ...baseEvent, id });
-
-        return {
-          statusText: "OK",
-          status: 200,
-          data: { items: data.instances },
-        };
-      }),
       watch: jest.fn(
         async (
           params: calendar_v3.Params$Resource$Events$Watch,
@@ -256,12 +263,28 @@ export const mockGcal = ({
     },
     calendarList: {
       ...calendar.calendarList,
-      list: jest.fn(() => ({
-        data: {
-          items: calendarList,
-          nextSyncToken: calendarListNextSyncToken,
+      list: jest.fn(
+        async (
+          params: calendar_v3.Params$Resource$Events$Watch = {},
+          options: MethodOptions = {},
+        ): GaxiosPromise<gSchema$CalendarList> => {
+          const { calendarlist } = compassTestState();
+
+          return Promise.resolve({
+            config: options,
+            statusText: "OK",
+            status: 200,
+            headers: options.headers!,
+            request: { responseURL: params.requestBody?.address ?? "" },
+            data: generatePaginatedGcalItems(
+              calendarlist,
+              calendarListNextSyncToken,
+              params.maxResults ?? pageSize,
+              params.pageToken,
+            ),
+          });
         },
-      })),
+      ),
     },
     channels: {
       ...calendar.channels,

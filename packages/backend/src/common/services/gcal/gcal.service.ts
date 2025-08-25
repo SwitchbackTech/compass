@@ -45,7 +45,7 @@ class GCalService {
     return response;
   }
 
-  async getEventInstances(
+  private async getEventInstances(
     gcal: gCalendar,
     calendarId: string,
     eventId: string,

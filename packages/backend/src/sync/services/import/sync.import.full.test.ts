@@ -23,7 +23,7 @@ describe("SyncImport: Full", () => {
     const syncImport = await createSyncImport(user._id.toString());
     // Importing both the bae and first instance helps us find the series recurrence rule.
     // To prevent duplicates in the UI, the GET API will not return the base event
-    await syncImport.importAllEvents(user._id.toString(), "test-calendar");
+    await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
 
     const currentEventsInDb = await getEventsInDb({
       user: user._id.toString(),
@@ -42,7 +42,7 @@ describe("SyncImport: Full", () => {
     const { user } = await UtilDriver.setupTestUser();
     const syncImport = await createSyncImport(user._id.toString());
 
-    await syncImport.importAllEvents(user._id.toString(), "test-calendar");
+    await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
 
     const { baseEvents, instanceEvents } = await getCategorizedEventsInDb({
       user: user._id.toString(),
@@ -59,7 +59,7 @@ describe("SyncImport: Full", () => {
     const syncImport = await createSyncImport(user._id.toString());
 
     const { totalProcessed, totalChanged, nextSyncToken } =
-      await syncImport.importAllEvents(user._id.toString(), "test-calendar");
+      await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
 
     const currentEventsInDb = await getEventsInDb({
       user: user._id.toString(),
@@ -101,7 +101,7 @@ describe("SyncImport: Full", () => {
     const { user } = await UtilDriver.setupTestUser();
     const syncImport = await createSyncImport(user._id.toString());
 
-    await syncImport.importAllEvents(user._id.toString(), "test-calendar");
+    await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
 
     const currentEventsInDb = await getEventsInDb({
       user: user._id.toString(),
@@ -128,7 +128,7 @@ describe("SyncImport: Full", () => {
     const { user } = await UtilDriver.setupTestUser();
     const syncImport = await createSyncImport(user._id.toString());
 
-    await syncImport.importAllEvents(user._id.toString(), "test-calendar");
+    await syncImport.importAllEvents(user._id.toString(), "test-calendar", 1);
 
     const currentEventsInDb = await getEventsInDb({
       user: user._id.toString(),
