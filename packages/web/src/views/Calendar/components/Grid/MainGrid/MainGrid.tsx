@@ -10,7 +10,6 @@ import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { useDragEdgeNavigation } from "@web/views/Calendar/hooks/grid/useDragEdgeNavigation";
 import { useDragEventSmartScroll } from "@web/views/Calendar/hooks/grid/useDragEventSmartScroll";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -46,7 +45,6 @@ export const MainGrid: FC<Props> = ({
   const isDrafting = useAppSelector(selectIsDrafting);
 
   useDragEventSmartScroll(mainGridRef);
-  useDragEdgeNavigation(mainGridRef, weekProps);
 
   const onMouseDown = async (e: MouseEvent) => {
     if (isDrafting) {

@@ -74,6 +74,7 @@ export const getAllDayEventWidth = (
   end: Dayjs,
   startOfWeek: Dayjs,
   widths: number[],
+  isDraft?: boolean,
 ) => {
   let width: number;
 
@@ -99,7 +100,18 @@ export const getAllDayEventWidth = (
       break;
     }
     case Category.PastToFutureWeek: {
-      width = _sumEventWidths(7, 0, widths);
+      // For draft events during week transitions, preserve original event width
+      // instead of expanding to full week width
+      if (isDraft) {
+        let duration = end.diff(start, "days");
+        if (duration === 0) {
+          width = widths[startIndex];
+          duration = 1;
+        }
+        width = _sumEventWidths(duration, startIndex, widths);
+      } else {
+        width = _sumEventWidths(7, 0, widths);
+      }
       break;
     }
     default: {
@@ -160,6 +172,7 @@ export const getAllDayEventPosition = (
     end,
     startOfView,
     colWidths,
+    isDraft,
   );
 
   const left = getLeftPosition(
