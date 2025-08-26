@@ -44,7 +44,6 @@ export const TimePicker = ({
           const key = e.key;
 
           if (key === Key.Enter || key === Key.Backspace) {
-            console.log("stopping prop");
             e.stopPropagation();
           }
 

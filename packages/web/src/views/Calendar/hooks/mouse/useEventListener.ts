@@ -23,7 +23,6 @@ export const useEventListener = (
     const listener = (event: MouseEvent) => savedHandler.current(event);
 
     if (element === null) {
-      console.log("element is null");
       return;
     }
     element.addEventListener(eventName, listener);

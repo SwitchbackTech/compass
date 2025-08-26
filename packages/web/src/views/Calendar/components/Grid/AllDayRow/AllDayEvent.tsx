@@ -56,7 +56,6 @@ const AllDayEvent = ({
     lineClamp: 1,
     onMouseDown: (e: MouseEvent) => {
       if (isRecurring) {
-        console.log(event);
         toast("Can't edit recurring events (yet)");
         e.stopPropagation();
         return;
