@@ -24,9 +24,7 @@ describe("snapToGrid", () => {
     hourHeight: 60,
     colWidths: Array(7).fill(100) as number[],
     allDayRow: null,
-    remeasure: (elem: MeasureableElement) => {
-      console.log("remeasuring element", elem);
-    },
+    remeasure: (elem: MeasureableElement) => {},
   };
 
   const DEFAULT_X = 105;
@@ -60,9 +58,7 @@ describe("snapToGrid", () => {
           allDayRow: null,
           colWidths: [],
           hourHeight: 0,
-          remeasure: (elem: MeasureableElement) => {
-            console.log("foo", elem);
-          },
+          remeasure: (elem: MeasureableElement) => {},
         },
         0,
       );

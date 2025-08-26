@@ -255,7 +255,6 @@ export const useSidebarActions = (
     if (droppedOnSidebar) {
       const reorderedDraft = draggableId === ID_SOMEDAY_DRAFT;
       if (reorderedDraft && !state.isDraftingNew) {
-        console.log("Tried reordering a draft. TODO: add draft to state");
         return;
       }
 
@@ -293,7 +292,6 @@ export const useSidebarActions = (
     if (isExisting) {
       setDraft(existingEvent);
     } else {
-      console.log("REMINDER: update for monthly");
       const defaultSomeday = await assembleDefaultEvent(
         Categories_Event.SOMEDAY_WEEK,
       );

@@ -97,7 +97,6 @@ const _GridEvent = (
     lineClamp,
     onMouseDown: (e: MouseEvent) => {
       if (isRecurring) {
-        console.log(event);
         toast("Can't edit recurring events (yet)");
         e.stopPropagation();
         return;

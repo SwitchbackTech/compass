@@ -59,7 +59,6 @@ export const useDragEdgeNavigation = (
       return;
     }
 
-    console.log("mousePosition", mousePosition);
     const { left, right } = container.getBoundingClientRect();
     const { x } = mousePosition;
 

@@ -27,16 +27,11 @@ export const socket = io(ENV_WEB.BACKEND_BASEURL, {
 const reconnect = (message: string) => {
   socket.disconnect();
   socket.connect();
-
-  console.error("reconnect:", message);
 };
 
-const onConnect = () => {
-  console.log(`socket with id(${socket.id}) connected`);
-};
+const onConnect = () => {};
 
 export const onceConnected = () => {
-  console.log("run these the first time socket connects");
   socket.emit(FETCH_USER_METADATA);
 };
 
@@ -44,14 +39,10 @@ const onConnectError = (err: Error) => {
   console.error("connect_error:", err);
 };
 
-const onDisconnect = (reason: string) => {
-  console.log("disconnected due to:", reason);
-};
+const onDisconnect = (reason: string) => {};
 
 const onUserSignOut = () => {
   socket.disconnect();
-
-  console.log("disconnected due to:", "user sign out");
 };
 
 const onUserRefreshToken = () =>

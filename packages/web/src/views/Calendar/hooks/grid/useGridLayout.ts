@@ -91,7 +91,6 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
         break;
       }
       case "allDayRow": {
-        console.log("TODO: measure allday row...");
         break;
       }
       default: {

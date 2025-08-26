@@ -156,7 +156,6 @@ const OnboardingDemo_: React.FC = () => {
       key="main-onboarding"
       steps={onboardingSteps}
       onComplete={() => {
-        console.log("onboarding complete");
         navigate("/");
       }}
     />
