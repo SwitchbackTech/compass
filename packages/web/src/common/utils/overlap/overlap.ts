@@ -4,7 +4,7 @@ import { Schema_GridEvent } from "@web/common/types/web.event.types";
 export const adjustOverlappingEvents = (
   events: Schema_GridEvent[],
 ): Schema_GridEvent[] => {
-  let adjustedEvents = deepCopyEvents(events);
+  const adjustedEvents = deepCopyEvents(events);
   adjustedEvents.sort((a, b) => dayjs(a.startDate).diff(dayjs(b.startDate)));
 
   const processedEvents = new Set<string>();

@@ -53,12 +53,11 @@ export const RecurrenceSection = ({
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    const recurrenceDates = generateRecurrenceDates({
+    generateRecurrenceDates({
       event,
       repeatCount,
       weekDays,
     });
-    console.info("recurrenceDates", recurrenceDates);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repeatCount, weekDays, event.startDate, event.endDate]);
