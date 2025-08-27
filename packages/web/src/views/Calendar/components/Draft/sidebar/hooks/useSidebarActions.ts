@@ -251,10 +251,16 @@ export const useSidebarActions = (
   const onDragEnd = (result: DropResult) => {
     const { destination, draggableId, source } = result;
 
+    const handleDiscard = () => {
+      dispatch(draftSlice.actions.discard());
+      close();
+    };
+
     const droppedOnSidebar = destination !== null;
     if (droppedOnSidebar) {
       const reorderedDraft = draggableId === ID_SOMEDAY_DRAFT;
       if (reorderedDraft && !state.isDraftingNew) {
+        handleDiscard();
         return;
       }
 
@@ -263,7 +269,7 @@ export const useSidebarActions = (
         destination.index === source.index;
 
       if (noChange) {
-        close();
+        handleDiscard();
         return;
       }
 
@@ -280,7 +286,7 @@ export const useSidebarActions = (
       }
     }
 
-    close();
+    handleDiscard();
   };
 
   const onDragStart = async (props: { draggableId: string }) => {

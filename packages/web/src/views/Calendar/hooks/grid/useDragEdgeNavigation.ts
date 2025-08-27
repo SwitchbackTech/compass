@@ -1,7 +1,11 @@
 import { MutableRefObject, useEffect, useRef, useState } from "react";
 import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
 import { getElemById } from "@web/common/utils/grid.util";
+import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
+import { SidebarDraftContextValue } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
+import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { WeekProps } from "../useWeek";
 
 const EDGE_THRESHOLD = 50; // pixels from edge to trigger navigation
@@ -11,14 +15,26 @@ export const useDragEdgeNavigation = (
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
   weekProps: WeekProps,
 ) => {
-  const { state } = useDraftContext();
+  const { state: draftState } = useDraftContext();
+  const isDNDing = useAppSelector(selectIsDNDing);
+  const { state: sidebarState } =
+    useSidebarContext() as SidebarDraftContextValue;
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastEdgeRef = useRef<"left" | "right" | null>(null);
 
+  const isGridEventDragging = draftState.isDragging;
+  const isSomedayEventDragging = isDNDing;
+
+  const gridEventDraft = draftState.draft;
+  const somedayEventDraft = sidebarState.draft;
+
+  const isDragging = isGridEventDragging || isSomedayEventDragging;
+  const currentDraft = gridEventDraft || somedayEventDraft;
+
   // Track mouse position during dragging
   useEffect(() => {
-    if (!state.isDragging) {
+    if (!isDragging) {
       // Clear any pending navigation when dragging stops
       if (navigationTimeoutRef.current) {
         clearTimeout(navigationTimeoutRef.current);
@@ -29,9 +45,6 @@ export const useDragEdgeNavigation = (
       return;
     }
 
-    // Handle both timed and all-day events
-    if (!state.draft) return;
-
     const updateMousePosition = (event: MouseEvent) => {
       setMousePosition({ x: event.clientX, y: event.clientY });
     };
@@ -41,16 +54,16 @@ export const useDragEdgeNavigation = (
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
     };
-  }, [state.isDragging, state.draft]);
+  }, [isDragging]);
 
   // Check for edge proximity and trigger navigation
   useEffect(() => {
-    if (!state.isDragging || !state.draft) {
+    if (!isDragging || !currentDraft) {
       return;
     }
 
     // Use appropriate container based on event type
-    const isAllDay = state.draft.isAllDay;
+    const isAllDay = currentDraft.isAllDay;
     const container = isAllDay
       ? getElemById(ID_GRID_ALLDAY_ROW)
       : mainGridRef.current;
@@ -98,7 +111,8 @@ export const useDragEdgeNavigation = (
         navigationTimeoutRef.current = null;
       }
     };
-  }, [state.isDragging, mousePosition.x, weekProps.util, state.draft]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging, mousePosition.x, weekProps.util, currentDraft]);
 
   // Cleanup on unmount
   useEffect(() => {
