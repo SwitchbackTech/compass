@@ -80,26 +80,26 @@ export const CalendarView = () => {
               />
             )}
           </ContextMenuWrapper>
-        </SidebarDraftProvider>
-        <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
-          <Header
-            rootProps={rootProps}
-            scrollUtil={scrollUtil}
-            today={today}
-            weekProps={weekProps}
-          />
-
-          <ContextMenuWrapper id="grid-context-menu">
-            <Grid
-              dateCalcs={dateCalcs}
-              isSidebarOpen={isSidebarOpen}
-              gridRefs={gridRefs}
-              measurements={measurements}
+          <StyledCalendar direction={FlexDirections.COLUMN} id={ID_MAIN}>
+            <Header
+              rootProps={rootProps}
+              scrollUtil={scrollUtil}
               today={today}
               weekProps={weekProps}
             />
-          </ContextMenuWrapper>
-        </StyledCalendar>
+
+            <ContextMenuWrapper id="grid-context-menu">
+              <Grid
+                dateCalcs={dateCalcs}
+                isSidebarOpen={isSidebarOpen}
+                gridRefs={gridRefs}
+                measurements={measurements}
+                today={today}
+                weekProps={weekProps}
+              />
+            </ContextMenuWrapper>
+          </StyledCalendar>
+        </SidebarDraftProvider>
       </DraftProvider>
     </Styled>
   );
