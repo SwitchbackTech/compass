@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Schema_Answers_v0 } from "./waitlist.answer.types";
+import { Schema_Answers_v1 } from "./waitlist.answer.types";
 
 export interface Result_Waitlist {
   status: "waitlisted" | "ignored";
@@ -11,9 +11,10 @@ export interface Result_InviteToWaitlist {
 
 const Schema_Status = z.enum(["waitlisted", "invited", "active"]);
 
-const Schema_Waitlist_v0 = Schema_Answers_v0.extend({
+const Schema_Waitlist_v1 = Schema_Answers_v1.extend({
   status: Schema_Status,
   waitlistedAt: z.string().datetime(),
 });
-export type Schema_Waitlist_v0 = z.infer<typeof Schema_Waitlist_v0>;
-export type Schema_Waitlist = Schema_Waitlist_v0; // make a union type when adding more versions
+
+export type Schema_Waitlist_v1 = z.infer<typeof Schema_Waitlist_v1>;
+export type Schema_Waitlist = Schema_Waitlist_v1;

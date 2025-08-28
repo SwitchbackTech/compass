@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
-import { AnswerMap } from "@core/types/waitlist/waitlist.answer.types";
+import { Answers } from "@core/types/waitlist/waitlist.answer.types";
 import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
 import { isMissingWaitlistTagId } from "@backend/common/constants/env.util";
 import { findCompassUserBy } from "../../user/queries/user.queries";
@@ -22,7 +22,7 @@ export class WaitlistController {
       return res.status(500).json({ error: "Emailer values are missing" });
     }
 
-    const parseResult = AnswerMap.v0.safeParse(req.body);
+    const parseResult = Answers.v1.safeParse(req.body);
     if (!parseResult.success) {
       return res
         .status(400)
