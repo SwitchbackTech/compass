@@ -44,7 +44,7 @@ export const useDraftEffects = (
     setResizeStatus(null);
     setDateBeingChanged(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekProps.component.week, isDragging, weekProps.util]);
+  }, [weekProps.component.week, weekProps.util]);
 
   useEffect(() => {
     if (isResizing) {
