@@ -5,6 +5,7 @@ import { Filter, ObjectId } from "mongodb";
 import {
   Query_Event,
   Query_Event_Update,
+  RecurringEventUpdateScope,
   Schema_Event,
   Schema_Event_Core,
 } from "@core/types/event.types";
@@ -108,13 +109,13 @@ export const getUpdateAction = (
   const hasInstances = event?.recurrence?.eventId !== undefined;
   const hasRule = event?.recurrence?.rule && event.recurrence.rule.length > 0;
 
-  if (query?.applyTo === "future") {
+  if (query?.applyTo === RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS) {
     if (hasInstances) {
       return "UPDATE_ALL";
     }
   }
 
-  if (query?.applyTo === "all") {
+  if (query?.applyTo === RecurringEventUpdateScope.ALL_EVENTS) {
     if (!hasInstances) {
       if (hasRule) {
         return "CREATE_INSTANCES";
@@ -126,6 +127,11 @@ export const getUpdateAction = (
       }
       return "UPDATE_ALL";
     }
+  }
+
+  // Handle THIS_EVENT case - just update this single instance
+  if (query?.applyTo === RecurringEventUpdateScope.THIS_EVENT) {
+    return "UPDATE";
   }
 
   return "UPDATE";

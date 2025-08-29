@@ -1,6 +1,9 @@
 import { Action } from "redux";
 import { Priorities } from "@core/constants/core.constants";
-import { Categories_Recur, Schema_Event } from "@core/types/event.types";
+import {
+  RecurringEventUpdateScope,
+  Schema_Event,
+} from "@core/types/event.types";
 import { SliceStateContext } from "@web/common/store/helpers";
 import {
   Filters_Pagination,
@@ -81,7 +84,7 @@ interface Payload_DeleteEvent {
 export interface Payload_EditEvent {
   _id: string;
   event: Schema_Event;
-  applyTo?: Categories_Recur;
+  applyTo?: RecurringEventUpdateScope;
   shouldRemove?: boolean;
 }
 
