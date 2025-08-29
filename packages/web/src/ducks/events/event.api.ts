@@ -1,8 +1,8 @@
 import { AxiosPromise } from "axios";
 import {
-  Categories_Recur,
   Params_Events,
   Payload_Order,
+  RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
 import { CompassApi } from "@web/common/apis/compass.api";
@@ -17,7 +17,7 @@ const EventApi = {
   edit: (
     _id: string,
     event: Schema_Event,
-    params: { applyTo?: Categories_Recur },
+    params: { applyTo?: RecurringEventUpdateScope },
   ): AxiosPromise<Schema_Event> => {
     if (params?.applyTo) {
       return CompassApi.put(`/event/${_id}?applyTo=${params.applyTo}`, event);

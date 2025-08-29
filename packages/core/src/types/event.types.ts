@@ -33,6 +33,15 @@ export type TransitionStatus = "CONFIRMED" | "CANCELLED";
 export type TransitionCategoriesRecurrence =
   `${Categories_Recurrence}_${TransitionStatus}`;
 
+/**
+ * Scope of application for changes made to recurring event instances
+ */
+export enum RecurringEventUpdateScope {
+  THIS_EVENT = "This Event",
+  THIS_AND_FOLLOWING_EVENTS = "This and Following Events",
+  ALL_EVENTS = "All Events",
+}
+
 export type Categories_Recur = "all" | "future";
 
 export type Direction_Migrate = "forward" | "back" | "up" | "down";
@@ -113,7 +122,7 @@ export interface Query_Event extends Query {
 }
 
 export interface Query_Event_Update extends Query {
-  applyTo?: Categories_Recur;
+  applyTo?: RecurringEventUpdateScope;
 }
 
 const Recurrence = z.object({
