@@ -1,7 +1,7 @@
 import { Logger } from "@core/logger/winston.logger";
 import { mapWaitlistUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { Subscriber } from "@core/types/email/email.types";
-import { Answers } from "@core/types/waitlist/waitlist.answer.types";
+import { Answers_v1 } from "@core/types/waitlist/waitlist.answer.types";
 import {
   Result_InviteToWaitlist,
   Result_Waitlist,
@@ -16,7 +16,7 @@ const logger = Logger("app:waitlist.service");
 class WaitlistService {
   static async addToWaitlist(
     email: string,
-    answer: Answers,
+    answer: Answers_v1,
   ): Promise<Result_Waitlist> {
     if (ENV.EMAILER_SECRET && ENV.EMAILER_WAITLIST_TAG_ID) {
       const subscriber: Subscriber = {

@@ -1,5 +1,5 @@
 import request from "supertest";
-import type { Answers } from "@core/types/waitlist/waitlist.answer.types";
+import type { Answers_v1 } from "@core/types/waitlist/waitlist.answer.types";
 
 describe("POST /api/waitlist", () => {
   beforeEach(() => jest.resetModules());
@@ -37,16 +37,15 @@ describe("POST /api/waitlist", () => {
     app.use(express.json());
     app.post("/api/waitlist", WaitlistController.addToWaitlist);
 
-    const answers: Answers = {
+    const answers: Answers_v1 = {
+      email: "test@example.com",
+      schemaVersion: "1",
       source: "social-media",
       firstName: "Jo",
       lastName: "Schmo",
-      email: "test@example.com",
+      profession: "Founder",
       currentlyPayingFor: [],
-      howClearAboutValues: "not-clear",
-      workingTowardsMainGoal: "yes",
-      isWillingToShare: false,
-      schemaVersion: "0",
+      anythingElse: "I'm a test",
     };
     const res = await request(app).post("/api/waitlist").send(answers);
 
@@ -65,16 +64,14 @@ describe("POST /api/waitlist", () => {
     app.use(express.json());
     app.post("/api/waitlist", WaitlistController.addToWaitlist);
 
-    const answers: Answers = {
+    const answers: Answers_v1 = {
+      email: "test@example.com",
+      schemaVersion: "1",
       source: "other",
       firstName: "Jo",
       lastName: "Schmo",
-      email: "test@example.com",
       currentlyPayingFor: [],
-      howClearAboutValues: "not-clear",
-      workingTowardsMainGoal: "yes",
-      isWillingToShare: false,
-      schemaVersion: "0",
+      profession: "Founder",
     };
     const res = await request(app).post("/api/waitlist").send(answers);
     expect(res.status).toBe(500);

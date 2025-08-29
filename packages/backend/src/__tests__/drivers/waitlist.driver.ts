@@ -9,14 +9,13 @@ export class WaitListDriver {
   ): Schema_Waitlist {
     return {
       email: user.email,
-      schemaVersion: "0",
+      schemaVersion: "1",
       source: "other",
       firstName: user.firstName,
       lastName: user.lastName,
+      profession: "Software Engineer",
       currentlyPayingFor: ["superhuman", "notion"],
-      howClearAboutValues: "not-clear",
-      workingTowardsMainGoal: "yes",
-      isWillingToShare: false,
+      anythingElse: "I'm a test",
       status: "waitlisted",
       waitlistedAt: new Date().toISOString(),
     };
