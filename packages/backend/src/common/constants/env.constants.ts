@@ -35,6 +35,7 @@ const EnvSchema = z
     TOKEN_COMPASS_SYNC: z.string().nonempty(),
     NGROK_AUTHTOKEN: z.string().nonempty().optional(),
     NGROK_DOMAIN: z.string().nonempty().optional(),
+    STRIPE_SECRET: z.string().nonempty().optional(),
   })
   .strict()
   .superRefine(({ NGROK_AUTHTOKEN, NGROK_DOMAIN }, context) => {
@@ -71,6 +72,7 @@ const processEnv = {
   TOKEN_COMPASS_SYNC: process.env["TOKEN_COMPASS_SYNC"],
   NGROK_AUTHTOKEN: process.env["NGROK_AUTHTOKEN"],
   NGROK_DOMAIN: process.env["NGROK_DOMAIN"],
+  STRIPE_SECRET: process.env["STRIPE_SECRET"],
 };
 
 const { success, error, data } = EnvSchema.safeParse(processEnv);

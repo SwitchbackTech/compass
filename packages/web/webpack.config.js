@@ -21,6 +21,7 @@ module.exports = (env, argv) => {
   const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
   const POSTHOG_KEY = env.POSTHOG_KEY;
   const POSTHOG_HOST = env.POSTHOG_HOST;
+  const STRIPE_PUBLISHABLE_KEY = env.STRIPE_PUBLISHABLE_KEY;
 
   if (!argv.mode || GOOGLE_CLIENT_ID === "undefined") {
     console.error(`Oopsies, you're missing a required parameter.
@@ -45,6 +46,9 @@ module.exports = (env, argv) => {
       "process.env.GOOGLE_CLIENT_ID": JSON.stringify(GOOGLE_CLIENT_ID),
       "process.env.POSTHOG_KEY": JSON.stringify(POSTHOG_KEY),
       "process.env.POSTHOG_HOST": JSON.stringify(POSTHOG_HOST),
+      "process.env.STRIPE_PUBLISHABLE_KEY": JSON.stringify(
+        STRIPE_PUBLISHABLE_KEY,
+      ),
     }),
     new HtmlWebpackPlugin({
       filename: "index.html",

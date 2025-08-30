@@ -45,14 +45,14 @@ const buildNodePckgs = async (options: Options_Cli) => {
 
 const buildWeb = async (options: Options_Cli) => {
   const environment = options.environment;
-  const { baseUrl, gClientId, posthogKey, posthogHost } =
+  const { baseUrl, gClientId, posthogKey, posthogHost, stripePublishableKey } =
     await getBuildOptions(options);
   removeOldBuildFor(PCKG.WEB);
 
   log.info("Compiling web files...");
   shell.cd(`${COMPASS_ROOT_DEV}/packages/web`);
   shell.exec(
-    `webpack --mode=production --env API_BASEURL=${baseUrl} GOOGLE_CLIENT_ID=${gClientId} POSTHOG_KEY=${posthogKey} POSTHOG_HOST=${posthogHost}`,
+    `webpack --mode=production --env API_BASEURL=${baseUrl} GOOGLE_CLIENT_ID=${gClientId} POSTHOG_KEY=${posthogKey} POSTHOG_HOST=${posthogHost} STRIPE_PUBLISHABLE_KEY=${stripePublishableKey}`,
   );
 
   log.success(`Done building web files.`);

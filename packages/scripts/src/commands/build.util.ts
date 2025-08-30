@@ -112,8 +112,9 @@ export const getBuildOptions = async (options: Options_Cli) => {
   // Read values from env file
   const posthogKey = process.env["POSTHOG_KEY"];
   const posthogHost = process.env["POSTHOG_HOST"];
+  const stripePublishableKey = process.env["STRIPE_PUBLISHABLE_KEY"];
 
-  return { baseUrl, gClientId, posthogKey, posthogHost };
+  return { baseUrl, gClientId, posthogKey, posthogHost, stripePublishableKey };
 };
 
 export const removeOldBuildFor = (pckg: string) => {
