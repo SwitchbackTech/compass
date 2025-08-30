@@ -5,7 +5,10 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Schema_Event } from "@core/types/event.types";
+import {
+  RecurringEventUpdateScope,
+  Schema_Event,
+} from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import { getUserId } from "@web/auth/auth.util";
 import { PartialMouseEvent } from "@web/common/types/util.types";
@@ -105,93 +108,133 @@ export const useDraftActions = (
     setDateBeingChanged("endDate");
   };
 
-  const isEventDirty = (
-    currentDraft: Schema_Event,
-    originalEvent: Schema_Event | null,
-  ) => {
-    if (!originalEvent) return true; // New event is always dirty
+  const isRecurrence = (draft: Schema_Event) => {
+    const hasRRule = Array.isArray(draft?.recurrence?.rule);
+    const hasEventId = (draft?.recurrence?.eventId ?? "").length > 0;
 
-    // Compare relevant fields that can change in the form
-    const fieldsToCompare = [
-      "title",
-      "description",
-      "startDate",
-      "endDate",
-      "priority",
-    ] as const;
-
-    return fieldsToCompare.some(
-      (field) => currentDraft[field] !== originalEvent[field],
-    );
+    return hasRRule || hasEventId;
   };
 
-  const submit = async (draft: Schema_GridEvent) => {
-    // Check if the event has actually changed
-    if (!isEventDirty(draft, reduxDraft)) {
-      // No changes detected, just close the form without making HTTP request
+  const isRecurrenceChanged = useCallback(
+    (currentDraft: Schema_Event): boolean => {
+      if (!isRecurrence(currentDraft)) return false; // Not a recurring event
+
+      const oldStartDate = reduxDraft?.startDate;
+      const newStartDate = currentDraft.startDate;
+      const oldEndDate = reduxDraft?.endDate;
+      const newEndDate = currentDraft.endDate;
+      const oldRecurrence = reduxDraft?.recurrence?.rule ?? [];
+      const newRecurrence = currentDraft.recurrence?.rule ?? [];
+      const startDateChanged = oldStartDate !== newStartDate;
+      const endDateChanged = oldEndDate !== newEndDate;
+      const recurrenceUpdated = oldRecurrence.length !== newRecurrence.length;
+
+      return (
+        recurrenceUpdated ||
+        startDateChanged ||
+        endDateChanged ||
+        newRecurrence.some((rule) => !oldRecurrence.includes(rule))
+      );
+    },
+    [reduxDraft],
+  );
+
+  const isEventDirty = useCallback(
+    (currentDraft: Schema_Event): boolean => {
+      if (!reduxDraft) return true; // New event is always dirty
+
+      // Compare relevant fields that can change in the form
+      const fieldsToCompare = [
+        "title",
+        "description",
+        "startDate",
+        "endDate",
+        "priority",
+      ] as const;
+
+      const recurrenceDirty = isRecurrenceChanged(currentDraft);
+
+      const fieldsDirty = fieldsToCompare.some(
+        (field) => currentDraft[field] !== reduxDraft[field],
+      );
+
+      return (fieldsDirty || recurrenceDirty) ?? false;
+    },
+    [reduxDraft, isRecurrenceChanged],
+  );
+
+  const submit = useCallback(
+    async (draft: Schema_GridEvent, applyTo?: RecurringEventUpdateScope) => {
+      // Check if the event has actually changed
+      if (!isEventDirty(draft)) {
+        // No changes detected, just close the form without making HTTP request
+        if (isFormOpenBeforeDragging) {
+          openForm();
+        } else {
+          discard();
+        }
+        return;
+      }
+
+      const userId = await getUserId();
+
+      let event = null;
+      if (draft.isSomeday) {
+        event = prepSomedayEventBeforeSubmit(draft, userId);
+        event.order = -1; // Provide it to prevent zod validation error since zod expects it
+      } else {
+        event = prepEvtBeforeSubmit(draft, userId);
+      }
+
+      const { startOfView, endOfView } = weekProps.component;
+
+      const isExisting = event._id;
+      if (isExisting) {
+        const isDateWithinView = (date: string) =>
+          dayjs(date).isBetween(startOfView, endOfView, null, "[]");
+
+        const isStartDateInView = isDateWithinView(event.startDate);
+        const isEndDateInView = isDateWithinView(event.endDate);
+        const doesEventSpanView =
+          dayjs(event.startDate).isBefore(startOfView) &&
+          dayjs(event.endDate).isAfter(endOfView);
+
+        const isEventCompletelyOutsideView =
+          !isStartDateInView && !isEndDateInView && !doesEventSpanView;
+
+        const shouldRemove = isEventCompletelyOutsideView;
+
+        const payload = { _id: event._id, event, shouldRemove, applyTo };
+        dispatch(editEventSlice.actions.request(payload));
+
+        // If this was a drag-to-edge navigation and event moved to current week, ensure it's visible
+        const lastNavigationSource = weekProps.util.getLastNavigationSource();
+        const isDragToEdgeNavigation = lastNavigationSource === "drag-to-edge";
+        const wasEventMovedToCurrentWeek =
+          !shouldRemove &&
+          (isStartDateInView || isEndDateInView || doesEventSpanView);
+
+        if (isDragToEdgeNavigation && wasEventMovedToCurrentWeek) {
+          // Only insert if the event is not already in the current week's event list
+          const isEventAlreadyInWeek = currentWeekEvents.data.includes(
+            event._id,
+          );
+          if (!isEventAlreadyInWeek) {
+            dispatch(getWeekEventsSlice.actions.insert(event._id));
+          }
+        }
+      } else {
+        dispatch(createEventSlice.actions.request(event));
+      }
+
       if (isFormOpenBeforeDragging) {
         openForm();
       } else {
         discard();
       }
-      return;
-    }
-
-    const userId = await getUserId();
-
-    let event = null;
-    if (draft.isSomeday) {
-      event = prepSomedayEventBeforeSubmit(draft, userId);
-      event.order = -1; // Provide it to prevent zod validation error since zod expects it
-    } else {
-      event = prepEvtBeforeSubmit(draft, userId);
-    }
-
-    const { startOfView, endOfView } = weekProps.component;
-
-    const isExisting = event._id;
-    if (isExisting) {
-      const isDateWithinView = (date: string) =>
-        dayjs(date).isBetween(startOfView, endOfView, null, "[]");
-
-      const isStartDateInView = isDateWithinView(event.startDate);
-      const isEndDateInView = isDateWithinView(event.endDate);
-      const doesEventSpanView =
-        dayjs(event.startDate).isBefore(startOfView) &&
-        dayjs(event.endDate).isAfter(endOfView);
-
-      const isEventCompletelyOutsideView =
-        !isStartDateInView && !isEndDateInView && !doesEventSpanView;
-
-      const shouldRemove = isEventCompletelyOutsideView;
-
-      const payload = { _id: event._id, event, shouldRemove };
-      dispatch(editEventSlice.actions.request(payload));
-
-      // If this was a drag-to-edge navigation and event moved to current week, ensure it's visible
-      const lastNavigationSource = weekProps.util.getLastNavigationSource();
-      const isDragToEdgeNavigation = lastNavigationSource === "drag-to-edge";
-      const wasEventMovedToCurrentWeek =
-        !shouldRemove &&
-        (isStartDateInView || isEndDateInView || doesEventSpanView);
-
-      if (isDragToEdgeNavigation && wasEventMovedToCurrentWeek) {
-        // Only insert if the event is not already in the current week's event list
-        const isEventAlreadyInWeek = currentWeekEvents.data.includes(event._id);
-        if (!isEventAlreadyInWeek) {
-          dispatch(getWeekEventsSlice.actions.insert(event._id));
-        }
-      }
-    } else {
-      dispatch(createEventSlice.actions.request(event));
-    }
-
-    if (isFormOpenBeforeDragging) {
-      openForm();
-    } else {
-      discard();
-    }
-  };
+    },
+    [isEventDirty],
+  );
 
   const closeForm = () => {
     setIsFormOpen(false);
@@ -494,6 +537,9 @@ export const useDraftActions = (
     openForm,
     reset,
     resize,
+    isEventDirty,
+    isRecurrence,
+    isRecurrenceChanged,
     startDragging: () => {
       // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
       // because `setIsFormOpenBeforeDragging` depends on `isFormOpen` and re-calculates
