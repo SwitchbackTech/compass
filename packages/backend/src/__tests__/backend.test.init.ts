@@ -26,3 +26,7 @@ process.env["EMAILER_API_SECRET"] = "emailerApiSecret";
 process.env["EMAILER_WAITLIST_TAG_ID"] = "1234567";
 process.env["EMAILER_WAITLIST_INVITE_TAG_ID"] = "7654321";
 process.env["EMAILER_USER_TAG_ID"] = "910111213";
+
+// Stripe
+process.env["STRIPE_PUBLISHABLE_KEY"] = "stripePublishableKey";
+process.env["STRIPE_SECRET"] = "stripeSecret";

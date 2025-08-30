@@ -18,6 +18,7 @@ const webEnvSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val === "undefined" ? undefined : val)),
+  STRIPE_PUBLISHABLE_KEY: z.string().optional(),
 });
 
 export const ENV_WEB = webEnvSchema.parse({
@@ -27,6 +28,7 @@ export const ENV_WEB = webEnvSchema.parse({
   NODE_ENV: process.env["NODE_ENV"],
   POSTHOG_KEY: process.env["POSTHOG_KEY"],
   POSTHOG_HOST: process.env["POSTHOG_HOST"],
+  STRIPE_PUBLISHABLE_KEY: process.env["STRIPE_PUBLISHABLE_KEY"],
 });
 
 export const IS_DEV = isDev(ENV_WEB.NODE_ENV);
