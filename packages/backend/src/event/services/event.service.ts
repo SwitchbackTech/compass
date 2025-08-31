@@ -1,4 +1,11 @@
-import { ClientSession, Document, Filter, OptionalId } from "mongodb";
+import {
+  ClientSession,
+  Document,
+  Filter,
+  ObjectId,
+  OptionalId,
+  WithId,
+} from "mongodb";
 import {
   Origin,
   Priorities,
@@ -18,6 +25,7 @@ import {
   Query_Event,
   Query_Event_Update,
   Result_DeleteMany,
+  Schema_Event,
   Schema_Event_Core,
 } from "@core/types/event.types";
 import { getCurrentRangeDates } from "@core/util/date/date.util";
@@ -29,6 +37,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { Event_Core_WithObjectId } from "@backend/sync/sync.types";
+import { isExistingInstance } from "../../../../core/src/util/event/event.util";
 import { reorderEvents } from "../queries/event.queries";
 import {
   getCreateParams,
@@ -256,21 +265,44 @@ class EventService {
   ): Promise<Schema_Event_Core[] | BaseError> => {
     const filter = getReadAllFilter(userId, query) as Filter<Document>;
 
+    let events: Array<WithId<Omit<Schema_Event, "_id">>>;
+
     if (query.someday) {
-      const response = (await mongoService.db
-        .collection(Collections.EVENT)
+      events = await mongoService.event
         .find(filter)
         .limit(SOMEDAY_WEEKLY_LIMIT + SOMEDAY_MONTHLY_LIMIT)
         .sort({ startDate: 1 })
-        .toArray()) as unknown as Schema_Event_Core[];
-      return response;
+        .toArray();
     } else {
-      const response = (await mongoService.db
-        .collection(Collections.EVENT)
-        .find(filter)
-        .toArray()) as unknown as Schema_Event_Core[];
-      return response;
+      events = await mongoService.event.find(filter).toArray();
     }
+
+    const baseEventIds = events
+      .filter(isExistingInstance)
+      .map((e) => new ObjectId(e.recurrence?.eventId));
+
+    const baseEvents = await mongoService.event
+      .find({ user: userId, _id: { $in: baseEventIds } })
+      .toArray();
+
+    return events.map((event) => {
+      if (isExistingInstance(event)) {
+        const baseEvent = baseEvents.find(
+          ({ _id }) => _id.toString() === event.recurrence?.eventId,
+        );
+
+        return {
+          ...event,
+          _id: event._id.toString(),
+          recurrence: {
+            eventId: event.recurrence?.eventId,
+            rule: baseEvent?.recurrence?.rule,
+          },
+        } as Schema_Event_Core;
+      }
+
+      return { ...event, _id: event._id.toString() } as Schema_Event_Core;
+    });
   };
 
   readById = async (userId: string, eventId: string) => {
@@ -278,9 +310,8 @@ class EventService {
       _id: mongoService.objectId(eventId),
       user: userId,
     };
-    const event = await mongoService.db
-      .collection(Collections.EVENT)
-      .findOne(filter);
+
+    const event = await mongoService.event.findOne(filter);
 
     if (event === null) {
       throw new BaseError(
@@ -291,7 +322,21 @@ class EventService {
       );
     }
 
-    return event;
+    const isInstance = isExistingInstance(event);
+
+    if (isInstance) {
+      const baseEvent = await mongoService.event.findOne({
+        user: userId,
+        _id: new ObjectId(event.recurrence?.eventId),
+      });
+
+      event.recurrence = {
+        eventId: event.recurrence?.eventId,
+        rule: baseEvent?.recurrence?.rule,
+      };
+    }
+
+    return { ...event, _id: event._id.toString() };
   };
 
   reorder = async (userId: string, order: Payload_Order[]) => {
@@ -311,11 +356,14 @@ class EventService {
     query: Query_Event_Update,
   ) => {
     const updateGcal = !event.isSomeday;
+    const baseId = event.recurrence?.eventId as string;
+
+    if (baseId) event.recurrence = { eventId: baseId };
+
     const action = getUpdateAction(event, query);
     const _baseEvent = updateGcal ? await _updateGcal(userId, event) : event;
 
     const _event = { ..._baseEvent, updatedAt: new Date() };
-    const baseId = _event.recurrence?.eventId as string;
 
     const repo = new EventRepository(userId);
     switch (action) {
