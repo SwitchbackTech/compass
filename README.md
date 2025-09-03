@@ -28,13 +28,14 @@ The basics:
 
 The unique stuff:
 
-- ✍️ Display your custom note-to-self
-- ☑️ Someday / Maybe todo list
+- ✍️ Display your weekly goal
+- ☑️ Someday / Maybe task list
 - ⏩ Move an event forward/back with one click
 
 Integrations:
 
-- 🔄 2-way sync with Google Calendar
+- 🔄 **Hosted** 2-way sync with Google Calendar
+- 🔄 **Local** 2-way sync with Google Calendar (Ngrok proxy)
 - 🔐 Google OAuth authentication
 - 🔐 User session management (Supertokens)
 - ✉️ Email capture (Kit)
@@ -58,9 +59,9 @@ All the info you'd need to get started is at [docs.compasscalendar.com](https://
 
 ## Next Steps
 
-🔵 [Use the app](https://app.compasscalendar.com) (Closed beta)
+✍️ [Sign Up for the Waitlist](https://www.compasscalendar.com/waitlist)
 
-Compass sign in is currently limited to emails that have been invited from our waitlist. If you're running the app locally, this restriction is skipped so contributors can get started right away.
+🧭 [Use the App](https://app.compasscalendar.com) (Closed beta). Access to the **hosted** version of Compass is currently limited to emails that have been invited from our waitlist. This restriction is skipped when you're running the app **locally**.
 
 💬 [Join our Discord](https://www.discord.gg/H3DVMnKmUd)
 
