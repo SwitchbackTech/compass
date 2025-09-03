@@ -8,6 +8,8 @@ export const Schema_Options_Cli_Build = z.object({
   clientId: z.string().optional(),
   environment: z.enum(["staging", "production"]).optional(),
   packages: z.array(z.string()).optional(),
+  posthogKey: z.string().optional(),
+  posthogHost: z.string().optional(),
 });
 
 export const Schema_Options_Cli_Delete = z.object({

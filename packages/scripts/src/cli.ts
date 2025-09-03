@@ -71,6 +71,14 @@ class CompassCli {
       .option(
         `-e, --environment [${CATEGORY_VM.STAG} | ${CATEGORY_VM.PROD}]`,
         "specify environment",
+      )
+      .option(
+        "--posthogKey <posthogKey>",
+        "posthog api key to inject into build",
+      )
+      .option(
+        "--posthogHost <posthogHost>",
+        "posthog host url to inject into build",
       );
 
     program

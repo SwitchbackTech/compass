@@ -109,9 +109,9 @@ export const getBuildOptions = async (options: Options_Cli) => {
   const envPath = path.join(__dirname, "..", "..", "..", "backend", envFile);
   dotenv.config({ path: envPath });
 
-  // Read values from env file
-  const posthogKey = process.env["POSTHOG_KEY"];
-  const posthogHost = process.env["POSTHOG_HOST"];
+  // Read values from CLI options first, then fall back to env file
+  const posthogKey = options.posthogKey || process.env["POSTHOG_KEY"];
+  const posthogHost = options.posthogHost || process.env["POSTHOG_HOST"];
 
   return { baseUrl, gClientId, posthogKey, posthogHost };
 };

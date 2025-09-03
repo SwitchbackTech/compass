@@ -97,6 +97,20 @@ export class CliValidator {
       if (clientId) {
         buildOpts.clientId = clientId;
       }
+
+      const posthogKey = buildCmd?.opts()[
+        "posthogKey"
+      ] as Options_Cli_Build["posthogKey"];
+      if (posthogKey) {
+        buildOpts.posthogKey = posthogKey;
+      }
+
+      const posthogHost = buildCmd?.opts()[
+        "posthogHost"
+      ] as Options_Cli_Build["posthogHost"];
+      if (posthogHost) {
+        buildOpts.posthogHost = posthogHost;
+      }
     }
     return buildOpts;
   }
