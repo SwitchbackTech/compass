@@ -148,7 +148,7 @@ export const CoreEventSchema = z.object({
   gRecurringEventId: z.string().optional(),
   origin: z.nativeEnum(Origin),
   priority: z.nativeEnum(Priorities),
-  recurrence: Recurrence.nullable().optional(),
+  recurrence: Recurrence.optional(),
   startDate: z.union([
     z.string().datetime({ offset: true }),
     z.string().date(),
