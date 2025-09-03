@@ -100,14 +100,19 @@ export const assignIdsToEvents = (
 
     const baseEventObjectId = idMaps.get(baseEventId)!;
 
-    return {
+    const result = {
       ...event,
       _id: isBaseEvent ? baseEventObjectId : new ObjectId(),
-      recurrence: (isRegularEvent
-        ? undefined
-        : isInstance
-          ? { eventId: baseEventObjectId.toString() }
-          : event.recurrence) as { rule: string[] },
     };
+
+    if (!isRegularEvent) {
+      if (isInstance) {
+        result.recurrence = { eventId: baseEventObjectId.toString() };
+      } else if (event.recurrence) {
+        result.recurrence = event.recurrence;
+      }
+    }
+
+    return result;
   });
 };
