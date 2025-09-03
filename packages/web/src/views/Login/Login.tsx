@@ -86,18 +86,7 @@ export const LoginView = () => {
     e.preventDefault();
     const processedInput = emailInput.trim().toLowerCase();
 
-    if (processedInput === "marco@polo.co") {
-      setApiError(null); // Clear any previous error
-      setWaitlistStatus({
-        isOnWaitlist: true,
-        isInvited: true,
-        isActive: true,
-      });
-      setFlowStep("waitlistStatusKnown");
-      return;
-    }
-
-    if (!emailInput.trim()) {
+    if (!processedInput) {
       setApiError("Please enter your email address.");
       return;
     }
@@ -105,7 +94,7 @@ export const LoginView = () => {
     setApiError(null);
     setFlowStep("checkingWaitlist");
     try {
-      const data = await WaitlistApi.getWaitlistStatus(emailInput.trim());
+      const data = await WaitlistApi.getWaitlistStatus(processedInput);
       setWaitlistStatus(data);
       setFlowStep("waitlistStatusKnown");
     } catch (error) {

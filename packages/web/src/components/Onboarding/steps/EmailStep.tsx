@@ -73,20 +73,9 @@ export const EmailStep: React.FC<OnboardingStepProps> = ({
 
     const processedInput = email.trim().toLowerCase();
 
-    if (processedInput === "marco@polo.co") {
-      setWaitlistStatus({
-        isOnWaitlist: true,
-        isInvited: true,
-        isActive: true,
-      });
-      setFirstName("Marco");
-      onNext();
-      return;
-    }
-
     setIsLoadingWaitlistStatus(true);
     try {
-      const data = await WaitlistApi.getWaitlistStatus(email.trim());
+      const data = await WaitlistApi.getWaitlistStatus(processedInput);
       setWaitlistStatus(data);
       setFirstName(data.firstName ?? "Sailor");
 
