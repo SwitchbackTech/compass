@@ -1,4 +1,4 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
 contact_links:
   - name: 🐞 Bug Report
     url: https://github.com/SwitchbackTech/compass/issues/new?template=2-bug-report.yml

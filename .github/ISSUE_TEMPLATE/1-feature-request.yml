@@ -19,7 +19,6 @@ body:
         - High (would significantly improve my experience)
         - Medium (nice to have)
         - Low (minor improvement)
-      required: true
 
   - type: textarea
     attributes:
