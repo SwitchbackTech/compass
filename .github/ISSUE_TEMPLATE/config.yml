@@ -1,14 +1,14 @@
 blank_issues_enabled: false
 contact_links:
+  - name: 🐞 Bug Report
+    url: https://github.com/SwitchbackTech/compass/issues/new?template=2-bug-report.yml
+    about: Report a bug or unexpected behavior
+  - name: ✨ Feature Request
+    url: https://github.com/SwitchbackTech/compass/issues/new?template=1-feature-request.yml
+    about: Suggest a new feature or enhancement
   - name: 💬 Discord Community
     url: https://www.discord.gg/H3DVMnKmUd
-    about: Join our Discord for general discussion
+    about: Join our Discord for general questions and discussion
   - name: 📚 Documentation
     url: https://docs.compasscalendar.com
     about: Check our documentation for setup guides, API reference, and contributing guidelines
-  - name: ✍️ Join Waitlist
-    url: https://www.compasscalendar.com/waitlist
-    about: Sign up for early access to the hosted version
-  - name: 🧭 Try the App
-    url: https://app.compasscalendar.com
-    about: Use the hosted version of Compass Calendar (requires waitlist access)
