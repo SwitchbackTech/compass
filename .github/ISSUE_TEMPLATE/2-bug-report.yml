@@ -1,5 +1,5 @@
 name: Bug Report 🐞
-description: Report technical issues.
+description: You found something wrong
 labels: [bug]
 projects: [SwitchbackTech/4]
 
@@ -14,7 +14,7 @@ body:
       label: Where did this happen?
       multiple: true
       options:
-        - Production app
+        - Hosted (app.compasscalendar.com)
         - Local code with an up-to-date main branch
 
   - type: textarea
