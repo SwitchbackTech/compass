@@ -187,7 +187,6 @@ export const EventForm: React.FC<FormProps> = ({
     };
 
     onSubmit(finalEvent);
-    onClose();
   };
 
   const onSetEventField: SetEventFormField = (field) => {
