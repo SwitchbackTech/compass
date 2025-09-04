@@ -1,5 +1,5 @@
 name: Bug Report 🐞
-description: Report technical issues.
+description: You found something wrong
 labels: [bug]
 projects: [SwitchbackTech/4]
 
@@ -14,7 +14,7 @@ body:
       label: Where did this happen?
       multiple: true
       options:
-        - Production app
+        - Hosted (app.compasscalendar.com)
         - Local code with an up-to-date main branch
 
   - type: textarea
@@ -26,14 +26,19 @@ body:
   - type: textarea
     attributes:
       label: Current Behavior
-      description: What went wrong?
+      description: What went wrong? If applicable, add screenshots or videos
       placeholder: Describe the current behavior...
 
   - type: textarea
     attributes:
       label: Steps to Reproduce
       description: Include a step-by-step guide, along with any stack traces, screenshots, or screen recordings.
-      placeholder: "1.\n\n2.\n\n3.\n\n4."
+      placeholder: |
+        1. Go to calendar view
+        2. Click on an event
+        3. Try to edit the event
+        4. See error message
+      required: true
 
   - type: textarea
     attributes:
@@ -44,5 +49,5 @@ body:
   - type: textarea
     attributes:
       label: Context
-      description: How has this issue affected users? What are they trying to accomplish?
+      description: How has this issue affected you as a user? What were you trying to accomplish? Any workarounds?
       placeholder: Describe the context...

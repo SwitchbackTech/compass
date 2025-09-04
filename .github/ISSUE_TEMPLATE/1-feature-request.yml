@@ -9,6 +9,18 @@ body:
       value: |
         Thanks for taking the time to fill out this feature request!
 
+  - type: dropdown
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      multiple: false
+      options:
+        - Critical (blocking my workflow)
+        - High (would significantly improve my experience)
+        - Medium (nice to have)
+        - Low (minor improvement)
+      required: true
+
   - type: textarea
     attributes:
       label: Feature Description
@@ -25,4 +37,25 @@ body:
     attributes:
       label: Additional Context
       description: Add any other context or screenshots about the feature request here.
-      placeholder: Here's where I got this idea ...
+      placeholder: |
+        - Links to similar features in other apps
+        - User research or feedback
+        - Technical considerations
+        - Screenshots or mockups
+      required: false
+
+  - type: checkboxes
+    attributes:
+      label: Contribution Interest
+      description: Are you interested in helping with this feature?
+      options:
+        - label: I would like to help implement this feature
+          required: false
+        - label: I can help with design/mockups
+          required: false
+        - label: I can help with testing
+          required: false
+        - label: I can help with documentation
+          required: false
+        - label: I'm just suggesting, not planning to contribute
+          required: false
