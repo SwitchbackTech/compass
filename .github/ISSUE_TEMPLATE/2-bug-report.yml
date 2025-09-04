@@ -38,7 +38,6 @@ body:
         2. Click on an event
         3. Try to edit the event
         4. See error message
-      required: true
 
   - type: textarea
     attributes:
