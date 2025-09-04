@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discord Community
+    url: https://www.discord.gg/H3DVMnKmUd
+    about: Join our Discord for general discussion
+  - name: 📚 Documentation
+    url: https://docs.compasscalendar.com
+    about: Check our documentation for setup guides, API reference, and contributing guidelines
+  - name: ✍️ Join Waitlist
+    url: https://www.compasscalendar.com/waitlist
+    about: Sign up for early access to the hosted version
+  - name: 🧭 Try the App
+    url: https://app.compasscalendar.com
+    about: Use the hosted version of Compass Calendar (requires waitlist access)
