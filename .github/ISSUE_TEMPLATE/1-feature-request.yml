@@ -41,7 +41,6 @@ body:
         - User research or feedback
         - Technical considerations
         - Screenshots or mockups
-      required: false
 
   - type: checkboxes
     attributes:
@@ -49,12 +48,7 @@ body:
       description: Are you interested in helping with this feature?
       options:
         - label: I would like to help implement this feature
-          required: false
         - label: I can help with design/mockups
-          required: false
         - label: I can help with testing
-          required: false
         - label: I can help with documentation
-          required: false
         - label: I'm just suggesting, not planning to contribute
-          required: false
