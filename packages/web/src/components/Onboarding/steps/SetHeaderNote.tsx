@@ -43,11 +43,14 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setShowHelpText(true);
+      // Only show help text if the input is still empty
+      if (!headerNote.trim()) {
+        setShowHelpText(true);
+      }
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [headerNote]);
 
   const handleNext = () => {
     localStorage.setItem(
