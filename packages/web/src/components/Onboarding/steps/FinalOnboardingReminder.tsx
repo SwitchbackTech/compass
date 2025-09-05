@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { OnboardingCard, OnboardingText } from "../components/";
 import { OnboardingStepProps } from "../components/Onboarding";
 
-const FADE_IN_MS = 5000;
-const READ_MS = 4000;
-const FADE_OUT_MS = 2500;
+const FADE_IN_MS = 4000;
+const READ_MS = 3500;
+const FADE_OUT_MS = 2000;
 
 /**
  * This step fades the quote in when it comes into view, allows the user a few
@@ -74,7 +74,7 @@ export const FinalOnboardingReminder: React.FC<OnboardingStepProps> = ({
         >
           To reach a port, we must set sail.
           <br />
-          Sail, not tie at anchor
+          Sail, not tie at anchor.
           <br />
           Sail, not drift.
         </OnboardingText>
