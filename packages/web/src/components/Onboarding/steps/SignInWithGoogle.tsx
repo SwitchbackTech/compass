@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
@@ -27,6 +27,19 @@ export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
       console.error(error);
     },
   });
+
+  // Handle ENTER key globally to trigger login
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Enter" && !loading) {
+        event.preventDefault();
+        login();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [login, loading]);
 
   return (
     <OnboardingStepBoilerplate
