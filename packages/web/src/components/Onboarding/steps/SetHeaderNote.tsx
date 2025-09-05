@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
@@ -40,23 +40,17 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
 }) => {
   const [headerNote, setHeaderNote] = useState("");
   const [showHelpText, setShowHelpText] = useState(false);
-  const headerNoteRef = useRef("");
-
-  // Keep headerNoteRef in sync with headerNote state
-  useEffect(() => {
-    headerNoteRef.current = headerNote;
-  }, [headerNote]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       // Only show help text if the input is still empty
-      if (!headerNoteRef.current.trim()) {
+      if (!headerNote.trim()) {
         setShowHelpText(true);
       }
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, []); // Empty dependency array is now safe since we use ref
+  }, [headerNote]);
 
   const handleNext = () => {
     localStorage.setItem(
