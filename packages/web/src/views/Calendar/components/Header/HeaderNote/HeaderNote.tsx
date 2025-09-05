@@ -7,7 +7,7 @@ import React, {
   useState,
 } from "react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { ID_GOAL_INPUT } from "@web/common/constants/web.constants";
+import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectHeaderNoteFocus } from "@web/ducks/events/selectors/view.selectors";
@@ -294,7 +294,7 @@ export const HeaderNote = forwardRef(
           <>
             <StyledNoteWrapper ref={focusWrapperRef}>
               <StyledNoteText
-                id={ID_GOAL_INPUT}
+                id={ID_REMINDER_INPUT}
                 ref={focusRef}
                 contentEditable
                 suppressContentEditableWarning
@@ -311,7 +311,7 @@ export const HeaderNote = forwardRef(
           </>
         ) : note ? (
           <TooltipWrapper
-            description="Edit Goal"
+            description="Edit Reminder"
             onClick={() => {}}
             shortcut="F"
           >
@@ -356,7 +356,7 @@ export const HeaderNote = forwardRef(
           </TooltipWrapper>
         ) : (
           <TooltipWrapper
-            description="Edit Goal"
+            description="Edit Reminder"
             onClick={() => {}}
             shortcut="F"
           >
@@ -366,7 +366,7 @@ export const HeaderNote = forwardRef(
               onMouseLeave={() => setShowPlaceholderUnderline(false)}
             >
               <StyledNotePlaceholder onClick={handleNoteClick}>
-                Click to add your goal
+                Click to add your reminder
               </StyledNotePlaceholder>
               <StyledPlaceholderUnderline
                 isVisible={showPlaceholderUnderline}
