@@ -9,11 +9,14 @@ import {
 } from "../components";
 import { OnboardingStepProps } from "../components/Onboarding";
 
-const InputContainer = styled.div`
+const Form = styled.form`
   width: 100%;
+`;
+
+const InputContainer = styled.div`
   position: relative;
   margin-top: ${({ theme }) => theme.spacing.l};
-  margin-bottom: ${({ theme }) => theme.spacing.l};
+  margin-bottom: 40px;
 `;
 
 const Input = styled(OnboardingInputWhite)``;
@@ -23,7 +26,7 @@ const HelpText = styled(OnboardingText)`
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: 8px;
+  margin: 8px 0;
   font-size: ${({ theme }) => theme.text.size.l};
   color: rgb(87, 193, 255);
   text-align: center;
@@ -80,12 +83,13 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
         everything else will become easier or unnecessary?
       </OnboardingText>
 
-      <form onSubmit={handleSubmit}>
+      <Form onSubmit={handleSubmit}>
         <InputContainer>
           <Input
             placeholder={PLACEHOLDER}
             value={headerNote}
             onChange={(e) => setHeaderNote(e.target.value)}
+            autoFocus
           />
           {showHelpText && (
             <HelpText>Fear not, you can always change this later.</HelpText>
@@ -98,7 +102,7 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
           onNext={handleNext}
           nextBtnDisabled={!!headerNote && !headerNote.trim()}
         />
-      </form>
+      </Form>
     </OnboardingStepBoilerplate>
   );
 };
