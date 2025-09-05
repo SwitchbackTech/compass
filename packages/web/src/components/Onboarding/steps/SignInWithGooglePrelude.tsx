@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import compassGoogleOauthPerms from "@web/assets/png/compass-google-oauth-perms.png";
+import compassGoogleOauthPerms from "@web/assets/png/google-oauth-preview.png";
 import {
   OnboardingFooter,
   OnboardingStepBoilerplate,
