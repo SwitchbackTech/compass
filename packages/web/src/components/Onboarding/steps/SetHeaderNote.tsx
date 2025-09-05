@@ -60,6 +60,11 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
     onNext();
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleNext();
+  };
+
   return (
     <OnboardingStepBoilerplate
       currentStep={currentStep}
@@ -75,23 +80,25 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
         everything else will become easier or unnecessary?
       </OnboardingText>
 
-      <InputContainer>
-        <Input
-          placeholder={PLACEHOLDER}
-          value={headerNote}
-          onChange={(e) => setHeaderNote(e.target.value)}
-        />
-        {showHelpText && (
-          <HelpText>Fear not, you can always change this later.</HelpText>
-        )}
-      </InputContainer>
+      <form onSubmit={handleSubmit}>
+        <InputContainer>
+          <Input
+            placeholder={PLACEHOLDER}
+            value={headerNote}
+            onChange={(e) => setHeaderNote(e.target.value)}
+          />
+          {showHelpText && (
+            <HelpText>Fear not, you can always change this later.</HelpText>
+          )}
+        </InputContainer>
 
-      <OnboardingFooter
-        onSkip={onSkip}
-        onPrev={onPrevious}
-        onNext={handleNext}
-        nextBtnDisabled={!!headerNote && !headerNote.trim()}
-      />
+        <OnboardingFooter
+          onSkip={onSkip}
+          onPrev={onPrevious}
+          onNext={handleNext}
+          nextBtnDisabled={!!headerNote && !headerNote.trim()}
+        />
+      </form>
     </OnboardingStepBoilerplate>
   );
 };

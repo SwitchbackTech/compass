@@ -66,6 +66,11 @@ export const SetSomedayEvents: React.FC<OnboardingStepProps> = ({
     onNext();
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleNext();
+  };
+
   return (
     <OnboardingStepBoilerplate
       currentStep={currentStep}
@@ -76,39 +81,41 @@ export const SetSomedayEvents: React.FC<OnboardingStepProps> = ({
         Enter two tasks you want to do this month.
       </OnboardingText>
 
-      <OnboardingInputSection>
-        <OnboardingInputLabel htmlFor="someday-event-1">
-          Task 1:
-        </OnboardingInputLabel>
-        <OnboardingInputWhite
-          id="someday-event-1"
-          placeholder={SOMEDAY_EVENT_ONE_PLACEHOLDER}
-          value={somedayEventOne}
-          onChange={(e) => setSomedayEventOne(e.target.value)}
-        />
-      </OnboardingInputSection>
+      <form onSubmit={handleSubmit}>
+        <OnboardingInputSection>
+          <OnboardingInputLabel htmlFor="someday-event-1">
+            Task 1:
+          </OnboardingInputLabel>
+          <OnboardingInputWhite
+            id="someday-event-1"
+            placeholder={SOMEDAY_EVENT_ONE_PLACEHOLDER}
+            value={somedayEventOne}
+            onChange={(e) => setSomedayEventOne(e.target.value)}
+          />
+        </OnboardingInputSection>
 
-      <OnboardingInputSection>
-        <OnboardingInputLabel htmlFor="someday-event-2">
-          Task 2:
-        </OnboardingInputLabel>
-        <OnboardingInputWhite
-          id="someday-event-2"
-          placeholder={SOMEDAY_EVENT_TWO_PLACEHOLDER}
-          value={somedayEventTwo}
-          onChange={(e) => setSomedayEventTwo(e.target.value)}
-        />
-      </OnboardingInputSection>
+        <OnboardingInputSection>
+          <OnboardingInputLabel htmlFor="someday-event-2">
+            Task 2:
+          </OnboardingInputLabel>
+          <OnboardingInputWhite
+            id="someday-event-2"
+            placeholder={SOMEDAY_EVENT_TWO_PLACEHOLDER}
+            value={somedayEventTwo}
+            onChange={(e) => setSomedayEventTwo(e.target.value)}
+          />
+        </OnboardingInputSection>
 
-      <OnboardingFooter
-        onSkip={onSkip}
-        onPrev={onPrevious}
-        onNext={handleNext}
-        nextBtnDisabled={
-          (!!somedayEventOne && !somedayEventOne.trim()) ||
-          (!!somedayEventTwo && !somedayEventTwo.trim())
-        }
-      />
+        <OnboardingFooter
+          onSkip={onSkip}
+          onPrev={onPrevious}
+          onNext={handleNext}
+          nextBtnDisabled={
+            (!!somedayEventOne && !somedayEventOne.trim()) ||
+            (!!somedayEventTwo && !somedayEventTwo.trim())
+          }
+        />
+      </form>
     </OnboardingStepBoilerplate>
   );
 };

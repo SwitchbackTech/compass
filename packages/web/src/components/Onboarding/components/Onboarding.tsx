@@ -138,7 +138,10 @@ export const Onboarding: React.FC<Props> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       const currentStep = steps[currentStepIndex];
 
-      if (event.key === "ArrowRight" && !currentStep?.disableRightArrow) {
+      if (
+        (event.key === "ArrowRight" || event.key === "Enter") &&
+        !currentStep?.disableRightArrow
+      ) {
         event.preventDefault();
         handleNext();
       } else if (event.key === "ArrowLeft" && !currentStep?.disableLeftArrow) {
