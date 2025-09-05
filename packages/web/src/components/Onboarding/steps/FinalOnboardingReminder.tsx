@@ -72,8 +72,11 @@ export const FinalOnboardingReminder: React.FC<OnboardingStepProps> = ({
             transition: `opacity ${FADE_IN_MS}ms ease-in-out`,
           }}
         >
-          To reach a port we must set sail — sail, not tie at anchor — sail, not
-          drift.
+          To reach a port we must set sail —
+          <br />
+          Sail, not tie at anchor
+          <br />
+          Sail, not drift.
         </OnboardingText>
       </OnboardingCard>
     </div>
