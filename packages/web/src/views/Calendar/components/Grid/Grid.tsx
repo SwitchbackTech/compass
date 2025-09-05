@@ -28,7 +28,7 @@ export const Grid: FC<Props> = ({
   const { allDayRef, mainGridRef } = gridRefs;
 
   // Handle drag-to-edge navigation for both timed and all-day events
-  useDragEdgeNavigation(mainGridRef, weekProps);
+  const dragEdgeState = useDragEdgeNavigation(mainGridRef, weekProps);
 
   return (
     <>
@@ -47,6 +47,7 @@ export const Grid: FC<Props> = ({
         measurements={measurements}
         today={today}
         weekProps={weekProps}
+        dragEdgeState={dragEdgeState}
       />
     </>
   );

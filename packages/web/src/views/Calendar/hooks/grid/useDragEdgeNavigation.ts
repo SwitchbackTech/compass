@@ -11,17 +11,27 @@ import { WeekProps } from "../useWeek";
 const EDGE_THRESHOLD = 50; // pixels from edge to trigger navigation
 const NAVIGATION_DELAY = 500; // milliseconds to hold before navigating
 
+export interface DragEdgeNavigationState {
+  isDragging: boolean;
+  currentEdge: "left" | "right" | null;
+  isTimerActive: boolean;
+  progress: number; // 0-100 percentage for timer progress
+}
+
 export const useDragEdgeNavigation = (
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
   weekProps: WeekProps,
-) => {
+): DragEdgeNavigationState => {
   const { state: draftState } = useDraftContext();
   const isDNDing = useAppSelector(selectIsDNDing);
   const { state: sidebarState } =
     useSidebarContext() as SidebarDraftContextValue;
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastEdgeRef = useRef<"left" | "right" | null>(null);
+  const [progress, setProgress] = useState(0);
+  const timerStartTimeRef = useRef<number | null>(null);
 
   const isGridEventDragging = draftState.isDragging;
   const isSomedayEventDragging = isDNDing;
@@ -40,7 +50,13 @@ export const useDragEdgeNavigation = (
         clearTimeout(navigationTimeoutRef.current);
         navigationTimeoutRef.current = null;
       }
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       lastEdgeRef.current = null;
+      setProgress(0);
+      timerStartTimeRef.current = null;
 
       return;
     }
@@ -84,23 +100,51 @@ export const useDragEdgeNavigation = (
       currentEdge = "right";
     }
 
-    // If we moved away from an edge, clear the timeout
+    // If we moved away from an edge, clear the timeout and progress
     if (currentEdge !== lastEdgeRef.current) {
       if (navigationTimeoutRef.current) {
         clearTimeout(navigationTimeoutRef.current);
         navigationTimeoutRef.current = null;
       }
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      setProgress(0);
+      timerStartTimeRef.current = null;
       lastEdgeRef.current = currentEdge;
     }
 
     // Start navigation timer if we're at an edge and don't already have a timer
     if (currentEdge && !navigationTimeoutRef.current) {
+      timerStartTimeRef.current = Date.now();
+
+      // Progress tracking interval
+      progressIntervalRef.current = setInterval(() => {
+        if (timerStartTimeRef.current) {
+          const elapsed = Date.now() - timerStartTimeRef.current;
+          const progressPercent = Math.min(
+            (elapsed / NAVIGATION_DELAY) * 100,
+            100,
+          );
+          setProgress(progressPercent);
+        }
+      }, 16);
+
       navigationTimeoutRef.current = setTimeout(() => {
         if (currentEdge === "left") {
           weekProps.util.decrementWeek("drag-to-edge");
         } else if (currentEdge === "right") {
           weekProps.util.incrementWeek("drag-to-edge");
         }
+
+        // Clear progress tracking
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+        setProgress(0);
+        timerStartTimeRef.current = null;
         navigationTimeoutRef.current = null;
       }, NAVIGATION_DELAY);
     }
@@ -109,6 +153,10 @@ export const useDragEdgeNavigation = (
       if (navigationTimeoutRef.current) {
         clearTimeout(navigationTimeoutRef.current);
         navigationTimeoutRef.current = null;
+      }
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -120,6 +168,16 @@ export const useDragEdgeNavigation = (
       if (navigationTimeoutRef.current) {
         clearTimeout(navigationTimeoutRef.current);
       }
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
     };
   }, []);
+
+  return {
+    isDragging,
+    currentEdge: lastEdgeRef.current,
+    isTimerActive: navigationTimeoutRef.current !== null,
+    progress,
+  };
 };

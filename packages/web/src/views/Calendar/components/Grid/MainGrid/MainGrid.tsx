@@ -10,11 +10,13 @@ import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { DragEdgeNavigationState } from "@web/views/Calendar/hooks/grid/useDragEdgeNavigation";
 import { useDragEventSmartScroll } from "@web/views/Calendar/hooks/grid/useDragEventSmartScroll";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DRAFT_DURATION_MIN } from "@web/views/Calendar/layout.constants";
 import { MainGridColumns } from "../Columns/MainGridColumns";
+import { EdgeNavigationIndicators } from "./EdgeNavigationIndicators";
 import { MainGridEvents } from "./MainGridEvents";
 import {
   StyledGridRow,
@@ -29,6 +31,7 @@ interface Props {
   measurements: Measurements_Grid;
   today: Dayjs;
   weekProps: WeekProps;
+  dragEdgeState: DragEdgeNavigationState;
 }
 
 export const MainGrid: FC<Props> = ({
@@ -38,6 +41,7 @@ export const MainGrid: FC<Props> = ({
   measurements,
   today,
   weekProps,
+  dragEdgeState,
 }) => {
   const dispatch = useAppDispatch();
   const { component } = weekProps;
@@ -95,6 +99,8 @@ export const MainGrid: FC<Props> = ({
       </StyledGridWithTimeLabels>
 
       <MainGridEvents measurements={measurements} weekProps={weekProps} />
+
+      <EdgeNavigationIndicators dragEdgeState={dragEdgeState} />
     </StyledMainGrid>
   );
 };
