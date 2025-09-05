@@ -8,6 +8,7 @@ import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import {
   OnboardingFooter,
+  OnboardingInputContainer,
   OnboardingInputLabel,
   OnboardingInputSection,
   OnboardingInputWhite,
@@ -15,6 +16,7 @@ import {
   OnboardingText,
 } from "../components";
 import { OnboardingStepProps } from "../components/Onboarding";
+import { OnboardingForm } from "../components/OnboardingForm";
 
 const SOMEDAY_EVENT_ONE_PLACEHOLDER = "RSVP to Pip’s wedding invite";
 const SOMEDAY_EVENT_TWO_PLACEHOLDER = "Order mahogany peg leg";
@@ -81,30 +83,32 @@ export const SetSomedayEvents: React.FC<OnboardingStepProps> = ({
         Enter two tasks you want to do this month.
       </OnboardingText>
 
-      <form onSubmit={handleSubmit}>
-        <OnboardingInputSection>
-          <OnboardingInputLabel htmlFor="someday-event-1">
-            Task 1:
-          </OnboardingInputLabel>
-          <OnboardingInputWhite
-            id="someday-event-1"
-            placeholder={SOMEDAY_EVENT_ONE_PLACEHOLDER}
-            value={somedayEventOne}
-            onChange={(e) => setSomedayEventOne(e.target.value)}
-          />
-        </OnboardingInputSection>
+      <OnboardingForm onSubmit={handleSubmit}>
+        <OnboardingInputContainer>
+          <OnboardingInputSection>
+            <OnboardingInputLabel htmlFor="someday-event-1">
+              Task 1:
+            </OnboardingInputLabel>
+            <OnboardingInputWhite
+              id="someday-event-1"
+              placeholder={SOMEDAY_EVENT_ONE_PLACEHOLDER}
+              value={somedayEventOne}
+              onChange={(e) => setSomedayEventOne(e.target.value)}
+            />
+          </OnboardingInputSection>
 
-        <OnboardingInputSection>
-          <OnboardingInputLabel htmlFor="someday-event-2">
-            Task 2:
-          </OnboardingInputLabel>
-          <OnboardingInputWhite
-            id="someday-event-2"
-            placeholder={SOMEDAY_EVENT_TWO_PLACEHOLDER}
-            value={somedayEventTwo}
-            onChange={(e) => setSomedayEventTwo(e.target.value)}
-          />
-        </OnboardingInputSection>
+          <OnboardingInputSection>
+            <OnboardingInputLabel htmlFor="someday-event-2">
+              Task 2:
+            </OnboardingInputLabel>
+            <OnboardingInputWhite
+              id="someday-event-2"
+              placeholder={SOMEDAY_EVENT_TWO_PLACEHOLDER}
+              value={somedayEventTwo}
+              onChange={(e) => setSomedayEventTwo(e.target.value)}
+            />
+          </OnboardingInputSection>
+        </OnboardingInputContainer>
 
         <OnboardingFooter
           onSkip={onSkip}
@@ -115,7 +119,7 @@ export const SetSomedayEvents: React.FC<OnboardingStepProps> = ({
             (!!somedayEventTwo && !somedayEventTwo.trim())
           }
         />
-      </form>
+      </OnboardingForm>
     </OnboardingStepBoilerplate>
   );
 };

@@ -8,10 +8,7 @@ import {
   OnboardingText,
 } from "../components";
 import { OnboardingStepProps } from "../components/Onboarding";
-
-const Form = styled.form`
-  width: 100%;
-`;
+import { OnboardingForm } from "../components/OnboardingForm";
 
 const InputContainer = styled.div`
   position: relative;
@@ -91,7 +88,7 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
         everything else will become easier or unnecessary?
       </OnboardingText>
 
-      <Form onSubmit={handleSubmit}>
+      <OnboardingForm onSubmit={handleSubmit}>
         <InputContainer>
           <Input
             placeholder={PLACEHOLDER}
@@ -110,7 +107,7 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
           onNext={handleNext}
           nextBtnDisabled={!!headerNote && !headerNote.trim()}
         />
-      </Form>
+      </OnboardingForm>
     </OnboardingStepBoilerplate>
   );
 };
