@@ -183,7 +183,7 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
         }, 300);
 
         currentLine++;
-        timeoutId = setTimeout(showNextLine, 1200);
+        timeoutId = setTimeout(showNextLine, 800);
       } else if (currentLine < totalLines) {
         setVisibleLines(
           totalTextLines +
@@ -192,13 +192,13 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
             1,
         );
         currentLine++;
-        timeoutId = setTimeout(showNextLine, 800);
+        timeoutId = setTimeout(showNextLine, 600);
       } else {
         setAnimationComplete(true);
       }
     };
 
-    const initialDelay = setTimeout(showNextLine, 500);
+    const initialDelay = setTimeout(showNextLine, 400);
 
     return () => {
       clearTimeout(initialDelay);
