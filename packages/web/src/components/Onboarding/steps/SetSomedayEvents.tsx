@@ -90,6 +90,7 @@ export const SetSomedayEvents: React.FC<OnboardingStepProps> = ({
               Task 1:
             </OnboardingInputLabel>
             <OnboardingInputWhite
+              autoFocus
               id="someday-event-1"
               placeholder={SOMEDAY_EVENT_ONE_PLACEHOLDER}
               value={somedayEventOne}
