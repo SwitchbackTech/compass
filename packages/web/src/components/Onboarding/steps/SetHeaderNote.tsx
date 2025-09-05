@@ -55,12 +55,10 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setHeaderNote(value);
-    // Save to localStorage on every change to ensure it's always up to date
     localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, value.trim() || PLACEHOLDER);
   };
 
   const handleNext = () => {
-    // Ensure the value is saved (in case it wasn't saved on change)
     localStorage.setItem(
       STORAGE_KEYS.HEADER_NOTE,
       headerNote.trim() || PLACEHOLDER,
