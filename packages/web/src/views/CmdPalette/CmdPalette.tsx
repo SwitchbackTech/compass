@@ -172,7 +172,7 @@ const CmdPalette = ({
             id: "report-bug",
             children: "Report Bug",
             icon: "BugAntIcon",
-            href: "https://github.com/SwitchbackTech/compass/issues/new?assignees=&labels=bug&projects=&template=2-Bug_report.md&title=",
+            href: "https://github.com/SwitchbackTech/compass/issues/new?assignees=&projects=&template=2-bug-report.yml",
             target: "_blank",
           },
           {
