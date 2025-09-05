@@ -8,12 +8,12 @@ import {
   OnboardingText,
 } from "../components";
 import { OnboardingStepProps } from "../components/Onboarding";
+import { OnboardingForm } from "../components/OnboardingForm";
 
 const InputContainer = styled.div`
-  width: 100%;
   position: relative;
   margin-top: ${({ theme }) => theme.spacing.l};
-  margin-bottom: ${({ theme }) => theme.spacing.l};
+  margin-bottom: 40px;
 `;
 
 const Input = styled(OnboardingInputWhite)``;
@@ -23,7 +23,7 @@ const HelpText = styled(OnboardingText)`
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: 8px;
+  margin: 8px 0;
   font-size: ${({ theme }) => theme.text.size.l};
   color: rgb(87, 193, 255);
   text-align: center;
@@ -52,12 +52,23 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
     return () => clearTimeout(timer);
   }, [headerNote]);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setHeaderNote(value);
+    localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, value.trim() || PLACEHOLDER);
+  };
+
   const handleNext = () => {
     localStorage.setItem(
       STORAGE_KEYS.HEADER_NOTE,
       headerNote.trim() || PLACEHOLDER,
     );
     onNext();
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleNext();
   };
 
   return (
@@ -75,23 +86,26 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
         everything else will become easier or unnecessary?
       </OnboardingText>
 
-      <InputContainer>
-        <Input
-          placeholder={PLACEHOLDER}
-          value={headerNote}
-          onChange={(e) => setHeaderNote(e.target.value)}
-        />
-        {showHelpText && (
-          <HelpText>Fear not, you can always change this later.</HelpText>
-        )}
-      </InputContainer>
+      <OnboardingForm onSubmit={handleSubmit}>
+        <InputContainer>
+          <Input
+            placeholder={PLACEHOLDER}
+            value={headerNote}
+            onChange={handleInputChange}
+            autoFocus
+          />
+          {showHelpText && (
+            <HelpText>Fear not, you can always change this later.</HelpText>
+          )}
+        </InputContainer>
 
-      <OnboardingFooter
-        onSkip={onSkip}
-        onPrev={onPrevious}
-        onNext={handleNext}
-        nextBtnDisabled={!!headerNote && !headerNote.trim()}
-      />
+        <OnboardingFooter
+          onSkip={onSkip}
+          onPrev={onPrevious}
+          onNext={handleNext}
+          nextBtnDisabled={!!headerNote && !headerNote.trim()}
+        />
+      </OnboardingForm>
     </OnboardingStepBoilerplate>
   );
 };

@@ -31,12 +31,17 @@ export const OnboardingContent = styled.div`
   gap: ${({ theme }) => theme.spacing.l};
 `;
 
+export const OnboardingInputContainer = styled.div`
+  margin-bottom: 40px;
+`;
+
 export const OnboardingInputSection = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: ${({ theme }) => theme.spacing.s};
+  padding-bottom: 20px;
 `;
 
 export const OnboardingInputLabel = styled.label`

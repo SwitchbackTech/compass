@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
+import { Key } from "ts-key-enum";
 
 export const OnboardingRoot = styled.div`
   // background: rgba(0, 0, 0, 0.8);
@@ -138,7 +139,10 @@ export const Onboarding: React.FC<Props> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       const currentStep = steps[currentStepIndex];
 
-      if (event.key === "ArrowRight" && !currentStep?.disableRightArrow) {
+      if (
+        (event.key === Key.ArrowRight || event.key === Key.Enter) &&
+        !currentStep?.disableRightArrow
+      ) {
         event.preventDefault();
         handleNext();
       } else if (event.key === "ArrowLeft" && !currentStep?.disableLeftArrow) {

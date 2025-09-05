@@ -12,6 +12,7 @@ import {
 } from "../components";
 import { OnboardingStepProps } from "../components/Onboarding";
 import { useOnboarding } from "../components/OnboardingContext";
+import { OnboardingForm } from "../components/OnboardingForm";
 
 const Title = styled(OnboardingText)`
   margin-bottom: ${({ theme }) => theme.spacing.xl};
@@ -111,23 +112,25 @@ export const EmailStep: React.FC<OnboardingStepProps> = ({
       totalSteps={totalSteps}
     >
       <Title>The gangway lowers only for the chosen.</Title>
-      <OnboardingInputSection>
-        <OnboardingInputLabel htmlFor="email">Email</OnboardingInputLabel>
-        <OnboardingInput
-          id="email"
-          type="email"
-          placeholder=""
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoFocus
-        />
-      </OnboardingInputSection>
-      <SubmitButton
-        disabled={isLoadingWaitlistStatus || !email.trim()}
-        onClick={handleSubmit}
-      >
-        OK
-      </SubmitButton>
+      <OnboardingForm onSubmit={handleSubmit}>
+        <OnboardingInputSection>
+          <OnboardingInputLabel htmlFor="email">Email</OnboardingInputLabel>
+          <OnboardingInput
+            id="email"
+            type="email"
+            placeholder=""
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoFocus
+          />
+        </OnboardingInputSection>
+        <SubmitButton
+          type="submit"
+          disabled={isLoadingWaitlistStatus || !email.trim()}
+        >
+          OK
+        </SubmitButton>
+      </OnboardingForm>
     </OnboardingStepBoilerplate>
   );
 };
