@@ -25,8 +25,8 @@ export const SignInWithGooglePrelude: React.FC<OnboardingStepProps> = ({
       totalSteps={totalSteps}
     >
       <OnboardingText>
-        Alas, the crew must get permission to take your bags and set up your
-        cabin before I can show you around.
+        Alas, the crew must get permission to take your bags before I can show
+        you around.
       </OnboardingText>
 
       <OnboardingText>
