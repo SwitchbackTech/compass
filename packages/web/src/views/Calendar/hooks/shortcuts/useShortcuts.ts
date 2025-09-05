@@ -9,7 +9,7 @@ import {
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { ID_GOAL_INPUT } from "@web/common/constants/web.constants";
+import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
 import { isEventFormOpen } from "@web/common/utils";
 import { createAlldayDraft } from "@web/common/utils/draft/draft.util";
 import { createTimedDraft } from "@web/common/utils/draft/draft.util";
@@ -104,7 +104,8 @@ export const useShortcuts = ({
       // Prevent shortcuts from triggering unexpectedly
       if (isEventFormOpen()) return;
 
-      const isEditingHeader = document.getElementById(ID_GOAL_INPUT) !== null;
+      const isEditingHeader =
+        document.getElementById(ID_REMINDER_INPUT) !== null;
       if (isEditingHeader) return;
 
       const isCmdPaletteOpen =
