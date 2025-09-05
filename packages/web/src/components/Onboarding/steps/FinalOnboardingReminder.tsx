@@ -61,24 +61,18 @@ export const FinalOnboardingReminder: React.FC<OnboardingStepProps> = ({
         justifyContent: "center",
       }}
     >
-      <OnboardingCard
+      <OnboardingText
         style={{
-          border: "solid 1px #E4E4E4",
+          opacity: showText ? 1 : 0,
+          transition: `opacity ${FADE_IN_MS}ms ease-in-out`,
         }}
       >
-        <OnboardingText
-          style={{
-            opacity: showText ? 1 : 0,
-            transition: `opacity ${FADE_IN_MS}ms ease-in-out`,
-          }}
-        >
-          To reach a port, we must set sail.
-          <br />
-          Sail, not tie at anchor.
-          <br />
-          Sail, not drift.
-        </OnboardingText>
-      </OnboardingCard>
+        To reach a port, we must set sail.
+        <br />
+        Sail, not tie at anchor.
+        <br />
+        Sail, not drift.
+      </OnboardingText>
     </div>
   );
 };
