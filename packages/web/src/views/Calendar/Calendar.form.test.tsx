@@ -86,35 +86,35 @@ describe("Event Form", () => {
     it("it should be focused when the 'f' keyboard shortcut is used", async () => {
       const { container } = render(<CalendarView />, { state: preloadedState });
 
-      const focusNotePlaceholder = screen.getByText("Click to add your focus");
+      const goalPlaceholder = screen.getByText("Click to add your goal");
 
-      expect(focusNotePlaceholder).toBeInTheDocument();
+      expect(goalPlaceholder).toBeInTheDocument();
 
       await act(async () => userEvent.keyboard("f"));
 
-      const focusNoteInput = container.querySelector('[id="headerNoteInput"]');
+      const goalInput = container.querySelector('[id="goalInput"]');
 
-      expect(focusNoteInput).toHaveFocus();
+      expect(goalInput).toHaveFocus();
     });
 
-    it.skip("it should be focused when the 'edit focus' btn is clicked in the command palette", async () => {
+    it.skip("it should be focused when the 'edit goal' btn is clicked in the command palette", async () => {
       const { container } = render(<CalendarView />, { state: preloadedState });
 
-      const focusNotePlaceholder = screen.getByText("Click to add your focus");
+      const goalPlaceholder = screen.getByText("Click to add your goal");
 
-      expect(focusNotePlaceholder).toBeInTheDocument();
+      expect(goalPlaceholder).toBeInTheDocument();
 
       await act(async () => userEvent.keyboard("{Meta>}k{/Meta}"));
 
-      const cmdPaletteEditBtn = screen.getByText("Edit Focus Note [f]");
+      const cmdPaletteEditBtn = screen.getByText("Edit Goal [f]");
 
       expect(cmdPaletteEditBtn).toBeInTheDocument();
 
       await act(async () => userEvent.click(cmdPaletteEditBtn!));
 
-      const focusNoteInput = container.querySelector('[id="headerNoteInput"]');
+      const goalInput = container.querySelector('[id="goalInput"]');
 
-      expect(focusNoteInput).toHaveFocus();
+      expect(goalInput).toHaveFocus();
     });
   });
 });

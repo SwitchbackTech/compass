@@ -41,7 +41,7 @@ export const SetHeaderNoteSuccess: React.FC<OnboardingStepProps> = ({
       <OnboardingText>Excellent choice.</OnboardingText>
 
       <OnboardingText>
-        Compass will display this focus above your calendar.
+        Compass will display this goal above your calendar.
       </OnboardingText>
 
       <OnboardingText>
