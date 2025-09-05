@@ -131,8 +131,8 @@ const CmdPalette = ({
             ),
           },
           {
-            id: "edit-focus-note",
-            children: `Edit Focus Note [f]`,
+            id: "edit-goal",
+            children: `Edit Goal [f]`,
             icon: "PencilSquareIcon",
             onClick: onEventTargetVisibility(() =>
               dispatch(viewSlice.actions.focusHeaderNote(true)),
