@@ -69,7 +69,14 @@ export const App = () => {
       wrappedChildren = (
         <PostHogProvider
           apiKey={ENV_WEB.POSTHOG_KEY as string}
-          options={{ api_host: ENV_WEB.POSTHOG_HOST! }}
+          options={{
+            api_host: ENV_WEB.POSTHOG_HOST!,
+            capture_exceptions: {
+              capture_unhandled_errors: true,
+              capture_unhandled_rejections: true,
+              capture_console_errors: true,
+            },
+          }}
         >
           {wrappedChildren}
         </PostHogProvider>
