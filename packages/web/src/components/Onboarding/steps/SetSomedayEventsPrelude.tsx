@@ -19,8 +19,7 @@ export const SetSomedayEventsPrelude: React.FC<OnboardingStepProps> = ({
       totalSteps={totalSteps}
     >
       <OnboardingText>
-        As you know, scallywags will complain about the many demands aboard the
-        vessel.
+        Scallywags will complain about the many demands aboard the vessel.
       </OnboardingText>
 
       <OnboardingText>
