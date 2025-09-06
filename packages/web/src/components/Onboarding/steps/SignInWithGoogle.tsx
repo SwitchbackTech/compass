@@ -22,18 +22,10 @@ export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
       if (result.isNewUser) {
         // Start Google Calendar import in the background
         // This allows the import to begin while the user continues through onboarding
-        try {
-          SyncApi.importGCal().catch((error) => {
-            // Log the error but don't block the onboarding flow
-            console.error("Background Google Calendar import failed:", error);
-          });
-        } catch (error) {
-          // Even if the import call fails, we shouldn't block onboarding
-          console.error(
-            "Failed to initiate background Google Calendar import:",
-            error,
-          );
-        }
+        SyncApi.importGCal().catch((error) => {
+          // Log the error but don't block the onboarding flow
+          console.error("Background Google Calendar import failed:", error);
+        });
       } else {
         navigate("/");
       }
