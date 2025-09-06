@@ -5,10 +5,6 @@
   "version": "1.0.0",
   "private": true,
   "main": "",
-  "scripts": {
-    "precommit": "exit",
-    "lint-fix": "exit"
-  },
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
     "@types/tinycolor2": "^1.4.6",
