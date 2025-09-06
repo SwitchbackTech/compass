@@ -19,10 +19,8 @@ export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
   const { login, loading } = useGoogleLogin({
     onSuccess: async (code) => {
       const result = await AuthApi.loginOrSignup(code);
-      if (!result.isNewUser) {
-        navigate("/");
-      } else {
-        // For new users, start Google Calendar import in the background
+      if (result.isNewUser) {
+        // Start Google Calendar import in the background
         // This allows the import to begin while the user continues through onboarding
         try {
           SyncApi.importGCal().catch((error) => {
@@ -36,6 +34,8 @@ export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
             error,
           );
         }
+      } else {
+        navigate("/");
       }
       onNext();
     },
