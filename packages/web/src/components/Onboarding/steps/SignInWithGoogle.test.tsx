@@ -243,9 +243,9 @@ describe("SignInWithGoogle", () => {
       mockAuthApi.loginOrSignup.mockResolvedValue({
         isNewUser: true,
       });
-      mockSyncApi.importGCal.mockImplementation(() => {
-        throw new Error("Sync API threw synchronously");
-      });
+      mockSyncApi.importGCal.mockRejectedValue(
+        new Error("Sync API threw synchronously"),
+      );
 
       mockUseGoogleLogin.mockImplementation(({ onSuccess, onError }) => {
         onSuccessCallback = onSuccess;
@@ -265,7 +265,7 @@ describe("SignInWithGoogle", () => {
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith(
-          "Failed to initiate background Google Calendar import:",
+          "Background Google Calendar import failed:",
           expect.any(Error),
         );
         expect(mockOnNext).toHaveBeenCalledTimes(1);
