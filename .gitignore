@@ -4,8 +4,6 @@
 build.zip
 .DS_Store
 .eslintcache
-.idea/
-.vscode/
 globalConfig.json
 sendgrid.env
 credentials.txt
@@ -21,6 +19,10 @@ packages/**/yarn.lock
 # DIRS #
 ########
 # root
+.cursor/
+.idea/
+.vscode/
+
 build/
 buildcache/
 logs/
