@@ -4,7 +4,7 @@ import {
   OnboardingButton,
   OnboardingNextButton,
   OnboardingPreviousButton,
-} from "../components";
+} from ".";
 
 export const OnboardingFooter = ({
   onSkip,
