@@ -83,7 +83,7 @@ describe("Event Form", () => {
   });
 
   describe("Reminder", () => {
-    it("it should be focused when the 'f' keyboard shortcut is used", async () => {
+    it("it should be focused when the 'r' keyboard shortcut is used", async () => {
       const { container } = render(<CalendarView />, { state: preloadedState });
 
       const reminderPlaceholder = screen.getByText(
@@ -92,7 +92,7 @@ describe("Event Form", () => {
 
       expect(reminderPlaceholder).toBeInTheDocument();
 
-      await act(async () => userEvent.keyboard("f"));
+      await act(async () => userEvent.keyboard("r"));
 
       const reminderInput = container.querySelector('[id="reminderInput"]');
 
@@ -110,7 +110,7 @@ describe("Event Form", () => {
 
       await act(async () => userEvent.keyboard("{Meta>}k{/Meta}"));
 
-      const cmdPaletteEditBtn = screen.getByText("Edit Reminder [f]");
+      const cmdPaletteEditBtn = screen.getByText("Edit Reminder [r]");
 
       expect(cmdPaletteEditBtn).toBeInTheDocument();
 
