@@ -41,6 +41,11 @@ export const SetReminder: React.FC<OnboardingStepProps> = ({
   const [reminder, setReminder] = useState("");
   const [showHelpText, setShowHelpText] = useState(false);
 
+  // Set initial placeholder value in localStorage on mount
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.REMINDER, PLACEHOLDER);
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       // Only show help text if the input is still empty
@@ -53,19 +58,19 @@ export const SetReminder: React.FC<OnboardingStepProps> = ({
   }, [reminder]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    const value = e.target.value.trim();
     setReminder(value);
-    localStorage.setItem(STORAGE_KEYS.REMINDER, value.trim() || PLACEHOLDER);
-  };
-
-  const handleNext = () => {
-    localStorage.setItem(STORAGE_KEYS.REMINDER, reminder.trim() || PLACEHOLDER);
-    onNext();
+    localStorage.setItem(STORAGE_KEYS.REMINDER, value || PLACEHOLDER);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleNext();
+  };
+
+  const handleNext = () => {
+    // localStorage is already updated on every input change, so just proceed
+    onNext();
   };
 
   return (
