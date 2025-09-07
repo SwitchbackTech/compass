@@ -318,7 +318,7 @@ export const Reminder = forwardRef(
           <TooltipWrapper
             description="Edit Reminder"
             onClick={() => {}}
-            shortcut="F"
+            shortcut="R"
           >
             <StyledReminderWrapper
               ref={reminderWrapperRef}
@@ -362,7 +362,7 @@ export const Reminder = forwardRef(
           <TooltipWrapper
             description="Edit Reminder"
             onClick={() => {}}
-            shortcut="F"
+            shortcut="R"
           >
             <StyledReminderWrapper
               ref={placeholderRef}
