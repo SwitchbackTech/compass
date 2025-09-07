@@ -7,38 +7,38 @@ import React, {
   useState,
 } from "react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { ID_HEADER_NOTE_INPUT } from "@web/common/constants/web.constants";
+import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { selectHeaderNoteFocus } from "@web/ducks/events/selectors/view.selectors";
+import { selectReminder } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { generateHandDrawnUnderline } from "./header-note.util";
+import { generateHandDrawnUnderline } from "./reminder-util";
 import {
   StyledCharCounter,
-  StyledNoteContainer,
-  StyledNotePlaceholder,
-  StyledNoteText,
-  StyledNoteWrapper,
   StyledPlaceholderUnderline,
+  StyledReminderContainer,
+  StyledReminderPlaceholder,
+  StyledReminderText,
+  StyledReminderWrapper,
   StyledUnderline,
 } from "./styled";
 
-const MAX_NOTE_CHARS = 80;
+const MAX_REMINDER_CHARS = 80;
 
 type CursorPosition = {
   startOffset: number;
   endOffset: number;
 };
 
-export const HeaderNote = forwardRef(
+export const Reminder = forwardRef(
   (
     _: unknown,
-    headerNoteRef: ForwardedRef<{ focus: HTMLDivElement["focus"] }>,
+    reminderForwardRef: ForwardedRef<{ focus: HTMLDivElement["focus"] }>,
   ) => {
-    const focusHeaderNote = useAppSelector(selectHeaderNoteFocus);
+    const reminderFromStore = useAppSelector(selectReminder);
     const dispatch = useAppDispatch();
-    const [note, setNote] = useState("");
+    const [reminder, setReminder] = useState("");
     const [isEditing, setIsEditing] = useState(false);
 
     const [showUnderline, setShowUnderline] = useState(false);
@@ -47,18 +47,19 @@ export const HeaderNote = forwardRef(
     const [underlinePath, setUnderlinePath] = useState("");
     const [placeholderUnderlinePath, setPlaceholderUnderlinePath] =
       useState("");
-    const focusRef = useRef<HTMLDivElement>(null);
-    const focusWrapperRef = useRef<HTMLDivElement>(null);
+    const reminderRef = useRef<HTMLDivElement>(null);
+    const reminderWrapperRef = useRef<HTMLDivElement>(null);
     const placeholderRef = useRef<HTMLDivElement>(null);
     const cursorPositionRef = useRef<CursorPosition | null>(null);
 
     // Helper functions to save and restore cursor position
     const saveCursorPosition = () => {
       const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0 || !focusRef.current) return;
+      if (!selection || selection.rangeCount === 0 || !reminderRef.current)
+        return;
 
       const range = selection.getRangeAt(0);
-      if (focusRef.current.contains(range.commonAncestorContainer)) {
+      if (reminderRef.current.contains(range.commonAncestorContainer)) {
         cursorPositionRef.current = {
           startOffset: range.startOffset,
           endOffset: range.endOffset,
@@ -67,14 +68,14 @@ export const HeaderNote = forwardRef(
     };
 
     const restoreCursorPosition = () => {
-      if (!cursorPositionRef.current || !focusRef.current) return;
+      if (!cursorPositionRef.current || !reminderRef.current) return;
 
       const selection = window.getSelection();
       if (!selection) return;
 
       try {
         const range = document.createRange();
-        const textNode = focusRef.current.firstChild || focusRef.current;
+        const textNode = reminderRef.current.firstChild || reminderRef.current;
 
         // Ensure offsets are within the valid range
         const textLength = textNode.textContent?.length || 0;
@@ -99,16 +100,16 @@ export const HeaderNote = forwardRef(
 
     // Load from localStorage on mount
     useEffect(() => {
-      const savedNote = localStorage.getItem(STORAGE_KEYS.HEADER_NOTE);
-      if (savedNote !== null) {
-        setNote(savedNote);
+      const savedReminder = localStorage.getItem(STORAGE_KEYS.REMINDER);
+      if (savedReminder !== null) {
+        setReminder(savedReminder);
       }
     }, []);
 
     // Generate underline paths when components mount or resize
     useEffect(() => {
-      if (focusWrapperRef.current) {
-        const width = focusWrapperRef.current.offsetWidth;
+      if (reminderWrapperRef.current) {
+        const width = reminderWrapperRef.current.offsetWidth;
         setUnderlinePath(generateHandDrawnUnderline(width));
       }
 
@@ -119,8 +120,8 @@ export const HeaderNote = forwardRef(
 
       // Add resize listener
       const handleResize = () => {
-        if (focusWrapperRef.current) {
-          const width = focusWrapperRef.current.offsetWidth;
+        if (reminderWrapperRef.current) {
+          const width = reminderWrapperRef.current.offsetWidth;
           setUnderlinePath(generateHandDrawnUnderline(width));
         }
 
@@ -132,12 +133,12 @@ export const HeaderNote = forwardRef(
 
       window.addEventListener("resize", handleResize);
       return () => window.removeEventListener("resize", handleResize);
-    }, [note, isEditing]);
+    }, [reminder, isEditing]);
 
     // Regenerate underline on hover for a dynamic effect
     const handleMouseEnter = () => {
-      if (focusWrapperRef.current) {
-        const width = focusWrapperRef.current.offsetWidth;
+      if (reminderWrapperRef.current) {
+        const width = reminderWrapperRef.current.offsetWidth;
         setUnderlinePath(generateHandDrawnUnderline(width));
         setShowUnderline(true);
       }
@@ -153,18 +154,18 @@ export const HeaderNote = forwardRef(
 
     // Effect for initial focus when editing starts
     useEffect(() => {
-      if (isEditing && focusRef.current) {
+      if (isEditing && reminderRef.current) {
         // Only set content when first entering edit mode
-        if (focusRef.current.textContent !== note) {
-          focusRef.current.textContent = note;
+        if (reminderRef.current.textContent !== reminder) {
+          reminderRef.current.textContent = reminder;
         }
-        focusRef.current.focus();
+        reminderRef.current.focus();
 
         // Only place cursor at the end when first entering edit mode
         if (!cursorPositionRef.current) {
           const range = document.createRange();
           const sel = window.getSelection();
-          range.selectNodeContents(focusRef.current);
+          range.selectNodeContents(reminderRef.current);
           range.collapse(false);
           sel?.removeAllRanges();
           sel?.addRange(range);
@@ -175,25 +176,25 @@ export const HeaderNote = forwardRef(
       }
     }, [isEditing]);
 
-    // Effect to sync note content after state updates
+    // Effect to sync reminder content after state updates
     useEffect(() => {
       if (
         isEditing &&
-        focusRef.current &&
-        focusRef.current.textContent !== note
+        reminderRef.current &&
+        reminderRef.current.textContent !== reminder
       ) {
         // Remember cursor position
         saveCursorPosition();
 
         // Update text content only if it's different
-        if (focusRef.current.textContent !== note) {
-          focusRef.current.textContent = note;
+        if (reminderRef.current.textContent !== reminder) {
+          reminderRef.current.textContent = reminder;
         }
 
         // Restore cursor position
         setTimeout(restoreCursorPosition, 0);
       }
-    }, [note, isEditing]);
+    }, [reminder, isEditing]);
 
     // Effect to handle ESC key
     useEffect(() => {
@@ -201,10 +202,10 @@ export const HeaderNote = forwardRef(
         if (e.key === "Escape" && isEditing) {
           setIsEditing(false);
           // Save to localStorage on ESC
-          if (focusRef.current) {
-            const value = focusRef.current.textContent || "";
-            setNote(value);
-            localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, value);
+          if (reminderRef.current) {
+            const value = reminderRef.current.textContent || "";
+            setReminder(value);
+            localStorage.setItem(STORAGE_KEYS.REMINDER, value);
           }
         }
       };
@@ -215,55 +216,57 @@ export const HeaderNote = forwardRef(
       };
     }, [isEditing]);
 
-    const handleNoteClick = () => {
+    const handleReminderClick = () => {
       cursorPositionRef.current = null; // Reset cursor position
       setIsEditing(true);
     };
 
-    useImperativeHandle(headerNoteRef, () => ({ focus: handleNoteClick }), [
-      handleNoteClick,
-    ]);
+    useImperativeHandle(
+      reminderForwardRef,
+      () => ({ focus: handleReminderClick }),
+      [handleReminderClick],
+    );
 
     useEffect(() => {
-      if (focusHeaderNote) handleNoteClick();
+      if (reminderFromStore) handleReminderClick();
 
-      dispatch(viewSlice.actions.focusHeaderNote(false));
-    }, [focusHeaderNote]);
+      dispatch(viewSlice.actions.updateReminder(false));
+    }, [reminderFromStore]);
 
-    const handleNoteBlur = () => {
+    const handleReminderBlur = () => {
       setIsEditing(false);
       // Save to localStorage on blur
-      if (focusRef.current) {
-        const value = focusRef.current.textContent || "";
-        setNote(value);
-        localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, value);
+      if (reminderRef.current) {
+        const value = reminderRef.current.textContent || "";
+        setReminder(value);
+        localStorage.setItem(STORAGE_KEYS.REMINDER, value);
       }
     };
 
-    const handleNoteKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const handleReminderKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key === "Enter") {
         e.preventDefault();
         setIsEditing(false);
         // Save to localStorage on ENTER
         const latestValue = e.currentTarget.textContent || "";
-        setNote(latestValue);
-        localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, latestValue);
+        setReminder(latestValue);
+        localStorage.setItem(STORAGE_KEYS.REMINDER, latestValue);
       }
     };
 
-    const handleNoteChange = (e: React.FormEvent<HTMLDivElement>) => {
+    const handleReminderChange = (e: React.FormEvent<HTMLDivElement>) => {
       const newText = e.currentTarget.textContent || "";
 
       // Save cursor position before updating state
       saveCursorPosition();
 
       // Limit text length
-      if (newText.length <= MAX_NOTE_CHARS) {
-        setNote(newText);
+      if (newText.length <= MAX_REMINDER_CHARS) {
+        setReminder(newText);
       } else {
         // If text is too long, truncate it and update the DOM element
-        const truncated = newText.substring(0, MAX_NOTE_CHARS);
-        setNote(truncated);
+        const truncated = newText.substring(0, MAX_REMINDER_CHARS);
+        setReminder(truncated);
 
         // Only manually update DOM and cursor if truncation happened
         if (newText !== truncated) {
@@ -289,45 +292,46 @@ export const HeaderNote = forwardRef(
     };
 
     return (
-      <StyledNoteContainer>
+      <StyledReminderContainer>
         {isEditing ? (
           <>
-            <StyledNoteWrapper ref={focusWrapperRef}>
-              <StyledNoteText
-                id={ID_HEADER_NOTE_INPUT}
-                ref={focusRef}
+            <StyledReminderWrapper ref={reminderWrapperRef}>
+              <StyledReminderText
+                id={ID_REMINDER_INPUT}
+                ref={reminderRef}
                 contentEditable
                 suppressContentEditableWarning
                 isEditing={true}
-                textLength={note.length}
-                onBlur={handleNoteBlur}
-                onKeyDown={handleNoteKeyDown}
-                onInput={handleNoteChange}
+                textLength={reminder.length}
+                onBlur={handleReminderBlur}
+                onKeyDown={handleReminderKeyDown}
+                onInput={handleReminderChange}
               />
-            </StyledNoteWrapper>
-            <StyledCharCounter isNearLimit={note.length > MAX_NOTE_CHARS * 0.8}>
-              {note.length}/{MAX_NOTE_CHARS}
+            </StyledReminderWrapper>
+            <StyledCharCounter
+              isNearLimit={reminder.length > MAX_REMINDER_CHARS * 0.8}
+            >
+              {reminder.length}/{MAX_REMINDER_CHARS}
             </StyledCharCounter>
           </>
-        ) : note ? (
+        ) : reminder ? (
           <TooltipWrapper
-            description="Edit Focus Note"
+            description="Edit Reminder"
             onClick={() => {}}
-            shortcut="F"
+            shortcut="R"
           >
-            <StyledNoteWrapper
-              ref={focusWrapperRef}
+            <StyledReminderWrapper
+              ref={reminderWrapperRef}
               onMouseEnter={handleMouseEnter}
               onMouseLeave={() => setShowUnderline(false)}
             >
-              <StyledNoteText
+              <StyledReminderText
                 isEditing={false}
-                textLength={note.length}
-                onClick={handleNoteClick}
-                className="header-note-text"
+                textLength={reminder.length}
+                onClick={handleReminderClick}
               >
-                {note}
-              </StyledNoteText>
+                {reminder}
+              </StyledReminderText>
               <StyledUnderline
                 isVisible={showUnderline}
                 preserveAspectRatio="none"
@@ -352,22 +356,22 @@ export const HeaderNote = forwardRef(
                 </defs>
                 <path d={underlinePath} stroke="url(#underlineGradient)" />
               </StyledUnderline>
-            </StyledNoteWrapper>
+            </StyledReminderWrapper>
           </TooltipWrapper>
         ) : (
           <TooltipWrapper
-            description="Edit Focus Note"
+            description="Edit Reminder"
             onClick={() => {}}
-            shortcut="F"
+            shortcut="R"
           >
-            <StyledNoteWrapper
+            <StyledReminderWrapper
               ref={placeholderRef}
               onMouseEnter={handlePlaceholderMouseEnter}
               onMouseLeave={() => setShowPlaceholderUnderline(false)}
             >
-              <StyledNotePlaceholder onClick={handleNoteClick}>
-                Click to add your focus
-              </StyledNotePlaceholder>
+              <StyledReminderPlaceholder onClick={handleReminderClick}>
+                Click to add your reminder
+              </StyledReminderPlaceholder>
               <StyledPlaceholderUnderline
                 isVisible={showPlaceholderUnderline}
                 preserveAspectRatio="none"
@@ -395,12 +399,12 @@ export const HeaderNote = forwardRef(
                   stroke="url(#placeholderUnderlineGradient)"
                 />
               </StyledPlaceholderUnderline>
-            </StyledNoteWrapper>
+            </StyledReminderWrapper>
           </TooltipWrapper>
         )}
-      </StyledNoteContainer>
+      </StyledReminderContainer>
     );
   },
 );
 
-HeaderNote.displayName = "HeaderNote";
+Reminder.displayName = "Reminder";

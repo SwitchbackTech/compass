@@ -131,11 +131,11 @@ const CmdPalette = ({
             ),
           },
           {
-            id: "edit-focus-note",
-            children: `Edit Focus Note [f]`,
+            id: "edit-reminder",
+            children: `Edit Reminder [r]`,
             icon: "PencilSquareIcon",
             onClick: onEventTargetVisibility(() =>
-              dispatch(viewSlice.actions.focusHeaderNote(true)),
+              dispatch(viewSlice.actions.updateReminder(true)),
             ),
           },
           {

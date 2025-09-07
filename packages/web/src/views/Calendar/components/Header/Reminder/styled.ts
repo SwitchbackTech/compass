@@ -60,7 +60,7 @@ export const StyledCharCounter = styled.div<{ isNearLimit: boolean }>`
   width: 100%;
 `;
 
-export const StyledNotePlaceholder = styled.div`
+export const StyledReminderPlaceholder = styled.div`
   font-family: "Caveat", cursive;
   font-size: 28px;
   color: ${({ theme }) => theme.color.text.lightInactive};
@@ -121,7 +121,7 @@ export const StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
   }
 `;
 
-export const StyledNoteContainer = styled.div`
+export const StyledReminderContainer = styled.div`
   left: 0;
   right: 0;
   display: flex;
@@ -133,7 +133,7 @@ export const StyledNoteContainer = styled.div`
   margin: 0 auto;
 `;
 
-export const StyledNoteText = styled.div<{
+export const StyledReminderText = styled.div<{
   isEditing: boolean;
   textLength: number;
 }>`
@@ -212,7 +212,7 @@ export const StyledNoteText = styled.div<{
         `}
 `;
 
-export const StyledNoteWrapper = styled.div`
+export const StyledReminderWrapper = styled.div`
   position: relative;
   display: inline-block;
   padding-bottom: 18px; /* Add padding to create space for the underline */

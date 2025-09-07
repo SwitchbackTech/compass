@@ -1,12 +1,12 @@
 import { useHotkeys } from "react-hotkeys-hook";
 
-export const useFocusHotkey = (
+export const useReminderHotkey = (
   callback: () => void,
   dependencies: unknown[] = [],
 ) =>
   useHotkeys(
-    "F",
+    "R",
     callback,
-    { description: "focus", preventDefault: true },
+    { description: "reminder", preventDefault: true },
     dependencies,
   );

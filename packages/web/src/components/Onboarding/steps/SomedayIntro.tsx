@@ -6,7 +6,7 @@ import {
 } from "../components";
 import { OnboardingStepProps } from "../components/Onboarding";
 
-export const SetSomedayEventsPrelude: React.FC<OnboardingStepProps> = ({
+export const SomedayIntro: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,

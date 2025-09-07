@@ -8,17 +8,17 @@ import {
 import { Onboarding, OnboardingStepProps, OnboardingStepType } from "./index";
 import {
   EmailStep,
-  FinalOnboardingReminder,
-  SetHeaderNote,
-  SetHeaderNoteNoteOne,
-  SetHeaderNoteNoteTwo,
-  SetHeaderNoteSuccess,
+  OutroQuote,
+  OutroTwo,
+  SetReminder,
+  SetReminderSuccess,
+  SetSomedayEventTwo,
   SetSomedayEvents,
-  SetSomedayEventsNoteOne,
-  SetSomedayEventsNoteTwo,
-  SetSomedayEventsPrelude,
+  SetSomedayEventsOne,
+  SetSomedayEventsSuccess,
   SignInWithGoogle,
   SignInWithGooglePrelude,
+  SomedayIntro,
   WelcomeNoteOne,
   WelcomeNoteTwo,
   WelcomeScreen,
@@ -77,32 +77,30 @@ const OnboardingDemo_: React.FC = () => {
       disableRightArrow: true,
     },
     {
-      id: "set-someday-events-prelude",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEventsPrelude {...props} />
-      ),
+      id: "someday-intro",
+      component: (props: OnboardingStepProps) => <SomedayIntro {...props} />,
       disableLeftArrow: true,
     },
     {
-      id: "set-header-note",
-      component: (props: OnboardingStepProps) => <SetHeaderNote {...props} />,
+      id: "set-reminder",
+      component: (props: OnboardingStepProps) => <SetReminder {...props} />,
     },
     {
-      id: "set-header-note-success",
+      id: "set-reminder-success",
       component: (props: OnboardingStepProps) => (
-        <SetHeaderNoteSuccess {...props} />
+        <SetReminderSuccess {...props} />
       ),
     },
     {
-      id: "set-header-note-note-one",
+      id: "set-someday-events-one",
       component: (props: OnboardingStepProps) => (
-        <SetHeaderNoteNoteOne {...props} />
+        <SetSomedayEventsOne {...props} />
       ),
     },
     {
-      id: "set-header-note-note-two",
+      id: "set-someday-event-two",
       component: (props: OnboardingStepProps) => (
-        <SetHeaderNoteNoteTwo {...props} />
+        <SetSomedayEventTwo {...props} />
       ),
     },
     {
@@ -112,22 +110,18 @@ const OnboardingDemo_: React.FC = () => {
       ),
     },
     {
-      id: "set-someday-events-note-one",
+      id: "set-someday-events-success",
       component: (props: OnboardingStepProps) => (
-        <SetSomedayEventsNoteOne {...props} />
+        <SetSomedayEventsSuccess {...props} />
       ),
     },
     {
-      id: "set-someday-events-note-two",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEventsNoteTwo {...props} />
-      ),
+      id: "outro-two",
+      component: (props: OnboardingStepProps) => <OutroTwo {...props} />,
     },
     {
-      id: "final-onboarding-reminder",
-      component: (props: OnboardingStepProps) => (
-        <FinalOnboardingReminder {...props} />
-      ),
+      id: "outro-quote",
+      component: (props: OnboardingStepProps) => <OutroQuote {...props} />,
       disableLeftArrow: true,
       disableRightArrow: true,
     },

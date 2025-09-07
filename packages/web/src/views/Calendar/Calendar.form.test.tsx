@@ -82,39 +82,43 @@ describe("Event Form", () => {
     });
   });
 
-  describe("HeaderNote", () => {
-    it("it should be focused when the 'f' keyboard shortcut is used", async () => {
+  describe("Reminder", () => {
+    it("it should be focused when the 'r' keyboard shortcut is used", async () => {
       const { container } = render(<CalendarView />, { state: preloadedState });
 
-      const focusNotePlaceholder = screen.getByText("Click to add your focus");
+      const reminderPlaceholder = screen.getByText(
+        "Click to add your reminder",
+      );
 
-      expect(focusNotePlaceholder).toBeInTheDocument();
+      expect(reminderPlaceholder).toBeInTheDocument();
 
-      await act(async () => userEvent.keyboard("f"));
+      await act(async () => userEvent.keyboard("r"));
 
-      const focusNoteInput = container.querySelector('[id="headerNoteInput"]');
+      const reminderInput = container.querySelector('[id="reminderInput"]');
 
-      expect(focusNoteInput).toHaveFocus();
+      expect(reminderInput).toHaveFocus();
     });
 
-    it.skip("it should be focused when the 'edit focus' btn is clicked in the command palette", async () => {
+    it.skip("it should be focused when the 'edit reminder' btn is clicked in the command palette", async () => {
       const { container } = render(<CalendarView />, { state: preloadedState });
 
-      const focusNotePlaceholder = screen.getByText("Click to add your focus");
+      const reminderPlaceholder = screen.getByText(
+        "Click to add your reminder",
+      );
 
-      expect(focusNotePlaceholder).toBeInTheDocument();
+      expect(reminderPlaceholder).toBeInTheDocument();
 
       await act(async () => userEvent.keyboard("{Meta>}k{/Meta}"));
 
-      const cmdPaletteEditBtn = screen.getByText("Edit Focus Note [f]");
+      const cmdPaletteEditBtn = screen.getByText("Edit Reminder [r]");
 
       expect(cmdPaletteEditBtn).toBeInTheDocument();
 
       await act(async () => userEvent.click(cmdPaletteEditBtn!));
 
-      const focusNoteInput = container.querySelector('[id="headerNoteInput"]');
+      const reminderInput = container.querySelector('[id="reminderInput"]');
 
-      expect(focusNoteInput).toHaveFocus();
+      expect(reminderInput).toHaveFocus();
     });
   });
 });

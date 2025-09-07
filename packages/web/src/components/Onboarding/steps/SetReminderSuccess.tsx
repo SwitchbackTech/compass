@@ -14,7 +14,7 @@ const CalendarContainer = styled.div`
   justify-content: center;
 `;
 
-const HeaderNoteText = styled(OnboardingText)`
+const ReminderText = styled(OnboardingText)`
   font-size: ${({ theme }) => theme.text.size["5xl"]};
   color: ${({ theme }) => theme.color.text.light};
   font-family: "Caveat", cursive;
@@ -24,14 +24,14 @@ const HeaderNoteText = styled(OnboardingText)`
   color: #40b7f6;
 `;
 
-export const SetHeaderNoteSuccess: React.FC<OnboardingStepProps> = ({
+export const SetReminderSuccess: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
   onPrevious,
   onSkip,
 }) => {
-  const headerNote = localStorage.getItem(STORAGE_KEYS.HEADER_NOTE) as string;
+  const reminder = localStorage.getItem(STORAGE_KEYS.REMINDER) as string;
 
   return (
     <OnboardingStepBoilerplate
@@ -41,24 +41,24 @@ export const SetHeaderNoteSuccess: React.FC<OnboardingStepProps> = ({
       <OnboardingText>Excellent choice.</OnboardingText>
 
       <OnboardingText>
-        Compass will display this focus above your calendar.
+        Compass will display this reminder above your calendar.
       </OnboardingText>
 
       <OnboardingText>
         As long as you’re here, you’ll never forget what matters most.
       </OnboardingText>
 
-      <MockCalendar headerNote={headerNote} />
+      <MockCalendar reminder={reminder} />
 
       <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />
     </OnboardingStepBoilerplate>
   );
 };
 
-const MockCalendar = ({ headerNote }: { headerNote: string }) => {
+const MockCalendar = ({ reminder }: { reminder: string }) => {
   return (
     <CalendarContainer>
-      <HeaderNoteText>{headerNote}</HeaderNoteText>
+      <ReminderText>{reminder}</ReminderText>
 
       <EventsSVG />
     </CalendarContainer>

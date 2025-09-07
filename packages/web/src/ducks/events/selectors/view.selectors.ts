@@ -5,5 +5,4 @@ export const selectIsSidebarOpen = (state: RootState) =>
   state.view.sidebar.isOpen;
 export const selectSidebarTab = (state: RootState) => state.view.sidebar.tab;
 
-export const selectHeaderNoteFocus = (state: RootState) =>
-  state.view.header.note.focus;
+export const selectReminder = (state: RootState) => state.view.header.reminder;

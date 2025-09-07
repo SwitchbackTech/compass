@@ -31,44 +31,47 @@ const HelpText = styled(OnboardingText)`
 
 const PLACEHOLDER = "Automate repetitive tasks";
 
-export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
+export const SetReminder: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
   onSkip,
   onPrevious,
 }) => {
-  const [headerNote, setHeaderNote] = useState("");
+  const [reminder, setReminder] = useState("");
   const [showHelpText, setShowHelpText] = useState(false);
+
+  // Set initial placeholder value in localStorage on mount
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.REMINDER, PLACEHOLDER);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       // Only show help text if the input is still empty
-      if (!headerNote.trim()) {
+      if (!reminder.trim()) {
         setShowHelpText(true);
       }
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, [headerNote]);
+  }, [reminder]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setHeaderNote(value);
-    localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, value.trim() || PLACEHOLDER);
-  };
-
-  const handleNext = () => {
-    localStorage.setItem(
-      STORAGE_KEYS.HEADER_NOTE,
-      headerNote.trim() || PLACEHOLDER,
-    );
-    onNext();
+    setReminder(value);
+    const persistedValue = value.trim() !== "" ? value.trim() : PLACEHOLDER;
+    localStorage.setItem(STORAGE_KEYS.REMINDER, persistedValue);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleNext();
+  };
+
+  const handleNext = () => {
+    // localStorage is already updated on every input change, so just proceed
+    onNext();
   };
 
   return (
@@ -90,7 +93,7 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
         <InputContainer>
           <Input
             placeholder={PLACEHOLDER}
-            value={headerNote}
+            value={reminder}
             onChange={handleInputChange}
             autoFocus
           />
@@ -103,7 +106,7 @@ export const SetHeaderNote: React.FC<OnboardingStepProps> = ({
           onSkip={onSkip}
           onPrev={onPrevious}
           onNext={handleNext}
-          nextBtnDisabled={!!headerNote && !headerNote.trim()}
+          nextBtnDisabled={!!reminder && !reminder.trim()}
         />
       </OnboardingForm>
     </OnboardingStepBoilerplate>
