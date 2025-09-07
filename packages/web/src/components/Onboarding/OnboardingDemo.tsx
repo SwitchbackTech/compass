@@ -9,10 +9,10 @@ import { Onboarding, OnboardingStepProps, OnboardingStepType } from "./index";
 import {
   EmailStep,
   FinalOnboardingReminder,
-  SetHeaderNote,
   SetHeaderNoteNoteOne,
   SetHeaderNoteNoteTwo,
   SetHeaderNoteSuccess,
+  SetReminder,
   SetSomedayEvents,
   SetSomedayEventsNoteOne,
   SetSomedayEventsNoteTwo,
@@ -85,7 +85,7 @@ const OnboardingDemo_: React.FC = () => {
     },
     {
       id: "set-header-note",
-      component: (props: OnboardingStepProps) => <SetHeaderNote {...props} />,
+      component: (props: OnboardingStepProps) => <SetReminder {...props} />,
     },
     {
       id: "set-header-note-success",

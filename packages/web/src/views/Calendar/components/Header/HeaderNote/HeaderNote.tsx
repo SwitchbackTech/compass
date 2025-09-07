@@ -99,7 +99,7 @@ export const HeaderNote = forwardRef(
 
     // Load from localStorage on mount
     useEffect(() => {
-      const savedNote = localStorage.getItem(STORAGE_KEYS.HEADER_NOTE);
+      const savedNote = localStorage.getItem(STORAGE_KEYS.REMINDER);
       if (savedNote !== null) {
         setNote(savedNote);
       }
@@ -204,7 +204,7 @@ export const HeaderNote = forwardRef(
           if (focusRef.current) {
             const value = focusRef.current.textContent || "";
             setNote(value);
-            localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, value);
+            localStorage.setItem(STORAGE_KEYS.REMINDER, value);
           }
         }
       };
@@ -236,7 +236,7 @@ export const HeaderNote = forwardRef(
       if (focusRef.current) {
         const value = focusRef.current.textContent || "";
         setNote(value);
-        localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, value);
+        localStorage.setItem(STORAGE_KEYS.REMINDER, value);
       }
     };
 
@@ -247,7 +247,7 @@ export const HeaderNote = forwardRef(
         // Save to localStorage on ENTER
         const latestValue = e.currentTarget.textContent || "";
         setNote(latestValue);
-        localStorage.setItem(STORAGE_KEYS.HEADER_NOTE, latestValue);
+        localStorage.setItem(STORAGE_KEYS.REMINDER, latestValue);
       }
     };
 

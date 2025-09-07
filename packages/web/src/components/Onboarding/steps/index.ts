@@ -7,7 +7,7 @@ export * from "./SignInWithGooglePrelude";
 export * from "./SignInWithGoogle";
 export * from "./SignInWithGoogleSuccess";
 export * from "./SetSomedayEventsPrelude";
-export * from "./SetHeaderNote";
+export * from "./SetReminder";
 export * from "./SetHeaderNoteSuccess";
 export * from "./SetHeaderNoteNoteOne";
 export * from "./SetHeaderNoteNoteTwo";

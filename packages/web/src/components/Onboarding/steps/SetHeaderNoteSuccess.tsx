@@ -31,7 +31,7 @@ export const SetHeaderNoteSuccess: React.FC<OnboardingStepProps> = ({
   onPrevious,
   onSkip,
 }) => {
-  const headerNote = localStorage.getItem(STORAGE_KEYS.HEADER_NOTE) as string;
+  const headerNote = localStorage.getItem(STORAGE_KEYS.REMINDER) as string;
 
   return (
     <OnboardingStepBoilerplate
