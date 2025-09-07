@@ -4,7 +4,7 @@ import { IS_DEV } from "@web/common/constants/env.constants";
 import {
   useOnboarding,
   withProvider,
-} from "@web/components/Onboarding/components/OnboardingContext";
+} from "@web/views/Onboarding/components/OnboardingContext";
 import { Onboarding, OnboardingStepProps, OnboardingStepType } from "./index";
 import {
   EmailStep,
