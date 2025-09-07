@@ -6,7 +6,7 @@ import {
 } from "../components";
 import { OnboardingStepProps } from "../components/Onboarding";
 
-export const OutroOne: React.FC<OnboardingStepProps> = ({
+export const SomedayIntro: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
@@ -19,16 +19,16 @@ export const OutroOne: React.FC<OnboardingStepProps> = ({
       totalSteps={totalSteps}
     >
       <OnboardingText>
-        Wise choices, these look crucial for this month.
+        Scallywags will complain about the many demands aboard the vessel.
       </OnboardingText>
 
       <OnboardingText>
-        Now you’re already one step closer to getting them done.
+        But it&apos;s not that we have too little time to do all the
+        things,{" "}
       </OnboardingText>
 
       <OnboardingText>
-        With Compass, you’ll always be in charge of your tasks — not the other
-        way around.
+        it&apos;s that we do too many things in the time we have.
       </OnboardingText>
 
       <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />

@@ -6,7 +6,7 @@ import {
 } from "../components";
 import { OnboardingStepProps } from "../components/Onboarding";
 
-export const SetSomedayEventsPrelude: React.FC<OnboardingStepProps> = ({
+export const SetSomedayEventsSuccess: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
@@ -19,16 +19,16 @@ export const SetSomedayEventsPrelude: React.FC<OnboardingStepProps> = ({
       totalSteps={totalSteps}
     >
       <OnboardingText>
-        Scallywags will complain about the many demands aboard the vessel.
+        Wise choices, these look crucial for this month.
       </OnboardingText>
 
       <OnboardingText>
-        But it&apos;s not that we have too little time to do all the
-        things,{" "}
+        Now you’re already one step closer to getting them done.
       </OnboardingText>
 
       <OnboardingText>
-        it&apos;s that we do too many things in the time we have.
+        With Compass, you’ll always be in charge of your tasks — not the other
+        way around.
       </OnboardingText>
 
       <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />

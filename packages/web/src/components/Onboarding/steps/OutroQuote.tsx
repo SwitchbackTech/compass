@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { OnboardingCard, OnboardingText } from "../components/";
+import { OnboardingText } from "../components";
 import { OnboardingStepProps } from "../components/Onboarding";
 
 const FADE_IN_MS = 4000;
@@ -12,9 +12,7 @@ const FADE_OUT_MS = 2000;
  * `div` handles the fade-out of the entire component while the text itself
  * handles the fade-in.
  */
-export const FinalOnboardingReminder: React.FC<OnboardingStepProps> = ({
-  onNext,
-}) => {
+export const OutroQuote: React.FC<OnboardingStepProps> = ({ onNext }) => {
   const [showText, setShowText] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
 
