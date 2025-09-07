@@ -3,7 +3,7 @@ import { OnboardingFooter, OnboardingText } from "../components";
 import { OnboardingStepProps } from "../components/Onboarding";
 import { OnboardingStepBoilerplate } from "../components/OnboardingStepBoilerplate";
 
-export const SetHeaderNoteNoteOne: React.FC<OnboardingStepProps> = ({
+export const SetSomedayEventsOne: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,

@@ -9,13 +9,13 @@ import { Onboarding, OnboardingStepProps, OnboardingStepType } from "./index";
 import {
   EmailStep,
   FinalOnboardingReminder,
-  SetHeaderNoteNoteOne,
-  SetHeaderNoteNoteTwo,
+  OutroOne,
+  OutroTwo,
   SetHeaderNoteSuccess,
   SetReminder,
+  SetSomedayEventTwo,
   SetSomedayEvents,
-  SetSomedayEventsNoteOne,
-  SetSomedayEventsNoteTwo,
+  SetSomedayEventsOne,
   SetSomedayEventsPrelude,
   SignInWithGoogle,
   SignInWithGooglePrelude,
@@ -84,25 +84,25 @@ const OnboardingDemo_: React.FC = () => {
       disableLeftArrow: true,
     },
     {
-      id: "set-header-note",
+      id: "set-reminder",
       component: (props: OnboardingStepProps) => <SetReminder {...props} />,
     },
     {
-      id: "set-header-note-success",
+      id: "set-reminder-success",
       component: (props: OnboardingStepProps) => (
         <SetHeaderNoteSuccess {...props} />
       ),
     },
     {
-      id: "set-header-note-note-one",
+      id: "set-someday-events-one",
       component: (props: OnboardingStepProps) => (
-        <SetHeaderNoteNoteOne {...props} />
+        <SetSomedayEventsOne {...props} />
       ),
     },
     {
-      id: "set-header-note-note-two",
+      id: "set-someday-event-two",
       component: (props: OnboardingStepProps) => (
-        <SetHeaderNoteNoteTwo {...props} />
+        <SetSomedayEventTwo {...props} />
       ),
     },
     {
@@ -113,15 +113,11 @@ const OnboardingDemo_: React.FC = () => {
     },
     {
       id: "set-someday-events-note-one",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEventsNoteOne {...props} />
-      ),
+      component: (props: OnboardingStepProps) => <OutroOne {...props} />,
     },
     {
       id: "set-someday-events-note-two",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEventsNoteTwo {...props} />
-      ),
+      component: (props: OnboardingStepProps) => <OutroTwo {...props} />,
     },
     {
       id: "final-onboarding-reminder",
