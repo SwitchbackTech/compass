@@ -11,7 +11,7 @@ import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { RootProps } from "../../calendarView.types";
 import { Util_Scroll } from "../../hooks/grid/useScroll";
-import { useFocusHotkey } from "../../hooks/shortcuts/useFocusHotkey";
+import { useReminderHotkey } from "../../hooks/shortcuts/useFocusHotkey";
 import { WeekProps } from "../../hooks/useWeek";
 import { TodayButton } from "../TodayButton";
 import { DayLabels } from "./DayLabels";
@@ -52,7 +52,7 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
 
   const reminderRef = useRef<HTMLDivElement>(null);
 
-  useFocusHotkey(() => reminderRef.current?.focus(), [reminderRef]);
+  useReminderHotkey(() => reminderRef.current?.focus(), [reminderRef]);
 
   return (
     <>
