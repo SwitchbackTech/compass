@@ -58,9 +58,10 @@ export const SetReminder: React.FC<OnboardingStepProps> = ({
   }, [reminder]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.trim();
+    const value = e.target.value;
     setReminder(value);
-    localStorage.setItem(STORAGE_KEYS.REMINDER, value || PLACEHOLDER);
+    const persistedValue = value.trim() !== "" ? value.trim() : PLACEHOLDER;
+    localStorage.setItem(STORAGE_KEYS.REMINDER, persistedValue);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
