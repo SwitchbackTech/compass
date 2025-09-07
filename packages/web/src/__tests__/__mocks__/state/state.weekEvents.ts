@@ -71,9 +71,7 @@ export const preloadedState: InitialReduxState = {
       isOpen: true,
     },
     header: {
-      note: {
-        focus: false,
-      },
+      reminder: "",
     },
   },
 };

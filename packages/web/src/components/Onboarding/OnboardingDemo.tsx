@@ -10,8 +10,8 @@ import {
   EmailStep,
   OutroQuote,
   OutroTwo,
-  SetHeaderNoteSuccess,
   SetReminder,
+  SetReminderSuccess,
   SetSomedayEventTwo,
   SetSomedayEvents,
   SetSomedayEventsOne,
@@ -88,7 +88,7 @@ const OnboardingDemo_: React.FC = () => {
     {
       id: "set-reminder-success",
       component: (props: OnboardingStepProps) => (
-        <SetHeaderNoteSuccess {...props} />
+        <SetReminderSuccess {...props} />
       ),
     },
     {

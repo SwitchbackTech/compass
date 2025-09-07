@@ -12,9 +12,7 @@ interface State_View {
     isOpen: boolean;
   };
   header: {
-    note: {
-      focus: boolean;
-    };
+    reminder: string;
   };
 }
 
@@ -26,8 +24,8 @@ interface Action_SidebarViewChange extends Action {
   payload: State_View["sidebar"]["tab"];
 }
 
-interface Action_FocusHeaderNoteChange extends Action {
-  payload: State_View["header"]["note"]["focus"];
+interface Action_ReminderChange extends Action {
+  payload: State_View["header"]["reminder"];
 }
 
 const initialState: State_View = {
@@ -36,7 +34,7 @@ const initialState: State_View = {
     end: dayjs().endOf("week").format(),
   },
   sidebar: { tab: "tasks", isOpen: true },
-  header: { note: { focus: false } },
+  header: { reminder: "" },
 };
 
 export const viewSlice = createSlice({
@@ -52,8 +50,8 @@ export const viewSlice = createSlice({
     updateSidebarTab: (state, action: Action_SidebarViewChange) => {
       state.sidebar.tab = action.payload;
     },
-    focusHeaderNote: (state, action: Action_FocusHeaderNoteChange) => {
-      state.header.note.focus = action?.payload ?? !state.header.note.focus;
+    updateReminder: (state, action: Action_ReminderChange) => {
+      state.header.reminder = action?.payload ?? !state.header.reminder;
     },
   },
 });

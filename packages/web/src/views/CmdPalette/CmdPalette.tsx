@@ -135,7 +135,7 @@ const CmdPalette = ({
             children: `Edit Reminder [f]`,
             icon: "PencilSquareIcon",
             onClick: onEventTargetVisibility(() =>
-              dispatch(viewSlice.actions.focusHeaderNote(true)),
+              dispatch(viewSlice.actions.updateReminder(true)),
             ),
           },
           {

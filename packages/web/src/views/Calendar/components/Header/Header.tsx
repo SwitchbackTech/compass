@@ -15,7 +15,7 @@ import { useFocusHotkey } from "../../hooks/shortcuts/useFocusHotkey";
 import { WeekProps } from "../../hooks/useWeek";
 import { TodayButton } from "../TodayButton";
 import { DayLabels } from "./DayLabels";
-import { HeaderNote } from "./HeaderNote/HeaderNote";
+import { Reminder } from "./Reminder/Reminder";
 import {
   ArrowNavigationButton,
   StyledHeaderLabel,
@@ -50,9 +50,9 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
     scrollToNow();
   };
 
-  const headerNoteRef = useRef<HTMLDivElement>(null);
+  const reminderRef = useRef<HTMLDivElement>(null);
 
-  useFocusHotkey(() => headerNoteRef.current?.focus(), [headerNoteRef]);
+  useFocusHotkey(() => reminderRef.current?.focus(), [reminderRef]);
 
   return (
     <>
@@ -72,7 +72,7 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
             />
           </TooltipWrapper>
         </StyledLeftGroup>
-        <HeaderNote ref={headerNoteRef} />
+        <Reminder ref={reminderRef} />
         <StyledRightGroup>
           <StyledHeaderLabel aria-level={1} role="heading">
             <Text size="xl">{headerLabel}</Text>

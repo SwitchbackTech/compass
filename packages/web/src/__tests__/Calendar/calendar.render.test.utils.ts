@@ -116,9 +116,7 @@ export const createInitialState = (
         isOpen: true,
       },
       header: {
-        note: {
-          focus: false,
-        },
+        reminder: "",
       },
     },
     settings: {

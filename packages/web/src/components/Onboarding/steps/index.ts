@@ -8,7 +8,7 @@ export * from "./SignInWithGoogle";
 export * from "./SignInWithGoogleSuccess";
 export * from "./SomedayIntro";
 export * from "./SetReminder";
-export * from "./SetHeaderNoteSuccess";
+export * from "./SetReminderSuccess";
 export * from "./SetSomedayEventsOne";
 export * from "./SetSomedayEventsTwo";
 export * from "./SetSomedayEvents";

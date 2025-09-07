@@ -82,7 +82,7 @@ describe("Event Form", () => {
     });
   });
 
-  describe("HeaderNote", () => {
+  describe("Reminder", () => {
     it("it should be focused when the 'f' keyboard shortcut is used", async () => {
       const { container } = render(<CalendarView />, { state: preloadedState });
 
