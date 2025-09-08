@@ -16,13 +16,8 @@ export const SetSomedayEventsOne: React.FC<OnboardingStepProps> = ({
       totalSteps={totalSteps}
     >
       <OnboardingText>
-        You’ll focus on that ONE thing for this week, but what about everything
-        else?{" "}
-      </OnboardingText>
-
-      <OnboardingText>
         Much like the sirens who lure distractable sailors with their songs,
-        these tasks will tempt you away from your focus.
+        many ideas will tempt you away from your focus.
       </OnboardingText>
 
       <OnboardingText>You must not let them. </OnboardingText>

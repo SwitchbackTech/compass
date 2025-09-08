@@ -1,9 +1,9 @@
 import React from "react";
 import styled from "styled-components";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { OnboardingFooter, OnboardingText } from "../components";
-import { OnboardingStepProps } from "../components/Onboarding";
-import { OnboardingStepBoilerplate } from "../components/OnboardingStepBoilerplate";
+import { OnboardingFooter, OnboardingText } from "../../components";
+import { OnboardingStepProps } from "../../components/Onboarding";
+import { OnboardingStepBoilerplate } from "../../components/OnboardingStepBoilerplate";
 
 const CalendarContainer = styled.div`
   width: 100%;

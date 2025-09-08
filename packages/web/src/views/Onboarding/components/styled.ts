@@ -50,7 +50,7 @@ export const OnboardingInputLabel = styled.label`
   font-size: ${({ theme }) => theme.text.size.xxl};
 `;
 
-export const OnboardingInput = styled.input`
+export const OnboardingInput = styled.textarea`
   font-family: "VT323", monospace;
   font-size: ${({ theme }) => theme.text.size.xxl};
   width: 100%;

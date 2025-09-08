@@ -24,6 +24,8 @@ import {
   WelcomeScreen,
   WelcomeStep,
 } from "./steps";
+import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
+import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
 
 const OnboardingDemo_: React.FC = () => {
   const navigate = useNavigate();
@@ -69,17 +71,24 @@ const OnboardingDemo_: React.FC = () => {
         <SignInWithGooglePrelude {...props} />
       ),
     },
+    // {
+    //   id: "sign-in-with-google",
+    //   component: (props: OnboardingStepProps) => (
+    //     <SignInWithGoogle {...props} />
+    //   ),
+    //   disableRightArrow: true,
+    // },
     {
-      id: "sign-in-with-google",
+      id: "reminder-intro-one",
       component: (props: OnboardingStepProps) => (
-        <SignInWithGoogle {...props} />
+        <ReminderIntroOne {...props} />
       ),
-      disableRightArrow: true,
     },
     {
-      id: "someday-intro",
-      component: (props: OnboardingStepProps) => <SomedayIntro {...props} />,
-      disableLeftArrow: true,
+      id: "reminder-intro-two",
+      component: (props: OnboardingStepProps) => (
+        <ReminderIntroTwo {...props} />
+      ),
     },
     {
       id: "set-reminder",
