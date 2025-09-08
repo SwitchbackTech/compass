@@ -68,7 +68,7 @@ const OnboardingInputBase = css`
   }
 `;
 
-export const OnboardingInputInput = styled.input`
+export const OnboardingInput = styled.input`
   ${OnboardingInputBase}
 `;
 

@@ -3,12 +3,12 @@ import styled from "styled-components";
 import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import {
   OnboardingButton,
+  OnboardingInput,
   OnboardingInputLabel,
   OnboardingInputSection,
   OnboardingLink,
   OnboardingStepBoilerplate,
   OnboardingText,
-  OnboardingTextarea,
 } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 import { useOnboarding } from "../../components/OnboardingContext";
@@ -115,7 +115,7 @@ export const WaitlistCheck: React.FC<OnboardingStepProps> = ({
       <OnboardingForm onSubmit={handleSubmit}>
         <OnboardingInputSection>
           <OnboardingInputLabel htmlFor="email">Email</OnboardingInputLabel>
-          <OnboardingTextarea
+          <OnboardingInput
             id="email"
             type="email"
             placeholder=""
