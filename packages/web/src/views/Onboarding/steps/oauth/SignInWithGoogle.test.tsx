@@ -10,7 +10,7 @@ import { AuthApi } from "@web/common/apis/auth.api";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import { withProvider } from "../components/OnboardingContext";
+import { withProvider } from "../../components/OnboardingContext";
 import { SignInWithGoogle } from "./SignInWithGoogle";
 
 // Mock the APIs

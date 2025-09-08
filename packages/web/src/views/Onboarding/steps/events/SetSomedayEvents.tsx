@@ -14,9 +14,9 @@ import {
   OnboardingInputWhite,
   OnboardingStepBoilerplate,
   OnboardingText,
-} from "../components";
-import { OnboardingStepProps } from "../components/Onboarding";
-import { OnboardingForm } from "../components/OnboardingForm";
+} from "../../components";
+import { OnboardingStepProps } from "../../components/Onboarding";
+import { OnboardingForm } from "../../components/OnboardingForm";
 
 const SOMEDAY_EVENT_ONE_PLACEHOLDER = "RSVP to Pip’s wedding invite";
 const SOMEDAY_EVENT_TWO_PLACEHOLDER = "Order mahogany peg leg";

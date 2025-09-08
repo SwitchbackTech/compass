@@ -1,7 +1,7 @@
 import React from "react";
-import { OnboardingFooter, OnboardingText } from "../components";
-import { OnboardingStepProps } from "../components/Onboarding";
-import { OnboardingStepBoilerplate } from "../components/OnboardingStepBoilerplate";
+import { OnboardingFooter, OnboardingText } from "../../components";
+import { OnboardingStepProps } from "../../components/Onboarding";
+import { OnboardingStepBoilerplate } from "../../components/OnboardingStepBoilerplate";
 
 export const SetSomedayEventTwo: React.FC<OnboardingStepProps> = ({
   currentStep,

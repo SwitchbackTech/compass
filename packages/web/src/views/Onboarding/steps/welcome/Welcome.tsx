@@ -4,8 +4,8 @@ import {
   OnboardingButton,
   OnboardingStepBoilerplate,
   OnboardingText,
-} from "../components";
-import { OnboardingStepProps } from "../components/Onboarding";
+} from "../../components";
+import { OnboardingStepProps } from "../../components/Onboarding";
 
 const Title = styled(OnboardingText)`
   margin-bottom: ${({ theme }) => theme.spacing.xl};

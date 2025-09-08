@@ -9,10 +9,10 @@ import {
   OnboardingLink,
   OnboardingStepBoilerplate,
   OnboardingText,
-} from "../components";
-import { OnboardingStepProps } from "../components/Onboarding";
-import { useOnboarding } from "../components/OnboardingContext";
-import { OnboardingForm } from "../components/OnboardingForm";
+} from "../../components";
+import { OnboardingStepProps } from "../../components/Onboarding";
+import { useOnboarding } from "../../components/OnboardingContext";
+import { OnboardingForm } from "../../components/OnboardingForm";
 
 const Title = styled(OnboardingText)`
   margin-bottom: ${({ theme }) => theme.spacing.xl};
@@ -53,7 +53,7 @@ const OnWaitlistButNotInvited = () => {
   );
 };
 
-export const EmailStep: React.FC<OnboardingStepProps> = ({
+export const WaitlistCheck: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,

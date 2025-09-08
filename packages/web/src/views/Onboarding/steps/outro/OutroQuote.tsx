@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { OnboardingText } from "../components";
-import { OnboardingStepProps } from "../components/Onboarding";
+import { OnboardingText } from "../../components";
+import { OnboardingStepProps } from "../../components/Onboarding";
 
 const FADE_IN_MS = 4000;
 const READ_MS = 3500;

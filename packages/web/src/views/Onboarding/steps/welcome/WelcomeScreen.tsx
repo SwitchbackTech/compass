@@ -4,9 +4,9 @@ import {
   OnboardingFooter,
   OnboardingStepBoilerplate,
   OnboardingText,
-} from "../components";
-import { OnboardingStepProps } from "../components/Onboarding";
-import { useOnboarding } from "../components/OnboardingContext";
+} from "../../components";
+import { OnboardingStepProps } from "../../components/Onboarding";
+import { useOnboarding } from "../../components/OnboardingContext";
 
 const AsciiContainer = styled.div`
   width: 100%;

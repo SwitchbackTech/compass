@@ -3,8 +3,8 @@ import {
   OnboardingFooter,
   OnboardingStepBoilerplate,
   OnboardingText,
-} from "../components";
-import { OnboardingStepProps } from "../components/Onboarding";
+} from "../../components";
+import { OnboardingStepProps } from "../../components/Onboarding";
 
 export const WelcomeNoteTwo: React.FC<OnboardingStepProps> = ({
   currentStep,
