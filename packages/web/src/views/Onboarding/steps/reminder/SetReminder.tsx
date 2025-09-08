@@ -5,9 +5,9 @@ import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import IconButton from "@web/components/IconButton/IconButton";
 import {
   OnboardingFooter,
-  OnboardingInputWhite,
   OnboardingStepBoilerplate,
   OnboardingText,
+  OnboardingTextareaWhite,
 } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 import { OnboardingForm } from "../../components/OnboardingForm";
@@ -19,7 +19,7 @@ const InputContainer = styled.div`
   margin-bottom: 40px;
 `;
 
-const Input = styled(OnboardingInputWhite)``;
+const Input = styled(OnboardingTextareaWhite)``;
 
 const HelpText = styled(OnboardingText)`
   position: absolute;

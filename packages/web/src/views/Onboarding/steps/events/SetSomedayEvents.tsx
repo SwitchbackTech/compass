@@ -11,9 +11,9 @@ import {
   OnboardingInputContainer,
   OnboardingInputLabel,
   OnboardingInputSection,
-  OnboardingInputWhite,
   OnboardingStepBoilerplate,
   OnboardingText,
+  OnboardingTextareaWhite,
 } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 import { OnboardingForm } from "../../components/OnboardingForm";
@@ -89,7 +89,7 @@ export const SetSomedayEvents: React.FC<OnboardingStepProps> = ({
             <OnboardingInputLabel htmlFor="someday-event-1">
               Task 1:
             </OnboardingInputLabel>
-            <OnboardingInputWhite
+            <OnboardingTextareaWhite
               autoFocus
               id="someday-event-1"
               placeholder={SOMEDAY_EVENT_ONE_PLACEHOLDER}
@@ -102,7 +102,7 @@ export const SetSomedayEvents: React.FC<OnboardingStepProps> = ({
             <OnboardingInputLabel htmlFor="someday-event-2">
               Task 2:
             </OnboardingInputLabel>
-            <OnboardingInputWhite
+            <OnboardingTextareaWhite
               id="someday-event-2"
               placeholder={SOMEDAY_EVENT_TWO_PLACEHOLDER}
               value={somedayEventTwo}
