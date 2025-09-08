@@ -32,7 +32,13 @@ export const SomedayEvents: FC<Props> = ({
   viewStart,
   mainGridRef,
 }) => {
-  const { actions, state } = useSidebarContext();
+  const context = useSidebarContext();
+  const draftCategory = useAppSelector(selectDraftCategory);
+
+  if (!context) return null; // TS Guard
+
+  const { state } = context;
+
   const gridX = state.mouseCoords.x - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
   const dayIndex = dateCalcs.getDayNumberByX(gridX);
 
@@ -41,7 +47,6 @@ export const SomedayEvents: FC<Props> = ({
       category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH
     ];
 
-  const draftCategory = useAppSelector(selectDraftCategory);
   const isDraftingNew = state.isDraftingNew && draftCategory === category;
 
   return (
@@ -66,7 +71,6 @@ export const SomedayEvents: FC<Props> = ({
             category={category}
             column={column}
             key={COLUMN_WEEK}
-            onPlaceholderClick={actions.onPlaceholderClick}
             isDraftingNew={isDraftingNew}
           />
         </div>

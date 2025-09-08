@@ -22,7 +22,7 @@ export const useSidebarState = (measurements: Measurements_Grid) => {
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
   const [isSomedayFormOpen, setIsSomedayFormOpen] = useState(false);
 
-  const isDragging = isDrafting && draft !== null;
+  const isDragging = isDrafting && draft !== null; // TODO: Probably not a good way to determine if we are dragging, consider refactoring or removing this comment.
   const { isOverAllDayRow, isOverGrid, isOverMainGrid, mouseCoords } =
     useMousePosition(isDNDing, isSomedayFormOpen, measurements);
 

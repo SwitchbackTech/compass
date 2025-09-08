@@ -34,14 +34,12 @@ export interface Props {
   column: {
     id: string;
   };
-  onPlaceholderClick: (category: Categories_Event) => void;
   isDraftingNew: boolean;
 }
 
 export const SomedayEventsContainer: FC<Props> = ({
   category,
   column,
-  onPlaceholderClick,
   isDraftingNew,
 }) => {
   const context = useSidebarContext();
@@ -63,7 +61,7 @@ export const SomedayEventsContainer: FC<Props> = ({
             ? "Add to month"
             : "Add to week"
         }
-        onClick={() => onPlaceholderClick(category)}
+        onClick={() => context.actions.createSomedayDraft(category)}
         shortcut={category === Categories_Event.SOMEDAY_MONTH ? "M" : "W"}
       >
         {children}

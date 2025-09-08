@@ -6,6 +6,10 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
 import { assembleDefaultEvent } from "../event.util";
 
+/** @deprecated
+ * `createSomedayDraft` should not be called outside `useSidebarActions.createSomedayDraft`
+ * Consider removing
+ */
 export const createSomedayDraft = async (
   category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
   startOfView: Dayjs,

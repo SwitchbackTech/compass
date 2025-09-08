@@ -353,19 +353,19 @@ export const useSidebarActions = (
     close();
   };
 
-  const onPlaceholderClick = async (section: Categories_Event) => {
+  const createSomedayDraft = async (category: Categories_Event) => {
     if (isDrafting) {
       dispatch(draftSlice.actions.discard());
       close();
       return;
     }
 
-    if (section === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
+    if (category === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
       alert(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
 
-    if (section === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
+    if (category === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
       alert(SOMEDAY_MONTH_LIMIT_MSG);
       return;
     }
@@ -380,7 +380,7 @@ export const useSidebarActions = (
     dispatch(
       draftSlice.actions.start({
         activity: "sidebarClick",
-        eventType: section,
+        eventType: category,
         event,
       }),
     );
@@ -571,17 +571,15 @@ export const useSidebarActions = (
   return {
     close,
     closeForm,
-    createDefaultSomeday,
     discard,
     handleChange,
     onDraft,
     onDragEnd,
     onDragStart,
     onMigrate,
-    onPlaceholderClick,
+    createSomedayDraft,
     onSubmit,
     reset,
-    resetLocalDraftStateIfNeeded,
     setDraft,
   };
 };
