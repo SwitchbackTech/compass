@@ -13,7 +13,6 @@ import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
 import { isEventFormOpen } from "@web/common/utils";
 import { createAlldayDraft } from "@web/common/utils/draft/draft.util";
 import { createTimedDraft } from "@web/common/utils/draft/draft.util";
-import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
@@ -25,6 +24,7 @@ import {
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { DateCalcs } from "../grid/useDateCalcs";
 import { Util_Scroll } from "../grid/useScroll";
 import { WeekProps } from "../useWeek";
@@ -49,6 +49,7 @@ export const useShortcuts = ({
   scrollUtil,
 }: ShortcutProps) => {
   const dispatch = useAppDispatch();
+  const context = useSidebarContext(true);
   const navigate = useNavigate();
 
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
@@ -76,18 +77,12 @@ export const useShortcuts = ({
         return;
       }
 
+      context?.actions.createSomedayDraft(category);
+
       // If sidebar is closed, open it first
       if (!isSidebarOpen) {
         dispatch(viewSlice.actions.toggleSidebar());
       }
-
-      await createSomedayDraft(
-        category,
-        startOfView,
-        endOfView,
-        "createShortcut",
-        dispatch,
-      );
 
       if (tab !== "tasks") {
         dispatch(viewSlice.actions.updateSidebarTab("tasks"));

@@ -7,6 +7,7 @@ import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { computeCurrentEventDateRange } from "@web/common/utils/web.date.util";
 import { useDraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
+import { SidebarDraftContextValue } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { Setters_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
@@ -42,7 +43,8 @@ export const SomedayEventContainer = ({
   setEvent,
   weekViewRange,
 }: Props) => {
-  const { actions, setters, state } = useSidebarContext();
+  const context = useSidebarContext() as SidebarDraftContextValue;
+  const { state, actions, setters } = context;
 
   const formProps = useDraftForm(
     category,
