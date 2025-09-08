@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { OnboardingFooter, OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
-import { OnboardingStepBoilerplate } from "../../components/OnboardingStepBoilerplate";
+import { OnboardingCardLayout } from "../../components/layouts/OnboardingCardLayout";
 
 const CalendarContainer = styled.div`
   width: 100%;
@@ -34,10 +34,7 @@ export const SetReminderSuccess: React.FC<OnboardingStepProps> = ({
   const reminder = localStorage.getItem(STORAGE_KEYS.REMINDER) as string;
 
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <OnboardingText>Excellent choice.</OnboardingText>
 
       <OnboardingText>
@@ -51,7 +48,7 @@ export const SetReminderSuccess: React.FC<OnboardingStepProps> = ({
       <MockCalendar reminder={reminder} />
 
       <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };
 

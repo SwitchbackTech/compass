@@ -1,7 +1,7 @@
 import React from "react";
 import {
+  OnboardingCardLayout,
   OnboardingFooter,
-  OnboardingStepBoilerplate,
   OnboardingText,
 } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
@@ -14,10 +14,7 @@ export const WelcomeNoteTwo: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <OnboardingText>
         To protect yourself from these forces, you&apos;ll need this one thing
         at all times:
@@ -40,6 +37,6 @@ export const WelcomeNoteTwo: React.FC<OnboardingStepProps> = ({
         onPrev={onPrevious}
         onNext={onNext}
       />
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

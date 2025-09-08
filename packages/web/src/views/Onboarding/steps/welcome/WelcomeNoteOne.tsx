@@ -1,7 +1,7 @@
 import React from "react";
 import { OnboardingFooter, OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
-import { OnboardingStepBoilerplate } from "../../components/OnboardingStepBoilerplate";
+import { OnboardingCardLayout } from "../../components/layouts/OnboardingCardLayout";
 
 export const WelcomeNoteOne: React.FC<OnboardingStepProps> = ({
   currentStep,
@@ -11,10 +11,7 @@ export const WelcomeNoteOne: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <OnboardingText>
         I see you are eager to board, but I must warn you:
       </OnboardingText>
@@ -35,6 +32,6 @@ export const WelcomeNoteOne: React.FC<OnboardingStepProps> = ({
         onPrev={onPrevious}
         onNext={onNext}
       />
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

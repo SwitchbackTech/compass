@@ -4,8 +4,8 @@ import { ShuffleAngular } from "@phosphor-icons/react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import IconButton from "@web/components/IconButton/IconButton";
 import {
+  OnboardingCardLayout,
   OnboardingFooter,
-  OnboardingStepBoilerplate,
   OnboardingText,
   OnboardingTextareaWhite,
 } from "../../components";
@@ -89,10 +89,7 @@ export const SetReminder: React.FC<OnboardingStepProps> = ({
   );
 
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <OnboardingText>
         The sea is calm now. It's a good time to set a Reminder.
       </OnboardingText>
@@ -124,6 +121,6 @@ export const SetReminder: React.FC<OnboardingStepProps> = ({
           nextBtnDisabled={!!reminder && !reminder.trim()}
         />
       </OnboardingForm>
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

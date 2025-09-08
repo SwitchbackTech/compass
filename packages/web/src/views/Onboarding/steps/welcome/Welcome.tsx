@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import {
   OnboardingButton,
-  OnboardingStepBoilerplate,
+  OnboardingCardLayout,
   OnboardingText,
 } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
@@ -201,10 +201,7 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
   ]);
 
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <CRTContainer>
         {textLines.map((line, index) => (
           <AnimatedText key={index} delay={0} visible={index < visibleLines}>
@@ -244,6 +241,6 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
           </BlinkingText>
         ))}
       </CRTContainer>
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

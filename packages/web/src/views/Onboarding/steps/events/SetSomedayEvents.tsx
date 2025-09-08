@@ -7,11 +7,11 @@ import { prepSomedayEventBeforeSubmit } from "@web/common/utils/event.util";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import {
+  OnboardingCardLayout,
   OnboardingFooter,
   OnboardingInputContainer,
   OnboardingInputLabel,
   OnboardingInputSection,
-  OnboardingStepBoilerplate,
   OnboardingText,
   OnboardingTextareaWhite,
 } from "../../components";
@@ -74,10 +74,7 @@ export const SetSomedayEvents: React.FC<OnboardingStepProps> = ({
   };
 
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <OnboardingText>Let’s not delay.</OnboardingText>
       <OnboardingText>
         Enter two tasks you want to do this month.
@@ -121,6 +118,6 @@ export const SetSomedayEvents: React.FC<OnboardingStepProps> = ({
           }
         />
       </OnboardingForm>
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

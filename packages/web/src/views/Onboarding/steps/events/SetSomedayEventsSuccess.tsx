@@ -1,7 +1,7 @@
 import React from "react";
 import {
+  OnboardingCardLayout,
   OnboardingFooter,
-  OnboardingStepBoilerplate,
   OnboardingText,
 } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
@@ -14,10 +14,7 @@ export const SetSomedayEventsSuccess: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <OnboardingText>
         Wise choices, these look crucial for this month.
       </OnboardingText>
@@ -32,6 +29,6 @@ export const SetSomedayEventsSuccess: React.FC<OnboardingStepProps> = ({
       </OnboardingText>
 
       <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

@@ -9,19 +9,25 @@ export const OnboardingRoot = styled.div`
   width: 100vw;
 `;
 
-export const OnboardingContainer = styled.div`
+interface OnboardingContainerProps {
+  fullWidth?: boolean;
+}
+
+export const OnboardingContainer = styled.div<OnboardingContainerProps>`
   background-color: #12151b;
   position: absolute;
-  width: 900px;
-  height: 800px;
-  border-radius: 44px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  width: ${({ fullWidth }) => (fullWidth ? "100vw" : "900px")};
+  height: ${({ fullWidth }) => (fullWidth ? "100vh" : "800px")};
+  border-radius: ${({ fullWidth }) => (fullWidth ? "0" : "44px")};
+  top: ${({ fullWidth }) => (fullWidth ? "0" : "50%")};
+  left: ${({ fullWidth }) => (fullWidth ? "0" : "50%")};
+  transform: ${({ fullWidth }) =>
+    fullWidth ? "none" : "translate(-50%, -50%)"};
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: rgb(255 255 255 / 15%) 0px 9px 20px 1px;
+  box-shadow: ${({ fullWidth }) =>
+    fullWidth ? "none" : "rgb(255 255 255 / 15%) 0px 9px 20px 1px"};
 
   @keyframes flicker {
     0%,
@@ -60,7 +66,8 @@ export const OnboardingContainer = styled.div`
     }
   }
 
-  animation: flicker 0.5s infinite;
+  animation: ${({ fullWidth }) =>
+    fullWidth ? "none" : "flicker 0.5s infinite"};
 
   &::before {
     content: "";
@@ -73,7 +80,7 @@ export const OnboardingContainer = styled.div`
     background-size: 100% 4px;
     pointer-events: none;
     z-index: 1;
-    border-radius: 44px;
+    border-radius: ${({ fullWidth }) => (fullWidth ? "0" : "44px")};
   }
 `;
 
@@ -98,12 +105,14 @@ interface Props {
   steps: OnboardingStep[];
   onComplete: (reason: "skip" | "complete") => void;
   className?: string;
+  fullWidth?: boolean;
 }
 
 export const Onboarding: React.FC<Props> = ({
   steps,
   onComplete,
   className,
+  fullWidth = false,
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
@@ -170,9 +179,7 @@ export const Onboarding: React.FC<Props> = ({
 
   return (
     <OnboardingRoot>
-      <OnboardingContainer className={className} id="onboarding-container">
-        <StepComponent {...stepProps} />
-      </OnboardingContainer>
+      <StepComponent {...stepProps} />
     </OnboardingRoot>
   );
 };
