@@ -7,7 +7,6 @@ import {
 } from "@web/views/Onboarding/components/OnboardingContext";
 import { Onboarding, OnboardingStepProps, OnboardingStepType } from "./index";
 import {
-  EmailStep,
   OutroQuote,
   OutroTwo,
   SetReminder,
@@ -18,12 +17,14 @@ import {
   SetSomedayEventsSuccess,
   SignInWithGoogle,
   SignInWithGooglePrelude,
-  SomedayIntro,
+  WaitlistCheck,
   WelcomeNoteOne,
   WelcomeNoteTwo,
   WelcomeScreen,
   WelcomeStep,
 } from "./steps";
+import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
+import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
 
 const OnboardingDemo_: React.FC = () => {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ const OnboardingDemo_: React.FC = () => {
     // to allow contributors on localhost through
     loginSteps.push({
       id: "email",
-      component: EmailStep,
+      component: WaitlistCheck,
       disableRightArrow: true,
     });
   }
@@ -77,9 +78,16 @@ const OnboardingDemo_: React.FC = () => {
       disableRightArrow: true,
     },
     {
-      id: "someday-intro",
-      component: (props: OnboardingStepProps) => <SomedayIntro {...props} />,
-      disableLeftArrow: true,
+      id: "reminder-intro-one",
+      component: (props: OnboardingStepProps) => (
+        <ReminderIntroOne {...props} />
+      ),
+    },
+    {
+      id: "reminder-intro-two",
+      component: (props: OnboardingStepProps) => (
+        <ReminderIntroTwo {...props} />
+      ),
     },
     {
       id: "set-reminder",

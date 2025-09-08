@@ -3,10 +3,10 @@ import {
   OnboardingFooter,
   OnboardingStepBoilerplate,
   OnboardingText,
-} from "../components";
-import { OnboardingStepProps } from "../components/Onboarding";
+} from "../../components";
+import { OnboardingStepProps } from "../../components/Onboarding";
 
-export const SetSomedayEventsSuccess: React.FC<OnboardingStepProps> = ({
+export const ReminderIntroTwo: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
@@ -19,16 +19,15 @@ export const SetSomedayEventsSuccess: React.FC<OnboardingStepProps> = ({
       totalSteps={totalSteps}
     >
       <OnboardingText>
-        Wise choices, these look crucial for this month.
+        Compass solves this by showing a Reminder at the top of your calendar.
       </OnboardingText>
 
       <OnboardingText>
-        Now you’re already one step closer to getting them done.
+        A Reminder can be a goal, intention, or quote.
       </OnboardingText>
 
       <OnboardingText>
-        With Compass, you’ll always be in charge of your tasks — not the other
-        way around.
+        The only thing that matters is it helps you invest your time wisely.
       </OnboardingText>
 
       <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />

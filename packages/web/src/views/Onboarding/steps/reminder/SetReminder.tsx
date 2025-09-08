@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
+import { ShuffleAngular } from "@phosphor-icons/react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import IconButton from "@web/components/IconButton/IconButton";
 import {
   OnboardingFooter,
-  OnboardingInputWhite,
   OnboardingStepBoilerplate,
   OnboardingText,
-} from "../components";
-import { OnboardingStepProps } from "../components/Onboarding";
-import { OnboardingForm } from "../components/OnboardingForm";
+  OnboardingTextareaWhite,
+} from "../../components";
+import { OnboardingStepProps } from "../../components/Onboarding";
+import { OnboardingForm } from "../../components/OnboardingForm";
+import { REMINDERS } from "./reminders";
 
 const InputContainer = styled.div`
   position: relative;
@@ -16,7 +19,7 @@ const InputContainer = styled.div`
   margin-bottom: 40px;
 `;
 
-const Input = styled(OnboardingInputWhite)``;
+const Input = styled(OnboardingTextareaWhite)``;
 
 const HelpText = styled(OnboardingText)`
   position: absolute;
@@ -57,8 +60,7 @@ export const SetReminder: React.FC<OnboardingStepProps> = ({
     return () => clearTimeout(timer);
   }, [reminder]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const persistReminder = (value: string) => {
     setReminder(value);
     const persistedValue = value.trim() !== "" ? value.trim() : PLACEHOLDER;
     localStorage.setItem(STORAGE_KEYS.REMINDER, persistedValue);
@@ -74,29 +76,42 @@ export const SetReminder: React.FC<OnboardingStepProps> = ({
     onNext();
   };
 
+  const handleShuffle = () => {
+    const randomReminder =
+      REMINDERS[Math.floor(Math.random() * REMINDERS.length)];
+    persistReminder(randomReminder);
+  };
+
+  const ShuffleIcon = (props: React.ComponentProps<typeof ShuffleAngular>) => (
+    <IconButton {...props}>
+      <ShuffleAngular color="#FFFFFF" size={32} />
+    </IconButton>
+  );
+
   return (
     <OnboardingStepBoilerplate
       currentStep={currentStep}
       totalSteps={totalSteps}
     >
       <OnboardingText>
-        There is always ONE thing that matters most.
+        The sea is calm now. It's a good time to set a Reminder.
       </OnboardingText>
-      <OnboardingText>So I ask you, wise Captain:</OnboardingText>
-
-      <OnboardingText>
-        What is the ONE thing you can do this week, such that by doing it
-        everything else will become easier or unnecessary?
-      </OnboardingText>
+      <OnboardingText>What do you want to remember this week?</OnboardingText>
 
       <OnboardingForm onSubmit={handleSubmit}>
         <InputContainer>
-          <Input
-            placeholder={PLACEHOLDER}
-            value={reminder}
-            onChange={handleInputChange}
-            autoFocus
-          />
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <Input
+              placeholder={PLACEHOLDER}
+              value={reminder}
+              onChange={(e) => persistReminder(e.target.value)}
+              autoFocus
+              style={{ flex: 1 }}
+            />
+            <div style={{ marginLeft: 8, cursor: "pointer" }}>
+              <ShuffleIcon color="#FFFFFF" size={32} onClick={handleShuffle} />
+            </div>
+          </div>
           {showHelpText && (
             <HelpText>Fear not, you can always change this later.</HelpText>
           )}

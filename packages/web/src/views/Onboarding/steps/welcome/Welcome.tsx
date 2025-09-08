@@ -1,17 +1,11 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import {
   OnboardingButton,
-  OnboardingInput,
-  OnboardingInputLabel,
-  OnboardingInputSection,
-  OnboardingLink,
   OnboardingStepBoilerplate,
   OnboardingText,
-} from "../components";
-import { OnboardingStepProps } from "../components/Onboarding";
-import { useOnboarding } from "../components/OnboardingContext";
+} from "../../components";
+import { OnboardingStepProps } from "../../components/Onboarding";
 
 const Title = styled(OnboardingText)`
   margin-bottom: ${({ theme }) => theme.spacing.xl};
@@ -72,37 +66,6 @@ const BlinkingText = styled(OnboardingText)<{
 
   animation: ${({ visible }) => (visible ? "blink 1s infinite" : "none")};
 `;
-
-const NotInvited = () => {
-  return (
-    <OnboardingStepBoilerplate currentStep={1} totalSteps={1}>
-      <OnboardingText>You&apos;re not on the crew list yet.</OnboardingText>
-      <OnboardingText>
-        Sign up to get notified when a spot opens up.
-      </OnboardingText>
-      <OnboardingLink
-        href="https://www.compasscalendar.com/waitlist"
-        target="_blank"
-        rel="noreferrer"
-      >
-        JOIN CREW LIST
-      </OnboardingLink>
-    </OnboardingStepBoilerplate>
-  );
-};
-
-const OnWaitlistButNotInvited = () => {
-  return (
-    <OnboardingStepBoilerplate currentStep={1} totalSteps={1}>
-      <OnboardingText>
-        You&apos;re on the crew list but not invited yet.
-      </OnboardingText>
-      <OnboardingText>
-        We&apos;ll let you know when you&apos;re invited.
-      </OnboardingText>
-    </OnboardingStepBoilerplate>
-  );
-};
 
 export const WelcomeStep: React.FC<OnboardingStepProps> = ({
   currentStep,

@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 
 export const OnboardingText = styled.p`
   font-family: "VT323", monospace;
@@ -49,8 +49,7 @@ export const OnboardingInputLabel = styled.label`
   color: ${({ theme }) => theme.color.common.white};
   font-size: ${({ theme }) => theme.text.size.xxl};
 `;
-
-export const OnboardingInput = styled.input`
+const OnboardingInputBase = css`
   font-family: "VT323", monospace;
   font-size: ${({ theme }) => theme.text.size.xxl};
   width: 100%;
@@ -69,7 +68,15 @@ export const OnboardingInput = styled.input`
   }
 `;
 
-export const OnboardingInputWhite = styled(OnboardingInput)`
+export const OnboardingInput = styled.input`
+  ${OnboardingInputBase}
+`;
+
+export const OnboardingTextarea = styled.textarea`
+  ${OnboardingInputBase}
+`;
+
+export const OnboardingTextareaWhite = styled(OnboardingTextarea)`
   background-color: ${({ theme }) => theme.color.common.white};
   border-radius: 0;
   color: ${({ theme }) => theme.color.common.black};

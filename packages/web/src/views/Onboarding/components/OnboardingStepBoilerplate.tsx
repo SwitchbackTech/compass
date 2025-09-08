@@ -17,7 +17,7 @@ export const OnboardingStepBoilerplate = (
   const { currentStep, totalSteps, children } = props;
 
   return (
-    <OnboardingCard hideBorder={currentStep === 1}>
+    <OnboardingCard hideBorder={true}>
       <OnboardingStep currentStep={currentStep} totalSteps={totalSteps}>
         {children}
       </OnboardingStep>
