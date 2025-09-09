@@ -85,8 +85,12 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
           <Content>{content}</Content>
           <SkipButton onClick={onSkip}>SKIP INTRO</SkipButton>
           <NavigationButtons>
-            <OnboardingPreviousButton onClick={onPrevious} />
+            <OnboardingPreviousButton
+              aria-label="Previous"
+              onClick={onPrevious}
+            />
             <OnboardingNextButton
+              aria-label="Next"
               onClick={onNext}
               disabled={nextButtonDisabled}
               shouldTrapFocus={!isNavPrevented}
