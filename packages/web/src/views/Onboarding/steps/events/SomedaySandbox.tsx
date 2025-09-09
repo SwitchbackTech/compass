@@ -270,20 +270,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        const hadContent = inputValue.trim();
         addTask();
-        // If we added content and both sections now have enough tasks, navigate
-        if (hadContent) {
-          const weekCount = isWeekTask
-            ? weekTasks.length + 1
-            : weekTasks.length;
-          const monthCount = isWeekTask
-            ? monthTasks.length
-            : monthTasks.length + 1;
-          if (weekCount >= WEEK_LIMIT && monthCount >= MONTH_LIMIT) {
-            handleNext();
-          }
-        }
       } else if (e.key === "Tab") {
         addTask();
       }

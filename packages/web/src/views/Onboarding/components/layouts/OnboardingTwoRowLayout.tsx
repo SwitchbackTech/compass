@@ -98,7 +98,7 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
         }
       }
 
-      // For Enter key, only prevent navigation if not focused on an input
+      // For Enter key, check navigation rules first
       if (isEnter) {
         const activeElement = document.activeElement as HTMLElement;
         const isInputFocused =
@@ -107,28 +107,30 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
             activeElement.tagName === "TEXTAREA" ||
             activeElement.contentEditable === "true");
 
+        // Check if navigation should be prevented
+        const shouldPreventNavigation =
+          (canNavigateNext && !canNavigateNext()) ||
+          (!canNavigateNext && nextButtonDisabled);
+
         // If focused on an input, let the input handle the Enter key (for saving)
+        // but only if navigation is not prevented
         if (isInputFocused) {
+          if (shouldPreventNavigation) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
           return;
         }
 
-        // If not focused on an input, check navigation rules
-        if (canNavigateNext && !canNavigateNext()) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-
-        if (!canNavigateNext && nextButtonDisabled) {
+        // If not focused on input, check navigation rules
+        if (shouldPreventNavigation) {
           event.preventDefault();
           event.stopPropagation();
           return;
         }
 
         // If navigation is allowed, call onNext
-        if (!nextButtonDisabled) {
-          onNext();
-        }
+        onNext();
       }
     };
 
