@@ -42,25 +42,11 @@ const textWave = keyframes`
 `;
 
 // Styled Components
-const TopContent = styled.div`
-  display: flex;
-  width: 100%;
-  gap: 40px;
-`;
-
 const LeftColumn = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
-`;
-
-const RightColumn = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 24px;
 `;
 
 const CheckboxContainer = styled.div`
@@ -197,7 +183,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   const [weekTasksChecked, setWeekTasksChecked] = useState(false);
   const [monthTasksChecked, setMonthTasksChecked] = useState(false);
   const [headingAnimating, setHeadingAnimating] = useState(false);
-  const taskColors = [
+  const colors = [
     colorByPriority.work,
     colorByPriority.self,
     colorByPriority.relationships,
@@ -208,9 +194,9 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     setTimeout(() => setHeadingAnimating(false), 3000);
   }, []);
 
-  const getRandomTaskColor = () => {
-    const randomIndex = Math.floor(Math.random() * taskColors.length);
-    return taskColors[randomIndex];
+  const getRandomColor = () => {
+    const randomIndex = Math.floor(Math.random() * colors.length);
+    return colors[randomIndex];
   };
 
   // Custom onNext handler that prevents navigation when checkboxes aren't checked
@@ -221,13 +207,13 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   };
 
   const [weekTasks, setWeekTasks] = useState([
-    { text: "That one thing ...", color: getRandomTaskColor() },
-    { text: "Buy groceries", color: getRandomTaskColor() },
+    { text: "💸 File taxes", color: colorByPriority.work },
+    { text: "🥗 Get groceries", color: colorByPriority.self },
   ]);
   const [monthTasks, setMonthTasks] = useState([
-    { text: "Buy groceries", color: getRandomTaskColor() },
-    { text: "Buy groceries", color: getRandomTaskColor() },
-    { text: "Buy groceries", color: getRandomTaskColor() },
+    { text: "🤖 Start AI course", color: colorByPriority.work },
+    { text: "🏠 Book Airbnb", color: colorByPriority.relationships },
+    { text: "📚 Return library books", color: colorByPriority.self },
   ]);
   const [newWeekTask, setNewWeekTask] = useState("");
   const [newMonthTask, setNewMonthTask] = useState("");
@@ -242,7 +228,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     if (newWeekTask.trim()) {
       const newTasks = [
         ...weekTasks,
-        { text: newWeekTask.trim(), color: getRandomTaskColor() },
+        { text: newWeekTask.trim(), color: getRandomColor() },
       ];
       setWeekTasks(newTasks);
       setNewWeekTask("");
@@ -257,7 +243,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     if (newMonthTask.trim()) {
       const newTasks = [
         ...monthTasks,
-        { text: newMonthTask.trim(), color: getRandomTaskColor() },
+        { text: newMonthTask.trim(), color: getRandomColor() },
       ];
       setMonthTasks(newTasks);
       setNewMonthTask("");
