@@ -376,6 +376,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       canNavigateNext={isWeekTaskReady && isMonthTaskReady}
       defaultPreventNavigation={true}
       onNavigationControlChange={setIsNavPrevented}
+      isNavPrevented={isNavPrevented}
     />
   );
 };

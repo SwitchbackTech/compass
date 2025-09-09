@@ -1,19 +1,59 @@
-import React from "react";
-import styled from "styled-components";
+import React, { useEffect, useRef } from "react";
+import styled, { css, keyframes } from "styled-components";
 import { OnboardingButton } from "./styled";
 
-const IconButton = styled(OnboardingButton)`
+// Keyframes for pulsing animation
+const pulse = keyframes`
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+`;
+
+const IconButton = styled(OnboardingButton)<{ $shouldPulse?: boolean }>`
   padding: 0;
   min-width: 0;
   width: 24px;
   height: 24px;
+  transition: all 0.2s ease-in-out;
+
+  ${({ $shouldPulse }) =>
+    $shouldPulse &&
+    css`
+      animation: ${pulse} 2s ease-in-out infinite;
+    `}
 `;
 
-export const OnboardingNextButton = (
-  props: React.ButtonHTMLAttributes<HTMLButtonElement>,
-) => {
+interface OnboardingNextButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  shouldTrapFocus?: boolean;
+  shouldPulse?: boolean;
+}
+
+export const OnboardingNextButton: React.FC<OnboardingNextButtonProps> = ({
+  shouldTrapFocus = false,
+  shouldPulse = false,
+  ...props
+}) => {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (shouldTrapFocus && buttonRef.current) {
+      // Focus the button when focus trapping is enabled
+      buttonRef.current.focus();
+    }
+  }, [shouldTrapFocus]);
+
   return (
-    <IconButton {...props}>
+    <IconButton ref={buttonRef} $shouldPulse={shouldPulse} {...props}>
       <svg
         width="10"
         height="9"

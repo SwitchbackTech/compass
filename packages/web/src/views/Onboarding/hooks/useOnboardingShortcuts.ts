@@ -59,11 +59,6 @@ export const useOnboardingShortcuts = ({
           event.stopPropagation();
           return;
         }
-        console.log("shouldPrevent:", shouldPrevent);
-        console.log("nextButtonDisabled:", nextButtonDisabled);
-        console.log("canNavigateNext:", canNavigateNext);
-
-        onNext();
       }
     };
 
