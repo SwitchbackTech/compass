@@ -174,6 +174,9 @@ const AnimatedText = styled(OnboardingText)<{ isAnimating: boolean }>`
     `}
 `;
 
+const WEEK_LIMIT = 3;
+const MONTH_LIMIT = 4;
+
 export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
@@ -241,7 +244,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       setWeekTasks(newTasks);
       setNewWeekTask("");
 
-      if (newTasks.length >= 3 && !weekTasksChecked) {
+      if (newTasks.length >= WEEK_LIMIT && !weekTasksChecked) {
         setWeekTasksChecked(true);
       }
     }
@@ -256,29 +259,47 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       setMonthTasks(newTasks);
       setNewMonthTask("");
 
-      if (newTasks.length >= 3 && !monthTasksChecked) {
+      if (newTasks.length >= MONTH_LIMIT && !monthTasksChecked) {
         setMonthTasksChecked(true);
       }
     }
   };
 
-  const handleWeekTaskKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.stopPropagation();
-      handleAddWeekTask();
-    } else if (e.key === "Tab") {
-      handleAddWeekTask();
-    }
-  };
+  const createTaskKeyHandler =
+    (inputValue: string, addTask: () => void, isWeekTask: boolean) =>
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const hadContent = inputValue.trim();
+        addTask();
+        // If we added content and both sections now have enough tasks, navigate
+        if (hadContent) {
+          const weekCount = isWeekTask
+            ? weekTasks.length + 1
+            : weekTasks.length;
+          const monthCount = isWeekTask
+            ? monthTasks.length
+            : monthTasks.length + 1;
+          if (weekCount >= WEEK_LIMIT && monthCount >= MONTH_LIMIT) {
+            handleNext();
+          }
+        }
+      } else if (e.key === "Tab") {
+        addTask();
+      }
+    };
 
-  const handleMonthTaskKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.stopPropagation();
-      handleAddMonthTask();
-    } else if (e.key === "Tab") {
-      handleAddMonthTask();
-    }
-  };
+  const handleWeekTaskKeyPress = createTaskKeyHandler(
+    newWeekTask,
+    handleAddWeekTask,
+    true,
+  );
+
+  const handleMonthTaskKeyPress = createTaskKeyHandler(
+    newMonthTask,
+    handleAddMonthTask,
+    false,
+  );
 
   const saveWeekTaskEdit = () => {
     if (editingWeekIndex !== null && editWeekValue.trim()) {
@@ -330,18 +351,21 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
         <Sidebar>
           <SidebarSection>
             <SectionTitle>This Week</SectionTitle>
-            <TaskInput
-              type="text"
-              placeholder="Add new task..."
-              value={newWeekTask}
-              onChange={(e) => setNewWeekTask(e.target.value)}
-              onKeyDown={handleWeekTaskKeyPress}
-              onBlur={() => {
-                if (newWeekTask.trim()) {
-                  handleAddWeekTask();
-                }
-              }}
-            />
+            {weekTasks.length < WEEK_LIMIT && (
+              <TaskInput
+                type="text"
+                placeholder="Add new task..."
+                value={newWeekTask}
+                onChange={(e) => setNewWeekTask(e.target.value)}
+                onKeyDown={handleWeekTaskKeyPress}
+                onBlur={() => {
+                  if (newWeekTask.trim()) {
+                    handleAddWeekTask();
+                  }
+                }}
+                autoFocus
+              />
+            )}
             {weekTasks.map((task, index) => (
               <TaskItem key={index} color={task.color}>
                 {editingWeekIndex === index ? (
@@ -363,18 +387,20 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
 
           <SidebarSection>
             <SectionTitle>This Month</SectionTitle>
-            <TaskInput
-              type="text"
-              placeholder="Add new task..."
-              value={newMonthTask}
-              onChange={(e) => setNewMonthTask(e.target.value)}
-              onKeyDown={handleMonthTaskKeyPress}
-              onBlur={() => {
-                if (newMonthTask.trim()) {
-                  handleAddMonthTask();
-                }
-              }}
-            />
+            {monthTasks.length < MONTH_LIMIT && (
+              <TaskInput
+                type="text"
+                placeholder="Add new task..."
+                value={newMonthTask}
+                onChange={(e) => setNewMonthTask(e.target.value)}
+                onKeyDown={handleMonthTaskKeyPress}
+                onBlur={() => {
+                  if (newMonthTask.trim()) {
+                    handleAddMonthTask();
+                  }
+                }}
+              />
+            )}
             {monthTasks.map((task, index) => (
               <TaskItem key={index} color={task.color}>
                 {editingMonthIndex === index ? (
