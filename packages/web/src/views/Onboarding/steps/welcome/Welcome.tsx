@@ -37,7 +37,10 @@ const CheckText = styled(OnboardingText)<{ delay: number; visible: boolean }>`
   display: inline;
 `;
 
-const ResultText = styled(OnboardingText)<{ delay: number; visible: boolean }>`
+const ResultText = styled.span<{ delay: number; visible: boolean }>`
+  font-family: "VT323", monospace;
+  font-size: 24px;
+  color: ${({ theme }) => theme.color.common.white};
   opacity: ${({ visible }) => (visible ? 1 : 0)};
   transition: opacity 0.1s ease-in;
   transition-delay: ${({ delay }) => delay}ms;
