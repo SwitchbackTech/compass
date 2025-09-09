@@ -62,6 +62,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         onSkip={onSkip}
         onPrev={onPrevious}
         onNext={onNext}
+        prevBtnDisabled={true}
       />
     </OnboardingCardLayout>
   );

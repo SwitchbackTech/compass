@@ -12,12 +12,14 @@ export const OnboardingFooter = ({
   onNext,
   hideSkip,
   nextBtnDisabled,
+  prevBtnDisabled,
 }: {
   onSkip: () => void;
   onPrev: () => void;
   onNext: () => void;
   hideSkip?: boolean;
   nextBtnDisabled?: boolean;
+  prevBtnDisabled?: boolean;
 }) => {
   return (
     <div
@@ -35,7 +37,7 @@ export const OnboardingFooter = ({
         )}
       </div>
       <div style={{ display: "flex", gap: "16px" }}>
-        <OnboardingPreviousButton onClick={onPrev} />
+        <OnboardingPreviousButton onClick={onPrev} disabled={prevBtnDisabled} />
         <OnboardingNextButton onClick={onNext} disabled={nextBtnDisabled} />
       </div>
     </div>

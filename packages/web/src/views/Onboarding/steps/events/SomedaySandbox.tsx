@@ -371,10 +371,14 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
           ) : (
             <>
               <OnboardingText>
-                Nice work. Who said todos have to be complicted?
+                Nice work. Who said being organized had to be complicted?
               </OnboardingText>
               <OnboardingText>
-                Type ENTER or click the right arrow to continue
+                To continue, click the right arrow
+              </OnboardingText>
+              <OnboardingText>
+                You can also hit the ⇨ key (there's a shortcut for everything
+                here)
               </OnboardingText>
               <div style={{ marginTop: "40px" }}>
                 <CheckboxContainer>

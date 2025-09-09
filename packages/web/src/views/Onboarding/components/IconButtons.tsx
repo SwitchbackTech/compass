@@ -30,6 +30,12 @@ const IconButton = styled(OnboardingButton)<{ $shouldPulse?: boolean }>`
     css`
       animation: ${pulse} 2s ease-in-out infinite;
     `}
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
 `;
 
 interface OnboardingNextButtonProps
@@ -70,9 +76,9 @@ export const OnboardingNextButton: React.FC<OnboardingNextButtonProps> = ({
   );
 };
 
-export const OnboardingPreviousButton = (
-  props: React.ButtonHTMLAttributes<HTMLButtonElement>,
-) => {
+export const OnboardingPreviousButton: React.FC<
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+> = (props) => {
   return (
     <IconButton {...props}>
       <svg

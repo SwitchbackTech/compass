@@ -113,16 +113,9 @@ export interface OnboardingStep {
 interface Props {
   steps: OnboardingStep[];
   onComplete: (reason: "skip" | "complete") => void;
-  className?: string;
-  fullWidth?: boolean;
 }
 
-export const Onboarding: React.FC<Props> = ({
-  steps,
-  onComplete,
-  className,
-  fullWidth = false,
-}) => {
+export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isNavPrevented, setIsNavPrevented] = useState(false);
 

@@ -17,7 +17,12 @@ export const SignInWithGoogleSuccess: React.FC<OnboardingStepProps> = ({
       <OnboardingText>
         The crew will attend to your things as we continue.
       </OnboardingText>
-      <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />
+      <OnboardingFooter
+        onSkip={onSkip}
+        onPrev={onPrevious}
+        onNext={onNext}
+        prevBtnDisabled={true}
+      />
     </OnboardingCardLayout>
   );
 };
