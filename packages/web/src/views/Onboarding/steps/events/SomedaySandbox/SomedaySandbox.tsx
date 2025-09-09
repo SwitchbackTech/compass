@@ -155,7 +155,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
           ) : (
             <>
               <OnboardingText>
-                Nice work. Who said being organized had to be complicted?
+                Nice work. Who said being organized had to be complicated?
               </OnboardingText>
               <OnboardingText>
                 To continue, click the right arrow
