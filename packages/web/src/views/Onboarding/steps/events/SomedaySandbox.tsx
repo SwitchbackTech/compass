@@ -171,6 +171,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   const [isWeekTaskReady, setIsWeekTaskReady] = useState(false);
   const [isMonthTaskReady, setIsMonthTaskReady] = useState(false);
   const [isHeaderAnimating, setIsHeaderAnimating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const colors = [
     colorByPriority.work,
     colorByPriority.self,
@@ -200,13 +202,27 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   };
 
   const handleNext = async () => {
-    try {
-      await createAndSubmitEvents(weekTasks, monthTasks);
-      // Navigate to next step after successful creation
-      onNext();
-    } catch (error) {
-      console.error("Failed to create someday events:", error);
+    // Prevent multiple submissions using ref for immediate check
+    if (isSubmittingRef.current) {
+      return;
     }
+
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
+    // Navigate immediately without waiting for the request
+    onNext();
+
+    // Send request in background
+    createAndSubmitEvents(weekTasks, monthTasks)
+      .catch((error) => {
+        console.error("Failed to create someday events:", error);
+      })
+      .finally(() => {
+        // Reset submitting state (though component may be unmounted)
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
+      });
   };
 
   // Handle keyboard events for this step
@@ -220,7 +236,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
         const hasUnsavedChanges =
           newWeekTask.trim() !== "" || newMonthTask.trim() !== "";
         const checkboxesNotChecked = !isWeekTaskReady || !isMonthTaskReady;
-        const shouldPrevent = hasUnsavedChanges || checkboxesNotChecked;
+        const shouldPrevent =
+          hasUnsavedChanges || checkboxesNotChecked || isSubmitting;
 
         if (shouldPrevent) {
           event.preventDefault();
@@ -244,6 +261,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     isMonthTaskReady,
     weekTasks,
     monthTasks,
+    isSubmitting,
   ]);
   const monthInputRef = useRef<HTMLInputElement>(null);
 
@@ -254,7 +272,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
 
     const checkboxesNotChecked = !isWeekTaskReady || !isMonthTaskReady;
 
-    const shouldPrevent = hasUnsavedChanges || checkboxesNotChecked;
+    const shouldPrevent =
+      hasUnsavedChanges || checkboxesNotChecked || isSubmitting;
 
     if (onNavigationControlChange) {
       onNavigationControlChange(shouldPrevent);
@@ -264,6 +283,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     newMonthTask,
     isWeekTaskReady,
     isMonthTaskReady,
+    isSubmitting,
     onNavigationControlChange,
   ]);
 
@@ -456,8 +476,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       onPrevious={onPrevious}
       onSkip={onSkip}
       content={content}
-      nextButtonDisabled={!isWeekTaskReady || !isMonthTaskReady}
-      canNavigateNext={isWeekTaskReady && isMonthTaskReady}
+      nextButtonDisabled={!isWeekTaskReady || !isMonthTaskReady || isSubmitting}
+      canNavigateNext={isWeekTaskReady && isMonthTaskReady && !isSubmitting}
       onNavigationControlChange={onNavigationControlChange}
       isNavPrevented={isNavPrevented}
     />
