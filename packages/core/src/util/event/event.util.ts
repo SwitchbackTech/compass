@@ -5,6 +5,7 @@ import {
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import { UserMetadata } from "@core/types/user.types";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { Event_API } from "@backend/common/types/backend.event.types";
 
 /** Event utilities for Compass events */
@@ -112,4 +113,25 @@ export const shouldImportGCal = (metadata: UserMetadata): boolean => {
     default:
       return true;
   }
+};
+
+export const getCompassEventDateFormat = (
+  date: Exclude<Schema_Event["startDate"], undefined>,
+): string => {
+  const allday = isAllDay({ startDate: date, endDate: date });
+  const { YEAR_MONTH_DAY_FORMAT, RFC3339_OFFSET } = dayjs.DateFormat;
+  const format = allday ? YEAR_MONTH_DAY_FORMAT : RFC3339_OFFSET;
+
+  return format;
+};
+
+export const parseCompassEventDate = (
+  date: Exclude<Schema_Event["startDate"], undefined>,
+): Dayjs => {
+  if (!date) throw new Error("`date` or `dateTime` must be defined");
+
+  const format = getCompassEventDateFormat(date);
+  const timezone = dayjs.tz.guess();
+
+  return dayjs(date, format).tz(timezone);
 };
