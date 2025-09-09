@@ -12,7 +12,6 @@ import {
   SetReminder,
   SetReminderSuccess,
   SetSomedayEventTwo,
-  SetSomedayEvents,
   SetSomedayEventsOne,
   SetSomedayEventsSuccess,
   SignInWithGoogle,
@@ -51,6 +50,10 @@ const OnboardingDemo_: React.FC = () => {
   }
 
   const onboardingSteps: OnboardingStepType[] = [
+    {
+      id: "someday-sandbox",
+      component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
+    },
     {
       id: "welcome-screen",
       component: (props: OnboardingStepProps) => (
