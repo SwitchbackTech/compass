@@ -135,24 +135,6 @@ const TaskItem = styled.div<{ color: string }>`
   color: ${({ theme }) => theme.color.common.black};
   border-radius: 4px;
   padding: 8px 12px;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-
-  &:hover {
-    opacity: 0.8;
-  }
-`;
-
-const TaskInputEdit = styled.input`
-  font-family: "Rubik", sans-serif;
-  font-size: 14px;
-  width: 100%;
-  background: transparent;
-  color: ${({ theme }) => theme.color.common.white};
-  border: none;
-  outline: none;
-  padding: 0;
-  margin: 0;
 `;
 
 const Divider = styled.hr`
@@ -225,21 +207,12 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   ]);
   const [newWeekTask, setNewWeekTask] = useState("");
   const [newMonthTask, setNewMonthTask] = useState("");
-  const [editingWeekIndex, setEditingWeekIndex] = useState<number | null>(null);
-  const [editingMonthIndex, setEditingMonthIndex] = useState<number | null>(
-    null,
-  );
-  const [editWeekValue, setEditWeekValue] = useState("");
-  const [editMonthValue, setEditMonthValue] = useState("");
 
   // Update navigation prevention based on state
   useEffect(() => {
     if (isNavPrevented) {
       const hasUnsavedChanges =
-        newWeekTask.trim() !== "" ||
-        newMonthTask.trim() !== "" ||
-        editWeekValue.trim() !== "" ||
-        editMonthValue.trim() !== "";
+        newWeekTask.trim() !== "" || newMonthTask.trim() !== "";
 
       const checkboxesNotChecked = !isWeekTaskReady || !isMonthTaskReady;
 
@@ -248,8 +221,6 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   }, [
     newWeekTask,
     newMonthTask,
-    editWeekValue,
-    editMonthValue,
     isWeekTaskReady,
     isMonthTaskReady,
     isNavPrevented,
@@ -285,32 +256,6 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     }
   };
 
-  const saveWeekTaskEdit = () => {
-    if (editingWeekIndex !== null && editWeekValue.trim()) {
-      const updatedTasks = [...weekTasks];
-      updatedTasks[editingWeekIndex] = {
-        ...updatedTasks[editingWeekIndex],
-        text: editWeekValue.trim(),
-      };
-      setWeekTasks(updatedTasks);
-    }
-    setEditingWeekIndex(null);
-    setEditWeekValue("");
-  };
-
-  const saveMonthTaskEdit = () => {
-    if (editingMonthIndex !== null && editMonthValue.trim()) {
-      const updatedTasks = [...monthTasks];
-      updatedTasks[editingMonthIndex] = {
-        ...updatedTasks[editingMonthIndex],
-        text: editMonthValue.trim(),
-      };
-      setMonthTasks(updatedTasks);
-    }
-    setEditingMonthIndex(null);
-    setEditMonthValue("");
-  };
-
   const handleNewWeekTaskKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -325,38 +270,6 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       handleAddMonthTask();
       // Focus will naturally move to the next input in tab order
     }
-  };
-
-  const handleEditWeekKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === "Tab") {
-      e.preventDefault();
-      saveWeekTaskEdit();
-      // Focus will naturally move to the next input in tab order
-    } else if (e.key === "Escape") {
-      setEditingWeekIndex(null);
-      setEditWeekValue("");
-    }
-  };
-
-  const handleEditMonthKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === "Tab") {
-      e.preventDefault();
-      saveMonthTaskEdit();
-      // Focus will naturally move to the next input in tab order
-    } else if (e.key === "Escape") {
-      setEditingMonthIndex(null);
-      setEditMonthValue("");
-    }
-  };
-
-  const startEditingWeek = (index: number) => {
-    setEditingWeekIndex(index);
-    setEditWeekValue(weekTasks[index].text);
-  };
-
-  const startEditingMonth = (index: number) => {
-    setEditingMonthIndex(index);
-    setEditMonthValue(monthTasks[index].text);
   };
 
   const content = (
@@ -382,23 +295,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               />
             )}
             {weekTasks.map((task, index) => (
-              <TaskItem
-                key={index}
-                color={task.color}
-                onClick={() => startEditingWeek(index)}
-              >
-                {editingWeekIndex === index ? (
-                  <TaskInputEdit
-                    tabIndex={1}
-                    autoFocus
-                    value={editWeekValue}
-                    onChange={(e) => setEditWeekValue(e.target.value)}
-                    onKeyDown={handleEditWeekKeyPress}
-                    onBlur={saveWeekTaskEdit}
-                  />
-                ) : (
-                  task.text
-                )}
+              <TaskItem key={index} color={task.color}>
+                {task.text}
               </TaskItem>
             ))}
           </SidebarSection>
@@ -423,24 +321,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               />
             )}
             {monthTasks.map((task, index) => (
-              <TaskItem
-                autoFocus
-                key={index}
-                color={task.color}
-                onClick={() => startEditingMonth(index)}
-              >
-                {editingMonthIndex === index ? (
-                  <TaskInputEdit
-                    tabIndex={2}
-                    autoFocus
-                    value={editMonthValue}
-                    onChange={(e) => setEditMonthValue(e.target.value)}
-                    onKeyDown={handleEditMonthKeyPress}
-                    onBlur={saveMonthTaskEdit}
-                  />
-                ) : (
-                  task.text
-                )}
+              <TaskItem key={index} color={task.color}>
+                {task.text}
               </TaskItem>
             ))}
           </SidebarSection>
