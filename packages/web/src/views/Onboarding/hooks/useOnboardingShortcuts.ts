@@ -15,14 +15,8 @@ export const useOnboardingShortcuts = ({
 }: UseOnboardingShortcutsProps) => {
   const shouldPreventNavigationRef = useRef(false);
 
-  // Method to allow components to control navigation prevention
-  const setShouldPreventNavigation = (shouldPrevent: boolean) => {
-    shouldPreventNavigationRef.current = shouldPrevent;
-  };
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      console.log(event);
       const isRightArrow = event.key === "ArrowRight";
       const isEnter = event.key === "Enter";
       const isLeftArrow = event.key === "ArrowLeft";
@@ -78,6 +72,6 @@ export const useOnboardingShortcuts = ({
   }, [onNext, onPrevious, canNavigateNext, nextButtonDisabled]);
 
   return {
-    setShouldPreventNavigation,
+    shouldPreventNavigation: shouldPreventNavigationRef.current,
   };
 };

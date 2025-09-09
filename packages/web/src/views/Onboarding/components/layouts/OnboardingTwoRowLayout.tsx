@@ -59,9 +59,7 @@ interface OnboardingTwoRowLayoutProps
   nextButtonDisabled?: boolean;
   canNavigateNext?: boolean;
   defaultPreventNavigation?: boolean;
-  onNavigationControlChange?: (
-    setShouldPreventNavigation: (shouldPrevent: boolean) => void,
-  ) => void;
+  onNavigationControlChange?: (shouldPrevent: boolean) => void;
 }
 
 export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
@@ -77,7 +75,7 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
   onNavigationControlChange,
 }) => {
   // Use the keyboard shortcuts hook
-  const { setShouldPreventNavigation } = useOnboardingShortcuts({
+  const { shouldPreventNavigation } = useOnboardingShortcuts({
     onNext,
     onPrevious,
     canNavigateNext: canNavigateNext || !nextButtonDisabled,
@@ -87,9 +85,9 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
   // Pass the navigation control function to parent components
   useEffect(() => {
     if (onNavigationControlChange) {
-      onNavigationControlChange(setShouldPreventNavigation);
+      onNavigationControlChange(shouldPreventNavigation);
     }
-  }, [onNavigationControlChange, setShouldPreventNavigation]);
+  }, [onNavigationControlChange, shouldPreventNavigation]);
 
   return (
     <OnboardingContainer fullWidth>

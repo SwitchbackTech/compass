@@ -205,10 +205,6 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   };
 
   const handleNext = async () => {
-    if (!isWeekTaskReady || !isMonthTaskReady) {
-      return;
-    }
-
     try {
       await createAndSubmitEvents(weekTasks, monthTasks);
       // Navigate to next step after successful creation
@@ -317,19 +313,25 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
 
   const handleNewWeekTaskKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
+      e.preventDefault();
       handleAddWeekTask();
+      // Focus will naturally move to the next input in tab order
     }
   };
 
   const handleNewMonthTaskKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
+      e.preventDefault();
       handleAddMonthTask();
+      // Focus will naturally move to the next input in tab order
     }
   };
 
   const handleEditWeekKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
       saveWeekTaskEdit();
+      // Focus will naturally move to the next input in tab order
     } else if (e.key === "Escape") {
       setEditingWeekIndex(null);
       setEditWeekValue("");
@@ -338,7 +340,9 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
 
   const handleEditMonthKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
       saveMonthTaskEdit();
+      // Focus will naturally move to the next input in tab order
     } else if (e.key === "Escape") {
       setEditingMonthIndex(null);
       setEditMonthValue("");
@@ -364,6 +368,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
             {weekTasks.length < WEEK_LIMIT && (
               <TaskInput
                 autoFocus
+                tabIndex={1}
                 type="text"
                 placeholder="Add new task..."
                 value={newWeekTask}
@@ -384,6 +389,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               >
                 {editingWeekIndex === index ? (
                   <TaskInputEdit
+                    tabIndex={1}
+                    autoFocus
                     value={editWeekValue}
                     onChange={(e) => setEditWeekValue(e.target.value)}
                     onKeyDown={handleEditWeekKeyPress}
@@ -402,6 +409,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
             <SectionTitle>This Month</SectionTitle>
             {monthTasks.length < MONTH_LIMIT && (
               <TaskInput
+                tabIndex={2}
                 type="text"
                 placeholder="Add new task..."
                 value={newMonthTask}
@@ -423,6 +431,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               >
                 {editingMonthIndex === index ? (
                   <TaskInputEdit
+                    tabIndex={2}
+                    autoFocus
                     value={editMonthValue}
                     onChange={(e) => setEditMonthValue(e.target.value)}
                     onKeyDown={handleEditMonthKeyPress}
