@@ -117,7 +117,6 @@ const OnboardingDemo_: React.FC = () => {
       id: "someday-sandbox",
       component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
       preventNavigation: true,
-      handlesKeyboardEvents: true,
     },
 
     {

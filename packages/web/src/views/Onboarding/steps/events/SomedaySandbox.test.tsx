@@ -120,7 +120,7 @@ describe("SomedaySandbox", () => {
     });
   });
 
-  it("should call createAndSubmitEvents and onNext when Enter is pressed and tasks are ready", async () => {
+  it("should call createAndSubmitEvents and onNext when Enter is pressed outside input fields and tasks are ready", async () => {
     const { createAndSubmitEvents } = require("./someday-sandbox.util");
     const mockOnNext = jest.fn();
     const props = { ...defaultProps, onNext: mockOnNext };
@@ -143,10 +143,99 @@ describe("SomedaySandbox", () => {
       expect(screen.getByText("Month task")).toBeInTheDocument();
     });
 
-    // Press Enter key (not focused on input)
+    // Click outside the input to remove focus, then press Enter key
+    await userEvent.click(document.body);
     await userEvent.keyboard("{Enter}");
 
     // onNext should be called immediately
+    expect(mockOnNext).toHaveBeenCalled();
+
+    // createAndSubmitEvents should be called in background
+    await waitFor(() => {
+      expect(createAndSubmitEvents).toHaveBeenCalled();
+    });
+  });
+
+  it("should not trigger onNext when Enter is pressed while focused on input field", async () => {
+    const { createAndSubmitEvents } = require("./someday-sandbox.util");
+    const mockOnNext = jest.fn();
+    const props = { ...defaultProps, onNext: mockOnNext };
+
+    render(<SomedaySandboxWithProvider {...props} />);
+
+    // Clear the mock to reset any previous calls
+    createAndSubmitEvents.mockClear();
+    mockOnNext.mockClear();
+
+    // Focus on the week input and press Enter
+    const weekInput = screen.getAllByPlaceholderText("Add new task...")[0];
+    weekInput.focus();
+    await userEvent.type(weekInput, "Test task{enter}");
+
+    // Should not call createAndSubmitEvents or onNext because Enter was pressed while focused on input
+    expect(createAndSubmitEvents).not.toHaveBeenCalled();
+    expect(mockOnNext).not.toHaveBeenCalled();
+
+    // But the task should still be added
+    expect(screen.getByText("Test task")).toBeInTheDocument();
+  });
+
+  it("should not trigger onNext when Enter is pressed while focused on month input field", async () => {
+    const { createAndSubmitEvents } = require("./someday-sandbox.util");
+    const mockOnNext = jest.fn();
+    const props = { ...defaultProps, onNext: mockOnNext };
+
+    render(<SomedaySandboxWithProvider {...props} />);
+
+    // Clear the mock to reset any previous calls
+    createAndSubmitEvents.mockClear();
+    mockOnNext.mockClear();
+
+    // Focus on the month input and press Enter
+    const monthInput = screen.getAllByPlaceholderText("Add new task...")[1];
+    monthInput.focus();
+    await userEvent.type(monthInput, "Test month task{enter}");
+
+    // Should not call createAndSubmitEvents or onNext because Enter was pressed while focused on input
+    expect(createAndSubmitEvents).not.toHaveBeenCalled();
+    expect(mockOnNext).not.toHaveBeenCalled();
+
+    // But the task should still be added
+    expect(screen.getByText("Test month task")).toBeInTheDocument();
+  });
+
+  it("should trigger onNext when Enter is pressed outside input fields after tasks are ready", async () => {
+    const { createAndSubmitEvents } = require("./someday-sandbox.util");
+    const mockOnNext = jest.fn();
+    const props = { ...defaultProps, onNext: mockOnNext };
+
+    render(<SomedaySandboxWithProvider {...props} />);
+
+    // Add enough tasks to make both checkboxes ready
+    const weekInput = screen.getAllByPlaceholderText("Add new task...")[0];
+    const monthInput = screen.getAllByPlaceholderText("Add new task...")[1];
+
+    // Add week task
+    await userEvent.type(weekInput, "Week task{enter}");
+
+    // Add month task
+    await userEvent.type(monthInput, "Month task{enter}");
+
+    // Wait for checkboxes to be checked
+    await waitFor(() => {
+      expect(screen.getByText("Week task")).toBeInTheDocument();
+      expect(screen.getByText("Month task")).toBeInTheDocument();
+    });
+
+    // Clear mocks to test fresh
+    createAndSubmitEvents.mockClear();
+    mockOnNext.mockClear();
+
+    // Click outside inputs to remove focus, then press Enter
+    await userEvent.click(document.body);
+    await userEvent.keyboard("{Enter}");
+
+    // onNext should be called
     expect(mockOnNext).toHaveBeenCalled();
 
     // createAndSubmitEvents should be called in background

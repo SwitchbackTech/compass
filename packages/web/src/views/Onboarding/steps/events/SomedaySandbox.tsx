@@ -225,44 +225,6 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       });
   };
 
-  // Handle keyboard events for this step
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const isRightArrow = event.key === "ArrowRight";
-      const isEnter = event.key === "Enter";
-
-      if (isRightArrow || isEnter) {
-        // Check if we should prevent navigation
-        const hasUnsavedChanges =
-          newWeekTask.trim() !== "" || newMonthTask.trim() !== "";
-        const checkboxesNotChecked = !isWeekTaskReady || !isMonthTaskReady;
-        const shouldPrevent =
-          hasUnsavedChanges || checkboxesNotChecked || isSubmitting;
-
-        if (shouldPrevent) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-
-        // If all conditions are met, call our custom handleNext
-        event.preventDefault();
-        event.stopPropagation();
-        handleNext();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [
-    newWeekTask,
-    newMonthTask,
-    isWeekTaskReady,
-    isMonthTaskReady,
-    weekTasks,
-    monthTasks,
-    isSubmitting,
-  ]);
   const monthInputRef = useRef<HTMLInputElement>(null);
 
   // Update navigation prevention based on state
@@ -320,6 +282,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   const handleNewWeekTaskKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
+      e.stopPropagation();
       handleAddWeekTask();
       // Focus the month input after adding a week task
       if (monthInputRef.current) {
@@ -331,6 +294,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   const handleNewMonthTaskKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
+      e.stopPropagation();
       handleAddMonthTask();
       // Focus will naturally move to the next input in tab order
     }
