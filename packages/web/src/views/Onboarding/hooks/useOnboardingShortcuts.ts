@@ -27,7 +27,6 @@ export const useOnboardingShortcuts = ({
   useEffect(() => {
     // If the step handles its own keyboard events, don't add our listeners
     if (handlesKeyboardEvents) {
-      console.log("skipping cuz handles its own events...");
       return;
     }
 
@@ -80,7 +79,6 @@ export const useOnboardingShortcuts = ({
         }
 
         // If all conditions are met, navigate to next step
-        alert("navigating to next step...");
         onNext();
       }
     };

@@ -21,7 +21,7 @@ import {
   WelcomeScreen,
   WelcomeStep,
 } from "./steps";
-import { SomedaySandbox } from "./steps/events/SomedaySandbox";
+import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
 
