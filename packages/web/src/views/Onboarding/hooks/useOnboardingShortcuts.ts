@@ -45,8 +45,7 @@ export const useOnboardingShortcuts = ({
         const isInputFocused =
           activeElement &&
           (activeElement.tagName === "INPUT" ||
-            activeElement.tagName === "TEXTAREA" ||
-            activeElement.contentEditable === "true");
+            activeElement.tagName === "TEXTAREA");
 
         // If focused on an input, let the input handle it
         if (isInputFocused) {
