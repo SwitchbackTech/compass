@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import {
   OnboardingButton,
-  OnboardingStepBoilerplate,
+  OnboardingCardLayout,
   OnboardingText,
 } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
@@ -37,7 +37,10 @@ const CheckText = styled(OnboardingText)<{ delay: number; visible: boolean }>`
   display: inline;
 `;
 
-const ResultText = styled(OnboardingText)<{ delay: number; visible: boolean }>`
+const ResultText = styled.span<{ delay: number; visible: boolean }>`
+  font-family: "VT323", monospace;
+  font-size: 24px;
+  color: ${({ theme }) => theme.color.common.white};
   opacity: ${({ visible }) => (visible ? 1 : 0)};
   transition: opacity 0.1s ease-in;
   transition-delay: ${({ delay }) => delay}ms;
@@ -171,21 +174,30 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      event.preventDefault();
-      if (!animationComplete) {
-        // Skip animation - show all content immediately and stop timeouts
-        setAnimationSkipped(true);
-        setVisibleLines(
-          textLines.length + checkLines.length + finalLines.length,
-        );
-        const allCheckResults: Record<string, boolean> = {};
-        checkLines.forEach((check) => {
-          allCheckResults[check.text] = true;
-        });
-        setCheckResults(allCheckResults);
-        setAnimationComplete(true);
-      } else {
-        // Animation is complete, move to next step
+      const isRightArrow = event.key === "ArrowRight";
+      const isEnter = event.key === "Enter";
+
+      if (isRightArrow || isEnter) {
+        event.preventDefault();
+        if (!animationComplete) {
+          // Skip animation - show all content immediately and stop timeouts
+          setAnimationSkipped(true);
+          setVisibleLines(
+            textLines.length + checkLines.length + finalLines.length,
+          );
+          const allCheckResults: Record<string, boolean> = {};
+          checkLines.forEach((check) => {
+            allCheckResults[check.text] = true;
+          });
+          setCheckResults(allCheckResults);
+          setAnimationComplete(true);
+        } else {
+          // Animation is complete, move to next step
+          onNext();
+        }
+      } else if (animationComplete) {
+        // After animation is complete, any key press should trigger next
+        event.preventDefault();
         onNext();
       }
     };
@@ -201,10 +213,7 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
   ]);
 
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <CRTContainer>
         {textLines.map((line, index) => (
           <AnimatedText key={index} delay={0} visible={index < visibleLines}>
@@ -244,6 +253,6 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
           </BlinkingText>
         ))}
       </CRTContainer>
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

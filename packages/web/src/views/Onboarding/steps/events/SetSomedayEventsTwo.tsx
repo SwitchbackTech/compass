@@ -1,7 +1,7 @@
 import React from "react";
 import { OnboardingFooter, OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
-import { OnboardingStepBoilerplate } from "../../components/OnboardingStepBoilerplate";
+import { OnboardingCardLayout } from "../../components/layouts/OnboardingCardLayout";
 
 export const SetSomedayEventTwo: React.FC<OnboardingStepProps> = ({
   currentStep,
@@ -11,19 +11,18 @@ export const SetSomedayEventTwo: React.FC<OnboardingStepProps> = ({
   onPrevious,
 }) => {
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
-      <OnboardingText>Instead, capture them in the sidebar.</OnboardingText>
-
-      <OnboardingText>Move them forward, back, up, down.</OnboardingText>
-
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <OnboardingText>
-        Then, when the time is right, drag them onto the calendar.
+        Thankfully, you can store future tasks in the sidebar.
       </OnboardingText>
 
+      <OnboardingText>
+        Keeping those next to your schedule helps you stay on top of things.
+      </OnboardingText>
+
+      <OnboardingText>Let's see how that looks.</OnboardingText>
+
       <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

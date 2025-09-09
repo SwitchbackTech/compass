@@ -8,7 +8,7 @@ import {
 import { CompassApi } from "@web/common/apis/compass.api";
 
 const EventApi = {
-  create: (event: Schema_Event) => {
+  create: (event: Schema_Event | Schema_Event[]) => {
     return CompassApi.post(`/event`, event);
   },
   delete: (_id: string) => {

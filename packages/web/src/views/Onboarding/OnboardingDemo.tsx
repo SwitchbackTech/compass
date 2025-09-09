@@ -12,9 +12,7 @@ import {
   SetReminder,
   SetReminderSuccess,
   SetSomedayEventTwo,
-  SetSomedayEvents,
   SetSomedayEventsOne,
-  SetSomedayEventsSuccess,
   SignInWithGoogle,
   SignInWithGooglePrelude,
   WaitlistCheck,
@@ -23,6 +21,7 @@ import {
   WelcomeScreen,
   WelcomeStep,
 } from "./steps";
+import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
 
@@ -55,6 +54,7 @@ const OnboardingDemo_: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <WelcomeScreen firstName="hello" {...props} />
       ),
+      disableLeftArrow: true,
     },
     {
       id: "welcome-note-one",
@@ -76,6 +76,8 @@ const OnboardingDemo_: React.FC = () => {
         <SignInWithGoogle {...props} />
       ),
       disableRightArrow: true,
+      preventNavigation: true,
+      handlesKeyboardEvents: true,
     },
     {
       id: "reminder-intro-one",
@@ -112,20 +114,15 @@ const OnboardingDemo_: React.FC = () => {
       ),
     },
     {
-      id: "set-someday-events",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEvents {...props} />
-      ),
+      id: "someday-sandbox",
+      component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
+      preventNavigation: true,
     },
-    {
-      id: "set-someday-events-success",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEventsSuccess {...props} />
-      ),
-    },
+
     {
       id: "outro-two",
       component: (props: OnboardingStepProps) => <OutroTwo {...props} />,
+      disableLeftArrow: true,
     },
     {
       id: "outro-quote",
@@ -135,7 +132,7 @@ const OnboardingDemo_: React.FC = () => {
     },
   ];
 
-  // Initially hide the steps til the user logs in
+  // Initially hide the steps until the user logs in
   useEffect(() => {
     setHideSteps(true);
   }, [setHideSteps]);

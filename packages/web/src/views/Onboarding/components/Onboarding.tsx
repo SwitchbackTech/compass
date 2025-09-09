@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import { Key } from "ts-key-enum";
+import { useOnboardingShortcuts } from "../hooks/useOnboardingShortcuts";
 
 export const OnboardingRoot = styled.div`
   // background: rgba(0, 0, 0, 0.8);
@@ -9,19 +9,25 @@ export const OnboardingRoot = styled.div`
   width: 100vw;
 `;
 
-export const OnboardingContainer = styled.div`
+interface OnboardingContainerProps {
+  fullWidth?: boolean;
+}
+
+export const OnboardingContainer = styled.div<OnboardingContainerProps>`
   background-color: #12151b;
   position: absolute;
-  width: 900px;
-  height: 800px;
-  border-radius: 44px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  width: ${({ fullWidth }) => (fullWidth ? "100vw" : "900px")};
+  height: ${({ fullWidth }) => (fullWidth ? "100vh" : "800px")};
+  border-radius: ${({ fullWidth }) => (fullWidth ? "0" : "44px")};
+  top: ${({ fullWidth }) => (fullWidth ? "0" : "50%")};
+  left: ${({ fullWidth }) => (fullWidth ? "0" : "50%")};
+  transform: ${({ fullWidth }) =>
+    fullWidth ? "none" : "translate(-50%, -50%)"};
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: rgb(255 255 255 / 15%) 0px 9px 20px 1px;
+  box-shadow: ${({ fullWidth }) =>
+    fullWidth ? "none" : "rgb(255 255 255 / 15%) 0px 9px 20px 1px"};
 
   @keyframes flicker {
     0%,
@@ -60,7 +66,8 @@ export const OnboardingContainer = styled.div`
     }
   }
 
-  animation: flicker 0.5s infinite;
+  animation: ${({ fullWidth }) =>
+    fullWidth ? "none" : "flicker 0.5s infinite"};
 
   &::before {
     content: "";
@@ -73,7 +80,7 @@ export const OnboardingContainer = styled.div`
     background-size: 100% 4px;
     pointer-events: none;
     z-index: 1;
-    border-radius: 44px;
+    border-radius: ${({ fullWidth }) => (fullWidth ? "0" : "44px")};
   }
 `;
 
@@ -84,6 +91,12 @@ export interface OnboardingStepProps {
   onPrevious: () => void;
   onComplete: () => void;
   onSkip: () => void;
+  // New props for keyboard control
+  canNavigateNext?: boolean;
+  nextButtonDisabled?: boolean;
+  onNavigationControlChange?: (shouldPrevent: boolean) => void;
+  isNavPrevented?: boolean;
+  handlesKeyboardEvents?: boolean;
 }
 
 export interface OnboardingStep {
@@ -92,20 +105,21 @@ export interface OnboardingStep {
   onNext?: (data?: Record<string, unknown>) => void;
   disableLeftArrow?: boolean;
   disableRightArrow?: boolean;
+  // Navigation control properties
+  preventNavigation?: boolean;
+  nextButtonDisabled?: boolean;
+  canNavigateNext?: boolean;
+  handlesKeyboardEvents?: boolean;
 }
 
 interface Props {
   steps: OnboardingStep[];
   onComplete: (reason: "skip" | "complete") => void;
-  className?: string;
 }
 
-export const Onboarding: React.FC<Props> = ({
-  steps,
-  onComplete,
-  className,
-}) => {
+export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [isNavPrevented, setIsNavPrevented] = useState(false);
 
   const handleNext = (data?: Record<string, unknown>) => {
     // Call `onNext` if provided
@@ -119,6 +133,11 @@ export const Onboarding: React.FC<Props> = ({
   };
 
   const handlePrevious = () => {
+    // Check if the current step disables left arrow navigation
+    if (currentStep.disableLeftArrow) {
+      return;
+    }
+
     if (currentStepIndex > 0) {
       setCurrentStepIndex(currentStepIndex - 1);
     }
@@ -135,29 +154,30 @@ export const Onboarding: React.FC<Props> = ({
   const currentStep = steps[currentStepIndex];
   const StepComponent = currentStep?.component;
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const currentStep = steps[currentStepIndex];
-
-      if (
-        (event.key === Key.ArrowRight || event.key === Key.Enter) &&
-        !currentStep?.disableRightArrow
-      ) {
-        event.preventDefault();
-        handleNext();
-      } else if (event.key === "ArrowLeft" && !currentStep?.disableLeftArrow) {
-        event.preventDefault();
-        handlePrevious();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [currentStepIndex, steps.length, handleNext, handlePrevious]);
-
   if (!StepComponent) {
     return null;
   }
+
+  // Get navigation control from step configuration
+  const preventNavigation = currentStep.preventNavigation || false;
+  const nextButtonDisabled = currentStep.nextButtonDisabled || false;
+  const canNavigateNext = currentStep.canNavigateNext !== false; // Default to true
+  const handlesKeyboardEvents = currentStep.handlesKeyboardEvents || false;
+
+  // Use the keyboard shortcuts hook
+  useOnboardingShortcuts({
+    onNext: handleNext,
+    onPrevious: handlePrevious,
+    canNavigateNext,
+    shouldPreventNavigation: preventNavigation ? isNavPrevented : false,
+    handlesKeyboardEvents,
+    disableLeftArrow: currentStep.disableLeftArrow || false,
+  });
+
+  // Handle navigation control changes from steps
+  const handleNavigationControlChange = (shouldPrevent: boolean) => {
+    setIsNavPrevented(shouldPrevent);
+  };
 
   const stepProps: OnboardingStepProps = {
     currentStep: currentStepIndex + 1,
@@ -166,13 +186,16 @@ export const Onboarding: React.FC<Props> = ({
     onPrevious: handlePrevious,
     onComplete: handleComplete,
     onSkip: handleSkip,
+    canNavigateNext,
+    nextButtonDisabled,
+    onNavigationControlChange: handleNavigationControlChange,
+    isNavPrevented: preventNavigation ? isNavPrevented : false,
+    handlesKeyboardEvents,
   };
 
   return (
     <OnboardingRoot>
-      <OnboardingContainer className={className} id="onboarding-container">
-        <StepComponent {...stepProps} />
-      </OnboardingContainer>
+      <StepComponent {...stepProps} />
     </OnboardingRoot>
   );
 };

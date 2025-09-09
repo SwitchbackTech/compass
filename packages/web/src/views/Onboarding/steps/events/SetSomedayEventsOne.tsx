@@ -1,7 +1,7 @@
 import React from "react";
 import { OnboardingFooter, OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
-import { OnboardingStepBoilerplate } from "../../components/OnboardingStepBoilerplate";
+import { OnboardingCardLayout } from "../../components/layouts/OnboardingCardLayout";
 
 export const SetSomedayEventsOne: React.FC<OnboardingStepProps> = ({
   currentStep,
@@ -11,22 +11,17 @@ export const SetSomedayEventsOne: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <OnboardingText>
-        Much like the sirens who lure distractable sailors with their songs,
-        many ideas will tempt you away from your focus.
+        Having a fancy Reminder is great, but what about all the nitty-gritty
+        tasks that the sea requires?
       </OnboardingText>
 
-      <OnboardingText>You must not let them. </OnboardingText>
-
       <OnboardingText>
-        But do not completely ignore these tasks, either.
+        We cannot let those fall through the cracks.
       </OnboardingText>
 
       <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

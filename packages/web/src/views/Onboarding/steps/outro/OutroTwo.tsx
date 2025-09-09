@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   DynamicLogo,
   OnboardingButton,
-  OnboardingStepBoilerplate,
+  OnboardingCardLayout,
   OnboardingText,
 } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
@@ -13,10 +13,7 @@ export const OutroTwo: React.FC<OnboardingStepProps> = ({
   onNext,
 }) => {
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <OnboardingText>
         I can see that you now understand that Compass helps you focus on what
         matters to you.{" "}
@@ -30,6 +27,6 @@ export const OutroTwo: React.FC<OnboardingStepProps> = ({
 
       <OnboardingText>It’s finally time.</OnboardingText>
       <OnboardingButton onClick={() => onNext()}>Enter</OnboardingButton>
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

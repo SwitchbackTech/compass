@@ -2,8 +2,8 @@ import React from "react";
 import styled from "styled-components";
 import compassGoogleOauthPerms from "@web/assets/png/google-oauth-preview.png";
 import {
+  OnboardingCardLayout,
   OnboardingFooter,
-  OnboardingStepBoilerplate,
   OnboardingText,
 } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
@@ -20,10 +20,7 @@ export const SignInWithGooglePrelude: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <OnboardingText>
         Alas, the crew must get permission to take your bags before I can show
         you around.
@@ -42,6 +39,6 @@ export const SignInWithGooglePrelude: React.FC<OnboardingStepProps> = ({
         onPrev={onPrevious}
         onNext={onNext}
       />
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

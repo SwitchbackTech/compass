@@ -6,7 +6,7 @@ import { SyncApi } from "@web/common/apis/sync.api";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
 import { useGoogleLogin } from "@web/components/oauth/google/useGoogleLogin";
-import { OnboardingStepBoilerplate } from "../../components";
+import { OnboardingCardLayout } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 
 export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
@@ -43,6 +43,7 @@ export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
         !loading
       ) {
         event.preventDefault();
+        event.stopPropagation(); // Prevent the centralized handler from also triggering
         login();
       }
     };
@@ -52,10 +53,7 @@ export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
   }, [login, loading]);
 
   return (
-    <OnboardingStepBoilerplate
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-    >
+    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
       <GoogleButton
         disabled={loading}
         onClick={login}
@@ -65,6 +63,6 @@ export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
         }}
       />
       {loading && <AbsoluteOverflowLoader />}
-    </OnboardingStepBoilerplate>
+    </OnboardingCardLayout>
   );
 };

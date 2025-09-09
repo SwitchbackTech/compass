@@ -187,6 +187,10 @@ TZ=Etc/UTC
 
 Always prioritize frontend development with `yarn dev:web` when backend services are unavailable.
 
+## Naming Conventions
+
+- Use `is` prefix for boolean variables. For example, `isLoading`, `isError`, `isSuccess`
+
 ## Branch Naming & Commit Message Conventions
 
 ### Semantic Branch Naming

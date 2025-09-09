@@ -12,12 +12,14 @@ export const OnboardingFooter = ({
   onNext,
   hideSkip,
   nextBtnDisabled,
+  prevBtnDisabled,
 }: {
   onSkip: () => void;
   onPrev: () => void;
   onNext: () => void;
   hideSkip?: boolean;
   nextBtnDisabled?: boolean;
+  prevBtnDisabled?: boolean;
 }) => {
   return (
     <div
@@ -31,12 +33,22 @@ export const OnboardingFooter = ({
     >
       <div>
         {!hideSkip && (
-          <OnboardingButton onClick={onSkip}>Skip Intro</OnboardingButton>
+          <OnboardingButton aria-label="Skip" onClick={onSkip}>
+            Skip Intro
+          </OnboardingButton>
         )}
       </div>
       <div style={{ display: "flex", gap: "16px" }}>
-        <OnboardingPreviousButton onClick={onPrev} />
-        <OnboardingNextButton onClick={onNext} disabled={nextBtnDisabled} />
+        <OnboardingPreviousButton
+          aria-label="Previous"
+          onClick={onPrev}
+          disabled={prevBtnDisabled}
+        />
+        <OnboardingNextButton
+          aria-label="Next"
+          onClick={onNext}
+          disabled={nextBtnDisabled}
+        />
       </div>
     </div>
   );

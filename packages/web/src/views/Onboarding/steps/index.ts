@@ -11,6 +11,5 @@ export * from "./reminder/SetReminderSuccess";
 export * from "./events/SetSomedayEventsOne";
 export * from "./events/SetSomedayEventsTwo";
 export * from "./events/SetSomedayEvents";
-export * from "./events/SetSomedayEventsSuccess";
 export * from "./outro/OutroTwo";
 export * from "./outro/OutroQuote";
