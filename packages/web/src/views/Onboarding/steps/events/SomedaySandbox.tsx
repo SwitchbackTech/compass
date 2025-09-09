@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styled, { css, keyframes } from "styled-components";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { OnboardingText } from "../../components";
@@ -207,6 +207,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   ]);
   const [newWeekTask, setNewWeekTask] = useState("");
   const [newMonthTask, setNewMonthTask] = useState("");
+  const monthInputRef = useRef<HTMLInputElement>(null);
 
   // Update navigation prevention based on state
   useEffect(() => {
@@ -260,7 +261,10 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     if (e.key === "Enter") {
       e.preventDefault();
       handleAddWeekTask();
-      // Focus will naturally move to the next input in tab order
+      // Focus the month input after adding a week task
+      if (monthInputRef.current) {
+        monthInputRef.current.focus();
+      }
     }
   };
 
@@ -281,7 +285,6 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
             {weekTasks.length < WEEK_LIMIT && (
               <TaskInput
                 autoFocus
-                tabIndex={1}
                 type="text"
                 placeholder="Add new task..."
                 value={newWeekTask}
@@ -307,7 +310,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
             <SectionTitle>This Month</SectionTitle>
             {monthTasks.length < MONTH_LIMIT && (
               <TaskInput
-                tabIndex={2}
+                ref={monthInputRef}
                 type="text"
                 placeholder="Add new task..."
                 value={newMonthTask}
