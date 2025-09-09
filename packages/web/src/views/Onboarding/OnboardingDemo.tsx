@@ -23,6 +23,7 @@ import {
   WelcomeScreen,
   WelcomeStep,
 } from "./steps";
+import { SomedaySandbox } from "./steps/events/SomedaySandbox";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
 
@@ -112,10 +113,8 @@ const OnboardingDemo_: React.FC = () => {
       ),
     },
     {
-      id: "set-someday-events",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEvents {...props} />
-      ),
+      id: "someday-sandbox",
+      component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
     },
     {
       id: "set-someday-events-success",
@@ -135,7 +134,7 @@ const OnboardingDemo_: React.FC = () => {
     },
   ];
 
-  // Initially hide the steps til the user logs in
+  // Initially hide the steps until the user logs in
   useEffect(() => {
     setHideSteps(true);
   }, [setHideSteps]);
