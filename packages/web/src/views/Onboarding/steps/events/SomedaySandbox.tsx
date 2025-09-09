@@ -1,9 +1,47 @@
-import React, { useState } from "react";
-import styled from "styled-components";
+import React, { useEffect, useState } from "react";
+import styled, { css, keyframes } from "styled-components";
+import { colorByPriority } from "@web/common/styles/theme.util";
 import { OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 import { OnboardingTwoRowLayout } from "../../components/layouts/OnboardingTwoRowLayout";
 
+// Keyframes for text wave animation
+const textWave = keyframes`
+  0% {
+    background: linear-gradient(90deg, #ffffff 0%, #ffffff 100%);
+    background-size: 300% 100%;
+    background-position: 0% 0%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  30% {
+    background: linear-gradient(90deg, #ffffff 0%, #60a5fa 30%, #ffffff 100%);
+    background-size: 300% 100%;
+    background-position: 30% 0%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  70% {
+    background: linear-gradient(90deg, #ffffff 0%, #60a5fa 70%, #ffffff 100%);
+    background-size: 300% 100%;
+    background-position: 70% 0%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  100% {
+    background: linear-gradient(90deg, #ffffff 0%, #ffffff 100%);
+    background-size: 300% 100%;
+    background-position: 100% 0%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+`;
+
+// Styled Components
 const TopContent = styled.div`
   display: flex;
   width: 100%;
@@ -22,19 +60,25 @@ const RightColumn = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 16px;
+  gap: 24px;
 `;
 
 const CheckboxContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 `;
 
 const Checkbox = styled.input`
   width: 16px;
   height: 16px;
-  cursor: pointer;
+  cursor: default;
+  accent-color: ${({ theme }) => theme.color.text.accent};
+  pointer-events: none;
+
+  &:not(:checked) {
+    accent-color: ${({ theme }) => theme.color.fg.primary};
+  }
 `;
 
 const CheckboxLabel = styled.label`
@@ -50,10 +94,19 @@ const BottomContent = styled.div`
   height: 100%;
 `;
 
+const MainContent = styled.div`
+  flex: 1;
+  background-color: #12151b;
+  border: 1px solid #333;
+  display: flex;
+  margin: 20px;
+  gap: 20px;
+  z-index: 5;
+`;
+
 const Sidebar = styled.div`
   width: 300px;
-  background-color: #1a1d24;
-  border: 1px solid #333;
+  background-color: #23262f;
   display: flex;
   flex-direction: column;
   padding: 20px;
@@ -88,46 +141,50 @@ const TaskInput = styled.input`
   }
 `;
 
-const TaskItem = styled.div`
+const TaskItem = styled.div<{ color: string }>`
   font-family: "Rubik", sans-serif;
   font-size: 14px;
-  background: ${({ theme }) => theme.color.common.white};
+  background: ${({ color }) => color};
   color: ${({ theme }) => theme.color.common.black};
-  border: 1px solid #ccc;
   border-radius: 4px;
   padding: 8px 12px;
-`;
-
-const AddButton = styled.button`
-  font-family: "Rubik", sans-serif;
-  font-size: 16px;
-  width: 32px;
-  height: 32px;
-  background: ${({ theme }) => theme.color.common.white};
-  color: ${({ theme }) => theme.color.common.black};
-  border: 1px solid #ccc;
-  border-radius: 4px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: opacity 0.2s ease;
 
   &:hover {
-    background: #f0f0f0;
+    opacity: 0.8;
   }
 `;
 
-const MainContent = styled.div`
-  flex: 1;
-  background-color: #12151b;
-  border: 1px solid #333;
-  margin-left: 1px;
+const TaskInputEdit = styled.input`
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
+  width: 100%;
+  background: transparent;
+  color: ${({ theme }) => theme.color.common.white};
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
 `;
 
 const Divider = styled.hr`
   border: none;
   border-top: 1px solid #333;
   margin: 0;
+`;
+
+const AnimatedText = styled(OnboardingText)<{ isAnimating: boolean }>`
+  ${({ isAnimating }) =>
+    isAnimating &&
+    css`
+      background: linear-gradient(90deg, #ffffff 0%, #60a5fa 50%, #ffffff 100%);
+      background-size: 300% 100%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: ${textWave} 3s ease-in-out;
+    `}
 `;
 
 export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
@@ -137,106 +194,230 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   onPrevious,
   onSkip,
 }) => {
-  const [weekTasks, setWeekTasks] = useState<string[]>(["Buy groceries"]);
-  const [monthTasks, setMonthTasks] = useState<string[]>([
-    "Buy groceries",
-    "Buy groceries",
-    "Buy groceries",
+  const [weekTasksChecked, setWeekTasksChecked] = useState(false);
+  const [monthTasksChecked, setMonthTasksChecked] = useState(false);
+  const [headingAnimating, setHeadingAnimating] = useState(false);
+  const taskColors = [
+    colorByPriority.work,
+    colorByPriority.self,
+    colorByPriority.relationships,
+  ];
+
+  useEffect(() => {
+    setHeadingAnimating(true);
+    setTimeout(() => setHeadingAnimating(false), 3000);
+  }, []);
+
+  const getRandomTaskColor = () => {
+    const randomIndex = Math.floor(Math.random() * taskColors.length);
+    return taskColors[randomIndex];
+  };
+
+  // Custom onNext handler that prevents navigation when checkboxes aren't checked
+  const handleNext = () => {
+    if (weekTasksChecked && monthTasksChecked) {
+      onNext();
+    }
+  };
+
+  const [weekTasks, setWeekTasks] = useState([
+    { text: "That one thing ...", color: getRandomTaskColor() },
+    { text: "Buy groceries", color: getRandomTaskColor() },
   ]);
-  const [weekInput, setWeekInput] = useState<string>("");
-  const [monthInput, setMonthInput] = useState<string>("");
-  const [weekCheckbox, setWeekCheckbox] = useState<boolean>(false);
-  const [monthCheckbox, setMonthCheckbox] = useState<boolean>(false);
-
-  const handleWeekAdd = () => {
-    console.log("Clicked This Week");
-    if (weekInput.trim()) {
-      setWeekTasks([...weekTasks, weekInput.trim()]);
-      setWeekInput("");
-    }
-  };
-
-  const handleMonthAdd = () => {
-    console.log("Clicked This Month");
-    if (monthInput.trim()) {
-      setMonthTasks([...monthTasks, monthInput.trim()]);
-      setMonthInput("");
-    }
-  };
-
-  const topContent = (
-    <TopContent>
-      <LeftColumn>
-        <OnboardingText>Behold, the all mighty sidebar</OnboardingText>
-        <OnboardingText>{"{dramatic music}"}</OnboardingText>
-        <OnboardingText>
-          Don't be shy, start capturing your future tasks
-        </OnboardingText>
-      </LeftColumn>
-      <RightColumn>
-        <CheckboxContainer>
-          <Checkbox
-            type="checkbox"
-            id="week-tasks"
-            checked={weekCheckbox}
-            onChange={(e) => setWeekCheckbox(e.target.checked)}
-          />
-          <CheckboxLabel htmlFor="week-tasks">
-            Create 3 week tasks
-          </CheckboxLabel>
-        </CheckboxContainer>
-        <CheckboxContainer>
-          <Checkbox
-            type="checkbox"
-            id="month-tasks"
-            checked={monthCheckbox}
-            onChange={(e) => setMonthCheckbox(e.target.checked)}
-          />
-          <CheckboxLabel htmlFor="month-tasks">
-            Create 3 month tasks
-          </CheckboxLabel>
-        </CheckboxContainer>
-      </RightColumn>
-    </TopContent>
+  const [monthTasks, setMonthTasks] = useState([
+    { text: "Buy groceries", color: getRandomTaskColor() },
+    { text: "Buy groceries", color: getRandomTaskColor() },
+    { text: "Buy groceries", color: getRandomTaskColor() },
+  ]);
+  const [newWeekTask, setNewWeekTask] = useState("");
+  const [newMonthTask, setNewMonthTask] = useState("");
+  const [editingWeekIndex, setEditingWeekIndex] = useState<number | null>(null);
+  const [editingMonthIndex, setEditingMonthIndex] = useState<number | null>(
+    null,
   );
+  const [editWeekValue, setEditWeekValue] = useState("");
+  const [editMonthValue, setEditMonthValue] = useState("");
 
-  const bottomContent = (
+  const handleAddWeekTask = () => {
+    if (newWeekTask.trim()) {
+      const newTasks = [
+        ...weekTasks,
+        { text: newWeekTask.trim(), color: getRandomTaskColor() },
+      ];
+      setWeekTasks(newTasks);
+      setNewWeekTask("");
+
+      if (newTasks.length >= 3 && !weekTasksChecked) {
+        setWeekTasksChecked(true);
+      }
+    }
+  };
+
+  const handleAddMonthTask = () => {
+    if (newMonthTask.trim()) {
+      const newTasks = [
+        ...monthTasks,
+        { text: newMonthTask.trim(), color: getRandomTaskColor() },
+      ];
+      setMonthTasks(newTasks);
+      setNewMonthTask("");
+
+      if (newTasks.length >= 3 && !monthTasksChecked) {
+        setMonthTasksChecked(true);
+      }
+    }
+  };
+
+  const handleWeekTaskKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.stopPropagation();
+      handleAddWeekTask();
+    }
+  };
+
+  const handleMonthTaskKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.stopPropagation();
+      handleAddMonthTask();
+    }
+  };
+
+  const saveWeekTaskEdit = () => {
+    if (editingWeekIndex !== null && editWeekValue.trim()) {
+      const updatedTasks = [...weekTasks];
+      updatedTasks[editingWeekIndex] = {
+        ...updatedTasks[editingWeekIndex],
+        text: editWeekValue.trim(),
+      };
+      setWeekTasks(updatedTasks);
+    }
+    setEditingWeekIndex(null);
+    setEditWeekValue("");
+  };
+
+  const saveMonthTaskEdit = () => {
+    if (editingMonthIndex !== null && editMonthValue.trim()) {
+      const updatedTasks = [...monthTasks];
+      updatedTasks[editingMonthIndex] = {
+        ...updatedTasks[editingMonthIndex],
+        text: editMonthValue.trim(),
+      };
+      setMonthTasks(updatedTasks);
+    }
+    setEditingMonthIndex(null);
+    setEditMonthValue("");
+  };
+
+  const handleEditWeekKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      saveWeekTaskEdit();
+    } else if (e.key === "Escape") {
+      setEditingWeekIndex(null);
+      setEditWeekValue("");
+    }
+  };
+
+  const handleEditMonthKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      saveMonthTaskEdit();
+    } else if (e.key === "Escape") {
+      setEditingMonthIndex(null);
+      setEditMonthValue("");
+    }
+  };
+
+  const content = (
     <BottomContent>
-      <Sidebar>
-        <SidebarSection>
-          <SectionTitle>This Week</SectionTitle>
-          <TaskInput
-            type="text"
-            placeholder="That one thing..."
-            value={weekInput}
-            onChange={(e) => setWeekInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleWeekAdd()}
-          />
-          {weekTasks.map((task, index) => (
-            <TaskItem key={index}>{task}</TaskItem>
-          ))}
-          <AddButton onClick={handleWeekAdd}>+</AddButton>
-        </SidebarSection>
+      <MainContent>
+        <Sidebar>
+          <SidebarSection>
+            <SectionTitle>This Week</SectionTitle>
+            <TaskInput
+              type="text"
+              placeholder="Add new task..."
+              value={newWeekTask}
+              onChange={(e) => setNewWeekTask(e.target.value)}
+              onKeyDown={handleWeekTaskKeyPress}
+            />
+            {weekTasks.map((task, index) => (
+              <TaskItem key={index} color={task.color}>
+                {editingWeekIndex === index ? (
+                  <TaskInputEdit
+                    value={editWeekValue}
+                    onChange={(e) => setEditWeekValue(e.target.value)}
+                    onKeyDown={handleEditWeekKeyPress}
+                    onBlur={saveWeekTaskEdit}
+                    autoFocus
+                  />
+                ) : (
+                  task.text
+                )}
+              </TaskItem>
+            ))}
+          </SidebarSection>
 
-        <Divider />
+          <Divider />
 
-        <SidebarSection>
-          <SectionTitle>This Month</SectionTitle>
-          <TaskInput
-            type="text"
-            placeholder="That one thing..."
-            value={monthInput}
-            onChange={(e) => setMonthInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleMonthAdd()}
-          />
-          {monthTasks.map((task, index) => (
-            <TaskItem key={index}>{task}</TaskItem>
-          ))}
-          <AddButton onClick={handleMonthAdd}>+</AddButton>
-        </SidebarSection>
-      </Sidebar>
-
-      <MainContent />
+          <SidebarSection>
+            <SectionTitle>This Month</SectionTitle>
+            <TaskInput
+              type="text"
+              placeholder="Add new task..."
+              value={newMonthTask}
+              onChange={(e) => setNewMonthTask(e.target.value)}
+              onKeyDown={handleMonthTaskKeyPress}
+            />
+            {monthTasks.map((task, index) => (
+              <TaskItem key={index} color={task.color}>
+                {editingMonthIndex === index ? (
+                  <TaskInputEdit
+                    value={editMonthValue}
+                    onChange={(e) => setEditMonthValue(e.target.value)}
+                    onKeyDown={handleEditMonthKeyPress}
+                    onBlur={saveMonthTaskEdit}
+                    autoFocus
+                  />
+                ) : (
+                  task.text
+                )}
+              </TaskItem>
+            ))}
+          </SidebarSection>
+        </Sidebar>
+        <LeftColumn>
+          <AnimatedText isAnimating={headingAnimating}>
+            Behold, the all-mighty sidebar
+          </AnimatedText>
+          <OnboardingText>{"{dramatic music}"}</OnboardingText>
+          <OnboardingText>
+            Don't be shy, jot down a few tasks and type ENTER to save
+          </OnboardingText>
+          <div style={{ marginTop: "40px" }}>
+            <CheckboxContainer>
+              <Checkbox
+                type="checkbox"
+                id="week-tasks"
+                checked={weekTasksChecked}
+                readOnly
+              />
+              <CheckboxLabel htmlFor="week-tasks">
+                Create a week task
+              </CheckboxLabel>
+            </CheckboxContainer>
+            <CheckboxContainer>
+              <Checkbox
+                type="checkbox"
+                id="month-tasks"
+                checked={monthTasksChecked}
+                readOnly
+              />
+              <CheckboxLabel htmlFor="month-tasks">
+                Create a month task
+              </CheckboxLabel>
+            </CheckboxContainer>
+          </div>
+        </LeftColumn>
+      </MainContent>
     </BottomContent>
   );
 
@@ -244,11 +425,12 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     <OnboardingTwoRowLayout
       currentStep={currentStep}
       totalSteps={totalSteps}
-      onNext={onNext}
+      onNext={handleNext}
       onPrevious={onPrevious}
       onSkip={onSkip}
-      topContent={topContent}
-      bottomContent={bottomContent}
+      content={content}
+      nextButtonDisabled={!weekTasksChecked || !monthTasksChecked}
+      canNavigateNext={() => weekTasksChecked && monthTasksChecked}
     />
   );
 };
