@@ -195,6 +195,10 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
           // Animation is complete, move to next step
           onNext();
         }
+      } else if (animationComplete) {
+        // After animation is complete, any key press should trigger next
+        event.preventDefault();
+        onNext();
       }
     };
 
