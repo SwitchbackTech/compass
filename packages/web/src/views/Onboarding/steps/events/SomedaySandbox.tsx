@@ -4,6 +4,7 @@ import { colorByPriority } from "@web/common/styles/theme.util";
 import { OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 import { OnboardingTwoRowLayout } from "../../components/layouts/OnboardingTwoRowLayout";
+import { createAndSubmitEvents } from "./someday-sandbox.util";
 
 // Keyframes for text wave animation
 const textWave = keyframes`
@@ -199,10 +200,17 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     return colors[randomIndex];
   };
 
-  // Custom onNext handler that prevents navigation when checkboxes aren't checked
-  const handleNext = () => {
-    if (weekTasksChecked && monthTasksChecked) {
+  const handleNext = async () => {
+    if (!weekTasksChecked || !monthTasksChecked) {
+      return;
+    }
+
+    try {
+      await createAndSubmitEvents(weekTasks, monthTasks);
+      // Navigate to next step after successful creation
       onNext();
+    } catch (error) {
+      console.error("Failed to create someday events:", error);
     }
   };
 
@@ -258,12 +266,16 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     if (e.key === "Enter") {
       e.stopPropagation();
       handleAddWeekTask();
+    } else if (e.key === "Tab") {
+      handleAddWeekTask();
     }
   };
 
   const handleMonthTaskKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.stopPropagation();
+      handleAddMonthTask();
+    } else if (e.key === "Tab") {
       handleAddMonthTask();
     }
   };
@@ -324,6 +336,11 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               value={newWeekTask}
               onChange={(e) => setNewWeekTask(e.target.value)}
               onKeyDown={handleWeekTaskKeyPress}
+              onBlur={() => {
+                if (newWeekTask.trim()) {
+                  handleAddWeekTask();
+                }
+              }}
             />
             {weekTasks.map((task, index) => (
               <TaskItem key={index} color={task.color}>
@@ -352,6 +369,11 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               value={newMonthTask}
               onChange={(e) => setNewMonthTask(e.target.value)}
               onKeyDown={handleMonthTaskKeyPress}
+              onBlur={() => {
+                if (newMonthTask.trim()) {
+                  handleAddMonthTask();
+                }
+              }}
             />
             {monthTasks.map((task, index) => (
               <TaskItem key={index} color={task.color}>
