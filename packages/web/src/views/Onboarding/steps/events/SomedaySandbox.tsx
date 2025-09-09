@@ -184,12 +184,10 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   onPrevious,
   onSkip,
 }) => {
-  const [weekTasksChecked, setWeekTasksChecked] = useState(false);
-  const [monthTasksChecked, setMonthTasksChecked] = useState(false);
-  const [headingAnimating, setHeadingAnimating] = useState(false);
-  const [setShouldPreventNavigation, setSetShouldPreventNavigation] = useState<
-    ((shouldPrevent: boolean) => void) | null
-  >(null);
+  const [isWeekTaskReady, setIsWeekTaskReady] = useState(false);
+  const [isMonthTaskReady, setIsMonthTaskReady] = useState(false);
+  const [isHeaderAnimating, setIsHeaderAnimating] = useState(false);
+  const [isNavPrevented, setIsNavPrevented] = useState(true);
   const colors = [
     colorByPriority.work,
     colorByPriority.self,
@@ -197,8 +195,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   ];
 
   useEffect(() => {
-    setHeadingAnimating(true);
-    setTimeout(() => setHeadingAnimating(false), 3000);
+    setIsHeaderAnimating(true);
+    setTimeout(() => setIsHeaderAnimating(false), 2500);
   }, []);
 
   const getRandomColor = () => {
@@ -207,7 +205,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   };
 
   const handleNext = async () => {
-    if (!weekTasksChecked || !monthTasksChecked) {
+    if (!isWeekTaskReady || !isMonthTaskReady) {
       return;
     }
 
@@ -240,25 +238,25 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
 
   // Update navigation prevention based on state
   useEffect(() => {
-    if (setShouldPreventNavigation) {
+    if (isNavPrevented) {
       const hasUnsavedChanges =
         newWeekTask.trim() !== "" ||
         newMonthTask.trim() !== "" ||
         editWeekValue.trim() !== "" ||
         editMonthValue.trim() !== "";
 
-      const checkboxesNotChecked = !weekTasksChecked || !monthTasksChecked;
+      const checkboxesNotChecked = !isWeekTaskReady || !isMonthTaskReady;
 
-      setShouldPreventNavigation(hasUnsavedChanges || checkboxesNotChecked);
+      setIsNavPrevented(hasUnsavedChanges || checkboxesNotChecked);
     }
   }, [
     newWeekTask,
     newMonthTask,
     editWeekValue,
     editMonthValue,
-    weekTasksChecked,
-    monthTasksChecked,
-    setShouldPreventNavigation,
+    isWeekTaskReady,
+    isMonthTaskReady,
+    isNavPrevented,
   ]);
 
   const handleAddWeekTask = () => {
@@ -270,8 +268,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       setWeekTasks(newTasks);
       setNewWeekTask("");
 
-      if (newTasks.length >= WEEK_LIMIT && !weekTasksChecked) {
-        setWeekTasksChecked(true);
+      if (newTasks.length >= WEEK_LIMIT && !isWeekTaskReady) {
+        setIsWeekTaskReady(true);
       }
     }
   };
@@ -285,8 +283,8 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       setMonthTasks(newTasks);
       setNewMonthTask("");
 
-      if (newTasks.length >= MONTH_LIMIT && !monthTasksChecked) {
-        setMonthTasksChecked(true);
+      if (newTasks.length >= MONTH_LIMIT && !isMonthTaskReady) {
+        setIsMonthTaskReady(true);
       }
     }
   };
@@ -365,6 +363,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
             <SectionTitle>This Week</SectionTitle>
             {weekTasks.length < WEEK_LIMIT && (
               <TaskInput
+                autoFocus
                 type="text"
                 placeholder="Add new task..."
                 value={newWeekTask}
@@ -375,7 +374,6 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
                     handleAddWeekTask();
                   }
                 }}
-                autoFocus
               />
             )}
             {weekTasks.map((task, index) => (
@@ -390,7 +388,6 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
                     onChange={(e) => setEditWeekValue(e.target.value)}
                     onKeyDown={handleEditWeekKeyPress}
                     onBlur={saveWeekTaskEdit}
-                    autoFocus
                   />
                 ) : (
                   task.text
@@ -419,6 +416,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
             )}
             {monthTasks.map((task, index) => (
               <TaskItem
+                autoFocus
                 key={index}
                 color={task.color}
                 onClick={() => startEditingMonth(index)}
@@ -429,7 +427,6 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
                     onChange={(e) => setEditMonthValue(e.target.value)}
                     onKeyDown={handleEditMonthKeyPress}
                     onBlur={saveMonthTaskEdit}
-                    autoFocus
                   />
                 ) : (
                   task.text
@@ -439,19 +436,19 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
           </SidebarSection>
         </Sidebar>
         <LeftColumn>
-          <AnimatedText isAnimating={headingAnimating}>
+          <AnimatedText isAnimating={isHeaderAnimating}>
             Behold, the all-mighty sidebar
           </AnimatedText>
           <OnboardingText>{"{dramatic music}"}</OnboardingText>
           <OnboardingText>
-            Don't be shy, jot down a few tasks and type ENTER to save
+            Don't be shy, jot down a task and type ENTER to save
           </OnboardingText>
           <div style={{ marginTop: "40px" }}>
             <CheckboxContainer>
               <Checkbox
                 type="checkbox"
                 id="week-tasks"
-                checked={weekTasksChecked}
+                checked={isWeekTaskReady}
                 readOnly
               />
               <CheckboxLabel htmlFor="week-tasks">
@@ -462,7 +459,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               <Checkbox
                 type="checkbox"
                 id="month-tasks"
-                checked={monthTasksChecked}
+                checked={isMonthTaskReady}
                 readOnly
               />
               <CheckboxLabel htmlFor="month-tasks">
@@ -483,10 +480,10 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       onPrevious={onPrevious}
       onSkip={onSkip}
       content={content}
-      nextButtonDisabled={!weekTasksChecked || !monthTasksChecked}
-      canNavigateNext={weekTasksChecked && monthTasksChecked}
+      nextButtonDisabled={!isWeekTaskReady || !isMonthTaskReady}
+      canNavigateNext={isWeekTaskReady && isMonthTaskReady}
       defaultPreventNavigation={true}
-      onNavigationControlChange={setSetShouldPreventNavigation}
+      onNavigationControlChange={setIsNavPrevented}
     />
   );
 };
