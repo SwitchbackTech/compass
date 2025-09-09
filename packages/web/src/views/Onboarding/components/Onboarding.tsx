@@ -133,6 +133,11 @@ export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
   };
 
   const handlePrevious = () => {
+    // Check if the current step disables left arrow navigation
+    if (currentStep.disableLeftArrow) {
+      return;
+    }
+
     if (currentStepIndex > 0) {
       setCurrentStepIndex(currentStepIndex - 1);
     }
@@ -166,6 +171,7 @@ export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
     canNavigateNext,
     shouldPreventNavigation: preventNavigation ? isNavPrevented : false,
     handlesKeyboardEvents,
+    disableLeftArrow: currentStep.disableLeftArrow || false,
   });
 
   // Handle navigation control changes from steps

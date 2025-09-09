@@ -123,6 +123,7 @@ const OnboardingDemo_: React.FC = () => {
     {
       id: "outro-two",
       component: (props: OnboardingStepProps) => <OutroTwo {...props} />,
+      disableLeftArrow: true,
     },
     {
       id: "outro-quote",

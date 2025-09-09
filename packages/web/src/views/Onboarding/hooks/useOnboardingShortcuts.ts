@@ -6,6 +6,7 @@ interface UseOnboardingShortcutsProps {
   canNavigateNext: boolean;
   shouldPreventNavigation?: boolean;
   handlesKeyboardEvents?: boolean;
+  disableLeftArrow?: boolean;
 }
 
 export const useOnboardingShortcuts = ({
@@ -14,6 +15,7 @@ export const useOnboardingShortcuts = ({
   canNavigateNext,
   shouldPreventNavigation = false,
   handlesKeyboardEvents = false,
+  disableLeftArrow = false,
 }: UseOnboardingShortcutsProps) => {
   const shouldPreventNavigationRef = useRef(shouldPreventNavigation);
 
@@ -48,6 +50,11 @@ export const useOnboardingShortcuts = ({
 
       // For left arrow navigation
       if (isLeftArrow) {
+        if (disableLeftArrow) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
         onPrevious();
       }
 
@@ -84,6 +91,7 @@ export const useOnboardingShortcuts = ({
     canNavigateNext,
     shouldPreventNavigation,
     handlesKeyboardEvents,
+    disableLeftArrow,
   ]);
 
   return {
