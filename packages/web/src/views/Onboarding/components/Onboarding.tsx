@@ -161,8 +161,7 @@ export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
     onNext: handleNext,
     onPrevious: handlePrevious,
     canNavigateNext,
-    nextButtonDisabled,
-    shouldPreventNavigation: isNavPrevented || preventNavigation,
+    shouldPreventNavigation: preventNavigation ? isNavPrevented : false,
   });
 
   // Handle navigation control changes from steps
@@ -180,7 +179,7 @@ export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
     canNavigateNext,
     nextButtonDisabled,
     onNavigationControlChange: handleNavigationControlChange,
-    isNavPrevented: isNavPrevented || preventNavigation,
+    isNavPrevented: preventNavigation ? isNavPrevented : false,
   };
 
   return (

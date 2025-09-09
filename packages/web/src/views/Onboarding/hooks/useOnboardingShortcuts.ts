@@ -4,7 +4,6 @@ interface UseOnboardingShortcutsProps {
   onNext: () => void;
   onPrevious: () => void;
   canNavigateNext: boolean;
-  nextButtonDisabled: boolean;
   shouldPreventNavigation?: boolean;
 }
 
@@ -12,7 +11,6 @@ export const useOnboardingShortcuts = ({
   onNext,
   onPrevious,
   canNavigateNext,
-  nextButtonDisabled,
   shouldPreventNavigation = false,
 }: UseOnboardingShortcutsProps) => {
   const shouldPreventNavigationRef = useRef(shouldPreventNavigation);
@@ -30,10 +28,11 @@ export const useOnboardingShortcuts = ({
 
       // Check if we should prevent navigation
       const shouldPrevent = shouldPreventNavigationRef.current;
+      console.log(event.key, shouldPrevent);
 
       // For right arrow navigation
       if (isRightArrow) {
-        if (shouldPrevent || nextButtonDisabled || !canNavigateNext) {
+        if (shouldPrevent || !canNavigateNext) {
           event.preventDefault();
           event.stopPropagation();
           return;
@@ -60,23 +59,20 @@ export const useOnboardingShortcuts = ({
         }
 
         // If not focused on input, check navigation rules
-        if (shouldPrevent || nextButtonDisabled || !canNavigateNext) {
+        if (shouldPrevent || !canNavigateNext) {
           event.preventDefault();
           event.stopPropagation();
           return;
         }
+
+        // If all conditions are met, navigate to next step
+        onNext();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown, false);
     return () => document.removeEventListener("keydown", handleKeyDown, false);
-  }, [
-    onNext,
-    onPrevious,
-    canNavigateNext,
-    nextButtonDisabled,
-    shouldPreventNavigation,
-  ]);
+  }, [onNext, onPrevious, canNavigateNext, shouldPreventNavigation]);
 
   return {
     shouldPreventNavigation: shouldPreventNavigationRef.current,
