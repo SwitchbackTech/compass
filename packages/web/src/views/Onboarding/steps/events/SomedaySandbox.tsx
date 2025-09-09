@@ -177,6 +177,18 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     colorByPriority.relationships,
   ];
 
+  const [weekTasks, setWeekTasks] = useState([
+    { text: "💸 File taxes", color: colorByPriority.work },
+    { text: "🥗 Get groceries", color: colorByPriority.self },
+  ]);
+  const [monthTasks, setMonthTasks] = useState([
+    { text: "🤖 Start AI course", color: colorByPriority.work },
+    { text: "🏠 Book Airbnb", color: colorByPriority.relationships },
+    { text: "📚 Return library books", color: colorByPriority.self },
+  ]);
+  const [newWeekTask, setNewWeekTask] = useState("");
+  const [newMonthTask, setNewMonthTask] = useState("");
+
   useEffect(() => {
     setIsHeaderAnimating(true);
     setTimeout(() => setIsHeaderAnimating(false), 2500);
@@ -197,17 +209,42 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     }
   };
 
-  const [weekTasks, setWeekTasks] = useState([
-    { text: "💸 File taxes", color: colorByPriority.work },
-    { text: "🥗 Get groceries", color: colorByPriority.self },
+  // Handle keyboard events for this step
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isRightArrow = event.key === "ArrowRight";
+      const isEnter = event.key === "Enter";
+
+      if (isRightArrow || isEnter) {
+        // Check if we should prevent navigation
+        const hasUnsavedChanges =
+          newWeekTask.trim() !== "" || newMonthTask.trim() !== "";
+        const checkboxesNotChecked = !isWeekTaskReady || !isMonthTaskReady;
+        const shouldPrevent = hasUnsavedChanges || checkboxesNotChecked;
+
+        if (shouldPrevent) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
+        // If all conditions are met, call our custom handleNext
+        event.preventDefault();
+        event.stopPropagation();
+        handleNext();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [
+    newWeekTask,
+    newMonthTask,
+    isWeekTaskReady,
+    isMonthTaskReady,
+    weekTasks,
+    monthTasks,
   ]);
-  const [monthTasks, setMonthTasks] = useState([
-    { text: "🤖 Start AI course", color: colorByPriority.work },
-    { text: "🏠 Book Airbnb", color: colorByPriority.relationships },
-    { text: "📚 Return library books", color: colorByPriority.self },
-  ]);
-  const [newWeekTask, setNewWeekTask] = useState("");
-  const [newMonthTask, setNewMonthTask] = useState("");
   const monthInputRef = useRef<HTMLInputElement>(null);
 
   // Update navigation prevention based on state
