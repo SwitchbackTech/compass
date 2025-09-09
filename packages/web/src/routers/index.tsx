@@ -25,10 +25,7 @@ const router = createBrowserRouter([
   },
   {
     path: ROOT_ROUTES.LOGIN,
-    element: (
-      // <LoginView />
-      <OnboardingDemo />
-    ),
+    element: <OnboardingDemo />,
   },
   { path: ROOT_ROUTES.LOGOUT, element: <LogoutView /> },
   { path: "*", element: <NotFoundView /> },
