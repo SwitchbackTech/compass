@@ -119,7 +119,6 @@ export const useSomedaySandbox = ({
       return;
     }
 
-    console.log("submitting");
     isSubmittingRef.current = true;
     setIsSubmitting(true);
 
