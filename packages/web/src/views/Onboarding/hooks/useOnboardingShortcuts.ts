@@ -5,6 +5,7 @@ interface UseOnboardingShortcutsProps {
   onPrevious: () => void;
   canNavigateNext: boolean;
   nextButtonDisabled: boolean;
+  shouldPreventNavigation?: boolean;
 }
 
 export const useOnboardingShortcuts = ({
@@ -12,8 +13,14 @@ export const useOnboardingShortcuts = ({
   onPrevious,
   canNavigateNext,
   nextButtonDisabled,
+  shouldPreventNavigation = false,
 }: UseOnboardingShortcutsProps) => {
-  const shouldPreventNavigationRef = useRef(false);
+  const shouldPreventNavigationRef = useRef(shouldPreventNavigation);
+
+  // Update the ref when the prop changes
+  useEffect(() => {
+    shouldPreventNavigationRef.current = shouldPreventNavigation;
+  }, [shouldPreventNavigation]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -63,7 +70,13 @@ export const useOnboardingShortcuts = ({
 
     document.addEventListener("keydown", handleKeyDown, false);
     return () => document.removeEventListener("keydown", handleKeyDown, false);
-  }, [onNext, onPrevious, canNavigateNext, nextButtonDisabled]);
+  }, [
+    onNext,
+    onPrevious,
+    canNavigateNext,
+    nextButtonDisabled,
+    shouldPreventNavigation,
+  ]);
 
   return {
     shouldPreventNavigation: shouldPreventNavigationRef.current,

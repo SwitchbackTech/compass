@@ -171,22 +171,27 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      event.preventDefault();
-      if (!animationComplete) {
-        // Skip animation - show all content immediately and stop timeouts
-        setAnimationSkipped(true);
-        setVisibleLines(
-          textLines.length + checkLines.length + finalLines.length,
-        );
-        const allCheckResults: Record<string, boolean> = {};
-        checkLines.forEach((check) => {
-          allCheckResults[check.text] = true;
-        });
-        setCheckResults(allCheckResults);
-        setAnimationComplete(true);
-      } else {
-        // Animation is complete, move to next step
-        onNext();
+      const isRightArrow = event.key === "ArrowRight";
+      const isEnter = event.key === "Enter";
+
+      if (isRightArrow || isEnter) {
+        event.preventDefault();
+        if (!animationComplete) {
+          // Skip animation - show all content immediately and stop timeouts
+          setAnimationSkipped(true);
+          setVisibleLines(
+            textLines.length + checkLines.length + finalLines.length,
+          );
+          const allCheckResults: Record<string, boolean> = {};
+          checkLines.forEach((check) => {
+            allCheckResults[check.text] = true;
+          });
+          setCheckResults(allCheckResults);
+          setAnimationComplete(true);
+        } else {
+          // Animation is complete, move to next step
+          onNext();
+        }
       }
     };
 

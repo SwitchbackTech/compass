@@ -43,6 +43,7 @@ export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
         !loading
       ) {
         event.preventDefault();
+        event.stopPropagation(); // Prevent the centralized handler from also triggering
         login();
       }
     };

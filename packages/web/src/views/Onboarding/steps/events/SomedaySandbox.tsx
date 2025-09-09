@@ -165,11 +165,12 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   onNext,
   onPrevious,
   onSkip,
+  onNavigationControlChange,
+  isNavPrevented = true,
 }) => {
   const [isWeekTaskReady, setIsWeekTaskReady] = useState(false);
   const [isMonthTaskReady, setIsMonthTaskReady] = useState(false);
   const [isHeaderAnimating, setIsHeaderAnimating] = useState(false);
-  const [isNavPrevented, setIsNavPrevented] = useState(true);
   const colors = [
     colorByPriority.work,
     colorByPriority.self,
@@ -211,20 +212,22 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
 
   // Update navigation prevention based on state
   useEffect(() => {
-    if (isNavPrevented) {
-      const hasUnsavedChanges =
-        newWeekTask.trim() !== "" || newMonthTask.trim() !== "";
+    const hasUnsavedChanges =
+      newWeekTask.trim() !== "" || newMonthTask.trim() !== "";
 
-      const checkboxesNotChecked = !isWeekTaskReady || !isMonthTaskReady;
+    const checkboxesNotChecked = !isWeekTaskReady || !isMonthTaskReady;
 
-      setIsNavPrevented(hasUnsavedChanges || checkboxesNotChecked);
+    const shouldPrevent = hasUnsavedChanges || checkboxesNotChecked;
+
+    if (onNavigationControlChange) {
+      onNavigationControlChange(shouldPrevent);
     }
   }, [
     newWeekTask,
     newMonthTask,
     isWeekTaskReady,
     isMonthTaskReady,
-    isNavPrevented,
+    onNavigationControlChange,
   ]);
 
   const handleAddWeekTask = () => {
@@ -414,8 +417,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       content={content}
       nextButtonDisabled={!isWeekTaskReady || !isMonthTaskReady}
       canNavigateNext={isWeekTaskReady && isMonthTaskReady}
-      defaultPreventNavigation={true}
-      onNavigationControlChange={setIsNavPrevented}
+      onNavigationControlChange={onNavigationControlChange}
       isNavPrevented={isNavPrevented}
     />
   );

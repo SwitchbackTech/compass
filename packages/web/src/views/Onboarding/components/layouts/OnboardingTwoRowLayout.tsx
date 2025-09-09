@@ -1,10 +1,9 @@
 import React, { useEffect } from "react";
 import styled from "styled-components";
-import { useOnboardingShortcuts } from "../../hooks/useOnboardingShortcuts";
 import { OnboardingNextButton, OnboardingPreviousButton } from "../IconButtons";
 import { OnboardingContainer, OnboardingStepProps } from "../Onboarding";
 import { OnboardingStep } from "../OnboardingStep";
-import { OnboardingButton, OnboardingCard } from "../styled";
+import { OnboardingButton } from "../styled";
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -51,7 +50,6 @@ interface OnboardingTwoRowLayoutProps
     OnboardingStepProps,
     "onNext" | "onPrevious" | "onComplete" | "onSkip"
   > {
-  children?: React.ReactNode;
   content: React.ReactNode;
   onNext: () => void;
   onPrevious: () => void;
@@ -69,27 +67,18 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
   onNext,
   onPrevious,
   onSkip,
-  children,
   content,
   nextButtonDisabled = false,
   canNavigateNext,
   onNavigationControlChange,
   isNavPrevented = true,
 }) => {
-  // Use the keyboard shortcuts hook
-  const { shouldPreventNavigation } = useOnboardingShortcuts({
-    onNext,
-    onPrevious,
-    canNavigateNext: canNavigateNext || !nextButtonDisabled,
-    nextButtonDisabled,
-  });
-
   // Pass the navigation control function to parent components
   useEffect(() => {
     if (onNavigationControlChange) {
-      onNavigationControlChange(shouldPreventNavigation);
+      onNavigationControlChange(isNavPrevented);
     }
-  }, [onNavigationControlChange, shouldPreventNavigation]);
+  }, [onNavigationControlChange, isNavPrevented]);
 
   return (
     <OnboardingContainer fullWidth>
