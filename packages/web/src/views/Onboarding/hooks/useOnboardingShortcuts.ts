@@ -5,6 +5,7 @@ interface UseOnboardingShortcutsProps {
   onPrevious: () => void;
   canNavigateNext: boolean;
   shouldPreventNavigation?: boolean;
+  handlesKeyboardEvents?: boolean;
 }
 
 export const useOnboardingShortcuts = ({
@@ -12,6 +13,7 @@ export const useOnboardingShortcuts = ({
   onPrevious,
   canNavigateNext,
   shouldPreventNavigation = false,
+  handlesKeyboardEvents = false,
 }: UseOnboardingShortcutsProps) => {
   const shouldPreventNavigationRef = useRef(shouldPreventNavigation);
 
@@ -21,6 +23,11 @@ export const useOnboardingShortcuts = ({
   }, [shouldPreventNavigation]);
 
   useEffect(() => {
+    // If the step handles its own keyboard events, don't add our listeners
+    if (handlesKeyboardEvents) {
+      return;
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       const isRightArrow = event.key === "ArrowRight";
       const isEnter = event.key === "Enter";
@@ -28,7 +35,6 @@ export const useOnboardingShortcuts = ({
 
       // Check if we should prevent navigation
       const shouldPrevent = shouldPreventNavigationRef.current;
-      console.log(event.key, shouldPrevent);
 
       // For right arrow navigation
       if (isRightArrow) {
@@ -72,7 +78,13 @@ export const useOnboardingShortcuts = ({
 
     document.addEventListener("keydown", handleKeyDown, false);
     return () => document.removeEventListener("keydown", handleKeyDown, false);
-  }, [onNext, onPrevious, canNavigateNext, shouldPreventNavigation]);
+  }, [
+    onNext,
+    onPrevious,
+    canNavigateNext,
+    shouldPreventNavigation,
+    handlesKeyboardEvents,
+  ]);
 
   return {
     shouldPreventNavigation: shouldPreventNavigationRef.current,

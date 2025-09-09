@@ -78,6 +78,7 @@ const OnboardingDemo_: React.FC = () => {
       ),
       disableRightArrow: true,
       preventNavigation: true,
+      handlesKeyboardEvents: true,
     },
     {
       id: "reminder-intro-one",

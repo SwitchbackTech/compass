@@ -53,6 +53,7 @@ describe("useOnboardingShortcuts", () => {
     onNext: mockOnNext,
     onPrevious: mockOnPrevious,
     canNavigateNext: true,
+    handlesKeyboardEvents: false,
   };
 
   it("should add and remove event listeners on mount and unmount", () => {
@@ -293,5 +294,56 @@ describe("useOnboardingShortcuts", () => {
       initialRemoveCalls + 1,
     );
     expect(mockAddEventListener).toHaveBeenCalledTimes(initialAddCalls + 1);
+  });
+
+  describe("handlesKeyboardEvents behavior", () => {
+    it("should not add event listeners when handlesKeyboardEvents is true", () => {
+      const props = { ...defaultProps, handlesKeyboardEvents: true };
+      renderHook(() => useOnboardingShortcuts(props));
+
+      // Should not add any event listeners
+      expect(mockAddEventListener).not.toHaveBeenCalled();
+    });
+
+    it("should add event listeners when handlesKeyboardEvents is false", () => {
+      const props = { ...defaultProps, handlesKeyboardEvents: false };
+      renderHook(() => useOnboardingShortcuts(props));
+
+      // Should add event listener
+      expect(mockAddEventListener).toHaveBeenCalledWith(
+        "keydown",
+        expect.any(Function),
+        false,
+      );
+    });
+
+    it("should add event listeners when handlesKeyboardEvents is undefined", () => {
+      const props = { ...defaultProps };
+      delete props.handlesKeyboardEvents;
+      renderHook(() => useOnboardingShortcuts(props));
+
+      // Should add event listener (default behavior)
+      expect(mockAddEventListener).toHaveBeenCalledWith(
+        "keydown",
+        expect.any(Function),
+        false,
+      );
+    });
+
+    it("should not respond to keyboard events when handlesKeyboardEvents is true", () => {
+      const props = { ...defaultProps, handlesKeyboardEvents: true };
+      renderHook(() => useOnboardingShortcuts(props));
+
+      // Manually trigger a keydown event since no listener was added
+      const rightArrowEvent = {
+        key: "ArrowRight",
+        preventDefault: mockPreventDefault,
+        stopPropagation: mockStopPropagation,
+      };
+
+      // Since no event listener was added, nothing should happen
+      expect(mockOnNext).not.toHaveBeenCalled();
+      expect(mockOnPrevious).not.toHaveBeenCalled();
+    });
   });
 });

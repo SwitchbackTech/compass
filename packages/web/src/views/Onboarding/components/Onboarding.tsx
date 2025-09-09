@@ -96,6 +96,7 @@ export interface OnboardingStepProps {
   nextButtonDisabled?: boolean;
   onNavigationControlChange?: (shouldPrevent: boolean) => void;
   isNavPrevented?: boolean;
+  handlesKeyboardEvents?: boolean;
 }
 
 export interface OnboardingStep {
@@ -108,6 +109,7 @@ export interface OnboardingStep {
   preventNavigation?: boolean;
   nextButtonDisabled?: boolean;
   canNavigateNext?: boolean;
+  handlesKeyboardEvents?: boolean;
 }
 
 interface Props {
@@ -155,6 +157,7 @@ export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
   const preventNavigation = currentStep.preventNavigation || false;
   const nextButtonDisabled = currentStep.nextButtonDisabled || false;
   const canNavigateNext = currentStep.canNavigateNext !== false; // Default to true
+  const handlesKeyboardEvents = currentStep.handlesKeyboardEvents || false;
 
   // Use the keyboard shortcuts hook
   useOnboardingShortcuts({
@@ -162,6 +165,7 @@ export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
     onPrevious: handlePrevious,
     canNavigateNext,
     shouldPreventNavigation: preventNavigation ? isNavPrevented : false,
+    handlesKeyboardEvents,
   });
 
   // Handle navigation control changes from steps
@@ -180,6 +184,7 @@ export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
     nextButtonDisabled,
     onNavigationControlChange: handleNavigationControlChange,
     isNavPrevented: preventNavigation ? isNavPrevented : false,
+    handlesKeyboardEvents,
   };
 
   return (
