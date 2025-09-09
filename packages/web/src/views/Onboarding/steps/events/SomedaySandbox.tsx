@@ -331,37 +331,74 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
           </SidebarSection>
         </Sidebar>
         <LeftColumn>
-          <AnimatedText isAnimating={isHeaderAnimating}>
-            Behold, the all-mighty sidebar
-          </AnimatedText>
-          <OnboardingText>{"{dramatic music}"}</OnboardingText>
-          <OnboardingText>
-            Don't be shy, jot down a task and type ENTER to save
-          </OnboardingText>
-          <div style={{ marginTop: "40px" }}>
-            <CheckboxContainer>
-              <Checkbox
-                type="checkbox"
-                id="week-tasks"
-                checked={isWeekTaskReady}
-                readOnly
-              />
-              <CheckboxLabel htmlFor="week-tasks">
-                Create a week task
-              </CheckboxLabel>
-            </CheckboxContainer>
-            <CheckboxContainer>
-              <Checkbox
-                type="checkbox"
-                id="month-tasks"
-                checked={isMonthTaskReady}
-                readOnly
-              />
-              <CheckboxLabel htmlFor="month-tasks">
-                Create a month task
-              </CheckboxLabel>
-            </CheckboxContainer>
-          </div>
+          {isNavPrevented ? (
+            <>
+              <AnimatedText isAnimating={isHeaderAnimating}>
+                Behold, the all-mighty sidebar
+              </AnimatedText>
+              <OnboardingText>{"{dramatic music}"}</OnboardingText>
+              <OnboardingText>
+                Don't be shy, jot down a task and type ENTER to save
+              </OnboardingText>
+              <div style={{ marginTop: "40px" }}>
+                <CheckboxContainer>
+                  <Checkbox
+                    type="checkbox"
+                    id="week-tasks"
+                    checked={isWeekTaskReady}
+                    readOnly
+                  />
+                  <CheckboxLabel htmlFor="week-tasks">
+                    Create a week task
+                  </CheckboxLabel>
+                </CheckboxContainer>
+                <CheckboxContainer>
+                  <Checkbox
+                    type="checkbox"
+                    id="month-tasks"
+                    checked={isMonthTaskReady}
+                    readOnly
+                  />
+                  <CheckboxLabel htmlFor="month-tasks">
+                    Create a month task
+                  </CheckboxLabel>
+                </CheckboxContainer>
+              </div>
+            </>
+          ) : (
+            <>
+              <OnboardingText>
+                Nice work. Who said todos have to be complicted?
+              </OnboardingText>
+              <OnboardingText>
+                Type ENTER or click the right arrow to continue
+              </OnboardingText>
+              <div style={{ marginTop: "40px" }}>
+                <CheckboxContainer>
+                  <Checkbox
+                    type="checkbox"
+                    id="week-tasks"
+                    checked={isWeekTaskReady}
+                    readOnly
+                  />
+                  <CheckboxLabel htmlFor="week-tasks">
+                    Create a week task
+                  </CheckboxLabel>
+                </CheckboxContainer>
+                <CheckboxContainer>
+                  <Checkbox
+                    type="checkbox"
+                    id="month-tasks"
+                    checked={isMonthTaskReady}
+                    readOnly
+                  />
+                  <CheckboxLabel htmlFor="month-tasks">
+                    Create a month task
+                  </CheckboxLabel>
+                </CheckboxContainer>
+              </div>
+            </>
+          )}
         </LeftColumn>
       </MainContent>
     </BottomContent>
