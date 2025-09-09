@@ -187,6 +187,9 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   const [weekTasksChecked, setWeekTasksChecked] = useState(false);
   const [monthTasksChecked, setMonthTasksChecked] = useState(false);
   const [headingAnimating, setHeadingAnimating] = useState(false);
+  const [setShouldPreventNavigation, setSetShouldPreventNavigation] = useState<
+    ((shouldPrevent: boolean) => void) | null
+  >(null);
   const colors = [
     colorByPriority.work,
     colorByPriority.self,
@@ -235,6 +238,29 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   const [editWeekValue, setEditWeekValue] = useState("");
   const [editMonthValue, setEditMonthValue] = useState("");
 
+  // Update navigation prevention based on state
+  useEffect(() => {
+    if (setShouldPreventNavigation) {
+      const hasUnsavedChanges =
+        newWeekTask.trim() !== "" ||
+        newMonthTask.trim() !== "" ||
+        editWeekValue.trim() !== "" ||
+        editMonthValue.trim() !== "";
+
+      const checkboxesNotChecked = !weekTasksChecked || !monthTasksChecked;
+
+      setShouldPreventNavigation(hasUnsavedChanges || checkboxesNotChecked);
+    }
+  }, [
+    newWeekTask,
+    newMonthTask,
+    editWeekValue,
+    editMonthValue,
+    weekTasksChecked,
+    monthTasksChecked,
+    setShouldPreventNavigation,
+  ]);
+
   const handleAddWeekTask = () => {
     if (newWeekTask.trim()) {
       const newTasks = [
@@ -265,29 +291,6 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     }
   };
 
-  const createTaskKeyHandler =
-    (inputValue: string, addTask: () => void, isWeekTask: boolean) =>
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        addTask();
-      } else if (e.key === "Tab") {
-        addTask();
-      }
-    };
-
-  const handleWeekTaskKeyPress = createTaskKeyHandler(
-    newWeekTask,
-    handleAddWeekTask,
-    true,
-  );
-
-  const handleMonthTaskKeyPress = createTaskKeyHandler(
-    newMonthTask,
-    handleAddMonthTask,
-    false,
-  );
-
   const saveWeekTaskEdit = () => {
     if (editingWeekIndex !== null && editWeekValue.trim()) {
       const updatedTasks = [...weekTasks];
@@ -314,8 +317,20 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     setEditMonthValue("");
   };
 
-  const handleEditWeekKeyPress = (e: React.KeyboardEvent) => {
+  const handleNewWeekTaskKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
+      handleAddWeekTask();
+    }
+  };
+
+  const handleNewMonthTaskKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleAddMonthTask();
+    }
+  };
+
+  const handleEditWeekKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === "Tab") {
       saveWeekTaskEdit();
     } else if (e.key === "Escape") {
       setEditingWeekIndex(null);
@@ -324,12 +339,22 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   };
 
   const handleEditMonthKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" || e.key === "Tab") {
       saveMonthTaskEdit();
     } else if (e.key === "Escape") {
       setEditingMonthIndex(null);
       setEditMonthValue("");
     }
+  };
+
+  const startEditingWeek = (index: number) => {
+    setEditingWeekIndex(index);
+    setEditWeekValue(weekTasks[index].text);
+  };
+
+  const startEditingMonth = (index: number) => {
+    setEditingMonthIndex(index);
+    setEditMonthValue(monthTasks[index].text);
   };
 
   const content = (
@@ -344,7 +369,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
                 placeholder="Add new task..."
                 value={newWeekTask}
                 onChange={(e) => setNewWeekTask(e.target.value)}
-                onKeyDown={handleWeekTaskKeyPress}
+                onKeyDown={handleNewWeekTaskKeyPress}
                 onBlur={() => {
                   if (newWeekTask.trim()) {
                     handleAddWeekTask();
@@ -354,7 +379,11 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               />
             )}
             {weekTasks.map((task, index) => (
-              <TaskItem key={index} color={task.color}>
+              <TaskItem
+                key={index}
+                color={task.color}
+                onClick={() => startEditingWeek(index)}
+              >
                 {editingWeekIndex === index ? (
                   <TaskInputEdit
                     value={editWeekValue}
@@ -380,7 +409,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
                 placeholder="Add new task..."
                 value={newMonthTask}
                 onChange={(e) => setNewMonthTask(e.target.value)}
-                onKeyDown={handleMonthTaskKeyPress}
+                onKeyDown={handleNewMonthTaskKeyPress}
                 onBlur={() => {
                   if (newMonthTask.trim()) {
                     handleAddMonthTask();
@@ -389,7 +418,11 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
               />
             )}
             {monthTasks.map((task, index) => (
-              <TaskItem key={index} color={task.color}>
+              <TaskItem
+                key={index}
+                color={task.color}
+                onClick={() => startEditingMonth(index)}
+              >
                 {editingMonthIndex === index ? (
                   <TaskInputEdit
                     value={editMonthValue}
@@ -451,7 +484,9 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       onSkip={onSkip}
       content={content}
       nextButtonDisabled={!weekTasksChecked || !monthTasksChecked}
-      canNavigateNext={() => weekTasksChecked && monthTasksChecked}
+      canNavigateNext={weekTasksChecked && monthTasksChecked}
+      defaultPreventNavigation={true}
+      onNavigationControlChange={setSetShouldPreventNavigation}
     />
   );
 };

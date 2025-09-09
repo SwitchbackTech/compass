@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import styled from "styled-components";
+import { useOnboardingShortcuts } from "../../hooks/useOnboardingShortcuts";
 import { OnboardingNextButton, OnboardingPreviousButton } from "../IconButtons";
 import { OnboardingContainer, OnboardingStepProps } from "../Onboarding";
 import { OnboardingStep } from "../OnboardingStep";
@@ -56,7 +57,11 @@ interface OnboardingTwoRowLayoutProps
   onPrevious: () => void;
   onSkip: () => void;
   nextButtonDisabled?: boolean;
-  canNavigateNext?: () => boolean;
+  canNavigateNext?: boolean;
+  defaultPreventNavigation?: boolean;
+  onNavigationControlChange?: (
+    setShouldPreventNavigation: (shouldPrevent: boolean) => void,
+  ) => void;
 }
 
 export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
@@ -69,74 +74,22 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
   content,
   nextButtonDisabled = false,
   canNavigateNext,
+  onNavigationControlChange,
 }) => {
-  // Handle keyboard navigation with custom logic
+  // Use the keyboard shortcuts hook
+  const { setShouldPreventNavigation } = useOnboardingShortcuts({
+    onNext,
+    onPrevious,
+    canNavigateNext: canNavigateNext || !nextButtonDisabled,
+    nextButtonDisabled,
+  });
+
+  // Pass the navigation control function to parent components
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const isRightArrow = event.key === "ArrowRight";
-      const isEnter = event.key === "Enter";
-
-      // For right arrow, always check navigation rules
-      if (isRightArrow) {
-        // If canNavigateNext is provided, use it to determine if navigation should proceed
-        if (canNavigateNext && !canNavigateNext()) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-
-        // If canNavigateNext is not provided, use the button disabled state
-        if (!canNavigateNext && nextButtonDisabled) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-
-        // If navigation is allowed, call onNext
-        if (!nextButtonDisabled) {
-          onNext();
-        }
-      }
-
-      // For Enter key, check navigation rules first
-      if (isEnter) {
-        const activeElement = document.activeElement as HTMLElement;
-        const isInputFocused =
-          activeElement &&
-          (activeElement.tagName === "INPUT" ||
-            activeElement.tagName === "TEXTAREA" ||
-            activeElement.contentEditable === "true");
-
-        // Check if navigation should be prevented
-        const shouldPreventNavigation =
-          (canNavigateNext && !canNavigateNext()) ||
-          (!canNavigateNext && nextButtonDisabled);
-
-        // If focused on an input, let the input handle the Enter key (for saving)
-        // but only if navigation is not prevented
-        if (isInputFocused) {
-          if (shouldPreventNavigation) {
-            event.preventDefault();
-            event.stopPropagation();
-          }
-          return;
-        }
-
-        // If not focused on input, check navigation rules
-        if (shouldPreventNavigation) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-
-        // If navigation is allowed, call onNext
-        onNext();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown, true);
-    return () => document.removeEventListener("keydown", handleKeyDown, true);
-  }, [onNext, nextButtonDisabled, canNavigateNext]);
+    if (onNavigationControlChange) {
+      onNavigationControlChange(setShouldPreventNavigation);
+    }
+  }, [onNavigationControlChange, setShouldPreventNavigation]);
 
   return (
     <OnboardingContainer fullWidth>
