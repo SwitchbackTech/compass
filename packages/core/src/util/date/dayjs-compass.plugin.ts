@@ -1,7 +1,6 @@
 import type { Dayjs, PluginFunc } from "dayjs";
 import dayjs from "dayjs";
 import winston from "winston";
-import { Logger } from "@core/logger/winston.logger";
 
 enum DateFormatEnum {
   RFC5545 = "YYYYMMDD[T]HHmmss[Z]",
@@ -180,7 +179,6 @@ export const dayjsCompassPlugin: PluginFunc<never> = (...params) => {
   dayjsClass.prototype.toRRuleDTSTARTString = toRRuleDTSTARTString;
   dayjsClass.prototype.weekMonthRange = weekMonthRange;
 
-  dayjsStatic.logger = Logger("core.util.date.dayjs");
   dayjsStatic.DateFormat = DateFormatEnum;
 
   dayjsStatic.monthFromZeroIndex = monthFromZeroIndex.bind(dayjsStatic);

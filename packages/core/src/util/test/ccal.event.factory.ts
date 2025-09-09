@@ -125,3 +125,24 @@ export const createMockInstances = (
 
   return instances;
 };
+
+export const generateCompassEventDates = ({
+  date,
+  allDay = false,
+  value = 1,
+  unit = "hours",
+}: {
+  date?: dayjs.ConfigType;
+  value?: number;
+  unit?: dayjs.ManipulateType;
+  allDay?: boolean;
+  timezone?: string;
+} = {}): Pick<Schema_Event, "startDate" | "endDate"> => {
+  const timeZone = dayjs.tz.guess();
+  const start = dayjs.tz(date ?? faker.date.future(), timeZone);
+  const end = start.add(value, unit);
+  const { YEAR_MONTH_DAY_FORMAT, RFC3339_OFFSET } = dayjs.DateFormat;
+  const format = allDay ? YEAR_MONTH_DAY_FORMAT : RFC3339_OFFSET;
+
+  return { startDate: start.format(format), endDate: end.format(format) };
+};
