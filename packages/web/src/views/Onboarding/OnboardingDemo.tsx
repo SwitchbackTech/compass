@@ -119,12 +119,7 @@ const OnboardingDemo_: React.FC = () => {
       component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
       preventNavigation: true,
     },
-    {
-      id: "set-someday-events-success",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEventsSuccess {...props} />
-      ),
-    },
+
     {
       id: "outro-two",
       component: (props: OnboardingStepProps) => <OutroTwo {...props} />,
