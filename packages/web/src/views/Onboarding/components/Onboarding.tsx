@@ -104,6 +104,10 @@ export interface OnboardingStep {
   onNext?: (data?: Record<string, unknown>) => void;
   disableLeftArrow?: boolean;
   disableRightArrow?: boolean;
+  // Navigation control properties
+  preventNavigation?: boolean;
+  nextButtonDisabled?: boolean;
+  canNavigateNext?: boolean;
 }
 
 interface Props {
@@ -121,8 +125,6 @@ export const Onboarding: React.FC<Props> = ({
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isNavPrevented, setIsNavPrevented] = useState(false);
-  const [nextButtonDisabled, setNextButtonDisabled] = useState(false);
-  const [canNavigateNext, setCanNavigateNext] = useState(true);
 
   const handleNext = (data?: Record<string, unknown>) => {
     // Call `onNext` if provided
@@ -149,26 +151,31 @@ export const Onboarding: React.FC<Props> = ({
     onComplete("skip");
   };
 
-  // Use the keyboard shortcuts hook
-  useOnboardingShortcuts({
-    onNext: handleNext,
-    onPrevious: handlePrevious,
-    canNavigateNext,
-    nextButtonDisabled,
-    shouldPreventNavigation: isNavPrevented,
-  });
-
-  // Handle navigation control changes from steps
-  const handleNavigationControlChange = (shouldPrevent: boolean) => {
-    setIsNavPrevented(shouldPrevent);
-  };
-
   const currentStep = steps[currentStepIndex];
   const StepComponent = currentStep?.component;
 
   if (!StepComponent) {
     return null;
   }
+
+  // Get navigation control from step configuration
+  const preventNavigation = currentStep.preventNavigation || false;
+  const nextButtonDisabled = currentStep.nextButtonDisabled || false;
+  const canNavigateNext = currentStep.canNavigateNext !== false; // Default to true
+
+  // Use the keyboard shortcuts hook
+  useOnboardingShortcuts({
+    onNext: handleNext,
+    onPrevious: handlePrevious,
+    canNavigateNext,
+    nextButtonDisabled,
+    shouldPreventNavigation: isNavPrevented || preventNavigation,
+  });
+
+  // Handle navigation control changes from steps
+  const handleNavigationControlChange = (shouldPrevent: boolean) => {
+    setIsNavPrevented(shouldPrevent);
+  };
 
   const stepProps: OnboardingStepProps = {
     currentStep: currentStepIndex + 1,
@@ -180,7 +187,7 @@ export const Onboarding: React.FC<Props> = ({
     canNavigateNext,
     nextButtonDisabled,
     onNavigationControlChange: handleNavigationControlChange,
-    isNavPrevented,
+    isNavPrevented: isNavPrevented || preventNavigation,
   };
 
   return (

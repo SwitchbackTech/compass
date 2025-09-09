@@ -55,6 +55,7 @@ const OnboardingDemo_: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <WelcomeScreen firstName="hello" {...props} />
       ),
+      disableLeftArrow: true,
     },
     {
       id: "welcome-note-one",
@@ -76,6 +77,7 @@ const OnboardingDemo_: React.FC = () => {
         <SignInWithGoogle {...props} />
       ),
       disableRightArrow: true,
+      preventNavigation: true,
     },
     {
       id: "reminder-intro-one",
@@ -114,6 +116,7 @@ const OnboardingDemo_: React.FC = () => {
     {
       id: "someday-sandbox",
       component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
+      preventNavigation: true,
     },
     {
       id: "set-someday-events-success",

@@ -166,7 +166,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
   onPrevious,
   onSkip,
   onNavigationControlChange,
-  isNavPrevented = true,
+  isNavPrevented = false,
 }) => {
   const [isWeekTaskReady, setIsWeekTaskReady] = useState(false);
   const [isMonthTaskReady, setIsMonthTaskReady] = useState(false);
@@ -334,7 +334,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
           </SidebarSection>
         </Sidebar>
         <LeftColumn>
-          {isNavPrevented ? (
+          {!isWeekTaskReady || !isMonthTaskReady ? (
             <>
               <AnimatedText isAnimating={isHeaderAnimating}>
                 Behold, the all-mighty sidebar

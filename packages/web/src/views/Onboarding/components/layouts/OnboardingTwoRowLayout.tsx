@@ -55,7 +55,6 @@ interface OnboardingTwoRowLayoutProps
   onPrevious: () => void;
   onSkip: () => void;
   nextButtonDisabled?: boolean;
-  canNavigateNext?: boolean;
   defaultPreventNavigation?: boolean;
   onNavigationControlChange?: (shouldPrevent: boolean) => void;
   isNavPrevented?: boolean;
@@ -69,9 +68,8 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
   onSkip,
   content,
   nextButtonDisabled = false,
-  canNavigateNext,
   onNavigationControlChange,
-  isNavPrevented = true,
+  isNavPrevented = false,
 }) => {
   // Pass the navigation control function to parent components
   useEffect(() => {
