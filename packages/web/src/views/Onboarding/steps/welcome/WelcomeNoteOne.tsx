@@ -1,5 +1,5 @@
 import React from "react";
-import { OnboardingFooter, OnboardingText } from "../../components";
+import { OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 import { OnboardingCardLayout } from "../../components/layouts/OnboardingCardLayout";
 
@@ -11,7 +11,14 @@ export const WelcomeNoteOne: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      hideSkip={true}
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={onNext}
+    >
       <OnboardingText>
         I see you are eager to board, but I must warn you:
       </OnboardingText>
@@ -25,13 +32,6 @@ export const WelcomeNoteOne: React.FC<OnboardingStepProps> = ({
       <OnboardingText>
         while the leviathan below will pull you away from your goals.
       </OnboardingText>
-
-      <OnboardingFooter
-        hideSkip
-        onSkip={onSkip}
-        onPrev={onPrevious}
-        onNext={onNext}
-      />
     </OnboardingCardLayout>
   );
 };

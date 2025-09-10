@@ -5,7 +5,6 @@ import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import IconButton from "@web/components/IconButton/IconButton";
 import {
   OnboardingCardLayout,
-  OnboardingFooter,
   OnboardingText,
   OnboardingTextareaWhite,
 } from "../../components";
@@ -89,7 +88,14 @@ export const SetReminder: React.FC<OnboardingStepProps> = ({
   );
 
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={handleNext}
+      nextBtnDisabled={!!reminder && !reminder.trim()}
+    >
       <OnboardingText>
         The sea is calm now. It's a good time to set a Reminder.
       </OnboardingText>
@@ -113,13 +119,6 @@ export const SetReminder: React.FC<OnboardingStepProps> = ({
             <HelpText>Fear not, you can always change this later.</HelpText>
           )}
         </InputContainer>
-
-        <OnboardingFooter
-          onSkip={onSkip}
-          onPrev={onPrevious}
-          onNext={handleNext}
-          nextBtnDisabled={!!reminder && !reminder.trim()}
-        />
       </OnboardingForm>
     </OnboardingCardLayout>
   );

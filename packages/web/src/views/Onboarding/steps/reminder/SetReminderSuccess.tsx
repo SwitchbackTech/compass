@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { OnboardingFooter, OnboardingText } from "../../components";
+import { OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 import { OnboardingCardLayout } from "../../components/layouts/OnboardingCardLayout";
 
@@ -34,7 +34,13 @@ export const SetReminderSuccess: React.FC<OnboardingStepProps> = ({
   const reminder = localStorage.getItem(STORAGE_KEYS.REMINDER) as string;
 
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={onNext}
+    >
       <OnboardingText>Excellent choice.</OnboardingText>
 
       <OnboardingText>
@@ -42,12 +48,10 @@ export const SetReminderSuccess: React.FC<OnboardingStepProps> = ({
       </OnboardingText>
 
       <OnboardingText>
-        As long as you’re here, you’ll never forget what matters most.
+        As long as you're here, you'll never forget what matters most.
       </OnboardingText>
 
       <MockCalendar reminder={reminder} />
-
-      <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />
     </OnboardingCardLayout>
   );
 };

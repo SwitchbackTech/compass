@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  OnboardingCardLayout,
-  OnboardingFooter,
-  OnboardingText,
-} from "../../components";
+import { OnboardingCardLayout, OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 
 export const WelcomeNoteTwo: React.FC<OnboardingStepProps> = ({
@@ -14,7 +10,14 @@ export const WelcomeNoteTwo: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      hideSkip={true}
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={onNext}
+    >
       <OnboardingText>
         To protect yourself from these forces, you&apos;ll need this one thing
         at all times:
@@ -30,13 +33,6 @@ export const WelcomeNoteTwo: React.FC<OnboardingStepProps> = ({
       </OnboardingText>
 
       <OnboardingText>Let me show you how.</OnboardingText>
-
-      <OnboardingFooter
-        hideSkip
-        onSkip={onSkip}
-        onPrev={onPrevious}
-        onNext={onNext}
-      />
     </OnboardingCardLayout>
   );
 };

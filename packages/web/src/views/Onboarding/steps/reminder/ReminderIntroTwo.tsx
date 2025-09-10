@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  OnboardingCardLayout,
-  OnboardingFooter,
-  OnboardingText,
-} from "../../components";
+import { OnboardingCardLayout, OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 
 export const ReminderIntroTwo: React.FC<OnboardingStepProps> = ({
@@ -14,7 +10,13 @@ export const ReminderIntroTwo: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={onNext}
+    >
       <OnboardingText>
         Compass solves this by showing a Reminder at the top of your calendar.
       </OnboardingText>
@@ -26,8 +28,6 @@ export const ReminderIntroTwo: React.FC<OnboardingStepProps> = ({
       <OnboardingText>
         The only thing that matters is it helps you invest your time wisely.
       </OnboardingText>
-
-      <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />
     </OnboardingCardLayout>
   );
 };

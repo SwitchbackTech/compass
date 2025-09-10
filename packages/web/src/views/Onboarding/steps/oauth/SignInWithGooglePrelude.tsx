@@ -1,11 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import compassGoogleOauthPerms from "@web/assets/png/google-oauth-preview.png";
-import {
-  OnboardingCardLayout,
-  OnboardingFooter,
-  OnboardingText,
-} from "../../components";
+import { OnboardingCardLayout, OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 
 const StyledCompassGoogleOauthPerms = styled.img`
@@ -20,7 +16,14 @@ export const SignInWithGooglePrelude: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      hideSkip={true}
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={onNext}
+    >
       <OnboardingText>
         Alas, the crew must get permission to take your bags before I can show
         you around.
@@ -32,13 +35,6 @@ export const SignInWithGooglePrelude: React.FC<OnboardingStepProps> = ({
       </OnboardingText>
 
       <StyledCompassGoogleOauthPerms src={compassGoogleOauthPerms} />
-
-      <OnboardingFooter
-        hideSkip
-        onSkip={onSkip}
-        onPrev={onPrevious}
-        onNext={onNext}
-      />
     </OnboardingCardLayout>
   );
 };

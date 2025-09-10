@@ -8,7 +8,6 @@ import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import {
   OnboardingCardLayout,
-  OnboardingFooter,
   OnboardingInputContainer,
   OnboardingInputLabel,
   OnboardingInputSection,
@@ -74,8 +73,18 @@ export const SetSomedayEvents: React.FC<OnboardingStepProps> = ({
   };
 
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
-      <OnboardingText>Let’s not delay.</OnboardingText>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      onSkip={onSkip}
+      onPrev={onPrevious}
+      onNext={handleNext}
+      nextBtnDisabled={
+        (!!somedayEventOne && !somedayEventOne.trim()) ||
+        (!!somedayEventTwo && !somedayEventTwo.trim())
+      }
+    >
+      <OnboardingText>Let's not delay.</OnboardingText>
       <OnboardingText>
         Enter two tasks you want to do this month.
       </OnboardingText>
@@ -107,16 +116,6 @@ export const SetSomedayEvents: React.FC<OnboardingStepProps> = ({
             />
           </OnboardingInputSection>
         </OnboardingInputContainer>
-
-        <OnboardingFooter
-          onSkip={onSkip}
-          onPrev={onPrevious}
-          onNext={handleNext}
-          nextBtnDisabled={
-            (!!somedayEventOne && !somedayEventOne.trim()) ||
-            (!!somedayEventTwo && !somedayEventTwo.trim())
-          }
-        />
       </OnboardingForm>
     </OnboardingCardLayout>
   );

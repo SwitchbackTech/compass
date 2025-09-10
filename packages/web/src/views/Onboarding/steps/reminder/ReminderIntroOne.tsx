@@ -1,5 +1,4 @@
 import React from "react";
-import { OnboardingFooter } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 import { OnboardingCardLayout } from "../../components/layouts/OnboardingCardLayout";
 import { OnboardingText } from "../../components/styled";
@@ -12,7 +11,13 @@ export const ReminderIntroOne: React.FC<OnboardingStepProps> = ({
   onSkip,
 }) => {
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={onNext}
+    >
       <OnboardingText>
         Compass is where you'll make the most important decisions of your life:
         how to spend your time.
@@ -22,8 +27,6 @@ export const ReminderIntroOne: React.FC<OnboardingStepProps> = ({
         But making wise decisions about your time is hard when the seas are
         stormy.
       </OnboardingText>
-
-      <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />
     </OnboardingCardLayout>
   );
 };
