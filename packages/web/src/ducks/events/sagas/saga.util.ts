@@ -101,7 +101,7 @@ export const EventDateUtils = {
         // For all-day events with exclusive end dates (e.g., Mon event: start="2025-09-08", end="2025-09-09")
         // Check if the event overlaps with the requested date range
         const eventStart = dayjs(event.startDate);
-        const eventEnd = dayjs(event.endDate); // This is exclusive, so actual event ends the day before
+        const eventEnd = dayjs(event.endDate); // This is exclusive, so the event ends at the very start of the end date
         const rangeStart = dayjs(startDate);
         const rangeEnd = dayjs(endDate);
 
