@@ -1,6 +1,7 @@
 export * from "./IconButtons";
 export * from "./styled";
 export * from "./OnboardingFooter";
+export * from "./FixedOnboardingFooter";
 export * from "./layouts/OnboardingCardLayout";
 export * from "./layouts/OnboardingTwoRowLayout";
 export * from "./Logo";
