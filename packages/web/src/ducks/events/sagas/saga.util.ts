@@ -98,14 +98,18 @@ export const EventDateUtils = {
   ) => {
     return events.filter((event) => {
       if (event.isAllDay) {
-        const belongsInRange =
-          dayjs(event.startDate).isSameOrAfter(startDate) ||
-          dayjs(event.endDate).isSameOrBefore(endDate) ||
-          // is between start and end date
-          (dayjs(startDate).isBetween(event.startDate, event.endDate) &&
-            dayjs(endDate).isBetween(event.startDate, event.endDate));
+        // For all-day events with exclusive end dates (e.g., Mon event: start="2025-09-08", end="2025-09-09")
+        // Check if the event overlaps with the requested date range
+        const eventStart = dayjs(event.startDate);
+        const eventEnd = dayjs(event.endDate); // This is exclusive, so the event ends at the very start of the end date
+        const rangeStart = dayjs(startDate);
+        const rangeEnd = dayjs(endDate);
 
-        return belongsInRange;
+        // Event overlaps if: event starts before range ends AND event ends after range starts
+        const overlaps =
+          eventStart.isBefore(rangeEnd) && eventEnd.isAfter(rangeStart);
+
+        return overlaps;
       }
 
       return (
