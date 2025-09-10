@@ -1,8 +1,7 @@
-import { ObjectId, WithId } from "mongodb";
 import { Options, RRule, RRuleStrOptions, rrulestr } from "rrule";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import {
-  Schema_Event,
+  Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -12,14 +11,11 @@ import {
 } from "@core/util/event/event.util";
 
 export class CompassEventRRule extends RRule {
-  #event: WithId<Omit<Schema_Event, "_id">>;
+  #event: Schema_Event_Recur_Base;
   #dateFormat: string;
   #durationMs!: number;
 
-  constructor(
-    event: WithId<Omit<Schema_Event, "_id">>,
-    options: Partial<Options> = {},
-  ) {
+  constructor(event: Schema_Event_Recur_Base, options: Partial<Options> = {}) {
     super(CompassEventRRule.#initOptions(event, options));
 
     this.#event = event;
@@ -32,11 +28,14 @@ export class CompassEventRRule extends RRule {
   }
 
   static #initOptions(
-    event: WithId<Omit<Schema_Event, "_id">>,
+    event: Schema_Event_Recur_Base,
     options: Partial<Options> = {},
   ): Partial<Options> {
     const startDate = parseCompassEventDate(event.startDate!);
     const dtstart = startDate.local().toDate();
+    const wkst = RRule.SU;
+    const freq = RRule.WEEKLY;
+    const interval = 1;
     const tzid = dayjs.tz.guess();
     const opts: Partial<RRuleStrOptions> = { dtstart, tzid };
     const recurrence = event.recurrence?.rule?.join("\n").trim();
@@ -46,15 +45,7 @@ export class CompassEventRRule extends RRule {
     const rawCount = rruleOptions.count ?? GCAL_MAX_RECURRENCES;
     const count = Math.min(rawCount, GCAL_MAX_RECURRENCES);
 
-    return { ...rruleOptions, count, dtstart, tzid };
-  }
-
-  toString(): string {
-    return super
-      .toString()
-      .split("\n")
-      .filter((r) => !(r.startsWith("DTSTART") || r.startsWith("DTEND")))
-      .join("\n");
+    return { wkst, freq, interval, ...rruleOptions, count, dtstart, tzid };
   }
 
   toRecurrence(): string[] {
@@ -64,10 +55,9 @@ export class CompassEventRRule extends RRule {
       .filter((r) => !(r.startsWith("DTSTART") || r.startsWith("DTEND")));
   }
 
-  base(): WithId<Omit<Schema_Event, "_id">> {
+  base(): Schema_Event_Recur_Base {
     return {
       ...this.#event,
-      _id: this.#event._id ?? new ObjectId(),
       recurrence: { rule: this.toRecurrence() },
     };
   }
@@ -79,7 +69,7 @@ export class CompassEventRRule extends RRule {
    * @description Returns all instances of the event based on the recurrence rule.
    * @note **This is a test-only method for now, it is not to be used in production.**
    */
-  instances(): WithId<Omit<Schema_Event_Recur_Instance, "_id">>[] {
+  instances(): Array<Omit<Schema_Event_Recur_Instance, "_id">> {
     return this.all().map((date) => {
       const timezone = dayjs.tz.guess();
       const startDate = dayjs(date).tz(timezone);
@@ -89,10 +79,9 @@ export class CompassEventRRule extends RRule {
 
       return {
         ...baseData,
-        _id: new ObjectId(),
         startDate: startDate.format(this.#dateFormat),
         endDate: endDate.format(this.#dateFormat),
-        recurrence: { eventId: this.base()._id.toString() },
+        recurrence: { eventId: this.base()._id! },
       };
     });
   }
