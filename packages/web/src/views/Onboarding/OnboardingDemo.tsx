@@ -54,7 +54,6 @@ const OnboardingDemo_: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <WelcomeScreen firstName="hello" {...props} />
       ),
-      disableLeftArrow: true,
     },
     {
       id: "welcome-note-one",
@@ -75,8 +74,6 @@ const OnboardingDemo_: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <SignInWithGoogle {...props} />
       ),
-      disableRightArrow: true,
-      preventNavigation: true,
       handlesKeyboardEvents: true,
     },
     {

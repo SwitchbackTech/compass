@@ -64,6 +64,7 @@ export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
       onNext={onNext}
       nextBtnDisabled
       prevBtnDisabled
+      showFooter={false}
     >
       <GoogleButton
         disabled={loading}

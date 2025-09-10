@@ -222,6 +222,8 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
       onSkip={onSkip}
       onPrevious={onPrevious}
       onNext={onNext}
+      prevBtnDisabled
+      showFooter={false}
     >
       <CRTContainer>
         {textLines.map((line, index) => (

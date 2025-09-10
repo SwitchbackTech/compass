@@ -40,6 +40,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     <OnboardingCardLayout
       currentStep={currentStep}
       totalSteps={totalSteps}
+      hideSkip={true}
       onSkip={onSkip}
       onPrevious={onPrevious}
       onNext={onNext}

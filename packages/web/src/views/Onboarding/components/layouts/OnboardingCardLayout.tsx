@@ -10,6 +10,7 @@ interface OnboardingStepBoilerplateProps
   hideSkip?: boolean;
   nextBtnDisabled?: boolean;
   prevBtnDisabled?: boolean;
+  showFooter?: boolean;
 }
 
 export const OnboardingCardLayout = (props: OnboardingStepBoilerplateProps) => {
@@ -20,6 +21,7 @@ export const OnboardingCardLayout = (props: OnboardingStepBoilerplateProps) => {
     hideSkip,
     nextBtnDisabled,
     prevBtnDisabled,
+    showFooter = true,
     onNext,
     onPrevious,
     onSkip,
@@ -32,14 +34,16 @@ export const OnboardingCardLayout = (props: OnboardingStepBoilerplateProps) => {
           <OnboardingStep currentStep={currentStep} totalSteps={totalSteps}>
             {children}
           </OnboardingStep>
-          <FixedOnboardingFooter
-            onSkip={onSkip}
-            onPrev={onPrevious}
-            onNext={onNext}
-            hideSkip={hideSkip}
-            nextBtnDisabled={nextBtnDisabled}
-            prevBtnDisabled={prevBtnDisabled}
-          />
+          {showFooter && (
+            <FixedOnboardingFooter
+              onSkip={onSkip}
+              onPrev={onPrevious}
+              onNext={onNext}
+              hideSkip={hideSkip}
+              nextBtnDisabled={nextBtnDisabled}
+              prevBtnDisabled={prevBtnDisabled}
+            />
+          )}
         </OnboardingCard>
       </OnboardingContainer>
     </>
