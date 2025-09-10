@@ -5,23 +5,11 @@ import { OnboardingContainer, OnboardingStepProps } from "../Onboarding";
 import { OnboardingStep } from "../OnboardingStep";
 import { OnboardingButton } from "../styled";
 
-const LayoutContainer = styled.div`
+const TwoRowLayoutContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
   gap: 20px;
-`;
-
-const TopSection = styled.div`
-  background-color: #12151b;
-  border: 2px solid #ffffff;
-  border-radius: 4px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  position: relative;
 `;
 
 const Content = styled.div`
@@ -80,25 +68,24 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
 
   return (
     <OnboardingContainer fullWidth>
-      <OnboardingStep currentStep={currentStep} totalSteps={totalSteps}>
-        <LayoutContainer>
-          <Content>{content}</Content>
-          <SkipButton onClick={onSkip}>SKIP INTRO</SkipButton>
-          <NavigationButtons>
-            <OnboardingPreviousButton
-              aria-label="Previous"
-              onClick={onPrevious}
-            />
-            <OnboardingNextButton
-              aria-label="Next"
-              onClick={onNext}
-              disabled={nextButtonDisabled}
-              shouldTrapFocus={!isNavPrevented}
-              shouldPulse={!isNavPrevented}
-            />
-          </NavigationButtons>
-        </LayoutContainer>
-      </OnboardingStep>
+      <OnboardingStep currentStep={currentStep} totalSteps={totalSteps} />
+      <TwoRowLayoutContainer>
+        <Content>{content}</Content>
+        <SkipButton onClick={onSkip}>SKIP INTRO</SkipButton>
+        <NavigationButtons>
+          <OnboardingPreviousButton
+            aria-label="Previous"
+            onClick={onPrevious}
+          />
+          <OnboardingNextButton
+            aria-label="Next"
+            onClick={onNext}
+            disabled={nextButtonDisabled}
+            shouldTrapFocus={!isNavPrevented}
+            shouldPulse={!isNavPrevented}
+          />
+        </NavigationButtons>
+      </TwoRowLayoutContainer>
     </OnboardingContainer>
   );
 };

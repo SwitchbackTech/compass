@@ -9,14 +9,12 @@ import {
 interface Props {
   currentStep: number;
   totalSteps: number;
-  children: ReactNode;
   style?: React.CSSProperties;
 }
 
 export const OnboardingStep: React.FC<Props> = ({
   currentStep,
   totalSteps,
-  children,
   style,
 }) => {
   const { hideSteps } = useOnboarding();
@@ -25,8 +23,11 @@ export const OnboardingStep: React.FC<Props> = ({
     <div
       id="onboarding-step"
       style={{
-        width: "100%",
-        overflow: "auto",
+        position: "absolute",
+        top: "20px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 10,
         ...style,
       }}
     >
@@ -37,7 +38,6 @@ export const OnboardingStep: React.FC<Props> = ({
           ))}
         </ProgressIndicator>
       )}
-      <OnboardingContent>{children}</OnboardingContent>
     </div>
   );
 };
