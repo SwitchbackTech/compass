@@ -8,6 +8,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import { getUserId } from "@web/auth/auth.util";
+import { ID_OPTIMISTIC_PREFIX } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -126,8 +127,11 @@ export const useDraftActions = (
   };
 
   const submit = async (draft: Schema_GridEvent) => {
-    // Check if the event has actually changed
-    if (!isEventDirty(draft, reduxDraft)) {
+    // For new events, skip the dirty check and allow saving blank events
+    const isNewEvent = !draft._id || draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
+
+    // Check if the event has actually changed (skip for new events)
+    if (!isNewEvent && !isEventDirty(draft, reduxDraft)) {
       // No changes detected, just close the form without making HTTP request
       if (isFormOpenBeforeDragging) {
         openForm();
