@@ -45,7 +45,6 @@ export const useSomedayMigration = (
   const navigateToNextWeek = useCallback(() => {
     if (canNavigateForward) {
       setCurrentWeekIndex(1);
-      console.log("Navigated to next week");
       onNavigatedToNextWeek?.();
     }
   }, [canNavigateForward, onNavigatedToNextWeek]);
@@ -53,7 +52,6 @@ export const useSomedayMigration = (
   const navigateToPreviousWeek = useCallback(() => {
     if (canNavigateBack) {
       setCurrentWeekIndex(0);
-      console.log("Navigated to previous week");
     }
   }, [canNavigateBack]);
 
@@ -62,10 +60,6 @@ export const useSomedayMigration = (
     (eventText: string, eventIndex: number, direction: "back" | "forward") => {
       const actionText = direction === "back" ? "previous" : "next";
       const currentWeek = currentWeekIndex === 0 ? "this week" : "next week";
-      console.log(
-        `Event migrated: "${eventText}" from ${currentWeek} to ${actionText} week`,
-      );
-      console.log(`Direction: ${direction}, Event index: ${eventIndex}`);
 
       // Actually move the event between lists
       if (direction === "forward" && currentWeekIndex === 0) {

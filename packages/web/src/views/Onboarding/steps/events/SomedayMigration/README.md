@@ -20,9 +20,9 @@ import { SomedayMigration } from "./SomedayMigration";
 <SomedayMigration
   currentStep={1}
   totalSteps={3}
-  onNext={() => console.log("Next clicked")}
-  onPrevious={() => console.log("Previous clicked")}
-  onSkip={() => console.log("Skip clicked")}
+  onNext={() => {}}
+  onPrevious={() => {}}
+  onSkip={() => {}}
 />;
 ```
 

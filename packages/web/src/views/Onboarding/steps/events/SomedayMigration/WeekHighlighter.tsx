@@ -6,6 +6,7 @@ interface WeekHighlighterProps {
   width?: number;
   height?: number;
   color?: string;
+  textColor?: string;
   strokeWidth?: number;
   className?: string;
   onClick?: () => void;
@@ -17,7 +18,8 @@ export const WeekHighlighter: React.FC<WeekHighlighterProps> = ({
   y,
   width = 280,
   height = 40,
-  color = "#ff6b6b",
+  color,
+  textColor,
   strokeWidth = 3,
   className,
   onClick,
@@ -96,7 +98,7 @@ export const WeekHighlighter: React.FC<WeekHighlighterProps> = ({
     if (text !== "") {
       const displayText = text || "pretend we're here";
       ctx.font = "18px Caveat, cursive";
-      ctx.fillStyle = color;
+      ctx.fillStyle = textColor || color;
 
       let textX: number;
       let textY: number;

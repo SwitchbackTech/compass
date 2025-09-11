@@ -3,7 +3,7 @@ import { renderHook } from "@testing-library/react";
 import { useCalendarLogic } from "./useCalendarLogic";
 
 // Mock dayjs to use a fixed date for consistent testing
-const mockDate = dayjs("2024-01-11"); // Thursday, January 11, 2024
+const mockDate = dayjs("2025-09-10"); // Wednesday, September 10, 2025
 jest.mock("dayjs", () => {
   const originalDayjs = jest.requireActual("dayjs");
   const mockDayjs = (date?: any) => {
@@ -24,7 +24,7 @@ describe("useCalendarLogic", () => {
   it("should return correct month title", () => {
     const { result } = renderHook(() => useCalendarLogic());
 
-    expect(result.current.monthTitle).toBe("January 2024");
+    expect(result.current.monthTitle).toBe("September 2025");
   });
 
   it("should return correct week day labels", () => {
@@ -44,7 +44,7 @@ describe("useCalendarLogic", () => {
   it("should identify current week correctly", () => {
     const { result } = renderHook(() => useCalendarLogic());
 
-    // Find the week that contains the current day (January 11, 2024)
+    // Find the week that contains the current day (September 10, 2025)
     const currentWeek = result.current.weeks.find((week) =>
       week.days.some((day) => day.isToday),
     );
@@ -78,12 +78,12 @@ describe("useCalendarLogic", () => {
       .find((day) => day.isToday);
 
     expect(today).toBeDefined();
-    expect(today?.day).toBe(11); // January 11, 2024
+    expect(today?.day).toBe(10); // September 10, 2025
     expect(today?.isCurrentMonth).toBe(true);
     expect(today?.isCurrentWeek).toBe(true);
   });
 
-  it("should have correct current week days (January 7-13, 2024)", () => {
+  it("should have correct current week days (September 7-13, 2025)", () => {
     const { result } = renderHook(() => useCalendarLogic());
 
     // Find the current week
@@ -119,7 +119,7 @@ describe("useCalendarLogic", () => {
   it("should have correct isCurrentWeekVisible value", () => {
     const { result } = renderHook(() => useCalendarLogic());
 
-    // Since we're testing with January 11, 2024, the current week should be visible
+    // Since we're testing with September 10, 2025, the current week should be visible
     expect(result.current.isCurrentWeekVisible).toBe(true);
   });
 
@@ -140,7 +140,7 @@ describe("useCalendarLogic", () => {
   it("should correctly calculate currentWeekIndex", () => {
     const { result } = renderHook(() => useCalendarLogic());
 
-    // Since we're using January 11, 2024 (Thursday), currentWeekIndex should be valid
+    // Since we're using September 10, 2025 (Wednesday), currentWeekIndex should be valid
     expect(result.current.currentWeekIndex).toBeGreaterThanOrEqual(0);
     expect(result.current.currentWeekIndex).toBeLessThan(5);
 
@@ -160,7 +160,7 @@ describe("useCalendarLogic", () => {
     // Saturday should be the last day (index 6) of the current week
     const saturdayDay = currentWeek.days[6]; // Saturday is index 6
     expect(saturdayDay.isCurrentWeek).toBe(true);
-    expect(saturdayDay.day).toBe(13); // January 13, 2024 is the Saturday of the week containing January 11
+    expect(saturdayDay.day).toBe(13); // September 13, 2025 is the Saturday of the week containing September 10
     expect(saturdayDay.isCurrentMonth).toBe(true);
   });
 

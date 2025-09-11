@@ -297,16 +297,34 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
         </CheckboxContainer>
       </RightColumn>
       {isCurrentWeekVisible && (
-        <WeekHighlighter
-          x={ellipsePosition.x}
-          y={ellipsePosition.y}
-          width={ellipsePosition.width}
-          height={ellipsePosition.height}
-          color="#ff6b6b"
-          strokeWidth={3}
-          text={"this week (pretend)"}
-          onClick={() => console.log("Week highlighter clicked!")}
-        />
+        <>
+          <WeekHighlighter
+            x={ellipsePosition.x}
+            y={ellipsePosition.y}
+            width={ellipsePosition.width}
+            height={ellipsePosition.height}
+            color="#6ba6ff"
+            strokeWidth={3}
+            text=""
+            onClick={() => {}}
+          />
+          <div
+            style={{
+              position: "absolute",
+              left: `${ellipsePosition.x + ellipsePosition.width + 20}px`,
+              top: `${ellipsePosition.y + ellipsePosition.height / 2 - 10}px`,
+              fontFamily: "Caveat, cursive",
+              fontSize: "18px",
+              color: "#60a5fa",
+              fontWeight: "normal",
+              zIndex: 101,
+              pointerEvents: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            This week (pretend)
+          </div>
+        </>
       )}
       {showMigratedEventEllipse && calendarGridRef.current && (
         <WeekHighlighter
@@ -317,10 +335,10 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
           }
           width={ellipsePosition.width}
           height={ellipsePosition.height}
-          color="#60a5fa"
+          color="#60e3fa"
           strokeWidth={3}
           text=""
-          onClick={() => console.log("Migrated event highlighter clicked!")}
+          onClick={() => {}}
         />
       )}
       {showMigratedEventEllipse &&
