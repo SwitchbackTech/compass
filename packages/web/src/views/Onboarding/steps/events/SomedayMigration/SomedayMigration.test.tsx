@@ -41,7 +41,9 @@ describe("SomedayMigration", () => {
       getForwardArrow: () => screen.getByTitle("Next week"),
       getWeekLabel: () => screen.getByText(/This Week|Next Week/),
       getEventMigrateArrows: () =>
-        screen.getAllByTitle(/Migrate to (previous|next) week/),
+        screen.getAllByTitle(
+          /Migrate to (previous|next) week|Cannot migrate further/,
+        ),
       getEvents: () => screen.getAllByText(/🥙|🥗|🏠|📧|🏃‍♂️/),
     };
   }
@@ -538,6 +540,61 @@ describe("SomedayMigration", () => {
       expect(consoleSpy).toHaveBeenCalledWith(
         'Event migrated: "🥙 Meal prep" from this week to next week',
       );
+    });
+
+    it("should disable event migration arrows when on Next Week", async () => {
+      const { getForwardArrow, getEventMigrateArrows } = setup();
+
+      // Navigate to next week
+      await userEvent.click(getForwardArrow());
+
+      const arrows = getEventMigrateArrows();
+
+      // All arrows should be disabled when on Next Week
+      arrows.forEach((arrow) => {
+        expect(arrow).toHaveAttribute("tabIndex", "-1");
+        expect(arrow.getAttribute("title")).toMatch(/Cannot migrate further/);
+      });
+    });
+
+    it("should not trigger migration when disabled arrows are clicked", async () => {
+      const consoleSpy = jest.spyOn(console, "log");
+      const { getForwardArrow, getEventMigrateArrows } = setup();
+
+      // Navigate to next week
+      await userEvent.click(getForwardArrow());
+
+      const arrows = getEventMigrateArrows();
+      const firstArrow = arrows[0];
+
+      // Clear any previous console logs
+      consoleSpy.mockClear();
+
+      // Try to click disabled arrow
+      await userEvent.click(firstArrow);
+
+      // Should not log any migration event
+      expect(consoleSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining("Event migrated:"),
+      );
+    });
+
+    it("should re-enable event migration arrows when navigating back to This Week", async () => {
+      const { getForwardArrow, getBackArrow, getEventMigrateArrows } = setup();
+
+      // Navigate to next week and back
+      await userEvent.click(getForwardArrow());
+      await userEvent.click(getBackArrow());
+
+      const arrows = getEventMigrateArrows();
+
+      // All arrows should be re-enabled
+      arrows.forEach((arrow) => {
+        expect(arrow).toHaveAttribute("tabIndex", "0");
+        expect(arrow.getAttribute("title")).toMatch(
+          /Migrate to (previous|next) week/,
+        );
+      });
     });
   });
 });

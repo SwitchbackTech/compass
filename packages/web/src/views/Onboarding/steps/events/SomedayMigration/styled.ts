@@ -120,23 +120,24 @@ export const EventArrows = styled.div`
   gap: 4px;
 `;
 
-export const MigrateArrow = styled.span`
+export const MigrateArrow = styled.span<{ disabled?: boolean }>`
   padding: 4px 8px;
   font-size: 12px;
   font-weight: bold;
-  cursor: pointer;
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
   border-radius: 3px;
   transition: all 0.2s ease;
   user-select: none;
+  opacity: ${({ disabled }) => (disabled ? 0.3 : 1)};
 
   &:hover {
-    background: rgba(0, 0, 0, 0.1);
-    transform: scale(1.1);
+    background: ${({ disabled }) => (disabled ? "none" : "rgba(0, 0, 0, 0.1)")};
+    transform: ${({ disabled }) => (disabled ? "none" : "scale(1.1)")};
   }
 
   &:active {
-    background: rgba(0, 0, 0, 0.2);
-    transform: scale(0.95);
+    background: ${({ disabled }) => (disabled ? "none" : "rgba(0, 0, 0, 0.2)")};
+    transform: ${({ disabled }) => (disabled ? "none" : "scale(0.95)")};
   }
 `;
 

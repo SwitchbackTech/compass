@@ -39,14 +39,19 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
   const {
     somedayEvents,
     weekLabel,
+    currentWeekIndex,
     canNavigateBack,
     canNavigateForward,
     navigateToNextWeek,
     navigateToPreviousWeek,
     handleEventClick,
   } = useSomedayMigration();
-  const { weekDays, weeks, isCurrentWeekVisible, currentWeekIndex } =
-    useCalendarLogic();
+  const {
+    weekDays,
+    weeks,
+    isCurrentWeekVisible,
+    currentWeekIndex: calendarWeekIndex,
+  } = useCalendarLogic();
 
   const thisWeekLabelRef = useRef<HTMLDivElement>(null);
   const calendarGridRef = useRef<HTMLDivElement>(null);
@@ -59,7 +64,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
 
   useEffect(() => {
     const computeEllipse = () => {
-      if (!calendarGridRef.current || currentWeekIndex === -1) return;
+      if (!calendarGridRef.current || calendarWeekIndex === -1) return;
 
       const calendarGridRect = calendarGridRef.current.getBoundingClientRect();
 
@@ -90,7 +95,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
       const ellipseY =
         calendarGridRect.top -
         containerRect.top +
-        currentWeekIndex * currentWeekRowHeight -
+        calendarWeekIndex * currentWeekRowHeight -
         5;
       const ellipseWidth = (lastIdx - firstIdx + 1) * colWidth + 10;
       const ellipseHeight = currentWeekRowHeight + 10;
@@ -113,7 +118,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
       clearTimeout(timer);
       window.removeEventListener("resize", computeEllipse);
     };
-  }, [currentWeekIndex, isCurrentWeekVisible, weeks]);
+  }, [calendarWeekIndex, isCurrentWeekVisible, weeks]);
 
   const content = (
     <MainContent>
@@ -151,38 +156,56 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
                 <EventText>{event.text}</EventText>
                 <EventArrows>
                   <MigrateArrow
+                    disabled={currentWeekIndex === 1}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleEventClick(event.text, index, "back");
+                      if (currentWeekIndex !== 1) {
+                        handleEventClick(event.text, index, "back");
+                      }
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleEventClick(event.text, index, "back");
+                        if (currentWeekIndex !== 1) {
+                          handleEventClick(event.text, index, "back");
+                        }
                       }
                     }}
                     role="button"
-                    tabIndex={0}
-                    title="Migrate to previous week"
+                    tabIndex={currentWeekIndex === 1 ? -1 : 0}
+                    title={
+                      currentWeekIndex === 1
+                        ? "Cannot migrate further back"
+                        : "Migrate to previous week"
+                    }
                   >
                     {"<"}
                   </MigrateArrow>
                   <MigrateArrow
+                    disabled={currentWeekIndex === 1}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleEventClick(event.text, index, "forward");
+                      if (currentWeekIndex !== 1) {
+                        handleEventClick(event.text, index, "forward");
+                      }
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleEventClick(event.text, index, "forward");
+                        if (currentWeekIndex !== 1) {
+                          handleEventClick(event.text, index, "forward");
+                        }
                       }
                     }}
                     role="button"
-                    tabIndex={0}
-                    title="Migrate to next week"
+                    tabIndex={currentWeekIndex === 1 ? -1 : 0}
+                    title={
+                      currentWeekIndex === 1
+                        ? "Cannot migrate further forward"
+                        : "Migrate to next week"
+                    }
                   >
                     {">"}
                   </MigrateArrow>
