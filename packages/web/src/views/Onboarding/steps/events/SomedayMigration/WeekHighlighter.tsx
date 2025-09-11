@@ -53,59 +53,72 @@ export const WeekHighlighter: React.FC<WeekHighlighterProps> = ({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw a simple ellipse around the week
+    // Draw a rounded rectangle around the week
     const startX = 5;
     const startY = 5;
-    const centerX = startX + width / 2;
-    const centerY = startY + height / 2;
-    const radiusX = (width - 10) / 2;
-    const radiusY = (height - 10) / 2;
+    const rectWidth = width - 10;
+    const rectHeight = height - 10;
+    const cornerRadius = 12; // Rounded corner radius
 
-    // Draw simple ellipse
+    // Draw rounded rectangle
     ctx.beginPath();
-    ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+    ctx.moveTo(startX + cornerRadius, startY);
+    ctx.lineTo(startX + rectWidth - cornerRadius, startY);
+    ctx.quadraticCurveTo(
+      startX + rectWidth,
+      startY,
+      startX + rectWidth,
+      startY + cornerRadius,
+    );
+    ctx.lineTo(startX + rectWidth, startY + rectHeight - cornerRadius);
+    ctx.quadraticCurveTo(
+      startX + rectWidth,
+      startY + rectHeight,
+      startX + rectWidth - cornerRadius,
+      startY + rectHeight,
+    );
+    ctx.lineTo(startX + cornerRadius, startY + rectHeight);
+    ctx.quadraticCurveTo(
+      startX,
+      startY + rectHeight,
+      startX,
+      startY + rectHeight - cornerRadius,
+    );
+    ctx.lineTo(startX, startY + cornerRadius);
+    ctx.quadraticCurveTo(startX, startY, startX + cornerRadius, startY);
+    ctx.closePath();
+
     ctx.strokeStyle = color;
     ctx.lineWidth = strokeWidth;
     ctx.stroke();
 
-    // Draw text if provided
-    if (text) {
+    // Draw text with responsive positioning (unless text is explicitly empty string)
+    if (text !== "") {
+      const displayText = text || "pretend we're here";
       ctx.font = "18px Caveat, cursive";
       ctx.fillStyle = color;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
 
-      // Position text at the top of the ellipse
-      const textX = startX + width / 2;
-      const textY = startY - 15; // Above the ellipse
+      let textX: number;
+      let textY: number;
 
-      ctx.fillText(text, textX, textY);
+      if (isNarrowScreen) {
+        // Position text underneath the entire month widget when screen is narrow
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        textX = startX + width / 2; // Centered horizontally with ellipse
+        // Position well below the ellipse to clear the entire month widget
+        // The month widget extends below the ellipse, so we need more space
+        textY = startX + height + 60; // Well below the month widget
+      } else {
+        // Position text to the right of the ellipse when there's space
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        textX = startX + width + 15; // To the right of the ellipse
+        textY = startY + height / 2; // Vertically centered with ellipse
+      }
+
+      ctx.fillText(displayText, textX, textY);
     }
-
-    // Draw "pretend we're here" text with responsive positioning
-    ctx.font = "18px Caveat, cursive";
-    ctx.fillStyle = color;
-
-    let pretendTextX: number;
-    let pretendTextY: number;
-
-    if (isNarrowScreen) {
-      // Position text underneath the entire month widget when screen is narrow
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      pretendTextX = startX + width / 2; // Centered horizontally with ellipse
-      // Position well below the ellipse to clear the entire month widget
-      // The month widget extends below the ellipse, so we need more space
-      pretendTextY = startY + height + 60; // Well below the month widget
-    } else {
-      // Position text to the right of the ellipse when there's space
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      pretendTextX = startX + width + 15; // To the right of the ellipse
-      pretendTextY = startY + height / 2; // Vertically centered with ellipse
-    }
-
-    ctx.fillText("pretend we're here", pretendTextX, pretendTextY);
   }, [x, y, width, height, color, strokeWidth, text, isNarrowScreen]);
 
   // Calculate canvas dimensions based on text positioning

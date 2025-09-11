@@ -295,12 +295,23 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
           height={ellipsePosition.height}
           color="#ff6b6b"
           strokeWidth={3}
-          text={
-            showMigratedEventEllipse && migratedEventName
-              ? `you moved ${migratedEventName} here`
-              : "pretend we're here"
-          }
+          text={"this week (pretend)"}
           onClick={() => console.log("Week highlighter clicked!")}
+        />
+      )}
+      {showMigratedEventEllipse && calendarGridRef.current && (
+        <WeekHighlighter
+          x={ellipsePosition.x}
+          y={
+            ellipsePosition.y +
+            calendarGridRef.current.getBoundingClientRect().height / 5
+          }
+          width={ellipsePosition.width}
+          height={ellipsePosition.height}
+          color="#60a5fa"
+          strokeWidth={3}
+          text=""
+          onClick={() => console.log("Migrated event highlighter clicked!")}
         />
       )}
       {showMigratedEventEllipse &&
