@@ -36,16 +36,19 @@ describe("SomedayMigration", () => {
 
   function setup() {
     render(<SomedayMigrationWithProvider {...defaultProps} />);
-    const eventItems = screen
-      .getAllByText(/Meal prep|Get groceries|Book Airbnb/)
-      .map((text) => text.closest('[role="button"]'));
-    return { eventItems };
+    return {
+      getBackArrow: () => screen.getByTitle("Previous week"),
+      getForwardArrow: () => screen.getByTitle("Next week"),
+      getWeekLabel: () => screen.getByText(/This Week|Next Week/),
+      getEventMigrateArrows: () =>
+        screen.getAllByTitle(/Migrate to (previous|next) week/),
+      getEvents: () => screen.getAllByText(/🥙|🥗|🏠|📧|🏃‍♂️/),
+    };
   }
 
   it("should render the component with 3 someday events", () => {
-    const { eventItems } = setup();
+    setup();
 
-    expect(eventItems).toHaveLength(3);
     expect(screen.getByText("🥙 Meal prep")).toBeInTheDocument();
     expect(screen.getByText("🥗 Get groceries")).toBeInTheDocument();
     expect(screen.getByText("🏠 Book Airbnb")).toBeInTheDocument();
@@ -77,103 +80,14 @@ describe("SomedayMigration", () => {
     ).toBeInTheDocument();
   });
 
-  it("should log to console when an event is clicked", async () => {
-    const consoleSpy = jest.spyOn(console, "log");
-    const { eventItems } = setup();
+  it("should have proper accessibility attributes for event containers", () => {
+    setup();
 
-    // Click the first event
-    await userEvent.click(eventItems[0]);
+    const eventContainers = screen
+      .getAllByText(/🥙|🥗|🏠/)
+      .map((text) => text.closest('[role="button"]'));
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Event clicked: "🥙 Meal prep" at index 0',
-    );
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "This event would be migrated to next week or month",
-    );
-  });
-
-  it("should log to console when the second event is clicked", async () => {
-    const consoleSpy = jest.spyOn(console, "log");
-    const { eventItems } = setup();
-
-    // Click the second event
-    await userEvent.click(eventItems[1]);
-
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Event clicked: "🥗 Get groceries" at index 1',
-    );
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "This event would be migrated to next week or month",
-    );
-  });
-
-  it("should log to console when the third event is clicked", async () => {
-    const consoleSpy = jest.spyOn(console, "log");
-    const { eventItems } = setup();
-
-    // Click the third event
-    await userEvent.click(eventItems[2]);
-
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Event clicked: "🏠 Book Airbnb" at index 2',
-    );
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "This event would be migrated to next week or month",
-    );
-  });
-
-  it("should log to console when an event is activated with Enter key", async () => {
-    const consoleSpy = jest.spyOn(console, "log");
-    const { eventItems } = setup();
-
-    // Focus the first event and press Enter
-    eventItems[0].focus();
-    await userEvent.keyboard("{Enter}");
-
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Event clicked: "🥙 Meal prep" at index 0',
-    );
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "This event would be migrated to next week or month",
-    );
-  });
-
-  it("should log to console when an event is activated with Space key", async () => {
-    const consoleSpy = jest.spyOn(console, "log");
-    const { eventItems } = setup();
-
-    // Focus the second event and press Space
-    eventItems[1].focus();
-    await userEvent.keyboard(" ");
-
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Event clicked: "🥗 Get groceries" at index 1',
-    );
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "This event would be migrated to next week or month",
-    );
-  });
-
-  it("should not log to console when other keys are pressed", async () => {
-    const consoleSpy = jest.spyOn(console, "log");
-    const { eventItems } = setup();
-
-    // Focus the first event and press other keys
-    eventItems[0].focus();
-    await userEvent.keyboard("a");
-    await userEvent.keyboard("b");
-    await userEvent.keyboard("{Tab}");
-
-    // Only the initial render logs should be present, no click logs
-    expect(consoleSpy).not.toHaveBeenCalledWith(
-      expect.stringContaining("Event clicked:"),
-    );
-  });
-
-  it("should have proper accessibility attributes", () => {
-    const { eventItems } = setup();
-
-    eventItems.forEach((item) => {
+    eventContainers.forEach((item) => {
       expect(item).toBeInTheDocument();
       expect(item).toHaveAttribute("role", "button");
       expect(item).toHaveAttribute("tabIndex", "0");
@@ -192,14 +106,7 @@ describe("SomedayMigration", () => {
   it("should render the month picker in the middle column", () => {
     setup();
 
-    // Check that the month picker components are rendered with current month
-    const currentMonthYear = new Date().toLocaleDateString("en-US", {
-      month: "long",
-      year: "numeric",
-    });
-    expect(screen.getByText(currentMonthYear)).toBeInTheDocument();
-
-    // Check that all week day labels are rendered
+    // Check that all week day labels are rendered (month title was removed)
     const sLabels = screen.getAllByText("S");
     expect(sLabels).toHaveLength(2); // Sunday and Saturday
 
@@ -249,15 +156,8 @@ describe("SomedayMigration", () => {
     // Should have some calendar days
     expect(calendarDays.length).toBeGreaterThan(0);
 
-    // The current day should be visible
-    expect(screen.getByText(currentDay.toString())).toBeInTheDocument();
-
-    // Verify that the current month and year are displayed
-    const currentMonthYear = currentDate.toLocaleDateString("en-US", {
-      month: "long",
-      year: "numeric",
-    });
-    expect(screen.getByText(currentMonthYear)).toBeInTheDocument();
+    // The current day should be visible (using hard-coded September 10, 2025)
+    expect(screen.getByText("10")).toBeInTheDocument();
   });
 
   it("should highlight day numbers of the current week", () => {
@@ -282,10 +182,8 @@ describe("SomedayMigration", () => {
     // Should have calendar days
     expect(calendarDays.length).toBeGreaterThan(0);
 
-    // Verify that the current day is present
-    expect(
-      screen.getByText(currentDate.getDate().toString()),
-    ).toBeInTheDocument();
+    // Verify that the hard-coded current day (September 10) is present
+    expect(screen.getByText("10")).toBeInTheDocument();
   });
 
   it("should highlight the entire current week background", () => {
@@ -415,4 +313,231 @@ describe("SomedayMigration", () => {
 
   // Note: Highlighter dimensions are dynamic and responsive; exact
   // width/height assertions are validated in the earlier highlighter test.
+
+  describe("Week Navigation", () => {
+    it("should render This Week label and navigation arrows initially", () => {
+      const { getWeekLabel, getBackArrow, getForwardArrow } = setup();
+
+      expect(getWeekLabel()).toHaveTextContent("This Week");
+      expect(getBackArrow()).toBeInTheDocument();
+      expect(getForwardArrow()).toBeInTheDocument();
+    });
+
+    it("should have back arrow disabled and forward arrow enabled initially", () => {
+      const { getBackArrow, getForwardArrow } = setup();
+
+      expect(getBackArrow()).toBeDisabled();
+      expect(getForwardArrow()).not.toBeDisabled();
+    });
+
+    it("should show initial week events (Meal prep, Get groceries, Book Airbnb)", () => {
+      const { getEvents } = setup();
+      const events = getEvents();
+
+      expect(screen.getByText("🥙 Meal prep")).toBeInTheDocument();
+      expect(screen.getByText("🥗 Get groceries")).toBeInTheDocument();
+      expect(screen.getByText("🏠 Book Airbnb")).toBeInTheDocument();
+      expect(events).toHaveLength(3);
+    });
+
+    it("should navigate to next week when forward arrow is clicked", async () => {
+      const { getForwardArrow, getWeekLabel } = setup();
+      const consoleSpy = jest.spyOn(console, "log");
+
+      await userEvent.click(getForwardArrow());
+
+      expect(getWeekLabel()).toHaveTextContent("Next Week");
+      expect(consoleSpy).toHaveBeenCalledWith("Navigated to next week");
+    });
+
+    it("should show different events when navigated to next week", async () => {
+      const { getForwardArrow } = setup();
+
+      await userEvent.click(getForwardArrow());
+
+      expect(screen.getByText("📧 Respond to emails")).toBeInTheDocument();
+      expect(screen.getByText("🏃‍♂️ Go for a run")).toBeInTheDocument();
+      expect(screen.queryByText("🥙 Meal prep")).not.toBeInTheDocument();
+      expect(screen.queryByText("🥗 Get groceries")).not.toBeInTheDocument();
+      expect(screen.queryByText("🏠 Book Airbnb")).not.toBeInTheDocument();
+    });
+
+    it("should show only 2 events in next week", async () => {
+      const { getForwardArrow, getEvents } = setup();
+
+      await userEvent.click(getForwardArrow());
+
+      const events = getEvents();
+      expect(events).toHaveLength(2);
+    });
+
+    it("should have forward arrow disabled when on next week", async () => {
+      const { getForwardArrow, getBackArrow } = setup();
+
+      await userEvent.click(getForwardArrow());
+
+      expect(getForwardArrow()).toBeDisabled();
+      expect(getBackArrow()).not.toBeDisabled();
+    });
+
+    it("should navigate back to this week when back arrow is clicked", async () => {
+      const { getForwardArrow, getBackArrow, getWeekLabel } = setup();
+      const consoleSpy = jest.spyOn(console, "log");
+
+      // Navigate to next week first
+      await userEvent.click(getForwardArrow());
+      expect(getWeekLabel()).toHaveTextContent("Next Week");
+
+      // Navigate back
+      await userEvent.click(getBackArrow());
+
+      expect(getWeekLabel()).toHaveTextContent("This Week");
+      expect(consoleSpy).toHaveBeenCalledWith("Navigated to previous week");
+    });
+
+    it("should show original events when navigated back to this week", async () => {
+      const { getForwardArrow, getBackArrow } = setup();
+
+      // Navigate to next week and back
+      await userEvent.click(getForwardArrow());
+      await userEvent.click(getBackArrow());
+
+      expect(screen.getByText("🥙 Meal prep")).toBeInTheDocument();
+      expect(screen.getByText("🥗 Get groceries")).toBeInTheDocument();
+      expect(screen.getByText("🏠 Book Airbnb")).toBeInTheDocument();
+      expect(
+        screen.queryByText("📧 Respond to emails"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText("🏃‍♂️ Go for a run")).not.toBeInTheDocument();
+    });
+
+    it("should have proper accessibility attributes for navigation arrows", () => {
+      const { getBackArrow, getForwardArrow } = setup();
+
+      expect(getBackArrow()).toHaveAttribute(
+        "aria-label",
+        "Navigate to previous week",
+      );
+      expect(getForwardArrow()).toHaveAttribute(
+        "aria-label",
+        "Navigate to next week",
+      );
+      expect(getBackArrow()).toHaveAttribute("title", "Previous week");
+      expect(getForwardArrow()).toHaveAttribute("title", "Next week");
+    });
+  });
+
+  describe("Event Migration Arrows", () => {
+    it("should render migrate arrows for each event", () => {
+      const { getEventMigrateArrows } = setup();
+      const arrows = getEventMigrateArrows();
+
+      // 3 events × 2 arrows each = 6 arrows
+      expect(arrows).toHaveLength(6);
+    });
+
+    it("should log migration when event arrow is clicked", async () => {
+      const consoleSpy = jest.spyOn(console, "log");
+      const { getEventMigrateArrows } = setup();
+      const arrows = getEventMigrateArrows();
+
+      // Click first event's forward arrow
+      const firstEventForwardArrow = arrows.find(
+        (arrow) =>
+          arrow.getAttribute("title") === "Migrate to next week" &&
+          arrow.textContent === ">",
+      );
+
+      await userEvent.click(firstEventForwardArrow!);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Event migrated: "🥙 Meal prep" from this week to next week',
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Direction: forward, Event index: 0",
+      );
+    });
+
+    it("should log backward migration when back arrow is clicked", async () => {
+      const consoleSpy = jest.spyOn(console, "log");
+      const { getEventMigrateArrows } = setup();
+      const arrows = getEventMigrateArrows();
+
+      // Click first event's back arrow
+      const firstEventBackArrow = arrows.find(
+        (arrow) =>
+          arrow.getAttribute("title") === "Migrate to previous week" &&
+          arrow.textContent === "<",
+      );
+
+      await userEvent.click(firstEventBackArrow!);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Event migrated: "🥙 Meal prep" from this week to previous week',
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Direction: back, Event index: 0",
+      );
+    });
+
+    it("should log correct event name and week context when on next week", async () => {
+      const consoleSpy = jest.spyOn(console, "log");
+      const { getForwardArrow, getEventMigrateArrows } = setup();
+
+      // Navigate to next week
+      await userEvent.click(getForwardArrow());
+
+      const arrows = getEventMigrateArrows();
+      const firstEventForwardArrow = arrows.find(
+        (arrow) =>
+          arrow.getAttribute("title") === "Migrate to next week" &&
+          arrow.textContent === ">",
+      );
+
+      await userEvent.click(firstEventForwardArrow!);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Event migrated: "📧 Respond to emails" from next week to next week',
+      );
+    });
+
+    it("should have proper accessibility for event migrate arrows", () => {
+      const { getEventMigrateArrows } = setup();
+      const arrows = getEventMigrateArrows();
+
+      arrows.forEach((arrow) => {
+        expect(arrow).toHaveAttribute("role", "button");
+        expect(arrow).toHaveAttribute("tabIndex", "0");
+        expect(arrow).toHaveAttribute("title");
+      });
+    });
+
+    it("should support keyboard navigation for event arrows", async () => {
+      const consoleSpy = jest.spyOn(console, "log");
+      const { getEventMigrateArrows } = setup();
+      const arrows = getEventMigrateArrows();
+
+      const firstEventForwardArrow = arrows.find(
+        (arrow) =>
+          arrow.getAttribute("title") === "Migrate to next week" &&
+          arrow.textContent === ">",
+      );
+
+      // Focus and press Enter
+      firstEventForwardArrow!.focus();
+      await userEvent.keyboard("{Enter}");
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Event migrated: "🥙 Meal prep" from this week to next week',
+      );
+
+      // Clear console and test Space key
+      consoleSpy.mockClear();
+      await userEvent.keyboard(" ");
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Event migrated: "🥙 Meal prep" from this week to next week',
+      );
+    });
+  });
 });

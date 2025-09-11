@@ -34,6 +34,45 @@ export const SectionTitle = styled.h4.withConfig({
   font-size: 18px;
   color: ${({ theme }) => theme.color.common.white};
   margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+export const SectionTitleText = styled.span`
+  flex: 1;
+`;
+
+export const SectionNavigationArrows = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+export const SectionNavigationArrow = styled.button<{ disabled?: boolean }>`
+  background: none;
+  border: 1px solid ${({ theme }) => theme.color.border.primary};
+  color: ${({ theme }) => theme.color.common.white};
+  font-size: 14px;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
+  transition: all 0.2s ease;
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+
+  &:hover:not(:disabled) {
+    background: ${({ theme }) => theme.color.bg.secondary};
+    transform: scale(1.05);
+  }
+
+  &:active:not(:disabled) {
+    background: ${({ theme }) => theme.color.bg.primary};
+    transform: scale(0.95);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
 `;
 
 export const EventList = styled.div`

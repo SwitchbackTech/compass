@@ -15,7 +15,10 @@ import {
   MigrateArrow,
   MonthPicker,
   RightColumn,
+  SectionNavigationArrow,
+  SectionNavigationArrows,
   SectionTitle,
+  SectionTitleText,
   Sidebar,
   SidebarSection,
   WeekDayLabel,
@@ -33,7 +36,15 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
   onNavigationControlChange,
   isNavPrevented = false,
 }) => {
-  const { somedayEvents, handleEventClick } = useSomedayMigration();
+  const {
+    somedayEvents,
+    weekLabel,
+    canNavigateBack,
+    canNavigateForward,
+    navigateToNextWeek,
+    navigateToPreviousWeek,
+    handleEventClick,
+  } = useSomedayMigration();
   const { weekDays, weeks, isCurrentWeekVisible, currentWeekIndex } =
     useCalendarLogic();
 
@@ -108,7 +119,27 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
     <MainContent>
       <Sidebar>
         <SidebarSection>
-          <SectionTitle ref={thisWeekLabelRef}>This Week</SectionTitle>
+          <SectionTitle ref={thisWeekLabelRef}>
+            <SectionTitleText>{weekLabel}</SectionTitleText>
+            <SectionNavigationArrows>
+              <SectionNavigationArrow
+                disabled={!canNavigateBack}
+                onClick={navigateToPreviousWeek}
+                title="Previous week"
+                aria-label="Navigate to previous week"
+              >
+                {"<"}
+              </SectionNavigationArrow>
+              <SectionNavigationArrow
+                disabled={!canNavigateForward}
+                onClick={navigateToNextWeek}
+                title="Next week"
+                aria-label="Navigate to next week"
+              >
+                {">"}
+              </SectionNavigationArrow>
+            </SectionNavigationArrows>
+          </SectionTitle>
           <EventList>
             {somedayEvents.map((event, index) => (
               <EventItem
