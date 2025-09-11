@@ -13,6 +13,8 @@ export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
+  onPrevious,
+  onSkip,
 }) => {
   const navigate = useNavigate();
 
@@ -53,7 +55,17 @@ export const SignInWithGoogle: React.FC<OnboardingStepProps> = ({
   }, [login, loading]);
 
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      hideSkip
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={onNext}
+      nextBtnDisabled
+      prevBtnDisabled
+      showFooter={false}
+    >
       <GoogleButton
         disabled={loading}
         onClick={login}

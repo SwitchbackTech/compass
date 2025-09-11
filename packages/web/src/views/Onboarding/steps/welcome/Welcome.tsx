@@ -74,6 +74,8 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
+  onPrevious,
+  onSkip,
 }) => {
   const [visibleLines, setVisibleLines] = useState<number>(0);
   const [checkResults, setCheckResults] = useState<Record<string, boolean>>({});
@@ -213,7 +215,16 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
   ]);
 
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      hideSkip={true}
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={onNext}
+      prevBtnDisabled
+      showFooter={false}
+    >
       <CRTContainer>
         {textLines.map((line, index) => (
           <AnimatedText key={index} delay={0} visible={index < visibleLines}>

@@ -44,7 +44,7 @@ const OnboardingDemo_: React.FC = () => {
     loginSteps.push({
       id: "email",
       component: WaitlistCheck,
-      disableRightArrow: true,
+      handlesKeyboardEvents: true, // prevents nav via keyboard
     });
   }
 
@@ -54,7 +54,6 @@ const OnboardingDemo_: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <WelcomeScreen firstName="hello" {...props} />
       ),
-      disableLeftArrow: true,
     },
     {
       id: "welcome-note-one",
@@ -75,8 +74,6 @@ const OnboardingDemo_: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <SignInWithGoogle {...props} />
       ),
-      disableRightArrow: true,
-      preventNavigation: true,
       handlesKeyboardEvents: true,
     },
     {
@@ -116,7 +113,6 @@ const OnboardingDemo_: React.FC = () => {
     {
       id: "someday-sandbox",
       component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
-      preventNavigation: true,
     },
 
     {

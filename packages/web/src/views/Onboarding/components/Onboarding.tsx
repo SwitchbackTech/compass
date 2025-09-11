@@ -25,6 +25,7 @@ export const OnboardingContainer = styled.div<OnboardingContainerProps>`
     fullWidth ? "none" : "translate(-50%, -50%)"};
   display: flex;
   align-items: center;
+  flex-direction: column;
   justify-content: center;
   box-shadow: ${({ fullWidth }) =>
     fullWidth ? "none" : "rgb(255 255 255 / 15%) 0px 9px 20px 1px"};

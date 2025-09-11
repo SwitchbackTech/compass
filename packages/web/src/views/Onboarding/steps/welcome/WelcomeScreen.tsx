@@ -1,10 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import {
-  OnboardingCardLayout,
-  OnboardingFooter,
-  OnboardingText,
-} from "../../components";
+import { OnboardingCardLayout, OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 import { useOnboarding } from "../../components/OnboardingContext";
 
@@ -41,7 +37,15 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const { firstName } = useOnboarding();
 
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      hideSkip={true}
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={onNext}
+      prevBtnDisabled={true}
+    >
       <OnboardingText>Welcome, Captain {firstName}</OnboardingText>
       <AsciiContainer>
         <AsciiArt>
@@ -56,14 +60,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                    ^^^^      ^^^`}
         </AsciiArt>
       </AsciiContainer>
-
-      <OnboardingFooter
-        hideSkip
-        onSkip={onSkip}
-        onPrev={onPrevious}
-        onNext={onNext}
-        prevBtnDisabled={true}
-      />
     </OnboardingCardLayout>
   );
 };

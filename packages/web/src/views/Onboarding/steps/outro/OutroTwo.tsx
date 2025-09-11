@@ -11,9 +11,19 @@ export const OutroTwo: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
+  onPrevious,
+  onSkip,
 }) => {
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      hideSkip
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={onNext}
+      showFooter={false}
+    >
       <OnboardingText>
         I can see that you now understand that Compass helps you focus on what
         matters to you.{" "}

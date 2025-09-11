@@ -1,5 +1,5 @@
 import React from "react";
-import { OnboardingFooter, OnboardingText } from "../../components";
+import { OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 import { OnboardingCardLayout } from "../../components/layouts/OnboardingCardLayout";
 
@@ -11,7 +11,13 @@ export const SetSomedayEventTwo: React.FC<OnboardingStepProps> = ({
   onPrevious,
 }) => {
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      onSkip={onSkip}
+      onPrevious={onPrevious}
+      onNext={onNext}
+    >
       <OnboardingText>
         Thankfully, you can store future tasks in the sidebar.
       </OnboardingText>
@@ -21,8 +27,6 @@ export const SetSomedayEventTwo: React.FC<OnboardingStepProps> = ({
       </OnboardingText>
 
       <OnboardingText>Let's see how that looks.</OnboardingText>
-
-      <OnboardingFooter onSkip={onSkip} onPrev={onPrevious} onNext={onNext} />
     </OnboardingCardLayout>
   );
 };

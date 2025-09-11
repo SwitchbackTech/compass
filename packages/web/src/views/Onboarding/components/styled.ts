@@ -28,7 +28,10 @@ export const OnboardingContent = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: ${({ theme }) => theme.spacing.l};
+  flex: 1;
+  min-height: 0;
 `;
 
 export const OnboardingInputContainer = styled.div`

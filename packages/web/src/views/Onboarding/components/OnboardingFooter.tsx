@@ -27,17 +27,26 @@ export const OnboardingFooter = ({
       style={{
         width: "100%",
         display: "flex",
-        justifyContent: "space-between",
+        justifyContent: "center",
         alignItems: "center",
+        position: "relative",
       }}
     >
-      <div>
-        {!hideSkip && (
+      {/* Skip button positioned absolutely on the left */}
+      {!hideSkip && (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+          }}
+        >
           <OnboardingButton aria-label="Skip" onClick={onSkip}>
             Skip Intro
           </OnboardingButton>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Navigation buttons in the center */}
       <div style={{ display: "flex", gap: "16px" }}>
         <OnboardingPreviousButton
           aria-label="Previous"
