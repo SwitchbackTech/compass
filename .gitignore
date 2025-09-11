@@ -19,6 +19,7 @@ packages/**/yarn.lock
 # DIRS #
 ########
 # root
+.claude/
 .cursor/
 .idea/
 .vscode/
