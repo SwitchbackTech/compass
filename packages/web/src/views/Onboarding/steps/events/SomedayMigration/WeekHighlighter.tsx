@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import rough from "roughjs";
 
 interface WeekHighlighterProps {
   x: number;
@@ -36,30 +35,20 @@ export const WeekHighlighter: React.FC<WeekHighlighterProps> = ({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Create rough.js instance
-    const rc = rough.canvas(canvas);
-
-    // Draw a hand-drawn ellipse around the week
+    // Draw a simple ellipse around the week
     const startX = 5;
     const startY = 5;
+    const centerX = startX + width / 2;
+    const centerY = startY + height / 2;
+    const radiusX = (width - 10) / 2;
+    const radiusY = (height - 10) / 2;
 
-    // Draw ellipse around the current week
-    const ellipse = rc.ellipse(
-      startX + width / 2, // center x
-      startY + height / 2, // center y
-      width - 10, // width with padding
-      height - 10, // height with padding
-      {
-        stroke: color,
-        strokeWidth,
-        fill: "none",
-        roughness: 1.5,
-        bowing: 2,
-      },
-    );
-
-    // Draw the ellipse
-    rc.draw(ellipse);
+    // Draw simple ellipse
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = strokeWidth;
+    ctx.stroke();
 
     // Draw text if provided
     if (text) {

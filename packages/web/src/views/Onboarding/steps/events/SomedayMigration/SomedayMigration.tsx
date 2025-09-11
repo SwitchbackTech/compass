@@ -10,9 +10,7 @@ import {
   EventList,
   MainContent,
   MiddleColumn,
-  MonthHeader,
   MonthPicker,
-  MonthTitle,
   RightColumn,
   SectionTitle,
   Sidebar,
@@ -33,13 +31,8 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
   isNavPrevented = false,
 }) => {
   const { somedayEvents, handleEventClick } = useSomedayMigration();
-  const {
-    monthTitle,
-    weekDays,
-    weeks,
-    isCurrentWeekVisible,
-    currentWeekIndex,
-  } = useCalendarLogic();
+  const { weekDays, weeks, isCurrentWeekVisible, currentWeekIndex } =
+    useCalendarLogic();
 
   const thisWeekLabelRef = useRef<HTMLDivElement>(null);
   const calendarGridRef = useRef<HTMLDivElement>(null);
@@ -136,9 +129,6 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
       </Sidebar>
       <MiddleColumn>
         <MonthPicker>
-          <MonthHeader>
-            <MonthTitle>{monthTitle}</MonthTitle>
-          </MonthHeader>
           <WeekDays isCurrentWeek={isCurrentWeekVisible}>
             {weekDays.map((day, index) => (
               <WeekDayLabel key={index} isCurrentWeek={isCurrentWeekVisible}>

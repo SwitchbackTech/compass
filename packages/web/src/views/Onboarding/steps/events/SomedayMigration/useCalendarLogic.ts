@@ -27,11 +27,11 @@ export interface CalendarData {
 
 export const useCalendarLogic = (): CalendarData => {
   return useMemo(() => {
-    const currentDate = dayjs();
+    const currentDate = dayjs("2025-09-10");
     const currentMonth = currentDate.month();
 
     // Get the first day of the current month and calculate the starting Sunday
-    const firstDayOfMonth = dayjs().startOf("month");
+    const firstDayOfMonth = currentDate.startOf("month");
     const firstSunday = firstDayOfMonth.subtract(firstDayOfMonth.day(), "day");
 
     // Calculate the current week boundaries (Sunday to Saturday)
