@@ -51,45 +51,62 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
   });
 
   useEffect(() => {
-    // Add a small delay to ensure DOM elements are fully rendered
-    const timer = setTimeout(() => {
-      if (calendarGridRef.current && currentWeekIndex !== -1) {
-        const calendarGridRect =
-          calendarGridRef.current.getBoundingClientRect();
+    const computeEllipse = () => {
+      if (!calendarGridRef.current || currentWeekIndex === -1) return;
 
-        // Get the container element position to calculate relative coordinates
-        const container = calendarGridRef.current.closest(
-          '[class*="MainContent"]',
-        ) as HTMLElement;
-        const containerRect = container?.getBoundingClientRect();
+      const calendarGridRect = calendarGridRef.current.getBoundingClientRect();
 
-        if (containerRect) {
-          // Calculate ellipse position to circle the entire current week row
-          const currentWeekRowHeight = calendarGridRect.height / 5; // 5 weeks in calendar
+      // Get the container element position to calculate relative coordinates
+      const container = calendarGridRef.current.closest(
+        '[class*="MainContent"]',
+      ) as HTMLElement;
+      const containerRect = container?.getBoundingClientRect();
+      if (!containerRect) return;
 
-          // Position ellipse to encompass the entire current week row
-          const ellipseX = calendarGridRect.left - containerRect.left - 5; // Start slightly before the calendar
-          const ellipseY =
-            calendarGridRect.top -
-            containerRect.top +
-            currentWeekIndex * currentWeekRowHeight -
-            5; // Center on the week row
-          const ellipseWidth = calendarGridRect.width + 10; // Full width of calendar plus padding
-          const ellipseHeight = currentWeekRowHeight + 10; // Height of one week row plus padding
+      // Calculate geometry
+      const totalWeeks = 5; // calendar uses 5 rows
+      const currentWeekRowHeight = calendarGridRect.height / totalWeeks;
+      const colWidth = calendarGridRect.width / 7;
 
-          const newPosition = {
-            x: ellipseX,
-            y: ellipseY,
-            width: ellipseWidth,
-            height: ellipseHeight,
-          };
-          setEllipsePosition(newPosition);
-        }
-      }
-    }, 100); // 100ms delay
+      // Narrow ellipse to only the current month's day columns within current week
+      const thisWeek = weeks[currentWeekIndex];
+      const indicesInMonth = thisWeek.days
+        .map((d, idx) => ({ idx, inMonth: d.isCurrentMonth }))
+        .filter((x) => x.inMonth)
+        .map((x) => x.idx);
 
-    return () => clearTimeout(timer);
-  }, [currentWeekIndex, isCurrentWeekVisible]);
+      const firstIdx = indicesInMonth.length ? Math.min(...indicesInMonth) : 0;
+      const lastIdx = indicesInMonth.length ? Math.max(...indicesInMonth) : 6;
+
+      const ellipseX =
+        calendarGridRect.left - containerRect.left + firstIdx * colWidth - 5;
+      const ellipseY =
+        calendarGridRect.top -
+        containerRect.top +
+        currentWeekIndex * currentWeekRowHeight -
+        5;
+      const ellipseWidth = (lastIdx - firstIdx + 1) * colWidth + 10;
+      const ellipseHeight = currentWeekRowHeight + 10;
+
+      setEllipsePosition({
+        x: ellipseX,
+        y: ellipseY,
+        width: ellipseWidth,
+        height: ellipseHeight,
+      });
+    };
+
+    // Slight delay to ensure layout is ready
+    const timer = setTimeout(computeEllipse, 100);
+
+    // Recompute on resize for responsive behavior
+    window.addEventListener("resize", computeEllipse);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", computeEllipse);
+    };
+  }, [currentWeekIndex, isCurrentWeekVisible, weeks]);
 
   const content = (
     <MainContent>

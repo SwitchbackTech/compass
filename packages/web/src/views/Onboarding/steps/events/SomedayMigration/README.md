@@ -1,14 +1,15 @@
 # SomedayMigration Component
 
-An interactive sandbox component for demonstrating someday event migration during onboarding.
+An interactive onboarding step demonstrating how to migrate "someday" events, with a responsive calendar and a hand‑drawn ellipse highlighting the current week.
 
 ## Features
 
-- **3-Column Layout**: Left sidebar with events, middle column with rectangle, right column with instructions
+- 3‑column layout: sidebar (events), middle (calendar), right (instructions)
 - Displays 3 sample someday events in a sidebar
 - Clickable events that log to console when clicked
 - Keyboard navigation support (Enter and Space keys)
 - Integrated with OnboardingTwoRowLayout
+- Responsive, hand‑drawn ellipse highlighting the current week’s day labels (e.g., 7–13 for 9/11)
 - Fully accessible with proper ARIA attributes
 
 ## Usage
@@ -27,10 +28,10 @@ import { SomedayMigration } from "./SomedayMigration";
 
 ## Layout Structure
 
-The component uses a 3-column layout:
+The component uses a 3‑column layout:
 
 - **Left Column**: Sidebar with 3 sample someday events
-- **Middle Column**: Simple rectangle placeholder (200x120px)
+- **Middle Column**: Compact month calendar with current week highlighted by a hand‑drawn ellipse
 - **Right Column**: Instructional text and guidance
 
 ## Events
