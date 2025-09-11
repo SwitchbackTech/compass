@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { OnboardingText } from "../../../components";
 import { OnboardingStepProps } from "../../../components/Onboarding";
 import { OnboardingTwoRowLayout } from "../../../components/layouts/OnboardingTwoRowLayout";
-import { HandDrawnArrow } from "./HandDrawnArrow";
+import { WeekHighlighter } from "./WeekHighlighter";
 import {
   CalendarDay,
   CalendarGrid,
@@ -43,43 +43,47 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
 
   const thisWeekLabelRef = useRef<HTMLDivElement>(null);
   const calendarGridRef = useRef<HTMLDivElement>(null);
-  const [arrowPosition, setArrowPosition] = useState({ x: 280, y: 60 });
+  const [ellipsePosition, setEllipsePosition] = useState({
+    x: 280,
+    y: 60,
+    width: 280,
+    height: 40,
+  });
 
   useEffect(() => {
     // Add a small delay to ensure DOM elements are fully rendered
     const timer = setTimeout(() => {
-      if (
-        thisWeekLabelRef.current &&
-        calendarGridRef.current &&
-        currentWeekIndex !== -1
-      ) {
-        // Get the "This Week" label position
-        const thisWeekRect = thisWeekLabelRef.current.getBoundingClientRect();
+      if (calendarGridRef.current && currentWeekIndex !== -1) {
         const calendarGridRect =
           calendarGridRef.current.getBoundingClientRect();
 
         // Get the container element position to calculate relative coordinates
-        const container = thisWeekLabelRef.current.closest(
+        const container = calendarGridRef.current.closest(
           '[class*="MainContent"]',
         ) as HTMLElement;
         const containerRect = container?.getBoundingClientRect();
 
         if (containerRect) {
-          // Calculate relative positions within the container
-          const startX = thisWeekRect.right - containerRect.left + 10; // Start from the end of "This Week" label
-          const startY =
-            thisWeekRect.top + thisWeekRect.height / 2 - containerRect.top; // Middle of the label
-
-          // Calculate the target position (current week row in calendar)
+          // Calculate ellipse position to circle the entire current week row
           const currentWeekRowHeight = calendarGridRect.height / 5; // 5 weeks in calendar
-          const currentWeekY =
+
+          // Position ellipse to encompass the entire current week row
+          const ellipseX = calendarGridRect.left - containerRect.left - 5; // Start slightly before the calendar
+          const ellipseY =
             calendarGridRect.top -
             containerRect.top +
-            currentWeekIndex * currentWeekRowHeight +
-            currentWeekRowHeight / 2;
+            currentWeekIndex * currentWeekRowHeight -
+            5; // Center on the week row
+          const ellipseWidth = calendarGridRect.width + 10; // Full width of calendar plus padding
+          const ellipseHeight = currentWeekRowHeight + 10; // Height of one week row plus padding
 
-          const newPosition = { x: startX, y: startY };
-          setArrowPosition(newPosition);
+          const newPosition = {
+            x: ellipseX,
+            y: ellipseY,
+            width: ellipseWidth,
+            height: ellipseHeight,
+          };
+          setEllipsePosition(newPosition);
         }
       }
     }, 100); // 100ms delay
@@ -155,14 +159,15 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
         </OnboardingText>
       </RightColumn>
       {isCurrentWeekVisible && (
-        <HandDrawnArrow
-          x={arrowPosition.x}
-          y={arrowPosition.y}
-          width={80}
-          height={40}
+        <WeekHighlighter
+          x={ellipsePosition.x}
+          y={ellipsePosition.y}
+          width={ellipsePosition.width}
+          height={ellipsePosition.height}
           color="#ff6b6b"
           strokeWidth={3}
-          onClick={() => console.log("Hand-drawn arrow clicked!")}
+          text="We're here"
+          onClick={() => console.log("Week highlighter clicked!")}
         />
       )}
     </MainContent>

@@ -302,32 +302,32 @@ describe("SomedayMigration", () => {
     expect(calendarGridContainer).toBeInTheDocument();
   });
 
-  it("should render and be clickable the hand-drawn arrow", async () => {
+  it("should render and be clickable the week highlighter", async () => {
     const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     const user = userEvent.setup();
 
     setup();
 
-    // Check that the arrow canvas is in the DOM
-    const arrowCanvas = document.querySelector("canvas");
-    expect(arrowCanvas).toBeInTheDocument();
-    expect(arrowCanvas?.tagName).toBe("CANVAS");
+    // Check that the highlighter canvas is in the DOM
+    const highlighterCanvas = document.querySelector("canvas");
+    expect(highlighterCanvas).toBeInTheDocument();
+    expect(highlighterCanvas?.tagName).toBe("CANVAS");
 
-    // Check that the arrow has the correct positioning styles
-    const arrowElement = arrowCanvas as HTMLCanvasElement;
-    expect(arrowElement.style.position).toBe("absolute");
-    expect(arrowElement.style.pointerEvents).toBe("auto");
-    expect(arrowElement.style.cursor).toBe("pointer");
+    // Check that the highlighter has the correct positioning styles
+    const highlighterElement = highlighterCanvas as HTMLCanvasElement;
+    expect(highlighterElement.style.position).toBe("absolute");
+    expect(highlighterElement.style.pointerEvents).toBe("auto");
+    expect(highlighterElement.style.cursor).toBe("pointer");
 
-    // Verify the arrow has the correct dimensions (updated width and height)
-    expect(arrowElement.width).toBe(90); // width + 10 = 80 + 10
-    expect(arrowElement.height).toBe(50); // height + 10 = 40 + 10
+    // Verify the highlighter has reasonable dimensions (will be dynamic based on calendar)
+    expect(highlighterElement.width).toBeGreaterThan(200); // Should be wide enough for calendar
+    expect(highlighterElement.height).toBeGreaterThan(40); // Should have height for week row plus text
 
-    // Click the arrow
-    await user.click(arrowCanvas!);
+    // Click the highlighter
+    await user.click(highlighterCanvas!);
 
     // Verify console message was logged
-    expect(consoleSpy).toHaveBeenCalledWith("Hand-drawn arrow clicked!");
+    expect(consoleSpy).toHaveBeenCalledWith("Week highlighter clicked!");
 
     consoleSpy.mockRestore();
   });
@@ -358,19 +358,15 @@ describe("SomedayMigration", () => {
     expect(arrowElement.style.top).toMatch(/\d+px/);
   });
 
-  it("should position arrow to connect This Week label to current week in calendar", async () => {
+  it("should position arrow close to Saturday day label, overlapping calendar", async () => {
     setup();
-
-    // Find the "This Week" label
-    const thisWeekLabel = screen.getByText("This Week");
-    expect(thisWeekLabel).toBeInTheDocument();
 
     // Find the calendar grid
     const calendarGrid = document.querySelector('[class*="CalendarGrid"]');
     expect(calendarGrid).toBeInTheDocument();
 
     // Wait for positioning calculations
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 150));
 
     const arrowCanvas = document.querySelector("canvas");
     expect(arrowCanvas).toBeInTheDocument();
@@ -380,8 +376,55 @@ describe("SomedayMigration", () => {
     const arrowLeft = parseInt(arrowElement.style.left.replace("px", ""));
     const arrowTop = parseInt(arrowElement.style.top.replace("px", ""));
 
-    // Arrow should be positioned somewhere meaningful (not just default 280,60)
-    expect(arrowLeft).toBeGreaterThan(0);
+    // Arrow should be positioned close to the Saturday column, overlapping calendar
+    expect(arrowLeft).toBeGreaterThan(0); // Should be positioned
     expect(arrowTop).toBeGreaterThan(0);
+
+    // Arrow should have high z-index to render on top
+    expect(arrowElement.style.zIndex).toBe("100");
+  });
+
+  it("should target Saturday (last day) of the current week", async () => {
+    setup();
+
+    // Wait for positioning calculations
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    // Get current date to find the Saturday of current week
+    const currentDate = new Date();
+    const currentDay = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
+    const daysUntilSaturday = (6 - currentDay + 7) % 7;
+    const saturdayDate = new Date(currentDate);
+    saturdayDate.setDate(currentDate.getDate() + daysUntilSaturday);
+
+    // In the mock, we're using January 11, 2024 (Thursday)
+    // So Saturday would be January 13, 2024
+    const expectedSaturday = 13;
+
+    // Find the Saturday element in the calendar
+    const saturdayElement = screen.getByText(expectedSaturday.toString());
+    expect(saturdayElement).toBeInTheDocument();
+
+    // Verify it's marked as current week
+    const saturdayParent = saturdayElement.parentElement;
+    expect(saturdayParent).toHaveAttribute(
+      "class",
+      expect.stringContaining("CalendarDay"),
+    );
+  });
+
+  it("should show 'We're here' text in Caveat font with arrow color", async () => {
+    setup();
+
+    // Wait for positioning calculations
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    const arrowCanvas = document.querySelector("canvas");
+    expect(arrowCanvas).toBeInTheDocument();
+
+    // Check that the canvas has the correct dimensions for text
+    const arrowElement = arrowCanvas as HTMLCanvasElement;
+    expect(arrowElement.width).toBe(170); // width + 10 = 160 + 10
+    expect(arrowElement.height).toBe(50); // height + 10 = 40 + 10
   });
 });

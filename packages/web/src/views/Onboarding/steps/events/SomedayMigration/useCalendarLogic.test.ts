@@ -149,4 +149,37 @@ describe("useCalendarLogic", () => {
     expect(currentWeek.isCurrentWeek).toBe(true);
     expect(currentWeek.days.some((day) => day.isToday)).toBe(true);
   });
+
+  it("should have Saturday (day 13) as the last day of the current week", () => {
+    const { result } = renderHook(() => useCalendarLogic());
+
+    // Find the current week
+    const currentWeek = result.current.weeks[result.current.currentWeekIndex];
+    expect(currentWeek.isCurrentWeek).toBe(true);
+
+    // Saturday should be the last day (index 6) of the current week
+    const saturdayDay = currentWeek.days[6]; // Saturday is index 6
+    expect(saturdayDay.isCurrentWeek).toBe(true);
+    expect(saturdayDay.day).toBe(13); // January 13, 2024 is the Saturday of the week containing January 11
+    expect(saturdayDay.isCurrentMonth).toBe(true);
+  });
+
+  it("should provide correct week structure for arrow targeting", () => {
+    const { result } = renderHook(() => useCalendarLogic());
+
+    // Verify that each week has 7 days (Sunday to Saturday)
+    result.current.weeks.forEach((week) => {
+      expect(week.days).toHaveLength(7);
+      // First day should be Sunday (index 0), last should be Saturday (index 6)
+    });
+
+    // The current week should be identifiable
+    const currentWeek = result.current.weeks[result.current.currentWeekIndex];
+    expect(currentWeek).toBeDefined();
+    expect(currentWeek.isCurrentWeek).toBe(true);
+
+    // Saturday of current week should be at index 6
+    const saturday = currentWeek.days[6];
+    expect(saturday.isCurrentWeek).toBe(true);
+  });
 });
