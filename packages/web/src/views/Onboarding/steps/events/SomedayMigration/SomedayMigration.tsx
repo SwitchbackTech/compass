@@ -351,7 +351,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
               top: `${ellipsePosition.y + calendarGridRef.current.getBoundingClientRect().height / 5 + ellipsePosition.height / 2 - 10}px`,
               fontFamily: "Caveat, cursive",
               fontSize: "18px",
-              color: "#60a5fa", // Complementary blue color
+              color: "#60e3fa", // Match rectangle color
               fontWeight: "normal",
               zIndex: 101,
               pointerEvents: "none",
