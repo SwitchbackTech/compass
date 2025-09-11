@@ -18,8 +18,8 @@ const colors = [
 export const useSomedayMigration = () => {
   // State for the 3 sample someday events
   const [somedayEvents] = useState<SomedayEvent[]>([
-    { text: "💸 File taxes", color: colorByPriority.work },
-    { text: "🥗 Get groceries", color: colorByPriority.self },
+    { text: "🥙 Meal prep", color: colorByPriority.work },
+    { text: "🥬 Get groceries", color: colorByPriority.self },
     { text: "🏠 Book Airbnb", color: colorByPriority.relationships },
   ]);
 

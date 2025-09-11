@@ -3,16 +3,23 @@ import { OnboardingText } from "../../../components";
 import { OnboardingStepProps } from "../../../components/Onboarding";
 import { OnboardingTwoRowLayout } from "../../../components/layouts/OnboardingTwoRowLayout";
 import {
+  CalendarDay,
+  CalendarGrid,
   EventItem,
   EventList,
   MainContent,
   MiddleColumn,
-  Rectangle,
+  MonthHeader,
+  MonthPicker,
+  MonthTitle,
   RightColumn,
   SectionTitle,
   Sidebar,
   SidebarSection,
+  WeekDayLabel,
+  WeekDays,
 } from "./styled";
+import { useCalendarLogic } from "./useCalendarLogic";
 import { useSomedayMigration } from "./useSomedayMigration";
 
 export const SomedayMigration: React.FC<OnboardingStepProps> = ({
@@ -25,12 +32,14 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
   isNavPrevented = false,
 }) => {
   const { somedayEvents, handleEventClick } = useSomedayMigration();
+  const { monthTitle, weekDays, weeks, isCurrentWeekVisible } =
+    useCalendarLogic();
 
   const content = (
     <MainContent>
       <Sidebar>
         <SidebarSection>
-          <SectionTitle>Someday Events</SectionTitle>
+          <SectionTitle>This Week</SectionTitle>
           <EventList>
             {somedayEvents.map((event, index) => (
               <EventItem
@@ -53,7 +62,31 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
         </SidebarSection>
       </Sidebar>
       <MiddleColumn>
-        <Rectangle />
+        <MonthPicker>
+          <MonthHeader>
+            <MonthTitle>{monthTitle}</MonthTitle>
+          </MonthHeader>
+          <WeekDays isCurrentWeek={isCurrentWeekVisible}>
+            {weekDays.map((day, index) => (
+              <WeekDayLabel key={index} isCurrentWeek={isCurrentWeekVisible}>
+                {day}
+              </WeekDayLabel>
+            ))}
+          </WeekDays>
+          <CalendarGrid isCurrentWeek={isCurrentWeekVisible}>
+            {weeks.map((week, weekIndex) =>
+              week.days.map((day, dayIndex) => (
+                <CalendarDay
+                  key={`${weekIndex}-${dayIndex}`}
+                  isCurrentWeek={day.isCurrentWeek}
+                  isToday={day.isToday}
+                >
+                  {day.isCurrentMonth ? day.day : ""}
+                </CalendarDay>
+              )),
+            )}
+          </CalendarGrid>
+        </MonthPicker>
       </MiddleColumn>
       <RightColumn>
         <OnboardingText>

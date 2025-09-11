@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { colorByPriority } from "@web/common/styles/theme.util";
 
 export const MainContent = styled.div`
   flex: 1;
@@ -26,7 +25,7 @@ export const SidebarSection = styled.div`
   gap: 12px;
 `;
 
-export const SectionTitle = styled.h3`
+export const SectionTitle = styled.h4`
   font-family: "Rubik", sans-serif;
   font-size: 18px;
   color: ${({ theme }) => theme.color.common.white};
@@ -74,12 +73,90 @@ export const MiddleColumn = styled.div`
   padding: 20px;
 `;
 
-export const Rectangle = styled.div`
-  width: 200px;
-  height: 120px;
-  background-color: #2a2d35;
+export const MonthPicker = styled.div`
+  width: 280px;
+  height: 200px;
+  background-color: #2a2d3a;
   border: 2px solid #444;
   border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+`;
+
+export const MonthHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+export const MonthTitle = styled.h3`
+  font-family: "Rubik", sans-serif;
+  font-size: 16px;
+  color: ${({ theme }) => theme.color.common.white};
+  margin: 0;
+`;
+
+export const WeekDays = styled.div<{ isCurrentWeek: boolean }>`
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+  background-color: ${({ isCurrentWeek }) =>
+    isCurrentWeek ? "#3a3d44" : "transparent"};
+  border-radius: 8px;
+  padding: 2px;
+`;
+
+export const WeekDayLabel = styled.div<{ isCurrentWeek: boolean }>`
+  font-family: "Rubik", sans-serif;
+  font-size: 12px;
+  color: #888;
+  font-weight: 400;
+  text-align: center;
+  padding: 4px;
+`;
+
+export const CalendarGrid = styled.div<{ isCurrentWeek: boolean }>`
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  flex: 1;
+  background-color: ${({ isCurrentWeek }) =>
+    isCurrentWeek ? "#3a3d44" : "transparent"};
+  border-radius: 8px;
+  padding: 8px;
+`;
+
+export const CalendarDay = styled.div<{
+  isCurrentWeek: boolean;
+}>`
+  font-family: "Rubik", sans-serif;
+  font-size: 12px;
+  color: ${({ isCurrentWeek, theme }) => {
+    if (isCurrentWeek) return theme.color.common.white;
+    return "#888";
+  }};
+  background-color: ${({ isCurrentWeek }) => {
+    if (isCurrentWeek) return "#3a3d44"; // Give current week days their own background
+    return "transparent";
+  }};
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: ${({ isCurrentWeek }) => (isCurrentWeek ? "600" : "400")};
+
+  &:hover {
+    background-color: ${({ isCurrentWeek }) => {
+      if (isCurrentWeek) return "#4a4d54";
+      return "#2a2d35";
+    }};
+  }
 `;
 
 export const RightColumn = styled.div`
