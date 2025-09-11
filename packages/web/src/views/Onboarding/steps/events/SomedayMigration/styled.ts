@@ -253,3 +253,29 @@ export const RightColumn = styled.div`
   gap: 16px;
   padding: 20px;
 `;
+
+export const CheckboxContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+`;
+
+export const Checkbox = styled.input`
+  width: 16px;
+  height: 16px;
+  cursor: default;
+  accent-color: ${({ theme }) => theme.color.text.accent};
+  pointer-events: none;
+
+  &:not(:checked) {
+    accent-color: ${({ theme }) => theme.color.fg.primary};
+  }
+`;
+
+export const CheckboxLabel = styled.label`
+  font-family: "VT323", monospace;
+  font-size: 24px;
+  color: ${({ theme }) => theme.color.common.white};
+  cursor: pointer;
+`;

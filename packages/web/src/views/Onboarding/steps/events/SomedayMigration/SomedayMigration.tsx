@@ -6,6 +6,9 @@ import { WeekHighlighter } from "./WeekHighlighter";
 import {
   CalendarDay,
   CalendarGrid,
+  Checkbox,
+  CheckboxContainer,
+  CheckboxLabel,
   EventArrows,
   EventItem,
   EventList,
@@ -45,7 +48,14 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
     navigateToNextWeek,
     navigateToPreviousWeek,
     handleEventClick,
-  } = useSomedayMigration();
+  } = useSomedayMigration(
+    () => setHasMigratedEvent(true),
+    (eventName: string) => {
+      setMigratedEventName(eventName);
+      setShowMigratedEventEllipse(true);
+    },
+    () => setHasViewedNextWeek(true),
+  );
   const {
     weekDays,
     weeks,
@@ -61,6 +71,13 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
     width: 280,
     height: 40,
   });
+  const [hasMigratedEvent, setHasMigratedEvent] = useState(false);
+  const [hasViewedNextWeek, setHasViewedNextWeek] = useState(false);
+  const [migratedEventName, setMigratedEventName] = useState<string | null>(
+    null,
+  );
+  const [showMigratedEventEllipse, setShowMigratedEventEllipse] =
+    useState(false);
 
   useEffect(() => {
     const computeEllipse = () => {
@@ -247,15 +264,28 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
         </MonthPicker>
       </MiddleColumn>
       <RightColumn>
-        <OnboardingText>
-          Click on any event to migrate it to next week or month
-        </OnboardingText>
-        <OnboardingText>
-          This is how you'll manage your someday events in the real app
-        </OnboardingText>
-        <OnboardingText>
-          Try clicking on the events in the sidebar to see them in action
-        </OnboardingText>
+        <CheckboxContainer>
+          <Checkbox
+            type="checkbox"
+            id="migrate-event"
+            checked={hasMigratedEvent}
+            readOnly
+          />
+          <CheckboxLabel htmlFor="migrate-event">
+            Migrate an event to next week
+          </CheckboxLabel>
+        </CheckboxContainer>
+        <CheckboxContainer>
+          <Checkbox
+            type="checkbox"
+            id="view-next-week"
+            checked={hasViewedNextWeek}
+            readOnly
+          />
+          <CheckboxLabel htmlFor="view-next-week">
+            Go to next week and view the event
+          </CheckboxLabel>
+        </CheckboxContainer>
       </RightColumn>
       {isCurrentWeekVisible && (
         <WeekHighlighter
@@ -265,10 +295,34 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
           height={ellipsePosition.height}
           color="#ff6b6b"
           strokeWidth={3}
-          text="We're here"
+          text={
+            showMigratedEventEllipse && migratedEventName
+              ? `you moved ${migratedEventName} here`
+              : "pretend we're here"
+          }
           onClick={() => console.log("Week highlighter clicked!")}
         />
       )}
+      {showMigratedEventEllipse &&
+        migratedEventName &&
+        calendarGridRef.current && (
+          <div
+            style={{
+              position: "absolute",
+              left: `${ellipsePosition.x + ellipsePosition.width + 20}px`,
+              top: `${ellipsePosition.y + calendarGridRef.current.getBoundingClientRect().height / 5 + ellipsePosition.height / 2 - 10}px`,
+              fontFamily: "Caveat, cursive",
+              fontSize: "18px",
+              color: "#60a5fa", // Complementary blue color
+              fontWeight: "normal",
+              zIndex: 101,
+              pointerEvents: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {migratedEventName} is here now
+          </div>
+        )}
     </MainContent>
   );
 
