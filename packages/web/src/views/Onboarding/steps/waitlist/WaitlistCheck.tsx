@@ -24,7 +24,14 @@ const SubmitButton = styled(OnboardingButton)`
 
 const NotInvited = () => {
   return (
-    <OnboardingCardLayout currentStep={1} totalSteps={1}>
+    <OnboardingCardLayout
+      currentStep={1}
+      totalSteps={1}
+      onNext={() => {}}
+      onPrevious={() => {}}
+      onSkip={() => {}}
+      showFooter={false}
+    >
       <OnboardingText>You&apos;re not on the crew list yet.</OnboardingText>
       <OnboardingText>
         Sign up to get notified when a spot opens up.
@@ -42,7 +49,14 @@ const NotInvited = () => {
 
 const OnWaitlistButNotInvited = () => {
   return (
-    <OnboardingCardLayout currentStep={1} totalSteps={1}>
+    <OnboardingCardLayout
+      currentStep={1}
+      totalSteps={1}
+      onNext={() => {}}
+      onPrevious={() => {}}
+      onSkip={() => {}}
+      showFooter={false}
+    >
       <OnboardingText>
         You&apos;re on the crew list but not invited yet.
       </OnboardingText>
@@ -107,7 +121,14 @@ export const WaitlistCheck: React.FC<OnboardingStepProps> = ({
   }
 
   return (
-    <OnboardingCardLayout currentStep={currentStep} totalSteps={totalSteps}>
+    <OnboardingCardLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      onNext={onNext}
+      onPrevious={() => {}}
+      onSkip={() => {}}
+      showFooter={false}
+    >
       <Title>The gangway lowers only for the chosen.</Title>
       <OnboardingForm onSubmit={handleSubmit}>
         <OnboardingInputSection>

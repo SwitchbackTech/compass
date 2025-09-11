@@ -44,7 +44,7 @@ const OnboardingDemo_: React.FC = () => {
     loginSteps.push({
       id: "email",
       component: WaitlistCheck,
-      disableRightArrow: true,
+      handlesKeyboardEvents: true, // prevents nav via keyboard
     });
   }
 
@@ -113,7 +113,6 @@ const OnboardingDemo_: React.FC = () => {
     {
       id: "someday-sandbox",
       component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
-      preventNavigation: true,
     },
 
     {
