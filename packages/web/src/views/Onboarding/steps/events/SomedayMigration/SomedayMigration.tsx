@@ -53,8 +53,12 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
     (eventName: string) => {
       setMigratedEventName(eventName);
       setShowMigratedEventEllipse(true);
+      setShouldHighlightNavigation(true);
     },
-    () => setHasViewedNextWeek(true),
+    () => {
+      setHasViewedNextWeek(true);
+      setShouldHighlightNavigation(false); // Remove highlight once they navigate
+    },
   );
   const {
     weekDays,
@@ -77,6 +81,8 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
     null,
   );
   const [showMigratedEventEllipse, setShowMigratedEventEllipse] =
+    useState(false);
+  const [shouldHighlightNavigation, setShouldHighlightNavigation] =
     useState(false);
 
   useEffect(() => {
@@ -161,6 +167,9 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
                 onClick={navigateToNextWeek}
                 title="Next week"
                 aria-label="Navigate to next week"
+                $shouldHighlight={
+                  shouldHighlightNavigation && currentWeekIndex === 0
+                }
               >
                 {">"}
               </SectionNavigationArrow>

@@ -1,4 +1,20 @@
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
+
+// Keyframes for pulsing animation similar to onboarding buttons
+const pulse = keyframes`
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+`;
 
 export const MainContent = styled.div`
   flex: 1;
@@ -48,7 +64,10 @@ export const SectionNavigationArrows = styled.div`
   gap: 8px;
 `;
 
-export const SectionNavigationArrow = styled.button<{ disabled?: boolean }>`
+export const SectionNavigationArrow = styled.button<{
+  disabled?: boolean;
+  $shouldHighlight?: boolean;
+}>`
   background: none;
   border: 1px solid ${({ theme }) => theme.color.border.primary};
   color: ${({ theme }) => theme.color.common.white};
@@ -60,8 +79,19 @@ export const SectionNavigationArrow = styled.button<{ disabled?: boolean }>`
   transition: all 0.2s ease;
   opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
 
+  ${({ $shouldHighlight, theme }) =>
+    $shouldHighlight &&
+    css`
+      background: ${theme.color.border.primary}30;
+      border-color: ${theme.color.text.accent};
+      color: ${theme.color.common.white};
+      animation: ${pulse} 3s ease-in-out infinite;
+      box-shadow: 0 0 4px ${theme.color.text.accent}20;
+    `}
+
   &:hover:not(:disabled) {
-    background: ${({ theme }) => theme.color.bg.secondary};
+    background: ${({ theme, $shouldHighlight }) =>
+      $shouldHighlight ? theme.color.text.accent : theme.color.bg.secondary};
     transform: scale(1.05);
   }
 
