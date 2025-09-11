@@ -25,7 +25,7 @@ import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
 
-const OnboardingDemo_: React.FC = () => {
+const _OnboardingFlow: React.FC = () => {
   const navigate = useNavigate();
   const { setHideSteps } = useOnboarding();
 
@@ -157,5 +157,5 @@ const OnboardingDemo_: React.FC = () => {
   );
 };
 
-export const OnboardingDemo = withProvider(OnboardingDemo_);
-export default OnboardingDemo;
+export const OnboardingFlow = withProvider(_OnboardingFlow);
+export default OnboardingFlow;
