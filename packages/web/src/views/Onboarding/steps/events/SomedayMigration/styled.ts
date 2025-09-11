@@ -53,6 +53,9 @@ export const EventItem = styled.div<{ color: string }>`
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
   &:hover {
     transform: translateY(-1px);
@@ -66,6 +69,35 @@ export const EventItem = styled.div<{ color: string }>`
   &:focus {
     outline: 2px solid ${({ theme }) => theme.color.text.accent};
     outline-offset: 2px;
+  }
+`;
+
+export const EventText = styled.span`
+  flex: 1;
+`;
+
+export const EventArrows = styled.div`
+  display: flex;
+  gap: 4px;
+`;
+
+export const MigrateArrow = styled.span`
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  user-select: none;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.2);
+    transform: scale(0.95);
   }
 `;
 

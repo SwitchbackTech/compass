@@ -34,14 +34,6 @@ The component uses a 3‑column layout:
 - **Middle Column**: Compact month calendar with current week highlighted by a hand‑drawn ellipse
 - **Right Column**: Instructional text and guidance
 
-## Events
-
-The component displays 3 sample events:
-
-- 💸 File taxes (Work priority)
-- 🥗 Get groceries (Self priority)
-- 🏠 Book Airbnb (Relationships priority)
-
 ## Interaction
 
 - Click any event to log it to the console

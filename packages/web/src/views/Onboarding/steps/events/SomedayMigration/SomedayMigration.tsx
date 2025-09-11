@@ -6,10 +6,13 @@ import { WeekHighlighter } from "./WeekHighlighter";
 import {
   CalendarDay,
   CalendarGrid,
+  EventArrows,
   EventItem,
   EventList,
+  EventText,
   MainContent,
   MiddleColumn,
+  MigrateArrow,
   MonthPicker,
   RightColumn,
   SectionTitle,
@@ -111,17 +114,48 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
               <EventItem
                 key={index}
                 color={event.color}
-                onClick={() => handleEventClick(event.text, index)}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleEventClick(event.text, index);
-                  }
-                }}
               >
-                {event.text}
+                <EventText>{event.text}</EventText>
+                <EventArrows>
+                  <MigrateArrow
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEventClick(event.text, index, "back");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEventClick(event.text, index, "back");
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    title="Migrate to previous week"
+                  >
+                    {"<"}
+                  </MigrateArrow>
+                  <MigrateArrow
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEventClick(event.text, index, "forward");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEventClick(event.text, index, "forward");
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    title="Migrate to next week"
+                  >
+                    {">"}
+                  </MigrateArrow>
+                </EventArrows>
               </EventItem>
             ))}
           </EventList>

@@ -18,16 +18,17 @@ const colors = [
 export const useSomedayMigration = () => {
   // State for the 3 sample someday events
   const [somedayEvents] = useState<SomedayEvent[]>([
-    { text: "💸 File taxes", color: colorByPriority.work },
+    { text: "🥙 Meal prep", color: colorByPriority.work },
     { text: "🥗 Get groceries", color: colorByPriority.self },
     { text: "🏠 Book Airbnb", color: colorByPriority.relationships },
   ]);
 
   // Handle event click - logs to console as requested
   const handleEventClick = useCallback(
-    (eventText: string, eventIndex: number) => {
-      console.log(`Event clicked: "${eventText}" at index ${eventIndex}`);
-      console.log("This event would be migrated to next week or month");
+    (eventText: string, eventIndex: number, direction: "back" | "forward") => {
+      const actionText = direction === "back" ? "previous" : "next";
+      console.log(`Event migrated: "${eventText}" to ${actionText} week`);
+      console.log(`Direction: ${direction}, Event index: ${eventIndex}`);
     },
     [],
   );

@@ -37,7 +37,7 @@ describe("SomedayMigration", () => {
   function setup() {
     render(<SomedayMigrationWithProvider {...defaultProps} />);
     const eventItems = screen
-      .getAllByText(/File taxes|Get groceries|Book Airbnb/)
+      .getAllByText(/Meal prep|Get groceries|Book Airbnb/)
       .map((text) => text.closest('[role="button"]'));
     return { eventItems };
   }
@@ -46,7 +46,7 @@ describe("SomedayMigration", () => {
     const { eventItems } = setup();
 
     expect(eventItems).toHaveLength(3);
-    expect(screen.getByText("💸 File taxes")).toBeInTheDocument();
+    expect(screen.getByText("🥙 Meal prep")).toBeInTheDocument();
     expect(screen.getByText("🥗 Get groceries")).toBeInTheDocument();
     expect(screen.getByText("🏠 Book Airbnb")).toBeInTheDocument();
   });
@@ -85,7 +85,7 @@ describe("SomedayMigration", () => {
     await userEvent.click(eventItems[0]);
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      'Event clicked: "💸 File taxes" at index 0',
+      'Event clicked: "🥙 Meal prep" at index 0',
     );
     expect(consoleSpy).toHaveBeenCalledWith(
       "This event would be migrated to next week or month",
@@ -131,7 +131,7 @@ describe("SomedayMigration", () => {
     await userEvent.keyboard("{Enter}");
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      'Event clicked: "💸 File taxes" at index 0',
+      'Event clicked: "🥙 Meal prep" at index 0',
     );
     expect(consoleSpy).toHaveBeenCalledWith(
       "This event would be migrated to next week or month",
