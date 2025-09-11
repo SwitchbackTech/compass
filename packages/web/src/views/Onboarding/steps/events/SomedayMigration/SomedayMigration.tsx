@@ -80,25 +80,29 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
       const currentWeekRowHeight = calendarGridRect.height / totalWeeks;
       const colWidth = calendarGridRect.width / 7;
 
-      // Narrow ellipse to only the current month's day columns within current week
-      const thisWeek = weeks[currentWeekIndex];
-      const indicesInMonth = thisWeek.days
-        .map((d, idx) => ({ idx, inMonth: d.isCurrentMonth }))
-        .filter((x) => x.inMonth)
+      // Include all days in the current week for the ellipse
+      const thisWeek = weeks[calendarWeekIndex];
+      const currentWeekDayIndices = thisWeek.days
+        .map((d, idx) => ({ idx, isCurrentWeek: d.isCurrentWeek }))
+        .filter((x) => x.isCurrentWeek)
         .map((x) => x.idx);
 
-      const firstIdx = indicesInMonth.length ? Math.min(...indicesInMonth) : 0;
-      const lastIdx = indicesInMonth.length ? Math.max(...indicesInMonth) : 6;
+      const firstIdx = currentWeekDayIndices.length
+        ? Math.min(...currentWeekDayIndices)
+        : 0;
+      const lastIdx = currentWeekDayIndices.length
+        ? Math.max(...currentWeekDayIndices)
+        : 6;
 
       const ellipseX =
-        calendarGridRect.left - containerRect.left + firstIdx * colWidth - 5;
+        calendarGridRect.left - containerRect.left + firstIdx * colWidth - 8;
       const ellipseY =
         calendarGridRect.top -
         containerRect.top +
         calendarWeekIndex * currentWeekRowHeight -
-        5;
-      const ellipseWidth = (lastIdx - firstIdx + 1) * colWidth + 10;
-      const ellipseHeight = currentWeekRowHeight + 10;
+        8;
+      const ellipseWidth = (lastIdx - firstIdx + 1) * colWidth + 16;
+      const ellipseHeight = currentWeekRowHeight + 16;
 
       setEllipsePosition({
         x: ellipseX,
