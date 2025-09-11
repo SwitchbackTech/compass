@@ -357,8 +357,8 @@ describe("SomedayMigration", () => {
 
       await userEvent.click(getForwardArrow());
 
-      expect(screen.getByText("📧 Respond to emails")).toBeInTheDocument();
-      expect(screen.getByText("🏃‍♂️ Go for a run")).toBeInTheDocument();
+      expect(screen.getByText("📑 Submit report")).toBeInTheDocument();
+      expect(screen.getByText("🧹 Clean house")).toBeInTheDocument();
       expect(screen.queryByText("🥙 Meal prep")).not.toBeInTheDocument();
       expect(screen.queryByText("🥗 Get groceries")).not.toBeInTheDocument();
       expect(screen.queryByText("🏠 Book Airbnb")).not.toBeInTheDocument();
@@ -407,10 +407,8 @@ describe("SomedayMigration", () => {
       expect(screen.getByText("🥙 Meal prep")).toBeInTheDocument();
       expect(screen.getByText("🥗 Get groceries")).toBeInTheDocument();
       expect(screen.getByText("🏠 Book Airbnb")).toBeInTheDocument();
-      expect(
-        screen.queryByText("📧 Respond to emails"),
-      ).not.toBeInTheDocument();
-      expect(screen.queryByText("🏃‍♂️ Go for a run")).not.toBeInTheDocument();
+      expect(screen.queryByText("📑 Submit report")).not.toBeInTheDocument();
+      expect(screen.queryByText("🧹 Clean house")).not.toBeInTheDocument();
     });
 
     it("should have proper accessibility attributes for navigation arrows", () => {
@@ -499,7 +497,7 @@ describe("SomedayMigration", () => {
       await userEvent.click(firstEventForwardArrow!);
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        'Event migrated: "📧 Respond to emails" from next week to next week',
+        'Event migrated: "📑 Submit report" from next week to next week',
       );
     });
 

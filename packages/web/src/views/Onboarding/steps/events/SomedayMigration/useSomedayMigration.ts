@@ -15,8 +15,8 @@ const thisWeekEvents: SomedayEvent[] = [
 ];
 
 const nextWeekEvents: SomedayEvent[] = [
-  { text: "📧 Respond to emails", color: colorByPriority.work },
-  { text: "🏃‍♂️ Go for a run", color: colorByPriority.self },
+  { text: "📑 Submit report", color: colorByPriority.work },
+  { text: "🧹 Clean house", color: colorByPriority.self },
 ];
 
 // Custom hook for managing someday event migration
