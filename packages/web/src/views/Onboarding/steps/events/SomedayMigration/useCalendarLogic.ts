@@ -22,6 +22,7 @@ export interface CalendarData {
   weekDays: string[];
   weeks: CalendarWeek[];
   isCurrentWeekVisible: boolean;
+  currentWeekIndex: number;
 }
 
 export const useCalendarLogic = (): CalendarData => {
@@ -51,11 +52,13 @@ export const useCalendarLogic = (): CalendarData => {
           currentWeekEnd.isSame(firstSunday)));
 
     // Generate calendar data
-    const monthTitle = currentDate.format("MMMM");
+    const monthTitle = currentDate.format("MMMM YYYY");
     const weekDays = ["S", "M", "T", "W", "T", "F", "S"];
 
     // Generate 5 weeks of calendar data
     const weeks: CalendarWeek[] = [];
+    let currentWeekIndex = -1;
+
     for (let weekIndex = 0; weekIndex < 5; weekIndex++) {
       const weekStart = firstSunday.add(weekIndex * 7, "day");
       const days: CalendarDay[] = [];
@@ -81,6 +84,10 @@ export const useCalendarLogic = (): CalendarData => {
       }
 
       const isCurrentWeekForThisWeek = days.some((day) => day.isCurrentWeek);
+      if (isCurrentWeekForThisWeek) {
+        currentWeekIndex = weekIndex;
+      }
+
       weeks.push({
         days,
         isCurrentWeek: isCurrentWeekForThisWeek,
@@ -92,6 +99,7 @@ export const useCalendarLogic = (): CalendarData => {
       weekDays,
       weeks,
       isCurrentWeekVisible,
+      currentWeekIndex,
     };
   }, []);
 };

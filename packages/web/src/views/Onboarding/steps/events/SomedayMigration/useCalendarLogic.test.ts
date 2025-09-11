@@ -136,4 +136,17 @@ describe("useCalendarLogic", () => {
       expect(week.days).toHaveLength(7);
     });
   });
+
+  it("should correctly calculate currentWeekIndex", () => {
+    const { result } = renderHook(() => useCalendarLogic());
+
+    // Since we're using January 11, 2024 (Thursday), currentWeekIndex should be valid
+    expect(result.current.currentWeekIndex).toBeGreaterThanOrEqual(0);
+    expect(result.current.currentWeekIndex).toBeLessThan(5);
+
+    // The week at currentWeekIndex should contain today
+    const currentWeek = result.current.weeks[result.current.currentWeekIndex];
+    expect(currentWeek.isCurrentWeek).toBe(true);
+    expect(currentWeek.days.some((day) => day.isToday)).toBe(true);
+  });
 });

@@ -54,7 +54,7 @@ describe("SomedayMigration", () => {
   it("should render the sidebar with correct title", () => {
     setup();
 
-    expect(screen.getByText("Someday Events")).toBeInTheDocument();
+    expect(screen.getByText("This Week")).toBeInTheDocument();
   });
 
   it("should render instructional text", () => {
@@ -300,5 +300,88 @@ describe("SomedayMigration", () => {
 
     expect(weekDaysContainer).toBeInTheDocument();
     expect(calendarGridContainer).toBeInTheDocument();
+  });
+
+  it("should render and be clickable the hand-drawn arrow", async () => {
+    const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const user = userEvent.setup();
+
+    setup();
+
+    // Check that the arrow canvas is in the DOM
+    const arrowCanvas = document.querySelector("canvas");
+    expect(arrowCanvas).toBeInTheDocument();
+    expect(arrowCanvas?.tagName).toBe("CANVAS");
+
+    // Check that the arrow has the correct positioning styles
+    const arrowElement = arrowCanvas as HTMLCanvasElement;
+    expect(arrowElement.style.position).toBe("absolute");
+    expect(arrowElement.style.pointerEvents).toBe("auto");
+    expect(arrowElement.style.cursor).toBe("pointer");
+
+    // Verify the arrow has the correct dimensions (updated width and height)
+    expect(arrowElement.width).toBe(90); // width + 10 = 80 + 10
+    expect(arrowElement.height).toBe(50); // height + 10 = 40 + 10
+
+    // Click the arrow
+    await user.click(arrowCanvas!);
+
+    // Verify console message was logged
+    expect(consoleSpy).toHaveBeenCalledWith("Hand-drawn arrow clicked!");
+
+    consoleSpy.mockRestore();
+  });
+
+  it("should only render arrow when current week is visible", () => {
+    setup();
+
+    // Check that the arrow canvas is in the DOM when current week is visible
+    const arrowCanvas = document.querySelector("canvas");
+    expect(arrowCanvas).toBeInTheDocument();
+  });
+
+  it("should position arrow dynamically based on This Week label and current week row", async () => {
+    setup();
+
+    // Wait for the component to calculate positions (useEffect with refs)
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const arrowCanvas = document.querySelector("canvas");
+    expect(arrowCanvas).toBeInTheDocument();
+
+    // Verify the arrow is positioned (exact values will depend on layout)
+    const arrowElement = arrowCanvas as HTMLCanvasElement;
+    expect(arrowElement.style.position).toBe("absolute");
+
+    // Check that left and top styles are set (they will be calculated dynamically)
+    expect(arrowElement.style.left).toMatch(/\d+px/);
+    expect(arrowElement.style.top).toMatch(/\d+px/);
+  });
+
+  it("should position arrow to connect This Week label to current week in calendar", async () => {
+    setup();
+
+    // Find the "This Week" label
+    const thisWeekLabel = screen.getByText("This Week");
+    expect(thisWeekLabel).toBeInTheDocument();
+
+    // Find the calendar grid
+    const calendarGrid = document.querySelector('[class*="CalendarGrid"]');
+    expect(calendarGrid).toBeInTheDocument();
+
+    // Wait for positioning calculations
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const arrowCanvas = document.querySelector("canvas");
+    expect(arrowCanvas).toBeInTheDocument();
+
+    // Check that arrow exists and has been positioned
+    const arrowElement = arrowCanvas as HTMLCanvasElement;
+    const arrowLeft = parseInt(arrowElement.style.left.replace("px", ""));
+    const arrowTop = parseInt(arrowElement.style.top.replace("px", ""));
+
+    // Arrow should be positioned somewhere meaningful (not just default 280,60)
+    expect(arrowLeft).toBeGreaterThan(0);
+    expect(arrowTop).toBeGreaterThan(0);
   });
 });

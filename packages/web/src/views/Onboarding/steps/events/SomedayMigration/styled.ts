@@ -8,6 +8,8 @@ export const MainContent = styled.div`
   margin: 20px;
   gap: 20px;
   z-index: 5;
+  position: relative;
+  overflow: visible;
 `;
 
 export const Sidebar = styled.div`
@@ -25,7 +27,9 @@ export const SidebarSection = styled.div`
   gap: 12px;
 `;
 
-export const SectionTitle = styled.h4`
+export const SectionTitle = styled.h4.withConfig({
+  shouldForwardProp: (prop) => prop !== "ref",
+})`
   font-family: "Rubik", sans-serif;
   font-size: 18px;
   color: ${({ theme }) => theme.color.common.white};
@@ -82,6 +86,7 @@ export const MonthPicker = styled.div`
   padding: 16px;
   display: flex;
   flex-direction: column;
+  position: relative;
 `;
 
 export const MonthHeader = styled.div`
@@ -98,7 +103,9 @@ export const MonthTitle = styled.h3`
   margin: 0;
 `;
 
-export const WeekDays = styled.div<{ isCurrentWeek: boolean }>`
+export const WeekDays = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== "isCurrentWeek",
+})<{ isCurrentWeek: boolean }>`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
@@ -109,7 +116,9 @@ export const WeekDays = styled.div<{ isCurrentWeek: boolean }>`
   padding: 2px;
 `;
 
-export const WeekDayLabel = styled.div<{ isCurrentWeek: boolean }>`
+export const WeekDayLabel = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== "isCurrentWeek",
+})<{ isCurrentWeek: boolean }>`
   font-family: "Rubik", sans-serif;
   font-size: 12px;
   color: #888;
@@ -118,7 +127,9 @@ export const WeekDayLabel = styled.div<{ isCurrentWeek: boolean }>`
   padding: 4px;
 `;
 
-export const CalendarGrid = styled.div<{ isCurrentWeek: boolean }>`
+export const CalendarGrid = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== "ref",
+})<{ isCurrentWeek: boolean }>`
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
@@ -129,8 +140,12 @@ export const CalendarGrid = styled.div<{ isCurrentWeek: boolean }>`
   padding: 8px;
 `;
 
-export const CalendarDay = styled.div<{
+export const CalendarDay = styled.div.withConfig({
+  shouldForwardProp: (prop) =>
+    !["isCurrentWeek", "isToday"].includes(prop as string),
+})<{
   isCurrentWeek: boolean;
+  isToday: boolean;
 }>`
   font-family: "Rubik", sans-serif;
   font-size: 12px;
