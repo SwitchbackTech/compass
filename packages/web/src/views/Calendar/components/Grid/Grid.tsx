@@ -2,6 +2,7 @@ import { Dayjs } from "dayjs";
 import React, { FC } from "react";
 import { AllDayRow } from "@web/views/Calendar/components/Grid/AllDayRow";
 import { MainGrid } from "@web/views/Calendar/components/Grid/MainGrid";
+import { EdgeNavigationIndicators } from "@web/views/Calendar/components/Grid/MainGrid/EdgeNavigationIndicators";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { useDragEdgeNavigation } from "@web/views/Calendar/hooks/grid/useDragEdgeNavigation";
 import { Refs_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
@@ -31,7 +32,7 @@ export const Grid: FC<Props> = ({
   const dragEdgeState = useDragEdgeNavigation(mainGridRef, weekProps);
 
   return (
-    <>
+    <div style={{ height: "100%", width: "100%", position: "relative" }}>
       <AllDayRow
         allDayRef={allDayRef}
         dateCalcs={dateCalcs}
@@ -49,6 +50,7 @@ export const Grid: FC<Props> = ({
         weekProps={weekProps}
         dragEdgeState={dragEdgeState}
       />
-    </>
+      <EdgeNavigationIndicators dragEdgeState={dragEdgeState} />
+    </div>
   );
 };

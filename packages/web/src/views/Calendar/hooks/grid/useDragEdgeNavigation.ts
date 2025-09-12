@@ -1,6 +1,4 @@
 import { MutableRefObject, useEffect, useRef, useState } from "react";
-import { ID_GRID_ALLDAY_ROW } from "@web/common/constants/web.constants";
-import { getElemById } from "@web/common/utils/grid.util";
 import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
@@ -78,18 +76,27 @@ export const useDragEdgeNavigation = (
       return;
     }
 
-    // Use appropriate container based on event type
-    const isAllDay = currentDraft.isAllDay;
-    const container = isAllDay
-      ? getElemById(ID_GRID_ALLDAY_ROW)
-      : mainGridRef.current;
-
-    if (!container) {
+    // Check if mouse is over the main calendar grid
+    if (!mainGridRef.current) {
       return;
     }
 
-    const { left, right } = container.getBoundingClientRect();
-    const { x } = mousePosition;
+    const calendarBounds = mainGridRef.current.getBoundingClientRect();
+    const { x, y } = mousePosition;
+
+    const isMouseOverCalendar =
+      x >= calendarBounds.left &&
+      x <= calendarBounds.right &&
+      y >= calendarBounds.top &&
+      y <= calendarBounds.bottom;
+
+    // Only proceed with edge detection if mouse is over calendar
+    if (!isMouseOverCalendar) {
+      return;
+    }
+
+    // Use main calendar bounds for edge detection
+    const { left, right } = calendarBounds;
 
     let currentEdge: "left" | "right" | null = null;
 

@@ -16,7 +16,6 @@ import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout"
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DRAFT_DURATION_MIN } from "@web/views/Calendar/layout.constants";
 import { MainGridColumns } from "../Columns/MainGridColumns";
-import { EdgeNavigationIndicators } from "./EdgeNavigationIndicators";
 import { MainGridEvents } from "./MainGridEvents";
 import {
   StyledGridRow,
@@ -99,8 +98,6 @@ export const MainGrid: FC<Props> = ({
       </StyledGridWithTimeLabels>
 
       <MainGridEvents measurements={measurements} weekProps={weekProps} />
-
-      <EdgeNavigationIndicators dragEdgeState={dragEdgeState} />
     </StyledMainGrid>
   );
 };
