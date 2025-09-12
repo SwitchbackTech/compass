@@ -35,7 +35,11 @@ export const useDragEventSmartScroll = (
       if (!container) return;
       if (state.draft?.isAllDay !== false) return;
 
-      const { top, bottom } = container.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const { top, bottom } = {
+        top: containerRect.top,
+        bottom: containerRect.bottom - 100,
+      };
       const { y } = mousePosition;
 
       let scrollAmount = 0;

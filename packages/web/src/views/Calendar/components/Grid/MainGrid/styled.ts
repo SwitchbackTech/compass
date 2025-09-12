@@ -30,6 +30,7 @@ export const StyledGridWithTimeLabels = styled.div`
 export const StyledMainGrid = styled.div`
   flex: 1;
   margin-bottom: ${GRID_PADDING_BOTTOM}px;
+  height: 100%;
   width: 100%;
   position: relative;
   overflow-y: auto;
