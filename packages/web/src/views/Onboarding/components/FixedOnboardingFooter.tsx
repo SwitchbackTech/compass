@@ -67,11 +67,16 @@ export const FixedOnboardingFooter = ({
         >
           <OnboardingPreviousButton
             aria-label="Previous"
+            onClick={onPrev}
             disabled={prevBtnDisabled}
           />
         </TooltipWrapper>
         <TooltipWrapper description="Next step" onClick={onNext} shortcut="K">
-          <OnboardingNextButton aria-label="Next" disabled={nextBtnDisabled} />
+          <OnboardingNextButton
+            aria-label="Next"
+            onClick={onNext}
+            disabled={nextBtnDisabled}
+          />
         </TooltipWrapper>
       </NavigationButtonsContainer>
     </FixedFooterContainer>
