@@ -101,6 +101,10 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
   const [shouldHighlightNavigation, setShouldHighlightNavigation] =
     useState(false);
 
+  // Disable the footer's Next button until all steps are completed
+  const isAllChecked =
+    hasMigratedEvent && hasMigratedMonthEvent && hasViewedNextWeek;
+
   const [thisMonthEvents, setThisMonthEvents] = useState([
     { text: "🤖 Start AI course", color: colorByPriority.work },
     { text: "🏠 Book Airbnb", color: colorByPriority.relationships },
@@ -547,7 +551,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
       onPrevious={onPrevious}
       onSkip={onSkip}
       content={content}
-      nextButtonDisabled={false}
+      nextButtonDisabled={!isAllChecked}
       onNavigationControlChange={onNavigationControlChange}
       isNavPrevented={isNavPrevented}
     />
