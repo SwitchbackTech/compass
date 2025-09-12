@@ -26,6 +26,8 @@ export const MainContent = styled.div`
   z-index: 5;
   position: relative;
   overflow: visible;
+  /* Fix container height so ellipse positions remain stable and sidebar fits */
+  height: 475px;
 `;
 
 export const Sidebar = styled.div`
