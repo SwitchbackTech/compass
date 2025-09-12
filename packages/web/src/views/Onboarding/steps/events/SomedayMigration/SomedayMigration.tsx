@@ -18,7 +18,9 @@ import {
   MainContent,
   MiddleColumn,
   MigrateArrow,
+  MonthHeader,
   MonthPicker,
+  MonthTitle,
   RightColumn,
   SectionNavigationArrow,
   SectionNavigationArrows,
@@ -26,8 +28,6 @@ import {
   SectionTitleText,
   Sidebar,
   SidebarSection,
-  WeekDayLabel,
-  WeekDays,
 } from "./styled";
 import { useMigrationLogic } from "./useMigrationLogic";
 import { useSomedayMigration } from "./useSomedayMigration";
@@ -65,6 +65,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
   const {
     weekDays,
     weeks,
+    nextMonthWeeks,
     isCurrentWeekVisible,
     currentWeekIndex: calendarWeekIndex,
   } = useMigrationLogic();
@@ -264,13 +265,9 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
       </Sidebar>
       <MiddleColumn>
         <MonthPicker>
-          <WeekDays isCurrentWeek={isCurrentWeekVisible}>
-            {weekDays.map((day, index) => (
-              <WeekDayLabel key={index} isCurrentWeek={isCurrentWeekVisible}>
-                {day}
-              </WeekDayLabel>
-            ))}
-          </WeekDays>
+          <MonthHeader>
+            <MonthTitle>This Month</MonthTitle>
+          </MonthHeader>
           <CalendarGrid
             ref={calendarGridRef}
             isCurrentWeek={isCurrentWeekVisible}
@@ -279,6 +276,24 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
               week.days.map((day, dayIndex) => (
                 <CalendarDay
                   key={`${weekIndex}-${dayIndex}`}
+                  isCurrentWeek={day.isCurrentWeek}
+                  isToday={day.isToday}
+                >
+                  {day.isCurrentMonth ? day.day : ""}
+                </CalendarDay>
+              )),
+            )}
+          </CalendarGrid>
+          {/* Spacer between months */}
+          <div style={{ height: 8 }} />
+          <MonthHeader>
+            <MonthTitle>Next Month</MonthTitle>
+          </MonthHeader>
+          <CalendarGrid isCurrentWeek={isCurrentWeekVisible}>
+            {nextMonthWeeks.map((week, weekIndex) =>
+              week.days.map((day, dayIndex) => (
+                <CalendarDay
+                  key={`n-${weekIndex}-${dayIndex}`}
                   isCurrentWeek={day.isCurrentWeek}
                   isToday={day.isToday}
                 >

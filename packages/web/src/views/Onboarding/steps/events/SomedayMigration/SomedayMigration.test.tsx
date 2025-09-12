@@ -96,36 +96,20 @@ describe("SomedayMigration", () => {
     expect(screen.getByText("SKIP INTRO")).toBeInTheDocument();
   });
 
-  it("should render the month picker in the middle column", () => {
+  it("should render two month widgets with titles", () => {
     setup();
 
-    // Check that all week day labels are rendered (month title was removed)
-    const sLabels = screen.getAllByText("S");
-    expect(sLabels).toHaveLength(2); // Sunday and Saturday
-
-    const tLabels = screen.getAllByText("T");
-    expect(tLabels).toHaveLength(2); // Tuesday and Thursday
-
-    expect(screen.getByText("M")).toBeInTheDocument();
-    expect(screen.getByText("W")).toBeInTheDocument();
-    expect(screen.getByText("F")).toBeInTheDocument();
+    // Check that the month widgets have titles
+    expect(screen.getByText("This Month")).toBeInTheDocument();
+    expect(screen.getByText("Next Month")).toBeInTheDocument();
   });
 
-  it("should render week day labels with current week highlighting", () => {
+  it("should not render week day abbreviation labels", () => {
     setup();
 
-    // Check that all week day labels are rendered
-    const weekDayLabels = screen.getAllByText(/^[SMTWF]$/);
-    expect(weekDayLabels).toHaveLength(7);
-
-    // All days should be present
-    expect(weekDayLabels[0]).toHaveTextContent("S"); // Sunday
-    expect(weekDayLabels[1]).toHaveTextContent("M"); // Monday
-    expect(weekDayLabels[2]).toHaveTextContent("T"); // Tuesday
-    expect(weekDayLabels[3]).toHaveTextContent("W"); // Wednesday
-    expect(weekDayLabels[4]).toHaveTextContent("T"); // Thursday
-    expect(weekDayLabels[5]).toHaveTextContent("F"); // Friday
-    expect(weekDayLabels[6]).toHaveTextContent("S"); // Saturday
+    // WeekDays container should not be present now
+    const weekDaysContainer = document.querySelector('[class*="WeekDays"]');
+    expect(weekDaysContainer).not.toBeInTheDocument();
   });
 
   it("should highlight the current week days in the calendar", () => {
@@ -179,17 +163,14 @@ describe("SomedayMigration", () => {
     expect(screen.getByText("10")).toBeInTheDocument();
   });
 
-  it("should highlight the entire current week background", () => {
+  it("should render the calendar grids with current week highlighting", () => {
     setup();
 
-    // Check that the week day labels and calendar grid have the current week highlighting
-    // We can't easily test the exact styling, but we can verify the structure exists
-    const weekDaysContainer = document.querySelector('[class*="WeekDays"]');
+    // Verify the calendar grid container exists
     const calendarGridContainer = document.querySelector(
       '[class*="CalendarGrid"]',
     );
 
-    expect(weekDaysContainer).toBeInTheDocument();
     expect(calendarGridContainer).toBeInTheDocument();
   });
 

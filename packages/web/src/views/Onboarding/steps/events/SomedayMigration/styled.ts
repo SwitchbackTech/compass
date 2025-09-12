@@ -183,7 +183,7 @@ export const MiddleColumn = styled.div`
 
 export const MonthPicker = styled.div`
   width: 280px;
-  height: 200px;
+  height: 435px;
   background-color: #2a2d3a;
   border: 2px solid #444;
   border-radius: 8px;
