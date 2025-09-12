@@ -252,11 +252,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
                     }}
                     role="button"
                     tabIndex={currentWeekIndex === 1 ? -1 : 0}
-                    title={
-                      currentWeekIndex === 1
-                        ? "Cannot migrate further back"
-                        : "Migrate to previous week"
-                    }
+                    title="Migrate to previous week"
                   >
                     {"<"}
                   </MigrateArrow>
@@ -278,11 +274,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
                     }}
                     role="button"
                     tabIndex={currentWeekIndex === 1 ? -1 : 0}
-                    title={
-                      currentWeekIndex === 1
-                        ? "Cannot migrate further forward"
-                        : "Migrate to next week"
-                    }
+                    title="Migrate to next week"
                   >
                     {">"}
                   </MigrateArrow>
@@ -318,9 +310,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
                     }}
                     role="button"
                     tabIndex={-1}
-                    title={
-                      "Migrate to previous month (won't do anything for this demo)"
-                    }
+                    title="Migrate to previous month"
                   >
                     {"<"}
                   </MigrateArrow>
@@ -355,11 +345,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
                     }}
                     role="button"
                     tabIndex={currentWeekIndex === 1 ? -1 : 0}
-                    title={
-                      currentWeekIndex === 1
-                        ? "Cannot migrate further forward"
-                        : "Migrate to next month"
-                    }
+                    title="Migrate to next month"
                   >
                     {">"}
                   </MigrateArrow>
@@ -430,7 +416,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
             readOnly
           />
           <CheckboxLabel htmlFor="migrate-month-event">
-            Migrate a month event
+            Migrate an event to next month
           </CheckboxLabel>
         </CheckboxContainer>
         <CheckboxContainer>
@@ -441,7 +427,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
             readOnly
           />
           <CheckboxLabel htmlFor="view-next-week">
-            Go to next week and view the event
+            Go to next week/month
           </CheckboxLabel>
         </CheckboxContainer>
       </RightColumn>

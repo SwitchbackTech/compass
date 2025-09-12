@@ -42,9 +42,7 @@ describe("SomedayMigration", () => {
       getForwardArrow: () => screen.getByTitle("Next week"),
       getWeekLabel: () => screen.getByText(/This Week|Next Week/),
       getEventMigrateArrows: () =>
-        screen.getAllByTitle(
-          /Migrate to (previous|next) week|Cannot migrate further/,
-        ),
+        screen.getAllByTitle(/Migrate to (previous|next) week/),
       getEvents: () => screen.getAllByText(/🥙|🥗|☕️|📑|🧹/),
     };
   }
@@ -69,10 +67,10 @@ describe("SomedayMigration", () => {
     expect(
       screen.getByText("Migrate an event to next week"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Migrate a month event")).toBeInTheDocument();
     expect(
-      screen.getByText("Go to next week and view the event"),
+      screen.getByText("Migrate an event to next month"),
     ).toBeInTheDocument();
+    expect(screen.getByText("Go to next week/month")).toBeInTheDocument();
   });
 
   it("should have proper accessibility attributes for event containers", () => {
@@ -418,7 +416,7 @@ describe("SomedayMigration", () => {
 
       // Checkbox should be checked
       const monthCheckbox = screen.getByLabelText(
-        "Migrate a month event",
+        "Migrate an event to next month",
       ) as HTMLInputElement;
       expect(monthCheckbox).toBeChecked();
 
@@ -572,7 +570,6 @@ describe("SomedayMigration", () => {
       // All arrows should be disabled when on Next Week
       arrows.forEach((arrow) => {
         expect(arrow).toHaveAttribute("tabIndex", "-1");
-        expect(arrow.getAttribute("title")).toMatch(/Cannot migrate further/);
       });
     });
 
@@ -624,10 +621,10 @@ describe("SomedayMigration", () => {
         "Migrate an event to next week",
       ) as HTMLInputElement;
       const monthCheckbox = screen.getByLabelText(
-        "Migrate a month event",
+        "Migrate an event to next month",
       ) as HTMLInputElement;
       const viewCheckbox = screen.getByLabelText(
-        "Go to next week and view the event",
+        "Go to next week/month",
       ) as HTMLInputElement;
 
       expect(eventCheckbox).not.toBeChecked();
@@ -673,10 +670,10 @@ describe("SomedayMigration", () => {
         "Migrate an event to next week",
       ) as HTMLInputElement;
       const monthCheckbox = screen.getByLabelText(
-        "Migrate a month event",
+        "Migrate an event to next month",
       ) as HTMLInputElement;
       const viewCheckbox = screen.getByLabelText(
-        "Go to next week and view the event",
+        "Go to next week/month",
       ) as HTMLInputElement;
 
       expect(eventCheckbox).toBeChecked();
