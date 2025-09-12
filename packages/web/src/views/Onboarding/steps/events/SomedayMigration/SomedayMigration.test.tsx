@@ -598,4 +598,107 @@ describe("SomedayMigration", () => {
       });
     });
   });
+
+  describe("Keyboard Navigation Blocking", () => {
+    it("should prevent ENTER key navigation when not all checkboxes are checked", async () => {
+      const mockOnNext = jest.fn();
+      render(
+        <SomedayMigrationWithProvider {...defaultProps} onNext={mockOnNext} />,
+      );
+
+      // Initially, no checkboxes should be checked
+      const eventCheckbox = screen.getByLabelText(
+        "Migrate an event to next week",
+      ) as HTMLInputElement;
+      const monthCheckbox = screen.getByLabelText(
+        "Migrate a month event",
+      ) as HTMLInputElement;
+      const viewCheckbox = screen.getByLabelText(
+        "Go to next week and view the event",
+      ) as HTMLInputElement;
+
+      expect(eventCheckbox).not.toBeChecked();
+      expect(monthCheckbox).not.toBeChecked();
+      expect(viewCheckbox).not.toBeChecked();
+
+      // Try to press ENTER - should not navigate
+      await userEvent.keyboard("{Enter}");
+      expect(mockOnNext).not.toHaveBeenCalled();
+    });
+
+    it("should prevent RIGHT ARROW key navigation when not all checkboxes are checked", async () => {
+      const mockOnNext = jest.fn();
+      render(
+        <SomedayMigrationWithProvider {...defaultProps} onNext={mockOnNext} />,
+      );
+
+      // Try to press RIGHT ARROW - should not navigate
+      await userEvent.keyboard("{ArrowRight}");
+      expect(mockOnNext).not.toHaveBeenCalled();
+    });
+
+    it("should allow navigation after all checkboxes are checked", async () => {
+      const mockOnNext = jest.fn();
+      render(
+        <SomedayMigrationWithProvider {...defaultProps} onNext={mockOnNext} />,
+      );
+
+      // Complete all tasks by interacting with the component
+      // 1. Migrate a week event
+      const eventMigrateArrows = screen.getAllByTitle("Migrate to next week");
+      await userEvent.click(eventMigrateArrows[0]);
+
+      // 2. Migrate a month event
+      const monthMigrateArrows = screen.getAllByTitle("Migrate to next month");
+      await userEvent.click(monthMigrateArrows[0]);
+
+      // 3. Navigate to next week
+      await userEvent.click(screen.getByTitle("Next week"));
+
+      // Now all checkboxes should be checked
+      const eventCheckbox = screen.getByLabelText(
+        "Migrate an event to next week",
+      ) as HTMLInputElement;
+      const monthCheckbox = screen.getByLabelText(
+        "Migrate a month event",
+      ) as HTMLInputElement;
+      const viewCheckbox = screen.getByLabelText(
+        "Go to next week and view the event",
+      ) as HTMLInputElement;
+
+      expect(eventCheckbox).toBeChecked();
+      expect(monthCheckbox).toBeChecked();
+      expect(viewCheckbox).toBeChecked();
+
+      // Now ENTER should work
+      await userEvent.keyboard("{Enter}");
+      expect(mockOnNext).toHaveBeenCalledTimes(1);
+    });
+
+    it("should have Next button disabled when not all checkboxes are checked", () => {
+      render(<SomedayMigrationWithProvider {...defaultProps} />);
+
+      const nextButton = screen.getByLabelText("Next");
+      expect(nextButton).toBeDisabled();
+    });
+
+    it("should have Next button enabled after all checkboxes are checked", async () => {
+      render(<SomedayMigrationWithProvider {...defaultProps} />);
+
+      // Complete all tasks
+      const eventMigrateArrows = screen.getAllByTitle("Migrate to next week");
+      await userEvent.click(eventMigrateArrows[0]);
+
+      const monthMigrateArrows = screen.getAllByTitle("Migrate to next month");
+      await userEvent.click(monthMigrateArrows[0]);
+
+      await userEvent.click(screen.getByTitle("Next week"));
+
+      // Wait for state updates
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const nextButton = screen.getByLabelText("Next");
+      expect(nextButton).not.toBeDisabled();
+    });
+  });
 });

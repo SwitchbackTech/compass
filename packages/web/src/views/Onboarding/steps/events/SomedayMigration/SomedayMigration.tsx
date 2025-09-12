@@ -547,13 +547,13 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
     <OnboardingTwoRowLayout
       currentStep={currentStep}
       totalSteps={totalSteps}
-      onNext={onNext}
+      onNext={isAllChecked ? onNext : () => {}}
       onPrevious={onPrevious}
       onSkip={onSkip}
       content={content}
       nextButtonDisabled={!isAllChecked}
       onNavigationControlChange={onNavigationControlChange}
-      isNavPrevented={isNavPrevented}
+      isNavPrevented={!isAllChecked || isNavPrevented}
     />
   );
 };
