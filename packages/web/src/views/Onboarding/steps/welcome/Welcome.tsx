@@ -148,10 +148,10 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
           if (!animationSkipped) {
             setCheckResults((prev) => ({ ...prev, [checkKey]: true }));
           }
-        }, 300);
+        }, 150);
 
         currentLine++;
-        timeoutId = setTimeout(showNextLine, 800);
+        timeoutId = setTimeout(showNextLine, 400);
       } else if (currentLine < totalLines) {
         setVisibleLines(
           totalTextLines +
@@ -160,13 +160,13 @@ export const WelcomeStep: React.FC<OnboardingStepProps> = ({
             1,
         );
         currentLine++;
-        timeoutId = setTimeout(showNextLine, 600);
+        timeoutId = setTimeout(showNextLine, 300);
       } else {
         setAnimationComplete(true);
       }
     };
 
-    const initialDelay = setTimeout(showNextLine, 400);
+    const initialDelay = setTimeout(showNextLine, 200);
 
     return () => {
       clearTimeout(initialDelay);
