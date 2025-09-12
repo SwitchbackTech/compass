@@ -31,7 +31,7 @@ const HelpText = styled(OnboardingText)`
   text-align: center;
 `;
 
-const PLACEHOLDER = "Automate repetitive tasks";
+const PLACEHOLDER = "Identify the essential. Eliminate the rest";
 
 export const SetReminder: React.FC<OnboardingStepProps> = ({
   currentStep,
@@ -67,11 +67,6 @@ export const SetReminder: React.FC<OnboardingStepProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleNext();
-  };
-
-  const handleNext = () => {
-    // localStorage is already updated on every input change, so just proceed
     onNext();
   };
 
@@ -93,7 +88,7 @@ export const SetReminder: React.FC<OnboardingStepProps> = ({
       totalSteps={totalSteps}
       onSkip={onSkip}
       onPrevious={onPrevious}
-      onNext={handleNext}
+      onNext={onNext}
       nextBtnDisabled={!!reminder && !reminder.trim()}
     >
       <OnboardingText>
