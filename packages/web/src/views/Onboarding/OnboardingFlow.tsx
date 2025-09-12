@@ -126,12 +126,12 @@ const _OnboardingFlow: React.FC = () => {
     {
       id: "outro-two",
       component: (props: OnboardingStepProps) => <OutroTwo {...props} />,
-      disableLeftArrow: true,
+      disablePrevious: true,
     },
     {
       id: "outro-quote",
       component: (props: OnboardingStepProps) => <OutroQuote {...props} />,
-      disableLeftArrow: true,
+      disablePrevious: true,
       disableRightArrow: true,
     },
   ];

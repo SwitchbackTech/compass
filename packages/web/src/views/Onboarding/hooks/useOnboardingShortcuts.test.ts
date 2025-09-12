@@ -74,70 +74,52 @@ describe("useOnboardingShortcuts", () => {
     );
   });
 
-  it("should call onNext when right arrow is pressed and navigation is allowed", () => {
+  it("should call onNext when 'k' key is pressed and navigation is allowed", () => {
     renderHook(() => useOnboardingShortcuts(defaultProps));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
-    const rightArrowEvent = {
-      key: "ArrowRight",
+    const kKeyEvent = {
+      key: "k",
       preventDefault: mockPreventDefault,
       stopPropagation: mockStopPropagation,
     };
 
-    keydownHandler(rightArrowEvent);
+    keydownHandler(kKeyEvent);
 
     expect(mockOnNext).toHaveBeenCalledTimes(1);
     expect(mockPreventDefault).not.toHaveBeenCalled();
     expect(mockStopPropagation).not.toHaveBeenCalled();
   });
 
-  it("should call onPrevious when left arrow is pressed", () => {
+  it("should call onPrevious when 'j' key is pressed", () => {
     renderHook(() => useOnboardingShortcuts(defaultProps));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
-    const leftArrowEvent = {
-      key: "ArrowLeft",
+    const jKeyEvent = {
+      key: "j",
       preventDefault: mockPreventDefault,
       stopPropagation: mockStopPropagation,
     };
 
-    keydownHandler(leftArrowEvent);
+    keydownHandler(jKeyEvent);
 
     expect(mockOnPrevious).toHaveBeenCalledTimes(1);
     expect(mockPreventDefault).not.toHaveBeenCalled();
     expect(mockStopPropagation).not.toHaveBeenCalled();
   });
 
-  it("should prevent navigation when canNavigateNext is false", () => {
+  it("should prevent 'k' key navigation when canNavigateNext is false", () => {
     const props = { ...defaultProps, canNavigateNext: false };
     renderHook(() => useOnboardingShortcuts(props));
 
     const keydownHandler = mockAddEventListener.mock.calls[0][1];
-    const rightArrowEvent = {
-      key: "ArrowRight",
+    const kKeyEvent = {
+      key: "k",
       preventDefault: mockPreventDefault,
       stopPropagation: mockStopPropagation,
     };
 
-    keydownHandler(rightArrowEvent);
-
-    expect(mockOnNext).not.toHaveBeenCalled();
-    expect(mockPreventDefault).toHaveBeenCalled();
-    expect(mockStopPropagation).toHaveBeenCalled();
-  });
-
-  it("should prevent navigation when canNavigateNext is false", () => {
-    const props = { ...defaultProps, canNavigateNext: false };
-    renderHook(() => useOnboardingShortcuts(props));
-
-    const keydownHandler = mockAddEventListener.mock.calls[0][1];
-    const rightArrowEvent = {
-      key: "ArrowRight",
-      preventDefault: mockPreventDefault,
-      stopPropagation: mockStopPropagation,
-    };
-
-    keydownHandler(rightArrowEvent);
+    keydownHandler(kKeyEvent);
 
     expect(mockOnNext).not.toHaveBeenCalled();
     expect(mockPreventDefault).toHaveBeenCalled();
@@ -156,7 +138,7 @@ describe("useOnboardingShortcuts", () => {
 
     keydownHandler(enterEvent);
 
-    // Enter should work like right arrow when navigation is allowed
+    // Enter should work like 'k' key when navigation is allowed
     expect(mockOnNext).toHaveBeenCalledTimes(1);
     expect(mockPreventDefault).not.toHaveBeenCalled();
     expect(mockStopPropagation).not.toHaveBeenCalled();
@@ -268,7 +250,7 @@ describe("useOnboardingShortcuts", () => {
 
     keydownHandler(enterEvent);
 
-    // Enter should work like right arrow when no input is focused
+    // Enter should work like 'k' key when no input is focused
     expect(mockOnNext).toHaveBeenCalledTimes(1);
     expect(mockPreventDefault).not.toHaveBeenCalled();
     expect(mockStopPropagation).not.toHaveBeenCalled();
@@ -335,8 +317,8 @@ describe("useOnboardingShortcuts", () => {
       renderHook(() => useOnboardingShortcuts(props));
 
       // Manually trigger a keydown event since no listener was added
-      const rightArrowEvent = {
-        key: "ArrowRight",
+      const kKeyEvent = {
+        key: "k",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };

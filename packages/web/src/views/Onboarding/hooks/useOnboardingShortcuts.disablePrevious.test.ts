@@ -27,7 +27,7 @@ Object.defineProperty(document, "activeElement", {
   writable: true,
 });
 
-describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
+describe("useOnboardingShortcuts - disablePrevious functionality", () => {
   const mockOnNext = jest.fn();
   const mockOnPrevious = jest.fn();
 
@@ -56,9 +56,9 @@ describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
     handlesKeyboardEvents: false,
   };
 
-  describe("disableLeftArrow = true", () => {
-    it("should prevent left arrow navigation when disableLeftArrow is true", () => {
-      const props = { ...defaultProps, disableLeftArrow: true };
+  describe("disablePrevious = true", () => {
+    it("should prevent 'j' key navigation when disablePrevious is true", () => {
+      const props = { ...defaultProps, disablePrevious: true };
       renderHook(() => useOnboardingShortcuts(props));
 
       // Verify that event listener was added
@@ -75,39 +75,57 @@ describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
 
       expect(keydownHandler).toBeDefined();
 
-      const leftArrowEvent = {
-        key: "ArrowLeft",
+      const jKeyEvent = {
+        key: "j",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };
 
-      keydownHandler(leftArrowEvent);
+      keydownHandler(jKeyEvent);
 
       expect(mockOnPrevious).not.toHaveBeenCalled();
       expect(mockPreventDefault).toHaveBeenCalled();
       expect(mockStopPropagation).toHaveBeenCalled();
     });
 
-    it("should still allow right arrow navigation when disableLeftArrow is true", () => {
-      const props = { ...defaultProps, disableLeftArrow: true };
+    it("should prevent 'J' key navigation when disablePrevious is true", () => {
+      const props = { ...defaultProps, disablePrevious: true };
       renderHook(() => useOnboardingShortcuts(props));
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
-      const rightArrowEvent = {
-        key: "ArrowRight",
+      const JKeyEvent = {
+        key: "J",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };
 
-      keydownHandler(rightArrowEvent);
+      keydownHandler(JKeyEvent);
+
+      expect(mockOnPrevious).not.toHaveBeenCalled();
+      expect(mockPreventDefault).toHaveBeenCalled();
+      expect(mockStopPropagation).toHaveBeenCalled();
+    });
+
+    it("should still allow 'k' key navigation when disablePrevious is true", () => {
+      const props = { ...defaultProps, disablePrevious: true };
+      renderHook(() => useOnboardingShortcuts(props));
+
+      const keydownHandler = mockAddEventListener.mock.calls[0][1];
+      const kKeyEvent = {
+        key: "k",
+        preventDefault: mockPreventDefault,
+        stopPropagation: mockStopPropagation,
+      };
+
+      keydownHandler(kKeyEvent);
 
       expect(mockOnNext).toHaveBeenCalledTimes(1);
       expect(mockPreventDefault).not.toHaveBeenCalled();
       expect(mockStopPropagation).not.toHaveBeenCalled();
     });
 
-    it("should still allow Enter key navigation when disableLeftArrow is true", () => {
-      const props = { ...defaultProps, disableLeftArrow: true };
+    it("should still allow Enter key navigation when disablePrevious is true", () => {
+      const props = { ...defaultProps, disablePrevious: true };
       renderHook(() => useOnboardingShortcuts(props));
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
@@ -125,37 +143,37 @@ describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
     });
   });
 
-  describe("disableLeftArrow = false", () => {
-    it("should allow left arrow navigation when disableLeftArrow is false", () => {
-      const props = { ...defaultProps, disableLeftArrow: false };
+  describe("disablePrevious = false", () => {
+    it("should allow 'j' key navigation when disablePrevious is false", () => {
+      const props = { ...defaultProps, disablePrevious: false };
       renderHook(() => useOnboardingShortcuts(props));
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
-      const leftArrowEvent = {
-        key: "ArrowLeft",
+      const jKeyEvent = {
+        key: "j",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };
 
-      keydownHandler(leftArrowEvent);
+      keydownHandler(jKeyEvent);
 
       expect(mockOnPrevious).toHaveBeenCalledTimes(1);
       expect(mockPreventDefault).not.toHaveBeenCalled();
       expect(mockStopPropagation).not.toHaveBeenCalled();
     });
 
-    it("should allow right arrow navigation when disableLeftArrow is false", () => {
-      const props = { ...defaultProps, disableLeftArrow: false };
+    it("should allow 'k' key navigation when disablePrevious is false", () => {
+      const props = { ...defaultProps, disablePrevious: false };
       renderHook(() => useOnboardingShortcuts(props));
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
-      const rightArrowEvent = {
-        key: "ArrowRight",
+      const kKeyEvent = {
+        key: "k",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };
 
-      keydownHandler(rightArrowEvent);
+      keydownHandler(kKeyEvent);
 
       expect(mockOnNext).toHaveBeenCalledTimes(1);
       expect(mockPreventDefault).not.toHaveBeenCalled();
@@ -163,20 +181,20 @@ describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
     });
   });
 
-  describe("disableLeftArrow = undefined (default)", () => {
-    it("should allow left arrow navigation when disableLeftArrow is undefined", () => {
+  describe("disablePrevious = undefined (default)", () => {
+    it("should allow 'j' key navigation when disablePrevious is undefined", () => {
       const props = { ...defaultProps };
-      delete (props as any).disableLeftArrow;
+      delete (props as any).disablePrevious;
       renderHook(() => useOnboardingShortcuts(props));
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
-      const leftArrowEvent = {
-        key: "ArrowLeft",
+      const jKeyEvent = {
+        key: "j",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };
 
-      keydownHandler(leftArrowEvent);
+      keydownHandler(jKeyEvent);
 
       expect(mockOnPrevious).toHaveBeenCalledTimes(1);
       expect(mockPreventDefault).not.toHaveBeenCalled();
@@ -184,68 +202,68 @@ describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
     });
   });
 
-  describe("disableLeftArrow with other navigation controls", () => {
-    it("should prevent left arrow even when canNavigateNext is true", () => {
+  describe("disablePrevious with other navigation controls", () => {
+    it("should prevent 'j' key even when canNavigateNext is true", () => {
       const props = {
         ...defaultProps,
-        disableLeftArrow: true,
+        disablePrevious: true,
         canNavigateNext: true,
       };
       renderHook(() => useOnboardingShortcuts(props));
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
-      const leftArrowEvent = {
-        key: "ArrowLeft",
+      const jKeyEvent = {
+        key: "j",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };
 
-      keydownHandler(leftArrowEvent);
+      keydownHandler(jKeyEvent);
 
       expect(mockOnPrevious).not.toHaveBeenCalled();
       expect(mockPreventDefault).toHaveBeenCalled();
       expect(mockStopPropagation).toHaveBeenCalled();
     });
 
-    it("should prevent left arrow even when shouldPreventNavigation is false", () => {
+    it("should prevent 'j' key even when shouldPreventNavigation is false", () => {
       const props = {
         ...defaultProps,
-        disableLeftArrow: true,
+        disablePrevious: true,
         shouldPreventNavigation: false,
       };
       renderHook(() => useOnboardingShortcuts(props));
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
-      const leftArrowEvent = {
-        key: "ArrowLeft",
+      const jKeyEvent = {
+        key: "j",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };
 
-      keydownHandler(leftArrowEvent);
+      keydownHandler(jKeyEvent);
 
       expect(mockOnPrevious).not.toHaveBeenCalled();
       expect(mockPreventDefault).toHaveBeenCalled();
       expect(mockStopPropagation).toHaveBeenCalled();
     });
 
-    it("should not interfere with right arrow prevention when canNavigateNext is false", () => {
+    it("should not interfere with 'k' key prevention when canNavigateNext is false", () => {
       const props = {
         ...defaultProps,
-        disableLeftArrow: true,
+        disablePrevious: true,
         canNavigateNext: false,
       };
       renderHook(() => useOnboardingShortcuts(props));
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
 
-      // Test left arrow (should be prevented by disableLeftArrow)
-      const leftArrowEvent = {
-        key: "ArrowLeft",
+      // Test 'j' key (should be prevented by disablePrevious)
+      const jKeyEvent = {
+        key: "j",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };
-      keydownHandler(leftArrowEvent);
+      keydownHandler(jKeyEvent);
 
       expect(mockOnPrevious).not.toHaveBeenCalled();
       expect(mockPreventDefault).toHaveBeenCalled();
@@ -255,13 +273,13 @@ describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
       mockPreventDefault.mockClear();
       mockStopPropagation.mockClear();
 
-      // Test right arrow (should be prevented by canNavigateNext: false)
-      const rightArrowEvent = {
-        key: "ArrowRight",
+      // Test 'k' key (should be prevented by canNavigateNext: false)
+      const kKeyEvent = {
+        key: "k",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };
-      keydownHandler(rightArrowEvent);
+      keydownHandler(kKeyEvent);
 
       expect(mockOnNext).not.toHaveBeenCalled();
       expect(mockPreventDefault).toHaveBeenCalled();
@@ -270,23 +288,23 @@ describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
   });
 
   describe("dependency updates", () => {
-    it("should update behavior when disableLeftArrow changes from false to true", () => {
+    it("should update behavior when disablePrevious changes from false to true", () => {
       const { rerender } = renderHook(
         ({ props }) => useOnboardingShortcuts(props),
         {
-          initialProps: { props: { ...defaultProps, disableLeftArrow: false } },
+          initialProps: { props: { ...defaultProps, disablePrevious: false } },
         },
       );
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
-      const leftArrowEvent = {
-        key: "ArrowLeft",
+      const jKeyEvent = {
+        key: "j",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };
 
-      // Initially should allow left arrow
-      keydownHandler(leftArrowEvent);
+      // Initially should allow 'j' key
+      keydownHandler(jKeyEvent);
       expect(mockOnPrevious).toHaveBeenCalledTimes(1);
 
       // Reset mocks
@@ -294,8 +312,8 @@ describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
       mockPreventDefault.mockClear();
       mockStopPropagation.mockClear();
 
-      // Update to disable left arrow
-      rerender({ props: { ...defaultProps, disableLeftArrow: true } });
+      // Update to disable previous
+      rerender({ props: { ...defaultProps, disablePrevious: true } });
 
       // Get the new handler
       const newKeydownHandler =
@@ -303,30 +321,30 @@ describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
           mockAddEventListener.mock.calls.length - 1
         ][1];
 
-      // Now should prevent left arrow
-      newKeydownHandler(leftArrowEvent);
+      // Now should prevent 'j' key
+      newKeydownHandler(jKeyEvent);
       expect(mockOnPrevious).not.toHaveBeenCalled();
       expect(mockPreventDefault).toHaveBeenCalled();
       expect(mockStopPropagation).toHaveBeenCalled();
     });
 
-    it("should update behavior when disableLeftArrow changes from true to false", () => {
+    it("should update behavior when disablePrevious changes from true to false", () => {
       const { rerender } = renderHook(
         ({ props }) => useOnboardingShortcuts(props),
         {
-          initialProps: { props: { ...defaultProps, disableLeftArrow: true } },
+          initialProps: { props: { ...defaultProps, disablePrevious: true } },
         },
       );
 
       const keydownHandler = mockAddEventListener.mock.calls[0][1];
-      const leftArrowEvent = {
-        key: "ArrowLeft",
+      const jKeyEvent = {
+        key: "j",
         preventDefault: mockPreventDefault,
         stopPropagation: mockStopPropagation,
       };
 
-      // Initially should prevent left arrow
-      keydownHandler(leftArrowEvent);
+      // Initially should prevent 'j' key
+      keydownHandler(jKeyEvent);
       expect(mockOnPrevious).not.toHaveBeenCalled();
       expect(mockPreventDefault).toHaveBeenCalled();
       expect(mockStopPropagation).toHaveBeenCalled();
@@ -336,8 +354,8 @@ describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
       mockPreventDefault.mockClear();
       mockStopPropagation.mockClear();
 
-      // Update to allow left arrow
-      rerender({ props: { ...defaultProps, disableLeftArrow: false } });
+      // Update to allow previous
+      rerender({ props: { ...defaultProps, disablePrevious: false } });
 
       // Get the new handler
       const newKeydownHandler =
@@ -345,8 +363,8 @@ describe("useOnboardingShortcuts - disableLeftArrow functionality", () => {
           mockAddEventListener.mock.calls.length - 1
         ][1];
 
-      // Now should allow left arrow
-      newKeydownHandler(leftArrowEvent);
+      // Now should allow 'j' key
+      newKeydownHandler(jKeyEvent);
       expect(mockOnPrevious).toHaveBeenCalledTimes(1);
       expect(mockPreventDefault).not.toHaveBeenCalled();
       expect(mockStopPropagation).not.toHaveBeenCalled();

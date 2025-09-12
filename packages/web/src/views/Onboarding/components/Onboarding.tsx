@@ -104,7 +104,7 @@ export interface OnboardingStep {
   id: string;
   component: React.ComponentType<OnboardingStepProps>;
   onNext?: (data?: Record<string, unknown>) => void;
-  disableLeftArrow?: boolean;
+  disablePrevious?: boolean;
   disableRightArrow?: boolean;
   // Navigation control properties
   preventNavigation?: boolean;
@@ -134,8 +134,8 @@ export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
   };
 
   const handlePrevious = () => {
-    // Check if the current step disables left arrow navigation
-    if (currentStep.disableLeftArrow) {
+    // Check if the current step disables previous navigation
+    if (currentStep.disablePrevious) {
       return;
     }
 
@@ -172,7 +172,7 @@ export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
     canNavigateNext,
     shouldPreventNavigation: preventNavigation ? isNavPrevented : false,
     handlesKeyboardEvents,
-    disableLeftArrow: currentStep.disableLeftArrow || false,
+    disablePrevious: currentStep.disablePrevious || false,
   });
 
   // Handle navigation control changes from steps

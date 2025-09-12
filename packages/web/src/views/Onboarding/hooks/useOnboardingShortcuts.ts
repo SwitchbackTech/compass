@@ -6,7 +6,7 @@ interface UseOnboardingShortcutsProps {
   canNavigateNext: boolean;
   shouldPreventNavigation?: boolean;
   handlesKeyboardEvents?: boolean;
-  disableLeftArrow?: boolean;
+  disablePrevious?: boolean;
 }
 
 export const useOnboardingShortcuts = ({
@@ -15,7 +15,7 @@ export const useOnboardingShortcuts = ({
   canNavigateNext,
   shouldPreventNavigation = false,
   handlesKeyboardEvents = false,
-  disableLeftArrow = false,
+  disablePrevious = false,
 }: UseOnboardingShortcutsProps) => {
   const shouldPreventNavigationRef = useRef(shouldPreventNavigation);
 
@@ -31,15 +31,15 @@ export const useOnboardingShortcuts = ({
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      const isRightArrow = event.key === "ArrowRight";
+      const isNextKey = event.key === "k" || event.key === "K";
       const isEnter = event.key === "Enter";
-      const isLeftArrow = event.key === "ArrowLeft";
+      const isPreviousKey = event.key === "j" || event.key === "J";
 
       // Check if we should prevent navigation
       const shouldPrevent = shouldPreventNavigationRef.current;
 
-      // For right arrow navigation
-      if (isRightArrow) {
+      // For 'k' key navigation (next)
+      if (isNextKey) {
         if (shouldPrevent || !canNavigateNext) {
           event.preventDefault();
           event.stopPropagation();
@@ -48,9 +48,9 @@ export const useOnboardingShortcuts = ({
         onNext();
       }
 
-      // For left arrow navigation
-      if (isLeftArrow) {
-        if (disableLeftArrow) {
+      // For 'j' key navigation (previous)
+      if (isPreviousKey) {
+        if (disablePrevious) {
           event.preventDefault();
           event.stopPropagation();
           return;
@@ -91,7 +91,7 @@ export const useOnboardingShortcuts = ({
     canNavigateNext,
     shouldPreventNavigation,
     handlesKeyboardEvents,
-    disableLeftArrow,
+    disablePrevious,
   ]);
 
   return {

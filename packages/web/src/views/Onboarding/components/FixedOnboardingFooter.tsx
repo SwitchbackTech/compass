@@ -1,6 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React from "react";
 import styled from "styled-components";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
   OnboardingButton,
   OnboardingNextButton,
@@ -59,16 +60,19 @@ export const FixedOnboardingFooter = ({
 
       {/* Navigation buttons on the right */}
       <NavigationButtonsContainer>
-        <OnboardingPreviousButton
-          aria-label="Previous"
+        <TooltipWrapper
+          description="Previous step"
           onClick={onPrev}
-          disabled={prevBtnDisabled}
-        />
-        <OnboardingNextButton
-          aria-label="Next"
-          onClick={onNext}
-          disabled={nextBtnDisabled}
-        />
+          shortcut="J"
+        >
+          <OnboardingPreviousButton
+            aria-label="Previous"
+            disabled={prevBtnDisabled}
+          />
+        </TooltipWrapper>
+        <TooltipWrapper description="Next step" onClick={onNext} shortcut="K">
+          <OnboardingNextButton aria-label="Next" disabled={nextBtnDisabled} />
+        </TooltipWrapper>
       </NavigationButtonsContainer>
     </FixedFooterContainer>
   );
