@@ -11,21 +11,23 @@ import {
   OutroTwo,
   SetReminder,
   SetReminderSuccess,
-  SetSomedayEventTwo,
-  SetSomedayEventsOne,
   SignInWithGoogle,
   SignInWithGooglePrelude,
+  SomedayIntroOne,
+  SomedayIntroTwo,
   WaitlistCheck,
   WelcomeNoteOne,
   WelcomeNoteTwo,
   WelcomeScreen,
   WelcomeStep,
 } from "./steps";
+import { MigrationIntro } from "./steps/events/MigrationIntro/MigrationIntro";
+import { MigrationSandbox } from "./steps/events/MigrationSandbox/MigrationSandbox";
 import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
 
-const OnboardingDemo_: React.FC = () => {
+const _OnboardingFlow: React.FC = () => {
   const navigate = useNavigate();
   const { setHideSteps } = useOnboarding();
 
@@ -98,23 +100,29 @@ const OnboardingDemo_: React.FC = () => {
         <SetReminderSuccess {...props} />
       ),
     },
+
     {
       id: "set-someday-events-one",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEventsOne {...props} />
-      ),
+      component: (props: OnboardingStepProps) => <SomedayIntroOne {...props} />,
     },
     {
       id: "set-someday-event-two",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEventTwo {...props} />
-      ),
+      component: (props: OnboardingStepProps) => <SomedayIntroTwo {...props} />,
     },
     {
       id: "someday-sandbox",
       component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
     },
-
+    {
+      id: "migration-intro",
+      component: (props: OnboardingStepProps) => <MigrationIntro {...props} />,
+    },
+    {
+      id: "someday-migration",
+      component: (props: OnboardingStepProps) => (
+        <MigrationSandbox {...props} />
+      ),
+    },
     {
       id: "outro-two",
       component: (props: OnboardingStepProps) => <OutroTwo {...props} />,
@@ -157,5 +165,5 @@ const OnboardingDemo_: React.FC = () => {
   );
 };
 
-export const OnboardingDemo = withProvider(OnboardingDemo_);
-export default OnboardingDemo;
+export const OnboardingFlow = withProvider(_OnboardingFlow);
+export default OnboardingFlow;

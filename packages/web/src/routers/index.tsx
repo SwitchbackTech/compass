@@ -7,7 +7,7 @@ import SocketProvider from "@web/socket/SocketProvider";
 import { LoginView } from "@web/views/Login";
 import { LogoutView } from "@web/views/Logout";
 import { NotFoundView } from "@web/views/NotFound";
-import OnboardingDemo from "@web/views/Onboarding/OnboardingDemo";
+import OnboardingFlow from "@web/views/Onboarding/OnboardingFlow";
 import { RootView } from "@web/views/Root";
 
 const router = createBrowserRouter([
@@ -25,7 +25,7 @@ const router = createBrowserRouter([
   },
   {
     path: ROOT_ROUTES.LOGIN,
-    element: <OnboardingDemo />,
+    element: <OnboardingFlow />,
   },
   { path: ROOT_ROUTES.LOGOUT, element: <LogoutView /> },
   { path: "*", element: <NotFoundView /> },

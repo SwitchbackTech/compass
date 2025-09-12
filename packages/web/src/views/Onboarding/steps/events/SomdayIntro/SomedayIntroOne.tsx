@@ -1,9 +1,9 @@
 import React from "react";
-import { OnboardingText } from "../../components";
-import { OnboardingStepProps } from "../../components/Onboarding";
-import { OnboardingCardLayout } from "../../components/layouts/OnboardingCardLayout";
+import { OnboardingText } from "../../../components";
+import { OnboardingStepProps } from "../../../components/Onboarding";
+import { OnboardingCardLayout } from "../../../components/layouts/OnboardingCardLayout";
 
-export const SetSomedayEventsOne: React.FC<OnboardingStepProps> = ({
+export const SomedayIntroOne: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
