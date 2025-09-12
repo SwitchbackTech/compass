@@ -45,7 +45,6 @@
     "redux-saga": "^1.1.3",
     "regenerator-runtime": "^0.14.1",
     "reselect": "^4.0.0",
-    "roughjs": "^4.6.6",
     "sass-loader": "^13.2.0",
     "socket.io-client": "^4.7.5",
     "style-loader": "^3.2.1",
