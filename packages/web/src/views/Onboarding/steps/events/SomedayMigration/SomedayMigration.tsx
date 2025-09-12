@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import { colorByPriority } from "@web/common/styles/theme.util";
+import { Divider } from "@web/components/Divider";
 import { OnboardingText } from "../../../components";
 import { OnboardingStepProps } from "../../../components/Onboarding";
 import { OnboardingTwoRowLayout } from "../../../components/layouts/OnboardingTwoRowLayout";
@@ -240,6 +242,21 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
                     {">"}
                   </MigrateArrow>
                 </EventArrows>
+              </EventItem>
+            ))}
+          </EventList>
+        </SidebarSection>
+        <Divider />
+        <SidebarSection>
+          <SectionTitle>This Month</SectionTitle>
+          <EventList>
+            {[
+              { text: "🤖 Start AI course", color: colorByPriority.work },
+              { text: "🏠 Book Airbnb", color: colorByPriority.relationships },
+              { text: "📚 Return library books", color: colorByPriority.self },
+            ].map((event, index) => (
+              <EventItem key={`month-${index}`} color={event.color}>
+                <EventText>{event.text}</EventText>
               </EventItem>
             ))}
           </EventList>
