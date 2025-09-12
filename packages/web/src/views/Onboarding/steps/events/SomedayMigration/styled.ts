@@ -136,11 +136,6 @@ export const EventItem = styled.div<{ color: string }>`
   &:active {
     transform: translateY(0);
   }
-
-  &:focus {
-    outline: 2px solid ${({ theme }) => theme.color.text.accent};
-    outline-offset: 2px;
-  }
 `;
 
 export const EventText = styled.span`
