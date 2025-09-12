@@ -120,8 +120,8 @@ describe("useOnboardingShortcuts - disablePrevious functionality", () => {
       keydownHandler(kKeyEvent);
 
       expect(mockOnNext).toHaveBeenCalledTimes(1);
-      expect(mockPreventDefault).not.toHaveBeenCalled();
-      expect(mockStopPropagation).not.toHaveBeenCalled();
+      expect(mockPreventDefault).toHaveBeenCalled();
+      expect(mockStopPropagation).toHaveBeenCalled();
     });
 
     it("should still allow Enter key navigation when disablePrevious is true", () => {
@@ -145,6 +145,12 @@ describe("useOnboardingShortcuts - disablePrevious functionality", () => {
 
   describe("disablePrevious = false", () => {
     it("should allow 'j' key navigation when disablePrevious is false", () => {
+      // Mock no active element (not in input field)
+      Object.defineProperty(document, "activeElement", {
+        value: null,
+        writable: true,
+      });
+
       const props = { ...defaultProps, disablePrevious: false };
       renderHook(() => useOnboardingShortcuts(props));
 
@@ -158,11 +164,17 @@ describe("useOnboardingShortcuts - disablePrevious functionality", () => {
       keydownHandler(jKeyEvent);
 
       expect(mockOnPrevious).toHaveBeenCalledTimes(1);
-      expect(mockPreventDefault).not.toHaveBeenCalled();
-      expect(mockStopPropagation).not.toHaveBeenCalled();
+      expect(mockPreventDefault).toHaveBeenCalled();
+      expect(mockStopPropagation).toHaveBeenCalled();
     });
 
     it("should allow 'k' key navigation when disablePrevious is false", () => {
+      // Mock no active element (not in input field)
+      Object.defineProperty(document, "activeElement", {
+        value: null,
+        writable: true,
+      });
+
       const props = { ...defaultProps, disablePrevious: false };
       renderHook(() => useOnboardingShortcuts(props));
 
@@ -176,13 +188,19 @@ describe("useOnboardingShortcuts - disablePrevious functionality", () => {
       keydownHandler(kKeyEvent);
 
       expect(mockOnNext).toHaveBeenCalledTimes(1);
-      expect(mockPreventDefault).not.toHaveBeenCalled();
-      expect(mockStopPropagation).not.toHaveBeenCalled();
+      expect(mockPreventDefault).toHaveBeenCalled();
+      expect(mockStopPropagation).toHaveBeenCalled();
     });
   });
 
   describe("disablePrevious = undefined (default)", () => {
     it("should allow 'j' key navigation when disablePrevious is undefined", () => {
+      // Mock no active element (not in input field)
+      Object.defineProperty(document, "activeElement", {
+        value: null,
+        writable: true,
+      });
+
       const props = { ...defaultProps };
       delete (props as any).disablePrevious;
       renderHook(() => useOnboardingShortcuts(props));
@@ -197,8 +215,8 @@ describe("useOnboardingShortcuts - disablePrevious functionality", () => {
       keydownHandler(jKeyEvent);
 
       expect(mockOnPrevious).toHaveBeenCalledTimes(1);
-      expect(mockPreventDefault).not.toHaveBeenCalled();
-      expect(mockStopPropagation).not.toHaveBeenCalled();
+      expect(mockPreventDefault).toHaveBeenCalled();
+      expect(mockStopPropagation).toHaveBeenCalled();
     });
   });
 
@@ -366,8 +384,8 @@ describe("useOnboardingShortcuts - disablePrevious functionality", () => {
       // Now should allow 'j' key
       newKeydownHandler(jKeyEvent);
       expect(mockOnPrevious).toHaveBeenCalledTimes(1);
-      expect(mockPreventDefault).not.toHaveBeenCalled();
-      expect(mockStopPropagation).not.toHaveBeenCalled();
+      expect(mockPreventDefault).toHaveBeenCalled();
+      expect(mockStopPropagation).toHaveBeenCalled();
     });
   });
 });

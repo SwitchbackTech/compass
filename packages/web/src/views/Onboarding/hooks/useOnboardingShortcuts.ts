@@ -38,23 +38,45 @@ export const useOnboardingShortcuts = ({
       // Check if we should prevent navigation
       const shouldPrevent = shouldPreventNavigationRef.current;
 
+      // Check if the active element is an input field
+      const activeElement = document.activeElement as HTMLElement;
+      const isInputFocused =
+        activeElement &&
+        (activeElement.tagName === "INPUT" ||
+          activeElement.tagName === "TEXTAREA" ||
+          activeElement.contentEditable === "true");
+
       // For 'k' key navigation (next)
       if (isNextKey) {
+        // Allow typing in input fields
+        if (isInputFocused) {
+          return;
+        }
+
         if (shouldPrevent || !canNavigateNext) {
           event.preventDefault();
           event.stopPropagation();
           return;
         }
+        event.preventDefault();
+        event.stopPropagation();
         onNext();
       }
 
       // For 'j' key navigation (previous)
       if (isPreviousKey) {
+        // Allow typing in input fields
+        if (isInputFocused) {
+          return;
+        }
+
         if (disablePrevious) {
           event.preventDefault();
           event.stopPropagation();
           return;
         }
+        event.preventDefault();
+        event.stopPropagation();
         onPrevious();
       }
 
