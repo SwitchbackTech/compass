@@ -9,6 +9,17 @@ interface UseOnboardingShortcutsProps {
   disablePrevious?: boolean;
 }
 
+// Helper function to check if an input field is currently focused
+const isInputFieldFocused = (): boolean => {
+  const activeElement = document.activeElement as HTMLElement;
+  return (
+    activeElement &&
+    (activeElement.tagName === "INPUT" ||
+      activeElement.tagName === "TEXTAREA" ||
+      activeElement.contentEditable === "true")
+  );
+};
+
 export const useOnboardingShortcuts = ({
   onNext,
   onPrevious,
@@ -38,18 +49,10 @@ export const useOnboardingShortcuts = ({
       // Check if we should prevent navigation
       const shouldPrevent = shouldPreventNavigationRef.current;
 
-      // Check if the active element is an input field
-      const activeElement = document.activeElement as HTMLElement;
-      const isInputFocused =
-        activeElement &&
-        (activeElement.tagName === "INPUT" ||
-          activeElement.tagName === "TEXTAREA" ||
-          activeElement.contentEditable === "true");
-
       // For 'k' key navigation (next)
       if (isNextKey) {
         // Allow typing in input fields
-        if (isInputFocused) {
+        if (isInputFieldFocused()) {
           return;
         }
 
@@ -66,7 +69,7 @@ export const useOnboardingShortcuts = ({
       // For 'j' key navigation (previous)
       if (isPreviousKey) {
         // Allow typing in input fields
-        if (isInputFocused) {
+        if (isInputFieldFocused()) {
           return;
         }
 
@@ -82,14 +85,8 @@ export const useOnboardingShortcuts = ({
 
       // For Enter key navigation
       if (isEnter) {
-        const activeElement = document.activeElement as HTMLElement;
-        const isInputFocused =
-          activeElement &&
-          (activeElement.tagName === "INPUT" ||
-            activeElement.tagName === "TEXTAREA");
-
         // If focused on an input, let the input handle it
-        if (isInputFocused) {
+        if (isInputFieldFocused()) {
           return;
         }
 
