@@ -11,7 +11,7 @@ export interface SomedayEvent {
 const thisWeekEvents: SomedayEvent[] = [
   { text: "🥙 Meal prep", color: colorByPriority.work },
   { text: "🥗 Get groceries", color: colorByPriority.self },
-  { text: "🏠 Book Airbnb", color: colorByPriority.relationships },
+  { text: "☕️ Coffee with Mom", color: colorByPriority.relationships },
 ];
 
 const nextWeekEvents: SomedayEvent[] = [
