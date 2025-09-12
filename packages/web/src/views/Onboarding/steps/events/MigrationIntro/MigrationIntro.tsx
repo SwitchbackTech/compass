@@ -188,10 +188,12 @@ export const MigrationIntro: React.FC<OnboardingStepProps> = ({
             Compass makes it easy to adjust your plans as things change.
           </OnboardingText>
           <OnboardingText>
-            You can click a someday event's arrow to migrate them forward or
-            back a week/month.
+            You can click one of the arrows to migrate the task forward or back
+            a week/month.
           </OnboardingText>
-          <OnboardingText>Go to the next screen to practice.</OnboardingText>
+          <OnboardingText>
+            Let's go to the next screen to practice.
+          </OnboardingText>
         </RightColumn>
       </TwoColumnContainer>
       <WeekHighlighter
