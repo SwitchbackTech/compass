@@ -289,12 +289,12 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
           <MonthHeader>
             <MonthTitle>Next Month</MonthTitle>
           </MonthHeader>
-          <CalendarGrid isCurrentWeek={isCurrentWeekVisible}>
+          <CalendarGrid isCurrentWeek={false}>
             {nextMonthWeeks.map((week, weekIndex) =>
               week.days.map((day, dayIndex) => (
                 <CalendarDay
                   key={`n-${weekIndex}-${dayIndex}`}
-                  isCurrentWeek={day.isCurrentWeek}
+                  isCurrentWeek={false}
                   isToday={day.isToday}
                 >
                   {day.isCurrentMonth ? day.day : ""}

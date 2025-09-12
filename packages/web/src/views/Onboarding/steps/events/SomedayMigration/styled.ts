@@ -27,7 +27,7 @@ export const MainContent = styled.div`
   position: relative;
   overflow: visible;
   /* Fix container height so ellipse positions remain stable and sidebar fits */
-  height: 475px;
+  height: 580px;
 `;
 
 export const Sidebar = styled.div`
@@ -214,8 +214,6 @@ export const WeekDays = styled.div.withConfig({
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
   margin-bottom: 8px;
-  background-color: ${({ isCurrentWeek }) =>
-    isCurrentWeek ? "#3a3d44" : "transparent"};
   border-radius: 8px;
   padding: 2px;
 `;
@@ -238,8 +236,7 @@ export const CalendarGrid = styled.div.withConfig({
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
   flex: 1;
-  background-color: ${({ isCurrentWeek }) =>
-    isCurrentWeek ? "#3a3d44" : "transparent"};
+  background-color: transparent;
   border-radius: 8px;
   padding: 8px;
 `;
@@ -257,10 +254,7 @@ export const CalendarDay = styled.div.withConfig({
     if (isCurrentWeek) return theme.color.common.white;
     return "#888";
   }};
-  background-color: ${({ isCurrentWeek }) => {
-    if (isCurrentWeek) return "#3a3d44"; // Give current week days their own background
-    return "transparent";
-  }};
+
   border-radius: 4px;
   display: flex;
   align-items: center;
