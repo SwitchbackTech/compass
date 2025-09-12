@@ -91,12 +91,24 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
   const [migratedEventName, setMigratedEventName] = useState<string | null>(
     null,
   );
+  const [migratedMonthEventName, setMigratedMonthEventName] = useState<
+    string | null
+  >(null);
   const [showMigratedEventEllipse, setShowMigratedEventEllipse] =
     useState(false);
   const [showMonthMigratedEllipse, setShowMonthMigratedEllipse] =
     useState(false);
   const [shouldHighlightNavigation, setShouldHighlightNavigation] =
     useState(false);
+
+  const [thisMonthEvents, setThisMonthEvents] = useState([
+    { text: "🤖 Start AI course", color: colorByPriority.work },
+    { text: "🏠 Book Airbnb", color: colorByPriority.relationships },
+    { text: "📚 Return library books", color: colorByPriority.self },
+  ] as { text: string; color: string }[]);
+  const [nextMonthEventsList, setNextMonthEventsList] = useState<
+    { text: string; color: string }[]
+  >([]);
 
   useEffect(() => {
     const computeEllipse = () => {
@@ -219,7 +231,6 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
                 <EventText>{event.text}</EventText>
                 <EventArrows>
                   <MigrateArrow
-                    disabled={currentWeekIndex === 1}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (currentWeekIndex !== 1) {
@@ -246,7 +257,6 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
                     {"<"}
                   </MigrateArrow>
                   <MigrateArrow
-                    disabled={currentWeekIndex === 1}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (currentWeekIndex !== 1) {
@@ -279,16 +289,14 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
         </SidebarSection>
         <Divider />
         <SidebarSection>
-          <SectionTitle>This Month</SectionTitle>
+          <SectionTitle>
+            {currentWeekIndex === 0 ? "This Month" : "Next Month"}
+          </SectionTitle>
           <EventList>
-            {[
-              { text: "🤖 Buy AI course", color: colorByPriority.work },
-              {
-                text: "☕️ Coffee with Mom",
-                color: colorByPriority.relationships,
-              },
-              { text: "📚 Return library books", color: colorByPriority.self },
-            ].map((event, index) => (
+            {(currentWeekIndex === 0
+              ? thisMonthEvents
+              : nextMonthEventsList
+            ).map((event, index) => (
               <EventItem key={`month-${index}`} color={event.color}>
                 <EventText>{event.text}</EventText>
                 <EventArrows>
@@ -305,28 +313,49 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
                       }
                     }}
                     role="button"
-                    tabIndex={0}
-                    title={"No previous month migration"}
+                    tabIndex={-1}
+                    title={
+                      "Migrate to previous month (won't do anything for this demo)"
+                    }
                   >
                     {"<"}
                   </MigrateArrow>
                   <MigrateArrow
                     onClick={(e) => {
                       e.stopPropagation();
-                      setHasMigratedMonthEvent(true);
-                      setShowMonthMigratedEllipse(true);
+                      if (currentWeekIndex === 0) {
+                        setHasMigratedMonthEvent(true);
+                        setShowMonthMigratedEllipse(true);
+                        setMigratedMonthEventName(event.text);
+                        // Remove from This Month and add to Next Month list
+                        setThisMonthEvents((prev) =>
+                          prev.filter((_, i) => i !== index),
+                        );
+                        setNextMonthEventsList((prev) => [...prev, event]);
+                      }
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         e.stopPropagation();
-                        setHasMigratedMonthEvent(true);
-                        setShowMonthMigratedEllipse(true);
+                        if (currentWeekIndex === 0) {
+                          setHasMigratedMonthEvent(true);
+                          setShowMonthMigratedEllipse(true);
+                          setMigratedMonthEventName(event.text);
+                          setThisMonthEvents((prev) =>
+                            prev.filter((_, i) => i !== index),
+                          );
+                          setNextMonthEventsList((prev) => [...prev, event]);
+                        }
                       }
                     }}
                     role="button"
-                    tabIndex={0}
-                    title={"Migrate to next month"}
+                    tabIndex={currentWeekIndex === 1 ? -1 : 0}
+                    title={
+                      currentWeekIndex === 1
+                        ? "Cannot migrate further forward"
+                        : "Migrate to next month"
+                    }
                   >
                     {">"}
                   </MigrateArrow>
@@ -386,7 +415,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
             readOnly
           />
           <CheckboxLabel htmlFor="migrate-event">
-            Migrate a week event
+            Migrate an event to next week
           </CheckboxLabel>
         </CheckboxContainer>
         <CheckboxContainer>
@@ -408,7 +437,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
             readOnly
           />
           <CheckboxLabel htmlFor="view-next-week">
-            Go to next week
+            Go to next week and view the event
           </CheckboxLabel>
         </CheckboxContainer>
       </RightColumn>
@@ -468,6 +497,24 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
           text=""
           onClick={() => {}}
         />
+      )}
+      {showMonthMigratedEllipse && migratedMonthEventName && (
+        <div
+          style={{
+            position: "absolute",
+            left: `${nextMonthFirstWeekPosition.x + nextMonthFirstWeekPosition.width + 20}px`,
+            top: `${nextMonthFirstWeekPosition.y + nextMonthFirstWeekPosition.height / 2 - 10}px`,
+            fontFamily: "Caveat, cursive",
+            fontSize: "18px",
+            color: "#60e3fa",
+            fontWeight: "normal",
+            zIndex: 101,
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {migratedMonthEventName} is here now
+        </div>
       )}
       {showMigratedEventEllipse &&
         migratedEventName &&

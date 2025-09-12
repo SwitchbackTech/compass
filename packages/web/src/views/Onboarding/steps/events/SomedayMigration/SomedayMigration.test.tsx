@@ -1,6 +1,7 @@
 import React from "react";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
+import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { withProvider } from "../../../components/OnboardingContext";
@@ -387,6 +388,76 @@ describe("SomedayMigration", () => {
       );
       expect(getBackArrow()).toHaveAttribute("title", "Previous week");
       expect(getForwardArrow()).toHaveAttribute("title", "Next week");
+    });
+  });
+
+  describe("Month Migration", () => {
+    it("should check the month migration checkbox and remove the event when migrating a month event", async () => {
+      render(<SomedayMigrationWithProvider {...defaultProps} />);
+
+      // Ensure a month event is present initially
+      expect(screen.getByText("🤖 Start AI course")).toBeInTheDocument();
+
+      // Click the first month event's forward arrow
+      const monthForwardArrows = screen.getAllByTitle("Migrate to next month");
+      expect(monthForwardArrows.length).toBeGreaterThan(0);
+      await userEvent.click(monthForwardArrows[0]);
+
+      // Checkbox should be checked
+      const monthCheckbox = screen.getByLabelText(
+        "Migrate a month event",
+      ) as HTMLInputElement;
+      expect(monthCheckbox).toBeChecked();
+
+      // Event should be removed from the This Month list
+      expect(screen.queryByText("🤖 Start AI course")).not.toBeInTheDocument();
+
+      // A label should appear next to the Next Month rectangle
+      expect(
+        screen.getByText(/Start AI course is here now/),
+      ).toBeInTheDocument();
+
+      // There should be at least one canvas drawn for the month highlight
+      const canvases = document.querySelectorAll("canvas");
+      expect(canvases.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe("Month Sidebar Paging", () => {
+    it("changes label from This Month to Next Month when navigating forward", async () => {
+      render(<SomedayMigrationWithProvider {...defaultProps} />);
+
+      const sections = document.querySelectorAll('[class*="SidebarSection"]');
+      const monthSection = sections[1] as HTMLElement; // Second section is month
+
+      expect(within(monthSection).getByText("This Month")).toBeInTheDocument();
+
+      // Navigate to next page (week navigation forward)
+      await userEvent.click(screen.getByTitle("Next week"));
+
+      expect(within(monthSection).getByText("Next Month")).toBeInTheDocument();
+    });
+
+    it("shows migrated month event on Next Month after navigating forward", async () => {
+      render(<SomedayMigrationWithProvider {...defaultProps} />);
+
+      // Migrate first month event forward
+      const monthForwardArrows = screen.getAllByTitle("Migrate to next month");
+      await userEvent.click(monthForwardArrows[0]);
+
+      // Navigate to next page
+      await userEvent.click(screen.getByTitle("Next week"));
+
+      const sections = document.querySelectorAll('[class*="SidebarSection"]');
+      const monthSection = sections[1] as HTMLElement;
+
+      // Label should be Next Month now
+      expect(within(monthSection).getByText("Next Month")).toBeInTheDocument();
+
+      // Migrated event should appear in Next Month list
+      expect(
+        within(monthSection).getByText("🤖 Start AI course"),
+      ).toBeInTheDocument();
     });
   });
 
