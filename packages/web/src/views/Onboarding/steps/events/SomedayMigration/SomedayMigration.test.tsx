@@ -65,12 +65,8 @@ describe("SomedayMigration", () => {
   it("should render checkboxes for user tasks", () => {
     setup();
 
-    expect(
-      screen.getByText("Migrate an event to next week"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Go to next week and view the event"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Migrate a week event")).toBeInTheDocument();
+    expect(screen.getByText("Go to next week")).toBeInTheDocument();
   });
 
   it("should have proper accessibility attributes for event containers", () => {

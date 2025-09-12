@@ -252,8 +252,11 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
           <SectionTitle>This Month</SectionTitle>
           <EventList>
             {[
-              { text: "🤖 Start AI course", color: colorByPriority.work },
-              { text: "🏠 Book Airbnb", color: colorByPriority.relationships },
+              { text: "🤖 Buy AI course", color: colorByPriority.work },
+              {
+                text: "☕️ Coffee with Mom",
+                color: colorByPriority.relationships,
+              },
               { text: "📚 Return library books", color: colorByPriority.self },
             ].map((event, index) => (
               <EventItem key={`month-${index}`} color={event.color}>
@@ -313,7 +316,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
             readOnly
           />
           <CheckboxLabel htmlFor="migrate-event">
-            Migrate an event to next week
+            Migrate a week event
           </CheckboxLabel>
         </CheckboxContainer>
         <CheckboxContainer>
@@ -324,7 +327,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
             readOnly
           />
           <CheckboxLabel htmlFor="view-next-week">
-            Go to next week and view the event
+            Go to next week
           </CheckboxLabel>
         </CheckboxContainer>
       </RightColumn>
