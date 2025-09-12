@@ -72,7 +72,14 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
 
   const thisWeekLabelRef = useRef<HTMLDivElement>(null);
   const calendarGridRef = useRef<HTMLDivElement>(null);
+  const nextCalendarGridRef = useRef<HTMLDivElement>(null);
   const [ellipsePosition, setEllipsePosition] = useState({
+    x: 280,
+    y: 60,
+    width: 280,
+    height: 40,
+  });
+  const [nextMonthFirstWeekPosition, setNextMonthFirstWeekPosition] = useState({
     x: 280,
     y: 60,
     width: 280,
@@ -80,10 +87,13 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
   });
   const [hasMigratedEvent, setHasMigratedEvent] = useState(false);
   const [hasViewedNextWeek, setHasViewedNextWeek] = useState(false);
+  const [hasMigratedMonthEvent, setHasMigratedMonthEvent] = useState(false);
   const [migratedEventName, setMigratedEventName] = useState<string | null>(
     null,
   );
   const [showMigratedEventEllipse, setShowMigratedEventEllipse] =
+    useState(false);
+  const [showMonthMigratedEllipse, setShowMonthMigratedEllipse] =
     useState(false);
   const [shouldHighlightNavigation, setShouldHighlightNavigation] =
     useState(false);
@@ -136,6 +146,26 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
         width: ellipseWidth,
         height: ellipseHeight,
       });
+
+      // Compute rectangle for first week of the NEXT month widget
+      if (nextCalendarGridRef.current) {
+        const nextRect = nextCalendarGridRef.current.getBoundingClientRect();
+        const totalWeeksNext = 5;
+        const rowHeightNext = nextRect.height / totalWeeksNext;
+        const colWidthNext = nextRect.width / 7;
+
+        const nmX = nextRect.left - containerRect.left - 8;
+        const nmY = nextRect.top - containerRect.top + 0 * rowHeightNext - 8;
+        const nmWidth = 7 * colWidthNext + 16;
+        const nmHeight = rowHeightNext + 16;
+
+        setNextMonthFirstWeekPosition({
+          x: nmX,
+          y: nmY,
+          width: nmWidth,
+          height: nmHeight,
+        });
+      }
     };
 
     // Slight delay to ensure layout is ready
@@ -261,6 +291,46 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
             ].map((event, index) => (
               <EventItem key={`month-${index}`} color={event.color}>
                 <EventText>{event.text}</EventText>
+                <EventArrows>
+                  <MigrateArrow
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // No-op for back month migration
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // No-op for back month migration
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    title={"No previous month migration"}
+                  >
+                    {"<"}
+                  </MigrateArrow>
+                  <MigrateArrow
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setHasMigratedMonthEvent(true);
+                      setShowMonthMigratedEllipse(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setHasMigratedMonthEvent(true);
+                        setShowMonthMigratedEllipse(true);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    title={"Migrate to next month"}
+                  >
+                    {">"}
+                  </MigrateArrow>
+                </EventArrows>
               </EventItem>
             ))}
           </EventList>
@@ -292,7 +362,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
           <MonthHeader>
             <MonthTitle>Next Month</MonthTitle>
           </MonthHeader>
-          <CalendarGrid isCurrentWeek={false}>
+          <CalendarGrid isCurrentWeek={false} ref={nextCalendarGridRef}>
             {nextMonthWeeks.map((week, weekIndex) =>
               week.days.map((day, dayIndex) => (
                 <CalendarDay
@@ -317,6 +387,17 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
           />
           <CheckboxLabel htmlFor="migrate-event">
             Migrate a week event
+          </CheckboxLabel>
+        </CheckboxContainer>
+        <CheckboxContainer>
+          <Checkbox
+            type="checkbox"
+            id="migrate-month-event"
+            checked={hasMigratedMonthEvent}
+            readOnly
+          />
+          <CheckboxLabel htmlFor="migrate-month-event">
+            Migrate a month event
           </CheckboxLabel>
         </CheckboxContainer>
         <CheckboxContainer>
@@ -370,6 +451,18 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
           }
           width={ellipsePosition.width}
           height={ellipsePosition.height}
+          color="#60e3fa"
+          strokeWidth={3}
+          text=""
+          onClick={() => {}}
+        />
+      )}
+      {showMonthMigratedEllipse && nextCalendarGridRef.current && (
+        <WeekHighlighter
+          x={nextMonthFirstWeekPosition.x}
+          y={nextMonthFirstWeekPosition.y}
+          width={nextMonthFirstWeekPosition.width}
+          height={nextMonthFirstWeekPosition.height}
           color="#60e3fa"
           strokeWidth={3}
           text=""
