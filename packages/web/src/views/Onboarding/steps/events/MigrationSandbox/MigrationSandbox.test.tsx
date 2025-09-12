@@ -5,10 +5,10 @@ import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { withProvider } from "../../../components/OnboardingContext";
-import { SomedayMigration } from "./SomedayMigration";
+import { MigrationSandbox } from "./MigrationSandbox";
 
 // Wrap the component with OnboardingProvider
-const SomedayMigrationWithProvider = withProvider(SomedayMigration);
+const SomedayMigrationWithProvider = withProvider(MigrationSandbox);
 
 // Mock required props for SomedayMigration
 const defaultProps = {

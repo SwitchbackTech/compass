@@ -20,7 +20,7 @@ const nextWeekEvents: SomedayEvent[] = [
 ];
 
 // Custom hook for managing someday event migration
-export const useSomedayMigration = (
+export const useMigrationSandbox = (
   onEventMigrated?: () => void,
   onEventMigratedForward?: (eventName: string) => void,
   onNavigatedToNextWeek?: () => void,

@@ -30,9 +30,9 @@ import {
   SidebarSection,
 } from "./styled";
 import { useMigrationLogic } from "./useMigrationLogic";
-import { useSomedayMigration } from "./useSomedayMigration";
+import { useMigrationSandbox } from "./useMigrationSandbox";
 
-export const SomedayMigration: React.FC<OnboardingStepProps> = ({
+export const MigrationSandbox: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
@@ -50,7 +50,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
     navigateToNextWeek,
     navigateToPreviousWeek,
     handleEventClick,
-  } = useSomedayMigration(
+  } = useMigrationSandbox(
     () => setHasMigratedEvent(true),
     (eventName: string) => {
       setMigratedEventName(eventName);
