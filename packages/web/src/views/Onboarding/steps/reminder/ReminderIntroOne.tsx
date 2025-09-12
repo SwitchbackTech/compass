@@ -17,6 +17,7 @@ export const ReminderIntroOne: React.FC<OnboardingStepProps> = ({
       onSkip={onSkip}
       onPrevious={onPrevious}
       onNext={onNext}
+      prevBtnDisabled={true}
     >
       <OnboardingText>
         Compass is where you'll make the most important decisions of your life:

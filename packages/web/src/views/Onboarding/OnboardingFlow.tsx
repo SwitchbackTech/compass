@@ -83,6 +83,7 @@ const _OnboardingFlow: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <ReminderIntroOne {...props} />
       ),
+      disablePrevious: true,
     },
     {
       id: "reminder-intro-two",
