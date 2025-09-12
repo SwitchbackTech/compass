@@ -21,7 +21,8 @@ import {
   WelcomeScreen,
   WelcomeStep,
 } from "./steps";
-import { SomedayMigration } from "./steps/events/SomedayMigration/SomedayMigration";
+import { MigrationIntro } from "./steps/events/MigrationIntro/MigrationIntro";
+import { MigrationSandbox } from "./steps/events/MigrationSandbox/MigrationSandbox";
 import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
@@ -33,12 +34,6 @@ const _OnboardingFlow: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   const loginSteps: OnboardingStepType[] = [
-    {
-      id: "someday-migration",
-      component: (props: OnboardingStepProps) => (
-        <SomedayMigration {...props} />
-      ),
-    },
     {
       id: "welcome",
       component: (props: OnboardingStepProps) => <WelcomeStep {...props} />,
@@ -119,9 +114,13 @@ const _OnboardingFlow: React.FC = () => {
       component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
     },
     {
+      id: "migration-intro",
+      component: (props: OnboardingStepProps) => <MigrationIntro {...props} />,
+    },
+    {
       id: "someday-migration",
       component: (props: OnboardingStepProps) => (
-        <SomedayMigration {...props} />
+        <MigrationSandbox {...props} />
       ),
     },
     {

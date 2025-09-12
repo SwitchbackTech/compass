@@ -13,16 +13,15 @@ import { RootView } from "@web/views/Root";
 const router = createBrowserRouter([
   {
     path: ROOT_ROUTES.ROOT,
-    // element: (
-    // <ProtectedRoute>
-    // <UserProvider>
-    // <SocketProvider>
-    // <RootView />
-    // </SocketProvider>
-    // </UserProvider>
-    // </ProtectedRoute>
-    // ),
-    element: <OnboardingFlow />,
+    element: (
+      <ProtectedRoute>
+        <UserProvider>
+          <SocketProvider>
+            <RootView />
+          </SocketProvider>
+        </UserProvider>
+      </ProtectedRoute>
+    ),
   },
   {
     path: ROOT_ROUTES.LOGIN,

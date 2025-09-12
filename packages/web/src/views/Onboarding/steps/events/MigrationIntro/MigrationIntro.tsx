@@ -105,10 +105,6 @@ const MigrateArrow = styled.span`
   }
 `;
 
-const BulletPoint = styled(OnboardingText)`
-  margin: 0;
-`;
-
 export const MigrationIntro: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
@@ -187,15 +183,15 @@ export const MigrationIntro: React.FC<OnboardingStepProps> = ({
           </EventContainer>
         </LeftColumn>
         <RightColumn>
-          <BulletPoint>Life at sea is unpredictable.</BulletPoint>
-          <BulletPoint>
+          <OnboardingText>Life at sea is unpredictable.</OnboardingText>
+          <OnboardingText>
             Compass makes it easy to adjust your plans as things change.
-          </BulletPoint>
-          <BulletPoint>
+          </OnboardingText>
+          <OnboardingText>
             You can click a someday event's arrow to migrate them forward or
             back a week/month.
-          </BulletPoint>
-          <BulletPoint>Go to the next screen to practice.</BulletPoint>
+          </OnboardingText>
+          <OnboardingText>Go to the next screen to practice.</OnboardingText>
         </RightColumn>
       </TwoColumnContainer>
       <WeekHighlighter
