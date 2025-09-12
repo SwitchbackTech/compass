@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { renderHook } from "@testing-library/react";
-import { useCalendarLogic } from "./useCalendarLogic";
+import { useMigrationLogic } from "./useMigrationLogic";
 
 // Mock dayjs to use a fixed date for consistent testing
 const mockDate = dayjs("2025-09-10"); // Wednesday, September 10, 2025
@@ -22,13 +22,13 @@ describe("useCalendarLogic", () => {
   });
 
   it("should return correct month title", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     expect(result.current.monthTitle).toBe("September 2025");
   });
 
   it("should return correct week day labels", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     expect(result.current.weekDays).toEqual([
       "S",
@@ -42,7 +42,7 @@ describe("useCalendarLogic", () => {
   });
 
   it("should identify current week correctly", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     // Find the week that contains the current day (September 10, 2025)
     const currentWeek = result.current.weeks.find((week) =>
@@ -54,7 +54,7 @@ describe("useCalendarLogic", () => {
   });
 
   it("should highlight all days in current week (Sunday to Saturday)", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     // Find the current week
     const currentWeek = result.current.weeks.find((week) =>
@@ -70,7 +70,7 @@ describe("useCalendarLogic", () => {
   });
 
   it("should identify today correctly", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     // Find today's date
     const today = result.current.weeks
@@ -84,7 +84,7 @@ describe("useCalendarLogic", () => {
   });
 
   it("should have correct current week days (September 7-13, 2025)", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     // Find the current week
     const currentWeek = result.current.weeks.find((week) =>
@@ -103,7 +103,7 @@ describe("useCalendarLogic", () => {
   });
 
   it("should mark non-current month days correctly", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     // Find days that are not in the current month
     const nonCurrentMonthDays = result.current.weeks
@@ -117,20 +117,20 @@ describe("useCalendarLogic", () => {
   });
 
   it("should have correct isCurrentWeekVisible value", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     // Since we're testing with September 10, 2025, the current week should be visible
     expect(result.current.isCurrentWeekVisible).toBe(true);
   });
 
   it("should have exactly 5 weeks", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     expect(result.current.weeks).toHaveLength(5);
   });
 
   it("should have exactly 7 days per week", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     result.current.weeks.forEach((week) => {
       expect(week.days).toHaveLength(7);
@@ -138,7 +138,7 @@ describe("useCalendarLogic", () => {
   });
 
   it("should correctly calculate currentWeekIndex", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     // Since we're using September 10, 2025 (Wednesday), currentWeekIndex should be valid
     expect(result.current.currentWeekIndex).toBeGreaterThanOrEqual(0);
@@ -151,7 +151,7 @@ describe("useCalendarLogic", () => {
   });
 
   it("should have Saturday (day 13) as the last day of the current week", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     // Find the current week
     const currentWeek = result.current.weeks[result.current.currentWeekIndex];
@@ -165,7 +165,7 @@ describe("useCalendarLogic", () => {
   });
 
   it("should provide correct week structure for arrow targeting", () => {
-    const { result } = renderHook(() => useCalendarLogic());
+    const { result } = renderHook(() => useMigrationLogic());
 
     // Verify that each week has 7 days (Sunday to Saturday)
     result.current.weeks.forEach((week) => {

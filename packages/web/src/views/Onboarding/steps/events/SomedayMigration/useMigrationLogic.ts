@@ -25,7 +25,7 @@ export interface CalendarData {
   currentWeekIndex: number;
 }
 
-export const useCalendarLogic = (): CalendarData => {
+export const useMigrationLogic = (): CalendarData => {
   return useMemo(() => {
     const currentDate = dayjs("2025-09-10");
     const currentMonth = currentDate.month();

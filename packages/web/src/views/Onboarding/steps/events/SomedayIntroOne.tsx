@@ -3,12 +3,12 @@ import { OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
 import { OnboardingCardLayout } from "../../components/layouts/OnboardingCardLayout";
 
-export const SetSomedayEventTwo: React.FC<OnboardingStepProps> = ({
+export const SomedayIntroOne: React.FC<OnboardingStepProps> = ({
   currentStep,
   totalSteps,
   onNext,
-  onSkip,
   onPrevious,
+  onSkip,
 }) => {
   return (
     <OnboardingCardLayout
@@ -19,14 +19,13 @@ export const SetSomedayEventTwo: React.FC<OnboardingStepProps> = ({
       onNext={onNext}
     >
       <OnboardingText>
-        Thankfully, you can store future tasks in the sidebar.
+        Having a fancy Reminder is great, but what about all the nitty-gritty
+        tasks that the sea requires?
       </OnboardingText>
 
       <OnboardingText>
-        Keeping those next to your schedule helps you stay on top of things.
+        We cannot let those fall through the cracks.
       </OnboardingText>
-
-      <OnboardingText>Let's see how that looks.</OnboardingText>
     </OnboardingCardLayout>
   );
 };

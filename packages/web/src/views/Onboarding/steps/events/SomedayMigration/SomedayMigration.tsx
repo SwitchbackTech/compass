@@ -27,7 +27,7 @@ import {
   WeekDayLabel,
   WeekDays,
 } from "./styled";
-import { useCalendarLogic } from "./useCalendarLogic";
+import { useMigrationLogic } from "./useMigrationLogic";
 import { useSomedayMigration } from "./useSomedayMigration";
 
 export const SomedayMigration: React.FC<OnboardingStepProps> = ({
@@ -65,7 +65,7 @@ export const SomedayMigration: React.FC<OnboardingStepProps> = ({
     weeks,
     isCurrentWeekVisible,
     currentWeekIndex: calendarWeekIndex,
-  } = useCalendarLogic();
+  } = useMigrationLogic();
 
   const thisWeekLabelRef = useRef<HTMLDivElement>(null);
   const calendarGridRef = useRef<HTMLDivElement>(null);

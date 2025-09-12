@@ -11,10 +11,10 @@ import {
   OutroTwo,
   SetReminder,
   SetReminderSuccess,
-  SetSomedayEventTwo,
-  SetSomedayEventsOne,
   SignInWithGoogle,
   SignInWithGooglePrelude,
+  SomedayIntroOne,
+  SomedayIntroTwo,
   WaitlistCheck,
   WelcomeNoteOne,
   WelcomeNoteTwo,
@@ -105,23 +105,25 @@ const _OnboardingFlow: React.FC = () => {
         <SetReminderSuccess {...props} />
       ),
     },
+
     {
       id: "set-someday-events-one",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEventsOne {...props} />
-      ),
+      component: (props: OnboardingStepProps) => <SomedayIntroOne {...props} />,
     },
     {
       id: "set-someday-event-two",
-      component: (props: OnboardingStepProps) => (
-        <SetSomedayEventTwo {...props} />
-      ),
+      component: (props: OnboardingStepProps) => <SomedayIntroTwo {...props} />,
     },
     {
       id: "someday-sandbox",
       component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
     },
-
+    {
+      id: "someday-migration",
+      component: (props: OnboardingStepProps) => (
+        <SomedayMigration {...props} />
+      ),
+    },
     {
       id: "outro-two",
       component: (props: OnboardingStepProps) => <OutroTwo {...props} />,
