@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import styled from "styled-components";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { OnboardingNextButton, OnboardingPreviousButton } from "../IconButtons";
 import { OnboardingContainer, OnboardingStepProps } from "../Onboarding";
 import { OnboardingStep } from "../OnboardingStep";
@@ -42,7 +43,8 @@ interface OnboardingTwoRowLayoutProps
   onNext: () => void;
   onPrevious: () => void;
   onSkip: () => void;
-  nextButtonDisabled?: boolean;
+  isNextBtnDisabled?: boolean;
+  isPrevBtnDisabled?: boolean;
   defaultPreventNavigation?: boolean;
   onNavigationControlChange?: (shouldPrevent: boolean) => void;
   isNavPrevented?: boolean;
@@ -55,7 +57,8 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
   onPrevious,
   onSkip,
   content,
-  nextButtonDisabled = false,
+  isNextBtnDisabled = false,
+  isPrevBtnDisabled = false,
   onNavigationControlChange,
   isNavPrevented = false,
 }) => {
@@ -73,17 +76,29 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
         <Content>{content}</Content>
         <SkipButton onClick={onSkip}>SKIP INTRO</SkipButton>
         <NavigationButtons>
-          <OnboardingPreviousButton
-            aria-label="Previous"
-            onClick={onPrevious}
-          />
-          <OnboardingNextButton
-            aria-label="Next"
-            onClick={onNext}
-            disabled={nextButtonDisabled}
-            shouldTrapFocus={!isNavPrevented}
-            shouldPulse={!isNavPrevented}
-          />
+          <TooltipWrapper
+            description="Previous step"
+            onClick={isPrevBtnDisabled ? undefined : onPrevious}
+            shortcut="J"
+          >
+            <OnboardingPreviousButton
+              aria-label="Previous"
+              disabled={isPrevBtnDisabled}
+            />
+          </TooltipWrapper>
+          <TooltipWrapper
+            description="Next step"
+            onClick={isNextBtnDisabled ? undefined : onNext}
+            shortcut="K"
+          >
+            <OnboardingNextButton
+              aria-label="Next"
+              onClick={isNextBtnDisabled ? undefined : onNext}
+              disabled={isNextBtnDisabled}
+              shouldTrapFocus={!isNavPrevented}
+              shouldPulse={!isNavPrevented}
+            />
+          </TooltipWrapper>
         </NavigationButtons>
       </TwoRowLayoutContainer>
     </OnboardingContainer>

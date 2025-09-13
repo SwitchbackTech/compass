@@ -83,6 +83,7 @@ const _OnboardingFlow: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <ReminderIntroOne {...props} />
       ),
+      disablePrevious: true,
     },
     {
       id: "reminder-intro-two",
@@ -112,10 +113,12 @@ const _OnboardingFlow: React.FC = () => {
     {
       id: "someday-sandbox",
       component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
+      handlesKeyboardEvents: true,
     },
     {
       id: "migration-intro",
       component: (props: OnboardingStepProps) => <MigrationIntro {...props} />,
+      disablePrevious: true,
     },
     {
       id: "someday-migration",
@@ -126,12 +129,12 @@ const _OnboardingFlow: React.FC = () => {
     {
       id: "outro-two",
       component: (props: OnboardingStepProps) => <OutroTwo {...props} />,
-      disableLeftArrow: true,
+      disablePrevious: true,
     },
     {
       id: "outro-quote",
       component: (props: OnboardingStepProps) => <OutroQuote {...props} />,
-      disableLeftArrow: true,
+      disablePrevious: true,
       disableRightArrow: true,
     },
   ];

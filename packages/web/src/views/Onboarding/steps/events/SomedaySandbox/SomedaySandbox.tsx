@@ -61,6 +61,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     isMonthTaskReady,
     isSubmitting,
     handleNext,
+    onPrevious,
   });
 
   const content = (
@@ -203,7 +204,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
       onPrevious={onPrevious}
       onSkip={onSkip}
       content={content}
-      nextButtonDisabled={!isWeekTaskReady || !isMonthTaskReady || isSubmitting}
+      isNextBtnDisabled={!isWeekTaskReady || !isMonthTaskReady || isSubmitting}
       canNavigateNext={isWeekTaskReady && isMonthTaskReady && !isSubmitting}
       onNavigationControlChange={onNavigationControlChange}
       isNavPrevented={isNavPrevented}

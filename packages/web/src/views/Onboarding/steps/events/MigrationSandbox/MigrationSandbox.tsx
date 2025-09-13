@@ -537,7 +537,7 @@ export const MigrationSandbox: React.FC<OnboardingStepProps> = ({
       onPrevious={onPrevious}
       onSkip={onSkip}
       content={content}
-      nextButtonDisabled={!isAllChecked}
+      isNextBtnDisabled={!isAllChecked}
       onNavigationControlChange={onNavigationControlChange}
       isNavPrevented={!isAllChecked || isNavPrevented}
     />

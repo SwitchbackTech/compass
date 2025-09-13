@@ -219,6 +219,7 @@ export const MigrationIntro: React.FC<OnboardingStepProps> = ({
       content={content}
       onNavigationControlChange={onNavigationControlChange}
       isNavPrevented={isNavPrevented}
+      isPrevBtnDisabled={true}
     />
   );
 };

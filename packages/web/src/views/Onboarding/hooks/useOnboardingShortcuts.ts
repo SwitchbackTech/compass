@@ -6,8 +6,19 @@ interface UseOnboardingShortcutsProps {
   canNavigateNext: boolean;
   shouldPreventNavigation?: boolean;
   handlesKeyboardEvents?: boolean;
-  disableLeftArrow?: boolean;
+  disablePrevious?: boolean;
 }
+
+// Helper function to check if an input field is currently focused
+const isInputFieldFocused = (): boolean => {
+  const activeElement = document.activeElement as HTMLElement;
+  return (
+    activeElement &&
+    (activeElement.tagName === "INPUT" ||
+      activeElement.tagName === "TEXTAREA" ||
+      activeElement.contentEditable === "true")
+  );
+};
 
 export const useOnboardingShortcuts = ({
   onNext,
@@ -15,7 +26,7 @@ export const useOnboardingShortcuts = ({
   canNavigateNext,
   shouldPreventNavigation = false,
   handlesKeyboardEvents = false,
-  disableLeftArrow = false,
+  disablePrevious = false,
 }: UseOnboardingShortcutsProps) => {
   const shouldPreventNavigationRef = useRef(shouldPreventNavigation);
 
@@ -31,43 +42,51 @@ export const useOnboardingShortcuts = ({
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      const isRightArrow = event.key === "ArrowRight";
+      const isNextKey = event.key === "k" || event.key === "K";
       const isEnter = event.key === "Enter";
-      const isLeftArrow = event.key === "ArrowLeft";
+      const isPreviousKey = event.key === "j" || event.key === "J";
 
       // Check if we should prevent navigation
       const shouldPrevent = shouldPreventNavigationRef.current;
 
-      // For right arrow navigation
-      if (isRightArrow) {
+      // For 'k' key navigation (next)
+      if (isNextKey) {
+        // Allow typing in input fields
+        if (isInputFieldFocused()) {
+          return;
+        }
+
         if (shouldPrevent || !canNavigateNext) {
           event.preventDefault();
           event.stopPropagation();
           return;
         }
+        event.preventDefault();
+        event.stopPropagation();
         onNext();
       }
 
-      // For left arrow navigation
-      if (isLeftArrow) {
-        if (disableLeftArrow) {
+      // For 'j' key navigation (previous)
+      if (isPreviousKey) {
+        // Allow typing in input fields
+        if (isInputFieldFocused()) {
+          return;
+        }
+
+        if (disablePrevious) {
           event.preventDefault();
           event.stopPropagation();
           return;
         }
+        event.preventDefault();
+        event.stopPropagation();
         onPrevious();
       }
 
       // For Enter key navigation
       if (isEnter) {
-        const activeElement = document.activeElement as HTMLElement;
-        const isInputFocused =
-          activeElement &&
-          (activeElement.tagName === "INPUT" ||
-            activeElement.tagName === "TEXTAREA");
-
         // If focused on an input, let the input handle it
-        if (isInputFocused) {
+        if (isInputFieldFocused()) {
           return;
         }
 
@@ -91,7 +110,7 @@ export const useOnboardingShortcuts = ({
     canNavigateNext,
     shouldPreventNavigation,
     handlesKeyboardEvents,
-    disableLeftArrow,
+    disablePrevious,
   ]);
 
   return {
