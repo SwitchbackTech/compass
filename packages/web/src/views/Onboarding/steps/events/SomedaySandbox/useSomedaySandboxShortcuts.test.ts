@@ -69,7 +69,7 @@ describe("useSomedaySandboxKeyboard", () => {
     );
   });
 
-  it("should call handleNext when ArrowRight is pressed and conditions are met", () => {
+  it("should call handleNext when k is pressed and conditions are met", () => {
     const mockHandleNext = jest.fn();
     const props = { ...defaultProps, handleNext: mockHandleNext };
 
@@ -78,8 +78,8 @@ describe("useSomedaySandboxKeyboard", () => {
     // Get the event handler that was registered
     const eventHandler = mockAddEventListener.mock.calls[0][1];
 
-    // Simulate ArrowRight key press
-    const event = new KeyboardEvent("keydown", { key: "ArrowRight" });
+    // Simulate k key press
+    const event = new KeyboardEvent("keydown", { key: "k" });
     event.preventDefault = jest.fn();
     event.stopPropagation = jest.fn();
 
@@ -115,7 +115,7 @@ describe("useSomedaySandboxKeyboard", () => {
     expect(event.stopPropagation).toHaveBeenCalled();
   });
 
-  it("should not call handleNext when ArrowRight is pressed but isWeekTaskReady is false", () => {
+  it("should not call handleNext when k is pressed but isWeekTaskReady is false", () => {
     const mockHandleNext = jest.fn();
     const props = {
       ...defaultProps,
@@ -126,7 +126,7 @@ describe("useSomedaySandboxKeyboard", () => {
     renderHook(() => useSomedaySandboxKeyboard(props));
 
     const eventHandler = mockAddEventListener.mock.calls[0][1];
-    const event = new KeyboardEvent("keydown", { key: "ArrowRight" });
+    const event = new KeyboardEvent("keydown", { key: "k" });
     event.preventDefault = jest.fn();
     event.stopPropagation = jest.fn();
 
@@ -139,7 +139,7 @@ describe("useSomedaySandboxKeyboard", () => {
     expect(event.stopPropagation).toHaveBeenCalled();
   });
 
-  it("should not call handleNext when ArrowRight is pressed but isMonthTaskReady is false", () => {
+  it("should not call handleNext when k is pressed but isMonthTaskReady is false", () => {
     const mockHandleNext = jest.fn();
     const props = {
       ...defaultProps,
@@ -150,7 +150,7 @@ describe("useSomedaySandboxKeyboard", () => {
     renderHook(() => useSomedaySandboxKeyboard(props));
 
     const eventHandler = mockAddEventListener.mock.calls[0][1];
-    const event = new KeyboardEvent("keydown", { key: "ArrowRight" });
+    const event = new KeyboardEvent("keydown", { key: "k" });
     event.preventDefault = jest.fn();
     event.stopPropagation = jest.fn();
 
@@ -163,7 +163,7 @@ describe("useSomedaySandboxKeyboard", () => {
     expect(event.stopPropagation).toHaveBeenCalled();
   });
 
-  it("should not call handleNext when ArrowRight is pressed but isSubmitting is true", () => {
+  it("should not call handleNext when k is pressed but isSubmitting is true", () => {
     const mockHandleNext = jest.fn();
     const props = {
       ...defaultProps,
@@ -174,7 +174,7 @@ describe("useSomedaySandboxKeyboard", () => {
     renderHook(() => useSomedaySandboxKeyboard(props));
 
     const eventHandler = mockAddEventListener.mock.calls[0][1];
-    const event = new KeyboardEvent("keydown", { key: "ArrowRight" });
+    const event = new KeyboardEvent("keydown", { key: "k" });
     event.preventDefault = jest.fn();
     event.stopPropagation = jest.fn();
 
@@ -201,7 +201,7 @@ describe("useSomedaySandboxKeyboard", () => {
     renderHook(() => useSomedaySandboxKeyboard(props));
 
     const eventHandler = mockAddEventListener.mock.calls[0][1];
-    const event = new KeyboardEvent("keydown", { key: "ArrowRight" });
+    const event = new KeyboardEvent("keydown", { key: "k" });
 
     act(() => {
       eventHandler(event);
@@ -242,7 +242,15 @@ describe("useSomedaySandboxKeyboard", () => {
     const eventHandler = mockAddEventListener.mock.calls[0][1];
 
     // Test various other keys (excluding j and k which now have functionality)
-    const otherKeys = ["Space", "Tab", "Escape", "a", "1"];
+    const otherKeys = [
+      "Space",
+      "Tab",
+      "Escape",
+      "a",
+      "1",
+      "ArrowRight",
+      "ArrowLeft",
+    ];
     otherKeys.forEach((key) => {
       const event = new KeyboardEvent("keydown", { key });
       act(() => {
@@ -301,7 +309,7 @@ describe("useSomedaySandboxKeyboard", () => {
     renderHook(() => useSomedaySandboxKeyboard(props));
 
     const eventHandler = mockAddEventListener.mock.calls[0][1];
-    const event = new KeyboardEvent("keydown", { key: "ArrowRight" });
+    const event = new KeyboardEvent("keydown", { key: "k" });
 
     act(() => {
       eventHandler(event);
@@ -324,7 +332,7 @@ describe("useSomedaySandboxKeyboard", () => {
     renderHook(() => useSomedaySandboxKeyboard(props));
 
     const eventHandler = mockAddEventListener.mock.calls[0][1];
-    const event = new KeyboardEvent("keydown", { key: "ArrowRight" });
+    const event = new KeyboardEvent("keydown", { key: "k" });
 
     act(() => {
       eventHandler(event);
@@ -333,94 +341,25 @@ describe("useSomedaySandboxKeyboard", () => {
     expect(mockHandleNext).toHaveBeenCalled();
   });
 
-  // Tests for 'k' key functionality
-  describe("k key navigation", () => {
-    it("should call handleNext when k is pressed and conditions are met", () => {
-      const mockHandleNext = jest.fn();
-      const props = { ...defaultProps, handleNext: mockHandleNext };
+  // Tests for 'k' key functionality (uppercase)
+  it("should call handleNext when K (uppercase) is pressed and conditions are met", () => {
+    const mockHandleNext = jest.fn();
+    const props = { ...defaultProps, handleNext: mockHandleNext };
 
-      renderHook(() => useSomedaySandboxKeyboard(props));
+    renderHook(() => useSomedaySandboxKeyboard(props));
 
-      const eventHandler = mockAddEventListener.mock.calls[0][1];
-      const event = new KeyboardEvent("keydown", { key: "k" });
-      event.preventDefault = jest.fn();
-      event.stopPropagation = jest.fn();
+    const eventHandler = mockAddEventListener.mock.calls[0][1];
+    const event = new KeyboardEvent("keydown", { key: "K" });
+    event.preventDefault = jest.fn();
+    event.stopPropagation = jest.fn();
 
-      act(() => {
-        eventHandler(event);
-      });
-
-      expect(mockHandleNext).toHaveBeenCalled();
-      expect(event.preventDefault).toHaveBeenCalled();
-      expect(event.stopPropagation).toHaveBeenCalled();
+    act(() => {
+      eventHandler(event);
     });
 
-    it("should call handleNext when K (uppercase) is pressed and conditions are met", () => {
-      const mockHandleNext = jest.fn();
-      const props = { ...defaultProps, handleNext: mockHandleNext };
-
-      renderHook(() => useSomedaySandboxKeyboard(props));
-
-      const eventHandler = mockAddEventListener.mock.calls[0][1];
-      const event = new KeyboardEvent("keydown", { key: "K" });
-      event.preventDefault = jest.fn();
-      event.stopPropagation = jest.fn();
-
-      act(() => {
-        eventHandler(event);
-      });
-
-      expect(mockHandleNext).toHaveBeenCalled();
-      expect(event.preventDefault).toHaveBeenCalled();
-      expect(event.stopPropagation).toHaveBeenCalled();
-    });
-
-    it("should not call handleNext when k is pressed but tasks are not ready", () => {
-      const mockHandleNext = jest.fn();
-      const props = {
-        ...defaultProps,
-        isWeekTaskReady: false,
-        handleNext: mockHandleNext,
-      };
-
-      renderHook(() => useSomedaySandboxKeyboard(props));
-
-      const eventHandler = mockAddEventListener.mock.calls[0][1];
-      const event = new KeyboardEvent("keydown", { key: "k" });
-      event.preventDefault = jest.fn();
-      event.stopPropagation = jest.fn();
-
-      act(() => {
-        eventHandler(event);
-      });
-
-      expect(mockHandleNext).not.toHaveBeenCalled();
-      expect(event.preventDefault).toHaveBeenCalled();
-      expect(event.stopPropagation).toHaveBeenCalled();
-    });
-
-    it("should not call handleNext when k is pressed while focused on input", () => {
-      const mockHandleNext = jest.fn();
-      const props = { ...defaultProps, handleNext: mockHandleNext };
-
-      // Mock activeElement as an input
-      const mockInput = document.createElement("input");
-      Object.defineProperty(document, "activeElement", {
-        value: mockInput,
-        writable: true,
-      });
-
-      renderHook(() => useSomedaySandboxKeyboard(props));
-
-      const eventHandler = mockAddEventListener.mock.calls[0][1];
-      const event = new KeyboardEvent("keydown", { key: "k" });
-
-      act(() => {
-        eventHandler(event);
-      });
-
-      expect(mockHandleNext).not.toHaveBeenCalled();
-    });
+    expect(mockHandleNext).toHaveBeenCalled();
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
   });
 
   // Tests for 'j' key functionality
