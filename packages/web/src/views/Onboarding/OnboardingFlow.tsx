@@ -124,7 +124,6 @@ const _OnboardingFlow: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <MigrationSandbox {...props} />
       ),
-      handlesKeyboardEvents: true,
     },
     {
       id: "outro-two",
