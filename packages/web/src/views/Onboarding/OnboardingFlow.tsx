@@ -113,6 +113,7 @@ const _OnboardingFlow: React.FC = () => {
     {
       id: "someday-sandbox",
       component: (props: OnboardingStepProps) => <SomedaySandbox {...props} />,
+      handlesKeyboardEvents: true,
     },
     {
       id: "migration-intro",
@@ -123,6 +124,7 @@ const _OnboardingFlow: React.FC = () => {
       component: (props: OnboardingStepProps) => (
         <MigrationSandbox {...props} />
       ),
+      handlesKeyboardEvents: true,
     },
     {
       id: "outro-two",
