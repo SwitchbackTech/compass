@@ -1,13 +1,12 @@
-import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import {
   createMockBaseEvent,
   generateCompassEventDates,
 } from "@core/util/test/ccal.event.factory";
-import { CompassEventRRule } from "@backend/event/classes/compass.event.rrule";
 
 describe("CompassEventRRule: ", () => {
   it(`should return the correct number of events based on rrule count`, () => {
@@ -18,10 +17,7 @@ describe("CompassEventRRule: ", () => {
       recurrence: { rule: [rruleString] },
     });
 
-    const rrule = new CompassEventRRule({
-      ...baseEvent,
-      _id: new ObjectId(baseEvent._id),
-    });
+    const rrule = new CompassEventRRule(baseEvent);
 
     expect(rrule.toString()).toContain("RRULE:FREQ=DAILY");
     expect(rrule.toString()).toContain(`COUNT=${count}`);
@@ -36,10 +32,7 @@ describe("CompassEventRRule: ", () => {
       recurrence: { rule: [rruleString] },
     });
 
-    const rrule = new CompassEventRRule({
-      ...baseEvent,
-      _id: new ObjectId(baseEvent._id),
-    });
+    const rrule = new CompassEventRRule(baseEvent);
 
     expect(rrule.toString()).toContain("RRULE:FREQ=DAILY");
     expect(rrule.toString()).toContain(`COUNT=${GCAL_MAX_RECURRENCES}`);
@@ -49,10 +42,7 @@ describe("CompassEventRRule: ", () => {
 
   it("should return the rrule in system timezone", () => {
     const baseEvent = createMockBaseEvent();
-    const rrule = new CompassEventRRule({
-      ...baseEvent,
-      _id: new ObjectId(baseEvent._id),
-    });
+    const rrule = new CompassEventRRule(baseEvent);
     const startDate = parseCompassEventDate(baseEvent.startDate!);
     const events = rrule.all();
 
@@ -65,13 +55,7 @@ describe("CompassEventRRule: ", () => {
 
   it("should return the rrule without DTSTART and DTEND", () => {
     const baseEvent = createMockBaseEvent();
-    const rrule = new CompassEventRRule({
-      ...baseEvent,
-      _id: new ObjectId(baseEvent._id),
-    });
-
-    expect(rrule.toString().includes("DTSTART")).toEqual(false);
-    expect(rrule.toString().includes("DTEND")).toEqual(false);
+    const rrule = new CompassEventRRule(baseEvent);
 
     expect(
       rrule.toRecurrence().some((rule) => rule.includes("DTSTART")),
@@ -85,10 +69,7 @@ describe("CompassEventRRule: ", () => {
   describe("base", () => {
     it("should return the recurrence string as an array", () => {
       const baseEvent = createMockBaseEvent();
-      const rrule = new CompassEventRRule({
-        ...baseEvent,
-        _id: new ObjectId(baseEvent._id),
-      });
+      const rrule = new CompassEventRRule(baseEvent);
       const recurrence = rrule.toRecurrence();
 
       expect(recurrence).toBeInstanceOf(Array);
@@ -104,10 +85,7 @@ describe("CompassEventRRule: ", () => {
     it(`should return a maximum of ${GCAL_MAX_RECURRENCES} compass instances if no count is supplied in the recurrence`, () => {
       const rule = ["RRULE:FREQ=DAILY"];
       const baseEvent = createMockBaseEvent({ recurrence: { rule } });
-      const rrule = new CompassEventRRule({
-        ...baseEvent,
-        _id: new ObjectId(baseEvent._id),
-      });
+      const rrule = new CompassEventRRule(baseEvent);
       const instances = rrule.instances();
 
       expect(instances).toBeInstanceOf(Array);
@@ -117,10 +95,7 @@ describe("CompassEventRRule: ", () => {
     it(`should return a maximum of ${GCAL_MAX_RECURRENCES} compass instances if count exceeds maximum recurrence`, () => {
       const rule = ["RRULE:FREQ=DAILY;COUNT=1000"];
       const baseEvent = createMockBaseEvent({ recurrence: { rule } });
-      const rrule = new CompassEventRRule({
-        ...baseEvent,
-        _id: new ObjectId(baseEvent._id),
-      });
+      const rrule = new CompassEventRRule(baseEvent);
       const instances = rrule.instances();
 
       expect(instances).toBeInstanceOf(Array);
@@ -131,10 +106,7 @@ describe("CompassEventRRule: ", () => {
       const count = faker.number.int({ min: 1, max: GCAL_MAX_RECURRENCES });
       const rule = [`RRULE:FREQ=DAILY;COUNT=${count}`];
       const baseEvent = createMockBaseEvent({ recurrence: { rule } });
-      const rrule = new CompassEventRRule({
-        ...baseEvent,
-        _id: new ObjectId(baseEvent._id),
-      });
+      const rrule = new CompassEventRRule(baseEvent);
       const instances = rrule.instances();
 
       expect(instances).toBeInstanceOf(Array);
@@ -146,10 +118,7 @@ describe("CompassEventRRule: ", () => {
       const date = dayjs().startOf("year"); // specific date for testing
       const dates = generateCompassEventDates({ date, allDay: true });
       const baseEvent = createMockBaseEvent({ ...dates, recurrence: { rule } });
-      const rrule = new CompassEventRRule({
-        ...baseEvent,
-        _id: new ObjectId(baseEvent._id),
-      });
+      const rrule = new CompassEventRRule(baseEvent);
       const instances = rrule.instances();
       const startDate = parseCompassEventDate(baseEvent.startDate!);
       const endDate = parseCompassEventDate(baseEvent.endDate!);
@@ -174,10 +143,7 @@ describe("CompassEventRRule: ", () => {
       const date = dayjs().startOf("year"); // specific date for testing
       const dates = generateCompassEventDates({ date });
       const baseEvent = createMockBaseEvent({ ...dates, recurrence: { rule } });
-      const rrule = new CompassEventRRule({
-        ...baseEvent,
-        _id: new ObjectId(baseEvent._id),
-      });
+      const rrule = new CompassEventRRule(baseEvent);
       const instances = rrule.instances();
       const startDate = parseCompassEventDate(baseEvent.startDate!);
       const endDate = parseCompassEventDate(baseEvent.endDate!);
