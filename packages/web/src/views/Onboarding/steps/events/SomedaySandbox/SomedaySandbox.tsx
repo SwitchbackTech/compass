@@ -61,6 +61,7 @@ export const SomedaySandbox: React.FC<OnboardingStepProps> = ({
     isMonthTaskReady,
     isSubmitting,
     handleNext,
+    onPrevious,
   });
 
   const content = (
