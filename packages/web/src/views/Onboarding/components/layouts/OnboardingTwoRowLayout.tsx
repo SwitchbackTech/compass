@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import styled from "styled-components";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { OnboardingNextButton, OnboardingPreviousButton } from "../IconButtons";
 import { OnboardingContainer, OnboardingStepProps } from "../Onboarding";
 import { OnboardingStep } from "../OnboardingStep";
@@ -73,17 +74,26 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
         <Content>{content}</Content>
         <SkipButton onClick={onSkip}>SKIP INTRO</SkipButton>
         <NavigationButtons>
-          <OnboardingPreviousButton
-            aria-label="Previous"
+          <TooltipWrapper
+            description="Previous step"
             onClick={onPrevious}
-          />
-          <OnboardingNextButton
-            aria-label="Next"
-            onClick={onNext}
-            disabled={nextButtonDisabled}
-            shouldTrapFocus={!isNavPrevented}
-            shouldPulse={!isNavPrevented}
-          />
+            shortcut="J"
+          >
+            <OnboardingPreviousButton aria-label="Previous" />
+          </TooltipWrapper>
+          <TooltipWrapper
+            description="Next step"
+            onClick={nextButtonDisabled ? undefined : onNext}
+            shortcut="K"
+          >
+            <OnboardingNextButton
+              aria-label="Next"
+              onClick={nextButtonDisabled ? undefined : onNext}
+              disabled={nextButtonDisabled}
+              shouldTrapFocus={!isNavPrevented}
+              shouldPulse={!isNavPrevented}
+            />
+          </TooltipWrapper>
         </NavigationButtons>
       </TwoRowLayoutContainer>
     </OnboardingContainer>
