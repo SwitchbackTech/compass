@@ -21,7 +21,7 @@ class GCalService {
     const { status, statusText } = response;
 
     if (status !== 200 || statusText !== "OK") {
-      throw new Error(message);
+      throw error(GcalError.Unsure, message);
     }
 
     return response;

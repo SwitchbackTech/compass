@@ -44,8 +44,24 @@ export const isBase = (
   event: Pick<Schema_Event | Event_API, "recurrence">,
 ): boolean => {
   return (
-    Array.isArray(event?.recurrence?.rule) &&
-    typeof event?.recurrence?.eventId !== "string"
+    Array.isArray((event as Schema_Event_Recur_Base)?.recurrence?.rule) &&
+    typeof (event as Schema_Event_Recur_Instance)?.recurrence?.eventId !==
+      "string"
+  );
+};
+
+/**
+ * Instance compass events have an `eventId` and an empty `rule` within their `recurrence` field
+ * @param event
+ * @returns
+ */
+export const isInstance = (
+  event: Pick<Schema_Event | Event_API, "recurrence" | "gRecurringEventId">,
+): boolean => {
+  return (
+    !Array.isArray((event as Schema_Event_Recur_Base)?.recurrence?.rule) &&
+    typeof (event as Schema_Event_Recur_Instance)?.recurrence?.eventId ===
+      "string"
   );
 };
 
@@ -58,8 +74,9 @@ export const isInstanceWithoutId = (
   event: Pick<Schema_Event | Event_API, "recurrence" | "gRecurringEventId">,
 ): boolean => {
   return (
-    !Array.isArray(event?.recurrence?.rule) &&
-    typeof event?.recurrence?.eventId !== "string" &&
+    !Array.isArray((event as Schema_Event_Recur_Base)?.recurrence?.rule) &&
+    typeof (event as Schema_Event_Recur_Instance)?.recurrence?.eventId !==
+      "string" &&
     typeof event?.gRecurringEventId === "string"
   );
 };
@@ -73,24 +90,27 @@ export const isExistingInstance = (
   event: Pick<Schema_Event | Event_API, "recurrence" | "gRecurringEventId">,
 ): boolean => {
   return (
-    !Array.isArray(event?.recurrence?.rule) &&
-    typeof event?.recurrence?.eventId === "string" &&
+    !Array.isArray((event as Schema_Event_Recur_Base)?.recurrence?.rule) &&
+    typeof (event as Schema_Event_Recur_Instance)?.recurrence?.eventId ===
+      "string" &&
     typeof event?.gRecurringEventId === "string"
   );
 };
 
 export const isRegularEvent = (
   event: Pick<Schema_Event | Event_API, "recurrence">,
-): boolean => !isExistingInstance(event) && !isBase(event);
+): boolean =>
+  !isExistingInstance(event) && !isInstanceWithoutId(event) && !isBase(event);
 
 /**
  * Filters the base events
  * @param e - The events array
  * @returns The base events
  */
-export const filterBaseEvents = (e: Array<Schema_Event | Event_API>) => {
-  const baseEvents = e.filter((e) => e.recurrence?.rule !== undefined);
-  return baseEvents as Schema_Event_Recur_Base[];
+export const filterBaseEvents = (
+  e: Array<Schema_Event | Event_API>,
+): Schema_Event_Recur_Base[] => {
+  return e.filter(isBase) as Schema_Event_Recur_Base[];
 };
 
 /**
@@ -99,7 +119,7 @@ export const filterBaseEvents = (e: Array<Schema_Event | Event_API>) => {
  * @returns The recurring events (base or instance)
  */
 export const filterExistingInstances = (e: Array<Schema_Event | Event_API>) =>
-  e.filter(isExistingInstance);
+  e.filter(isExistingInstance) as Schema_Event_Recur_Instance[];
 
 export const shouldImportGCal = (metadata: UserMetadata): boolean => {
   const sync = metadata.sync;

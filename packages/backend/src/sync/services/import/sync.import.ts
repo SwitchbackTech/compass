@@ -16,17 +16,14 @@ import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
 import { EventError } from "@backend/common/errors/event/event.errors";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import eventService from "@backend/event/services/event.service";
 import { EventsToModify } from "@backend/sync/services/import/sync.import.types";
-import {
-  assignIdsToEvents,
-  organizeGcalEventsByType,
-} from "@backend/sync/services/import/sync.import.util";
+import { organizeGcalEventsByType } from "@backend/sync/services/import/sync.import.util";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
 import syncService from "@backend/sync/services/sync.service";
 import { assembleEventWatchPayloads } from "@backend/sync/services/watch/sync.watch";
@@ -266,7 +263,7 @@ export class SyncImport {
   async importEventInstances(
     userId: string,
     calendarId: string,
-    baseEvent: gSchema$Event,
+    event: gSchema$Event,
     perPage = 1000,
     session?: ClientSession,
   ): Promise<{
@@ -274,41 +271,22 @@ export class SyncImport {
     totalSaved: number;
     totalInstancesSaved: number;
   }> {
-    const isBaseEvent = isBaseGCalEvent(baseEvent);
-    const instances: gSchema$Event[] = [baseEvent];
+    const isBaseEvent = isBaseGCalEvent(event);
 
-    if (isBaseEvent) {
-      const items = await this.expandRecurringEvent(
-        calendarId,
-        baseEvent.id!,
-        perPage,
-      );
-
-      instances.push(...items);
-    }
-
-    const cEvents = MapEvent.toCompass(userId, instances, Origin.GOOGLE_IMPORT);
-
-    const compassSeries = assignIdsToEvents(cEvents);
-
-    let insertedCount = 0;
-
-    if (compassSeries.length > 0) {
-      const createResponse = await eventService.createMany(
-        compassSeries,
-        {
-          stripIds: false, // Preserve our generated ids in order to match the gcal ids
-        },
-        session,
-      );
-
-      insertedCount = createResponse.insertedCount;
-    }
+    const sync = isBaseEvent
+      ? await this.importSeries(
+          userId,
+          calendarId,
+          event as gSchema$EventBase,
+          session,
+          perPage,
+        )
+      : await this.syncEvent(userId, event, session);
 
     return {
-      totalProcessed: instances.length,
-      totalSaved: insertedCount,
-      totalInstancesSaved: Math.max(insertedCount - 1, 0),
+      totalProcessed: sync.totalProcessed,
+      totalSaved: sync.totalSaved,
+      totalInstancesSaved: Math.max(sync.totalInstancesSaved - 1, 0),
     };
   }
 
@@ -444,27 +422,68 @@ export class SyncImport {
     return result;
   }
 
-  public async importSeries(
+  public async syncEvent(
     userId: string,
-    calendarId: string,
-    gEvent: gSchema$EventBase,
-    excludeBase = false,
+    gEvent: gSchema$Event,
     session?: ClientSession,
-    perPage = 1000,
-  ) {
-    // assemble base event
-    const cBase = MapEvent.toCompass(
+  ): Promise<{
+    totalProcessed: number;
+    totalSaved: number;
+    totalInstancesSaved: number;
+    upsertedId?: ObjectId;
+  }> {
+    // assemble event
+    const event = MapEvent.toCompass(
       userId,
       [gEvent],
       Origin.GOOGLE_IMPORT,
     )[0] as WithoutCompassId<Schema_Event_Recur_Base>;
 
+    if (!event) {
+      return { totalProcessed: 1, totalInstancesSaved: 0, totalSaved: 0 };
+    }
+
+    const cEvent = await mongoService.event.findOneAndUpdate(
+      { gEventId: event.gEventId, user: userId },
+      { $set: event },
+      { upsert: true, session, returnDocument: "after" },
+    );
+
+    if (!cEvent?._id) throw error(GenericError.NotSure, "Event import failed");
+
+    return {
+      totalProcessed: 1,
+      totalInstancesSaved: 0,
+      totalSaved: 1,
+      upsertedId: cEvent._id,
+    };
+  }
+
+  public async importSeries(
+    userId: string,
+    calendarId: string,
+    baseEvent: gSchema$EventBase,
+    session?: ClientSession,
+    perPage = 1000,
+  ): Promise<{
+    totalProcessed: number;
+    totalSaved: number;
+    totalInstancesSaved: number;
+  }> {
+    // assemble base event
+    const baseImport = await this.syncEvent(userId, baseEvent, session);
+    const baseId = baseImport?.upsertedId;
+
+    if (!baseId) return baseImport;
+
     // assemble instances
     const instances = await this.expandRecurringEvent(
       calendarId,
-      gEvent.id,
+      baseEvent.id,
       perPage,
     );
+
+    if (instances.length === 0) return baseImport;
 
     const cInstances = MapEvent.toCompass(
       userId,
@@ -472,16 +491,29 @@ export class SyncImport {
       Origin.GOOGLE_IMPORT,
     );
 
-    const series = excludeBase ? cInstances : [cBase, ...cInstances];
+    const bulkUpsert = mongoService.event.initializeUnorderedBulkOp();
 
-    // assign ids and link instances to base
-    const compassSeries = assignIdsToEvents(series);
-
-    const result = await mongoService.event.insertMany(compassSeries, {
-      session,
+    cInstances.forEach((event) => {
+      bulkUpsert
+        .find({ gEventId: event.gEventId, user: userId })
+        .upsert()
+        .update({
+          $set: {
+            ...event,
+            recurrence: { eventId: baseId.toString() },
+            updatedAt: new Date(),
+          },
+        });
     });
 
-    return result;
+    const result = await bulkUpsert.execute({ session });
+
+    return {
+      totalProcessed: baseImport.totalProcessed + instances.length,
+      totalInstancesSaved: result.upsertedCount + result.insertedCount,
+      totalSaved:
+        baseImport.totalSaved + result.upsertedCount + result.insertedCount,
+    };
   }
 
   /**

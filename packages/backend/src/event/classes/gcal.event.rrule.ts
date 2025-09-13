@@ -1,7 +1,8 @@
+import { ObjectId, WithId } from "mongodb";
 import { Options, RRule, RRuleStrOptions, rrulestr } from "rrule";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { gEventToCompassEvent } from "@core/mappers/map.event";
-import { Event_Core } from "@core/types/event.types";
+import { Schema_Event_Recur_Instance } from "@core/types/event.types";
 import {
   gSchema$Event,
   gSchema$EventBase,
@@ -100,7 +101,14 @@ export class GcalEventRRule extends RRule {
    * @description Returns all instances of the event mapped to Compass Event format.
    * @note **This is a test-only method for now, it is not to be used in production.**
    */
-  compassInstances(userId: string): Event_Core[] {
-    return this.instances().map((event) => gEventToCompassEvent(event, userId));
+  compassInstances(
+    userId: string,
+    baseId: ObjectId,
+  ): Array<WithId<Omit<Schema_Event_Recur_Instance, "_id">>> {
+    return this.instances().map((event) => ({
+      ...gEventToCompassEvent(event, userId),
+      _id: baseId,
+      recurrence: { eventId: baseId.toString() },
+    }));
   }
 }

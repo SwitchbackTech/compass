@@ -11,7 +11,10 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { simulateGoogleCalendarEventCreation } from "@backend/__tests__/helpers/mock.events.init";
-import { mockRecurringGcalBaseEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import {
+  mockRecurringGcalBaseEvent,
+  mockRecurringGcalInstances,
+} from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
 
 describe("SyncImport: Series", () => {
@@ -27,9 +30,11 @@ describe("SyncImport: Series", () => {
     const syncImport = await createSyncImport(user._id.toString());
 
     const baseRecurringGcalEvent = mockRecurringGcalBaseEvent();
+    const instances = mockRecurringGcalInstances(baseRecurringGcalEvent);
 
     //simulate event creation in Google Calendar
     await simulateGoogleCalendarEventCreation(baseRecurringGcalEvent);
+    await Promise.all(instances.map(simulateGoogleCalendarEventCreation));
 
     /* Act */
     // trigger a series import with base event
@@ -40,7 +45,7 @@ describe("SyncImport: Series", () => {
     );
 
     // validate return value - base + 3 instances
-    expect(result.insertedCount).toEqual(4);
+    expect(result.totalSaved).toEqual(4);
 
     // validate DB state
     const currentEventsInDb = await getEventsInDb({
