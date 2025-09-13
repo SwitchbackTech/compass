@@ -118,6 +118,7 @@ const _OnboardingFlow: React.FC = () => {
     {
       id: "migration-intro",
       component: (props: OnboardingStepProps) => <MigrationIntro {...props} />,
+      disablePrevious: true,
     },
     {
       id: "someday-migration",

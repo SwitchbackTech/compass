@@ -43,7 +43,8 @@ interface OnboardingTwoRowLayoutProps
   onNext: () => void;
   onPrevious: () => void;
   onSkip: () => void;
-  nextButtonDisabled?: boolean;
+  isNextBtnDisabled?: boolean;
+  isPrevBtnDisabled?: boolean;
   defaultPreventNavigation?: boolean;
   onNavigationControlChange?: (shouldPrevent: boolean) => void;
   isNavPrevented?: boolean;
@@ -56,7 +57,8 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
   onPrevious,
   onSkip,
   content,
-  nextButtonDisabled = false,
+  isNextBtnDisabled = false,
+  isPrevBtnDisabled = false,
   onNavigationControlChange,
   isNavPrevented = false,
 }) => {
@@ -76,20 +78,23 @@ export const OnboardingTwoRowLayout: React.FC<OnboardingTwoRowLayoutProps> = ({
         <NavigationButtons>
           <TooltipWrapper
             description="Previous step"
-            onClick={onPrevious}
+            onClick={isPrevBtnDisabled ? undefined : onPrevious}
             shortcut="J"
           >
-            <OnboardingPreviousButton aria-label="Previous" />
+            <OnboardingPreviousButton
+              aria-label="Previous"
+              disabled={isPrevBtnDisabled}
+            />
           </TooltipWrapper>
           <TooltipWrapper
             description="Next step"
-            onClick={nextButtonDisabled ? undefined : onNext}
+            onClick={isNextBtnDisabled ? undefined : onNext}
             shortcut="K"
           >
             <OnboardingNextButton
               aria-label="Next"
-              onClick={nextButtonDisabled ? undefined : onNext}
-              disabled={nextButtonDisabled}
+              onClick={isNextBtnDisabled ? undefined : onNext}
+              disabled={isNextBtnDisabled}
               shouldTrapFocus={!isNavPrevented}
               shouldPulse={!isNavPrevented}
             />
