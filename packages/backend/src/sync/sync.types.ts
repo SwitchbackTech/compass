@@ -10,7 +10,7 @@ export type Event_Core_WithObjectId = Omit<Event_Core, "_id"> & {
 };
 export type Summary_Sync = {
   summary: "PROCESSED" | "IGNORED";
-  changes: Change_Gcal[];
+  changes: Event_Transition[];
 };
 
 export type Operation_Sync =
@@ -21,7 +21,7 @@ export type Operation_Sync =
   | "SERIES_DELETED"
   | null;
 
-export type Change_Gcal = {
+export type Event_Transition = {
   title: string;
   transition: [Categories_Recurrence | null, TransitionCategoriesRecurrence];
   category: Categories_Recurrence;

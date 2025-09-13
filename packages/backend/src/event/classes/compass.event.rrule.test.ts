@@ -1,8 +1,19 @@
-import { ObjectId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import { faker } from "@faker-js/faker";
-import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
+import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
+import { GCAL_MAX_RECURRENCES, Origin } from "@core/constants/core.constants";
+import { gEventToCompassEvent } from "@core/mappers/map.event";
+import {
+  CalendarProvider,
+  Schema_Event_Recur_Base,
+} from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { parseCompassEventDate } from "@core/util/event/event.util";
+import {
+  isBase,
+  isInstance,
+  parseCompassEventDate,
+} from "@core/util/event/event.util";
+import { isInstanceGCalEvent } from "@core/util/event/gcal.event.util";
 import {
   createMockBaseEvent,
   generateCompassEventDates,
@@ -97,6 +108,24 @@ describe("CompassEventRRule: ", () => {
       expect(recurrence.some((rule) => rule.startsWith("RRULE:"))).toEqual(
         true,
       );
+    });
+
+    it("should include the specified provider data in the generated base event", () => {
+      const baseEvent = createMockBaseEvent();
+
+      const rrule = new CompassEventRRule({
+        ...baseEvent,
+        _id: new ObjectId(baseEvent._id),
+      });
+
+      const base = rrule.base();
+
+      expect(base.gEventId).not.toBeDefined();
+      expect(base.gEventId).not.toBeNull();
+
+      const providerBase = rrule.base(CalendarProvider.GOOGLE);
+
+      expect(providerBase.gEventId).toEqual(baseEvent._id.toString());
     });
   });
 
@@ -194,6 +223,86 @@ describe("CompassEventRRule: ", () => {
         expect(instance.endDate).toEqual(
           endDate.add(index, "day").format(dateFormat),
         );
+      });
+    });
+
+    it("should include the specified provider data in the generated instance events", () => {
+      const rule = ["RRULE:FREQ=DAILY;COUNT=2"];
+      const date = dayjs().startOf("year"); // specific date for testing
+      const dates = generateCompassEventDates({ date });
+      const baseEvent = createMockBaseEvent({ ...dates, recurrence: { rule } });
+
+      const rrule = new CompassEventRRule({
+        ...baseEvent,
+        _id: new ObjectId(baseEvent._id),
+      });
+
+      const instances = rrule.instances();
+      const providerInstances = rrule.instances(CalendarProvider.GOOGLE);
+
+      instances.forEach((instance) => {
+        expect(instance._id).toBeDefined();
+        expect(instance.gEventId).not.toBeDefined();
+        expect(instance.gEventId).not.toBeNull();
+        expect(instance.gRecurringEventId).not.toBeDefined();
+        expect(instance.gRecurringEventId).not.toBeNull();
+      });
+
+      providerInstances.forEach((instance) => {
+        expect(instance._id).toBeDefined();
+        expect(instance.gEventId).toBeDefined();
+        expect(instance.gRecurringEventId).toBeDefined();
+      });
+    });
+
+    it("should have times and timezones that match a real gcal event", () => {
+      const baseCompassId = new ObjectId();
+
+      const compassEvents = recurring.map((gEvent) => {
+        const isInstance = isInstanceGCalEvent(gEvent);
+        const _id = isInstance ? new ObjectId() : baseCompassId;
+
+        const event = {
+          ...gEventToCompassEvent(gEvent, "test-user", Origin.GOOGLE_IMPORT),
+          _id,
+        };
+
+        if (isInstance) {
+          event.recurrence = { eventId: baseCompassId.toString() };
+        }
+
+        return event;
+      });
+
+      const baseEvent = compassEvents.find(isBase) as WithId<
+        Omit<Schema_Event_Recur_Base, "_id">
+      >;
+
+      expect(baseEvent).toBeDefined();
+      expect(baseEvent).not.toBeNull();
+
+      const rrule = new CompassEventRRule(baseEvent);
+      const compassInstances = compassEvents.filter(isInstance);
+      const instances = rrule.instances(CalendarProvider.GOOGLE);
+
+      instances.forEach((instance, index) => {
+        const compassInstance = compassInstances[index];
+
+        expect(compassInstance).toBeDefined();
+        expect(compassInstance).not.toBeNull();
+
+        expect(instance.startDate).toBeDefined();
+        expect(instance.startDate).not.toBeNull();
+        expect(instance.endDate).toBeDefined();
+        expect(instance.endDate).not.toBeNull();
+
+        const startDate = parseCompassEventDate(instance.startDate!);
+        const endDate = parseCompassEventDate(instance.endDate!);
+        const cStartDate = parseCompassEventDate(compassInstance!.startDate!);
+        const cEndDate = parseCompassEventDate(compassInstance!.endDate!);
+
+        expect(startDate.isSame(cStartDate)).toBe(true);
+        expect(endDate.isSame(cEndDate)).toBe(true);
       });
     });
   });

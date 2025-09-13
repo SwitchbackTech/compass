@@ -1,8 +1,12 @@
+import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
+import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
+import { gSchema$EventBase } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
-import { isInstanceWithoutId } from "@core/util/event/event.util";
+import { isExistingInstance } from "@core/util/event/event.util";
 import {
+  isBaseGCalEvent,
   isInstanceGCalEvent,
   parseGCalEventDate,
 } from "@core/util/event/gcal.event.util";
@@ -169,6 +173,41 @@ describe("GcalEventRRule: ", () => {
         );
       });
     });
+
+    it("should have times and timezones that match a real gcal event", () => {
+      const baseEvent = recurring.find(isBaseGCalEvent) as gSchema$EventBase;
+
+      expect(baseEvent).toBeDefined();
+      expect(baseEvent).not.toBeNull();
+
+      const rrule = new GcalEventRRule(baseEvent);
+      const gcalInstances = recurring.filter(isInstanceGCalEvent);
+      const instances = rrule.instances();
+
+      instances.forEach((instance, index) => {
+        const gcalInstance = gcalInstances[index];
+
+        expect(gcalInstance).toBeDefined();
+        expect(gcalInstance).not.toBeNull();
+
+        expect(instance.start?.dateTime).toBeDefined();
+        expect(instance.start?.dateTime).not.toBeNull();
+        expect(instance.end?.dateTime).toBeDefined();
+        expect(instance.end?.dateTime).not.toBeNull();
+        expect(instance.start?.timeZone).toBeDefined();
+        expect(instance.start?.timeZone).not.toBeNull();
+        expect(instance.end?.timeZone).toBeDefined();
+        expect(instance.end?.timeZone).not.toBeNull();
+
+        expect(instance.start?.timeZone).toEqual(baseEvent.start?.timeZone);
+        expect(instance.end?.timeZone).toEqual(baseEvent.start?.timeZone);
+        expect(instance.start?.timeZone).toEqual(gcalInstance?.start?.timeZone);
+        expect(instance.end?.timeZone).toEqual(gcalInstance?.start?.timeZone);
+
+        expect(instance.start?.dateTime).toEqual(gcalInstance?.start?.dateTime);
+        expect(instance.end?.dateTime).toEqual(gcalInstance?.end?.dateTime);
+      });
+    });
   });
 
   describe("compassInstances", () => {
@@ -178,8 +217,9 @@ describe("GcalEventRRule: ", () => {
       const dates = generateGcalEventDate({ date: startOfYear });
       const userId = faker.string.uuid();
       const baseEvent = mockRecurringGcalBaseEvent(dates);
+      const baseCompassId = new ObjectId();
       const rrule = new GcalEventRRule({ ...baseEvent, recurrence });
-      const instances = rrule.compassInstances(userId);
+      const instances = rrule.compassInstances(userId, baseCompassId);
       const startDate = parseGCalEventDate(baseEvent.start);
       const endDate = parseGCalEventDate(baseEvent.end);
       const dateFormat = dayjs.DateFormat.RFC3339_OFFSET;
@@ -191,7 +231,7 @@ describe("GcalEventRRule: ", () => {
         expect(instance.user).toEqual(userId);
         expect(instance.startDate).toBeDefined();
         expect(instance.endDate).toBeDefined();
-        expect(isInstanceWithoutId(instance)).toEqual(true);
+        expect(isExistingInstance(instance)).toEqual(true);
 
         expect(instance.startDate).toEqual(
           startDate.add(index, "day").format(dateFormat),
@@ -210,7 +250,8 @@ describe("GcalEventRRule: ", () => {
       const dates = generateGcalEventDate({ date: startOfYear, allDay: true });
       const baseEvent = mockRecurringGcalBaseEvent(dates, true);
       const rrule = new GcalEventRRule({ ...baseEvent, recurrence });
-      const instances = rrule.compassInstances(userId);
+      const baseCompassId = new ObjectId();
+      const instances = rrule.compassInstances(userId, baseCompassId);
       const startDate = parseGCalEventDate(baseEvent.start);
       const endDate = parseGCalEventDate(baseEvent.end);
       const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
@@ -222,7 +263,7 @@ describe("GcalEventRRule: ", () => {
         expect(instance.user).toEqual(userId);
         expect(instance.startDate).toBeDefined();
         expect(instance.endDate).toBeDefined();
-        expect(isInstanceWithoutId(instance)).toEqual(true);
+        expect(isExistingInstance(instance)).toEqual(true);
 
         expect(instance.startDate).toEqual(
           startDate.add(index, "day").format(dateFormat),

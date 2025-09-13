@@ -42,8 +42,6 @@ export enum RecurringEventUpdateScope {
   ALL_EVENTS = "All Events",
 }
 
-export type Categories_Recur = "all" | "future";
-
 export type Direction_Migrate = "forward" | "back" | "up" | "down";
 
 export interface Params_DeleteMany {
@@ -94,7 +92,7 @@ export type Schema_Event_Regular = Omit<
 >;
 
 export interface Schema_Event_Recur_Base
-  extends Omit<Schema_Event, "recurrence"> {
+  extends Omit<Schema_Event, "recurrence" | "gRecurringEventId"> {
   recurrence: {
     rule: string[]; // No eventId since this is the base recurring event
   };
@@ -138,10 +136,29 @@ export type RecurrenceWithoutId =
   | WithoutCompassId<Schema_Event_Recur_Instance>
   | WithoutCompassId<Schema_Event_Recur_Base>;
 
+export enum CompassEventStatus {
+  CONFIRMED = "CONFIRMED",
+  CANCELLED = "CANCELLED",
+}
+
+export const eventDateSchema = z.union([
+  z.string().datetime({ offset: true }),
+  z.string().date(),
+]);
+
+export const EventUpdateSchema = z.object({
+  description: z.string().nullable().optional(),
+  priority: z.nativeEnum(Priorities).optional(),
+  recurrence: Recurrence.optional(),
+  startDate: eventDateSchema.optional(),
+  endDate: eventDateSchema.optional(),
+  title: z.string().optional(),
+});
+
 export const CoreEventSchema = z.object({
   _id: z.string().optional(),
   description: z.string().nullable().optional(),
-  endDate: z.union([z.string().datetime({ offset: true }), z.string().date()]),
+  endDate: eventDateSchema,
   isAllDay: z.boolean().optional(),
   isSomeday: z.boolean().optional(),
   gEventId: z.string().optional(),
@@ -149,16 +166,41 @@ export const CoreEventSchema = z.object({
   origin: z.nativeEnum(Origin),
   priority: z.nativeEnum(Priorities),
   recurrence: Recurrence.optional(),
-  startDate: z.union([
-    z.string().datetime({ offset: true }),
-    z.string().date(),
-  ]),
+  startDate: eventDateSchema,
   title: z.string().optional(),
   updatedAt: z.union([z.date(), z.string().datetime()]).optional(),
   user: z.string(),
 });
 
+export const CompassEventSchema = z.object({
+  calendarId: z.string().optional(), // require calendarId when multi-calendar supported
+  eventId: z.string(),
+  userId: z.string(),
+  payload: z.union([
+    CoreEventSchema.merge(z.object({ recurrence: z.undefined() })), //compass-gcal standalone event
+    CoreEventSchema.merge(
+      z.object({
+        recurrence: z.union([
+          z.null(),
+          z.object({
+            rule: z.array(z.string()),
+            eventId: z.string().optional(),
+          }),
+        ]),
+      }),
+    ), // compass-gcal instance event with rule from base event,
+  ]),
+  status: z.nativeEnum(CompassEventStatus),
+  applyTo: z.nativeEnum(RecurringEventUpdateScope).optional(),
+});
+
 export type Event_Core = z.infer<typeof CoreEventSchema>;
+export type CompassEvent = z.infer<typeof CompassEventSchema>;
+export type EventUpdatePayload = z.infer<typeof EventUpdateSchema>;
 
 export type WithCompassId<T> = T & { _id: string };
 export type WithoutCompassId<T> = Omit<T, "_id">;
+
+export enum CalendarProvider {
+  GOOGLE = "google",
+}
