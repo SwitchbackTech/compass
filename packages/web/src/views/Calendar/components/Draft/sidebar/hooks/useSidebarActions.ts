@@ -40,6 +40,7 @@ import {
 } from "@web/ducks/events/selectors/someday.selectors";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
 import {
   createEventSlice,
   editEventSlice,
@@ -353,7 +354,10 @@ export const useSidebarActions = (
     close();
   };
 
-  const createSomedayDraft = async (category: Categories_Event) => {
+  const createSomedayDraft = async (
+    category: Categories_Event,
+    activity: Activity_DraftEvent = "sidebarClick",
+  ) => {
     if (isDrafting) {
       dispatch(draftSlice.actions.discard());
       close();
@@ -379,7 +383,7 @@ export const useSidebarActions = (
 
     dispatch(
       draftSlice.actions.start({
-        activity: "sidebarClick",
+        activity,
         eventType: category,
         event,
       }),
