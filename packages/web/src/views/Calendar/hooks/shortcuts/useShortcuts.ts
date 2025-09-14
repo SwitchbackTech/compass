@@ -77,7 +77,7 @@ export const useShortcuts = ({
         return;
       }
 
-      context?.actions.createSomedayDraft(category);
+      context?.actions.createSomedayDraft(category, "createShortcut");
 
       // If sidebar is closed, open it first
       if (!isSidebarOpen) {
@@ -166,5 +166,7 @@ export const useShortcuts = ({
     scrollUtil,
     util,
     tab,
+    context,
+    isSidebarOpen,
   ]);
 };
