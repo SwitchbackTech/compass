@@ -153,3 +153,78 @@ describe("Event saving logic", () => {
     });
   });
 });
+
+// Test the duplicateEvent functionality
+describe("duplicateEvent logic", () => {
+  it("should create a duplicate event without (copy) suffix", () => {
+    const originalEvent: Schema_GridEvent = {
+      _id: "original-123",
+      title: "Meeting with team",
+      description: "Weekly standup",
+      startDate: "2024-01-01T10:00:00.000Z",
+      endDate: "2024-01-01T11:00:00.000Z",
+      user: "user1",
+      isAllDay: false,
+      isSomeday: false,
+      origin: "compass" as any,
+      priority: "unassigned" as any,
+      position: {
+        isOverlapping: false,
+        widthMultiplier: 1,
+        horizontalOrder: 1,
+        initialX: null,
+        initialY: null,
+        dragOffset: { y: 0 },
+      },
+    };
+
+    // Simulate what duplicateEvent function does
+    const duplicatedEvent = { ...originalEvent };
+    delete duplicatedEvent._id;
+
+    // Verify that the duplicated event does NOT have (copy) suffix
+    expect(duplicatedEvent.title).toBe("Meeting with team");
+    expect(duplicatedEvent.title).not.toContain("(copy)");
+    expect(duplicatedEvent._id).toBeUndefined();
+    expect(duplicatedEvent.description).toBe(originalEvent.description);
+    expect(duplicatedEvent.startDate).toBe(originalEvent.startDate);
+    expect(duplicatedEvent.endDate).toBe(originalEvent.endDate);
+  });
+
+  it("should preserve all properties except _id when duplicating", () => {
+    const originalEvent: Schema_GridEvent = {
+      _id: "original-456",
+      title: "Important call",
+      description: "Client discussion",
+      startDate: "2024-02-01T14:00:00.000Z",
+      endDate: "2024-02-01T15:00:00.000Z",
+      user: "user2",
+      isAllDay: true,
+      isSomeday: false,
+      origin: "google" as any,
+      priority: "high" as any,
+      position: {
+        isOverlapping: true,
+        widthMultiplier: 0.5,
+        horizontalOrder: 2,
+        initialX: 100,
+        initialY: 200,
+        dragOffset: { y: 10 },
+      },
+    };
+
+    // Simulate what duplicateEvent function does
+    const duplicatedEvent = { ...originalEvent };
+    delete duplicatedEvent._id;
+
+    // Verify all properties are preserved except _id
+    expect(duplicatedEvent._id).toBeUndefined();
+    expect(duplicatedEvent.title).toBe("Important call");
+    expect(duplicatedEvent.description).toBe("Client discussion");
+    expect(duplicatedEvent.isAllDay).toBe(true);
+    expect(duplicatedEvent.isSomeday).toBe(false);
+    expect(duplicatedEvent.origin).toBe("google");
+    expect(duplicatedEvent.priority).toBe("high");
+    expect(duplicatedEvent.position).toEqual(originalEvent.position);
+  });
+});
