@@ -5,7 +5,7 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import { getUserId } from "@web/auth/auth.util";
 import { ID_OPTIMISTIC_PREFIX } from "@web/common/constants/web.constants";
@@ -464,23 +464,25 @@ export const useDraftActions = (
   }, [reduxDraft, reduxDraftType]);
 
   const handleChange = useCallback(async () => {
+    const isSomeday =
+      reduxDraftType === Categories_Event.SOMEDAY_WEEK ||
+      reduxDraftType === Categories_Event.SOMEDAY_MONTH;
     if (!isDrafting) return;
-
     if (activity === "eventRightClick") {
       return; // Prevents form and context menu from opening at same time
     }
-
-    if (activity === "createShortcut" || activity === "gridClick") {
+    if (
+      !isSomeday &&
+      (activity === "createShortcut" || activity === "gridClick")
+    ) {
       await create();
       return;
     }
-
     if (activity === "dragging") {
       setDraft(reduxDraft as Schema_GridEvent);
       startDragging();
       return;
     }
-
     if (activity === "resizing") {
       setDraft(reduxDraft as Schema_GridEvent);
       startResizing();

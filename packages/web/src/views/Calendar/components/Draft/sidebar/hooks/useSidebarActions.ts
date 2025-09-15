@@ -231,9 +231,16 @@ export const useSidebarActions = (
 
   const handleChange = useCallback(() => {
     if (activity === "createShortcut") {
-      create();
+      // Only handle someday events in sidebar - other draft types should be handled by DraftProvider
+      const isSomedayDraft =
+        draftType === Categories_Event.SOMEDAY_WEEK ||
+        draftType === Categories_Event.SOMEDAY_MONTH;
+
+      if (isSomedayDraft) {
+        create();
+      }
     }
-  }, [activity, create]);
+  }, [activity, create, draftType]);
 
   const onDraft = (event: Schema_Event, category: Categories_Event) => {
     setIsDrafting(true);
