@@ -45,13 +45,12 @@ describe("sync.queries: ", () => {
       const channelId = faker.string.uuid();
       const resourceId = faker.string.uuid();
 
-      await Promise.all([
-        updateSync(Resource_Sync.CALENDAR, userId, calendarId),
-        updateSync(Resource_Sync.EVENTS, userId, calendarId, {
-          channelId,
-          resourceId,
-        }),
-      ]);
+      await updateSync(Resource_Sync.CALENDAR, userId, calendarId);
+
+      await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
+        channelId,
+        resourceId,
+      });
 
       const sync = await getSync({ userId });
 
@@ -85,13 +84,12 @@ describe("sync.queries: ", () => {
       const channelId = faker.string.uuid();
       const resourceId = faker.string.uuid();
 
-      await Promise.all([
-        updateSync(Resource_Sync.CALENDAR, userId, calendarId),
-        updateSync(Resource_Sync.EVENTS, userId, calendarId, {
-          channelId,
-          resourceId,
-        }),
-      ]);
+      await updateSync(Resource_Sync.CALENDAR, userId, calendarId);
+
+      await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
+        channelId,
+        resourceId,
+      });
 
       const sync = await getSync({
         userId,
@@ -129,13 +127,12 @@ describe("sync.queries: ", () => {
       const channelId = faker.string.uuid();
       const resourceId = faker.string.uuid();
 
-      await Promise.all([
-        updateSync(Resource_Sync.CALENDAR, userId, calendarId),
-        updateSync(Resource_Sync.EVENTS, userId, calendarId, {
-          channelId,
-          resourceId,
-        }),
-      ]);
+      await updateSync(Resource_Sync.CALENDAR, userId, calendarId);
+
+      await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
+        channelId,
+        resourceId,
+      });
 
       const sync = await getSync({ channelId });
 
@@ -169,15 +166,19 @@ describe("sync.queries: ", () => {
       const channelId = faker.string.uuid();
       const resourceId = faker.string.uuid();
 
-      await Promise.all([
-        updateSync(Resource_Sync.CALENDAR, userId, calendarId),
-        updateSync(Resource_Sync.EVENTS, userId, calendarId, {
-          channelId,
-          resourceId,
-        }),
-      ]);
+      await updateSync(Resource_Sync.CALENDAR, userId, calendarId);
+
+      await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
+        channelId,
+        resourceId,
+      });
 
       const sync = await getSync({ channelId, resourceId });
+
+      expect(sync?.google.calendarlist).toBeDefined();
+      expect(sync?.google.calendarlist).not.toBeNull();
+      expect(sync?.google.events).not.toBeNull();
+      expect(sync?.google.events).toBeDefined();
 
       expect(sync).toEqual(
         expect.objectContaining({
@@ -209,13 +210,12 @@ describe("sync.queries: ", () => {
       const channelId = faker.string.uuid();
       const resourceId = faker.string.uuid();
 
-      await Promise.all([
-        updateSync(Resource_Sync.CALENDAR, userId, calendarId),
-        updateSync(Resource_Sync.EVENTS, userId, calendarId, {
-          channelId,
-          resourceId,
-        }),
-      ]);
+      await updateSync(Resource_Sync.CALENDAR, userId, calendarId);
+
+      await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
+        channelId,
+        resourceId,
+      });
 
       const sync = await getSync({
         channelId,
