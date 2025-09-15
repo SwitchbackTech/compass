@@ -42,8 +42,6 @@ export enum RecurringEventUpdateScope {
   ALL_EVENTS = "All Events",
 }
 
-export type Categories_Recur = "all" | "future";
-
 export type Direction_Migrate = "forward" | "back" | "up" | "down";
 
 export interface Params_DeleteMany {
@@ -94,7 +92,7 @@ export type Schema_Event_Regular = Omit<
 >;
 
 export interface Schema_Event_Recur_Base
-  extends Omit<Schema_Event, "recurrence"> {
+  extends Omit<Schema_Event, "recurrence" | "gRecurringEventId"> {
   recurrence: {
     rule: string[]; // No eventId since this is the base recurring event
   };
@@ -162,3 +160,7 @@ export type Event_Core = z.infer<typeof CoreEventSchema>;
 
 export type WithCompassId<T> = T & { _id: string };
 export type WithoutCompassId<T> = Omit<T, "_id">;
+export enum CalendarProvider {
+  GOOGLE = "google",
+  COMPASS = "compass",
+}

@@ -144,7 +144,9 @@ describe("toCompass", () => {
 
       expect(cEvent.recurrence).toBeDefined();
       expect(cEvent.recurrence).not.toBeNull();
-      expect(cEvent.recurrence?.rule).toEqual(["RRULE:FREQ=DAILY"]);
+      expect(cEvent.recurrence?.rule).toEqual([
+        "RRULE:FREQ=DAILY;UNTIL=20250916T225959Z",
+      ]);
       expect(cEvent.recurrence?.eventId).toBeUndefined();
     });
     it("does not include both recurrence rule and id simultaneously", () => {

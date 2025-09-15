@@ -76,7 +76,8 @@ export const stripReadonlyEventProps = (
 > => {
   const strippedBase = stripBaseProps(base as Schema_Event_Recur_Base);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { gRecurringEventId, ...rest } = strippedBase;
+  const { gRecurringEventId, ...rest } =
+    strippedBase as Schema_Event_Recur_Instance;
   return rest;
 };
 

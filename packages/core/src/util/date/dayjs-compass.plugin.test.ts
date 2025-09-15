@@ -128,7 +128,7 @@ describe("toRRuleDTSTARTString", () => {
   it("converts dayjs date to RFC5545 iCalendar DTSTART format", () => {
     const rfc5545 = dayjs("2025-12-07T15:59:33.000Z").toRRuleDTSTARTString();
 
-    expect(rfc5545).toEqual("20251207T155933");
+    expect(rfc5545).toEqual("20251207T155933Z");
   });
 
   it("converts dayjs date to rrule all day format", () => {

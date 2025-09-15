@@ -107,9 +107,9 @@ function toYearMonthDayString(this: Dayjs): string {
 }
 
 function toRRuleDTSTARTString(this: Dayjs, allDay = false): string {
-  const { RFC5545_ZONELESS, YEAR_MONTH_DAY_COMPACT_FORMAT } = dayjs.DateFormat;
+  const { RFC5545, YEAR_MONTH_DAY_COMPACT_FORMAT } = dayjs.DateFormat;
 
-  return this.format(allDay ? YEAR_MONTH_DAY_COMPACT_FORMAT : RFC5545_ZONELESS);
+  return this.format(allDay ? YEAR_MONTH_DAY_COMPACT_FORMAT : RFC5545);
 }
 
 function monthFromZeroIndex(this: typeof dayjs, index: number): number {
