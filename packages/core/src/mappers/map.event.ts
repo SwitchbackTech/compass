@@ -1,15 +1,25 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import mergeWith from "lodash.mergewith";
+import { WithId } from "mongodb";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import {
+  CalendarProvider,
   Event_Core,
   Schema_Event,
+  Schema_Event_Recur_Base,
+  Schema_Event_Recur_Instance,
+  Schema_Event_Regular,
+  WithCompassId,
   WithoutCompassId,
 } from "@core/types/event.types";
 import { WithGcalId, gSchema$Event } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
-import { isAllDay } from "@core/util/event/event.util";
+import {
+  isAllDay,
+  isInstance,
+  parseCompassEventDate,
+} from "@core/util/event/event.util";
 import { isCancelledGCalEvent } from "@core/util/event/gcal.event.util";
 import { validateEvent } from "@core/validators/event.validator";
 
@@ -26,14 +36,44 @@ export namespace MapEvent {
     return mapped;
   };
 
-  export const toGcal = (event: Schema_Event): gSchema$Event => {
+  export const removeIdentifyingData = (
+    event: WithId<Omit<Schema_Event, "_id">> | Schema_Event,
+  ): Omit<
+    Schema_Event,
+    | "_id"
+    | "gEventId"
+    | "gRecurringEventId"
+    | "order"
+    | "allDayOrder"
+    | "recurrence"
+  > => {
+    const {
+      _id, // eslint-disable-line @typescript-eslint/no-unused-vars
+      order, // eslint-disable-line @typescript-eslint/no-unused-vars
+      allDayOrder, // eslint-disable-line @typescript-eslint/no-unused-vars
+      recurrence, // eslint-disable-line @typescript-eslint/no-unused-vars
+      gEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
+      gRecurringEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
+      ...coreEvent
+    } = event;
+
+    return coreEvent;
+  };
+
+  export const toGcal = (
+    event: Schema_Event,
+    { status = "confirmed" }: Pick<gSchema$Event, "status"> = {},
+  ): gSchema$Event => {
+    const timeZone = dayjs.tz.guess();
     const dateKey = isAllDay(event) ? "date" : "dateTime";
+    const recurrence = event.recurrence;
+    const gRecurringEventId = event.gRecurringEventId;
+    const hasRecurrenceRule = (recurrence?.rule ?? []).length > 0;
 
     const gcalEvent: gSchema$Event = {
-      summary: event.title, // TODO only add this field if not undefined
-      description: event.description, // TODO only add this field if not undefined
-      start: { [dateKey]: event.startDate },
-      end: { [dateKey]: event.endDate },
+      status,
+      start: { [dateKey]: event.startDate, timeZone },
+      end: { [dateKey]: event.endDate, timeZone },
       extendedProperties: {
         private: {
           // capture where event came from to later decide how to
@@ -44,7 +84,64 @@ export namespace MapEvent {
       },
     };
 
+    if (event.title) gcalEvent.summary = event.title;
+    if (event.description) gcalEvent.description = event.description;
+    if (event.gEventId) gcalEvent.id = event.gEventId;
+    if (gRecurringEventId) gcalEvent.recurringEventId = gRecurringEventId;
+    if (recurrence === null) gcalEvent.recurrence = null;
+    if (hasRecurrenceRule) gcalEvent.recurrence = recurrence?.rule;
+
     return gcalEvent;
+  };
+
+  export const toGcalInstanceProviderData = (
+    instance: Omit<Schema_Event_Recur_Instance, "_id">,
+    base?: Omit<Schema_Event_Recur_Base, "_id">,
+  ): Pick<Schema_Event, "gEventId" | "gRecurringEventId"> => {
+    const { gEventId: _gEventId } = instance;
+    const { gRecurringEventId: _gRecurringEventId = base?.gEventId } = instance;
+    const gRecurringEventId = _gRecurringEventId ?? instance.recurrence.eventId;
+    const startDate = parseCompassEventDate(instance.startDate!);
+    const gEventId = `${gRecurringEventId}_${startDate.toRRuleDTSTARTString()}`;
+
+    return { gEventId: _gEventId ?? gEventId, gRecurringEventId };
+  };
+
+  export const toGcalSingleProviderData = (
+    base:
+      | WithId<Omit<Schema_Event_Recur_Base | Schema_Event_Regular, "_id">>
+      | WithCompassId<
+          Omit<Schema_Event_Recur_Base | Schema_Event_Regular, "_id">
+        >,
+  ): Pick<Schema_Event, "gEventId"> => {
+    const gEventId = base.gEventId ?? base._id.toString();
+
+    return { gEventId };
+  };
+
+  export const toProviderData = (
+    event:
+      | WithId<Omit<Schema_Event, "_id" | "recurrence">>
+      | WithCompassId<Omit<Schema_Event, "_id" | "recurrence">>,
+    provider?: CalendarProvider,
+    base?:
+      | WithId<Omit<Schema_Event_Recur_Base, "_id">>
+      | WithCompassId<Omit<Schema_Event_Recur_Base, "_id">>,
+  ) => {
+    const isCInstance = isInstance(event);
+
+    switch (provider) {
+      case CalendarProvider.GOOGLE: {
+        return isCInstance
+          ? MapEvent.toGcalInstanceProviderData(
+              event as WithId<Omit<Schema_Event_Recur_Instance, "_id">>,
+              base,
+            )
+          : MapEvent.toGcalSingleProviderData(event);
+      }
+      default:
+        return {};
+    }
   };
 }
 
@@ -98,7 +195,7 @@ export const gEventToCompassEvent = (
   const endDate = isAllDay ? event.end?.date : event.end?.dateTime;
 
   const _origin =
-    origin ?? event.extendedProperties?.private?.["origin"] ?? Origin.UNSURE;
+    event.extendedProperties?.private?.["origin"] ?? origin ?? Origin.UNSURE;
 
   const compassEvent: Schema_Event = {
     gEventId,
