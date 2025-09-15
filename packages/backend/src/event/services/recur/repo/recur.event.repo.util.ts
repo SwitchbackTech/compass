@@ -12,7 +12,7 @@ import {
 
 export const getOldBaseId = async (
   updatedBase: Schema_Event_Recur_Base,
-  idKey: Ids_Event,
+  idKey: Exclude<Ids_Event, "gRecurringEventId">,
   userId: string,
 ) => {
   const oldBase = await mongoService.db
