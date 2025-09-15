@@ -136,20 +136,10 @@ export type RecurrenceWithoutId =
   | WithoutCompassId<Schema_Event_Recur_Instance>
   | WithoutCompassId<Schema_Event_Recur_Base>;
 
-export enum CompassEventStatus {
-  CONFIRMED = "CONFIRMED",
-  CANCELLED = "CANCELLED",
-}
-
-export const eventDateSchema = z.union([
-  z.string().datetime({ offset: true }),
-  z.string().date(),
-]);
-
 export const CoreEventSchema = z.object({
   _id: z.string().optional(),
   description: z.string().nullable().optional(),
-  endDate: eventDateSchema,
+  endDate: z.union([z.string().datetime({ offset: true }), z.string().date()]),
   isAllDay: z.boolean().optional(),
   isSomeday: z.boolean().optional(),
   gEventId: z.string().optional(),
@@ -157,106 +147,19 @@ export const CoreEventSchema = z.object({
   origin: z.nativeEnum(Origin),
   priority: z.nativeEnum(Priorities),
   recurrence: Recurrence.optional(),
-  startDate: eventDateSchema,
+  startDate: z.union([
+    z.string().datetime({ offset: true }),
+    z.string().date(),
+  ]),
   title: z.string().optional(),
   updatedAt: z.union([z.date(), z.string().datetime()]).optional(),
   user: z.string(),
 });
 
-const CompassEventRecurrence = z.object({
-  rule: z.array(z.string()),
-  eventId: z.string().optional(),
-});
-
-export const EventUpdateSchema = z.object({
-  description: z.string().nullable().optional(),
-  priority: z.nativeEnum(Priorities).optional(),
-  recurrence: z.union([
-    CompassEventRecurrence.omit({ rule: true }).extend({
-      rule: z.null(),
-    }),
-    CompassEventRecurrence,
-  ]),
-  startDate: eventDateSchema.optional(),
-  endDate: eventDateSchema.optional(),
-  title: z.string().optional(),
-  isSomeday: z.boolean().optional(),
-});
-
-const CompassCoreEventSchema = CoreEventSchema.extend({ _id: z.string() });
-
-const BaseCompassEventSchema = z.object({
-  calendarId: z.string().optional(), // require calendarId when multi-calendar supported
-  eventId: z.string(),
-  userId: z.string(),
-  status: z
-    .nativeEnum(CompassEventStatus)
-    .default(CompassEventStatus.CONFIRMED),
-  applyTo: z
-    .nativeEnum(RecurringEventUpdateScope)
-    .default(RecurringEventUpdateScope.THIS_EVENT)
-    .optional(),
-});
-
-export const CompassThisEventSchema = BaseCompassEventSchema.merge(
-  z.object({
-    applyTo: z.literal(RecurringEventUpdateScope.THIS_EVENT),
-    payload: z.union([
-      CompassCoreEventSchema.merge(z.object({ recurrence: z.undefined() })),
-      CompassCoreEventSchema.merge(
-        z.object({
-          recurrence: z.union([
-            CompassEventRecurrence.omit({ rule: true }).extend({
-              rule: z.null(),
-            }),
-            CompassEventRecurrence,
-          ]),
-        }),
-      ),
-    ]),
-  }),
-);
-
-export const CompassThisAndFollowingEventSchema = BaseCompassEventSchema.merge(
-  z.object({
-    applyTo: z.literal(RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS),
-    payload: CompassCoreEventSchema.merge(
-      z.object({ recurrence: CompassEventRecurrence }),
-    )
-      .omit({ isSomeday: true })
-      .extend({ isSomeday: z.literal(false) }),
-  }),
-);
-
-export const CompassAllEventsSchema = BaseCompassEventSchema.merge(
-  z.object({
-    applyTo: z.literal(RecurringEventUpdateScope.ALL_EVENTS),
-    payload: CompassCoreEventSchema.merge(
-      z.object({ recurrence: CompassEventRecurrence }),
-    )
-      .omit({ isSomeday: true })
-      .extend({ isSomeday: z.literal(false) }),
-  }),
-);
-
-export const CompassEventSchema = z.discriminatedUnion("applyTo", [
-  CompassThisEventSchema,
-  CompassThisAndFollowingEventSchema,
-  CompassAllEventsSchema,
-]);
-
 export type Event_Core = z.infer<typeof CoreEventSchema>;
-export type CompassThisEvent = z.infer<typeof CompassThisEventSchema>;
-export type CompassThisAndFollowingEvent = z.infer<
-  typeof CompassThisAndFollowingEventSchema
->;
-export type CompassAllEvents = z.infer<typeof CompassAllEventsSchema>;
-export type CompassEvent = z.infer<typeof CompassEventSchema>;
-export type EventUpdatePayload = z.infer<typeof EventUpdateSchema>;
 
 export type WithCompassId<T> = T & { _id: string };
 export type WithoutCompassId<T> = Omit<T, "_id">;
-
 export enum CalendarProvider {
   GOOGLE = "google",
   COMPASS = "compass",
