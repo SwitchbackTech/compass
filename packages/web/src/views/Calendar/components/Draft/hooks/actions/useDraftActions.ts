@@ -231,7 +231,6 @@ export const useDraftActions = (
   const duplicateEvent = () => {
     const draft = { ...reduxDraft } as Schema_GridEvent;
     delete draft._id;
-    draft.title = `${draft.title} (copy)`;
     submit(draft);
     discard();
   };
