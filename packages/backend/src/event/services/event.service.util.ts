@@ -1,11 +1,6 @@
-import dayjs from "dayjs";
-import tz from "dayjs/plugin/timezone";
-import utc from "dayjs/plugin/utc";
 import { Filter, ObjectId } from "mongodb";
 import {
   Query_Event,
-  Query_Event_Update,
-  RecurringEventUpdateScope,
   Schema_Event,
   Schema_Event_Core,
 } from "@core/types/event.types";
@@ -13,25 +8,6 @@ import { isSameMonth } from "@core/util/date/date.util";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
-
-dayjs.extend(tz);
-dayjs.extend(utc);
-
-export const getCreateParams = (userId: string, event: Schema_Event_Core) => {
-  const _event = {
-    ...event,
-    _id: undefined,
-    updatedAt: new Date(),
-    user: userId,
-  };
-
-  const syncToGcal = !event.isSomeday;
-  const isRecurring = !event?.recurrence?.rule
-    ? false
-    : event.recurrence.rule.length > 0;
-
-  return { _event, isRecurring, syncToGcal };
-};
 
 export const getDeleteByIdFilter = (
   event: Schema_Event_Core,
@@ -100,41 +76,6 @@ export const getReadAllFilter = (
   filter["recurrence.rule"] = { $exists: false };
 
   return filter;
-};
-
-export const getUpdateAction = (
-  event: Schema_Event_Core,
-  query: Query_Event_Update,
-) => {
-  const hasInstances = event?.recurrence?.eventId !== undefined;
-  const hasRule = event?.recurrence?.rule && event.recurrence.rule.length > 0;
-
-  if (query?.applyTo === RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS) {
-    if (hasInstances) {
-      return "UPDATE_ALL";
-    }
-  }
-
-  if (query?.applyTo === RecurringEventUpdateScope.ALL_EVENTS) {
-    if (!hasInstances) {
-      if (hasRule) {
-        return "CREATE_INSTANCES";
-      }
-      return "DELETE_INSTANCES_ALL";
-    } else {
-      if (event?.recurrence?.rule === null) {
-        return "DELETE_INSTANCES_ALL";
-      }
-      return "UPDATE_ALL";
-    }
-  }
-
-  // Handle THIS_EVENT case - just update this single instance
-  if (query?.applyTo === RecurringEventUpdateScope.THIS_EVENT) {
-    return "UPDATE";
-  }
-
-  return "UPDATE";
 };
 
 const _getDateFilters = (isSomeday: boolean, start: string, end: string) => {

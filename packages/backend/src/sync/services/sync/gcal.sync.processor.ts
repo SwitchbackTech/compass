@@ -6,14 +6,14 @@ import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 import { GcalEventParser } from "@backend/event/classes/gcal.event.parser";
-import { Change_Gcal } from "@backend/sync/sync.types";
+import { Event_Transition } from "@backend/sync/sync.types";
 
-const logger = Logger("app.sync.processor");
+const logger = Logger("app.gcal.sync.processor");
 export class GcalSyncProcessor {
   constructor(private userId: string) {}
 
-  async processEvents(events: gSchema$Event[]): Promise<Change_Gcal[]> {
-    const summary: Change_Gcal[] = [];
+  async processEvents(events: gSchema$Event[]): Promise<Event_Transition[]> {
+    const summary: Event_Transition[] = [];
 
     logger.debug(`Processing ${events.length} event(s)...`);
 
@@ -43,7 +43,7 @@ export class GcalSyncProcessor {
   private async handleGCalChange(
     gEvent: gSchema$Event,
     session?: ClientSession,
-  ): Promise<Change_Gcal[]> {
+  ): Promise<Event_Transition[]> {
     if (typeof gEvent.id !== "string") {
       throw error(
         EventError.MissingGevents,
@@ -70,14 +70,14 @@ export class GcalSyncProcessor {
         return parser.deleteCompassEvent(session);
       case "NIL->>RECURRENCE_BASE_CANCELLED":
       case "RECURRENCE_BASE->>RECURRENCE_BASE_CANCELLED":
-        return parser.cancelSeries();
+        return parser.cancelSeries(true, session);
       case "NIL->>STANDALONE_CONFIRMED":
       case "NIL->>RECURRENCE_INSTANCE_CONFIRMED":
       case "STANDALONE->>STANDALONE_CONFIRMED":
       case "RECURRENCE_INSTANCE->>RECURRENCE_INSTANCE_CONFIRMED":
         return parser.upsertCompassEvent(undefined, session);
       case "NIL->>RECURRENCE_BASE_CONFIRMED":
-        return parser.createSeries(false, session);
+        return parser.createSeries(session);
       case "STANDALONE->>RECURRENCE_BASE_CONFIRMED":
         return parser.standaloneToSeries(session);
       case "RECURRENCE_BASE->>STANDALONE_CONFIRMED":
