@@ -85,9 +85,7 @@ export class CompassEventFactory {
     const duration = endDate.diff(startDate);
 
     const rruleOldSeries = new CompassEventRRule(baseEvent, {
-      until: parseCompassEventDate(instanceEvent.startDate!)
-        .subtract(duration, "millisecond")
-        .toDate(),
+      until: startDate.subtract(duration, "millisecond").toDate(),
     });
 
     const baseEventId = baseEvent._id.toString();

@@ -50,7 +50,7 @@ export class CompassSyncProcessor {
       throw error;
     }
 
-    if (!_session) this.notifyClients(events);
+    if (!_session) CompassSyncProcessor.notifyClients(events);
 
     return summary;
   }
