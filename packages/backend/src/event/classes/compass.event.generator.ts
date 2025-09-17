@@ -18,7 +18,8 @@ import { CompassEventRRule } from "@backend/event/classes/compass.event.rrule";
 
 export class CompassEventFactory {
   private static async findCompassEvent(
-    { eventId, userId: user }: Pick<CompassEvent, "userId" | "eventId">,
+    eventId: string,
+    user: string,
     session?: ClientSession,
     throwIfNotFound = true,
   ): Promise<WithId<Omit<Schema_Event, "_id">> | null> {
@@ -35,17 +36,17 @@ export class CompassEventFactory {
   }
 
   private static async findCompassBaseAndInstanceEvent(
-    event: Pick<CompassEvent, "userId" | "eventId">,
+    eventId: string,
+    userId: string,
     session?: ClientSession,
   ): Promise<{
     baseEvent: WithId<Omit<Schema_Event_Recur_Base, "_id">>;
     instanceEvent: WithId<Omit<Schema_Event_Recur_Instance, "_id">>;
   }> {
-    const { userId } = event;
-
     // get instance event or throw
     const instanceEvent = await CompassEventFactory.findCompassEvent(
-      event,
+      eventId,
+      userId,
       session,
     );
 
@@ -55,7 +56,8 @@ export class CompassEventFactory {
 
     // get base event in series or throw
     const baseEvent = await CompassEventFactory.findCompassEvent(
-      { userId, eventId: baseEventId },
+      baseEventId,
+      userId,
       session,
     );
 
@@ -72,11 +74,19 @@ export class CompassEventFactory {
     session?: ClientSession,
   ): Promise<CompassThisAndFollowingEvent[]> {
     const { baseEvent, instanceEvent } =
-      await CompassEventFactory.findCompassBaseAndInstanceEvent(event, session);
+      await CompassEventFactory.findCompassBaseAndInstanceEvent(
+        event.payload._id,
+        event.payload.user,
+        session,
+      );
+
+    const startDate = parseCompassEventDate(instanceEvent.startDate!);
+    const endDate = parseCompassEventDate(instanceEvent.endDate!);
+    const duration = endDate.diff(startDate);
 
     const rruleOldSeries = new CompassEventRRule(baseEvent, {
       until: parseCompassEventDate(instanceEvent.startDate!)
-        .subtract(1, baseEvent.isAllDay ? "day" : "milliseconds")
+        .subtract(duration, "millisecond")
         .toDate(),
     });
 
@@ -84,7 +94,6 @@ export class CompassEventFactory {
 
     const compassBaseEventWithUntil = {
       ...event,
-      eventId: baseEventId,
       payload: {
         ...rruleOldSeries.base(),
         _id: baseEventId,
@@ -120,24 +129,28 @@ export class CompassEventFactory {
     session?: ClientSession,
   ): Promise<CompassAllEvents[]> {
     const { baseEvent } =
-      await CompassEventFactory.findCompassBaseAndInstanceEvent(event, session);
+      await CompassEventFactory.findCompassBaseAndInstanceEvent(
+        event.payload._id,
+        event.payload.user,
+        session,
+      );
 
     const eventId = baseEvent._id.toString();
     const payload = EventUpdateSchema.parse(event.payload);
     const nullRecurrence = payload.recurrence?.rule === null;
 
-    delete payload.startDate;
-    delete payload.endDate;
     delete payload.recurrence?.eventId;
 
     if (nullRecurrence) {
       delete (payload as Event_Core).recurrence;
       delete (baseEvent as unknown as Event_Core).recurrence;
+    } else {
+      delete payload.startDate;
+      delete payload.endDate;
     }
 
     const compassEvent = {
       ...event,
-      eventId,
       payload: {
         ...baseEvent,
         ...payload,

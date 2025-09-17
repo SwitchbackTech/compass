@@ -1,14 +1,17 @@
 import { ObjectId, WithId } from "mongodb";
-import { Options, RRule, RRuleStrOptions, rrulestr } from "rrule";
+import type { Options, RRuleStrOptions } from "rrule";
+import { RRule, rrulestr } from "rrule";
+import type { ParsedOptions } from "rrule/dist/esm/types";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
-import {
+import type {
   CalendarProvider,
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import {
+  diffRRuleOptions,
   getCompassEventDateFormat,
   parseCompassEventDate,
 } from "@core/util/event/event.util";
@@ -58,15 +61,37 @@ export class CompassEventRRule extends RRule {
 
   private formatUNTIL(rrule: string): string {
     // see - // https://github.com/jkbrzt/rrule/issues/440
-    return rrule.replace(/UNTIL=(\d{8}T\d{6}Z?)/, (_match, until) => {
+    return rrule.replace(/UNTIL=(\d{8}T\d{6}Z?)/, (_match, until: string) => {
       const replace = !until.endsWith("Z");
 
       return `UNTIL=${replace ? `${until}Z` : until}`;
     });
   }
 
+  private formatCount(rrule: string): string {
+    return rrule.replace(/(;COUNT=\d{1,3};?)/, (_match, count: string) => {
+      const max = GCAL_MAX_RECURRENCES.toString();
+      const replaceLast = count.endsWith(max);
+      const replace = count.endsWith(`${max};`);
+
+      if (replace) return ";";
+
+      return replaceLast ? "" : count;
+    });
+  }
+
+  diffOptions(rrule: CompassEventRRule): Array<[keyof ParsedOptions, unknown]> {
+    return diffRRuleOptions(rrule, this);
+  }
+
+  toOriginalString(): string {
+    return super.toString();
+  }
+
   toString(): string {
-    return this.formatUNTIL(super.toString())
+    const untilRule = this.formatUNTIL(super.toString());
+
+    return this.formatCount(untilRule)
       .split("\n")
       .filter((r) => !(r.startsWith("DTSTART") || r.startsWith("DTEND")))
       .join("\n");
@@ -75,7 +100,7 @@ export class CompassEventRRule extends RRule {
   toRecurrence(): string[] {
     const untilRule = this.formatUNTIL(super.toString());
 
-    return untilRule
+    return this.formatCount(untilRule)
       .split("\n")
       .filter((r) => !(r.startsWith("DTSTART") || r.startsWith("DTEND")));
   }
