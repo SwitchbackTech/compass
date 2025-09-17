@@ -17,6 +17,7 @@ import {
 import {
   generateGcalId,
   mockRecurringGcalBaseEvent,
+  mockRecurringGcalInstances,
   mockRegularGcalEvent,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { createNewRecurringEventPayload } from "@backend/__tests__/mocks.gcal/fixtures/recurring/create/create";
@@ -524,8 +525,10 @@ describe("GcalEventParser", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const baseEvent = mockRecurringGcalBaseEvent({}, false, { count: 3 });
+      const instances = mockRecurringGcalInstances(baseEvent);
 
       await simulateGoogleCalendarEventCreation(baseEvent);
+      await Promise.all(instances.map(simulateGoogleCalendarEventCreation));
 
       const parser = new GcalEventParser(baseEvent, userId);
 
@@ -582,8 +585,10 @@ describe("GcalEventParser", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const baseEvent = mockRecurringGcalBaseEvent({}, false, { count: 3 });
+      const instances = mockRecurringGcalInstances(baseEvent);
 
       await simulateGoogleCalendarEventCreation(baseEvent);
+      await Promise.all(instances.map(simulateGoogleCalendarEventCreation));
 
       const parser = new GcalEventParser(baseEvent, userId);
 
@@ -655,8 +660,10 @@ describe("GcalEventParser", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const baseEvent = mockRecurringGcalBaseEvent({}, false, { count: 3 });
+      const instances = mockRecurringGcalInstances(baseEvent);
 
       await simulateGoogleCalendarEventCreation(baseEvent);
+      await Promise.all(instances.map(simulateGoogleCalendarEventCreation));
 
       const parser = new GcalEventParser(baseEvent, userId);
 
@@ -721,8 +728,15 @@ describe("GcalEventParser", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const regularEvent = mockRegularGcalEvent();
+      const recurrence = ["RRULE:FREQ=DAILY"];
+
+      const instances = mockRecurringGcalInstances({
+        ...regularEvent,
+        recurrence,
+      });
 
       await simulateGoogleCalendarEventCreation(regularEvent);
+      await Promise.all(instances.map(simulateGoogleCalendarEventCreation));
 
       const parser = new GcalEventParser(regularEvent, userId);
 
@@ -730,7 +744,7 @@ describe("GcalEventParser", () => {
 
       await parser.upsertCompassEvent();
 
-      Object.assign(regularEvent, { recurrence: ["RRULE:FREQ=DAILY"] });
+      Object.assign(regularEvent, { recurrence });
 
       const seriesParser = new GcalEventParser(regularEvent, userId);
 

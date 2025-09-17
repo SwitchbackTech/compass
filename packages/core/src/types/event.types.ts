@@ -17,15 +17,19 @@ export enum Categories_Event {
 }
 
 /**
- * Event category, based on its recurrence status
+ * Event category, based on its recurrence status and isSomeday flag
  * - STANDALONE: A single event that is not recurring
  * - RECURRENCE_BASE: A base event that is the parent of a recurring series
  * - RECURRENCE_INSTANCE: An instance of a recurring event
+ * - STANDALONE_SOMEDAY: A single event that is not recurring and isSomeday,
+ * - RECURRENCE_BASE_SOMEDAY: A base event that is the parent of a recurring series and isSomeday,
  */
 export enum Categories_Recurrence {
   STANDALONE = "STANDALONE",
   RECURRENCE_BASE = "RECURRENCE_BASE",
   RECURRENCE_INSTANCE = "RECURRENCE_INSTANCE",
+  STANDALONE_SOMEDAY = "STANDALONE_SOMEDAY",
+  RECURRENCE_BASE_SOMEDAY = "RECURRENCE_BASE_SOMEDAY",
 }
 
 export type TransitionStatus = "CONFIRMED" | "CANCELLED";
@@ -183,12 +187,11 @@ export const EventUpdateSchema = z.object({
   isSomeday: z.boolean().optional(),
 });
 
-const CompassCoreEventSchema = CoreEventSchema.extend({ _id: z.string() });
+export const CompassCoreEventSchema = CoreEventSchema.extend({
+  _id: z.string(),
+});
 
 const BaseCompassEventSchema = z.object({
-  calendarId: z.string().optional(), // require calendarId when multi-calendar supported
-  eventId: z.string(),
-  userId: z.string(),
   status: z
     .nativeEnum(CompassEventStatus)
     .default(CompassEventStatus.CONFIRMED),

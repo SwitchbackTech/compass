@@ -22,6 +22,7 @@ export const createMockStandaloneEvent = (
     user: "test-user-id",
     origin: Origin.COMPASS,
     priority: Priorities.WORK,
+    isSomeday: false,
     ...overrides,
   };
 };
@@ -45,7 +46,7 @@ export const createMockBaseEvent = (
       rule: ["RRULE:FREQ=WEEKLY"],
     },
     user: "test-user-id",
-    origin: Origin.GOOGLE,
+    origin: Origin.COMPASS,
     priority: Priorities.WORK,
     isAllDay: false,
     isSomeday: false,

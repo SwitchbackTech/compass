@@ -1,3 +1,5 @@
+import { RRule } from "rrule";
+import { ParsedOptions } from "rrule/dist/esm/types";
 import {
   Recurrence,
   Schema_Event,
@@ -154,4 +156,31 @@ export const parseCompassEventDate = (
   const timezone = dayjs.tz.guess();
 
   return dayjs(date, format).tz(timezone);
+};
+
+export const diffRRuleOptions = (
+  rruleA: RRule,
+  rruleB: RRule,
+): Array<[keyof ParsedOptions, unknown]> => {
+  const items = Object.entries(rruleA.options) as Array<
+    [keyof ParsedOptions, unknown]
+  >;
+
+  return items.filter(([key, value]) => {
+    const comparison = rruleB.options[key];
+    const isArray = Array.isArray(value) && Array.isArray(comparison);
+    const isDate = value instanceof Date && comparison instanceof Date;
+
+    if (isDate) return !dayjs(value).isSame(comparison);
+
+    if (isArray) {
+      const sameLength = value.length === comparison.length;
+
+      if (!sameLength) return true;
+
+      return value.some((v) => !comparison.includes(v));
+    }
+
+    return value !== comparison;
+  });
 };
