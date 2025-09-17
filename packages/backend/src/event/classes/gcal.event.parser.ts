@@ -28,7 +28,7 @@ import {
   stripReadonlyEventProps,
 } from "@backend/event/services/recur/util/recur.util";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
-import { Change_Gcal, Operation_Sync } from "@backend/sync/sync.types";
+import { Event_Transition, Operation_Sync } from "@backend/sync/sync.types";
 
 export class GcalEventParser {
   #logger = Logger("app.event.classes.gcal.parser");
@@ -43,8 +43,8 @@ export class GcalEventParser {
   #isCompassStandalone!: boolean;
   #rrule!: GcalEventRRule | null;
   #compassRrule!: GcalEventRRule | null;
-  #transition!: Change_Gcal["transition"];
-  #summary!: Omit<Change_Gcal, "operation">;
+  #transition!: Event_Transition["transition"];
+  #summary!: Omit<Event_Transition, "operation">;
 
   constructor(
     event: WithGcalId<gSchema$Event>,
@@ -85,7 +85,7 @@ export class GcalEventParser {
     return this.#ensureInitInvoked(this.#compassRrule);
   }
 
-  get transition(): Change_Gcal["transition"] {
+  get transition(): Event_Transition["transition"] {
     return this.#ensureInitInvoked(this.#transition);
   }
 
@@ -93,7 +93,7 @@ export class GcalEventParser {
     return this.#transition?.[0] ?? this.#getCategory();
   }
 
-  get summary(): Omit<Change_Gcal, "operation"> {
+  get summary(): Omit<Event_Transition, "operation"> {
     return this.#ensureInitInvoked(this.#summary);
   }
 
@@ -159,7 +159,9 @@ export class GcalEventParser {
     };
   }
 
-  async deleteCompassEvent(session?: ClientSession): Promise<Change_Gcal[]> {
+  async deleteCompassEvent(
+    session?: ClientSession,
+  ): Promise<Event_Transition[]> {
     this.#logger.info(
       `DELETING ${this.getTransitionString()}: ${this.#event.id} (Gcal)`,
     );
@@ -180,7 +182,7 @@ export class GcalEventParser {
   async upsertCompassEvent(
     data?: Pick<UpdateFilter<Omit<Schema_Event, "_id">>, "$set" | "$unset">,
     session?: ClientSession,
-  ): Promise<Change_Gcal[]> {
+  ): Promise<Event_Transition[]> {
     let update: Exclude<typeof data, undefined> = data!;
 
     if (!data) {
@@ -207,27 +209,22 @@ export class GcalEventParser {
       : [];
   }
 
-  async createSeries(
-    excludeBase = false,
-    session?: ClientSession,
-  ): Promise<Change_Gcal[]> {
+  async createSeries(session?: ClientSession): Promise<Event_Transition[]> {
     const syncImport = await createSyncImport(this.userId);
 
-    const { insertedCount } = await syncImport.importSeries(
+    const { totalSaved } = await syncImport.importSeries(
       this.userId,
       "primary",
       this.#event as gSchema$EventBase,
-      excludeBase,
       session,
     );
 
-    return insertedCount > 0
-      ? [this.#getOperationSummary("SERIES_CREATED")]
-      : [];
+    return totalSaved > 0 ? [this.#getOperationSummary("SERIES_CREATED")] : [];
   }
 
-  async updateSeries(session?: ClientSession): Promise<Change_Gcal[]> {
-    const seriesSplit = this.#isSeriesSplit();
+  async updateSeries(session?: ClientSession): Promise<Event_Transition[]> {
+    const rruleDiff = this.rrule?.diffOptions(this.#compassRrule!) ?? [];
+    const seriesSplit = rruleDiff.length > 0;
 
     if (seriesSplit) return this.#splitSeries(session);
 
@@ -237,10 +234,10 @@ export class GcalEventParser {
   async cancelSeries(
     cancelBase = true,
     session?: ClientSession,
-  ): Promise<Change_Gcal[]> {
+  ): Promise<Event_Transition[]> {
     this.#logger.info(`Cancelling SERIES: ${this.#event.id} (Gcal)`);
 
-    const changes: Change_Gcal[] = [];
+    const changes: Event_Transition[] = [];
 
     const { deletedCount } = await mongoService.event.deleteMany(
       {
@@ -262,7 +259,9 @@ export class GcalEventParser {
     return changes;
   }
 
-  async seriesToStandalone(session?: ClientSession): Promise<Change_Gcal[]> {
+  async seriesToStandalone(
+    session?: ClientSession,
+  ): Promise<Event_Transition[]> {
     const seriesChanges = await this.cancelSeries(false, session);
     const event = gEventToCompassEvent(this.#event, this.userId);
 
@@ -288,7 +287,7 @@ export class GcalEventParser {
     );
 
     const eventChanges = await this.upsertCompassEvent(undefined, session);
-    const seriesChanges = await this.createSeries(true, session);
+    const seriesChanges = await this.createSeries(session);
 
     return [...eventChanges, ...seriesChanges];
   }
@@ -319,7 +318,7 @@ export class GcalEventParser {
     }
   }
 
-  #getOperationSummary(operation: Operation_Sync): Change_Gcal {
+  #getOperationSummary(operation: Operation_Sync): Event_Transition {
     return this.#ensureInitInvoked({ ...this.summary, operation });
   }
 
@@ -331,20 +330,10 @@ export class GcalEventParser {
     return value;
   }
 
-  #isSeriesSplit(): boolean {
-    if (!(this.isCompassBase || this.isBase)) return false;
-
-    const cEventRule = this.#compassRrule?.toString();
-    const gEventRule = this.#rrule?.toString();
-    const ruleDiverged = cEventRule !== gEventRule;
-
-    return ruleDiverged;
-  }
-
   async #updateAllDayInstances(
     baseUpdate: ReturnType<typeof stripReadonlyEventProps>,
     session?: ClientSession,
-  ): Promise<Change_Gcal[]> {
+  ): Promise<Event_Transition[]> {
     this.#logger.info(
       `UPDATING all-day instances for Gcal event: ${this.#event.id}`,
     );
@@ -366,7 +355,7 @@ export class GcalEventParser {
       endDate: string;
     },
     session?: ClientSession,
-  ): Promise<Change_Gcal[]> {
+  ): Promise<Event_Transition[]> {
     this.#logger.info(
       `UPDATING timed instances for Gcal event: ${this.#event.id}`,
     );
@@ -395,7 +384,9 @@ export class GcalEventParser {
       : [];
   }
 
-  async #updateRecurrence(session?: ClientSession): Promise<Change_Gcal[]> {
+  async #updateRecurrence(
+    session?: ClientSession,
+  ): Promise<Event_Transition[]> {
     this.#logger.info(`Updating SERIES: ${this.#event.id} (Gcal)`);
 
     const event = gEventToCompassEvent(this.#event, this.userId);
@@ -432,11 +423,11 @@ export class GcalEventParser {
     return [...eventChanges, ...timedInstancesChanges];
   }
 
-  async #splitSeries(session?: ClientSession): Promise<Change_Gcal[]> {
+  async #splitSeries(session?: ClientSession): Promise<Event_Transition[]> {
     this.#logger.info(`Splitting SERIES: ${this.#event.id} (Gcal)`);
 
     const truncation = await this.cancelSeries(false, session);
-    const series = await this.createSeries(true, session);
+    const series = await this.createSeries(session);
     const updates = await this.#updateRecurrence(session);
 
     return [...truncation, ...series, ...updates];

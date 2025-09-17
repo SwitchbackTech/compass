@@ -21,15 +21,28 @@ class GCalService {
     const { status, statusText } = response;
 
     if (status !== 200 || statusText !== "OK") {
-      throw new Error(message);
+      throw error(GcalError.Unsure, message);
     }
 
     return response;
   }
 
+  async getEvent(
+    gcal: gCalendar,
+    gcalEventId: string,
+    calendarId = GCAL_PRIMARY,
+  ) {
+    const response = await gcal.events.get({
+      calendarId,
+      eventId: gcalEventId,
+    });
+
+    return response.data;
+  }
+
   async createEvent(gcal: gCalendar, event: gSchema$Event) {
     const response = await gcal.events.insert({
-      calendarId: "primary",
+      calendarId: GCAL_PRIMARY,
       requestBody: event,
     });
 

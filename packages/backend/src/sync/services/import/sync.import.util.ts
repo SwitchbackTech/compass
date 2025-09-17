@@ -7,7 +7,11 @@ import {
   WithoutCompassId,
 } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
-import { isBase, isInstanceWithoutId } from "@core/util/event/event.util";
+import {
+  isBase,
+  isInstanceWithoutId,
+  isRegularEvent,
+} from "@core/util/event/event.util";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
 import { Event_Core_WithObjectId } from "@backend/sync/sync.types";
 
@@ -93,8 +97,8 @@ export const assignIdsToEvents = (
     const event = e as Event_Core;
     const isBaseEvent = isBase(event);
     const isInstance = isInstanceWithoutId(event);
-    const isRegularEvent = !isBaseEvent && !isInstance;
-    const baseEventId = event?.gRecurringEventId ?? event?.gEventId!;
+    const isRegular = isRegularEvent(event);
+    const baseEventId = event?.gRecurringEventId ?? (event?.gEventId as string);
 
     if (!idMaps.get(baseEventId)) idMaps.set(baseEventId, new ObjectId());
 
@@ -105,7 +109,7 @@ export const assignIdsToEvents = (
       _id: isBaseEvent ? baseEventObjectId : new ObjectId(),
     };
 
-    if (!isRegularEvent) {
+    if (!isRegular) {
       if (isInstance) {
         result.recurrence = { eventId: baseEventObjectId.toString() };
       } else if (event.recurrence) {

@@ -1,13 +1,16 @@
+import { ObjectId, WithId } from "mongodb";
 import { Options, RRule, RRuleStrOptions, rrulestr } from "rrule";
+import { ParsedOptions } from "rrule/dist/esm/types";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { gEventToCompassEvent } from "@core/mappers/map.event";
-import { Event_Core } from "@core/types/event.types";
+import { Schema_Event_Recur_Instance } from "@core/types/event.types";
 import {
   gSchema$Event,
   gSchema$EventBase,
   gSchema$EventInstance,
 } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
+import { diffRRuleOptions } from "@core/util/event/event.util";
 import {
   getGcalEventDateFormat,
   parseGCalEventDate,
@@ -20,10 +23,7 @@ export class GcalEventRRule extends RRule {
   #dateFormat: string;
   #durationMs!: number;
 
-  constructor(
-    event: gSchema$EventBase,
-    options: Partial<Pick<Options, "count" | "freq" | "interval">> = {},
-  ) {
+  constructor(event: gSchema$EventBase, options: Partial<Options> = {}) {
     super(GcalEventRRule.#initOptions(event, options));
 
     this.#event = event;
@@ -40,7 +40,7 @@ export class GcalEventRRule extends RRule {
 
   static #initOptions(
     event: gSchema$EventBase,
-    options: Partial<Pick<Options, "count" | "freq" | "interval">> = {},
+    options: Partial<Options> = {},
   ): Partial<Options> {
     const startDate = parseGCalEventDate(event.start);
     const dtstart = startDate.local().toDate();
@@ -54,6 +54,10 @@ export class GcalEventRRule extends RRule {
     const count = Math.min(rawCount, GCAL_MAX_RECURRENCES);
 
     return { ...rruleOptions, count, dtstart, tzid };
+  }
+
+  diffOptions(rrule: GcalEventRRule): Array<[keyof ParsedOptions, unknown]> {
+    return diffRRuleOptions(rrule, this);
   }
 
   toRecurrence(): string[] {
@@ -100,7 +104,14 @@ export class GcalEventRRule extends RRule {
    * @description Returns all instances of the event mapped to Compass Event format.
    * @note **This is a test-only method for now, it is not to be used in production.**
    */
-  compassInstances(userId: string): Event_Core[] {
-    return this.instances().map((event) => gEventToCompassEvent(event, userId));
+  compassInstances(
+    userId: string,
+    baseId: ObjectId,
+  ): Array<WithId<Omit<Schema_Event_Recur_Instance, "_id">>> {
+    return this.instances().map((event) => ({
+      ...gEventToCompassEvent(event, userId),
+      _id: baseId,
+      recurrence: { eventId: baseId.toString() },
+    }));
   }
 }

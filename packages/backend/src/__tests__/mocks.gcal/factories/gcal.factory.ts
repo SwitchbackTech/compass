@@ -12,6 +12,7 @@ import type {
   gSchema$CalendarListEntry,
   gSchema$Channel,
   gSchema$Event,
+  gSchema$EventBase,
   gSchema$Events,
 } from "@core/types/gcal";
 import {
@@ -20,7 +21,8 @@ import {
   isRegularGCalEvent,
 } from "@core/util/event/gcal.event.util";
 import { compassTestState } from "@backend/__tests__/helpers/mock.setup";
-import { mockRecurringGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { generateGcalId } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
 
 /**
  * Generates a paginated items for the Google Calendar API.
@@ -111,8 +113,14 @@ export const mockGcal = ({
         ): GaxiosPromise<gSchema$Event> => {
           const testState = compassTestState();
           const { all: events } = testState.events.gcalEvents;
+          const id = params.requestBody?.id ?? generateGcalId();
+          const event = { ...params.requestBody, id } as gSchema$EventBase;
+          const isBase = isBaseGCalEvent(event);
+          const rrule = isBase ? new GcalEventRRule(event) : null;
+          const instances = rrule?.instances() ?? [];
+          const newEvents = [event, ...instances];
 
-          events.push(params.requestBody as WithGcalId<gSchema$Event>);
+          events.push(...newEvents);
 
           return Promise.resolve({
             config: options,
@@ -138,13 +146,92 @@ export const mockGcal = ({
             throw new Error(`Event with id ${eventId} not found`);
           }
 
-          const updatedEvent = { ...events[eventIndex], ...params.requestBody };
+          let updatedEvent = { ...events[eventIndex], ...params.requestBody };
+
+          if (updatedEvent.recurrence === null) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { recurrence, ...update } = updatedEvent;
+            updatedEvent = update as gSchema$EventBase;
+
+            events
+              .filter(
+                ({ recurringEventId }) => updatedEvent.id === recurringEventId,
+              )
+              .forEach((instance) => {
+                const index = events.findIndex((e) => e.id === instance.id);
+                if (index !== -1) {
+                  events.splice(index, 1);
+                }
+              });
+          }
 
           events.splice(
             eventIndex,
             1,
             updatedEvent as WithGcalId<gSchema$Event>,
           );
+
+          return Promise.resolve({
+            config: options,
+            statusText: "OK",
+            status: 200,
+            data: updatedEvent,
+            headers: options.headers!,
+            request: { responseURL: updatedEvent.id! },
+          });
+        },
+      ),
+      update: jest.fn(
+        async (
+          params: calendar_v3.Params$Resource$Events$Update,
+          options: MethodOptions = {},
+        ): GaxiosPromise<gSchema$Event> => {
+          const testState = compassTestState();
+          const { all: events } = testState.events.gcalEvents;
+          const { eventId } = params;
+          const eventIndex = events.findIndex((e) => e.id === eventId);
+
+          if (eventIndex === -1) {
+            throw new Error(`Event with id ${eventId} not found`);
+          }
+
+          let updatedEvent = {
+            ...events[eventIndex],
+            ...params.requestBody,
+          } as gSchema$EventBase;
+
+          if (updatedEvent.recurrence === null) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { recurrence, ...update } = updatedEvent;
+            updatedEvent = update as gSchema$EventBase;
+
+            events
+              .filter(
+                ({ recurringEventId }) => updatedEvent.id === recurringEventId,
+              )
+              .forEach((instance) => {
+                const index = events.findIndex((e) => e.id === instance.id);
+                if (index !== -1) {
+                  events.splice(index, 1);
+                }
+              });
+          }
+
+          events.splice(eventIndex, 1, updatedEvent);
+
+          const isBase = isBaseGCalEvent(updatedEvent);
+          const rrule = isBase ? new GcalEventRRule(updatedEvent) : null;
+          const instances = rrule?.instances() ?? [];
+
+          instances.forEach((instance) => {
+            const instanceIndex = events.findIndex((e) => e.id === instance.id);
+
+            if (instanceIndex !== -1) {
+              events.splice(instanceIndex, 1, instance);
+            } else {
+              events.push(instance);
+            }
+          });
 
           return Promise.resolve({
             config: options,
@@ -167,7 +254,22 @@ export const mockGcal = ({
             throw new Error(`Event with id ${eventId} not found`);
           }
 
+          const event = events[eventIndex]!;
+          const isRecurring = isBaseGCalEvent(event);
+
           events.splice(eventIndex, 1);
+
+          if (isRecurring) {
+            // Also delete all instances of the recurring event
+            const instanceEvents = events.filter(isInstanceGCalEvent);
+
+            instanceEvents.forEach((instance) => {
+              const index = events.findIndex((e) => e.id === instance.id);
+              if (index !== -1) {
+                events.splice(index, 1);
+              }
+            });
+          }
 
           return Promise.resolve({
             statusText: "OK",
@@ -211,6 +313,7 @@ export const mockGcal = ({
           params.maxResults ?? pageSize,
           params.pageToken,
         );
+
         return {
           statusText: "OK",
           status: 200,
@@ -227,7 +330,9 @@ export const mockGcal = ({
 
           if (!baseEvent) throw new Error(`Event with id ${id} not found`);
 
-          const { instances } = mockRecurringGcalEvents({ ...baseEvent, id });
+          const instances = events.filter(
+            ({ recurringEventId }) => recurringEventId === id,
+          );
 
           const eventsPage = generatePaginatedGcalItems(
             instances,
