@@ -48,6 +48,8 @@ import {
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { showMigrationToast } from "./MigrationToast";
 import { Setters_Sidebar, State_Sidebar } from "./useSidebarState";
 
 interface SomedayEventsColumns {
@@ -65,6 +67,7 @@ export const useSidebarActions = (
   dateCalcs: DateCalcs,
   state: State_Sidebar,
   setters: Setters_Sidebar,
+  weekProps: WeekProps,
 ) => {
   const dispatch = useAppDispatch();
 
@@ -344,6 +347,22 @@ export const useSidebarActions = (
         event,
         weekViewRange,
       );
+    }
+
+    // Show toast only for month migrations
+    const isMonthMigration =
+      (direction === "forward" || direction === "back") &&
+      category === Categories_Event.SOMEDAY_MONTH;
+
+    if (isMonthMigration) {
+      // Calculate target month name for toast
+      const targetDate = dayjs(_event.startDate);
+      const targetMonthName = targetDate.format("MMMM");
+
+      // Show single toast with navigation button
+      showMigrationToast(targetMonthName, () => {
+        weekProps.state.setStartOfView(targetDate.startOf("month"));
+      });
     }
 
     const isExisting = _event._id;
