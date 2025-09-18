@@ -88,6 +88,39 @@ describe("Jan 2022: Many Formats", () => {
       const instances = result.filter(isExistingInstance);
       expect(instances).toHaveLength(gInstances.length);
     });
+
+    it("excludes base calendar recurring events when someday=false", async () => {
+      // Create a base calendar recurring event (isSomeday: false)
+      const baseCalendarRecurringEvent = {
+        user: userId,
+        title: "Base Calendar Recurring Event",
+        isSomeday: false,
+        startDate: "2023-10-01T10:00:00Z",
+        endDate: "2023-10-01T11:00:00Z",
+        recurrence: {
+          rule: ["RRULE:FREQ=WEEKLY;COUNT=5"],
+        },
+      };
+
+      // Insert the test event
+      await mongoService.event.insertOne(baseCalendarRecurringEvent);
+
+      // Query for calendar events (not someday)
+      const filter = getReadAllFilter(userId, {
+        start: "2023-10-01",
+        end: "2023-10-31",
+      });
+      const result = await mongoService.event.find(filter).toArray();
+
+      // Should NOT include the base calendar recurring event
+      const baseCalendarRecurringEvents = result.filter(
+        (e) => e.isSomeday === false && e.recurrence?.rule,
+      );
+
+      expect(baseCalendarRecurringEvents).toHaveLength(0);
+      const titles = result.map((e) => e.title);
+      expect(titles).not.toContain("Base Calendar Recurring Event");
+    });
   });
 
   describe("finds events with exact same timestamps", () => {
@@ -297,6 +330,36 @@ describe("Jan 2022: Many Formats", () => {
         expect(resultHMS).toHaveLength(1);
         expect(result[0]?.title).toBe("Multi-Month 2");
       });
+    });
+
+    it("includes base someday recurring events when someday query provided", async () => {
+      // Create a base someday recurring event
+      const baseSomedayRecurringEvent = {
+        user: userId,
+        title: "Base Someday Recurring Event",
+        isSomeday: true,
+        startDate: "2023-10-01",
+        endDate: "2023-10-02",
+        recurrence: {
+          rule: ["RRULE:FREQ=WEEKLY;COUNT=5"],
+        },
+      };
+
+      // Insert the test event
+      await mongoService.event.insertOne(baseSomedayRecurringEvent);
+
+      // Query for someday events
+      const filter = getReadAllFilter(userId, { someday: "true" });
+      const result = await mongoService.event.find(filter).toArray();
+
+      // Should include the base someday recurring event
+      const baseSomedayRecurringEvents = result.filter(
+        (e) => e.isSomeday === true && e.recurrence?.rule,
+      );
+
+      expect(baseSomedayRecurringEvents.length).toBeGreaterThan(0);
+      const titles = baseSomedayRecurringEvents.map((e) => e.title);
+      expect(titles).toContain("Base Someday Recurring Event");
     });
   });
 });

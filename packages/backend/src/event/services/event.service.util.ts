@@ -72,8 +72,15 @@ export const getReadAllFilter = (
     Object.assign(filter, dateFilters);
   }
 
-  // Exclude base recurring events (those with recurrence.rule)
-  filter["recurrence.rule"] = { $exists: false };
+  // For someday events: include base recurring events (those with recurrence.rule)
+  // For calendar events: exclude base recurring events (those with recurrence.rule)
+  if (isSomeday) {
+    // Include all someday events, including base recurring events
+    // No additional filter needed for recurrence.rule
+  } else {
+    // Exclude base recurring events (those with recurrence.rule)
+    filter["recurrence.rule"] = { $exists: false };
+  }
 
   return filter;
 };
