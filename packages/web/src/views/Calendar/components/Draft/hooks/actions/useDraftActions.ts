@@ -213,7 +213,7 @@ export const useDraftActions = (
       isSomeday: true,
       startDate: start,
       endDate: end,
-      order: somedayWeekCount,
+      order: somedayWeekCount || 0, // Provide fallback if somedayWeekCount is undefined
     };
     const event = validateSomedayEvent(_draft);
     dispatch(getWeekEventsSlice.actions.convert({ event }));
