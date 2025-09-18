@@ -66,7 +66,11 @@ export const CalendarView = () => {
         weekProps={weekProps}
         isSidebarOpen={isSidebarOpen}
       >
-        <SidebarDraftProvider dateCalcs={dateCalcs} measurements={measurements}>
+        <SidebarDraftProvider
+          dateCalcs={dateCalcs}
+          measurements={measurements}
+          weekProps={weekProps}
+        >
           <Shortcuts shortcutsProps={shortcutProps}>
             <ContextMenuWrapper id="sidebar-context-menu">
               <Draft measurements={measurements} weekProps={weekProps} />
