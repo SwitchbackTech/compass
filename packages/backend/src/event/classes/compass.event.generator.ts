@@ -4,7 +4,9 @@ import {
   CompassAllEvents,
   CompassEvent,
   CompassEventSchema,
+  CompassEventStatus,
   CompassThisAndFollowingEvent,
+  CompassThisEvent,
   EventUpdateSchema,
   Event_Core,
   RecurringEventUpdateScope,
@@ -12,7 +14,7 @@ import {
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
-import { parseCompassEventDate } from "@core/util/event/event.util";
+import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";
 import mongoService from "@backend/common/services/mongo.service";
 import { CompassEventRRule } from "@backend/event/classes/compass.event.rrule";
 
@@ -70,9 +72,9 @@ export class CompassEventFactory {
   }
 
   private static async genThisAndFollowingEvents(
-    event: CompassEvent,
+    event: CompassThisAndFollowingEvent,
     session?: ClientSession,
-  ): Promise<CompassThisAndFollowingEvent[]> {
+  ): Promise<CompassEvent[]> {
     const { baseEvent, instanceEvent } =
       await CompassEventFactory.findCompassBaseAndInstanceEvent(
         event.payload._id,
@@ -80,46 +82,81 @@ export class CompassEventFactory {
         session,
       );
 
+    const baseStartDate = parseCompassEventDate(baseEvent.startDate!);
     const startDate = parseCompassEventDate(instanceEvent.startDate!);
+    const updateAllSeries = startDate.isSameOrBefore(baseStartDate);
+    const allDay = isAllDay(instanceEvent);
+
+    if (updateAllSeries) {
+      return CompassEventFactory.genAllEvents(
+        {
+          ...event,
+          applyTo: RecurringEventUpdateScope.ALL_EVENTS,
+        } as CompassAllEvents,
+        session,
+      );
+    }
+
+    const rruleOldSeries = new CompassEventRRule(baseEvent);
+    const oldSeriesLastEventStartDate = rruleOldSeries.all().pop()!;
+    const applyTo = RecurringEventUpdateScope.THIS_EVENT;
     const endDate = parseCompassEventDate(instanceEvent.endDate!);
     const duration = endDate.diff(startDate);
 
-    const rruleOldSeries = new CompassEventRRule(baseEvent, {
-      until: startDate.subtract(duration, "millisecond").toDate(),
+    const oldUntil = startDate.subtract(
+      allDay ? 1 : duration,
+      allDay ? "day" : "millisecond",
+    );
+
+    const rruleTruncatedSeries = new CompassEventRRule(baseEvent, {
+      until: oldUntil.toDate(),
     });
 
-    const baseEventId = baseEvent._id.toString();
-
-    const compassBaseEventWithUntil = {
+    const truncateOldSeries = {
       ...event,
+      applyTo,
       payload: {
-        ...rruleOldSeries.base(),
-        _id: baseEventId,
+        ...rruleTruncatedSeries.base(),
+        _id: baseEvent._id.toString(),
       },
-    } as CompassThisAndFollowingEvent;
+    } as CompassThisEvent;
+
+    if (event.status === CompassEventStatus.CANCELLED) {
+      return [{ ...truncateOldSeries, status: CompassEventStatus.CONFIRMED }];
+    }
 
     const payload = EventUpdateSchema.parse(event.payload);
 
     delete payload.recurrence?.eventId;
 
-    const rruleNewSeries = new CompassEventRRule({
+    const _rruleNewSeries = new CompassEventRRule({
       ...MapEvent.removeIdentifyingData(instanceEvent),
       ...(payload as Schema_Event_Recur_Base),
-      _id: instanceEvent._id,
+      _id: new ObjectId(),
     });
+
+    const rruleNewSeries = new CompassEventRRule(
+      {
+        ...MapEvent.removeIdentifyingData(instanceEvent),
+        ...(payload as Schema_Event_Recur_Base),
+        _id: new ObjectId(),
+      },
+      { until: _rruleNewSeries.options.until ?? oldSeriesLastEventStartDate },
+    );
 
     const newBase = rruleNewSeries.base();
 
     // new series
-    const compassEvent = {
+    const newBaseEvent = {
       ...event,
+      applyTo,
       payload: {
         ...newBase,
         _id: newBase._id.toString(),
-      } as CompassThisAndFollowingEvent["payload"],
-    } as CompassThisAndFollowingEvent;
+      },
+    } as CompassThisEvent;
 
-    return [compassBaseEventWithUntil, compassEvent];
+    return [truncateOldSeries, newBaseEvent];
   }
 
   private static async genAllEvents(
@@ -172,7 +209,13 @@ export class CompassEventFactory {
     const baseToSomedayTransition = isSomeday && hasRecurringBase;
 
     if (baseToStandaloneTransition || baseToSomedayTransition) {
-      return CompassEventFactory.genAllEvents(event, session);
+      return CompassEventFactory.genAllEvents(
+        {
+          ...event,
+          applyTo: RecurringEventUpdateScope.ALL_EVENTS,
+        } as CompassAllEvents,
+        session,
+      );
     }
 
     if (hasRRule && hasRecurringBase) delete payload.recurrence?.rule;

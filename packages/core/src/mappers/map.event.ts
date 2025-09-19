@@ -102,7 +102,9 @@ export namespace MapEvent {
     const { gRecurringEventId: _gRecurringEventId = base?.gEventId } = instance;
     const gRecurringEventId = _gRecurringEventId ?? instance.recurrence.eventId;
     const startDate = parseCompassEventDate(instance.startDate!);
-    const gEventId = `${gRecurringEventId}_${startDate.toRRuleDTSTARTString()}`;
+    const isAllDayEvent = isAllDay(instance);
+    const idPrefix = startDate.toRRuleDTSTARTString(isAllDayEvent);
+    const gEventId = `${gRecurringEventId}_${idPrefix}`;
 
     return { gEventId: _gEventId ?? gEventId, gRecurringEventId };
   };
