@@ -8,6 +8,7 @@ import {
   WithCompassId,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { isAllDay, parseCompassEventDate } from "../event/event.util";
 
 export const createMockStandaloneEvent = (
   overrides: Partial<Schema_Event> = {},
@@ -34,24 +35,29 @@ export const createMockStandaloneEvent = (
  */
 export const createMockBaseEvent = (
   overrides: Partial<Schema_Event_Recur_Base> = {},
+  allDayEvent = false,
 ): WithCompassId<Schema_Event_Recur_Base> => {
+  const { startDate } = overrides;
   const now = new Date();
+  const allDay = allDayEvent || isAllDay(overrides) || overrides.isAllDay;
+  const date = startDate ? parseCompassEventDate(startDate) : undefined;
+  const dates = generateCompassEventDates({ date, allDay });
+
   return {
     _id: new ObjectId().toString(),
     title: "Weekly Team Sync",
     description: "Weekly team meeting",
-    startDate: "2024-03-20T10:00:00Z",
-    endDate: "2024-03-20T11:00:00Z",
     recurrence: {
       rule: ["RRULE:FREQ=WEEKLY"],
     },
     user: "test-user-id",
     origin: Origin.COMPASS,
     priority: Priorities.WORK,
-    isAllDay: false,
     isSomeday: false,
     updatedAt: now,
     ...overrides,
+    isAllDay: allDay ?? false,
+    ...dates,
   };
 };
 

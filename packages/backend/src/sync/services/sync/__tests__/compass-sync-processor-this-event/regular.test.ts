@@ -921,7 +921,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
-                const gcalEvent = await testCompassEventInGcal(standaloneEvent);
+                const gcalEvent = await testCompassEventInGcal(updatedEvent);
 
                 expect(gcalEvent).not.toHaveProperty("recurrence");
                 break;
@@ -1006,7 +1006,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
-                const gcalEvent = await testCompassEventInGcal(standaloneEvent);
+                const gcalEvent = await testCompassEventInGcal(updatedEvent);
 
                 expect(gcalEvent).not.toHaveProperty("recurrence");
                 break;

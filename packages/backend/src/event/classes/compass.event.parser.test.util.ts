@@ -7,6 +7,7 @@ import {
   Schema_Event_Regular,
   WithCompassId,
 } from "@core/types/event.types";
+import { gSchema$Event } from "@core/types/gcal";
 import {
   isBase,
   isInstance,
@@ -14,7 +15,6 @@ import {
 } from "@core/util/event/event.util";
 import mongoService from "@backend/common/services/mongo.service";
 import { _getGcal } from "@backend/event/services/event.service";
-import { gSchema$Event } from "../../../../core/src/types/gcal";
 
 export async function testCompassStandaloneEvent(
   payload: WithCompassId<Schema_Event_Regular>,
@@ -102,10 +102,13 @@ export async function testCompassSeries(
 
   // expect event to have instances
   const instances = (await mongoService.event
-    .find({
-      user: payload.user,
-      "recurrence.eventId": baseEvent!._id.toString(),
-    })
+    .find(
+      {
+        user: payload.user,
+        "recurrence.eventId": baseEvent!._id.toString(),
+      },
+      { sort: { startDate: 1 } },
+    )
     .toArray()) as Array<WithId<Omit<Schema_Event_Recur_Instance, "_id">>>;
 
   expect(instances).toHaveLength(payload.isSomeday ? 0 : instanceCount);
@@ -145,11 +148,20 @@ export async function testCompassEventInGcal(
   expect(event).toHaveProperty("gEventId");
   // check that event exists in external calendar
   const gcalEvent = await _getGcal(event.user!, event!.gEventId!);
+  const dateKey = event.isAllDay ? "date" : "dateTime";
 
   expect(gcalEvent).toEqual(
     expect.objectContaining({
       id: event!.gEventId,
       summary: event.title,
+      ...(event.description ? { description: event.description } : {}),
+      start: expect.objectContaining({ [dateKey]: event.startDate }),
+      end: expect.objectContaining({ [dateKey]: event.endDate }),
+      extendedProperties: {
+        private: expect.objectContaining({
+          priority: event.priority,
+        }),
+      },
     }),
   );
 
