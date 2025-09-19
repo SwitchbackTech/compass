@@ -7,8 +7,39 @@ import {
   Schema_SomedayEvent,
   Schema_SomedayEventsColumn,
 } from "@web/common/types/web.event.types";
-import { validateSomedayEvents } from "@web/common/validators/someday.event.validator";
+import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
 import { ID_SOMEDAY_EVENT_ACTION_MENU } from "@web/views/Forms/SomedayEventForm/SomedayEventActionMenu";
+
+/**
+ * Safely checks if an event is a valid someday event
+ */
+export const isSafeSomedayEvent = (
+  event: Schema_Event,
+): event is Schema_SomedayEvent => {
+  try {
+    validateSomedayEvent(event);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Safely validates someday events, filtering out invalid ones
+ */
+export const validateSomedayEventsSafely = (
+  events: Schema_Event[],
+): Schema_SomedayEvent[] => {
+  const validEvents: Schema_SomedayEvent[] = [];
+
+  events.forEach((event) => {
+    if (isSafeSomedayEvent(event)) {
+      validEvents.push(event);
+    }
+  });
+
+  return validEvents;
+};
 
 export const getSomedayEventCategory = (
   event: Schema_Event,
@@ -36,11 +67,12 @@ export const categorizeSomedayEvents = (
 ): Schema_SomedayEventsColumn => {
   const { start: weekStart, end: weekEnd } = weekDates;
 
-  let events = Object.values(somedayEvents) as Schema_SomedayEvent[];
+  let events = Object.values(somedayEvents) as Schema_Event[];
 
-  events = validateSomedayEvents(events);
+  // Use safe validation to filter out invalid someday events
+  const validSomedayEvents = validateSomedayEventsSafely(events);
 
-  const sortedEvents = events.sort((a, b) => a.order - b.order);
+  const sortedEvents = validSomedayEvents.sort((a, b) => a.order - b.order);
 
   const weekIds: string[] = [];
   const monthIds: string[] = [];
