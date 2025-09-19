@@ -73,7 +73,14 @@ export const getReadAllFilter = (
   }
 
   // Exclude base recurring events (those with recurrence.rule)
-  filter["recurrence.rule"] = { $exists: false };
+  filter.$and = [
+    {
+      $or: [
+        { "recurrence.rule": { $exists: false }, isSomeday },
+        { "recurrence.rule": { $exists: isSomeday }, isSomeday },
+      ],
+    },
+  ];
 
   return filter;
 };

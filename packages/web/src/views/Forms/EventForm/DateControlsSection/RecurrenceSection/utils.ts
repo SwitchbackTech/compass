@@ -1,9 +1,11 @@
-import dayjs from "dayjs";
-import { RRule } from "rrule";
-import { Schema_Event } from "@core/types/event.types";
-import { devAlert } from "@core/util/app.util";
+import dayjs, { Dayjs } from "dayjs";
+import { useMemo, useState } from "react";
+import { Frequency, Options, RRule, Weekday } from "rrule";
+import { Schema_Event, Schema_Event_Recur_Base } from "@core/types/event.types";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
+import { getCompassEventDateFormat } from "@core/util/event/event.util";
 
-export const WEEKDAYS = [
+export const WEEKDAYS: Array<keyof typeof WEEKDAY_RRULE_MAP> = [
   "sunday",
   "monday",
   "tuesday",
@@ -12,6 +14,22 @@ export const WEEKDAYS = [
   "friday",
   "saturday",
 ];
+
+export const FREQUENCY_MAP: Record<Frequency, string> = {
+  [Frequency.SECONDLY]: "Second",
+  [Frequency.MINUTELY]: "Minute",
+  [Frequency.HOURLY]: "Hour",
+  [Frequency.DAILY]: "Day",
+  [Frequency.WEEKLY]: "Week",
+  [Frequency.MONTHLY]: "Month",
+  [Frequency.YEARLY]: "Year",
+};
+
+export const FREQUENCY_OPTIONS = (suffix = "") =>
+  Object.entries(FREQUENCY_MAP).map(([value, label]) => ({
+    label: `${label}${suffix}`,
+    value: value as unknown as Frequency,
+  }));
 
 const WEEKDAY_RRULE_MAP = {
   monday: RRule.MO,
@@ -23,86 +41,126 @@ const WEEKDAY_RRULE_MAP = {
   sunday: RRule.SU,
 };
 
-interface GenerateRecurrenceParams {
-  event: Schema_Event;
-  repeatCount: number;
-  weekDays: string[];
-}
-
-export const generateRecurrenceDates = ({
-  event,
-  repeatCount,
-  weekDays,
-}: GenerateRecurrenceParams): { startDate: Date; endDate: Date }[] => {
-  if (weekDays.length === 0) {
-    return [];
-  }
-
-  const startDate = dayjs(event.startDate);
-  const endDate = dayjs(event.endDate);
-
-  const duration = endDate.diff(startDate);
-
-  const byWeekDay = weekDays.map(
-    (day) => WEEKDAY_RRULE_MAP[day as keyof typeof WEEKDAY_RRULE_MAP],
-  );
-
-  const untilDate = startDate
-    .add(repeatCount - 1, "weeks")
-    .endOf("week")
-    .add(1, "day"); // Selecting sundays does not work without this.
-
-  const rule = new RRule({
-    freq: RRule.WEEKLY,
-    dtstart: startDate.toDate(),
-    until: untilDate.toDate(),
-    byweekday: byWeekDay,
-  });
-
-  const occurrences = rule.all().map((date) => ({
-    startDate: dayjs(date).toDate(),
-    endDate: dayjs(date).add(duration, "millisecond").toDate(),
-  }));
-
-  return occurrences;
+const WEEKDAY_LABELS_MAP: Record<keyof typeof WEEKDAY_RRULE_MAP, string> = {
+  sunday: RRule.SU.toString(),
+  monday: RRule.MO.toString(),
+  tuesday: RRule.TU.toString(),
+  wednesday: RRule.WE.toString(),
+  thursday: RRule.TH.toString(),
+  friday: RRule.FR.toString(),
+  saturday: RRule.SA.toString(),
 };
 
-export const getDefaultWeekDay = (event: Schema_Event): string => {
-  const day = WEEKDAYS.find((day) => {
-    const dayOfWeek = dayjs(event.startDate).format("dddd").toLowerCase();
-    return dayOfWeek === day;
-  });
+const REVERSE_WEEKDAY_LABELS_MAP: Record<
+  string,
+  keyof typeof WEEKDAY_RRULE_MAP
+> = Object.entries(WEEKDAY_LABELS_MAP).reduce(
+  (acc, [key, value]) => ({ ...acc, [value]: key }),
+  {},
+);
+
+const WEEKDAY_MAP: Record<
+  number | string | keyof typeof WEEKDAY_RRULE_MAP,
+  Weekday
+> = [
+  RRule.SU,
+  RRule.MO,
+  RRule.TU,
+  RRule.WE,
+  RRule.TH,
+  RRule.FR,
+  RRule.SA,
+].reduce(
+  (acc, day) => ({
+    ...acc,
+    [day.weekday]: day,
+    [day.toString()]: day,
+    [REVERSE_WEEKDAY_LABELS_MAP[day.toString()]]: day,
+  }),
+  {},
+);
+
+export const getDefaultWeekDay = (startDate: Dayjs): (typeof WEEKDAYS)[0] => {
+  const dayOfWeek = startDate.format("dddd").toLowerCase();
+  const day = WEEKDAYS.find((day) => dayOfWeek === day);
+
   if (!day) {
-    devAlert(
+    console.log(
       "No default week day found. Something went wrong. Please investigate",
     );
-    return "";
+
+    return "sunday";
   }
 
   return day;
 };
 
-export const getRecurrenceEndsOnDate = (
-  event: Schema_Event,
-  numWeeks: number,
-  weekDays: string[],
-): dayjs.Dayjs => {
-  const startDate = dayjs(event.startDate);
+export function toWeekDay(weekDay: (typeof WEEKDAYS)[0]): Weekday {
+  return WEEKDAY_RRULE_MAP[weekDay];
+}
 
-  const lastSelectedWeekDay = weekDays.sort((a, b) => {
-    const aIndex = WEEKDAYS.indexOf(a);
-    const bIndex = WEEKDAYS.indexOf(b);
-    return aIndex - bIndex;
-  })[weekDays.length - 1];
+export function toWeekDays(weekDays: typeof WEEKDAYS): Weekday[] {
+  return weekDays.map(toWeekDay);
+}
 
-  const startDayIndex = startDate.day();
-  const lastDayIndex = WEEKDAYS.indexOf(lastSelectedWeekDay);
+export const useRecurrence = (event: Schema_Event) => {
+  const dateFormat = getCompassEventDateFormat(event.startDate!);
+  const startDate = dayjs(event.startDate, dateFormat);
 
-  const daysUntilLastDay = lastDayIndex - startDayIndex;
+  const { options } = useMemo(
+    () => new CompassEventRRule(event as Schema_Event_Recur_Base),
+    [event],
+  );
 
-  const daysToAdd = (numWeeks - 1) * 7 + daysUntilLastDay;
+  const defaultWeekDay: typeof WEEKDAYS = useMemo(
+    () =>
+      options.byweekday?.map(
+        (day) => REVERSE_WEEKDAY_LABELS_MAP[WEEKDAY_MAP[day].toString()],
+      ) ?? [],
+    [options.byweekday],
+  );
 
-  const endsOnDate = startDate.add(daysToAdd, "day");
+  const defaultWkst = useMemo<Weekday | null>(
+    () => (options.wkst ? WEEKDAY_MAP[options.wkst] : null),
+    [options.wkst],
+  );
 
-  return endsOnDate;
+  const [freq, setFreq] = useState<Frequency>(options.freq);
+  const [interval, setInterval] = useState<number>(options.interval);
+  const [until, setUntil] = useState<Date | null>(options.until);
+  const [count, setCount] = useState<number | null>(options.count);
+  const [wkst, setWkst] = useState<Weekday | null>(defaultWkst);
+  const [weekDays, setWeekDays] = useState<typeof WEEKDAYS>(defaultWeekDay);
+  const byweekday = useMemo<Weekday[]>(() => toWeekDays(weekDays), [weekDays]);
+  const dtstart = useMemo<Date>(() => startDate.toDate(), [startDate]);
+
+  const rruleOptions = useMemo<Partial<Options>>(
+    () => ({
+      freq,
+      dtstart,
+      interval,
+      wkst,
+      byweekday,
+      until,
+      count,
+    }),
+    [freq, dtstart, interval, wkst, byweekday, until, count],
+  );
+
+  const rrule = useMemo(
+    () => new CompassEventRRule(event as Schema_Event_Recur_Base, rruleOptions),
+    [event, rruleOptions],
+  );
+
+  return {
+    rrule,
+    options: rruleOptions,
+    weekDays,
+    setFreq,
+    setInterval,
+    setUntil,
+    setCount,
+    setWkst,
+    setWeekDays,
+  };
 };

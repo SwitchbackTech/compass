@@ -1,4 +1,5 @@
-import { ObjectId, WithId } from "mongodb";
+import { ObjectId } from "bson";
+import type { WithId } from "mongodb";
 import type { Options, RRuleStrOptions } from "rrule";
 import { RRule, rrulestr } from "rrule";
 import type { ParsedOptions } from "rrule/dist/esm/types";

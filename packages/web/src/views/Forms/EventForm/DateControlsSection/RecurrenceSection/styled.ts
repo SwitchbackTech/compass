@@ -17,7 +17,7 @@ export const StyledRecurrenceSection = styled.div`
   opacity: 0.7;
 `;
 
-export const StyledRecurrenceRepeatCountSelect = styled.div`
+export const StyledRecurrenceIntervalSelect = styled.div`
   display: flex;
   align-items: center;
   flex-basis: 100%;
@@ -60,7 +60,7 @@ export const StyledWeekDay = styled.button<{
   `}
 `;
 
-export const StyledRepeatCountInput = styled.input<{
+export const StyledIntervalInput = styled.input<{
   bgColor: string;
 }>`
   width: 32;
@@ -135,4 +135,79 @@ export const StyledUpcomingFeature = styled.div`
   border-radius: 4px;
   font-size: 0.9em;
   text-align: center;
+`;
+
+export const StyledFreqSelect = styled.div`
+  margin-right: ${({ theme }) => theme.spacing.s};
+  width: 190px;
+
+  .freq-select__control {
+    background-color: transparent;
+    border: 1px solid ${({ theme }) => theme.color.bg.primary};
+    box-shadow: none;
+    min-height: 24px;
+    height: 24px;
+    cursor: pointer;
+  }
+
+  .freq-select__control--is-focused {
+    border-color: ${({ theme }) => theme.color.border.primaryDark};
+    box-shadow: 0 0 0 1px ${({ theme }) => theme.color.bg.primary};
+  }
+
+  .freq-select__value-container {
+    padding: 0 ${({ theme }) => theme.spacing.xs};
+    height: 24px;
+    font-size: 0.9em;
+  }
+
+  .freq-select__single-value {
+    color: ${({ theme }) => theme.color.text.dark};
+    line-height: 24px;
+  }
+
+  .freq-select__indicators {
+    height: 24px;
+  }
+
+  .freq-select__indicator {
+    padding: 0 4px;
+    color: ${({ theme }) => theme.color.text.dark};
+    transition: color 150ms;
+
+    &:hover {
+      color: ${({ theme }) => theme.color.text.darkPlaceholder};
+    }
+  }
+
+  .freq-select__menu {
+    background-color: ${({ theme }) => theme.color.bg.primary};
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-top: 4px;
+    border-radius: 4px;
+    overflow: hidden;
+    z-index: 10;
+  }
+
+  .freq-select__option {
+    padding: ${({ theme }) => theme.spacing.s} ${({ theme }) => theme.spacing.m};
+    cursor: pointer;
+    font-size: 0.9em;
+    color: ${({ theme }) => theme.color.text.light};
+    background-color: transparent;
+    transition:
+      background-color 150ms,
+      color 150ms;
+
+    &:hover {
+      background-color: ${({ theme }) => theme.color.bg.primary};
+      color: ${({ theme }) => theme.color.text.light};
+    }
+  }
+
+  .freq-select__option--is-selected {
+    background-color: ${({ theme }) => theme.color.bg.primary};
+    color: ${({ theme }) => theme.color.text.light};
+  }
 `;

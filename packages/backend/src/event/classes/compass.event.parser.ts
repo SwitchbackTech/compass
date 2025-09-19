@@ -12,6 +12,7 @@ import {
   TransitionStatus,
   WithCompassId,
 } from "@core/types/event.types";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import {
   isBase,
   isInstance,
@@ -20,7 +21,6 @@ import {
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
-import { CompassEventRRule } from "@backend/event/classes/compass.event.rrule";
 import {
   _createCompassEvent,
   _createGcal,

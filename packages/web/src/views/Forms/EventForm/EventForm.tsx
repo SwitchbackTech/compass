@@ -22,6 +22,7 @@ import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSect
 import { getFormDates } from "./DateControlsSection/DateTimeSection/form.datetime.util";
 import { EventActionMenu } from "./EventActionMenu";
 import { PrioritySection } from "./PrioritySection";
+import { RepeatSection } from "./RepeatSection";
 import { SaveSection } from "./SaveSection";
 import {
   StyledDescription,
@@ -338,6 +339,12 @@ export const EventForm: React.FC<FormProps> = ({
         dateTimeSectionProps={dateTimeSectionProps}
         eventCategory={category}
         recurrenceSectionProps={recurrenceSectionProps}
+      />
+
+      <RepeatSection
+        bgColor={colorByPriority[priority ?? Priorities.UNASSIGNED]}
+        onSetEventField={onSetEventField}
+        recurrence={event.recurrence}
       />
 
       <StyledDescription

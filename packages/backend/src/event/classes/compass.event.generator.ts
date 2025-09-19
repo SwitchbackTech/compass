@@ -14,9 +14,9 @@ import {
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";
 import mongoService from "@backend/common/services/mongo.service";
-import { CompassEventRRule } from "@backend/event/classes/compass.event.rrule";
 
 export class CompassEventFactory {
   private static async findCompassEvent(

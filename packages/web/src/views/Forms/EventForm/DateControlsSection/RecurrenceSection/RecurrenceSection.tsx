@@ -1,35 +1,44 @@
-import dayjs from "dayjs";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
+import ReactSelect from "react-select";
+import { Frequency } from "rrule";
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import { Schema_Event } from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
+import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { StyledText } from "@web/components/Text/styled";
-import {
-  WEEKDAYS,
-  generateRecurrenceDates,
-  getDefaultWeekDay,
-  getRecurrenceEndsOnDate,
-} from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/utils";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
   StyledCaretButton,
   StyledCaretInputContainer,
-  StyledDisabledOverlay,
   StyledEditRecurrence,
   StyledEndsOnDate,
-  StyledRecurrenceRepeatCountSelect,
+  StyledFreqSelect,
+  StyledIntervalInput,
+  StyledRecurrenceIntervalSelect,
   StyledRecurrenceSection,
-  StyledRepeatCountInput,
-  StyledUpcomingFeature,
   StyledWeekDay,
   StyledWeekDayContainer,
   StyledWeekDaysContainer,
-} from "./styled";
+} from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
+import {
+  FREQUENCY_MAP,
+  FREQUENCY_OPTIONS,
+  WEEKDAYS,
+  useRecurrence,
+} from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/utils";
+import { RepeatIcon } from "../../../../../components/Icons/Repeat";
+import {
+  StyledRepeatContainer,
+  StyledRepeatRow,
+  StyledRepeatTextContainer,
+} from "../../RepeatSection/styled";
 
 export interface RecurrenceSectionProps {
   bgColor: string;
   event: Schema_Event;
   startTime: SelectOption<string>;
   endTime: SelectOption<string>;
+  setEvent: (event: Schema_Event) => React.SetStateAction<Schema_Event>;
 }
 
 const EditRecurrence = ({ onClick }: { onClick: () => void }) => {
@@ -46,55 +55,97 @@ export const RecurrenceSection = ({
   bgColor,
   event,
 }: RecurrenceSectionProps) => {
-  const [repeatCount, setRepeatCount] = useState(1);
-  const [weekDays, setWeekDays] = useState<string[]>([
-    getDefaultWeekDay(event),
-  ]);
   const [isEditing, setIsEditing] = useState(false);
+  const recurrenceHook = useRecurrence(event);
+  const { options, setInterval, weekDays, setWeekDays } = recurrenceHook;
+  const { setFreq, rrule } = recurrenceHook;
+  const { interval } = options;
 
-  useEffect(() => {
-    generateRecurrenceDates({
-      event,
-      repeatCount,
-      weekDays,
-    });
+  const freq = useMemo(
+    () => (event.recurrence?.rule ? options.freq! : "Never"),
+    [event],
+  );
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [repeatCount, weekDays, event.startDate, event.endDate]);
+  const [recurring, setRecurring] = useState<Frequency | "Never">(freq);
+  const [recurrence, setRecurrence] = useState<string[] | null>(null);
 
-  if (!isEditing) {
-    return <EditRecurrence onClick={() => setIsEditing(true)} />;
-  }
+  const toggleRecurrence = useCallback(
+    () => setRecurrence((value) => (value ? null : rrule.toRecurrence())),
+    [setRecurrence, rrule],
+  );
+
+  const onFreqSelect = useCallback(
+    (option: Frequency | "Never") => {
+      if (option !== "Never") setFreq(option);
+
+      setRecurring(option);
+    },
+    [setRecurring, setFreq],
+  );
+
+  // const recurrence = useMemo(() => rrule.toRecurrence(), [options]);
+
+  console.log("recurrence", isEditing);
 
   return (
-    <StyledRecurrenceSection>
-      <RecurrenceRepeatCountSelect
-        bgColor={bgColor}
-        initialValue={repeatCount}
-        onChange={setRepeatCount}
-        min={1}
-        max={12}
-      />
-      <WeekDays bgColor={bgColor} value={weekDays} onChange={setWeekDays} />
-      {weekDays.length > 0 && repeatCount > 1 && (
-        <EndsOnDate event={event} numWeeks={repeatCount} weekDays={weekDays} />
-      )}
-      <StyledDisabledOverlay>
-        <StyledUpcomingFeature>
-          Recurring events coming soon!
-        </StyledUpcomingFeature>
-      </StyledDisabledOverlay>
-    </StyledRecurrenceSection>
+    <>
+      <StyledRepeatRow>
+        <StyledRepeatContainer>
+          <StyledRepeatTextContainer onClick={toggleRecurrence} tabIndex={0}>
+            {recurrence ? <RepeatIcon /> : null}
+            {recurrence ? "Repeats every" : "Does not repeat"}
+          </StyledRepeatTextContainer>
+        </StyledRepeatContainer>
+      </StyledRepeatRow>
+
+      {recurrence ? (
+        <StyledRecurrenceSection>
+          <RecurrenceIntervalSelect
+            bgColor={bgColor}
+            initialValue={interval!}
+            recurring={recurring}
+            onChange={setInterval}
+            onFreqSelect={onFreqSelect}
+            min={1}
+            max={12}
+          />
+
+          {recurring !== "Never" ? (
+            <>
+              <WeekDays
+                bgColor={bgColor}
+                value={weekDays}
+                onChange={setWeekDays}
+              />
+
+              {/* {weekDays.length > 0 && interval! > 1 && (
+            <EndsOnDate />
+          )} */}
+            </>
+          ) : null}
+
+          {/* <StyledDisabledOverlay>
+          <StyledUpcomingFeature>
+            Recurring events coming soon!
+          </StyledUpcomingFeature>
+        </StyledDisabledOverlay> */}
+        </StyledRecurrenceSection>
+      ) : null}
+    </>
   );
 };
 
-export const RecurrenceRepeatCountSelect = ({
+export const RecurrenceIntervalSelect = ({
   bgColor,
   initialValue,
   onChange,
+  recurring,
+  onFreqSelect,
   min,
   max,
 }: {
+  recurring: Frequency | "Never";
+  onFreqSelect: (option: Frequency | "Never") => void;
   bgColor: string;
   initialValue: number;
   onChange: (repeatCount: number) => void;
@@ -104,33 +155,46 @@ export const RecurrenceRepeatCountSelect = ({
   const [value, setValue] = useState(initialValue);
 
   return (
-    <StyledRecurrenceRepeatCountSelect>
-      <StyledText size="l">Repeat every</StyledText>
-      <StyledRepeatCountInput
-        bgColor={bgColor}
-        type="number"
-        max={12}
-        min={1}
-        value={value}
-        readOnly
+    <StyledRecurrenceIntervalSelect>
+      {recurring !== "Never" ? (
+        <>
+          <StyledText size="l">Repeat every</StyledText>
+
+          <StyledIntervalInput
+            bgColor={bgColor}
+            type="number"
+            max={12}
+            min={1}
+            value={value}
+            readOnly
+          />
+
+          <CaretInput
+            onChange={(type) => {
+              if (type === "increase") {
+                if (value < max) {
+                  setValue(value + 1);
+                  onChange(value + 1);
+                }
+              } else {
+                if (value > min) {
+                  setValue(value - 1);
+                  onChange(value - 1);
+                }
+              }
+            }}
+          />
+        </>
+      ) : null}
+
+      <FreqSelect
+        value={recurring}
+        plural={value > 1}
+        onFreqSelect={onFreqSelect}
       />
-      <CaretInput
-        onChange={(type) => {
-          if (type === "increase") {
-            if (value < max) {
-              setValue(value + 1);
-              onChange(value + 1);
-            }
-          } else {
-            if (value > min) {
-              setValue(value - 1);
-              onChange(value - 1);
-            }
-          }
-        }}
-      />
-      <StyledText size="l">{value === 1 ? "week" : "weeks"} on:</StyledText>
-    </StyledRecurrenceRepeatCountSelect>
+
+      {recurring !== "Never" ? <StyledText size="l">on:</StyledText> : null}
+    </StyledRecurrenceIntervalSelect>
   );
 };
 
@@ -169,8 +233,8 @@ const WeekDays = ({
   onChange,
 }: {
   bgColor: string;
-  value: string[];
-  onChange: (days: string[]) => void;
+  value: typeof WEEKDAYS;
+  onChange: (days: typeof WEEKDAYS) => void;
 }) => {
   return (
     <StyledWeekDaysContainer>
@@ -220,22 +284,51 @@ const WeekDay = ({
   );
 };
 
-const EndsOnDate = ({
-  event,
-  numWeeks,
-  weekDays,
+const EndsOnDate = () => {
+  return (
+    <>
+      <StyledEndsOnDate>
+        <StyledText size="l">
+          Ends on: {/* Ends on {event.startDate.format("YYYY-MM-DD")} */}
+        </StyledText>
+
+        <TooltipWrapper
+          description="Select event's end date"
+          onClick={() => {}}
+        >
+          <CalendarIcon />
+        </TooltipWrapper>
+      </StyledEndsOnDate>
+    </>
+  );
+};
+
+const FreqSelect = ({
+  value = "Never",
+  plural = false,
+  onFreqSelect,
 }: {
-  event: Schema_Event;
-  numWeeks: number;
-  weekDays: string[];
+  value: Frequency | "Never";
+  plural?: boolean;
+  onFreqSelect: (option: Frequency | "Never") => void;
 }) => {
-  const endsOnDate = getRecurrenceEndsOnDate(event, numWeeks, weekDays);
+  const options = useMemo(() => FREQUENCY_OPTIONS(plural ? "s" : ""), [plural]);
+
+  const label = useMemo(() => {
+    if (value === "Never") return FREQUENCY_MAP[value];
+
+    return `${FREQUENCY_MAP[value]}${plural ? "s" : ""}`;
+  }, [value, plural]);
 
   return (
-    <StyledEndsOnDate>
-      <StyledText size="l">
-        Ends on {endsOnDate.format("YYYY-MM-DD")}
-      </StyledText>
-    </StyledEndsOnDate>
+    <StyledFreqSelect>
+      <ReactSelect
+        options={options}
+        classNamePrefix="freq-select"
+        value={{ label, value }}
+        onChange={(e) => onFreqSelect(e?.value!)}
+        maxMenuHeight={4 * 41}
+      />
+    </StyledFreqSelect>
   );
 };
