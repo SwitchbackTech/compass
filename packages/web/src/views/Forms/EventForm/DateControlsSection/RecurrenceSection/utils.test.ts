@@ -20,7 +20,6 @@ describe("RecurrenceSection utils", () => {
 
   it("FREQUENCY_OPTIONS returns correct options", () => {
     const opts = FREQUENCY_OPTIONS("s");
-    console.log(opts);
     expect(opts).toEqual(
       expect.arrayContaining([
         { label: "Years", value: Frequency.YEARLY.toString() },
