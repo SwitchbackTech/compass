@@ -23,13 +23,12 @@ export const WEEKDAYS: Array<keyof typeof WEEKDAY_RRULE_MAP> = [
   "saturday",
 ];
 
-export const FREQUENCY_MAP: Record<
-  Exclude<
-    Frequency,
-    Frequency.HOURLY | Frequency.MINUTELY | Frequency.SECONDLY
-  >,
-  string
-> = {
+export type FrequencyValues = Exclude<
+  Frequency,
+  Frequency.HOURLY | Frequency.MINUTELY | Frequency.SECONDLY
+>;
+
+export const FREQUENCY_MAP: Record<FrequencyValues, string> = {
   [Frequency.DAILY]: "Day",
   [Frequency.WEEKLY]: "Week",
   [Frequency.MONTHLY]: "Month",
@@ -39,7 +38,7 @@ export const FREQUENCY_MAP: Record<
 export const FREQUENCY_OPTIONS = (suffix = "") =>
   Object.entries(FREQUENCY_MAP).map(([value, label]) => ({
     label: `${label}${suffix}`,
-    value: value as unknown as Frequency,
+    value: Number(value) as FrequencyValues,
   }));
 
 const WEEKDAY_RRULE_MAP = {
@@ -115,15 +114,14 @@ export function toWeekDays(weekDays: typeof WEEKDAYS): Weekday[] {
 }
 
 export const useRecurrence = (
-  event: Schema_Event,
+  event: Pick<Schema_Event, "startDate" | "endDate" | "recurrence">,
   { setEvent }: { setEvent: Dispatch<SetStateAction<Schema_Event | null>> },
 ) => {
-  const _startDate = event.startDate
-    ? parseCompassEventDate(event.startDate)
-    : dayjs();
-
-  const { _id, startDate, endDate, recurrence } = event;
-  const hasRecurrence = (event.recurrence?.rule?.length ?? 0) > 0;
+  const { recurrence, endDate: _endDate } = event;
+  const startDate = event?.startDate ?? dayjs().toRFC3339OffsetString();
+  const endDate = _endDate ?? dayjs().add(1, "hour").toRFC3339OffsetString();
+  const _startDate = parseCompassEventDate(startDate);
+  const hasRecurrence = (event?.recurrence?.rule?.length ?? 0) > 0;
 
   const { options } = useMemo(() => {
     if (!hasRecurrence) {
@@ -141,12 +139,12 @@ export const useRecurrence = (
     }
 
     return new CompassEventRRule({
-      _id: new ObjectId(_id),
+      _id: new ObjectId(), // we do not need the event's actual id here
       startDate: startDate!,
       endDate: endDate!,
       recurrence: { rule: recurrence?.rule as string[] },
     });
-  }, [_id, _startDate, startDate, endDate, hasRecurrence, recurrence?.rule]);
+  }, [_startDate, startDate, endDate, hasRecurrence, recurrence?.rule]);
 
   const defaultWeekDay: typeof WEEKDAYS = useMemo(
     () =>
@@ -187,14 +185,14 @@ export const useRecurrence = (
     () =>
       new CompassEventRRule(
         {
-          _id: new ObjectId(_id),
-          startDate: startDate ?? dayjs().toISOString(),
-          endDate: endDate ?? dayjs().add(1, "hour").toISOString(),
+          _id: new ObjectId(), // we do not need the event's actual id here
+          startDate: startDate,
+          endDate: endDate,
           recurrence: { rule: [] },
         },
         rruleOptions,
       ),
-    [_id, startDate, endDate, rruleOptions],
+    [startDate, endDate, rruleOptions],
   );
 
   const rule = useMemo(() => JSON.stringify(rrule.toRecurrence()), [rrule]);
@@ -238,8 +236,10 @@ export const useRecurrence = (
 
   return {
     hasRecurrence,
-    ...rrule.options,
     weekDays,
+    interval: rrule.options.interval,
+    freq: rrule.options.freq,
+    until: rrule.options.until,
     setFreq,
     setInterval,
     setUntil,

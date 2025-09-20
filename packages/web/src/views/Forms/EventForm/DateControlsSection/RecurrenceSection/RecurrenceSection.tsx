@@ -289,7 +289,10 @@ const FreqSelect = ({
   onFreqSelect,
 }: {
   bgColor: string;
-  value: Frequency;
+  value: Exclude<
+    Frequency,
+    Frequency.HOURLY | Frequency.MINUTELY | Frequency.SECONDLY
+  >;
   plural?: boolean;
   onFreqSelect: (option: Frequency) => void;
 }) => {

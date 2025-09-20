@@ -223,8 +223,6 @@ export const EventForm: React.FC<FormProps> = ({
   const recurrenceSectionProps = {
     bgColor: priorityColor,
     event,
-    startTime,
-    endTime,
     setEvent,
   };
 
