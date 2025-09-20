@@ -1,4 +1,4 @@
-import { SetStateAction } from "react";
+import { Dispatch, SetStateAction } from "react";
 import { Priority } from "@core/constants/core.constants";
 import {
   Categories_Event,
@@ -23,7 +23,7 @@ export interface FormProps {
   onSubmit: (event?: Schema_Event) => void;
   onSubmitEventForm?: (event: Schema_Event) => void;
   priority?: Priority;
-  setEvent: (event: Schema_Event) => SetStateAction<Schema_Event> | void;
+  setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
   weekViewRange: {
     startDate: string;
     endDate: string;

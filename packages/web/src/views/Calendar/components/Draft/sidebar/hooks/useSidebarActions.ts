@@ -9,11 +9,15 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
   Categories_Event,
   Direction_Migrate,
+  RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
 import { getUserId } from "@web/auth/auth.util";
-import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
-import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
+import {
+  COLUMN_MONTH,
+  COLUMN_WEEK,
+  ID_SOMEDAY_DRAFT,
+} from "@web/common/constants/web.constants";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
 import { Coordinates } from "@web/common/types/util.types";
 import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
@@ -446,14 +450,11 @@ export const useSidebarActions = (
 
     const isExisting = _event._id;
     if (isExisting) {
-      const isRecurring = _event.recurrence?.rule;
-      const wasRecurring = _event.recurrence?.rule === null;
-
       dispatch(
         editEventSlice.actions.request({
           _id: _event._id,
           event: _event,
-          applyTo: isRecurring || wasRecurring ? "all" : null,
+          applyTo: RecurringEventUpdateScope.THIS_EVENT,
         }),
       );
     } else {

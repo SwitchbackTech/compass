@@ -23,7 +23,10 @@ export class CompassEventRRule extends RRule {
   #durationMs!: number;
 
   constructor(
-    event: WithId<Omit<Schema_Event_Recur_Base, "_id">>,
+    event: Pick<
+      WithId<Omit<Schema_Event_Recur_Base, "_id">>,
+      "startDate" | "endDate" | "_id" | "recurrence"
+    >,
     options: Partial<Options> = {},
   ) {
     super(CompassEventRRule.#initOptions(event, options));

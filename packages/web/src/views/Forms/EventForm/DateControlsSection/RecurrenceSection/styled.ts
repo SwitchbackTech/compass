@@ -1,36 +1,52 @@
 import styled from "styled-components";
 import { darken } from "@core/util/color.utils";
+import { Flex } from "@web/components/Flex";
 
-export const StyledEditRecurrence = styled.div`
-  display: flex;
+export const StyledRepeatContainer = styled.div`
+  margin-bottom: 10px;
+  &:hover {
+    cursor: pointer;
+  }
+`;
+
+export const StyledRepeatRow = styled(Flex)`
   align-items: center;
-  flex-basis: 100%;
-  cursor: pointer;
-`;
-
-export const StyledRecurrenceSection = styled.div`
-  display: flex;
-  flex-basis: 100%;
-  flex-wrap: wrap;
-  gap: ${({ theme }) => theme.spacing.xs};
-  position: relative;
-  opacity: 0.7;
-`;
-
-export const StyledRecurrenceIntervalSelect = styled.div`
-  display: flex;
-  align-items: center;
-  flex-basis: 100%;
-`;
-
-export const StyledWeekDaysContainer = styled.div`
-  display: flex;
   flex-basis: 100%;
   gap: ${({ theme }) => theme.spacing.s};
 `;
 
-export const StyledWeekDayContainer = styled.div`
-  width: fit-content;
+export const StyledRepeatText = styled.span<{
+  hasRepeat: boolean;
+}>`
+  border: 1px solid transparent;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
+  font-size: ${({ theme }) => theme.text.size.m};
+  opacity: ${({ hasRepeat }) => !hasRepeat && 0.85};
+  padding: 2px 8px;
+
+  &:focus,
+  &:hover {
+    cursor: pointer;
+    border: ${({ hasRepeat, theme }) =>
+      !hasRepeat && `1px solid ${theme.color.border.primaryDark}`};
+  }
+`;
+
+export const StyledRepeatTextContainer = styled(Flex)`
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
+  gap: 6px;
+  justify-content: center;
+  margin-right: 8px;
+  padding: 2px 8px;
+
+  &:focus,
+  &:hover {
+    border: 1px solid ${({ theme }) => theme.color.border.primaryDark};
+    filter: brightness(90%);
+    transition: border ${({ theme }) => theme.transition.default} ease;
+  }
 `;
 
 export const StyledWeekDay = styled.button<{
@@ -104,109 +120,6 @@ export const StyledCaretButton = styled.button`
   align-items: center;
   justify-content: center;
   &:hover {
-    background-color: ${({ theme }) => theme.color.bg.primary};
-    color: ${({ theme }) => theme.color.text.light};
-  }
-`;
-
-export const StyledEndsOnDate = styled.div`
-  display: flex;
-  align-items: center;
-  flex-basis: 100%;
-`;
-
-export const StyledDisabledOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-`;
-
-export const StyledUpcomingFeature = styled.div`
-  background-color: ${({ theme }) => theme.color.bg.primary};
-  color: ${({ theme }) => theme.color.text.light};
-  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s};
-  border-radius: 4px;
-  font-size: 0.9em;
-  text-align: center;
-`;
-
-export const StyledFreqSelect = styled.div`
-  margin-right: ${({ theme }) => theme.spacing.s};
-  width: 190px;
-
-  .freq-select__control {
-    background-color: transparent;
-    border: 1px solid ${({ theme }) => theme.color.bg.primary};
-    box-shadow: none;
-    min-height: 24px;
-    height: 24px;
-    cursor: pointer;
-  }
-
-  .freq-select__control--is-focused {
-    border-color: ${({ theme }) => theme.color.border.primaryDark};
-    box-shadow: 0 0 0 1px ${({ theme }) => theme.color.bg.primary};
-  }
-
-  .freq-select__value-container {
-    padding: 0 ${({ theme }) => theme.spacing.xs};
-    height: 24px;
-    font-size: 0.9em;
-  }
-
-  .freq-select__single-value {
-    color: ${({ theme }) => theme.color.text.dark};
-    line-height: 24px;
-  }
-
-  .freq-select__indicators {
-    height: 24px;
-  }
-
-  .freq-select__indicator {
-    padding: 0 4px;
-    color: ${({ theme }) => theme.color.text.dark};
-    transition: color 150ms;
-
-    &:hover {
-      color: ${({ theme }) => theme.color.text.darkPlaceholder};
-    }
-  }
-
-  .freq-select__menu {
-    background-color: ${({ theme }) => theme.color.bg.primary};
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border: none;
-    margin-top: 4px;
-    border-radius: 4px;
-    overflow: hidden;
-    z-index: 10;
-  }
-
-  .freq-select__option {
-    padding: ${({ theme }) => theme.spacing.s} ${({ theme }) => theme.spacing.m};
-    cursor: pointer;
-    font-size: 0.9em;
-    color: ${({ theme }) => theme.color.text.light};
-    background-color: transparent;
-    transition:
-      background-color 150ms,
-      color 150ms;
-
-    &:hover {
-      background-color: ${({ theme }) => theme.color.bg.primary};
-      color: ${({ theme }) => theme.color.text.light};
-    }
-  }
-
-  .freq-select__option--is-selected {
     background-color: ${({ theme }) => theme.color.bg.primary};
     color: ${({ theme }) => theme.color.text.light};
   }
