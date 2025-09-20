@@ -3,6 +3,7 @@ import { SessionRequest } from "supertokens-node/framework/express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
+  CompassCoreEventSchema,
   CompassEvent,
   CompassEventStatus,
   CompassCoreEventSchema as EventSchema,
@@ -11,7 +12,6 @@ import {
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
-import { validateEvent } from "@core/validators/event.validator";
 import { Res_Promise, SReqBody } from "@backend/common/types/express.types";
 import eventService from "@backend/event/services/event.service";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
@@ -24,7 +24,7 @@ class EventController {
     status?: CompassEventStatus,
     applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
   ) {
-    const payload = validateEvent(_payload as Schema_Event);
+    const payload = CompassCoreEventSchema.parse(_payload as Schema_Event);
 
     const event = {
       status: status ?? CompassEventStatus.CONFIRMED,
@@ -134,10 +134,9 @@ class EventController {
       const { body, query, params, session } = req;
       const user = session?.getUserId() as string;
       const _id = params["id"] as string;
-      const data = EventSchema.parse({ ...body, user, _id });
 
       await this.processEvent(
-        data as CompassEvent["payload"],
+        { ...body, user, _id } as CompassEvent["payload"],
         CompassEventStatus.CONFIRMED,
         (query["applyTo"] as RecurringEventUpdateScope) ??
           RecurringEventUpdateScope.THIS_EVENT,

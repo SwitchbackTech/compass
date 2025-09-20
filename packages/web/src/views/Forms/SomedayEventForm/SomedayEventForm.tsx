@@ -19,7 +19,8 @@ import {
   StyledTitle,
 } from "@web/views/Forms/EventForm/styled";
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
-import { RepeatSection } from "../EventForm/RepeatSection";
+import { Priorities } from "../../../../../core/src/constants/core.constants";
+import { RecurrenceSection } from "../EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { SomedayEventActionMenu } from "./SomedayEventActionMenu";
 
 const hotkeysOptions: OptionsOrDependencyArray = {
@@ -41,7 +42,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
 
-  const { priority, title } = event || {};
+  const { priority = Priorities.UNASSIGNED, title } = event || {};
   const bgColor = colorByPriority[priority];
 
   const origRecurrence = useRef(event?.recurrence).current;
@@ -69,8 +70,10 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   };
 
   const onChangeEventTextField =
-    (fieldName: "title" | "description") =>
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
+      fieldName: "title" | "description",
+    ) =>
+    (e: React.ChangeEvent<T>) => {
       onSetEventField({ [fieldName]: e.target.value });
     };
 
@@ -78,7 +81,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     if (event._id) {
       dispatch(getSomedayEventsSlice.actions.delete({ _id: event._id }));
 
-      const isRecurrence = event?.recurrence?.rule?.length > 0;
+      const isRecurrence = (event?.recurrence?.rule?.length ?? 0) > 0;
       const title = event.title || "event";
       const recurTitle = event.title ? `"${event.title}"s` : "events";
       const eventTitle = isRecurrence
@@ -133,7 +136,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     "ctrl+meta+up",
     (e) => {
       e.preventDefault();
-      onMigrate(event, category, "up");
+      onMigrate?.(event, category, "up");
     },
     hotkeysOptions,
     [event, category, onMigrate],
@@ -143,7 +146,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     "ctrl+meta+down",
     async (e) => {
       e.preventDefault();
-      onMigrate(event, category, "down");
+      onMigrate?.(event, category, "down");
     },
     hotkeysOptions,
     [event, category, onMigrate],
@@ -153,7 +156,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     "ctrl+meta+right",
     async (e) => {
       e.preventDefault();
-      onMigrate(event, category, "forward");
+      onMigrate?.(event, category, "forward");
     },
     hotkeysOptions,
     [event, category, onMigrate],
@@ -163,7 +166,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     "ctrl+meta+left",
     async (e) => {
       e.preventDefault();
-      onMigrate(event, category, "back");
+      onMigrate?.(event, category, "back");
     },
     hotkeysOptions,
     [event, category, onMigrate],
@@ -206,16 +209,16 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         <SomedayEventActionMenu
           target={target}
           onMigrateBackwardClick={() => {
-            onMigrate(event, category, "back");
+            onMigrate?.(event, category, "back");
           }}
           onMigrateForwardClick={() => {
-            onMigrate(event, category, "forward");
+            onMigrate?.(event, category, "forward");
           }}
           onMigrateAboveClick={() => {
-            onMigrate(event, category, "up");
+            onMigrate?.(event, category, "up");
           }}
           onMigrateBelowClick={() => {
-            onMigrate(event, category, "down");
+            onMigrate?.(event, category, "down");
           }}
           onDuplicateClick={onDuplicateEvent}
           onDeleteClick={onDelete}
@@ -235,11 +238,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
       <PrioritySection onSetEventField={onSetEventField} priority={priority} />
 
-      <RepeatSection
-        bgColor={bgColor}
-        onSetEventField={onSetEventField}
-        recurrence={event.recurrence}
-      />
+      <RecurrenceSection bgColor={bgColor} event={event} setEvent={setEvent} />
 
       <StyledDescription
         onChange={onChangeEventTextField("description")}

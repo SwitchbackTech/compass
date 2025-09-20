@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 interface Status_Drag {
@@ -23,7 +23,7 @@ export interface State_Draft_Local {
 export interface Setters_Draft {
   setIsDragging: (value: boolean) => void;
   setIsResizing: (value: boolean) => void;
-  setDraft: (value: Schema_GridEvent | null) => void;
+  setDraft: Dispatch<SetStateAction<Schema_GridEvent | null>>;
   setDragStatus: (value: Status_Drag | null) => void;
   setResizeStatus: (value: Status_Resize | null) => void;
   setDateBeingChanged: (value: "startDate" | "endDate" | null) => void;

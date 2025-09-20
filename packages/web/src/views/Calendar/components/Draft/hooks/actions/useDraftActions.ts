@@ -119,11 +119,19 @@ export const useDraftActions = (
       "startDate",
       "endDate",
       "priority",
+      "recurrence",
     ] as const;
 
-    return fieldsToCompare.some(
-      (field) => currentDraft[field] !== originalEvent[field],
-    );
+    return fieldsToCompare.some((field) => {
+      const _current = currentDraft[field];
+      const _original = originalEvent[field];
+      const currentIsObj = typeof _current === "object" && _current !== null;
+      const origIsObj = typeof _original === "object" && _original !== null;
+      const current = currentIsObj ? JSON.stringify(_current) : _current;
+      const original = origIsObj ? JSON.stringify(_original) : _original;
+
+      return current !== original;
+    });
   };
 
   const submit = async (draft: Schema_GridEvent) => {

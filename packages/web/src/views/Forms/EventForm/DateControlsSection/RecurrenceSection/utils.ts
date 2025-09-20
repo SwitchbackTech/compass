@@ -1,9 +1,19 @@
-import dayjs from "dayjs";
-import { RRule } from "rrule";
+import { ObjectId } from "bson";
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Frequency, Options, RRule, Weekday } from "rrule";
 import { Schema_Event } from "@core/types/event.types";
-import { devAlert } from "@core/util/app.util";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
+import { parseCompassEventDate } from "@core/util/event/event.util";
 
-export const WEEKDAYS = [
+export const WEEKDAYS: Array<keyof typeof WEEKDAY_RRULE_MAP> = [
   "sunday",
   "monday",
   "tuesday",
@@ -12,6 +22,25 @@ export const WEEKDAYS = [
   "friday",
   "saturday",
 ];
+
+export const FREQUENCY_MAP: Record<
+  Exclude<
+    Frequency,
+    Frequency.HOURLY | Frequency.MINUTELY | Frequency.SECONDLY
+  >,
+  string
+> = {
+  [Frequency.DAILY]: "Day",
+  [Frequency.WEEKLY]: "Week",
+  [Frequency.MONTHLY]: "Month",
+  [Frequency.YEARLY]: "Year",
+};
+
+export const FREQUENCY_OPTIONS = (suffix = "") =>
+  Object.entries(FREQUENCY_MAP).map(([value, label]) => ({
+    label: `${label}${suffix}`,
+    value: value as unknown as Frequency,
+  }));
 
 const WEEKDAY_RRULE_MAP = {
   monday: RRule.MO,
@@ -23,86 +52,200 @@ const WEEKDAY_RRULE_MAP = {
   sunday: RRule.SU,
 };
 
-interface GenerateRecurrenceParams {
-  event: Schema_Event;
-  repeatCount: number;
-  weekDays: string[];
-}
-
-export const generateRecurrenceDates = ({
-  event,
-  repeatCount,
-  weekDays,
-}: GenerateRecurrenceParams): { startDate: Date; endDate: Date }[] => {
-  if (weekDays.length === 0) {
-    return [];
-  }
-
-  const startDate = dayjs(event.startDate);
-  const endDate = dayjs(event.endDate);
-
-  const duration = endDate.diff(startDate);
-
-  const byWeekDay = weekDays.map(
-    (day) => WEEKDAY_RRULE_MAP[day as keyof typeof WEEKDAY_RRULE_MAP],
-  );
-
-  const untilDate = startDate
-    .add(repeatCount - 1, "weeks")
-    .endOf("week")
-    .add(1, "day"); // Selecting sundays does not work without this.
-
-  const rule = new RRule({
-    freq: RRule.WEEKLY,
-    dtstart: startDate.toDate(),
-    until: untilDate.toDate(),
-    byweekday: byWeekDay,
-  });
-
-  const occurrences = rule.all().map((date) => ({
-    startDate: dayjs(date).toDate(),
-    endDate: dayjs(date).add(duration, "millisecond").toDate(),
-  }));
-
-  return occurrences;
+const WEEKDAY_LABELS_MAP: Record<keyof typeof WEEKDAY_RRULE_MAP, string> = {
+  sunday: RRule.SU.toString(),
+  monday: RRule.MO.toString(),
+  tuesday: RRule.TU.toString(),
+  wednesday: RRule.WE.toString(),
+  thursday: RRule.TH.toString(),
+  friday: RRule.FR.toString(),
+  saturday: RRule.SA.toString(),
 };
 
-export const getDefaultWeekDay = (event: Schema_Event): string => {
-  const day = WEEKDAYS.find((day) => {
-    const dayOfWeek = dayjs(event.startDate).format("dddd").toLowerCase();
-    return dayOfWeek === day;
-  });
+const REVERSE_WEEKDAY_LABELS_MAP: Record<
+  string,
+  keyof typeof WEEKDAY_RRULE_MAP
+> = Object.entries(WEEKDAY_LABELS_MAP).reduce(
+  (acc, [key, value]) => ({ ...acc, [value]: key }),
+  {},
+);
+
+const WEEKDAY_MAP: Record<
+  number | string | keyof typeof WEEKDAY_RRULE_MAP,
+  Weekday
+> = [
+  RRule.SU,
+  RRule.MO,
+  RRule.TU,
+  RRule.WE,
+  RRule.TH,
+  RRule.FR,
+  RRule.SA,
+].reduce(
+  (acc, day) => ({
+    ...acc,
+    [day.weekday]: day,
+    [day.toString()]: day,
+    [REVERSE_WEEKDAY_LABELS_MAP[day.toString()]]: day,
+  }),
+  {},
+);
+
+export const getDefaultWeekDay = (startDate: Dayjs): (typeof WEEKDAYS)[0] => {
+  const dayOfWeek = startDate.format("dddd").toLowerCase();
+  const day = WEEKDAYS.find((day) => dayOfWeek === day);
+
   if (!day) {
-    devAlert(
+    console.log(
       "No default week day found. Something went wrong. Please investigate",
     );
-    return "";
+
+    return "sunday";
   }
 
   return day;
 };
 
-export const getRecurrenceEndsOnDate = (
+export function toWeekDay(weekDay: (typeof WEEKDAYS)[0]): Weekday {
+  return WEEKDAY_RRULE_MAP[weekDay];
+}
+
+export function toWeekDays(weekDays: typeof WEEKDAYS): Weekday[] {
+  return weekDays.map(toWeekDay);
+}
+
+export const useRecurrence = (
   event: Schema_Event,
-  numWeeks: number,
-  weekDays: string[],
-): dayjs.Dayjs => {
-  const startDate = dayjs(event.startDate);
+  { setEvent }: { setEvent: Dispatch<SetStateAction<Schema_Event | null>> },
+) => {
+  const _startDate = event.startDate
+    ? parseCompassEventDate(event.startDate)
+    : dayjs();
 
-  const lastSelectedWeekDay = weekDays.sort((a, b) => {
-    const aIndex = WEEKDAYS.indexOf(a);
-    const bIndex = WEEKDAYS.indexOf(b);
-    return aIndex - bIndex;
-  })[weekDays.length - 1];
+  const { _id, startDate, endDate, recurrence } = event;
+  const hasRecurrence = (event.recurrence?.rule?.length ?? 0) > 0;
 
-  const startDayIndex = startDate.day();
-  const lastDayIndex = WEEKDAYS.indexOf(lastSelectedWeekDay);
+  const { options } = useMemo(() => {
+    if (!hasRecurrence) {
+      return {
+        options: {
+          freq: Frequency.DAILY,
+          interval: 1,
+          byweekday: undefined,
+          wkst: WEEKDAY_MAP[0].weekday,
+          count: null,
+          until: null,
+          dtstart: _startDate.toDate(),
+        },
+      };
+    }
 
-  const daysUntilLastDay = lastDayIndex - startDayIndex;
+    return new CompassEventRRule({
+      _id: new ObjectId(_id),
+      startDate: startDate!,
+      endDate: endDate!,
+      recurrence: { rule: recurrence?.rule as string[] },
+    });
+  }, [_id, _startDate, startDate, endDate, hasRecurrence, recurrence?.rule]);
 
-  const daysToAdd = (numWeeks - 1) * 7 + daysUntilLastDay;
+  const defaultWeekDay: typeof WEEKDAYS = useMemo(
+    () =>
+      options?.byweekday?.map(
+        (day) => REVERSE_WEEKDAY_LABELS_MAP[WEEKDAY_MAP[day].toString()],
+      ) ?? [],
+    [options?.byweekday],
+  );
 
-  const endsOnDate = startDate.add(daysToAdd, "day");
+  const defaultWkst = useMemo<Weekday | null>(
+    () => (options?.wkst ? WEEKDAY_MAP[options.wkst] : null),
+    [options?.wkst],
+  );
 
-  return endsOnDate;
+  const [freq, setFreq] = useState<Frequency>(options.freq);
+  const [interval, setInterval] = useState<number>(options.interval);
+  const [until, setUntil] = useState<Date | null>(options.until);
+  const [count, setCount] = useState<number | null>(options.count);
+  const [wkst, setWkst] = useState<Weekday | null>(defaultWkst);
+  const [weekDays, setWeekDays] = useState<typeof WEEKDAYS>(defaultWeekDay);
+  const byweekday = useMemo<Weekday[]>(() => toWeekDays(weekDays), [weekDays]);
+  const dtstart = useMemo<Date>(() => _startDate.toDate(), [_startDate]);
+
+  const rruleOptions = useMemo<Partial<Options>>(
+    () => ({
+      freq,
+      dtstart,
+      interval,
+      wkst,
+      byweekday,
+      until,
+      count,
+    }),
+    [freq, dtstart, interval, wkst, byweekday, until, count],
+  );
+
+  const rrule = useMemo(
+    () =>
+      new CompassEventRRule(
+        {
+          _id: new ObjectId(_id),
+          startDate: startDate ?? dayjs().toISOString(),
+          endDate: endDate ?? dayjs().add(1, "hour").toISOString(),
+          recurrence: { rule: [] },
+        },
+        rruleOptions,
+      ),
+    [_id, startDate, endDate, rruleOptions],
+  );
+
+  const rule = useMemo(() => JSON.stringify(rrule.toRecurrence()), [rrule]);
+
+  const toggleRecurrence = useCallback(() => {
+    setEvent((gridEvent): Schema_Event | null => {
+      if (!gridEvent) return gridEvent;
+
+      const { recurrence, ...event } = gridEvent;
+      const { eventId, rule: _rule } = recurrence ?? {};
+
+      if (_rule) {
+        return {
+          ...event,
+          recurrence: {
+            ...(eventId ? { eventId } : {}),
+            rule: null as unknown as string[],
+          },
+        };
+      }
+
+      return {
+        ...event,
+        recurrence: { ...(recurrence ?? {}), rule: JSON.parse(rule) },
+      };
+    });
+  }, [setEvent, rule]);
+
+  useEffect(() => {
+    if (!hasRecurrence) return;
+
+    setEvent((gridEvent): Schema_Event | null => {
+      if (!gridEvent) return gridEvent;
+
+      return {
+        ...gridEvent,
+        recurrence: { ...(gridEvent.recurrence ?? {}), rule: JSON.parse(rule) },
+      };
+    });
+  }, [rule, hasRecurrence, setEvent]);
+
+  return {
+    hasRecurrence,
+    ...rrule.options,
+    weekDays,
+    setFreq,
+    setInterval,
+    setUntil,
+    setCount,
+    setWkst,
+    setWeekDays,
+    toggleRecurrence,
+  };
 };

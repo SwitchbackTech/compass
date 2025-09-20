@@ -1,6 +1,11 @@
-import { Query } from "express-serve-static-core";
+import type { ObjectId } from "bson";
+import type { Query } from "express-serve-static-core";
 import { z } from "zod";
-import { Origin, Priorities, Priority } from "@core/constants/core.constants";
+import {
+  Origin,
+  Priorities,
+  type Priority,
+} from "@core/constants/core.constants";
 
 /**
  * Event category, based on its display type
@@ -167,7 +172,7 @@ export const CoreEventSchema = z.object({
   user: z.string(),
 });
 
-const CompassEventRecurrence = z.object({
+export const CompassEventRecurrence = z.object({
   rule: z.array(z.string()),
   eventId: z.string().optional(),
 });
@@ -187,8 +192,15 @@ export const EventUpdateSchema = z.object({
   isSomeday: z.boolean().optional(),
 });
 
-export const CompassCoreEventSchema = CoreEventSchema.extend({
+export const CompassCoreEventSchema = CoreEventSchema.omit({
+  recurrence: true,
+}).extend({
   _id: z.string(),
+  recurrence: CompassEventRecurrence.omit({ rule: true })
+    .extend({
+      rule: z.union([z.null(), z.array(z.string())]),
+    })
+    .optional(),
 });
 
 const BaseCompassEventSchema = z.object({
@@ -260,6 +272,7 @@ export type CompassEvent = z.infer<typeof CompassEventSchema>;
 export type EventUpdatePayload = z.infer<typeof EventUpdateSchema>;
 
 export type WithCompassId<T> = T & { _id: string };
+export type WithMongoId<T> = T & { _id: ObjectId }; // same as WithId from the 'mongodb' package - but for ui use
 export type WithoutCompassId<T> = Omit<T, "_id">;
 export enum CalendarProvider {
   GOOGLE = "google",

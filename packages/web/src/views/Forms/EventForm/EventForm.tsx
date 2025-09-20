@@ -19,7 +19,10 @@ import { SelectOption } from "@web/common/types/component.types";
 import { getCategory } from "@web/common/utils/event.util";
 import { mapToBackend } from "@web/common/utils/web.date.util";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection";
+import { Categories_Event } from "../../../../../core/src/types/event.types";
+import { ConditionalRender } from "../../../components/ConditionalRender/conditional-render";
 import { getFormDates } from "./DateControlsSection/DateTimeSection/form.datetime.util";
+import { RecurrenceSection } from "./DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { EventActionMenu } from "./EventActionMenu";
 import { PrioritySection } from "./PrioritySection";
 import { SaveSection } from "./SaveSection";
@@ -222,6 +225,7 @@ export const EventForm: React.FC<FormProps> = ({
     event,
     startTime,
     endTime,
+    setEvent,
   };
 
   useHotkeys(
@@ -337,8 +341,11 @@ export const EventForm: React.FC<FormProps> = ({
       <DateControlsSection
         dateTimeSectionProps={dateTimeSectionProps}
         eventCategory={category}
-        recurrenceSectionProps={recurrenceSectionProps}
       />
+
+      <ConditionalRender condition={category === Categories_Event.TIMED}>
+        <RecurrenceSection {...recurrenceSectionProps} />
+      </ConditionalRender>
 
       <StyledDescription
         underlineColor={priorityColor}

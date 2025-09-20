@@ -28,6 +28,7 @@ import {
 } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import { getCurrentRangeDates } from "@core/util/date/date.util";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import {
   isExistingInstance,
   parseCompassEventDate,
@@ -39,7 +40,6 @@ import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { CompassEventRRule } from "@backend/event/classes/compass.event.rrule";
 import { reorderEvents } from "@backend/event/queries/event.queries";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
 import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";

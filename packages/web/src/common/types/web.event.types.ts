@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { CoreEventSchema, Schema_Event } from "@core/types/event.types";
+import {
+  CompassEventRecurrence,
+  CoreEventSchema,
+  Schema_Event,
+} from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
 
 export enum Recurrence_Selection {
@@ -8,13 +12,23 @@ export enum Recurrence_Selection {
   MONTH = "month",
 }
 
-export const GridEventSchema = CoreEventSchema.extend({
+const WebEventRecurrence = z.union([
+  z.undefined(),
+  CompassEventRecurrence.omit({ rule: true }).extend({ rule: z.null() }),
+  CompassEventRecurrence,
+]);
+
+const WebCoreEventSchema = CoreEventSchema.omit({ recurrence: true }).extend({
+  recurrence: WebEventRecurrence,
+});
+
+export const GridEventSchema = WebCoreEventSchema.extend({
   hasFlipped: z.boolean().optional(),
   isOpen: z.boolean().optional(),
   row: z.number().optional(),
 });
 
-export const SomedayEventSchema = CoreEventSchema.extend({
+export const SomedayEventSchema = WebCoreEventSchema.extend({
   order: z.number(),
   isSomeday: z.literal(true),
 });
