@@ -22,10 +22,10 @@ describe("RecurrenceSection utils", () => {
     const opts = FREQUENCY_OPTIONS("s");
     expect(opts).toEqual(
       expect.arrayContaining([
-        { label: "Years", value: Frequency.YEARLY.toString() },
-        { label: "Months", value: Frequency.MONTHLY.toString() },
-        { label: "Weeks", value: Frequency.WEEKLY.toString() },
-        { label: "Days", value: Frequency.DAILY.toString() },
+        { label: "Years", value: Frequency.YEARLY },
+        { label: "Months", value: Frequency.MONTHLY },
+        { label: "Weeks", value: Frequency.WEEKLY },
+        { label: "Days", value: Frequency.DAILY },
       ]),
     );
   });

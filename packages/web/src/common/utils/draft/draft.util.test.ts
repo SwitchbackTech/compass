@@ -22,7 +22,7 @@ describe("assembleDefaultEvent", () => {
       Categories_Event.SOMEDAY_WEEK,
     );
 
-    expect(eventWithoutDates).toHaveProperty("startDate", "");
-    expect(eventWithoutDates).toHaveProperty("endDate", "");
+    expect(eventWithoutDates).toHaveProperty("startDate", undefined);
+    expect(eventWithoutDates).toHaveProperty("endDate", undefined);
   });
 });
