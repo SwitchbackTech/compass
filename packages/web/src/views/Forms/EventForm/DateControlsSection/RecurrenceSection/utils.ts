@@ -1,5 +1,4 @@
 import { ObjectId } from "bson";
-import { Dayjs } from "dayjs";
 import {
   Dispatch,
   SetStateAction,
@@ -10,6 +9,7 @@ import {
 } from "react";
 import { Frequency, Options, RRule, Weekday } from "rrule";
 import { Schema_Event } from "@core/types/event.types";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 
@@ -115,7 +115,10 @@ export const useRecurrence = (
   event: Schema_Event,
   { setEvent }: { setEvent: Dispatch<SetStateAction<Schema_Event | null>> },
 ) => {
-  const _startDate = parseCompassEventDate(event.startDate!);
+  const _startDate = event.startDate
+    ? parseCompassEventDate(event.startDate)
+    : dayjs();
+
   const { _id, startDate, endDate, recurrence } = event;
   const hasRecurrence = (event.recurrence?.rule?.length ?? 0) > 0;
 
@@ -182,8 +185,8 @@ export const useRecurrence = (
       new CompassEventRRule(
         {
           _id: new ObjectId(_id),
-          startDate: startDate!,
-          endDate: endDate!,
+          startDate: startDate ?? dayjs().toISOString(),
+          endDate: endDate ?? dayjs().add(1, "hour").toISOString(),
           recurrence: { rule: [] },
         },
         rruleOptions,

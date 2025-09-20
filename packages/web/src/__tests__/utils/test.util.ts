@@ -3,7 +3,7 @@ interface Spies {
 }
 const spies: Spies = {};
 
-export const arraysAreEqual = (a: any[], b: any[]) => {
+export const arraysAreEqual = (a: unknown[], b: unknown[]) => {
   return (
     Array.isArray(a) &&
     Array.isArray(b) &&
@@ -33,4 +33,14 @@ export const mockResizeObserver = () => {
 
 export const mockScroll = () => {
   window.HTMLElement.prototype.scroll = jest.fn();
+};
+
+export const mockBSON = () => {
+  jest.mock("bson", () => ({
+    ObjectId: class ObjectId {
+      toString() {
+        return crypto.randomUUID();
+      }
+    },
+  }));
 };
