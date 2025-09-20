@@ -23,10 +23,13 @@ export const WEEKDAYS: Array<keyof typeof WEEKDAY_RRULE_MAP> = [
   "saturday",
 ];
 
-export const FREQUENCY_MAP: Record<Frequency, string> = {
-  [Frequency.SECONDLY]: "Second",
-  [Frequency.MINUTELY]: "Minute",
-  [Frequency.HOURLY]: "Hour",
+export const FREQUENCY_MAP: Record<
+  Exclude<
+    Frequency,
+    Frequency.HOURLY | Frequency.MINUTELY | Frequency.SECONDLY
+  >,
+  string
+> = {
   [Frequency.DAILY]: "Day",
   [Frequency.WEEKLY]: "Week",
   [Frequency.MONTHLY]: "Month",
