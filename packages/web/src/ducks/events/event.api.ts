@@ -11,8 +11,8 @@ const EventApi = {
   create: (event: Schema_Event | Schema_Event[]) => {
     return CompassApi.post(`/event`, event);
   },
-  delete: (_id: string) => {
-    return CompassApi.delete(`/event/${_id}`);
+  delete: (_id: string, applyTo?: RecurringEventUpdateScope) => {
+    return CompassApi.delete(`/event/${_id}?applyTo=${applyTo}`);
   },
   edit: (
     _id: string,

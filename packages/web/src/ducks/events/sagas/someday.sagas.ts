@@ -55,7 +55,7 @@ export function* deleteSomedayEvent({ payload }: Action_DeleteEvent) {
   try {
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
-    yield call(EventApi.delete, payload._id);
+    yield call(EventApi.delete, payload._id, payload.applyTo);
   } catch (error) {
     yield put(getSomedayEventsSlice.actions.error());
     handleError(error as Error);

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   FloatingFocusManager,
   FloatingOverlay,
@@ -9,22 +9,26 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
-import { Priorities, Priority } from "@core/constants/core.constants";
+import { Priorities } from "@core/constants/core.constants";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
+import { theme } from "@web/common/styles/theme";
+import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
+import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection/SaveSection";
 import { StyledEventForm } from "@web/views/Forms/EventForm/styled";
-import { theme } from "../../../common/styles/theme";
 
-export function RecurringEventUpdateScopeDialog(props: {
-  open?: boolean;
-  priority?: Priority;
-  onSubmit: (value: RecurringEventUpdateScope) => unknown;
-  onOpenChange?: (open: boolean) => unknown;
-}) {
-  const { onOpenChange, onSubmit, ...floatingProps } = props;
+export function RecurringEventUpdateScopeDialog() {
+  const { confirmation, state } = useDraftContext();
+  const { isRecurrenceUpdateScopeDialogOpen } = confirmation;
+  const { setRecurrenceUpdateScopeDialogOpen } = confirmation;
+  const { onUpdateScopeChange, recurrenceChanged } = confirmation;
+  const reduxDraft = useAppSelector(selectDraft);
+  const draft = state.draft ?? reduxDraft;
+
   const { context, refs, floatingStyles } = useFloating({
-    open: floatingProps.open,
-    onOpenChange,
+    open: isRecurrenceUpdateScopeDialogOpen,
+    onOpenChange: setRecurrenceUpdateScopeDialogOpen,
     strategy: "absolute",
     placement: "bottom",
     transform: true,
@@ -39,15 +43,24 @@ export function RecurringEventUpdateScopeDialog(props: {
   const dismiss = useDismiss(context, { outsidePressEvent: "mousedown" });
   const interactions = useInteractions([click, role, dismiss]);
 
-  const options: Array<[string, RecurringEventUpdateScope]> = [
+  const _options: Array<[string, RecurringEventUpdateScope]> = [
     ["this", RecurringEventUpdateScope.THIS_EVENT],
     ["this-and-following", RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS],
     ["all", RecurringEventUpdateScope.ALL_EVENTS],
   ];
 
-  const onSubmitHandler = useCallback(() => onSubmit(value), [value, onSubmit]);
+  const options = useMemo<Array<[string, RecurringEventUpdateScope]>>(() => {
+    if (!recurrenceChanged) return _options;
 
-  if (!props.open) return null;
+    return _options.slice(1);
+  }, [recurrenceChanged]);
+
+  const onSubmitHandler = useCallback(() => {
+    onUpdateScopeChange(value);
+    setValue(RecurringEventUpdateScope.THIS_EVENT);
+  }, [value, onUpdateScopeChange]);
+
+  if (!isRecurrenceUpdateScopeDialogOpen) return null;
 
   return (
     <FloatingPortal>
@@ -60,9 +73,9 @@ export function RecurringEventUpdateScopeDialog(props: {
           <div
             ref={refs.setFloating}
             style={{ ...floatingStyles, top: "50%", left: "50%" }}
-            {...interactions.getFloatingProps(floatingProps)}
+            {...interactions.getFloatingProps()}
           >
-            <StyledEventForm role="form" priority={props.priority}>
+            <StyledEventForm role="form" priority={draft?.priority}>
               <fieldset style={{ borderRadius: theme.shape.borderRadius }}>
                 <legend>Apply Changes To</legend>
 
@@ -74,7 +87,7 @@ export function RecurringEventUpdateScopeDialog(props: {
                       value={option}
                       onChange={() => setValue(option)}
                       checked={value === option}
-                      id={`recurring-event-update-scope-select--${id}`}
+                      id={`recurring-event-update-scope-select-${id}`}
                     />
 
                     <label
@@ -88,9 +101,9 @@ export function RecurringEventUpdateScopeDialog(props: {
 
               <SaveSection
                 saveText="Ok"
-                priority={props.priority ?? Priorities.UNASSIGNED}
+                priority={draft?.priority ?? Priorities.UNASSIGNED}
                 onSubmit={onSubmitHandler}
-                onCancel={() => onOpenChange?.(false)}
+                onCancel={() => setRecurrenceUpdateScopeDialogOpen(false)}
               />
             </StyledEventForm>
           </div>

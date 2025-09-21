@@ -1,10 +1,7 @@
-import React, { FC, MouseEvent, useCallback, useMemo, useState } from "react";
+import React, { FC, MouseEvent, useMemo } from "react";
 import { FloatingFocusManager } from "@floating-ui/react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import {
-  Categories_Event,
-  RecurringEventUpdateScope,
-} from "@core/types/event.types";
+import { Categories_Event } from "@core/types/event.types";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event.util";
@@ -14,7 +11,6 @@ import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEve
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
-import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/RecurringEventUpdateScopeDialog";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 
 interface Props {
@@ -26,10 +22,9 @@ interface Props {
 }
 
 export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
-  const { actions, setters, state } = useDraftContext();
-  const { discard, deleteEvent, duplicateEvent, submit } = actions;
-  const { startDragging, isRecurrenceChanged } = actions;
-  const { isInstance, isRecurrence, isEventDirty } = actions;
+  const { actions, setters, state, confirmation } = useDraftContext();
+  const { discard, duplicateEvent } = actions;
+  const { startDragging } = actions;
   const { setDraft, setDateBeingChanged, setIsResizing } = setters;
   const { draft, isDragging, formProps, isFormOpen, isResizing } = state;
   const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
@@ -60,50 +55,17 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
     startDragging();
   };
 
-  const [
-    isRecurrenceUpdateScopeDialogOpen,
-    setRecurrenceUpdateScopeDialogOpen,
-  ] = useState<boolean>(false);
-
-  const [finalDraft, setFinalDraft] = useState<Schema_GridEvent | null>(null);
-
-  const onUpdateScopeChange = useCallback(
-    (applyTo: RecurringEventUpdateScope) => {
-      if (finalDraft) {
-        submit(finalDraft, applyTo);
-        setFinalDraft(null);
-        discard();
-      }
-    },
-    [finalDraft, submit, setFinalDraft, discard],
-  );
-
-  const onSubmit = useCallback(
-    async (_draft: Schema_GridEvent) => {
-      if (isEventDirty(_draft) && isRecurrence(_draft)) {
-        setFinalDraft(_draft);
-
-        return setRecurrenceUpdateScopeDialogOpen(true);
-      }
-
-      submit(_draft);
-      discard();
-    },
-    [
-      submit,
-      setRecurrenceUpdateScopeDialogOpen,
-      isRecurrenceChanged,
-      setFinalDraft,
-      isEventDirty,
-      isRecurrence,
-      discard,
-    ],
-  );
+  const { onSubmit, onDelete } = confirmation;
 
   const { onMouseDown } = useGridEventMouseDown(
     draft?.isAllDay ? Categories_Event.ALLDAY : Categories_Event.TIMED,
     handleClick,
     handleDrag,
+  );
+
+  const formDirty = useMemo(
+    () => (draft ? actions.isEventDirty(draft) : false),
+    [draft, actions.isEventDirty],
   );
 
   if (!draft) return null;
@@ -151,8 +113,9 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
                 event={draft}
                 onClose={discard}
                 onConvert={onConvert}
-                onDelete={deleteEvent}
+                onDelete={onDelete}
                 onDuplicate={duplicateEvent}
+                disableSaveBtn={!formDirty}
                 onSubmit={onSubmit}
                 setEvent={setDraft}
               />
@@ -160,18 +123,6 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
           </FloatingFocusManager>
         )}
       </div>
-
-      {useMemo(
-        () => (
-          <RecurringEventUpdateScopeDialog
-            open={isRecurrenceUpdateScopeDialogOpen}
-            priority={draft.priority}
-            onOpenChange={setRecurrenceUpdateScopeDialogOpen}
-            onSubmit={onUpdateScopeChange}
-          />
-        ),
-        [isRecurrenceUpdateScopeDialogOpen, setRecurrenceUpdateScopeDialogOpen],
-      )}
     </>
   );
 };

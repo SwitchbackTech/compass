@@ -40,6 +40,7 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useDraftEffects } from "@web/views/Calendar/components/Draft/hooks/effects/useDraftEffects";
 import {
   Setters_Draft,
   State_Draft_Local,
@@ -48,7 +49,6 @@ import {
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
-import { useDraftEffects } from "../effects/useDraftEffects";
 
 export const useDraftActions = (
   draftState: State_Draft_Local,
@@ -127,23 +127,25 @@ export const useDraftActions = (
 
   const isRecurrenceChanged = useCallback(
     (currentDraft: Schema_Event): boolean => {
-      if (!isRecurrence()) return false; // Not a recurring event
+      if (!isRecurrence() || !currentDraft) return false;
 
       const oldStartDate = reduxDraft?.startDate;
-      const newStartDate = currentDraft.startDate;
+      const newStartDate = currentDraft?.startDate;
       const oldEndDate = reduxDraft?.endDate;
-      const newEndDate = currentDraft.endDate;
+      const newEndDate = currentDraft?.endDate;
       const oldRecurrence = reduxDraft?.recurrence?.rule ?? [];
-      const newRecurrence = currentDraft.recurrence?.rule ?? [];
+      const newRecurrence = currentDraft?.recurrence?.rule ?? [];
       const startDateChanged = oldStartDate !== newStartDate;
       const endDateChanged = oldEndDate !== newEndDate;
-      const recurrenceUpdated = oldRecurrence.length !== newRecurrence.length;
+      const oldRuleFields = oldRecurrence.flatMap((rule) => rule.split(";"));
+      const newRuleFields = newRecurrence.flatMap((rule) => rule.split(";"));
+      const oldRuleSet = [...new Set(oldRuleFields)];
+      const newRuleSet = [...new Set(newRuleFields)];
 
       return (
-        recurrenceUpdated ||
         startDateChanged ||
         endDateChanged ||
-        newRecurrence.some((rule) => !oldRecurrence.includes(rule))
+        newRuleSet.some((rule) => !oldRuleSet.includes(rule))
       );
     },
     [reduxDraft, isRecurrence],
@@ -164,17 +166,16 @@ export const useDraftActions = (
       ] as const;
 
       return fieldsToCompare.some((field) => {
-        const _current = currentDraft[field];
-        const _original = reduxDraft[field];
-        const currentIsObj = typeof _current === "object" && _current !== null;
-        const origIsObj = typeof _original === "object" && _original !== null;
-        const current = currentIsObj ? JSON.stringify(_current) : _current;
-        const original = origIsObj ? JSON.stringify(_original) : _original;
+        const current = currentDraft[field];
+        const original = reduxDraft[field];
+        const recurrence = field === "recurrence";
 
-        return current !== original;
+        return recurrence
+          ? isRecurrenceChanged(currentDraft)
+          : current !== original;
       });
     },
-    [reduxDraft],
+    [reduxDraft, isRecurrenceChanged],
   );
 
   const closeForm = useCallback(() => {
@@ -207,16 +208,22 @@ export const useDraftActions = (
     }
   }, [dispatch, reduxDraft, reduxDraftType, reset]);
 
-  const deleteEvent = useCallback(() => {
-    if (reduxDraft?._id) {
-      dispatch(
-        deleteEventSlice.actions.request({
-          _id: reduxDraft._id,
-        } as unknown as void),
-      );
-    }
-    discard();
-  }, [dispatch, reduxDraft, discard]);
+  const deleteEvent = useCallback(
+    (
+      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
+    ) => {
+      if (reduxDraft?._id) {
+        dispatch(
+          deleteEventSlice.actions.request({
+            _id: reduxDraft._id,
+            applyTo,
+          } as unknown as void),
+        );
+      }
+      discard();
+    },
+    [dispatch, reduxDraft, discard],
+  );
 
   const convert = useCallback(
     (start: string, end: string) => {
