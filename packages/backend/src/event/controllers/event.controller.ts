@@ -33,8 +33,6 @@ class EventController {
     } as CompassEvent;
 
     await CompassSyncProcessor.processEvents([event]);
-
-    return payload;
   }
 
   create = async (req: SReqBody<Schema_Event>, res: Res_Promise) => {
@@ -44,13 +42,13 @@ class EventController {
       const _id = new ObjectId().toString();
       const data = EventSchema.parse({ ...body, _id, user });
 
-      const createdEvent = await this.processEvent(
+      await this.processEvent(
         data as CompassEvent["payload"],
         CompassEventStatus.CONFIRMED,
         RecurringEventUpdateScope.THIS_EVENT,
       );
 
-      res.promise(createdEvent);
+      res.status(Status.NO_CONTENT).send();
     } catch (e) {
       logger.error(e);
 
