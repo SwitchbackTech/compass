@@ -16,7 +16,7 @@ _Compass is a weekly planner that integrates with Google Calendar._
 
 The basics:
 
-- 🔄 Recurring events (limited support)
+- 🔄 Recurring events
 - ⚡ Command palette
 - ⚡ Shortcuts
 - 🕒 Display events in local time

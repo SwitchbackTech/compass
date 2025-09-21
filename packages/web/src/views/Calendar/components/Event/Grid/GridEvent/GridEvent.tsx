@@ -123,7 +123,6 @@ const _GridEvent = (
       >
         <StyledEventTitle eventHeight={position.height} role="textbox">
           {event.title}
-          {isRecurring && "*"}
         </StyledEventTitle>
         {!event.isAllDay && (
           <>
