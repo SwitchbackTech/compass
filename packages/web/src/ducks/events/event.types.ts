@@ -79,6 +79,7 @@ interface Payload_ConvertTimedEvent {
 
 interface Payload_DeleteEvent {
   _id: string;
+  applyTo?: RecurringEventUpdateScope;
 }
 
 export interface Payload_EditEvent {

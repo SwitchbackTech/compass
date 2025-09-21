@@ -1,49 +1,22 @@
-import dayjs, { Dayjs } from "dayjs";
-import isBetween from "dayjs/plugin/isBetween";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { v4 as uuidv4 } from "uuid";
 import { DropResult } from "@hello-pangea/dnd";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
-import { PartialMouseEvent } from "@web/common/types/util.types";
-import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
 import {
   DATA_EVENT_ELEMENT_ID,
   ID_OPTIMISTIC_PREFIX,
-} from "../constants/web.constants";
+} from "@web/common/constants/web.constants";
+import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
-} from "../types/web.event.types";
-
-dayjs.extend(isSameOrAfter);
-dayjs.extend(isSameOrBefore);
-dayjs.extend(isBetween);
-
-export const assembleBaseEvent = (
-  userId: string,
-  event: Partial<Schema_Event>,
-): Schema_Event => {
-  const baseEvent = {
-    _id: event._id,
-    title: event.title || "",
-    description: event.description || "",
-    startDate: event.startDate,
-    endDate: event.endDate,
-    user: userId,
-    isAllDay: event.isAllDay || false,
-    isSomeday: event.isSomeday || false,
-    origin: event.origin || Origin.COMPASS,
-    priority: event.priority || Priorities.UNASSIGNED,
-  };
-
-  return baseEvent;
-};
+} from "@web/common/types/web.event.types";
+import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
 
 const gridEventDefaultPosition = {
   isOverlapping: false,
@@ -55,7 +28,7 @@ const gridEventDefaultPosition = {
 };
 
 export const assembleDefaultEvent = async (
-  draftType: Categories_Event,
+  draftType?: Categories_Event | null,
   startDate?: string,
   endDate?: string,
 ): Promise<Schema_Event | Schema_GridEvent> => {
@@ -192,7 +165,7 @@ export const isOptimisticEvent = (event: Schema_Event) => {
 
 export const prepEvtAfterDraftDrop = (
   category: Categories_Event,
-  dropItem: DropResult,
+  dropItem: DropResult & Schema_Event,
   dates: { startDate: string; endDate: string },
 ) => {
   const baseEvent = assembleDefaultEvent(category);
@@ -260,10 +233,10 @@ const _assembleBaseEvent = (
     startDate: event.startDate,
     endDate: event.endDate,
     user: userId,
-    isAllDay: event.isAllDay || false,
-    isSomeday: event.isSomeday || false,
-    origin: event.origin || Origin.COMPASS,
-    priority: event.priority || Priorities.UNASSIGNED,
+    isAllDay: event.isAllDay ?? false,
+    isSomeday: event.isSomeday ?? false,
+    origin: event.origin ?? Origin.COMPASS,
+    priority: event.priority ?? Priorities.UNASSIGNED,
   };
 
   return baseEvent;

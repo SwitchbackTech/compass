@@ -27,6 +27,7 @@ import {
 import {
   FREQUENCY_MAP,
   FREQUENCY_OPTIONS,
+  FrequencyValues,
   WEEKDAYS,
   useRecurrence,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/utils";
@@ -94,8 +95,8 @@ export const RecurrenceIntervalSelect = ({
   min,
   max,
 }: {
-  frequency: Frequency;
-  onFreqSelect: (option: Frequency) => void;
+  frequency: FrequencyValues;
+  onFreqSelect: (option: FrequencyValues) => void;
   bgColor: string;
   initialValue: number;
   onChange: (repeatCount: number) => void;
@@ -263,19 +264,22 @@ const EndsOnDate = ({
           description="Select recurrence end date"
           onClick={() => setOpen(true)}
         >
-          <DatePicker
-            bgColor={darken(bgColor, 15)}
-            calendarClassName="recurrenceUntilDatePicker"
-            inputColor={inputColor}
-            isOpen={open}
-            minDate={miniDate.toDate()}
-            onCalendarClose={() => setOpen(false)}
-            onChange={() => null}
-            onSelect={(date) => setUntil(date)}
-            selected={until}
-            title="Select recurrence end date"
-            view="grid"
-          />
+          <div id="portal">
+            <DatePicker
+              bgColor={darken(bgColor, 15)}
+              calendarClassName="recurrenceUntilDatePicker"
+              inputColor={inputColor}
+              isOpen={open}
+              minDate={miniDate.toDate()}
+              onCalendarClose={() => setOpen(false)}
+              onChange={() => null}
+              onSelect={(date) => setUntil(date)}
+              selected={until}
+              title="Select recurrence end date"
+              view="grid"
+              portalId="portal"
+            />
+          </div>
         </TooltipWrapper>
       </Flex>
     </StyledRepeatRow>
@@ -289,12 +293,9 @@ const FreqSelect = ({
   onFreqSelect,
 }: {
   bgColor: string;
-  value: Exclude<
-    Frequency,
-    Frequency.HOURLY | Frequency.MINUTELY | Frequency.SECONDLY
-  >;
+  value: FrequencyValues;
   plural?: boolean;
-  onFreqSelect: (option: Frequency) => void;
+  onFreqSelect: (option: FrequencyValues) => void;
 }) => {
   const options = useMemo(() => FREQUENCY_OPTIONS(plural ? "s" : ""), [plural]);
   const fontSize = theme.text.size.m;

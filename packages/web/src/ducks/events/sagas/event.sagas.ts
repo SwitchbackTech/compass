@@ -109,7 +109,7 @@ export function* deleteEvent({ payload }: Action_DeleteEvent) {
 
     const isInDb = !event._id.startsWith(ID_OPTIMISTIC_PREFIX);
     if (isInDb) {
-      yield call(EventApi.delete, payload._id);
+      yield call(EventApi.delete, payload._id, payload.applyTo);
     }
 
     yield put(deleteEventSlice.actions.success());

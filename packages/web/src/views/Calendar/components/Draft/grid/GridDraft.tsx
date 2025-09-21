@@ -1,17 +1,17 @@
-import React, { FC, MouseEvent } from "react";
+import React, { FC, MouseEvent, useMemo } from "react";
 import { FloatingFocusManager } from "@floating-ui/react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event.util";
+import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
+import { GridEvent } from "@web/views/Calendar/components/Event/Grid";
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { GridEvent } from "../../Event/Grid";
-import { useDraftContext } from "../context/useDraftContext";
 
 interface Props {
   draft: Schema_GridEvent;
@@ -22,9 +22,9 @@ interface Props {
 }
 
 export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
-  const { actions, setters, state } = useDraftContext();
-  const { discard, deleteEvent, duplicateEvent, submit, startDragging } =
-    actions;
+  const { actions, setters, state, confirmation } = useDraftContext();
+  const { discard, duplicateEvent } = actions;
+  const { startDragging } = actions;
   const { setDraft, setDateBeingChanged, setIsResizing } = setters;
   const { draft, isDragging, formProps, isFormOpen, isResizing } = state;
   const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
@@ -55,10 +55,17 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
     startDragging();
   };
 
+  const { onSubmit, onDelete } = confirmation;
+
   const { onMouseDown } = useGridEventMouseDown(
     draft?.isAllDay ? Categories_Event.ALLDAY : Categories_Event.TIMED,
     handleClick,
     handleDrag,
+  );
+
+  const formDirty = useMemo(
+    () => (draft ? actions.isEventDirty(draft) : false),
+    [draft, actions.isEventDirty],
   );
 
   if (!draft) return null;
@@ -78,7 +85,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
           onMouseDown(e, event);
         }}
         onScalerMouseDown={(
-          event: Schema_GridEvent,
+          _event: Schema_GridEvent,
           e: MouseEvent,
           dateToChange: "startDate" | "endDate",
         ) => {
@@ -106,9 +113,10 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
                 event={draft}
                 onClose={discard}
                 onConvert={onConvert}
-                onDelete={deleteEvent}
+                onDelete={onDelete}
                 onDuplicate={duplicateEvent}
-                onSubmit={(_draft: Schema_GridEvent) => submit(_draft)}
+                disableSaveBtn={!formDirty}
+                onSubmit={onSubmit}
                 setEvent={setDraft}
               />
             </StyledFloatContainer>

@@ -27,7 +27,7 @@ export const PriorityButton = styled(Btn)<PalletteProps>`
 
   &:hover {
     background: ${({ theme }) => theme.color.bg.primary};
-    color: ${({ color }) => brighten(color)};
+    color: ${({ color }) => brighten(color!)};
     transition: background-color 0.5s;
     transition: color 0.55s;
   }
@@ -35,13 +35,17 @@ export const PriorityButton = styled(Btn)<PalletteProps>`
 interface CustomProps {
   priority: Priority;
   minWidth: number;
+  disabled?: boolean;
 }
 
 export const StyledSaveBtn = styled(PriorityButton)<CustomProps>`
   background: ${({ priority }) => darken(colorByPriority[priority])};
   color: ${({ theme }) => theme.color.text.dark}
-      
+
   min-width: ${({ minWidth }) => minWidth}px;
+
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+  pointer-events: ${({ disabled }) => (disabled ? "none" : "auto")};
 
   &:focus {
     border: 2px solid ${({ theme }) => theme.color.border.primaryDark};

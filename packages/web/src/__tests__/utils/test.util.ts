@@ -41,6 +41,10 @@ export const mockBSON = () => {
       toString() {
         return crypto.randomUUID();
       }
+
+      static isValid(value?: string) {
+        return value?.length === 36;
+      }
     },
   }));
 };

@@ -6,9 +6,6 @@ import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event.util";
 import { getSomedayEventCategory } from "@web/common/utils/someday.util";
-import IconButton from "@web/components/IconButton/IconButton";
-import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
-import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import {
   MenuItem,
   MenuItemLabel,
@@ -16,7 +13,10 @@ import {
   PriorityContainer,
   TooltipText,
   TooltipWrapper,
-} from "./styled";
+} from "@web/components/ContextMenu/styled";
+import IconButton from "@web/components/IconButton/IconButton";
+import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
+import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 
 export interface ContextMenuAction {
   id: string;
@@ -31,8 +31,8 @@ interface ContextMenuItemsProps {
 }
 
 export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
-  const { actions, setters } = useDraftContext();
-  const { openForm, deleteEvent, duplicateEvent, submit } = actions;
+  const { actions, setters, confirmation } = useDraftContext();
+  const { openForm, duplicateEvent, submit } = actions;
   const { setDraft } = setters;
 
   const sidebarContext = useSidebarContext(true);
@@ -80,6 +80,8 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
     }
   };
 
+  const { onDelete } = confirmation;
+
   const menuActions: ContextMenuAction[] = [
     {
       id: "edit",
@@ -104,7 +106,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
     {
       id: "delete",
       label: "Delete",
-      onClick: deleteEvent,
+      onClick: onDelete,
       icon: (
         <IconButton>
           <Trash />
