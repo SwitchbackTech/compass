@@ -46,15 +46,17 @@ class AuthController {
     }
 
     if (cUserId) {
-      await compassAuthService.createSessionForUser(cUserId);
+      const sessionData =
+        await compassAuthService.createSessionForUser(cUserId);
+
+      res.promise({
+        message: `User session created for ${cUserId}`,
+        accessToken: sessionData.accessToken,
+      });
     } else {
       res.promise({ error: "User doesn't exist" });
       return;
     }
-
-    res.promise({
-      message: `User session created for ${cUserId}`,
-    });
   };
 
   getUserIdFromSession = (req: SessionRequest, res: Res_Promise) => {
