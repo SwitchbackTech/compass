@@ -1,12 +1,17 @@
-import dayjs, { Dayjs } from "dayjs";
+import { ObjectId } from "bson";
 import { MouseEvent, useCallback } from "react";
 import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import {
+  Categories_Event,
+  RecurringEventUpdateScope,
+  Schema_Event,
+} from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import { ID_OPTIMISTIC_PREFIX } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
@@ -35,11 +40,15 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  Setters_Draft,
+  State_Draft_Local,
+  Status_Drag,
+} from "@web/views/Calendar/components/Draft/hooks/state/useDraftState";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { useDraftEffects } from "../effects/useDraftEffects";
-import { Setters_Draft, State_Draft_Local } from "../state/useDraftState";
 
 export const useDraftActions = (
   draftState: State_Draft_Local,
@@ -61,7 +70,7 @@ export const useDraftActions = (
     dateToResize,
     eventType: reduxDraftType,
     isDrafting,
-  } = useAppSelector(selectDraftStatus);
+  } = useAppSelector(selectDraftStatus)!;
 
   const {
     dateBeingChanged,
@@ -87,161 +96,108 @@ export const useDraftActions = (
 
   const startDragging = useCallback(() => {
     setIsDragging(true);
-  }, [reduxDraft]);
+  }, [setIsDragging]);
 
   const startResizing = useCallback(() => {
     setIsResizing(true);
-    setDateBeingChanged(dateToResize);
-  }, [reduxDraft, dateToResize]);
+    setDateBeingChanged(dateToResize ?? null);
+  }, [setIsResizing, setDateBeingChanged, dateToResize]);
 
-  const stopDragging = () => {
+  const stopDragging = useCallback(() => {
     setIsDragging(false);
     setDragStatus(null);
     setIsFormOpenBeforeDragging(null);
-  };
+  }, [setIsDragging, setDragStatus, setIsFormOpenBeforeDragging]);
 
-  const stopResizing = () => {
+  const stopResizing = useCallback(() => {
     setIsResizing(false);
     setResizeStatus(null);
     setDateBeingChanged("endDate");
-  };
+  }, [setIsResizing, setResizeStatus, setDateBeingChanged]);
 
-  const isEventDirty = (
-    currentDraft: Schema_Event,
-    originalEvent: Schema_Event | null,
-  ) => {
-    if (!originalEvent) return true; // New event is always dirty
+  const isInstance = useCallback((): boolean => {
+    return ObjectId.isValid(reduxDraft?.recurrence?.eventId ?? "");
+  }, [reduxDraft]);
 
-    // Compare relevant fields that can change in the form
-    const fieldsToCompare = [
-      "title",
-      "description",
-      "startDate",
-      "endDate",
-      "priority",
-      "recurrence",
-    ] as const;
+  const isRecurrence = useCallback((): boolean => {
+    const hasRRule = Array.isArray(reduxDraft?.recurrence?.rule);
 
-    return fieldsToCompare.some((field) => {
-      const _current = currentDraft[field];
-      const _original = originalEvent[field];
-      const currentIsObj = typeof _current === "object" && _current !== null;
-      const origIsObj = typeof _original === "object" && _original !== null;
-      const current = currentIsObj ? JSON.stringify(_current) : _current;
-      const original = origIsObj ? JSON.stringify(_original) : _original;
+    return hasRRule || isInstance();
+  }, [reduxDraft, isInstance]);
 
-      return current !== original;
-    });
-  };
+  const isRecurrenceChanged = useCallback(
+    (currentDraft: Schema_Event): boolean => {
+      if (!isRecurrence()) return false; // Not a recurring event
 
-  const submit = async (draft: Schema_GridEvent) => {
-    // For new events, skip the dirty check and allow saving blank events
-    const isNewEvent = !draft._id || draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
+      const oldStartDate = reduxDraft?.startDate;
+      const newStartDate = currentDraft.startDate;
+      const oldEndDate = reduxDraft?.endDate;
+      const newEndDate = currentDraft.endDate;
+      const oldRecurrence = reduxDraft?.recurrence?.rule ?? [];
+      const newRecurrence = currentDraft.recurrence?.rule ?? [];
+      const startDateChanged = oldStartDate !== newStartDate;
+      const endDateChanged = oldEndDate !== newEndDate;
+      const recurrenceUpdated = oldRecurrence.length !== newRecurrence.length;
 
-    // Check if the event has actually changed (skip for new events)
-    if (!isNewEvent && !isEventDirty(draft, reduxDraft)) {
-      // No changes detected, just close the form without making HTTP request
-      if (isFormOpenBeforeDragging) {
-        openForm();
-      } else {
-        discard();
-      }
-      return;
-    }
+      return (
+        recurrenceUpdated ||
+        startDateChanged ||
+        endDateChanged ||
+        newRecurrence.some((rule) => !oldRecurrence.includes(rule))
+      );
+    },
+    [reduxDraft, isRecurrence],
+  );
 
-    const userId = await getUserId();
+  const isEventDirty = useCallback(
+    (currentDraft: Schema_Event): boolean => {
+      if (!reduxDraft) return true; // New event is always dirty
 
-    let event = null;
-    if (draft.isSomeday) {
-      event = prepSomedayEventBeforeSubmit(draft, userId);
-      event.order = -1; // Provide it to prevent zod validation error since zod expects it
-    } else {
-      event = prepEvtBeforeSubmit(draft, userId);
-    }
+      // Compare relevant fields that can change in the form
+      const fieldsToCompare = [
+        "title",
+        "description",
+        "startDate",
+        "endDate",
+        "priority",
+        "recurrence",
+      ] as const;
 
-    const { startOfView, endOfView } = weekProps.component;
+      return fieldsToCompare.some((field) => {
+        const _current = currentDraft[field];
+        const _original = reduxDraft[field];
+        const currentIsObj = typeof _current === "object" && _current !== null;
+        const origIsObj = typeof _original === "object" && _original !== null;
+        const current = currentIsObj ? JSON.stringify(_current) : _current;
+        const original = origIsObj ? JSON.stringify(_original) : _original;
 
-    const isExisting = event._id;
-    if (isExisting) {
-      const isDateWithinView = (date: string) =>
-        dayjs(date).isBetween(startOfView, endOfView, null, "[]");
+        return current !== original;
+      });
+    },
+    [reduxDraft],
+  );
 
-      const isStartDateInView = isDateWithinView(event.startDate);
-      const isEndDateInView = isDateWithinView(event.endDate);
-      const doesEventSpanView =
-        dayjs(event.startDate).isBefore(startOfView) &&
-        dayjs(event.endDate).isAfter(endOfView);
-
-      const isEventCompletelyOutsideView =
-        !isStartDateInView && !isEndDateInView && !doesEventSpanView;
-
-      const shouldRemove = isEventCompletelyOutsideView;
-
-      const payload = { _id: event._id, event, shouldRemove };
-      dispatch(editEventSlice.actions.request(payload));
-
-      // If this was a drag-to-edge navigation and event moved to current week, ensure it's visible
-      const lastNavigationSource = weekProps.util.getLastNavigationSource();
-      const isDragToEdgeNavigation = lastNavigationSource === "drag-to-edge";
-      const wasEventMovedToCurrentWeek =
-        !shouldRemove &&
-        (isStartDateInView || isEndDateInView || doesEventSpanView);
-
-      if (isDragToEdgeNavigation && wasEventMovedToCurrentWeek) {
-        // Only insert if the event is not already in the current week's event list
-        const isEventAlreadyInWeek = currentWeekEvents.data.includes(event._id);
-        if (!isEventAlreadyInWeek) {
-          dispatch(getWeekEventsSlice.actions.insert(event._id));
-        }
-      }
-    } else {
-      dispatch(createEventSlice.actions.request(event));
-    }
-
-    if (isFormOpenBeforeDragging) {
-      openForm();
-    } else {
-      discard();
-    }
-  };
-
-  const closeForm = () => {
+  const closeForm = useCallback(() => {
     setIsFormOpen(false);
-  };
+  }, [setIsFormOpen]);
 
-  const convert = (start: string, end: string) => {
-    if (isAtWeeklyLimit) {
-      alert(SOMEDAY_WEEK_LIMIT_MSG);
-      return;
-    }
-
-    const _draft = {
-      ...draft,
-      isAllDay: false,
-      isSomeday: true,
-      startDate: start,
-      endDate: end,
-      order: somedayWeekCount,
-    };
-    const event = validateSomedayEvent(_draft);
-    dispatch(getWeekEventsSlice.actions.convert({ event }));
-
-    discard();
-  };
-
-  const deleteEvent = () => {
-    if (reduxDraft?._id) {
-      dispatch(deleteEventSlice.actions.request({ _id: reduxDraft._id }));
-    }
-    discard();
-  };
-
-  const duplicateEvent = () => {
-    const draft = { ...reduxDraft } as Schema_GridEvent;
-    delete draft._id;
-    submit(draft);
-    discard();
-  };
+  const reset = useCallback(() => {
+    setDraft(null);
+    setIsDragging(false);
+    closeForm();
+    setIsResizing(false);
+    setDragStatus(null);
+    setResizeStatus(null);
+    setDateBeingChanged(null);
+  }, [
+    closeForm,
+    setDateBeingChanged,
+    setDraft,
+    setDragStatus,
+    setIsDragging,
+    setIsResizing,
+    setResizeStatus,
+  ]);
 
   const discard = useCallback(() => {
     reset();
@@ -249,7 +205,145 @@ export const useDraftActions = (
     if (reduxDraft || reduxDraftType) {
       dispatch(draftSlice.actions.discard());
     }
-  }, [dispatch, draft, reduxDraft, reduxDraftType, setDraft]);
+  }, [dispatch, reduxDraft, reduxDraftType, reset]);
+
+  const deleteEvent = useCallback(() => {
+    if (reduxDraft?._id) {
+      dispatch(
+        deleteEventSlice.actions.request({
+          _id: reduxDraft._id,
+        } as unknown as void),
+      );
+    }
+    discard();
+  }, [dispatch, reduxDraft, discard]);
+
+  const convert = useCallback(
+    (start: string, end: string) => {
+      if (isAtWeeklyLimit) {
+        alert(SOMEDAY_WEEK_LIMIT_MSG);
+        return;
+      }
+
+      const _draft = {
+        ...draft,
+        isAllDay: false,
+        isSomeday: true,
+        startDate: start,
+        endDate: end,
+        order: somedayWeekCount,
+      };
+      const event = validateSomedayEvent(_draft);
+      dispatch(
+        getWeekEventsSlice.actions.convert({ event } as unknown as void),
+      );
+
+      discard();
+    },
+    [discard, dispatch, draft, isAtWeeklyLimit, somedayWeekCount],
+  );
+
+  const openForm = useCallback(() => {
+    setIsFormOpen(true);
+  }, [setIsFormOpen]);
+
+  const submit = useCallback(
+    async (
+      draft: Schema_GridEvent,
+      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
+    ) => {
+      // For new events, skip the dirty check and allow saving blank events
+      const isNewEvent =
+        !draft._id || draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
+
+      // Check if the event has actually changed (skip for new events)
+      if (!isNewEvent && !isEventDirty(draft)) {
+        // No changes detected, just close the form without making HTTP request
+        if (isFormOpenBeforeDragging) {
+          openForm();
+        } else {
+          discard();
+        }
+        return;
+      }
+
+      const userId = await getUserId();
+
+      let event = null;
+      if (draft.isSomeday) {
+        event = prepSomedayEventBeforeSubmit(draft, userId);
+        event.order = -1; // Provide it to prevent zod validation error since zod expects it
+      } else {
+        event = prepEvtBeforeSubmit(draft, userId);
+      }
+
+      const { startOfView, endOfView } = weekProps.component;
+
+      const isExisting = event._id;
+
+      if (isExisting) {
+        const isDateWithinView = (date: string) =>
+          dayjs(date).isBetween(startOfView, endOfView, null, "[]");
+
+        const isStartDateInView = isDateWithinView(event.startDate);
+        const isEndDateInView = isDateWithinView(event.endDate);
+        const doesEventSpanView =
+          dayjs(event.startDate).isBefore(startOfView) &&
+          dayjs(event.endDate).isAfter(endOfView);
+
+        const isEventCompletelyOutsideView =
+          !isStartDateInView && !isEndDateInView && !doesEventSpanView;
+
+        const shouldRemove = isEventCompletelyOutsideView;
+
+        const payload = { _id: event._id, event, shouldRemove, applyTo };
+        dispatch(editEventSlice.actions.request(payload as unknown as void));
+
+        // If this was a drag-to-edge navigation and event moved to current week, ensure it's visible
+        const lastNavigationSource = weekProps.util.getLastNavigationSource();
+        const isDragToEdgeNavigation = lastNavigationSource === "drag-to-edge";
+        const wasEventMovedToCurrentWeek =
+          !shouldRemove &&
+          (isStartDateInView || isEndDateInView || doesEventSpanView);
+
+        if (isDragToEdgeNavigation && wasEventMovedToCurrentWeek) {
+          // Only insert if the event is not already in the current week's event list
+          const isEventAlreadyInWeek = currentWeekEvents.data.includes(
+            event._id,
+          );
+          if (!isEventAlreadyInWeek) {
+            dispatch(
+              getWeekEventsSlice.actions.insert(event._id as unknown as void),
+            );
+          }
+        }
+      } else {
+        dispatch(createEventSlice.actions.request(event as unknown as void));
+      }
+
+      if (isFormOpenBeforeDragging) {
+        openForm();
+      } else {
+        discard();
+      }
+    },
+    [
+      isEventDirty,
+      isFormOpenBeforeDragging,
+      weekProps,
+      currentWeekEvents,
+      dispatch,
+      discard,
+      openForm,
+    ],
+  );
+
+  const duplicateEvent = useCallback(() => {
+    const draft = { ...reduxDraft } as Schema_GridEvent;
+    delete draft._id;
+    submit(draft);
+    discard();
+  }, [reduxDraft, submit, discard]);
 
   const drag = useCallback(
     (e: Omit<PartialMouseEvent, "currentTarget">) => {
@@ -258,7 +352,7 @@ export const useDraftActions = (
       ) => {
         if (!draft) return;
 
-        const x = getX(e, isSidebarOpen);
+        const x = getX(e as MouseEvent, isSidebarOpen);
         const startEndDurationMin = dragStatus?.durationMin || 0;
 
         const y = draft.isAllDay
@@ -300,19 +394,21 @@ export const useDraftActions = (
         return;
       }
 
-      const x = getX(e, isSidebarOpen);
+      const x = getX(e as MouseEvent, isSidebarOpen);
       const currTime = dateCalcs.getDateStrByXY(
         x,
         e.clientY,
         weekProps.component.startOfView,
       );
-      const hasMoved = currTime !== draft.startDate;
+      const hasMoved = currTime !== draft?.startDate;
 
       if (!dragStatus?.hasMoved && hasMoved) {
-        setDragStatus((_status) => ({
-          ..._status,
-          hasMoved: true,
-        }));
+        setDragStatus(
+          (_status): Status_Drag => ({
+            ..._status!,
+            hasMoved: true,
+          }),
+        );
       }
 
       updateTimesDuringDrag(e);
@@ -322,9 +418,11 @@ export const useDraftActions = (
       isSidebarOpen,
       dateCalcs,
       weekProps.component.startOfView,
-      draft?.startDate,
+      draft,
       dragStatus?.hasMoved,
       dragStatus?.durationMin,
+      setDraft,
+      setDragStatus,
     ],
   );
 
@@ -333,7 +431,8 @@ export const useDraftActions = (
       if (!draft || !dateBeingChanged) return false;
 
       const _currTime = currTime.format();
-      const noChange = draft[draft.dateBeingChanged] === _currTime;
+      const noChange = draft[dateBeingChanged] === _currTime;
+
       if (noChange) return false;
 
       const diffDay = currTime.day() !== dayjs(draft.startDate).day();
@@ -347,39 +446,25 @@ export const useDraftActions = (
     [dateBeingChanged, draft],
   );
 
-  const openForm = () => {
-    setIsFormOpen(true);
-  };
-
-  const reset = () => {
-    setDraft(null);
-    setIsDragging(false);
-    closeForm();
-    setIsResizing(false);
-    setDragStatus(null);
-    setResizeStatus(null);
-    setDateBeingChanged(null);
-  };
-
   const resize = useCallback(
     (e: MouseEvent) => {
       const oppositeKey =
         dateBeingChanged === "startDate" ? "endDate" : "startDate";
 
       const flipIfNeeded = (currTime: Dayjs) => {
-        let startDate = draft.startDate;
-        let endDate = draft.endDate;
+        let startDate = draft?.startDate;
+        let endDate = draft?.endDate;
 
         let justFlipped = false;
         let dateKey = dateBeingChanged;
-        const opposite = dayjs(draft[oppositeKey]);
+        const opposite = dayjs(draft?.[oppositeKey]);
         const comparisonKeyword =
           dateBeingChanged === "startDate" ? "after" : "before";
 
         if (comparisonKeyword === "after") {
           if (currTime.isAfter(opposite)) {
             dateKey = oppositeKey;
-            startDate = draft.endDate;
+            startDate = draft?.endDate;
             setDateBeingChanged(dateKey);
 
             justFlipped = true;
@@ -397,13 +482,13 @@ export const useDraftActions = (
         }
 
         closeForm();
-        setDraft((_draft) => {
+        setDraft((_draft): Schema_GridEvent => {
           return {
-            ..._draft,
+            ..._draft!,
             hasFlipped: justFlipped,
             endDate,
             startDate,
-            priority: draft.priority,
+            priority: draft?.priority,
           };
         });
 
@@ -429,7 +514,7 @@ export const useDraftActions = (
       const justFlipped = flipIfNeeded(currTime);
       const dateChanged = justFlipped ? oppositeKey : dateBeingChanged;
 
-      const origTime = dayjs(draft[dateChanged]);
+      const origTime = dayjs(dateChanged ? draft?.[dateChanged] : null);
       const diffMin = currTime.diff(origTime, "minute");
       const updatedTime = origTime.add(diffMin, "minutes").format();
 
@@ -439,11 +524,15 @@ export const useDraftActions = (
         setResizeStatus({ hasMoved: true });
       }
 
-      setDraft((_draft) => {
-        return { ..._draft, [dateChanged]: updatedTime };
+      setDraft((_draft): Schema_GridEvent => {
+        return {
+          ..._draft!,
+          ...(dateChanged ? { [dateChanged]: updatedTime } : {}),
+        };
       });
     },
     [
+      closeForm,
       dateBeingChanged,
       dateCalcs,
       draft,
@@ -451,24 +540,31 @@ export const useDraftActions = (
       isSidebarOpen,
       isValidMovement,
       resizeStatus?.hasMoved,
+      setDateBeingChanged,
+      setDraft,
+      setResizeStatus,
       weekProps.component.startOfView,
     ],
   );
 
   const create = useCallback(async () => {
-    const draftingExisting = reduxDraft !== null;
-    if (draftingExisting) {
+    if (reduxDraft !== null) {
       setDraft(reduxDraft as Schema_GridEvent);
     } else {
+      const { startDate, endDate } = reduxDraft ?? {
+        startDate: undefined,
+        endDate: undefined,
+      };
+
       const defaultDraft = (await assembleDefaultEvent(
         reduxDraftType,
-        reduxDraft?.startDate,
-        reduxDraft?.endDate,
+        startDate,
+        endDate,
       )) as Schema_GridEvent;
       setDraft(defaultDraft);
     }
     openForm();
-  }, [reduxDraft, reduxDraftType]);
+  }, [openForm, reduxDraft, reduxDraftType, setDraft]);
 
   const handleChange = useCallback(async () => {
     const isSomeday =
@@ -494,7 +590,16 @@ export const useDraftActions = (
       setDraft(reduxDraft as Schema_GridEvent);
       startResizing();
     }
-  }, [activity, startDragging, startResizing, create, isDrafting]);
+  }, [
+    reduxDraftType,
+    isDrafting,
+    activity,
+    create,
+    setDraft,
+    reduxDraft,
+    startDragging,
+    startResizing,
+  ]);
 
   const actions = {
     closeForm,
@@ -507,6 +612,10 @@ export const useDraftActions = (
     openForm,
     reset,
     resize,
+    isEventDirty,
+    isInstance,
+    isRecurrence,
+    isRecurrenceChanged,
     startDragging: () => {
       // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
       // because `setIsFormOpenBeforeDragging` depends on `isFormOpen` and re-calculates

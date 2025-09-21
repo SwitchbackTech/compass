@@ -238,7 +238,7 @@ export const useRecurrence = (
     hasRecurrence,
     weekDays,
     interval: rrule.options.interval,
-    freq: rrule.options.freq,
+    freq: rrule.options.freq as FrequencyValues,
     until: rrule.options.until,
     setFreq,
     setInterval,
