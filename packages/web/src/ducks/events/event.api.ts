@@ -1,5 +1,6 @@
 import { AxiosPromise } from "axios";
 import {
+  CompassCoreEvent,
   Params_Events,
   Payload_Order,
   RecurringEventUpdateScope,
@@ -8,7 +9,7 @@ import {
 import { CompassApi } from "@web/common/apis/compass.api";
 
 const EventApi = {
-  create: (event: Schema_Event | Schema_Event[]) => {
+  create: (event: Schema_Event | Schema_Event[] | CompassCoreEvent[]) => {
     return CompassApi.post(`/event`, event);
   },
   delete: (_id: string, applyTo?: RecurringEventUpdateScope) => {

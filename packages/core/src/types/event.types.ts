@@ -269,6 +269,7 @@ export type CompassThisAndFollowingEvent = z.infer<
 >;
 export type CompassAllEvents = z.infer<typeof CompassAllEventsSchema>;
 export type CompassEvent = z.infer<typeof CompassEventSchema>;
+export type CompassCoreEvent = z.infer<typeof CompassCoreEventSchema>;
 export type EventUpdatePayload = z.infer<typeof EventUpdateSchema>;
 
 export type WithCompassId<T> = T & { _id: string };
