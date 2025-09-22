@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
   Categories_Event,
+  CompassCoreEvent,
   Schema_Event,
   Schema_Event_Core,
 } from "@core/types/event.types";
@@ -24,7 +25,7 @@ export const createAndSubmitEvents = async (
   monthTasks: { text: string; color: string }[],
 ): Promise<void> => {
   // Create events from week tasks
-  const weekEvents: Schema_Event[] = [];
+  const weekEvents: CompassCoreEvent[] = [];
   for (let i = 0; i < weekTasks.length; i++) {
     const event = await createEventFromTask(
       weekTasks[i],
@@ -35,7 +36,7 @@ export const createAndSubmitEvents = async (
   }
 
   // Create events from month tasks
-  const monthEvents: Schema_Event[] = [];
+  const monthEvents: CompassCoreEvent[] = [];
   for (let i = 0; i < monthTasks.length; i++) {
     const event = await createEventFromTask(
       monthTasks[i],
@@ -56,7 +57,7 @@ const createEventFromTask = async function (
   task: { text: string; color: string },
   category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
   order: number,
-): Promise<Schema_Event_Core> {
+): Promise<CompassCoreEvent> {
   const userId = await getUserId();
   const now = dayjs();
 
@@ -68,6 +69,7 @@ const createEventFromTask = async function (
     weekEnd,
   );
 
+  //@ts-expect-error - not supporting FE-generated _ids yet
   return {
     title: task.text,
     description: "",
@@ -78,6 +80,5 @@ const createEventFromTask = async function (
     isSomeday: true,
     origin: Origin.COMPASS,
     priority: getPriorityFromColor(task.color),
-    order,
   };
 };
