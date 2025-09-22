@@ -50,7 +50,6 @@ export const SaveSection: React.FC<Props> = ({
             {getMetaKey()} + Enter
           </Text>
         }
-        description="Save event"
       >
         <StyledSaveBtn
           minWidth={110}
@@ -58,7 +57,7 @@ export const SaveSection: React.FC<Props> = ({
           disabled={disableSaveBtn}
           role="tab"
           tabIndex={0}
-          title="Save event"
+          aria-keyshortcuts="Meta+Enter"
         >
           {saveText}
         </StyledSaveBtn>
