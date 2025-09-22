@@ -3,10 +3,10 @@ import { SessionRequest } from "supertokens-node/framework/express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
+  CompassCoreEvent,
   CompassCoreEventSchema,
   CompassEvent,
   CompassEventStatus,
-  CompassCoreEventSchema as EventSchema,
   Params_DeleteMany,
   Payload_Order,
   RecurringEventUpdateScope,
@@ -24,7 +24,7 @@ class EventController {
     status?: CompassEventStatus,
     applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
   ) {
-    const payload = CompassCoreEventSchema.parse(_payload as Schema_Event);
+    const payload = CompassCoreEventSchema.parse(_payload);
 
     const event = {
       status: status ?? CompassEventStatus.CONFIRMED,
@@ -35,18 +35,30 @@ class EventController {
     await CompassSyncProcessor.processEvents([event]);
   }
 
-  create = async (req: SReqBody<Schema_Event>, res: Res_Promise) => {
+  create = async (
+    req: SReqBody<CompassCoreEvent | CompassCoreEvent[]>,
+    res: Res_Promise,
+  ) => {
     try {
       const { body } = req;
       const user = req.session?.getUserId() as string;
-      const _id = new ObjectId().toString();
-      const data = EventSchema.parse({ ...body, _id, user });
 
-      await this.processEvent(
-        data as CompassEvent["payload"],
-        CompassEventStatus.CONFIRMED,
-        RecurringEventUpdateScope.THIS_EVENT,
-      );
+      // Handle both single object and array cases
+      const events = Array.isArray(body) ? body : [body];
+
+      // Process each event
+      for (const eventData of events) {
+        const _id = new ObjectId().toString();
+        const event = { ...eventData, _id, user };
+
+        CompassCoreEventSchema.parse(event);
+
+        await this.processEvent(
+          event,
+          CompassEventStatus.CONFIRMED,
+          RecurringEventUpdateScope.THIS_EVENT,
+        );
+      }
 
       res.status(Status.NO_CONTENT).send();
     } catch (e) {
