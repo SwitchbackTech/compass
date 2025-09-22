@@ -47,7 +47,6 @@ export const useRefresh = () => {
           },
         }),
       );
-      console.log("getWeekEventsSlice.actions.request");
       dispatch(resetIsFetchNeeded());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
