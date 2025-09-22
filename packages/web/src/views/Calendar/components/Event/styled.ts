@@ -15,7 +15,6 @@ interface StyledEventProps {
   hoverColor?: string;
   isDragging: boolean;
   isInPast: boolean;
-  isRecurring: boolean;
   isResizing: boolean;
   isPlaceholder: boolean;
   isOptimistic: boolean;
@@ -25,7 +24,6 @@ interface StyledEventProps {
   priority: Priority;
   top: number;
   width: number;
-  eventHeight: number;
 }
 
 export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
@@ -85,7 +83,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
       !isPlaceholder &&
       !isResizing &&
       `
-      background-color: ${isOptimistic ? darken(backgroundColor) : hoverColor};
+      background-color: ${isOptimistic && backgroundColor ? darken(backgroundColor) : hoverColor};
       cursor: ${isDragging ? "move" : isOptimistic ? "wait" : "pointer"};
       drop-shadow(2px 4px 4px ${theme.color.shadow.default});
      `};
@@ -108,7 +106,7 @@ export const StyledEvent = styled.div.attrs<StyledEventProps>((props) => {
   }
 `;
 
-export const StyledEventTitle = styled(Text)<StyledEventProps>`
+export const StyledEventTitle = styled(Text)<{ eventHeight: number }>`
   font-size: ${({ eventHeight }) => (eventHeight <= 15 ? "10px" : "13px")};
   line-height: ${({ eventHeight }) => (eventHeight <= 15 ? "1.1" : "")};
   min-height: 3px;
