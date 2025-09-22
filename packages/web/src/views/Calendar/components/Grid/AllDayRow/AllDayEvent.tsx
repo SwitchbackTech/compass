@@ -57,7 +57,7 @@ const AllDayEvent = ({
       onMouseDown(e, event);
     },
     priority: event.priority || Priorities.UNASSIGNED,
-    role: isRecurring ? undefined : "button",
+    role: "button",
     top: position.top,
     width: position.width,
   };
@@ -68,9 +68,8 @@ const AllDayEvent = ({
         alignItems={AlignItems.FLEX_START}
         direction={FlexDirections.COLUMN}
       >
-        <Text size="m" role={isRecurring ? undefined : "textbox"}>
+        <Text size="m" role="textbox">
           {event.title}
-          {isRecurring && "*"}
           <SpaceCharacter />
         </Text>
       </Flex>
