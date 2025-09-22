@@ -51,10 +51,10 @@ class EventController {
         const _id = new ObjectId().toString();
         const event = { ...eventData, _id, user };
 
-        CompassCoreEventSchema.parse(event);
+        const safeEvent = CompassCoreEventSchema.parse(event);
 
         await this.processEvent(
-          event,
+          safeEvent,
           CompassEventStatus.CONFIRMED,
           RecurringEventUpdateScope.THIS_EVENT,
         );
