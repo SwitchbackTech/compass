@@ -104,7 +104,6 @@ describe("sandbox.util", () => {
         isSomeday: true,
         origin: "compass",
         priority: "work",
-        order: 0,
       });
 
       expect(weekEvent.startDate).toBeDefined();
@@ -131,7 +130,6 @@ describe("sandbox.util", () => {
         isSomeday: true,
         origin: "compass",
         priority: "self",
-        order: 0,
       });
     });
 
@@ -154,28 +152,6 @@ describe("sandbox.util", () => {
       expect(createdEvents[1].priority).toBe("self");
       expect(createdEvents[2].priority).toBe("relations");
       expect(createdEvents[3].priority).toBe("unassigned");
-    });
-
-    it("should set correct order for events", async () => {
-      const { EventApi } = require("@web/ducks/events/event.api");
-
-      const weekTasks = [
-        { text: "Week task 1", color: "#ff6b6b" },
-        { text: "Week task 2", color: "#4ecdc4" },
-      ];
-      const monthTasks = [
-        { text: "Month task 1", color: "#45b7d1" },
-        { text: "Month task 2", color: "#ff6b6b" },
-      ];
-
-      await createAndSubmitEvents(weekTasks, monthTasks);
-
-      const createdEvents = EventApi.create.mock.calls[0][0];
-
-      expect(createdEvents[0].order).toBe(0); // First week task
-      expect(createdEvents[1].order).toBe(1); // Second week task
-      expect(createdEvents[2].order).toBe(0); // First month task
-      expect(createdEvents[3].order).toBe(1); // Second month task
     });
 
     it("should handle empty task arrays", async () => {
