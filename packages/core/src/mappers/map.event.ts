@@ -36,6 +36,22 @@ export namespace MapEvent {
     return mapped;
   };
 
+  export const removeProviderData = (
+    event: WithId<Omit<Schema_Event, "_id">> | Schema_Event,
+  ): Omit<Schema_Event, "_id" | "gEventId" | "gRecurringEventId"> => {
+    const {
+      _id, // eslint-disable-line @typescript-eslint/no-unused-vars
+      gEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
+      gRecurringEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
+      recurrence,
+      ...coreEvent
+    } = event;
+
+    return recurrence?.eventId
+      ? { ...coreEvent, recurrence: { rule: recurrence.rule } }
+      : coreEvent;
+  };
+
   export const removeIdentifyingData = (
     event: WithId<Omit<Schema_Event, "_id">> | Schema_Event,
   ): Omit<
@@ -48,14 +64,11 @@ export namespace MapEvent {
     | "recurrence"
   > => {
     const {
-      _id, // eslint-disable-line @typescript-eslint/no-unused-vars
       order, // eslint-disable-line @typescript-eslint/no-unused-vars
       allDayOrder, // eslint-disable-line @typescript-eslint/no-unused-vars
       recurrence, // eslint-disable-line @typescript-eslint/no-unused-vars
-      gEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
-      gRecurringEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
       ...coreEvent
-    } = event;
+    } = MapEvent.removeProviderData(event);
 
     return coreEvent;
   };
