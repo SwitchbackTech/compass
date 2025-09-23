@@ -2,10 +2,10 @@ import React, {
   MouseEvent,
   createContext,
   useContext,
+  useEffect,
   useRef,
   useState,
 } from "react";
-import styled from "styled-components";
 import {
   FloatingFocusManager,
   FloatingPortal,
@@ -22,6 +22,7 @@ import {
 // @ts-expect-error - Icon name might not be present in type definitions but does exist at runtime
 import { DotsThreeVertical } from "@phosphor-icons/react";
 import IconButton from "@web/components/IconButton/IconButton";
+import { StyledMenu, TriggerWrapper } from "./styled";
 
 interface MenuContextValue {
   getItemProps: (
@@ -41,9 +42,14 @@ export const useMenuContext = () => {
 interface ActionsMenuProps {
   children: (closeMenu: () => void) => React.ReactNode;
   id?: string;
+  bgColor: string;
 }
 
-export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
+export const ActionsMenu: React.FC<ActionsMenuProps> = ({
+  children,
+  id,
+  bgColor,
+}) => {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const openedByMouseRef = useRef(false);
@@ -77,7 +83,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
   const compactToSparseMap = useRef<Map<number, number>>(new Map());
 
   // Update dense list and mappings when listRef changes
-  React.useEffect(() => {
+  useEffect(() => {
     const denseArray: HTMLElement[] = [];
     sparseToCompactMap.current.clear();
     compactToSparseMap.current.clear();
@@ -164,6 +170,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
               id={menuId}
               role="menu"
               aria-labelledby={triggerId}
+              bgColor={bgColor}
             >
               <MenuContext.Provider
                 value={{
@@ -181,19 +188,3 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
     </>
   );
 };
-
-const TriggerWrapper = styled.div`
-  display: inline-flex;
-`;
-
-const StyledMenu = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background-color: ${({ theme }) => theme.color.menu.bg};
-  border: 1px solid ${({ theme }) => theme.color.border.primary};
-  padding: 8px;
-  border-radius: ${({ theme }) => theme.shape.borderRadius || "6px"};
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 3;
-`;

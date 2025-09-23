@@ -5,22 +5,22 @@ import { DuplicateMenuButton } from "./DuplicateMenuButton";
 import { MoveToSidebarMenuButton } from "./MoveToSidebarMenuButton";
 
 interface Props {
+  bgColor: string;
   isDraft: boolean;
   onConvert?: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
 }
 
-const ID_EVENT_ACTION_MENU = "event-action-menu";
-
 export const EventActionMenu: React.FC<Props> = ({
+  bgColor,
   isDraft,
   onConvert,
   onDuplicate,
   onDelete,
 }) => {
   return (
-    <ActionsMenu id={ID_EVENT_ACTION_MENU}>
+    <ActionsMenu bgColor={bgColor}>
       {(close) => (
         <>
           {!isDraft && (
@@ -29,15 +29,18 @@ export const EventActionMenu: React.FC<Props> = ({
                 onConvert?.();
                 close();
               }}
+              bgColor={bgColor}
             />
           )}
           <DuplicateMenuButton
+            bgColor={bgColor}
             onClick={() => {
               onDuplicate();
               close();
             }}
           />
           <DeleteMenuButton
+            bgColor={bgColor}
             onClick={() => {
               onDelete();
               close();

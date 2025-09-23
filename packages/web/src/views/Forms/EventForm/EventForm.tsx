@@ -10,6 +10,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
+import { darken } from "@core/util/color.utils";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
@@ -309,7 +310,7 @@ export const EventForm: React.FC<FormProps> = ({
     >
       <StyledIconRow>
         <EventActionMenu
-          priority={priority}
+          bgColor={darken(priorityColor)}
           isDraft={isDraft}
           onConvert={() => {
             onConvert?.();

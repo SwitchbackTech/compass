@@ -1,5 +1,4 @@
-import React, { ReactNode, useRef, useState } from "react";
-import styled from "styled-components";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -7,39 +6,7 @@ import {
 } from "@web/components/Tooltip";
 import { StyledShortcutTip } from "@web/components/Tooltip/styled";
 import { useMenuContext } from "./ActionsMenu";
-
-/**
- * Shared menu item styling for the EventActionMenu buttons.
- */
-const StyledMenuItem = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  background: none;
-  border: none;
-  padding: 4px 8px;
-  cursor: pointer;
-  color: ${({ theme }) => theme.color.text.dark};
-  font-size: ${({ theme }) => theme.text.size.m};
-  text-align: left;
-
-  &:hover {
-    background-color: ${({ theme }) => theme.color.bg.secondary};
-    color: ${({ theme }) => theme.color.text.light};
-  }
-
-  &:focus {
-    outline: none;
-    background-color: ${({ theme }) => theme.color.bg.secondary};
-    color: ${({ theme }) => theme.color.text.light};
-  }
-
-  &:focus-visible {
-    outline: 2px solid ${({ theme }) => theme.color.border.primary};
-    outline-offset: 2px;
-  }
-`;
+import { StyledMenuItem } from "./styled";
 
 export interface MenuItemProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -47,12 +14,14 @@ export interface MenuItemProps
    * Content to render inside the delayed tooltip. If omitted, the tooltip is disabled.
    */
   tooltipContent?: ReactNode;
+  bgColor: string;
 }
 
 const MenuItem: React.FC<MenuItemProps> = ({
   tooltipContent,
   children,
   onClick,
+  bgColor,
   ...rest
 }) => {
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
@@ -61,7 +30,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   const indexRef = useRef<number | null>(null);
 
   // Register with menu context
-  React.useEffect(() => {
+  useEffect(() => {
     if (menuContext && itemRef.current) {
       const index = menuContext.listRef.current.length;
       indexRef.current = index;
@@ -116,6 +85,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
           ref={itemRef}
           role="menuitem"
           tabIndex={tabIndex}
+          bgColor={bgColor}
         >
           {children}
         </StyledMenuItem>
