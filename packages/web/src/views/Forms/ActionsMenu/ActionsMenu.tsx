@@ -55,11 +55,23 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
   const { x, y, refs, strategy, context } = useFloating({
     open,
     onOpenChange: (open) => {
+      console.log(`🎭 Menu ${open ? "OPENING" : "CLOSING"}`);
       setOpen(open);
       if (!open) {
         // Reset the flag when menu closes
         openedByMouseRef.current = false;
         setActiveIndex(null);
+        // Clear the listRef when menu closes to start fresh next time
+        console.log(
+          `🧹 Clearing listRef. Previous state:`,
+          listRef.current.map((item, i) =>
+            item ? `[${i}]: ${item.textContent || "No text"}` : `[${i}]: null`,
+          ),
+        );
+        listRef.current = [];
+        console.log(
+          `✨ ListRef cleared. New length: ${listRef.current.length}`,
+        );
       }
     },
     middleware: [offset(8), flip(), shift({ padding: 8 })],
@@ -69,12 +81,57 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
   const click = useClick(context);
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: "menu" });
+  // Create a dense array for FloatingUI and mapping back to sparse array
+  const denseListRef = useRef<Array<HTMLElement>>([]);
+  const sparseToCompactMap = useRef<Map<number, number>>(new Map());
+  const compactToSparseMap = useRef<Map<number, number>>(new Map());
+
+  // Update dense list and mappings when listRef changes
+  React.useEffect(() => {
+    const denseArray: HTMLElement[] = [];
+    sparseToCompactMap.current.clear();
+    compactToSparseMap.current.clear();
+
+    listRef.current.forEach((item, sparseIndex) => {
+      if (item !== null) {
+        const compactIndex = denseArray.length;
+        denseArray.push(item);
+        sparseToCompactMap.current.set(sparseIndex, compactIndex);
+        compactToSparseMap.current.set(compactIndex, sparseIndex);
+      }
+    });
+
+    denseListRef.current = denseArray;
+    console.log(`🔄 Updated dense array. Length: ${denseArray.length}`);
+    console.log(`📍 Mappings - Sparse to Compact:`, [
+      ...sparseToCompactMap.current.entries(),
+    ]);
+  });
+
+  // Convert sparse activeIndex to compact activeIndex for FloatingUI
+  const compactActiveIndex =
+    activeIndex !== null
+      ? (sparseToCompactMap.current.get(activeIndex) ?? null)
+      : null;
+
   const listNavigation = useListNavigation(context, {
-    listRef,
-    activeIndex,
-    onNavigate: setActiveIndex,
-    // Open with arrow keys/enter/space
-    virtual: true,
+    listRef: denseListRef,
+    activeIndex: compactActiveIndex,
+    onNavigate: (compactIndex) => {
+      const sparseIndex = compactToSparseMap.current.get(compactIndex) ?? null;
+      console.log(
+        `🔄 Navigation: compact index ${compactIndex} -> sparse index ${sparseIndex}`,
+      );
+      if (sparseIndex !== null) {
+        console.log(
+          `📊 Dense array state:`,
+          denseListRef.current.map(
+            (item, i) => `[${i}]: ${item.textContent || "No text"}`,
+          ),
+        );
+        setActiveIndex(sparseIndex);
+      }
+    },
     loop: true,
   });
 
@@ -121,6 +178,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
             context={context}
             modal={false}
             initialFocus={openedByMouseRef.current ? -1 : 0}
+            returnFocus={false}
           >
             <StyledMenu
               ref={refs.setFloating}
