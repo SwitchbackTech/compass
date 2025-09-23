@@ -20,7 +20,7 @@ export const PrioritySection: React.FC<Props> = ({
   priority,
 }) => {
   return (
-    <StyledPriorityFlex justifyContent={JustifyContent.CENTER}>
+    <StyledPriorityFlex>
       <TooltipWrapper>
         <PriorityCircle
           color={colorByPriority.work}
@@ -32,7 +32,7 @@ export const PrioritySection: React.FC<Props> = ({
           role="tab"
           tabIndex={0}
         />
-        <TooltipText>Doing your best work</TooltipText>
+        <TooltipText>Work</TooltipText>
       </TooltipWrapper>
 
       <TooltipWrapper>
@@ -44,7 +44,7 @@ export const PrioritySection: React.FC<Props> = ({
           role="tab"
           tabIndex={0}
         />
-        <TooltipText>Nurturing your authentic self</TooltipText>
+        <TooltipText>Self</TooltipText>
       </TooltipWrapper>
 
       <TooltipWrapper>
@@ -58,7 +58,7 @@ export const PrioritySection: React.FC<Props> = ({
           role="tab"
           tabIndex={0}
         />
-        <TooltipText>Connecting with others</TooltipText>
+        <TooltipText>Relationships</TooltipText>
       </TooltipWrapper>
     </StyledPriorityFlex>
   );
