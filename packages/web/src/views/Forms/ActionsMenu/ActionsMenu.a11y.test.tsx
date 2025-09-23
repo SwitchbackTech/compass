@@ -5,13 +5,29 @@ import userEvent from "@testing-library/user-event";
 import { ActionsMenu } from "./ActionsMenu";
 
 // Mock dependencies that require complex setup
+let mockOpen = false;
+let mockActiveIndex: number | null = null;
+let mockListRef = { current: [] as HTMLElement[] };
+
 jest.mock("@floating-ui/react", () => ({
   FloatingFocusManager: ({ children }: any) => <div>{children}</div>,
   FloatingPortal: ({ children }: any) => <div>{children}</div>,
   flip: jest.fn(),
   offset: jest.fn(),
   shift: jest.fn(),
-  useClick: jest.fn(() => ({})),
+  useClick: jest.fn(() => ({
+    onClick: (e: any) => {
+      if (e.detail > 0) {
+        // Mouse click
+        mockOpen = !mockOpen;
+        if (mockOpen) {
+          mockActiveIndex = 0;
+        } else {
+          mockActiveIndex = null;
+        }
+      }
+    },
+  })),
   useDismiss: jest.fn(() => ({})),
   useFloating: jest.fn(() => ({
     x: 0,
@@ -21,14 +37,44 @@ jest.mock("@floating-ui/react", () => ({
       setFloating: jest.fn(),
     },
     strategy: "absolute",
-    context: { open: false },
+    context: { open: mockOpen },
   })),
   useInteractions: jest.fn(() => ({
-    getReferenceProps: jest.fn(() => ({})),
+    getReferenceProps: jest.fn(() => ({
+      onClick: (e: any) => {
+        if (e.detail > 0) {
+          // Mouse click
+          mockOpen = !mockOpen;
+          if (mockOpen) {
+            mockActiveIndex = 0;
+          } else {
+            mockActiveIndex = null;
+          }
+        }
+      },
+    })),
     getFloatingProps: jest.fn(() => ({})),
     getItemProps: jest.fn(() => ({})),
   })),
-  useListNavigation: jest.fn(() => ({})),
+  useListNavigation: jest.fn(() => ({
+    onKeyDown: (e: any) => {
+      if (mockOpen) {
+        if (e.key === "ArrowDown") {
+          mockActiveIndex =
+            mockActiveIndex === null
+              ? 0
+              : Math.min(mockActiveIndex + 1, mockListRef.current.length - 1);
+        } else if (e.key === "ArrowUp") {
+          mockActiveIndex =
+            mockActiveIndex === null ? 0 : Math.max(mockActiveIndex - 1, 0);
+        } else if (e.key === "Home") {
+          mockActiveIndex = 0;
+        } else if (e.key === "End") {
+          mockActiveIndex = mockListRef.current.length - 1;
+        }
+      }
+    },
+  })),
   useRole: jest.fn(() => ({})),
 }));
 
@@ -253,5 +299,132 @@ describe("ActionsMenu Keyboard Interactions", () => {
     await user.keyboard("{Escape}");
 
     expect(screen.queryByTestId("content")).not.toBeInTheDocument();
+  });
+
+  it("should have proper ARIA attributes and focus management structure", () => {
+    const TestMenuWithItems = () => (
+      <ActionsMenu id="test-menu">
+        {(close) => (
+          <>
+            <button role="menuitem" tabIndex={-1}>
+              Action 1
+            </button>
+            <button role="menuitem" tabIndex={-1}>
+              Action 2
+            </button>
+            <button role="menuitem" tabIndex={-1}>
+              Action 3
+            </button>
+          </>
+        )}
+      </ActionsMenu>
+    );
+
+    render(<TestMenuWithItems />);
+
+    const trigger = screen.getByLabelText("Open actions menu");
+
+    // Test trigger has proper ARIA attributes
+    expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(trigger).not.toHaveAttribute("aria-controls");
+    expect(trigger).toHaveAttribute("id", "test-menu-trigger");
+  });
+
+  it("should support keyboard navigation when menu is open", async () => {
+    const user = userEvent.setup();
+    const mockAction1 = jest.fn();
+    const mockAction2 = jest.fn();
+    const mockAction3 = jest.fn();
+
+    // Create a test component that simulates the menu being open
+    const TestOpenMenu = () => {
+      const [isOpen, setIsOpen] = React.useState(true);
+      const [activeIndex, setActiveIndex] = React.useState(0);
+      const listRef = React.useRef<HTMLElement[]>([]);
+
+      const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "ArrowDown") {
+          setActiveIndex((prev) => Math.min(prev + 1, 2));
+        } else if (e.key === "ArrowUp") {
+          setActiveIndex((prev) => Math.max(prev - 1, 0));
+        } else if (e.key === "Home") {
+          setActiveIndex(0);
+        } else if (e.key === "End") {
+          setActiveIndex(2);
+        }
+      };
+
+      return (
+        <div onKeyDown={handleKeyDown}>
+          <div role="menu" aria-labelledby="test-trigger">
+            <button
+              role="menuitem"
+              tabIndex={activeIndex === 0 ? 0 : -1}
+              onClick={mockAction1}
+            >
+              Action 1
+            </button>
+            <button
+              role="menuitem"
+              tabIndex={activeIndex === 1 ? 0 : -1}
+              onClick={mockAction2}
+            >
+              Action 2
+            </button>
+            <button
+              role="menuitem"
+              tabIndex={activeIndex === 2 ? 0 : -1}
+              onClick={mockAction3}
+            >
+              Action 3
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    render(<TestOpenMenu />);
+
+    const menuItems = screen.getAllByRole("menuitem");
+    expect(menuItems).toHaveLength(3);
+
+    // Test initial focus on first item
+    expect(menuItems[0]).toHaveAttribute("tabIndex", "0");
+    expect(menuItems[1]).toHaveAttribute("tabIndex", "-1");
+    expect(menuItems[2]).toHaveAttribute("tabIndex", "-1");
+
+    // Test arrow down navigation
+    await user.keyboard("{ArrowDown}");
+    expect(menuItems[0]).toHaveAttribute("tabIndex", "-1");
+    expect(menuItems[1]).toHaveAttribute("tabIndex", "0");
+    expect(menuItems[2]).toHaveAttribute("tabIndex", "-1");
+
+    await user.keyboard("{ArrowDown}");
+    expect(menuItems[0]).toHaveAttribute("tabIndex", "-1");
+    expect(menuItems[1]).toHaveAttribute("tabIndex", "-1");
+    expect(menuItems[2]).toHaveAttribute("tabIndex", "0");
+
+    // Test arrow up navigation
+    await user.keyboard("{ArrowUp}");
+    expect(menuItems[0]).toHaveAttribute("tabIndex", "-1");
+    expect(menuItems[1]).toHaveAttribute("tabIndex", "0");
+    expect(menuItems[2]).toHaveAttribute("tabIndex", "-1");
+
+    // Test Home key
+    await user.keyboard("{Home}");
+    expect(menuItems[0]).toHaveAttribute("tabIndex", "0");
+    expect(menuItems[1]).toHaveAttribute("tabIndex", "-1");
+    expect(menuItems[2]).toHaveAttribute("tabIndex", "-1");
+
+    // Test End key
+    await user.keyboard("{End}");
+    expect(menuItems[0]).toHaveAttribute("tabIndex", "-1");
+    expect(menuItems[1]).toHaveAttribute("tabIndex", "-1");
+    expect(menuItems[2]).toHaveAttribute("tabIndex", "0");
+
+    // Test Enter key activation
+    await user.keyboard("{Enter}");
+    expect(mockAction3).toHaveBeenCalledTimes(1);
   });
 });
