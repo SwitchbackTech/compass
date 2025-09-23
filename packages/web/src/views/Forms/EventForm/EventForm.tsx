@@ -47,8 +47,9 @@ export const EventForm: React.FC<FormProps> = ({
   disableSaveBtn,
   ...props
 }) => {
-  const { priority, title } = event || {};
-  const priorityColor = colorByPriority[priority || Priorities.UNASSIGNED];
+  const { title } = event || {};
+  const priority = event.priority || Priorities.UNASSIGNED;
+  const priorityColor = colorByPriority[priority];
   const category = getCategory(event);
   const isDraft = !event._id;
 
@@ -206,7 +207,7 @@ export const EventForm: React.FC<FormProps> = ({
     event,
     category,
     endTime,
-    inputColor: hoverColorByPriority[priority || Priorities.UNASSIGNED],
+    inputColor: hoverColorByPriority[priority],
     isEndDatePickerOpen,
     isStartDatePickerOpen,
     onSetEventField,
@@ -308,6 +309,7 @@ export const EventForm: React.FC<FormProps> = ({
     >
       <StyledIconRow>
         <EventActionMenu
+          priority={priority}
           isDraft={isDraft}
           onConvert={() => {
             onConvert?.();
@@ -328,10 +330,7 @@ export const EventForm: React.FC<FormProps> = ({
         value={title}
       />
 
-      <PrioritySection
-        onSetEventField={onSetEventField}
-        priority={priority || Priorities.UNASSIGNED}
-      />
+      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
 
       <DateControlsSection
         dateTimeSectionProps={dateTimeSectionProps}
@@ -351,7 +350,7 @@ export const EventForm: React.FC<FormProps> = ({
 
       <SaveSection
         disableSaveBtn={disableSaveBtn}
-        priority={priority || Priorities.UNASSIGNED}
+        priority={priority}
         onSubmit={onSubmitForm}
         onCancel={onClose}
         cancelText="Close"
