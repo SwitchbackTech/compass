@@ -1,6 +1,9 @@
 import dayjs from "dayjs";
 import { useEffect } from "react";
-import { toUTCOffset } from "@web/common/utils/web.date.util";
+import {
+  computeSomedayEventsRequestFilter,
+  toUTCOffset,
+} from "@web/common/utils/web.date.util";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { selectImportLatestState } from "@web/ducks/events/selectors/sync.selector";
@@ -36,8 +39,11 @@ export const useRefresh = () => {
         }),
       );
 
-      const startDate = dayjs(start).startOf("month").format();
-      const endDate = dayjs(end).endOf("month").format();
+      const { startDate, endDate } = computeSomedayEventsRequestFilter(
+        dayjs(start),
+        dayjs(end),
+      );
+
       dispatch(
         getSomedayEventsSlice.actions.request({
           startDate,
