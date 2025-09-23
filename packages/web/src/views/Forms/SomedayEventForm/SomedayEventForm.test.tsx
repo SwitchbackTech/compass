@@ -176,9 +176,9 @@ describe("SomedayEventForm Hotkeys", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("Duplicate")).toBeInTheDocument();
+      expect(screen.getByText("Duplicate Event")).toBeInTheDocument();
     });
-    await user.click(screen.getByText("Duplicate"));
+    await user.click(screen.getByText("Duplicate Event"));
 
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
 

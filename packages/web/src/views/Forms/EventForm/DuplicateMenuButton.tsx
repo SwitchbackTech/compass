@@ -13,7 +13,7 @@ interface Props {
 export const DuplicateMenuButton: React.FC<Props> = ({
   onClick,
   bgColor,
-  label = "Duplicate",
+  label = "Duplicate Event",
 }) => {
   return (
     <MenuItem
@@ -27,7 +27,7 @@ export const DuplicateMenuButton: React.FC<Props> = ({
       }
     >
       <Copy size={16} />
-      <span>Duplicate</span>
+      <span>{label}</span>
     </MenuItem>
   );
 };
