@@ -1,4 +1,6 @@
 import React from "react";
+import { Priority } from "@core/constants/core.constants";
+import { ID_SOMEDAY_EVENT_ACTION_MENU } from "@web/common/constants/web.constants";
 import { ActionsMenu } from "../ActionsMenu/ActionsMenu";
 import { DeleteMenuButton } from "../EventForm/DeleteMenuButton";
 import { DuplicateMenuButton } from "../EventForm/DuplicateMenuButton";
@@ -15,9 +17,8 @@ interface Props {
   onMigrateAboveClick: () => void;
   onDuplicateClick: () => void;
   onDeleteClick: () => void;
+  priority: Priority;
 }
-
-export const ID_SOMEDAY_EVENT_ACTION_MENU = "someday-event-action-menu";
 
 export const SomedayEventActionMenu: React.FC<Props> = ({
   target,
@@ -27,9 +28,10 @@ export const SomedayEventActionMenu: React.FC<Props> = ({
   onMigrateAboveClick,
   onDuplicateClick,
   onDeleteClick,
+  priority,
 }) => {
   return (
-    <ActionsMenu id={ID_SOMEDAY_EVENT_ACTION_MENU}>
+    <ActionsMenu id={ID_SOMEDAY_EVENT_ACTION_MENU} priority={priority}>
       {(close) => (
         <>
           <MigrateBackwardMenuButton
