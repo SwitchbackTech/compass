@@ -178,9 +178,9 @@ test("should call duplicateEvent when duplicate icon btn is clicked", async () =
   });
 
   await waitFor(() => {
-    expect(screen.getByText("Duplicate")).toBeInTheDocument();
+    expect(screen.getByText("Duplicate Event")).toBeInTheDocument();
   });
-  await user.click(screen.getByText("Duplicate"));
+  await user.click(screen.getByText("Duplicate Event"));
 
   expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
   expect(mockOnDuplicate).toHaveBeenCalledWith(sampleEvent);

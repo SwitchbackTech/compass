@@ -1,5 +1,11 @@
-import React, { MouseEvent, useRef, useState } from "react";
-import styled from "styled-components";
+import React, {
+  MouseEvent,
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   FloatingFocusManager,
   FloatingPortal,
@@ -10,20 +16,48 @@ import {
   useDismiss,
   useFloating,
   useInteractions,
+  useListNavigation,
   useRole,
 } from "@floating-ui/react";
 // @ts-expect-error - Icon name might not be present in type definitions but does exist at runtime
 import { DotsThreeVertical } from "@phosphor-icons/react";
+import { ID_EVENT_FORM_ACTION_MENU } from "@web/common/constants/web.constants";
 import IconButton from "@web/components/IconButton/IconButton";
+import { StyledMenu, TriggerWrapper } from "./styled";
+
+interface MenuContextValue {
+  getItemProps: (
+    userProps?: React.HTMLProps<HTMLElement>,
+  ) => Record<string, unknown>;
+  listRef: React.MutableRefObject<Array<HTMLElement | null>>;
+  activeIndex: number | null;
+}
+
+const MenuContext = createContext<MenuContextValue | null>(null);
+
+export const useMenuContext = () => {
+  const context = useContext(MenuContext);
+  return context;
+};
 
 interface ActionsMenuProps {
   children: (closeMenu: () => void) => React.ReactNode;
   id?: string;
+  bgColor: string;
 }
 
-export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
+export const ActionsMenu: React.FC<ActionsMenuProps> = ({
+  children,
+  id,
+  bgColor,
+}) => {
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const openedByMouseRef = useRef(false);
+  const listRef = useRef<Array<HTMLElement | null>>([]);
+
+  const menuId = id || ID_EVENT_FORM_ACTION_MENU;
+  const triggerId = `${menuId}-trigger`;
 
   const { x, y, refs, strategy, context } = useFloating({
     open,
@@ -32,6 +66,9 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
       if (!open) {
         // Reset the flag when menu closes
         openedByMouseRef.current = false;
+        setActiveIndex(null);
+        // Clear the listRef when menu closes to start fresh next time
+        listRef.current = [];
       }
     },
     middleware: [offset(8), flip(), shift({ padding: 8 })],
@@ -40,15 +77,60 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
 
   const click = useClick(context);
   const dismiss = useDismiss(context);
-  const role = useRole(context);
+  const role = useRole(context, { role: "menu" });
+  // Create a dense array for FloatingUI and mapping back to sparse array
+  const denseListRef = useRef<Array<HTMLElement>>([]);
+  const sparseToCompactMap = useRef<Map<number, number>>(new Map());
+  const compactToSparseMap = useRef<Map<number, number>>(new Map());
 
-  const { getReferenceProps, getFloatingProps } = useInteractions([
-    click,
-    dismiss,
-    role,
-  ]);
+  // Update dense list and mappings when listRef changes
+  useEffect(() => {
+    const denseArray: HTMLElement[] = [];
+    sparseToCompactMap.current.clear();
+    compactToSparseMap.current.clear();
 
-  const closeMenu = () => {};
+    listRef.current.forEach((item, sparseIndex) => {
+      if (item !== null) {
+        const compactIndex = denseArray.length;
+        denseArray.push(item);
+        sparseToCompactMap.current.set(sparseIndex, compactIndex);
+        compactToSparseMap.current.set(compactIndex, sparseIndex);
+      }
+    });
+
+    denseListRef.current = denseArray;
+  });
+
+  // Convert sparse activeIndex to compact activeIndex for FloatingUI
+  const compactActiveIndex =
+    activeIndex !== null
+      ? (sparseToCompactMap.current.get(activeIndex) ?? null)
+      : null;
+
+  const listNavigation = useListNavigation(context, {
+    listRef: denseListRef,
+    activeIndex: compactActiveIndex,
+    onNavigate: (compactIndex) => {
+      const sparseIndex = compactToSparseMap.current.get(compactIndex) ?? null;
+      if (sparseIndex !== null) {
+        setActiveIndex(sparseIndex);
+      }
+    },
+    loop: true,
+  });
+
+  const { getReferenceProps, getFloatingProps, getItemProps } = useInteractions(
+    [click, dismiss, role, listNavigation],
+  );
+
+  const closeMenu = () => {
+    setOpen(false);
+    // Return focus to trigger when menu closes
+    const triggerElement = document.getElementById(triggerId);
+    if (triggerElement) {
+      triggerElement.focus();
+    }
+  };
 
   return (
     <>
@@ -64,7 +146,13 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
           },
         })}
       >
-        <IconButton id="actions-menu-trigger" aria-label="Open actions menu">
+        <IconButton
+          id={triggerId}
+          aria-label="Open actions menu"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-controls={open ? menuId : undefined}
+        >
           <DotsThreeVertical />
         </IconButton>
       </TriggerWrapper>
@@ -74,14 +162,26 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
             context={context}
             modal={false}
             initialFocus={openedByMouseRef.current ? -1 : 0}
+            returnFocus={false}
           >
             <StyledMenu
               ref={refs.setFloating}
               style={{ position: strategy, top: y ?? 0, left: x ?? 0 }}
               {...getFloatingProps()}
-              id={id}
+              id={menuId}
+              role="menu"
+              aria-labelledby={triggerId}
+              bgColor={bgColor}
             >
-              {children(closeMenu)}
+              <MenuContext.Provider
+                value={{
+                  getItemProps,
+                  listRef,
+                  activeIndex,
+                }}
+              >
+                {children(closeMenu)}
+              </MenuContext.Provider>
             </StyledMenu>
           </FloatingFocusManager>
         </FloatingPortal>
@@ -89,19 +189,3 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
     </>
   );
 };
-
-const TriggerWrapper = styled.div`
-  display: inline-flex;
-`;
-
-const StyledMenu = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background-color: ${({ theme }) => theme.color.menu.bg};
-  border: 1px solid ${({ theme }) => theme.color.border.primary};
-  padding: 8px;
-  border-radius: ${({ theme }) => theme.shape.borderRadius || "6px"};
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 3;
-`;

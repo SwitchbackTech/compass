@@ -13,17 +13,19 @@ const StyledArrowDown = styled(ArrowDown)`
 interface Props {
   onClick: () => void;
   tooltipText?: string;
+  bgColor: string;
 }
 
 export const MigrateBelowMenuButton: React.FC<Props> = ({
   onClick,
   tooltipText = "Migrate Below",
+  bgColor,
 }) => {
   return (
     <MenuItem
-      role="menuitem"
       onClick={onClick}
       aria-label={tooltipText}
+      bgColor={bgColor}
       tooltipContent={
         <Text size="s" style={{ display: "flex", alignItems: "center" }}>
           CTRL + {getMetaKey()} + <StyledArrowDown />

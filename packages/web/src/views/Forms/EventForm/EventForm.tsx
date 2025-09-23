@@ -10,6 +10,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
+import { darken } from "@core/util/color.utils";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
@@ -47,8 +48,9 @@ export const EventForm: React.FC<FormProps> = ({
   disableSaveBtn,
   ...props
 }) => {
-  const { priority, title } = event || {};
-  const priorityColor = colorByPriority[priority || Priorities.UNASSIGNED];
+  const { title } = event || {};
+  const priority = event.priority || Priorities.UNASSIGNED;
+  const priorityColor = colorByPriority[priority];
   const category = getCategory(event);
   const isDraft = !event._id;
 
@@ -206,7 +208,7 @@ export const EventForm: React.FC<FormProps> = ({
     event,
     category,
     endTime,
-    inputColor: hoverColorByPriority[priority || Priorities.UNASSIGNED],
+    inputColor: hoverColorByPriority[priority],
     isEndDatePickerOpen,
     isStartDatePickerOpen,
     onSetEventField,
@@ -308,6 +310,7 @@ export const EventForm: React.FC<FormProps> = ({
     >
       <StyledIconRow>
         <EventActionMenu
+          bgColor={darken(priorityColor)}
           isDraft={isDraft}
           onConvert={() => {
             onConvert?.();
@@ -328,10 +331,7 @@ export const EventForm: React.FC<FormProps> = ({
         value={title}
       />
 
-      <PrioritySection
-        onSetEventField={onSetEventField}
-        priority={priority || Priorities.UNASSIGNED}
-      />
+      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
 
       <DateControlsSection
         dateTimeSectionProps={dateTimeSectionProps}
@@ -351,7 +351,7 @@ export const EventForm: React.FC<FormProps> = ({
 
       <SaveSection
         disableSaveBtn={disableSaveBtn}
-        priority={priority || Priorities.UNASSIGNED}
+        priority={priority}
         onSubmit={onSubmitForm}
         onCancel={onClose}
         cancelText="Close"

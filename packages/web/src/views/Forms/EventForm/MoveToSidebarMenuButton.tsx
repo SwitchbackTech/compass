@@ -8,6 +8,7 @@ import MenuItem from "../ActionsMenu/MenuItem";
 interface Props {
   onClick: () => void;
   label?: string;
+  bgColor: string;
 }
 
 const StyledArrowLeft = styled(ArrowLeft)`
@@ -18,10 +19,11 @@ const StyledArrowLeft = styled(ArrowLeft)`
 export const MoveToSidebarMenuButton: React.FC<Props> = ({
   onClick,
   label = "Move To Sidebar",
+  bgColor,
 }) => {
   return (
     <MenuItem
-      role="menuitem"
+      bgColor={bgColor}
       onClick={onClick}
       aria-label={label}
       tooltipContent={
