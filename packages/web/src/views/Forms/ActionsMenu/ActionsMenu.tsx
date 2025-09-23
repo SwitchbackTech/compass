@@ -99,7 +99,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
     });
 
     denseListRef.current = denseArray;
-  });
+  }, [listRef.current]);
 
   // Convert sparse activeIndex to compact activeIndex for FloatingUI
   const compactActiveIndex =
