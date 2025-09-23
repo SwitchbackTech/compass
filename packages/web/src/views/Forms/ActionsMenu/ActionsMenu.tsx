@@ -1,7 +1,7 @@
 import React, {
-  KeyboardEvent,
   MouseEvent,
-  useEffect,
+  createContext,
+  useContext,
   useRef,
   useState,
 } from "react";
@@ -16,11 +16,27 @@ import {
   useDismiss,
   useFloating,
   useInteractions,
+  useListNavigation,
   useRole,
 } from "@floating-ui/react";
 // @ts-expect-error - Icon name might not be present in type definitions but does exist at runtime
 import { DotsThreeVertical } from "@phosphor-icons/react";
 import IconButton from "@web/components/IconButton/IconButton";
+
+interface MenuContextValue {
+  getItemProps: (
+    userProps?: React.HTMLProps<HTMLElement>,
+  ) => Record<string, unknown>;
+  listRef: React.MutableRefObject<Array<HTMLElement | null>>;
+  activeIndex: number | null;
+}
+
+const MenuContext = createContext<MenuContextValue | null>(null);
+
+export const useMenuContext = () => {
+  const context = useContext(MenuContext);
+  return context;
+};
 
 interface ActionsMenuProps {
   children: (closeMenu: () => void) => React.ReactNode;
@@ -29,9 +45,9 @@ interface ActionsMenuProps {
 
 export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
   const [open, setOpen] = useState(false);
-  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const openedByMouseRef = useRef(false);
-  const menuItemsRef = useRef<HTMLElement[]>([]);
+  const listRef = useRef<Array<HTMLElement | null>>([]);
 
   const menuId = id || "event-actions-menu";
   const triggerId = `${menuId}-trigger`;
@@ -43,8 +59,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
       if (!open) {
         // Reset the flag when menu closes
         openedByMouseRef.current = false;
-        setFocusedIndex(-1);
-        menuItemsRef.current = [];
+        setActiveIndex(null);
       }
     },
     middleware: [offset(8), flip(), shift({ padding: 8 })],
@@ -54,12 +69,18 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
   const click = useClick(context);
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: "menu" });
+  const listNavigation = useListNavigation(context, {
+    listRef,
+    activeIndex,
+    onNavigate: setActiveIndex,
+    // Open with arrow keys/enter/space
+    virtual: true,
+    loop: true,
+  });
 
-  const { getReferenceProps, getFloatingProps } = useInteractions([
-    click,
-    dismiss,
-    role,
-  ]);
+  const { getReferenceProps, getFloatingProps, getItemProps } = useInteractions(
+    [click, dismiss, role, listNavigation],
+  );
 
   const closeMenu = () => {
     setOpen(false);
@@ -67,68 +88,6 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
     const triggerElement = document.getElementById(triggerId);
     if (triggerElement) {
       triggerElement.focus();
-    }
-  };
-
-  // Update focused index when menu items change
-  useEffect(() => {
-    if (open) {
-      const menuItems = Array.from(
-        document.querySelectorAll(`#${menuId} [role="menuitem"]`),
-      ) as HTMLElement[];
-      menuItemsRef.current = menuItems;
-
-      // Focus first item if opened by keyboard
-      if (!openedByMouseRef.current && menuItems.length > 0) {
-        setFocusedIndex(0);
-        menuItems[0].focus();
-      }
-    }
-  }, [open, menuId]);
-
-  // Handle keyboard navigation
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (!open || menuItemsRef.current.length === 0) return;
-
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        const nextIndex =
-          focusedIndex < menuItemsRef.current.length - 1 ? focusedIndex + 1 : 0;
-        setFocusedIndex(nextIndex);
-        menuItemsRef.current[nextIndex]?.focus();
-        break;
-
-      case "ArrowUp":
-        e.preventDefault();
-        const prevIndex =
-          focusedIndex > 0 ? focusedIndex - 1 : menuItemsRef.current.length - 1;
-        setFocusedIndex(prevIndex);
-        menuItemsRef.current[prevIndex]?.focus();
-        break;
-
-      case "Home":
-        e.preventDefault();
-        setFocusedIndex(0);
-        menuItemsRef.current[0]?.focus();
-        break;
-
-      case "End":
-        e.preventDefault();
-        const lastIndex = menuItemsRef.current.length - 1;
-        setFocusedIndex(lastIndex);
-        menuItemsRef.current[lastIndex]?.focus();
-        break;
-
-      case "Escape":
-        e.preventDefault();
-        closeMenu();
-        break;
-
-      case "Tab":
-        // Allow natural tab behavior, but close menu
-        closeMenu();
-        break;
     }
   };
 
@@ -170,9 +129,16 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
               id={menuId}
               role="menu"
               aria-labelledby={triggerId}
-              onKeyDown={handleKeyDown}
             >
-              {children(closeMenu)}
+              <MenuContext.Provider
+                value={{
+                  getItemProps,
+                  listRef,
+                  activeIndex,
+                }}
+              >
+                {children(closeMenu)}
+              </MenuContext.Provider>
             </StyledMenu>
           </FloatingFocusManager>
         </FloatingPortal>

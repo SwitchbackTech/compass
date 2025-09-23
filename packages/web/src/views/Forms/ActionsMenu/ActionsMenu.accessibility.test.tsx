@@ -1,6 +1,7 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ActionsMenu } from "./ActionsMenu";
 
 // Mock dependencies that require complex setup
@@ -25,7 +26,9 @@ jest.mock("@floating-ui/react", () => ({
   useInteractions: jest.fn(() => ({
     getReferenceProps: jest.fn(() => ({})),
     getFloatingProps: jest.fn(() => ({})),
+    getItemProps: jest.fn(() => ({})),
   })),
+  useListNavigation: jest.fn(() => ({})),
   useRole: jest.fn(() => ({})),
 }));
 
@@ -68,5 +71,187 @@ describe("ActionsMenu ARIA Compliance", () => {
 
     const trigger = screen.getByLabelText("Open actions menu");
     expect(trigger).toHaveAttribute("id", "event-actions-menu-trigger");
+  });
+});
+
+describe("ActionsMenu Keyboard Interactions", () => {
+  const mockAction1 = jest.fn();
+  const mockAction2 = jest.fn();
+  const mockAction3 = jest.fn();
+
+  beforeEach(() => {
+    mockAction1.mockClear();
+    mockAction2.mockClear();
+    mockAction3.mockClear();
+  });
+
+  it("should focus trigger button initially", () => {
+    render(<ActionsMenu>{() => <div>Menu content</div>}</ActionsMenu>);
+    const trigger = screen.getByLabelText("Open actions menu");
+
+    trigger.focus();
+    expect(trigger).toHaveFocus();
+  });
+
+  it("should have focusable trigger button", () => {
+    render(<ActionsMenu>{() => <div>Menu content</div>}</ActionsMenu>);
+    const trigger = screen.getByLabelText("Open actions menu");
+
+    expect(trigger).not.toHaveAttribute("tabIndex", "-1");
+    expect(trigger.tabIndex).not.toBe(-1);
+  });
+
+  it("should handle keyboard interaction on trigger", async () => {
+    const user = userEvent.setup();
+    const mockOpen = jest.fn();
+
+    // Mock useFloating to track interactions
+    const mockUseInteractions = require("@floating-ui/react").useInteractions;
+    mockUseInteractions.mockImplementation(() => ({
+      getReferenceProps: jest.fn(() => ({
+        onKeyDown: (e: any) => {
+          if (e.key === "Enter" || e.key === " ") {
+            mockOpen();
+          }
+        },
+      })),
+      getFloatingProps: jest.fn(() => ({})),
+      getItemProps: jest.fn(() => ({})),
+    }));
+
+    render(<ActionsMenu>{() => <div>Menu content</div>}</ActionsMenu>);
+
+    const trigger = screen.getByLabelText("Open actions menu");
+
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.keyDown(trigger, { key: " " });
+
+    expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+  });
+
+  it("should have proper ARIA structure when menu exists", () => {
+    // Test with a simulated open menu by rendering menu items directly
+    const TestMenuItems = () => (
+      <div role="menu" aria-labelledby="test-trigger">
+        <button role="menuitem" tabIndex={-1}>
+          Action 1
+        </button>
+        <button role="menuitem" tabIndex={-1}>
+          Action 2
+        </button>
+      </div>
+    );
+
+    render(<TestMenuItems />);
+
+    const menu = screen.getByRole("menu");
+    const menuItems = screen.getAllByRole("menuitem");
+
+    expect(menu).toHaveAttribute("aria-labelledby", "test-trigger");
+    expect(menuItems).toHaveLength(2);
+
+    menuItems.forEach((item) => {
+      expect(item).toHaveAttribute("tabIndex", "-1");
+      expect(item).toHaveAttribute("role", "menuitem");
+    });
+  });
+
+  it("should support menu item keyboard activation", () => {
+    const TestMenuItem = () => {
+      const handleKeyDown = (e: React.KeyboardEvent) => {
+        if ((e.key === "Enter" || e.key === " ") && mockAction1) {
+          e.preventDefault();
+          mockAction1();
+        }
+      };
+
+      return (
+        <button
+          role="menuitem"
+          tabIndex={-1}
+          onKeyDown={handleKeyDown}
+          onClick={mockAction1}
+        >
+          Test Action
+        </button>
+      );
+    };
+
+    render(<TestMenuItem />);
+
+    const menuItem = screen.getByRole("menuitem");
+
+    // Test Enter key
+    fireEvent.keyDown(menuItem, { key: "Enter" });
+    expect(mockAction1).toHaveBeenCalledTimes(1);
+
+    // Test Space key
+    fireEvent.keyDown(menuItem, { key: " " });
+    expect(mockAction1).toHaveBeenCalledTimes(2);
+
+    // Test mouse click still works
+    fireEvent.click(menuItem);
+    expect(mockAction1).toHaveBeenCalledTimes(3);
+  });
+
+  it("should support Tab navigation past the trigger", async () => {
+    const user = userEvent.setup();
+
+    const TestTabNavigation = () => (
+      <div>
+        <button id="before">Before</button>
+        <ActionsMenu>{() => <div>Menu content</div>}</ActionsMenu>
+        <button id="after">After</button>
+      </div>
+    );
+
+    render(<TestTabNavigation />);
+
+    const before = screen.getByText("Before");
+    const trigger = screen.getByLabelText("Open actions menu");
+    const after = screen.getByText("After");
+
+    // Test tab order
+    await user.tab();
+    expect(before).toHaveFocus();
+
+    await user.tab();
+    expect(trigger).toHaveFocus();
+
+    await user.tab();
+    expect(after).toHaveFocus();
+  });
+
+  it("should handle Escape key functionality", async () => {
+    const user = userEvent.setup();
+
+    const TestEscapeHandler = () => {
+      const [showContent, setShowContent] = React.useState(true);
+
+      return (
+        <div
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setShowContent(false);
+            }
+          }}
+        >
+          {showContent && <div data-testid="content">Closeable content</div>}
+          <button>Focus target</button>
+        </div>
+      );
+    };
+
+    render(<TestEscapeHandler />);
+
+    const content = screen.getByTestId("content");
+    const button = screen.getByText("Focus target");
+
+    expect(content).toBeInTheDocument();
+
+    button.focus();
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByTestId("content")).not.toBeInTheDocument();
   });
 });

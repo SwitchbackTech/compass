@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useRef, useState } from "react";
 import styled from "styled-components";
 import {
   Tooltip,
@@ -6,6 +6,7 @@ import {
   TooltipTrigger,
 } from "@web/components/Tooltip";
 import { StyledShortcutTip } from "@web/components/Tooltip/styled";
+import { useMenuContext } from "./ActionsMenu";
 
 /**
  * Shared menu item styling for the EventActionMenu buttons.
@@ -48,6 +49,24 @@ const MenuItem: React.FC<MenuItemProps> = ({
   ...rest
 }) => {
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const menuContext = useMenuContext();
+  const itemRef = useRef<HTMLButtonElement | null>(null);
+  const indexRef = useRef<number | null>(null);
+
+  // Register with menu context
+  React.useEffect(() => {
+    if (menuContext) {
+      const index = menuContext.listRef.current.length;
+      indexRef.current = index;
+      menuContext.listRef.current[index] = itemRef.current;
+
+      return () => {
+        if (indexRef.current !== null) {
+          menuContext.listRef.current[indexRef.current] = null;
+        }
+      };
+    }
+  }, [menuContext]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     if ((e.key === "Enter" || e.key === " ") && onClick) {
@@ -63,6 +82,12 @@ const MenuItem: React.FC<MenuItemProps> = ({
     }
   };
 
+  const itemProps =
+    menuContext?.getItemProps({
+      onClick: handleClick,
+      onKeyDown: handleKeyDown,
+    }) || {};
+
   // With tooltip
   return (
     <Tooltip
@@ -73,8 +98,8 @@ const MenuItem: React.FC<MenuItemProps> = ({
       <TooltipTrigger asChild>
         <StyledMenuItem
           {...rest}
-          onClick={handleClick}
-          onKeyDown={handleKeyDown}
+          {...itemProps}
+          ref={itemRef}
           role="menuitem"
           tabIndex={-1}
         >
