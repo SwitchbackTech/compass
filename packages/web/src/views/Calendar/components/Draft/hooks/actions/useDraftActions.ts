@@ -233,6 +233,11 @@ export const useDraftActions = (
         return;
       }
 
+      if (!draft) {
+        console.error("Cannot convert event: draft is null");
+        return;
+      }
+
       const _draft = {
         ...draft,
         isAllDay: false,

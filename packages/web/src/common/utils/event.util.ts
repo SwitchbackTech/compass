@@ -205,6 +205,10 @@ export const prepSomedayEventBeforeSubmit = (
     ...draft,
     origin: Origin.COMPASS,
     user: userId,
+    // Ensure someday-specific properties are set correctly
+    isSomeday: true,
+    // Preserve existing order or set to 0 as fallback
+    order: typeof draft.order === "number" ? draft.order : 0,
   };
 
   const event = validateSomedayEvent(_event);
