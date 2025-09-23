@@ -6,14 +6,20 @@ import MenuItem from "../ActionsMenu/MenuItem";
 
 interface Props {
   onClick: () => void;
+  label?: string;
+  bgColor: string;
 }
 
-export const DuplicateMenuButton: React.FC<Props> = ({ onClick }) => {
+export const DuplicateMenuButton: React.FC<Props> = ({
+  onClick,
+  bgColor,
+  label = "Duplicate Event",
+}) => {
   return (
     <MenuItem
-      role="menuitem"
       onClick={onClick}
-      aria-label="Duplicate Event"
+      aria-label={label}
+      bgColor={bgColor}
       tooltipContent={
         <Text size="s" style={{ display: "flex", alignItems: "center" }}>
           {getMetaKey()} + D
@@ -21,7 +27,7 @@ export const DuplicateMenuButton: React.FC<Props> = ({ onClick }) => {
       }
     >
       <Copy size={16} />
-      <span>Duplicate</span>
+      <span>{label}</span>
     </MenuItem>
   );
 };

@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
 import { Categories_Event } from "@core/types/event.types";
+import { darken } from "@core/util/color.utils";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
@@ -207,6 +208,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     >
       <StyledIconRow>
         <SomedayEventActionMenu
+          bgColor={darken(colorByPriority[priority])}
           target={target}
           onMigrateBackwardClick={() => {
             onMigrate?.(event, category, "back");

@@ -1,6 +1,9 @@
 import { Dayjs } from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toUTCOffset } from "@web/common/utils/web.date.util";
+import {
+  computeSomedayEventsRequestFilter,
+  toUTCOffset,
+} from "@web/common/utils/web.date.util";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { updateDates } from "@web/ducks/events/slices/view.slice";
@@ -39,10 +42,7 @@ export const useWeek = (today: Dayjs) => {
   }, [dispatch, end, start]);
 
   const somedayEventsRequestFilter = useMemo(() => {
-    return {
-      startDate: toUTCOffset(start.startOf("month")),
-      endDate: toUTCOffset(end.endOf("month")),
-    };
+    return computeSomedayEventsRequestFilter(start, end);
   }, [end, start]);
 
   useEffect(() => {

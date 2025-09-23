@@ -49,6 +49,7 @@ import {
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
+import { MapEvent } from "../../../../../../../../core/src/mappers/map.event";
 
 export const useDraftActions = (
   draftState: State_Draft_Local,
@@ -346,8 +347,10 @@ export const useDraftActions = (
   );
 
   const duplicateEvent = useCallback(() => {
-    const draft = { ...reduxDraft } as Schema_GridEvent;
-    delete draft._id;
+    const draft = MapEvent.removeProviderData({
+      ...reduxDraft,
+    }) as Schema_GridEvent;
+
     submit(draft);
     discard();
   }, [reduxDraft, submit, discard]);
