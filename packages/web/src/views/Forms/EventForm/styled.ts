@@ -20,7 +20,6 @@ export const StyledEventForm = styled.form<SomedayFormProps>`
   font-size: 20px;
   padding: 18px 20px;
   transition: ${({ theme }) => theme.transition.default};
-  width: 585px;
   z-index: ${ZIndex.LAYER_1};
 `;
 
