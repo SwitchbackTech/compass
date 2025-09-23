@@ -371,4 +371,90 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
+
+  test("should call onMigrate when ctrl+meta+right keyboard shortcut is used while ActionsMenu is open", async () => {
+    const user = userEvent.setup();
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
+          onSubmit={mockOnSubmit}
+          setEvent={mockSetEvent}
+          category={defaultCategory}
+        />
+      </div>,
+    );
+
+    const form = screen.getByRole("form");
+
+    // Open the actions menu
+    await act(async () => {
+      await user.click(
+        within(form).getByRole("button", { name: /open actions menu/i }),
+      );
+    });
+
+    // Wait for menu to be open
+    await waitFor(() => {
+      expect(screen.getByText("Migrate to next week")).toBeInTheDocument();
+    });
+
+    // Try the keyboard shortcut while menu is open
+    await act(async () => {
+      await user.keyboard("{Control>}{Meta>}{ArrowRight}{/Meta}{/Control}");
+    });
+
+    expect(mockOnMigrate).toHaveBeenCalledTimes(1);
+    expect(mockOnMigrate).toHaveBeenCalledWith(
+      sampleSomedayEvent,
+      defaultCategory,
+      "forward",
+    );
+  });
+
+  test("should call onDelete when delete keyboard shortcut is used while ActionsMenu is open", async () => {
+    const user = userEvent.setup();
+    mockConfirm.mockReturnValue(true);
+
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
+          onSubmit={mockOnSubmit}
+          setEvent={mockSetEvent}
+          category={defaultCategory}
+        />
+      </div>,
+    );
+
+    const form = screen.getByRole("form");
+
+    // Open the actions menu
+    await act(async () => {
+      await user.click(
+        within(form).getByRole("button", { name: /open actions menu/i }),
+      );
+    });
+
+    // Wait for menu to be open
+    await waitFor(() => {
+      expect(screen.getByText("Delete")).toBeInTheDocument();
+    });
+
+    // Try the keyboard shortcut while menu is open
+    await act(async () => {
+      await user.keyboard("{Delete}");
+    });
+
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
+    expect(mockDispatch).toHaveBeenCalledWith(
+      getSomedayEventsSlice.actions.delete({ _id: sampleSomedayEvent._id }),
+    );
+    expect(toast).toHaveBeenCalledTimes(1);
+  });
 });
