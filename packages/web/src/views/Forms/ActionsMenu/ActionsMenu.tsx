@@ -21,6 +21,7 @@ import {
 } from "@floating-ui/react";
 // @ts-expect-error - Icon name might not be present in type definitions but does exist at runtime
 import { DotsThreeVertical } from "@phosphor-icons/react";
+import { ID_EVENT_FORM_ACTION_MENU } from "@web/common/constants/web.constants";
 import IconButton from "@web/components/IconButton/IconButton";
 import { StyledMenu, TriggerWrapper } from "./styled";
 
@@ -55,7 +56,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
   const openedByMouseRef = useRef(false);
   const listRef = useRef<Array<HTMLElement | null>>([]);
 
-  const menuId = id || "event-actions-menu";
+  const menuId = id || ID_EVENT_FORM_ACTION_MENU;
   const triggerId = `${menuId}-trigger`;
 
   const { x, y, refs, strategy, context } = useFloating({

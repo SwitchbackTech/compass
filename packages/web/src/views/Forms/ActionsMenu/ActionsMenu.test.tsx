@@ -2,6 +2,7 @@ import React from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { ID_EVENT_FORM_ACTION_MENU } from "@web/common/constants/web.constants";
 import { ActionsMenu } from "./ActionsMenu";
 import MenuItem from "./MenuItem";
 
@@ -116,7 +117,11 @@ describe("ActionsMenu", () => {
 
   describe("ARIA Compliance", () => {
     it("should have proper ARIA attributes on trigger button", () => {
-      render(<ActionsMenu>{() => <div>Menu content</div>}</ActionsMenu>);
+      render(
+        <ActionsMenu bgColor="red">
+          {() => <div>Menu content</div>}
+        </ActionsMenu>,
+      );
 
       const trigger = screen.getByLabelText("Open actions menu");
 
@@ -126,7 +131,7 @@ describe("ActionsMenu", () => {
 
     it("should generate consistent IDs for ARIA relationships", () => {
       render(
-        <ActionsMenu id="test-menu">
+        <ActionsMenu id="test-menu" bgColor="red">
           {() => <div>Menu content</div>}
         </ActionsMenu>,
       );
@@ -137,18 +142,25 @@ describe("ActionsMenu", () => {
     });
 
     it("should use default ID when none provided", () => {
-      render(<ActionsMenu>{() => <div>Menu content</div>}</ActionsMenu>);
+      render(
+        <ActionsMenu bgColor="red">
+          {() => <div>Menu content</div>}
+        </ActionsMenu>,
+      );
 
       const trigger = screen.getByLabelText("Open actions menu");
 
-      expect(trigger).toHaveAttribute("id", "event-actions-menu-trigger");
+      expect(trigger).toHaveAttribute(
+        "id",
+        `${ID_EVENT_FORM_ACTION_MENU}-trigger`,
+      );
     });
 
     it("should have proper ARIA structure when menu is open", async () => {
       const user = userEvent.setup();
 
       render(
-        <ActionsMenu id="test-menu">
+        <ActionsMenu id="test-menu" bgColor="red">
           {(close) => (
             <>
               <MenuItem
@@ -156,6 +168,7 @@ describe("ActionsMenu", () => {
                   mockAction1();
                   close();
                 }}
+                bgColor="red"
               >
                 Action 1
               </MenuItem>
@@ -164,6 +177,7 @@ describe("ActionsMenu", () => {
                   mockAction2();
                   close();
                 }}
+                bgColor="red"
               >
                 Action 2
               </MenuItem>
@@ -184,7 +198,11 @@ describe("ActionsMenu", () => {
 
   describe("Keyboard Interactions", () => {
     it("should focus trigger button initially", () => {
-      render(<ActionsMenu>{() => <div>Menu content</div>}</ActionsMenu>);
+      render(
+        <ActionsMenu bgColor="red">
+          {() => <div>Menu content</div>}
+        </ActionsMenu>,
+      );
 
       const trigger = screen.getByLabelText("Open actions menu");
 
@@ -195,7 +213,11 @@ describe("ActionsMenu", () => {
     });
 
     it("should have focusable trigger button", () => {
-      render(<ActionsMenu>{() => <div>Menu content</div>}</ActionsMenu>);
+      render(
+        <ActionsMenu bgColor="red">
+          {() => <div>Menu content</div>}
+        </ActionsMenu>,
+      );
 
       const trigger = screen.getByLabelText("Open actions menu");
 
@@ -204,7 +226,11 @@ describe("ActionsMenu", () => {
     });
 
     it("should handle keyboard interaction on trigger", async () => {
-      render(<ActionsMenu>{() => <div>Menu content</div>}</ActionsMenu>);
+      render(
+        <ActionsMenu bgColor="red">
+          {() => <div>Menu content</div>}
+        </ActionsMenu>,
+      );
 
       const trigger = screen.getByLabelText("Open actions menu");
 
@@ -219,13 +245,14 @@ describe("ActionsMenu", () => {
       const mockAction = jest.fn();
 
       render(
-        <ActionsMenu>
+        <ActionsMenu bgColor="red">
           {(close) => (
             <MenuItem
               onClick={() => {
                 mockAction();
                 close();
               }}
+              bgColor="red"
             >
               Test Action
             </MenuItem>
@@ -247,8 +274,12 @@ describe("ActionsMenu", () => {
       render(
         <div>
           <button id="before">Before</button>
-          <ActionsMenu>
-            {() => <MenuItem onClick={() => {}}>Test Action</MenuItem>}
+          <ActionsMenu bgColor="red">
+            {() => (
+              <MenuItem onClick={() => {}} bgColor="red">
+                Test Action
+              </MenuItem>
+            )}
           </ActionsMenu>
           <button id="after">After</button>
         </div>,
@@ -273,11 +304,15 @@ describe("ActionsMenu", () => {
       const user = userEvent.setup();
 
       render(
-        <ActionsMenu>
+        <ActionsMenu bgColor="red">
           {() => (
             <>
-              <MenuItem onClick={() => {}}>Action 1</MenuItem>
-              <MenuItem onClick={() => {}}>Action 2</MenuItem>
+              <MenuItem onClick={() => {}} bgColor="red">
+                Action 1
+              </MenuItem>
+              <MenuItem onClick={() => {}} bgColor="red">
+                Action 2
+              </MenuItem>
             </>
           )}
         </ActionsMenu>,
@@ -293,12 +328,18 @@ describe("ActionsMenu", () => {
 
     it("should have proper ARIA attributes and focus management structure", () => {
       render(
-        <ActionsMenu id="test-menu">
+        <ActionsMenu id="test-menu" bgColor="red">
           {() => (
             <>
-              <MenuItem onClick={() => {}}>Action 1</MenuItem>
-              <MenuItem onClick={() => {}}>Action 2</MenuItem>
-              <MenuItem onClick={() => {}}>Action 3</MenuItem>
+              <MenuItem onClick={() => {}} bgColor="red">
+                Action 1
+              </MenuItem>
+              <MenuItem onClick={() => {}} bgColor="red">
+                Action 2
+              </MenuItem>
+              <MenuItem onClick={() => {}} bgColor="red">
+                Action 3
+              </MenuItem>
             </>
           )}
         </ActionsMenu>,
@@ -314,7 +355,7 @@ describe("ActionsMenu", () => {
 
     it("should render with real MenuItem components", () => {
       render(
-        <ActionsMenu>
+        <ActionsMenu bgColor="red">
           {(close) => (
             <>
               <MenuItem
@@ -322,6 +363,7 @@ describe("ActionsMenu", () => {
                   mockAction1();
                   close();
                 }}
+                bgColor="red"
               >
                 Move To Sidebar
               </MenuItem>
@@ -330,6 +372,7 @@ describe("ActionsMenu", () => {
                   mockAction2();
                   close();
                 }}
+                bgColor="red"
               >
                 Duplicate
               </MenuItem>
@@ -338,6 +381,7 @@ describe("ActionsMenu", () => {
                   mockAction3();
                   close();
                 }}
+                bgColor="red"
               >
                 Delete
               </MenuItem>
