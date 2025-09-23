@@ -262,10 +262,9 @@ describe("SomedayEventForm Hotkeys", () => {
   });
 
   /**
-   * This test is skipped
-   * The hotkey functionality is not implemented in the SomedayEventForm comp.
+   * Test validates that the duplicate shortcut is now implemented
    */
-  test.skip("should call duplicateEvent when meta+d keyboard shortcut is used", async () => {
+  test("should call duplicateEvent when meta+d keyboard shortcut is used", async () => {
     render(
       <div>
         <SomedayEventForm
@@ -285,10 +284,91 @@ describe("SomedayEventForm Hotkeys", () => {
     await act(async () => userEvent.keyboard("{Meta>}d{/Meta}"));
 
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
 
-    expect(mockOnClose).not.toHaveBeenCalled();
+    expect(mockOnSubmit).not.toHaveBeenCalled();
     expect(mockDispatch).not.toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
     expect(mockConfirm).not.toHaveBeenCalled();
+  });
+
+  test("should call onMigrate when ctrl+meta+left keyboard shortcut is used while ActionsMenu is open", async () => {
+    const user = userEvent.setup();
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
+          onSubmit={mockOnSubmit}
+          setEvent={mockSetEvent}
+          category={defaultCategory}
+        />
+      </div>,
+    );
+
+    const form = screen.getByRole("form");
+
+    // Open the actions menu
+    await act(async () => {
+      await user.click(
+        within(form).getByRole("button", { name: /open actions menu/i }),
+      );
+    });
+
+    // Wait for menu to be open
+    await waitFor(() => {
+      expect(screen.getByText("Migrate to previous week")).toBeInTheDocument();
+    });
+
+    // Try the keyboard shortcut while menu is open
+    await act(async () => {
+      await user.keyboard("{Control>}{Meta>}{ArrowLeft}{/Meta}{/Control}");
+    });
+
+    expect(mockOnMigrate).toHaveBeenCalledTimes(1);
+    expect(mockOnMigrate).toHaveBeenCalledWith(
+      sampleSomedayEvent,
+      defaultCategory,
+      "back",
+    );
+  });
+
+  test("should call duplicateEvent when meta+d keyboard shortcut is used while ActionsMenu is open", async () => {
+    const user = userEvent.setup();
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
+          onSubmit={mockOnSubmit}
+          setEvent={mockSetEvent}
+          category={defaultCategory}
+        />
+      </div>,
+    );
+
+    const form = screen.getByRole("form");
+
+    // Open the actions menu
+    await act(async () => {
+      await user.click(
+        within(form).getByRole("button", { name: /open actions menu/i }),
+      );
+    });
+
+    // Wait for menu to be open
+    await waitFor(() => {
+      expect(screen.getByText("Duplicate Event")).toBeInTheDocument();
+    });
+
+    // Try the keyboard shortcut while menu is open
+    await act(async () => {
+      await user.keyboard("{Meta>}d{/Meta}");
+    });
+
+    expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 });

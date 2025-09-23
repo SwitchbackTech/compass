@@ -25,7 +25,9 @@ import { RecurrenceSection } from "../EventForm/DateControlsSection/RecurrenceSe
 import { SomedayEventActionMenu } from "./SomedayEventActionMenu";
 
 const hotkeysOptions: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input"],
+  enableOnFormTags: ["input", "button"],
+  enableOnContentEditable: true,
+  enabled: true,
 };
 
 export const SomedayEventForm: React.FC<FormProps> = ({
@@ -100,6 +102,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     }
   };
 
+  const onDuplicateEvent = useCallback(() => {
+    actions.duplicateEvent();
+    onClose();
+  }, [actions.duplicateEvent, onClose]);
+
   useHotkeys(
     "delete",
     () => {
@@ -173,6 +180,16 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     [event, category, onMigrate],
   );
 
+  useHotkeys(
+    "meta+d",
+    (e) => {
+      e.preventDefault();
+      onDuplicateEvent();
+    },
+    hotkeysOptions,
+    [onDuplicateEvent],
+  );
+
   const onSetEventField: SetEventFormField = (field) => {
     const newEvent = { ...event, ...field };
 
@@ -186,11 +203,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const stopPropagation = (e: MouseEvent) => {
     e.stopPropagation();
   };
-
-  const onDuplicateEvent = useCallback(() => {
-    actions.duplicateEvent();
-    onClose();
-  }, [actions.duplicateEvent, onClose]);
 
   return (
     <StyledEventForm
