@@ -50,8 +50,15 @@ const MenuItem: React.FC<MenuItemProps> = ({
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (e.key === "Enter" && onClick) {
+    if ((e.key === "Enter" || e.key === " ") && onClick) {
+      e.preventDefault();
       // @ts-expect-error - onClick is a function that takes a MouseEvent
+      onClick(e);
+    }
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (onClick) {
       onClick(e);
     }
   };
@@ -64,7 +71,13 @@ const MenuItem: React.FC<MenuItemProps> = ({
       placement="right-end"
     >
       <TooltipTrigger asChild>
-        <StyledMenuItem {...rest} onClick={onClick} onKeyDown={handleKeyDown}>
+        <StyledMenuItem
+          {...rest}
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
+          role="menuitem"
+          tabIndex={-1}
+        >
           {children}
         </StyledMenuItem>
       </TooltipTrigger>

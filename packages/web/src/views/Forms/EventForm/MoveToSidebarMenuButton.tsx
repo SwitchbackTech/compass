@@ -21,7 +21,6 @@ export const MoveToSidebarMenuButton: React.FC<Props> = ({
 }) => {
   return (
     <MenuItem
-      role="menuitem"
       onClick={onClick}
       aria-label={label}
       tooltipContent={

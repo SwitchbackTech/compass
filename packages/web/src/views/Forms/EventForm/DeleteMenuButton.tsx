@@ -9,7 +9,6 @@ interface Props {
 export const DeleteMenuButton: React.FC<Props> = ({ onClick }) => {
   return (
     <MenuItem
-      role="menuitem"
       onClick={onClick}
       aria-label="Delete Event"
       tooltipContent={<span>DEL</span>}

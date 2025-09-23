@@ -21,7 +21,6 @@ export const MigrateBackwardMenuButton: React.FC<Props> = ({
 }) => {
   return (
     <MenuItem
-      role="menuitem"
       onClick={onClick}
       aria-label={tooltipText}
       tooltipContent={

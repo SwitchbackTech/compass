@@ -11,7 +11,6 @@ interface Props {
 export const DuplicateMenuButton: React.FC<Props> = ({ onClick }) => {
   return (
     <MenuItem
-      role="menuitem"
       onClick={onClick}
       aria-label="Duplicate Event"
       tooltipContent={
