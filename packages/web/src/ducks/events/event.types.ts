@@ -10,6 +10,7 @@ import {
   Response_HttpPaginatedSuccess,
 } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import { Schema_SomedayEvent } from "@web/common/types/web.event.types";
 
 export interface Action_ConvertSomedayEvent extends Action {
   payload: Payload_ConvertSomedayEvent;
@@ -74,7 +75,7 @@ interface Payload_ConvertSomedayEvent {
 }
 
 interface Payload_ConvertTimedEvent {
-  event: Schema_Event;
+  event: Schema_SomedayEvent;
 }
 
 interface Payload_DeleteEvent {
