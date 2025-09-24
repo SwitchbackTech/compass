@@ -1,9 +1,9 @@
 import { ObjectId } from "mongodb";
 import { SessionRequest } from "supertokens-node/framework/express";
+import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import {
-  CompassCoreEvent,
   CompassCoreEventSchema,
   CompassEvent,
   CompassEventStatus,
@@ -19,24 +19,17 @@ import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.p
 const logger = Logger("app.event.controllers.event.controller");
 
 class EventController {
-  private async processEvent(
-    _payload: Omit<CompassEvent["payload"], "user">,
-    status?: CompassEventStatus,
-    applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
-  ) {
-    const payload = CompassCoreEventSchema.parse(_payload);
+  private async processEvents(_events: CompassEvent[]) {
+    const events = _events.map((e) => ({
+      ...e,
+      payload: CompassCoreEventSchema.parse(e.payload),
+    })) as CompassEvent[];
 
-    const event = {
-      status: status ?? CompassEventStatus.CONFIRMED,
-      payload,
-      applyTo,
-    } as CompassEvent;
-
-    await CompassSyncProcessor.processEvents([event]);
+    await CompassSyncProcessor.processEvents(events);
   }
 
   create = async (
-    req: SReqBody<CompassCoreEvent | CompassCoreEvent[]>,
+    req: SReqBody<CompassEvent["payload"] | CompassEvent["payload"][]>,
     res: Res_Promise,
   ) => {
     try {
@@ -46,19 +39,19 @@ class EventController {
       // Handle both single object and array cases
       const events = Array.isArray(body) ? body : [body];
 
-      // Process each event
-      for (const eventData of events) {
-        const _id = new ObjectId().toString();
-        const event = { ...eventData, _id, user };
-
-        const safeEvent = CompassCoreEventSchema.parse(event);
-
-        await this.processEvent(
-          safeEvent,
-          CompassEventStatus.CONFIRMED,
-          RecurringEventUpdateScope.THIS_EVENT,
-        );
-      }
+      await this.processEvents(
+        events.map((e) => ({
+          payload: {
+            ...e,
+            _id:
+              e._id?.replace(`${ID_OPTIMISTIC_PREFIX}`, "") ??
+              new ObjectId().toString(),
+            user,
+          },
+          status: CompassEventStatus.CONFIRMED,
+          applyTo: RecurringEventUpdateScope.THIS_EVENT,
+        })) as CompassEvent[],
+      );
 
       res.status(Status.NO_CONTENT).send();
     } catch (e) {
@@ -70,16 +63,19 @@ class EventController {
 
   delete = async (req: SessionRequest, res: Res_Promise) => {
     try {
+      const { query } = req;
       const user = req.session?.getUserId() as string;
       const _id = req.params["id"] as string;
       const event = await eventService.readById(user, _id);
+      const applyTo = query["applyTo"] ?? RecurringEventUpdateScope.THIS_EVENT;
 
-      await this.processEvent(
-        event as CompassEvent["payload"],
-        CompassEventStatus.CANCELLED,
-        (req.query["applyTo"] as RecurringEventUpdateScope) ??
-          RecurringEventUpdateScope.THIS_EVENT,
-      );
+      await this.processEvents([
+        {
+          payload: event as CompassEvent["payload"],
+          status: CompassEventStatus.CANCELLED,
+          applyTo: applyTo as RecurringEventUpdateScope.THIS_EVENT,
+        },
+      ]);
 
       res.status(Status.NO_CONTENT).send();
     } catch (e) {
@@ -146,13 +142,16 @@ class EventController {
       const { body, query, params, session } = req;
       const user = session?.getUserId() as string;
       const _id = params["id"] as string;
+      const payload = { ...body, user, _id } as CompassEvent["payload"];
+      const applyTo = query["applyTo"] as RecurringEventUpdateScope.THIS_EVENT;
 
-      await this.processEvent(
-        { ...body, user, _id } as CompassEvent["payload"],
-        CompassEventStatus.CONFIRMED,
-        (query["applyTo"] as RecurringEventUpdateScope) ??
-          RecurringEventUpdateScope.THIS_EVENT,
-      );
+      await this.processEvents([
+        {
+          payload,
+          status: CompassEventStatus.CONFIRMED,
+          applyTo: applyTo ?? RecurringEventUpdateScope.THIS_EVENT,
+        },
+      ]);
 
       res.status(Status.NO_CONTENT).send();
     } catch (e) {
