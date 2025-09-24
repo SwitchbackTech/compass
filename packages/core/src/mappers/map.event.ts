@@ -36,6 +36,22 @@ export namespace MapEvent {
     return mapped;
   };
 
+  export const removeProviderData = (
+    event: WithId<Omit<Schema_Event, "_id">> | Schema_Event,
+  ): Omit<Schema_Event, "_id" | "gEventId" | "gRecurringEventId"> => {
+    const {
+      _id, // eslint-disable-line @typescript-eslint/no-unused-vars
+      gEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
+      gRecurringEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
+      recurrence,
+      ...coreEvent
+    } = event;
+
+    return recurrence?.eventId
+      ? { ...coreEvent, recurrence: { rule: recurrence.rule } }
+      : coreEvent;
+  };
+
   export const removeIdentifyingData = (
     event: WithId<Omit<Schema_Event, "_id">> | Schema_Event,
   ): Omit<
@@ -48,14 +64,11 @@ export namespace MapEvent {
     | "recurrence"
   > => {
     const {
-      _id, // eslint-disable-line @typescript-eslint/no-unused-vars
       order, // eslint-disable-line @typescript-eslint/no-unused-vars
       allDayOrder, // eslint-disable-line @typescript-eslint/no-unused-vars
       recurrence, // eslint-disable-line @typescript-eslint/no-unused-vars
-      gEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
-      gRecurringEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
       ...coreEvent
-    } = event;
+    } = MapEvent.removeProviderData(event);
 
     return coreEvent;
   };
@@ -102,7 +115,9 @@ export namespace MapEvent {
     const { gRecurringEventId: _gRecurringEventId = base?.gEventId } = instance;
     const gRecurringEventId = _gRecurringEventId ?? instance.recurrence.eventId;
     const startDate = parseCompassEventDate(instance.startDate!);
-    const gEventId = `${gRecurringEventId}_${startDate.toRRuleDTSTARTString()}`;
+    const isAllDayEvent = isAllDay(instance);
+    const idPrefix = startDate.toRRuleDTSTARTString(isAllDayEvent);
+    const gEventId = `${gRecurringEventId}_${idPrefix}`;
 
     return { gEventId: _gEventId ?? gEventId, gRecurringEventId };
   };

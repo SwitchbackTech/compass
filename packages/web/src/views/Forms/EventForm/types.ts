@@ -1,4 +1,4 @@
-import { SetStateAction } from "react";
+import { Dispatch, SetStateAction } from "react";
 import { Priority } from "@core/constants/core.constants";
 import {
   Categories_Event,
@@ -10,10 +10,11 @@ export interface FormProps {
   event: Schema_Event;
   category: Categories_Event;
   isOpen?: boolean;
+  disableSaveBtn?: boolean;
   onClose: () => void;
   onCloseEventForm?: () => void;
   onConvert?: () => void;
-  onDelete?: (eventId?: string) => void;
+  onDelete?: () => void;
   onDuplicate?: (event: Schema_Event) => void;
   onMigrate?: (
     event: Schema_Event,
@@ -23,7 +24,7 @@ export interface FormProps {
   onSubmit: (event?: Schema_Event) => void;
   onSubmitEventForm?: (event: Schema_Event) => void;
   priority?: Priority;
-  setEvent: (event: Schema_Event) => SetStateAction<Schema_Event> | void;
+  setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
   weekViewRange: {
     startDate: string;
     endDate: string;

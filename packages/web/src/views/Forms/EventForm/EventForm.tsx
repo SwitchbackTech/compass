@@ -10,6 +10,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
+import { darken } from "@core/util/color.utils";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
@@ -19,17 +20,18 @@ import { SelectOption } from "@web/common/types/component.types";
 import { getCategory } from "@web/common/utils/event.util";
 import { mapToBackend } from "@web/common/utils/web.date.util";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection";
-import { getFormDates } from "./DateControlsSection/DateTimeSection/form.datetime.util";
-import { EventActionMenu } from "./EventActionMenu";
-import { PrioritySection } from "./PrioritySection";
-import { SaveSection } from "./SaveSection";
+import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
+import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
+import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
+import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
+import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import {
   StyledDescription,
   StyledEventForm,
   StyledIconRow,
   StyledTitle,
-} from "./styled";
-import { FormProps, SetEventFormField } from "./types";
+} from "@web/views/Forms/EventForm/styled";
+import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 
 const hotkeysOptions: OptionsOrDependencyArray = {
   enableOnFormTags: ["input"],
@@ -43,10 +45,12 @@ export const EventForm: React.FC<FormProps> = ({
   onSubmit,
   onDuplicate,
   setEvent,
+  disableSaveBtn,
   ...props
 }) => {
-  const { priority, title } = event || {};
-  const priorityColor = colorByPriority[priority || Priorities.UNASSIGNED];
+  const { title } = event || {};
+  const priority = event.priority || Priorities.UNASSIGNED;
+  const priorityColor = colorByPriority[priority];
   const category = getCategory(event);
   const isDraft = !event._id;
 
@@ -57,7 +61,7 @@ export const EventForm: React.FC<FormProps> = ({
     label: "1 AM",
     value: "01:00 AM",
   });
-  const [isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
+  const [_isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
   const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
@@ -119,7 +123,9 @@ export const EventForm: React.FC<FormProps> = ({
    **********/
   const onChangeEventTextField =
     (fieldName: "title" | "description") =>
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
+      e: React.ChangeEvent<T>,
+    ) => {
       onSetEventField({ [fieldName]: e.target.value });
     };
 
@@ -128,12 +134,15 @@ export const EventForm: React.FC<FormProps> = ({
 
     setTimeout(() => {
       _onClose();
-    }, 120);
+    }, 1);
   };
 
   const onDeleteForm = () => {
-    onDelete?.(event._id);
-    onClose();
+    const confirmed = window.confirm(`Delete ${event.title || "this event"}?`);
+
+    if (!confirmed) return;
+
+    onDelete?.();
   };
 
   const onDuplicateEvent = useCallback(() => {
@@ -187,7 +196,6 @@ export const EventForm: React.FC<FormProps> = ({
     };
 
     onSubmit(finalEvent);
-    onClose();
   };
 
   const onSetEventField: SetEventFormField = (field) => {
@@ -200,7 +208,7 @@ export const EventForm: React.FC<FormProps> = ({
     event,
     category,
     endTime,
-    inputColor: hoverColorByPriority[priority || Priorities.UNASSIGNED],
+    inputColor: hoverColorByPriority[priority],
     isEndDatePickerOpen,
     isStartDatePickerOpen,
     onSetEventField,
@@ -220,8 +228,7 @@ export const EventForm: React.FC<FormProps> = ({
   const recurrenceSectionProps = {
     bgColor: priorityColor,
     event,
-    startTime,
-    endTime,
+    setEvent,
   };
 
   useHotkeys(
@@ -232,13 +239,7 @@ export const EventForm: React.FC<FormProps> = ({
         return;
       }
 
-      const confirmed = window.confirm(
-        `Delete ${event.title || "this event"}?`,
-      );
-
-      if (confirmed) {
-        onDeleteForm();
-      }
+      onDeleteForm();
     },
     hotkeysOptions,
   );
@@ -309,6 +310,7 @@ export const EventForm: React.FC<FormProps> = ({
     >
       <StyledIconRow>
         <EventActionMenu
+          bgColor={darken(priorityColor)}
           isDraft={isDraft}
           onConvert={() => {
             onConvert?.();
@@ -329,16 +331,14 @@ export const EventForm: React.FC<FormProps> = ({
         value={title}
       />
 
-      <PrioritySection
-        onSetEventField={onSetEventField}
-        priority={priority || Priorities.UNASSIGNED}
-      />
+      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
 
       <DateControlsSection
         dateTimeSectionProps={dateTimeSectionProps}
         eventCategory={category}
-        recurrenceSectionProps={recurrenceSectionProps}
       />
+
+      <RecurrenceSection {...recurrenceSectionProps} />
 
       <StyledDescription
         underlineColor={priorityColor}
@@ -350,8 +350,11 @@ export const EventForm: React.FC<FormProps> = ({
       />
 
       <SaveSection
-        priority={priority || Priorities.UNASSIGNED}
+        disableSaveBtn={disableSaveBtn}
+        priority={priority}
         onSubmit={onSubmitForm}
+        onCancel={onClose}
+        cancelText="Close"
       />
     </StyledEventForm>
   );

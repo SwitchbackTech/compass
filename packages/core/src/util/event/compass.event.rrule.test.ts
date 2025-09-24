@@ -9,6 +9,7 @@ import {
   type Schema_Event_Recur_Base,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import {
   isBase,
   isInstance,
@@ -19,7 +20,6 @@ import {
   createMockBaseEvent,
   generateCompassEventDates,
 } from "@core/util/test/ccal.event.factory";
-import { CompassEventRRule } from "@backend/event/classes/compass.event.rrule";
 
 describe("CompassEventRRule: ", () => {
   it(`should return the correct number of events based on rrule count`, () => {

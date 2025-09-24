@@ -6,7 +6,6 @@ import React, {
   memo,
   useMemo,
 } from "react";
-import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
 import {
   DATA_EVENT_ELEMENT_ID,
@@ -25,9 +24,13 @@ import {
   FlexWrap,
 } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
+import {
+  StyledEvent,
+  StyledEventScaler,
+  StyledEventTitle,
+} from "@web/views/Calendar/components/Event/styled";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { StyledEvent, StyledEventScaler, StyledEventTitle } from "../../styled";
 
 interface Props {
   event: Schema_GridEvent;
@@ -35,8 +38,6 @@ interface Props {
   isDragging: boolean;
   isPlaceholder: boolean;
   isResizing: boolean;
-  isRecurring: boolean;
-  isInPast: boolean;
   measurements: Measurements_Grid;
   onEventMouseDown: (event: Schema_GridEvent, e: MouseEvent) => void;
   onScalerMouseDown: (
@@ -96,11 +97,6 @@ const _GridEvent = (
     left: position.left,
     lineClamp,
     onMouseDown: (e: MouseEvent) => {
-      if (isRecurring) {
-        toast("Can't edit recurring events (yet)");
-        e.stopPropagation();
-        return;
-      }
       if (
         isOptimistic || // Event is in the process of being created, don't allow any interactions until it's completely saved
         isRightClick(e) // Ignores right click here so it can pass through to context menu
@@ -127,7 +123,6 @@ const _GridEvent = (
       >
         <StyledEventTitle eventHeight={position.height} role="textbox">
           {event.title}
-          {isRecurring && "*"}
         </StyledEventTitle>
         {!event.isAllDay && (
           <>
@@ -145,11 +140,6 @@ const _GridEvent = (
                   !isPlaceholder && !isResizing && !isDragging && !isOptimistic
                 }
                 onMouseDown={(e) => {
-                  if (isRecurring) {
-                    toast("Can't edit recurring events (yet)");
-                    e.stopPropagation();
-                    return;
-                  }
                   onScalerMouseDown(event, e, "startDate");
                 }}
                 top="-0.25px"
@@ -162,11 +152,6 @@ const _GridEvent = (
                   !isPlaceholder && !isResizing && !isDragging && !isOptimistic
                 }
                 onMouseDown={(e) => {
-                  if (isRecurring) {
-                    alert("Can't edit recurring events (yet)");
-                    e.stopPropagation();
-                    return;
-                  }
                   onScalerMouseDown(event, e, "endDate");
                 }}
                 zIndex={ZIndex.LAYER_4}

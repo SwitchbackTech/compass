@@ -1,6 +1,6 @@
 import { all, takeLatest } from "redux-saga/effects";
 import {
-  convertTimedEvent,
+  convertCalendarToSomedayEvent,
   createEvent,
   deleteEvent,
   editEvent,
@@ -8,7 +8,7 @@ import {
   getWeekEvents,
 } from "@web/ducks/events/sagas/event.sagas";
 import {
-  convertSomedayEvent,
+  convertSomedayToCalendarEvent,
   deleteSomedayEvent,
   getSomedayEvents,
   reorderSomedayEvents,
@@ -30,7 +30,10 @@ export function* sagas() {
 
 function* eventSagas() {
   yield takeLatest(getWeekEventsSlice.actions.request, getWeekEvents);
-  yield takeLatest(getWeekEventsSlice.actions.convert, convertTimedEvent);
+  yield takeLatest(
+    getWeekEventsSlice.actions.convert,
+    convertCalendarToSomedayEvent,
+  );
   yield takeLatest(
     getCurrentMonthEventsSlice.actions.request,
     getCurrentMonthEvents,
@@ -41,7 +44,10 @@ function* eventSagas() {
 }
 
 function* somedayEventSagas() {
-  yield takeLatest(getSomedayEventsSlice.actions.convert, convertSomedayEvent);
+  yield takeLatest(
+    getSomedayEventsSlice.actions.convert,
+    convertSomedayToCalendarEvent,
+  );
   yield takeLatest(getSomedayEventsSlice.actions.request, getSomedayEvents);
   yield takeLatest(getSomedayEventsSlice.actions.delete, deleteSomedayEvent);
   yield takeLatest(getSomedayEventsSlice.actions.reorder, reorderSomedayEvents);

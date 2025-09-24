@@ -1,7 +1,11 @@
 import React from "react";
 import { Priorities, Priority } from "@core/constants/core.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import { PriorityButton } from "@web/components/Button/styled";
+import {
+  PriorityCircle,
+  TooltipText,
+  TooltipWrapper,
+} from "@web/components/ContextMenu/styled";
 import { JustifyContent } from "@web/components/Flex/styled";
 import { SetEventFormField } from "../types";
 import { StyledPriorityFlex } from "./styled";
@@ -16,46 +20,46 @@ export const PrioritySection: React.FC<Props> = ({
   priority,
 }) => {
   return (
-    <StyledPriorityFlex justifyContent={JustifyContent.SPACE_BETWEEN}>
-      <PriorityButton
-        bordered={priority === Priorities.WORK}
-        color={colorByPriority.work}
-        onClick={() => {
-          onSetEventField({ priority: Priorities.WORK });
-        }}
-        onFocus={() => onSetEventField({ priority: Priorities.WORK })}
-        role="tab"
-        tabIndex={0}
-        title="Doing your best work"
-      >
-        Work
-      </PriorityButton>
+    <StyledPriorityFlex>
+      <TooltipWrapper>
+        <PriorityCircle
+          color={colorByPriority.work}
+          selected={priority === Priorities.WORK}
+          onClick={() => {
+            onSetEventField({ priority: Priorities.WORK });
+          }}
+          onFocus={() => onSetEventField({ priority: Priorities.WORK })}
+          role="tab"
+          tabIndex={0}
+        />
+        <TooltipText>Work</TooltipText>
+      </TooltipWrapper>
 
-      <PriorityButton
-        bordered={priority === Priorities.SELF}
-        color={colorByPriority.self}
-        onClick={() => onSetEventField({ priority: Priorities.SELF })}
-        onFocus={() => onSetEventField({ priority: Priorities.SELF })}
-        role="tab"
-        tabIndex={0}
-        title="Nurturing your authentic self"
-      >
-        Self
-      </PriorityButton>
+      <TooltipWrapper>
+        <PriorityCircle
+          color={colorByPriority.self}
+          selected={priority === Priorities.SELF}
+          onClick={() => onSetEventField({ priority: Priorities.SELF })}
+          onFocus={() => onSetEventField({ priority: Priorities.SELF })}
+          role="tab"
+          tabIndex={0}
+        />
+        <TooltipText>Self</TooltipText>
+      </TooltipWrapper>
 
-      <PriorityButton
-        bordered={priority === Priorities.RELATIONS}
-        color={colorByPriority.relationships}
-        onClick={() => {
-          onSetEventField({ priority: Priorities.RELATIONS });
-        }}
-        onFocus={() => onSetEventField({ priority: Priorities.RELATIONS })}
-        role="tab"
-        tabIndex={0}
-        title="Connecting with others"
-      >
-        Relationships
-      </PriorityButton>
+      <TooltipWrapper>
+        <PriorityCircle
+          color={colorByPriority.relationships}
+          selected={priority === Priorities.RELATIONS}
+          onClick={() => {
+            onSetEventField({ priority: Priorities.RELATIONS });
+          }}
+          onFocus={() => onSetEventField({ priority: Priorities.RELATIONS })}
+          role="tab"
+          tabIndex={0}
+        />
+        <TooltipText>Relationships</TooltipText>
+      </TooltipWrapper>
     </StyledPriorityFlex>
   );
 };

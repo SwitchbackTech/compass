@@ -1,4 +1,5 @@
 import { Action } from "redux";
+import { PayloadAction } from "@reduxjs/toolkit";
 import { Priorities } from "@core/constants/core.constants";
 import {
   RecurringEventUpdateScope,
@@ -10,17 +11,15 @@ import {
   Response_HttpPaginatedSuccess,
 } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import {
+  Schema_GridEvent,
+  Schema_OptimisticEvent,
+} from "@web/common/types/web.event.types";
 
-export interface Action_ConvertSomedayEvent extends Action {
-  payload: Payload_ConvertSomedayEvent;
-}
-
-export interface Action_ConvertTimedEvent extends Action {
-  payload: Payload_ConvertTimedEvent;
-}
+export type Action_ConvertEvent = PayloadAction<Payload_ConvertEvent>;
 
 export interface Action_CreateEvent extends Action {
-  payload: Schema_Event;
+  payload: Schema_GridEvent;
 }
 
 export interface Action_DeleteEvent extends Action {
@@ -68,17 +67,13 @@ export interface Entities_Event {
   [key: string]: Schema_Event;
 }
 
-interface Payload_ConvertSomedayEvent {
-  _id: string;
-  updatedFields: Schema_Event;
-}
-
-interface Payload_ConvertTimedEvent {
-  event: Schema_Event;
+export interface Payload_ConvertEvent {
+  event: Omit<Schema_OptimisticEvent, "position">;
 }
 
 interface Payload_DeleteEvent {
   _id: string;
+  applyTo?: RecurringEventUpdateScope;
 }
 
 export interface Payload_EditEvent {

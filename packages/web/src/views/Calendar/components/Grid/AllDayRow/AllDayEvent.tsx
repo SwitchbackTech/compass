@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import React, { MouseEvent, memo } from "react";
-import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -55,15 +54,10 @@ const AllDayEvent = ({
     left: position.left,
     lineClamp: 1,
     onMouseDown: (e: MouseEvent) => {
-      if (isRecurring) {
-        toast("Can't edit recurring events (yet)");
-        e.stopPropagation();
-        return;
-      }
       onMouseDown(e, event);
     },
     priority: event.priority || Priorities.UNASSIGNED,
-    role: isRecurring ? undefined : "button",
+    role: "button",
     top: position.top,
     width: position.width,
   };
@@ -74,9 +68,8 @@ const AllDayEvent = ({
         alignItems={AlignItems.FLEX_START}
         direction={FlexDirections.COLUMN}
       >
-        <Text size="m" role={isRecurring ? undefined : "textbox"}>
+        <Text size="m" role="textbox">
           {event.title}
-          {isRecurring && "*"}
           <SpaceCharacter />
         </Text>
       </Flex>

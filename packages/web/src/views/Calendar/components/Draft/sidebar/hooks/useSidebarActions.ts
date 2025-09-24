@@ -9,11 +9,15 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
   Categories_Event,
   Direction_Migrate,
+  RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
 import { getUserId } from "@web/auth/auth.util";
-import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
-import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
+import {
+  COLUMN_MONTH,
+  COLUMN_WEEK,
+  ID_SOMEDAY_DRAFT,
+} from "@web/common/constants/web.constants";
 import { DropResult_ReactDND } from "@web/common/types/dnd.types";
 import { Coordinates } from "@web/common/types/util.types";
 import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
@@ -48,6 +52,8 @@ import {
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { showMigrationToast } from "./MigrationToast";
 import { Setters_Sidebar, State_Sidebar } from "./useSidebarState";
 
 interface SomedayEventsColumns {
@@ -65,6 +71,7 @@ export const useSidebarActions = (
   dateCalcs: DateCalcs,
   state: State_Sidebar,
   setters: Setters_Sidebar,
+  weekProps: WeekProps,
 ) => {
   const dispatch = useAppDispatch();
 
@@ -141,43 +148,19 @@ export const useSidebarActions = (
     dispatch(draftSlice.actions.discard());
   };
 
-  const convertSomedayEventToAllDay = (
-    _id: string,
-    dates: { startDate: string; endDate: string },
-  ) => {
-    const updatedFields: Schema_Event = {
-      isAllDay: true,
-      isSomeday: false,
-      startDate: dates.startDate,
-      endDate: dates.endDate,
-    };
-
-    dispatch(
-      getSomedayEventsSlice.actions.convert({
-        _id,
-        updatedFields,
-      }),
-    );
-  };
-
-  const convertSomedayEventToTimed = (
-    _id: string,
-    dates: { startDate: string; endDate: string },
-  ) => {
-    const updatedFields: Schema_Event = {
-      isAllDay: false,
-      isSomeday: false,
-      startDate: dates.startDate,
-      endDate: dates.endDate,
-    };
-
-    dispatch(
-      getSomedayEventsSlice.actions.convert({
-        _id,
-        updatedFields,
-      }),
-    );
-  };
+  const convertSomedayToCalendarEvent = useCallback(
+    (
+      _id: string,
+      updates: Pick<Schema_Event, "startDate" | "endDate" | "isAllDay">,
+    ) => {
+      dispatch(
+        getSomedayEventsSlice.actions.convert({
+          event: { ...updates, isSomeday: false, _id },
+        }),
+      );
+    },
+    [dispatch],
+  );
 
   const create = useCallback(() => {
     setDraft(reduxDraft);
@@ -283,15 +266,13 @@ export const useSidebarActions = (
 
       reorder(result);
     } else {
-      if (state.isOverMainGrid) {
-        const dates = getDatesAfterDroppingOn("mainGrid", state.mouseCoords);
-        convertSomedayEventToTimed(draggableId, dates);
-      }
+      const grid = state.isOverMainGrid ? "mainGrid" : "alldayRow";
+      const dates = getDatesAfterDroppingOn(grid, state.mouseCoords);
 
-      if (state.isOverAllDayRow) {
-        const dates = getDatesAfterDroppingOn("alldayRow", state.mouseCoords);
-        convertSomedayEventToAllDay(draggableId, dates);
-      }
+      convertSomedayToCalendarEvent(draggableId, {
+        ...dates,
+        isAllDay: state.isOverAllDayRow,
+      });
     }
 
     handleDiscard();
@@ -344,6 +325,22 @@ export const useSidebarActions = (
         event,
         weekViewRange,
       );
+    }
+
+    // Show toast only for month migrations
+    const isMonthMigration =
+      (direction === "forward" || direction === "back") &&
+      category === Categories_Event.SOMEDAY_MONTH;
+
+    if (isMonthMigration) {
+      // Calculate target month name for toast
+      const targetDate = dayjs(_event.startDate);
+      const targetMonthName = targetDate.format("MMMM");
+
+      // Show single toast with navigation button
+      showMigrationToast(targetMonthName, () => {
+        weekProps.state.setStartOfView(targetDate.startOf("month"));
+      });
     }
 
     const isExisting = _event._id;
@@ -427,14 +424,11 @@ export const useSidebarActions = (
 
     const isExisting = _event._id;
     if (isExisting) {
-      const isRecurring = _event.recurrence?.rule;
-      const wasRecurring = _event.recurrence?.rule === null;
-
       dispatch(
         editEventSlice.actions.request({
           _id: _event._id,
           event: _event,
-          applyTo: isRecurring || wasRecurring ? "all" : null,
+          applyTo: RecurringEventUpdateScope.THIS_EVENT,
         }),
       );
     } else {

@@ -1,20 +1,42 @@
 import dayjs from "dayjs";
-import { schema } from "normalizr";
-import { normalize } from "normalizr";
-import { put, select } from "redux-saga/effects";
-import { Params_Events, Schema_Event } from "@core/types/event.types";
+import { normalize, schema } from "normalizr";
+import { call, put, select } from "redux-saga/effects";
+import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
+import {
+  Params_Events,
+  RecurringEventUpdateScope,
+  Schema_Event,
+} from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { replaceIdWithOptimisticId } from "@web/common/utils/event.util";
+import { validateGridEvent } from "@web/common/validators/grid.event.validator";
+import { EventApi } from "@web/ducks/events/event.api";
+import { Payload_ConvertEvent } from "@web/ducks/events/event.types";
+import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
+import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
+import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
+import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { RootState } from "@web/store";
-import { selectEventById } from "../selectors/event.selectors";
-import { eventsEntitiesSlice } from "../slices/event.slice";
-import { getSomedayEventsSlice } from "../slices/someday.slice";
-import { getWeekEventsSlice } from "../slices/week.slice";
 
-export function* getEventById(_id: string) {
-  const currEvent = (yield select((state: RootState) =>
+export function* getEventById(
+  _id: string,
+): Generator<
+  ReturnType<typeof select>,
+  Schema_GridEvent | undefined,
+  Schema_GridEvent | undefined
+> {
+  const currEvent = yield select((state: RootState) =>
     selectEventById(state, _id),
-  )) as Schema_Event;
+  );
+
   return currEvent;
+}
+
+export function* _editEvent(
+  gridEvent: Schema_GridEvent,
+  params: { applyTo?: RecurringEventUpdateScope } = {},
+) {
+  yield call(EventApi.edit, gridEvent._id as string, gridEvent, params);
 }
 
 export function* insertOptimisticEvent(
@@ -22,9 +44,9 @@ export function* insertOptimisticEvent(
   isSomeday: boolean,
 ) {
   if (isSomeday) {
-    yield put(getSomedayEventsSlice.actions.insert(event._id));
+    yield put(getSomedayEventsSlice.actions.insert(event._id!));
   } else {
-    yield put(getWeekEventsSlice.actions.insert(event._id));
+    yield put(getWeekEventsSlice.actions.insert(event._id!));
   }
   yield put(
     eventsEntitiesSlice.actions.insert(
@@ -33,23 +55,43 @@ export function* insertOptimisticEvent(
   );
 }
 
-export function* replaceOptimisticId(
-  optimisticId: string,
-  newId: string,
-  isSomeday: boolean,
+export function* _assembleGridEvent({
+  _id,
+  ...updatedFields
+}: Payload_ConvertEvent["event"]) {
+  const currEvent = yield* getEventById(_id);
+
+  const _gridEvent = { ...currEvent, ...updatedFields };
+  const gridEvent = validateGridEvent(_gridEvent);
+  return gridEvent;
+}
+
+export function* _createOptimisticGridEvent(
+  gridEvent: Schema_GridEvent,
+  isSomeday = false,
 ) {
+  const optimisticGridEvent = replaceIdWithOptimisticId(gridEvent);
+
+  yield* insertOptimisticEvent(optimisticGridEvent, isSomeday);
+
+  return optimisticGridEvent;
+}
+
+export function* replaceOptimisticId(optimisticId: string, isSomeday: boolean) {
+  const _id = optimisticId.replace(`${ID_OPTIMISTIC_PREFIX}-`, "");
+
   if (isSomeday) {
     yield put(
       getSomedayEventsSlice.actions.replace({
         oldSomedayId: optimisticId,
-        newSomedayId: newId,
+        newSomedayId: _id,
       }),
     );
   } else {
     yield put(
       getWeekEventsSlice.actions.replace({
         oldWeekId: optimisticId,
-        newWeekId: newId,
+        newWeekId: _id,
       }),
     );
   }
@@ -57,7 +99,7 @@ export function* replaceOptimisticId(
   yield put(
     eventsEntitiesSlice.actions.replace({
       oldEventId: optimisticId,
-      newEventId: newId,
+      newEventId: _id,
     }),
   );
 }

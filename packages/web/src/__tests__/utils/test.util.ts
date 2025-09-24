@@ -3,7 +3,7 @@ interface Spies {
 }
 const spies: Spies = {};
 
-export const arraysAreEqual = (a: any[], b: any[]) => {
+export const arraysAreEqual = (a: unknown[], b: unknown[]) => {
   return (
     Array.isArray(a) &&
     Array.isArray(b) &&

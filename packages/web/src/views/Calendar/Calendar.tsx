@@ -4,6 +4,7 @@ import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuW
 import { FlexDirections } from "@web/components/Flex/styled";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
+import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/RecurringEventUpdateScopeDialog";
 import { CmdPalette } from "../CmdPalette";
 import { RootProps } from "./calendarView.types";
 import { Dedication } from "./components/Dedication";
@@ -66,7 +67,11 @@ export const CalendarView = () => {
         weekProps={weekProps}
         isSidebarOpen={isSidebarOpen}
       >
-        <SidebarDraftProvider dateCalcs={dateCalcs} measurements={measurements}>
+        <SidebarDraftProvider
+          dateCalcs={dateCalcs}
+          measurements={measurements}
+          weekProps={weekProps}
+        >
           <Shortcuts shortcutsProps={shortcutProps}>
             <ContextMenuWrapper id="sidebar-context-menu">
               <Draft measurements={measurements} weekProps={weekProps} />
@@ -100,6 +105,8 @@ export const CalendarView = () => {
             </StyledCalendar>
           </Shortcuts>
         </SidebarDraftProvider>
+
+        <RecurringEventUpdateScopeDialog />
       </DraftProvider>
     </Styled>
   );

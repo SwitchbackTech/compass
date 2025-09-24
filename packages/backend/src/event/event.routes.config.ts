@@ -13,7 +13,6 @@ export class EventRoutes extends CommonRoutesConfig {
     this.app
       .route(`/api/event`)
       .all(verifySession())
-      //@ts-ignore
       .get(eventController.readAll)
       //@ts-ignore
       .post(eventController.create);
@@ -21,33 +20,23 @@ export class EventRoutes extends CommonRoutesConfig {
     this.app
       .route(`/api/event/deleteMany`)
       .all(verifySession())
-      //@ts-ignore
       .delete(eventController.deleteMany);
 
     this.app
       .route(`/api/event/reorder`)
       .all(verifySession())
-      //@ts-ignore
       .put(eventController.reorder);
-
-    // this.app.route(`/api/event/updateMany`).all(verifySession());
-    //@ts-ignore
-    // .post(eventController.updateMany);
 
     this.app
       .route(`/api/event/delete-all/:userId`)
       .all([verifySession(), authMiddleware.verifyIsDev])
-      //@ts-ignore
       .delete(eventController.deleteAllByUser);
 
     this.app
       .route(`/api/event/:id`)
       .all(verifySession())
-      //@ts-ignore
       .get(eventController.readById)
-      //@ts-ignore
       .put(eventController.update)
-      //@ts-ignore
       .delete(eventController.delete);
 
     return this.app;

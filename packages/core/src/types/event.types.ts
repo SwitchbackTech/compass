@@ -1,6 +1,11 @@
-import { Query } from "express-serve-static-core";
+import { ObjectId } from "bson";
+import type { Query } from "express-serve-static-core";
 import { z } from "zod";
-import { Origin, Priorities, Priority } from "@core/constants/core.constants";
+import {
+  Origin,
+  Priorities,
+  type Priority,
+} from "@core/constants/core.constants";
 
 /**
  * Event category, based on its display type
@@ -145,13 +150,17 @@ export enum CompassEventStatus {
   CANCELLED = "CANCELLED",
 }
 
+export const idSchema = z.string().refine(ObjectId.isValid, {
+  message: "Invalid id",
+});
+
 export const eventDateSchema = z.union([
   z.string().datetime({ offset: true }),
   z.string().date(),
 ]);
 
 export const CoreEventSchema = z.object({
-  _id: z.string().optional(),
+  _id: idSchema.optional(),
   description: z.string().nullable().optional(),
   endDate: eventDateSchema,
   isAllDay: z.boolean().optional(),
@@ -167,7 +176,7 @@ export const CoreEventSchema = z.object({
   user: z.string(),
 });
 
-const CompassEventRecurrence = z.object({
+export const CompassEventRecurrence = z.object({
   rule: z.array(z.string()),
   eventId: z.string().optional(),
 });
@@ -187,8 +196,19 @@ export const EventUpdateSchema = z.object({
   isSomeday: z.boolean().optional(),
 });
 
-export const CompassCoreEventSchema = CoreEventSchema.extend({
-  _id: z.string(),
+export const CompassCoreEventSchema = CoreEventSchema.omit({
+  recurrence: true,
+}).extend({
+  _id: idSchema,
+  recurrence: CompassEventRecurrence.omit({ rule: true })
+    .extend({
+      rule: z.union([z.null(), z.array(z.string())]),
+    })
+    .optional(),
+});
+
+export const CompassCoreCalendarEventSchema = CompassCoreEventSchema.extend({
+  isSomeday: z.literal(false),
 });
 
 const BaseCompassEventSchema = z.object({
@@ -257,9 +277,11 @@ export type CompassThisAndFollowingEvent = z.infer<
 >;
 export type CompassAllEvents = z.infer<typeof CompassAllEventsSchema>;
 export type CompassEvent = z.infer<typeof CompassEventSchema>;
+export type CompassCoreEvent = z.infer<typeof CompassCoreEventSchema>;
 export type EventUpdatePayload = z.infer<typeof EventUpdateSchema>;
 
 export type WithCompassId<T> = T & { _id: string };
+export type WithMongoId<T> = T & { _id: ObjectId }; // same as WithId from the 'mongodb' package - but for ui use
 export type WithoutCompassId<T> = Omit<T, "_id">;
 export enum CalendarProvider {
   GOOGLE = "google",

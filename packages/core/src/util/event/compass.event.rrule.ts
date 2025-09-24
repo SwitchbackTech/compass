@@ -1,4 +1,5 @@
-import { ObjectId, WithId } from "mongodb";
+import { ObjectId } from "bson";
+import type { WithId } from "mongodb";
 import type { Options, RRuleStrOptions } from "rrule";
 import { RRule, rrulestr } from "rrule";
 import type { ParsedOptions } from "rrule/dist/esm/types";
@@ -22,7 +23,10 @@ export class CompassEventRRule extends RRule {
   #durationMs!: number;
 
   constructor(
-    event: WithId<Omit<Schema_Event_Recur_Base, "_id">>,
+    event: Pick<
+      WithId<Omit<Schema_Event_Recur_Base, "_id">>,
+      "startDate" | "endDate" | "_id" | "recurrence"
+    >,
     options: Partial<Options> = {},
   ) {
     super(CompassEventRRule.#initOptions(event, options));

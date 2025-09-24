@@ -1,5 +1,3 @@
-import { Recurrence_Selection } from "../types/web.event.types";
-
 export const COLUMN_WEEK = "weekEvents";
 export const COLUMN_MONTH = "monthEvents";
 
@@ -18,16 +16,10 @@ export const ID_SIDEBAR = "sidebar";
 export const ID_SOMEDAY_DRAFT = "somedayDraft";
 export const ID_SOMEDAY_EVENTS = "ID_SOMEDAY_EVENTS";
 export const ID_SOMEDAY_EVENT_FORM = "Someday Event Form";
-export const ID_OPTIMISTIC_PREFIX = "optimistic";
+export const ID_EVENT_FORM_ACTION_MENU = "event-action-menu";
+export const ID_SOMEDAY_EVENT_ACTION_MENU = "someday-event-action-menu";
 export const DATA_EVENT_ELEMENT_ID = "data-event-id";
 export const ID_CONTEXT_MENU_ITEMS = "context-menu-items";
-
-export const OPTIONS_RECURRENCE = {
-  WEEK: { value: Recurrence_Selection.WEEK, label: "week" },
-  WEEKS_2: { value: Recurrence_Selection.WEEKS_2, label: "2 weeks" },
-  WEEKS_3: { value: Recurrence_Selection.WEEKS_3, label: "3 weeks" },
-  MONTH: { value: Recurrence_Selection.MONTH, label: "month" },
-};
 
 export enum ZIndex {
   LAYER_1 = 1,

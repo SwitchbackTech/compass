@@ -33,7 +33,7 @@ export const deleteEventSlice = createAsyncSlice<{ _id: string }>({
 
 export const editEventSlice = createAsyncSlice<Payload_EditEvent>({
   name: "editEvent",
-  initialState: {},
+  initialState: {} as unknown as undefined,
   reducers: {
     migrate: () => {},
   },

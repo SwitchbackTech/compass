@@ -4,14 +4,15 @@ import MenuItem from "../ActionsMenu/MenuItem";
 
 interface Props {
   onClick: () => void;
+  bgColor: string;
 }
 
-export const DeleteMenuButton: React.FC<Props> = ({ onClick }) => {
+export const DeleteMenuButton: React.FC<Props> = ({ onClick, bgColor }) => {
   return (
     <MenuItem
-      role="menuitem"
       onClick={onClick}
       aria-label="Delete Event"
+      bgColor={bgColor}
       tooltipContent={<span>DEL</span>}
     >
       <Trash size={16} />

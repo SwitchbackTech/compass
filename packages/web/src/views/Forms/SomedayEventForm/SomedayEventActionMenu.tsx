@@ -1,4 +1,6 @@
 import React from "react";
+import { Priority } from "@core/constants/core.constants";
+import { ID_SOMEDAY_EVENT_ACTION_MENU } from "@web/common/constants/web.constants";
 import { ActionsMenu } from "../ActionsMenu/ActionsMenu";
 import { DeleteMenuButton } from "../EventForm/DeleteMenuButton";
 import { DuplicateMenuButton } from "../EventForm/DuplicateMenuButton";
@@ -15,11 +17,11 @@ interface Props {
   onMigrateAboveClick: () => void;
   onDuplicateClick: () => void;
   onDeleteClick: () => void;
+  bgColor: string;
 }
 
-export const ID_SOMEDAY_EVENT_ACTION_MENU = "someday-event-action-menu";
-
 export const SomedayEventActionMenu: React.FC<Props> = ({
+  bgColor,
   target,
   onMigrateBackwardClick,
   onMigrateForwardClick,
@@ -29,10 +31,11 @@ export const SomedayEventActionMenu: React.FC<Props> = ({
   onDeleteClick,
 }) => {
   return (
-    <ActionsMenu id={ID_SOMEDAY_EVENT_ACTION_MENU}>
+    <ActionsMenu id={ID_SOMEDAY_EVENT_ACTION_MENU} bgColor={bgColor}>
       {(close) => (
         <>
           <MigrateBackwardMenuButton
+            bgColor={bgColor}
             tooltipText={`Migrate to previous ${target}`}
             onClick={() => {
               onMigrateBackwardClick();
@@ -40,6 +43,7 @@ export const SomedayEventActionMenu: React.FC<Props> = ({
             }}
           />
           <MigrateForwardMenuButton
+            bgColor={bgColor}
             tooltipText={`Migrate to next ${target}`}
             onClick={() => {
               onMigrateForwardClick();
@@ -48,6 +52,7 @@ export const SomedayEventActionMenu: React.FC<Props> = ({
           />
           {target === "month" && (
             <MigrateAboveMenuButton
+              bgColor={bgColor}
               tooltipText="Migrate to this week"
               onClick={() => {
                 onMigrateAboveClick();
@@ -57,6 +62,7 @@ export const SomedayEventActionMenu: React.FC<Props> = ({
           )}
           {target === "week" && (
             <MigrateBelowMenuButton
+              bgColor={bgColor}
               tooltipText="Migrate to this month"
               onClick={() => {
                 onMigrateBelowClick();
@@ -66,12 +72,14 @@ export const SomedayEventActionMenu: React.FC<Props> = ({
           )}
 
           <DuplicateMenuButton
+            bgColor={bgColor}
             onClick={() => {
               onDuplicateClick();
               close();
             }}
           />
           <DeleteMenuButton
+            bgColor={bgColor}
             onClick={() => {
               onDeleteClick();
               close();

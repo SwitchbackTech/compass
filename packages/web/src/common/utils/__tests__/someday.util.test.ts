@@ -1,32 +1,30 @@
-import dayjs from "dayjs";
-import isBetween from "dayjs/plugin/isBetween";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import timezone from "dayjs/plugin/timezone";
-import utc from "dayjs/plugin/utc";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { ObjectId } from "bson";
+import {
+  ID_OPTIMISTIC_PREFIX,
+  Origin,
+  Priorities,
+} from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { Schema_SomedayEvent } from "@web/common/types/web.event.types";
-import { computeRelativeEventDateRange } from "@web/common/utils/web.date.util";
-import { computeCurrentEventDateRange } from "@web/common/utils/web.date.util";
-import { categorizeSomedayEvents } from "../someday.util";
-import { setSomedayEventsOrder } from "../someday.util";
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.extend(isSameOrAfter);
-dayjs.extend(isSameOrBefore);
-dayjs.extend(isBetween);
+import {
+  categorizeSomedayEvents,
+  setSomedayEventsOrder,
+} from "@web/common/utils/someday.util";
+import {
+  computeCurrentEventDateRange,
+  computeRelativeEventDateRange,
+} from "@web/common/utils/web.date.util";
 
 describe("categorizeSomedayEvents", () => {
-  const baseEvent: Partial<Schema_SomedayEvent> = {
+  const baseEvent: Partial<Omit<Schema_SomedayEvent, "recurrence">> = {
     title: "test-title",
     description: "test-description",
     isAllDay: false,
     origin: Origin.COMPASS,
-    _id: "test-id",
+    _id: new ObjectId().toString(),
     order: 0,
     isSomeday: true,
     user: "test-user",
@@ -42,10 +40,12 @@ describe("categorizeSomedayEvents", () => {
 
   describe("Week vs Month categorization", () => {
     it("should categorize event within current week to week column", () => {
+      const _id = new ObjectId().toString();
+
       const events = {
-        "event-1": {
+        [_id]: {
           ...baseEvent,
-          _id: "event-1",
+          _id,
           startDate: "2024-03-19",
           endDate: "2024-03-20",
         },
@@ -53,15 +53,17 @@ describe("categorizeSomedayEvents", () => {
 
       const result = categorizeSomedayEvents(events, weekDates);
 
-      expect(result.columns[COLUMN_WEEK].eventIds).toContain("event-1");
-      expect(result.columns[COLUMN_MONTH].eventIds).not.toContain("event-1");
+      expect(result.columns[COLUMN_WEEK].eventIds).toContain(_id);
+      expect(result.columns[COLUMN_MONTH].eventIds).not.toContain(_id);
     });
 
     it("should categorize event outside current week but within month to month column", () => {
+      const _id = new ObjectId().toString();
+
       const events = {
-        "event-1": {
+        [_id]: {
           ...baseEvent,
-          _id: "event-1",
+          _id,
           startDate: "2024-03-25", // Next week but same month
           endDate: "2024-03-26",
         },
@@ -69,15 +71,17 @@ describe("categorizeSomedayEvents", () => {
 
       const result = categorizeSomedayEvents(events, weekDates);
 
-      expect(result.columns[COLUMN_MONTH].eventIds).toContain("event-1");
-      expect(result.columns[COLUMN_WEEK].eventIds).not.toContain("event-1");
+      expect(result.columns[COLUMN_MONTH].eventIds).toContain(_id);
+      expect(result.columns[COLUMN_WEEK].eventIds).not.toContain(_id);
     });
 
     it("should categorize month event to month column", () => {
+      const _id = new ObjectId().toString();
+
       const events = {
-        "event-1": {
+        [_id]: {
           ...baseEvent,
-          _id: "event-1",
+          _id,
           startDate: "2024-03-01",
           endDate: "2024-03-31",
         },
@@ -85,21 +89,24 @@ describe("categorizeSomedayEvents", () => {
 
       const result = categorizeSomedayEvents(events, weekDates);
 
-      expect(result.columns[COLUMN_MONTH].eventIds).toContain("event-1");
-      expect(result.columns[COLUMN_WEEK].eventIds).not.toContain("event-1");
+      expect(result.columns[COLUMN_MONTH].eventIds).toContain(_id);
+      expect(result.columns[COLUMN_WEEK].eventIds).not.toContain(_id);
     });
 
     it("should categorize week event to week column and month event to month column", () => {
+      const _idA = new ObjectId().toString();
+      const _idB = new ObjectId().toString();
+
       const events = {
-        "event-1": {
+        [_idA]: {
           ...baseEvent,
-          _id: "event-1",
+          _id: _idA,
           startDate: "2024-03-17",
           endDate: "2024-03-23",
         },
-        "event-2": {
+        [_idB]: {
           ...baseEvent,
-          _id: "event-2",
+          _id: _idB,
           startDate: "2024-03-01",
           endDate: "2024-03-31",
         },
@@ -107,15 +114,17 @@ describe("categorizeSomedayEvents", () => {
 
       const result = categorizeSomedayEvents(events, weekDates);
 
-      expect(result.columns[COLUMN_MONTH].eventIds).toContain("event-2");
-      expect(result.columns[COLUMN_WEEK].eventIds).toContain("event-1");
+      expect(result.columns[COLUMN_MONTH].eventIds).toContain(_idB);
+      expect(result.columns[COLUMN_WEEK].eventIds).toContain(_idA);
     });
 
     it("should not categorize events outside current month", () => {
+      const _id = new ObjectId().toString();
+
       const events = {
-        "event-1": {
+        [_id]: {
           ...baseEvent,
-          _id: "event-1",
+          _id: new ObjectId().toString(),
           startDate: "2024-04-01",
           endDate: "2024-04-02",
         },
@@ -123,24 +132,27 @@ describe("categorizeSomedayEvents", () => {
 
       const result = categorizeSomedayEvents(events, weekDates);
 
-      expect(result.columns[COLUMN_MONTH].eventIds).not.toContain("event-1");
-      expect(result.columns[COLUMN_WEEK].eventIds).not.toContain("event-1");
+      expect(result.columns[COLUMN_MONTH].eventIds).not.toContain(_id);
+      expect(result.columns[COLUMN_WEEK].eventIds).not.toContain(_id);
     });
   });
 
   describe("Event Sorting", () => {
     it("should maintain event order based on order property", () => {
+      const _idA = new ObjectId().toString();
+      const _idB = new ObjectId().toString();
+
       const events = {
-        "event-1": {
+        [_idA]: {
           ...baseEvent,
-          _id: "event-1",
+          _id: _idA,
           startDate: "2024-03-19",
           endDate: "2024-03-20",
           order: 2,
         },
-        "event-2": {
+        [_idB]: {
           ...baseEvent,
-          _id: "event-2",
+          _id: _idB,
           startDate: "2024-03-19",
           endDate: "2024-03-20",
           order: 1,
@@ -149,19 +161,18 @@ describe("categorizeSomedayEvents", () => {
 
       const result = categorizeSomedayEvents(events, weekDates);
 
-      expect(result.columns[COLUMN_WEEK].eventIds).toEqual([
-        "event-2",
-        "event-1",
-      ]);
+      expect(result.columns[COLUMN_WEEK].eventIds).toEqual([_idB, _idA]);
     });
   });
 
   describe("Edge Cases", () => {
     it("should handle events exactly at week boundaries", () => {
+      const _id = new ObjectId().toString();
+
       const events = {
-        "event-1": {
+        [_id]: {
           ...baseEvent,
-          _id: "event-1",
+          _id,
           startDate: "2024-03-17", // Monday (week start)
           endDate: "2024-03-23", // Sunday (week end)
         },
@@ -169,14 +180,16 @@ describe("categorizeSomedayEvents", () => {
 
       const result = categorizeSomedayEvents(events, weekDates);
 
-      expect(result.columns[COLUMN_WEEK].eventIds).toContain("event-1");
+      expect(result.columns[COLUMN_WEEK].eventIds).toContain(_id);
     });
 
     it("should handle events exactly at month boundaries", () => {
+      const _id = new ObjectId().toString();
+
       const events = {
-        "event-1": {
+        [_id]: {
           ...baseEvent,
-          _id: "event-1",
+          _id,
           startDate: "2024-03-01", // Month start
           endDate: "2024-03-31", // Month end
         },
@@ -184,7 +197,7 @@ describe("categorizeSomedayEvents", () => {
 
       const result = categorizeSomedayEvents(events, weekDates);
 
-      expect(result.columns[COLUMN_MONTH].eventIds).toContain("event-1");
+      expect(result.columns[COLUMN_MONTH].eventIds).toContain(_id);
     });
 
     it("should handle empty events object", () => {
@@ -482,6 +495,154 @@ describe("computeCurrentEventDateRange", () => {
       expect(result.title).toBe(eventWithProps.title);
       expect(result.description).toBe(eventWithProps.description);
       expect(result.isAllDay).toBe(eventWithProps.isAllDay);
+    });
+  });
+
+  describe("Optimistic Event IDs", () => {
+    it("should handle events with optimistic IDs", () => {
+      const optimisticId = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+      // Add all required properties for Schema_SomedayEvent
+      const events = {
+        [optimisticId]: {
+          ...baseEvent,
+          _id: optimisticId,
+          startDate: "2024-03-19",
+          endDate: "2024-03-20",
+          isSomeday: true,
+          origin: Origin.COMPASS,
+          priority: Priorities.UNASSIGNED,
+          user: "test-user",
+          order: 0,
+        },
+      };
+
+      const weekDates = {
+        start: dayjs("2024-03-17"),
+        end: dayjs("2024-03-23"),
+      };
+
+      const result = categorizeSomedayEvents(events, weekDates);
+
+      expect(result.columns[COLUMN_WEEK].eventIds).toContain(optimisticId);
+      expect(result.columns[COLUMN_MONTH].eventIds).not.toContain(optimisticId);
+      expect(result.columnOrder).toEqual([COLUMN_WEEK, COLUMN_MONTH]);
+    });
+
+    it("should maintain order for events with optimistic IDs", () => {
+      const optimisticIdA = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+      const optimisticIdB = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+
+      // Add all required properties for Schema_SomedayEvent
+      const events = {
+        [optimisticIdA]: {
+          ...baseEvent,
+          _id: optimisticIdA,
+          startDate: "2024-03-19",
+          endDate: "2024-03-20",
+          order: 2,
+          isSomeday: true,
+          origin: Origin.COMPASS,
+          priority: Priorities.UNASSIGNED,
+          user: "test-user",
+        },
+        [optimisticIdB]: {
+          ...baseEvent,
+          _id: optimisticIdB,
+          startDate: "2024-03-19",
+          endDate: "2024-03-20",
+          order: 1,
+          isSomeday: true,
+          origin: Origin.COMPASS,
+          priority: Priorities.UNASSIGNED,
+          user: "test-user",
+        },
+      };
+
+      const weekDates = {
+        start: dayjs("2024-03-17"),
+        end: dayjs("2024-03-23"),
+      };
+
+      const result = categorizeSomedayEvents(events, weekDates);
+
+      expect(result.columns[COLUMN_WEEK].eventIds).toEqual([
+        optimisticIdB,
+        optimisticIdA,
+      ]);
+    });
+
+    it("should assign sequential orders for optimistic events without order", () => {
+      const optimisticIdA = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+      const optimisticIdB = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+      // Add all required properties for Schema_Event
+      const events = [
+        {
+          ...baseEvent,
+          _id: optimisticIdA,
+          isSomeday: true,
+          origin: Origin.COMPASS,
+          priority: Priorities.UNASSIGNED,
+          user: "test-user",
+        },
+        {
+          ...baseEvent,
+          _id: optimisticIdB,
+          isSomeday: true,
+          origin: Origin.COMPASS,
+          priority: Priorities.UNASSIGNED,
+          user: "test-user",
+        },
+      ];
+
+      const result = setSomedayEventsOrder(events as Schema_Event[]);
+
+      expect(result).toEqual([
+        { ...events[0], order: 0 },
+        { ...events[1], order: 1 },
+      ]);
+    });
+
+    it("should fill gaps in order sequence for optimistic events", () => {
+      const optimisticIdA = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+      const optimisticIdB = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+      const optimisticIdC = `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`;
+      // Add all required properties for Schema_Event
+      const events = [
+        {
+          ...baseEvent,
+          _id: optimisticIdA,
+          order: 0,
+          isSomeday: true,
+          origin: Origin.COMPASS,
+          priority: Priorities.UNASSIGNED,
+          user: "test-user",
+        },
+        {
+          ...baseEvent,
+          _id: optimisticIdB,
+          isSomeday: true,
+          origin: Origin.COMPASS,
+          priority: Priorities.UNASSIGNED,
+          user: "test-user",
+        }, // Should get order 1
+        {
+          ...baseEvent,
+          _id: optimisticIdC,
+          order: 3,
+          isSomeday: true,
+          origin: Origin.COMPASS,
+          priority: Priorities.UNASSIGNED,
+          user: "test-user",
+        },
+      ];
+
+      const result = setSomedayEventsOrder(events as Schema_Event[]);
+
+      expect(result).toEqual([
+        { ...events[0], order: 0 },
+        { ...events[1], order: 1 },
+        { ...events[2], order: 3 },
+      ]);
     });
   });
 });

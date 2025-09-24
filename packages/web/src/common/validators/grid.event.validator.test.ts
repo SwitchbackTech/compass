@@ -1,3 +1,4 @@
+import { ObjectId } from "bson";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Schema_GridEvent } from "../types/web.event.types";
 import { validateGridEvent } from "./grid.event.validator";
@@ -5,6 +6,7 @@ import { validateGridEvent } from "./grid.event.validator";
 describe("validateGridEvent", () => {
   it("strips unexpected properties", () => {
     const event = {
+      _id: new ObjectId().toString(),
       startDate: "2023-01-01",
       endDate: "2023-01-02",
       origin: Origin.COMPASS,
@@ -18,6 +20,7 @@ describe("validateGridEvent", () => {
   });
   it("validates a correct event", () => {
     const event: Schema_GridEvent = {
+      _id: new ObjectId().toString(),
       endDate: "2023-01-02",
       hasFlipped: true,
       isOpen: true,

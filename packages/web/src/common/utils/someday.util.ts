@@ -3,12 +3,12 @@ import { RRULE } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { Categories_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
+import { ID_SOMEDAY_EVENT_ACTION_MENU } from "@web/common/constants/web.constants";
 import {
   Schema_SomedayEvent,
   Schema_SomedayEventsColumn,
 } from "@web/common/types/web.event.types";
 import { validateSomedayEvents } from "@web/common/validators/someday.event.validator";
-import { ID_SOMEDAY_EVENT_ACTION_MENU } from "@web/views/Forms/SomedayEventForm/SomedayEventActionMenu";
 
 export const getSomedayEventCategory = (
   event: Schema_Event,
