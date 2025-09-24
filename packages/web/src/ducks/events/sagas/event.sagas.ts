@@ -13,7 +13,6 @@ import {
 } from "@web/common/utils/event.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
 import { RootState } from "@web/store";
 import {
   Action_ConvertTimedEvent,
@@ -45,28 +44,24 @@ import {
 
 export function* convertTimedEvent({ payload }: Action_ConvertTimedEvent) {
   try {
-    const res = yield call(EventApi.edit, payload.event._id, payload.event);
-    const event = res.data as Schema_Event;
+    const { event } = payload;
 
+    // First remove the event from the week slice
+    yield put(getWeekEventsSlice.actions.delete({ _id: event._id }));
+
+    // Make the API call to convert the event
+    yield call(EventApi.edit, event._id, event, {});
+
+    // Add to someday slice
     yield put(getSomedayEventsSlice.actions.insert(event._id));
 
+    // Store the event in entities
     const normalizedEvent = normalize<Schema_Event>(
       event,
       normalizedEventsSchema(),
     );
     yield put(
       eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events),
-    );
-
-    const timedEvents = (yield select((state: RootState) =>
-      selectPaginatedEventsBySectionType(state, "week"),
-    )) as Response_GetEventsSaga;
-
-    const remainingTimedEvents = timedEvents.data.filter(
-      (id) => id !== event._id,
-    );
-    yield put(
-      getWeekEventsSlice.actions.success({ data: remainingTimedEvents }),
     );
   } catch (error) {
     yield put(getWeekEventsSlice.actions.error());

@@ -227,7 +227,7 @@ export const useDraftActions = (
   );
 
   const convert = useCallback(
-    (start: string, end: string) => {
+    async (start: string, end: string) => {
       if (isAtWeeklyLimit) {
         alert(SOMEDAY_WEEK_LIMIT_MSG);
         return;
@@ -238,18 +238,19 @@ export const useDraftActions = (
         return;
       }
 
+      const { position, ...draftWithoutPosition } = draft;
       const _draft = {
-        ...draft,
+        ...draftWithoutPosition,
         isAllDay: false,
         isSomeday: true,
         startDate: start,
         endDate: end,
         order: somedayWeekCount,
       };
-      const event = validateSomedayEvent(_draft);
-      dispatch(
-        getWeekEventsSlice.actions.convert({ event } as unknown as void),
-      );
+      const userId = await getUserId();
+      const preppedEvent = prepSomedayEventBeforeSubmit(_draft, userId);
+      const event = validateSomedayEvent(preppedEvent);
+      dispatch(getWeekEventsSlice.actions.convert({ event }));
 
       discard();
     },
