@@ -196,6 +196,146 @@ test("should call duplicateEvent when duplicate icon btn is clicked", async () =
   expect(mockOnConvert).not.toHaveBeenCalled();
 });
 
+test("should call onDuplicate with event containing provider data", async () => {
+  const eventWithProviderData: Schema_Event = {
+    _id: "event123",
+    title: "Test Event with Provider Data",
+    startDate: "2025-04-10",
+    endDate: "2025-04-10",
+    isAllDay: false,
+    gEventId: "google-calendar-event-id-123",
+    gRecurringEventId: "google-recurring-event-id-456",
+    recurrence: {
+      eventId: "recurring-event-base-id",
+      rule: ["FREQ=WEEKLY;BYDAY=MO,WE,FR"],
+    } as any,
+  };
+  const mockOnClose = jest.fn();
+  const mockOnConvert = jest.fn();
+  const mockOnSubmit = jest.fn();
+  const mockSetEvent = jest.fn();
+  const mockOnDelete = jest.fn();
+  const mockOnDuplicate = jest.fn();
+
+  render(
+    <div>
+      <EventForm
+        event={eventWithProviderData}
+        onClose={mockOnClose}
+        onConvert={mockOnConvert}
+        onSubmit={mockOnSubmit}
+        setEvent={mockSetEvent}
+        onDelete={mockOnDelete}
+        onDuplicate={mockOnDuplicate}
+      />
+    </div>,
+  );
+
+  // Ensure the form is rendered
+  expect(screen.getByRole("form")).toBeInTheDocument();
+
+  await act(async () => {
+    // Simulate pressing Meta + d
+    await userEvent.keyboard("{Meta>}d{/Meta}");
+  });
+
+  expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
+
+  // Verify that the onDuplicate callback receives the full original event
+  // (The EventForm component should pass the complete event with provider data
+  // to the onDuplicate callback, and the duplication logic elsewhere handles
+  // removing the provider data before submission)
+  expect(mockOnDuplicate).toHaveBeenCalledWith(eventWithProviderData);
+
+  // Verify the event passed to onDuplicate still contains provider data
+  const duplicatedEvent = mockOnDuplicate.mock.calls[0][0];
+  expect(duplicatedEvent.gEventId).toBe("google-calendar-event-id-123");
+  expect(duplicatedEvent.gRecurringEventId).toBe(
+    "google-recurring-event-id-456",
+  );
+  expect(duplicatedEvent.recurrence?.eventId).toBe("recurring-event-base-id");
+  expect(duplicatedEvent.recurrence?.rule).toEqual([
+    "FREQ=WEEKLY;BYDAY=MO,WE,FR",
+  ]);
+
+  expect(mockOnClose).not.toHaveBeenCalled();
+  expect(mockOnSubmit).not.toHaveBeenCalled();
+  expect(mockOnDelete).not.toHaveBeenCalled();
+  expect(mockOnConvert).not.toHaveBeenCalled();
+});
+
+test("should call duplicateEvent with provider data via button click", async () => {
+  const user = userEvent.setup();
+
+  const eventWithProviderData: Schema_Event = {
+    _id: "event123",
+    title: "Test Event with Provider Data for Button Click",
+    startDate: "2025-04-10",
+    endDate: "2025-04-10",
+    isAllDay: false,
+    gEventId: "google-event-button-test-789",
+    gRecurringEventId: "google-recurring-button-test-101112",
+  };
+  const mockOnClose = jest.fn();
+  const mockOnConvert = jest.fn();
+  const mockOnSubmit = jest.fn();
+  const mockSetEvent = jest.fn();
+  const mockOnDelete = jest.fn();
+  const mockOnDuplicate = jest.fn();
+
+  render(
+    <div>
+      <EventForm
+        event={eventWithProviderData}
+        onClose={mockOnClose}
+        onConvert={mockOnConvert}
+        onSubmit={mockOnSubmit}
+        setEvent={mockSetEvent}
+        onDelete={mockOnDelete}
+        onDuplicate={mockOnDuplicate}
+      />
+    </div>,
+  );
+
+  const eventForm = screen.getByRole("form");
+  expect(eventForm).toBeInTheDocument();
+
+  const form = screen.getByRole("form");
+
+  await act(async () => {
+    await user.click(
+      within(form).getByRole("button", { name: /open actions menu/i }),
+    );
+  });
+
+  await waitFor(() => {
+    expect(screen.getByText("Duplicate Event")).toBeInTheDocument();
+  });
+  await user.click(screen.getByText("Duplicate Event"));
+
+  expect(mockOnDuplicate).toHaveBeenCalledTimes(1);
+
+  // Verify that the onDuplicate callback receives the original event with provider data
+  expect(mockOnDuplicate).toHaveBeenCalledWith(eventWithProviderData);
+
+  const duplicatedEvent = mockOnDuplicate.mock.calls[0][0];
+  expect(duplicatedEvent._id).toBe("event123");
+  expect(duplicatedEvent.gEventId).toBe("google-event-button-test-789");
+  expect(duplicatedEvent.gRecurringEventId).toBe(
+    "google-recurring-button-test-101112",
+  );
+
+  // the form waits for 120ms before calling onClose
+  await new Promise((resolve) => {
+    const timeout = setTimeout(() => resolve(clearTimeout(timeout)), 120);
+  });
+
+  expect(mockOnClose).toHaveBeenCalledTimes(1);
+  expect(mockOnSubmit).not.toHaveBeenCalled();
+  expect(mockOnDelete).not.toHaveBeenCalled();
+  expect(mockOnConvert).not.toHaveBeenCalled();
+});
+
 const _clickStartInput = async () => {
   const startDateInput = screen.getByRole("textbox", {
     name: /pick start date/i,

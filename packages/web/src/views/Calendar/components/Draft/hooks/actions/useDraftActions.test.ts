@@ -152,4 +152,64 @@ describe("Event saving logic", () => {
       expect(shouldDiscard).toBe(false); // Should not discard changed events
     });
   });
+
+  describe("duplicateEvent behavior", () => {
+    it("should remove provider data when duplicating events", () => {
+      // This test validates that the duplication logic properly removes
+      // provider-specific data like gEventId and gRecurringEventId
+
+      const eventWithProviderData = createMockEvent({
+        _id: "existing-event-123",
+        title: "Original Event",
+        gEventId: "google-event-id-456",
+        gRecurringEventId: "google-recurring-id-789",
+        recurrence: {
+          eventId: "recurring-event-id",
+          rule: ["FREQ=WEEKLY;BYDAY=MO,WE,FR"],
+        } as any,
+      });
+
+      // Simulate what the duplicateEvent function does:
+      // const draft = MapEvent.removeProviderData({...reduxDraft}) as Schema_GridEvent;
+      // We can't easily test the actual hook here, but we can test the logic
+      const { MapEvent } = require("@core/mappers/map.event");
+      const duplicatedEvent = MapEvent.removeProviderData(
+        eventWithProviderData,
+      );
+
+      // Verify provider-specific fields are removed
+      expect(duplicatedEvent).not.toHaveProperty("_id");
+      expect(duplicatedEvent).not.toHaveProperty("gEventId");
+      expect(duplicatedEvent).not.toHaveProperty("gRecurringEventId");
+
+      // Verify core event data is preserved
+      expect(duplicatedEvent.title).toBe("Original Event");
+      expect(duplicatedEvent.startDate).toBe("2024-01-01T10:00:00.000Z");
+      expect(duplicatedEvent.endDate).toBe("2024-01-01T11:00:00.000Z");
+      expect(duplicatedEvent.user).toBe("user1");
+
+      // Verify recurrence is handled properly (rule preserved, eventId removed)
+      expect(duplicatedEvent.recurrence).toEqual({
+        rule: ["FREQ=WEEKLY;BYDAY=MO,WE,FR"],
+      });
+    });
+
+    it("should handle duplication of events without provider data", () => {
+      const simpleEvent = createMockEvent({
+        _id: "simple-event-123",
+        title: "Simple Event",
+        // No provider-specific fields
+      });
+
+      const { MapEvent } = require("@core/mappers/map.event");
+      const duplicatedEvent = MapEvent.removeProviderData(simpleEvent);
+
+      // _id should still be removed
+      expect(duplicatedEvent).not.toHaveProperty("_id");
+
+      // Core data should be preserved
+      expect(duplicatedEvent.title).toBe("Simple Event");
+      expect(duplicatedEvent.user).toBe("user1");
+    });
+  });
 });
