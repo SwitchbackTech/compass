@@ -34,17 +34,3 @@ export const mockResizeObserver = () => {
 export const mockScroll = () => {
   window.HTMLElement.prototype.scroll = jest.fn();
 };
-
-export const mockBSON = () => {
-  jest.mock("bson", () => ({
-    ObjectId: class ObjectId {
-      toString() {
-        return crypto.randomUUID();
-      }
-
-      static isValid(value?: string) {
-        return value?.length === 36;
-      }
-    },
-  }));
-};

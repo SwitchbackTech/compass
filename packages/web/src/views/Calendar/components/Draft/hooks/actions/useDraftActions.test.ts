@@ -1,5 +1,9 @@
+import {
+  ID_OPTIMISTIC_PREFIX,
+  Origin,
+  Priorities,
+} from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
-import { ID_OPTIMISTIC_PREFIX } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isOptimisticEvent } from "@web/common/utils/event.util";
 
@@ -16,8 +20,8 @@ describe("Event saving logic", () => {
     user: "user1",
     isAllDay: false,
     isSomeday: false,
-    origin: "compass" as any,
-    priority: "unassigned" as any,
+    origin: Origin.COMPASS,
+    priority: Priorities.UNASSIGNED,
     position: {
       isOverlapping: false,
       widthMultiplier: 1,

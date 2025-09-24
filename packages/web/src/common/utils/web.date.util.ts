@@ -7,15 +7,11 @@ import {
   YMDHAM_FORMAT,
   YMDHM_FORMAT,
 } from "@core/constants/date.constants";
-import {
-  Categories_Event,
-  Direction_Migrate,
-  Schema_Event,
-} from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Option_Time } from "@web/common/types/util.types";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { roundToNext } from ".";
-import { ACCEPTED_TIMES, OPTIONS_RECURRENCE } from "../constants/web.constants";
+import { ACCEPTED_TIMES } from "../constants/web.constants";
 import { theme } from "../styles/theme";
 import {
   Recurrence_Selection,
@@ -135,25 +131,6 @@ export const getRecurrenceRule = (selection: Recurrence_Selection) => {
       break;
     default:
       throw Error("Invalid selection");
-  }
-};
-
-export const getRecurrenceOption = (rrule: string) => {
-  switch (rrule) {
-    case RRULE.WEEK:
-      return OPTIONS_RECURRENCE.WEEK;
-      break;
-    case RRULE.WEEKS_2:
-      return OPTIONS_RECURRENCE.WEEKS_2;
-      break;
-    case RRULE.WEEKS_3:
-      return OPTIONS_RECURRENCE.WEEKS_3;
-      break;
-    case RRULE.MONTH:
-      return OPTIONS_RECURRENCE.MONTH;
-      break;
-    default:
-      throw Error(`Invalid RRule: ${rrule.toString()}`);
   }
 };
 

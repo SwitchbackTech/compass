@@ -1,10 +1,12 @@
 import { ObjectId } from "bson";
 import { MouseEvent, useCallback } from "react";
 import {
+  ID_OPTIMISTIC_PREFIX,
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { MapEvent } from "@core/mappers/map.event";
 import {
   Categories_Event,
   RecurringEventUpdateScope,
@@ -13,7 +15,6 @@ import {
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
-import { ID_OPTIMISTIC_PREFIX } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -22,7 +23,6 @@ import {
   prepSomedayEventBeforeSubmit,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
-import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
 import {
   selectDraft,
   selectDraftStatus,
@@ -49,7 +49,6 @@ import {
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
-import { MapEvent } from "../../../../../../../../core/src/mappers/map.event";
 
 export const useDraftActions = (
   draftState: State_Draft_Local,
@@ -233,17 +232,17 @@ export const useDraftActions = (
         return;
       }
 
-      const _draft = {
-        ...draft,
-        isAllDay: false,
-        isSomeday: true,
-        startDate: start,
-        endDate: end,
-        order: somedayWeekCount,
-      };
-      const event = validateSomedayEvent(_draft);
       dispatch(
-        getWeekEventsSlice.actions.convert({ event } as unknown as void),
+        getWeekEventsSlice.actions.convert({
+          event: {
+            _id: draft!._id!,
+            isAllDay: false,
+            isSomeday: true,
+            startDate: start,
+            endDate: end,
+            order: somedayWeekCount,
+          },
+        }),
       );
 
       discard();

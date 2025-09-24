@@ -102,6 +102,9 @@ module.exports = {
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
       setupFiles: ["<rootDir>/packages/core/src/__tests__/core.test.init.ts"],
+      setupFilesAfterEnv: [
+        "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
+      ],
     },
     {
       displayName: "web",
