@@ -9,6 +9,7 @@ export const SOMEDAY_WEEKLY_LIMIT = 9;
 export const SOMEDAY_WEEK_LIMIT_MSG = `Sorry, you can only have ${SOMEDAY_WEEKLY_LIMIT} unscheduled events per week.`;
 export const SOMEDAY_MONTH_LIMIT_MSG = `Sorry, you can only have ${SOMEDAY_MONTHLY_LIMIT} unscheduled events per month.`;
 export const SYNC_DEBUG = "/api/sync/debug";
+export const ID_OPTIMISTIC_PREFIX = "optimistic";
 
 export enum NodeEnv {
   Development = "development",
