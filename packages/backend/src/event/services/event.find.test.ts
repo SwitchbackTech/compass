@@ -4,6 +4,7 @@ import { mockEventSetSomeday1 } from "@core/__mocks__/v1/events/events.someday.1
 import { MapEvent, gEventToCompassEvent } from "@core/mappers/map.event";
 import { Schema_Event } from "@core/types/event.types";
 import { isBase, isExistingInstance } from "@core/util/event/event.util";
+import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
 import {
   cleanupTestDb,
   setupTestDb,
@@ -91,7 +92,7 @@ describe("Jan 2022: Many Formats", () => {
 
     it("excludes base calendar recurring events when someday=false", async () => {
       // Create a base calendar recurring event (isSomeday: false)
-      const baseCalendarRecurringEvent = {
+      const baseCalendarRecurringEvent = createMockBaseEvent({
         user: userId,
         title: "Base Calendar Recurring Event",
         isSomeday: false,
@@ -100,7 +101,7 @@ describe("Jan 2022: Many Formats", () => {
         recurrence: {
           rule: ["RRULE:FREQ=WEEKLY;COUNT=5"],
         },
-      };
+      });
 
       // Insert the test event
       await mongoService.event.insertOne(baseCalendarRecurringEvent);
@@ -334,7 +335,7 @@ describe("Jan 2022: Many Formats", () => {
 
     it("includes base someday recurring events when someday query provided", async () => {
       // Create a base someday recurring event
-      const baseSomedayRecurringEvent = {
+      const baseSomedayRecurringEvent = createMockBaseEvent({
         user: userId,
         title: "Base Someday Recurring Event",
         isSomeday: true,
@@ -343,7 +344,7 @@ describe("Jan 2022: Many Formats", () => {
         recurrence: {
           rule: ["RRULE:FREQ=WEEKLY;COUNT=5"],
         },
-      };
+      });
 
       // Insert the test event
       await mongoService.event.insertOne(baseSomedayRecurringEvent);
