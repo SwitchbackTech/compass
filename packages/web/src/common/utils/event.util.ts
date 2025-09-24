@@ -15,6 +15,7 @@ import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
+  Schema_SomedayEvent,
 } from "@web/common/types/web.event.types";
 import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
 
@@ -136,6 +137,7 @@ export const handleError = (error: Error) => {
   }
 
   alert(error);
+  console.error(error);
 };
 
 export const isEventInRange = (
@@ -200,12 +202,11 @@ export const prepEvtBeforeSubmit = (
 export const prepSomedayEventBeforeSubmit = (
   draft: Schema_Event | Schema_GridEvent,
   userId: string,
-) => {
+): Schema_SomedayEvent => {
   const _event = {
     ...draft,
     origin: Origin.COMPASS,
     user: userId,
-    // Ensure someday-specific properties are set correctly
     isSomeday: true,
     // Preserve existing order or set to 0 as fallback
     order: typeof draft.order === "number" ? draft.order : 0,
