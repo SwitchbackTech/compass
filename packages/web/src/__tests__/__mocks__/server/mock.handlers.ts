@@ -1,3 +1,4 @@
+import { ObjectId } from "bson";
 import { rest } from "msw";
 import {
   CLIMB,
@@ -17,7 +18,7 @@ export const globalHandlers = [
       return res(
         ctx.json([
           {
-            _id: "somedayFoo",
+            _id: new ObjectId().toString(),
             description: "somesomesome",
             isSomeday: true,
             origin: "compass",

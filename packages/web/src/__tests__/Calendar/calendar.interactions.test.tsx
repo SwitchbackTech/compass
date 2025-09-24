@@ -10,7 +10,7 @@ import { CalendarView } from "@web/views/Calendar";
 
 it("displays alert upon server error", async () => {
   server.use(
-    rest.get(`${ENV_WEB.API_BASEURL}/event`, (req, res, ctx) => {
+    rest.get(`${ENV_WEB.API_BASEURL}/event`, (_req, res, ctx) => {
       return res(
         ctx.status(500),
         ctx.json({

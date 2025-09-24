@@ -1,5 +1,3 @@
-import { faker as mockFaker } from "@faker-js/faker";
-
 interface Spies {
   [key: string]: jest.SpyInstance;
 }
@@ -35,18 +33,4 @@ export const mockResizeObserver = () => {
 
 export const mockScroll = () => {
   window.HTMLElement.prototype.scroll = jest.fn();
-};
-
-export const mockBSON = () => {
-  jest.mock("bson", () => ({
-    ObjectId: class ObjectId {
-      toString() {
-        return mockFaker.database.mongodbObjectId();
-      }
-
-      static isValid(value?: string) {
-        return /^[a-fA-F0-9]{24}$/.test(value ?? "");
-      }
-    },
-  }));
 };
