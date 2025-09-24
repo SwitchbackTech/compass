@@ -19,7 +19,7 @@ const EventApi = {
     _id: string,
     event: Schema_Event,
     params: { applyTo?: RecurringEventUpdateScope },
-  ): AxiosPromise<Schema_Event> => {
+  ): AxiosPromise<void> => {
     if (params?.applyTo) {
       return CompassApi.put(`/event/${_id}?applyTo=${params.applyTo}`, event);
     }
