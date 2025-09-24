@@ -148,43 +148,19 @@ export const useSidebarActions = (
     dispatch(draftSlice.actions.discard());
   };
 
-  const convertSomedayEventToAllDay = (
-    _id: string,
-    dates: { startDate: string; endDate: string },
-  ) => {
-    const updatedFields: Schema_Event = {
-      isAllDay: true,
-      isSomeday: false,
-      startDate: dates.startDate,
-      endDate: dates.endDate,
-    };
-
-    dispatch(
-      getSomedayEventsSlice.actions.convert({
-        _id,
-        updatedFields,
-      }),
-    );
-  };
-
-  const convertSomedayEventToTimed = (
-    _id: string,
-    dates: { startDate: string; endDate: string },
-  ) => {
-    const updatedFields: Schema_Event = {
-      isAllDay: false,
-      isSomeday: false,
-      startDate: dates.startDate,
-      endDate: dates.endDate,
-    };
-
-    dispatch(
-      getSomedayEventsSlice.actions.convert({
-        _id,
-        updatedFields,
-      }),
-    );
-  };
+  const convertSomedayToCalendarEvent = useCallback(
+    (
+      _id: string,
+      updates: Pick<Schema_Event, "startDate" | "endDate" | "isAllDay">,
+    ) => {
+      dispatch(
+        getSomedayEventsSlice.actions.convert({
+          event: { ...updates, isSomeday: false, _id },
+        }),
+      );
+    },
+    [dispatch],
+  );
 
   const create = useCallback(() => {
     setDraft(reduxDraft);
@@ -290,15 +266,13 @@ export const useSidebarActions = (
 
       reorder(result);
     } else {
-      if (state.isOverMainGrid) {
-        const dates = getDatesAfterDroppingOn("mainGrid", state.mouseCoords);
-        convertSomedayEventToTimed(draggableId, dates);
-      }
+      const grid = state.isOverMainGrid ? "mainGrid" : "alldayRow";
+      const dates = getDatesAfterDroppingOn(grid, state.mouseCoords);
 
-      if (state.isOverAllDayRow) {
-        const dates = getDatesAfterDroppingOn("alldayRow", state.mouseCoords);
-        convertSomedayEventToAllDay(draggableId, dates);
-      }
+      convertSomedayToCalendarEvent(draggableId, {
+        ...dates,
+        isAllDay: state.isOverAllDayRow,
+      });
     }
 
     handleDiscard();

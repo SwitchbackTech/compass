@@ -1,4 +1,5 @@
 import {
+  ActionCreatorWithPayload,
   PayloadAction,
   SliceCaseReducers,
   ValidateSliceCaseReducers,
@@ -23,10 +24,13 @@ export interface _AsyncState<SuccessPayload, ErrorPayload> {
   [key: string]: unknown;
 }
 
-export interface _CreateSliceOptions<State> {
+export interface _CreateSliceOptions<
+  State,
+  Reducers extends SliceCaseReducers<State> = SliceCaseReducers<State>,
+> {
   initialState?: State;
   name: string;
-  reducers?: ValidateSliceCaseReducers<State, SliceCaseReducers<State>>;
+  reducers?: ValidateSliceCaseReducers<State, Reducers>;
 }
 
 export interface SliceStateContext {
@@ -38,7 +42,7 @@ export interface SliceStateContext {
     /**
      * The reason for the action, could be anything
      */
-    reason?: string;
+    reason?: string | null;
   };
 }
 
@@ -47,9 +51,13 @@ export const createAsyncSlice = <
   SuccessPayload = undefined,
   ErrorPayload = undefined,
   ExtraState = never,
+  Reducers extends SliceCaseReducers<
+    AsyncState<SuccessPayload, ErrorPayload> & ExtraState
+  > = SliceCaseReducers<AsyncState<SuccessPayload, ErrorPayload> & ExtraState>,
 >(
   options: _CreateSliceOptions<
-    AsyncState<SuccessPayload, ErrorPayload> & ExtraState
+    AsyncState<SuccessPayload, ErrorPayload> & ExtraState,
+    Reducers
   >,
 ) => {
   type StateType = Exclude<typeof options.initialState, undefined>;
@@ -75,7 +83,20 @@ export const createAsyncSlice = <
     state.reason = null;
   };
 
-  const reducers = {
+  const reducers: Reducers & {
+    request: (
+      state: StateType,
+      _action: PayloadAction<RequestPayload & SliceStateContext>,
+    ) => void;
+    success: (
+      state: StateType,
+      action: PayloadAction<SuccessPayload & SliceStateContext>,
+    ) => void;
+    error: (
+      state: StateType,
+      action: PayloadAction<ErrorPayload & SliceStateContext>,
+    ) => void;
+  } = {
     request(
       state: StateType,
       _action: PayloadAction<RequestPayload & SliceStateContext>,
@@ -116,41 +137,59 @@ export const createAsyncSlice = <
       state.isSuccess = false;
       state.error = action.payload;
     },
-    ...options.reducers,
+    ...(options.reducers as Reducers),
   };
 
-  const actionKeys = Object.keys(reducers);
-  const actionNames = actionKeys.reduce<Record<string, string>>(
-    (result, name) => {
-      result[name] = `async/${options.name}/${name}`;
+  const slice = createSlice({
+    ...options,
+    initialState: {
+      ...initialState,
+      ...options.initialState,
+    },
+    name: `async/${options.name}`,
+    reducers: reducers as ValidateSliceCaseReducers<StateType, typeof reducers>,
+  });
+
+  const actionNames = Object.keys(reducers).reduce(
+    (result, _name) => {
+      const name = _name as keyof Reducers;
+      result[name] = `async/${options.name}/${String(name)}`;
+
       return result;
     },
-    {},
+    {} as Record<keyof typeof reducers, string>,
   );
 
   return {
-    ...createSlice({
-      ...options,
-      initialState: {
-        ...initialState,
-        ...options.initialState,
-      },
-      name: `async/${options.name}`,
-      // TS has bad time figuring out the dynamic nature of the reducers object
-      // so need to assert it.
-      reducers: reducers as SliceCaseReducers<StateType>,
-    }),
+    ...slice,
     actionNames,
+    actions: {
+      ...slice.actions,
+      request: slice.actions.request as ActionCreatorWithPayload<
+        RequestPayload & SliceStateContext,
+        typeof actionNames.request
+      >,
+      success: slice.actions.success as ActionCreatorWithPayload<
+        SuccessPayload & SliceStateContext,
+        typeof actionNames.success
+      >,
+      error: slice.actions.error as ActionCreatorWithPayload<
+        ErrorPayload & SliceStateContext,
+        typeof actionNames.error
+      >,
+      // custom reducers will remain as in slice.actions
+    },
   };
 };
 
 export const isError = (asyncState: _AsyncState<unknown, unknown>) =>
   !asyncState.isProcessing && !!asyncState.error;
 
-export const isProcessing = (asyncState: _AsyncState<unknown, unknown>) =>
+export const isProcessing = (asyncState: AsyncState<unknown, unknown>) =>
   asyncState.isProcessing && !asyncState.error;
 
-export const isSuccess = (asyncState: _AsyncState<unknown, unknown>) =>
-  !asyncState.isProcessing && asyncState.isSuccess;
+export const isSuccess = <SuccessPayload, ErrorPayload>(
+  asyncState: AsyncState<SuccessPayload, ErrorPayload>,
+) => !asyncState.isProcessing && asyncState.isSuccess;
 
 export const pure = <T>(state: T) => state;

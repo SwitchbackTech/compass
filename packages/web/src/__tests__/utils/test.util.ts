@@ -1,3 +1,5 @@
+import { faker as mockFaker } from "@faker-js/faker";
+
 interface Spies {
   [key: string]: jest.SpyInstance;
 }
@@ -39,11 +41,11 @@ export const mockBSON = () => {
   jest.mock("bson", () => ({
     ObjectId: class ObjectId {
       toString() {
-        return crypto.randomUUID();
+        return mockFaker.database.mongodbObjectId();
       }
 
       static isValid(value?: string) {
-        return value?.length === 36;
+        return /^[a-fA-F0-9]{24}$/.test(value ?? "");
       }
     },
   }));

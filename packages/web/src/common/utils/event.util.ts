@@ -1,16 +1,17 @@
-import { v4 as uuidv4 } from "uuid";
+import { ObjectId } from "bson";
 import { DropResult } from "@hello-pangea/dnd";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import {
+  ID_OPTIMISTIC_PREFIX,
+  Origin,
+  Priorities,
+} from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
-import {
-  DATA_EVENT_ELEMENT_ID,
-  ID_OPTIMISTIC_PREFIX,
-} from "@web/common/constants/web.constants";
+import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Schema_GridEvent,
@@ -212,11 +213,11 @@ export const prepSomedayEventBeforeSubmit = (
 };
 
 export const replaceIdWithOptimisticId = (
-  event: Schema_Event,
+  event: Schema_GridEvent,
 ): Schema_OptimisticEvent => {
-  const _event: Schema_OptimisticEvent = {
+  const _event = {
     ...event,
-    _id: `${ID_OPTIMISTIC_PREFIX}-${uuidv4()}`,
+    _id: `${ID_OPTIMISTIC_PREFIX}-${new ObjectId().toString()}`,
   };
 
   return _event;

@@ -1,4 +1,4 @@
-import type { ObjectId } from "bson";
+import { ObjectId } from "bson";
 import type { Query } from "express-serve-static-core";
 import { z } from "zod";
 import {
@@ -150,13 +150,17 @@ export enum CompassEventStatus {
   CANCELLED = "CANCELLED",
 }
 
+export const idSchema = z.string().refine(ObjectId.isValid, {
+  message: "Invalid id",
+});
+
 export const eventDateSchema = z.union([
   z.string().datetime({ offset: true }),
   z.string().date(),
 ]);
 
 export const CoreEventSchema = z.object({
-  _id: z.string().optional(),
+  _id: idSchema.optional(),
   description: z.string().nullable().optional(),
   endDate: eventDateSchema,
   isAllDay: z.boolean().optional(),
@@ -195,12 +199,16 @@ export const EventUpdateSchema = z.object({
 export const CompassCoreEventSchema = CoreEventSchema.omit({
   recurrence: true,
 }).extend({
-  _id: z.string(),
+  _id: idSchema,
   recurrence: CompassEventRecurrence.omit({ rule: true })
     .extend({
       rule: z.union([z.null(), z.array(z.string())]),
     })
     .optional(),
+});
+
+export const CompassCoreCalendarEventSchema = CompassCoreEventSchema.extend({
+  isSomeday: z.literal(false),
 });
 
 const BaseCompassEventSchema = z.object({
