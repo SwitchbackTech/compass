@@ -1,3 +1,4 @@
+import type { GaxiosError } from "gaxios";
 import { ClientSession, Document, Filter, ObjectId, WithId } from "mongodb";
 import {
   Origin,
@@ -442,12 +443,22 @@ export const _getGcal = async (
 };
 
 export const _createGcal = async (userId: string, event: Schema_Event_Core) => {
-  const _gEvent = MapEvent.toGcal(event);
+  try {
+    const _gEvent = MapEvent.toGcal(event);
 
-  const gcal = await getGcalClient(userId);
-  const gEvent = await gcalService.createEvent(gcal, _gEvent);
+    const gcal = await getGcalClient(userId);
+    const gEvent = await gcalService.createEvent(gcal, _gEvent);
 
-  return gEvent;
+    return gEvent;
+  } catch (e) {
+    const error = e as GaxiosError<gSchema$Event>;
+
+    if (error.code?.toString() === "409") {
+      return _updateGcal(userId, event, { status: "confirmed" });
+    }
+
+    throw e;
+  }
 };
 
 export const _updateGcal = async (
@@ -465,26 +476,13 @@ export const _updateGcal = async (
     );
   }
 
-  await gcalService.updateEvent(gcal, event.gEventId, gEvent);
+  const updatedGEvent = await gcalService.updateEvent(
+    gcal,
+    event.gEventId,
+    gEvent,
+  );
 
-  return event;
-};
-
-export const _upsertGcal = async (
-  userId: string,
-  event: Schema_Event_Core,
-  extras?: Pick<gSchema$Event, "status" | "recurrence">,
-) => {
-  const wasSomedayEvent = event.gEventId === undefined;
-
-  if (wasSomedayEvent) {
-    const gEvent = await _createGcal(userId, event);
-    event.gEventId = gEvent.id as string;
-  } else {
-    await _updateGcal(userId, event, extras);
-  }
-
-  return event;
+  return updatedGEvent;
 };
 
 export const _deleteGcal = async (
