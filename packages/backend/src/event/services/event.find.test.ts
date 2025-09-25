@@ -109,7 +109,7 @@ describe("Jan 2022: Many Formats", () => {
 
       // Should NOT include the base calendar recurring event
       const baseCalendarRecurringEvents = result.filter(
-        (e) => e.isSomeday === false && e.recurrence?.rule,
+        (e) => isBase(e) && e.isSomeday === false,
       );
 
       expect(baseCalendarRecurringEvents).toHaveLength(0);
@@ -341,7 +341,7 @@ describe("Jan 2022: Many Formats", () => {
 
       // Should include the base someday recurring event
       const baseSomedayRecurringEvents = result.filter(
-        (e) => e.isSomeday === true && e.recurrence?.rule,
+        (e) => isBase(e) && e.isSomeday === true,
       );
 
       expect(baseSomedayRecurringEvents.length).toBeGreaterThan(0);
