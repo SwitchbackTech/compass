@@ -131,6 +131,7 @@ export const handleError = (error: Error) => {
     return;
   }
 
+  console.error(error);
   if (code === Status.INTERNAL_SERVER) {
     alert("Something went wrong behind the scenes. Please try again later.");
     window.location.reload();
