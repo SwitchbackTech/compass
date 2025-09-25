@@ -349,7 +349,6 @@ export const EventForm: React.FC<FormProps> = ({
       />
 
       <SaveSection
-        disableSaveBtn={disableSaveBtn}
         priority={priority}
         onSubmit={onSubmitForm}
         onCancel={onClose}

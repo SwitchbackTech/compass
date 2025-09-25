@@ -90,7 +90,7 @@ describe("SaveSection", () => {
     });
 
     it("does not call onSubmit when save button is disabled and clicked", async () => {
-      render(<SaveSection onSubmit={mockOnSubmit} disableSaveBtn={true} />);
+      render(<SaveSection onSubmit={mockOnSubmit} />);
 
       const saveButton = screen.getByRole("tab", { name: "Save" });
       // Use fireEvent instead of userEvent for disabled elements

@@ -110,7 +110,6 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
                 onConvert={onConvert}
                 onDelete={onDelete}
                 onDuplicate={duplicateEvent}
-                disableSaveBtn={false}
                 onSubmit={onSubmit}
                 setEvent={setDraft}
               />

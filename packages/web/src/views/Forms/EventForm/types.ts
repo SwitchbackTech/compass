@@ -10,7 +10,6 @@ export interface FormProps {
   event: Schema_Event;
   category: Categories_Event;
   isOpen?: boolean;
-  disableSaveBtn?: boolean;
   onClose: () => void;
   onCloseEventForm?: () => void;
   onConvert?: () => void;
