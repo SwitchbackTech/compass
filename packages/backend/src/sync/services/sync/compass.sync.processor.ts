@@ -1,4 +1,8 @@
 import { ClientSession } from "mongodb";
+import {
+  EVENT_CHANGED,
+  SOMEDAY_EVENT_CHANGED,
+} from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { CompassEvent } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
@@ -50,17 +54,59 @@ export class CompassSyncProcessor {
       throw error;
     }
 
-    if (!_session) CompassSyncProcessor.notifyClients(events);
+    if (!_session) CompassSyncProcessor.notifyClients(events, summary);
 
     return summary;
   }
 
-  private static notifyClients(events: CompassEvent[]): void {
+  private static getNotificationType({
+    transition: [from, to],
+  }: Event_Transition): Array<
+    typeof EVENT_CHANGED | typeof SOMEDAY_EVENT_CHANGED
+  > {
+    const notifications: Array<
+      typeof EVENT_CHANGED | typeof SOMEDAY_EVENT_CHANGED
+    > = [];
+
+    if (from) {
+      const isSomeday = from.includes("SOMEDAY");
+
+      notifications.push(isSomeday ? SOMEDAY_EVENT_CHANGED : EVENT_CHANGED);
+    }
+
+    const isSomeday = to.includes("SOMEDAY");
+
+    notifications.push(isSomeday ? SOMEDAY_EVENT_CHANGED : EVENT_CHANGED);
+
+    return notifications;
+  }
+
+  private static notifyClients(
+    events: CompassEvent[],
+    summary: Event_Transition[],
+  ): void {
+    const notifications = [
+      ...new Set(summary.flatMap(CompassSyncProcessor.getNotificationType)),
+    ];
+
     const uniqueUserIds = new Set(events.map((e) => e.payload.user));
 
-    uniqueUserIds.forEach((userId) =>
-      webSocketServer.handleBackgroundCalendarChange(userId),
-    );
+    uniqueUserIds.forEach((userId) => {
+      notifications.forEach((notification) => {
+        switch (notification) {
+          case EVENT_CHANGED:
+            webSocketServer.handleBackgroundCalendarChange(userId);
+            break;
+          case SOMEDAY_EVENT_CHANGED:
+            webSocketServer.handleBackgroundSomedayChange(userId);
+            break;
+          default:
+            logger.error(
+              `Unknown notification type: ${notification} for user: ${userId}`,
+            );
+        }
+      });
+    });
   }
 
   private static async handleCompassChange(

@@ -1,5 +1,6 @@
 // server to client events
 export const EVENT_CHANGED = "EVENT_CHANGED";
+export const SOMEDAY_EVENT_CHANGED = "SOMEDAY_EVENT_CHANGED";
 export const EVENT_RECEIVED = "EVENT_RECEIVED";
 
 export const RESULT_IGNORED = "IGNORED";
@@ -15,5 +16,6 @@ export const IMPORT_GCAL_END = "IMPORT_GCAL_END";
 
 // client to server events
 export const EVENT_CHANGE_PROCESSED = "EVENT_CHANGE_PROCESSED";
+export const SOMEDAY_EVENT_CHANGE_PROCESSED = "SOMEDAY_EVENT_CHANGE_PROCESSED";
 
 export const FETCH_USER_METADATA = "FETCH_USER_METADATA";
