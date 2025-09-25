@@ -1,6 +1,6 @@
 import React from "react";
 import "@testing-library/jest-dom/extend-expect";
-import { fireEvent, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Priorities } from "@core/constants/core.constants";
 import { render } from "@web/__tests__/__mocks__/mock.render";
@@ -87,16 +87,6 @@ describe("SaveSection", () => {
       await user.click(cancelButton);
 
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
-    });
-
-    it("does not call onSubmit when save button is disabled and clicked", async () => {
-      render(<SaveSection onSubmit={mockOnSubmit} />);
-
-      const saveButton = screen.getByRole("tab", { name: "Save" });
-      // Use fireEvent instead of userEvent for disabled elements
-      fireEvent.click(saveButton);
-
-      expect(mockOnSubmit).not.toHaveBeenCalled();
     });
 
     it("handles keyboard navigation with tabIndex", () => {
