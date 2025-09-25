@@ -207,10 +207,6 @@ export const CompassCoreEventSchema = CoreEventSchema.omit({
     .optional(),
 });
 
-export const CompassCoreCalendarEventSchema = CompassCoreEventSchema.extend({
-  isSomeday: z.literal(false),
-});
-
 const BaseCompassEventSchema = z.object({
   status: z
     .nativeEnum(CompassEventStatus)
