@@ -9,6 +9,8 @@ import {
   EVENT_CHANGED,
   EVENT_CHANGE_PROCESSED,
   FETCH_USER_METADATA,
+  SOMEDAY_EVENT_CHANGED,
+  SOMEDAY_EVENT_CHANGE_PROCESSED,
   USER_METADATA,
   USER_REFRESH_TOKEN,
 } from "@core/constants/websocket.constants";
@@ -271,6 +273,29 @@ describe("WebSocket Server", () => {
       });
     });
 
+    describe("handleBackgroundSomedayChange: ", () => {
+      it("emits the `SOMEDAY_EVENT_CHANGED` event without a payload to the client", async () => {
+        const userId = randomUUID();
+
+        const client = baseDriver.createWebsocketClient(
+          { userId },
+          { autoConnect: false },
+        );
+
+        client.once("connect", () =>
+          webSocketServer.handleBackgroundSomedayChange(userId),
+        );
+
+        await expect(
+          baseDriver.waitUntilWebsocketEvent(
+            client,
+            SOMEDAY_EVENT_CHANGED,
+            async () => client.connect(),
+          ),
+        ).resolves.toEqual([]);
+      });
+    });
+
     describe("handleUserMetadata: ", () => {
       it("emits the `USER_METADATA` event with a `UserMetadata` payload to the client", async () => {
         const userId = randomUUID();
@@ -315,6 +340,31 @@ describe("WebSocket Server", () => {
                 EVENT_CHANGE_PROCESSED,
                 async () =>
                   Promise.resolve(client.emit(EVENT_CHANGE_PROCESSED)),
+              ),
+            ),
+          ).then((res) => res.flat()),
+        ).resolves.toEqual([]);
+      });
+
+      it("listens for the `SOMEDAY_EVENT_CHANGE_PROCESSED` event", async () => {
+        const userId = randomUUID();
+
+        const client = baseDriver.createWebsocketClient(
+          { userId },
+          { autoConnect: false },
+        );
+
+        const connectedUserSockets =
+          await baseDriver.getConnectedUserClientSockets(userId, client);
+
+        await expect(
+          Promise.all(
+            connectedUserSockets.map((socket) =>
+              baseDriver.waitUntilWebsocketEvent(
+                socket,
+                SOMEDAY_EVENT_CHANGE_PROCESSED,
+                async () =>
+                  Promise.resolve(client.emit(SOMEDAY_EVENT_CHANGE_PROCESSED)),
               ),
             ),
           ).then((res) => res.flat()),

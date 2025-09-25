@@ -7,9 +7,9 @@ import {
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { Schema_GridEvent } from "@web/common/schemas/events/draft.event.schemas";
+import { GridEventSchema } from "@web/common/schemas/events/draft.event.schemas";
 import { replaceIdWithOptimisticId } from "@web/common/utils/event.util";
-import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 import { EventApi } from "@web/ducks/events/event.api";
 import { Payload_ConvertEvent } from "@web/ducks/events/event.types";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
@@ -62,7 +62,7 @@ export function* _assembleGridEvent({
   const currEvent = yield* getEventById(_id);
 
   const _gridEvent = { ...currEvent, ...updatedFields };
-  const gridEvent = validateGridEvent(_gridEvent);
+  const gridEvent = GridEventSchema.parse(_gridEvent) as Schema_GridEvent;
   return gridEvent;
 }
 

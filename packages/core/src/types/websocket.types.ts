@@ -5,6 +5,7 @@ import { UserMetadata } from "@core/types/user.types";
 
 export interface ClientToServerEvents {
   EVENT_CHANGE_PROCESSED: () => void;
+  SOMEDAY_EVENT_CHANGE_PROCESSED: () => void;
   FETCH_USER_METADATA: () => void;
 }
 
@@ -28,6 +29,7 @@ export interface InterServerEvents {
 
 export interface ServerToClientEvents {
   EVENT_CHANGED: () => void;
+  SOMEDAY_EVENT_CHANGED: () => void;
   USER_SIGN_OUT: () => void;
   USER_REFRESH_TOKEN: () => void;
   USER_METADATA: (data: UserMetadata) => void;

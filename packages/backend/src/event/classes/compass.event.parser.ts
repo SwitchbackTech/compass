@@ -1,6 +1,5 @@
 import { ClientSession, ObjectId, WithId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { MapEvent } from "@core/mappers/map.event";
 import {
   CalendarProvider,
   Categories_Recurrence,
@@ -25,7 +24,6 @@ import {
   _createCompassEvent,
   _createGcal,
   _deleteGcal,
-  _deleteInstances,
   _deleteInstancesAfterUntil,
   _deleteSeries,
   _deleteSingleCompassEvent,
@@ -261,11 +259,12 @@ export class CompassEventParser {
        * *************************************************************************
        * const instances = this.rrule!.instances();
        * const availableStarts = instances.map((i) => i.startDate);
-       * await _deleteInstances(
+       * await _deleteSeries(
        *   userId,
        *   this.#event._id.toString(),
        *   { startDate: { $nin: availableStarts } },
        *   session,
+       *   true,
        * );
        * *************************************************************************
        * We will respect only the UNTIL recurrence rule param for now
@@ -292,7 +291,7 @@ export class CompassEventParser {
         );
       } else {
         // recreate instances
-        await _deleteInstances(userId, this.#event._id.toString(), {}, session);
+        await _deleteSeries(userId, this.#event._id.toString(), session, true);
 
         cEvent = await _createCompassEvent(
           { ...compassEvent, user: userId },
@@ -360,19 +359,12 @@ export class CompassEventParser {
     );
 
     const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
-    const _id = new ObjectId();
+    const user = this.#event.user!;
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
-    await _deleteSingleCompassEvent({ ...this.#event, user: userId }, session);
-
     await _createCompassEvent(
-      Object.assign(MapEvent.removeIdentifyingData(this.#event), {
-        _id,
-        user: userId,
-        isSomeday: true,
-      }),
+      { ...this.#event, user, isSomeday: true },
       calendarProvider,
       null,
       session,
@@ -380,7 +372,7 @@ export class CompassEventParser {
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
-        const ok = await _deleteGcal(userId, this.#event.gEventId!);
+        const ok = await _deleteGcal(user, this.#event.gEventId!);
 
         return ok ? [operationSummary] : [];
       }
@@ -395,20 +387,19 @@ export class CompassEventParser {
     );
 
     const calendarProvider = CalendarProvider.GOOGLE;
-    const userId = this.#event.user!;
-    const _id = new ObjectId();
+    const user = this.#event.user!;
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
-    await _deleteSeries(userId, this.#event._id.toString(), session);
+    await _deleteSeries(user, this.#event._id.toString(), session, true);
 
     await _createCompassEvent(
-      Object.assign(MapEvent.removeIdentifyingData(this.#event), {
-        _id,
-        user: userId,
-        isSomeday: true,
+      {
+        ...this.#event,
+        user,
         recurrence: this.#event.recurrence,
-      }),
+        isSomeday: true,
+      },
       calendarProvider,
       null,
       session,
@@ -416,7 +407,7 @@ export class CompassEventParser {
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
-        const ok = await _deleteGcal(userId, this.#event.gEventId!);
+        const ok = await _deleteGcal(user, this.#event.gEventId!);
 
         return ok ? [operationSummary] : [];
       }
@@ -437,7 +428,7 @@ export class CompassEventParser {
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
-    await _deleteInstances(userId, this.#event._id.toString(), {}, session);
+    await _deleteSeries(userId, this.#event._id.toString(), session, true);
 
     const cEvent = (await _updateCompassEvent(
       { ...this.#event, user: userId },

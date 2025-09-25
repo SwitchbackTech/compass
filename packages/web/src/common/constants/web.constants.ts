@@ -128,3 +128,9 @@ export const ACCEPTED_TIMES = [
   "11:30 PM",
   "11:45 PM",
 ];
+
+export enum Recurrence_Selection {
+  NONE = "none",
+  WEEK = "week",
+  MONTH = "month",
+}

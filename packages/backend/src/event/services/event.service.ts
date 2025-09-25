@@ -1,3 +1,4 @@
+import type { GaxiosError } from "gaxios";
 import { ClientSession, Document, Filter, ObjectId, WithId } from "mongodb";
 import {
   Origin,
@@ -25,6 +26,7 @@ import {
   Schema_Event,
   Schema_Event_Core,
   WithCompassId,
+  idSchema,
 } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import { getCurrentRangeDates } from "@core/util/date/date.util";
@@ -269,24 +271,20 @@ export const _createCompassEvent = async (
   rrule?: CompassEventRRule | null,
   session?: ClientSession,
 ): Promise<WithCompassId<Omit<Schema_Event, "_id">>> => {
-  const updatedAt = new Date();
-  const { isSomeday, _id, user, recurrence } = _event;
+  const { isSomeday } = _event;
+  const providerData = MapEvent.toProviderData(_event, provider);
 
-  const calData = isSomeday
-    ? MapEvent.removeIdentifyingData(_event)
-    : MapEvent.toProviderData(_event, provider);
-
-  const recurrenceData = recurrence ? { recurrence } : {};
-
-  const event = isSomeday
-    ? { ...calData, _id, user, ...recurrenceData, updatedAt }
-    : Object.assign(_event, calData, { updatedAt });
+  const event = Object.assign(
+    MapEvent.removeProviderData(_event),
+    isSomeday ? {} : providerData,
+    { updatedAt: new Date() },
+  );
 
   const instances = isSomeday ? [] : (rrule?.instances(provider) ?? []);
 
-  const baseEvent = await mongoService.event.findOneAndUpdate(
-    { _id: event._id, user: event.user },
-    { $set: event },
+  const baseEvent = await mongoService.event.findOneAndReplace(
+    { _id: _event._id, user: _event.user },
+    event,
     { upsert: true, session, returnDocument: "after" },
   );
 
@@ -377,47 +375,22 @@ export const _deleteSingleCompassEvent = async (
   return { ...event, _id: event._id.toString() };
 };
 
-export const _deleteInstances = async (
-  userId: string,
-  baseId: string,
-  filter: Filter<Omit<Schema_Event, "_id">> = {},
-  session?: ClientSession,
-) => {
-  if (typeof baseId !== "string") {
-    throw new Error("Invalid baseId");
-  }
-
-  const response = await mongoService.event.deleteMany(
-    {
-      ...filter,
-      user: userId,
-      _id: { $ne: new ObjectId(baseId) },
-      "recurrence.eventId": baseId,
-    },
-    { session },
-  );
-
-  return response;
-};
-
 export const _deleteSeries = async (
-  userId: string,
-  baseId: string,
+  _userId: string,
+  _baseId: string,
   session?: ClientSession,
+  keepBase = false,
 ) => {
-  if (typeof baseId !== "string") {
-    throw new Error("Invalid baseId");
-  }
+  const userId = idSchema.parse(_userId);
+  const baseId = idSchema.parse(_baseId);
 
-  const response = await mongoService.event.deleteMany(
-    {
-      $or: [
-        { _id: new ObjectId(baseId), user: userId },
-        { "recurrence.eventId": baseId, user: userId },
-      ],
-    },
-    { session },
-  );
+  const $or: Array<Filter<WithId<Omit<Schema_Event, "_id">>>> = [
+    { "recurrence.eventId": baseId, user: userId },
+  ];
+
+  if (!keepBase) $or.push({ _id: new ObjectId(baseId), user: userId });
+
+  const response = await mongoService.event.deleteMany({ $or }, { session });
 
   return response;
 };
@@ -470,12 +443,22 @@ export const _getGcal = async (
 };
 
 export const _createGcal = async (userId: string, event: Schema_Event_Core) => {
-  const _gEvent = MapEvent.toGcal(event);
+  try {
+    const _gEvent = MapEvent.toGcal(event);
 
-  const gcal = await getGcalClient(userId);
-  const gEvent = await gcalService.createEvent(gcal, _gEvent);
+    const gcal = await getGcalClient(userId);
+    const gEvent = await gcalService.createEvent(gcal, _gEvent);
 
-  return gEvent;
+    return gEvent;
+  } catch (e) {
+    const error = e as GaxiosError<gSchema$Event>;
+
+    if (error.code?.toString() === "409") {
+      return _updateGcal(userId, event, { status: "confirmed" });
+    }
+
+    throw e;
+  }
 };
 
 export const _updateGcal = async (
@@ -493,26 +476,13 @@ export const _updateGcal = async (
     );
   }
 
-  await gcalService.updateEvent(gcal, event.gEventId, gEvent);
+  const updatedGEvent = await gcalService.updateEvent(
+    gcal,
+    event.gEventId,
+    gEvent,
+  );
 
-  return event;
-};
-
-export const _upsertGcal = async (
-  userId: string,
-  event: Schema_Event_Core,
-  extras?: Pick<gSchema$Event, "status" | "recurrence">,
-) => {
-  const wasSomedayEvent = event.gEventId === undefined;
-
-  if (wasSomedayEvent) {
-    const gEvent = await _createGcal(userId, event);
-    event.gEventId = gEvent.id as string;
-  } else {
-    await _updateGcal(userId, event, extras);
-  }
-
-  return event;
+  return updatedGEvent;
 };
 
 export const _deleteGcal = async (
