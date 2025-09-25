@@ -152,33 +152,6 @@ export const useDraftActions = (
     [reduxDraft, isRecurrence],
   );
 
-  const isEventDirty = useCallback(
-    (currentDraft: Schema_Event): boolean => {
-      if (!reduxDraft) return true; // New event is always dirty
-
-      // Compare relevant fields that can change in the form
-      const fieldsToCompare = [
-        "title",
-        "description",
-        "startDate",
-        "endDate",
-        "priority",
-        "recurrence",
-      ] as const;
-
-      return fieldsToCompare.some((field) => {
-        const current = currentDraft[field];
-        const original = reduxDraft[field];
-        const recurrence = field === "recurrence";
-
-        return recurrence
-          ? isRecurrenceChanged(currentDraft)
-          : current !== original;
-      });
-    },
-    [reduxDraft, isRecurrenceChanged],
-  );
-
   const closeForm = useCallback(() => {
     setIsFormOpen(false);
   }, [setIsFormOpen]);
@@ -265,11 +238,11 @@ export const useDraftActions = (
         !draft._id || draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
 
       // Check if the event has actually changed (skip for new events)
-      if (!isNewEvent && !isEventDirty(draft)) {
-        // No changes detected, just close the form without making HTTP request
+      if (!isNewEvent) {
         if (isFormOpenBeforeDragging) {
           openForm();
         } else {
+          // no need to make HTTP request
           discard();
         }
         return;
@@ -336,7 +309,6 @@ export const useDraftActions = (
       }
     },
     [
-      isEventDirty,
       isFormOpenBeforeDragging,
       weekProps,
       currentWeekEvents,
@@ -622,7 +594,6 @@ export const useDraftActions = (
     openForm,
     reset,
     resize,
-    isEventDirty,
     isInstance,
     isRecurrence,
     isRecurrenceChanged,

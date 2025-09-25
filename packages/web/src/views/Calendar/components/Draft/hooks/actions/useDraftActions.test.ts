@@ -33,6 +33,7 @@ describe("Event saving logic", () => {
     ...overrides,
   });
 
+  // TODO move to separate util outside test
   const isEventDirty = (
     currentDraft: Schema_Event,
     originalEvent: Schema_Event | null,

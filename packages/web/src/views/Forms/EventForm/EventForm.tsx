@@ -45,7 +45,6 @@ export const EventForm: React.FC<FormProps> = ({
   onSubmit,
   onDuplicate,
   setEvent,
-  disableSaveBtn,
   ...props
 }) => {
   const { title } = event || {};
