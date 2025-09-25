@@ -250,7 +250,7 @@ export const useDraftActions = (
       }
       return "SUBMIT";
     },
-    [reduxDraft, reduxDraftType, isFormOpenBeforeDragging, openForm, discard],
+    [reduxDraft, isFormOpenBeforeDragging, openForm, discard],
   );
 
   const submit = useCallback(
