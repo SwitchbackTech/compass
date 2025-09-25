@@ -6,9 +6,9 @@ import {
 } from "@core/constants/core.constants";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { isProcessing } from "@web/common/store/helpers";
-import { Schema_SomedayEventsColumn } from "@web/common/types/web.event.types";
 import { categorizeSomedayEvents } from "@web/common/utils/someday.util";
 import { RootState } from "@web/store";
+import { Schema_SomedayEventsColumn } from "@web/views/Calendar/components/Sidebar/sidebar.types";
 import { selectEventEntities } from "./event.selectors";
 import { selectDatesInView } from "./view.selectors";
 
