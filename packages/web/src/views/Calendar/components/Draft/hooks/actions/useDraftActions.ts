@@ -15,8 +15,12 @@ import {
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
+import { isDraftDirty } from "@web/common/parsers/draft.parser";
+import {
+  Schema_DraftEvent,
+  Schema_GridEvent,
+} from "@web/common/schemas/events/draft.event.schemas";
 import { PartialMouseEvent } from "@web/common/types/util.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleDefaultEvent,
   prepEvtBeforeSubmit,
@@ -230,22 +234,23 @@ export const useDraftActions = (
 
   const submit = useCallback(
     async (
-      draft: Schema_GridEvent,
+      draft: Schema_DraftEvent,
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
-      // For new events, skip the dirty check and allow saving blank events
-      const isNewEvent =
-        !draft._id || draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
+      const isExisting = draft._id;
+      const isOptimistic = draft._id?.startsWith(ID_OPTIMISTIC_PREFIX);
 
-      // Check if the event has actually changed (skip for new events)
-      if (!isNewEvent) {
+      if (isExisting && !isOptimistic) {
         if (isFormOpenBeforeDragging) {
           openForm();
-        } else {
+          return;
+        }
+        const isSame = !isDraftDirty(draft, reduxDraft);
+        if (isSame) {
           // no need to make HTTP request
           discard();
+          return;
         }
-        return;
       }
 
       const userId = await getUserId();
@@ -259,8 +264,6 @@ export const useDraftActions = (
       }
 
       const { startOfView, endOfView } = weekProps.component;
-
-      const isExisting = event._id;
 
       if (isExisting) {
         const isDateWithinView = (date: string) =>
