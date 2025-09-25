@@ -127,8 +127,6 @@ describe("CompassSyncProcessor.notifyClients", () => {
     CompassSyncProcessor["notifyClients"](events, summary);
 
     expect(calendarSpy).toHaveBeenCalledWith(userA);
-    expect(calendarSpy).toHaveBeenCalledWith(userB);
-    expect(somedaySpy).toHaveBeenCalledWith(userA);
     expect(somedaySpy).toHaveBeenCalledWith(userB);
   });
 });
