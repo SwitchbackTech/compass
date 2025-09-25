@@ -5,6 +5,11 @@ import { Schema_DraftEvent } from "@web/common/schemas/events/draft.event.schema
 import { Schema_WebEvent } from "@web/common/schemas/events/web.event.schemas";
 
 /**
+ * These utils focus on generating web-specific schemas.
+ * For generating API-compatible events, see utils in `@core`
+ */
+
+/**
  * Helper function to create a base draft event for testing with faker.js generated data
  */
 export const createDraftEvent = (
