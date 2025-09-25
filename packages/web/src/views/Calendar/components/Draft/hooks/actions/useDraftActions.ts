@@ -232,25 +232,44 @@ export const useDraftActions = (
     setIsFormOpen(true);
   }, [setIsFormOpen]);
 
-  const submit = useCallback(
-    async (
-      draft: Schema_DraftEvent,
-      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
-    ) => {
+  const determineSubmitAction = useCallback(
+    (draft: Schema_DraftEvent) => {
       const isExisting = draft._id;
       const isOptimistic = draft._id?.startsWith(ID_OPTIMISTIC_PREFIX);
-
       if (isExisting && !isOptimistic) {
         if (isFormOpenBeforeDragging) {
           openForm();
-          return;
+          return "OPEN_FORM";
         }
         const isSame = !isDraftDirty(draft, reduxDraft);
         if (isSame) {
           // no need to make HTTP request
           discard();
-          return;
+          return "DISCARD";
         }
+      }
+      return "SUBMIT";
+    },
+    [reduxDraft, reduxDraftType, isFormOpenBeforeDragging, openForm, discard],
+  );
+
+  const submit = useCallback(
+    async (
+      draft: Schema_DraftEvent,
+      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
+    ) => {
+      const action = determineSubmitAction(draft);
+      switch (action) {
+        case "OPEN_FORM":
+          openForm();
+          return;
+        case "DISCARD":
+          discard();
+          return;
+        case "SUBMIT":
+        default:
+          // Continue with the submit logic below
+          break;
       }
 
       const userId = await getUserId();
@@ -265,6 +284,7 @@ export const useDraftActions = (
 
       const { startOfView, endOfView } = weekProps.component;
 
+      const isExisting = draft._id;
       if (isExisting) {
         const isDateWithinView = (date: string) =>
           dayjs(date).isBetween(startOfView, endOfView, null, "[]");
