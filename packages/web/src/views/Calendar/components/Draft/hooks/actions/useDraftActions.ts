@@ -528,7 +528,8 @@ export const useDraftActions = (
       if (!isResizing) return;
 
       const x = getX(e, isSidebarOpen);
-      // For all-day events, use a fixed Y coordinate since they don't use Y positioning
+      // For all-day events, use a fixed Y coordinate (0) because Y positioning is irrelevant:
+      // dateCalcs.getDateByXY ignores the Y value for all-day events, so 0 is a safe placeholder.
       const y = draft?.isAllDay ? 0 : e.clientY;
       const currTime = dateCalcs.getDateByXY(
         x,
