@@ -4,7 +4,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { Categories_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { ID_SOMEDAY_EVENT_ACTION_MENU } from "@web/common/constants/web.constants";
-import { Schema_SomedayEvent } from "@web/common/types/web.event.types";
+import { Schema_SomedayEvent } from "@web/common/schemas/events/someday.event.schemas";
 import { validateSomedayEvents } from "@web/common/validators/someday.event.validator";
 import { Schema_SomedayEventsColumn } from "@web/views/Calendar/components/Sidebar/sidebar.types";
 
