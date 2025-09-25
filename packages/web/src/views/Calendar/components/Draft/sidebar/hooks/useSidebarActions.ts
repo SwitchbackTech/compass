@@ -419,10 +419,7 @@ export const useSidebarActions = (
       _event.endDate = endDate;
     }
 
-    // const userId = await getUserId();
-    const userId = "user-id";
-    // console.log('userid:', userId);
-    console.log("event", _event);
+    const userId = await getUserId();
     _event = prepSomedayEventBeforeSubmit(_event, userId);
 
     const isExisting = _event._id;
@@ -444,7 +441,6 @@ export const useSidebarActions = (
         ..._event,
         order,
       };
-      console.log("submitting:", _event);
       dispatch(createEventSlice.actions.request(eventWithOrder));
     }
 
