@@ -40,16 +40,14 @@ export namespace MapEvent {
     event: WithId<Omit<Schema_Event, "_id">> | Schema_Event,
   ): Omit<Schema_Event, "_id" | "gEventId" | "gRecurringEventId"> => {
     const {
-      _id, // eslint-disable-line @typescript-eslint/no-unused-vars
       gEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
       gRecurringEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
-      recurrence,
       ...coreEvent
     } = event;
 
-    return recurrence?.eventId
-      ? { ...coreEvent, recurrence: { rule: recurrence.rule } }
-      : coreEvent;
+    delete coreEvent.recurrence?.eventId;
+
+    return coreEvent;
   };
 
   export const removeIdentifyingData = (
@@ -210,7 +208,7 @@ export const gEventToCompassEvent = (
   const endDate = isAllDay ? event.end?.date : event.end?.dateTime;
 
   const _origin =
-    event.extendedProperties?.private?.["origin"] ?? origin ?? Origin.UNSURE;
+    event.extendedProperties?.private?.["origin"] ?? origin ?? Origin.GOOGLE;
 
   const compassEvent: Schema_Event = {
     gEventId,
