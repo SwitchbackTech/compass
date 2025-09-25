@@ -408,8 +408,8 @@ export const useSidebarActions = (
     // so its okay to provide any random int (hence -1)
     _event.order = -1;
 
-    if (!_event.startDate || !_event.endDate) {
-      // This probably means we are creating a new event, hence why we don't have start/end dates
+    const isDraft = !_event.startDate || !_event.endDate;
+    if (isDraft) {
       const { startDate, endDate } = getDatesByCategory(
         category,
         viewStart,
@@ -419,7 +419,10 @@ export const useSidebarActions = (
       _event.endDate = endDate;
     }
 
-    const userId = await getUserId();
+    // const userId = await getUserId();
+    const userId = "user-id";
+    // console.log('userid:', userId);
+    console.log("event", _event);
     _event = prepSomedayEventBeforeSubmit(_event, userId);
 
     const isExisting = _event._id;
@@ -441,6 +444,7 @@ export const useSidebarActions = (
         ..._event,
         order,
       };
+      console.log("submitting:", _event);
       dispatch(createEventSlice.actions.request(eventWithOrder));
     }
 

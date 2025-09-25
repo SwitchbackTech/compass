@@ -11,12 +11,20 @@ import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Option_Time } from "@web/common/types/util.types";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { roundToNext } from ".";
-import { ACCEPTED_TIMES } from "../constants/web.constants";
-import { theme } from "../styles/theme";
 import {
+  ACCEPTED_TIMES,
   Recurrence_Selection,
-  Schema_SelectedDates,
-} from "../types/web.event.types";
+} from "../constants/web.constants";
+import { theme } from "../styles/theme";
+import { SelectOption } from "../types/component.types";
+
+export interface SelectedDates {
+  startDate: Date;
+  startTime: SelectOption<string>;
+  endDate: Date;
+  endTime: SelectOption<string>;
+  isAllDay: boolean;
+}
 
 export const dateIsValid = (date: string) => {
   const notNaN = !Number.isNaN(new Date(date).getTime());
@@ -196,7 +204,7 @@ export const getCalendarHeadingLabel = (
   }
 };
 
-export const mapToBackend = (s: Schema_SelectedDates) => {
+export const mapToBackend = (s: SelectedDates) => {
   if (s.isAllDay) {
     const startDate = dayjs(s.startDate).format(YEAR_MONTH_DAY_FORMAT);
     const endDate = dayjs(s.endDate).format(YEAR_MONTH_DAY_FORMAT);
@@ -228,7 +236,7 @@ export const toUTCOffset = (date: string | Dayjs | Date) => {
   } else return date.format(); // then already a DayJs object
 };
 
-const _addTimesToDates = (dt: Schema_SelectedDates) => {
+const _addTimesToDates = (dt: SelectedDates) => {
   const start = getDayjsByTimeValue(dt.startTime.value);
   const startDate = dayjs(dt.startDate)
     .hour(start.hour())

@@ -274,6 +274,7 @@ export const useDraftActions = (
         return;
       }
 
+      alert("useDraftActions.submit");
       const userId = await getUserId();
 
       let event = null;

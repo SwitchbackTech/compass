@@ -1,7 +1,7 @@
 import { PayloadAction } from "@reduxjs/toolkit";
 import { AsyncState, createAsyncSlice } from "@web/common/store/helpers";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import { Payload_NormalizedAsyncAction } from "@web/ducks/events/entity.types";
 import {
   Action_ConvertEvent,
   Action_DeleteEvent,
