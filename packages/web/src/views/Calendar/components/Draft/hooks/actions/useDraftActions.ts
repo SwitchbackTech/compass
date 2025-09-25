@@ -145,7 +145,8 @@ export const useDraftActions = (
       return (
         startDateChanged ||
         endDateChanged ||
-        newRuleSet.some((rule) => !oldRuleSet.includes(rule))
+        newRuleSet.some((rule) => !oldRuleSet.includes(rule)) ||
+        oldRuleSet.some((rule) => !newRuleSet.includes(rule))
       );
     },
     [reduxDraft, isRecurrence],
