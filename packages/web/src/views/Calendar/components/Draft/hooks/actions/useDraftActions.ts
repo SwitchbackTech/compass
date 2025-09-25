@@ -439,16 +439,21 @@ export const useDraftActions = (
     (currTime: dayjs.Dayjs) => {
       if (!draft || !dateBeingChanged) return false;
 
-      const _currTime = currTime.format();
+      const _currTime = draft.isAllDay
+        ? currTime.format(YEAR_MONTH_DAY_FORMAT)
+        : currTime.format();
       const noChange = draft[dateBeingChanged] === _currTime;
 
       if (noChange) return false;
 
-      const diffDay = currTime.day() !== dayjs(draft.startDate).day();
-      if (diffDay) return false;
+      // For timed events, restrict to same day
+      if (!draft.isAllDay) {
+        const diffDay = currTime.day() !== dayjs(draft.startDate).day();
+        if (diffDay) return false;
 
-      const sameStart = currTime.format() === draft.startDate;
-      if (sameStart) return false;
+        const sameStart = currTime.format() === draft.startDate;
+        if (sameStart) return false;
+      }
 
       return true;
     },
@@ -481,10 +486,23 @@ export const useDraftActions = (
         } else if (comparisonKeyword === "before") {
           if (currTime.isBefore(opposite)) {
             setDateBeingChanged(oppositeKey);
-            startDate = dayjs(startDate)
-              .subtract(GRID_TIME_STEP, "minutes")
-              .format();
-            endDate = dayjs(startDate).add(GRID_TIME_STEP, "minutes").format();
+            if (draft?.isAllDay) {
+              // For all-day events, move by day
+              startDate = dayjs(startDate)
+                .subtract(1, "day")
+                .format(YEAR_MONTH_DAY_FORMAT);
+              endDate = dayjs(startDate)
+                .add(1, "day")
+                .format(YEAR_MONTH_DAY_FORMAT);
+            } else {
+              // For timed events, move by time step
+              startDate = dayjs(startDate)
+                .subtract(GRID_TIME_STEP, "minutes")
+                .format();
+              endDate = dayjs(startDate)
+                .add(GRID_TIME_STEP, "minutes")
+                .format();
+            }
 
             justFlipped = true;
           }
@@ -510,9 +528,11 @@ export const useDraftActions = (
       if (!isResizing) return;
 
       const x = getX(e, isSidebarOpen);
+      // For all-day events, use a fixed Y coordinate since they don't use Y positioning
+      const y = draft?.isAllDay ? 0 : e.clientY;
       const currTime = dateCalcs.getDateByXY(
         x,
-        e.clientY,
+        y,
         weekProps.component.startOfView,
       );
 
@@ -524,10 +544,23 @@ export const useDraftActions = (
       const dateChanged = justFlipped ? oppositeKey : dateBeingChanged;
 
       const origTime = dayjs(dateChanged ? draft?.[dateChanged] : null);
-      const diffMin = currTime.diff(origTime, "minute");
-      const updatedTime = origTime.add(diffMin, "minutes").format();
 
-      const hasMoved = diffMin !== 0;
+      let updatedTime: string;
+      let hasMoved: boolean;
+
+      if (draft?.isAllDay) {
+        // For all-day events, work with day differences
+        const diffDays = currTime.diff(origTime, "day");
+        updatedTime = origTime
+          .add(diffDays, "days")
+          .format(YEAR_MONTH_DAY_FORMAT);
+        hasMoved = diffDays !== 0;
+      } else {
+        // For timed events, work with minute differences
+        const diffMin = currTime.diff(origTime, "minute");
+        updatedTime = origTime.add(diffMin, "minutes").format();
+        hasMoved = diffMin !== 0;
+      }
 
       if (!resizeStatus?.hasMoved && hasMoved) {
         setResizeStatus({ hasMoved: true });
