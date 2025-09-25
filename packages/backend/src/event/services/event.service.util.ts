@@ -74,9 +74,7 @@ export const getReadAllFilter = (
 
   // For someday events: include base recurring events (those with recurrence.rule)
   // For calendar events: exclude base recurring events (those with recurrence.rule)
-  if (!isSomeday) {
-    filter["recurrence.rule"] = { $exists: false };
-  }
+  if (!isSomeday) filter["recurrence.rule"] = { $exists: false };
 
   return filter;
 };

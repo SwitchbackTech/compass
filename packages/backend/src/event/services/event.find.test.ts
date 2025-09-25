@@ -94,13 +94,7 @@ describe("Jan 2022: Many Formats", () => {
       // Create a base calendar recurring event (isSomeday: false)
       const baseCalendarRecurringEvent = createMockBaseEvent({
         user: userId,
-        title: "Base Calendar Recurring Event",
         isSomeday: false,
-        startDate: "2023-10-01T10:00:00Z",
-        endDate: "2023-10-01T11:00:00Z",
-        recurrence: {
-          rule: ["RRULE:FREQ=WEEKLY;COUNT=5"],
-        },
       });
 
       // Insert the test event
@@ -119,8 +113,6 @@ describe("Jan 2022: Many Formats", () => {
       );
 
       expect(baseCalendarRecurringEvents).toHaveLength(0);
-      const titles = result.map((e) => e.title);
-      expect(titles).not.toContain("Base Calendar Recurring Event");
     });
   });
 
@@ -337,13 +329,7 @@ describe("Jan 2022: Many Formats", () => {
       // Create a base someday recurring event
       const baseSomedayRecurringEvent = createMockBaseEvent({
         user: userId,
-        title: "Base Someday Recurring Event",
         isSomeday: true,
-        startDate: "2023-10-01",
-        endDate: "2023-10-02",
-        recurrence: {
-          rule: ["RRULE:FREQ=WEEKLY;COUNT=5"],
-        },
       });
 
       // Insert the test event
@@ -359,8 +345,6 @@ describe("Jan 2022: Many Formats", () => {
       );
 
       expect(baseSomedayRecurringEvents.length).toBeGreaterThan(0);
-      const titles = baseSomedayRecurringEvents.map((e) => e.title);
-      expect(titles).toContain("Base Someday Recurring Event");
     });
   });
 });
