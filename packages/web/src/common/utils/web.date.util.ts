@@ -1,5 +1,4 @@
 import dayjs, { Dayjs } from "dayjs";
-import { RRULE } from "@core/constants/core.constants";
 import {
   HOURS_AM_FORMAT,
   HOURS_AM_SHORT_FORMAT,
@@ -13,10 +12,7 @@ import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
 import { roundToNext } from ".";
 import { ACCEPTED_TIMES } from "../constants/web.constants";
 import { theme } from "../styles/theme";
-import {
-  Recurrence_Selection,
-  Schema_SelectedDates,
-} from "../types/web.event.types";
+import { Schema_SelectedDates } from "../types/web.event.types";
 
 export const dateIsValid = (date: string) => {
   const notNaN = !Number.isNaN(new Date(date).getTime());
@@ -119,19 +115,6 @@ export const getNextIntervalTimes = () => {
   const endDate = end.format();
 
   return { startDate, endDate };
-};
-
-export const getRecurrenceRule = (selection: Recurrence_Selection) => {
-  switch (selection) {
-    case Recurrence_Selection.WEEK:
-      return [RRULE.WEEK];
-      break;
-    case Recurrence_Selection.MONTH:
-      return [RRULE.MONTH];
-      break;
-    default:
-      throw Error("Invalid selection");
-  }
 };
 
 export const getTimeLabel = (value: string) => value.replace(":00", "");

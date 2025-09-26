@@ -13,13 +13,22 @@ describe("validateGridEvent", () => {
       priority: Priorities.RELATIONS,
       user: "user123",
       unexpectedProperty: "unexpectedValue",
+      position: {
+        dragOffset: { y: 0 },
+        horizontalOrder: 0,
+        initialX: 0,
+        initialY: 0,
+        isOverlapping: false,
+        widthMultiplier: 1,
+      },
     };
 
     const parsedEvent = validateGridEvent(event);
     expect(parsedEvent).not.toHaveProperty("unexpectedProperty");
   });
+
   it("validates a correct event", () => {
-    const event: Schema_GridEvent = {
+    const event: Omit<Schema_GridEvent, "recurrence"> = {
       _id: new ObjectId().toString(),
       endDate: "2023-01-02",
       hasFlipped: true,
@@ -29,6 +38,14 @@ describe("validateGridEvent", () => {
       origin: Origin.COMPASS,
       priority: Priorities.RELATIONS,
       user: "user123",
+      position: {
+        dragOffset: { y: 0 },
+        horizontalOrder: 0,
+        initialX: 0,
+        initialY: 0,
+        isOverlapping: false,
+        widthMultiplier: 1,
+      },
     };
 
     const parsedEvent = validateGridEvent(event);
@@ -36,14 +53,22 @@ describe("validateGridEvent", () => {
   });
 
   it("invalidates when types are incorrect", () => {
-    const event = {
+    const event: Omit<Partial<Schema_GridEvent>, "recurrence"> = {
       startDate: "2022-10-22",
       endDate: "2023-01-02",
       origin: Origin.UNSURE,
       priority: Priorities.SELF,
       user: "user1",
-      hasFlipped: "true", // invalid
-    } as unknown as Schema_GridEvent;
+      hasFlipped: "true" as unknown as boolean, // invalid
+      position: {
+        dragOffset: { y: 0 },
+        horizontalOrder: 0,
+        initialX: 0,
+        initialY: 0,
+        isOverlapping: false,
+        widthMultiplier: 1,
+      },
+    };
 
     expect(() => validateGridEvent(event)).toThrow();
   });

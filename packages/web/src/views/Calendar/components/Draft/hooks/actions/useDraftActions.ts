@@ -9,18 +9,22 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import {
   Categories_Event,
+  Recurrence,
   RecurringEventUpdateScope,
-  Schema_Event,
 } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import { PartialMouseEvent } from "@web/common/types/util.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Schema_GridEvent,
+  Schema_WebEvent,
+} from "@web/common/types/web.event.types";
 import {
   assembleDefaultEvent,
   prepEvtBeforeSubmit,
   prepSomedayEventBeforeSubmit,
+  replaceIdWithOptimisticId,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import {
@@ -126,7 +130,7 @@ export const useDraftActions = (
   }, [reduxDraft, isInstance]);
 
   const isRecurrenceChanged = useCallback(
-    (currentDraft: Schema_Event): boolean => {
+    (currentDraft: Schema_WebEvent): boolean => {
       if (!isRecurrence() || !currentDraft) return false;
 
       const oldStartDate = reduxDraft?.startDate;
@@ -152,7 +156,7 @@ export const useDraftActions = (
   );
 
   const isEventDirty = useCallback(
-    (currentDraft: Schema_Event): boolean => {
+    (currentDraft: Schema_WebEvent): boolean => {
       if (!reduxDraft) return true; // New event is always dirty
 
       // Compare relevant fields that can change in the form
@@ -235,11 +239,15 @@ export const useDraftActions = (
       dispatch(
         getWeekEventsSlice.actions.convert({
           event: {
+            ...draft,
             _id: draft!._id!,
+            user: draft!.user!,
             isAllDay: false,
             isSomeday: true,
             startDate: start,
             endDate: end,
+            origin: draft!.origin!,
+            priority: draft?.priority ?? Priorities.UNASSIGNED,
             order: somedayWeekCount,
           },
         }),
@@ -286,9 +294,7 @@ export const useDraftActions = (
 
       const { startOfView, endOfView } = weekProps.component;
 
-      const isExisting = event._id;
-
-      if (isExisting) {
+      if (!isNewEvent) {
         const isDateWithinView = (date: string) =>
           dayjs(date).isBetween(startOfView, endOfView, null, "[]");
 
@@ -315,17 +321,20 @@ export const useDraftActions = (
 
         if (isDragToEdgeNavigation && wasEventMovedToCurrentWeek) {
           // Only insert if the event is not already in the current week's event list
-          const isEventAlreadyInWeek = currentWeekEvents.data.includes(
-            event._id,
+          const isEventAlreadyInWeek = currentWeekEvents?.data.includes(
+            event._id!,
           );
           if (!isEventAlreadyInWeek) {
-            dispatch(
-              getWeekEventsSlice.actions.insert(event._id as unknown as void),
-            );
+            dispatch(getWeekEventsSlice.actions.insert(event._id!));
           }
         }
       } else {
-        dispatch(createEventSlice.actions.request(event as unknown as void));
+        dispatch(
+          createEventSlice.actions.request({
+            ...event,
+            recurrence: event.recurrence as Recurrence["recurrence"],
+          }),
+        );
       }
 
       if (isFormOpenBeforeDragging) {
@@ -350,7 +359,7 @@ export const useDraftActions = (
       ...reduxDraft,
     }) as Schema_GridEvent;
 
-    submit(draft);
+    submit(replaceIdWithOptimisticId(draft));
     discard();
   }, [reduxDraft, submit, discard]);
 
@@ -494,10 +503,11 @@ export const useDraftActions = (
         setDraft((_draft): Schema_GridEvent => {
           return {
             ..._draft!,
+            _id: _draft!._id!,
             hasFlipped: justFlipped,
-            endDate,
-            startDate,
-            priority: draft?.priority,
+            endDate: endDate!,
+            startDate: startDate!,
+            priority: draft!.priority,
           };
         });
 

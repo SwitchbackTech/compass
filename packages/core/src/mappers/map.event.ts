@@ -38,14 +38,20 @@ export namespace MapEvent {
 
   export const removeProviderData = (
     event: WithId<Omit<Schema_Event, "_id">> | Schema_Event,
-  ): Omit<Schema_Event, "_id" | "gEventId" | "gRecurringEventId"> => {
+  ): Omit<
+    WithId<Omit<Schema_Event, "_id">> | Schema_Event,
+    "gEventId" | "gRecurringEventId"
+  > => {
     const {
       gEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
       gRecurringEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
+      recurrence, // eslint-disable-line @typescript-eslint/no-unused-vars
       ...coreEvent
     } = event;
 
-    delete coreEvent.recurrence?.eventId;
+    if (event.recurrence?.rule) {
+      Object.assign(coreEvent, { recurrence: { rule: event.recurrence.rule } });
+    }
 
     return coreEvent;
   };
