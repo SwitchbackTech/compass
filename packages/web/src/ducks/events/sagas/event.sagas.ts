@@ -4,13 +4,13 @@ import { call, put, select } from "@redux-saga/core/effects";
 import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
+import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
-} from "@web/common/schemas/events/draft.event.schemas";
-import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
+} from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event.util";
-import { Payload_NormalizedAsyncAction } from "@web/ducks/events/entity.types";
 import { EventApi } from "@web/ducks/events/event.api";
 import {
   Action_ConvertEvent,

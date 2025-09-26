@@ -1,19 +1,8 @@
 import {
-  DraftEventSchema,
-  Schema_DraftEvent,
-} from "../schemas/events/draft.event.schemas";
-import {
   Schema_SomedayEvent,
+  Schema_WebEvent,
   SomedayEventSchema,
-} from "../schemas/events/someday.event.schemas";
-import { Schema_WebEvent } from "../schemas/events/web.event.schemas";
-
-export const validateSomedayDraft = (
-  draft: Schema_DraftEvent,
-): Schema_DraftEvent => {
-  const result = DraftEventSchema.parse(draft);
-  return result;
-};
+} from "../types/web.event.types";
 
 export const validateSomedayEvent = (
   event: Schema_WebEvent,
