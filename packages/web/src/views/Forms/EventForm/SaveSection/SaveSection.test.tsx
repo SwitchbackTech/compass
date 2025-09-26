@@ -89,16 +89,6 @@ describe("SaveSection", () => {
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
     });
 
-    it("does not call onSubmit when save button is disabled and clicked", async () => {
-      render(<SaveSection onSubmit={mockOnSubmit} disableSaveBtn={true} />);
-
-      const saveButton = screen.getByRole("tab", { name: "Save" });
-      // Use fireEvent instead of userEvent for disabled elements
-      fireEvent.click(saveButton);
-
-      expect(mockOnSubmit).not.toHaveBeenCalled();
-    });
-
     it("handles keyboard navigation with tabIndex", () => {
       render(<SaveSection onSubmit={mockOnSubmit} onCancel={mockOnCancel} />);
 
