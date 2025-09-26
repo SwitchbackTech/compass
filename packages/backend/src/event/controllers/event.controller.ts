@@ -44,8 +44,6 @@ class EventController {
       // Handle both single object and array cases
       const events = Array.isArray(body) ? body : [body];
 
-      console.log(events);
-
       await this.processEvents(
         events.map((e) => ({
           payload: { ...e, user },
