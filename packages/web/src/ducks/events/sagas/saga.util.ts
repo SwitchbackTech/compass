@@ -8,7 +8,10 @@ import {
   Schema_Event,
 } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { replaceIdWithOptimisticId } from "@web/common/utils/event.util";
+import {
+  assembleGridEvent,
+  replaceIdWithOptimisticId,
+} from "@web/common/utils/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 import { EventApi } from "@web/ducks/events/event.api";
 import { Payload_ConvertEvent } from "@web/ducks/events/event.types";
@@ -61,8 +64,14 @@ export function* _assembleGridEvent({
 }: Payload_ConvertEvent["event"]) {
   const currEvent = yield* getEventById(_id);
 
-  const _gridEvent = { ...currEvent, ...updatedFields };
-  const gridEvent = validateGridEvent(_gridEvent);
+  // First merge the current event with updated fields
+  const eventWithUpdates = { ...currEvent, ...updatedFields };
+
+  // Use assembleGridEvent to ensure position field is properly set
+  const gridEventWithDefaults = assembleGridEvent(eventWithUpdates);
+
+  // Validate the result
+  const gridEvent = validateGridEvent(gridEventWithDefaults);
   return gridEvent;
 }
 
