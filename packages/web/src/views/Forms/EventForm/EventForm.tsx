@@ -45,6 +45,7 @@ export const EventForm: React.FC<FormProps> = ({
   onSubmit,
   onDuplicate,
   setEvent,
+  disableSaveBtn,
   ...props
 }) => {
   const { title } = event || {};
@@ -349,6 +350,7 @@ export const EventForm: React.FC<FormProps> = ({
       />
 
       <SaveSection
+        disableSaveBtn={disableSaveBtn}
         priority={priority}
         onSubmit={onSubmitForm}
         onCancel={onClose}

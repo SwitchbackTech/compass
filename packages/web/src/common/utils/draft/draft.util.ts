@@ -6,7 +6,7 @@ import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
-import { Schema_GridEvent } from "@web/common/schemas/events/draft.event.schemas";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { roundToNext } from "@web/common/utils";
 import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import { getElemById, getX } from "@web/common/utils/grid.util";
