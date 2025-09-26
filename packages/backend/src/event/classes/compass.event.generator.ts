@@ -230,6 +230,19 @@ export class CompassEventFactory {
   ): Promise<CompassEvent[]> {
     const event = CompassEventSchema.parse(_event);
 
+    // Additional validation: Only allow someday events for deletion operations
+    // when using ALL_EVENTS or THIS_AND_FOLLOWING_EVENTS scope
+    if (
+      event.payload.isSomeday &&
+      event.status !== CompassEventStatus.CANCELLED &&
+      (event.applyTo === RecurringEventUpdateScope.ALL_EVENTS ||
+        event.applyTo === RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS)
+    ) {
+      throw new Error(
+        "Cannot convert recurring events to someday events. Someday events are only allowed for deletion operations.",
+      );
+    }
+
     switch (event.applyTo) {
       case RecurringEventUpdateScope.ALL_EVENTS:
         return CompassEventFactory.genAllEvents(event, session);

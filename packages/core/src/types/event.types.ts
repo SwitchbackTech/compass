@@ -239,7 +239,7 @@ export const CompassThisAndFollowingEventSchema = BaseCompassEventSchema.merge(
     applyTo: z.literal(RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS),
     payload: CompassCoreEventSchema.merge(
       z.object({ recurrence: CompassEventRecurrence }),
-    ).extend({ isSomeday: z.literal(false) }),
+    ),
   }),
 );
 
@@ -248,7 +248,7 @@ export const CompassAllEventsSchema = BaseCompassEventSchema.merge(
     applyTo: z.literal(RecurringEventUpdateScope.ALL_EVENTS),
     payload: CompassCoreEventSchema.merge(
       z.object({ recurrence: CompassEventRecurrence }),
-    ).extend({ isSomeday: z.literal(false) }),
+    ),
   }),
 );
 
