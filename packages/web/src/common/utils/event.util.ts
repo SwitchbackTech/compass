@@ -7,7 +7,12 @@ import {
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import {
+  Categories_Event,
+  CompassEvent,
+  CompassEventSchema,
+  Schema_Event,
+} from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
@@ -198,10 +203,23 @@ export const prepEvtBeforeSubmit = (
   return event;
 };
 
+export const prepGridEventBeforeSubmit = (
+  draft: Schema_GridEvent,
+  userId: string,
+) => {
+  // TODO continue here
+  const _event: CompassEvent = {
+    ...draft,
+    user: userId,
+  };
+  const event = CompassEventSchema.parse(_event);
+  return event;
+};
+
 export const prepSomedayEventBeforeSubmit = (
   draft: Schema_Event | Schema_GridEvent,
   userId: string,
-) => {
+): CompassEvent => {
   const _event = {
     ...draft,
     origin: Origin.COMPASS,
