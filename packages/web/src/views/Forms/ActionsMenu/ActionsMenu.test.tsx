@@ -14,6 +14,7 @@ let mockListRef = { current: [] as HTMLElement[] };
 jest.mock("@floating-ui/react", () => ({
   FloatingFocusManager: ({ children }: any) => <div>{children}</div>,
   FloatingPortal: ({ children }: any) => <div>{children}</div>,
+  autoUpdate: jest.fn(),
   flip: jest.fn(),
   offset: jest.fn(),
   shift: jest.fn(),

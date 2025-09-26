@@ -9,6 +9,7 @@ import React, {
 import {
   FloatingFocusManager,
   FloatingPortal,
+  autoUpdate,
   flip,
   offset,
   shift,
@@ -73,6 +74,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
     },
     middleware: [offset(8), flip(), shift({ padding: 8 })],
     placement: "bottom-end",
+    whileElementsMounted: autoUpdate,
   });
 
   const click = useClick(context);
