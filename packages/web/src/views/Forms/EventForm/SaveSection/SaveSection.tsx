@@ -9,6 +9,7 @@ import { StyledSubmitRow } from "../styled";
 interface Props {
   saveText?: string;
   cancelText?: string;
+  disableSaveBtn?: boolean;
   onSubmit: () => void;
   onCancel?: () => void;
   priority?: Priority;
@@ -18,10 +19,14 @@ export const SaveSection: React.FC<Props> = ({
   saveText = "Save",
   cancelText = "Cancel",
   onSubmit: _onSubmit,
+  disableSaveBtn,
   onCancel,
   priority,
 }) => {
-  const onSave = useCallback(() => _onSubmit(), [_onSubmit]);
+  const onSave = useCallback(
+    () => (disableSaveBtn ? null : _onSubmit()),
+    [disableSaveBtn, _onSubmit],
+  );
 
   return (
     <StyledSubmitRow>
@@ -49,6 +54,7 @@ export const SaveSection: React.FC<Props> = ({
         <StyledSaveBtn
           minWidth={110}
           priority={priority!}
+          disabled={disableSaveBtn}
           role="tab"
           tabIndex={0}
           aria-keyshortcuts="Meta+Enter"

@@ -63,6 +63,11 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
     handleDrag,
   );
 
+  const formDirty = useMemo(
+    () => (draft ? actions.isEventDirty(draft) : false),
+    [draft, actions.isEventDirty],
+  );
+
   if (!draft) return null;
 
   return (
@@ -110,6 +115,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
                 onConvert={onConvert}
                 onDelete={onDelete}
                 onDuplicate={duplicateEvent}
+                disableSaveBtn={!formDirty}
                 onSubmit={onSubmit}
                 setEvent={setDraft}
               />
