@@ -16,6 +16,7 @@ import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import { isEventDirty } from "@web/common/parsers/dirty.parser";
+import { EventParser } from "@web/common/parsers/event.parser";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Schema_GridEvent,
@@ -23,8 +24,6 @@ import {
 } from "@web/common/types/web.event.types";
 import {
   assembleDefaultEvent,
-  prepEvtBeforeSubmit,
-  prepSomedayEventBeforeSubmit,
   replaceIdWithOptimisticId,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
@@ -238,9 +237,11 @@ export const useDraftActions = (
 
   const determineSubmitAction = useCallback(
     (draft: Schema_WebEvent) => {
-      const isExisting = draft._id;
-      const isOptimistic = draft._id?.startsWith(ID_OPTIMISTIC_PREFIX);
-      if (isExisting && !isOptimistic) {
+      const isExisting =
+        draft._id && !draft._id?.startsWith(ID_OPTIMISTIC_PREFIX);
+      if (!isExisting) return "CREATE";
+
+      if (isExisting) {
         if (isFormOpenBeforeDragging) {
           return "OPEN_FORM";
         }
@@ -250,10 +251,12 @@ export const useDraftActions = (
           return "DISCARD";
         }
       }
-      return "SUBMIT";
+      return "UPDATE";
     },
     [reduxDraft, isFormOpenBeforeDragging],
   );
+
+  // const determineEditActions = useCallback((draft: Schema_WebEvent) => {}, []);
 
   const submit = useCallback(
     async (
@@ -268,72 +271,73 @@ export const useDraftActions = (
         case "DISCARD":
           discard();
           return;
-        case "SUBMIT":
-        default:
-          // Continue with the submit logic below
-          break;
-      }
-
-      const userId = await getUserId();
-
-      let event = null;
-      if (draft.isSomeday) {
-        event = prepSomedayEventBeforeSubmit(draft, userId);
-      } else {
-        event = prepEvtBeforeSubmit(draft, userId);
-      }
-
-      const { startOfView, endOfView } = weekProps.component;
-      const isExisting =
-        draft._id && !draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
-
-      if (isExisting) {
-        const isDateWithinView = (date: string) =>
-          dayjs(date).isBetween(startOfView, endOfView, null, "[]");
-
-        const isStartDateInView = isDateWithinView(event.startDate);
-        const isEndDateInView = isDateWithinView(event.endDate);
-        const doesEventSpanView =
-          dayjs(event.startDate).isBefore(startOfView) &&
-          dayjs(event.endDate).isAfter(endOfView);
-
-        const isEventCompletelyOutsideView =
-          !isStartDateInView && !isEndDateInView && !doesEventSpanView;
-
-        const shouldRemove = isEventCompletelyOutsideView;
-
-        const payload = { _id: event._id, event, shouldRemove, applyTo };
-        dispatch(editEventSlice.actions.request(payload as unknown as void));
-
-        // If this was a drag-to-edge navigation and event moved to current week, ensure it's visible
-        const lastNavigationSource = weekProps.util.getLastNavigationSource();
-        const isDragToEdgeNavigation = lastNavigationSource === "drag-to-edge";
-        const wasEventMovedToCurrentWeek =
-          !shouldRemove &&
-          (isStartDateInView || isEndDateInView || doesEventSpanView);
-
-        if (isDragToEdgeNavigation && wasEventMovedToCurrentWeek) {
-          // Only insert if the event is not already in the current week's event list
-          const isEventAlreadyInWeek = currentWeekEvents?.data.includes(
-            event._id!,
+        case "CREATE": {
+          const event = new EventParser(draft).parse();
+          dispatch(
+            createEventSlice.actions.request({
+              ...event,
+              recurrence: event.recurrence as Recurrence["recurrence"],
+            }),
           );
-          if (!isEventAlreadyInWeek) {
-            dispatch(getWeekEventsSlice.actions.insert(event._id!));
-          }
+          return;
         }
-      } else {
-        dispatch(
-          createEventSlice.actions.request({
-            ...event,
-            recurrence: event.recurrence as Recurrence["recurrence"],
-          }),
-        );
-      }
+        case "UPDATE": {
+          const event = new EventParser(draft).parse();
+          // const userId = await getUserId();
 
-      if (isFormOpenBeforeDragging) {
-        openForm();
-      } else {
-        discard();
+          const { startOfView, endOfView } = weekProps.component;
+          const isExisting =
+            draft._id && !draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
+
+          if (isExisting) {
+            const isDateWithinView = (date: string) =>
+              dayjs(date).isBetween(startOfView, endOfView, null, "[]");
+
+            const isStartDateInView = isDateWithinView(event.startDate);
+            const isEndDateInView = isDateWithinView(event.endDate);
+            const doesEventSpanView =
+              dayjs(event.startDate).isBefore(startOfView) &&
+              dayjs(event.endDate).isAfter(endOfView);
+
+            const isEventCompletelyOutsideView =
+              !isStartDateInView && !isEndDateInView && !doesEventSpanView;
+
+            const shouldRemove = isEventCompletelyOutsideView;
+
+            const payload = { _id: event._id, event, shouldRemove, applyTo };
+            dispatch(
+              editEventSlice.actions.request(payload as unknown as void),
+            );
+
+            // If this was a drag-to-edge navigation and event moved to current week, ensure it's visible
+            const lastNavigationSource =
+              weekProps.util.getLastNavigationSource();
+            const isDragToEdgeNavigation =
+              lastNavigationSource === "drag-to-edge";
+            const wasEventMovedToCurrentWeek =
+              !shouldRemove &&
+              (isStartDateInView || isEndDateInView || doesEventSpanView);
+
+            if (isDragToEdgeNavigation && wasEventMovedToCurrentWeek) {
+              // Only insert if the event is not already in the current week's event list
+              const isEventAlreadyInWeek = currentWeekEvents?.data.includes(
+                event._id!,
+              );
+              if (!isEventAlreadyInWeek) {
+                dispatch(getWeekEventsSlice.actions.insert(event._id!));
+              }
+            }
+          }
+
+          if (isFormOpenBeforeDragging) {
+            openForm();
+          } else {
+            discard();
+          }
+          return;
+        }
+        default:
+          break;
       }
     },
     [
