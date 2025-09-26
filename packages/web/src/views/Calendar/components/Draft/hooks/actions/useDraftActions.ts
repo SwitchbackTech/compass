@@ -285,7 +285,8 @@ export const useDraftActions = (
       }
 
       const { startOfView, endOfView } = weekProps.component;
-      const isExisting = draft._id;
+      const isExisting =
+        draft._id && !draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
 
       if (isExisting) {
         const isDateWithinView = (date: string) =>
