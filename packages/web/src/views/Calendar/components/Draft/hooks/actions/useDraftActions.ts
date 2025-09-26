@@ -341,6 +341,7 @@ export const useDraftActions = (
       weekProps,
       currentWeekEvents,
       dispatch,
+      determineSubmitAction,
       discard,
       openForm,
     ],
