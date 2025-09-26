@@ -15,12 +15,8 @@ import {
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
-import { isDraftDirty } from "@web/common/parsers/draft.parser";
-import {
-  Schema_DraftEvent,
-  Schema_GridEvent,
-} from "@web/common/schemas/events/draft.event.schemas";
 import { PartialMouseEvent } from "@web/common/types/util.types";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleDefaultEvent,
   prepEvtBeforeSubmit,
@@ -149,11 +145,37 @@ export const useDraftActions = (
       return (
         startDateChanged ||
         endDateChanged ||
-        newRuleSet.some((rule) => !oldRuleSet.includes(rule)) ||
-        oldRuleSet.some((rule) => !newRuleSet.includes(rule))
+        newRuleSet.some((rule) => !oldRuleSet.includes(rule))
       );
     },
     [reduxDraft, isRecurrence],
+  );
+
+  const isEventDirty = useCallback(
+    (currentDraft: Schema_Event): boolean => {
+      if (!reduxDraft) return true; // New event is always dirty
+
+      // Compare relevant fields that can change in the form
+      const fieldsToCompare = [
+        "title",
+        "description",
+        "startDate",
+        "endDate",
+        "priority",
+        "recurrence",
+      ] as const;
+
+      return fieldsToCompare.some((field) => {
+        const current = currentDraft[field];
+        const original = reduxDraft[field];
+        const recurrence = field === "recurrence";
+
+        return recurrence
+          ? isRecurrenceChanged(currentDraft)
+          : current !== original;
+      });
+    },
+    [reduxDraft, isRecurrenceChanged],
   );
 
   const closeForm = useCallback(() => {
@@ -232,44 +254,24 @@ export const useDraftActions = (
     setIsFormOpen(true);
   }, [setIsFormOpen]);
 
-  const determineSubmitAction = useCallback(
-    (draft: Schema_DraftEvent) => {
-      const isExisting = draft._id;
-      const isOptimistic = draft._id?.startsWith(ID_OPTIMISTIC_PREFIX);
-      if (isExisting && !isOptimistic) {
-        if (isFormOpenBeforeDragging) {
-          openForm();
-          return "OPEN_FORM";
-        }
-        const isSame = !isDraftDirty(draft, reduxDraft);
-        if (isSame) {
-          // no need to make HTTP request
-          discard();
-          return "DISCARD";
-        }
-      }
-      return "SUBMIT";
-    },
-    [reduxDraft, isFormOpenBeforeDragging, openForm, discard],
-  );
-
   const submit = useCallback(
     async (
-      draft: Schema_DraftEvent,
+      draft: Schema_GridEvent,
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
-      const action = determineSubmitAction(draft);
-      switch (action) {
-        case "OPEN_FORM":
+      // For new events, skip the dirty check and allow saving blank events
+      const isNewEvent =
+        !draft._id || draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
+
+      // Check if the event has actually changed (skip for new events)
+      if (!isNewEvent && !isEventDirty(draft)) {
+        // No changes detected, just close the form without making HTTP request
+        if (isFormOpenBeforeDragging) {
           openForm();
-          return;
-        case "DISCARD":
+        } else {
           discard();
-          return;
-        case "SUBMIT":
-        default:
-          // Continue with the submit logic below
-          break;
+        }
+        return;
       }
 
       const userId = await getUserId();
@@ -284,7 +286,8 @@ export const useDraftActions = (
 
       const { startOfView, endOfView } = weekProps.component;
 
-      const isExisting = draft._id;
+      const isExisting = event._id;
+
       if (isExisting) {
         const isDateWithinView = (date: string) =>
           dayjs(date).isBetween(startOfView, endOfView, null, "[]");
@@ -332,6 +335,7 @@ export const useDraftActions = (
       }
     },
     [
+      isEventDirty,
       isFormOpenBeforeDragging,
       weekProps,
       currentWeekEvents,
@@ -617,6 +621,7 @@ export const useDraftActions = (
     openForm,
     reset,
     resize,
+    isEventDirty,
     isInstance,
     isRecurrence,
     isRecurrenceChanged,
