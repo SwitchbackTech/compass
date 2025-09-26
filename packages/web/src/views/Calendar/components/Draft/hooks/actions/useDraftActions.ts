@@ -245,7 +245,7 @@ export const useDraftActions = (
           openForm();
           return "OPEN_FORM";
         }
-        const isSame = !isEventDirty(draft, reduxDraft);
+        const isSame = reduxDraft ? !isEventDirty(draft, reduxDraft) : false;
         if (isSame) {
           // no need to make HTTP request
           discard();
