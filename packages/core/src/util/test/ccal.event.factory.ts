@@ -1,4 +1,4 @@
-import { ObjectId } from "mongodb";
+import { ObjectId } from "bson";
 import { faker } from "@faker-js/faker";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
@@ -8,7 +8,7 @@ import {
   WithCompassId,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { isAllDay, parseCompassEventDate } from "../event/event.util";
+import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";
 
 export const createMockStandaloneEvent = (
   overrides: Partial<Schema_Event> = {},

@@ -1,4 +1,4 @@
-import { ObjectId, type WithId } from "mongodb";
+import { ObjectId } from "bson";
 import { RRule } from "rrule";
 import { faker } from "@faker-js/faker";
 import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
@@ -7,6 +7,7 @@ import { gEventToCompassEvent } from "@core/mappers/map.event";
 import {
   CalendarProvider,
   type Schema_Event_Recur_Base,
+  WithMongoId,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
@@ -390,7 +391,7 @@ describe("CompassEventRRule: ", () => {
         return event;
       });
 
-      const baseEvent = compassEvents.find(isBase) as WithId<
+      const baseEvent = compassEvents.find(isBase) as WithMongoId<
         Omit<Schema_Event_Recur_Base, "_id">
       >;
 
