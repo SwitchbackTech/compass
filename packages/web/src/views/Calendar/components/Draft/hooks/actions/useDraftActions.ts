@@ -25,6 +25,7 @@ import {
   assembleDefaultEvent,
   prepEvtBeforeSubmit,
   prepSomedayEventBeforeSubmit,
+  replaceIdWithOptimisticId,
 } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import {
@@ -342,9 +343,13 @@ export const useDraftActions = (
   );
 
   const duplicateEvent = useCallback(() => {
-    const draft = MapEvent.removeProviderData({
+    const draftWithoutProvider = MapEvent.removeProviderData({
       ...reduxDraft,
     }) as Schema_GridEvent;
+
+    // Remove the original _id and generate a new optimistic ID for duplication
+    const { _id, ...draftWithoutId } = draftWithoutProvider;
+    const draft = replaceIdWithOptimisticId(draftWithoutId as Schema_GridEvent);
 
     submit(draft);
     discard();
