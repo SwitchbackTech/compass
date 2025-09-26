@@ -21,10 +21,10 @@ import {
   Schema_OptimisticEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
+import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
-import { validateGridEvent } from "../validators/grid.event.validator";
 
-const gridEventDefaultPosition = {
+export const gridEventDefaultPosition = {
   isOverlapping: false,
   widthMultiplier: 1,
   horizontalOrder: 1,
@@ -87,7 +87,7 @@ export const assembleDefaultEvent = async (
   }
 };
 
-export const assembleGridEvent = (event: Schema_Event): Schema_GridEvent => {
+export const assembleGridEvent = (event: Schema_WebEvent): Schema_GridEvent => {
   const gridEvent: Schema_GridEvent = {
     ...event,
     position: gridEventDefaultPosition,
@@ -97,7 +97,7 @@ export const assembleGridEvent = (event: Schema_Event): Schema_GridEvent => {
     origin: event.origin ?? Origin.COMPASS,
     priority: event.priority ?? Priorities.UNASSIGNED,
     user: event.user!,
-    recurrence: event.recurrence as Schema_Event_Recur_Base["recurrence"],
+    recurrence: event.recurrence,
   };
 
   return gridEvent;
@@ -203,13 +203,10 @@ export const prepEvtAfterDraftDrop = (
   return event;
 };
 
-export const prepEvtBeforeSubmit = (
-  draft: Schema_Event | Schema_GridEvent,
-  userId: string,
-) => {
-  const _event: Omit<Schema_Event | Schema_GridEvent, "recurrence"> = {
+export const prepEvtBeforeSubmit = (draft: Schema_WebEvent, userId: string) => {
+  const _event = {
     ...draft,
-    origin: Origin.COMPASS,
+    origin: draft.origin ?? Origin.COMPASS,
     user: userId,
   };
 
