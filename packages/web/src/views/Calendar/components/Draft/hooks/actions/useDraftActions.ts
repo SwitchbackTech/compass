@@ -242,13 +242,11 @@ export const useDraftActions = (
       const isOptimistic = draft._id?.startsWith(ID_OPTIMISTIC_PREFIX);
       if (isExisting && !isOptimistic) {
         if (isFormOpenBeforeDragging) {
-          openForm();
           return "OPEN_FORM";
         }
         const isSame = reduxDraft ? !isEventDirty(draft, reduxDraft) : false;
         if (isSame) {
           // no need to make HTTP request
-          discard();
           return "DISCARD";
         }
       }
