@@ -185,9 +185,7 @@ export const EventUpdateSchema = z.object({
   description: z.string().nullable().optional(),
   priority: z.nativeEnum(Priorities).optional(),
   recurrence: z.union([
-    CompassEventRecurrence.omit({ rule: true }).extend({
-      rule: z.null(),
-    }),
+    CompassEventRecurrence.extend({ rule: z.null() }),
     CompassEventRecurrence,
   ]),
   startDate: eventDateSchema.optional(),
@@ -196,15 +194,11 @@ export const EventUpdateSchema = z.object({
   isSomeday: z.boolean().optional(),
 });
 
-export const CompassCoreEventSchema = CoreEventSchema.omit({
-  recurrence: true,
-}).extend({
+export const CompassCoreEventSchema = CoreEventSchema.extend({
   _id: idSchema,
-  recurrence: CompassEventRecurrence.omit({ rule: true })
-    .extend({
-      rule: z.union([z.null(), z.array(z.string())]),
-    })
-    .optional(),
+  recurrence: CompassEventRecurrence.extend({
+    rule: z.union([z.null(), z.array(z.string())]),
+  }).optional(),
 });
 
 export const CompassCoreCalendarEventSchema = CompassCoreEventSchema.extend({
@@ -230,9 +224,7 @@ export const CompassThisEventSchema = BaseCompassEventSchema.merge(
         z.object({
           recurrence: z
             .union([
-              CompassEventRecurrence.omit({ rule: true }).extend({
-                rule: z.null(),
-              }),
+              CompassEventRecurrence.extend({ rule: z.null() }),
               CompassEventRecurrence,
             ])
             .optional(),
@@ -247,9 +239,7 @@ export const CompassThisAndFollowingEventSchema = BaseCompassEventSchema.merge(
     applyTo: z.literal(RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS),
     payload: CompassCoreEventSchema.merge(
       z.object({ recurrence: CompassEventRecurrence }),
-    )
-      .omit({ isSomeday: true })
-      .extend({ isSomeday: z.literal(false) }),
+    ).extend({ isSomeday: z.literal(false) }),
   }),
 );
 
@@ -258,9 +248,7 @@ export const CompassAllEventsSchema = BaseCompassEventSchema.merge(
     applyTo: z.literal(RecurringEventUpdateScope.ALL_EVENTS),
     payload: CompassCoreEventSchema.merge(
       z.object({ recurrence: CompassEventRecurrence }),
-    )
-      .omit({ isSomeday: true })
-      .extend({ isSomeday: z.literal(false) }),
+    ).extend({ isSomeday: z.literal(false) }),
   }),
 );
 

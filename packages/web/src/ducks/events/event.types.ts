@@ -13,7 +13,7 @@ import {
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   Schema_GridEvent,
-  Schema_OptimisticEvent,
+  Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 
 export type Action_ConvertEvent = PayloadAction<Payload_ConvertEvent>;
@@ -68,7 +68,7 @@ export interface Entities_Event {
 }
 
 export interface Payload_ConvertEvent {
-  event: Omit<Schema_OptimisticEvent, "position">;
+  event: Schema_WebEvent;
 }
 
 interface Payload_DeleteEvent {
@@ -78,7 +78,7 @@ interface Payload_DeleteEvent {
 
 export interface Payload_EditEvent {
   _id: string;
-  event: Schema_Event;
+  event: Schema_WebEvent;
   applyTo?: RecurringEventUpdateScope;
   shouldRemove?: boolean;
 }

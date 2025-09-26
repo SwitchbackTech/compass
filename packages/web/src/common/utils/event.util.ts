@@ -7,17 +7,22 @@ import {
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import {
+  Categories_Event,
+  Schema_Event,
+  Schema_Event_Recur_Base,
+} from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
+  Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
+import { validateGridEvent } from "../validators/grid.event.validator";
 
 const gridEventDefaultPosition = {
   isOverlapping: false,
@@ -63,11 +68,17 @@ export const assembleDefaultEvent = async (
     case Categories_Event.TIMED: {
       const defaultTimed: Schema_GridEvent = {
         ...baseEvent,
+        _id: baseEvent._id!,
         isAllDay: false,
         isSomeday: false,
-        startDate,
-        endDate,
+        startDate: startDate!,
+        endDate: endDate!,
         position: gridEventDefaultPosition,
+        origin: baseEvent.origin ?? Origin.COMPASS,
+        priority: baseEvent.priority ?? Priorities.UNASSIGNED,
+        user: baseEvent.user!,
+        recurrence:
+          baseEvent.recurrence as Schema_Event_Recur_Base["recurrence"],
       };
       return defaultTimed;
     }
@@ -77,10 +88,18 @@ export const assembleDefaultEvent = async (
 };
 
 export const assembleGridEvent = (event: Schema_Event): Schema_GridEvent => {
-  const gridEvent = {
+  const gridEvent: Schema_GridEvent = {
     ...event,
     position: gridEventDefaultPosition,
+    _id: event._id!,
+    startDate: event.startDate!,
+    endDate: event.endDate!,
+    origin: event.origin ?? Origin.COMPASS,
+    priority: event.priority ?? Priorities.UNASSIGNED,
+    user: event.user!,
+    recurrence: event.recurrence as Schema_Event_Recur_Base["recurrence"],
   };
+
   return gridEvent;
 };
 
@@ -188,13 +207,15 @@ export const prepEvtBeforeSubmit = (
   draft: Schema_Event | Schema_GridEvent,
   userId: string,
 ) => {
-  const _event = {
+  const _event: Omit<Schema_Event | Schema_GridEvent, "recurrence"> = {
     ...draft,
     origin: Origin.COMPASS,
     user: userId,
   };
 
-  const event = validateEvent(_event);
+  if (draft.recurrence) Object.assign(_event, { recurrence: draft.recurrence });
+
+  const event = validateGridEvent(_event);
   return event;
 };
 
@@ -202,13 +223,20 @@ export const prepSomedayEventBeforeSubmit = (
   draft: Schema_Event | Schema_GridEvent,
   userId: string,
 ) => {
-  const _event = {
+  const _event: Omit<Schema_WebEvent, "recurrence"> = {
     ...draft,
     origin: Origin.COMPASS,
     user: userId,
+    _id: draft._id!,
+    startDate: draft.startDate!,
+    endDate: draft.endDate!,
+    priority: draft.priority ?? Priorities.UNASSIGNED,
   };
 
+  if (draft.recurrence) Object.assign(_event, { recurrence: draft.recurrence });
+
   const event = validateSomedayEvent(_event);
+
   return event;
 };
 
@@ -229,8 +257,8 @@ const _assembleBaseEvent = (
 ): Schema_Event => {
   const baseEvent = {
     _id: event._id,
-    title: event.title || "",
-    description: event.description || "",
+    title: event.title ?? "",
+    description: event.description ?? "",
     startDate: event.startDate,
     endDate: event.endDate,
     user: userId,
