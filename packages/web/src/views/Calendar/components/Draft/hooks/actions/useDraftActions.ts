@@ -15,6 +15,7 @@ import {
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
+import { isEventDirty } from "@web/common/parsers/event.parser";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Schema_GridEvent,
@@ -155,33 +156,6 @@ export const useDraftActions = (
     [reduxDraft, isRecurrence],
   );
 
-  const isEventDirty = useCallback(
-    (currentDraft: Schema_WebEvent): boolean => {
-      if (!reduxDraft) return true; // New event is always dirty
-
-      // Compare relevant fields that can change in the form
-      const fieldsToCompare = [
-        "title",
-        "description",
-        "startDate",
-        "endDate",
-        "priority",
-        "recurrence",
-      ] as const;
-
-      return fieldsToCompare.some((field) => {
-        const current = currentDraft[field];
-        const original = reduxDraft[field];
-        const recurrence = field === "recurrence";
-
-        return recurrence
-          ? isRecurrenceChanged(currentDraft)
-          : current !== original;
-      });
-    },
-    [reduxDraft, isRecurrenceChanged],
-  );
-
   const closeForm = useCallback(() => {
     setIsFormOpen(false);
   }, [setIsFormOpen]);
@@ -262,24 +236,42 @@ export const useDraftActions = (
     setIsFormOpen(true);
   }, [setIsFormOpen]);
 
+  const determineSubmitAction = useCallback(
+    (draft: Schema_WebEvent) => {
+      const isExisting = draft._id;
+      const isOptimistic = draft._id?.startsWith(ID_OPTIMISTIC_PREFIX);
+      if (isExisting && !isOptimistic) {
+        if (isFormOpenBeforeDragging) {
+          return "OPEN_FORM";
+        }
+        const isSame = reduxDraft ? !isEventDirty(draft, reduxDraft) : false;
+        if (isSame) {
+          // no need to make HTTP request
+          return "DISCARD";
+        }
+      }
+      return "SUBMIT";
+    },
+    [reduxDraft, isFormOpenBeforeDragging],
+  );
+
   const submit = useCallback(
     async (
       draft: Schema_GridEvent,
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
-      // For new events, skip the dirty check and allow saving blank events
-      const isNewEvent =
-        !draft._id || draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
-
-      // Check if the event has actually changed (skip for new events)
-      if (!isNewEvent && !isEventDirty(draft)) {
-        // No changes detected, just close the form without making HTTP request
-        if (isFormOpenBeforeDragging) {
+      const action = determineSubmitAction(draft);
+      switch (action) {
+        case "OPEN_FORM":
           openForm();
-        } else {
+          return;
+        case "DISCARD":
           discard();
-        }
-        return;
+          return;
+        case "SUBMIT":
+        default:
+          // Continue with the submit logic below
+          break;
       }
 
       const userId = await getUserId();
@@ -293,8 +285,10 @@ export const useDraftActions = (
       }
 
       const { startOfView, endOfView } = weekProps.component;
+      const isExisting =
+        draft._id && !draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
 
-      if (!isNewEvent) {
+      if (isExisting) {
         const isDateWithinView = (date: string) =>
           dayjs(date).isBetween(startOfView, endOfView, null, "[]");
 
@@ -344,11 +338,11 @@ export const useDraftActions = (
       }
     },
     [
-      isEventDirty,
       isFormOpenBeforeDragging,
       weekProps,
       currentWeekEvents,
       dispatch,
+      determineSubmitAction,
       discard,
       openForm,
     ],
@@ -631,7 +625,6 @@ export const useDraftActions = (
     openForm,
     reset,
     resize,
-    isEventDirty,
     isInstance,
     isRecurrence,
     isRecurrenceChanged,

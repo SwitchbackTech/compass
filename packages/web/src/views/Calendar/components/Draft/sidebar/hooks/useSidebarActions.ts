@@ -89,15 +89,6 @@ export const useSidebarActions = (
   const { setDraft, setIsDrafting, setIsSomedayFormOpen, setSomedayEvents } =
     setters;
 
-  const resetLocalDraftStateIfNeeded = () => {
-    if (!state.isDrafting) return;
-
-    if (isSomedayEventFormOpen()) {
-      setIsDrafting(false);
-      setDraft(null);
-    }
-  };
-
   const close = () => {
     setIsDrafting(false);
     setDraft(null);
@@ -118,35 +109,6 @@ export const useSidebarActions = (
   const openForm = useCallback(() => {
     setIsSomedayFormOpen(true);
   }, [setIsSomedayFormOpen]);
-
-  // call this when enabling DND for drafts
-  const convertSomedayDraftToTimed = (
-    dropItem: DropResult_ReactDND,
-    dates: { startDate: string; endDate: string },
-  ) => {
-    const event = prepEvtAfterDraftDrop(
-      Categories_Event.TIMED,
-      dropItem,
-      dates,
-    );
-
-    dispatch(createEventSlice.actions.request(event));
-    dispatch(draftSlice.actions.discard());
-  };
-
-  const convertSomedayDraftToAllDay = (
-    dropItem: DropResult_ReactDND,
-    dates: { startDate: string; endDate: string },
-  ) => {
-    const event = prepEvtAfterDraftDrop(
-      Categories_Event.ALLDAY,
-      dropItem,
-      dates,
-    );
-
-    dispatch(createEventSlice.actions.request(event));
-    dispatch(draftSlice.actions.discard());
-  };
 
   const convertSomedayToCalendarEvent = useCallback(
     (

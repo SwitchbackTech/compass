@@ -9,7 +9,7 @@ export const useDraftConfirmation = ({
 }: Omit<ReturnType<typeof useDraftContext>, "setters" | "confirmation">) => {
   const { discard, deleteEvent, submit } = actions;
   const { isRecurrenceChanged } = actions;
-  const { isInstance, isRecurrence, isEventDirty } = actions;
+  const { isInstance, isRecurrence } = actions;
   const { draft } = state;
 
   const recurrenceChanged = useMemo(
@@ -45,9 +45,6 @@ export const useDraftConfirmation = ({
       const isRecurringEvent = isRecurrence();
       const instanceEvent = isInstance();
       const toStandAlone = instanceEvent && rule === null;
-      const dirty = isEventDirty(_draft);
-
-      if (!dirty) return discard();
 
       if (!toStandAlone && isRecurringEvent) {
         setFinalDraft(_draft);
@@ -69,7 +66,6 @@ export const useDraftConfirmation = ({
       submit,
       setRecurrenceUpdateScopeDialogOpen,
       setFinalDraft,
-      isEventDirty,
       isRecurrence,
       isInstance,
       discard,
