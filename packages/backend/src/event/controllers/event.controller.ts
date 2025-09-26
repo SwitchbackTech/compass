@@ -22,7 +22,12 @@ class EventController {
   private async processEvents(_events: CompassEvent[]) {
     const events = _events.map((e) => ({
       ...e,
-      payload: CompassCoreEventSchema.parse(e.payload),
+      payload: CompassCoreEventSchema.parse({
+        ...e.payload,
+        _id:
+          e.payload._id?.replace(`${ID_OPTIMISTIC_PREFIX}-`, "") ??
+          new ObjectId().toString(),
+      }),
     })) as CompassEvent[];
 
     await CompassSyncProcessor.processEvents(events);
@@ -39,15 +44,11 @@ class EventController {
       // Handle both single object and array cases
       const events = Array.isArray(body) ? body : [body];
 
+      console.log(events);
+
       await this.processEvents(
         events.map((e) => ({
-          payload: {
-            ...e,
-            _id:
-              e._id?.replace(`${ID_OPTIMISTIC_PREFIX}`, "") ??
-              new ObjectId().toString(),
-            user,
-          },
+          payload: { ...e, user },
           status: CompassEventStatus.CONFIRMED,
           applyTo: RecurringEventUpdateScope.THIS_EVENT,
         })) as CompassEvent[],
