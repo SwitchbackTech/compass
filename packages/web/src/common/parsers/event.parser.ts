@@ -41,8 +41,6 @@ export class WebEventParser {
    * Private method to check if recurrence has changed
    */
   private isRecurrenceChanged(): boolean {
-    if (!this.orig) return false;
-
     const isDateChanged = this.isDateChanged();
     const oldRecurrence = this.orig?.recurrence?.rule ?? [];
     const newRecurrence = this.curr?.recurrence?.rule ?? [];
@@ -77,14 +75,6 @@ export class WebEventParser {
 
     // If neither has recurrence, only check date changes
     return isDateChanged;
-  }
-
-  /**
-   * Private method to check if the event has recurrence rules
-   */
-  private isRecurrence(): boolean {
-    const hasRRule = Array.isArray(this.curr?.recurrence?.rule);
-    return hasRRule;
   }
 
   /**
