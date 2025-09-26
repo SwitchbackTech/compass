@@ -8,7 +8,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { Schema_SomedayEvent } from "@web/common/schemas/events/someday.event.schemas";
+import { Schema_SomedayEvent } from "@web/common/types/web.event.types";
 import {
   categorizeSomedayEvents,
   setSomedayEventsOrder,

@@ -5,16 +5,16 @@ import {
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
-import {
-  Schema_GridEvent,
-  Schema_OptimisticEvent,
-} from "@web/common/schemas/events/draft.event.schemas";
 import { SliceStateContext } from "@web/common/store/helpers";
 import {
   Filters_Pagination,
   Response_HttpPaginatedSuccess,
 } from "@web/common/types/api.types";
-import { Payload_NormalizedAsyncAction } from "@web/ducks/events/entity.types";
+import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import {
+  Schema_GridEvent,
+  Schema_OptimisticEvent,
+} from "@web/common/types/web.event.types";
 
 export type Action_ConvertEvent = PayloadAction<Payload_ConvertEvent>;
 

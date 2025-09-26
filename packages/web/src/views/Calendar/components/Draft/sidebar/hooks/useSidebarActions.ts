@@ -368,8 +368,8 @@ export const useSidebarActions = (
     // so its okay to provide any random int (hence -1)
     _event.order = -1;
 
-    const isDraft = !_event.startDate || !_event.endDate;
-    if (isDraft) {
+    if (!_event.startDate || !_event.endDate) {
+      // This probably means we are creating a new event, hence why we don't have start/end dates
       const { startDate, endDate } = getDatesByCategory(
         category,
         viewStart,
