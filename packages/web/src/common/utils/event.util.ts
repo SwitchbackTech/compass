@@ -13,11 +13,11 @@ import { validateEvent } from "@core/validators/event.validator";
 import { getUserId } from "@web/auth/auth.util";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
-import { validateSomedayDraft } from "@web/common/validators/someday.event.validator";
 import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
-} from "../schemas/events/draft.event.schemas";
+} from "@web/common/types/web.event.types";
+import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
 
 const gridEventDefaultPosition = {
   isOverlapping: false,
@@ -209,7 +209,7 @@ export const prepSomedayEventBeforeSubmit = (
     user: userId,
   };
 
-  const event = validateSomedayDraft(_event);
+  const event = validateSomedayEvent(_event);
   return event;
 };
 
