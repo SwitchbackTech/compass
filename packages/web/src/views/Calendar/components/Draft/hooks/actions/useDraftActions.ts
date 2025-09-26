@@ -15,7 +15,7 @@ import {
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
-import { isEventDirty } from "@web/common/parsers/event.parser";
+import { isEventDirty } from "@web/common/parsers/dirty.parser";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Schema_GridEvent,
@@ -279,7 +279,6 @@ export const useDraftActions = (
       let event = null;
       if (draft.isSomeday) {
         event = prepSomedayEventBeforeSubmit(draft, userId);
-        event.order = -1; // Provide it to prevent zod validation error since zod expects it
       } else {
         event = prepEvtBeforeSubmit(draft, userId);
       }
