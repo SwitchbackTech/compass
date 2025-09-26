@@ -24,7 +24,7 @@ const WebEventRecurrence = z.union([
 ]);
 
 const WebCoreEventSchema = CompassCoreEventSchema.extend({
-  _id: z.union([idSchema, optimisticIdSchema]),
+  _id: z.union([idSchema, optimisticIdSchema]).optional(),
   recurrence: WebEventRecurrence,
   order: z.number().optional(),
 });

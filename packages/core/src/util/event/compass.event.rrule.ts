@@ -1,5 +1,4 @@
 import { ObjectId } from "bson";
-import type { WithId } from "mongodb";
 import type { Options, RRuleStrOptions } from "rrule";
 import { RRule, rrulestr } from "rrule";
 import type { ParsedOptions } from "rrule/dist/esm/types";
@@ -9,6 +8,7 @@ import type {
   CalendarProvider,
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
+  WithMongoId,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -18,13 +18,13 @@ import {
 } from "@core/util/event/event.util";
 
 export class CompassEventRRule extends RRule {
-  #event: WithId<Omit<Schema_Event_Recur_Base, "_id">>;
+  #event: WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>;
   #dateFormat: string;
   #durationMs!: number;
 
   constructor(
     event: Pick<
-      WithId<Omit<Schema_Event_Recur_Base, "_id">>,
+      WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>,
       "startDate" | "endDate" | "_id" | "recurrence"
     >,
     options: Partial<Options> = {},
@@ -41,7 +41,7 @@ export class CompassEventRRule extends RRule {
   }
 
   static #initOptions(
-    event: WithId<Omit<Schema_Event_Recur_Base, "_id">>,
+    event: WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>,
     _options: Partial<Options> = {},
   ): Partial<Options> {
     const startDate = parseCompassEventDate(event.startDate!);
@@ -111,7 +111,7 @@ export class CompassEventRRule extends RRule {
 
   base(
     provider?: CalendarProvider,
-  ): WithId<Omit<Schema_Event_Recur_Base, "_id">> {
+  ): WithMongoId<Omit<Schema_Event_Recur_Base, "_id">> {
     const _id = this.#event._id ?? new ObjectId();
     const recurrence = { rule: this.toRecurrence() };
     const event = { ...this.#event, _id, recurrence };
@@ -129,7 +129,7 @@ export class CompassEventRRule extends RRule {
    */
   instances(
     provider?: CalendarProvider,
-  ): WithId<Omit<Schema_Event_Recur_Instance, "_id">>[] {
+  ): WithMongoId<Omit<Schema_Event_Recur_Instance, "_id">>[] {
     const base = this.base();
     const baseData = MapEvent.removeIdentifyingData(base);
     const baseEventId = base._id.toString();

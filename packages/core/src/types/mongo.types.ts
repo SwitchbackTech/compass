@@ -1,3 +1,3 @@
-import { ObjectId } from "mongodb";
+import { ObjectId } from "bson";
 
 export type InsertedIds = { [key: number]: ObjectId };

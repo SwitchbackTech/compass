@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import mergeWith from "lodash.mergewith";
-import { WithId } from "mongodb";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import {
@@ -11,6 +10,7 @@ import {
   Schema_Event_Recur_Instance,
   Schema_Event_Regular,
   WithCompassId,
+  WithMongoId,
   WithoutCompassId,
 } from "@core/types/event.types";
 import { WithGcalId, gSchema$Event } from "@core/types/gcal";
@@ -37,9 +37,9 @@ export namespace MapEvent {
   };
 
   export const removeProviderData = (
-    event: WithId<Omit<Schema_Event, "_id">> | Schema_Event,
+    event: WithMongoId<Omit<Schema_Event, "_id">> | Schema_Event,
   ): Omit<
-    WithId<Omit<Schema_Event, "_id">> | Schema_Event,
+    WithMongoId<Omit<Schema_Event, "_id">> | Schema_Event,
     "gEventId" | "gRecurringEventId"
   > => {
     const {
@@ -57,7 +57,7 @@ export namespace MapEvent {
   };
 
   export const removeIdentifyingData = (
-    event: WithId<Omit<Schema_Event, "_id">> | Schema_Event,
+    event: WithMongoId<Omit<Schema_Event, "_id">> | Schema_Event,
   ): Omit<
     Schema_Event,
     | "_id"
@@ -128,7 +128,7 @@ export namespace MapEvent {
 
   export const toGcalSingleProviderData = (
     base:
-      | WithId<Omit<Schema_Event_Recur_Base | Schema_Event_Regular, "_id">>
+      | WithMongoId<Omit<Schema_Event_Recur_Base | Schema_Event_Regular, "_id">>
       | WithCompassId<
           Omit<Schema_Event_Recur_Base | Schema_Event_Regular, "_id">
         >,
@@ -140,11 +140,11 @@ export namespace MapEvent {
 
   export const toProviderData = (
     event:
-      | WithId<Omit<Schema_Event, "_id" | "recurrence">>
+      | WithMongoId<Omit<Schema_Event, "_id" | "recurrence">>
       | WithCompassId<Omit<Schema_Event, "_id" | "recurrence">>,
     provider?: CalendarProvider,
     base?:
-      | WithId<Omit<Schema_Event_Recur_Base, "_id">>
+      | WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>
       | WithCompassId<Omit<Schema_Event_Recur_Base, "_id">>,
   ) => {
     const isCInstance = isInstance(event);
@@ -153,7 +153,7 @@ export namespace MapEvent {
       case CalendarProvider.GOOGLE: {
         return isCInstance
           ? MapEvent.toGcalInstanceProviderData(
-              event as WithId<Omit<Schema_Event_Recur_Instance, "_id">>,
+              event as WithMongoId<Omit<Schema_Event_Recur_Instance, "_id">>,
               base,
             )
           : MapEvent.toGcalSingleProviderData(event);

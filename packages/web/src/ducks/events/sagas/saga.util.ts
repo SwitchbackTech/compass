@@ -1,14 +1,20 @@
 import dayjs from "dayjs";
 import { normalize, schema } from "normalizr";
-import { call, put, select } from "redux-saga/effects";
+import { SelectEffect, call, put, select } from "redux-saga/effects";
 import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import {
   Params_Events,
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { replaceIdWithOptimisticId } from "@web/common/utils/event.util";
+import {
+  Schema_GridEvent,
+  Schema_WebEvent,
+} from "@web/common/types/web.event.types";
+import {
+  assembleGridEvent,
+  replaceIdWithOptimisticId,
+} from "@web/common/utils/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 import { EventApi } from "@web/ducks/events/event.api";
 import { Payload_ConvertEvent } from "@web/ducks/events/event.types";
@@ -22,8 +28,8 @@ export function* getEventById(
   _id: string,
 ): Generator<
   ReturnType<typeof select>,
-  Schema_GridEvent | undefined,
-  Schema_GridEvent | undefined
+  Schema_GridEvent | Schema_WebEvent,
+  Schema_GridEvent | Schema_WebEvent
 > {
   const currEvent = yield select((state: RootState) =>
     selectEventById(state, _id),
@@ -36,7 +42,7 @@ export function* _editEvent(
   gridEvent: Schema_GridEvent,
   params: { applyTo?: RecurringEventUpdateScope } = {},
 ) {
-  yield call(EventApi.edit, gridEvent._id as string, gridEvent, params);
+  yield call(EventApi.edit, gridEvent._id, gridEvent, params);
 }
 
 export function* insertOptimisticEvent(
@@ -58,11 +64,22 @@ export function* insertOptimisticEvent(
 export function* _assembleGridEvent({
   _id,
   ...updatedFields
-}: Payload_ConvertEvent["event"]) {
+}: Payload_ConvertEvent["event"]): Generator<
+  SelectEffect,
+  Schema_GridEvent,
+  Schema_WebEvent
+> {
   const currEvent = yield* getEventById(_id);
 
-  const _gridEvent = { ...currEvent, ...updatedFields };
-  const gridEvent = validateGridEvent(_gridEvent);
+  // First merge the current event with updated fields
+  const eventWithUpdates = { ...currEvent, ...updatedFields, _id };
+
+  // Use assembleGridEvent to ensure position field is properly set
+  const gridEventWithDefaults = assembleGridEvent(eventWithUpdates);
+
+  // Validate the result
+  const gridEvent = validateGridEvent(gridEventWithDefaults);
+
   return gridEvent;
 }
 
