@@ -90,6 +90,7 @@ const AllDayEvent = ({
               e.stopPropagation();
               onScalerMouseDown(event, e, "startDate");
             }}
+            // "-0.25px" is a very offset for displaying the scalar, since we want the scalar to be a bit offseted from the event
             left="-0.25px"
             zIndex={ZIndex.LAYER_4}
           />
