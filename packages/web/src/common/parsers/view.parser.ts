@@ -8,7 +8,7 @@ export class EventInViewParser {
   private readonly endOfView: Dayjs;
   private readonly isStartInView: boolean;
   private readonly isEndInView: boolean;
-  private readonly doesSpanView: boolean;
+  private readonly isSpanningView: boolean;
 
   constructor(event: Schema_WebEvent, startOfView: Dayjs, endOfView: Dayjs) {
     this.event = event;
@@ -17,7 +17,7 @@ export class EventInViewParser {
     this.isStartInView = this.isWithinView(this.event.startDate);
     this.isEndInView = this.isWithinView(this.event.endDate);
 
-    this.doesSpanView =
+    this.isSpanningView =
       dayjs(this.event.startDate).isBefore(this.startOfView) &&
       dayjs(this.event.endDate).isAfter(this.endOfView);
   }
@@ -26,11 +26,11 @@ export class EventInViewParser {
     dayjs(date).isBetween(this.startOfView, this.endOfView, null, "[]");
 
   public isEventInView() {
-    return this.isStartInView || this.isEndInView || this.doesSpanView;
+    return this.isStartInView || this.isEndInView || this.isSpanningView;
   }
 
   public isEventOutsideView() {
-    return !this.isStartInView && !this.isEndInView && !this.doesSpanView;
+    return !this.isStartInView && !this.isEndInView && !this.isSpanningView;
   }
 
   public shouldAddToViewAfterDragToEdge(

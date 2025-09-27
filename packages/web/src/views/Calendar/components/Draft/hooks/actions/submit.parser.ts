@@ -34,9 +34,9 @@ export const parseSomedayEventBeforeSubmit = (
     ...draft,
     origin: Origin.COMPASS,
     user: userId,
-    _id: draft._id!,
-    startDate: draft.startDate!,
-    endDate: draft.endDate!,
+    _id: draft._id,
+    startDate: draft.startDate,
+    endDate: draft.endDate,
     priority: draft.priority ?? Priorities.UNASSIGNED,
   };
 
