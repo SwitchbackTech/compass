@@ -58,6 +58,19 @@ export const AllDayEvents = ({
     handleDrag,
   );
 
+  const resizeAllDayEvent = (
+    event: Schema_GridEvent,
+    dateToChange: "startDate" | "endDate",
+  ) => {
+    dispatch(
+      draftSlice.actions.startResizing({
+        category: Categories_Event.ALLDAY,
+        event,
+        dateToChange,
+      }),
+    );
+  };
+
   const renderEvents = () => {
     if (
       isProcessing &&
@@ -80,6 +93,15 @@ export const AllDayEvents = ({
               return;
             }
             onMouseDown(e, event);
+          }}
+          onScalerMouseDown={(
+            event,
+            e,
+            dateToChange: "startDate" | "endDate",
+          ) => {
+            e.stopPropagation();
+            e.preventDefault();
+            resizeAllDayEvent(event, dateToChange);
           }}
         />
       );

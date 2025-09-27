@@ -25,7 +25,7 @@ export const useGridMouseUp = () => {
         hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved || false;
         shouldSubmit = !draft?.isOpen;
       } else if (category === Categories_Event.ALLDAY) {
-        hasMoved = dragStatus?.hasMoved || false;
+        hasMoved = dragStatus?.hasMoved || resizeStatus?.hasMoved || false;
         shouldSubmit = hasMoved;
       }
 
@@ -39,6 +39,10 @@ export const useGridMouseUp = () => {
 
   const handleAllDayRowMouseUp = useCallback(() => {
     if (!draft) return;
+
+    if (isResizing) {
+      stopResizing();
+    }
 
     if (isDragging) {
       stopDragging();
@@ -56,7 +60,16 @@ export const useGridMouseUp = () => {
     if (shouldSubmit) {
       submit(draft);
     }
-  }, [draft, isDragging, getNextAction, stopDragging, openForm, submit]);
+  }, [
+    draft,
+    isDragging,
+    isResizing,
+    getNextAction,
+    stopDragging,
+    stopResizing,
+    openForm,
+    submit,
+  ]);
 
   const handleMainGridMouseUp = useCallback(() => {
     if (!draft || !isDrafting) return;

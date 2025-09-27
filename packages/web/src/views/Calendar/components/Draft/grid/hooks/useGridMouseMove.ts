@@ -15,7 +15,7 @@ export const useGridMouseMove = () => {
     (e: MouseEvent) => {
       if (!isDrafting) return;
 
-      if (isResizing && !draft?.isAllDay) {
+      if (isResizing) {
         resize(e);
       } else if (isDragging) {
         e.preventDefault();
