@@ -18,14 +18,9 @@ import {
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
-import { DropResult_ReactDND } from "@web/common/types/dnd.types";
 import { Coordinates } from "@web/common/types/util.types";
-import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
-import {
-  assembleDefaultEvent,
-  prepEvtAfterDraftDrop,
-  prepSomedayEventBeforeSubmit,
-} from "@web/common/utils/event.util";
+import { isEventFormOpen } from "@web/common/utils";
+import { assembleDefaultEvent } from "@web/common/utils/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import {
   computeCurrentEventDateRange,
@@ -51,6 +46,7 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { parseSomedayEventBeforeSubmit } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { showMigrationToast } from "./MigrationToast";
@@ -382,7 +378,7 @@ export const useSidebarActions = (
     }
 
     const userId = await getUserId();
-    _event = prepSomedayEventBeforeSubmit(_event, userId);
+    _event = parseSomedayEventBeforeSubmit(_event, userId);
 
     const isExisting = _event._id;
     if (isExisting) {
