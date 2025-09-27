@@ -29,7 +29,7 @@ export class OnSubmitParser {
 export const parseSomedayEventBeforeSubmit = (
   draft: Schema_SomedayEvent,
   userId: string,
-) => {
+): Schema_SomedayEvent => {
   const _event: Omit<Schema_SomedayEvent, "recurrence"> = {
     ...draft,
     origin: Origin.COMPASS,
