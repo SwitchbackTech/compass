@@ -14,7 +14,6 @@ import {
 } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { getUserId } from "@web/auth/auth.util";
 import { isEventDirty } from "@web/common/parsers/dirty.parser";
 import { EventParser } from "@web/common/parsers/event.parser";
 import { EventInViewParser } from "@web/common/parsers/view.parser";
@@ -327,7 +326,6 @@ export const useDraftActions = (
             draft._id && !draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
 
           if (isExisting) {
-            // const userId = await getUserId();
             const event = new EventParser(draft).parse();
             const payload = getEditSlicePayload(event, applyTo);
             dispatch(
