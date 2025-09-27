@@ -11,6 +11,7 @@ import {
   Categories_Event,
   Recurrence,
   RecurringEventUpdateScope,
+  Schema_Event,
 } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
@@ -120,19 +121,23 @@ export const useDraftActions = (
     setDateBeingChanged("endDate");
   }, [setIsResizing, setResizeStatus, setDateBeingChanged]);
 
+  const isSomeday = useCallback((): boolean => {
+    return reduxDraft?.isSomeday ?? false;
+  }, [reduxDraft?.isSomeday]);
+
   const isInstance = useCallback((): boolean => {
     return ObjectId.isValid(reduxDraft?.recurrence?.eventId ?? "");
-  }, [reduxDraft]);
+  }, [reduxDraft?.recurrence?.eventId]);
 
   const isRecurrence = useCallback((): boolean => {
     const hasRRule = Array.isArray(reduxDraft?.recurrence?.rule);
 
     return hasRRule || isInstance();
-  }, [reduxDraft, isInstance]);
+  }, [reduxDraft?.recurrence?.rule, isInstance]);
 
   const isRecurrenceChanged = useCallback(
     (currentDraft: Schema_WebEvent): boolean => {
-      if (!isRecurrence() || !currentDraft) return false;
+      if (!currentDraft) return false;
 
       const oldStartDate = reduxDraft?.startDate;
       const newStartDate = currentDraft?.startDate;
@@ -150,10 +155,11 @@ export const useDraftActions = (
       return (
         startDateChanged ||
         endDateChanged ||
-        newRuleSet.some((rule) => !oldRuleSet.includes(rule))
+        newRuleSet.some((rule) => !oldRuleSet.includes(rule)) ||
+        oldRuleSet.some((rule) => !newRuleSet.includes(rule))
       );
     },
-    [reduxDraft, isRecurrence],
+    [reduxDraft?.startDate, reduxDraft?.endDate, reduxDraft?.recurrence?.rule],
   );
 
   const closeForm = useCallback(() => {
@@ -190,7 +196,11 @@ export const useDraftActions = (
     (
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
-      if (reduxDraft?._id) {
+      const confirmed = window.confirm(
+        `Delete ${reduxDraft?.title || "this event"}?`,
+      );
+
+      if (confirmed && reduxDraft?._id) {
         dispatch(
           deleteEventSlice.actions.request({
             _id: reduxDraft._id,
@@ -200,7 +210,7 @@ export const useDraftActions = (
       }
       discard();
     },
-    [dispatch, reduxDraft, discard],
+    [dispatch, reduxDraft?._id, reduxDraft?.title, discard],
   );
 
   const convert = useCallback(
@@ -268,7 +278,8 @@ export const useDraftActions = (
         weekProps.component.endOfView,
       );
       const shouldRemove = viewParser.isEventOutsideView();
-      const payload = { _id: event._id, event, shouldRemove, applyTo };
+      const payload = { _id: event._id!, event, shouldRemove, applyTo };
+
       return payload;
     },
     [weekProps.component.endOfView, weekProps.component.startOfView],
@@ -360,7 +371,7 @@ export const useDraftActions = (
 
   const duplicateEvent = useCallback(() => {
     const draft = MapEvent.removeProviderData({
-      ...reduxDraft,
+      ...(reduxDraft as Schema_Event),
     }) as Schema_GridEvent;
 
     submit(replaceIdWithOptimisticId(draft));
@@ -635,6 +646,7 @@ export const useDraftActions = (
     openForm,
     reset,
     resize,
+    isSomeday,
     isInstance,
     isRecurrence,
     isRecurrenceChanged,

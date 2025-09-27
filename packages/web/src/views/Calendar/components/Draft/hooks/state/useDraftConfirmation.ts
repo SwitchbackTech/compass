@@ -11,6 +11,7 @@ export const useDraftConfirmation = ({
   const { isRecurrenceChanged } = actions;
   const { isInstance, isRecurrence } = actions;
   const { draft } = state;
+  const isSomeday = actions.isSomeday();
 
   const recurrenceChanged = useMemo(
     () => isRecurrenceChanged(draft!),
@@ -75,15 +76,16 @@ export const useDraftConfirmation = ({
   const onDelete = useCallback(async () => {
     const isRecurringEvent = isRecurrence();
 
-    if (isRecurringEvent) {
+    if (isRecurringEvent && !isSomeday) {
       setFinalDraft(null);
 
       return setRecurrenceUpdateScopeDialogOpen(true);
     }
 
-    deleteEvent();
+    deleteEvent(RecurringEventUpdateScope.THIS_EVENT);
     discard();
   }, [
+    isSomeday,
     setRecurrenceUpdateScopeDialogOpen,
     setFinalDraft,
     deleteEvent,

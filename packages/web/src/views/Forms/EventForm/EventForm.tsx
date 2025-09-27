@@ -136,14 +136,6 @@ export const EventForm: React.FC<FormProps> = ({
     }, 1);
   };
 
-  const onDeleteForm = () => {
-    const confirmed = window.confirm(`Delete ${event.title || "this event"}?`);
-
-    if (!confirmed) return;
-
-    onDelete?.();
-  };
-
   const onDuplicateEvent = useCallback(() => {
     onDuplicate?.(event);
     onClose();
@@ -238,9 +230,10 @@ export const EventForm: React.FC<FormProps> = ({
         return;
       }
 
-      onDeleteForm();
+      onDelete();
     },
     hotkeysOptions,
+    [onDelete],
   );
 
   useHotkeys(
@@ -315,7 +308,7 @@ export const EventForm: React.FC<FormProps> = ({
             onConvert?.();
           }}
           onDuplicate={onDuplicateEvent}
-          onDelete={onDeleteForm}
+          onDelete={onDelete}
         />
       </StyledIconRow>
 

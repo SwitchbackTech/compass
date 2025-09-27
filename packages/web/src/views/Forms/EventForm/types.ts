@@ -13,7 +13,7 @@ export interface FormProps {
   onClose: () => void;
   onCloseEventForm?: () => void;
   onConvert?: () => void;
-  onDelete?: () => void;
+  onDelete: () => void;
   onDuplicate?: (event: Schema_Event) => void;
   onMigrate?: (
     event: Schema_Event,
