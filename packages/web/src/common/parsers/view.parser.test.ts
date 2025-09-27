@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
-import { WeekNavigationSource } from "@web/views/Calendar/hooks/useWeek";
 import { Schema_WebEvent } from "../types/web.event.types";
 import { EventInViewParser } from "./view.parser";
 
@@ -313,7 +312,7 @@ describe("EventInViewParser", () => {
       const parser = new EventInViewParser(event, startOfView, endOfView);
 
       expect(parser.isEventInView()).toBe(true);
-      expect(parser["doesSpanView"]).toBe(true);
+      expect(parser["isSpanningView"]).toBe(true);
     });
 
     it("should handle events with missing _id", () => {
