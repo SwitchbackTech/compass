@@ -21,8 +21,6 @@ import {
   Schema_OptimisticEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { validateGridEvent } from "@web/common/validators/grid.event.validator";
-import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
 
 export const gridEventDefaultPosition = {
   isOverlapping: false,
@@ -201,40 +199,6 @@ export const prepEvtAfterDraftDrop = (
     title: dropItem.title,
     startDate: dates.startDate,
   };
-
-  return event;
-};
-
-export const prepEvtBeforeSubmit = (draft: Schema_WebEvent, userId: string) => {
-  const _event = {
-    ...draft,
-    origin: draft.origin ?? Origin.COMPASS,
-    user: userId,
-  };
-
-  if (draft.recurrence) Object.assign(_event, { recurrence: draft.recurrence });
-
-  const event = validateGridEvent(_event);
-  return event;
-};
-
-export const prepSomedayEventBeforeSubmit = (
-  draft: Schema_Event | Schema_GridEvent,
-  userId: string,
-) => {
-  const _event: Omit<Schema_WebEvent, "recurrence"> = {
-    ...draft,
-    origin: Origin.COMPASS,
-    user: userId,
-    _id: draft._id!,
-    startDate: draft.startDate!,
-    endDate: draft.endDate!,
-    priority: draft.priority ?? Priorities.UNASSIGNED,
-  };
-
-  if (draft.recurrence) Object.assign(_event, { recurrence: draft.recurrence });
-
-  const event = validateSomedayEvent(_event);
 
   return event;
 };

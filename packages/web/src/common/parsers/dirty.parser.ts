@@ -3,7 +3,7 @@ import { Schema_WebEvent } from "../types/web.event.types";
 /**
  * Parser for determining if an event has been modified (is dirty)
  */
-export class WebEventParser {
+export class DirtyParser {
   private readonly curr: Schema_WebEvent;
   private readonly orig: Schema_WebEvent;
 
@@ -94,6 +94,6 @@ export const isEventDirty = (
   curr: Schema_WebEvent,
   orig: Schema_WebEvent,
 ): boolean => {
-  const parser = new WebEventParser(curr, orig);
+  const parser = new DirtyParser(curr, orig);
   return parser.isDirty();
 };

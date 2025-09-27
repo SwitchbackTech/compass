@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { Priorities } from "@core/constants/core.constants";
 import { createWebEvent } from "../../__tests__/utils/event.util/test.event.util";
-import { WebEventParser, isEventDirty } from "./event.parser";
+import { DirtyParser, isEventDirty } from "./dirty.parser";
 
 describe("WebEventParser", () => {
   it("should return false when draft and original events are identical", () => {
@@ -15,7 +15,7 @@ describe("WebEventParser", () => {
       recurrence: originalEvent.recurrence,
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(false);
   });
 
@@ -30,7 +30,7 @@ describe("WebEventParser", () => {
       recurrence: originalEvent.recurrence,
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(true);
   });
 
@@ -45,7 +45,7 @@ describe("WebEventParser", () => {
       recurrence: originalEvent.recurrence,
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(true);
   });
 
@@ -60,7 +60,7 @@ describe("WebEventParser", () => {
       recurrence: originalEvent.recurrence,
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(true);
   });
 
@@ -75,7 +75,7 @@ describe("WebEventParser", () => {
       recurrence: originalEvent.recurrence,
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(true);
   });
 
@@ -90,7 +90,7 @@ describe("WebEventParser", () => {
       recurrence: originalEvent.recurrence,
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(true);
   });
 
@@ -105,7 +105,7 @@ describe("WebEventParser", () => {
       recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(true);
   });
 
@@ -122,7 +122,7 @@ describe("WebEventParser", () => {
       recurrence: undefined,
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(true);
   });
 
@@ -139,7 +139,7 @@ describe("WebEventParser", () => {
       recurrence: { rule: ["RRULE:FREQ=DAILY"] },
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(true);
   });
 
@@ -156,7 +156,7 @@ describe("WebEventParser", () => {
       recurrence: { rule: ["RRULE:FREQ=WEEKLY", "RRULE:BYDAY=MO"] },
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(true);
   });
 
@@ -175,7 +175,7 @@ describe("WebEventParser", () => {
       recurrence: { rule: ["RRULE:FREQ=WEEKLY"] }, // Same recurrence
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(true);
   });
 
@@ -191,7 +191,7 @@ describe("WebEventParser", () => {
       user: "different-user", // This field is not tracked
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(false);
   });
 
@@ -206,7 +206,7 @@ describe("WebEventParser", () => {
       recurrence: undefined,
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(false);
   });
 
@@ -223,7 +223,7 @@ describe("WebEventParser", () => {
       recurrence: { rule: [] },
     });
 
-    const parser = new WebEventParser(draftEvent, originalEvent);
+    const parser = new DirtyParser(draftEvent, originalEvent);
     expect(parser.isDirty()).toBe(false);
   });
 });
