@@ -4,8 +4,8 @@ import "@testing-library/jest-dom";
 import { LEARN_CHINESE } from "@core/__mocks__/v1/events/events.misc";
 import { Categories_Event } from "@core/types/event.types";
 import { fireEvent, render } from "@web/__tests__/__mocks__/mock.render";
-import { SidebarDraftContext } from "../../../../Draft/sidebar/context/SidebarDraftContext";
-import { SomedayEventContainer } from "./SomedayEventContainer";
+import { SidebarDraftContext } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
+import { SomedayEventContainer } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEventContainer/SomedayEventContainer";
 
 jest.mock(
   "@web/views/Calendar/components/Draft/hooks/state/useDraftForm",
@@ -53,6 +53,8 @@ describe("SomedayEventContainer keyboard interactions", () => {
           isDrafting={false}
           isDragging={false}
           isOverGrid={false}
+          deleteEvent={jest.fn()}
+          duplicateEvent={jest.fn()}
           onSubmit={jest.fn()}
           provided={
             {
@@ -118,6 +120,8 @@ describe("SomedayEventContainer keyboard interactions", () => {
           isDrafting={false}
           isDragging={false}
           isOverGrid={false}
+          deleteEvent={jest.fn()}
+          duplicateEvent={jest.fn()}
           onSubmit={onSubmit}
           provided={
             {
@@ -181,6 +185,8 @@ describe("SomedayEventContainer keyboard interactions", () => {
           isDrafting={false}
           isDragging={false}
           isOverGrid={false}
+          deleteEvent={jest.fn()}
+          duplicateEvent={jest.fn()}
           onSubmit={onSubmit}
           provided={
             {
