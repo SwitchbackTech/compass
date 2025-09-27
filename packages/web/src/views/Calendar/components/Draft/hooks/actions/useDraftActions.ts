@@ -15,7 +15,6 @@ import {
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { isEventDirty } from "@web/common/parsers/dirty.parser";
-import { EventParser } from "@web/common/parsers/event.parser";
 import { EventInViewParser } from "@web/common/parsers/view.parser";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
@@ -45,6 +44,7 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 import { useDraftEffects } from "@web/views/Calendar/components/Draft/hooks/effects/useDraftEffects";
 import {
   Setters_Draft,
@@ -312,7 +312,7 @@ export const useDraftActions = (
           discard();
           return;
         case "CREATE": {
-          const event = new EventParser(draft).parse();
+          const event = new OnSubmitParser(draft).parse();
           dispatch(
             createEventSlice.actions.request({
               ...event,
@@ -326,7 +326,7 @@ export const useDraftActions = (
             draft._id && !draft._id.startsWith(ID_OPTIMISTIC_PREFIX);
 
           if (isExisting) {
-            const event = new EventParser(draft).parse();
+            const event = new OnSubmitParser(draft).parse();
             const payload = getEditSlicePayload(event, applyTo);
             dispatch(
               editEventSlice.actions.request(payload as unknown as void),
