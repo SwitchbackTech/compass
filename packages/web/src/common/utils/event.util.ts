@@ -225,7 +225,7 @@ export const prepEvtBeforeSubmit = (draft: Schema_WebEvent, userId: string) => {
 };
 
 export const prepSomedayEventBeforeSubmit = (
-  draft: Schema_Event | Schema_GridEvent,
+  draft: Schema_WebEvent,
   userId: string,
 ) => {
   const _event: Omit<Schema_WebEvent, "recurrence"> = {
