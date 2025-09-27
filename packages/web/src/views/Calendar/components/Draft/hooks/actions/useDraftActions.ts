@@ -268,11 +268,10 @@ export const useDraftActions = (
         weekProps.component.endOfView,
       );
       const shouldRemove = viewParser.isEventOutsideView();
-
       const payload = { _id: event._id, event, shouldRemove, applyTo };
       return payload;
     },
-    [],
+    [weekProps.component.endOfView, weekProps.component.startOfView],
   );
 
   const shouldAddToView = useCallback(
