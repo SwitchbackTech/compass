@@ -18,7 +18,7 @@ import {
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
-import { onEventTargetVisibility } from "@web/common/utils/event-target-visibility.util";
+import { onEventTargetVisibility } from "@web/common/utils/event/event-target-visibility.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
