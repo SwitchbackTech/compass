@@ -45,7 +45,9 @@ describe("WebEventParser", () => {
   });
 
   it("should return true when priority has changed", () => {
-    const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
+    const originalEvent = createMockStandaloneEvent({
+      priority: Priorities.WORK,
+    }) as Schema_WebEvent;
     const draftEvent = { ...originalEvent, priority: Priorities.SELF };
 
     expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
