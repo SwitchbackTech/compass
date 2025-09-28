@@ -11,21 +11,21 @@ describe("WebEventParser", () => {
   it("should return false when draft and original events are identical", () => {
     const event = createMockStandaloneEvent() as Schema_WebEvent;
 
-    expect(DirtyParser.eventDirty(event, event)).toBe(false);
+    expect(DirtyParser.isEventDirty(event, event)).toBe(false);
   });
 
   it("should return true when title has changed", () => {
     const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
     const draftEvent = { ...originalEvent, title: faker.lorem.sentence() };
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when description has changed", () => {
     const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
     const draftEvent = { ...originalEvent, title: faker.lorem.paragraph() };
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when startDate has changed", () => {
@@ -33,7 +33,7 @@ describe("WebEventParser", () => {
     const startDate = faker.date.future().toISOString();
     const draftEvent = { ...originalEvent, startDate };
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when endDate has changed", () => {
@@ -41,14 +41,14 @@ describe("WebEventParser", () => {
     const endDate = faker.date.future().toISOString();
     const draftEvent = { ...originalEvent, endDate };
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when priority has changed", () => {
     const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
     const draftEvent = { ...originalEvent, priority: Priorities.SELF };
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when recurrence is added to non-recurring event", () => {
@@ -56,7 +56,7 @@ describe("WebEventParser", () => {
     const recurrence = { rule: ["RRULE:FREQ=WEEKLY"] };
     const draftEvent = { ...originalEvent, recurrence };
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when recurrence is removed from a recurring event", () => {
@@ -65,8 +65,8 @@ describe("WebEventParser", () => {
     const draftEventA = { ...originalEvent, recurrence: { rule: null } };
     const draftEventB = Object.assign({ ...originalEvent }, { recurrence });
 
-    expect(DirtyParser.eventDirty(draftEventA, originalEvent)).toBe(true);
-    expect(DirtyParser.eventDirty(draftEventB, originalEvent)).toBe(true);
+    expect(DirtyParser.isEventDirty(draftEventA, originalEvent)).toBe(true);
+    expect(DirtyParser.isEventDirty(draftEventB, originalEvent)).toBe(true);
   });
 
   it("should return true when recurrence rules have changed", () => {
@@ -77,7 +77,7 @@ describe("WebEventParser", () => {
     const recurrence = { rule: ["RRULE:FREQ=WEEKLY"] };
     const draftEvent = { ...originalEvent, recurrence };
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when recurrence rules array length has changed", () => {
@@ -88,7 +88,7 @@ describe("WebEventParser", () => {
     const recurrence = { rule: ["RRULE:FREQ=WEEKLY", "RRULE:BYDAY=MO"] };
     const draftEvent = { ...originalEvent, recurrence };
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when dates change in recurring event", () => {
@@ -99,7 +99,7 @@ describe("WebEventParser", () => {
     const startDate = faker.date.future().toISOString();
     const draftEvent = { ...originalEvent, startDate };
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return false when only non-tracked fields change", () => {
@@ -114,7 +114,7 @@ describe("WebEventParser", () => {
       gRecurringEventId: faker.database.mongodbObjectId(),
     };
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(false);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(false);
   });
 
   it("should handle undefined recurrence gracefully", () => {
@@ -126,7 +126,7 @@ describe("WebEventParser", () => {
 
     const draftEvent = Object.assign({ ...originalEvent }, { recurrence });
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(false);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(false);
   });
 
   it("should handle empty recurrence rules", () => {
@@ -138,6 +138,6 @@ describe("WebEventParser", () => {
 
     const draftEvent = Object.assign({ ...originalEvent }, { recurrence });
 
-    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(false);
+    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(false);
   });
 });

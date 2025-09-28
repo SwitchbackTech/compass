@@ -230,7 +230,7 @@ export const useDraftActions = (
           return "OPEN_FORM";
         }
         const isSame = reduxDraft
-          ? !DirtyParser.eventDirty(draft, reduxDraft)
+          ? !DirtyParser.isEventDirty(draft, reduxDraft)
           : false;
         if (isSame) {
           // no need to make HTTP request

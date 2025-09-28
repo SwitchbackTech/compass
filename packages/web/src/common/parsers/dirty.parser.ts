@@ -7,7 +7,7 @@ export class DirtyParser {
   /**
    * Private Static method to check if the recurrence rules have changed
    */
-  private static ruleChanged(
+  private static isRuleChanged(
     curr: Schema_WebEvent,
     orig: Schema_WebEvent,
   ): boolean {
@@ -30,7 +30,7 @@ export class DirtyParser {
   /**
    * Private Static method to check if start or end dates have changed
    */
-  private static dateChanged(
+  private static isDateChanged(
     curr: Schema_WebEvent,
     orig: Schema_WebEvent,
   ): boolean {
@@ -50,14 +50,15 @@ export class DirtyParser {
     orig: Schema_WebEvent,
   ): boolean {
     return (
-      DirtyParser.dateChanged(curr, orig) || DirtyParser.ruleChanged(curr, orig)
+      DirtyParser.isDateChanged(curr, orig) ||
+      DirtyParser.isRuleChanged(curr, orig)
     );
   }
 
   /**
    * Static method to check if the curr event has been modified
    */
-  static eventDirty(curr: Schema_WebEvent, orig: Schema_WebEvent): boolean {
+  static isEventDirty(curr: Schema_WebEvent, orig: Schema_WebEvent): boolean {
     // Compare relevant fields that can change in the form
     const fieldsToCompare = [
       "title",
