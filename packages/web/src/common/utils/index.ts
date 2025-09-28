@@ -1,13 +1,3 @@
-import {
-  ID_CONTEXT_MENU_ITEMS,
-  ID_SOMEDAY_EVENT_FORM,
-} from "../constants/web.constants";
-
-export const isContextMenuOpen = () => {
-  const contextMenuItems = document.getElementById(ID_CONTEXT_MENU_ITEMS);
-  return !!contextMenuItems;
-};
-
 export const roundToNearest = (x: number, roundBy: number) =>
   Math.round(x / roundBy) * roundBy;
 
