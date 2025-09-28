@@ -1,7 +1,7 @@
 import { OpenChangeReason } from "@floating-ui/react";
 import { Categories_Event } from "@core/types/event.types";
-import { isContextMenuOpen } from "@web/common/utils";
 import { isSomedayEventActionMenuOpen } from "@web/common/utils/event/someday.event.util";
+import { isContextMenuOpen } from "@web/common/utils/form/form.util";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 
 export const useDraftForm = (

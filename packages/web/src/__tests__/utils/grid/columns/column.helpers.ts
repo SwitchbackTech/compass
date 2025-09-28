@@ -1,6 +1,15 @@
 import { WidthPercentages } from "@web/common/types/util.types";
-import { sortLowToHigh, sum } from "@web/common/utils/index";
 import { FLEX_EQUAL, FLEX_TODAY } from "@web/views/Calendar/layout.constants";
+
+export const sortLowToHigh = (vals: number[]) =>
+  [...vals].sort(function (a, b) {
+    return a - b;
+  });
+
+export const sum = (arr: number[]) =>
+  arr.reduce(function (a, b) {
+    return a + b;
+  }, 0);
 
 export const runStandardChecks = (
   todayIndex: number,
