@@ -7,7 +7,7 @@ export class DirtyParser {
   /**
    * Private Static method to check if the recurrence rules have changed
    */
-  private static isRuleChanged(
+  private static isRuleDifferent(
     curr: Schema_WebEvent,
     orig: Schema_WebEvent,
   ): boolean {
@@ -30,7 +30,7 @@ export class DirtyParser {
   /**
    * Private Static method to check if start or end dates have changed
    */
-  private static isDateChanged(
+  private static isDateDifferent(
     curr: Schema_WebEvent,
     orig: Schema_WebEvent,
   ): boolean {
@@ -50,8 +50,8 @@ export class DirtyParser {
     orig: Schema_WebEvent,
   ): boolean {
     return (
-      DirtyParser.isDateChanged(curr, orig) ||
-      DirtyParser.isRuleChanged(curr, orig)
+      DirtyParser.isDateDifferent(curr, orig) ||
+      DirtyParser.isRuleDifferent(curr, orig)
     );
   }
 
