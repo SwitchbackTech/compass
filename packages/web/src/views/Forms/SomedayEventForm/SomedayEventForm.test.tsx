@@ -1,69 +1,73 @@
+import { AxiosResponse } from "axios";
+import dayjs from "dayjs";
 import React, { act } from "react";
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom/extend-expect";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Priorities } from "@core/constants/core.constants";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import {
+  Categories_Event,
+  RecurringEventUpdateScope,
+  Schema_Event,
+} from "@core/types/event.types";
+import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
-import { SomedayEventForm } from "./SomedayEventForm";
-
-jest.mock("react-toastify", () => ({
-  toast: jest.fn(),
-}));
+import { setupDraftState } from "@web/__tests__/utils/grid.util/draft.util";
+import { Schema_WebEvent } from "@web/common/types/web.event.types";
+import { EventApi } from "@web/ducks/events/event.api";
+import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
+import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";
+import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
 
 const mockDispatch = jest.fn();
-jest.mock("@web/store/store.hooks", () => ({
-  ...jest.requireActual("@web/store/store.hooks"),
-  useAppDispatch: () => mockDispatch,
-}));
-
 const mockConfirm = jest.spyOn(window, "confirm");
-
-const sampleSomedayEvent: Schema_Event = {
-  _id: "someday123",
-  title: "Test Someday Event for Hotkey",
-  description: "Practice hotkeys",
-  priority: Priorities.UNASSIGNED,
-};
-
 const mockOnClose = jest.fn();
 const mockOnMigrate = jest.fn();
 const mockOnSubmit = jest.fn();
+const mockOnDelete = jest.fn();
 const mockSetEvent = jest.fn();
 const mockDuplicateEvent = jest.fn();
 
-jest.mock(
-  "@web/views/Calendar/components/Draft/context/useDraftContext",
-  () => ({
-    useDraftContext: () => ({
-      actions: {
-        duplicateEvent: mockDuplicateEvent,
-      },
-    }),
-  }),
-);
-
-const defaultCategory = Categories_Event.SOMEDAY_WEEK;
+jest.mock("react-toastify", () => ({ toast: jest.fn() }));
 
 describe("SomedayEventForm Hotkeys", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  beforeEach(() => jest.resetAllMocks());
+
+  jest.spyOn(window, "alert");
+
+  jest
+    .spyOn(EventApi, "delete")
+    .mockImplementation(() =>
+      Promise.resolve({ status: 200 } as unknown as AxiosResponse<void>),
+    );
+
+  const sampleSomedayEvent = createMockStandaloneEvent({
+    isSomeday: true,
+  }) as Schema_Event;
+
+  const now = dayjs();
+  const startDate = now.startOf("week").toISOString();
+  const endDate = now.endOf("week").toISOString();
+  const defaultCategory = Categories_Event.SOMEDAY_WEEK;
 
   test("should call onSubmit when enter keyboard shortcut is used", async () => {
+    const state = setupDraftState(sampleSomedayEvent as Schema_WebEvent);
+    const { weekProps, dateCalcs, deleteEvent } = state;
+
     render(
-      <div>
+      <DraftProvider weekProps={weekProps} dateCalcs={dateCalcs} isSidebarOpen>
         <SomedayEventForm
+          weekViewRange={{ startDate, endDate }}
           event={sampleSomedayEvent}
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          onDelete={deleteEvent}
           setEvent={mockSetEvent}
           category={defaultCategory}
         />
-      </div>,
+        ,
+      </DraftProvider>,
     );
 
     // Ensure the form is rendered (good sanity check)
@@ -73,33 +77,42 @@ describe("SomedayEventForm Hotkeys", () => {
       await userEvent.keyboard("{Enter}");
     });
 
-    expect(mockOnSubmit).toHaveBeenCalledTimes(1);
-    expect(mockOnSubmit).toHaveBeenCalledWith(sampleSomedayEvent);
-
     expect(mockOnClose).not.toHaveBeenCalled();
-    expect(mockDispatch).not.toHaveBeenCalled();
+    expect(mockOnSubmit).toHaveBeenCalledTimes(1);
+    expect(mockOnSubmit).toHaveBeenCalledWith(
+      expect.objectContaining(sampleSomedayEvent),
+    );
     expect(toast).not.toHaveBeenCalled();
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
   test("should trigger delete flow when delete keyboard shortcut is used and confirmed", async () => {
+    // Explicitly confirm deletion
+    mockConfirm.mockReturnValue(true);
+
+    const deleteSpy = jest.spyOn(deleteEventSlice.actions, "request");
+
+    const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
+      sampleSomedayEvent as Schema_WebEvent,
+    );
+
     render(
-      <div>
+      <DraftProvider weekProps={weekProps} dateCalcs={dateCalcs} isSidebarOpen>
         <SomedayEventForm
+          weekViewRange={{ startDate, endDate }}
           event={sampleSomedayEvent}
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          onDelete={deleteEvent}
           setEvent={mockSetEvent}
           category={defaultCategory}
         />
-      </div>,
+        ,
+      </DraftProvider>,
     );
 
     expect(screen.getByRole("form")).toBeInTheDocument();
-
-    // Explicitly confirm deletion
-    mockConfirm.mockReturnValue(true);
 
     await act(async () => {
       await userEvent.keyboard("{Delete}");
@@ -109,33 +122,41 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).toHaveBeenCalledWith(
       `Delete ${sampleSomedayEvent.title}?`,
     );
-    expect(mockDispatch).toHaveBeenCalledTimes(1);
-    expect(mockDispatch).toHaveBeenCalledWith(
-      getSomedayEventsSlice.actions.delete({ _id: sampleSomedayEvent._id }),
+    expect(deleteSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: sampleSomedayEvent._id!,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
     );
-    expect(toast).toHaveBeenCalledTimes(1);
-    expect(toast).toHaveBeenCalledWith(`Deleted ${sampleSomedayEvent.title}`);
 
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
   test("should not trigger delete flow when delete keyboard shortcut is used and cancelled", async () => {
+    // Explicitly refuse deletion
+    mockConfirm.mockReturnValue(false);
+
+    const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
+      sampleSomedayEvent as Schema_WebEvent,
+    );
+
     render(
-      <div>
+      <DraftProvider weekProps={weekProps} dateCalcs={dateCalcs} isSidebarOpen>
         <SomedayEventForm
+          weekViewRange={{ startDate, endDate }}
           event={sampleSomedayEvent}
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          onDelete={deleteEvent}
           setEvent={mockSetEvent}
           category={defaultCategory}
         />
-      </div>,
+        ,
+      </DraftProvider>,
     );
 
     expect(screen.getByRole("form")).toBeInTheDocument();
-
-    mockConfirm.mockReturnValue(false);
 
     await act(async () => {
       await userEvent.keyboard("{Delete}");
@@ -146,25 +167,31 @@ describe("SomedayEventForm Hotkeys", () => {
       `Delete ${sampleSomedayEvent.title}?`,
     );
 
-    expect(mockDispatch).not.toHaveBeenCalled();
-    expect(toast).not.toHaveBeenCalled();
-    expect(mockOnClose).not.toHaveBeenCalled();
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
   test("should call duplicateEvent when duplicate icon btn is clicked", async () => {
     const user = userEvent.setup();
+
+    const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
+      sampleSomedayEvent as Schema_WebEvent,
+    );
+
     render(
-      <div>
+      <DraftProvider weekProps={weekProps} dateCalcs={dateCalcs} isSidebarOpen>
         <SomedayEventForm
+          weekViewRange={{ startDate, endDate }}
           event={sampleSomedayEvent}
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          onDuplicate={mockDuplicateEvent}
+          onDelete={deleteEvent}
           setEvent={mockSetEvent}
           category={defaultCategory}
         />
-      </div>,
+        ,
+      </DraftProvider>,
     );
 
     const form = screen.getByRole("form");
@@ -183,7 +210,6 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockDuplicateEvent).toHaveBeenCalledTimes(1);
 
     expect(mockOnClose).toHaveBeenCalledTimes(1);
-    expect(mockDispatch).not.toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
     expect(mockConfirm).not.toHaveBeenCalled();
   });
@@ -191,16 +217,16 @@ describe("SomedayEventForm Hotkeys", () => {
   test("should call onMigrate when migrate backward icon btn is clicked", async () => {
     const user = userEvent.setup();
     render(
-      <div>
-        <SomedayEventForm
-          event={sampleSomedayEvent}
-          onClose={mockOnClose}
-          onMigrate={mockOnMigrate}
-          onSubmit={mockOnSubmit}
-          setEvent={mockSetEvent}
-          category={defaultCategory}
-        />
-      </div>,
+      <SomedayEventForm
+        weekViewRange={{ startDate, endDate }}
+        event={sampleSomedayEvent}
+        onClose={mockOnClose}
+        onMigrate={mockOnMigrate}
+        onSubmit={mockOnSubmit}
+        onDelete={mockOnDelete}
+        setEvent={mockSetEvent}
+        category={defaultCategory}
+      />,
     );
 
     const form = screen.getByRole("form");
@@ -228,16 +254,16 @@ describe("SomedayEventForm Hotkeys", () => {
     const user = userEvent.setup();
 
     render(
-      <div>
-        <SomedayEventForm
-          event={sampleSomedayEvent}
-          onClose={mockOnClose}
-          onMigrate={mockOnMigrate}
-          onSubmit={mockOnSubmit}
-          setEvent={mockSetEvent}
-          category={defaultCategory}
-        />
-      </div>,
+      <SomedayEventForm
+        weekViewRange={{ startDate, endDate }}
+        event={sampleSomedayEvent}
+        onClose={mockOnClose}
+        onMigrate={mockOnMigrate}
+        onSubmit={mockOnSubmit}
+        onDelete={mockOnDelete}
+        setEvent={mockSetEvent}
+        category={defaultCategory}
+      />,
     );
 
     const form = screen.getByRole("form");
@@ -267,16 +293,16 @@ describe("SomedayEventForm Hotkeys", () => {
    */
   test.skip("should call duplicateEvent when meta+d keyboard shortcut is used", async () => {
     render(
-      <div>
-        <SomedayEventForm
-          event={sampleSomedayEvent}
-          onClose={mockOnClose}
-          onMigrate={mockOnMigrate}
-          onSubmit={mockOnSubmit}
-          setEvent={mockSetEvent}
-          category={defaultCategory}
-        />
-      </div>,
+      <SomedayEventForm
+        weekViewRange={{ startDate, endDate }}
+        event={sampleSomedayEvent}
+        onClose={mockOnClose}
+        onMigrate={mockOnMigrate}
+        onSubmit={mockOnSubmit}
+        onDelete={mockOnDelete}
+        setEvent={mockSetEvent}
+        category={defaultCategory}
+      />,
     );
 
     // Ensure the form is rendered (good sanity check)

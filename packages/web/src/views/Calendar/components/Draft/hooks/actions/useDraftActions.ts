@@ -11,10 +11,11 @@ import {
   Categories_Event,
   Recurrence,
   RecurringEventUpdateScope,
+  Schema_Event,
 } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { isEventDirty } from "@web/common/parsers/dirty.parser";
+import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { EventInViewParser } from "@web/common/parsers/view.parser";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
@@ -120,41 +121,19 @@ export const useDraftActions = (
     setDateBeingChanged("endDate");
   }, [setIsResizing, setResizeStatus, setDateBeingChanged]);
 
+  const isSomeday = useCallback((): boolean => {
+    return reduxDraft?.isSomeday ?? false;
+  }, [reduxDraft?.isSomeday]);
+
   const isInstance = useCallback((): boolean => {
     return ObjectId.isValid(reduxDraft?.recurrence?.eventId ?? "");
-  }, [reduxDraft]);
+  }, [reduxDraft?.recurrence?.eventId]);
 
   const isRecurrence = useCallback((): boolean => {
     const hasRRule = Array.isArray(reduxDraft?.recurrence?.rule);
 
     return hasRRule || isInstance();
-  }, [reduxDraft, isInstance]);
-
-  const isRecurrenceChanged = useCallback(
-    (currentDraft: Schema_WebEvent): boolean => {
-      if (!isRecurrence() || !currentDraft) return false;
-
-      const oldStartDate = reduxDraft?.startDate;
-      const newStartDate = currentDraft?.startDate;
-      const oldEndDate = reduxDraft?.endDate;
-      const newEndDate = currentDraft?.endDate;
-      const oldRecurrence = reduxDraft?.recurrence?.rule ?? [];
-      const newRecurrence = currentDraft?.recurrence?.rule ?? [];
-      const startDateChanged = oldStartDate !== newStartDate;
-      const endDateChanged = oldEndDate !== newEndDate;
-      const oldRuleFields = oldRecurrence.flatMap((rule) => rule.split(";"));
-      const newRuleFields = newRecurrence.flatMap((rule) => rule.split(";"));
-      const oldRuleSet = [...new Set(oldRuleFields)];
-      const newRuleSet = [...new Set(newRuleFields)];
-
-      return (
-        startDateChanged ||
-        endDateChanged ||
-        newRuleSet.some((rule) => !oldRuleSet.includes(rule))
-      );
-    },
-    [reduxDraft, isRecurrence],
-  );
+  }, [reduxDraft?.recurrence?.rule, isInstance]);
 
   const closeForm = useCallback(() => {
     setIsFormOpen(false);
@@ -190,7 +169,11 @@ export const useDraftActions = (
     (
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
-      if (reduxDraft?._id) {
+      const confirmed = window.confirm(
+        `Delete ${reduxDraft?.title || "this event"}?`,
+      );
+
+      if (confirmed && reduxDraft?._id) {
         dispatch(
           deleteEventSlice.actions.request({
             _id: reduxDraft._id,
@@ -200,7 +183,7 @@ export const useDraftActions = (
       }
       discard();
     },
-    [dispatch, reduxDraft, discard],
+    [dispatch, reduxDraft?._id, reduxDraft?.title, discard],
   );
 
   const convert = useCallback(
@@ -246,7 +229,9 @@ export const useDraftActions = (
         if (isFormOpenBeforeDragging) {
           return "OPEN_FORM";
         }
-        const isSame = reduxDraft ? !isEventDirty(draft, reduxDraft) : false;
+        const isSame = reduxDraft
+          ? !DirtyParser.eventDirty(draft, reduxDraft)
+          : false;
         if (isSame) {
           // no need to make HTTP request
           return "DISCARD";
@@ -268,7 +253,8 @@ export const useDraftActions = (
         weekProps.component.endOfView,
       );
       const shouldRemove = viewParser.isEventOutsideView();
-      const payload = { _id: event._id, event, shouldRemove, applyTo };
+      const payload = { _id: event._id!, event, shouldRemove, applyTo };
+
       return payload;
     },
     [weekProps.component.endOfView, weekProps.component.startOfView],
@@ -360,7 +346,7 @@ export const useDraftActions = (
 
   const duplicateEvent = useCallback(() => {
     const draft = MapEvent.removeProviderData({
-      ...reduxDraft,
+      ...(reduxDraft as Schema_Event),
     }) as Schema_GridEvent;
 
     submit(replaceIdWithOptimisticId(draft));
@@ -668,9 +654,9 @@ export const useDraftActions = (
     openForm,
     reset,
     resize,
+    isSomeday,
     isInstance,
     isRecurrence,
-    isRecurrenceChanged,
     startDragging: () => {
       // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
       // because `setIsFormOpenBeforeDragging` depends on `isFormOpen` and re-calculates

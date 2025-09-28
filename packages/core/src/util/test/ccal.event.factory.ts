@@ -5,26 +5,40 @@ import {
   Schema_Event,
   Schema_Event_Recur_Base,
   Schema_Event_Recur_Instance,
+  Schema_Event_Regular,
   WithCompassId,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";
 
 export const createMockStandaloneEvent = (
-  overrides: Partial<Schema_Event> = {},
-): WithCompassId<Schema_Event> => {
-  const start = faker.date.future();
-  const end = dayjs(start).add(1, "hour");
+  overrides: Partial<Omit<Schema_Event, "endDate">> = {},
+  allDayEvent = false,
+  dateDiff: Omit<
+    Partial<
+      Exclude<Parameters<typeof generateCompassEventDates>[0], undefined>
+    >,
+    "date" | "allDay"
+  > = {},
+): WithCompassId<Schema_Event_Regular> => {
+  const { startDate } = overrides;
+  const now = new Date();
+  const allDay = allDayEvent || isAllDay(overrides) || overrides.isAllDay;
+  const date = startDate ? parseCompassEventDate(startDate) : undefined;
+  const dates = generateCompassEventDates({ ...dateDiff, date, allDay });
+
   return {
     _id: new ObjectId().toString(),
     title: faker.lorem.sentence(),
-    startDate: start.toISOString(),
-    endDate: end.toISOString(),
-    user: "test-user-id",
+    description: faker.lorem.paragraph(),
+    priority: faker.helpers.arrayElement(Object.values(Priorities)),
+    user: new ObjectId().toString(),
     origin: Origin.COMPASS,
-    priority: Priorities.WORK,
     isSomeday: false,
+    updatedAt: now,
     ...overrides,
+    isAllDay: allDay ?? false,
+    ...dates,
   };
 };
 
@@ -34,30 +48,19 @@ export const createMockStandaloneEvent = (
  * @returns A base recurring event.
  */
 export const createMockBaseEvent = (
-  overrides: Partial<Schema_Event_Recur_Base> = {},
+  overrides: Partial<Omit<Schema_Event_Recur_Base, "endDate">> = {},
   allDayEvent = false,
+  dateDiff: Parameters<typeof createMockStandaloneEvent>[2] = {},
 ): WithCompassId<Schema_Event_Recur_Base> => {
-  const { startDate } = overrides;
-  const now = new Date();
-  const allDay = allDayEvent || isAllDay(overrides) || overrides.isAllDay;
-  const date = startDate ? parseCompassEventDate(startDate) : undefined;
-  const dates = generateCompassEventDates({ date, allDay });
+  const regularEvent = createMockStandaloneEvent(
+    overrides,
+    allDayEvent,
+    dateDiff,
+  );
 
   return {
-    _id: new ObjectId().toString(),
-    title: "Weekly Team Sync",
-    description: "Weekly team meeting",
-    recurrence: {
-      rule: ["RRULE:FREQ=WEEKLY"],
-    },
-    user: "test-user-id",
-    origin: Origin.COMPASS,
-    priority: Priorities.WORK,
-    isSomeday: false,
-    updatedAt: now,
-    ...overrides,
-    isAllDay: allDay ?? false,
-    ...dates,
+    ...regularEvent,
+    recurrence: overrides.recurrence ?? { rule: ["RRULE:FREQ=WEEKLY"] },
   };
 };
 

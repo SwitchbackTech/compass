@@ -49,11 +49,11 @@ export const assignEventsToRow = (
   const rows: number[][] = [];
   // makes copy of all event objects to allow for adding a 'row' field
   // can likely be optimized using immer's `produce` and `draft`
-  const orderedAllDayEvents = allDayEvents.map((e) => ({
+  const orderedAllDayEvents = allDayEvents?.map((e) => ({
     ...e,
   })) as Schema_GridEvent[];
 
-  orderedAllDayEvents.forEach((event, i) => {
+  orderedAllDayEvents?.forEach((event, i) => {
     const eventDays = _getEventDayNumbers(event);
 
     if (i === 0) {
@@ -382,10 +382,10 @@ const _getEventDayNumbers = (event: Schema_Event) => {
 
   /*
     removes the last number so that it doesn't overlap with neighboring events
-    example: 
+    example:
       - an event on July 4 is represented as yyyy-07-04 - yyyy-07-05
         - its original day numbers are: [85, 86]
-      - this will cause it to erroneously overlap with an event on July 5 
+      - this will cause it to erroneously overlap with an event on July 5
         - because July 5 day numbers will be [86, 87]
         - 86 is shared between both days
       - removing the second number fixes this, because:
