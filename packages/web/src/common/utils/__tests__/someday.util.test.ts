@@ -16,7 +16,7 @@ import {
 import {
   categorizeSomedayEvents,
   setSomedayEventsOrder,
-} from "@web/common/utils/someday.util";
+} from "@web/common/utils/event/someday.event.util";
 
 describe("categorizeSomedayEvents", () => {
   const baseEvent: Partial<Omit<Schema_SomedayEvent, "recurrence">> = {
