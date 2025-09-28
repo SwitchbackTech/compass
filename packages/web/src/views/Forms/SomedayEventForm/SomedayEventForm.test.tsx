@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import React, { act } from "react";
 import { toast } from "react-toastify";
 import "@testing-library/jest-dom/extend-expect";
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   Categories_Event,
@@ -407,6 +407,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          onDuplicate={mockDuplicateEvent}
+          onDelete={mockOnDelete}
           setEvent={mockSetEvent}
           category={defaultCategory}
         />
@@ -437,6 +439,108 @@ describe("SomedayEventForm Hotkeys", () => {
       sampleSomedayEvent,
       defaultCategory,
       "forward",
+    );
+  });
+
+  test("should call onMigrate when ctrl+meta+up keyboard shortcut is used while ActionsMenu is open", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
+          onSubmit={mockOnSubmit}
+          onDuplicate={mockDuplicateEvent}
+          onDelete={mockOnDelete}
+          setEvent={mockSetEvent}
+          category={Categories_Event.SOMEDAY_MONTH}
+        />
+      </div>,
+    );
+
+    const form = screen.getByRole("form");
+
+    await act(async () => {
+      await user.click(
+        within(form).getByRole("button", { name: /open actions menu/i }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Migrate to this week")).toBeInTheDocument();
+    });
+
+    const migrateToWeekItem = screen.getByRole("menuitem", {
+      name: /migrate to this week/i,
+    });
+
+    fireEvent.keyDown(migrateToWeekItem, {
+      key: "ArrowUp",
+      code: "ArrowUp",
+      ctrlKey: true,
+      metaKey: true,
+      keyCode: 38,
+      which: 38,
+    });
+
+    expect(mockOnMigrate).toHaveBeenCalledTimes(1);
+    expect(mockOnMigrate).toHaveBeenCalledWith(
+      sampleSomedayEvent,
+      Categories_Event.SOMEDAY_MONTH,
+      "up",
+    );
+  });
+
+  test("should call onMigrate when ctrl+meta+down keyboard shortcut is used while ActionsMenu is open", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <div>
+        <SomedayEventForm
+          event={sampleSomedayEvent}
+          onClose={mockOnClose}
+          onMigrate={mockOnMigrate}
+          onSubmit={mockOnSubmit}
+          onDuplicate={mockDuplicateEvent}
+          onDelete={mockOnDelete}
+          setEvent={mockSetEvent}
+          category={Categories_Event.SOMEDAY_WEEK}
+        />
+      </div>,
+    );
+
+    const form = screen.getByRole("form");
+
+    await act(async () => {
+      await user.click(
+        within(form).getByRole("button", { name: /open actions menu/i }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Migrate to this month")).toBeInTheDocument();
+    });
+
+    const migrateToMonthItem = screen.getByRole("menuitem", {
+      name: /migrate to this month/i,
+    });
+
+    fireEvent.keyDown(migrateToMonthItem, {
+      key: "ArrowDown",
+      code: "ArrowDown",
+      ctrlKey: true,
+      metaKey: true,
+      keyCode: 40,
+      which: 40,
+    });
+
+    expect(mockOnMigrate).toHaveBeenCalledTimes(1);
+    expect(mockOnMigrate).toHaveBeenCalledWith(
+      sampleSomedayEvent,
+      Categories_Event.SOMEDAY_WEEK,
+      "down",
     );
   });
 
