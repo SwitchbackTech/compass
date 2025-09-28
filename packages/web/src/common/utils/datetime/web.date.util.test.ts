@@ -5,13 +5,8 @@ import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
 } from "@web/common/utils/datetime/web.date.util";
-import { ID_CONTEXT_MENU_ITEMS } from "../../constants/web.constants";
 import { getCalendarHeadingLabel, getWeekRangeLabel } from "./web.date.util";
 
-export const isContextMenuOpen = () => {
-  const contextMenuItems = document.getElementById(ID_CONTEXT_MENU_ITEMS);
-  return !!contextMenuItems;
-};
 describe("computeRelativeEventDateRange", () => {
   const baseEvent: Schema_Event = {
     _id: "test-id",
