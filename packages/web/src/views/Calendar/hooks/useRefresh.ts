@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "react";
 import {
   computeSomedayEventsRequestFilter,
   toUTCOffset,
-} from "@web/common/utils/web.date.util";
+} from "@web/common/utils/datetime/web.date.util";
 import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { selectImportLatestState } from "@web/ducks/events/selectors/sync.selector";

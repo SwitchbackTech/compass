@@ -3,7 +3,7 @@ import {
   clearLocalStorageMock,
   mockResizeObserver,
   mockScroll,
-} from "@web/__tests__/utils/test.util";
+} from "@web/__tests__/utils/web.test.util";
 
 beforeAll(() => {
   mockScroll();

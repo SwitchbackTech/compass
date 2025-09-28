@@ -1,7 +1,7 @@
 import { Dayjs } from "dayjs";
 import React, { FC } from "react";
 import { theme } from "@web/common/styles/theme";
-import { getWeekDayLabel } from "@web/common/utils/event.util";
+import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";

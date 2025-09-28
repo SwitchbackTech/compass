@@ -1,11 +1,23 @@
 import dayjs from "dayjs";
-import { getFlexBasis, getPrevDayWidth } from "@web/common/utils/grid.util";
 import {
   AFTER_TMRW_MULTIPLE,
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
 } from "@web/views/Calendar/layout.constants";
+import { getFlexBasis, getLineClamp, getPrevDayWidth } from "./grid.util";
+
+describe("getLineClamp", () => {
+  it("uses a minimum value of 1", () => {
+    expect(getLineClamp(-1)).toBe(1);
+    expect(getLineClamp(0)).toBe(1);
+    expect(getLineClamp(1)).toBe(1);
+    expect(getLineClamp(1.818)).toBe(1);
+  });
+  it("uses value larger than 1 when possible", () => {
+    expect(getLineClamp(190.88)).toBeGreaterThan(1);
+  });
+});
 
 describe("getFlexBasis", () => {
   test("past week: all same", () => {

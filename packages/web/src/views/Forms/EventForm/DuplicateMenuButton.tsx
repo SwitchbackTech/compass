@@ -1,6 +1,6 @@
 import React from "react";
 import { Copy } from "@phosphor-icons/react";
-import { getMetaKey } from "@web/common/utils/shortcut.util";
+import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
 import { Text } from "@web/components/Text";
 import MenuItem from "../ActionsMenu/MenuItem";
 

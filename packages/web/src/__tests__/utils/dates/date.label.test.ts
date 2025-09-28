@@ -1,4 +1,4 @@
-import { getTimesLabel } from "@web/common/utils/web.date.util";
+import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 
 const meridians = (label: string) =>
   (label.match(/am/gi) || label.match(/pm/gi) || []).length;

@@ -9,10 +9,10 @@ import {
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { Option_Time } from "@web/common/types/util.types";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
-import { roundToNext } from ".";
-import { ACCEPTED_TIMES } from "../constants/web.constants";
-import { theme } from "../styles/theme";
-import { Schema_SelectedDates } from "../types/web.event.types";
+import { ACCEPTED_TIMES } from "../../constants/web.constants";
+import { theme } from "../../styles/theme";
+import { Schema_SelectedDates } from "../../types/web.event.types";
+import { roundToNext } from "../round/round.util";
 
 export const dateIsValid = (date: string) => {
   const notNaN = !Number.isNaN(new Date(date).getTime());

@@ -25,8 +25,8 @@ import {
 import {
   assembleDefaultEvent,
   replaceIdWithOptimisticId,
-} from "@web/common/utils/event.util";
-import { getX } from "@web/common/utils/grid.util";
+} from "@web/common/utils/event/event.util";
+import { getX } from "@web/common/utils/grid/grid.util";
 import { Payload_EditEvent } from "@web/ducks/events/event.types";
 import {
   selectDraft,
@@ -230,7 +230,7 @@ export const useDraftActions = (
           return "OPEN_FORM";
         }
         const isSame = reduxDraft
-          ? !DirtyParser.eventDirty(draft, reduxDraft)
+          ? !DirtyParser.isEventDirty(draft, reduxDraft)
           : false;
         if (isSame) {
           // no need to make HTTP request

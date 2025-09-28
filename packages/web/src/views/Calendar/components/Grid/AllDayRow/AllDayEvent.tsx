@@ -6,8 +6,8 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { isOptimisticEvent } from "@web/common/utils/event.util";
-import { getEventPosition } from "@web/common/utils/position.util";
+import { isOptimisticEvent } from "@web/common/utils/event/event.util";
+import { getEventPosition } from "@web/common/utils/position/position.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";

@@ -11,7 +11,7 @@ import {
   assembleGridEvent,
   getCalendarEventIdFromElement,
   isOptimisticEvent,
-} from "@web/common/utils/event.util";
+} from "@web/common/utils/event/event.util";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import {
   selectAllDayEvents,

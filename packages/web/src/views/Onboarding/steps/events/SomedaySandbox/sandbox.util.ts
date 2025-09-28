@@ -8,7 +8,7 @@ import {
 } from "@core/types/event.types";
 import { getUserId } from "@web/auth/auth.util";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import { getDatesByCategory } from "@web/common/utils/web.date.util";
+import { getDatesByCategory } from "@web/common/utils/datetime/web.date.util";
 import { EventApi } from "@web/ducks/events/event.api";
 
 // Helper function to map task color to priority

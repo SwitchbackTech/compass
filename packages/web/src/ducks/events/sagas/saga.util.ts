@@ -14,7 +14,7 @@ import {
 import {
   assembleGridEvent,
   replaceIdWithOptimisticId,
-} from "@web/common/utils/event.util";
+} from "@web/common/utils/event/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 import { EventApi } from "@web/ducks/events/event.api";
 import { Payload_ConvertEvent } from "@web/ducks/events/event.types";

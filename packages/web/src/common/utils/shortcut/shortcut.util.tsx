@@ -1,6 +1,6 @@
 import React from "react";
 import { Command, WindowsLogo } from "@phosphor-icons/react";
-import { DesktopOS, getDesktopOS } from "@web/common/utils/device.util";
+import { DesktopOS, getDesktopOS } from "@web/common/utils/device/device.util";
 
 export const getMetaKey = ({ size = 14 }: { size?: number } = {}) => {
   const desktopOS = getDesktopOS();

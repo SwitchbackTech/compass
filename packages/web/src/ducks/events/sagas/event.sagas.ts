@@ -10,7 +10,7 @@ import {
   Schema_GridEvent,
   Schema_OptimisticEvent,
 } from "@web/common/types/web.event.types";
-import { handleError } from "@web/common/utils/event.util";
+import { handleError } from "@web/common/utils/event/event.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import {
   Action_ConvertEvent,

@@ -1,6 +1,6 @@
 import React from "react";
 import { theme } from "@web/common/styles/theme";
-import { getMetaKey } from "@web/common/utils/shortcut.util";
+import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
 import { SpinnerIcon } from "@web/components/Icons/Spinner";

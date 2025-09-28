@@ -1,11 +1,10 @@
 import dayjs from "dayjs";
-import { arraysAreEqual } from "@web/__tests__/utils/test.util";
-import { headers } from "@web/common/utils";
+import { arraysAreEqual } from "@web/__tests__/utils/web.test.util";
 import {
   getColorsByHour,
   getHourLabels,
   toUTCOffset,
-} from "@web/common/utils/web.date.util";
+} from "@web/common/utils/datetime/web.date.util";
 
 const getColorTotals = (colors) => {
   const uniqueColors = Array.from(new Set(colors));
@@ -15,17 +14,6 @@ const getColorTotals = (colors) => {
   const colorTotals = [color1.length, color2.length];
   return colorTotals;
 };
-
-describe("headers", () => {
-  it("uses Bearer token", () => {
-    const emptyCall = headers();
-    const callWithToken = headers("aToken");
-
-    expect(emptyCall.headers.Authorization).toContain("Bearer ");
-    expect(callWithToken.headers.Authorization).toContain("Bearer ");
-    expect(callWithToken.headers.Authorization).toContain("aToken");
-  });
-});
 
 describe("getHourLabels", () => {
   it("has 23 intervals)", () => {
