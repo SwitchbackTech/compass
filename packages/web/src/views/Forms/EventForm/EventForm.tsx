@@ -17,7 +17,7 @@ import {
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { SelectOption } from "@web/common/types/component.types";
-import { mapToBackend } from "@web/common/utils/dates/web.date.util";
+import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
 import { getCategory } from "@web/common/utils/event.util";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";

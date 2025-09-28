@@ -6,7 +6,7 @@ import {
   getTimeOptionByValue,
   getTimeOptions,
   mapToBackend,
-} from "@web/common/utils/dates/web.date.util";
+} from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentTime } from "@web/common/utils/datetime/web.datetime.util";
 import { AlignItems } from "@web/components/Flex/styled";
 import { StyledTimeFlex } from "../styled";

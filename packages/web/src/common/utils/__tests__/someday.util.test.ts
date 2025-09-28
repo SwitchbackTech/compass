@@ -12,7 +12,7 @@ import { Schema_SomedayEvent } from "@web/common/types/web.event.types";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
-} from "@web/common/utils/dates/web.date.util";
+} from "@web/common/utils/datetime/web.date.util";
 import {
   categorizeSomedayEvents,
   setSomedayEventsOrder,

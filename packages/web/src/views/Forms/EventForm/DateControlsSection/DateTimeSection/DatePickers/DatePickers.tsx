@@ -3,7 +3,7 @@ import React, { FC } from "react";
 import { Key } from "ts-key-enum";
 import { MONTH_DAY_YEAR } from "@core/constants/date.constants";
 import { darken } from "@core/util/color.utils";
-import { dateIsValid } from "@web/common/utils/dates/web.date.util";
+import { dateIsValid } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";

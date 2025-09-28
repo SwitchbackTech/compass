@@ -1,7 +1,7 @@
 import dayjs, { Dayjs } from "dayjs";
 import React, { FC, useRef } from "react";
 import { theme } from "@web/common/styles/theme";
-import { getCalendarHeadingLabel } from "@web/common/utils/dates/web.date.util";
+import { getCalendarHeadingLabel } from "@web/common/utils/datetime/web.date.util";
 import { AlignItems } from "@web/components/Flex/styled";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { Text } from "@web/components/Text";
