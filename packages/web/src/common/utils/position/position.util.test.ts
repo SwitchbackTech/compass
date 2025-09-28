@@ -4,7 +4,7 @@ import {
   getEventCategory,
   getLeftPosition,
   widthMinusPadding,
-} from "@web/common/utils/position.util";
+} from "@web/common/utils/position/position.util";
 
 describe("getAllDayEventWidth", () => {
   it("is never wider than 1 week", () => {

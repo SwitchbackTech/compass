@@ -16,7 +16,7 @@ import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { isOptimisticEvent } from "@web/common/utils/event.util";
 import { getLineClamp } from "@web/common/utils/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
-import { getEventPosition } from "@web/common/utils/position.util";
+import { getEventPosition } from "@web/common/utils/position/position.util";
 import { Flex } from "@web/components/Flex";
 import {
   AlignItems,
