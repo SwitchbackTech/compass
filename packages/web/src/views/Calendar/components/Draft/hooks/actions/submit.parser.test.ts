@@ -361,6 +361,26 @@ describe("submit.parser", () => {
       expect(result.order).toBe(0);
     });
 
+    it("should handle someday event from keyboard form submission without order", () => {
+      // This simulates the scenario where a someday event is created via keyboard
+      // when the actions menu is open, and the event doesn't have an order field set
+      const draft = createMockSomedayEvent({
+        _id: undefined, // New event being created
+        order: undefined, // Missing order field (the issue)
+        title: "Test someday event via keyboard",
+      });
+      const userId = "test-user-id";
+
+      // This should not throw a validation error
+      expect(() => {
+        const result = parseSomedayEventBeforeSubmit(draft, userId);
+        expect(result.order).toBe(0); // Should get default order
+        expect(result.title).toBe("Test someday event via keyboard");
+        expect(result.user).toBe(userId);
+        expect(result.isSomeday).toBe(true);
+      }).not.toThrow();
+    });
+
     it("should handle grid event with missing _id", () => {
       const draft = createMockGridEvent({
         _id: undefined,
