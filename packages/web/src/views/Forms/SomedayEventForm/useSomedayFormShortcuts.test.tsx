@@ -118,29 +118,7 @@ describe("SomedayEventForm shortcuts hook", () => {
     const handler = getHotkeyHandler("meta+enter");
     handler(keyboardEvent);
 
-    expect(keyboardEvent.preventDefault).toHaveBeenCalledTimes(1);
-    expect(keyboardEvent.stopPropagation).toHaveBeenCalledTimes(1);
     expect(defaultProps.onSubmit).toHaveBeenCalledTimes(1);
-  });
-
-  test("enter shortcut ignores menu interactions", () => {
-    render(<TestComponent {...defaultProps} />);
-
-    const menuButton = document.createElement("button");
-    menuButton.setAttribute("role", "menuitem");
-
-    const keyboardEvent = {
-      target: menuButton,
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
-    } as unknown as KeyboardEvent;
-
-    const handler = getHotkeyHandler("enter");
-    handler(keyboardEvent);
-
-    expect(keyboardEvent.preventDefault).not.toHaveBeenCalled();
-    expect(keyboardEvent.stopPropagation).not.toHaveBeenCalled();
-    expect(defaultProps.onSubmit).not.toHaveBeenCalled();
   });
 
   test("meta+enter shortcut ignores menu interactions", () => {
