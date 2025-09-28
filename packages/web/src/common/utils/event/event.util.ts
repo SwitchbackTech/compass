@@ -7,7 +7,11 @@ import {
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import {
+  Categories_Event,
+  Schema_Event,
+  Schema_Event_Recur_Base,
+} from "@core/types/event.types";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";

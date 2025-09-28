@@ -1,15 +1,11 @@
 import dayjs from "dayjs";
 import {
-  getFlexBasis,
-  getPrevDayWidth,
-} from "@web/common/utils/grid/grid.util";
-import {
   AFTER_TMRW_MULTIPLE,
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
 } from "@web/views/Calendar/layout.constants";
-import { getLineClamp } from "./grid.util";
+import { getFlexBasis, getLineClamp, getPrevDayWidth } from "./grid.util";
 
 describe("getLineClamp", () => {
   it("uses a minimum value of 1", () => {
