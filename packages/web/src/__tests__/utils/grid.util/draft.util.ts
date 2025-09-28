@@ -72,7 +72,7 @@ export function setupDraftState(event: Schema_WebEvent) {
     { state },
   );
 
-  const { deleteEvent, submit, isEventDirty } = actions.result.current;
+  const { deleteEvent, submit } = actions.result.current;
 
   expect(weekProps).toBeDefined();
   expect(dateCalcs).toBeDefined();
@@ -85,7 +85,6 @@ export function setupDraftState(event: Schema_WebEvent) {
     isSidebarOpen,
     submit,
     draft,
-    isEventDirty,
     rerenderActions: actions.rerender,
   };
 }

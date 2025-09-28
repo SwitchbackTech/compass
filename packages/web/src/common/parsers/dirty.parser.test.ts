@@ -1,259 +1,143 @@
 import { faker } from "@faker-js/faker";
 import { Priorities } from "@core/constants/core.constants";
-import { createWebEvent } from "../../__tests__/utils/event.util/test.event.util";
-import { DirtyParser, isEventDirty } from "./dirty.parser";
+import {
+  createMockBaseEvent,
+  createMockStandaloneEvent,
+} from "@core/util/test/ccal.event.factory";
+import { DirtyParser } from "@web/common/parsers/dirty.parser";
+import { Schema_WebEvent } from "../types/web.event.types";
 
 describe("WebEventParser", () => {
   it("should return false when draft and original events are identical", () => {
-    const originalEvent = createWebEvent();
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: originalEvent.recurrence,
-    });
+    const event = createMockStandaloneEvent() as Schema_WebEvent;
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(false);
+    expect(DirtyParser.eventDirty(event, event)).toBe(false);
   });
 
   it("should return true when title has changed", () => {
-    const originalEvent = createWebEvent();
-    const draftEvent = createWebEvent({
-      title: "Different Title",
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: originalEvent.recurrence,
-    });
+    const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
+    const draftEvent = { ...originalEvent, title: faker.lorem.sentence() };
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(true);
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when description has changed", () => {
-    const originalEvent = createWebEvent();
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: "Different Description",
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: originalEvent.recurrence,
-    });
+    const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
+    const draftEvent = { ...originalEvent, title: faker.lorem.paragraph() };
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(true);
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when startDate has changed", () => {
-    const originalEvent = createWebEvent();
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: faker.date.future().toISOString(),
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: originalEvent.recurrence,
-    });
+    const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
+    const startDate = faker.date.future().toISOString();
+    const draftEvent = { ...originalEvent, startDate };
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(true);
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when endDate has changed", () => {
-    const originalEvent = createWebEvent();
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: faker.date.future().toISOString(),
-      priority: originalEvent.priority,
-      recurrence: originalEvent.recurrence,
-    });
+    const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
+    const endDate = faker.date.future().toISOString();
+    const draftEvent = { ...originalEvent, endDate };
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(true);
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when priority has changed", () => {
-    const originalEvent = createWebEvent({ priority: Priorities.WORK });
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: Priorities.SELF,
-      recurrence: originalEvent.recurrence,
-    });
+    const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
+    const draftEvent = { ...originalEvent, priority: Priorities.SELF };
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(true);
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when recurrence is added to non-recurring event", () => {
-    const originalEvent = createWebEvent({ recurrence: undefined });
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
-    });
+    const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
+    const recurrence = { rule: ["RRULE:FREQ=WEEKLY"] };
+    const draftEvent = { ...originalEvent, recurrence };
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(true);
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
-  it("should return true when recurrence is removed from recurring event", () => {
-    const originalEvent = createWebEvent({
-      recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
-    });
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: undefined,
-    });
+  it("should return true when recurrence is removed from a recurring event", () => {
+    const originalEvent = createMockBaseEvent() as Schema_WebEvent;
+    const recurrence = undefined;
+    const draftEventA = { ...originalEvent, recurrence: { rule: null } };
+    const draftEventB = Object.assign({ ...originalEvent }, { recurrence });
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(true);
+    expect(DirtyParser.eventDirty(draftEventA, originalEvent)).toBe(true);
+    expect(DirtyParser.eventDirty(draftEventB, originalEvent)).toBe(true);
   });
 
   it("should return true when recurrence rules have changed", () => {
-    const originalEvent = createWebEvent({
-      recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
-    });
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
+    const originalEvent = createMockBaseEvent({
       recurrence: { rule: ["RRULE:FREQ=DAILY"] },
-    });
+    }) as Schema_WebEvent;
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(true);
+    const recurrence = { rule: ["RRULE:FREQ=WEEKLY"] };
+    const draftEvent = { ...originalEvent, recurrence };
+
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when recurrence rules array length has changed", () => {
-    const originalEvent = createWebEvent({
-      recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
-    });
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: { rule: ["RRULE:FREQ=WEEKLY", "RRULE:BYDAY=MO"] },
-    });
+    const originalEvent = createMockBaseEvent({
+      recurrence: { rule: ["RRULE:FREQ=DAILY"] },
+    }) as Schema_WebEvent;
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(true);
+    const recurrence = { rule: ["RRULE:FREQ=WEEKLY", "RRULE:BYDAY=MO"] };
+    const draftEvent = { ...originalEvent, recurrence };
+
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return true when dates change in recurring event", () => {
-    const originalEvent = createWebEvent({
-      recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
-      startDate: "2024-01-01T10:00:00Z",
-      endDate: "2024-01-01T11:00:00Z",
-    });
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: "2024-01-01T11:00:00Z", // Different start time
-      endDate: "2024-01-01T12:00:00Z", // Different end time
-      priority: originalEvent.priority,
-      recurrence: { rule: ["RRULE:FREQ=WEEKLY"] }, // Same recurrence
-    });
+    const originalEvent = createMockBaseEvent({
+      startDate: faker.date.past().toISOString(),
+    }) as Schema_WebEvent;
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(true);
+    const startDate = faker.date.future().toISOString();
+    const draftEvent = { ...originalEvent, startDate };
+
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(true);
   });
 
   it("should return false when only non-tracked fields change", () => {
-    const originalEvent = createWebEvent();
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: originalEvent.recurrence,
-      user: "different-user", // This field is not tracked
-    });
+    const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(false);
+    const draftEvent = {
+      ...originalEvent,
+      user: faker.database.mongodbObjectId(),
+      _id: faker.database.mongodbObjectId(),
+      updatedAt: new Date(),
+      gEventId: faker.database.mongodbObjectId(),
+      gRecurringEventId: faker.database.mongodbObjectId(),
+    };
+
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(false);
   });
 
   it("should handle undefined recurrence gracefully", () => {
-    const originalEvent = createWebEvent({ recurrence: undefined });
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: undefined,
-    });
+    const recurrence = undefined;
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(false);
+    const originalEvent = createMockStandaloneEvent({
+      recurrence,
+    }) as Schema_WebEvent;
+
+    const draftEvent = Object.assign({ ...originalEvent }, { recurrence });
+
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(false);
   });
 
   it("should handle empty recurrence rules", () => {
-    const originalEvent = createWebEvent({
-      recurrence: { rule: [] },
-    });
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: { rule: [] },
-    });
+    const recurrence = { rule: [] };
 
-    const parser = new DirtyParser(draftEvent, originalEvent);
-    expect(parser.isDirty()).toBe(false);
-  });
-});
+    const originalEvent = createMockStandaloneEvent({
+      recurrence,
+    }) as Schema_WebEvent;
 
-describe("isDraftDirty", () => {
-  it("should work as a standalone function", () => {
-    const originalEvent = createWebEvent();
-    const draftEvent = createWebEvent({
-      title: "Different Title",
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: originalEvent.recurrence,
-    });
+    const draftEvent = Object.assign({ ...originalEvent }, { recurrence });
 
-    expect(isEventDirty(draftEvent, originalEvent)).toBe(true);
-  });
-
-  it("should return false for identical events", () => {
-    const originalEvent = createWebEvent();
-    const draftEvent = createWebEvent({
-      title: originalEvent.title,
-      description: originalEvent.description,
-      startDate: originalEvent.startDate,
-      endDate: originalEvent.endDate,
-      priority: originalEvent.priority,
-      recurrence: originalEvent.recurrence,
-    });
-
-    expect(isEventDirty(draftEvent, originalEvent)).toBe(false);
+    expect(DirtyParser.eventDirty(draftEvent, originalEvent)).toBe(false);
   });
 });

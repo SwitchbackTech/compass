@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
@@ -8,15 +8,9 @@ export const useDraftConfirmation = ({
   state,
 }: Omit<ReturnType<typeof useDraftContext>, "setters" | "confirmation">) => {
   const { discard, deleteEvent, submit } = actions;
-  const { isRecurrenceChanged } = actions;
   const { isInstance, isRecurrence } = actions;
   const { draft } = state;
   const isSomeday = actions.isSomeday();
-
-  const recurrenceChanged = useMemo(
-    () => isRecurrenceChanged(draft!),
-    [draft, isRecurrenceChanged],
-  );
 
   const [
     isRecurrenceUpdateScopeDialogOpen,
@@ -97,7 +91,6 @@ export const useDraftConfirmation = ({
     isRecurrenceUpdateScopeDialogOpen,
     setRecurrenceUpdateScopeDialogOpen,
     draft,
-    recurrenceChanged,
     finalDraft,
     onSubmit,
     onDelete,

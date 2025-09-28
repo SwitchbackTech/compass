@@ -15,7 +15,7 @@ import {
 } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
-import { isEventDirty } from "@web/common/parsers/dirty.parser";
+import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { EventInViewParser } from "@web/common/parsers/view.parser";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import {
@@ -135,33 +135,6 @@ export const useDraftActions = (
     return hasRRule || isInstance();
   }, [reduxDraft?.recurrence?.rule, isInstance]);
 
-  const isRecurrenceChanged = useCallback(
-    (currentDraft: Schema_WebEvent): boolean => {
-      if (!currentDraft) return false;
-
-      const oldStartDate = reduxDraft?.startDate;
-      const newStartDate = currentDraft?.startDate;
-      const oldEndDate = reduxDraft?.endDate;
-      const newEndDate = currentDraft?.endDate;
-      const oldRecurrence = reduxDraft?.recurrence?.rule ?? [];
-      const newRecurrence = currentDraft?.recurrence?.rule ?? [];
-      const startDateChanged = oldStartDate !== newStartDate;
-      const endDateChanged = oldEndDate !== newEndDate;
-      const oldRuleFields = oldRecurrence.flatMap((rule) => rule.split(";"));
-      const newRuleFields = newRecurrence.flatMap((rule) => rule.split(";"));
-      const oldRuleSet = [...new Set(oldRuleFields)];
-      const newRuleSet = [...new Set(newRuleFields)];
-
-      return (
-        startDateChanged ||
-        endDateChanged ||
-        newRuleSet.some((rule) => !oldRuleSet.includes(rule)) ||
-        oldRuleSet.some((rule) => !newRuleSet.includes(rule))
-      );
-    },
-    [reduxDraft?.startDate, reduxDraft?.endDate, reduxDraft?.recurrence?.rule],
-  );
-
   const closeForm = useCallback(() => {
     setIsFormOpen(false);
   }, [setIsFormOpen]);
@@ -256,7 +229,9 @@ export const useDraftActions = (
         if (isFormOpenBeforeDragging) {
           return "OPEN_FORM";
         }
-        const isSame = reduxDraft ? !isEventDirty(draft, reduxDraft) : false;
+        const isSame = reduxDraft
+          ? !DirtyParser.eventDirty(draft, reduxDraft)
+          : false;
         if (isSame) {
           // no need to make HTTP request
           return "DISCARD";
@@ -649,7 +624,6 @@ export const useDraftActions = (
     isSomeday,
     isInstance,
     isRecurrence,
-    isRecurrenceChanged,
     startDragging: () => {
       // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
       // because `setIsFormOpenBeforeDragging` depends on `isFormOpen` and re-calculates
