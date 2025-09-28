@@ -28,7 +28,7 @@ export const gridEventDefaultPosition = {
   horizontalOrder: 1,
   initialX: null,
   initialY: null,
-  dragOffset: { y: 0 },
+  dragOffset: { x: 0, y: 0 },
 };
 
 export const assembleDefaultEvent = async (
@@ -105,11 +105,12 @@ export const getEventDragOffset = (
   event?: Schema_GridEvent,
   e?: PartialMouseEvent,
 ): Schema_GridEvent["position"]["dragOffset"] => {
-  if (!event || !e) return { y: 0 };
+  if (!event || !e) return { x: 0, y: 0 };
 
   const target = e.currentTarget as HTMLElement;
   const rect = target.getBoundingClientRect();
   return {
+    x: e.clientX - rect.left,
     y: e.clientY - rect.top,
   };
 };
