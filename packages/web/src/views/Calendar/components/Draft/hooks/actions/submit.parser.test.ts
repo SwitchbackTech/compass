@@ -349,6 +349,18 @@ describe("submit.parser", () => {
       expect(result.endDate).toBeUndefined();
     });
 
+    it("should handle someday event with missing order field", () => {
+      const draft = createMockSomedayEvent({
+        order: undefined,
+      });
+      const userId = "test-user-id";
+
+      const result = parseSomedayEventBeforeSubmit(draft, userId);
+
+      // Should provide a default order of 0 when order is missing
+      expect(result.order).toBe(0);
+    });
+
     it("should handle grid event with missing _id", () => {
       const draft = createMockGridEvent({
         _id: undefined,
