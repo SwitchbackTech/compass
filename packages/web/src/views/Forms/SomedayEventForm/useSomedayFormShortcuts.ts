@@ -26,6 +26,20 @@ export interface SomedayFormShortcutsProps {
   ) => void;
 }
 
+const isMenuInteraction = (keyboardEvent: KeyboardEvent) => {
+  const target = keyboardEvent.target as HTMLElement | null;
+
+  if (!target) {
+    return false;
+  }
+
+  if (target.getAttribute("role") === "menuitem") {
+    return true;
+  }
+
+  return Boolean(target.closest?.("[role='menu']"));
+};
+
 export const handleMigration =
   (
     direction: Direction_Migrate,
@@ -57,10 +71,25 @@ export const useSomedayFormShortcuts = ({
   onMigrate,
 }: SomedayFormShortcutsProps) => {
   useHotkeys("delete", onDelete, SOMEDAY_HOTKEY_OPTIONS, [onDelete]);
-  useHotkeys("enter", onSubmit, SOMEDAY_HOTKEY_OPTIONS, [onSubmit]);
+  useHotkeys(
+    "enter",
+    (keyboardEvent) => {
+      if (isMenuInteraction(keyboardEvent)) {
+        return;
+      }
+
+      onSubmit();
+    },
+    SOMEDAY_HOTKEY_OPTIONS,
+    [onSubmit],
+  );
   useHotkeys(
     "meta+enter",
     (keyboardEvent) => {
+      if (isMenuInteraction(keyboardEvent)) {
+        return;
+      }
+
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
       onSubmit();

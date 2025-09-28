@@ -586,4 +586,50 @@ describe("SomedayEventForm Hotkeys", () => {
     expect(mockConfirm).not.toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
   });
+
+  test("should activate delete menu item with enter without submitting form", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <SomedayEventForm
+        event={sampleSomedayEvent}
+        onClose={mockOnClose}
+        onMigrate={mockOnMigrate}
+        onSubmit={mockOnSubmit}
+        onDuplicate={mockDuplicateEvent}
+        onDelete={mockOnDelete}
+        setEvent={mockSetEvent}
+        category={defaultCategory}
+      />,
+    );
+
+    const titleInput = screen.getByPlaceholderText("Title");
+
+    await act(async () => {
+      await user.clear(titleInput);
+      await user.type(titleInput, "title-changed");
+    });
+
+    const form = screen.getByRole("form");
+
+    await act(async () => {
+      await user.click(
+        within(form).getByRole("button", { name: /open actions menu/i }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Delete")).toBeInTheDocument();
+    });
+
+    const deleteMenuItem = screen.getByRole("menuitem", { name: /delete/i });
+    deleteMenuItem.focus();
+
+    await act(async () => {
+      await user.keyboard("{Enter}");
+    });
+
+    expect(mockOnDelete).toHaveBeenCalledTimes(1);
+    expect(mockOnSubmit).not.toHaveBeenCalled();
+  });
 });
