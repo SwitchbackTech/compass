@@ -1,12 +1,12 @@
 import { WidthPercentages } from "@web/common/types/util.types";
 import { FLEX_EQUAL, FLEX_TODAY } from "@web/views/Calendar/layout.constants";
 
-export const sortLowToHigh = (vals: number[]) =>
+const sortLowToHigh = (vals: number[]) =>
   [...vals].sort(function (a, b) {
     return a - b;
   });
 
-export const sum = (arr: number[]) =>
+const sum = (arr: number[]) =>
   arr.reduce(function (a, b) {
     return a + b;
   }, 0);
