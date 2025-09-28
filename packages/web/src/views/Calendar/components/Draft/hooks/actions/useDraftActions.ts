@@ -529,7 +529,7 @@ export const useDraftActions = (
 
       const x = getX(e, isSidebarOpen);
       // For all-day events, use a fixed Y coordinate (0) because Y positioning is irrelevant:
-      const y = 0;
+      const y = draft?.isAllDay ? 0 : e.clientY;
       const currTime = dateCalcs.getDateByXY(
         x,
         y,
