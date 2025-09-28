@@ -35,7 +35,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   onDuplicate,
   onDelete: onDeleteEvent,
   setEvent,
-  weekViewRange,
   ...props
 }) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
@@ -54,6 +53,24 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     }
   };
 
+  const onDuplicateEvent = useCallback(() => {
+    onDuplicate?.(event);
+    onClose();
+  }, [onDuplicate, event, onClose]);
+
+  const onSetEventField: SetEventFormField = useCallback(
+    (field) => {
+      const newEvent = { ...event, ...field };
+
+      if (field === null) {
+        delete newEvent[field];
+      }
+
+      setEvent(newEvent);
+    },
+    [event, setEvent],
+  );
+
   const _onSubmit = useCallback(() => {
     const hasInstances = origRecurrence?.eventId !== undefined;
     const removedRecurrence =
@@ -64,7 +81,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     }
 
     onSubmit(event);
-  }, [origRecurrence?.eventId, onSubmit, event]);
+  }, [origRecurrence?.eventId, event, onSubmit, onSetEventField]);
 
   const onChangeEventTextField =
     <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
@@ -148,24 +165,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     [onDuplicateEvent],
   );
 
-  const onSetEventField: SetEventFormField = (field) => {
-    const newEvent = { ...event, ...field };
-
-    if (field === null) {
-      delete newEvent[field];
-    }
-
-    setEvent(newEvent);
-  };
-
   const stopPropagation = (e: MouseEvent) => {
     e.stopPropagation();
   };
-
-  const onDuplicateEvent = useCallback(() => {
-    onDuplicate?.(event);
-    onClose();
-  }, [onDuplicate, onClose]);
 
   return (
     <StyledEventForm
