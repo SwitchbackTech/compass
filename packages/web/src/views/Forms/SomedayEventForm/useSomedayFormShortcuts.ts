@@ -75,6 +75,7 @@ export const useSomedayFormShortcuts = ({
     "enter",
     (keyboardEvent) => {
       if (isMenuInteraction(keyboardEvent)) {
+        // Don't prevent default - let the menu item handle the event
         return;
       }
 
@@ -90,8 +91,6 @@ export const useSomedayFormShortcuts = ({
         return;
       }
 
-      keyboardEvent.preventDefault();
-      keyboardEvent.stopPropagation();
       onSubmit();
     },
     SOMEDAY_HOTKEY_OPTIONS,

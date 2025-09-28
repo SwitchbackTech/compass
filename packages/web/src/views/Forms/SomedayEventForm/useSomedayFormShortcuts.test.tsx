@@ -131,11 +131,15 @@ describe("SomedayEventForm shortcuts hook", () => {
 
     const keyboardEvent = {
       target: menuButton,
+      preventDefault: jest.fn(),
+      stopPropagation: jest.fn(),
     } as unknown as KeyboardEvent;
 
     const handler = getHotkeyHandler("enter");
     handler(keyboardEvent);
 
+    expect(keyboardEvent.preventDefault).not.toHaveBeenCalled();
+    expect(keyboardEvent.stopPropagation).not.toHaveBeenCalled();
     expect(defaultProps.onSubmit).not.toHaveBeenCalled();
   });
 
