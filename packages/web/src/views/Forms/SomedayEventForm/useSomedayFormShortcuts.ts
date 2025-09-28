@@ -86,11 +86,7 @@ export const useSomedayFormShortcuts = ({
   );
   useHotkeys(
     "meta+enter",
-    (keyboardEvent) => {
-      if (isMenuInteraction(keyboardEvent)) {
-        return;
-      }
-
+    () => {
       onSubmit();
     },
     SOMEDAY_HOTKEY_OPTIONS,

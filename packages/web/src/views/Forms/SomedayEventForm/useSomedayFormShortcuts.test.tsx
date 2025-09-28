@@ -121,7 +121,7 @@ describe("SomedayEventForm shortcuts hook", () => {
     expect(defaultProps.onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  test("meta+enter shortcut ignores menu interactions", () => {
+  test("meta+enter shortcut invokes onSubmit", () => {
     render(<TestComponent {...defaultProps} />);
 
     const menuButton = document.createElement("button");
@@ -136,8 +136,6 @@ describe("SomedayEventForm shortcuts hook", () => {
     const handler = getHotkeyHandler("meta+enter");
     handler(keyboardEvent);
 
-    expect(keyboardEvent.preventDefault).not.toHaveBeenCalled();
-    expect(keyboardEvent.stopPropagation).not.toHaveBeenCalled();
-    expect(defaultProps.onSubmit).not.toHaveBeenCalled();
+    expect(defaultProps.onSubmit).toHaveBeenCalled();
   });
 });
