@@ -9,7 +9,7 @@ import {
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
-import { computeCurrentEventDateRange } from "@web/common/utils/web.date.util";
+import { computeCurrentEventDateRange } from "@web/common/utils/dates/web.date.util";
 import { useDraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
 import { SidebarDraftContextValue } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";

@@ -10,13 +10,13 @@ import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { Schema_SomedayEvent } from "@web/common/types/web.event.types";
 import {
+  computeCurrentEventDateRange,
+  computeRelativeEventDateRange,
+} from "@web/common/utils/dates/web.date.util";
+import {
   categorizeSomedayEvents,
   setSomedayEventsOrder,
 } from "@web/common/utils/someday.util";
-import {
-  computeCurrentEventDateRange,
-  computeRelativeEventDateRange,
-} from "@web/common/utils/web.date.util";
 
 describe("categorizeSomedayEvents", () => {
   const baseEvent: Partial<Omit<Schema_SomedayEvent, "recurrence">> = {

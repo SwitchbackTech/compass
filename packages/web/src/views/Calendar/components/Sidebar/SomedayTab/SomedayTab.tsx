@@ -1,7 +1,7 @@
 import React, { FC, useMemo, useRef } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { theme } from "@web/common/styles/theme";
-import { getWeekRangeLabel } from "@web/common/utils/web.date.util";
+import { getWeekRangeLabel } from "@web/common/utils/dates/web.date.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { Divider } from "@web/components/Divider";
 import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";

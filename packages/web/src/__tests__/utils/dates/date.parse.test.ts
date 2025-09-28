@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { Categories_Event } from "@core/types/event.types";
-import { getDatesByCategory } from "@web/common/utils/web.date.util";
+import { getDatesByCategory } from "@web/common/utils/dates/web.date.util";
 
 describe("Date Categories: Month", () => {
   it("uses first and last of month: case1", () => {
