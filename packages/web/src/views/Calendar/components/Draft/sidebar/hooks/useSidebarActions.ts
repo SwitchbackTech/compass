@@ -19,13 +19,13 @@ import {
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
 import { Coordinates } from "@web/common/types/util.types";
-import { isEventFormOpen } from "@web/common/utils";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
   getDatesByCategory,
 } from "@web/common/utils/datetime/web.date.util";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { getX } from "@web/common/utils/grid/grid.util";
 import {
   selectDraft,

@@ -2,7 +2,24 @@ import axios from "axios";
 import { Schema_CalendarList } from "@core/types/calendar.types";
 import { gSchema$CalendarList } from "@core/types/gcal";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-import { headers } from "@web/common/utils";
+
+const headers = (token?: string) => {
+  if (token) {
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+  } else {
+    return {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem(
+          "removedAsPartOfTokenRefactor",
+        )}`,
+      },
+    };
+  }
+};
 
 const CalendarListApi = {
   async list(): Promise<gSchema$CalendarList> {
