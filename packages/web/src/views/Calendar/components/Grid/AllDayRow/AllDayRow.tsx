@@ -7,7 +7,7 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { Ref_Callback } from "@web/common/types/util.types";
-import { assembleDefaultEvent } from "@web/common/utils/event.util";
+import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";

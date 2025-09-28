@@ -13,7 +13,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
-import { isOptimisticEvent } from "@web/common/utils/event.util";
+import { isOptimisticEvent } from "@web/common/utils/event/event.util";
 import { getLineClamp } from "@web/common/utils/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { getEventPosition } from "@web/common/utils/position/position.util";

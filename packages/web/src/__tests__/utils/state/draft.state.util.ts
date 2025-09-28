@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { Schema_WebEvent } from "@web/common/types/web.event.types";
-import { assembleGridEvent } from "@web/common/utils/event.util";
+import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useDraftActions } from "@web/views/Calendar/components/Draft/hooks/actions/useDraftActions";
 import { useDraftState } from "@web/views/Calendar/components/Draft/hooks/state/useDraftState";

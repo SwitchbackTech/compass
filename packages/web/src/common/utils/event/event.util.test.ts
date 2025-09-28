@@ -5,7 +5,7 @@ import {
   Schema_GridEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { isEventInRange } from "@web/common/utils/event.util";
+import { isEventInRange } from "@web/common/utils/event/event.util";
 import { _assembleGridEvent } from "@web/ducks/events/sagas/saga.util";
 
 describe("isEventInRange", () => {

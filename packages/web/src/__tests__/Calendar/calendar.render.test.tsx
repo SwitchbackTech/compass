@@ -5,7 +5,7 @@ import { GROCERIES } from "@core/__mocks__/v1/events/events.misc";
 import { findAndUpdateEventInPreloadedState } from "@web/__tests__/Calendar/calendar.render.test.utils";
 import { freshenEventStartEndDate } from "@web/__tests__/Calendar/calendar.render.test.utils";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
-import { getWeekDayLabel } from "@web/common/utils/event.util";
+import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { CalendarView } from "@web/views/Calendar";
 import { render } from "../__mocks__/mock.render";
 

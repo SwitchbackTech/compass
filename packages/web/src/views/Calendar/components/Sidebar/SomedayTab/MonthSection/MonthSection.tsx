@@ -1,6 +1,6 @@
 import React, { FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
-import { getMonthListLabel } from "@web/common/utils/event.util";
+import { getMonthListLabel } from "@web/common/utils/event/event.util";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";

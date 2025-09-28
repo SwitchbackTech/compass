@@ -25,7 +25,7 @@ import {
 import {
   assembleDefaultEvent,
   replaceIdWithOptimisticId,
-} from "@web/common/utils/event.util";
+} from "@web/common/utils/event/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import { Payload_EditEvent } from "@web/ducks/events/event.types";
 import {

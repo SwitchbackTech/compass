@@ -4,7 +4,7 @@ import { Priorities } from "@core/constants/core.constants";
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleGridEvent } from "@web/common/utils/event.util";
+import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { getSomedayEventCategory } from "@web/common/utils/someday.util";
 import {
   MenuItem,

@@ -3,7 +3,7 @@ import React, { FC, MouseEvent, MutableRefObject } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { getHourLabels } from "@web/common/utils/datetime/web.date.util";
-import { assembleDefaultEvent } from "@web/common/utils/event.util";
+import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";

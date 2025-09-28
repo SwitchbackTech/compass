@@ -25,7 +25,7 @@ import {
   computeRelativeEventDateRange,
   getDatesByCategory,
 } from "@web/common/utils/datetime/web.date.util";
-import { assembleDefaultEvent } from "@web/common/utils/event.util";
+import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { getX } from "@web/common/utils/grid.util";
 import {
   selectDraft,
