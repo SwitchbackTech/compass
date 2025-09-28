@@ -3,12 +3,12 @@ import React, { FC } from "react";
 import { Key } from "ts-key-enum";
 import { MONTH_DAY_YEAR } from "@core/constants/date.constants";
 import { darken } from "@core/util/color.utils";
+import { dateIsValid } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
-import { dateIsValid } from "@web/common/utils/web.date.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { AlignItems } from "@web/components/Flex/styled";
-import { SetEventFormField } from "../../types";
-import { StyledDateFlex } from "./styled";
+import { StyledDateFlex } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/styled";
+import { SetEventFormField } from "@web/views/Forms/EventForm/types";
 
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
   e.stopPropagation();
@@ -119,6 +119,10 @@ export const DatePickers: FC<Props> = ({
     }
   };
 
+  const formatDate = (date: Date) => {
+    return dayjs(date).format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
+  };
+
   const onSelectStartDate = (start: Date) => {
     setIsStartDatePickerOpen(false);
     setSelectedStartDate(start);
@@ -140,11 +144,11 @@ export const DatePickers: FC<Props> = ({
       setSelectedEndDate(compliment);
 
       onSetEventField({
-        startDate: dayjs(start).format(MONTH_DAY_YEAR),
-        endDate: dayjs(compliment).format(MONTH_DAY_YEAR),
+        startDate: formatDate(start),
+        endDate: formatDate(compliment),
       });
     } else {
-      const newStartDate = dayjs(start).format(MONTH_DAY_YEAR);
+      const newStartDate = formatDate(start);
       onSetEventField({ startDate: newStartDate });
     }
   };
@@ -162,11 +166,13 @@ export const DatePickers: FC<Props> = ({
       setSelectedEndDate(compliment);
       setDisplayEndDate(compliment);
       onSetEventField({
-        startDate: dayjs(compliment).format(MONTH_DAY_YEAR),
-        endDate: dayjs(compliment).format(MONTH_DAY_YEAR),
+        startDate: formatDate(compliment),
+        endDate: formatDate(compliment),
       });
     } else {
-      const newEndDate = dayjs(end).add(1, "day").format(MONTH_DAY_YEAR);
+      const newEndDate = dayjs(end)
+        .add(1, "day")
+        .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
       onSetEventField({ endDate: newEndDate });
     }
   };

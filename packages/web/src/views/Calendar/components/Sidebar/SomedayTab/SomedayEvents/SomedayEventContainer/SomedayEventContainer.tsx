@@ -4,16 +4,20 @@ import { Key } from "ts-key-enum";
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
 import { Priorities } from "@core/constants/core.constants";
-import { Categories_Event, Schema_Event } from "@core/types/event.types";
-import { computeCurrentEventDateRange } from "@web/common/utils/web.date.util";
+import {
+  Categories_Event,
+  RecurringEventUpdateScope,
+  Schema_Event,
+} from "@core/types/event.types";
+import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
 import { useDraftForm } from "@web/views/Calendar/components/Draft/hooks/state/useDraftForm";
 import { SidebarDraftContextValue } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftContext";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
 import { Setters_Sidebar } from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
+import { SomedayEvent } from "@web/views/Calendar/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/SomedayEvent";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Calendar/layout.constants";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
-import { SomedayEvent } from "../SomedayEvent/SomedayEvent";
 
 export interface Props {
   category: Categories_Event;
@@ -22,6 +26,8 @@ export interface Props {
   isDragging: boolean;
   isOverGrid: boolean;
   onSubmit: (event?: Schema_Event) => void;
+  deleteEvent: (applyTo?: RecurringEventUpdateScope) => void;
+  duplicateEvent: () => void;
   provided: DraggableProvided;
   snapshot: DraggableStateSnapshot;
   setEvent: Setters_Sidebar["setDraft"];
@@ -38,6 +44,8 @@ export const SomedayEventContainer = ({
   isDragging,
   isOverGrid,
   onSubmit,
+  deleteEvent,
+  duplicateEvent,
   provided,
   snapshot,
   setEvent,
@@ -139,6 +147,10 @@ export const SomedayEventContainer = ({
                   actions.closeForm();
                   actions.close();
                 }}
+                onDelete={() =>
+                  deleteEvent(RecurringEventUpdateScope.THIS_EVENT)
+                }
+                onDuplicate={duplicateEvent}
                 onMigrate={actions.onMigrate}
                 onSubmit={onSubmit}
                 setEvent={setEvent}

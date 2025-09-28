@@ -1,8 +1,10 @@
-import { ObjectId, WithId } from "mongodb";
-import { Priorities } from "../../../constants/core.constants";
-import { Schema_Event } from "../../../types/event.types";
+import { ObjectId } from "bson";
+import { Priorities } from "@core/constants/core.constants";
+import { Schema_Event, WithMongoId } from "@core/types/event.types";
 
-const allDayEventsThatShouldMatch: Array<WithId<Omit<Schema_Event, "_id">>> =
+const allDayEventsThatShouldMatch: Array<
+  WithMongoId<Omit<Schema_Event, "_id">>
+> =
   // ordered by start date
   [
     {
@@ -43,49 +45,50 @@ const allDayEventsThatShouldMatch: Array<WithId<Omit<Schema_Event, "_id">>> =
     },
   ];
 
-const allDayEventsThatShouldNotMatch: Array<WithId<Omit<Schema_Event, "_id">>> =
-  [
-    {
-      _id: new ObjectId(),
-      user: "user1",
-      title: "Feb 28 - Mar 5",
-      isAllDay: true,
-      isSomeday: false,
-      startDate: "2022-02-28",
-      endDate: "2022-03-05",
-      priority: Priorities.WORK,
-    },
-    {
-      _id: new ObjectId(),
-      user: "user1",
-      title: "Mar 5",
-      isAllDay: true,
-      isSomeday: false,
-      startDate: "2022-03-05",
-      endDate: "2022-03-06",
-      priority: Priorities.WORK,
-    },
-    {
-      _id: new ObjectId(),
-      user: "user1",
-      title: "Mar 13",
-      isAllDay: true,
-      isSomeday: false,
-      startDate: "2022-03-13",
-      endDate: "2022-03-14",
-      priority: Priorities.WORK,
-    },
-    {
-      _id: new ObjectId(),
-      user: "user1",
-      title: "Mar 13 - 16",
-      isAllDay: true,
-      isSomeday: false,
-      startDate: "2022-03-13",
-      endDate: "2022-03-17",
-      priority: Priorities.WORK,
-    },
-  ];
+const allDayEventsThatShouldNotMatch: Array<
+  WithMongoId<Omit<Schema_Event, "_id">>
+> = [
+  {
+    _id: new ObjectId(),
+    user: "user1",
+    title: "Feb 28 - Mar 5",
+    isAllDay: true,
+    isSomeday: false,
+    startDate: "2022-02-28",
+    endDate: "2022-03-05",
+    priority: Priorities.WORK,
+  },
+  {
+    _id: new ObjectId(),
+    user: "user1",
+    title: "Mar 5",
+    isAllDay: true,
+    isSomeday: false,
+    startDate: "2022-03-05",
+    endDate: "2022-03-06",
+    priority: Priorities.WORK,
+  },
+  {
+    _id: new ObjectId(),
+    user: "user1",
+    title: "Mar 13",
+    isAllDay: true,
+    isSomeday: false,
+    startDate: "2022-03-13",
+    endDate: "2022-03-14",
+    priority: Priorities.WORK,
+  },
+  {
+    _id: new ObjectId(),
+    user: "user1",
+    title: "Mar 13 - 16",
+    isAllDay: true,
+    isSomeday: false,
+    startDate: "2022-03-13",
+    endDate: "2022-03-17",
+    priority: Priorities.WORK,
+  },
+];
 
 export const mockEventSetMar22: Array<Omit<Schema_Event, "_id">> = [
   ...allDayEventsThatShouldMatch,

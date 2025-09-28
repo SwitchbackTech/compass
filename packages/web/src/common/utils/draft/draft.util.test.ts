@@ -1,5 +1,5 @@
 import { Categories_Event } from "@core/types/event.types";
-import { assembleDefaultEvent } from "../event.util";
+import { assembleDefaultEvent } from "../event/event.util";
 
 jest.mock("@web/auth/auth.util", () => ({
   getUserId: jest.fn().mockResolvedValue("mock-user-id"),

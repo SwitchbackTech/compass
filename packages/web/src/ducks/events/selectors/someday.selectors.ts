@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { createSelector } from "reselect";
+import { createSelector } from "@reduxjs/toolkit";
 import {
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
@@ -7,7 +7,7 @@ import {
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { isProcessing } from "@web/common/store/helpers";
 import { Schema_SomedayEventsColumn } from "@web/common/types/web.event.types";
-import { categorizeSomedayEvents } from "@web/common/utils/someday.util";
+import { categorizeSomedayEvents } from "@web/common/utils/event/someday.event.util";
 import { RootState } from "@web/store";
 import { selectEventEntities } from "./event.selectors";
 import { selectDatesInView } from "./view.selectors";

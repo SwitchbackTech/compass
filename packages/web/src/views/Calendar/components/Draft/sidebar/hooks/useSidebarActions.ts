@@ -18,20 +18,15 @@ import {
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
-import { DropResult_ReactDND } from "@web/common/types/dnd.types";
 import { Coordinates } from "@web/common/types/util.types";
-import { isEventFormOpen, isSomedayEventFormOpen } from "@web/common/utils";
-import {
-  assembleDefaultEvent,
-  prepEvtAfterDraftDrop,
-  prepSomedayEventBeforeSubmit,
-} from "@web/common/utils/event.util";
-import { getX } from "@web/common/utils/grid.util";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
   getDatesByCategory,
-} from "@web/common/utils/web.date.util";
+} from "@web/common/utils/datetime/web.date.util";
+import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import { isEventFormOpen } from "@web/common/utils/form/form.util";
+import { getX } from "@web/common/utils/grid/grid.util";
 import {
   selectDraft,
   selectDraftActivity,
@@ -51,6 +46,7 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { parseSomedayEventBeforeSubmit } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { showMigrationToast } from "./MigrationToast";
@@ -89,15 +85,6 @@ export const useSidebarActions = (
   const { setDraft, setIsDrafting, setIsSomedayFormOpen, setSomedayEvents } =
     setters;
 
-  const resetLocalDraftStateIfNeeded = () => {
-    if (!state.isDrafting) return;
-
-    if (isSomedayEventFormOpen()) {
-      setIsDrafting(false);
-      setDraft(null);
-    }
-  };
-
   const close = () => {
     setIsDrafting(false);
     setDraft(null);
@@ -119,72 +106,19 @@ export const useSidebarActions = (
     setIsSomedayFormOpen(true);
   }, [setIsSomedayFormOpen]);
 
-  // call this when enabling DND for drafts
-  const convertSomedayDraftToTimed = (
-    dropItem: DropResult_ReactDND,
-    dates: { startDate: string; endDate: string },
-  ) => {
-    const event = prepEvtAfterDraftDrop(
-      Categories_Event.TIMED,
-      dropItem,
-      dates,
-    );
-
-    dispatch(createEventSlice.actions.request(event));
-    dispatch(draftSlice.actions.discard());
-  };
-
-  const convertSomedayDraftToAllDay = (
-    dropItem: DropResult_ReactDND,
-    dates: { startDate: string; endDate: string },
-  ) => {
-    const event = prepEvtAfterDraftDrop(
-      Categories_Event.ALLDAY,
-      dropItem,
-      dates,
-    );
-
-    dispatch(createEventSlice.actions.request(event));
-    dispatch(draftSlice.actions.discard());
-  };
-
-  const convertSomedayEventToAllDay = (
-    _id: string,
-    dates: { startDate: string; endDate: string },
-  ) => {
-    const updatedFields: Schema_Event = {
-      isAllDay: true,
-      isSomeday: false,
-      startDate: dates.startDate,
-      endDate: dates.endDate,
-    };
-
-    dispatch(
-      getSomedayEventsSlice.actions.convert({
-        _id,
-        updatedFields,
-      }),
-    );
-  };
-
-  const convertSomedayEventToTimed = (
-    _id: string,
-    dates: { startDate: string; endDate: string },
-  ) => {
-    const updatedFields: Schema_Event = {
-      isAllDay: false,
-      isSomeday: false,
-      startDate: dates.startDate,
-      endDate: dates.endDate,
-    };
-
-    dispatch(
-      getSomedayEventsSlice.actions.convert({
-        _id,
-        updatedFields,
-      }),
-    );
-  };
+  const convertSomedayToCalendarEvent = useCallback(
+    (
+      _id: string,
+      updates: Pick<Schema_Event, "startDate" | "endDate" | "isAllDay">,
+    ) => {
+      dispatch(
+        getSomedayEventsSlice.actions.convert({
+          event: { ...updates, isSomeday: false, _id },
+        }),
+      );
+    },
+    [dispatch],
+  );
 
   const create = useCallback(() => {
     setDraft(reduxDraft);
@@ -290,15 +224,13 @@ export const useSidebarActions = (
 
       reorder(result);
     } else {
-      if (state.isOverMainGrid) {
-        const dates = getDatesAfterDroppingOn("mainGrid", state.mouseCoords);
-        convertSomedayEventToTimed(draggableId, dates);
-      }
+      const grid = state.isOverMainGrid ? "mainGrid" : "alldayRow";
+      const dates = getDatesAfterDroppingOn(grid, state.mouseCoords);
 
-      if (state.isOverAllDayRow) {
-        const dates = getDatesAfterDroppingOn("alldayRow", state.mouseCoords);
-        convertSomedayEventToAllDay(draggableId, dates);
-      }
+      convertSomedayToCalendarEvent(draggableId, {
+        ...dates,
+        isAllDay: state.isOverAllDayRow,
+      });
     }
 
     handleDiscard();
@@ -446,7 +378,7 @@ export const useSidebarActions = (
     }
 
     const userId = await getUserId();
-    _event = prepSomedayEventBeforeSubmit(_event, userId);
+    _event = parseSomedayEventBeforeSubmit(_event, userId);
 
     const isExisting = _event._id;
     if (isExisting) {

@@ -1,52 +1,53 @@
-import { AxiosResponse } from "axios";
 import { normalize } from "normalizr";
 import { call, put } from "redux-saga/effects";
 import { Schema_Event } from "@core/types/event.types";
-import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { Schema_OptimisticEvent } from "@web/common/types/web.event.types";
+import { handleError } from "@web/common/utils/event/event.util";
+import { setSomedayEventsOrder } from "@web/common/utils/event/someday.event.util";
+import { EventApi } from "@web/ducks/events/event.api";
 import {
-  handleError,
-  replaceIdWithOptimisticId,
-} from "@web/common/utils/event.util";
-import { setSomedayEventsOrder } from "@web/common/utils/someday.util";
-import { validateGridEvent } from "@web/common/validators/grid.event.validator";
-import { EventApi } from "../event.api";
-import {
-  Action_ConvertSomedayEvent,
+  Action_ConvertEvent,
   Action_DeleteEvent,
   Action_GetEvents,
   Response_GetEventsSuccess,
-} from "../event.types";
-import { eventsEntitiesSlice } from "../slices/event.slice";
-import { getSomedayEventsSlice } from "../slices/someday.slice";
-import { Action_Someday_Reorder } from "../slices/someday.slice.types";
+} from "@web/ducks/events/event.types";
 import {
-  getEventById,
-  insertOptimisticEvent,
+  _assembleGridEvent,
+  _createOptimisticGridEvent,
+  _editEvent,
   normalizedEventsSchema,
   replaceOptimisticId,
-} from "./saga.util";
+} from "@web/ducks/events/sagas/saga.util";
+import {
+  editEventSlice,
+  eventsEntitiesSlice,
+} from "@web/ducks/events/slices/event.slice";
+import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
+import { Action_Someday_Reorder } from "@web/ducks/events/slices/someday.slice.types";
 
-export function* convertSomedayEvent({ payload }: Action_ConvertSomedayEvent) {
-  const { _id, updatedFields } = payload;
-  const optimisticId: string | null = null;
+export function* convertSomedayToCalendarEvent({
+  payload,
+}: Action_ConvertEvent) {
+  let optimisticEvent: Schema_OptimisticEvent | null = null;
 
   try {
-    yield put(getSomedayEventsSlice.actions.remove({ _id }));
+    const gridEvent = yield* _assembleGridEvent(payload.event);
 
-    const gridEvent = yield* _assembleGridEvent(_id, updatedFields);
+    optimisticEvent = yield* _createOptimisticGridEvent(gridEvent);
 
-    delete gridEvent.recurrence;
-
-    const optimisticId = yield* _createOptimisticGridEvent(gridEvent);
-    const persistentId = yield* _convertEvent(gridEvent);
-    yield* replaceOptimisticId(optimisticId, persistentId as string, false);
+    yield* _editEvent(gridEvent);
+    yield* replaceOptimisticId(optimisticEvent._id, false);
+    yield put(editEventSlice.actions.success());
   } catch (error) {
-    if (optimisticId) {
-      yield put(eventsEntitiesSlice.actions.delete({ _id: optimisticId }));
+    if (optimisticEvent) {
+      yield put(
+        eventsEntitiesSlice.actions.delete({ _id: optimisticEvent._id }),
+      );
     }
-    yield put(getSomedayEventsSlice.actions.insert(_id));
-    yield put(getSomedayEventsSlice.actions.error());
+
+    yield put(getSomedayEventsSlice.actions.insert(payload.event._id));
+    yield put(editEventSlice.actions.error());
+
     handleError(error as Error);
   }
 }
@@ -80,10 +81,16 @@ export function* getSomedayEvents({ payload }: Action_GetEvents) {
       eventsEntitiesSlice.actions.insert(normalizedEvents.entities.events),
     );
 
-    const data = {
-      data: normalizedEvents.result as Payload_NormalizedAsyncAction,
-    };
-    yield put(getSomedayEventsSlice.actions.success(data));
+    yield put(
+      getSomedayEventsSlice.actions.success({
+        data: normalizedEvents.result,
+        count: res.count,
+        page: res.page,
+        pageSize: res.pageSize,
+        offset: res.offset,
+      }),
+    );
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     yield put(getSomedayEventsSlice.actions.error());
   }
@@ -96,35 +103,4 @@ export function* reorderSomedayEvents({ payload }: Action_Someday_Reorder) {
     yield put(getSomedayEventsSlice.actions.error());
     handleError(error as Error);
   }
-}
-
-function* _assembleGridEvent(
-  _id: string,
-  updatedFields: Partial<Schema_Event>,
-) {
-  const currEvent = yield* getEventById(_id);
-
-  const _gridEvent = { ...currEvent, ...updatedFields };
-  const gridEvent = validateGridEvent(_gridEvent);
-  return gridEvent;
-}
-
-function* _convertEvent(gridEvent: Schema_GridEvent) {
-  const response = (yield call(
-    EventApi.edit,
-    gridEvent._id as string,
-    gridEvent,
-    {},
-  )) as AxiosResponse<Schema_Event>;
-
-  const convertedEvent = response.data;
-  return convertedEvent._id;
-}
-
-function* _createOptimisticGridEvent(gridEvent: Schema_GridEvent) {
-  const optimisticGridEvent = replaceIdWithOptimisticId(gridEvent);
-
-  yield* insertOptimisticEvent(optimisticGridEvent, false);
-
-  return optimisticGridEvent._id;
 }

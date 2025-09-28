@@ -1532,8 +1532,8 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             expect(baseToSomedayEvent).toBeDefined();
 
-            // new id, gcal will delete the old event, so we create a new one
-            expect(baseToSomedayEvent!._id.toString()).not.toBe(
+            // same id kept across transition
+            expect(baseToSomedayEvent!._id.toString()).toBe(
               updatedPayload.recurrence.eventId,
             );
 

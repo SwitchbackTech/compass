@@ -1,5 +1,5 @@
 import { call, put } from "@redux-saga/core/effects";
-import { handleError } from "@web/common/utils/event.util";
+import { handleError } from "@web/common/utils/event/event.util";
 import { SyncApi } from "../../../common/apis/sync.api";
 import { importGCalSlice } from "../slices/sync.slice";
 

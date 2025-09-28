@@ -33,7 +33,7 @@ jest.mock("@web/common/styles/theme.util", () => ({
   },
 }));
 
-jest.mock("@web/common/utils/web.date.util", () => ({
+jest.mock("@web/common/utils/datetime/web.date.util", () => ({
   getDatesByCategory: jest.fn().mockReturnValue({
     startDate: "2024-01-01T00:00:00.000Z",
     endDate: "2024-01-01T23:59:59.999Z",
@@ -61,7 +61,9 @@ describe("sandbox.util", () => {
   describe("createAndSubmitEvents", () => {
     it("should create and submit events for week and month tasks", async () => {
       const { EventApi } = require("@web/ducks/events/event.api");
-      const { getDatesByCategory } = require("@web/common/utils/web.date.util");
+      const {
+        getDatesByCategory,
+      } = require("@web/common/utils/datetime/web.date.util");
 
       const weekTasks = [
         { text: "Week task 1", color: "#ff6b6b" },
@@ -86,7 +88,9 @@ describe("sandbox.util", () => {
     it("should create events with correct structure for week tasks", async () => {
       const { EventApi } = require("@web/ducks/events/event.api");
       const { getUserId } = require("@web/auth/auth.util");
-      const { getDatesByCategory } = require("@web/common/utils/web.date.util");
+      const {
+        getDatesByCategory,
+      } = require("@web/common/utils/datetime/web.date.util");
 
       const weekTasks = [{ text: "Test week task", color: "#ff6b6b" }];
       const monthTasks = [];
@@ -178,7 +182,9 @@ describe("sandbox.util", () => {
     });
 
     it("should call getDatesByCategory with correct parameters", async () => {
-      const { getDatesByCategory } = require("@web/common/utils/web.date.util");
+      const {
+        getDatesByCategory,
+      } = require("@web/common/utils/datetime/web.date.util");
 
       const weekTasks = [{ text: "Week task", color: "#ff6b6b" }];
       const monthTasks = [{ text: "Month task", color: "#4ecdc4" }];

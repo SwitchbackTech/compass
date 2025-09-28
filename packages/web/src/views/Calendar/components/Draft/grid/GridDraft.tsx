@@ -4,7 +4,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { getEventDragOffset } from "@web/common/utils/event.util";
+import { getEventDragOffset } from "@web/common/utils/event/event.util";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Calendar/components/Event/Grid";
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
@@ -63,11 +63,6 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
     handleDrag,
   );
 
-  const formDirty = useMemo(
-    () => (draft ? actions.isEventDirty(draft) : false),
-    [draft, actions.isEventDirty],
-  );
-
   if (!draft) return null;
 
   return (
@@ -115,7 +110,6 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
                 onConvert={onConvert}
                 onDelete={onDelete}
                 onDuplicate={duplicateEvent}
-                disableSaveBtn={!formDirty}
                 onSubmit={onSubmit}
                 setEvent={setDraft}
               />

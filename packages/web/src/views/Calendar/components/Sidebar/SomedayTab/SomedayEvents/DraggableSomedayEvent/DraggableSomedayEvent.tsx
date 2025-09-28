@@ -4,6 +4,7 @@ import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
+import { useDraftContext } from "../../../../Draft/context/useDraftContext";
 import { SomedayEventContainer } from "../SomedayEventContainer/SomedayEventContainer";
 
 export interface Props {
@@ -24,7 +25,8 @@ export const DraggableSomedayEvent: FC<Props> = ({
   index,
 }) => {
   const isDraftingThisEvent = isDrafting && draftId === event._id;
-  const { actions, setters } = useSidebarContext();
+  const { actions, setters } = useSidebarContext()!;
+  const { actions: draftActions } = useDraftContext();
   const { start, end } = useAppSelector(selectDatesInView);
 
   return (
@@ -44,7 +46,8 @@ export const DraggableSomedayEvent: FC<Props> = ({
                 isDragging={snapshot.isDragging}
                 isDrafting={isDraftingThisEvent}
                 isOverGrid={isOverGrid}
-                onMigrate={actions.onMigrate}
+                duplicateEvent={draftActions.duplicateEvent}
+                deleteEvent={draftActions.deleteEvent}
                 onSubmit={(event) => actions.onSubmit(category, event)}
                 provided={provided}
                 snapshot={snapshot}

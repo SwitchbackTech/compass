@@ -6,8 +6,8 @@ import {
 } from "@web/common/constants/web.constants";
 import { PartialMouseEvent } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { isEventFormOpen } from "@web/common/utils";
-import { getElemById } from "@web/common/utils/grid.util";
+import { isEventFormOpen } from "@web/common/utils/form/form.util";
+import { getElemById } from "@web/common/utils/grid/grid.util";
 
 export const GRID_EVENT_MOUSE_HOLD_DELAY = 750; // ms
 export const GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD = 25; // pixels

@@ -10,6 +10,8 @@ import {
   IMPORT_GCAL_START,
   RESULT_IGNORED,
   RESULT_NOTIFIED_CLIENT,
+  SOMEDAY_EVENT_CHANGED,
+  SOMEDAY_EVENT_CHANGE_PROCESSED,
   USER_METADATA,
   USER_REFRESH_TOKEN,
   USER_SIGN_OUT,
@@ -61,7 +63,18 @@ class WebSocketServer {
     socket.on(
       EVENT_CHANGE_PROCESSED,
       handleWsError(() => {
-        logger.debug(`Client successfully processed updated: ${socket.id}`);
+        logger.debug(
+          `Client(${socket.id}) successfully processed event changes`,
+        );
+      }),
+    );
+
+    socket.on(
+      SOMEDAY_EVENT_CHANGE_PROCESSED,
+      handleWsError(() => {
+        logger.debug(
+          `Client(${socket.id}) successfully processed someday event changes`,
+        );
       }),
     );
 
@@ -229,6 +242,10 @@ class WebSocketServer {
 
   handleBackgroundCalendarChange(userId: string) {
     return this.notifyUser(userId, EVENT_CHANGED);
+  }
+
+  handleBackgroundSomedayChange(userId: string) {
+    return this.notifyUser(userId, SOMEDAY_EVENT_CHANGED);
   }
 }
 

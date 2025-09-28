@@ -1,92 +1,82 @@
 import dayjs from "dayjs";
 import { normalize } from "normalizr";
 import { call, put, select } from "@redux-saga/core/effects";
+import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Params_Events, Schema_Event } from "@core/types/event.types";
-import { ID_OPTIMISTIC_PREFIX } from "@web/common/constants/web.constants";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
-import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
-  handleError,
-  replaceIdWithOptimisticId,
-} from "@web/common/utils/event.util";
+  Schema_GridEvent,
+  Schema_OptimisticEvent,
+} from "@web/common/types/web.event.types";
+import { handleError } from "@web/common/utils/event/event.util";
 import { EventApi } from "@web/ducks/events/event.api";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
-import { RootState } from "@web/store";
 import {
-  Action_ConvertTimedEvent,
+  Action_ConvertEvent,
   Action_CreateEvent,
   Action_DeleteEvent,
   Action_EditEvent,
   Action_GetEvents,
   Action_GetPaginatedEvents,
   Entities_Event,
-  Response_CreateEventSaga,
   Response_GetEventsSaga,
   Response_GetEventsSuccess,
-} from "../event.types";
+} from "@web/ducks/events/event.types";
+import {
+  EventDateUtils,
+  _assembleGridEvent,
+  _createOptimisticGridEvent,
+  _editEvent,
+  normalizedEventsSchema,
+  replaceOptimisticId,
+} from "@web/ducks/events/sagas/saga.util";
+import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import {
   createEventSlice,
   deleteEventSlice,
   editEventSlice,
   eventsEntitiesSlice,
   getCurrentMonthEventsSlice,
-} from "../slices/event.slice";
-import { getSomedayEventsSlice } from "../slices/someday.slice";
-import { getWeekEventsSlice } from "../slices/week.slice";
-import {
-  EventDateUtils,
-  insertOptimisticEvent,
-  normalizedEventsSchema,
-  replaceOptimisticId,
-} from "./saga.util";
+} from "@web/ducks/events/slices/event.slice";
+import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
+import { RootState } from "@web/store";
 
-export function* convertTimedEvent({ payload }: Action_ConvertTimedEvent) {
+export function* convertCalendarToSomedayEvent({
+  payload,
+}: Action_ConvertEvent) {
+  let optimisticEvent: Schema_OptimisticEvent | null = null;
+
   try {
-    const res = yield call(EventApi.edit, payload.event._id, payload.event);
-    const event = res.data as Schema_Event;
+    const gridEvent = yield* _assembleGridEvent(payload.event);
 
-    yield put(getSomedayEventsSlice.actions.insert(event._id));
+    // optimistic event will have an entirely new ID that will not match that eventually saved
+    optimisticEvent = yield* _createOptimisticGridEvent(gridEvent, true);
 
-    const normalizedEvent = normalize<Schema_Event>(
-      event,
-      normalizedEventsSchema(),
-    );
-    yield put(
-      eventsEntitiesSlice.actions.insert(normalizedEvent.entities.events),
-    );
-
-    const timedEvents = (yield select((state: RootState) =>
-      selectPaginatedEventsBySectionType(state, "week"),
-    )) as Response_GetEventsSaga;
-
-    const remainingTimedEvents = timedEvents.data.filter(
-      (id) => id !== event._id,
-    );
-    yield put(
-      getWeekEventsSlice.actions.success({ data: remainingTimedEvents }),
-    );
+    yield* _editEvent(gridEvent);
+    yield* replaceOptimisticId(optimisticEvent._id, false);
+    yield put(editEventSlice.actions.success());
   } catch (error) {
-    yield put(getWeekEventsSlice.actions.error());
+    if (optimisticEvent) {
+      yield put(
+        eventsEntitiesSlice.actions.delete({ _id: optimisticEvent._id }),
+      );
+    }
+
+    yield put(getWeekEventsSlice.actions.insert(payload.event._id!));
+    yield put(editEventSlice.actions.error());
+
     handleError(error as Error);
   }
 }
 
 export function* createEvent({ payload }: Action_CreateEvent) {
-  const event = replaceIdWithOptimisticId(payload);
+  const event = yield* _createOptimisticGridEvent(payload, payload.isSomeday);
   const optimisticId = event._id;
 
   try {
-    yield* insertOptimisticEvent(event, payload.isSomeday);
-
-    const res = (yield call(
-      EventApi.create,
-      payload,
-    )) as Response_CreateEventSaga;
-
-    yield* replaceOptimisticId(optimisticId, res.data._id, payload.isSomeday);
+    yield call(EventApi.create, payload);
+    yield* replaceOptimisticId(optimisticId, payload.isSomeday!);
 
     yield put(createEventSlice.actions.success());
   } catch (error) {
@@ -107,7 +97,7 @@ export function* deleteEvent({ payload }: Action_DeleteEvent) {
     yield put(getWeekEventsSlice.actions.delete(payload));
     yield put(eventsEntitiesSlice.actions.delete(payload));
 
-    const isInDb = !event._id.startsWith(ID_OPTIMISTIC_PREFIX);
+    const isInDb = !event?._id?.startsWith(ID_OPTIMISTIC_PREFIX);
     if (isInDb) {
       yield call(EventApi.delete, payload._id, payload.applyTo);
     }
@@ -123,13 +113,10 @@ export function* editEvent({ payload }: Action_EditEvent) {
   const { _id, applyTo, event, shouldRemove } = payload;
 
   try {
-    shouldRemove
-      ? yield put(eventsEntitiesSlice.actions.delete({ _id }))
-      : yield put(eventsEntitiesSlice.actions.edit(payload));
+    if (shouldRemove) yield put(eventsEntitiesSlice.actions.delete({ _id }));
+    else yield put(eventsEntitiesSlice.actions.edit(payload));
 
-    yield call(EventApi.edit, _id, event, {
-      applyTo: applyTo,
-    });
+    yield call(EventApi.edit, _id, event, { applyTo });
     yield put(editEventSlice.actions.success());
   } catch (error) {
     yield put(editEventSlice.actions.error());
@@ -155,7 +142,7 @@ export function* getCurrentMonthEvents({ payload }: Action_GetPaginatedEvents) {
 }
 
 function* getEvents(
-  payload: Params_Events | Response_HttpPaginatedSuccess<Entities_Event>,
+  payload: Params_Events & Response_HttpPaginatedSuccess<Entities_Event>,
 ) {
   try {
     if (!payload.startDate && !payload.endDate && "data" in payload) {
@@ -196,7 +183,7 @@ export function* getWeekEvents({ payload }: Action_GetEvents) {
     const data = (yield call(getEvents, payload)) as Response_GetEventsSaga;
     yield put(getWeekEventsSlice.actions.success(data));
   } catch (error) {
-    yield put(getWeekEventsSlice.actions.error());
+    yield put(getWeekEventsSlice.actions.error({}));
     handleError(error as Error);
   }
 }

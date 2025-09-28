@@ -97,29 +97,33 @@ module.exports = {
     {
       displayName: "core",
       moduleNameMapper: {
-        "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
+        "^@core(/(.*)$)?": "<rootDir>/packages/core/src/$1",
       },
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
       setupFiles: ["<rootDir>/packages/core/src/__tests__/core.test.init.ts"],
+      setupFilesAfterEnv: [
+        "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
+      ],
     },
     {
       displayName: "web",
       moduleNameMapper: {
         "\\.(jpg|jpeg|png|gif)$":
           "<rootDir>/packages/web/src/__tests__/__mocks__/file.stub.js",
-        "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
-        "^@web/__tests__/(.*)$": "<rootDir>/packages/web/src/__tests__/$1",
-        "^@web/assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
-        "^@web/auth/(.*)$": "<rootDir>/packages/web/src/auth/$1",
-        "^@web/common/(.*)$": "<rootDir>/packages/web/src/common/$1",
-        "^@web/components/(.*)$": "<rootDir>/packages/web/src/components/$1",
-        "^@web/containers/(.*)$": "<rootDir>/packages/web/src/containers/$1",
-        "^@web/ducks/(.*)$": "<rootDir>/packages/web/src/ducks/$1",
-        "^@web/public/(.*)$": "<rootDir>/packages/web/src/public/$1",
-        "^@web/routers/(.*)$": "<rootDir>/packages/web/src/routers/",
-        "^@web/store/(.*)$": "<rootDir>/packages/web/src/store/$1",
-        "^@web/views/(.*)$": "<rootDir>/packages/web/src/views/$1",
+        "^@core(/(.*)$)?": "<rootDir>/packages/core/src/$1",
+        "^@web/__tests__(/(.*)$)?": "<rootDir>/packages/web/src/__tests__/$1",
+        "^@web/assets(/(.*)$)?": "<rootDir>/packages/web/src/assets/$1",
+        "^@web/auth(/(.*)$)?": "<rootDir>/packages/web/src/auth/$1",
+        "^@web/common(/(.*)$)?": "<rootDir>/packages/web/src/common/$1",
+        "^@web/components(/(.*)$)?": "<rootDir>/packages/web/src/components/$1",
+        "^@web/containers(/(.*)$)?": "<rootDir>/packages/web/src/containers/$1",
+        "^@web/ducks(/(.*)$)?": "<rootDir>/packages/web/src/ducks/$1",
+        "^@web/public(/(.*)$)?": "<rootDir>/packages/web/src/public/$1",
+        "^@web/routers(/(.*)$)?": "<rootDir>/packages/web/src/routers/",
+        "^@web/store((/(.*)$)?)?": "<rootDir>/packages/web/src/store/$1",
+        "^@web/socket(/(.*)$)?": "<rootDir>/packages/web/src/socket/$1",
+        "^@web/views(/(.*)$)?": "<rootDir>/packages/web/src/views/$1",
         "^.+\\.(css|less)$":
           "<rootDir>/packages/web/src/__tests__/__mocks__/css.stub.js",
         "\\.(svg)$":
@@ -143,22 +147,23 @@ module.exports = {
     {
       displayName: "backend",
       moduleNameMapper: {
-        "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
-        "^@backend/auth/(.*)$": "<rootDir>/packages/backend/src/auth/$1",
-        "^@backend/calendar/(.*)$":
+        "^@core(/(.*)$)?": "<rootDir>/packages/core/src/$1",
+        "^@backend/auth(/(.*)$)?": "<rootDir>/packages/backend/src/auth/$1",
+        "^@backend/calendar(/(.*)$)?":
           "<rootDir>/packages/backend/src/calendar/$1",
-        "^@backend/common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
-        "^@backend/dev/(.*)$": "<rootDir>/packages/backend/src/dev/$1",
-        "^@backend/email/(.*)$": "<rootDir>/packages/backend/src/email/$1",
-        "^@backend/event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
-        "^@backend/priority/(.*)$":
+        "^@backend/common(/(.*)$)?": "<rootDir>/packages/backend/src/common/$1",
+        "^@backend/dev(/(.*)$)?": "<rootDir>/packages/backend/src/dev/$1",
+        "^@backend/email(/(.*)$)?": "<rootDir>/packages/backend/src/email/$1",
+        "^@backend/event(/(.*)$)?": "<rootDir>/packages/backend/src/event/$1",
+        "^@backend/priority(/(.*)$)?":
           "<rootDir>/packages/backend/src/priority/$1",
-        "^@backend/servers/(.*)$": "<rootDir>/packages/backend/src/servers/$1",
-        "^@backend/sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
-        "^@backend/user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
-        "^@backend/waitlist/(.*)$":
+        "^@backend/servers(/(.*)$)?":
+          "<rootDir>/packages/backend/src/servers/$1",
+        "^@backend/sync(/(.*)$)?": "<rootDir>/packages/backend/src/sync/$1",
+        "^@backend/user(/(.*)$)?": "<rootDir>/packages/backend/src/user/$1",
+        "^@backend/waitlist(/(.*)$)?":
           "<rootDir>/packages/backend/src/waitlist/$1",
-        "^@backend/__tests__/(.*)$":
+        "^@backend/__tests__(/(.*)$)?":
           "<rootDir>/packages/backend/src/__tests__/$1",
       },
 
