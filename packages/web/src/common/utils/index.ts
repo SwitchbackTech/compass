@@ -1,6 +1,3 @@
-export const roundToNearest = (x: number, roundBy: number) =>
-  Math.round(x / roundBy) * roundBy;
-
 export const roundToNext = (number: number, roundBy: number): number =>
   Math.ceil(number / roundBy) * roundBy;
 
