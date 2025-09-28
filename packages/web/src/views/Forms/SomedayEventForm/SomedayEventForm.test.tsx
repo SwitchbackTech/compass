@@ -134,7 +134,7 @@ describe("SomedayEventForm Hotkeys", () => {
 
   test("should not trigger delete flow when delete keyboard shortcut is used and cancelled", async () => {
     // Explicitly refuse deletion
-    mockConfirm.mockReturnValue(true);
+    mockConfirm.mockReturnValue(false);
 
     const { weekProps, dateCalcs, deleteEvent } = setupDraftState(
       sampleSomedayEvent as Schema_WebEvent,
@@ -157,8 +157,6 @@ describe("SomedayEventForm Hotkeys", () => {
     );
 
     expect(screen.getByRole("form")).toBeInTheDocument();
-
-    mockConfirm.mockReturnValue(false);
 
     await act(async () => {
       await userEvent.keyboard("{Delete}");
