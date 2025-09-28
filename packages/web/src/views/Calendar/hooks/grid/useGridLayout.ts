@@ -4,7 +4,7 @@ import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { getElemById } from "@web/common/utils/grid.util";
+import { getElemById } from "@web/common/utils/grid/grid.util";
 import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 

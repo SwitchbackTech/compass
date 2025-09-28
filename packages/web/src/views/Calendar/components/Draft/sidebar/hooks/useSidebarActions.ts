@@ -26,7 +26,7 @@ import {
   getDatesByCategory,
 } from "@web/common/utils/datetime/web.date.util";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
-import { getX } from "@web/common/utils/grid.util";
+import { getX } from "@web/common/utils/grid/grid.util";
 import {
   selectDraft,
   selectDraftActivity,

@@ -2,7 +2,7 @@ import { createSelector } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
-import { assignEventsToRow } from "@web/common/utils/grid.util";
+import { assignEventsToRow } from "@web/common/utils/grid/grid.util";
 import { RootState } from "@web/store";
 
 type Schema_GridEvent_NoPosition = Omit<Schema_GridEvent, "position">;

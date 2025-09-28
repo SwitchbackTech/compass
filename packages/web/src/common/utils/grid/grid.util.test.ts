@@ -1,5 +1,8 @@
 import dayjs from "dayjs";
-import { getFlexBasis, getPrevDayWidth } from "@web/common/utils/grid.util";
+import {
+  getFlexBasis,
+  getPrevDayWidth,
+} from "@web/common/utils/grid/grid.util";
 import {
   AFTER_TMRW_MULTIPLE,
   FLEX_EQUAL,

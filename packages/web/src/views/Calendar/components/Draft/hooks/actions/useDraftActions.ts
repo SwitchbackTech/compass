@@ -26,7 +26,7 @@ import {
   assembleDefaultEvent,
   replaceIdWithOptimisticId,
 } from "@web/common/utils/event/event.util";
-import { getX } from "@web/common/utils/grid.util";
+import { getX } from "@web/common/utils/grid/grid.util";
 import { Payload_EditEvent } from "@web/ducks/events/event.types";
 import {
   selectDraft,
