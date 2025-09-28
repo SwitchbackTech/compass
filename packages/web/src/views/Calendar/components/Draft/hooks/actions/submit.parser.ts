@@ -38,7 +38,6 @@ export const parseSomedayEventBeforeSubmit = (
     startDate: draft.startDate,
     endDate: draft.endDate,
     priority: draft.priority ?? Priorities.UNASSIGNED,
-    order: draft.order ?? 0, // Provide default order of 0 when missing
   };
 
   if (draft.recurrence) Object.assign(_event, { recurrence: draft.recurrence });
