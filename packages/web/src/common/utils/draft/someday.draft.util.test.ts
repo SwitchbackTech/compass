@@ -6,7 +6,7 @@ import { assembleDefaultEvent } from "../event/event.util";
 import { createSomedayDraft } from "./someday.draft.util";
 
 // Mock assembleDefaultEvent since it makes external calls
-jest.mock("../event.util", () => ({
+jest.mock("../event/event.util", () => ({
   assembleDefaultEvent: jest
     .fn()
     .mockImplementation(async (category, startDate, endDate) => ({

@@ -1,11 +1,11 @@
 import dayjs from "dayjs";
-import { arraysAreEqual } from "@web/__tests__/utils/test.util";
+import { arraysAreEqual } from "@web/__tests__/utils/web.test.util";
 import { headers } from "@web/common/utils";
 import {
   getColorsByHour,
   getHourLabels,
   toUTCOffset,
-} from "@web/common/utils/web.date.util";
+} from "@web/common/utils/datetime/web.date.util";
 
 const getColorTotals = (colors) => {
   const uniqueColors = Array.from(new Set(colors));

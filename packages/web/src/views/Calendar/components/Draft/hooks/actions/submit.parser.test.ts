@@ -2,7 +2,6 @@ import { Origin, Priorities } from "@core/constants/core.constants";
 import {
   Schema_GridEvent,
   Schema_SomedayEvent,
-  Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import {
   OnSubmitParser,
@@ -20,7 +19,7 @@ jest.mock("@web/common/validators/someday.event.validator", () => ({
 }));
 
 // Mock the event utility
-jest.mock("@web/common/utils/event.util", () => ({
+jest.mock("@web/common/utils/event/event.util", () => ({
   assembleGridEvent: jest.fn((event) => ({
     ...event,
     position: {
@@ -245,7 +244,9 @@ describe("submit.parser", () => {
     });
 
     it("should assemble grid event when position is missing", () => {
-      const { assembleGridEvent } = require("@web/common/utils/event.util");
+      const {
+        assembleGridEvent,
+      } = require("@web/common/utils/event/event.util");
       assembleGridEvent.mockClear();
 
       const draft = createMockGridEvent({
@@ -268,7 +269,9 @@ describe("submit.parser", () => {
     });
 
     it("should not assemble grid event when position is present", () => {
-      const { assembleGridEvent } = require("@web/common/utils/event.util");
+      const {
+        assembleGridEvent,
+      } = require("@web/common/utils/event/event.util");
       assembleGridEvent.mockClear();
 
       const draft = createMockGridEvent({
@@ -289,7 +292,9 @@ describe("submit.parser", () => {
     });
 
     it("should handle all-day events without position", () => {
-      const { assembleGridEvent } = require("@web/common/utils/event.util");
+      const {
+        assembleGridEvent,
+      } = require("@web/common/utils/event/event.util");
       assembleGridEvent.mockClear();
 
       const draft = createMockGridEvent({
