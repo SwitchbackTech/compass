@@ -77,7 +77,7 @@ export const MainGrid: FC<Props> = ({
   };
 
   return (
-    <StyledMainGrid id={ID_GRID_MAIN} ref={mainGridRef}>
+    <StyledMainGrid id={ID_GRID_MAIN} ref={mainGridRef} tabIndex={-1}>
       <MainGridColumns
         isCurrentWeek={isCurrentWeek}
         today={today}
