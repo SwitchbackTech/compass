@@ -57,7 +57,6 @@ describe("SomedayEventForm Hotkeys", () => {
     render(
       <DraftProvider weekProps={weekProps} dateCalcs={dateCalcs} isSidebarOpen>
         <SomedayEventForm
-          weekViewRange={{ startDate, endDate }}
           event={sampleSomedayEvent}
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
@@ -99,7 +98,6 @@ describe("SomedayEventForm Hotkeys", () => {
     render(
       <DraftProvider weekProps={weekProps} dateCalcs={dateCalcs} isSidebarOpen>
         <SomedayEventForm
-          weekViewRange={{ startDate, endDate }}
           event={sampleSomedayEvent}
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
@@ -143,7 +141,6 @@ describe("SomedayEventForm Hotkeys", () => {
     render(
       <DraftProvider weekProps={weekProps} dateCalcs={dateCalcs} isSidebarOpen>
         <SomedayEventForm
-          weekViewRange={{ startDate, endDate }}
           event={sampleSomedayEvent}
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
@@ -180,7 +177,6 @@ describe("SomedayEventForm Hotkeys", () => {
     render(
       <DraftProvider weekProps={weekProps} dateCalcs={dateCalcs} isSidebarOpen>
         <SomedayEventForm
-          weekViewRange={{ startDate, endDate }}
           event={sampleSomedayEvent}
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
@@ -218,11 +214,11 @@ describe("SomedayEventForm Hotkeys", () => {
     const user = userEvent.setup();
     render(
       <SomedayEventForm
-        weekViewRange={{ startDate, endDate }}
         event={sampleSomedayEvent}
         onClose={mockOnClose}
         onMigrate={mockOnMigrate}
         onSubmit={mockOnSubmit}
+        onDuplicate={mockDuplicateEvent}
         onDelete={mockOnDelete}
         setEvent={mockSetEvent}
         category={defaultCategory}
@@ -255,11 +251,11 @@ describe("SomedayEventForm Hotkeys", () => {
 
     render(
       <SomedayEventForm
-        weekViewRange={{ startDate, endDate }}
         event={sampleSomedayEvent}
         onClose={mockOnClose}
         onMigrate={mockOnMigrate}
         onSubmit={mockOnSubmit}
+        onDuplicate={mockDuplicateEvent}
         onDelete={mockOnDelete}
         setEvent={mockSetEvent}
         category={defaultCategory}
@@ -293,11 +289,11 @@ describe("SomedayEventForm Hotkeys", () => {
   test("should call duplicateEvent when meta+d keyboard shortcut is used", async () => {
     render(
       <SomedayEventForm
-        weekViewRange={{ startDate, endDate }}
         event={sampleSomedayEvent}
         onClose={mockOnClose}
         onMigrate={mockOnMigrate}
         onSubmit={mockOnSubmit}
+        onDuplicate={mockDuplicateEvent}
         onDelete={mockOnDelete}
         setEvent={mockSetEvent}
         category={defaultCategory}
@@ -327,6 +323,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          onDuplicate={mockDuplicateEvent}
+          onDelete={mockOnDelete}
           setEvent={mockSetEvent}
           category={defaultCategory}
         />
@@ -369,6 +367,8 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          onDuplicate={mockDuplicateEvent}
+          onDelete={mockOnDelete}
           setEvent={mockSetEvent}
           category={defaultCategory}
         />
@@ -451,6 +451,7 @@ describe("SomedayEventForm Hotkeys", () => {
           onClose={mockOnClose}
           onMigrate={mockOnMigrate}
           onSubmit={mockOnSubmit}
+          onDelete={mockOnDelete}
           setEvent={mockSetEvent}
           category={defaultCategory}
         />
@@ -476,11 +477,9 @@ describe("SomedayEventForm Hotkeys", () => {
       await user.keyboard("{Delete}");
     });
 
-    expect(mockConfirm).toHaveBeenCalledTimes(1);
-    expect(mockDispatch).toHaveBeenCalledTimes(1);
-    expect(mockDispatch).toHaveBeenCalledWith(
-      getSomedayEventsSlice.actions.delete({ _id: sampleSomedayEvent._id }),
-    );
-    expect(toast).toHaveBeenCalledTimes(1);
+    expect(mockOnDelete).toHaveBeenCalledTimes(1);
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
   });
 });
