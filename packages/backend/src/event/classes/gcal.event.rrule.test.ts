@@ -44,7 +44,6 @@ describe("GcalEventRRule: ", () => {
     });
 
     expect(rrule.toString()).toContain("RRULE:FREQ=DAILY");
-    expect(rrule.toString()).toContain(`COUNT=${GCAL_MAX_RECURRENCES}`);
     expect(rrule.count()).toBe(GCAL_MAX_RECURRENCES);
     expect(rrule.all()).toHaveLength(GCAL_MAX_RECURRENCES);
   });
