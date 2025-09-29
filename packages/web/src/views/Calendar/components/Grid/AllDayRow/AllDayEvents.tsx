@@ -94,15 +94,15 @@ export const AllDayEvents = ({
             }
             onMouseDown(e, event);
           }}
-          onScalerMouseDown={(
-            event,
-            e,
-            dateToChange: "startDate" | "endDate",
-          ) => {
-            e.stopPropagation();
-            e.preventDefault();
-            resizeAllDayEvent(event, dateToChange);
-          }}
+          // onScalerMouseDown={(
+          //   event,
+          //   e,
+          //   dateToChange: "startDate" | "endDate",
+          // ) => {
+          //   e.stopPropagation();
+          //   e.preventDefault();
+          //   resizeAllDayEvent(event, dateToChange);
+          // }}
         />
       );
     });
