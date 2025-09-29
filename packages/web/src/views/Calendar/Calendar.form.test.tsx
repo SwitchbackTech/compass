@@ -3,13 +3,13 @@ import "@testing-library/jest-dom";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CLIMB, EUROPE_TRIP } from "@core/__mocks__/v1/events/events.misc";
-import {
-  findAndUpdateEventInPreloadedState,
-  freshenEventStartEndDate,
-} from "@web/__tests__/Calendar/calendar.render.test.utils";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { preloadedState } from "@web/__tests__/__mocks__/state/state.weekEvents";
 import { CalendarView } from "@web/views/Calendar";
+import {
+  findAndUpdateEventInPreloadedState,
+  freshenEventStartEndDate,
+} from "@web/views/Calendar/calendar.render.test.utils";
 
 jest.mock("@web/views/Calendar/hooks/mouse/useEventListener", () => ({
   useEventListener: jest.fn(),

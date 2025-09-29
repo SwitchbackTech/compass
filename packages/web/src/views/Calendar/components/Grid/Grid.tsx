@@ -48,7 +48,6 @@ export const Grid: FC<Props> = ({
         measurements={measurements}
         today={today}
         weekProps={weekProps}
-        dragEdgeState={dragEdgeState}
       />
       <EdgeNavigationIndicators dragEdgeState={dragEdgeState} />
     </div>
