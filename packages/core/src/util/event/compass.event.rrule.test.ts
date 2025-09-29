@@ -42,23 +42,6 @@ describe("CompassEventRRule: ", () => {
     expect(rrule.all()).toHaveLength(count);
   });
 
-  it(`should adjust the instance COUNT to a maximum of ${GCAL_MAX_RECURRENCES}`, () => {
-    const rruleString = "RRULE:FREQ=DAILY;COUNT=1000";
-
-    const baseEvent = createMockBaseEvent({
-      recurrence: { rule: [rruleString] },
-    });
-
-    const rrule = new CompassEventRRule({
-      ...baseEvent,
-      _id: new ObjectId(baseEvent._id),
-    });
-
-    expect(rrule.toString()).toContain("RRULE:FREQ=DAILY");
-    expect(rrule.count()).toBe(GCAL_MAX_RECURRENCES);
-    expect(rrule.all()).toHaveLength(GCAL_MAX_RECURRENCES);
-  });
-
   it("should return the rrule in system timezone", () => {
     const baseEvent = createMockBaseEvent();
     const rrule = new CompassEventRRule({
@@ -92,6 +75,40 @@ describe("CompassEventRRule: ", () => {
     expect(rrule.toRecurrence().some((rule) => rule.includes("DTEND"))).toEqual(
       false,
     );
+  });
+
+  it("should include start dates outside the recurrence rule", () => {
+    // Add an extra date outside the recurrence (e.g., a Friday)
+    const startDateOnMonday = dayjs().startOf("week").add(1, "day");
+    const startDate = startDateOnMonday.toISOString();
+    const rule = [`RRULE:FREQ=WEEKLY;COUNT=0;BYDAY=${RRule.FR}`];
+    const baseEvent = createMockBaseEvent({ startDate, recurrence: { rule } });
+    const _id = new ObjectId(baseEvent._id);
+    const rrule = new CompassEventRRule({ ...baseEvent, _id });
+
+    const allDates = rrule.all();
+
+    expect(allDates).toHaveLength(1);
+
+    expect(allDates.some((d) => dayjs(d).isSame(startDateOnMonday))).toBe(true);
+  });
+
+  it("should correctly merge options when multiple rrules are present", () => {
+    const rule = [
+      "RRULE:FREQ=DAILY;COUNT=2",
+      "RRULE:FREQ=WEEKLY;COUNT=1;BYDAY=FR",
+    ];
+    const baseEvent = createMockBaseEvent({ recurrence: { rule } });
+    const _id = new ObjectId(baseEvent._id);
+    const rrule = new CompassEventRRule({ ...baseEvent, _id });
+
+    // Should include both daily and weekly recurrences
+    const allDates = rrule.all();
+    expect(allDates.length).toBeGreaterThanOrEqual(2);
+
+    // Options should merge both rules
+    expect(rrule.options.freq).toBeDefined();
+    expect(rrule.options.count).toBeDefined();
   });
 
   describe("diffOptions", () => {

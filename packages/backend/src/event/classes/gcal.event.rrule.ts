@@ -9,7 +9,7 @@ import {
   gSchema$EventBase,
   gSchema$EventInstance,
 } from "@core/types/gcal";
-import dayjs from "@core/util/date/dayjs";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { diffRRuleOptions } from "@core/util/event/event.util";
 import {
   getGcalEventDateFormat,
@@ -22,6 +22,8 @@ export class GcalEventRRule extends RRule {
   #dateKey: "date" | "dateTime";
   #dateFormat: string;
   #durationMs!: number;
+  #startDate!: Dayjs;
+  #endDate!: Dayjs;
 
   constructor(event: gSchema$EventBase, options: Partial<Options> = {}) {
     super(GcalEventRRule.#initOptions(event, options));
@@ -32,15 +34,15 @@ export class GcalEventRRule extends RRule {
     this.#dateFormat = getGcalEventDateFormat(this.#event.start);
 
     const { start, end } = this.#event;
-    const startDate = parseGCalEventDate(start);
-    const endDate = parseGCalEventDate(end);
 
-    this.#durationMs = endDate.diff(startDate, "milliseconds");
+    this.#startDate = parseGCalEventDate(start);
+    this.#endDate = parseGCalEventDate(end);
+    this.#durationMs = this.#endDate.diff(this.#startDate, "milliseconds");
   }
 
   static #initOptions(
     event: gSchema$EventBase,
-    options: Partial<Options> = {},
+    _options: Partial<Options> = {},
   ): Partial<Options> {
     const startDate = parseGCalEventDate(event.start);
     const dtstart = startDate.local().toDate();
@@ -49,11 +51,14 @@ export class GcalEventRRule extends RRule {
     const recurrence = event.recurrence?.join("\n").trim();
     const valid = recurrence?.length > 0;
     const rruleSet = valid ? rrulestr(recurrence!, opts) : { origOptions: {} };
-    const rruleOptions = { ...rruleSet.origOptions, ...options };
-    const rawCount = rruleOptions.count ?? GCAL_MAX_RECURRENCES;
-    const count = Math.min(rawCount, GCAL_MAX_RECURRENCES);
+    const rruleOptions = { ...rruleSet.origOptions, ..._options };
+    const options = { ...rruleOptions, dtstart, tzid };
 
-    return { ...rruleOptions, count, dtstart, tzid };
+    if (options.until instanceof Date) {
+      options.count = undefined as unknown as number;
+    }
+
+    return options;
   }
 
   diffOptions(rrule: GcalEventRRule): Array<[keyof ParsedOptions, unknown]> {
@@ -62,6 +67,20 @@ export class GcalEventRRule extends RRule {
 
   toRecurrence(): string[] {
     return this.toString().split("\n");
+  }
+
+  override all(
+    iterator: (d: Date, len: number) => boolean = (_, index) =>
+      index < GCAL_MAX_RECURRENCES,
+  ): Date[] {
+    const tzid = dayjs.tz.guess();
+    const dates = super.all(iterator);
+    const firstInstance = dates[0]!;
+    const firstInstanceStartDate = dayjs(firstInstance).tz(tzid);
+    const includesDtStart = this.#startDate.isSame(firstInstanceStartDate);
+    const rDates = includesDtStart ? [] : [this.#startDate.toDate()];
+
+    return rDates.concat(dates);
   }
 
   /**
