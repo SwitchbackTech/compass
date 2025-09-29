@@ -489,13 +489,24 @@ export const _deleteGcal = async (
   userId: string,
   gEventId: string,
 ): Promise<boolean> => {
-  const gcal = await getGcalClient(userId);
+  try {
+    const gcal = await getGcalClient(userId);
 
-  if (!gEventId) {
-    throw error(GenericError.BadRequest, "cannot delete gcal event without id");
+    if (!gEventId) {
+      throw error(
+        GenericError.BadRequest,
+        "cannot delete gcal event without id",
+      );
+    }
+
+    const response = await gcalService.deleteEvent(gcal, gEventId);
+
+    return response.status < 300;
+  } catch (e) {
+    const error = e as GaxiosError<gSchema$Event>;
+
+    if (error.code?.toString() === "410") return true;
+
+    throw e;
   }
-
-  const response = await gcalService.deleteEvent(gcal, gEventId);
-
-  return response.status < 300;
 };
