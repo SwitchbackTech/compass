@@ -190,33 +190,39 @@ class EventService {
       .find({ user: userId, _id: { $in: baseEventIds } })
       .toArray();
 
-    return events.map((event) => {
-      if (isExistingInstance(event)) {
-        const baseEvent = baseEvents.find(
-          ({ _id }) => _id.toString() === event.recurrence?.eventId,
-        );
-
-        if (!baseEvent) {
-          throw new BaseError(
-            "Base event not found for instance",
-            `Tried with user: ${userId} and _id: ${event._id.toString()}`,
-            Status.NOT_FOUND,
-            true,
+    return events
+      .map((event) => {
+        if (isExistingInstance(event)) {
+          const baseEvent = baseEvents.find(
+            ({ _id }) => _id.toString() === event.recurrence?.eventId,
           );
+
+          if (!baseEvent) {
+            console.error(
+              new BaseError(
+                "Skipping instance. Base event not found for instance",
+                `Tried with user: ${userId} and _id: ${event._id.toString()}`,
+                Status.NOT_FOUND,
+                true,
+              ),
+            );
+
+            return undefined;
+          }
+
+          return {
+            ...event,
+            _id: event._id.toString(),
+            recurrence: {
+              eventId: baseEvent._id.toString(),
+              rule: baseEvent.recurrence?.rule,
+            },
+          };
         }
 
-        return {
-          ...event,
-          _id: event._id.toString(),
-          recurrence: {
-            eventId: baseEvent._id.toString(),
-            rule: baseEvent.recurrence?.rule,
-          },
-        } as Schema_Event_Core;
-      }
-
-      return { ...event, _id: event._id.toString() } as Schema_Event_Core;
-    });
+        return { ...event, _id: event._id.toString() } as Schema_Event_Core;
+      })
+      .filter((e) => e) as Schema_Event_Core[];
   };
 
   readById = async (userId: string, eventId: string) => {
