@@ -196,12 +196,21 @@ class EventService {
           ({ _id }) => _id.toString() === event.recurrence?.eventId,
         );
 
+        if (!baseEvent) {
+          throw new BaseError(
+            "Base event not found for instance",
+            `Tried with user: ${userId} and _id: ${event._id.toString()}`,
+            Status.NOT_FOUND,
+            true,
+          );
+        }
+
         return {
           ...event,
           _id: event._id.toString(),
           recurrence: {
-            eventId: event.recurrence?.eventId,
-            rule: baseEvent?.recurrence?.rule,
+            eventId: baseEvent._id.toString(),
+            rule: baseEvent.recurrence?.rule,
           },
         } as Schema_Event_Core;
       }
@@ -218,7 +227,7 @@ class EventService {
 
     const event = await mongoService.event.findOne(filter);
 
-    if (event === null) {
+    if (!event) {
       throw new BaseError(
         "Event not found",
         `Tried with user: ${userId} and _id: ${eventId}`,
@@ -235,8 +244,17 @@ class EventService {
         _id: new ObjectId(event.recurrence?.eventId),
       });
 
+      if (!baseEvent) {
+        throw new BaseError(
+          "Base event not found for instance",
+          `Tried with user: ${userId} and _id: ${eventId}`,
+          Status.NOT_FOUND,
+          true,
+        );
+      }
+
       event.recurrence = {
-        eventId: event.recurrence?.eventId,
+        eventId: baseEvent._id.toString(),
         rule: baseEvent?.recurrence?.rule,
       };
     }
