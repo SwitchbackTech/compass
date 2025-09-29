@@ -7,7 +7,7 @@ import {
   MULTI_WEEK,
   TY_TIM,
 } from "@core/__mocks__/v1/events/events.misc";
-import { InitialReduxState } from "@web/__tests__/Calendar/calendar.render.test.utils";
+import { InitialReduxState } from "@web/views/Calendar/calendar.render.test.utils";
 
 export const preloadedState: InitialReduxState = {
   events: {

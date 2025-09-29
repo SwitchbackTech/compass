@@ -154,7 +154,6 @@ export const SomedayEventContainer = ({
                 onMigrate={actions.onMigrate}
                 onSubmit={onSubmit}
                 setEvent={setEvent}
-                weekViewRange={weekViewRange}
               />
             </StyledFloatContainer>
           </FloatingFocusManager>

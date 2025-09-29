@@ -1,6 +1,4 @@
 import React, { KeyboardEvent, MouseEvent, useCallback, useRef } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
-import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import "react-toastify/dist/ReactToastify.css";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
@@ -19,10 +17,7 @@ import {
 } from "@web/views/Forms/EventForm/styled";
 import { FormProps, SetEventFormField } from "@web/views/Forms/EventForm/types";
 import { SomedayEventActionMenu } from "@web/views/Forms/SomedayEventForm/SomedayEventActionMenu";
-
-const hotkeysOptions: OptionsOrDependencyArray = {
-  enableOnFormTags: ["input"],
-};
+import { useSomedayFormShortcuts } from "@web/views/Forms/SomedayEventForm/useSomedayFormShortcuts";
 
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
@@ -33,7 +28,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   onDuplicate,
   onDelete: onDeleteEvent,
   setEvent,
-  weekViewRange,
   ...props
 }) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
@@ -52,6 +46,24 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     }
   };
 
+  const onDuplicateEvent = useCallback(() => {
+    onDuplicate?.(event);
+    onClose();
+  }, [onDuplicate, event, onClose]);
+
+  const onSetEventField: SetEventFormField = useCallback(
+    (field) => {
+      const newEvent = { ...event, ...field };
+
+      if (field === null) {
+        delete newEvent[field];
+      }
+
+      setEvent(newEvent);
+    },
+    [event, setEvent],
+  );
+
   const _onSubmit = useCallback(() => {
     const hasInstances = origRecurrence?.eventId !== undefined;
     const removedRecurrence =
@@ -62,7 +74,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     }
 
     onSubmit(event);
-  }, [origRecurrence?.eventId, onSubmit, event]);
+  }, [origRecurrence?.eventId, event, onSubmit, onSetEventField]);
 
   const onChangeEventTextField =
     <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
@@ -83,77 +95,18 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     onClose();
   }, [onDeleteEvent, onClose]);
 
-  useHotkeys("delete", onDelete, hotkeysOptions, [onDelete]);
-  useHotkeys("enter", _onSubmit, hotkeysOptions, [_onSubmit]);
-
-  useHotkeys(
-    "meta+enter",
-    (e) => {
-      e.preventDefault();
-      _onSubmit();
-    },
-    hotkeysOptions,
-    [_onSubmit],
-  );
-
-  useHotkeys(
-    "ctrl+meta+up",
-    (e) => {
-      e.preventDefault();
-      onMigrate?.(event, category, "up");
-    },
-    hotkeysOptions,
-    [event, category, onMigrate],
-  );
-
-  useHotkeys(
-    "ctrl+meta+down",
-    async (e) => {
-      e.preventDefault();
-      onMigrate?.(event, category, "down");
-    },
-    hotkeysOptions,
-    [event, category, onMigrate],
-  );
-
-  useHotkeys(
-    "ctrl+meta+right",
-    async (e) => {
-      e.preventDefault();
-      onMigrate?.(event, category, "forward");
-    },
-    hotkeysOptions,
-    [event, category, onMigrate],
-  );
-
-  useHotkeys(
-    "ctrl+meta+left",
-    async (e) => {
-      e.preventDefault();
-      onMigrate?.(event, category, "back");
-    },
-    hotkeysOptions,
-    [event, category, onMigrate],
-  );
-
-  const onSetEventField: SetEventFormField = (field) => {
-    const newEvent = { ...event, ...field };
-
-    if (field === null) {
-      delete newEvent[field];
-    }
-
-    setEvent(newEvent);
-  };
+  useSomedayFormShortcuts({
+    event,
+    category,
+    onSubmit: _onSubmit,
+    onDelete,
+    onDuplicate: onDuplicateEvent,
+    onMigrate,
+  });
 
   const stopPropagation = (e: MouseEvent) => {
     e.stopPropagation();
   };
-
-  const onDuplicateEvent = useCallback(() => {
-    onDuplicate?.(event);
-    onClose();
-  }, [onDuplicate, onClose]);
 
   return (
     <StyledEventForm

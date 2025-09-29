@@ -10,7 +10,6 @@ import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { DragEdgeNavigationState } from "@web/views/Calendar/hooks/grid/useDragEdgeNavigation";
 import { useDragEventSmartScroll } from "@web/views/Calendar/hooks/grid/useDragEventSmartScroll";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
@@ -30,7 +29,6 @@ interface Props {
   measurements: Measurements_Grid;
   today: Dayjs;
   weekProps: WeekProps;
-  dragEdgeState: DragEdgeNavigationState;
 }
 
 export const MainGrid: FC<Props> = ({
@@ -40,7 +38,6 @@ export const MainGrid: FC<Props> = ({
   measurements,
   today,
   weekProps,
-  dragEdgeState,
 }) => {
   const dispatch = useAppDispatch();
   const { component } = weekProps;
@@ -80,7 +77,7 @@ export const MainGrid: FC<Props> = ({
   };
 
   return (
-    <StyledMainGrid id={ID_GRID_MAIN} ref={mainGridRef}>
+    <StyledMainGrid id={ID_GRID_MAIN} ref={mainGridRef} tabIndex={-1}>
       <MainGridColumns
         isCurrentWeek={isCurrentWeek}
         today={today}
