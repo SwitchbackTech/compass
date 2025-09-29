@@ -24,6 +24,7 @@ export class GcalEventRRule extends RRule {
   #durationMs!: number;
   #startDate!: Dayjs;
   #endDate!: Dayjs;
+  #timezone!: string;
 
   constructor(event: gSchema$EventBase, options: Partial<Options> = {}) {
     super(GcalEventRRule.#initOptions(event, options));
@@ -32,6 +33,7 @@ export class GcalEventRRule extends RRule {
     this.#isAllDay = "date" in this.#event.start!;
     this.#dateKey = this.#isAllDay ? "date" : "dateTime";
     this.#dateFormat = getGcalEventDateFormat(this.#event.start);
+    this.#timezone = this.#event.start?.timeZone ?? dayjs.tz.guess();
 
     const { start, end } = this.#event;
 
@@ -73,10 +75,9 @@ export class GcalEventRRule extends RRule {
     iterator: (d: Date, len: number) => boolean = (_, index) =>
       index < GCAL_MAX_RECURRENCES,
   ): Date[] {
-    const tzid = dayjs.tz.guess();
     const dates = super.all(iterator);
-    const firstInstance = dates[0]!;
-    const firstInstanceStartDate = dayjs(firstInstance).tz(tzid);
+    const firstInstance = dates[0];
+    const firstInstanceStartDate = dayjs(firstInstance).tz(this.#timezone);
     const includesDtStart = this.#startDate.isSame(firstInstanceStartDate);
     const rDates = includesDtStart ? [] : [this.#startDate.toDate()];
 
@@ -92,9 +93,7 @@ export class GcalEventRRule extends RRule {
    */
   instances(): gSchema$EventInstance[] {
     return this.all().map((date) => {
-      const timezone = dayjs.tz.guess();
-      const tzid = this.#event.start?.timeZone ?? timezone;
-      const startDate = dayjs(date).tz(tzid);
+      const startDate = dayjs(date).tz(this.#timezone);
       const endDate = startDate.add(this.#durationMs, "milliseconds");
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -104,11 +103,11 @@ export class GcalEventRRule extends RRule {
         recurringEventId: this.#event.id!,
         start: {
           [this.#dateKey]: startDate?.format(this.#dateFormat),
-          timeZone: this.#event.start?.timeZone ?? timezone,
+          timeZone: this.#timezone,
         },
         end: {
           [this.#dateKey]: endDate.format(this.#dateFormat),
-          timeZone: this.#event.end?.timeZone ?? timezone,
+          timeZone: this.#timezone,
         },
       };
 
