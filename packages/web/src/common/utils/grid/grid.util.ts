@@ -1,32 +1,23 @@
-import dayjs, { Dayjs } from "dayjs";
-import dayOfYear from "dayjs/plugin/dayOfYear";
-import isBetween from "dayjs/plugin/isBetween";
-import weekPlugin from "dayjs/plugin/weekOfYear";
 import { MouseEvent } from "react";
 import { Schema_Event } from "@core/types/event.types";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { AssignResult, WidthPercentages } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   AFTER_TMRW_MULTIPLE,
+  DIVIDER_GRID,
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
-} from "@web/views/Calendar/layout.constants";
-import {
-  DIVIDER_GRID,
   SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
-
-dayjs.extend(dayOfYear);
-dayjs.extend(weekPlugin);
-dayjs.extend(isBetween);
 
 export const assignEventToRow = (
   eventDays: number[],
   rows: number[][],
 ): AssignResult => {
   let fits = false;
-  let rowNum: number;
+  let rowNum!: number;
 
   for (let rowIndex = 0; rowIndex < rows.length; ++rowIndex) {
     const occupiedDays = rows[rowIndex];

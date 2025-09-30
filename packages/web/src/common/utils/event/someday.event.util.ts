@@ -1,9 +1,11 @@
-import dayjs, { Dayjs } from "dayjs";
 import { RRULE } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
-import { Categories_Event } from "@core/types/event.types";
-import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { ID_SOMEDAY_EVENT_ACTION_MENU } from "@web/common/constants/web.constants";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import {
+  COLUMN_MONTH,
+  COLUMN_WEEK,
+  ID_SOMEDAY_EVENT_ACTION_MENU,
+} from "@web/common/constants/web.constants";
 import {
   Schema_SomedayEvent,
   Schema_SomedayEventsColumn,
@@ -54,7 +56,7 @@ export const categorizeSomedayEvents = (
     if (isWeek) {
       const isMonthRepeat = e?.recurrence?.rule?.includes(RRULE.MONTH);
       if (!isMonthRepeat) {
-        weekIds.push(e._id);
+        weekIds.push(e._id!);
         return;
       }
     }
@@ -69,7 +71,7 @@ export const categorizeSomedayEvents = (
     const isMonth = eventStart.isBetween(monthStart, monthEnd, null, "[]");
 
     if (isMonth) {
-      monthIds.push(e._id);
+      monthIds.push(e._id!);
     }
   });
 

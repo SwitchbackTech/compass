@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs from "@core/util/date/dayjs";
 import {
   getAllDayEventWidth,
   getEventCategory,
@@ -90,7 +90,7 @@ describe("getAllDayEventWidth", () => {
     expect(
       getAllDayEventWidth(
         category,
-        -89, //this index shouldnt matter in this scenario
+        -89, //this index shouldn't matter in this scenario
         start,
         end,
         startOfWeek,
@@ -126,7 +126,7 @@ describe("getAllDayEventWidth", () => {
     expect(
       getAllDayEventWidth(
         category,
-        1000, //this index shouldnt matter in this scenario
+        1000, //this index shouldn't matter in this scenario
         start,
         end,
         startOfWeek,

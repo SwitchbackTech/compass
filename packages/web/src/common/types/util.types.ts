@@ -1,4 +1,4 @@
-import { Dayjs } from "dayjs";
+import { Dayjs } from "@core/util/date/dayjs";
 
 export interface AssignResult {
   fits: boolean;

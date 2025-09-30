@@ -1,7 +1,7 @@
-import { Dayjs } from "dayjs";
 import { Dispatch } from "redux";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
+import { Dayjs } from "@core/util/date/dayjs";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
 import { assembleDefaultEvent } from "../event/event.util";

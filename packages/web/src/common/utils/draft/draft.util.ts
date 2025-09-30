@@ -1,7 +1,7 @@
-import dayjs, { Dayjs } from "dayjs";
 import { MouseEvent } from "react";
 import { Dispatch } from "redux";
 import { Categories_Event } from "@core/types/event.types";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,

@@ -1,5 +1,5 @@
-import { Dayjs } from "dayjs";
 import React, { FC } from "react";
+import { Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
