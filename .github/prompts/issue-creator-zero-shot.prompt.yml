@@ -33,7 +33,6 @@ messages:
       - Scope
       - Acceptance criteria
       - Business use case
-
       - Additional context
 testData:
   - issue: |
