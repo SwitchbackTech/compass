@@ -1,6 +1,6 @@
-import dayjs from "dayjs";
 import { PreloadedState } from "redux";
 import { Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { RootState } from "@web/store";
 
 // Type for the initial state that can be passed to PreloadedState

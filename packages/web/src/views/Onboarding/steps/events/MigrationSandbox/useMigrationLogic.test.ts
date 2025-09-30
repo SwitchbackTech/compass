@@ -1,12 +1,15 @@
-import dayjs from "dayjs";
 import { renderHook } from "@testing-library/react";
-import { useMigrationLogic } from "./useMigrationLogic";
+import dayjs from "@core/util/date/dayjs";
+import { useMigrationLogic } from "@web/views/Onboarding/steps/events/MigrationSandbox/useMigrationLogic";
 
 // Mock dayjs to use a fixed date for consistent testing
 const mockDate = dayjs("2025-09-10"); // Wednesday, September 10, 2025
-jest.mock("dayjs", () => {
-  const originalDayjs = jest.requireActual("dayjs");
-  const mockDayjs = (date?: any) => {
+jest.mock("@core/util/date/dayjs", () => {
+  const { default: originalDayjs } = jest.requireActual(
+    "@core/util/date/dayjs",
+  );
+
+  const mockDayjs = (date?: unknown) => {
     if (date === undefined) {
       return originalDayjs(mockDate);
     }

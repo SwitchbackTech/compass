@@ -1,9 +1,8 @@
-import dayjs, { Dayjs } from "dayjs";
-import dayOfYear from "dayjs/plugin/dayOfYear";
-import isBetween from "dayjs/plugin/isBetween";
-import weekPlugin from "dayjs/plugin/weekOfYear";
 import { MS_IN_HR } from "@core/constants/core.constants";
 import { HOURS_AM_FORMAT } from "@core/constants/date.constants";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
+import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Category } from "@web/ducks/events/event.types";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import {
@@ -13,12 +12,6 @@ import {
   EVENT_PADDING_RIGHT,
   GRID_MARGIN_LEFT,
 } from "@web/views/Calendar/layout.constants";
-import { ACCEPTED_TIMES } from "../../constants/web.constants";
-import { Schema_GridEvent } from "../../types/web.event.types";
-
-dayjs.extend(dayOfYear);
-dayjs.extend(weekPlugin);
-dayjs.extend(isBetween);
 
 export const getAbsoluteLeftPosition = (
   category: Category,

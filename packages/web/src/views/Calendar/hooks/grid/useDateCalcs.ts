@@ -1,18 +1,13 @@
-import dayjs, { Dayjs } from "dayjs";
-import timezone from "dayjs/plugin/timezone";
-import utc from "dayjs/plugin/utc";
-import weekPlugin from "dayjs/plugin/weekOfYear";
 import { MutableRefObject } from "react";
 import { HOURS_AM_FORMAT } from "@core/constants/date.constants";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { roundToPrev } from "@web/common/utils/round/round.util";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
-import { GRID_X_START } from "@web/views/Calendar/layout.constants";
-
-dayjs.extend(weekPlugin);
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import {
+  GRID_TIME_STEP,
+  GRID_X_START,
+} from "@web/views/Calendar/layout.constants";
 
 export const useDateCalcs = (
   measurements: Measurements_Grid,

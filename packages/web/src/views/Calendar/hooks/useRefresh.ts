@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
 import { useEffect, useMemo } from "react";
+import dayjs from "@core/util/date/dayjs";
 import {
   computeSomedayEventsRequestFilter,
   toUTCOffset,
@@ -43,7 +43,6 @@ export const useRefresh = () => {
         case Sync_AsyncStateContextReason.SOCKET_SOMEDAY_EVENT_CHANGED: {
           const { startDate, endDate } = computeSomedayEventsRequestFilter(
             dayjs(start),
-            dayjs(end),
           );
 
           dispatch(

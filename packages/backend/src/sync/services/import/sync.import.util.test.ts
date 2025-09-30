@@ -1,19 +1,19 @@
-import dayjs from "dayjs";
 import { ObjectId } from "mongodb";
 import { gcalEvents } from "@core/__mocks__/v1/events/gcal/gcal.event";
 import { Event_Core } from "@core/types/event.types";
+import { gSchema$Event } from "@core/types/gcal";
+import dayjs from "@core/util/date/dayjs";
 import {
   createMockBaseEvent,
   createMockInstance,
 } from "@core/util/test/ccal.event.factory";
 import { generateGcalId } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
-import { syncExpired, syncExpiresSoon } from "@backend/sync/util/sync.util";
-import { gSchema$Event } from "../../../../../core/src/types/gcal";
 import {
   assignIdsToEvents,
   organizeGcalEventsByType,
-} from "./sync.import.util";
+} from "@backend/sync/services/import/sync.import.util";
+import { syncExpired, syncExpiresSoon } from "@backend/sync/util/sync.util";
 
 describe("categorizeGcalEvents", () => {
   const { toDelete, toUpdate } = organizeGcalEventsByType(gcalEvents.items);

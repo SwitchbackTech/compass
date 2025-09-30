@@ -1,15 +1,15 @@
-import dayjs from "dayjs";
 import { Categories_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
+import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
+import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
-import { assembleDefaultEvent } from "../event/event.util";
-import { createSomedayDraft } from "./someday.draft.util";
 
 // Mock assembleDefaultEvent since it makes external calls
 jest.mock("../event/event.util", () => ({
   assembleDefaultEvent: jest
     .fn()
-    .mockImplementation(async (category, startDate, endDate) => ({
+    .mockImplementation(async (_, startDate, endDate) => ({
       _id: "mock-id",
       user: "mock-user",
       title: "",

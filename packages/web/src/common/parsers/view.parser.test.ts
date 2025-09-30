@@ -1,23 +1,21 @@
-import dayjs from "dayjs";
-import isBetween from "dayjs/plugin/isBetween";
-import { Schema_WebEvent } from "../types/web.event.types";
-import { EventInViewParser } from "./view.parser";
-
-// Extend dayjs with isBetween plugin
-dayjs.extend(isBetween);
+import { ObjectId } from "bson";
+import { Origin, Priorities } from "@core/constants/core.constants";
+import dayjs from "@core/util/date/dayjs";
+import { EventInViewParser } from "@web/common/parsers/view.parser";
+import { Schema_WebEvent } from "@web/common/types/web.event.types";
 
 describe("EventInViewParser", () => {
   const createMockEvent = (
     overrides: Partial<Schema_WebEvent> = {},
   ): Schema_WebEvent => ({
-    _id: "test-event-id",
+    _id: new ObjectId().toString(),
     title: "Test Event",
     startDate: "2024-01-15T10:00:00Z",
     endDate: "2024-01-15T11:00:00Z",
     isAllDay: false,
-    origin: "COMPASS" as any,
-    priority: "MEDIUM" as any,
-    user: "test-user",
+    origin: Origin.COMPASS,
+    priority: Priorities.RELATIONS,
+    user: new ObjectId().toString(),
     ...overrides,
   });
 

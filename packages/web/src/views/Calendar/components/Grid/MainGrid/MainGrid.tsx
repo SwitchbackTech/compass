@@ -1,6 +1,6 @@
-import { Dayjs } from "dayjs";
 import React, { FC, MouseEvent, MutableRefObject } from "react";
 import { Categories_Event } from "@core/types/event.types";
+import { Dayjs } from "@core/util/date/dayjs";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { getHourLabels } from "@web/common/utils/datetime/web.date.util";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
@@ -9,18 +9,18 @@ import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { MainGridColumns } from "@web/views/Calendar/components/Grid//Columns/MainGridColumns";
+import { MainGridEvents } from "@web/views/Calendar/components/Grid/MainGrid/MainGridEvents";
+import {
+  StyledGridRow,
+  StyledGridWithTimeLabels,
+  StyledMainGrid,
+} from "@web/views/Calendar/components/Grid/MainGrid/styled";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { useDragEventSmartScroll } from "@web/views/Calendar/hooks/grid/useDragEventSmartScroll";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { DRAFT_DURATION_MIN } from "@web/views/Calendar/layout.constants";
-import { MainGridColumns } from "../Columns/MainGridColumns";
-import { MainGridEvents } from "./MainGridEvents";
-import {
-  StyledGridRow,
-  StyledGridWithTimeLabels,
-  StyledMainGrid,
-} from "./styled";
 
 interface Props {
   dateCalcs: DateCalcs;

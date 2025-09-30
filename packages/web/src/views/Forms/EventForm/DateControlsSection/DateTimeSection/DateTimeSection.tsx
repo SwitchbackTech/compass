@@ -1,15 +1,11 @@
-import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat";
 import React, { FC } from "react";
 import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
 import { AlignItems } from "@web/components/Flex/styled";
+import { DatePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/DatePickers";
+import { TimePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/TimePickers";
+import { StyledDateTimeFlex } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/styled";
 import { SetEventFormField } from "@web/views/Forms/EventForm/types";
-import { DatePickers } from "./DatePickers/DatePickers";
-import { TimePickers } from "./TimePicker/TimePickers";
-import { StyledDateTimeFlex } from "./styled";
-
-dayjs.extend(customParseFormat);
 
 export interface Props {
   bgColor: string;

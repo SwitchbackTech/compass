@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs from "@core/util/date/dayjs";
 import { arraysAreEqual } from "@web/__tests__/utils/web.test.util";
 import {
   getColorsByHour,
@@ -34,7 +34,7 @@ describe("getColorsByHour", () => {
     expect(new Set(colors).size).toBe(2);
   });
 
-  it("only higlights one hour (noon)", () => {
+  it("only highlights one hour (noon)", () => {
     const colors = getColorsByHour(12);
     const colorTotals = getColorTotals(colors);
     expect(colorTotals).toContain(23);
