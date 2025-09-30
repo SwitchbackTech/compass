@@ -33,11 +33,10 @@ messages:
       - Scope
       - Acceptance criteria
       - Business use case
-
       - Additional context
 testData:
-  issue: |
-    As a user, I want to be able to create recurring events in the calendar app so that I can easily schedule events that happen on a regular basis without having to manually enter each occurrence.
+  - issue: |
+      As a user, I want to be able to create recurring events in the calendar app so that I can easily schedule events that happen on a regular basis without having to manually enter each occurrence.
 evaluators:
   - name: Outputs a title
     string:
