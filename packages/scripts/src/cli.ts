@@ -10,7 +10,7 @@ import { ALL_PACKAGES, CATEGORY_VM } from "@scripts/common/cli.constants";
 import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
 
-class CompassCli {
+export default class CompassCLI {
   private program: Command;
   private validator: CliValidator;
 
@@ -22,7 +22,6 @@ class CompassCli {
 
   public async run() {
     const options = this.validator.getCliOptions();
-    const { force, user } = options;
     const cmd = this.program.args[0];
 
     switch (true) {
@@ -32,6 +31,7 @@ class CompassCli {
         break;
       }
       case cmd === "delete": {
+        const { force, user } = options;
         this.validator.validateDelete(options);
         await startDeleteFlow(user as string, force);
         break;
@@ -41,7 +41,10 @@ class CompassCli {
         break;
       }
       case cmd === "migrate":
+        await runMigrator(MigratorType.MIGRATION);
+        break;
       case cmd === "seed": {
+        await runMigrator(MigratorType.SEEDER);
         break;
       }
       default:
@@ -89,8 +92,7 @@ class CompassCli {
       .command("migrate")
       .helpOption(false)
       .allowUnknownOption(true)
-      .description("run database schema migrations")
-      .action(() => runMigrator(MigratorType.MIGRATION));
+      .description("run database schema migrations");
 
     program
       .enablePositionalOptions(true)
@@ -98,15 +100,17 @@ class CompassCli {
       .command("seed")
       .helpOption(false)
       .allowUnknownOption(true)
-      .description("run seed migrations to populate the database with data")
-      .action(() => runMigrator(MigratorType.SEEDER));
+      .description("run seed migrations to populate the database with data");
 
     return program;
   }
 }
 
-const cli = new CompassCli(process.argv);
-cli.run().catch((err) => {
-  console.log(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  const cli = new CompassCLI(process.argv);
+
+  cli.run().catch((err) => {
+    console.log(err);
+    process.exit(1);
+  });
+}
