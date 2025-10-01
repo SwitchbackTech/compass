@@ -21,7 +21,7 @@ async function migrations(
 
   const migrations = await Promise.all(
     files.map(async (path) => {
-      const { default: Migration } = (await import(path ?? "")) as {
+      const { default: Migration } = (await import(path)) as {
         default: { new (): RunnableMigration<MigrationContext> };
       };
 
