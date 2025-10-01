@@ -552,7 +552,7 @@ export const useDraftActions = (
 
       if (draft?.isAllDay) {
         // For all-day events, work with day differences
-        const diffDays = currTime.diff(origTime, "day");
+        const diffDays = currTime.diff(origTime, "day", true);
         updatedTime = currTime
           .add(dateChanged === "endDate" ? 1 : 0, "day")
           .format(YEAR_MONTH_DAY_FORMAT);
