@@ -567,10 +567,21 @@ export const useDraftActions = (
       }
 
       setDraft((_draft): Schema_GridEvent => {
-        return {
+        const result = {
           ..._draft!,
           ...(dateChanged ? { [dateChanged]: updatedTime } : {}),
         };
+
+        // All-day events end the day prior (EG: selected end date is "2020-01-01" but sent end date is "2020-01-02")
+        // Ensure that we would never have all day events that start and end in the same day, for consistency purposes.
+        // and less debugging headaches.
+        if (result.startDate === result.endDate) {
+          result.endDate = dayjs(result.endDate)
+            .add(1, "day")
+            .format("YYYY-MM-DD");
+        }
+
+        return result;
       });
     },
     [
