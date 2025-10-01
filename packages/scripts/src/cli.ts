@@ -1,13 +1,14 @@
 // sort-imports-ignore
-import { Command } from "commander";
-import "./init";
+import "@scripts/init";
 
-import { CliValidator } from "./cli.validator";
-import { runBuild } from "./commands/build";
-import { startDeleteFlow } from "./commands/delete";
-import { inviteWaitlist } from "./commands/invite";
-import { runSeed } from "./commands/seed";
-import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
+import { CliValidator } from "@scripts/cli.validator";
+import { runBuild } from "@scripts/commands/build";
+import { startDeleteFlow } from "@scripts/commands/delete";
+import { inviteWaitlist } from "@scripts/commands/invite";
+import { runMigrator } from "@scripts/commands/migrate";
+import { ALL_PACKAGES, CATEGORY_VM } from "@scripts/common/cli.constants";
+import { MigratorType } from "@scripts/common/cli.types";
+import { Command } from "commander";
 
 class CompassCli {
   private program: Command;
@@ -39,9 +40,8 @@ class CompassCli {
         await inviteWaitlist();
         break;
       }
+      case cmd === "migrate":
       case cmd === "seed": {
-        this.validator.validateSeed(options);
-        await runSeed(user as string, force);
         break;
       }
       default:
@@ -84,9 +84,23 @@ class CompassCli {
     program.command("invite").description("invite users from the waitlist");
 
     program
+      .enablePositionalOptions(true)
+      .passThroughOptions(true)
+      .command("migrate")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description("run database schema migrations")
+      .action(() => runMigrator(MigratorType.MIGRATION));
+
+    program
+      .enablePositionalOptions(true)
+      .passThroughOptions(true)
       .command("seed")
-      .description("seed the database with events")
-      .option("-u, --user <id>", "specify which user to seed events for");
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description("run seed migrations to populate the database with data")
+      .action(() => runMigrator(MigratorType.SEEDER));
+
     return program;
   }
 }
