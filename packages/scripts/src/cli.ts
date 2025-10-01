@@ -1,15 +1,16 @@
 // sort-imports-ignore
+import "@scripts/init";
+
+import { CliValidator } from "@scripts/cli.validator";
+import { runBuild } from "@scripts/commands/build";
+import { startDeleteFlow } from "@scripts/commands/delete";
+import { inviteWaitlist } from "@scripts/commands/invite";
+import { runMigrator } from "@scripts/commands/migrate";
+import { ALL_PACKAGES, CATEGORY_VM } from "@scripts/common/cli.constants";
+import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
-import "./init";
 
-import { CliValidator } from "./cli.validator";
-import { runBuild } from "./commands/build";
-import { startDeleteFlow } from "./commands/delete";
-import { inviteWaitlist } from "./commands/invite";
-import { runSeed } from "./commands/seed";
-import { ALL_PACKAGES, CATEGORY_VM } from "./common/cli.constants";
-
-class CompassCli {
+export default class CompassCLI {
   private program: Command;
   private validator: CliValidator;
 
@@ -21,7 +22,6 @@ class CompassCli {
 
   public async run() {
     const options = this.validator.getCliOptions();
-    const { force, user } = options;
     const cmd = this.program.args[0];
 
     switch (true) {
@@ -31,6 +31,7 @@ class CompassCli {
         break;
       }
       case cmd === "delete": {
+        const { force, user } = options;
         this.validator.validateDelete(options);
         await startDeleteFlow(user as string, force);
         break;
@@ -39,9 +40,11 @@ class CompassCli {
         await inviteWaitlist();
         break;
       }
+      case cmd === "migrate":
+        await runMigrator(MigratorType.MIGRATION);
+        break;
       case cmd === "seed": {
-        this.validator.validateSeed(options);
-        await runSeed(user as string, force);
+        await runMigrator(MigratorType.SEEDER);
         break;
       }
       default:
@@ -84,15 +87,30 @@ class CompassCli {
     program.command("invite").description("invite users from the waitlist");
 
     program
+      .enablePositionalOptions(true)
+      .passThroughOptions(true)
+      .command("migrate")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description("run database schema migrations");
+
+    program
+      .enablePositionalOptions(true)
+      .passThroughOptions(true)
       .command("seed")
-      .description("seed the database with events")
-      .option("-u, --user <id>", "specify which user to seed events for");
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description("run seed migrations to populate the database with data");
+
     return program;
   }
 }
 
-const cli = new CompassCli(process.argv);
-cli.run().catch((err) => {
-  console.log(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  const cli = new CompassCLI(process.argv);
+
+  cli.run().catch((err) => {
+    console.log(err);
+    process.exit(1);
+  });
+}
