@@ -1,9 +1,9 @@
-import dayjs from "dayjs";
 import React, { useEffect, useMemo, useState } from "react";
+import dayjs from "@core/util/date/dayjs";
 import {
   getColorsByHour,
   getHourLabels,
-} from "@web/common/utils/web.date.util";
+} from "@web/common/utils/datetime/web.date.util";
 import { Text } from "@web/components/Text";
 import { StyledDayTimes, StyledTimesLabel } from "./styled";
 

@@ -1,12 +1,14 @@
-import { Dayjs } from "dayjs";
 import React, { FC } from "react";
+import { Dayjs } from "@core/util/date/dayjs";
 import { AllDayRow } from "@web/views/Calendar/components/Grid/AllDayRow";
 import { MainGrid } from "@web/views/Calendar/components/Grid/MainGrid";
 import { EdgeNavigationIndicators } from "@web/views/Calendar/components/Grid/MainGrid/EdgeNavigationIndicators";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { useDragEdgeNavigation } from "@web/views/Calendar/hooks/grid/useDragEdgeNavigation";
-import { Refs_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import {
+  Measurements_Grid,
+  Refs_Grid,
+} from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 
 interface Props {
@@ -48,7 +50,6 @@ export const Grid: FC<Props> = ({
         measurements={measurements}
         today={today}
         weekProps={weekProps}
-        dragEdgeState={dragEdgeState}
       />
       <EdgeNavigationIndicators dragEdgeState={dragEdgeState} />
     </div>

@@ -4,7 +4,7 @@ import {
   Schema_SomedayEvent,
   Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { assembleGridEvent } from "@web/common/utils/event.util";
+import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
 

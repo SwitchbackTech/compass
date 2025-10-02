@@ -1,21 +1,21 @@
 import classNames from "classnames";
-import dayjs from "dayjs";
 import React, { useEffect, useRef } from "react";
 import ReactDatePicker, { ReactDatePickerProps } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { isDark } from "@core/util/color.utils";
+import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
-import { Flex } from "@web/components/Flex";
-import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
-import { Text } from "@web/components/Text";
-import { StyledInput } from "../Input/styled";
 import {
   ChangeDayButtonsStyledFlex,
   MonthContainerStyled,
   StyledDatePicker,
   StyledHeaderFlex,
   TodayStyledText,
-} from "./styled";
+} from "@web/components/DatePicker/styled";
+import { Flex } from "@web/components/Flex";
+import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
+import { StyledInput } from "@web/components/Input/styled";
+import { Text } from "@web/components/Text";
 
 export interface Props extends ReactDatePickerProps {
   animationOnToggle?: boolean;

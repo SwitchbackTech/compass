@@ -4,8 +4,8 @@
  * Datetime utilities that apply to both backend and web
  * should go in @core/
  */
-import dayjs, { Dayjs } from "dayjs";
 import { YMDHAM_FORMAT } from "@core/constants/date.constants";
+import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import {
   Params_DateChange,
   Params_TimeChange,
@@ -44,10 +44,10 @@ export const shouldAdjustComplimentTime = (
   changed: "start" | "end",
   vals: Params_TimeChange,
 ) => {
-  let shouldAdjust: boolean;
-  let duration: number;
-  let step: number;
-  let compliment: Dayjs;
+  let shouldAdjust!: boolean;
+  let duration!: number;
+  let step!: number;
+  let compliment!: Dayjs;
 
   const { oldStart, oldEnd, start, end } = vals;
 

@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { useCallback } from "react";
 import { DropResult } from "@hello-pangea/dnd";
 import {
@@ -12,6 +11,7 @@ import {
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import {
   COLUMN_MONTH,
@@ -19,14 +19,14 @@ import {
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
 import { Coordinates } from "@web/common/types/util.types";
-import { isEventFormOpen } from "@web/common/utils";
-import { assembleDefaultEvent } from "@web/common/utils/event.util";
-import { getX } from "@web/common/utils/grid.util";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
   getDatesByCategory,
-} from "@web/common/utils/web.date.util";
+} from "@web/common/utils/datetime/web.date.util";
+import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import { isEventFormOpen } from "@web/common/utils/form/form.util";
+import { getX } from "@web/common/utils/grid/grid.util";
 import {
   selectDraft,
   selectDraftActivity,
@@ -47,10 +47,13 @@ import {
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { parseSomedayEventBeforeSubmit } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
+import { showMigrationToast } from "@web/views/Calendar/components/Draft/sidebar/hooks/MigrationToast";
+import {
+  Setters_Sidebar,
+  State_Sidebar,
+} from "@web/views/Calendar/components/Draft/sidebar/hooks/useSidebarState";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { showMigrationToast } from "./MigrationToast";
-import { Setters_Sidebar, State_Sidebar } from "./useSidebarState";
 
 interface SomedayEventsColumns {
   [COLUMN_WEEK]: {

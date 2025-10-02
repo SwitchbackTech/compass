@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
 import { useEffect } from "react";
+import dayjs from "@core/util/date/dayjs";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { Setters_Draft, State_Draft_Local } from "../state/useDraftState";
 
@@ -51,7 +51,7 @@ export const useDraftEffects = (
       setDateBeingChanged(dateBeingChanged);
       setIsFormOpen(false);
     }
-  }, [dateBeingChanged, isResizing]);
+  }, [dateBeingChanged, isResizing, setDateBeingChanged, setIsFormOpen]);
 
   useEffect(() => {
     const isStaleDraft = !isDrafting;
@@ -88,5 +88,5 @@ export const useDraftEffects = (
         durationMin,
       });
     }
-  }, [isDragging]);
+  }, [isDragging, draft, setDragStatus, setIsFormOpen]);
 };

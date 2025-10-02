@@ -1,13 +1,13 @@
-import dayjs from "dayjs";
 import React, { MouseEvent, memo } from "react";
 import { Priorities } from "@core/constants/core.constants";
+import dayjs from "@core/util/date/dayjs";
 import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { isOptimisticEvent } from "@web/common/utils/event.util";
-import { getEventPosition } from "@web/common/utils/position.util";
+import { isOptimisticEvent } from "@web/common/utils/event/event.util";
+import { getEventPosition } from "@web/common/utils/position/position.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";

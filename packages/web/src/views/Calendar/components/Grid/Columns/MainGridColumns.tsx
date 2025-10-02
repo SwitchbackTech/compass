@@ -1,6 +1,6 @@
-import { Dayjs } from "dayjs";
 import React, { FC } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { TimesColumn } from "./TimesColumn";
@@ -59,7 +59,7 @@ export const MainGridColumns: FC<Props> = ({
 
         {weekDays.map((day, i) => (
           <StyledGridCol
-            color={colColors[i]}
+            color={colColors[i]!}
             key={day.format(YEAR_MONTH_DAY_FORMAT)}
           />
         ))}

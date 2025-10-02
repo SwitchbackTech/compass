@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { Logger } from "@core/logger/winston.logger";
 import {
   Payload_Sync_Events,
@@ -6,6 +5,7 @@ import {
   Result_Watch_Stop,
   Schema_Sync,
 } from "@core/types/sync.types";
+import dayjs from "@core/util/date/dayjs";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import {
@@ -13,6 +13,7 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
+import syncService from "@backend/sync/services/sync.service";
 import {
   getSync,
   hasUpdatedCompassEventRecently,
@@ -23,7 +24,6 @@ import {
   syncExpiresSoon,
 } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
-import syncService from "../sync.service";
 
 const logger = Logger("app:sync.maintenance");
 

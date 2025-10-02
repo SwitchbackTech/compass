@@ -1,14 +1,15 @@
-import dayjs from "dayjs";
+import { ObjectId } from "bson";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
   Categories_Event,
   CompassCoreEvent,
-  Schema_Event,
-  Schema_Event_Core,
+  WithCompassId,
 } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/auth.util";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import { getDatesByCategory } from "@web/common/utils/web.date.util";
+import { Schema_WebEvent } from "@web/common/types/web.event.types";
+import { getDatesByCategory } from "@web/common/utils/datetime/web.date.util";
 import { EventApi } from "@web/ducks/events/event.api";
 
 // Helper function to map task color to priority
@@ -57,7 +58,7 @@ const createEventFromTask = async function (
   task: { text: string; color: string },
   category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
   order: number,
-): Promise<CompassCoreEvent> {
+): Promise<WithCompassId<Omit<Schema_WebEvent, "_id">>> {
   const userId = await getUserId();
   const now = dayjs();
 
@@ -69,8 +70,8 @@ const createEventFromTask = async function (
     weekEnd,
   );
 
-  //@ts-expect-error - not supporting FE-generated _ids yet
   return {
+    _id: new ObjectId().toString(),
     title: task.text,
     description: "",
     startDate,
@@ -79,6 +80,7 @@ const createEventFromTask = async function (
     isAllDay: false,
     isSomeday: true,
     origin: Origin.COMPASS,
+    order,
     priority: getPriorityFromColor(task.color),
   };
 };
