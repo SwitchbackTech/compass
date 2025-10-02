@@ -61,9 +61,10 @@ export const prepEventBeforeSubmit = (
 
   // Ensure the event has a position field for grid validation
   // If it doesn't have one (e.g., all-day events), convert it to a grid event first
-  const eventWithPosition = _event.position
-    ? _event
-    : assembleGridEvent(_event);
+  const eventWithPosition =
+    _event.position && _event.position.isOverlapping
+      ? _event
+      : assembleGridEvent(_event);
 
   const event = validateGridEvent(eventWithPosition);
   return event;

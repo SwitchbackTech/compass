@@ -38,7 +38,7 @@ export const GridEventSchema = WebCoreEventSchema.extend({
     isOverlapping: z.boolean(),
     widthMultiplier: z.number(), // EG: 0.5 for half width
     horizontalOrder: z.number(),
-    dragOffset: z.object({ y: z.number() }),
+    dragOffset: z.object({ x: z.number(), y: z.number() }),
     initialX: z.number().nullable(),
     initialY: z.number().nullable(),
   }),

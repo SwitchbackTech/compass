@@ -360,12 +360,11 @@ export const useDraftActions = (
       ) => {
         if (!draft) return;
 
-        const x = getX(e as MouseEvent, isSidebarOpen);
+        const rawX = getX(e as MouseEvent, isSidebarOpen);
+        const x = draft.isAllDay ? rawX - draft.position.dragOffset.x : rawX;
         const startEndDurationMin = dragStatus?.durationMin || 0;
 
-        const y = draft.isAllDay
-          ? e.clientY
-          : e.clientY - draft.position.dragOffset.y;
+        const y = e.clientY - draft.position.dragOffset.y;
 
         let eventStart = dateCalcs.getDateByXY(
           x,
