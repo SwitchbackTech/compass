@@ -1,9 +1,9 @@
 import React from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
-import { Schema_GridEvent } from "@web/common/schemas/events/draft.event.schemas";
 import { PartialMouseEvent } from "@web/common/types/util.types";
-import { getEventDragOffset } from "@web/common/utils/event.util";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { getEventDragOffset } from "@web/common/utils/event/event.util";
 import { isLeftClick } from "@web/common/utils/mouse/mouse.util";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
