@@ -22,7 +22,6 @@ export class OnSubmitParser {
         this.event.user,
       );
     }
-    console.log("this.event", this.event);
     return prepEventBeforeSubmit(this.event, this.event.user);
   }
 }
