@@ -88,5 +88,5 @@ export const useDraftEffects = (
         durationMin,
       });
     }
-  }, [isDragging, draft, setDragStatus, setIsFormOpen]);
+  }, [isDragging]);
 };
