@@ -27,7 +27,12 @@ const AllTheProviders =
         <GoogleOAuthProvider clientId="anyClientId">
           <GlobalStyle />
           <ThemeProvider theme={theme}>
-            <BrowserRouter>
+            <BrowserRouter
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true,
+              }}
+            >
               <Provider store={store}>{children}</Provider>
             </BrowserRouter>
           </ThemeProvider>
