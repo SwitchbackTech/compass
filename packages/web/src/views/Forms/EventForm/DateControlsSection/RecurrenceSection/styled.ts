@@ -13,6 +13,9 @@ export const StyledRepeatRow = styled(Flex)`
   align-items: center;
   flex-basis: 100%;
   gap: ${({ theme }) => theme.spacing.s};
+  margin-bottom: 10px;
+  padding: 0;
+  width: 100%;
 `;
 
 export const StyledRepeatText = styled.span<{

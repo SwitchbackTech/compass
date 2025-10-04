@@ -23,13 +23,13 @@ import {
   StyledRepeatTextContainer,
   StyledWeekDay,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
+import { useRecurrence } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/useRecurrence/useRecurrence";
 import {
   FREQUENCY_MAP,
   FREQUENCY_OPTIONS,
   FrequencyValues,
   WEEKDAYS,
-  useRecurrence,
-} from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/utils";
+} from "./util/recurrence.constants";
 
 export interface RecurrenceSectionProps {
   bgColor: string;

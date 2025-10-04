@@ -3,7 +3,7 @@ import { Categories_Event } from "@core/types/event.types";
 import {
   DateTimeSection,
   Props as DateTimeSectionProps,
-} from "./DateTimeSection/DateTimeSection";
+} from "../DateTimeSection/DateTimeSection";
 import { StyledControlsSection } from "./styled";
 
 interface Props {

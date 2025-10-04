@@ -6,7 +6,7 @@ import { Categories_Event } from "@core/types/event.types";
 import { darken } from "@core/util/color.utils";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import { SomedayRecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/SomedayRecurrenceSection";
+import { SomedayRecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/SomedayRecurrenceSection/SomedayRecurrenceSection";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import {
