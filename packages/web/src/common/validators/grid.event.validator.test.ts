@@ -14,7 +14,7 @@ describe("validateGridEvent", () => {
       user: "user123",
       unexpectedProperty: "unexpectedValue",
       position: {
-        dragOffset: { y: 0 },
+        dragOffset: { y: 0, x: 0 },
         horizontalOrder: 0,
         initialX: 0,
         initialY: 0,
@@ -39,7 +39,7 @@ describe("validateGridEvent", () => {
       priority: Priorities.RELATIONS,
       user: "user123",
       position: {
-        dragOffset: { y: 0 },
+        dragOffset: { y: 0, x: 0 },
         horizontalOrder: 0,
         initialX: 0,
         initialY: 0,
@@ -61,7 +61,7 @@ describe("validateGridEvent", () => {
       user: "user1",
       hasFlipped: "true" as unknown as boolean, // invalid
       position: {
-        dragOffset: { y: 0 },
+        dragOffset: { y: 0, x: 0 },
         horizontalOrder: 0,
         initialX: 0,
         initialY: 0,

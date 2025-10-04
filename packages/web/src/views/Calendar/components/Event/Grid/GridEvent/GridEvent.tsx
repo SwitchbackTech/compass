@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import React, {
   ForwardedRef,
   MouseEvent,
@@ -7,6 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
+import dayjs from "@core/util/date/dayjs";
 import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,

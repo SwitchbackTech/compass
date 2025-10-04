@@ -24,7 +24,7 @@ export const getWeekEventsSlice = createAsyncSlice<
   Payload_GetEvents,
   Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>,
   unknown,
-  unknown,
+  AsyncState<Response_HttpPaginatedSuccess<string[]>, unknown>,
   typeof reducers
 >({
   name: "getWeekEvents",

@@ -1,8 +1,8 @@
-import dayjs from "dayjs";
 import fs from "fs";
 import path from "path";
 import { Schema_Event_Core } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
+import dayjs from "@core/util/date/dayjs";
 
 interface SyncLogData {
   updatedEvents: gSchema$Event[];

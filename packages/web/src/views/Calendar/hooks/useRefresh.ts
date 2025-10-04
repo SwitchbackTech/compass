@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
 import { useEffect, useMemo } from "react";
+import dayjs from "@core/util/date/dayjs";
 import {
   computeSomedayEventsRequestFilter,
   toUTCOffset,

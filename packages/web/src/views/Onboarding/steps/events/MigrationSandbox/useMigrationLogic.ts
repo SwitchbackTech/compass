@@ -1,9 +1,5 @@
-import dayjs from "dayjs";
-import isBetween from "dayjs/plugin/isBetween";
 import { useMemo } from "react";
-
-// Extend dayjs with isBetween plugin
-dayjs.extend(isBetween);
+import dayjs from "@core/util/date/dayjs";
 
 export interface CalendarDay {
   day: number;

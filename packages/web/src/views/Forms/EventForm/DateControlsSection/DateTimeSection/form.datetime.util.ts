@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import dayjs from "@core/util/date/dayjs";
 import { getTimeOptionByValue } from "@web/common/utils/datetime/web.date.util";
 
 export const getFormDates = (startDate: string, endDate: string) => {

@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
 import React, { useEffect, useMemo, useState } from "react";
+import dayjs from "@core/util/date/dayjs";
 import {
   getColorsByHour,
   getHourLabels,

@@ -1,11 +1,12 @@
-import dayjs from "dayjs";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
+  getCalendarHeadingLabel,
+  getWeekRangeLabel,
 } from "@web/common/utils/datetime/web.date.util";
-import { getCalendarHeadingLabel, getWeekRangeLabel } from "./web.date.util";
 
 describe("computeRelativeEventDateRange", () => {
   const baseEvent: Schema_Event = {

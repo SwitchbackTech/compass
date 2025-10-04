@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
 import { Categories_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { getDatesByCategory } from "@web/common/utils/datetime/web.date.util";
 
 describe("Date Categories: Month", () => {

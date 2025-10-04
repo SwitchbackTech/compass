@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import React, {
   KeyboardEvent,
   useCallback,
@@ -11,6 +10,7 @@ import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
+import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
   colorByPriority,

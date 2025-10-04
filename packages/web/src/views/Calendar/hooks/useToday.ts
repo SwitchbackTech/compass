@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
 import { useMemo } from "react";
+import dayjs from "@core/util/date/dayjs";
 
 export const useToday = () => {
   const getToday = (todayIndex: number) => {

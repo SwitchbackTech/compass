@@ -1,12 +1,5 @@
-import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat";
-import utc from "dayjs/plugin/utc";
-import weekOfYear from "dayjs/plugin/weekOfYear";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-
-dayjs.extend(utc);
-dayjs.extend(weekOfYear);
-dayjs.extend(customParseFormat); // for RFC formatting
+import dayjs from "@core/util/date/dayjs";
 
 export const FORMAT = {
   RFC5545: {

@@ -1,4 +1,4 @@
-import { Filter, ObjectId } from "mongodb";
+import { Filter, ObjectId, WithId } from "mongodb";
 import {
   Query_Event,
   Schema_Event,
@@ -7,11 +7,10 @@ import {
 import { isSameMonth } from "@core/util/date/date.util";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import mongoService from "@backend/common/services/mongo.service";
 
 export const getDeleteByIdFilter = (
   event: Schema_Event_Core,
-): Parameters<typeof mongoService.event.find>[0] => {
+): Filter<WithId<Omit<Schema_Event, "_id">>> => {
   if (!event._id) {
     throw error(
       GenericError.BadRequest,

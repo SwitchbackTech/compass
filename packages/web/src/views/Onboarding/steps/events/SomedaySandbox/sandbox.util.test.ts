@@ -1,5 +1,5 @@
-import dayjs from "dayjs";
-import { createAndSubmitEvents } from "./sandbox.util";
+import dayjs from "@core/util/date/dayjs";
+import { createAndSubmitEvents } from "@web/views/Onboarding/steps/events/SomedaySandbox/sandbox.util";
 
 // Mock dependencies
 jest.mock("@core/constants/core.constants", () => ({
@@ -60,10 +60,10 @@ describe("sandbox.util", () => {
 
   describe("createAndSubmitEvents", () => {
     it("should create and submit events for week and month tasks", async () => {
-      const { EventApi } = require("@web/ducks/events/event.api");
-      const {
-        getDatesByCategory,
-      } = require("@web/common/utils/datetime/web.date.util");
+      const { EventApi } = await import("@web/ducks/events/event.api");
+      const { getDatesByCategory } = await import(
+        "@web/common/utils/datetime/web.date.util"
+      );
 
       const weekTasks = [
         { text: "Week task 1", color: "#ff6b6b" },
@@ -86,11 +86,11 @@ describe("sandbox.util", () => {
     });
 
     it("should create events with correct structure for week tasks", async () => {
-      const { EventApi } = require("@web/ducks/events/event.api");
-      const { getUserId } = require("@web/auth/auth.util");
-      const {
-        getDatesByCategory,
-      } = require("@web/common/utils/datetime/web.date.util");
+      const { EventApi } = await import("@web/ducks/events/event.api");
+      const { getUserId } = await import("@web/auth/auth.util");
+      const { getDatesByCategory } = await import(
+        "@web/common/utils/datetime/web.date.util"
+      );
 
       const weekTasks = [{ text: "Test week task", color: "#ff6b6b" }];
       const monthTasks = [];
@@ -115,8 +115,7 @@ describe("sandbox.util", () => {
     });
 
     it("should create events with correct structure for month tasks", async () => {
-      const { EventApi } = require("@web/ducks/events/event.api");
-      const { getUserId } = require("@web/auth/auth.util");
+      const { EventApi } = await import("@web/ducks/events/event.api");
 
       const weekTasks = [];
       const monthTasks = [{ text: "Test month task", color: "#4ecdc4" }];
@@ -138,7 +137,7 @@ describe("sandbox.util", () => {
     });
 
     it("should map colors to correct priorities", async () => {
-      const { EventApi } = require("@web/ducks/events/event.api");
+      const { EventApi } = await import("@web/ducks/events/event.api");
 
       const weekTasks = [
         { text: "Work task", color: "#ff6b6b" }, // work
@@ -159,7 +158,7 @@ describe("sandbox.util", () => {
     });
 
     it("should handle empty task arrays", async () => {
-      const { EventApi } = require("@web/ducks/events/event.api");
+      const { EventApi } = await import("@web/ducks/events/event.api");
 
       await createAndSubmitEvents([], []);
 
@@ -167,7 +166,7 @@ describe("sandbox.util", () => {
     });
 
     it("should handle mixed week and month tasks", async () => {
-      const { EventApi } = require("@web/ducks/events/event.api");
+      const { EventApi } = await import("@web/ducks/events/event.api");
 
       const weekTasks = [{ text: "Week task", color: "#ff6b6b" }];
       const monthTasks = [{ text: "Month task", color: "#4ecdc4" }];
@@ -182,9 +181,9 @@ describe("sandbox.util", () => {
     });
 
     it("should call getDatesByCategory with correct parameters", async () => {
-      const {
-        getDatesByCategory,
-      } = require("@web/common/utils/datetime/web.date.util");
+      const { getDatesByCategory } = await import(
+        "@web/common/utils/datetime/web.date.util"
+      );
 
       const weekTasks = [{ text: "Week task", color: "#ff6b6b" }];
       const monthTasks = [{ text: "Month task", color: "#4ecdc4" }];
@@ -205,7 +204,7 @@ describe("sandbox.util", () => {
     });
 
     it("should propagate errors from EventApi.create", async () => {
-      const { EventApi } = require("@web/ducks/events/event.api");
+      const { EventApi } = await import("@web/ducks/events/event.api");
       const error = new Error("API Error");
       EventApi.create.mockRejectedValueOnce(error);
 
@@ -218,7 +217,7 @@ describe("sandbox.util", () => {
     });
 
     it("should propagate errors from getUserId", async () => {
-      const { getUserId } = require("@web/auth/auth.util");
+      const { getUserId } = await import("@web/auth/auth.util");
       const error = new Error("Auth Error");
       getUserId.mockRejectedValueOnce(error);
 

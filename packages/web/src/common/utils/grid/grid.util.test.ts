@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs from "@core/util/date/dayjs";
 import {
   AFTER_TMRW_MULTIPLE,
   FLEX_EQUAL,

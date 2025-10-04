@@ -68,7 +68,7 @@ export const getSomedayEventsSlice = createAsyncSlice<
   Payload_GetEvents,
   Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>,
   unknown,
-  never,
+  AsyncState<Response_HttpPaginatedSuccess<string[]>, unknown>,
   typeof reducers
 >({
   name: "getSomedayEvents",

@@ -30,7 +30,8 @@
     "test": "cross-env-shell TZ=Etc/UTC yarn jest",
     "test:backend": "yarn test backend",
     "test:core": "yarn test core",
-    "test:web": "yarn test web"
+    "test:web": "yarn test web",
+    "test:scripts": "yarn test scripts"
   },
   "dependencies": {
     "@compass/backend": "*",

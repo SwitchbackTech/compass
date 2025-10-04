@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs from "@core/util/date/dayjs";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export const adjustOverlappingEvents = (
@@ -10,14 +10,14 @@ export const adjustOverlappingEvents = (
   const processedEvents = new Set<string>();
 
   for (const event of adjustedEvents) {
-    if (processedEvents.has(event._id)) continue;
+    if (processedEvents.has(event._id!)) continue;
 
     const overlappingEventsSet = findOverlaps(event, adjustedEvents);
     const eventGroup = Array.from(overlappingEventsSet);
 
     if (eventGroup.length > 1) {
       adjustEventGroup(eventGroup);
-      eventGroup.forEach((e) => processedEvents.add(e._id));
+      eventGroup.forEach((e) => processedEvents.add(e._id!));
     }
   }
   return adjustedEvents;

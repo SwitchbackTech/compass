@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { normalize, schema } from "normalizr";
 import { SelectEffect, call, put, select } from "redux-saga/effects";
 import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
@@ -7,6 +6,7 @@ import {
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import {
   Schema_GridEvent,
   Schema_WebEvent,
@@ -69,7 +69,7 @@ export function* _assembleGridEvent({
   Schema_GridEvent,
   Schema_WebEvent
 > {
-  const currEvent = yield* getEventById(_id);
+  const currEvent = yield* getEventById(_id!);
 
   // First merge the current event with updated fields
   const eventWithUpdates = { ...currEvent, ...updatedFields, _id };

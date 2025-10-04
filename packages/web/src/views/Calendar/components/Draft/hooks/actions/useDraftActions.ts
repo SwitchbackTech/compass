@@ -360,12 +360,11 @@ export const useDraftActions = (
       ) => {
         if (!draft) return;
 
-        const x = getX(e as MouseEvent, isSidebarOpen);
+        const rawX = getX(e as MouseEvent, isSidebarOpen);
+        const x = draft.isAllDay ? rawX - draft.position.dragOffset.x : rawX;
         const startEndDurationMin = dragStatus?.durationMin || 0;
 
-        const y = draft.isAllDay
-          ? e.clientY
-          : e.clientY - draft.position.dragOffset.y;
+        const y = e.clientY - draft.position.dragOffset.y;
 
         let eventStart = dateCalcs.getDateByXY(
           x,
@@ -438,21 +437,20 @@ export const useDraftActions = (
     (currTime: dayjs.Dayjs) => {
       if (!draft || !dateBeingChanged) return false;
 
-      const _currTime = draft.isAllDay
-        ? currTime.format(YEAR_MONTH_DAY_FORMAT)
-        : currTime.format();
+      if (draft.isAllDay) {
+        return true;
+      }
+
+      const _currTime = currTime.format();
       const noChange = draft[dateBeingChanged] === _currTime;
 
       if (noChange) return false;
 
-      // For timed events, restrict to same day
-      if (!draft.isAllDay) {
-        const diffDay = currTime.day() !== dayjs(draft.startDate).day();
-        if (diffDay) return false;
+      const diffDay = currTime.day() !== dayjs(draft.startDate).day();
+      if (diffDay) return false;
 
-        const sameStart = currTime.format() === draft.startDate;
-        if (sameStart) return false;
-      }
+      const sameStart = currTime.format() === draft.startDate;
+      if (sameStart) return false;
 
       return true;
     },
@@ -461,8 +459,11 @@ export const useDraftActions = (
 
   const resize = useCallback(
     (e: MouseEvent) => {
+      if (!draft || !reduxDraft) return; // TS Guard
+
+      const _dateBeingChanged = dateBeingChanged as "startDate" | "endDate";
       const oppositeKey =
-        dateBeingChanged === "startDate" ? "endDate" : "startDate";
+        _dateBeingChanged === "startDate" ? "endDate" : "startDate";
 
       const flipIfNeeded = (currTime: Dayjs) => {
         let startDate = draft?.startDate;
@@ -529,7 +530,7 @@ export const useDraftActions = (
 
       const x = getX(e, isSidebarOpen);
       // For all-day events, use a fixed Y coordinate (0) because Y positioning is irrelevant:
-      const y = draft?.isAllDay ? 0 : e.clientY;
+      const y = draft.isAllDay ? 0 : e.clientY;
       const currTime = dateCalcs.getDateByXY(
         x,
         y,
@@ -541,18 +542,18 @@ export const useDraftActions = (
       }
 
       const justFlipped = flipIfNeeded(currTime);
-      const dateChanged = justFlipped ? oppositeKey : dateBeingChanged;
+      const dateChanged = justFlipped ? oppositeKey : _dateBeingChanged;
 
-      const origTime = dayjs(dateChanged ? draft?.[dateChanged] : null);
+      const origTime = dayjs(reduxDraft[dateChanged]).add(-1, "day");
 
       let updatedTime: string;
       let hasMoved: boolean;
 
       if (draft?.isAllDay) {
         // For all-day events, work with day differences
-        const diffDays = currTime.diff(origTime, "day");
-        updatedTime = origTime
-          .add(diffDays, "days")
+        const diffDays = currTime.diff(origTime, "day", true);
+        updatedTime = currTime
+          .add(dateChanged === "endDate" ? 1 : 0, "day")
           .format(YEAR_MONTH_DAY_FORMAT);
         hasMoved = diffDays !== 0;
       } else {
@@ -578,6 +579,7 @@ export const useDraftActions = (
       dateBeingChanged,
       dateCalcs,
       draft,
+      reduxDraft,
       isResizing,
       isSidebarOpen,
       isValidMovement,

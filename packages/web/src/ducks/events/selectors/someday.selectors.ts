@@ -1,21 +1,21 @@
-import dayjs from "dayjs";
 import { createSelector } from "@reduxjs/toolkit";
 import {
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
+import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { isProcessing } from "@web/common/store/helpers";
 import { Schema_SomedayEventsColumn } from "@web/common/types/web.event.types";
 import { categorizeSomedayEvents } from "@web/common/utils/event/someday.event.util";
+import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
+import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { RootState } from "@web/store";
-import { selectEventEntities } from "./event.selectors";
-import { selectDatesInView } from "./view.selectors";
 
 export const selectIsGetSomedayEventsProcessing = (state: RootState) =>
   isProcessing(state.events.getSomedayEvents);
 
-const selectSomedayIds = (state: RootState) =>
+const selectSomedayIds = (state: RootState): string[] =>
   state.events.getSomedayEvents.value?.data || [];
 
 export const selectSomedayEvents = createSelector(
