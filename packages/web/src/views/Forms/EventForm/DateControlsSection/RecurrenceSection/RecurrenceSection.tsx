@@ -8,7 +8,6 @@ import { brighten, darken } from "@core/util/color.utils";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { theme } from "@web/common/styles/theme";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
-import { ConditionalRender } from "@web/components/ConditionalRender/conditional-render";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { Flex } from "@web/components/Flex";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
@@ -66,22 +65,20 @@ const RecurrenceToggle = ({
 }) => {
   return (
     <StyledRepeatRow>
-      <ConditionalRender condition={!hasRecurrence}>
+      {!hasRecurrence ? (
         <StyledRepeatContainer onClick={toggleRecurrence}>
           <StyledRepeatText hasRepeat={hasRecurrence} tabIndex={0}>
             Does not repeat
           </StyledRepeatText>
         </StyledRepeatContainer>
-      </ConditionalRender>
-
-      <ConditionalRender condition={hasRecurrence}>
+      ) : (
         <StyledRepeatTextContainer onClick={toggleRecurrence}>
           <RepeatIcon />
           <StyledRepeatText hasRepeat={hasRecurrence}>
             Repeats every
           </StyledRepeatText>
         </StyledRepeatTextContainer>
-      </ConditionalRender>
+      )}
     </StyledRepeatRow>
   );
 };
@@ -382,43 +379,45 @@ export const RecurrenceSection = ({
         marginBottom: 10,
       }}
     >
-      <ConditionalRender condition={hasRecurrence}>
+      {hasRecurrence && (
         <EditRecurrence
           open={showForm}
           onClick={() => setShowForm((value) => !value)}
         />
-      </ConditionalRender>
+      )}
 
-      <ConditionalRender condition={hasRecurrence ? showForm : true}>
+      {(!hasRecurrence || showForm) && (
         <RecurrenceToggle
           hasRecurrence={hasRecurrence}
           toggleRecurrence={toggleRecurrence}
         />
-      </ConditionalRender>
+      )}
 
-      <ConditionalRender condition={hasRecurrence && showForm}>
-        <RecurrenceIntervalSelect
-          bgColor={bgColor}
-          initialValue={interval}
-          frequency={freq}
-          onChange={setInterval}
-          onFreqSelect={setFreq}
-          min={1}
-          max={12}
-        />
+      {hasRecurrence && showForm && (
+        <>
+          <RecurrenceIntervalSelect
+            bgColor={bgColor}
+            initialValue={interval}
+            frequency={freq}
+            onChange={setInterval}
+            onFreqSelect={setFreq}
+            min={1}
+            max={12}
+          />
 
-        <WeekDays bgColor={bgColor} value={weekDays} onChange={setWeekDays} />
+          <WeekDays bgColor={bgColor} value={weekDays} onChange={setWeekDays} />
 
-        <EndsOnDate
-          bgColor={bgColor}
-          inputColor={
-            hoverColorByPriority[event.priority ?? Priorities.UNASSIGNED]
-          }
-          until={until}
-          minDate={event.endDate}
-          setUntil={setUntil}
-        />
-      </ConditionalRender>
+          <EndsOnDate
+            bgColor={bgColor}
+            inputColor={
+              hoverColorByPriority[event.priority ?? Priorities.UNASSIGNED]
+            }
+            until={until}
+            minDate={event.endDate}
+            setUntil={setUntil}
+          />
+        </>
+      )}
     </StyledRepeatRow>
   );
 };
