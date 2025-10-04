@@ -27,6 +27,7 @@ export const WEEKDAYS: Array<keyof typeof WEEKDAY_RRULE_MAP> = [
   "friday",
   "saturday",
 ];
+
 export const WEEKDAY_RRULE_MAP = {
   monday: RRule.MO,
   tuesday: RRule.TU,

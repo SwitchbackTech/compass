@@ -29,7 +29,7 @@ import {
   FREQUENCY_OPTIONS,
   FrequencyValues,
   WEEKDAYS,
-} from "./util/recurrence.constants";
+} from "./constants/recurrence.constants";
 
 export interface RecurrenceSectionProps {
   bgColor: string;

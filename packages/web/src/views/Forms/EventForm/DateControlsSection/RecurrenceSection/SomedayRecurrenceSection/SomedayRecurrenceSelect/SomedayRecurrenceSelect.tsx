@@ -11,9 +11,13 @@ import { useTheme } from "styled-components";
 import { brighten, darken } from "@core/util/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
-import { FrequencyValues } from "../../util/recurrence.constants";
-import { SomedayFrequencyOption } from "../SomedayRecurrenceSection";
+import { FrequencyValues } from "../../constants/recurrence.constants";
 import { SelectContent } from "./styled";
+
+export type SomedayFrequencyOption = {
+  label: string;
+  value: FrequencyValues;
+};
 
 const SOMEDAY_FREQUENCY_OPTIONS: SomedayFrequencyOption[] = [
   { label: "Week", value: Frequency.WEEKLY },

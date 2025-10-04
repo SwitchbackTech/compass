@@ -17,8 +17,8 @@ import {
   FrequencyValues,
   WEEKDAYS,
   WEEKDAY_RRULE_MAP,
-  toWeekDays,
-} from "../util/recurrence.util";
+} from "../constants/recurrence.constants";
+import { toWeekDays } from "../util/recurrence.util";
 
 const WEEKDAY_LABELS_MAP: Record<keyof typeof WEEKDAY_RRULE_MAP, string> = {
   sunday: RRule.SU.toString(),
@@ -56,6 +56,7 @@ const WEEKDAY_MAP: Record<
   }),
   {},
 );
+
 export const useRecurrence = (
   event: Pick<Schema_Event, "startDate" | "endDate" | "recurrence">,
   { setEvent }: { setEvent: Dispatch<SetStateAction<Schema_Event | null>> },

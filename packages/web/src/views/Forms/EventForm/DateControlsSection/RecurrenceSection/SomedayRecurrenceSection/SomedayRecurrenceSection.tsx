@@ -1,15 +1,9 @@
-import React, { Dispatch, SetStateAction, useEffect } from "react";
-import { Frequency } from "rrule";
+import React, { Dispatch, SetStateAction } from "react";
 import { Schema_Event } from "@core/types/event.types";
 import { StyledRepeatRow } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
-import { FrequencyValues } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/util/recurrence.util";
 import { useRecurrence } from "../useRecurrence/useRecurrence";
 import { SomedayRecurrenceSelect } from "./SomedayRecurrenceSelect/SomedayRecurrenceSelect";
-
-export type SomedayFrequencyOption = {
-  label: string;
-  value: FrequencyValues;
-};
+import { SomedayFrequencyOption } from "./SomedayRecurrenceSelect/SomedayRecurrenceSelect";
 
 export interface SomedayRecurrenceSectionProps {
   bgColor: string;
@@ -23,15 +17,7 @@ export const SomedayRecurrenceSection = ({
   setEvent,
 }: SomedayRecurrenceSectionProps) => {
   const recurrenceHook = useRecurrence(event, { setEvent });
-  const { freq, setFreq, toggleRecurrence } = recurrenceHook;
-  const { hasRecurrence } = recurrenceHook;
-
-  // Set default frequency to Weekly for someday events if it's Daily
-  useEffect(() => {
-    if (hasRecurrence && freq === Frequency.DAILY) {
-      setFreq(Frequency.WEEKLY);
-    }
-  }, [hasRecurrence, freq, setFreq]);
+  const { freq, hasRecurrence, setFreq, toggleRecurrence } = recurrenceHook;
 
   const handleSelect = (option: SomedayFrequencyOption | null) => {
     if (!option) {
