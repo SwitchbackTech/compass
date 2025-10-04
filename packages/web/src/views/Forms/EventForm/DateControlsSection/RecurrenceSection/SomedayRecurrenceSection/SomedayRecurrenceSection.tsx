@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React, { Dispatch, SetStateAction, useRef } from "react";
 import { Frequency } from "rrule";
 import { Schema_Event } from "@core/types/event.types";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
@@ -27,6 +27,7 @@ export const SomedayRecurrenceSection = ({
   const [menuIsOpen, setMenuIsOpen] = React.useState<boolean | undefined>(
     undefined,
   );
+  const initialStateRef = useRef({ hasRecurrence, freq });
 
   const handleSelect = (option: SomedayFrequencyOption) => {
     if (option.value === Frequency.DAILY) {
@@ -55,8 +56,25 @@ export const SomedayRecurrenceSection = ({
   };
 
   const openSelect = () => {
+    initialStateRef.current = { hasRecurrence, freq };
     setIsEditing(true);
     setMenuIsOpen(true);
+  };
+
+  const cancelEdit = () => {
+    const { hasRecurrence: initialHasRecurrence, freq: initialFreq } =
+      initialStateRef.current;
+
+    if (hasRecurrence !== initialHasRecurrence) {
+      toggleRecurrence();
+    }
+
+    if (freq !== initialFreq) {
+      setFreq(initialFreq);
+    }
+
+    setIsEditing(false);
+    setMenuIsOpen(undefined);
   };
 
   const shouldShowSelect = hasRecurrence || isEditing;
@@ -71,6 +89,7 @@ export const SomedayRecurrenceSection = ({
           onSelect={handleSelect}
           menuIsOpen={menuIsOpen}
           onMenuClose={handleMenuClose}
+          onCancel={cancelEdit}
         />
       ) : (
         <StyledRepeatTextContainer

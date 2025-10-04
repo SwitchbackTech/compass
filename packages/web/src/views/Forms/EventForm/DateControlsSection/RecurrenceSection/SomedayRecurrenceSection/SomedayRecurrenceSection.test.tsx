@@ -249,4 +249,34 @@ describe("SomedayRecurrenceSection", () => {
     const value = await screen.findByTestId("someday-recurrence-value");
     expect(value).toHaveTextContent(/Repeats every Week/i);
   });
+
+  it("closes select on escape and restores original recurrence", async () => {
+    const eventWithRecurrence = {
+      ...baseSomedayEvent,
+      recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
+    };
+    renderSection(eventWithRecurrence);
+
+    const initialCalls = mockSetEvent.mock.calls.length;
+    const control = await openRecurrenceDropdown();
+    const input = control.querySelector("input") as HTMLElement | null;
+    fireEvent.keyDown(input ?? control, { key: "Escape", code: "Escape" });
+
+    expect(mockSetEvent.mock.calls.length).toBe(initialCalls);
+    expect(screen.getByText(/Repeats every Week/i)).toBeInTheDocument();
+  });
+
+  it("closes select on escape when no recurrence is set", async () => {
+    renderSection();
+
+    const initialCalls = mockSetEvent.mock.calls.length;
+    const control = await openRecurrenceDropdown();
+    const input = control.querySelector("input") as HTMLElement | null;
+    fireEvent.keyDown(input ?? control, { key: "Escape", code: "Escape" });
+
+    expect(mockSetEvent.mock.calls.length).toBe(initialCalls);
+    expect(
+      screen.getByRole("button", { name: /edit recurrence/i }),
+    ).toHaveTextContent(/^Repeat$/i);
+  });
 });

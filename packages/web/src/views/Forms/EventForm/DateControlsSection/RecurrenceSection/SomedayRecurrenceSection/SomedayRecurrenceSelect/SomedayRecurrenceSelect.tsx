@@ -3,6 +3,7 @@ import ReactSelect, { SelectInstance, SingleValueProps } from "react-select";
 import { components } from "react-select";
 import { Frequency } from "rrule";
 import { useTheme } from "styled-components";
+import { Key } from "ts-key-enum";
 import { brighten, darken } from "@core/util/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
@@ -32,6 +33,7 @@ export const SomedayRecurrenceSelect = ({
   onSelect,
   menuIsOpen,
   onMenuClose,
+  onCancel,
 }: {
   bgColor: string;
   hasRecurrence: boolean;
@@ -39,6 +41,7 @@ export const SomedayRecurrenceSelect = ({
   onSelect: (option: SomedayFrequencyOption) => void;
   menuIsOpen?: boolean;
   onMenuClose?: () => void;
+  onCancel?: () => void;
 }) => {
   const fontSize = theme.text.size.m;
   const bgBright = brighten(bgColor);
@@ -61,6 +64,13 @@ export const SomedayRecurrenceSelect = ({
   }, [menuIsOpen]);
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === Key.Escape) {
+      event.preventDefault();
+      event.stopPropagation();
+      onCancel?.();
+      return;
+    }
+
     if (event.key !== "Enter") {
       return;
     }
