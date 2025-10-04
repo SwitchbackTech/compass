@@ -74,7 +74,7 @@ export const SomedayRecurrenceSection = ({
         />
       ) : (
         <StyledRepeatTextContainer
-          data-testid="someday-recurrence-trigger"
+          aria-label="Edit recurrence"
           onClick={openSelect}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {

@@ -62,7 +62,7 @@ describe("SomedayRecurrenceSection", () => {
 
   it("renders without recurrence", () => {
     renderSection();
-    const trigger = screen.getByTestId("someday-recurrence-trigger");
+    const trigger = screen.getByRole("button", { name: /edit recurrence/i });
     expect(trigger).toHaveTextContent(/^Repeat$/i);
   });
 
@@ -72,7 +72,7 @@ describe("SomedayRecurrenceSection", () => {
     ) as HTMLElement | null;
 
     if (!control) {
-      const trigger = screen.getByTestId("someday-recurrence-trigger");
+      const trigger = screen.getByRole("button", { name: /edit recurrence/i });
       fireEvent.click(trigger);
       await screen.findByRole("combobox");
       control = document.querySelector(
@@ -195,7 +195,7 @@ describe("SomedayRecurrenceSection", () => {
 
     expect(mockSetEvent).toHaveBeenCalled();
     expect(
-      screen.getByTestId("someday-recurrence-trigger"),
+      screen.getByRole("button", { name: /edit recurrence/i }),
     ).toBeInTheDocument();
   });
 
