@@ -62,43 +62,57 @@ describe("SomedayRecurrenceSection", () => {
 
   it("renders without recurrence", () => {
     renderSection();
-    expect(screen.getByText(/Repeat/i)).toBeInTheDocument();
-    const placeholder = screen.getByTestId("someday-recurrence-placeholder");
-    expect(placeholder).toHaveAttribute("data-dimmed", "true");
+    const trigger = screen.getByTestId("someday-recurrence-trigger");
+    expect(trigger).toHaveTextContent(/^Repeat$/i);
   });
 
-  const openRecurrenceDropdown = () => {
-    const control = document.querySelector(
+  const openRecurrenceDropdown = async () => {
+    let control = document.querySelector(
       ".freq-select__control",
     ) as HTMLElement | null;
+
+    if (!control) {
+      const trigger = screen.getByTestId("someday-recurrence-trigger");
+      fireEvent.click(trigger);
+      await screen.findByRole("combobox");
+      control = document.querySelector(
+        ".freq-select__control",
+      ) as HTMLElement | null;
+    }
 
     if (!control) {
       throw new Error("Recurrence select control not found");
     }
 
-    fireEvent.mouseDown(control);
+    const input = control.querySelector("input") as HTMLElement | null;
+    fireEvent.keyDown(input ?? control, {
+      key: "ArrowDown",
+      code: "ArrowDown",
+    });
+    await screen.findByText("Week");
     return control;
   };
 
-  it("enables recurrence when selecting a frequency", () => {
+  it("enables recurrence when selecting a frequency", async () => {
     renderSection();
 
-    openRecurrenceDropdown();
+    await openRecurrenceDropdown();
 
     fireEvent.click(screen.getByText("Week"));
 
     expect(mockSetEvent).toHaveBeenCalled();
   });
 
-  it("shows only weekly and monthly frequency options when recurrence form is open", () => {
+  it("shows only weekly and monthly frequency options when recurrence form is open", async () => {
     const eventWithRecurrence = {
       ...baseSomedayEvent,
       recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
     };
     renderSection(eventWithRecurrence);
 
-    openRecurrenceDropdown();
+    await openRecurrenceDropdown();
 
+    expect(screen.getByText("Does not repeat")).toBeInTheDocument();
     expect(screen.getByText("Week")).toBeInTheDocument();
     expect(screen.getByText("Month")).toBeInTheDocument();
   });
@@ -134,37 +148,55 @@ describe("SomedayRecurrenceSection", () => {
 
     // Check that caret buttons are NOT present
     const caretButtons = screen.queryAllByRole("button");
-    // Only the select control's internal trigger (and optional clear button) should be present
-    expect(caretButtons.length).toBeLessThanOrEqual(2);
+    // Only the select control's internal trigger should be present
+    expect(caretButtons.length).toBeLessThanOrEqual(1);
   });
 
-  it("does not render end date controls", () => {
+  it("does not render end date controls", async () => {
     const eventWithRecurrence = {
       ...baseSomedayEvent,
       recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
     };
     renderSection(eventWithRecurrence);
 
-    openRecurrenceDropdown();
+    await openRecurrenceDropdown();
 
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
   });
 
-  it("does not show daily frequency option in dropdown", () => {
+  it("does not show daily frequency option in dropdown", async () => {
     const eventWithRecurrence = {
       ...baseSomedayEvent,
       recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
     };
     renderSection(eventWithRecurrence);
 
-    openRecurrenceDropdown();
+    await openRecurrenceDropdown();
 
     // Check that "Day" option is NOT available
     expect(screen.queryByText("Day")).not.toBeInTheDocument();
+    expect(screen.getByText("Does not repeat")).toBeInTheDocument();
 
     // But Week and Month should be available when dropdown is open
     // Note: The dropdown might not show options immediately in this test environment
     // This is a limitation of testing react-select components
+  });
+
+  it("disables recurrence when selecting does not repeat", async () => {
+    const eventWithRecurrence = {
+      ...baseSomedayEvent,
+      recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
+    };
+    renderSection(eventWithRecurrence);
+
+    await openRecurrenceDropdown();
+
+    fireEvent.click(screen.getByText("Does not repeat"));
+
+    expect(mockSetEvent).toHaveBeenCalled();
+    expect(
+      screen.getByTestId("someday-recurrence-trigger"),
+    ).toBeInTheDocument();
   });
 
   it("selects highlighted option on enter without submitting form", async () => {
@@ -208,11 +240,13 @@ describe("SomedayRecurrenceSection", () => {
 
     render(<FormWrapper />);
 
-    const control = openRecurrenceDropdown();
-    fireEvent.keyDown(control, { key: "Enter" });
+    const control = await openRecurrenceDropdown();
+    const input = control.querySelector("input") as HTMLElement | null;
+    fireEvent.keyDown(input ?? control, { key: "Enter", code: "Enter" });
 
     expect(mockSetEvent).toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(await screen.findByText(/Repeats every Week/i)).toBeInTheDocument();
+    const value = await screen.findByTestId("someday-recurrence-value");
+    expect(value).toHaveTextContent(/Repeats every Week/i);
   });
 });

@@ -1,10 +1,5 @@
-import { useMemo, useRef } from "react";
-import React from "react";
-import ReactSelect, {
-  PlaceholderProps,
-  SelectInstance,
-  SingleValueProps,
-} from "react-select";
+import React, { useEffect, useMemo, useRef } from "react";
+import ReactSelect, { SelectInstance, SingleValueProps } from "react-select";
 import { components } from "react-select";
 import { Frequency } from "rrule";
 import { useTheme } from "styled-components";
@@ -19,7 +14,13 @@ export type SomedayFrequencyOption = {
   value: FrequencyValues;
 };
 
+export const DO_NOT_REPEAT_OPTION: SomedayFrequencyOption = {
+  label: "Does not repeat",
+  value: Frequency.DAILY,
+};
+
 const SOMEDAY_FREQUENCY_OPTIONS: SomedayFrequencyOption[] = [
+  DO_NOT_REPEAT_OPTION,
   { label: "Week", value: Frequency.WEEKLY },
   { label: "Month", value: Frequency.MONTHLY },
 ];
@@ -29,25 +30,35 @@ export const SomedayRecurrenceSelect = ({
   hasRecurrence,
   freq,
   onSelect,
+  menuIsOpen,
+  onMenuClose,
 }: {
   bgColor: string;
   hasRecurrence: boolean;
   freq: FrequencyValues;
-  onSelect: (option: SomedayFrequencyOption | null) => void;
+  onSelect: (option: SomedayFrequencyOption) => void;
+  menuIsOpen?: boolean;
+  onMenuClose?: () => void;
 }) => {
   const fontSize = theme.text.size.m;
   const bgBright = brighten(bgColor);
   const bgDark = darken(bgColor);
-  const selectedOption = useMemo<SomedayFrequencyOption | null>(
+  const selectedOption = useMemo<SomedayFrequencyOption>(
     () =>
       hasRecurrence
         ? (SOMEDAY_FREQUENCY_OPTIONS.find((option) => option.value === freq) ??
-          SOMEDAY_FREQUENCY_OPTIONS[0])
-        : null,
+          SOMEDAY_FREQUENCY_OPTIONS[1])
+        : DO_NOT_REPEAT_OPTION,
     [hasRecurrence, freq],
   );
   const selectTheme = useTheme();
   const selectRef = useRef<SelectInstance<SomedayFrequencyOption, false>>(null);
+
+  useEffect(() => {
+    if (menuIsOpen) {
+      selectRef.current?.focus();
+    }
+  }, [menuIsOpen]);
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key !== "Enter") {
@@ -79,39 +90,43 @@ export const SomedayRecurrenceSelect = ({
     selectInstance.selectOption(focusedOption);
   };
 
-  const Placeholder = (
-    props: PlaceholderProps<SomedayFrequencyOption, false>,
-  ) => (
-    <components.Placeholder {...props}>
-      <SelectContent
-        dimmed
-        data-dimmed
-        data-testid="someday-recurrence-placeholder"
-      >
-        <RepeatIcon size={18} color={selectTheme.color.text.darkPlaceholder} />
-        <span>Repeat</span>
-      </SelectContent>
-    </components.Placeholder>
-  );
-
   const SingleValue = (
     props: SingleValueProps<SomedayFrequencyOption, false>,
-  ) => (
-    <components.SingleValue {...props}>
-      <SelectContent data-testid="someday-recurrence-value">
-        <RepeatIcon size={18} color={selectTheme.color.text.dark} />
-        <span>Repeats every {props.data.label}</span>
-      </SelectContent>
-    </components.SingleValue>
-  );
+  ) => {
+    const isDoNotRepeat = props.data.value === DO_NOT_REPEAT_OPTION.value;
+
+    return (
+      <components.SingleValue {...props}>
+        <SelectContent
+          data-testid="someday-recurrence-value"
+          data-dimmed={isDoNotRepeat}
+          dimmed={isDoNotRepeat}
+        >
+          <RepeatIcon
+            size={18}
+            color={
+              isDoNotRepeat
+                ? selectTheme.color.text.darkPlaceholder
+                : selectTheme.color.text.dark
+            }
+          />
+          <span>
+            {isDoNotRepeat
+              ? DO_NOT_REPEAT_OPTION.label
+              : `Repeats every ${props.data.label}`}
+          </span>
+        </SelectContent>
+      </components.SingleValue>
+    );
+  };
 
   return (
     <ReactSelect<SomedayFrequencyOption, false>
       options={SOMEDAY_FREQUENCY_OPTIONS}
       classNamePrefix="freq-select"
       value={selectedOption}
-      onChange={(option) => onSelect(option ?? null)}
-      isClearable
+      onChange={(option) => onSelect(option ?? DO_NOT_REPEAT_OPTION)}
+      isClearable={false}
       maxMenuHeight={100}
       placeholder="Repeat"
       theme={(theme) => ({
@@ -119,7 +134,6 @@ export const SomedayRecurrenceSelect = ({
         borderRadius: 4,
       })}
       components={{
-        Placeholder,
         SingleValue,
       }}
       styles={{
@@ -141,7 +155,7 @@ export const SomedayRecurrenceSelect = ({
         }),
         placeholder: (baseStyles) => ({
           ...baseStyles,
-          color: selectTheme.color.text.lightInactive,
+          color: selectTheme.color.text.dark,
         }),
         indicatorSeparator: () => ({
           visibility: "hidden",
@@ -176,6 +190,8 @@ export const SomedayRecurrenceSelect = ({
       }}
       ref={selectRef}
       onKeyDown={handleKeyDown}
+      menuIsOpen={menuIsOpen}
+      onMenuClose={onMenuClose}
     />
   );
 };

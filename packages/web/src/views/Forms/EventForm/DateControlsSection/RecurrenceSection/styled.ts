@@ -37,18 +37,27 @@ export const StyledRepeatText = styled.span<{
 
 export const StyledRepeatTextContainer = styled(Flex)`
   align-items: center;
-  border: 1px solid transparent;
   border-radius: ${({ theme }) => theme.shape.borderRadius};
   gap: 6px;
   justify-content: center;
   margin-right: 8px;
   padding: 2px 8px;
+  color: ${({ theme }) => theme.color.text.darkPlaceholder};
+  cursor: pointer;
+  transition:
+    color ${({ theme }) => theme.transition.default} ease,
+    filter ${({ theme }) => theme.transition.default} ease;
+
+  svg {
+    color: currentColor;
+    margin-right: ${({ theme }) => theme.spacing.xs};
+    transition: inherit;
+  }
 
   &:focus,
   &:hover {
-    border: 1px solid ${({ theme }) => theme.color.border.primaryDark};
-    filter: brightness(90%);
-    transition: border ${({ theme }) => theme.transition.default} ease;
+    color: ${({ theme }) => theme.color.text.dark};
+    filter: brightness(110%);
   }
 `;
 
