@@ -141,7 +141,7 @@ describe("SomedayRecurrenceSection", () => {
     expect(caretButtons.length).toBeLessThanOrEqual(1);
   });
 
-  it("shows end date picker", () => {
+  it("does not render end date controls", () => {
     const eventWithRecurrence = {
       ...baseSomedayEvent,
       recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
@@ -157,8 +157,7 @@ describe("SomedayRecurrenceSection", () => {
     // Click to open the recurrence form
     fireEvent.click(screen.getByText(/Edit Event Recurrence/i));
 
-    // Check that "Ends on:" is present
-    expect(screen.getByText("Ends on:")).toBeInTheDocument();
+    expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
   });
 
   it("does not show daily frequency option in dropdown", () => {
