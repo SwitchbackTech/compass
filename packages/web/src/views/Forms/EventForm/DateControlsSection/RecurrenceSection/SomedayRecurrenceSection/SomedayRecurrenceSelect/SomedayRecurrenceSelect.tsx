@@ -137,7 +137,6 @@ export const SomedayRecurrenceSelect = ({
       value={selectedOption}
       onChange={(option) => onSelect(option ?? DO_NOT_REPEAT_OPTION)}
       isClearable={false}
-      maxMenuHeight={100}
       placeholder="Repeat"
       theme={(theme) => ({
         ...theme,
@@ -174,6 +173,7 @@ export const SomedayRecurrenceSelect = ({
           ...baseStyles,
           fontSize,
           backgroundColor: bgColor,
+          overflowY: "hidden",
         }),
         option: (styles, { isDisabled, isFocused, isSelected }) => ({
           ...styles,
