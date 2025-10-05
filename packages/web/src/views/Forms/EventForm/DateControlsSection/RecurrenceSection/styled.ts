@@ -2,11 +2,16 @@ import styled from "styled-components";
 import { darken } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 
+export const StyledRepeatContainer = styled.div`
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
+  cursor: pointer;
+`;
+
 export const StyledRepeatRow = styled(Flex)`
-  align-items: flex-start;
+  align-items: center;
   flex-basis: 100%;
-  margin-bottom: 8px;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.s};
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
   padding: 0;
   width: 100%;
 `;
@@ -17,21 +22,23 @@ export const StyledRepeatText = styled.span<{
   display: inline-flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.xs};
+  border: 1px solid transparent;
   border-radius: ${({ theme }) => theme.shape.borderRadius};
   font-size: ${({ theme }) => theme.text.size.m};
   opacity: ${({ hasRepeat }) => (!hasRepeat ? 0.85 : 1)};
-  padding: 2px 0;
+  padding: 2px 8px;
   color: ${({ hasRepeat, theme }) =>
     hasRepeat ? theme.color.text.dark : theme.color.text.darkPlaceholder};
 
-  &:focus,
-  &:hover {
-    color: ${({ theme }) => theme.color.text.dark};
-    filter: brightness(110%);
-    cursor: pointer;
-
   svg {
     color: inherit;
+  }
+
+  &:focus,
+  &:hover {
+    cursor: pointer;
+    color: ${({ theme }) => theme.color.text.dark};
+    filter: brightness(110%);
   }
 `;
 

@@ -23,10 +23,9 @@ export const RecurrenceToggle = ({
   const handleClick = () => {
     if (!hasRecurrence) {
       toggleRecurrence();
-      onToggleForm();
-    } else {
-      onToggleForm();
     }
+
+    onToggleForm();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -39,21 +38,16 @@ export const RecurrenceToggle = ({
   return (
     <StyledRepeatRow>
       {!hasRecurrence || showForm ? (
-        <div onClick={toggleRecurrence}>
+        <StyledRepeatContainer onClick={handleClick}>
           <StyledRepeatText
             hasRepeat={hasRecurrence}
             tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                toggleRecurrence();
-              }
-            }}
+            onKeyDown={handleKeyDown}
           >
             <RepeatIcon size={18} />
             <span>Repeat</span>
           </StyledRepeatText>
-        </div>
+        </StyledRepeatContainer>
       ) : (
         <StyledRepeatTextContainer
           aria-label="Edit recurrence"
