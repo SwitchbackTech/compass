@@ -36,7 +36,7 @@ export const FreqSelect = ({
       options={options}
       classNamePrefix="freq-select"
       value={{ label, value }}
-      onChange={(option) => option && onFreqSelect(option.value)}
+      onChange={(option) => option && option.value !== undefined && onFreqSelect(option.value)}
       theme={(selectTheme) => ({
         ...selectTheme,
         borderRadius: 4,
