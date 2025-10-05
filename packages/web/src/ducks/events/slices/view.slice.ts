@@ -1,6 +1,6 @@
-import dayjs from "dayjs";
 import { Action } from "redux";
 import { createSlice } from "@reduxjs/toolkit";
+import dayjs from "@core/util/date/dayjs";
 
 interface State_View {
   dates: {

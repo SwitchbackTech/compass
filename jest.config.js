@@ -1,9 +1,42 @@
 /*
  * For a detailed explanation regarding each configuration property, visit:
  * https://jestjs.io/docs/configuration
+ *
  */
+
+/** @type { Exclude<Exclude<import("jest").Config["projects"], undefined>[number], string>} */
+const backendProject = {
+  displayName: "backend",
+  moduleNameMapper: {
+    "^@core(/(.*)$)?": "<rootDir>/packages/core/src/$1",
+    "^@backend/auth(/(.*)$)?": "<rootDir>/packages/backend/src/auth/$1",
+    "^@backend/calendar(/(.*)$)?": "<rootDir>/packages/backend/src/calendar/$1",
+    "^@backend/common(/(.*)$)?": "<rootDir>/packages/backend/src/common/$1",
+    "^@backend/dev(/(.*)$)?": "<rootDir>/packages/backend/src/dev/$1",
+    "^@backend/email(/(.*)$)?": "<rootDir>/packages/backend/src/email/$1",
+    "^@backend/event(/(.*)$)?": "<rootDir>/packages/backend/src/event/$1",
+    "^@backend/priority(/(.*)$)?": "<rootDir>/packages/backend/src/priority/$1",
+    "^@backend/servers(/(.*)$)?": "<rootDir>/packages/backend/src/servers/$1",
+    "^@backend/sync(/(.*)$)?": "<rootDir>/packages/backend/src/sync/$1",
+    "^@backend/user(/(.*)$)?": "<rootDir>/packages/backend/src/user/$1",
+    "^@backend/waitlist(/(.*)$)?": "<rootDir>/packages/backend/src/waitlist/$1",
+    "^@backend/__tests__(/(.*)$)?":
+      "<rootDir>/packages/backend/src/__tests__/$1",
+  },
+
+  setupFiles: ["<rootDir>/packages/core/src/__tests__/core.test.init.ts"],
+  setupFilesAfterEnv: [
+    // backend init intentionally here to accommodate @shelf/mongodb preset
+    "<rootDir>/packages/backend/src/__tests__/backend.test.init.ts",
+    "<rootDir>/packages/backend/src/__tests__/backend.test.start.ts",
+  ],
+  testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],
+  // A preset that is used as a base for Jest's configuration
+  preset: "@shelf/jest-mongodb", // https://jestjs.io/docs/mongodb,
+};
+
 /** @type { import("jest").Config } */
-module.exports = {
+const config = {
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 
@@ -85,7 +118,7 @@ module.exports = {
   // moduleNameMapper: {}
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
-  // modulePathIgnorePatterns: [],
+  modulePathIgnorePatterns: ["<rootDir>/build"],
 
   // Activates notifications for test results
   // notify: false,
@@ -97,29 +130,33 @@ module.exports = {
     {
       displayName: "core",
       moduleNameMapper: {
-        "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
+        "^@core(/(.*)$)?": "<rootDir>/packages/core/src/$1",
       },
       testEnvironment: "node",
       testMatch: ["<rootDir>/packages/core/**/?(*.)+(spec|test).[tj]s?(x)"],
       setupFiles: ["<rootDir>/packages/core/src/__tests__/core.test.init.ts"],
+      setupFilesAfterEnv: [
+        "<rootDir>/packages/core/src/__tests__/core.test.start.ts",
+      ],
     },
     {
       displayName: "web",
       moduleNameMapper: {
         "\\.(jpg|jpeg|png|gif)$":
           "<rootDir>/packages/web/src/__tests__/__mocks__/file.stub.js",
-        "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
-        "^@web/__tests__/(.*)$": "<rootDir>/packages/web/src/__tests__/$1",
-        "^@web/assets/(.*)$": "<rootDir>/packages/web/src/assets/$1",
-        "^@web/auth/(.*)$": "<rootDir>/packages/web/src/auth/$1",
-        "^@web/common/(.*)$": "<rootDir>/packages/web/src/common/$1",
-        "^@web/components/(.*)$": "<rootDir>/packages/web/src/components/$1",
-        "^@web/containers/(.*)$": "<rootDir>/packages/web/src/containers/$1",
-        "^@web/ducks/(.*)$": "<rootDir>/packages/web/src/ducks/$1",
-        "^@web/public/(.*)$": "<rootDir>/packages/web/src/public/$1",
-        "^@web/routers/(.*)$": "<rootDir>/packages/web/src/routers/",
-        "^@web/store/(.*)$": "<rootDir>/packages/web/src/store/$1",
-        "^@web/views/(.*)$": "<rootDir>/packages/web/src/views/$1",
+        "^@core(/(.*)$)?": "<rootDir>/packages/core/src/$1",
+        "^@web/__tests__(/(.*)$)?": "<rootDir>/packages/web/src/__tests__/$1",
+        "^@web/assets(/(.*)$)?": "<rootDir>/packages/web/src/assets/$1",
+        "^@web/auth(/(.*)$)?": "<rootDir>/packages/web/src/auth/$1",
+        "^@web/common(/(.*)$)?": "<rootDir>/packages/web/src/common/$1",
+        "^@web/components(/(.*)$)?": "<rootDir>/packages/web/src/components/$1",
+        "^@web/containers(/(.*)$)?": "<rootDir>/packages/web/src/containers/$1",
+        "^@web/ducks(/(.*)$)?": "<rootDir>/packages/web/src/ducks/$1",
+        "^@web/public(/(.*)$)?": "<rootDir>/packages/web/src/public/$1",
+        "^@web/routers(/(.*)$)?": "<rootDir>/packages/web/src/routers/",
+        "^@web/store((/(.*)$)?)?": "<rootDir>/packages/web/src/store/$1",
+        "^@web/socket(/(.*)$)?": "<rootDir>/packages/web/src/socket/$1",
+        "^@web/views(/(.*)$)?": "<rootDir>/packages/web/src/views/$1",
         "^.+\\.(css|less)$":
           "<rootDir>/packages/web/src/__tests__/__mocks__/css.stub.js",
         "\\.(svg)$":
@@ -140,35 +177,24 @@ module.exports = {
         "/node_modules/(?!react-dnd|dnd-core|@react-dnd)",
       ],
     },
+    backendProject,
     {
-      displayName: "backend",
+      displayName: "scripts",
       moduleNameMapper: {
-        "^@core/(.*)$": "<rootDir>/packages/core/src/$1",
-        "^@backend/auth/(.*)$": "<rootDir>/packages/backend/src/auth/$1",
-        "^@backend/calendar/(.*)$":
-          "<rootDir>/packages/backend/src/calendar/$1",
-        "^@backend/common/(.*)$": "<rootDir>/packages/backend/src/common/$1",
-        "^@backend/dev/(.*)$": "<rootDir>/packages/backend/src/dev/$1",
-        "^@backend/email/(.*)$": "<rootDir>/packages/backend/src/email/$1",
-        "^@backend/event/(.*)$": "<rootDir>/packages/backend/src/event/$1",
-        "^@backend/priority/(.*)$":
-          "<rootDir>/packages/backend/src/priority/$1",
-        "^@backend/servers/(.*)$": "<rootDir>/packages/backend/src/servers/$1",
-        "^@backend/sync/(.*)$": "<rootDir>/packages/backend/src/sync/$1",
-        "^@backend/user/(.*)$": "<rootDir>/packages/backend/src/user/$1",
-        "^@backend/waitlist/(.*)$":
-          "<rootDir>/packages/backend/src/waitlist/$1",
-        "^@backend/__tests__/(.*)$":
-          "<rootDir>/packages/backend/src/__tests__/$1",
+        ...backendProject.moduleNameMapper,
+        "^@scripts(/(.*)$)?": "<rootDir>/packages/scripts/src/$1",
+        "^@scripts/commands(/(.*)$)?":
+          "<rootDir>/packages/scripts/src/commands/$1",
+        "^@scripts/common(/(.*)$)?": "<rootDir>/packages/scripts/src/common/$1",
+        "^@scripts/migrations(/(.*)$)?":
+          "<rootDir>/packages/scripts/src/migrations/$1",
+        "^@scripts/seeders(/(.*)$)?":
+          "<rootDir>/packages/scripts/src/seeders/$1",
       },
 
-      setupFiles: ["<rootDir>/packages/core/src/__tests__/core.test.init.ts"],
-      setupFilesAfterEnv: [
-        // backend init intentionally here to accommodate @shelf/mongodb preset
-        "<rootDir>/packages/backend/src/__tests__/backend.test.init.ts",
-        "<rootDir>/packages/backend/src/__tests__/backend.test.start.ts",
-      ],
-      testMatch: ["<rootDir>/packages/backend/**/?(*.)+(spec|test).[tj]s?(x)"],
+      setupFiles: [...backendProject.setupFiles],
+      setupFilesAfterEnv: [...backendProject.setupFilesAfterEnv],
+      testMatch: ["<rootDir>/packages/scripts/**/?(*.)+(spec|test).[tj]s?(x)"],
       // A preset that is used as a base for Jest's configuration
       preset: "@shelf/jest-mongodb", // https://jestjs.io/docs/mongodb,
     },
@@ -192,6 +218,7 @@ module.exports = {
   // rootDir: 'packages/web/',
   // rootDir: 'packages/backend/',
   rootDir: "./",
+  passWithNoTests: true,
 
   // A list of paths to directories that Jest should use to search for files in
   // roots: [
@@ -267,3 +294,6 @@ module.exports = {
   // Whether to use watchman for file crawling
   // watchman: true,
 };
+
+// eslint-disable-next-line no-undef
+module.exports = config;

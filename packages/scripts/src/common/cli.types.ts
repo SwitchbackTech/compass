@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Logger } from "@core/logger/winston.logger";
 
 export const Schema_Options_Cli_Root = z.object({
   force: z.boolean().optional(),
@@ -22,3 +23,14 @@ export type Options_Cli = Options_Cli_Root &
   Options_Cli_Delete;
 
 export type Environment_Cli = "local" | "staging" | "production";
+
+export enum MigratorType {
+  SEEDER = "Seeder",
+  MIGRATION = "Migration",
+}
+
+export interface MigrationContext {
+  logger: ReturnType<typeof Logger>;
+  migratorType: MigratorType;
+  unsafe: boolean;
+}

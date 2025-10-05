@@ -4,6 +4,7 @@ import { mockEventSetSomeday1 } from "@core/__mocks__/v1/events/events.someday.1
 import { MapEvent, gEventToCompassEvent } from "@core/mappers/map.event";
 import { Schema_Event } from "@core/types/event.types";
 import { isBase, isExistingInstance } from "@core/util/event/event.util";
+import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
 import {
   cleanupTestDb,
   setupTestDb,
@@ -87,6 +88,31 @@ describe("Jan 2022: Many Formats", () => {
 
       const instances = result.filter(isExistingInstance);
       expect(instances).toHaveLength(gInstances.length);
+    });
+
+    it("excludes base calendar recurring events when someday=false", async () => {
+      // Create a base calendar recurring event (isSomeday: false)
+      const baseCalendarRecurringEvent = createMockBaseEvent({
+        user: userId,
+        isSomeday: false,
+      });
+
+      // Insert the test event
+      await mongoService.event.insertOne(baseCalendarRecurringEvent);
+
+      // Query for calendar events (not someday)
+      const filter = getReadAllFilter(userId, {
+        start: "2023-10-01",
+        end: "2023-10-31",
+      });
+      const result = await mongoService.event.find(filter).toArray();
+
+      // Should NOT include the base calendar recurring event
+      const baseCalendarRecurringEvents = result.filter(
+        (e) => isBase(e) && e.isSomeday === false,
+      );
+
+      expect(baseCalendarRecurringEvents).toHaveLength(0);
     });
   });
 
@@ -297,6 +323,28 @@ describe("Jan 2022: Many Formats", () => {
         expect(resultHMS).toHaveLength(1);
         expect(result[0]?.title).toBe("Multi-Month 2");
       });
+    });
+
+    it("includes base someday recurring events when someday query provided", async () => {
+      // Create a base someday recurring event
+      const baseSomedayRecurringEvent = createMockBaseEvent({
+        user: userId,
+        isSomeday: true,
+      });
+
+      // Insert the test event
+      await mongoService.event.insertOne(baseSomedayRecurringEvent);
+
+      // Query for someday events
+      const filter = getReadAllFilter(userId, { someday: "true" });
+      const result = await mongoService.event.find(filter).toArray();
+
+      // Should include the base someday recurring event
+      const baseSomedayRecurringEvents = result.filter(
+        (e) => isBase(e) && e.isSomeday === true,
+      );
+
+      expect(baseSomedayRecurringEvents.length).toBeGreaterThan(0);
     });
   });
 });

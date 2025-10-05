@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import React, {
   KeyboardEvent,
   useCallback,
@@ -11,15 +10,16 @@ import { OptionsOrDependencyArray } from "react-hotkeys-hook/dist/types";
 import { Key } from "ts-key-enum";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
+import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { SelectOption } from "@web/common/types/component.types";
-import { getCategory } from "@web/common/utils/event.util";
-import { mapToBackend } from "@web/common/utils/web.date.util";
-import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection";
+import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
+import { getCategory } from "@web/common/utils/event/event.util";
+import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
@@ -45,7 +45,6 @@ export const EventForm: React.FC<FormProps> = ({
   onSubmit,
   onDuplicate,
   setEvent,
-  disableSaveBtn,
   ...props
 }) => {
   const { title } = event || {};
@@ -135,14 +134,6 @@ export const EventForm: React.FC<FormProps> = ({
     setTimeout(() => {
       _onClose();
     }, 1);
-  };
-
-  const onDeleteForm = () => {
-    const confirmed = window.confirm(`Delete ${event.title || "this event"}?`);
-
-    if (!confirmed) return;
-
-    onDelete?.();
   };
 
   const onDuplicateEvent = useCallback(() => {
@@ -239,9 +230,10 @@ export const EventForm: React.FC<FormProps> = ({
         return;
       }
 
-      onDeleteForm();
+      onDelete();
     },
     hotkeysOptions,
+    [onDelete],
   );
 
   useHotkeys(
@@ -316,7 +308,7 @@ export const EventForm: React.FC<FormProps> = ({
             onConvert?.();
           }}
           onDuplicate={onDuplicateEvent}
-          onDelete={onDeleteForm}
+          onDelete={onDelete}
         />
       </StyledIconRow>
 
@@ -350,7 +342,6 @@ export const EventForm: React.FC<FormProps> = ({
       />
 
       <SaveSection
-        disableSaveBtn={disableSaveBtn}
         priority={priority}
         onSubmit={onSubmitForm}
         onCancel={onClose}

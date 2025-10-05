@@ -1,16 +1,21 @@
+import { ObjectId } from "bson";
 import { z } from "zod";
+import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import {
+  CompassCoreEventSchema,
   CompassEventRecurrence,
-  CoreEventSchema,
   Schema_Event,
+  idSchema,
 } from "@core/types/event.types";
 import { SelectOption } from "@web/common/types/component.types";
 
-export enum Recurrence_Selection {
-  NONE = "none",
-  WEEK = "week",
-  MONTH = "month",
-}
+export const optimisticIdSchema = z
+  .string()
+  .refine(
+    (id) =>
+      id.startsWith(`${ID_OPTIMISTIC_PREFIX}-`) &&
+      ObjectId.isValid(id.replace(`${ID_OPTIMISTIC_PREFIX}-`, "")),
+  );
 
 const WebEventRecurrence = z.union([
   z.undefined(),
@@ -18,38 +23,39 @@ const WebEventRecurrence = z.union([
   CompassEventRecurrence,
 ]);
 
-const WebCoreEventSchema = CoreEventSchema.omit({ recurrence: true }).extend({
+const WebCoreEventSchema = CompassCoreEventSchema.extend({
+  _id: z.union([idSchema, optimisticIdSchema]).optional(),
   recurrence: WebEventRecurrence,
+  order: z.number().optional(),
 });
 
 export const GridEventSchema = WebCoreEventSchema.extend({
   hasFlipped: z.boolean().optional(),
   isOpen: z.boolean().optional(),
   row: z.number().optional(),
+  order: z.number().optional(), // allow carry over from Someday events
+  position: z.object({
+    isOverlapping: z.boolean(),
+    widthMultiplier: z.number(), // EG: 0.5 for half width
+    horizontalOrder: z.number(),
+    dragOffset: z.object({ x: z.number(), y: z.number() }),
+    initialX: z.number().nullable(),
+    initialY: z.number().nullable(),
+  }),
 });
 
 export const SomedayEventSchema = WebCoreEventSchema.extend({
-  order: z.number(),
   isSomeday: z.literal(true),
+  order: z.number(),
 });
+
+export type Schema_WebEvent = z.infer<typeof WebCoreEventSchema>;
 
 export type Schema_SomedayEvent = z.infer<typeof SomedayEventSchema>;
 
-export interface Schema_GridEvent extends Schema_Event {
-  hasFlipped?: boolean;
-  isOpen?: boolean;
-  row?: number;
-  position: {
-    isOverlapping: boolean;
-    widthMultiplier: number; // EG: 0.5 for half width
-    horizontalOrder: number;
-    dragOffset: { y: number };
-    initialX: number | null;
-    initialY: number | null;
-  };
-}
+export type Schema_GridEvent = z.infer<typeof GridEventSchema>;
 
-export interface Schema_OptimisticEvent extends Schema_Event {
+export interface Schema_OptimisticEvent extends Schema_GridEvent {
   _id: string; // We guarantee that we have an _id for optimistic events, unlike `Schema_Event`
 }
 

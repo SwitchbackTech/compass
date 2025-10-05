@@ -1,8 +1,8 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleGridEvent } from "@web/common/utils/event.util";
-import { assignEventsToRow } from "@web/common/utils/grid.util";
+import { assembleGridEvent } from "@web/common/utils/event/event.util";
+import { assignEventsToRow } from "@web/common/utils/grid/grid.util";
 import { RootState } from "@web/store";
 
 type Schema_GridEvent_NoPosition = Omit<Schema_GridEvent, "position">;
@@ -11,12 +11,12 @@ export const selectAllDayEvents = createSelector(
   (state: RootState) => state.events.entities.value || {},
   (state: RootState) => state.events.getWeekEvents.value || [],
   (entities, weekIds) => {
-    if (!("data" in weekIds) || weekIds.data.length === 0) return [];
+    if (!("data" in weekIds) || weekIds.data?.length === 0) return [];
 
-    const weekEvents: Schema_GridEvent_NoPosition[] = weekIds.data.map(
+    const weekEvents: Schema_GridEvent_NoPosition[] = weekIds.data?.map(
       (_id: string) => entities[_id],
     );
-    const _allDayEvents: Schema_GridEvent_NoPosition[] = weekEvents.filter(
+    const _allDayEvents: Schema_GridEvent_NoPosition[] = weekEvents?.filter(
       (e: Schema_Event) => e !== undefined && e.isAllDay,
     );
     const { allDayEvents } = assignEventsToRow(_allDayEvents);
@@ -48,8 +48,8 @@ export const selectGridEvents = createSelector(
 export const selectRowCount = createSelector(
   selectAllDayEvents,
   (allDayEvents: Schema_GridEvent[]) => {
-    const _rowVals = allDayEvents.map((e) => e.row);
-    const rowsCount = _rowVals.length === 0 ? 1 : Math.max(..._rowVals);
+    const _rowVals = allDayEvents?.map((e) => e.row);
+    const rowsCount = (_rowVals ?? []).length === 0 ? 1 : Math.max(..._rowVals);
     return rowsCount;
   },
 );

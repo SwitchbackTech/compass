@@ -1,7 +1,7 @@
-import dayjs from "dayjs";
 import produce from "immer";
 import { createSlice } from "@reduxjs/toolkit";
 import { Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { createAsyncSlice } from "@web/common/store/helpers";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
@@ -14,7 +14,7 @@ import {
   Entities_Event,
   Payload_EditEvent,
   Payload_GetPaginatedEvents,
-} from "../event.types";
+} from "@web/ducks/events/event.types";
 
 const changeTimezones = produce((draft, newTimeZone) => {
   Object.keys(draft.value).map((k) => {

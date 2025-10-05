@@ -135,3 +135,29 @@ export const StyledEventScaler = styled.div.attrs<ScalerProps>((props) => {
   ${(props) => props.showResizeCursor && `cursor: row-resize`};
   ${({ zIndex }) => zIndex && `z-index: ${zIndex}`}
 `;
+
+export interface HorizontalScalerProps {
+  showResizeCursor: boolean;
+  left?: string;
+  right?: string;
+  zIndex?: number;
+}
+
+export const StyledEventHorizontalScaler = styled.div.attrs<HorizontalScalerProps>(
+  (props) => {
+    return {
+      left: props.left,
+      right: props.right,
+    };
+  },
+)<HorizontalScalerProps>`
+  position: absolute;
+  width: 4.5px;
+  height: 100%;
+  opacity: 0;
+  top: 0;
+  left: ${(props) => props.left};
+  right: ${(props) => props.right};
+  ${(props) => props.showResizeCursor && `cursor: col-resize`};
+  ${({ zIndex }) => zIndex && `z-index: ${zIndex}`}
+`;

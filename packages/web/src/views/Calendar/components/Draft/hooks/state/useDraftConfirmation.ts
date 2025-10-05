@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
@@ -8,14 +8,9 @@ export const useDraftConfirmation = ({
   state,
 }: Omit<ReturnType<typeof useDraftContext>, "setters" | "confirmation">) => {
   const { discard, deleteEvent, submit } = actions;
-  const { isRecurrenceChanged } = actions;
-  const { isInstance, isRecurrence, isEventDirty } = actions;
+  const { isInstance, isRecurrence } = actions;
   const { draft } = state;
-
-  const recurrenceChanged = useMemo(
-    () => isRecurrenceChanged(draft!),
-    [draft, isRecurrenceChanged],
-  );
+  const isSomeday = actions.isSomeday();
 
   const [
     isRecurrenceUpdateScopeDialogOpen,
@@ -45,9 +40,6 @@ export const useDraftConfirmation = ({
       const isRecurringEvent = isRecurrence();
       const instanceEvent = isInstance();
       const toStandAlone = instanceEvent && rule === null;
-      const dirty = isEventDirty(_draft);
-
-      if (!dirty) return discard();
 
       if (!toStandAlone && isRecurringEvent) {
         setFinalDraft(_draft);
@@ -69,7 +61,6 @@ export const useDraftConfirmation = ({
       submit,
       setRecurrenceUpdateScopeDialogOpen,
       setFinalDraft,
-      isEventDirty,
       isRecurrence,
       isInstance,
       discard,
@@ -79,15 +70,16 @@ export const useDraftConfirmation = ({
   const onDelete = useCallback(async () => {
     const isRecurringEvent = isRecurrence();
 
-    if (isRecurringEvent) {
+    if (isRecurringEvent && !isSomeday) {
       setFinalDraft(null);
 
       return setRecurrenceUpdateScopeDialogOpen(true);
     }
 
-    deleteEvent();
+    deleteEvent(RecurringEventUpdateScope.THIS_EVENT);
     discard();
   }, [
+    isSomeday,
     setRecurrenceUpdateScopeDialogOpen,
     setFinalDraft,
     deleteEvent,
@@ -99,7 +91,6 @@ export const useDraftConfirmation = ({
     isRecurrenceUpdateScopeDialogOpen,
     setRecurrenceUpdateScopeDialogOpen,
     draft,
-    recurrenceChanged,
     finalDraft,
     onSubmit,
     onDelete,

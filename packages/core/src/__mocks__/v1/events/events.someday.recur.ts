@@ -1,10 +1,11 @@
-import dayjs from "dayjs";
+import { ObjectId } from "bson";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 
-const userId = "user1";
-export const newsletterId = "64c266a87866ebd0a2bda49b";
-const walkDogId = "77c777a87866ebd0a2bda49b";
+export const userId = new ObjectId().toString();
+export const newsletterId = new ObjectId().toString();
+const walkDogId = new ObjectId().toString();
 
 const today = dayjs();
 
@@ -18,7 +19,7 @@ export const newsletterRecurrences: Schema_Event[] = [
     endDate: today.add(-13, "days").format(YEAR_MONTH_DAY_FORMAT),
   },
   {
-    _id: "instance1",
+    _id: new ObjectId().toString(),
     user: userId,
     title: "Send Newsletter | Instance | Past",
     isSomeday: true,
@@ -30,7 +31,7 @@ export const newsletterRecurrences: Schema_Event[] = [
     },
   },
   {
-    _id: "instance2a",
+    _id: new ObjectId().toString(),
     user: userId,
     title: "Send Newsletter | Instance2 | Starts Today",
     isSomeday: true,
@@ -42,7 +43,7 @@ export const newsletterRecurrences: Schema_Event[] = [
     },
   },
   {
-    _id: "instance2b",
+    _id: new ObjectId().toString(),
     user: userId,
     title: "Send Newsletter | Instance2 | Ends Today",
     isSomeday: true,
@@ -54,7 +55,7 @@ export const newsletterRecurrences: Schema_Event[] = [
     },
   },
   {
-    _id: "instance3",
+    _id: new ObjectId().toString(),
     user: userId,
     title: "Send Newsletter | Instance3 | Future1",
     isSomeday: true,
@@ -66,7 +67,7 @@ export const newsletterRecurrences: Schema_Event[] = [
     },
   },
   {
-    _id: "instance4",
+    _id: new ObjectId().toString(),
     user: userId,
     title: "Send Newsletter | Instance4 | Future2",
     isSomeday: true,
@@ -89,7 +90,7 @@ const walkDogRecurrences: Schema_Event[] = [
     endDate: today.add(-13, "days").format(YEAR_MONTH_DAY_FORMAT),
   },
   {
-    _id: "walkdog-instance1",
+    _id: new ObjectId().toString(),
     user: userId,
     title: "Send Newsletter | Instance | Past",
     isSomeday: true,

@@ -22,6 +22,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   children,
   onClick,
   bgColor,
+  type = "button",
   ...rest
 }) => {
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
@@ -48,6 +49,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
     // Handle Enter/Space for activation
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
+      e.stopPropagation();
       if (onClick) {
         // @ts-expect-error - onClick is a function that takes a MouseEvent
         onClick(e);
@@ -85,6 +87,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
           ref={itemRef}
           role="menuitem"
           tabIndex={tabIndex}
+          type={type}
           bgColor={bgColor}
         >
           {children}

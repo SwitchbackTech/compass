@@ -1,7 +1,9 @@
 import React from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
+import { PartialMouseEvent } from "@web/common/types/util.types";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { getEventDragOffset } from "@web/common/utils/event/event.util";
 import { isLeftClick } from "@web/common/utils/mouse/mouse.util";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
@@ -9,11 +11,11 @@ import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors"
 import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { AllDayEventMemo } from "@web/views/Calendar/components/Grid/AllDayRow/AllDayEvent";
+import { StyledEvents } from "@web/views/Calendar/components/Grid/AllDayRow/styled";
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { AllDayEventMemo } from "./AllDayEvent";
-import { StyledEvents } from "./styled";
 
 interface Props {
   measurements: Measurements_Grid;
@@ -43,11 +45,22 @@ export const AllDayEvents = ({
     );
   };
 
-  const handleDrag = (event: Schema_GridEvent) => {
+  const handleDrag = (
+    event: Schema_GridEvent,
+    moveEvent: PartialMouseEvent,
+  ) => {
     dispatch(
       draftSlice.actions.startDragging({
         category: Categories_Event.ALLDAY,
-        event,
+        event: {
+          ...event,
+          position: {
+            ...event.position,
+            dragOffset: getEventDragOffset(event, moveEvent),
+            initialX: moveEvent.clientX,
+            initialY: moveEvent.clientY,
+          },
+        },
       }),
     );
   };
@@ -57,6 +70,19 @@ export const AllDayEvents = ({
     handleClick,
     handleDrag,
   );
+
+  const resizeAllDayEvent = (
+    event: Schema_GridEvent,
+    dateToChange: "startDate" | "endDate",
+  ) => {
+    dispatch(
+      draftSlice.actions.startResizing({
+        category: Categories_Event.ALLDAY,
+        event,
+        dateToChange,
+      }),
+    );
+  };
 
   const renderEvents = () => {
     if (
@@ -80,6 +106,15 @@ export const AllDayEvents = ({
               return;
             }
             onMouseDown(e, event);
+          }}
+          onScalerMouseDown={(
+            event,
+            e,
+            dateToChange: "startDate" | "endDate",
+          ) => {
+            e.stopPropagation();
+            e.preventDefault();
+            resizeAllDayEvent(event, dateToChange);
           }}
         />
       );

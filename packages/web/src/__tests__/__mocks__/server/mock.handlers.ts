@@ -1,3 +1,4 @@
+import { ObjectId } from "bson";
 import { rest } from "msw";
 import {
   CLIMB,
@@ -7,8 +8,8 @@ import {
   MULTI_WEEK,
   TY_TIM,
 } from "@core/__mocks__/v1/events/events.misc";
-import { freshenEventStartEndDate } from "@web/__tests__/Calendar/calendar.render.test.utils";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
 
 export const globalHandlers = [
   rest.get(`${ENV_WEB.API_BASEURL}/event`, (req, res, ctx) => {
@@ -17,7 +18,7 @@ export const globalHandlers = [
       return res(
         ctx.json([
           {
-            _id: "somedayFoo",
+            _id: new ObjectId().toString(),
             description: "somesomesome",
             isSomeday: true,
             origin: "compass",

@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import React, {
   ForwardedRef,
   MouseEvent,
@@ -7,16 +6,17 @@ import React, {
   useMemo,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
+import dayjs from "@core/util/date/dayjs";
 import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { isOptimisticEvent } from "@web/common/utils/event.util";
-import { getLineClamp } from "@web/common/utils/grid.util";
+import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
+import { isOptimisticEvent } from "@web/common/utils/event/event.util";
+import { getLineClamp } from "@web/common/utils/grid/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
-import { getEventPosition } from "@web/common/utils/position.util";
-import { getTimesLabel } from "@web/common/utils/web.date.util";
+import { getEventPosition } from "@web/common/utils/position/position.util";
 import { Flex } from "@web/components/Flex";
 import {
   AlignItems,

@@ -1,11 +1,12 @@
-import dayjs from "dayjs";
-import { Collection, ObjectId } from "mongodb";
+import { ObjectId } from "mongodb";
 import {
   mockSomedayRecurrences,
   newsletterId,
+  userId,
 } from "@core/__mocks__/v1/events/events.someday.recur";
+import { Origin, Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import {
   cleanupTestDb,
   setupTestDb,
@@ -14,17 +15,16 @@ import mongoService from "@backend/common/services/mongo.service";
 import { getDeleteByIdFilter } from "@backend/event/services/event.service.util";
 
 describe("Delete Events", () => {
-  let eventCollection: Collection<Schema_Event>;
-
-  beforeAll(async () => {
-    await setupTestDb();
-
-    eventCollection = mongoService.db.collection("event.delete.test");
-  });
+  beforeAll(setupTestDb);
 
   beforeEach(async () => {
-    await eventCollection.deleteMany({});
-    await eventCollection.insertMany([...mockSomedayRecurrences]);
+    await mongoService.event.deleteMany({});
+    await mongoService.event.insertMany(
+      mockSomedayRecurrences.map((event) => ({
+        ...event,
+        _id: new ObjectId(event._id),
+      })),
+    );
   });
 
   afterAll(cleanupTestDb);
@@ -35,17 +35,19 @@ describe("Delete Events", () => {
       const instanceId = new ObjectId();
 
       const filter = getDeleteByIdFilter({
-        _id: instanceId,
-        user: "user1",
+        _id: instanceId.toString(),
+        user: userId,
         recurrence: { rule: ["foo"], eventId: newsletterId },
         startDate: today.format(YEAR_MONTH_DAY_FORMAT),
         endDate: today.add(6, "days").format(YEAR_MONTH_DAY_FORMAT),
+        origin: Origin.COMPASS,
+        priority: Priorities.SELF,
       });
 
-      const { deletedCount } = await eventCollection.deleteMany(filter);
+      const { deletedCount } = await mongoService.event.deleteMany(filter);
       expect(deletedCount).not.toBe(0);
 
-      const _events = await eventCollection.find({ user: "user1" }).toArray();
+      const _events = await mongoService.event.find({ user: userId }).toArray();
       const events = _events.map((e) => e.title);
 
       expect(events.includes("Send Newsletter | Base | Past")).toBe(true);

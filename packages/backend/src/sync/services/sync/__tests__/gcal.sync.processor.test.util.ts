@@ -1,5 +1,3 @@
-import dayjs from "dayjs";
-import timezone from "dayjs/plugin/timezone";
 import { Filter, ObjectId, WithId } from "mongodb";
 import {
   Event_Core,
@@ -9,6 +7,7 @@ import {
 } from "@core/types/event.types";
 import { gSchema$EventBase, gSchema$EventInstance } from "@core/types/gcal";
 import { Schema_User } from "@core/types/user.types";
+import dayjs from "@core/util/date/dayjs";
 import {
   categorizeEvents,
   isBase,
@@ -20,8 +19,6 @@ import { createRecurrenceSeries } from "@backend/__tests__/mocks.db/ccal.mock.db
 import { mockRecurringGcalInstances } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { Event_API } from "@backend/common/types/backend.event.types";
 import { validateEventSafely } from "@backend/common/validators/validate.event";
-
-dayjs.extend(timezone);
 
 /** Utility assertions for the gcal sync processor tests */
 export const baseHasRecurrenceRule = async (

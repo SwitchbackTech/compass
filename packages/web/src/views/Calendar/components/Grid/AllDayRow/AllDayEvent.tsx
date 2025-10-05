@@ -1,17 +1,20 @@
-import dayjs from "dayjs";
 import React, { MouseEvent, memo } from "react";
 import { Priorities } from "@core/constants/core.constants";
-import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
+import dayjs from "@core/util/date/dayjs";
+import {
+  DATA_EVENT_ELEMENT_ID,
+  ZIndex,
+} from "@web/common/constants/web.constants";
 import { Schema_GridEvent } from "@web/common/types/web.event.types";
-import { isOptimisticEvent } from "@web/common/utils/event.util";
-import { getEventPosition } from "@web/common/utils/position.util";
+import { isOptimisticEvent } from "@web/common/utils/event/event.util";
+import { getEventPosition } from "@web/common/utils/position/position.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { StyledEvent } from "../../Event/styled";
+import { StyledEvent, StyledEventHorizontalScaler } from "../../Event/styled";
 
 interface Props {
   event: Schema_GridEvent;
@@ -20,6 +23,11 @@ interface Props {
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
   onMouseDown: (e: MouseEvent, event: Schema_GridEvent) => void;
+  onScalerMouseDown?: (
+    event: Schema_GridEvent,
+    e: MouseEvent,
+    dateToChange: "startDate" | "endDate",
+  ) => void;
 }
 
 const AllDayEvent = ({
@@ -29,6 +37,7 @@ const AllDayEvent = ({
   startOfView,
   endOfView,
   onMouseDown,
+  onScalerMouseDown,
 }: Props) => {
   const position = getEventPosition(
     event,
@@ -73,6 +82,30 @@ const AllDayEvent = ({
           <SpaceCharacter />
         </Text>
       </Flex>
+      {onScalerMouseDown && (
+        <>
+          <StyledEventHorizontalScaler
+            showResizeCursor={!isPlaceholder && !isOptimistic}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              onScalerMouseDown(event, e, "startDate");
+            }}
+            // -0.25px is a small offset for displaying the scaler, since we want the scaler to be slightly offset from the event
+            left="-0.25px"
+            zIndex={ZIndex.LAYER_4}
+          />
+
+          <StyledEventHorizontalScaler
+            right="-0.25px"
+            showResizeCursor={!isPlaceholder && !isOptimistic}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              onScalerMouseDown(event, e, "endDate");
+            }}
+            zIndex={ZIndex.LAYER_4}
+          />
+        </>
+      )}
     </StyledEvent>
   );
 };

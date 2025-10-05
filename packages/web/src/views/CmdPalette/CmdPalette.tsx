@@ -12,13 +12,13 @@ import {
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { isEventFormOpen } from "@web/common/utils";
 import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
-import { onEventTargetVisibility } from "@web/common/utils/event-target-visibility.util";
+import { onEventTargetVisibility } from "@web/common/utils/event/event-target-visibility.util";
+import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
