@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
 import { Priorities } from "@core/constants/core.constants";
@@ -66,7 +66,10 @@ describe("SomedayRecurrenceSection", () => {
     expect(trigger).toHaveTextContent(/^Repeat$/i);
   });
 
-  const openRecurrenceDropdown = async () => {
+  const openRecurrenceDropdown = async (options?: {
+    focusOption?: boolean;
+  }) => {
+    const { focusOption = true } = options ?? {};
     let control = document.querySelector(
       ".freq-select__control",
     ) as HTMLElement | null;
@@ -84,12 +87,15 @@ describe("SomedayRecurrenceSection", () => {
       throw new Error("Recurrence select control not found");
     }
 
-    const input = control.querySelector("input") as HTMLElement | null;
-    fireEvent.keyDown(input ?? control, {
-      key: "ArrowDown",
-      code: "ArrowDown",
-    });
-    await screen.findByText("Week");
+    if (focusOption) {
+      const input = control.querySelector("input") as HTMLElement | null;
+      fireEvent.keyDown(input ?? control, {
+        key: "ArrowDown",
+        code: "ArrowDown",
+      });
+      await screen.findByText("Week");
+    }
+
     return control;
   };
 
@@ -275,6 +281,57 @@ describe("SomedayRecurrenceSection", () => {
     fireEvent.keyDown(input ?? control, { key: "Escape", code: "Escape" });
 
     expect(mockSetEvent.mock.calls.length).toBe(initialCalls);
+    expect(
+      screen.getByRole("button", { name: /edit recurrence/i }),
+    ).toHaveTextContent(/^Repeat$/i);
+  });
+
+  it("selects current option on enter without submitting form", async () => {
+    const onSubmit = jest.fn();
+    const FormWrapper = () => {
+      const [event, setEvent] = useState<Schema_Event>(baseSomedayEvent);
+
+      const handleSetEvent = useCallback(
+        (update: React.SetStateAction<Schema_Event | null>) => {
+          mockSetEvent(update);
+          setEvent((prev) => {
+            const next =
+              typeof update === "function"
+                ? (
+                    update as (
+                      value: Schema_Event | null,
+                    ) => Schema_Event | null
+                  )(prev)
+                : update;
+            return next ?? prev;
+          });
+        },
+        [],
+      );
+
+      return (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSubmit();
+          }}
+        >
+          <SomedayRecurrenceSection
+            bgColor="#fff"
+            event={event}
+            setEvent={handleSetEvent}
+          />
+        </form>
+      );
+    };
+
+    render(<FormWrapper />);
+
+    const control = await openRecurrenceDropdown({ focusOption: false });
+    fireEvent.keyDown(control, { key: "Enter", code: "Enter" });
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(mockSetEvent.mock.calls).toHaveLength(0);
     expect(
       screen.getByRole("button", { name: /edit recurrence/i }),
     ).toHaveTextContent(/^Repeat$/i);

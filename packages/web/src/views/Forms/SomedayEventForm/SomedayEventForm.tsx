@@ -40,9 +40,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     if (e.key === Key.Backspace) {
       e.stopPropagation();
     }
-    if (e.metaKey && e.key === Key.Enter) {
-      e.preventDefault();
-      _onSubmit();
+    if (e.key === Key.Enter) {
+      if (e.metaKey) {
+        e.preventDefault();
+        _onSubmit();
+      }
     }
   };
 
