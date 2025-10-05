@@ -24,11 +24,23 @@ export const mockLocalStorage = () => {
 };
 
 export const mockResizeObserver = () => {
-  global.ResizeObserver = jest.fn().mockImplementation(() => ({
-    observe: jest.fn(),
-    unobserve: jest.fn(),
-    disconnect: jest.fn(),
-  }));
+  class ResizeObserverMock {
+    callback: (...args: unknown[]) => void;
+
+    constructor(callback: (...args: unknown[]) => void) {
+      this.callback = callback;
+    }
+
+    observe = jest.fn();
+    unobserve = jest.fn();
+    disconnect = jest.fn();
+  }
+
+  Object.defineProperty(globalThis, "ResizeObserver", {
+    configurable: true,
+    writable: true,
+    value: ResizeObserverMock,
+  });
 };
 
 export const mockScroll = () => {
