@@ -56,7 +56,6 @@ describe("TimezoneSchema", () => {
       const invalidHex = faker.color.rgb({ prefix: "" });
       const result = RGBHexSchema.safeParse(invalidHex);
 
-      console.log(invalidHex, result);
       expect(result.success).toBe(false);
       expect(result.error).toBeInstanceOf(ZodError);
       expect(result.error?.errors).toEqual([

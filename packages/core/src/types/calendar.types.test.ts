@@ -55,7 +55,7 @@ describe("Calendar Types", () => {
       expect(() => GoogleCalendarMetadataSchema.parse(calendar)).not.toThrow();
     });
 
-    it("always sets the calendar prover as google", () => {
+    it("always sets the calendar provider as google", () => {
       const result = GoogleCalendarMetadataSchema.safeParse(gCalendar);
 
       expect(result.success).toBe(true);
