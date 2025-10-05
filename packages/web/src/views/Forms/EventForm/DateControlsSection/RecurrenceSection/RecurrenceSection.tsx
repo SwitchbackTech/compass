@@ -37,46 +37,64 @@ export interface RecurrenceSectionProps {
   setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
 }
 
-const EditRecurrence = ({
-  open,
-  onClick,
-}: {
-  open: boolean;
-  onClick: () => void;
-}) => {
-  return (
-    <StyledRepeatRow
-      style={{ cursor: "pointer", marginBottom: 10 }}
-      onClick={onClick}
-    >
-      <StyledText size="l" withBottomBorder>
-        {open ? "Hide Event Recurrence" : "Edit Event Recurrence"}
-      </StyledText>
-    </StyledRepeatRow>
-  );
-};
-
 const RecurrenceToggle = ({
   hasRecurrence,
   toggleRecurrence,
+  showForm,
+  onToggleForm,
 }: {
   hasRecurrence: boolean;
   toggleRecurrence: () => void;
+  showForm: boolean;
+  onToggleForm: () => void;
 }) => {
+  const handleClick = () => {
+    if (!hasRecurrence) {
+      toggleRecurrence();
+      onToggleForm();
+    } else {
+      onToggleForm();
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    // Prevent ENTER from closing the form when the repeat menu is open
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleClick();
+    } else if (event.key === " ") {
+      event.preventDefault();
+      handleClick();
+    }
+  };
+
   return (
     <StyledRepeatRow>
-      {!hasRecurrence ? (
+      {!hasRecurrence || showForm ? (
         <StyledRepeatContainer onClick={toggleRecurrence}>
-          <StyledRepeatText hasRepeat={hasRecurrence} tabIndex={0}>
+          <StyledRepeatText
+            hasRepeat={hasRecurrence}
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                toggleRecurrence();
+              }
+            }}
+          >
             Does not repeat
           </StyledRepeatText>
         </StyledRepeatContainer>
       ) : (
-        <StyledRepeatTextContainer onClick={toggleRecurrence}>
-          <RepeatIcon />
-          <StyledRepeatText hasRepeat={hasRecurrence}>
-            Repeats every
-          </StyledRepeatText>
+        <StyledRepeatTextContainer
+          aria-label="Edit recurrence"
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
+          role="button"
+          tabIndex={0}
+        >
+          <RepeatIcon size={18} />
+          <span>Repeat</span>
         </StyledRepeatTextContainer>
       )}
     </StyledRepeatRow>
@@ -371,6 +389,8 @@ export const RecurrenceSection = ({
   const { hasRecurrence } = recurrenceHook;
   const [showForm, setShowForm] = useState(false);
 
+  const shouldShowForm = hasRecurrence && showForm;
+
   return (
     <StyledRepeatRow
       style={{
@@ -379,21 +399,14 @@ export const RecurrenceSection = ({
         marginBottom: 10,
       }}
     >
-      {hasRecurrence && (
-        <EditRecurrence
-          open={showForm}
-          onClick={() => setShowForm((value) => !value)}
-        />
-      )}
+      <RecurrenceToggle
+        hasRecurrence={hasRecurrence}
+        toggleRecurrence={toggleRecurrence}
+        showForm={showForm}
+        onToggleForm={() => setShowForm((value) => !value)}
+      />
 
-      {(!hasRecurrence || showForm) && (
-        <RecurrenceToggle
-          hasRecurrence={hasRecurrence}
-          toggleRecurrence={toggleRecurrence}
-        />
-      )}
-
-      {hasRecurrence && showForm && (
+      {shouldShowForm && (
         <>
           <RecurrenceIntervalSelect
             bgColor={bgColor}

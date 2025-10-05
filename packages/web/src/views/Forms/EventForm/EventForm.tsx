@@ -341,12 +341,7 @@ export const EventForm: React.FC<FormProps> = ({
         value={event.description || ""}
       />
 
-      <SaveSection
-        priority={priority}
-        onSubmit={onSubmitForm}
-        onCancel={onClose}
-        cancelText="Close"
-      />
+      <SaveSection priority={priority} onSubmit={onSubmitForm} />
     </StyledEventForm>
   );
 };

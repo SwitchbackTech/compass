@@ -8,7 +8,6 @@ import {
   useMemo,
   useState,
 } from "react";
-
 import { Frequency, Options, RRule, Weekday } from "rrule";
 import { Schema_Event } from "@core/types/event.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
