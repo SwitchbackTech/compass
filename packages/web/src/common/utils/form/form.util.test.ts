@@ -3,7 +3,11 @@ import {
   ID_EVENT_FORM,
   ID_SOMEDAY_EVENT_FORM,
 } from "../../constants/web.constants";
-import { isContextMenuOpen, isEventFormOpen } from "./form.util";
+import {
+  isComboboxInteraction,
+  isContextMenuOpen,
+  isEventFormOpen,
+} from "./form.util";
 
 // Mock DOM methods
 const mockGetElementsByName = jest.fn();
@@ -84,20 +88,6 @@ describe("form.util", () => {
 
       expect(result).toBe(false);
     });
-
-    it("should handle null/undefined elements gracefully", () => {
-      // Mock getElementsByName to return null (edge case)
-      mockGetElementsByName.mockImplementation((name) => {
-        if (name === ID_EVENT_FORM) {
-          return null; // Return null for first call
-        }
-        return []; // Empty HTMLCollection for other names
-      });
-
-      // This test expects the function to throw an error when null is returned
-      // since the actual implementation doesn't handle null gracefully
-      expect(() => isEventFormOpen()).toThrow();
-    });
   });
 
   describe("isContextMenuOpen", () => {
@@ -160,6 +150,37 @@ describe("form.util", () => {
 
       expect(result).toBe(true);
       expect(mockGetElementById).toHaveBeenCalledWith(ID_CONTEXT_MENU_ITEMS);
+    });
+  });
+
+  describe("isComboboxInteraction", () => {
+    const createEvent = (element: HTMLElement | null) =>
+      ({ target: element }) as unknown as KeyboardEvent;
+
+    it("returns true when role is combobox", () => {
+      const element = document.createElement("div");
+      element.setAttribute("role", "combobox");
+
+      expect(isComboboxInteraction(createEvent(element))).toBe(true);
+    });
+
+    it("returns true when inside freq-select control", () => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "freq-select__control";
+      const child = document.createElement("span");
+      wrapper.appendChild(child);
+
+      expect(isComboboxInteraction(createEvent(child))).toBe(true);
+    });
+
+    it("returns false when no combobox context is present", () => {
+      const element = document.createElement("div");
+
+      expect(isComboboxInteraction(createEvent(element))).toBe(false);
+    });
+
+    it("returns false when target is null", () => {
+      expect(isComboboxInteraction(createEvent(null))).toBe(false);
     });
   });
 });

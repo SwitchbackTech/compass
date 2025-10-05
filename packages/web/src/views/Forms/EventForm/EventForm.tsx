@@ -19,6 +19,7 @@ import {
 import { SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
 import { getCategory } from "@web/common/utils/event/event.util";
+import { isComboboxInteraction } from "@web/common/utils/form/form.util";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
@@ -238,10 +239,15 @@ export const EventForm: React.FC<FormProps> = ({
 
   useHotkeys(
     "enter",
-    () => {
+    (keyboardEvent) => {
+      if (isComboboxInteraction(keyboardEvent)) {
+        return;
+      }
+
       onSubmitForm();
     },
     hotkeysOptions,
+    [onSubmitForm],
   );
 
   useHotkeys(
