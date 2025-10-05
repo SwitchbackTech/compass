@@ -26,9 +26,9 @@ import {
   Schema_Event,
   Schema_Event_Core,
   WithCompassId,
-  idSchema,
 } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
+import { IDSchema } from "@core/types/type.utils";
 import { getCurrentRangeDates } from "@core/util/date/date.util";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import {
@@ -405,8 +405,8 @@ export const _deleteSeries = async (
   session?: ClientSession,
   keepBase = false,
 ) => {
-  const userId = idSchema.parse(_userId);
-  const baseId = idSchema.parse(_baseId);
+  const userId = IDSchema.parse(_userId);
+  const baseId = IDSchema.parse(_baseId);
 
   const $or: Array<Filter<WithId<Omit<Schema_Event, "_id">>>> = [
     { "recurrence.eventId": baseId, user: userId },

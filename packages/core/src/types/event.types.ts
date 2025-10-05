@@ -6,6 +6,7 @@ import {
   Priorities,
   type Priority,
 } from "@core/constants/core.constants";
+import { IDSchema } from "@core/types/type.utils";
 
 /**
  * Event category, based on its display type
@@ -150,17 +151,13 @@ export enum CompassEventStatus {
   CANCELLED = "CANCELLED",
 }
 
-export const idSchema = z.string().refine(ObjectId.isValid, {
-  message: "Invalid id",
-});
-
 export const eventDateSchema = z.union([
   z.string().datetime({ offset: true }),
   z.string().date(),
 ]);
 
 export const CoreEventSchema = z.object({
-  _id: idSchema.optional(),
+  _id: IDSchema.optional(),
   description: z.string().nullable().optional(),
   endDate: eventDateSchema,
   isAllDay: z.boolean().optional(),
@@ -195,7 +192,7 @@ export const EventUpdateSchema = z.object({
 });
 
 export const CompassCoreEventSchema = CoreEventSchema.extend({
-  _id: idSchema,
+  _id: IDSchema,
   recurrence: CompassEventRecurrence.extend({
     rule: z.union([z.null(), z.array(z.string())]),
   }).optional(),
