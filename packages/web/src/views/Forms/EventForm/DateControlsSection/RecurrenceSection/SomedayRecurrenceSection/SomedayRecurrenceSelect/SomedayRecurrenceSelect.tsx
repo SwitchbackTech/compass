@@ -123,7 +123,7 @@ export const SomedayRecurrenceSelect = ({
           <span>
             {isDoNotRepeat
               ? DO_NOT_REPEAT_OPTION.label
-              : `Repeats every ${props.data.label}`}
+              : `Repeats every ${props.data.label.toLowerCase()}`}
           </span>
         </SelectContent>
       </components.SingleValue>

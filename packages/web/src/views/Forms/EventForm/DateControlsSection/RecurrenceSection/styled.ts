@@ -43,6 +43,7 @@ export const StyledRepeatTextContainer = styled(Flex)`
   margin-right: 8px;
   padding: 2px 8px;
   color: ${({ theme }) => theme.color.text.darkPlaceholder};
+  font-size: ${({ theme }) => theme.text.size.m};
   cursor: pointer;
   transition:
     color ${({ theme }) => theme.transition.default} ease,

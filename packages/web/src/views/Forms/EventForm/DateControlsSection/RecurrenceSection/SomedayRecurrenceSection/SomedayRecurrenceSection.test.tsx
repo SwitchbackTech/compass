@@ -253,7 +253,7 @@ describe("SomedayRecurrenceSection", () => {
     expect(mockSetEvent).toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
     const value = await screen.findByTestId("someday-recurrence-value");
-    expect(value).toHaveTextContent(/Repeats every Week/i);
+    expect(value).toHaveTextContent(/Repeats every week/i);
   });
 
   it("closes select on escape and restores original recurrence", async () => {
@@ -268,8 +268,8 @@ describe("SomedayRecurrenceSection", () => {
     const input = control.querySelector("input") as HTMLElement | null;
     fireEvent.keyDown(input ?? control, { key: "Escape", code: "Escape" });
 
-    expect(mockSetEvent.mock.calls.length).toBe(initialCalls);
-    expect(screen.getByText(/Repeats every Week/i)).toBeInTheDocument();
+    expect(mockSetEvent.mock.calls).toHaveLength(initialCalls);
+    expect(screen.getByText(/Repeats every week/i)).toBeInTheDocument();
   });
 
   it("closes select on escape when no recurrence is set", async () => {
