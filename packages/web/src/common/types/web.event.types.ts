@@ -5,8 +5,8 @@ import {
   CompassCoreEventSchema,
   CompassEventRecurrence,
   Schema_Event,
-  idSchema,
 } from "@core/types/event.types";
+import { IDSchema } from "@core/types/type.utils";
 import { SelectOption } from "@web/common/types/component.types";
 
 export const optimisticIdSchema = z
@@ -24,7 +24,7 @@ const WebEventRecurrence = z.union([
 ]);
 
 const WebCoreEventSchema = CompassCoreEventSchema.extend({
-  _id: z.union([idSchema, optimisticIdSchema]).optional(),
+  _id: z.union([IDSchema, optimisticIdSchema]).optional(),
   recurrence: WebEventRecurrence,
   order: z.number().optional(),
 });
