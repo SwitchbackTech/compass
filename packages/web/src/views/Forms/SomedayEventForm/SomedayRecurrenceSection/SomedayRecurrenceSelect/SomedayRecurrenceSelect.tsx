@@ -7,7 +7,7 @@ import { Key } from "ts-key-enum";
 import { brighten, darken } from "@core/util/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
-import { FrequencyValues } from "../../constants/recurrence.constants";
+import { FrequencyValues } from "../../../EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 import { SelectContent } from "./styled";
 
 export type SomedayFrequencyOption = {
