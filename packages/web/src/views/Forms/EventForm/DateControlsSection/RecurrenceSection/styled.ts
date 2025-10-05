@@ -3,7 +3,6 @@ import { darken } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 
 export const StyledRepeatContainer = styled.div`
-  margin-bottom: 10px;
   &:hover {
     cursor: pointer;
   }
@@ -12,8 +11,7 @@ export const StyledRepeatContainer = styled.div`
 export const StyledRepeatRow = styled(Flex)`
   align-items: center;
   flex-basis: 100%;
-  gap: ${({ theme }) => theme.spacing.s};
-  margin-bottom: 10px;
+  gap: 8px;
   padding: 0;
   width: 100%;
 `;
@@ -21,17 +19,18 @@ export const StyledRepeatRow = styled(Flex)`
 export const StyledRepeatText = styled.span<{
   hasRepeat: boolean;
 }>`
-  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.xs};
   border-radius: ${({ theme }) => theme.shape.borderRadius};
   font-size: ${({ theme }) => theme.text.size.m};
-  opacity: ${({ hasRepeat }) => !hasRepeat && 0.85};
-  padding: 2px 8px;
+  opacity: ${({ hasRepeat }) => (!hasRepeat ? 0.85 : 1)};
+  padding: 2px 0;
+  color: ${({ hasRepeat, theme }) =>
+    hasRepeat ? theme.color.text.dark : theme.color.text.darkPlaceholder};
 
-  &:focus,
-  &:hover {
-    cursor: pointer;
-    border: ${({ hasRepeat, theme }) =>
-      !hasRepeat && `1px solid ${theme.color.border.primaryDark}`};
+  svg {
+    color: inherit;
   }
 `;
 
@@ -41,7 +40,7 @@ export const StyledRepeatTextContainer = styled(Flex)`
   gap: 6px;
   justify-content: center;
   margin-right: 8px;
-  padding: 2px 8px;
+  padding: 2px 0;
   color: ${({ theme }) => theme.color.text.darkPlaceholder};
   font-size: ${({ theme }) => theme.text.size.m};
   cursor: pointer;

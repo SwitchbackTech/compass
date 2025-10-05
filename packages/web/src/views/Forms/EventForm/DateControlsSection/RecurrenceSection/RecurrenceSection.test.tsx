@@ -33,7 +33,7 @@ describe("RecurrenceSection", () => {
         setEvent={mockSetEvent}
       />,
     );
-    expect(screen.getByText(/Does not repeat/i)).toBeInTheDocument();
+    expect(screen.getByText(/Repeat/i)).toBeInTheDocument();
   });
 
   it("toggles recurrence on click", () => {
@@ -44,7 +44,7 @@ describe("RecurrenceSection", () => {
         setEvent={mockSetEvent}
       />,
     );
-    const toggle = screen.getByText(/Does not repeat/i);
+    const toggle = screen.getAllByText(/Repeat/i)[0];
     fireEvent.click(toggle);
     expect(mockSetEvent).toHaveBeenCalled();
   });

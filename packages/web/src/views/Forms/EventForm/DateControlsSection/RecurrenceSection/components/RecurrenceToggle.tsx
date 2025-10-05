@@ -50,7 +50,8 @@ export const RecurrenceToggle = ({
               }
             }}
           >
-            Does not repeat
+            <RepeatIcon size={18} />
+            <span>Repeat</span>
           </StyledRepeatText>
         </StyledRepeatContainer>
       ) : (
