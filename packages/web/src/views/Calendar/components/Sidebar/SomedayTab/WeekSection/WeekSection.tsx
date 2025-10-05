@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import React, { FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
@@ -22,8 +22,8 @@ interface Props {
 
 export const isCurrentWeek = (
   label: string,
-  viewStart: dayjs.Dayjs,
-  today: Date = new Date(),
+  viewStart: Dayjs,
+  today = new Date(),
 ): boolean => {
   const [start, end] = label.split(" - ");
   const [startMonth, startDay] = start.split(".").map(Number);
@@ -42,6 +42,8 @@ export const isCurrentWeek = (
   today.setHours(0, 0, 0, 0);
   startDate.setHours(0, 0, 0, 0);
   endDate.setHours(0, 0, 0, 0);
+
+  console.log(startDate + " " + today + " " + endDate);
 
   return today >= startDate && today <= endDate;
 };
