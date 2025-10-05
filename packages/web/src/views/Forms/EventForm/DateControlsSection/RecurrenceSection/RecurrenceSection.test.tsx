@@ -33,7 +33,7 @@ describe("RecurrenceSection", () => {
         setEvent={mockSetEvent}
       />,
     );
-    expect(screen.getByText(/Does not repeat/i)).toBeInTheDocument();
+    expect(screen.getByText(/Repeat/i)).toBeInTheDocument();
   });
 
   it("toggles recurrence on click", () => {
@@ -44,12 +44,12 @@ describe("RecurrenceSection", () => {
         setEvent={mockSetEvent}
       />,
     );
-    const toggle = screen.getByText(/Does not repeat/i);
+    const toggle = screen.getAllByText(/Repeat/i)[0];
     fireEvent.click(toggle);
     expect(mockSetEvent).toHaveBeenCalled();
   });
 
-  it("renders recurrence edit recurrence btn when recurrence is set", () => {
+  it("renders repeat text when recurrence is set", () => {
     const eventWithRecurrence = {
       ...baseEvent,
       recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
@@ -61,10 +61,10 @@ describe("RecurrenceSection", () => {
         setEvent={mockSetEvent}
       />,
     );
-    expect(screen.getByText(/Edit Event Recurrence/i)).toBeInTheDocument();
+    expect(screen.getByText(/Repeat/i)).toBeInTheDocument();
   });
 
-  it("renders recurrence controls when the edit recurrence btn is clicked and show recurrence form is set true", () => {
+  it("renders recurrence controls when recurrence exists", () => {
     const eventWithRecurrence = {
       ...baseEvent,
       recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
@@ -76,9 +76,8 @@ describe("RecurrenceSection", () => {
         setEvent={mockSetEvent}
       />,
     );
-    expect(screen.getByText(/Edit Event Recurrence/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByText(/Edit Event Recurrence/i));
-    expect(screen.getByText(/Repeats every/i)).toBeInTheDocument();
+    expect(screen.getByText(/Every/i)).toBeInTheDocument();
+    expect(screen.getAllByText("On:").length).toBeGreaterThan(0);
   });
 
   it("shows interval input and allows increment/decrement", () => {
@@ -93,7 +92,6 @@ describe("RecurrenceSection", () => {
         setEvent={mockSetEvent}
       />,
     );
-    fireEvent.click(screen.getByText(/Edit Event Recurrence/i));
     // "Every" appears more than once, so use getAllByText
     const everyLabels = screen.getAllByText("Every");
     expect(everyLabels.length).toBeGreaterThan(0);
@@ -116,7 +114,6 @@ describe("RecurrenceSection", () => {
         setEvent={mockSetEvent}
       />,
     );
-    fireEvent.click(screen.getByText(/Edit Event Recurrence/i));
     // "On:" appears more than once, so use getAllByText
     const onLabels = screen.getAllByText("On:");
     expect(onLabels.length).toBeGreaterThan(0);
@@ -139,10 +136,27 @@ describe("RecurrenceSection", () => {
         setEvent={mockSetEvent}
       />,
     );
-    fireEvent.click(screen.getByText(/Edit Event Recurrence/i));
     // "Ends on:" appears more than once, so use getAllByText
     const endsOnLabels = screen.getAllByText("Ends on:");
     expect(endsOnLabels.length).toBeGreaterThan(0);
     endsOnLabels.forEach((label) => expect(label).toBeInTheDocument());
+  });
+
+  it("keeps recurrence controls visible when editing an event with recurrence", () => {
+    const eventWithRecurrence = {
+      ...baseEvent,
+      recurrence: { rule: ["RRULE:FREQ=MONTHLY;COUNT=2"] },
+    };
+
+    render(
+      <RecurrenceSection
+        bgColor="#fff"
+        event={eventWithRecurrence}
+        setEvent={mockSetEvent}
+      />,
+    );
+
+    expect(screen.getAllByText("Every").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Ends on:").length).toBeGreaterThan(0);
   });
 });

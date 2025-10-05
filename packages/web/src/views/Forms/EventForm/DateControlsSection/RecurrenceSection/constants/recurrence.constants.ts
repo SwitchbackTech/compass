@@ -13,10 +13,12 @@ export const FREQUENCY_MAP: Record<FrequencyValues, string> = {
 };
 
 export const FREQUENCY_OPTIONS = (suffix = "") =>
-  Object.entries(FREQUENCY_MAP).map(([value, label]) => ({
-    label: `${label}${suffix}`,
-    value: Number(value) as FrequencyValues,
-  }));
+  [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY].map(
+    (frequency) => ({
+      label: `${FREQUENCY_MAP[frequency as FrequencyValues]}${suffix}`,
+      value: frequency,
+    }),
+  );
 
 export const WEEKDAYS: Array<keyof typeof WEEKDAY_RRULE_MAP> = [
   "sunday",

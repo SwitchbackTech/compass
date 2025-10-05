@@ -5,6 +5,7 @@ import {
   Direction_Migrate,
   Schema_Event,
 } from "@core/types/event.types";
+import { isComboboxInteraction } from "@web/common/utils/form/form.util";
 
 export const SOMEDAY_HOTKEY_OPTIONS: OptionsOrDependencyArray = {
   enableOnFormTags: ["input"],
@@ -38,25 +39,6 @@ const isMenuInteraction = (keyboardEvent: KeyboardEvent) => {
   }
 
   return Boolean(target.closest?.("[role='menu']"));
-};
-
-const isComboboxInteraction = (keyboardEvent: KeyboardEvent) => {
-  const target = keyboardEvent.target as HTMLElement | null;
-
-  if (!target) {
-    return false;
-  }
-
-  if (target.getAttribute("role") === "combobox") {
-    return true;
-  }
-
-  return Boolean(
-    target.closest?.("[role='combobox']") ??
-      target.closest?.(".freq-select__control") ??
-      target.closest?.(".freq-select__menu") ??
-      false,
-  );
 };
 
 export const handleMigration =
