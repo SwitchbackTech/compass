@@ -2,6 +2,7 @@ import React, { Dispatch, SetStateAction, useState } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
+import { FlexDirections } from "@web/components/Flex/styled";
 import { StyledRepeatRow } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 import { useRecurrence } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/useRecurrence/useRecurrence";
 import { EndsOnDate } from "./components/EndsOnDate";
@@ -29,13 +30,7 @@ export const RecurrenceSection = ({
   const shouldShowForm = hasRecurrence && showForm;
 
   return (
-    <StyledRepeatRow
-      style={{
-        flexDirection: "column",
-        alignItems: "flex-start",
-        marginBottom: 10,
-      }}
-    >
+    <StyledRepeatRow direction={FlexDirections.COLUMN}>
       <RecurrenceToggle
         hasRecurrence={hasRecurrence}
         toggleRecurrence={toggleRecurrence}

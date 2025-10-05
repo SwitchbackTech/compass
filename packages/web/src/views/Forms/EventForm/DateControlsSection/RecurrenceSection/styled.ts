@@ -9,8 +9,9 @@ export const StyledRepeatContainer = styled.div`
 `;
 
 export const StyledRepeatRow = styled(Flex)`
-  align-items: center;
+  align-items: flex-start;
   flex-basis: 100%;
+  margin-bottom: 8px;
   gap: 8px;
   padding: 0;
   width: 100%;
