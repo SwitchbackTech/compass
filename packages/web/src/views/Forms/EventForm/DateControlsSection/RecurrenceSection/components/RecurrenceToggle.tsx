@@ -22,10 +22,13 @@ export const RecurrenceToggle = ({
 }: RecurrenceToggleProps) => {
   const handleClick = () => {
     if (!hasRecurrence) {
+      // Enable recurrence and show form
       toggleRecurrence();
+      onToggleForm();
+    } else {
+      // Toggle form visibility when recurrence is already enabled
+      onToggleForm();
     }
-
-    onToggleForm();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {

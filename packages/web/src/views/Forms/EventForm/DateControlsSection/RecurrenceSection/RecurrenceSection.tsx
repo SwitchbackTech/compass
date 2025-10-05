@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useState } from "react";
+import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { Schema_Event } from "@core/types/event.types";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
@@ -26,6 +26,13 @@ export const RecurrenceSection = ({
   const { weekDays, interval, freq, until, toggleRecurrence } = recurrenceHook;
   const { hasRecurrence } = recurrenceHook;
   const [showForm, setShowForm] = useState(false);
+
+  // Hide form when recurrence is disabled
+  useEffect(() => {
+    if (!hasRecurrence) {
+      setShowForm(false);
+    }
+  }, [hasRecurrence]);
 
   const shouldShowForm = hasRecurrence && showForm;
 
