@@ -40,6 +40,25 @@ const isMenuInteraction = (keyboardEvent: KeyboardEvent) => {
   return Boolean(target.closest?.("[role='menu']"));
 };
 
+const isComboboxInteraction = (keyboardEvent: KeyboardEvent) => {
+  const target = keyboardEvent.target as HTMLElement | null;
+
+  if (!target) {
+    return false;
+  }
+
+  if (target.getAttribute("role") === "combobox") {
+    return true;
+  }
+
+  return Boolean(
+    target.closest?.("[role='combobox']") ??
+      target.closest?.(".freq-select__control") ??
+      target.closest?.(".freq-select__menu") ??
+      false,
+  );
+};
+
 export const handleMigration =
   (
     direction: Direction_Migrate,
@@ -74,8 +93,11 @@ export const useSomedayFormShortcuts = ({
   useHotkeys(
     "enter",
     (keyboardEvent) => {
-      if (isMenuInteraction(keyboardEvent)) {
-        // Don't prevent default - let the menu item handle the event
+      if (
+        isMenuInteraction(keyboardEvent) ||
+        isComboboxInteraction(keyboardEvent)
+      ) {
+        // Don't prevent default - let the child component in focus handle the event
         return;
       }
 

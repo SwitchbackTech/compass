@@ -2,7 +2,7 @@ import React, { act } from "react";
 import "@testing-library/jest-dom/extend-expect";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Schema_Event } from "@core/types/event.types";
+import { Categories_Event, Schema_Event } from "@core/types/event.types";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { EventForm } from "./EventForm";
 
@@ -17,15 +17,18 @@ test("start date picker opens and then closes when clicking the end input", asyn
   const mockOnConvert = jest.fn();
   const mockOnSubmit = jest.fn();
   const mockSetEvent = jest.fn();
+  const mockOnDelete = jest.fn();
 
   render(
     <div>
       <EventForm
         event={allDayEvent}
+        category={Categories_Event.ALLDAY}
         onClose={mockOnClose}
         onConvert={mockOnConvert}
         onSubmit={mockOnSubmit}
         setEvent={mockSetEvent}
+        onDelete={mockOnDelete}
       />
     </div>,
   );
@@ -106,6 +109,7 @@ test("should call onDuplicate when meta+d keyboard shortcut is used", async () =
     <div>
       <EventForm
         event={sampleEvent}
+        category={Categories_Event.SOMEDAY_WEEK}
         onClose={mockOnClose}
         onConvert={mockOnConvert}
         onSubmit={mockOnSubmit}
@@ -154,6 +158,7 @@ test("should call duplicateEvent when duplicate icon btn is clicked", async () =
     <div>
       <EventForm
         event={sampleEvent}
+        category={Categories_Event.SOMEDAY_WEEK}
         onClose={mockOnClose}
         onConvert={mockOnConvert}
         onSubmit={mockOnSubmit}
