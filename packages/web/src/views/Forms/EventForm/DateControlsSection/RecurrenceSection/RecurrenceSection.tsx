@@ -25,14 +25,11 @@ export const RecurrenceSection = ({
   const { setInterval, setFreq, setWeekDays, setUntil } = recurrenceHook;
   const { weekDays, interval, freq, until, toggleRecurrence } = recurrenceHook;
   const { hasRecurrence } = recurrenceHook;
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(() => hasRecurrence);
 
-  // Hide form when recurrence is disabled
   useEffect(() => {
-    if (!hasRecurrence) {
-      setShowForm(false);
-    }
-  }, [hasRecurrence]);
+    setShowForm(hasRecurrence);
+  }, [hasRecurrence, event?._id]);
 
   const shouldShowForm = hasRecurrence && showForm;
 
