@@ -37,7 +37,6 @@ export const FreqSelect = ({
       classNamePrefix="freq-select"
       value={{ label, value }}
       onChange={(option) => option && onFreqSelect(option.value)}
-      maxMenuHeight={100}
       theme={(selectTheme) => ({
         ...selectTheme,
         borderRadius: 4,
@@ -52,10 +51,16 @@ export const FreqSelect = ({
         indicatorSeparator: () => ({
           visibility: "hidden",
         }),
+        menu: (baseStyles) => ({
+          ...baseStyles,
+          overflow: "visible",
+        }),
         menuList: (baseStyles) => ({
           ...baseStyles,
           fontSize,
           backgroundColor: bgColor,
+          maxHeight: "none",
+          overflowY: "visible",
         }),
         option: (styles, { isDisabled, isFocused, isSelected }) => ({
           ...styles,
