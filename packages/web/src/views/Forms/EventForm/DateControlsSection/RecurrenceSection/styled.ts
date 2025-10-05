@@ -2,12 +2,6 @@ import styled from "styled-components";
 import { darken } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 
-export const StyledRepeatContainer = styled.div`
-  &:hover {
-    cursor: pointer;
-  }
-`;
-
 export const StyledRepeatRow = styled(Flex)`
   align-items: flex-start;
   flex-basis: 100%;
@@ -29,6 +23,12 @@ export const StyledRepeatText = styled.span<{
   padding: 2px 0;
   color: ${({ hasRepeat, theme }) =>
     hasRepeat ? theme.color.text.dark : theme.color.text.darkPlaceholder};
+
+  &:focus,
+  &:hover {
+    color: ${({ theme }) => theme.color.text.dark};
+    filter: brightness(110%);
+    cursor: pointer;
 
   svg {
     color: inherit;

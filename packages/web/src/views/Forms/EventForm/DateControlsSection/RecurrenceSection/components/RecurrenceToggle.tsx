@@ -39,7 +39,7 @@ export const RecurrenceToggle = ({
   return (
     <StyledRepeatRow>
       {!hasRecurrence || showForm ? (
-        <StyledRepeatContainer onClick={toggleRecurrence}>
+        <div onClick={toggleRecurrence}>
           <StyledRepeatText
             hasRepeat={hasRecurrence}
             tabIndex={0}
@@ -53,7 +53,7 @@ export const RecurrenceToggle = ({
             <RepeatIcon size={18} />
             <span>Repeat</span>
           </StyledRepeatText>
-        </StyledRepeatContainer>
+        </div>
       ) : (
         <StyledRepeatTextContainer
           aria-label="Edit recurrence"
