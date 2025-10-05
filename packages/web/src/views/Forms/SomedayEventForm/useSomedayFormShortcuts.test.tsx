@@ -138,4 +138,24 @@ describe("SomedayEventForm shortcuts hook", () => {
 
     expect(defaultProps.onSubmit).toHaveBeenCalled();
   });
+
+  test("enter shortcut ignores events originating from the recurrence combobox", () => {
+    render(<TestComponent {...defaultProps} />);
+
+    const combobox = document.createElement("div");
+    combobox.setAttribute("role", "combobox");
+
+    const keyboardEvent = {
+      target: combobox,
+      preventDefault: jest.fn(),
+      stopPropagation: jest.fn(),
+    } as unknown as KeyboardEvent;
+
+    const handler = getHotkeyHandler("enter");
+    handler(keyboardEvent);
+
+    expect(defaultProps.onSubmit).not.toHaveBeenCalled();
+    expect(keyboardEvent.preventDefault).not.toHaveBeenCalled();
+    expect(keyboardEvent.stopPropagation).not.toHaveBeenCalled();
+  });
 });

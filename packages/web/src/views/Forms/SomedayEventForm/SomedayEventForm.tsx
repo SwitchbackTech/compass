@@ -6,7 +6,7 @@ import { Categories_Event } from "@core/types/event.types";
 import { darken } from "@core/util/color.utils";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
+import { SomedayRecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/SomedayRecurrenceSection/SomedayRecurrenceSection";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import {
@@ -40,9 +40,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     if (e.key === Key.Backspace) {
       e.stopPropagation();
     }
-    if (e.metaKey && e.key === Key.Enter) {
-      e.preventDefault();
-      _onSubmit();
+    if (e.key === Key.Enter) {
+      if (e.metaKey) {
+        e.preventDefault();
+        _onSubmit();
+      }
     }
   };
 
@@ -156,7 +158,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
       <PrioritySection onSetEventField={onSetEventField} priority={priority} />
 
-      <RecurrenceSection bgColor={bgColor} event={event} setEvent={setEvent} />
+      <SomedayRecurrenceSection
+        bgColor={bgColor}
+        event={event}
+        setEvent={setEvent}
+      />
 
       <StyledDescription
         onChange={onChangeEventTextField("description")}

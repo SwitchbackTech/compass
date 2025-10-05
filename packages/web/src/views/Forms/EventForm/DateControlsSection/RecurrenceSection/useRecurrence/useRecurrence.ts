@@ -1,4 +1,5 @@
 import { ObjectId } from "bson";
+import dayjs from "dayjs";
 import {
   Dispatch,
   SetStateAction,
@@ -7,49 +8,17 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import { Frequency, Options, RRule, Weekday } from "rrule";
 import { Schema_Event } from "@core/types/event.types";
-import dayjs, { Dayjs } from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { parseCompassEventDate } from "@core/util/event/event.util";
-
-export const WEEKDAYS: Array<keyof typeof WEEKDAY_RRULE_MAP> = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-];
-
-export type FrequencyValues = Exclude<
-  Frequency,
-  Frequency.HOURLY | Frequency.MINUTELY | Frequency.SECONDLY
->;
-
-export const FREQUENCY_MAP: Record<FrequencyValues, string> = {
-  [Frequency.DAILY]: "Day",
-  [Frequency.WEEKLY]: "Week",
-  [Frequency.MONTHLY]: "Month",
-  [Frequency.YEARLY]: "Year",
-};
-
-export const FREQUENCY_OPTIONS = (suffix = "") =>
-  Object.entries(FREQUENCY_MAP).map(([value, label]) => ({
-    label: `${label}${suffix}`,
-    value: Number(value) as FrequencyValues,
-  }));
-
-const WEEKDAY_RRULE_MAP = {
-  monday: RRule.MO,
-  tuesday: RRule.TU,
-  wednesday: RRule.WE,
-  thursday: RRule.TH,
-  friday: RRule.FR,
-  saturday: RRule.SA,
-  sunday: RRule.SU,
-};
+import {
+  FrequencyValues,
+  WEEKDAYS,
+  WEEKDAY_RRULE_MAP,
+} from "../constants/recurrence.constants";
+import { toWeekDays } from "../util/recurrence.util";
 
 const WEEKDAY_LABELS_MAP: Record<keyof typeof WEEKDAY_RRULE_MAP, string> = {
   sunday: RRule.SU.toString(),
@@ -60,7 +29,6 @@ const WEEKDAY_LABELS_MAP: Record<keyof typeof WEEKDAY_RRULE_MAP, string> = {
   friday: RRule.FR.toString(),
   saturday: RRule.SA.toString(),
 };
-
 const REVERSE_WEEKDAY_LABELS_MAP: Record<
   string,
   keyof typeof WEEKDAY_RRULE_MAP
@@ -68,7 +36,6 @@ const REVERSE_WEEKDAY_LABELS_MAP: Record<
   (acc, [key, value]) => ({ ...acc, [value]: key }),
   {},
 );
-
 const WEEKDAY_MAP: Record<
   number | string | keyof typeof WEEKDAY_RRULE_MAP,
   Weekday
@@ -89,29 +56,6 @@ const WEEKDAY_MAP: Record<
   }),
   {},
 );
-
-export const getDefaultWeekDay = (startDate: Dayjs): (typeof WEEKDAYS)[0] => {
-  const dayOfWeek = startDate.format("dddd").toLowerCase();
-  const day = WEEKDAYS.find((day) => dayOfWeek === day);
-
-  if (!day) {
-    console.log(
-      "No default week day found. Something went wrong. Please investigate",
-    );
-
-    return "sunday";
-  }
-
-  return day;
-};
-
-export function toWeekDay(weekDay: (typeof WEEKDAYS)[0]): Weekday {
-  return WEEKDAY_RRULE_MAP[weekDay];
-}
-
-export function toWeekDays(weekDays: typeof WEEKDAYS): Weekday[] {
-  return weekDays.map(toWeekDay);
-}
 
 export const useRecurrence = (
   event: Pick<Schema_Event, "startDate" | "endDate" | "recurrence">,
