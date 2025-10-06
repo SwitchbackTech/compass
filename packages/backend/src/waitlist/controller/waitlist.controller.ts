@@ -36,7 +36,10 @@ export class WaitlistController {
     res: Response,
   ) {
     if (isMissingWaitlistTagId()) {
-      return res.status(500).json({ error: "Missing emailer value(s)" });
+      return res.status(500).json({
+        error:
+          "Missing required emailer configuration: EMAILER_SECRET or EMAILER_WAITLIST_TAG_ID",
+      });
     }
 
     const parseResult = WaitlistAnswerSchema.safeParse(req.body);

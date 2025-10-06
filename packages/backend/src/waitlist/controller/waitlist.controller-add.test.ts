@@ -136,6 +136,8 @@ describe("POST /api/waitlist", () => {
 
     const res = await request(app).post("/api/waitlist").send(answers);
     expect(res.status).toBe(500);
-    expect(res.body.error).toBe("Missing emailer value(s)");
+    expect(res.body.error).toBe(
+      "Missing required emailer configuration: EMAILER_SECRET or EMAILER_WAITLIST_TAG_ID",
+    );
   });
 });
