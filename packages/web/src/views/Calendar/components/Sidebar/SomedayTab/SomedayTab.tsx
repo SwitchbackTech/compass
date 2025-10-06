@@ -1,3 +1,4 @@
+import { Dayjs } from "dayjs";
 import React, { FC, useMemo, useRef } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { theme } from "@web/common/styles/theme";
@@ -23,6 +24,7 @@ interface Props {
   viewStart: WeekProps["component"]["startOfView"];
   viewEnd: WeekProps["component"]["endOfView"];
   gridRefs: Refs_Grid;
+  today: Dayjs;
 }
 
 export const SomedayTab: FC<Props> = ({
@@ -31,6 +33,7 @@ export const SomedayTab: FC<Props> = ({
   viewEnd,
   viewStart,
   gridRefs,
+  today,
 }) => {
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
   const context = useSidebarContext();
@@ -57,6 +60,7 @@ export const SomedayTab: FC<Props> = ({
           viewStart={viewStart}
           weekLabel={weekLabel}
           gridRefs={gridRefs}
+          today={today}
         />
 
         <Divider

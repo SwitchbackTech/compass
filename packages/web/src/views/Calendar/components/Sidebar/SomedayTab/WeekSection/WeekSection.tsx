@@ -1,4 +1,4 @@
-import dayjs, { Dayjs } from "dayjs";
+import { Dayjs } from "dayjs";
 import React, { FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
@@ -18,34 +18,49 @@ interface Props {
   viewStart: WeekProps["component"]["startOfView"];
   weekLabel: string;
   gridRefs: Refs_Grid;
+  today: Dayjs;
 }
+
+export const getSomedayWeekLabel = (
+  label: string,
+  viewStart: Dayjs,
+  today: Dayjs,
+): string => {
+  return isCurrentWeek(label, viewStart, today) ? "This Week" : label;
+};
 
 export const isCurrentWeek = (
   label: string,
   viewStart: Dayjs,
-  today = new Date(),
+  today: Dayjs,
 ): boolean => {
+  const parts = label.split(" - ");
+  if (parts.length != 2) return false;
+
   const [start, end] = label.split(" - ");
   const [startMonth, startDay] = start.split(".").map(Number);
   let [endMonth, endDay] = end.split(".").map(Number);
-  let year = new Date(Number(viewStart)).getFullYear();
+  const startYear = new Date(Number(viewStart)).getFullYear();
+  let endYear = startYear;
+  if (startMonth === 12 && endMonth === 1) {
+    endYear = startYear + 1;
+  }
 
   if (endDay === undefined) {
     endDay = endMonth;
     endMonth = startMonth;
   }
 
-  const startDate = new Date(year, startMonth - 1, startDay);
-  if (startMonth === 12 && endMonth === 1) year++;
-  const endDate = new Date(year, endMonth - 1, endDay);
+  const startDate = new Date(startYear, startMonth - 1, startDay);
+  const endDate = new Date(endYear, endMonth - 1, endDay);
 
-  today.setHours(0, 0, 0, 0);
+  today.toDate().setHours(0, 0, 0, 0);
   startDate.setHours(0, 0, 0, 0);
   endDate.setHours(0, 0, 0, 0);
 
   console.log(startDate + " " + today + " " + endDate);
 
-  return today >= startDate && today <= endDate;
+  return today.toDate() >= startDate && today.toDate() <= endDate;
 };
 
 export const WeekSection: FC<Props> = ({
@@ -54,6 +69,7 @@ export const WeekSection: FC<Props> = ({
   viewStart,
   weekLabel,
   gridRefs,
+  today,
 }) => {
   return (
     <SidebarSection>
@@ -62,7 +78,7 @@ export const WeekSection: FC<Props> = ({
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
         <Text role="heading" size="xl">
-          {isCurrentWeek(weekLabel, viewStart) ? "This Week" : weekLabel}
+          {getSomedayWeekLabel(weekLabel, viewStart, today)}
         </Text>
       </SidebarHeader>
 

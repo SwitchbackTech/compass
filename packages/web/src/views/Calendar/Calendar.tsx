@@ -81,6 +81,7 @@ export const CalendarView = () => {
                   measurements={measurements}
                   weekProps={weekProps}
                   gridRefs={gridRefs}
+                  today={today}
                 />
               )}
             </ContextMenuWrapper>

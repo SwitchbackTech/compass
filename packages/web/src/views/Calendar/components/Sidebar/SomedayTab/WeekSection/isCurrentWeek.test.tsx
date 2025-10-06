@@ -1,225 +1,171 @@
-import dayjs from "dayjs";
-import React from "react";
+import dayjs, { Dayjs } from "dayjs";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
-import { WeekSection, isCurrentWeek } from "./WeekSection";
+import { getSomedayWeekLabel, isCurrentWeek } from "./WeekSection";
 
-// Mock dependencies of WeekSection
-jest.mock("../SomedayEvents/SomedayEvents", () => ({
-  SomedayEvents: () => <div data-testid="someday-events" />,
-}));
+const makeLabel = (start: Dayjs, end: Dayjs): string =>
+  `${start.format("M.D")} - ${end.format("M.D")}`;
 
-jest.mock("@web/components/Text", () => ({
-  Text: ({ children, ...props }: any) => (
-    <div {...props} data-testid="text">
-      {children}
-    </div>
-  ),
-}));
-
-jest.mock("../styled", () => ({
-  SidebarSection: ({ children }: any) => <div>{children}</div>,
-  SidebarHeader: ({ children }: any) => <div>{children}</div>,
-}));
-
-const mockDateCalcs = {} as any;
-const mockMeasurements = {} as any;
-const mockGridRefs = { mainGridRef: null } as any;
-
-// Helper to generate a week label string based on any date
-function getWeekLabel(today: Date, offsetStart = -3, offsetEnd = 3): string {
-  const start = new Date(today);
-  start.setHours(0, 0, 0, 0);
-  start.setDate(today.getDate() + offsetStart);
-
-  const end = new Date(today);
-  end.setHours(0, 0, 0, 0);
-  end.setDate(today.getDate() + offsetEnd);
-
-  const startStr = `${start.getMonth() + 1}.${start.getDate()}`;
-  const endStr = `${end.getMonth() + 1}.${end.getDate()}`;
-  return `${startStr} - ${endStr}`;
-}
-
-export function getViewStart(offset: number = -3): Date {
-  return dayjs().add(offset, "day").startOf("day").toDate();
-}
-
-describe("WeekSection Component", () => {
-  it("displays 'This Week' if current date is within the week label", () => {
-    const today = new Date();
-    const weekLabel = getWeekLabel(today, -3, 3); // week span start = today - 3, end = today + 3
-    const viewStart = dayjs(getViewStart());
-
-    render(
-      <WeekSection
-        dateCalcs={mockDateCalcs}
-        measurements={mockMeasurements}
-        viewStart={viewStart}
-        weekLabel={weekLabel}
-        gridRefs={mockGridRefs}
-      />,
-    );
-
-    const heading = screen.getByRole("heading");
-    expect(heading).toHaveTextContent("This Week");
-  });
-
-  it("displays the weekLabel if current date is before the week", () => {
-    const today = new Date();
-    const weekLabel = getWeekLabel(today, 10, 17);
-    const viewStart = dayjs(getViewStart(10));
-
-    render(
-      <WeekSection
-        dateCalcs={mockDateCalcs}
-        measurements={mockMeasurements}
-        viewStart={viewStart}
-        weekLabel={weekLabel}
-        gridRefs={mockGridRefs}
-      />,
-    );
-
-    const heading = screen.getByRole("heading");
-    expect(heading).toHaveTextContent(weekLabel);
-  });
-
-  it("displays the weekLabel if current date is after the week", () => {
-    const today = new Date();
-    const weekLabel = getWeekLabel(today, -17, -10);
-    const viewStart = dayjs(getViewStart(-17));
-
-    render(
-      <WeekSection
-        dateCalcs={mockDateCalcs}
-        measurements={mockMeasurements}
-        viewStart={viewStart}
-        weekLabel={weekLabel}
-        gridRefs={mockGridRefs}
-      />,
-    );
-
-    const heading = screen.getByRole("heading");
-    expect(heading).toHaveTextContent(weekLabel);
-  });
-
-  it("handles this week crossing over to a new year", () => {
-    const dec29 = new Date(new Date().getFullYear(), 11, 29); // Dec 29
-    jest.useFakeTimers().setSystemTime(dec29); // mock Date.now()
-
-    const weekLabel = getWeekLabel(dec29, 0, 6);
-    const viewStart = dayjs(dec29);
-
-    render(
-      <WeekSection
-        dateCalcs={mockDateCalcs}
-        measurements={mockMeasurements}
-        viewStart={viewStart}
-        weekLabel={weekLabel}
-        gridRefs={mockGridRefs}
-      />,
-    );
-
-    const heading = screen.getByRole("heading");
-    expect(heading).toHaveTextContent("This Week");
-
-    jest.useRealTimers(); // restore
-  });
-
-  it("handles this week crossing over month boundaries", () => {
-    const jan30 = new Date(new Date().getFullYear(), 0, 30); // Jan 30
-    jest.useFakeTimers().setSystemTime(jan30);
-
-    const weekLabel = getWeekLabel(jan30, 0, 6);
-    const viewStart = dayjs(jan30);
-
-    render(
-      <WeekSection
-        dateCalcs={mockDateCalcs}
-        measurements={mockMeasurements}
-        viewStart={viewStart}
-        weekLabel={weekLabel}
-        gridRefs={mockGridRefs}
-      />,
-    );
-
-    const heading = screen.getByRole("heading");
-    expect(heading).toHaveTextContent("This Week");
-
-    jest.useRealTimers();
-  });
-
-  it("handles without month label format like '10.4 - 10'", () => {
-    const today = new Date();
-    const month = today.getMonth() + 1;
-    const weekLabel = `${month}.4 - 10`;
-    const viewStart = dayjs(new Date(today.getFullYear(), month - 1, 7));
-
-    render(
-      <WeekSection
-        dateCalcs={mockDateCalcs}
-        measurements={mockMeasurements}
-        viewStart={viewStart}
-        weekLabel={weekLabel}
-        gridRefs={mockGridRefs}
-      />,
-    );
-
-    const heading = screen.getByRole("heading");
-    expect(heading).toHaveTextContent("This Week");
-  });
-
-  it("handles week immediately before the current week", () => {
-    const today = new Date();
-    const weekLabel = getWeekLabel(today, -10, -4);
-    const viewStart = dayjs(getViewStart(-10));
-
-    render(
-      <WeekSection
-        dateCalcs={mockDateCalcs}
-        measurements={mockMeasurements}
-        viewStart={viewStart}
-        weekLabel={weekLabel}
-        gridRefs={mockGridRefs}
-      />,
-    );
-
-    const heading = screen.getByRole("heading");
-    expect(heading).toHaveTextContent(weekLabel);
-  });
-
-  it("handles week immediately after the current week", () => {
-    const today = new Date();
-    const weekLabel = getWeekLabel(today, 4, 10);
-    const viewStart = dayjs(getViewStart(4));
-
-    render(
-      <WeekSection
-        dateCalcs={mockDateCalcs}
-        measurements={mockMeasurements}
-        viewStart={viewStart}
-        weekLabel={weekLabel}
-        gridRefs={mockGridRefs}
-      />,
-    );
-
-    const heading = screen.getByRole("heading");
-    expect(heading).toHaveTextContent(weekLabel);
-  });
-});
-
-describe("isCurrentWeek function", () => {
+describe("isCurrentWeek()", () => {
   it("returns true when today is inside range", () => {
-    const today = new Date(new Date().getFullYear(), 0, 10); // Jan 10
-    const label = "1.8 - 1.12";
-    const result = isCurrentWeek(label, dayjs(today), today);
+    const today = dayjs("2025-01-10");
+    const label = makeLabel(dayjs("2025-01-08"), dayjs("2025-01-12"));
+    const result = isCurrentWeek(label, today, today);
     expect(result).toBe(true);
   });
 
-  it("returns false when today is outside range", () => {
-    const today = new Date(new Date().getFullYear(), 0, 20); // Jan 20
-    const label = "1.8 - 1.12";
-    const result = isCurrentWeek(label, dayjs(today), today);
+  it("returns false when today is before range", () => {
+    const today = dayjs("2025-01-07");
+    const label = makeLabel(dayjs("2025-01-08"), dayjs("2025-01-12"));
+    const result = isCurrentWeek(label, today, today);
     expect(result).toBe(false);
+  });
+
+  it("returns false when today is after range", () => {
+    const today = dayjs("2025-01-20");
+    const label = makeLabel(dayjs("2025-01-08"), dayjs("2025-01-12"));
+    const result = isCurrentWeek(label, today, today);
+    expect(result).toBe(false);
+  });
+
+  // Cross-year boundary (Dec → Jan)
+  it("handles a week spanning from December to January", () => {
+    const today = dayjs("2026-01-02");
+    const label = makeLabel(dayjs("2025-12-30"), dayjs("2026-01-05"));
+    const result = isCurrentWeek(label, dayjs("2025-12-30"), today);
+    expect(result).toBe(true);
+  });
+
+  // Cross-year boundary but today before
+  it("returns false when today is before a cross-year range", () => {
+    const today = dayjs("2025-12-28");
+    const label = makeLabel(dayjs("2025-12-30"), dayjs("2026-01-05"));
+    const result = isCurrentWeek(label, dayjs("2025-12-30"), today);
+    expect(result).toBe(false);
+  });
+
+  // Cross-year boundary but today after
+  it("returns false when today is after a cross-year range", () => {
+    const today = dayjs("2026-01-06");
+    const label = makeLabel(dayjs("2025-12-30"), dayjs("2026-01-05"));
+    const result = isCurrentWeek(label, dayjs("2025-12-30"), today);
+    expect(result).toBe(false);
+  });
+
+  // DISCUSS: unnecessary test bc label should not be one day range
+  it("handles single-day label correctly", () => {
+    const today = dayjs("2025-03-15");
+    const label = "3.15 - 3.15";
+    const result = isCurrentWeek(label, today, today);
+    expect(result).toBe(true);
+  });
+
+  // Missing dash (invalid format)
+  it("returns false for malformed label", () => {
+    const today = dayjs("2025-04-10");
+    const label = "4.10"; // no dash
+    const result = isCurrentWeek(label, today, today);
+    expect(result).toBe(false);
+  });
+
+  // End month omitted
+  it("handles label with no explicit end day", () => {
+    const today = dayjs("2025-06-03");
+    const label = "6.1 - 7"; // missing month number after dash
+    const result = isCurrentWeek(label, today, today);
+    expect(result).toBe(true);
+  });
+
+  // Leap year range
+  it("handles leap year February 29 correctly", () => {
+    const today = dayjs("2028-02-29");
+    const label = makeLabel(dayjs("2028-02-26"), dayjs("2028-03-03"));
+    const result = isCurrentWeek(label, today, today);
+    expect(result).toBe(true);
+  });
+
+  // Cross-month transition (e.g. June → July)
+  it("handles a week that crosses from one month to the next", () => {
+    const today = dayjs("2025-07-02");
+    const label = makeLabel(dayjs("2028-06-29"), dayjs("2028-07-05"));
+    const result = isCurrentWeek(label, dayjs("2025-06-29"), today);
+    expect(result).toBe(true);
+  });
+
+  // Cross-month transition, today before range
+  it("returns false when today is before a cross-month range", () => {
+    const today = dayjs("2025-06-27");
+    const label = makeLabel(dayjs("2028-06-29"), dayjs("2028-07-05"));
+    const result = isCurrentWeek(label, dayjs("2025-06-29"), today);
+    expect(result).toBe(false);
+  });
+
+  // Cross-month transition, today after range
+  it("returns false when today is after a cross-month range", () => {
+    const today = dayjs("2025-07-06");
+    const label = makeLabel(dayjs("2028-06-29"), dayjs("2028-07-05"));
+    const result = isCurrentWeek(label, dayjs("2025-06-29"), today);
+    expect(result).toBe(false);
+  });
+});
+
+describe("getSomedayWeekLabel()", () => {
+  it('returns "This Week" when today is inside range', () => {
+    const today = dayjs("2025-01-10");
+    const label = makeLabel(dayjs("2025-01-08"), dayjs("2025-01-12"));
+    expect(getSomedayWeekLabel(label, today, today)).toBe("This Week");
+  });
+
+  it("returns original label when today is before range", () => {
+    const today = dayjs("2025-01-07");
+    const label = makeLabel(dayjs("2025-01-08"), dayjs("2025-01-12"));
+    expect(getSomedayWeekLabel(label, today, today)).toBe(label);
+  });
+
+  it("returns original label when today is after range", () => {
+    const today = dayjs("2025-01-20");
+    const label = makeLabel(dayjs("2025-01-08"), dayjs("2025-01-12"));
+    expect(getSomedayWeekLabel(label, today, today)).toBe(label);
+  });
+
+  it('returns "This Week" for a cross-year week when today is inside', () => {
+    const today = dayjs("2026-01-02");
+    const label = makeLabel(dayjs("2025-12-30"), dayjs("2026-01-05"));
+    expect(getSomedayWeekLabel(label, dayjs("2025-12-30"), today)).toBe(
+      "This Week",
+    );
+  });
+
+  it("returns label for cross-year week when today is outside", () => {
+    const today = dayjs("2026-01-06");
+    const label = makeLabel(dayjs("2025-12-30"), dayjs("2026-01-05"));
+    expect(getSomedayWeekLabel(label, dayjs("2025-12-30"), today)).toBe(label);
+  });
+
+  // Cross-month
+  it('returns "This Week" for cross-month range when today is inside', () => {
+    const today = dayjs("2025-07-02");
+    const label = makeLabel(dayjs("2025-06-29"), dayjs("2025-07-05"));
+    expect(getSomedayWeekLabel(label, dayjs("2025-06-29"), today)).toBe(
+      "This Week",
+    );
+  });
+
+  it("returns label for cross-month week when today is outside", () => {
+    const today = dayjs("2025-07-06");
+    const label = makeLabel(dayjs("2025-06-29"), dayjs("2025-07-05"));
+    expect(getSomedayWeekLabel(label, dayjs("2025-06-29"), today)).toBe(label);
+  });
+
+  // Leap year
+  it('returns "This Week" for leap-year week containing February 29', () => {
+    const today = dayjs("2028-02-29");
+    const label = makeLabel(dayjs("2028-02-26"), dayjs("2028-03-03"));
+    expect(getSomedayWeekLabel(label, today, today)).toBe("This Week");
+  });
+
+  it("returns label when today is outside the leap-year week", () => {
+    const today = dayjs("2028-03-05");
+    const label = makeLabel(dayjs("2028-02-26"), dayjs("2028-03-03"));
+    expect(getSomedayWeekLabel(label, today, today)).toBe(label);
   });
 });
