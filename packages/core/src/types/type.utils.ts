@@ -1,5 +1,6 @@
 import { ObjectId } from "bson";
 import { z } from "zod";
+import { z as zod4 } from "zod/v4";
 
 export type KeyOfType<T, V> = keyof {
   [P in keyof T as T[P] extends V ? P : never]: unknown;
@@ -14,7 +15,11 @@ export const IDSchema = z.string().refine(ObjectId.isValid, {
   message: "Invalid id",
 });
 
-export const TimezoneSchema = z.string().refine(
+export const IDSchemaV4 = zod4.string().refine(ObjectId.isValid, {
+  message: "Invalid id",
+});
+
+export const TimezoneSchema = zod4.string().refine(
   (timeZone) => {
     try {
       new Intl.DateTimeFormat("en-US", { timeZone });
@@ -28,6 +33,6 @@ export const TimezoneSchema = z.string().refine(
   { message: "Invalid timezone" },
 );
 
-export const RGBHexSchema = z.string().regex(/^#[0-9a-f]{6}$/i, {
+export const RGBHexSchema = zod4.string().regex(/^#[0-9a-f]{6}$/i, {
   message: "Invalid color. Must be a 7-character hex color code.",
 });

@@ -1,4 +1,4 @@
-import { ZodError } from "zod";
+import { ZodError, z } from "zod/v4";
 import { faker } from "@faker-js/faker";
 import { IDSchema, RGBHexSchema, TimezoneSchema } from "@core/types/type.utils";
 
@@ -15,9 +15,7 @@ describe("IDSchema", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBeInstanceOf(ZodError);
-    expect(result.error?.errors).toEqual([
-      { message: "Invalid id", path: [], code: "custom" },
-    ]);
+    expect(z.treeifyError(result.error!).errors).toEqual(["Invalid id"]);
   });
 });
 
@@ -34,9 +32,7 @@ describe("TimezoneSchema", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBeInstanceOf(ZodError);
-    expect(result.error?.errors).toEqual([
-      { message: "Invalid timezone", path: [], code: "custom" },
-    ]);
+    expect(z.treeifyError(result.error!).errors).toEqual(["Invalid timezone"]);
   });
 
   describe("RGBHexSchema", () => {
@@ -58,13 +54,8 @@ describe("TimezoneSchema", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBeInstanceOf(ZodError);
-      expect(result.error?.errors).toEqual([
-        {
-          message: "Invalid color. Must be a 7-character hex color code.",
-          path: [],
-          code: "invalid_string",
-          validation: "regex",
-        },
+      expect(z.treeifyError(result.error!).errors).toEqual([
+        "Invalid color. Must be a 7-character hex color code.",
       ]);
     });
 
@@ -74,13 +65,8 @@ describe("TimezoneSchema", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBeInstanceOf(ZodError);
-      expect(result.error?.errors).toEqual([
-        {
-          message: "Invalid color. Must be a 7-character hex color code.",
-          path: [],
-          code: "invalid_string",
-          validation: "regex",
-        },
+      expect(z.treeifyError(result.error!).errors).toEqual([
+        "Invalid color. Must be a 7-character hex color code.",
       ]);
     });
 
@@ -90,13 +76,8 @@ describe("TimezoneSchema", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBeInstanceOf(ZodError);
-      expect(result.error?.errors).toEqual([
-        {
-          message: "Invalid color. Must be a 7-character hex color code.",
-          path: [],
-          code: "invalid_string",
-          validation: "regex",
-        },
+      expect(z.treeifyError(result.error!).errors).toEqual([
+        "Invalid color. Must be a 7-character hex color code.",
       ]);
     });
   });

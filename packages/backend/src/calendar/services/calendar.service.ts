@@ -9,7 +9,7 @@ class CalendarService {
   ) => {
     const payload = calendarList.google.items;
 
-    const response = await mongoService.calendar.updateOne(
+    const response = await mongoService.calendarList.updateOne(
       { user: userId },
       { $push: { [`${integration}.items`]: payload } },
       { upsert: true },
@@ -19,18 +19,18 @@ class CalendarService {
   };
 
   create = async (calendarList: Schema_CalendarList) => {
-    return await mongoService.calendar.insertOne(calendarList);
+    return await mongoService.calendarList.insertOne(calendarList);
   };
 
   async deleteAllByUser(userId: string) {
     const filter = { user: userId };
-    const response = await mongoService.calendar.deleteMany(filter);
+    const response = await mongoService.calendarList.deleteMany(filter);
 
     return response;
   }
 
   deleteByIntegrateion = async (integration: "google", userId: string) => {
-    const response = await mongoService.calendar.updateOne(
+    const response = await mongoService.calendarList.updateOne(
       { user: userId },
       { $unset: { [`${integration}.items`]: "" } },
     );

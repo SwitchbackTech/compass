@@ -17,7 +17,7 @@ import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.p
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 export default class Seeder implements RunnableMigration<MigrationContext> {
-  readonly name: string = "seed-user-events";
+  readonly name: string = "2025.10.01T10.09.22.seed-user-events";
   readonly path: string = "2025.10.01T10.09.22.seed-user-events.ts";
 
   #generateEvents(userId: string): Array<CompassThisEvent["payload"]> {
