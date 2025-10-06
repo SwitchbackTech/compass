@@ -29,15 +29,23 @@ export const mapCompassUserToEmailSubscriber = (
 export const mapWaitlistUserToEmailSubscriber = (
   user: Schema_Waitlist,
 ): Subscriber => {
-  const subscriber: Subscriber = {
+  if (user.schemaVersion === "1") {
+    return {
+      email_address: user.email,
+      first_name: user.firstName,
+      state: "active",
+      fields: {
+        "Last name": user.lastName,
+        Birthday: "1970-01-01",
+        Source: user.source,
+      },
+    };
+  }
+
+  return {
     email_address: user.email,
-    first_name: user.firstName,
+    first_name: null,
     state: "active",
-    fields: {
-      "Last name": user.lastName,
-      Birthday: "1970-01-01",
-      Source: user.source,
-    },
+    fields: null,
   };
-  return subscriber;
 };

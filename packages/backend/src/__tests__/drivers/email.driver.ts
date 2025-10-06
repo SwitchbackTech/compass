@@ -40,11 +40,13 @@ export class EmailDriver {
     },
     tagId: string,
   ): Promise<Response_TagSubscriber> {
+    const fields = subscriber.fields ?? undefined;
     return Promise.resolve({
       subscriber: {
         tagId,
         ...subscriber,
         tagged_at: new Date().toISOString(),
+        fields,
         first_name: subscriber.first_name!,
       },
     });
@@ -53,9 +55,11 @@ export class EmailDriver {
   private static async upsertSubscriber(
     subscriber: Subscriber & { id: number; created_at: string },
   ): Promise<Response_UpsertSubscriber> {
+    const fields = subscriber.fields ?? undefined;
     return Promise.resolve({
       subscriber: {
         ...subscriber,
+        fields,
         first_name: subscriber.first_name!,
       },
     });
