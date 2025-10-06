@@ -19,7 +19,7 @@ export class WaitlistController {
     res: Response,
   ) {
     if (isMissingWaitlistTagId()) {
-      return res.status(500).json({ error: "Emailer values are missing" });
+      return res.status(500).json({ error: "Missing emailer value(s)" });
     }
 
     const parseResult = Answers.v1.safeParse(req.body);
