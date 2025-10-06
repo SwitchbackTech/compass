@@ -337,7 +337,10 @@ export const EventForm: React.FC<FormProps> = ({
         underlineColor={priorityColor}
       />
 
-      <RecurrenceSection {...recurrenceSectionProps} />
+      <RecurrenceSection
+        {...recurrenceSectionProps}
+        underlineColor={priorityColor}
+      />
 
       <StyledDescription
         underlineColor={priorityColor}

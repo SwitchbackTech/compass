@@ -31,9 +31,11 @@ export const StyledDescription = styled(Textarea)`
   max-height: 180px;
   position: relative;
   width: calc(100% - 20px) !important;
+  transition: ${({ theme }) => theme.transition.default};
 
   &:hover {
     filter: brightness(90%);
+    background-color: rgba(0, 0, 0, 0.05);
   }
 `;
 

@@ -36,17 +36,30 @@ export const FreqSelect = ({
       options={options}
       classNamePrefix="freq-select"
       value={{ label, value }}
-      onChange={(option) => option && option.value !== undefined && onFreqSelect(option.value)}
+      onChange={(option) =>
+        option && option.value !== undefined && onFreqSelect(option.value)
+      }
       theme={(selectTheme) => ({
         ...selectTheme,
         borderRadius: 4,
+        primary: theme.color.border.primaryDark, // focus border color
+        primary25: darken(bgColor), // hover color
+        primary50: brighten(bgColor), // selected color
       })}
       styles={{
-        control: (baseStyles) => ({
+        control: (baseStyles, state) => ({
           ...baseStyles,
           backgroundColor: bgColor,
           borderRadius: theme.shape.borderRadius,
+          border: "none",
+          transition: theme.transition.default,
           fontSize,
+          "&:hover": {
+            filter: `brightness(95%)`,
+          },
+          boxShadow: state.isFocused
+            ? `0 0 0 2px ${theme.color.border.primaryDark}`
+            : "none",
         }),
         indicatorSeparator: () => ({
           visibility: "hidden",
