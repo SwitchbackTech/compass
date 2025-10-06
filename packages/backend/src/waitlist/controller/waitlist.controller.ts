@@ -43,7 +43,7 @@ export class WaitlistController {
     if (!parseResult.success) {
       return res
         .status(400)
-        .json({ error: "Invalid answer", details: parseResult.error });
+        .json({ error: "Invalid waitlist data", details: parseResult.error });
     }
 
     try {
