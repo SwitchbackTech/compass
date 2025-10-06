@@ -35,6 +35,9 @@ packages/core/build/
 # web
 packages/web/node_modules/
 packages/web/build/
+packages/web/e2e/support/*.json
+packages/web/playwright-report/
+packages/web/test-results/
 
 # backend
 packages/backend/logs
