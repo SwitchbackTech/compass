@@ -47,6 +47,24 @@ describe("POST /api/waitlist", () => {
 
     expect(res.status).toBe(400);
     expect(res.error).toBeDefined();
+    expect(mockAddToWaitlist).not.toHaveBeenCalled();
+  });
+
+  it("should return 400 if schema version is missing", async () => {
+    app = await createTestApp({
+      service: {
+        __esModule: true,
+        default: { addToWaitlist: mockAddToWaitlist },
+      },
+    });
+
+    const res = await request(app)
+      .post("/api/waitlist")
+      .send({ email: "test@example.com" });
+
+    expect(res.status).toBe(400);
+    expect(res.error).toBeDefined();
+    expect(mockAddToWaitlist).not.toHaveBeenCalled();
   });
 
   it("should return 200 if v1 answers are valid", async () => {
