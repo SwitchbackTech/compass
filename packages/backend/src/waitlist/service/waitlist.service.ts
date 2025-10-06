@@ -1,7 +1,9 @@
 import { Logger } from "@core/logger/winston.logger";
 import { mapWaitlistUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
-import { Subscriber } from "@core/types/email/email.types";
-import { Answers_v1 } from "@core/types/waitlist/waitlist.answer.types";
+import {
+  Answers_v1,
+  Answers_v2,
+} from "@core/types/waitlist/waitlist.answer.types";
 import {
   Result_InviteToWaitlist,
   Result_Waitlist,
@@ -11,24 +13,17 @@ import { isMissingWaitlistInviteTagId } from "@backend/common/constants/env.util
 import { Response_TagSubscriber } from "@backend/email/email.types";
 import EmailService from "../../email/email.service";
 import { WaitlistRepository } from "../repo/waitlist.repo";
+import { mapWaitlistAnswerToSubscriber } from "./waitlist.service.util";
 
 const logger = Logger("app:waitlist.service");
+
 class WaitlistService {
   static async addToWaitlist(
     email: string,
-    answer: Answers_v1,
+    answer: Answers_v1 | Answers_v2,
   ): Promise<Result_Waitlist> {
     if (ENV.EMAILER_SECRET && ENV.EMAILER_WAITLIST_TAG_ID) {
-      const subscriber: Subscriber = {
-        email_address: email,
-        first_name: answer.firstName,
-        state: "active",
-        fields: {
-          "Last name": answer.lastName,
-          Birthday: "1970-01-01",
-          Source: answer.source,
-        },
-      };
+      const subscriber = mapWaitlistAnswerToSubscriber(email, answer);
       await EmailService.addTagToSubscriber(
         subscriber,
         ENV.EMAILER_WAITLIST_TAG_ID,
