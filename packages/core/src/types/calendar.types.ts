@@ -1,7 +1,11 @@
-import { z } from "zod";
+import { z } from "zod/v4";
+import { CalendarProvider } from "@core/types/event.types";
 import { gSchema$CalendarListEntry } from "@core/types/gcal";
-import { IDSchema, RGBHexSchema, TimezoneSchema } from "@core/types/type.utils";
-import { CalendarProvider } from "./event.types";
+import {
+  IDSchemaV4,
+  RGBHexSchema,
+  TimezoneSchema,
+} from "@core/types/type.utils";
 
 // @deprecated - will be replaced by Schema_Calendar
 export interface Schema_CalendarList {
@@ -20,7 +24,7 @@ export const GoogleCalendarMetadataSchema = z.object({
   description: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
   accessRole: z.enum(["freeBusyReader", "reader", "writer", "owner"]),
-  primary: z.boolean().default(false),
+  primary: z.boolean().default(false).optional(),
   conferenceProperties: z.object({
     allowedConferenceSolutionTypes: z.array(
       z.enum(["hangoutsMeet", "eventHangout", "eventNamedHangout"]),
@@ -51,15 +55,15 @@ export const GoogleCalendarMetadataSchema = z.object({
 });
 
 export const CompassCalendarSchema = z.object({
-  _id: IDSchema,
-  user: IDSchema,
+  _id: IDSchemaV4,
+  user: IDSchemaV4,
   backgroundColor: RGBHexSchema,
   color: RGBHexSchema,
   selected: z.boolean().default(true),
   primary: z.boolean().default(false),
-  timezone: TimezoneSchema.optional(),
+  timezone: TimezoneSchema.nullable().optional(),
   createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().optional(),
+  updatedAt: z.date().nullable().optional(),
   metadata: GoogleCalendarMetadataSchema, // use union when other providers present
 });
 

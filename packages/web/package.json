@@ -52,14 +52,14 @@
     "supertokens-auth-react": "^0.46.0",
     "supertokens-web-js": "^0.13.0",
     "ts-keycode-enum": "^1.0.6",
-    "uuid": "^9.0.0",
-    "zod": "^3.24.1"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.15.5",
     "@babel/preset-env": "^7.16.0",
     "@babel/preset-react": "^7.23.3",
     "@babel/preset-typescript": "^7.16.0",
+    "@faker-js/faker": "^9.6.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
     "@testing-library/react-hooks": "^8.0.1",
@@ -80,7 +80,6 @@
     "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-testing-library": "^5.0.5",
-    "@faker-js/faker": "^9.6.0",
     "jest": "^29.0.3",
     "jest-environment-jsdom": "^29.7.0",
     "jest-styled-components": "^7.0.5",

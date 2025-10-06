@@ -10,21 +10,25 @@ import {
   ObjectId,
 } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { Schema_CalendarList as Schema_Calendar } from "@core/types/calendar.types";
+import {
+  CompassCalendar,
+  Schema_CalendarList as Schema_Calendar,
+} from "@core/types/calendar.types";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
 import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
+import { Collections } from "@backend/common/constants/collections";
+import { ENV } from "@backend/common/constants/env.constants";
 import { waitUntilEvent } from "@backend/common/helpers/common.util";
-import { Collections } from "../constants/collections";
-import { ENV } from "../constants/env.constants";
 
 const logger = Logger("app:mongo.service");
 
 interface InternalClient {
   db: Db;
   client: MongoClient;
-  calendar: Collection<Schema_Calendar>;
+  calendar: Collection<CompassCalendar>;
+  calendarList: Collection<Schema_Calendar>;
   event: Collection<Omit<Schema_Event, "_id">>;
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
@@ -45,6 +49,15 @@ class MongoService {
    */
   get calendar(): InternalClient["calendar"] {
     return this.#accessInternalCollectionProps("calendar");
+  }
+
+  /**
+   * calendarList
+   *
+   * mongo collection
+   */
+  get calendarList(): InternalClient["calendarList"] {
+    return this.#accessInternalCollectionProps("calendarList");
   }
 
   /**
@@ -114,7 +127,8 @@ class MongoService {
     return {
       db,
       client,
-      calendar: db.collection<Schema_Calendar>(Collections.CALENDARLIST),
+      calendar: db.collection<CompassCalendar>(Collections.CALENDAR),
+      calendarList: db.collection<Schema_Calendar>(Collections.CALENDARLIST),
       event: db.collection<Omit<Schema_Event, "_id">>(Collections.EVENT),
       sync: db.collection<Schema_Sync>(Collections.SYNC),
       user: db.collection<Schema_User>(Collections.USER),
@@ -205,6 +219,10 @@ class MongoService {
   async recordExists(collection: string, filter: object): Promise<boolean> {
     const r = await this.db.collection(collection).findOne(filter);
     return r !== null;
+  }
+
+  async collectionExists(name: string): Promise<boolean> {
+    return this.db.listCollections({ name }).hasNext();
   }
 }
 
