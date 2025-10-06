@@ -51,14 +51,6 @@ describe("isCurrentWeek()", () => {
     expect(result).toBe(false);
   });
 
-  // DISCUSS: unnecessary test bc label should not be one day range
-  it("handles single-day label correctly", () => {
-    const today = dayjs("2025-03-15");
-    const label = "3.15 - 3.15";
-    const result = isCurrentWeek(label, today, today);
-    expect(result).toBe(true);
-  });
-
   // Missing dash (invalid format)
   it("returns false for malformed label", () => {
     const today = dayjs("2025-04-10");
@@ -86,7 +78,7 @@ describe("isCurrentWeek()", () => {
   // Cross-month transition (e.g. June → July)
   it("handles a week that crosses from one month to the next", () => {
     const today = dayjs("2025-07-02");
-    const label = makeLabel(dayjs("2028-06-29"), dayjs("2028-07-05"));
+    const label = makeLabel(dayjs("2025-06-29"), dayjs("2025-07-05"));
     const result = isCurrentWeek(label, dayjs("2025-06-29"), today);
     expect(result).toBe(true);
   });
@@ -94,7 +86,7 @@ describe("isCurrentWeek()", () => {
   // Cross-month transition, today before range
   it("returns false when today is before a cross-month range", () => {
     const today = dayjs("2025-06-27");
-    const label = makeLabel(dayjs("2028-06-29"), dayjs("2028-07-05"));
+    const label = makeLabel(dayjs("2025-06-29"), dayjs("2025-07-05"));
     const result = isCurrentWeek(label, dayjs("2025-06-29"), today);
     expect(result).toBe(false);
   });
@@ -102,7 +94,7 @@ describe("isCurrentWeek()", () => {
   // Cross-month transition, today after range
   it("returns false when today is after a cross-month range", () => {
     const today = dayjs("2025-07-06");
-    const label = makeLabel(dayjs("2028-06-29"), dayjs("2028-07-05"));
+    const label = makeLabel(dayjs("2025-06-29"), dayjs("2025-07-05"));
     const result = isCurrentWeek(label, dayjs("2025-06-29"), today);
     expect(result).toBe(false);
   });

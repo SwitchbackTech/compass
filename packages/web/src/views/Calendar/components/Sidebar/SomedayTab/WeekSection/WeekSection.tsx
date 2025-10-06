@@ -1,4 +1,4 @@
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import React, { FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
@@ -8,6 +8,7 @@ import {
   Measurements_Grid,
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { useToday } from "@web/views/Calendar/hooks/useToday";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { SomedayEvents } from "../SomedayEvents/SomedayEvents";
 import { SidebarHeader, SidebarSection } from "../styled";
@@ -18,7 +19,6 @@ interface Props {
   viewStart: WeekProps["component"]["startOfView"];
   weekLabel: string;
   gridRefs: Refs_Grid;
-  today: Dayjs;
 }
 
 export const getSomedayWeekLabel = (
@@ -40,7 +40,8 @@ export const isCurrentWeek = (
   const [start, end] = label.split(" - ");
   const [startMonth, startDay] = start.split(".").map(Number);
   let [endMonth, endDay] = end.split(".").map(Number);
-  const startYear = new Date(Number(viewStart)).getFullYear();
+
+  const startYear = viewStart.year();
   let endYear = startYear;
   if (startMonth === 12 && endMonth === 1) {
     endYear = startYear + 1;
@@ -51,16 +52,17 @@ export const isCurrentWeek = (
     endMonth = startMonth;
   }
 
-  const startDate = new Date(startYear, startMonth - 1, startDay);
-  const endDate = new Date(endYear, endMonth - 1, endDay);
+  const startDate = dayjs(`${startYear}-${startMonth}-${startDay}`).startOf(
+    "day",
+  );
+  const endDate = dayjs(`${endYear}-${endMonth}-${endDay}`).endOf("day");
+  const todayDate = today.startOf("day");
 
-  today.toDate().setHours(0, 0, 0, 0);
-  startDate.setHours(0, 0, 0, 0);
-  endDate.setHours(0, 0, 0, 0);
-
-  console.log(startDate + " " + today + " " + endDate);
-
-  return today.toDate() >= startDate && today.toDate() <= endDate;
+  return (
+    todayDate.isSame(startDate) ||
+    (todayDate.isAfter(startDate) && todayDate.isBefore(endDate)) ||
+    todayDate.isSame(endDate)
+  );
 };
 
 export const WeekSection: FC<Props> = ({
@@ -69,8 +71,9 @@ export const WeekSection: FC<Props> = ({
   viewStart,
   weekLabel,
   gridRefs,
-  today,
 }) => {
+  const { today } = useToday();
+
   return (
     <SidebarSection>
       <SidebarHeader

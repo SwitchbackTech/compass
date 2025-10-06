@@ -1,4 +1,3 @@
-import { Dayjs } from "dayjs";
 import React, { FC } from "react";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { selectSidebarTab } from "@web/ducks/events/selectors/view.selectors";
@@ -19,7 +18,6 @@ interface Props {
   measurements: Measurements_Grid;
   weekProps: WeekProps;
   gridRefs: Refs_Grid;
-  today: Dayjs;
 }
 
 export const Sidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = ({
@@ -27,7 +25,6 @@ export const Sidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = ({
   measurements,
   weekProps,
   gridRefs,
-  today,
 }: Props) => {
   const weekStart = weekProps.component.startOfView;
   const weekEnd = weekProps.component.endOfView;
@@ -44,7 +41,6 @@ export const Sidebar: FC<Props & React.HTMLAttributes<HTMLDivElement>> = ({
             viewStart={weekStart}
             viewEnd={weekEnd}
             gridRefs={gridRefs}
-            today={today}
           />
         )}
         {tab === "monthWidget" && (
