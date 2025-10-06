@@ -334,6 +334,7 @@ export const EventForm: React.FC<FormProps> = ({
       <DateControlsSection
         dateTimeSectionProps={dateTimeSectionProps}
         eventCategory={category}
+        underlineColor={priorityColor}
       />
 
       <RecurrenceSection {...recurrenceSectionProps} />

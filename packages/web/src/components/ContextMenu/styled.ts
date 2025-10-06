@@ -46,7 +46,16 @@ export const PriorityCircle = styled.div<{ color: string; selected: boolean }>`
   background-color: ${({ selected, color }) =>
     selected ? color : "transparent"};
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: ${({ theme }) => theme.transition.default};
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
+  }
 `;
 
 export const MenuItem = styled.li`

@@ -60,7 +60,10 @@ export const StyledTitle = styled(Input)`
   background: transparent;
   font-size: ${({ theme }) => theme.text.size["5xl"]};
   font-weight: 600;
+  transition: ${({ theme }) => theme.transition.default};
+
   &:hover {
     filter: brightness(90%);
+    background-color: rgba(0, 0, 0, 0.05);
   }
 `;

@@ -16,6 +16,7 @@ import { Flex } from "@web/components/Flex";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { StyledInput } from "@web/components/Input/styled";
 import { Text } from "@web/components/Text";
+import { Focusable } from "../Focusable/Focusable";
 
 export interface Props extends ReactDatePickerProps {
   animationOnToggle?: boolean;
@@ -26,6 +27,7 @@ export interface Props extends ReactDatePickerProps {
   onInputBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   view: "sidebar" | "grid";
   withTodayButton?: boolean;
+  underlineColor?: string;
 }
 
 export interface CalendarRef extends HTMLDivElement {
@@ -45,6 +47,7 @@ export const DatePicker: React.FC<Props> = ({
   onCalendarOpen = () => null,
   view,
   withTodayButton = true,
+  underlineColor,
   ...props
 }) => {
   const datepickerRef = useRef<CalendarRef>(null);
@@ -80,7 +83,14 @@ export const DatePicker: React.FC<Props> = ({
           view={view}
         />
       )}
-      customInput={<StyledInput bgColor={inputColor} />}
+      customInput={
+        <Focusable
+          Component={StyledInput}
+          underlineColor={underlineColor}
+          bgColor={inputColor}
+          withUnderline
+        />
+      }
       dateFormat={"M-d-yyyy"}
       formatWeekDay={(day) => day[0]}
       open={isOpen}

@@ -22,33 +22,40 @@ export const StyledRepeatText = styled.span<{
   display: inline-flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.xs};
-  border: 1px solid transparent;
+  border: 2px solid transparent;
   border-radius: ${({ theme }) => theme.shape.borderRadius};
   font-size: ${({ theme }) => theme.text.size.m};
   opacity: ${({ hasRepeat }) => (!hasRepeat ? 0.85 : 1)};
   padding: 2px 8px;
   color: ${({ hasRepeat, theme }) =>
     hasRepeat ? theme.color.text.dark : theme.color.text.darkPlaceholder};
+  transition: ${({ theme }) => theme.transition.default};
 
   svg {
     color: inherit;
+    margin-right: ${({ theme }) => theme.spacing.xs};
   }
 
-  &:focus,
   &:hover {
     cursor: pointer;
     color: ${({ theme }) => theme.color.text.dark};
     filter: brightness(110%);
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  &:focus {
+    border: 2px solid ${({ theme }) => theme.color.border.primaryDark};
   }
 `;
 
 export const StyledRepeatTextContainer = styled(Flex)`
   align-items: center;
   border-radius: ${({ theme }) => theme.shape.borderRadius};
-  gap: 6px;
+  gap: ${({ theme }) => theme.spacing.xs};
+  border: 2px solid transparent;
+
   justify-content: center;
   margin-right: 8px;
-  padding: 2px 0;
+  padding: 2px 8px;
   color: ${({ theme }) => theme.color.text.darkPlaceholder};
   font-size: ${({ theme }) => theme.text.size.m};
   cursor: pointer;
@@ -62,10 +69,14 @@ export const StyledRepeatTextContainer = styled(Flex)`
     transition: inherit;
   }
 
-  &:focus,
   &:hover {
     color: ${({ theme }) => theme.color.text.dark};
     filter: brightness(110%);
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  &:focus {
+    border: 2px solid ${({ theme }) => theme.color.border.primaryDark};
   }
 `;
 
