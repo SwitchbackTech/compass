@@ -220,6 +220,10 @@ class MongoService {
     const r = await this.db.collection(collection).findOne(filter);
     return r !== null;
   }
+
+  async collectionExists(name: string): Promise<boolean> {
+    return this.db.listCollections({ name }).hasNext();
+  }
 }
 
 export default new MongoService();

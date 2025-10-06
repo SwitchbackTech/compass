@@ -24,7 +24,7 @@ export const GoogleCalendarMetadataSchema = z.object({
   description: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
   accessRole: z.enum(["freeBusyReader", "reader", "writer", "owner"]),
-  primary: z.boolean().default(false),
+  primary: z.boolean().default(false).optional(),
   conferenceProperties: z.object({
     allowedConferenceSolutionTypes: z.array(
       z.enum(["hangoutsMeet", "eventHangout", "eventNamedHangout"]),

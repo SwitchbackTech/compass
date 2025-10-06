@@ -8,25 +8,9 @@ export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.03T01.19.59.calendar-schema";
   readonly path: string = "2025.10.03T01.19.59.calendar-schema.ts";
 
-  async clearSchemaValidation() {
-    const { collectionName } = mongoService.calendar;
-    const collections = await mongoService.db.listCollections().toArray();
-    const exists = collections.some(({ name }) => collectionName === name);
-
-    if (!exists) return;
-
-    // do not run in session
-    await mongoService.db.command({
-      collMod: mongoService.calendar.collectionName,
-      validationLevel: "off",
-      validator: {},
-    });
-  }
-
   async up(): Promise<void> {
     const { collectionName } = mongoService.calendar;
-    const collections = await mongoService.db.listCollections().toArray();
-    const exists = collections.some(({ name }) => collectionName === name);
+    const exists = await mongoService.collectionExists(collectionName);
 
     const $jsonSchema = zodToMongoSchema(CompassCalendarSchema);
 
@@ -46,10 +30,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
     await mongoService.calendar.createIndex(
       { user: 1, primary: 1 },
-      {
-        unique: true,
-        name: `${collectionName}_user_primary_unique`,
-      },
+      { unique: true, name: `${collectionName}_user_primary_unique` },
     );
 
     await mongoService.calendar.createIndex(
@@ -62,17 +43,22 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
     await mongoService.calendar.createIndex(
       { user: 1, selected: 1 },
-      {
-        name: `${collectionName}_user_selected_index`,
-      },
+      { name: `${collectionName}_user_selected_index` },
     );
   }
 
   async down(): Promise<void> {
     // do not drop table, just remove indexes and schema validation
     const { collectionName } = mongoService.calendar;
+    const exists = await mongoService.collectionExists(collectionName);
 
-    await this.clearSchemaValidation();
+    if (!exists) return;
+
+    await mongoService.db.command({
+      collMod: collectionName,
+      validationLevel: "off",
+      validator: {},
+    });
 
     await mongoService.calendar.dropIndex(
       `${collectionName}_user_primary_unique`,
