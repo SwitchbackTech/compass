@@ -60,7 +60,8 @@ export const isInstance = (
 ): boolean => {
   return (
     "recurrence" in event &&
-    !("rule" in event.recurrence!) &&
+    typeof event.recurrence === "object" &&
+    !("rule" in event.recurrence) &&
     typeof event.recurrence?.eventId === "string"
   );
 };
