@@ -46,9 +46,9 @@ export const isBase = (
   event: Pick<Schema_Event | Event_API, "recurrence">,
 ): boolean => {
   return (
-    Array.isArray((event as Schema_Event_Recur_Base)?.recurrence?.rule) &&
-    typeof (event as Schema_Event_Recur_Instance)?.recurrence?.eventId !==
-      "string"
+    "recurrence" in event &&
+    Array.isArray(event.recurrence?.rule) &&
+    !("eventId" in event.recurrence)
   );
 };
 
@@ -61,13 +61,15 @@ export const isInstance = (
   event: Pick<Schema_Event | Event_API, "recurrence" | "gRecurringEventId">,
 ): boolean => {
   return (
-    !Array.isArray((event as Schema_Event_Recur_Base)?.recurrence?.rule) &&
-    typeof (event as Schema_Event_Recur_Instance)?.recurrence?.eventId ===
-      "string"
+    "recurrence" in event &&
+    !("rule" in event.recurrence!) &&
+    typeof event.recurrence?.eventId === "string"
   );
 };
 
 /**
+ * @deprecated
+ * this fn does not support multi calendar provider setup
  * Instance compass events have an `eventId` and an empty `rule` within their `recurrence` field
  * @param event
  * @returns

@@ -24,11 +24,12 @@ export enum Categories_Event {
 
 /**
  * Event category, based on its recurrence status and isSomeday flag
- * - STANDALONE: A single event that is not recurring
+ * - STANDALONE: A regular event that is not recurring
  * - RECURRENCE_BASE: A base event that is the parent of a recurring series
  * - RECURRENCE_INSTANCE: An instance of a recurring event
- * - STANDALONE_SOMEDAY: A single event that is not recurring and isSomeday,
- * - RECURRENCE_BASE_SOMEDAY: A base event that is the parent of a recurring series and isSomeday,
+ * - STANDALONE_SOMEDAY: A regular someday event that is not recurring
+ * - RECURRENCE_BASE_SOMEDAY: A base someday event that is the parent of a recurring series
+ * - RECURRENCE_INSTANCE_SOMEDAY: An instance of a someday recurring event
  */
 export enum Categories_Recurrence {
   STANDALONE = "STANDALONE",
@@ -36,6 +37,7 @@ export enum Categories_Recurrence {
   RECURRENCE_INSTANCE = "RECURRENCE_INSTANCE",
   STANDALONE_SOMEDAY = "STANDALONE_SOMEDAY",
   RECURRENCE_BASE_SOMEDAY = "RECURRENCE_BASE_SOMEDAY",
+  RECURRENCE_INSTANCE_SOMEDAY = "RECURRENCE_INSTANCE_SOMEDAY",
 }
 
 export type TransitionStatus = "CONFIRMED" | "CANCELLED";

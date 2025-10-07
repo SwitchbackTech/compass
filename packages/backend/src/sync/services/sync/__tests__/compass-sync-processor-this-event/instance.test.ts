@@ -1552,24 +1552,36 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
             expect(updatedPayload.recurrence.eventId).toBeDefined();
 
-            // check that other instances were deleted
-            const oldInstances = await mongoService.event
+            // check that instances provider data were deleted
+            const newInstances = await mongoService.event
               .find({
                 user,
                 "recurrence.eventId": updatedPayload.recurrence.eventId,
               })
               .toArray();
 
-            expect(oldInstances).toHaveLength(0);
+            expect(newInstances).toHaveLength(10);
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
-                // check that event has gcal attributes
+                // check that event has no gcal attributes
                 expect(baseToSomedayEvent).not.toHaveProperty("gEventId");
 
                 expect(baseToSomedayEvent).not.toHaveProperty(
                   "gRecurringEventId",
                 );
+
+                newInstances.forEach((instance) => {
+                  expect.objectContaining({
+                    recurrence: { eventId: event!._id.toString() },
+                    isSomeday: true,
+                    updatedAt: expect.any(Date),
+                    origin: CalendarProvider.COMPASS,
+                  });
+
+                  expect(instance).not.toHaveProperty("gEventId");
+                  expect(instance).not.toHaveProperty("gRecurringEventId");
+                });
 
                 // check that the base event has been deleted in gcal
                 await expect(
@@ -1580,7 +1592,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
 
                 // check that other instances has been deleted in gcal
                 await Promise.all(
-                  oldInstances.map((instance) =>
+                  newInstances.map((instance) =>
                     expect(_getGcal(user, instance.gEventId!)).rejects.toThrow(
                       `Event with id ${instance.gEventId} not found`,
                     ),

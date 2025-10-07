@@ -212,7 +212,7 @@ class MongoService {
     return this.#internalClient!.client.startSession(options);
   }
 
-  objectId(id: string): ObjectId {
+  objectId(id?: string): ObjectId {
     return new ObjectId(id);
   }
 

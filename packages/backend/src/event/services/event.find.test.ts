@@ -1,10 +1,21 @@
-import { Filter, WithId } from "mongodb";
+import { Filter, ObjectId, WithId } from "mongodb";
 import { mockEventSetJan22 } from "@core/__mocks__/v1/events/events.22jan";
 import { mockEventSetSomeday1 } from "@core/__mocks__/v1/events/events.someday.1";
 import { MapEvent, gEventToCompassEvent } from "@core/mappers/map.event";
-import { Schema_Event } from "@core/types/event.types";
-import { isBase, isExistingInstance } from "@core/util/event/event.util";
+import {
+  Categories_Recurrence,
+  CompassEventStatus,
+  CompassThisEvent,
+  RecurringEventUpdateScope,
+  Schema_Event,
+} from "@core/types/event.types";
+import {
+  isBase,
+  isExistingInstance,
+  isInstance,
+} from "@core/util/event/event.util";
 import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupTestDb,
   setupTestDb,
@@ -14,7 +25,9 @@ import {
   mockRecurringGcalInstances,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import mongoService from "@backend/common/services/mongo.service";
+import { testCompassSeries } from "@backend/event/classes/compass.event.parser.test.util";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
+import { CompassSyncProcessor } from "@backend/sync/services/sync/compass.sync.processor";
 
 describe("Jan 2022: Many Formats", () => {
   const gBase = mockRecurringGcalBaseEvent({}, false, { count: 10 });
@@ -34,7 +47,7 @@ describe("Jan 2022: Many Formats", () => {
 
     const { insertedId } = await mongoService.event.insertOne({
       ...base,
-      _id: mongoService.objectId(base._id!),
+      _id: mongoService.objectId(),
     });
 
     // link instances to base
@@ -98,7 +111,10 @@ describe("Jan 2022: Many Formats", () => {
       });
 
       // Insert the test event
-      await mongoService.event.insertOne(baseCalendarRecurringEvent);
+      await mongoService.event.insertOne({
+        ...baseCalendarRecurringEvent,
+        _id: mongoService.objectId(baseCalendarRecurringEvent._id),
+      });
 
       // Query for calendar events (not someday)
       const filter = getReadAllFilter(userId, {
@@ -325,7 +341,7 @@ describe("Jan 2022: Many Formats", () => {
       });
     });
 
-    it("includes base someday recurring events when someday query provided", async () => {
+    it("excludes base someday recurring events when someday query provided", async () => {
       // Create a base someday recurring event
       const baseSomedayRecurringEvent = createMockBaseEvent({
         user: userId,
@@ -333,18 +349,69 @@ describe("Jan 2022: Many Formats", () => {
       });
 
       // Insert the test event
-      await mongoService.event.insertOne(baseSomedayRecurringEvent);
+      await mongoService.event.insertOne({
+        ...baseSomedayRecurringEvent,
+        _id: new ObjectId(baseSomedayRecurringEvent._id),
+      });
 
       // Query for someday events
       const filter = getReadAllFilter(userId, { someday: "true" });
       const result = await mongoService.event.find(filter).toArray();
 
-      // Should include the base someday recurring event
+      // Should exclude the base someday recurring event
       const baseSomedayRecurringEvents = result.filter(
-        (e) => isBase(e) && e.isSomeday === true,
+        (e) => isBase(e) && e.isSomeday,
       );
 
-      expect(baseSomedayRecurringEvents.length).toBeGreaterThan(0);
+      expect(baseSomedayRecurringEvents).toHaveLength(0);
+    });
+
+    it("includes instance someday recurring events when someday query provided", async () => {
+      // Create a base someday recurring event
+      const { user: _user } = await UtilDriver.setupTestUser();
+      const user = _user._id.toString();
+      const isSomeday = true;
+      const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
+      const payload = createMockBaseEvent({ isSomeday, user, recurrence });
+
+      const changes = await CompassSyncProcessor.processEvents([
+        {
+          payload: payload as CompassThisEvent["payload"],
+          applyTo: RecurringEventUpdateScope.THIS_EVENT,
+          status: CompassEventStatus.CONFIRMED,
+        },
+      ]);
+
+      expect(changes).toEqual(
+        expect.arrayContaining([
+          {
+            title: payload.title,
+            transition: [null, "RECURRENCE_BASE_SOMEDAY_CONFIRMED"],
+            category: Categories_Recurrence.RECURRENCE_BASE_SOMEDAY,
+            operation: "RECURRENCE_BASE_SOMEDAY_CREATED",
+          },
+        ]),
+      );
+
+      // check that event is in db
+      await testCompassSeries(payload, 10);
+
+      // Query for someday events
+      const filter = getReadAllFilter(user, { someday: "true" });
+      const result = await mongoService.event.find(filter).toArray();
+
+      // Should not include the base someday recurring event
+      const baseSomedayRecurringEvents = result.filter(
+        (e) => isBase(e) && e.isSomeday,
+      );
+
+      expect(baseSomedayRecurringEvents).toHaveLength(0);
+
+      const instanceSomedayRecurringEvents = result.filter(
+        (e) => isInstance(e) && e.isSomeday,
+      );
+
+      expect(instanceSomedayRecurringEvents.length).toBeGreaterThan(0);
     });
   });
 });
@@ -377,7 +444,7 @@ const _flatten = (
 ) => {
   Object.keys(obj).forEach((key) => {
     if (typeof obj[key] == "object") {
-      out = _flatten(obj[key] as Record<string, unknown>, out); // recursively call for nesteds
+      out = _flatten(obj[key] as Record<string, unknown>, out); // recursive call for nested
     } else {
       out[key] = obj[key]; // direct assign for values
     }

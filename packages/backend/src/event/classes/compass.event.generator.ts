@@ -15,7 +15,11 @@ import {
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";
+import {
+  isAllDay,
+  isBase,
+  parseCompassEventDate,
+} from "@core/util/event/event.util";
 import mongoService from "@backend/common/services/mongo.service";
 
 export class CompassEventFactory {
@@ -207,6 +211,19 @@ export class CompassEventFactory {
     const nullRecurrence = payload.recurrence?.rule === null;
     const baseToStandaloneTransition = nullRecurrence && hasRecurringBase;
     const baseToSomedayTransition = isSomeday && hasRecurringBase;
+
+    const dbEvent = await CompassEventFactory.findCompassEvent(
+      event.payload._id,
+      event.payload.user,
+      session,
+      false,
+    );
+
+    if (dbEvent && isBase(dbEvent)) {
+      throw new Error(
+        `You cannot edit a base event with this option(${RecurringEventUpdateScope.THIS_EVENT})`,
+      );
+    }
 
     if (baseToStandaloneTransition || baseToSomedayTransition) {
       return CompassEventFactory.genAllEvents(

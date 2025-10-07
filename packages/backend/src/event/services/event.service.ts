@@ -296,15 +296,16 @@ export const _createCompassEvent = async (
   session?: ClientSession,
 ): Promise<WithCompassId<Omit<Schema_Event, "_id">>> => {
   const { isSomeday } = _event;
-  const providerData = MapEvent.toProviderData(_event, provider);
+  const calendarProvider = isSomeday ? CalendarProvider.COMPASS : provider;
+  const providerData = MapEvent.toProviderData(_event, calendarProvider);
 
   const event = Object.assign(
     MapEvent.removeProviderData(_event),
-    isSomeday ? {} : providerData,
+    providerData,
     { updatedAt: new Date() },
   );
 
-  const instances = isSomeday ? [] : (rrule?.instances(provider) ?? []);
+  const instances = rrule?.instances(calendarProvider) ?? [];
 
   const baseEvent = await mongoService.event.findOneAndReplace(
     { _id: _event._id, user: _event.user },
@@ -319,10 +320,17 @@ export const _createCompassEvent = async (
   if (instances.length > 0) {
     const bulkUpsert = mongoService.event.initializeUnorderedBulkOp();
 
-    instances.forEach((event) => {
-      bulkUpsert.find({ _id: event._id, user: event.user }).upsert().update({
-        $set: event,
-      });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    instances.forEach(({ _id, ...event }) => {
+      bulkUpsert
+        .find({
+          startDate: event.startDate,
+          endDate: event.endDate,
+          recurrence: { eventId: baseEvent._id.toString() },
+          user: event.user,
+        })
+        .upsert()
+        .replaceOne(event);
     });
 
     await bulkUpsert.execute({ session });
