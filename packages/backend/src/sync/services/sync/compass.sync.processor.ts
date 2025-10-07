@@ -120,7 +120,7 @@ export class CompassSyncProcessor {
 
     const transition = parser.getTransitionString();
 
-    logger.info(`Handle Compass event(${eventId}): ${transition}}`);
+    logger.info(`Handle Compass event(${eventId}): ${transition}`);
 
     switch (transition) {
       case "NIL->>STANDALONE_SOMEDAY_CONFIRMED":
