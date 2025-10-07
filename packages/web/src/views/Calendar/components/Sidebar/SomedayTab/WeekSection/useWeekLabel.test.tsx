@@ -154,13 +154,15 @@ describe("getSomedayWeekLabel()", () => {
   // Leap year
   it('returns "This Week" for leap-year week containing February 29', () => {
     const today = dayjs("2028-02-29");
+    const viewStart = dayjs("2028-02-26");
     const label = makeLabel(dayjs("2028-02-26"), dayjs("2028-03-03"));
-    expect(getSomedayWeekLabel(label, today, today)).toBe("This Week");
+    expect(getSomedayWeekLabel(label, viewStart, today)).toBe("This Week");
   });
 
   it("returns label when today is outside the leap-year week", () => {
     const today = dayjs("2028-03-05");
+    const viewStart = dayjs("2028-02-26");
     const label = makeLabel(dayjs("2028-02-26"), dayjs("2028-03-03"));
-    expect(getSomedayWeekLabel(label, today, today)).toBe(label);
+    expect(getSomedayWeekLabel(label, viewStart, today)).toBe(label);
   });
 });
