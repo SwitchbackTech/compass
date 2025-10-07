@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import {
   getSomedayWeekLabel,
   isCurrentWeek,
-} from "@web/views/Calendar/hooks/useWeekLabel";
+} from "@web/views/Calendar/components/Sidebar/SomedayTab/WeekSection/useWeekLabel";
 
 const makeLabel = (start: Dayjs, end: Dayjs): string =>
   `${start.format("M.D")} - ${end.format("M.D")}`;

@@ -1,15 +1,18 @@
 import dayjs, { Dayjs } from "dayjs";
 import { useMemo } from "react";
-import { useToday } from "./useToday";
+import { getWeekRangeLabel } from "@web/common/utils/datetime/web.date.util";
+import { useToday } from "@web/views/Calendar/hooks/useToday";
 
-export const useWeekLabel = (weekLabel: string, viewStart: Dayjs) => {
+export const useWeekLabel = (viewStart: Dayjs, viewEnd: Dayjs) => {
   const { today } = useToday();
 
-  const processedWeekLabel = useMemo(() => {
-    return getSomedayWeekLabel(weekLabel, viewStart, today);
-  }, [weekLabel, viewStart, today]);
+  const weekLabel = useMemo(() => {
+    const origLabel = getWeekRangeLabel(viewStart, viewEnd);
+    const processedLabel = getSomedayWeekLabel(origLabel, viewStart, today);
+    return processedLabel;
+  }, [viewStart, viewEnd, today]);
 
-  return processedWeekLabel;
+  return weekLabel;
 };
 
 export const getSomedayWeekLabel = (
