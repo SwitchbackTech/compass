@@ -9,11 +9,7 @@ import {
   RecurringEventUpdateScope,
   Schema_Event,
 } from "@core/types/event.types";
-import {
-  isBase,
-  isExistingInstance,
-  isInstance,
-} from "@core/util/event/event.util";
+import { isBase, isInstance } from "@core/util/event/event.util";
 import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
@@ -99,7 +95,7 @@ describe("Jan 2022: Many Formats", () => {
       const baseEvents = result.filter(isBase);
       expect(baseEvents).toHaveLength(0);
 
-      const instances = result.filter(isExistingInstance);
+      const instances = result.filter(isInstance);
       expect(instances).toHaveLength(gInstances.length);
     });
 

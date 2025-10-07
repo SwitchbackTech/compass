@@ -1,4 +1,4 @@
-import { isBase, isExistingInstance } from "@core/util/event/event.util";
+import { isBase, isInstance } from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   getCategorizedEventsInDb,
@@ -30,7 +30,7 @@ describe("SyncImport: Full", () => {
     });
 
     const baseEvent = currentEventsInDb.find(isBase)!;
-    const firstInstance = currentEventsInDb.find(isExistingInstance)!;
+    const firstInstance = currentEventsInDb.find(isInstance)!;
 
     expect(baseEvent).toBeDefined();
     expect(firstInstance).toBeDefined();
@@ -75,7 +75,7 @@ describe("SyncImport: Full", () => {
     expect(baseEvents[0]?.title).toBe("Recurrence");
 
     // Verify we have the correct instance
-    const instanceEvents = currentEventsInDb.filter(isExistingInstance);
+    const instanceEvents = currentEventsInDb.filter(isInstance);
 
     expect(instanceEvents).toHaveLength(3);
 
@@ -108,7 +108,7 @@ describe("SyncImport: Full", () => {
     });
 
     // Get all instance events
-    const instances = currentEventsInDb.filter(isExistingInstance);
+    const instances = currentEventsInDb.filter(isInstance);
 
     // For each instance event, verify there are no duplicates
     const eventIds = new Set<string>();

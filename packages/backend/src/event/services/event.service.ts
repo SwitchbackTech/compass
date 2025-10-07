@@ -31,10 +31,7 @@ import { gSchema$Event } from "@core/types/gcal";
 import { IDSchema } from "@core/types/type.utils";
 import { getCurrentRangeDates } from "@core/util/date/date.util";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import {
-  isExistingInstance,
-  parseCompassEventDate,
-} from "@core/util/event/event.util";
+import { isInstance, parseCompassEventDate } from "@core/util/event/event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
 import { EventError } from "@backend/common/errors/event/event.errors";
@@ -183,7 +180,7 @@ class EventService {
     }
 
     const baseEventIds = events
-      .filter(isExistingInstance)
+      .filter(isInstance)
       .map((e) => new ObjectId(e.recurrence?.eventId));
 
     const baseEvents = await mongoService.event
@@ -192,7 +189,7 @@ class EventService {
 
     return events
       .map((event) => {
-        if (isExistingInstance(event)) {
+        if (isInstance(event)) {
           const baseEvent = baseEvents.find(
             ({ _id }) => _id.toString() === event.recurrence?.eventId,
           );
@@ -242,9 +239,7 @@ class EventService {
       );
     }
 
-    const isInstance = isExistingInstance(event);
-
-    if (isInstance) {
+    if (isInstance(event)) {
       const baseEvent = await mongoService.event.findOne({
         user: userId,
         _id: new ObjectId(event.recurrence?.eventId),
