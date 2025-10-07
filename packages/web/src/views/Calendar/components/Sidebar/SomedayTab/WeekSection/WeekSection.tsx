@@ -26,23 +26,6 @@ export const WeekSection: FC<Props> = ({
   weekLabel,
   gridRefs,
 }) => {
-  const isCurrentWeek = (label: string): boolean => {
-    const [start, end] = label.split(" - ");
-    const [month, startDay] = start.split(".").map(Number);
-    const endDay = Number(end);
-    const now = new Date();
-    const year = now.getFullYear();
-
-    const startDate = new Date(year, month - 1, startDay);
-    const endDate = new Date(year, month - 1, endDay);
-
-    now.setHours(0, 0, 0, 0);
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-
-    return now >= startDate && now <= endDate;
-  };
-
   return (
     <SidebarSection>
       <SidebarHeader
@@ -50,7 +33,7 @@ export const WeekSection: FC<Props> = ({
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
         <Text role="heading" size="xl">
-          {isCurrentWeek(weekLabel) ? "This Week" : weekLabel}
+          {weekLabel}
         </Text>
       </SidebarHeader>
 

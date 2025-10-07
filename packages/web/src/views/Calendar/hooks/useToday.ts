@@ -4,6 +4,7 @@ import dayjs from "@core/util/date/dayjs";
 export const useToday = () => {
   const getToday = (todayIndex: number) => {
     const today = dayjs();
+
     if (today.get("day") === todayIndex) {
       return today;
     }
