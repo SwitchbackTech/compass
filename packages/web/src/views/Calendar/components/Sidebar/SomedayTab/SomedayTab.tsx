@@ -13,6 +13,7 @@ import {
   Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { WeekProps } from "@web/views/Calendar/hooks/useWeek";
+import { useWeekLabel } from "@web/views/Calendar/hooks/useWeekLabel";
 import { MonthSection } from "./MonthSection/MonthSection";
 import { WeekSection } from "./WeekSection/WeekSection";
 import { SidebarContent } from "./styled";
@@ -39,6 +40,7 @@ export const SomedayTab: FC<Props> = ({
     () => getWeekRangeLabel(viewStart, viewEnd),
     [viewEnd, viewStart],
   );
+  const processedWeekLabel = useWeekLabel(weekLabel, viewStart);
 
   if (!context) return null; // TS Guard
 
@@ -55,7 +57,7 @@ export const SomedayTab: FC<Props> = ({
           dateCalcs={dateCalcs}
           measurements={measurements}
           viewStart={viewStart}
-          weekLabel={weekLabel}
+          weekLabel={processedWeekLabel}
           gridRefs={gridRefs}
         />
 

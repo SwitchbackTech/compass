@@ -1,6 +1,9 @@
 import dayjs, { Dayjs } from "dayjs";
 import "@testing-library/jest-dom";
-import { getSomedayWeekLabel, isCurrentWeek } from "./WeekSection";
+import {
+  getSomedayWeekLabel,
+  isCurrentWeek,
+} from "@web/views/Calendar/hooks/useWeekLabel";
 
 const makeLabel = (start: Dayjs, end: Dayjs): string =>
   `${start.format("M.D")} - ${end.format("M.D")}`;
