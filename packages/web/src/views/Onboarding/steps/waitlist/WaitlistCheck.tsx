@@ -92,7 +92,7 @@ export const WaitlistCheck: React.FC<OnboardingStepProps> = ({
     try {
       const data = await WaitlistApi.getWaitlistStatus(processedInput);
       setWaitlistStatus(data);
-      setFirstName(data.firstName ?? "Sailor");
+      setFirstName(data.firstName ?? "");
 
       if ((data.isOnWaitlist && data.isInvited) || data.isActive) {
         onNext();
