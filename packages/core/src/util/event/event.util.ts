@@ -61,7 +61,7 @@ export const isInstance = (
   return (
     "recurrence" in event &&
     typeof event.recurrence === "object" &&
-    !("rule" in event.recurrence) &&
+    (!("rule" in event.recurrence) || event.recurrence?.rule === null) &&
     typeof event.recurrence?.eventId === "string"
   );
 };

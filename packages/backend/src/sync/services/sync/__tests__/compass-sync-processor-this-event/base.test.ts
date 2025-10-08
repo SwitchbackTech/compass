@@ -17,6 +17,7 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import {
   testCompassEventNotInGcal,
   testCompassSeries,
@@ -167,9 +168,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                       status: CompassEventStatus.CONFIRMED,
                     },
                   ]),
-                ).rejects.toThrow(
-                  `You cannot edit a base event with this option(${RecurringEventUpdateScope.THIS_EVENT})`,
-                );
+                ).rejects.toThrow(GenericError.BadRequest.description);
               });
 
               it("should not directly update the description field of a base event", async () => {
@@ -221,9 +220,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                       status: CompassEventStatus.CONFIRMED,
                     },
                   ]),
-                ).rejects.toThrow(
-                  `You cannot edit a base event with this option(${RecurringEventUpdateScope.THIS_EVENT})`,
-                );
+                ).rejects.toThrow(GenericError.BadRequest.description);
               });
 
               it("should not directly update the priority field of a base event", async () => {
@@ -277,9 +274,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                       status: CompassEventStatus.CONFIRMED,
                     },
                   ]),
-                ).rejects.toThrow(
-                  `You cannot edit a base event with this option(${RecurringEventUpdateScope.THIS_EVENT})`,
-                );
+                ).rejects.toThrow(GenericError.BadRequest.description);
               });
 
               it("should directly update the startDate field of a base event", async () => {
@@ -333,9 +328,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                       status: CompassEventStatus.CONFIRMED,
                     },
                   ]),
-                ).rejects.toThrow(
-                  `You cannot edit a base event with this option(${RecurringEventUpdateScope.THIS_EVENT})`,
-                );
+                ).rejects.toThrow(GenericError.BadRequest.description);
               });
 
               it("should directly update the endDate field of a base event", async () => {
@@ -389,9 +382,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                       status: CompassEventStatus.CONFIRMED,
                     },
                   ]),
-                ).rejects.toThrow(
-                  `You cannot edit a base event with this option(${RecurringEventUpdateScope.THIS_EVENT})`,
-                );
+                ).rejects.toThrow(GenericError.BadRequest.description);
               });
 
               it("should directly update the recurrence field of a base event", async () => {
@@ -445,9 +436,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                       status: CompassEventStatus.CONFIRMED,
                     },
                   ]),
-                ).rejects.toThrow(
-                  `You cannot edit a base event with this option(${RecurringEventUpdateScope.THIS_EVENT})`,
-                );
+                ).rejects.toThrow(GenericError.BadRequest.description);
               });
             });
           });
@@ -503,9 +492,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                       status: CompassEventStatus.CANCELLED,
                     },
                   ]),
-                ).rejects.toThrow(
-                  `You cannot edit a base event with this option(${RecurringEventUpdateScope.THIS_EVENT})`,
-                );
+                ).rejects.toThrow(GenericError.BadRequest.description);
               },
             );
           });

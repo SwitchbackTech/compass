@@ -20,9 +20,9 @@ import {
   isBase,
   parseCompassEventDate,
 } from "@core/util/event/event.util";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
-import { GenericError } from "../../common/errors/generic/generic.errors";
-import { error } from "../../common/errors/handlers/error.handler";
 
 export class CompassEventFactory {
   private static async findCompassEvent(
@@ -209,10 +209,7 @@ export class CompassEventFactory {
     const payload = event.payload as Schema_Event;
     const hasRRule = Array.isArray(payload.recurrence?.rule);
     const hasRecurringBase = !!payload.recurrence?.eventId;
-    const isSomeday = payload.isSomeday;
     const nullRecurrence = payload.recurrence?.rule === null;
-    const baseToStandaloneTransition = nullRecurrence && hasRecurringBase;
-    const baseToSomedayTransition = isSomeday && hasRecurringBase;
 
     const dbEvent = await CompassEventFactory.findCompassEvent(
       event.payload._id,
@@ -228,16 +225,7 @@ export class CompassEventFactory {
       );
     }
 
-    if (baseToStandaloneTransition || baseToSomedayTransition) {
-      return CompassEventFactory.genAllEvents(
-        {
-          ...event,
-          applyTo: RecurringEventUpdateScope.ALL_EVENTS,
-        } as CompassAllEvents,
-        session,
-      );
-    }
-
+    if (nullRecurrence) delete payload.recurrence?.rule;
     if (hasRRule && hasRecurringBase) delete payload.recurrence?.rule;
     if (nullRecurrence && !hasRecurringBase) delete payload.recurrence;
 

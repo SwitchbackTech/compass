@@ -213,37 +213,33 @@ const BaseCompassEventSchema = z.object({
 export const CompassThisEventSchema = BaseCompassEventSchema.merge(
   z.object({
     applyTo: z.literal(RecurringEventUpdateScope.THIS_EVENT),
-    payload: z.union([
-      CompassCoreEventSchema.merge(z.object({ recurrence: z.undefined() })),
-      CompassCoreEventSchema.merge(
-        z.object({
-          recurrence: z
-            .union([
-              CompassEventRecurrence.extend({ rule: z.null() }),
-              CompassEventRecurrence,
-            ])
-            .optional(),
-        }),
-      ),
-    ]),
+    payload: CompassCoreEventSchema.extend({
+      recurrence: CompassEventRecurrence.optional(),
+    }),
   }),
 );
 
 export const CompassThisAndFollowingEventSchema = BaseCompassEventSchema.merge(
   z.object({
     applyTo: z.literal(RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS),
-    payload: CompassCoreEventSchema.merge(
-      z.object({ recurrence: CompassEventRecurrence }),
-    ).extend({ isSomeday: z.literal(false) }),
+    payload: CompassCoreEventSchema.extend({
+      isSomeday: z.literal(false),
+      recurrence: CompassEventRecurrence,
+    }),
   }),
 );
 
 export const CompassAllEventsSchema = BaseCompassEventSchema.merge(
   z.object({
     applyTo: z.literal(RecurringEventUpdateScope.ALL_EVENTS),
-    payload: CompassCoreEventSchema.merge(
-      z.object({ recurrence: CompassEventRecurrence }),
-    ).extend({ isSomeday: z.literal(false) }),
+    payload: CompassCoreEventSchema.extend({
+      recurrence: z
+        .union([
+          CompassEventRecurrence.extend({ rule: z.null() }),
+          CompassEventRecurrence,
+        ])
+        .optional(),
+    }),
   }),
 );
 

@@ -1,4 +1,3 @@
-import { ObjectId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { Priorities } from "@core/constants/core.constants";
 import {
@@ -17,6 +16,7 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import {
   testCompassEventInGcal,
@@ -1160,7 +1160,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             }
           });
 
-          it("should not update the recurrence(change to new recurrence) field of event", async () => {
+          it("should not update the recurrence field of an instance event", async () => {
             const { user: _user } = await UtilDriver.setupTestUser();
             const user = _user._id.toString();
             const isSomeday = false;
@@ -1303,18 +1303,21 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
             );
 
             // check that event was updated in db
-            const updatedInstance = await mongoService.event.findOne({
-              _id: instanceUpdate._id,
+            const updatedInstance = await eventService.readById(
               user,
-            });
+              instanceUpdate._id.toString(),
+            );
 
             expect(updatedInstance).toBeDefined();
 
             expect(updatedInstance).toEqual(
               expect.objectContaining({
                 ...updatedPayload,
-                _id: instanceUpdate._id,
-                recurrence: { eventId: event!._id.toString() },
+                _id: instanceUpdate._id.toString(),
+                recurrence: expect.objectContaining({
+                  eventId: event!._id.toString(),
+                  rule: expect.arrayContaining(recurrence.rule),
+                }),
                 endDate: updatedPayload.endDate,
                 isSomeday: false,
                 updatedAt: expect.any(Date),
@@ -1380,7 +1383,7 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
         });
 
         describe("Transition Edits: ", () => {
-          it("should update the isSomeday(to true) field of an event - instance base to regular someday event", async () => {
+          it("should not update the isSomeday(to true) field of an event - to instance someday event", async () => {
             const { user: _user } = await UtilDriver.setupTestUser();
             const user = _user._id.toString();
             const isSomeday = false;
@@ -1443,8 +1446,6 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 ),
               ),
             );
-
-            const calendarProvider = CalendarProvider.GOOGLE;
 
             switch (calendarProvider) {
               case CalendarProvider.GOOGLE: {
@@ -1498,11 +1499,10 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
                 ...instanceUpdate.recurrence!,
                 rule: event.recurrence!.rule,
               },
-              title: "Transitioned to Someday Event",
               isSomeday: true,
             };
 
-            const updateChanges = await CompassSyncProcessor.processEvents([
+            const updateChanges = CompassSyncProcessor.processEvents([
               {
                 payload: updatedPayload as CompassThisEvent["payload"],
                 applyTo: RecurringEventUpdateScope.THIS_EVENT,
@@ -1510,309 +1510,9 @@ describe.each([{ calendarProvider: CalendarProvider.GOOGLE }])(
               },
             ]);
 
-            expect(updateChanges).toEqual(
-              expect.arrayContaining([
-                {
-                  title: updatedPayload.title,
-                  transition: [
-                    "RECURRENCE_BASE",
-                    "RECURRENCE_BASE_SOMEDAY_CONFIRMED",
-                  ],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_UPDATED",
-                },
-              ]),
+            await expect(updateChanges).rejects.toThrow(
+              GenericError.DeveloperError.description,
             );
-
-            const baseToSomedayEvent = await mongoService.event.findOne({
-              user,
-              title: updatedPayload.title,
-              isSomeday: true,
-            });
-
-            expect(baseToSomedayEvent).toBeDefined();
-
-            // same id kept across transition
-            expect(baseToSomedayEvent!._id.toString()).toBe(
-              updatedPayload.recurrence.eventId,
-            );
-
-            expect(baseToSomedayEvent).toEqual(
-              expect.objectContaining({
-                title: updatedPayload.title,
-                priority: updatedPayload.priority,
-                isAllDay: updatedPayload.isAllDay,
-                recurrence: { rule: event!.recurrence!.rule },
-                user: updatedPayload.user,
-                isSomeday: true,
-                updatedAt: expect.any(Date),
-                origin: CalendarProvider.COMPASS,
-              }),
-            );
-
-            expect(updatedPayload.recurrence.eventId).toBeDefined();
-
-            // check that instances provider data were deleted
-            const newInstances = await mongoService.event
-              .find({
-                user,
-                "recurrence.eventId": updatedPayload.recurrence.eventId,
-              })
-              .toArray();
-
-            expect(newInstances).toHaveLength(10);
-
-            switch (calendarProvider) {
-              case CalendarProvider.GOOGLE: {
-                // check that event has no gcal attributes
-                expect(baseToSomedayEvent).not.toHaveProperty("gEventId");
-
-                expect(baseToSomedayEvent).not.toHaveProperty(
-                  "gRecurringEventId",
-                );
-
-                newInstances.forEach((instance) => {
-                  expect.objectContaining({
-                    recurrence: { eventId: event!._id.toString() },
-                    isSomeday: true,
-                    updatedAt: expect.any(Date),
-                    origin: CalendarProvider.COMPASS,
-                  });
-
-                  expect(instance).not.toHaveProperty("gEventId");
-                  expect(instance).not.toHaveProperty("gRecurringEventId");
-                });
-
-                // check that the base event has been deleted in gcal
-                await expect(
-                  _getGcal(user, instanceUpdate!.gRecurringEventId!),
-                ).rejects.toThrow(
-                  `Event with id ${instanceUpdate!.gRecurringEventId} not found`,
-                );
-
-                // check that other instances has been deleted in gcal
-                await Promise.all(
-                  newInstances.map((instance) =>
-                    expect(_getGcal(user, instance.gEventId!)).rejects.toThrow(
-                      `Event with id ${instance.gEventId} not found`,
-                    ),
-                  ),
-                );
-                break;
-              }
-            }
-          });
-
-          it("should update the recurrence(rule to null) field of an event - change base to regular calendar event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
-            const user = _user._id.toString();
-            const isSomeday = false;
-            const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-            const payload = createMockBaseEvent({
-              isSomeday,
-              user,
-              recurrence,
-            });
-
-            const changes = await CompassSyncProcessor.processEvents([
-              {
-                payload: payload as CompassThisEvent["payload"],
-                applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
-              },
-            ]);
-
-            expect(changes).toEqual(
-              expect.arrayContaining([
-                {
-                  title: payload.title,
-                  transition: [null, "RECURRENCE_BASE_CONFIRMED"],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_CREATED",
-                },
-              ]),
-            );
-
-            // check that event is in db
-            const event = await eventService.readById(user, payload._id);
-
-            expect(event).toEqual(
-              expect.objectContaining({
-                ...payload,
-                isSomeday: false,
-                updatedAt: expect.any(Date),
-                origin: CalendarProvider.COMPASS,
-              }),
-            );
-
-            expect(event).toHaveProperty("recurrence");
-
-            // expect event to have instances
-            const instances = await mongoService.event
-              .find({ user, "recurrence.eventId": event!._id.toString() })
-              .toArray();
-
-            expect(instances).toHaveLength(10); // recurrence rule count
-
-            expect(instances).toEqual(
-              expect.arrayContaining(
-                instances.map(() =>
-                  expect.objectContaining({
-                    recurrence: { eventId: event!._id.toString() },
-                    isSomeday: false,
-                    updatedAt: expect.any(Date),
-                    origin: CalendarProvider.COMPASS,
-                  }),
-                ),
-              ),
-            );
-
-            const calendarProvider = CalendarProvider.GOOGLE;
-
-            switch (calendarProvider) {
-              case CalendarProvider.GOOGLE: {
-                // check that event has gcal attributes
-                expect(event).toHaveProperty("gEventId");
-
-                instances.forEach((instance) => {
-                  expect(instance).toHaveProperty("gEventId");
-                  expect(instance).toHaveProperty("gRecurringEventId");
-                });
-
-                // check that event exist in gcal
-                const gcalEvent = await _getGcal(user, event.gEventId!);
-
-                const gcalInstances = await Promise.all(
-                  instances.map((instance) =>
-                    _getGcal(user, instance.gEventId!),
-                  ),
-                );
-
-                expect(gcalEvent).toHaveProperty("recurrence");
-
-                expect(gcalEvent).toEqual(
-                  expect.objectContaining({
-                    id: event.gEventId,
-                    recurrence: event.recurrence!.rule,
-                  }),
-                );
-
-                expect(gcalInstances).toEqual(
-                  expect.arrayContaining(
-                    gcalInstances.map(() =>
-                      expect.objectContaining({
-                        recurringEventId: event!.gEventId,
-                      }),
-                    ),
-                  ),
-                );
-                break;
-              }
-            }
-
-            const instanceUpdate = instances[0]!;
-
-            expect(instanceUpdate).toBeDefined();
-
-            const updatedPayload = {
-              ...instanceUpdate,
-              _id: instanceUpdate._id.toString(),
-              recurrence: { ...instanceUpdate.recurrence!, rule: null },
-              title: "Transitioned to Regular Event",
-            };
-
-            const updateChanges = await CompassSyncProcessor.processEvents([
-              {
-                payload: updatedPayload as CompassThisEvent["payload"],
-                applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                status: CompassEventStatus.CONFIRMED,
-              },
-            ]);
-
-            expect(updateChanges).toEqual(
-              expect.arrayContaining([
-                {
-                  title: updatedPayload.title,
-                  transition: ["RECURRENCE_BASE", "STANDALONE_CONFIRMED"],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_UPDATED",
-                },
-              ]),
-            );
-
-            // check that event was transitioned to someday standalone in db
-            // the original event should be deleted
-            const deletedInstance = await mongoService.event.findOne({
-              _id: instanceUpdate._id,
-              user,
-            });
-
-            expect(deletedInstance).toBeNull();
-
-            const baseToStandaloneEvent = await mongoService.event.findOne({
-              user,
-              title: updatedPayload.title,
-              isSomeday: false,
-            });
-
-            expect(baseToStandaloneEvent).toBeDefined();
-
-            expect(baseToStandaloneEvent).not.toHaveProperty("recurrence");
-
-            expect(baseToStandaloneEvent).toEqual(
-              expect.objectContaining({
-                _id: new ObjectId(updatedPayload!.recurrence!.eventId),
-                title: updatedPayload.title,
-                priority: updatedPayload.priority,
-                isAllDay: updatedPayload.isAllDay,
-                user: updatedPayload.user,
-                isSomeday: false,
-                updatedAt: expect.any(Date),
-                origin: CalendarProvider.COMPASS,
-              }),
-            );
-
-            // check that other instances were deleted
-            const otherInstances = await mongoService.event
-              .find({
-                user,
-                "recurrence.eventId": event!._id.toString(),
-              })
-              .toArray();
-
-            expect(otherInstances).toHaveLength(0);
-
-            switch (calendarProvider) {
-              case CalendarProvider.GOOGLE: {
-                // check that event has gcal attributes
-                expect(baseToStandaloneEvent).toHaveProperty("gEventId");
-
-                // check that the base event has been updated in gcal
-                const standaloneGcalEvent = await _getGcal(
-                  user,
-                  baseToStandaloneEvent!.gEventId!,
-                );
-
-                expect(standaloneGcalEvent).not.toHaveProperty("recurrence");
-
-                expect(standaloneGcalEvent).toEqual(
-                  expect.objectContaining({
-                    id: baseToStandaloneEvent!.gEventId,
-                    summary: baseToStandaloneEvent!.title,
-                  }),
-                );
-
-                // check that old event instances have been deleted in gcal
-                await Promise.all(
-                  instances.map((instance) =>
-                    expect(_getGcal(user, instance.gEventId!)).rejects.toThrow(
-                      new Error(`Event with id ${instance.gEventId} not found`),
-                    ),
-                  ),
-                );
-                break;
-              }
-            }
           });
         });
       });
