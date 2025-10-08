@@ -2,7 +2,11 @@ import { normalize } from "normalizr";
 import { call, put, select } from "@redux-saga/core/effects";
 import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Params_Events, Schema_Event } from "@core/types/event.types";
+import {
+  Params_Events,
+  RecurringEventUpdateScope,
+  Schema_Event,
+} from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
@@ -49,11 +53,14 @@ export function* convertCalendarToSomedayEvent({
 
   try {
     const gridEvent = yield* _assembleGridEvent(payload.event);
+    const isInstance = typeof gridEvent.recurrence?.eventId === "string";
+    const { ALL_EVENTS, THIS_EVENT } = RecurringEventUpdateScope;
+    const applyTo = isInstance ? ALL_EVENTS : THIS_EVENT;
 
     // optimistic event will have an entirely new ID that will not match that eventually saved
     optimisticEvent = yield* _createOptimisticGridEvent(gridEvent, true);
 
-    yield* _editEvent(gridEvent);
+    yield* _editEvent(gridEvent, { applyTo });
     yield* replaceOptimisticId(optimisticEvent._id, false);
     yield put(editEventSlice.actions.success());
   } catch (error) {

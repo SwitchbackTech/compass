@@ -12,6 +12,7 @@ import {
   Recurrence,
   RecurringEventUpdateScope,
   Schema_Event,
+  WithCompassId,
 } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { Dayjs } from "@core/util/date/dayjs";
@@ -161,7 +162,7 @@ export const useDraftActions = (
     reset();
 
     if (reduxDraft || reduxDraftType) {
-      dispatch(draftSlice.actions.discard());
+      dispatch(draftSlice.actions.discard(undefined));
     }
   }, [dispatch, reduxDraft, reduxDraftType, reset]);
 
@@ -193,26 +194,37 @@ export const useDraftActions = (
         return;
       }
 
-      dispatch(
-        getWeekEventsSlice.actions.convert({
-          event: {
-            ...draft,
-            _id: draft!._id!,
-            user: draft!.user!,
-            isAllDay: false,
-            isSomeday: true,
-            startDate: start,
-            endDate: end,
-            origin: draft!.origin!,
-            priority: draft?.priority ?? Priorities.UNASSIGNED,
-            order: somedayWeekCount,
-          },
-        }),
-      );
+      const event: WithCompassId<Omit<Schema_WebEvent, "_id">> = {
+        ...draft,
+        _id: draft!._id!,
+        user: draft!.user!,
+        isAllDay: false,
+        isSomeday: true,
+        startDate: start,
+        endDate: end,
+        origin: draft!.origin!,
+        priority: draft?.priority ?? Priorities.UNASSIGNED,
+        order: somedayWeekCount,
+      };
+
+      if (isRecurrence()) {
+        event.recurrence = {
+          ...event.recurrence,
+          rule: event.recurrence?.rule?.map((rule) => {
+            const isRRule = rule.startsWith("RRULE:");
+
+            if (!isRRule) return rule;
+
+            return rule.replace(/FREQ=\w+;/, "FREQ=WEEKLY;");
+          }) as string[],
+        };
+      }
+
+      dispatch(getWeekEventsSlice.actions.convert({ event }));
 
       discard();
     },
-    [discard, dispatch, draft, isAtWeeklyLimit, somedayWeekCount],
+    [discard, dispatch, draft, isAtWeeklyLimit, somedayWeekCount, isRecurrence],
   );
 
   const openForm = useCallback(() => {
