@@ -21,6 +21,8 @@ import {
   parseCompassEventDate,
 } from "@core/util/event/event.util";
 import mongoService from "@backend/common/services/mongo.service";
+import { GenericError } from "../../common/errors/generic/generic.errors";
+import { error } from "../../common/errors/handlers/error.handler";
 
 export class CompassEventFactory {
   private static async findCompassEvent(
@@ -220,7 +222,8 @@ export class CompassEventFactory {
     );
 
     if (dbEvent && isBase(dbEvent)) {
-      throw new Error(
+      throw error(
+        GenericError.BadRequest,
         `You cannot edit a base event with this option(${RecurringEventUpdateScope.THIS_EVENT})`,
       );
     }
