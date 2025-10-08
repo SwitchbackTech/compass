@@ -1,14 +1,16 @@
+import { ObjectId } from "bson";
+
 export const mockEventSetJan22 = [
   // ordered by start date
   {
-    _id: "18b",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 2021",
     startDate: "2021-01",
     isSomeday: true,
   },
   {
-    _id: "yupm",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 2021",
     isAllDay: true,
@@ -17,7 +19,7 @@ export const mockEventSetJan22 = [
     endDate: "2021-01-02",
   },
   {
-    _id: "9upm",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 2021 (times)",
     isAllDay: false,
@@ -26,7 +28,7 @@ export const mockEventSetJan22 = [
     endDate: "2021-01-02T02:02:02-02:30",
   },
   {
-    _id: "wuop",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Dec 31",
     isAllDay: true,
@@ -35,7 +37,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-01",
   },
   {
-    _id: "ddim",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Dec 31 - Feb 2",
     isAllDay: true,
@@ -44,7 +46,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-02-03",
   },
   {
-    _id: "dkk",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Dec 31 - Jan 1",
     isAllDay: true,
@@ -53,7 +55,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-02",
   },
   {
-    _id: "foo",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1",
     isAllDay: true,
@@ -62,7 +64,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-02",
   },
   {
-    _id: "zoo",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 (times)",
     isAllDay: false,
@@ -71,7 +73,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-020T11:11:11+03:00",
   },
   {
-    _id: "noo",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 (UTC times)",
     isAllDay: false,
@@ -80,7 +82,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-02T00:12:00Z",
   },
   {
-    _id: "moo",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 - Jan 3",
     isAllDay: true,
@@ -89,7 +91,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-04",
   },
   {
-    _id: "hoo",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 - Jan 3 (times)",
     isAllDay: false,
@@ -98,7 +100,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-04T11:11:11+11:00",
   },
   {
-    _id: "19nm",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 - Jan 21",
     isAllDay: true,
@@ -107,7 +109,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-22",
   },
   {
-    _id: "20mi",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 - Jan 21 (times)",
     isAllDay: false,
@@ -116,7 +118,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-21T12:30:00+06:00",
   },
   {
-    _id: "92323asd",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 - Apr 20",
     isAllDay: true,
@@ -125,7 +127,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-04-21",
   },
   {
-    _id: "mnb",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 - Apr 20 (times)",
     isAllDay: false,
@@ -134,7 +136,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-04-21T04:40:00-02:00",
   },
   {
-    _id: "kimnh",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 2022 - Jan 1 2023",
     isAllDay: true,
@@ -143,7 +145,7 @@ export const mockEventSetJan22 = [
     endDate: "2023-01-02",
   },
   {
-    _id: "929hs",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 2022 - Jan 1 2023 (times)",
     isAllDay: false,
@@ -152,7 +154,7 @@ export const mockEventSetJan22 = [
     endDate: "2023-01-01T04:40:00-02:00",
   },
   {
-    _id: "bar",
+    _id: new ObjectId().toString(),
     title: "Jan 2",
     user: "user1",
     isAllDay: true,
@@ -161,7 +163,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-03",
   },
   {
-    _id: "buzz",
+    _id: new ObjectId().toString(),
     user: "user1",
     isAllDay: true,
     isSomeday: false,
@@ -170,7 +172,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-04",
   },
   {
-    _id: "huzz",
+    _id: new ObjectId().toString(),
     user: "user1",
     isAllDay: true,
     isSomeday: false,
@@ -179,7 +181,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-02-04",
   },
   {
-    _id: "kup",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 4",
     isAllDay: true,
@@ -188,7 +190,7 @@ export const mockEventSetJan22 = [
     endDate: "2022-01-05",
   },
   {
-    _id: "pmim",
+    _id: new ObjectId().toString(),
     user: "user1",
     title: "Jan 1 2023",
     isAllDay: true,

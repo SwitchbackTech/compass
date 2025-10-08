@@ -3,7 +3,7 @@ import { faker } from "@faker-js/faker";
 import { Categories_Recurrence } from "@core/types/event.types";
 import { WithGcalId, gSchema$Event } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
-import { isBase, isExistingInstance } from "@core/util/event/event.util";
+import { isBase, isInstance } from "@core/util/event/event.util";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   cleanupCollections,
@@ -546,7 +546,7 @@ describe("GcalEventParser", () => {
         .toArray();
 
       const dbSeriesBase = dbSeries.find(isBase);
-      const dbSeriesInstance = dbSeries.find(isExistingInstance);
+      const dbSeriesInstance = dbSeries.find(isInstance);
 
       expect(changes).toHaveLength(1);
 

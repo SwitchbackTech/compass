@@ -11,7 +11,7 @@ import {
 import { WithGcalId, gSchema$Event, gSchema$EventBase } from "@core/types/gcal";
 import {
   isBase,
-  isExistingInstance,
+  isInstance,
   isRegularEvent,
 } from "@core/util/event/event.util";
 import {
@@ -125,7 +125,7 @@ export class GcalEventParser {
     this.#compassEvent = cEvent ?? null;
 
     this.#isInstance = isInstanceGCalEvent(this.#event);
-    this.#isCompassInstance = cEvent ? isExistingInstance(cEvent) : false;
+    this.#isCompassInstance = cEvent ? isInstance(cEvent) : false;
 
     this.#isBase = isBaseGCalEvent(this.#event);
     this.#isCompassBase = cEvent ? isBase(cEvent) : false;

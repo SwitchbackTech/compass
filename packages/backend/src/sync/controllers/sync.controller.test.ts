@@ -7,7 +7,7 @@ import { EVENT_CHANGED } from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
 import { Resource_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
-import { isBase, isExistingInstance } from "@core/util/event/event.util";
+import { isBase, isInstance } from "@core/util/event/event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { SyncControllerDriver } from "@backend/__tests__/drivers/sync.controller.driver";
 import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
@@ -150,7 +150,7 @@ describe("SyncController", () => {
         });
 
         const baseEvent = currentEventsInDb.find(isBase)!;
-        const firstInstance = currentEventsInDb.find(isExistingInstance)!;
+        const firstInstance = currentEventsInDb.find(isInstance)!;
 
         expect(baseEvent).toBeDefined();
         expect(firstInstance).toBeDefined();
@@ -190,7 +190,7 @@ describe("SyncController", () => {
         expect(baseEvents[0]?.title).toBe("Recurrence");
 
         // Verify we have the correct instance
-        const instanceEvents = currentEventsInDb.filter(isExistingInstance);
+        const instanceEvents = currentEventsInDb.filter(isInstance);
 
         expect(instanceEvents).toHaveLength(3);
 
@@ -217,7 +217,7 @@ describe("SyncController", () => {
         });
 
         // Get all instance events
-        const instances = currentEventsInDb.filter(isExistingInstance);
+        const instances = currentEventsInDb.filter(isInstance);
 
         // For each instance event, verify there are no duplicates
         const eventIds = new Set<string>();
@@ -241,7 +241,7 @@ describe("SyncController", () => {
         });
 
         const regularEvents = currentEventsInDb.filter(
-          (e) => !isBase(e) && !isExistingInstance(e),
+          (e) => !isBase(e) && !isInstance(e),
         );
 
         expect(regularEvents).toHaveLength(1);
