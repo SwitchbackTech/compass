@@ -1,19 +1,7 @@
-import { AnyBulkWriteOperation, ObjectId } from "mongodb";
-import {
-  Event_Core,
-  RecurrenceWithoutId,
-  Schema_Event_Core,
-  Schema_Event_Regular,
-  WithoutCompassId,
-} from "@core/types/event.types";
+import { AnyBulkWriteOperation } from "mongodb";
+import { Schema_Event_Core } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
-import {
-  isBase,
-  isInstanceWithoutId,
-  isRegularEvent,
-} from "@core/util/event/event.util";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
-import { Event_Core_WithObjectId } from "@backend/sync/sync.types";
 
 export const assembleEventOperations = (
   userId: string,
@@ -80,43 +68,4 @@ export const organizeGcalEventsByType = (events: gSchema$Event[]) => {
     },
   };
   return categorized;
-};
-
-/**
- * Assigns IDs to events
- * will map instance events to their base events
- * @param events - The events to assign IDs
- * @returns The events with IDs assigned
- */
-export const assignIdsToEvents = (
-  events: Array<RecurrenceWithoutId | WithoutCompassId<Schema_Event_Regular>>,
-): Array<Event_Core_WithObjectId> => {
-  const idMaps = new Map<string, ObjectId>();
-
-  return events.map((e) => {
-    const event = e as Event_Core;
-    const isBaseEvent = isBase(event);
-    const isInstance = isInstanceWithoutId(event);
-    const isRegular = isRegularEvent(event);
-    const baseEventId = event?.gRecurringEventId ?? (event?.gEventId as string);
-
-    if (!idMaps.get(baseEventId)) idMaps.set(baseEventId, new ObjectId());
-
-    const baseEventObjectId = idMaps.get(baseEventId)!;
-
-    const result = {
-      ...event,
-      _id: isBaseEvent ? baseEventObjectId : new ObjectId(),
-    };
-
-    if (!isRegular) {
-      if (isInstance) {
-        result.recurrence = { eventId: baseEventObjectId.toString() };
-      } else if (event.recurrence) {
-        result.recurrence = event.recurrence;
-      }
-    }
-
-    return result;
-  });
 };
