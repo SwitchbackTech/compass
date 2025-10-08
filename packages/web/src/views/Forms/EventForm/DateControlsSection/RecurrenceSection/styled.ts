@@ -136,7 +136,7 @@ export const StyledIntervalInput = styled.input<{
   }
 
   &:hover {
-    filter: brightness(95%);
+    filter: brightness(90%);
   }
 
   &:focus {
