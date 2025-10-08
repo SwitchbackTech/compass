@@ -46,7 +46,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       onNext={onNext}
       prevBtnDisabled={true}
     >
-      <OnboardingText>Welcome, Captain {firstName}</OnboardingText>
+      <OnboardingText>Welcome, Cap&apos;n {firstName}</OnboardingText>
       <AsciiContainer>
         <AsciiArt>
           {`                        |    |    |
