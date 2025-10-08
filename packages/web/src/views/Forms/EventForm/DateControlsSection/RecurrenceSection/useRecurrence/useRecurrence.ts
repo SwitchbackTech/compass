@@ -95,23 +95,13 @@ export const useRecurrence = (
       };
     }
 
-    return new CompassEventRRule(
-      {
-        _id: new ObjectId(), // we do not need the event's actual id here
-        startDate: startDate!,
-        endDate: endDate!,
-        recurrence: { rule: recurrence?.rule as string[] },
-      },
-      isSomeday ? { count: 6 } : {}, // default to 6 occurrences for someday events
-    );
-  }, [
-    _startDate,
-    startDate,
-    endDate,
-    hasRecurrence,
-    recurrence?.rule,
-    isSomeday,
-  ]);
+    return new CompassEventRRule({
+      _id: new ObjectId(), // we do not need the event's actual id here
+      startDate: startDate!,
+      endDate: endDate!,
+      recurrence: { rule: recurrence?.rule as string[] },
+    });
+  }, [_startDate, startDate, endDate, hasRecurrence, recurrence?.rule]);
 
   const defaultWeekDay: typeof WEEKDAYS = useMemo(
     () =>
@@ -157,9 +147,9 @@ export const useRecurrence = (
           endDate: endDate,
           recurrence: { rule: [] },
         },
-        rruleOptions,
+        { ...rruleOptions, count: isSomeday ? 6 : rruleOptions.count }, // default to 6 occurrences for someday events
       ),
-    [startDate, endDate, rruleOptions],
+    [startDate, endDate, rruleOptions, isSomeday],
   );
 
   const rule = useMemo(() => JSON.stringify(rrule.toRecurrence()), [rrule]);
