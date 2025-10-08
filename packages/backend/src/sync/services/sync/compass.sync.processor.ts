@@ -122,8 +122,6 @@ export class CompassSyncProcessor {
 
     logger.info(`Handle Compass event(${eventId}): ${transition}`);
 
-    console.log(transition, "transition");
-
     switch (transition) {
       case "NIL->>STANDALONE_SOMEDAY_CONFIRMED":
       case "NIL->>RECURRENCE_BASE_SOMEDAY_CONFIRMED":
