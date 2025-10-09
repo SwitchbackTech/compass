@@ -43,9 +43,9 @@ export class DirtyParser {
   }
 
   /**
-   * Private Static method to check if recurrence has changed
+   * Public Static method to check if recurrence has changed
    */
-  private static recurrenceChanged(
+  public static recurrenceChanged(
     curr: Schema_WebEvent,
     orig: Schema_WebEvent,
   ): boolean {

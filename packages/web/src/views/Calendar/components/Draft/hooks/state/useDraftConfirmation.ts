@@ -40,6 +40,9 @@ export const useDraftConfirmation = ({
       const isRecurringEvent = isRecurrence();
       const instanceEvent = isInstance();
       const toStandAlone = instanceEvent && rule === null;
+      const applyTo = toStandAlone
+        ? RecurringEventUpdateScope.ALL_EVENTS
+        : RecurringEventUpdateScope.THIS_EVENT;
 
       if (!toStandAlone && isRecurringEvent) {
         setFinalDraft(_draft);
@@ -54,7 +57,7 @@ export const useDraftConfirmation = ({
         if (!confirmed) return;
       }
 
-      submit(_draft);
+      submit(_draft, applyTo);
       discard();
     },
     [
