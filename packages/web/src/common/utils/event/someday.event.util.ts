@@ -71,7 +71,7 @@ export const categorizeSomedayEvents = (
     const isMonth = eventStart.isBetween(monthStart, monthEnd, null, "[]");
 
     if (isMonth) {
-      monthIds.push(e._id!);
+      if (!e.recurrence?.eventId) monthIds.push(e._id!);
     }
   });
 
@@ -89,6 +89,7 @@ export const categorizeSomedayEvents = (
     columnOrder: [COLUMN_WEEK, COLUMN_MONTH],
     events: somedayEvents,
   };
+
   return sortedData;
 };
 
