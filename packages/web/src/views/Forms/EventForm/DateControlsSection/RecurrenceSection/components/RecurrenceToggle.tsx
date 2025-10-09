@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useCallback } from "react";
+import { ConditionalRender } from "@web/components/ConditionalRender/ConditionalRender";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import {
   StyledRepeatContainer,
@@ -10,51 +11,41 @@ import {
 export interface RecurrenceToggleProps {
   hasRecurrence: boolean;
   toggleRecurrence: () => void;
-  showForm: boolean;
-  onToggleForm: () => void;
 }
 
 export const RecurrenceToggle = ({
   hasRecurrence,
   toggleRecurrence,
-  showForm,
-  onToggleForm,
 }: RecurrenceToggleProps) => {
-  const handleClick = () => {
-    if (!hasRecurrence) {
-      // Enable recurrence and show form
-      toggleRecurrence();
-      onToggleForm();
-    } else {
-      // Toggle form visibility when recurrence is already enabled
-      onToggleForm();
-    }
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleClick();
-    }
-  };
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleRecurrence();
+      }
+    },
+    [toggleRecurrence],
+  );
 
   return (
     <StyledRepeatRow>
-      {!hasRecurrence || showForm ? (
-        <StyledRepeatContainer onClick={handleClick}>
+      <ConditionalRender condition={hasRecurrence}>
+        <StyledRepeatContainer onClick={toggleRecurrence}>
           <StyledRepeatText
             hasRepeat={hasRecurrence}
-            tabIndex={0}
             onKeyDown={handleKeyDown}
+            tabIndex={0}
           >
             <RepeatIcon size={18} />
             <span>Repeat</span>
           </StyledRepeatText>
         </StyledRepeatContainer>
-      ) : (
+      </ConditionalRender>
+
+      <ConditionalRender condition={!hasRecurrence}>
         <StyledRepeatTextContainer
           aria-label="Edit recurrence"
-          onClick={handleClick}
+          onClick={toggleRecurrence}
           onKeyDown={handleKeyDown}
           role="button"
           tabIndex={0}
@@ -62,7 +53,7 @@ export const RecurrenceToggle = ({
           <RepeatIcon size={18} />
           <span>Repeat</span>
         </StyledRepeatTextContainer>
-      )}
+      </ConditionalRender>
     </StyledRepeatRow>
   );
 };
