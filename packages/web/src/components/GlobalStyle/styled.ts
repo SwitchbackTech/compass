@@ -25,33 +25,29 @@ export const GlobalStyle = createGlobalStyle`
   /* Command Palette Scrollbar Styling */
   .command-palette .overflow-y-auto {
     /* Always reserve scrollbar space */
-    scrollbar-width: auto;
+    scrollbar-width: thin;
+    scrollbar-color: ${({ theme }) => theme.color.panel.scrollbar} transparent;
     
     /* Webkit scrollbar styling (Chrome, Safari, Edge) */
     &::-webkit-scrollbar {
       width: 8px;
     }
 
-    /* Hide the scrollbar thumb by default (transparent) */
+    /* Scrollbar track - always visible but subtle */
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    /* Scrollbar thumb - visible with theme colors */
     &::-webkit-scrollbar-thumb {
-      background-color: transparent;
+      background-color: ${({ theme }) => theme.color.panel.scrollbar};
       border-radius: ${({ theme }) => theme.shape.borderRadius};
       transition: background-color 0.3s ease;
     }
 
-    /* On hover of the container, make the scrollbar thumb visible */
-    &:hover::-webkit-scrollbar-thumb {
-      background-color: ${({ theme }) => theme.color.panel.scrollbar};
-    }
-
     /* On hover of the thumb itself, make it more visible */
-    &:hover::-webkit-scrollbar-thumb:hover {
+    &::-webkit-scrollbar-thumb:hover {
       background-color: ${({ theme }) => theme.color.panel.scrollbarActive};
-    }
-
-    /* Show scrollbar during active scrolling */
-    &.scrolling::-webkit-scrollbar-thumb {
-      background-color: ${({ theme }) => theme.color.panel.scrollbar};
     }
   }
 `;

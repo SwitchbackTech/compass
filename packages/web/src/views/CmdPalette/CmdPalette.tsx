@@ -53,47 +53,6 @@ const CmdPalette = ({
     setOpen(_open);
   }, [_open]);
 
-  // Handle scrollbar visibility during scrolling
-  useEffect(() => {
-    if (!open) return;
-
-    const handleScroll = () => {
-      const scrollableElement = document.querySelector(
-        ".command-palette .overflow-y-auto",
-      );
-      if (scrollableElement) {
-        scrollableElement.classList.add("scrolling");
-
-        // Clear any existing timeout
-        const existingTimeout = (scrollableElement as any).scrollTimeout;
-        if (existingTimeout) {
-          clearTimeout(existingTimeout);
-        }
-
-        // Remove the scrolling class after scrolling stops
-        (scrollableElement as any).scrollTimeout = setTimeout(() => {
-          scrollableElement.classList.remove("scrolling");
-        }, 150);
-      }
-    };
-
-    const scrollableElement = document.querySelector(
-      ".command-palette .overflow-y-auto",
-    );
-
-    if (scrollableElement) {
-      scrollableElement.addEventListener("scroll", handleScroll);
-
-      return () => {
-        scrollableElement.removeEventListener("scroll", handleScroll);
-        const timeout = (scrollableElement as any).scrollTimeout;
-        if (timeout) {
-          clearTimeout(timeout);
-        }
-      };
-    }
-  }, [open]);
-
   useHandleOpenCommandPalette(setOpen);
 
   const handleCreateSomedayDraft = async (
