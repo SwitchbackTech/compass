@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { darken } from "@core/util/color.utils";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import { PriorityButton } from "@web/components/Button/styled";
@@ -36,6 +37,27 @@ export const StyledDescription = styled(Textarea)`
   &:hover {
     filter: brightness(90%);
     background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.color.border.primaryDark};
+    border-radius: 999px;
+  }
+
+  @-moz-document url-prefix() {
+    & {
+      scrollbar-width: thin;
+      scrollbar-color: ${({ theme }) => theme.color.border.primaryDark}
+        transparent;
+    }
   }
 `;
 
