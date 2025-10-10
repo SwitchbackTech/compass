@@ -26,6 +26,7 @@ import { MigrationIntro } from "./steps/events/MigrationIntro/MigrationIntro";
 import { MigrationSandbox } from "./steps/events/MigrationSandbox/MigrationSandbox";
 import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
 import { MobileSignIn } from "./steps/mobile/MobileSignIn";
+import { MobileWaitlistCheck } from "./steps/mobile/MobileWaitlistCheck";
 import { MobileWarning } from "./steps/mobile/MobileWarning";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
@@ -56,6 +57,13 @@ const _OnboardingFlow: React.FC = () => {
 
   // Mobile-specific login steps
   const mobileLoginSteps: OnboardingStepType[] = [
+    {
+      id: "mobile-waitlist-check",
+      component: (props: OnboardingStepProps) => (
+        <MobileWaitlistCheck {...props} />
+      ),
+      handlesKeyboardEvents: true,
+    },
     {
       id: "mobile-warning",
       component: (props: OnboardingStepProps) => <MobileWarning {...props} />,
