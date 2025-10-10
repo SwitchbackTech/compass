@@ -45,9 +45,9 @@ export const MobileWarning: React.FC<OnboardingStepProps> = ({
       <Title>Compass isn't built for mobile yet</Title>
 
       <Message>
-        We're focusing on perfecting the desktop experience first. But you can
-        still authenticate with Google to import your calendar events so you're
-        ready to go when you access Compass from your laptop.
+        We're focusing on perfecting the desktop experience first. You can still
+        import your calendar events so you're ready to go when you access
+        Compass from your laptop.
       </Message>
 
       <ContinueButton onClick={onNext}>Continue</ContinueButton>
