@@ -29,14 +29,7 @@ export const GlobalStyle = createGlobalStyle`
       width: 8px;
     }
 
-    /* Hide the scrollbar thumb by default (transparent) */
-    &::-webkit-scrollbar-thumb {
-      background-color: transparent;
-      border-radius: 4px;
-      transition: background-color 0.3s ease;
-    }
-
-    /* Show scrollbar when hovering anywhere in the palette or when scrolling */
+    /* Show scrollbar when hovering over the command palette container */
     &:hover::-webkit-scrollbar-thumb,
     &:focus::-webkit-scrollbar-thumb,
     &:active::-webkit-scrollbar-thumb {
@@ -47,14 +40,5 @@ export const GlobalStyle = createGlobalStyle`
     &:hover::-webkit-scrollbar-thumb:hover {
       background-color: ${theme.color.panel.scrollbarActive};
     }
-  }
-
-  /* Also show scrollbar when hovering over the command palette container */
-  .command-palette:hover .overflow-y-auto::-webkit-scrollbar-thumb {
-    background-color: ${theme.color.panel.scrollbar};
-  }
-
-  .command-palette:hover .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background-color: ${theme.color.panel.scrollbarActive};
   }
 `;
