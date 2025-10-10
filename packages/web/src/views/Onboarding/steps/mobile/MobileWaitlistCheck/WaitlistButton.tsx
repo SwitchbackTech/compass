@@ -53,7 +53,7 @@ export const WaitlistButton: React.FC<WaitlistButtonProps> = ({
         return {
           ...baseProps,
           onClick: onCheckWaitlist,
-          disabled: isLoading || !isValidEmail,
+          disabled: isLoading,
         };
       default:
         return baseProps;
