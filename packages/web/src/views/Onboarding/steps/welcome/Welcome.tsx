@@ -1,19 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import {
-  OnboardingButton,
-  OnboardingCardLayout,
-  OnboardingText,
-} from "../../components";
+import { OnboardingCardLayout, OnboardingText } from "../../components";
 import { OnboardingStepProps } from "../../components/Onboarding";
-
-const Title = styled(OnboardingText)`
-  margin-bottom: ${({ theme }) => theme.spacing.xl};
-`;
-
-const SubmitButton = styled(OnboardingButton)`
-  margin-top: ${({ theme }) => theme.spacing.l};
-`;
 
 const CRTContainer = styled.div`
   position: relative;
