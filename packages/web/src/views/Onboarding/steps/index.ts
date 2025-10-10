@@ -12,3 +12,5 @@ export * from "./events/SomdayIntro/SomedayIntroOne";
 export * from "./events/SomdayIntro/SomedayIntroTwo";
 export * from "./outro/OutroTwo";
 export * from "./outro/OutroQuote";
+export * from "./mobile/MobileWarning";
+export * from "./mobile/MobileSignIn";
