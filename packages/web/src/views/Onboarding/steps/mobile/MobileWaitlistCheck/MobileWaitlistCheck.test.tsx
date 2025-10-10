@@ -1,9 +1,10 @@
 import React from "react";
-import { toast } from "react-toastify";
 import "@testing-library/jest-dom";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@web/__tests__/__mocks__/mock.render";
+import { WaitlistApi } from "@web/common/apis/waitlist.api";
+import { WAITLIST_URL } from "@web/common/constants/web.constants";
 import { MobileWaitlistCheck } from "./MobileWaitlistCheck";
 
 // Mock dependencies
@@ -15,35 +16,25 @@ jest.mock("@web/common/apis/waitlist.api", () => ({
   },
 }));
 
-jest.mock("react-toastify", () => ({
-  toast: {
-    success: jest.fn(),
-    info: jest.fn(),
-    warning: jest.fn(),
-    error: jest.fn(),
-  },
-}));
-
-jest.mock("../../components/OnboardingContext", () => ({
+jest.mock("../../../components/OnboardingContext", () => ({
   useOnboarding: () => ({
     setFirstName: mockSetFirstName,
   }),
 }));
 
 // Mock the onboarding components
-jest.mock("../../components", () => ({
-  OnboardingButton: ({ children, onClick, disabled, type, ...props }: any) => (
+jest.mock("../../../components", () => ({
+  OnboardingButton: ({ children, onClick, disabled, type, ...props }) => (
     <button
       data-testid={props["data-testid"] || "onboarding-button"}
       onClick={onClick}
       disabled={disabled}
       type={type}
-      {...props}
     >
       {children}
     </button>
   ),
-  OnboardingCardLayout: ({ children, currentStep, totalSteps }: any) => (
+  OnboardingCardLayout: ({ children, currentStep, totalSteps }) => (
     <div data-testid="onboarding-card-layout">
       <div data-testid="step-indicator">
         Step {currentStep} of {totalSteps}
@@ -51,14 +42,7 @@ jest.mock("../../components", () => ({
       {children}
     </div>
   ),
-  OnboardingInput: ({
-    id,
-    type,
-    placeholder,
-    value,
-    onChange,
-    autoFocus,
-  }: any) => (
+  OnboardingInput: ({ id, type, placeholder, value, onChange, autoFocus }) => (
     <input
       data-testid="email-input"
       id={id}
@@ -69,28 +53,28 @@ jest.mock("../../components", () => ({
       autoFocus={autoFocus}
     />
   ),
-  OnboardingInputLabel: ({ htmlFor, children }: any) => (
+  OnboardingInputLabel: ({ htmlFor, children }) => (
     <label data-testid="email-label" htmlFor={htmlFor}>
       {children}
     </label>
   ),
-  OnboardingInputSection: ({ children }: any) => (
+  OnboardingInputSection: ({ children }) => (
     <div data-testid="input-section">{children}</div>
   ),
-  OnboardingLink: ({ href, target, rel, children }: any) => (
+  OnboardingLink: ({ href, target, rel, children }) => (
     <a data-testid="waitlist-link" href={href} target={target} rel={rel}>
       {children}
     </a>
   ),
-  OnboardingText: ({ children, ...props }: any) => (
+  OnboardingText: ({ children, ...props }) => (
     <div data-testid="onboarding-text" {...props}>
       {children}
     </div>
   ),
 }));
 
-jest.mock("../../components/OnboardingForm", () => ({
-  OnboardingForm: ({ children, onSubmit }: any) => (
+jest.mock("../../../components/OnboardingForm", () => ({
+  OnboardingForm: ({ children, onSubmit }) => (
     <form data-testid="onboarding-form" onSubmit={onSubmit}>
       {children}
     </form>
@@ -114,11 +98,6 @@ describe("MobileWaitlistCheck - User Experience", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Clear all toast mocks
-    (toast.success as jest.Mock).mockClear();
-    (toast.info as jest.Mock).mockClear();
-    (toast.warning as jest.Mock).mockClear();
-    (toast.error as jest.Mock).mockClear();
   });
 
   describe("Initial User Experience", () => {
@@ -130,20 +109,16 @@ describe("MobileWaitlistCheck - User Experience", () => {
       );
     });
 
-    it("shows email input and single continue button initially", () => {
+    it("shows email input and bypass waitlist button initially", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
-      expect(continueButton).toBeInTheDocument();
-      expect(continueButton).toBeDisabled(); // Disabled until valid email is entered
+      expect(bypassButton).toBeInTheDocument();
 
       // Email input should be visible
       expect(screen.getByTestId("email-input")).toBeInTheDocument();
       expect(screen.getByTestId("onboarding-form")).toBeInTheDocument();
-
-      // Should not have bypass button
-      expect(screen.queryByText("BYPASS WAITLIST")).not.toBeInTheDocument();
     });
 
     it("displays the gangway message", () => {
@@ -166,22 +141,21 @@ describe("MobileWaitlistCheck - User Experience", () => {
       expect(emailInput).toHaveValue("test@example.com");
     });
 
-    it("enables the Continue button when valid email is entered", async () => {
+    it("shows BYPASS WAITLIST button when email is entered", async () => {
       const user = userEvent.setup();
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
-      expect(continueButton).toBeDisabled();
+      expect(bypassButton).toBeInTheDocument();
 
       await user.type(emailInput, "test@example.com");
 
-      expect(continueButton).not.toBeDisabled();
+      expect(bypassButton).toBeInTheDocument();
     });
 
-    it("allows the user to continue after entering email", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
+    it("allows the user to bypass waitlist after entering email", async () => {
       WaitlistApi.getWaitlistStatus.mockResolvedValue({
         isOnWaitlist: true,
         isInvited: true,
@@ -193,40 +167,38 @@ describe("MobileWaitlistCheck - User Experience", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
       await user.type(emailInput, "test@example.com");
-      await user.click(continueButton);
+      await user.click(bypassButton);
 
       await waitFor(() => {
         expect(mockOnNext).toHaveBeenCalledTimes(1);
       });
     });
 
-    it("keeps the Continue button disabled with invalid email", async () => {
+    it("shows BYPASS WAITLIST button with invalid email", async () => {
       const user = userEvent.setup();
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
 
       // Test with invalid email formats
       await user.type(emailInput, "invalid-email");
-      expect(continueButton).toBeDisabled();
+      expect(screen.getByText("BYPASS WAITLIST")).toBeInTheDocument();
 
       await user.clear(emailInput);
       await user.type(emailInput, "test@");
-      expect(continueButton).toBeDisabled();
+      expect(screen.getByText("BYPASS WAITLIST")).toBeInTheDocument();
 
       await user.clear(emailInput);
       await user.type(emailInput, "@example.com");
-      expect(continueButton).toBeDisabled();
+      expect(screen.getByText("BYPASS WAITLIST")).toBeInTheDocument();
     });
   });
 
   describe("Waitlist Status Validation", () => {
     it("handles successful waitlist check for invited user", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
       WaitlistApi.getWaitlistStatus.mockResolvedValue({
         isOnWaitlist: true,
         isInvited: true,
@@ -238,25 +210,24 @@ describe("MobileWaitlistCheck - User Experience", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
       await user.type(emailInput, "john@example.com");
-      await user.click(continueButton);
+      await user.click(bypassButton);
 
       await waitFor(() => {
         expect(WaitlistApi.getWaitlistStatus).toHaveBeenCalledWith(
           "john@example.com",
         );
-        expect(toast.success).toHaveBeenCalledWith(
-          "Welcome aboard! You're ready to set sail.",
-        );
+        expect(
+          screen.getByText("Welcome aboard! You're ready to set sail."),
+        ).toBeInTheDocument();
         expect(mockSetFirstName).toHaveBeenCalledWith("John");
         expect(mockOnNext).toHaveBeenCalledTimes(1);
       });
     });
 
     it("handles waitlist check for active user", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
       WaitlistApi.getWaitlistStatus.mockResolvedValue({
         isOnWaitlist: true,
         isInvited: false,
@@ -268,25 +239,24 @@ describe("MobileWaitlistCheck - User Experience", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
       await user.type(emailInput, "jane@example.com");
-      await user.click(continueButton);
+      await user.click(bypassButton);
 
       await waitFor(() => {
         expect(WaitlistApi.getWaitlistStatus).toHaveBeenCalledWith(
           "jane@example.com",
         );
-        expect(toast.success).toHaveBeenCalledWith(
-          "Welcome aboard! You're ready to set sail.",
-        );
+        expect(
+          screen.getByText("Welcome aboard! You're ready to set sail."),
+        ).toBeInTheDocument();
         expect(mockSetFirstName).toHaveBeenCalledWith("Jane");
         expect(mockOnNext).toHaveBeenCalledTimes(1);
       });
     });
 
-    it("shows warning toast for user not on waitlist", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
+    it("shows warning message for user not on waitlist", async () => {
       WaitlistApi.getWaitlistStatus.mockResolvedValue({
         isOnWaitlist: false,
         isInvited: false,
@@ -297,23 +267,24 @@ describe("MobileWaitlistCheck - User Experience", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
       await user.type(emailInput, "newuser@example.com");
-      await user.click(continueButton);
+      await user.click(bypassButton);
 
       await waitFor(() => {
-        expect(toast.warning).toHaveBeenCalledWith(
-          "You're not on the crew list yet. Sign up to get notified when a spot opens up.",
-        );
+        expect(
+          screen.getByText(
+            "You're not on the crew list yet. Sign up to get notified when a spot opens up.",
+          ),
+        ).toBeInTheDocument();
         expect(mockOnNext).not.toHaveBeenCalled();
         // Button should change to "Signup For Waitlist"
         expect(screen.getByText("Signup For Waitlist")).toBeInTheDocument();
       });
     });
 
-    it("shows info toast for user on waitlist but not invited", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
+    it("shows info message for user on waitlist but not invited", async () => {
       WaitlistApi.getWaitlistStatus.mockResolvedValue({
         isOnWaitlist: true,
         isInvited: false,
@@ -324,15 +295,17 @@ describe("MobileWaitlistCheck - User Experience", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
       await user.type(emailInput, "waitlist@example.com");
-      await user.click(continueButton);
+      await user.click(bypassButton);
 
       await waitFor(() => {
-        expect(toast.info).toHaveBeenCalledWith(
-          "You're on the crew list but not invited yet. We'll let you know when you're invited.",
-        );
+        expect(
+          screen.getByText(
+            "You're on the crew list but not invited yet. We'll let you know when you're invited.",
+          ),
+        ).toBeInTheDocument();
         expect(mockOnNext).not.toHaveBeenCalled();
         // Button should change to "Signup For Waitlist"
         expect(screen.getByText("Signup For Waitlist")).toBeInTheDocument();
@@ -341,13 +314,12 @@ describe("MobileWaitlistCheck - User Experience", () => {
   });
 
   describe("Button Behavior", () => {
-    it("shows Continue button initially", () => {
+    it("shows BYPASS WAITLIST button initially", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
-      expect(screen.getByText("Continue")).toBeInTheDocument();
+      expect(screen.getByText("BYPASS WAITLIST")).toBeInTheDocument();
     });
 
     it("changes to Signup For Waitlist button after API call for non-invited users", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
       WaitlistApi.getWaitlistStatus.mockResolvedValue({
         isOnWaitlist: false,
         isInvited: false,
@@ -358,19 +330,18 @@ describe("MobileWaitlistCheck - User Experience", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
       await user.type(emailInput, "test@example.com");
-      await user.click(continueButton);
+      await user.click(bypassButton);
 
       await waitFor(() => {
         expect(screen.getByText("Signup For Waitlist")).toBeInTheDocument();
-        expect(screen.queryByText("Continue")).not.toBeInTheDocument();
+        expect(screen.queryByText("BYPASS WAITLIST")).not.toBeInTheDocument();
       });
     });
 
     it("opens waitlist signup page when Signup For Waitlist button is clicked", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
       WaitlistApi.getWaitlistStatus.mockResolvedValue({
         isOnWaitlist: false,
         isInvited: false,
@@ -388,10 +359,10 @@ describe("MobileWaitlistCheck - User Experience", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
       await user.type(emailInput, "test@example.com");
-      await user.click(continueButton);
+      await user.click(bypassButton);
 
       await waitFor(() => {
         expect(screen.getByText("Signup For Waitlist")).toBeInTheDocument();
@@ -401,16 +372,12 @@ describe("MobileWaitlistCheck - User Experience", () => {
       const signupButton = screen.getByText("Signup For Waitlist");
       await user.click(signupButton);
 
-      expect(mockOpen).toHaveBeenCalledWith(
-        "https://www.compasscalendar.com/waitlist",
-        "_blank",
-      );
+      expect(mockOpen).toHaveBeenCalledWith(WAITLIST_URL, "_blank");
     });
   });
 
   describe("Error Handling", () => {
     it("handles waitlist API errors gracefully", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
       const consoleSpy = jest.spyOn(console, "error").mockImplementation();
       WaitlistApi.getWaitlistStatus.mockRejectedValue(new Error("API Error"));
 
@@ -418,30 +385,32 @@ describe("MobileWaitlistCheck - User Experience", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
       await user.type(emailInput, "error@example.com");
-      await user.click(continueButton);
+      await user.click(bypassButton);
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith(
           "Error checking waitlist status:",
           expect.any(Error),
         );
-        expect(toast.error).toHaveBeenCalledWith(
-          "Failed to check waitlist status. Please try again.",
-        );
+        expect(
+          screen.getByText(
+            "Failed to check waitlist status. Please try again.",
+          ),
+        ).toBeInTheDocument();
       });
 
       // Form should still be functional after error
       expect(screen.getByTestId("onboarding-form")).toBeInTheDocument();
+      // After error, button changes to Continue
       expect(screen.getByText("Continue")).toBeInTheDocument();
 
       consoleSpy.mockRestore();
     });
 
-    it("disables buttons during loading state", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
+    it("shows checking state during loading", async () => {
       WaitlistApi.getWaitlistStatus.mockImplementation(
         () => new Promise((resolve) => setTimeout(resolve, 100)),
       );
@@ -450,23 +419,22 @@ describe("MobileWaitlistCheck - User Experience", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
       await user.type(emailInput, "test@example.com");
-      await user.click(continueButton);
+      await user.click(bypassButton);
 
-      expect(continueButton).toBeDisabled();
+      expect(screen.getByText("Checking...")).toBeInTheDocument();
     });
   });
 
   describe("Mobile-Specific Features", () => {
-    it("provides single continue button that handles waitlist check with valid email", () => {
+    it("provides bypass waitlist button that handles waitlist check", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
-      const continueButton = screen.getByText("Continue");
-      expect(continueButton).toBeInTheDocument();
-      expect(continueButton).toHaveAttribute("type", "button");
-      expect(continueButton).toBeDisabled(); // Disabled until valid email is entered
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
+      expect(bypassButton).toBeInTheDocument();
+      expect(bypassButton).toHaveAttribute("type", "button");
     });
 
     it("maintains proper step progression for mobile flow", () => {
@@ -504,7 +472,6 @@ describe("MobileWaitlistCheck - User Experience", () => {
 
   describe("Form Validation", () => {
     it("trims and lowercases email input", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
       WaitlistApi.getWaitlistStatus.mockResolvedValue({
         isOnWaitlist: true,
         isInvited: true,
@@ -516,10 +483,10 @@ describe("MobileWaitlistCheck - User Experience", () => {
       render(<MobileWaitlistCheck {...defaultProps} />);
 
       const emailInput = screen.getByTestId("email-input");
-      const continueButton = screen.getByText("Continue");
+      const bypassButton = screen.getByText("BYPASS WAITLIST");
 
       await user.type(emailInput, "  TEST@EXAMPLE.COM  ");
-      await user.click(continueButton);
+      await user.click(bypassButton);
 
       await waitFor(() => {
         expect(WaitlistApi.getWaitlistStatus).toHaveBeenCalledWith(
@@ -528,21 +495,19 @@ describe("MobileWaitlistCheck - User Experience", () => {
       });
     });
 
-    it("requires valid email input before allowing submission", async () => {
+    it("shows BYPASS WAITLIST button regardless of email validity", async () => {
       const user = userEvent.setup();
       render(<MobileWaitlistCheck {...defaultProps} />);
 
-      const continueButton = screen.getByText("Continue");
-      expect(continueButton).toBeDisabled();
+      expect(screen.getByText("BYPASS WAITLIST")).toBeInTheDocument();
 
       // Test with valid email
       const emailInput = screen.getByTestId("email-input");
       await user.type(emailInput, "test@example.com");
-      expect(continueButton).not.toBeDisabled();
+      expect(screen.getByText("BYPASS WAITLIST")).toBeInTheDocument();
     });
 
     it("handles form submission via handleSubmit for not invited users", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
       WaitlistApi.getWaitlistStatus.mockResolvedValue({
         isOnWaitlist: false,
         isInvited: false,
@@ -562,15 +527,16 @@ describe("MobileWaitlistCheck - User Experience", () => {
         expect(WaitlistApi.getWaitlistStatus).toHaveBeenCalledWith(
           "newuser@example.com",
         );
-        expect(toast.warning).toHaveBeenCalledWith(
-          "You're not on the crew list yet. Sign up to get notified when a spot opens up.",
-        );
+        expect(
+          screen.getByText(
+            "You're not on the crew list yet. Sign up to get notified when a spot opens up.",
+          ),
+        ).toBeInTheDocument();
         expect(mockOnNext).not.toHaveBeenCalled();
       });
     });
 
     it("handles form submission via handleSubmit for waitlist users not yet invited", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
       WaitlistApi.getWaitlistStatus.mockResolvedValue({
         isOnWaitlist: true,
         isInvited: false,
@@ -590,15 +556,16 @@ describe("MobileWaitlistCheck - User Experience", () => {
         expect(WaitlistApi.getWaitlistStatus).toHaveBeenCalledWith(
           "waitlist@example.com",
         );
-        expect(toast.info).toHaveBeenCalledWith(
-          "You're on the crew list but not invited yet. We'll let you know when you're invited.",
-        );
+        expect(
+          screen.getByText(
+            "You're on the crew list but not invited yet. We'll let you know when you're invited.",
+          ),
+        ).toBeInTheDocument();
         expect(mockOnNext).not.toHaveBeenCalled();
       });
     });
 
     it("handles form submission via handleSubmit for invited users", async () => {
-      const { WaitlistApi } = require("@web/common/apis/waitlist.api");
       WaitlistApi.getWaitlistStatus.mockResolvedValue({
         isOnWaitlist: true,
         isInvited: true,
@@ -619,9 +586,9 @@ describe("MobileWaitlistCheck - User Experience", () => {
         expect(WaitlistApi.getWaitlistStatus).toHaveBeenCalledWith(
           "john@example.com",
         );
-        expect(toast.success).toHaveBeenCalledWith(
-          "Welcome aboard! You're ready to set sail.",
-        );
+        expect(
+          screen.getByText("Welcome aboard! You're ready to set sail."),
+        ).toBeInTheDocument();
         expect(mockSetFirstName).toHaveBeenCalledWith("John");
         expect(mockOnNext).toHaveBeenCalledTimes(1);
       });

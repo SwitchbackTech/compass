@@ -26,7 +26,7 @@ import { MigrationIntro } from "./steps/events/MigrationIntro/MigrationIntro";
 import { MigrationSandbox } from "./steps/events/MigrationSandbox/MigrationSandbox";
 import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
 import { MobileSignIn } from "./steps/mobile/MobileSignIn";
-import { MobileWaitlistCheck } from "./steps/mobile/MobileWaitlistCheck";
+import { MobileWaitlistCheck } from "./steps/mobile/MobileWaitlistCheck/MobileWaitlistCheck";
 import { MobileWarning } from "./steps/mobile/MobileWarning";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
