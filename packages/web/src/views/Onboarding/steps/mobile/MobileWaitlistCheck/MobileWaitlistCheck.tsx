@@ -78,7 +78,7 @@ export const MobileWaitlistCheck: React.FC<OnboardingStepProps> = ({
       console.error("Error checking waitlist status:", error);
       setError("Failed to check waitlist status. Please try again.");
       setSuccessMessage(""); // Clear success message on error
-      setNextAction("NEXT_BTN"); // Keep Continue button on error
+      setNextAction("NOTHING"); // Show BYPASS WAITLIST button on error
     } finally {
       setIsLoadingWaitlistStatus(false);
     }

@@ -404,8 +404,8 @@ describe("MobileWaitlistCheck - User Experience", () => {
 
       // Form should still be functional after error
       expect(screen.getByTestId("onboarding-form")).toBeInTheDocument();
-      // After error, button changes to Continue
-      expect(screen.getByText("Continue")).toBeInTheDocument();
+      // After error, button shows BYPASS WAITLIST for retry
+      expect(screen.getByText("BYPASS WAITLIST")).toBeInTheDocument();
 
       consoleSpy.mockRestore();
     });
