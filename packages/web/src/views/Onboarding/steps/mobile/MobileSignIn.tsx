@@ -27,10 +27,10 @@ export const MobileSignIn: React.FC<OnboardingStepProps> = ({
           // Log the error but don't block the onboarding flow
           console.error("Background Google Calendar import failed:", error);
         });
+        onNext();
       } else {
         navigate("/");
       }
-      onNext();
     },
     onError: (error) => {
       console.error(error);
