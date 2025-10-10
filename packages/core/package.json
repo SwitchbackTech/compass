@@ -7,11 +7,13 @@
   "main": "",
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
+    "@types/lodash.uniqby": "^4.7.9",
     "@types/tinycolor2": "^1.4.6",
     "typescript": "^5.1.6"
   },
   "dependencies": {
     "bson": "^6.10.4",
+    "lodash.uniqby": "^4.7.0",
     "tinycolor2": "^1.6.0",
     "winston": "^3.8.1",
     "zod": "^3.25.76"
