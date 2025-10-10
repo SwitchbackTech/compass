@@ -5,7 +5,7 @@ import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { gSchema$EventBase } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
-import { isExistingInstance } from "@core/util/event/event.util";
+import { isInstance } from "@core/util/event/event.util";
 import {
   isBaseGCalEvent,
   isInstanceGCalEvent,
@@ -281,7 +281,7 @@ describe("GcalEventRRule: ", () => {
         expect(instance.user).toEqual(userId);
         expect(instance.startDate).toBeDefined();
         expect(instance.endDate).toBeDefined();
-        expect(isExistingInstance(instance)).toEqual(true);
+        expect(isInstance(instance)).toEqual(true);
 
         expect(instance.startDate).toEqual(
           startDate.add(index, "day").format(dateFormat),
@@ -313,7 +313,7 @@ describe("GcalEventRRule: ", () => {
         expect(instance.user).toEqual(userId);
         expect(instance.startDate).toBeDefined();
         expect(instance.endDate).toBeDefined();
-        expect(isExistingInstance(instance)).toEqual(true);
+        expect(isInstance(instance)).toEqual(true);
 
         expect(instance.startDate).toEqual(
           startDate.add(index, "day").format(dateFormat),

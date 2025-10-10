@@ -11,7 +11,9 @@ import {
 } from "@floating-ui/react";
 import { Priorities } from "@core/constants/core.constants";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
+import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { theme } from "@web/common/styles/theme";
+import { Schema_WebEvent } from "@web/common/types/web.event.types";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
@@ -19,12 +21,21 @@ import { SaveSection } from "@web/views/Forms/EventForm/SaveSection/SaveSection"
 import { StyledEventForm } from "@web/views/Forms/EventForm/styled";
 
 export function RecurringEventUpdateScopeDialog() {
-  const { confirmation, state } = useDraftContext();
+  const {
+    confirmation,
+    state: { draft },
+  } = useDraftContext();
   const { isRecurrenceUpdateScopeDialogOpen } = confirmation;
   const { setRecurrenceUpdateScopeDialogOpen } = confirmation;
-  const { onUpdateScopeChange, recurrenceChanged } = confirmation;
+  const { onUpdateScopeChange } = confirmation;
   const reduxDraft = useAppSelector(selectDraft);
-  const draft = state.draft ?? reduxDraft;
+  const { UNASSIGNED } = Priorities;
+  const priority = draft?.priority ?? reduxDraft?.priority ?? UNASSIGNED;
+
+  const recurrenceChanged = DirtyParser.recurrenceChanged(
+    (draft as Schema_WebEvent) ?? reduxDraft,
+    reduxDraft!,
+  );
 
   const { context, refs, floatingStyles } = useFloating({
     open: isRecurrenceUpdateScopeDialogOpen,
@@ -75,7 +86,7 @@ export function RecurringEventUpdateScopeDialog() {
             style={{ ...floatingStyles, top: "50%", left: "50%" }}
             {...interactions.getFloatingProps()}
           >
-            <StyledEventForm role="form" priority={draft?.priority}>
+            <StyledEventForm role="form" priority={priority}>
               <fieldset style={{ borderRadius: theme.shape.borderRadius }}>
                 <legend>Apply Changes To</legend>
 
@@ -101,7 +112,7 @@ export function RecurringEventUpdateScopeDialog() {
 
               <SaveSection
                 saveText="Ok"
-                priority={draft?.priority ?? Priorities.UNASSIGNED}
+                priority={priority}
                 onSubmit={onSubmitHandler}
                 onCancel={() => setRecurrenceUpdateScopeDialogOpen(false)}
               />

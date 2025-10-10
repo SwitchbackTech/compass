@@ -33,6 +33,8 @@ export function* convertSomedayToCalendarEvent({
   try {
     const gridEvent = yield* _assembleGridEvent(payload.event);
 
+    delete gridEvent.recurrence;
+
     optimisticEvent = yield* _createOptimisticGridEvent(gridEvent);
 
     yield* _editEvent(gridEvent);

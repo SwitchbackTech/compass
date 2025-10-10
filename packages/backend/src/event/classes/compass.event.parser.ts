@@ -166,14 +166,15 @@ export class CompassEventParser {
     );
 
     // create series in calendar providers
+    const { isSomeday } = this.#event;
     const calendarProvider = CalendarProvider.GOOGLE;
+    const provider = isSomeday ? CalendarProvider.COMPASS : calendarProvider;
     const userId = this.#event.user!;
 
-    const compassEvent = this.isBase
-      ? this.rrule!.base(calendarProvider)
-      : this.#event;
+    const compassEvent = (
+      this.isBase ? this.rrule?.base(provider) : this.#event
+    )!;
 
-    const { isSomeday } = compassEvent;
     const operation: Operation_Sync = `${this.#getCategory()}_CREATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
@@ -235,8 +236,10 @@ export class CompassEventParser {
       `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
     );
 
+    const { isSomeday } = this.#event;
     const calendarProvider = CalendarProvider.GOOGLE;
-    const compassEvent = this.rrule!.base(calendarProvider);
+    const provider = isSomeday ? CalendarProvider.COMPASS : calendarProvider;
+    const compassEvent = this.rrule!.base(provider);
     const userId = compassEvent.user!;
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
@@ -309,6 +312,8 @@ export class CompassEventParser {
 
     if (!cEvent) return [];
 
+    if (isSomeday) return [operationSummary];
+
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
         const event = await _updateGcal(userId, cEvent as Schema_Event_Core);
@@ -363,12 +368,14 @@ export class CompassEventParser {
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
-    await _createCompassEvent(
+    const cEvent = await _createCompassEvent(
       { ...this.#event, user, isSomeday: true },
       calendarProvider,
       null,
       session,
     );
+
+    if (!cEvent) return [];
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
@@ -381,7 +388,9 @@ export class CompassEventParser {
     }
   }
 
-  async seriesToSomeday(session?: ClientSession): Promise<Event_Transition[]> {
+  async seriesToSomedaySeries(
+    session?: ClientSession,
+  ): Promise<Event_Transition[]> {
     this.#logger.info(
       `UPDATING ${this.getTransitionString()}: ${this.#event._id.toString()} (Compass)`,
     );
@@ -393,7 +402,7 @@ export class CompassEventParser {
 
     await _deleteSeries(user, this.#event._id.toString(), session, true);
 
-    await _createCompassEvent(
+    const cEvent = await _createCompassEvent(
       {
         ...this.#event,
         user,
@@ -401,9 +410,11 @@ export class CompassEventParser {
         isSomeday: true,
       },
       calendarProvider,
-      null,
+      this.rrule,
       session,
     );
+
+    if (!cEvent) return [];
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
@@ -425,6 +436,7 @@ export class CompassEventParser {
 
     const calendarProvider = CalendarProvider.GOOGLE;
     const userId = this.#event.user!;
+    const { isSomeday } = this.#event;
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
@@ -436,6 +448,8 @@ export class CompassEventParser {
     )) as Schema_Event_Core | null;
 
     if (!cEvent) return [];
+
+    if (isSomeday) return [operationSummary];
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
@@ -459,6 +473,7 @@ export class CompassEventParser {
 
     const calendarProvider = CalendarProvider.GOOGLE;
     const userId = this.#event.user!;
+    const { isSomeday } = this.#event;
     const operation: Operation_Sync = `${this.category}_UPDATED`;
     const operationSummary = this.#getOperationSummary(operation);
 
@@ -470,6 +485,8 @@ export class CompassEventParser {
     )) as Schema_Event_Core | null;
 
     if (!cEvent) return [];
+
+    if (isSomeday) return [operationSummary];
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
@@ -489,10 +506,13 @@ export class CompassEventParser {
 
     const calendarProvider = CalendarProvider.GOOGLE;
     const userId = this.#event.user!;
+    const { isSomeday } = this.#event;
     const operation: Operation_Sync = `${this.category}_DELETED`;
     const operationSummary = this.#getOperationSummary(operation);
 
     await _deleteSeries(userId, this.#event._id.toString(), session);
+
+    if (isSomeday) return [operationSummary];
 
     switch (calendarProvider) {
       case CalendarProvider.GOOGLE: {
@@ -511,6 +531,8 @@ export class CompassEventParser {
         return Categories_Recurrence.STANDALONE_SOMEDAY;
       case this.#isBase && this.#event.isSomeday:
         return Categories_Recurrence.RECURRENCE_BASE_SOMEDAY;
+      case this.#isInstance && this.#event.isSomeday:
+        return Categories_Recurrence.RECURRENCE_INSTANCE_SOMEDAY;
       case this.isStandalone:
         return Categories_Recurrence.STANDALONE;
       case this.isBase:
@@ -528,6 +550,8 @@ export class CompassEventParser {
         return Categories_Recurrence.STANDALONE_SOMEDAY;
       case this.#isDbBase && this.#dbEvent?.isSomeday:
         return Categories_Recurrence.RECURRENCE_BASE_SOMEDAY;
+      case this.#isDbInstance && this.#dbEvent?.isSomeday:
+        return Categories_Recurrence.RECURRENCE_INSTANCE_SOMEDAY;
       case this.#isDbStandalone:
         return Categories_Recurrence.STANDALONE;
       case this.#isDbBase:

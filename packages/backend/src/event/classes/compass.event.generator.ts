@@ -15,7 +15,13 @@ import {
   Schema_Event_Recur_Instance,
 } from "@core/types/event.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";
+import {
+  isAllDay,
+  isBase,
+  parseCompassEventDate,
+} from "@core/util/event/event.util";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
 
 export class CompassEventFactory {
@@ -203,21 +209,23 @@ export class CompassEventFactory {
     const payload = event.payload as Schema_Event;
     const hasRRule = Array.isArray(payload.recurrence?.rule);
     const hasRecurringBase = !!payload.recurrence?.eventId;
-    const isSomeday = payload.isSomeday;
     const nullRecurrence = payload.recurrence?.rule === null;
-    const baseToStandaloneTransition = nullRecurrence && hasRecurringBase;
-    const baseToSomedayTransition = isSomeday && hasRecurringBase;
 
-    if (baseToStandaloneTransition || baseToSomedayTransition) {
-      return CompassEventFactory.genAllEvents(
-        {
-          ...event,
-          applyTo: RecurringEventUpdateScope.ALL_EVENTS,
-        } as CompassAllEvents,
-        session,
+    const dbEvent = await CompassEventFactory.findCompassEvent(
+      event.payload._id,
+      event.payload.user,
+      session,
+      false,
+    );
+
+    if (dbEvent && isBase(dbEvent)) {
+      throw error(
+        GenericError.BadRequest,
+        `You cannot edit a base event with this option(${RecurringEventUpdateScope.THIS_EVENT})`,
       );
     }
 
+    if (nullRecurrence) delete payload.recurrence?.rule;
     if (hasRRule && hasRecurringBase) delete payload.recurrence?.rule;
     if (nullRecurrence && !hasRecurringBase) delete payload.recurrence;
 
