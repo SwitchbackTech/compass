@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const MOBILE_BREAKPOINT = "(max-width: 768px)";
+
 /**
  * Hook to detect if the current viewport is mobile-sized
  * Uses window.matchMedia with a 768px breakpoint
@@ -9,16 +11,13 @@ export const useIsMobile = (): boolean => {
   const [isMobile, setIsMobile] = useState<boolean>(false);
 
   useEffect(() => {
-    const checkIsMobile = () => {
-      const mediaQuery = window.matchMedia("(max-width: 768px)");
-      setIsMobile(mediaQuery.matches);
-    };
+    // Create media query object once
+    const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT);
 
     // Check initial state
-    checkIsMobile();
+    setIsMobile(mediaQuery.matches);
 
-    // Create media query listener
-    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    // Create listener
     const handleChange = () => {
       setIsMobile(mediaQuery.matches);
     };
