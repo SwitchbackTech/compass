@@ -27,10 +27,6 @@ const router = createBrowserRouter(
       path: ROOT_ROUTES.LOGIN,
       element: <OnboardingFlow />,
     },
-    {
-      path: ROOT_ROUTES.MOBILE,
-      element: <OnboardingFlow />,
-    },
     { path: ROOT_ROUTES.LOGOUT, element: <LogoutView /> },
     { path: "*", element: <NotFoundView /> },
   ],

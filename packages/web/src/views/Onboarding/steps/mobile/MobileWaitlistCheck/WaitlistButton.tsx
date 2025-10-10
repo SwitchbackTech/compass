@@ -28,7 +28,7 @@ export const WaitlistButton: React.FC<WaitlistButtonProps> = ({
       case "NEXT_BTN":
         return "Continue";
       default:
-        return "";
+        return "Continue";
     }
   };
 
