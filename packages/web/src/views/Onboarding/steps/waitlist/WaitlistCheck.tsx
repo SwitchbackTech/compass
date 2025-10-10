@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { WaitlistApi } from "@web/common/apis/waitlist.api";
+import { WAITLIST_URL } from "@web/common/constants/web.constants";
 import {
   OnboardingButton,
   OnboardingCardLayout,
@@ -36,11 +37,7 @@ const NotInvited = () => {
       <OnboardingText>
         Sign up to get notified when a spot opens up.
       </OnboardingText>
-      <OnboardingLink
-        href="https://www.compasscalendar.com/waitlist"
-        target="_blank"
-        rel="noreferrer"
-      >
+      <OnboardingLink href={WAITLIST_URL} target="_blank" rel="noreferrer">
         JOIN CREW LIST
       </OnboardingLink>
     </OnboardingCardLayout>
