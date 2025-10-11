@@ -2,7 +2,7 @@ import classNames from "classnames";
 import React, { useEffect, useRef } from "react";
 import ReactDatePicker, { ReactDatePickerProps } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { isDark } from "@core/util/color.utils";
+import { darken, hslToSpaceFormat, isDark } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import {
@@ -27,7 +27,6 @@ export interface Props extends ReactDatePickerProps {
   onInputBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   view: "sidebar" | "grid";
   withTodayButton?: boolean;
-  underlineColor?: string;
 }
 
 export interface CalendarRef extends HTMLDivElement {
@@ -47,7 +46,6 @@ export const DatePicker: React.FC<Props> = ({
   onCalendarOpen = () => null,
   view,
   withTodayButton = true,
-  underlineColor,
   ...props
 }) => {
   const datepickerRef = useRef<CalendarRef>(null);
@@ -86,7 +84,7 @@ export const DatePicker: React.FC<Props> = ({
       customInput={
         <Focusable
           Component={StyledInput}
-          underlineColor={underlineColor}
+          underlineColor={hslToSpaceFormat(darken(bgColor, -15))}
           bgColor={inputColor}
           withUnderline
         />

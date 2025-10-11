@@ -5,5 +5,5 @@ export const StyledControlsSection = styled.div`
   margin-bottom: 12px;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: ${({ theme }) => theme.spacing.s};
 `;

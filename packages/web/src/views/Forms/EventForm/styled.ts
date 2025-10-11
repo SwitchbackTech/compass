@@ -36,18 +36,21 @@ export const StyledDescription = styled(Textarea)`
 
   &:hover {
     filter: brightness(90%);
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: ${({ theme }) => theme.color.border.primary};
   }
 
   &::-webkit-scrollbar {
+    cursor: default;
     width: 6px;
   }
 
   &::-webkit-scrollbar-track {
+    cursor: default;
     background: transparent;
   }
 
   &::-webkit-scrollbar-thumb {
+    cursor: default;
     background: ${({ theme }) => theme.color.border.primaryDark};
     border-radius: 999px;
   }
@@ -87,7 +90,6 @@ export const StyledTitle = styled(Input)`
   transition: ${({ theme }) => theme.transition.default};
 
   &:hover {
-    filter: brightness(90%);
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: ${({ theme }) => theme.color.border.primary};
   }
 `;

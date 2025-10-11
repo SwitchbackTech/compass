@@ -13,7 +13,6 @@ import { WeekDays } from "./components/WeekDays";
 export interface RecurrenceSectionProps {
   bgColor: string;
   event: Schema_Event;
-  underlineColor?: string;
   setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
 }
 
@@ -21,7 +20,6 @@ export const RecurrenceSection = ({
   bgColor,
   event,
   setEvent,
-  underlineColor,
 }: RecurrenceSectionProps) => {
   const recurrenceHook = useRecurrence(event, { setEvent });
   const { setInterval, setFreq, setWeekDays, setUntil } = recurrenceHook;
@@ -66,7 +64,6 @@ export const RecurrenceSection = ({
             until={until}
             minDate={event.endDate}
             setUntil={setUntil}
-            underlineColor={underlineColor}
           />
         </>
       )}

@@ -39,7 +39,7 @@ export const StyledRepeatText = styled.span<{
   &:hover {
     cursor: pointer;
     color: ${({ theme }) => theme.color.text.dark};
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: ${({ theme }) => theme.color.border.primary};
   }
   &:focus {
     box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
@@ -69,7 +69,7 @@ export const StyledRepeatTextContainer = styled(Flex)`
 
   &:hover {
     color: ${({ theme }) => theme.color.text.dark};
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: ${({ theme }) => theme.color.border.primary};
   }
 
   &:focus {

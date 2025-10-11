@@ -35,7 +35,7 @@ export const StyledIconButton = styled.button<IconButtonProps>`
 
   &:hover {
     transform: scale(1.05);
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: ${({ theme }) => theme.color.border.primary};
   }
 
   &:active {

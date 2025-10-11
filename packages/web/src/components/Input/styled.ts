@@ -19,7 +19,6 @@ export const StyledInput = styled.input<Props>`
   }
 
   &:hover {
-    filter: brightness(90%);
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: ${({ theme }) => theme.color.border.primary};
   }
 `;

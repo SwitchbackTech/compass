@@ -9,19 +9,12 @@ import { StyledControlsSection } from "./styled";
 interface Props {
   dateTimeSectionProps: DateTimeSectionProps;
   eventCategory: Categories_Event;
-  underlineColor?: string;
 }
 
-export const DateControlsSection = ({
-  dateTimeSectionProps,
-  underlineColor,
-}: Props) => {
+export const DateControlsSection = ({ dateTimeSectionProps }: Props) => {
   return (
     <StyledControlsSection>
-      <DateTimeSection
-        {...dateTimeSectionProps}
-        underlineColor={underlineColor}
-      />
+      <DateTimeSection {...dateTimeSectionProps} />
     </StyledControlsSection>
   );
 };

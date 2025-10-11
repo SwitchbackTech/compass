@@ -14,7 +14,6 @@ export interface EndsOnDateProps {
   minDate?: string;
   until?: Date | null;
   setUntil: React.Dispatch<React.SetStateAction<Date | null>>;
-  underlineColor?: string;
 }
 
 export const EndsOnDate = ({
@@ -23,7 +22,6 @@ export const EndsOnDate = ({
   inputColor,
   setUntil,
   minDate = new Date().toISOString(),
-  underlineColor,
 }: EndsOnDateProps) => {
   const [open, setOpen] = useState(false);
   const miniDate = useMemo(() => parseCompassEventDate(minDate), [minDate]);
@@ -35,7 +33,7 @@ export const EndsOnDate = ({
       <Flex
         style={{
           cursor: "pointer",
-          borderColor: underlineColor,
+          borderColor: theme.color.border.primaryDark,
           borderBottomWidth: 1,
           borderBottomStyle: "solid",
         }}
@@ -58,7 +56,6 @@ export const EndsOnDate = ({
               title="Select recurrence end date"
               view="grid"
               portalId="portal"
-              underlineColor={underlineColor}
             />
           </div>
         </TooltipWrapper>

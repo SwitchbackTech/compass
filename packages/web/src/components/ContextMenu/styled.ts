@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { darken } from "@core/util/color.utils";
 
 export const PriorityContainer = styled.div`
   display: flex;
@@ -49,7 +50,10 @@ export const PriorityCircle = styled.div<{ color: string; selected: boolean }>`
   transition: ${({ theme }) => theme.transition.default};
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.1);
+    ${({ selected, theme }) =>
+      selected
+        ? `filter: brightness(85%);`
+        : `background-color: ${theme.color.border.primary};`}
   }
 
   &:focus {

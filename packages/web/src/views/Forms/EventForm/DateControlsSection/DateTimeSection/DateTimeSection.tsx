@@ -28,7 +28,6 @@ export interface Props {
   setStartTime: (value: SelectOption<string>) => void;
   setEvent: (event: Schema_Event) => React.SetStateAction<Schema_Event> | void;
   startTime: SelectOption<string>;
-  underlineColor?: string;
 }
 
 export const DateTimeSection: FC<Props> = ({
@@ -52,7 +51,6 @@ export const DateTimeSection: FC<Props> = ({
   setEvent,
   startTime,
   endTime,
-  underlineColor,
 }) => {
   return (
     <StyledDateTimeFlex alignItems={AlignItems.CENTER} role="tablist">
@@ -71,7 +69,6 @@ export const DateTimeSection: FC<Props> = ({
           setSelectedStartDate={setSelectedStartDate}
           setIsEndDatePickerOpen={setIsEndDatePickerOpen}
           setIsStartDatePickerOpen={setIsStartDatePickerOpen}
-          underlineColor={underlineColor}
         />
       )}
 

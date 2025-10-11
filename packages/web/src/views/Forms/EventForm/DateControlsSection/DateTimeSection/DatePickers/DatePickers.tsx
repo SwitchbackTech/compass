@@ -28,7 +28,6 @@ interface Props {
   setSelectedStartDate: (value: Date) => void;
   setIsStartDatePickerOpen: (arg0: boolean) => void;
   setIsEndDatePickerOpen: (arg0: boolean) => void;
-  underlineColor?: string;
 }
 
 export const DatePickers: FC<Props> = ({
@@ -45,7 +44,6 @@ export const DatePickers: FC<Props> = ({
   setIsStartDatePickerOpen,
   setSelectedEndDate,
   setSelectedStartDate,
-  underlineColor,
 }) => {
   const closeEndDatePicker = () => {
     setIsEndDatePickerOpen(false);
@@ -204,7 +202,6 @@ export const DatePickers: FC<Props> = ({
             selected={selectedStartDate}
             title="Pick Start Date"
             view="grid"
-            underlineColor={underlineColor}
           />
         </div>
       </StyledDateFlex>
@@ -230,7 +227,6 @@ export const DatePickers: FC<Props> = ({
             selected={displayEndDate}
             title="Pick End Date"
             view="grid"
-            underlineColor={underlineColor}
           />
         </div>
       </StyledDateFlex>

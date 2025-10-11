@@ -11,3 +11,11 @@ export const darken = (color: string, amount?: number) => {
 export const isDark = (color: string) => {
   return tinycolor(color).isDark();
 };
+
+export const hslToSpaceFormat = (hsl: string) => {
+  return hsl
+    .replace(/,/g, "")
+    .replace(/%/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/hsl\s*\((.*)\)/, "hsl($1)");
+};
