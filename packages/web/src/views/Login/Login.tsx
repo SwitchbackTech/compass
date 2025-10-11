@@ -4,6 +4,7 @@ import { useAuthCheck } from "@web/auth/useAuthCheck";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { WaitlistApi } from "@web/common/apis/waitlist.api";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { WAITLIST_URL } from "@web/common/constants/web.constants";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { LoginAbsoluteOverflowLoader } from "@web/components/LoginAbsoluteOverflowLoader/LoginAbsoluteOverflowLoader";
 import { GoogleButton } from "@web/components/oauth/google/GoogleButton";
@@ -180,7 +181,7 @@ export const LoginView = () => {
                       when a spot opens up!
                     </InfoText>
                     <TertiaryButton
-                      href="https://www.compasscalendar.com/waitlist"
+                      href={WAITLIST_URL}
                       target="_blank"
                       rel="noreferrer"
                     >

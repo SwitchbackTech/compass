@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IS_DEV } from "@web/common/constants/env.constants";
+import { useIsMobile } from "@web/common/hooks/useIsMobile";
 import {
   useOnboarding,
   withProvider,
@@ -24,12 +25,16 @@ import {
 import { MigrationIntro } from "./steps/events/MigrationIntro/MigrationIntro";
 import { MigrationSandbox } from "./steps/events/MigrationSandbox/MigrationSandbox";
 import { SomedaySandbox } from "./steps/events/SomedaySandbox/SomedaySandbox";
+import { MobileSignIn } from "./steps/mobile/MobileSignIn";
+import { MobileWaitlistCheck } from "./steps/mobile/MobileWaitlistCheck/MobileWaitlistCheck";
+import { MobileWarning } from "./steps/mobile/MobileWarning";
 import { ReminderIntroOne } from "./steps/reminder/ReminderIntroOne";
 import { ReminderIntroTwo } from "./steps/reminder/ReminderIntroTwo";
 
 const _OnboardingFlow: React.FC = () => {
   const navigate = useNavigate();
   const { setHideSteps } = useOnboarding();
+  const isMobile = useIsMobile();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -49,6 +54,26 @@ const _OnboardingFlow: React.FC = () => {
       handlesKeyboardEvents: true, // prevents nav via keyboard
     });
   }
+
+  // Mobile-specific login steps
+  const mobileLoginSteps: OnboardingStepType[] = [
+    {
+      id: "mobile-waitlist-check",
+      component: (props: OnboardingStepProps) => (
+        <MobileWaitlistCheck {...props} />
+      ),
+      handlesKeyboardEvents: true,
+    },
+    {
+      id: "mobile-warning",
+      component: (props: OnboardingStepProps) => <MobileWarning {...props} />,
+    },
+    {
+      id: "mobile-sign-in",
+      component: (props: OnboardingStepProps) => <MobileSignIn {...props} />,
+      handlesKeyboardEvents: true,
+    },
+  ];
 
   const onboardingSteps: OnboardingStepType[] = [
     {
@@ -143,6 +168,19 @@ const _OnboardingFlow: React.FC = () => {
   useEffect(() => {
     setHideSteps(true);
   }, [setHideSteps]);
+
+  // Show mobile flow if on mobile device
+  if (isMobile) {
+    return (
+      <Onboarding
+        key="mobile-onboarding"
+        steps={mobileLoginSteps}
+        onComplete={() => {
+          navigate("/");
+        }}
+      />
+    );
+  }
 
   if (!showOnboarding) {
     return (
