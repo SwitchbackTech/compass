@@ -28,11 +28,15 @@ export const StyledTimePicker = styled.div<Props>`
     &__control {
       border: none;
       ${({ bgColor }) => bgColor && `background: ${bgColor}`};
+      border-radius: ${({ theme }) => theme.shape.borderRadius};
       box-shadow: none;
-      border-radius: 0;
-      min-height: 100%;
+      min-height: 38px;
+      transition: ${({ theme }) => theme.transition.default};
       &:hover {
-        filter: brightness(87%);
+        filter: brightness(90%);
+      }
+      &--is-focused {
+        box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
       }
     }
     &__value-container {

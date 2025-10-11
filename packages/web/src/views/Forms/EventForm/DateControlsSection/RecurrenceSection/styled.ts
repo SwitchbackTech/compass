@@ -29,26 +29,31 @@ export const StyledRepeatText = styled.span<{
   padding: 2px 8px;
   color: ${({ hasRepeat, theme }) =>
     hasRepeat ? theme.color.text.dark : theme.color.text.darkPlaceholder};
+  transition: ${({ theme }) => theme.transition.default};
 
   svg {
     color: inherit;
+    margin-right: ${({ theme }) => theme.spacing.xs};
   }
 
-  &:focus,
   &:hover {
     cursor: pointer;
     color: ${({ theme }) => theme.color.text.dark};
-    filter: brightness(110%);
+    background-color: ${({ theme }) => theme.color.border.primary};
+  }
+  &:focus {
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
   }
 `;
 
 export const StyledRepeatTextContainer = styled(Flex)`
   align-items: center;
   border-radius: ${({ theme }) => theme.shape.borderRadius};
-  gap: 6px;
+  gap: ${({ theme }) => theme.spacing.xs};
+  border: 1px solid transparent;
   justify-content: center;
   margin-right: 8px;
-  padding: 2px 0;
+  padding: 2px 8px;
   color: ${({ theme }) => theme.color.text.darkPlaceholder};
   font-size: ${({ theme }) => theme.text.size.m};
   cursor: pointer;
@@ -62,10 +67,13 @@ export const StyledRepeatTextContainer = styled(Flex)`
     transition: inherit;
   }
 
-  &:focus,
   &:hover {
     color: ${({ theme }) => theme.color.text.dark};
-    filter: brightness(110%);
+    background-color: ${({ theme }) => theme.color.border.primary};
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
   }
 `;
 
@@ -76,8 +84,10 @@ export const StyledWeekDay = styled.button<{
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 1px solid ${({ theme }) => theme.color.bg.primary};
+  border: 1px solid ${({ theme }) => theme.color.border.primaryDark};
   background-color: ${({ bgColor }) => bgColor};
+  transition: ${({ theme }) => theme.transition.default};
+
   cursor: pointer;
   ${({ selected, theme }) =>
     !selected &&
@@ -94,17 +104,24 @@ export const StyledWeekDay = styled.button<{
     background-color: ${darken(bgColor, 30)};
     color: ${theme.getContrastText(bgColor)};
   `}
+
+  &:focus {
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
+  }
 `;
 
 export const StyledIntervalInput = styled.input<{
   bgColor: string;
 }>`
-  width: 32;
-  height: 24px;
-  border: 1px solid ${({ theme }) => theme.color.bg.primary};
+  width: 32px;
+  height: 38px;
+  border: 1px solid transparent;
+  text-align: center;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
   padding: 0 4px;
   background-color: ${({ bgColor }) => bgColor};
   margin-left: ${({ theme }) => theme.spacing.xs};
+  transition: ${({ theme }) => theme.transition.default};
 
   /* Hide arrows/spinners */
   &::-webkit-outer-spin-button,
@@ -116,6 +133,14 @@ export const StyledIntervalInput = styled.input<{
   /* Firefox */
   &[type="number"] {
     -moz-appearance: textfield;
+  }
+
+  &:hover {
+    filter: brightness(90%);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
   }
 `;
 
@@ -130,17 +155,23 @@ export const StyledCaretButton = styled.button`
   background: none;
   color: inherit;
   border: none;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
   padding: 0;
   font: inherit;
   cursor: pointer;
   outline: inherit;
-  height: 16px;
-  width: 16px;
+  height: 19px;
+  width: 19px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: ${({ theme }) => theme.transition.default};
+
   &:hover {
     background-color: ${({ theme }) => theme.color.bg.primary};
     color: ${({ theme }) => theme.color.text.light};
+  }
+  &:focus {
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
   }
 `;

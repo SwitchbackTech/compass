@@ -3,7 +3,7 @@ import ReactSelect, { Props as RSProps } from "react-select";
 import { Key } from "ts-key-enum";
 import { SelectOption } from "@web/common/types/component.types";
 import { Option_Time } from "@web/common/types/util.types";
-import { StyledDivider, StyledTimePicker } from "./styled";
+import { StyledTimePicker } from "./styled";
 
 export interface Props extends Omit<RSProps, "onChange" | "value"> {
   bgColor: string;
@@ -78,7 +78,6 @@ export const TimePicker = ({
         options={options}
         tabSelectsValue={false}
       />
-      {isMenuOpen && <StyledDivider width="calc(100% - 16px)" />}
     </StyledTimePicker>
   );
 };
