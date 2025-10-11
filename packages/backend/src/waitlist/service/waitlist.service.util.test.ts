@@ -1,3 +1,8 @@
+import {
+  Answers_v1,
+  Answers_v2,
+} from "@core/types/waitlist/waitlist.answer.types";
+import { mapWaitlistAnswerToSubscriber } from "./waitlist.service.util";
 import { getNormalizedEmail } from "./waitlist.service.util";
 
 describe("getNormalizedEmail", () => {
@@ -168,5 +173,65 @@ describe("getNormalizedEmail", () => {
         expect(result).toBe(expected);
       });
     });
+  });
+});
+
+describe("mapWaitlistAnswerToSubscriber", () => {
+  it("maps v1 answers with full waitlist details", () => {
+    const email = "test@example.com";
+    const answer: Answers_v1 = {
+      email,
+      schemaVersion: "1",
+      source: "search-engine",
+      firstName: "Ada",
+      lastName: "Lovelace",
+      profession: "Engineer",
+      currentlyPayingFor: ["calendar"],
+      anythingElse: "Early adopter",
+    };
+
+    const subscriber = mapWaitlistAnswerToSubscriber(email, answer);
+
+    expect(subscriber).toEqual({
+      email_address: email,
+      first_name: answer.firstName,
+      state: "active",
+      fields: {
+        "Last name": answer.lastName,
+        Birthday: "1970-01-01",
+        Source: answer.source,
+      },
+    });
+  });
+
+  it("maps v2 answers with sensible defaults", () => {
+    const email = "test-v2@example.com";
+    const answer: Answers_v2 = {
+      email,
+      schemaVersion: "2",
+    };
+
+    const subscriber = mapWaitlistAnswerToSubscriber(email, answer);
+
+    expect(subscriber).toEqual({
+      email_address: email,
+      first_name: null,
+      state: "active",
+      fields: null,
+    });
+    expect(subscriber.fields).toBeNull();
+  });
+
+  it("sets optional fields to null for non-v1 schemas", () => {
+    const email = "someone@example.com";
+    const answer: Answers_v2 = {
+      email,
+      schemaVersion: "2",
+    };
+
+    const subscriber = mapWaitlistAnswerToSubscriber(email, answer);
+
+    expect(subscriber.first_name).toBeNull();
+    expect(subscriber.fields).toBeNull();
   });
 });

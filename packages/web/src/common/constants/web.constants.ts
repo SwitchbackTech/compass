@@ -21,6 +21,8 @@ export const ID_SOMEDAY_EVENT_ACTION_MENU = "someday-event-action-menu";
 export const DATA_EVENT_ELEMENT_ID = "data-event-id";
 export const ID_CONTEXT_MENU_ITEMS = "context-menu-items";
 
+export const WAITLIST_URL = "https://www.compasscalendar.com/waitlist";
+
 export enum ZIndex {
   LAYER_1 = 1,
   LAYER_2 = 2,

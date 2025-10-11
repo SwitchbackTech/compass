@@ -1,4 +1,6 @@
-export const gcalCalendarList = {
+import { gSchema$CalendarList } from "@core/types/gcal";
+
+export const gcalCalendarList: gSchema$CalendarList = {
   kind: "calendar#calendarList",
   etag: '"p32g9nb5bt6fva0g"',
   nextSyncToken: "CKCbrKvpn_UCEhh0eWxlci5oaXR6ZW1hbkBnbWFpbC5jb20=",

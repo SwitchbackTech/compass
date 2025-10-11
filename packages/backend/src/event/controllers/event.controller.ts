@@ -7,6 +7,7 @@ import {
   CompassCoreEventSchema,
   CompassEvent,
   CompassEventStatus,
+  CompassThisEvent,
   Params_DeleteMany,
   Payload_Order,
   RecurringEventUpdateScope,
@@ -70,7 +71,7 @@ class EventController {
 
       await this.processEvents([
         {
-          payload: event as CompassEvent["payload"],
+          payload: event as CompassThisEvent["payload"],
           status: CompassEventStatus.CANCELLED,
           applyTo: applyTo as RecurringEventUpdateScope.THIS_EVENT,
         },
@@ -141,7 +142,7 @@ class EventController {
       const { body, query, params, session } = req;
       const user = session?.getUserId() as string;
       const _id = params["id"] as string;
-      const payload = { ...body, user, _id } as CompassEvent["payload"];
+      const payload = { ...body, user, _id } as CompassThisEvent["payload"];
       const applyTo = query["applyTo"] as RecurringEventUpdateScope.THIS_EVENT;
 
       await this.processEvents([

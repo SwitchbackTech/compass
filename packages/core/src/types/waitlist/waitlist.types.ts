@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Schema_Answers_v1 } from "./waitlist.answer.types";
+import { Schema_Answers_v1, Schema_Answers_v2 } from "./waitlist.answer.types";
 
 export interface Result_Waitlist {
   status: "waitlisted" | "ignored";
@@ -16,5 +16,11 @@ const Schema_Waitlist_v1 = Schema_Answers_v1.extend({
   waitlistedAt: z.string().datetime(),
 });
 
-export type Schema_Waitlist_v1 = z.infer<typeof Schema_Waitlist_v1>;
-export type Schema_Waitlist = Schema_Waitlist_v1;
+const Schema_Waitlist_v2 = Schema_Answers_v2.extend({
+  status: Schema_Status,
+  waitlistedAt: z.string().datetime(),
+});
+
+type Schema_Waitlist_v1 = z.infer<typeof Schema_Waitlist_v1>;
+type Schema_Waitlist_v2 = z.infer<typeof Schema_Waitlist_v2>;
+export type Schema_Waitlist = Schema_Waitlist_v1 | Schema_Waitlist_v2;

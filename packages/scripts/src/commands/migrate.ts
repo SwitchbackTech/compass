@@ -86,7 +86,7 @@ async function template({
       contents
         .toString()
         .replace("class Template", `class ${migratorType}`)
-        .replace("{{name}}", name.split(".").pop()!)
+        .replace("{{name}}", name)
         .replace("{{path}}", path.replace(`${migrationsRoot}${sep}`, "")),
     ],
   ]);

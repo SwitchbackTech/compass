@@ -1,7 +1,7 @@
 import { google } from "googleapis";
 import { Categories_Recurrence, Schema_Event } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
-import { isExistingInstance } from "@core/util/event/event.util";
+import { isInstance } from "@core/util/event/event.util";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import {
@@ -99,7 +99,7 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
 
     // Verify the instance before the UNTIL date still exists
     const instances = remainingEvents.filter((e) =>
-      isExistingInstance(e as unknown as Schema_Event),
+      isInstance(e as unknown as Schema_Event),
     );
 
     expect(instances.length).toBeGreaterThan(0);

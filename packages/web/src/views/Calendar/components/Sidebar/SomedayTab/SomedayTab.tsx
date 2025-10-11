@@ -1,12 +1,12 @@
-import React, { FC, useMemo, useRef } from "react";
+import React, { FC, useRef } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { theme } from "@web/common/styles/theme";
-import { getWeekRangeLabel } from "@web/common/utils/datetime/web.date.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { Divider } from "@web/components/Divider";
 import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
+import { useWeekLabel } from "@web/views/Calendar/components/Sidebar/SomedayTab/WeekSection/useWeekLabel";
 import { DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import {
   Measurements_Grid,
@@ -35,10 +35,7 @@ export const SomedayTab: FC<Props> = ({
   const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
   const context = useSidebarContext();
   const somedayRef = useRef<HTMLDivElement>(null);
-  const weekLabel = useMemo(
-    () => getWeekRangeLabel(viewStart, viewEnd),
-    [viewEnd, viewStart],
-  );
+  const weekLabel = useWeekLabel(viewStart, viewEnd);
 
   if (!context) return null; // TS Guard
 

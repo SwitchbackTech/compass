@@ -111,7 +111,7 @@ export async function testCompassSeries(
     )
     .toArray()) as Array<WithId<Omit<Schema_Event_Recur_Instance, "_id">>>;
 
-  expect(instances).toHaveLength(payload.isSomeday ? 0 : instanceCount);
+  expect(instances).toHaveLength(instanceCount);
 
   expect(instances).toEqual(
     expect.arrayContaining(

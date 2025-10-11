@@ -214,7 +214,7 @@ class WebSocketServer {
     this.wsServer.on("connection", handleWsError(this.onConnection.bind(this)));
 
     this.wsServer.engine.on("connection_error", (err: Error) => {
-      logger.error(`Connection error: ${err.message}`);
+      logger.debug(`Connection error: ${err.message}`);
     });
 
     return this.wsServer;

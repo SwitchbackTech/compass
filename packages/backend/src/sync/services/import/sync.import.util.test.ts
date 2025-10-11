@@ -1,18 +1,8 @@
-import { ObjectId } from "mongodb";
 import { gcalEvents } from "@core/__mocks__/v1/events/gcal/gcal.event";
-import { Event_Core } from "@core/types/event.types";
 import { gSchema$Event } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
-import {
-  createMockBaseEvent,
-  createMockInstance,
-} from "@core/util/test/ccal.event.factory";
-import { generateGcalId } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { cancelledEventsIds } from "@backend/common/services/gcal/gcal.utils";
-import {
-  assignIdsToEvents,
-  organizeGcalEventsByType,
-} from "@backend/sync/services/import/sync.import.util";
+import { organizeGcalEventsByType } from "@backend/sync/services/import/sync.import.util";
 import { syncExpired, syncExpiresSoon } from "@backend/sync/util/sync.util";
 
 describe("categorizeGcalEvents", () => {
@@ -94,63 +84,5 @@ describe("Sync Expiry Checks", () => {
     const manyDaysFromNow = dayjs().add(50, "days").valueOf().toString();
     const expiresSoon = syncExpiresSoon(manyDaysFromNow);
     expect(expiresSoon).toBe(false);
-  });
-});
-
-const getEventsWithoutIds = () => {
-  // Create a base event with a Google ID
-  const baseEvent = createMockBaseEvent();
-  const baseGEventId = generateGcalId();
-
-  baseEvent.gEventId = baseGEventId;
-
-  delete (baseEvent as Partial<typeof baseEvent>)._id;
-
-  const gEventId = baseEvent.gEventId as string;
-
-  // Create instances that reference the base event's Google ID
-  const instance1 = createMockInstance(baseGEventId, gEventId, {});
-  const instance2 = createMockInstance(baseGEventId, gEventId, {});
-
-  // delete _ids to simulate a newly mapped event
-  delete (instance1 as Partial<typeof instance1>)._id;
-  delete (instance1 as Partial<typeof instance1>).recurrence;
-  delete (instance2 as Partial<typeof instance2>)._id;
-  delete (instance2 as Partial<typeof instance2>).recurrence;
-
-  const eventsWithoutIds = [baseEvent, instance1, instance2];
-
-  return eventsWithoutIds;
-};
-
-describe("assignIdsToEvents", () => {
-  it("assigns Mongo ObjectIds to events", () => {
-    const eventsWithoutIds = getEventsWithoutIds() as Event_Core[];
-
-    const events = assignIdsToEvents(eventsWithoutIds);
-
-    // Verify all events have ObjectIds
-    for (const event of events) {
-      expect(event?._id).toBeDefined();
-      expect(event._id).toBeInstanceOf(ObjectId);
-    }
-  });
-
-  it("links instances to base events", () => {
-    const eventsWithoutIds = getEventsWithoutIds() as Event_Core[];
-
-    const events = assignIdsToEvents(eventsWithoutIds);
-
-    const baseEvent = events.find((event) => event.recurrence?.rule);
-
-    expect(baseEvent).toBeDefined();
-
-    const instances = events.filter((event) => event.recurrence?.eventId);
-
-    expect(instances).toHaveLength(2);
-
-    for (const instance of instances) {
-      expect(instance.recurrence?.eventId).toBe(baseEvent?._id?.toString());
-    }
   });
 });

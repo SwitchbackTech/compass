@@ -11,7 +11,7 @@ import dayjs from "@core/util/date/dayjs";
 import {
   categorizeEvents,
   isBase,
-  isExistingInstance,
+  isInstance,
 } from "@core/util/event/event.util";
 import { getEventsInDb } from "@backend/__tests__/helpers/mock.db.queries";
 import { State_AfterGcalImport } from "@backend/__tests__/helpers/mock.events.init";
@@ -147,7 +147,7 @@ export const noInstancesAfterSplitDate = async (
   const splitDate = new Date(splitDateStr);
   const futureInstances = events.filter(
     (e) =>
-      isExistingInstance(e as unknown as Schema_Event) &&
+      isInstance(e as unknown as Schema_Event) &&
       new Date(e.startDate) > splitDate,
   );
   expect(futureInstances).toHaveLength(0);

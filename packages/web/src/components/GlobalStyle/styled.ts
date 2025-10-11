@@ -21,4 +21,24 @@ export const GlobalStyle = createGlobalStyle`
   :focus-visible {
     outline: none;
   }
+
+  /* Command palette scrollbar styling */
+  .command-palette .overflow-y-auto {
+    /* Always reserve scrollbar space */
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    /* Show scrollbar when hovering over the command palette container */
+    &:hover::-webkit-scrollbar-thumb,
+    &:focus::-webkit-scrollbar-thumb,
+    &:active::-webkit-scrollbar-thumb {
+      background-color: ${theme.color.panel.scrollbar};
+    }
+
+    /* Even more visible on hover of the thumb itself */
+    &:hover::-webkit-scrollbar-thumb:hover {
+      background-color: ${theme.color.panel.scrollbarActive};
+    }
+  }
 `;

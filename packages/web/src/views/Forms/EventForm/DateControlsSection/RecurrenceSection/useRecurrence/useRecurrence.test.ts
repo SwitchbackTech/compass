@@ -1,21 +1,24 @@
 import { act } from "react";
 import { Frequency } from "rrule";
 import { renderHook } from "@testing-library/react";
-import { Priorities } from "@core/constants/core.constants";
-import { Schema_Event } from "@core/types/event.types";
+import { Origin, Priorities } from "@core/constants/core.constants";
+import { Schema_GridEvent } from "@web/common/types/web.event.types";
+import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { useRecurrence } from "./useRecurrence";
 
 describe("useRecurrence hook", () => {
-  const baseEvent = (): Schema_Event => ({
-    _id: "1",
-    title: "Test Event",
-    description: "desc",
-    startDate: new Date().toISOString(),
-    endDate: new Date(Date.now() + 3600000).toISOString(),
-    priority: Priorities.UNASSIGNED,
-    isSomeday: false,
-    user: "user1",
-  });
+  const baseEvent = (): Schema_GridEvent =>
+    assembleGridEvent({
+      _id: "1",
+      title: "Test Event",
+      description: "desc",
+      startDate: new Date().toISOString(),
+      endDate: new Date(Date.now() + 3600000).toISOString(),
+      priority: Priorities.UNASSIGNED,
+      origin: Origin.COMPASS,
+      isSomeday: false,
+      user: "user1",
+    });
 
   it("initializes with no recurrence", () => {
     const event = baseEvent();

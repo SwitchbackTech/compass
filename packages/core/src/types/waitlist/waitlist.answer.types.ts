@@ -13,6 +13,14 @@ export const Schema_Answers_v1 = z.object({
 });
 export type Answers_v1 = z.infer<typeof Schema_Answers_v1>;
 
+/* v2 */
+export const Schema_Answers_v2 = z.object({
+  email: z.string().email(),
+  schemaVersion: z.literal("2"),
+});
+export type Answers_v2 = z.infer<typeof Schema_Answers_v2>;
+
 export const Answers = {
+  v2: Schema_Answers_v2,
   v1: Schema_Answers_v1,
 };
