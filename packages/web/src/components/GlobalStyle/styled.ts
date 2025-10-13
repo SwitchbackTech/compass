@@ -41,4 +41,4 @@ export const GlobalStyle = createGlobalStyle`
       background-color: ${theme.color.panel.scrollbarActive};
     }
   }
-`;
+  `;

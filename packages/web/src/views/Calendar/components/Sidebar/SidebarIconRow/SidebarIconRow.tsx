@@ -1,8 +1,10 @@
 import React from "react";
+import { PH_ID_BETA_BUTTON } from "@web/common/constants/posthog.constants";
 import { theme } from "@web/common/styles/theme";
 import { getMetaKey } from "@web/common/utils/shortcut/shortcut.util";
 import { CalendarIcon } from "@web/components/Icons/Calendar";
 import { CommandIcon } from "@web/components/Icons/Command";
+import { FlaskIcon } from "@web/components/Icons/Flask";
 import { SpinnerIcon } from "@web/components/Icons/Spinner";
 import { TodoIcon } from "@web/components/Icons/Todo";
 import { Text } from "@web/components/Text";
@@ -80,6 +82,12 @@ export const SidebarIconRow = () => {
                 ? theme.color.text.light
                 : theme.color.text.darkPlaceholder
             }
+          />
+        </TooltipWrapper>
+        <TooltipWrapper description="Early Access">
+          <FlaskIcon
+            id={PH_ID_BETA_BUTTON}
+            color={theme.color.text.darkPlaceholder}
           />
         </TooltipWrapper>
         {gCalImport.importing ? (
