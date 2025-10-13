@@ -2,7 +2,7 @@ import classNames from "classnames";
 import React, { useEffect, useRef } from "react";
 import ReactDatePicker, { ReactDatePickerProps } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { darken, hslToSpaceFormat, isDark } from "@core/util/color.utils";
+import { darken, isDark } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import {
@@ -84,7 +84,7 @@ export const DatePicker: React.FC<Props> = ({
       customInput={
         <Focusable
           Component={StyledInput}
-          underlineColor={hslToSpaceFormat(darken(bgColor, -15))}
+          underlineColor={darken(bgColor, -15)}
           bgColor={inputColor}
           withUnderline
         />
