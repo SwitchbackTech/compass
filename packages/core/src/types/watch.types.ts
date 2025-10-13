@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { IDSchemaV4 } from "@core/types/type.utils";
+import { IDSchemaV4, zObjectId } from "@core/types/type.utils";
 
 /**
  * Watch collection schema for Google Calendar push notification channels
@@ -9,7 +9,7 @@ import { IDSchemaV4 } from "@core/types/type.utils";
  * expiration, deletion) separately from sync data.
  */
 export const WatchSchema = z.object({
-  _id: z.string(), // channel_id - unique identifier for the notification channel
+  _id: zObjectId, // channel_id - unique identifier for the notification channel
   user: IDSchemaV4, // user who owns this watch channel
   resourceId: z.string(), // Google Calendar resource identifier
   expiration: z.date(), // when the channel expires
@@ -19,4 +19,4 @@ export const WatchSchema = z.object({
     .default(() => new Date()), // when this watch was created
 });
 
-export type Watch = z.infer<typeof WatchSchema>;
+export type Schema_Watch = z.infer<typeof WatchSchema>;

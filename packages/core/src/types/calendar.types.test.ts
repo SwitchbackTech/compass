@@ -1,3 +1,4 @@
+import { ObjectId } from "bson";
 import { faker } from "@faker-js/faker";
 import {
   CompassCalendarSchema,
@@ -65,7 +66,7 @@ describe("Calendar Types", () => {
 
   describe("CompassCalendarSchema", () => {
     const compassCalendar = {
-      _id: faker.database.mongodbObjectId(),
+      _id: new ObjectId(),
       user: faker.database.mongodbObjectId(),
       backgroundColor: gCalendar.backgroundColor!,
       color: gCalendar.foregroundColor!,

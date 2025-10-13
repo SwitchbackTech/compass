@@ -1,11 +1,8 @@
 // derived from https://github.com/mission-apprentissage/zod-to-mongodb-schema/blob/main/src/index.test.ts
 import { z } from "zod/v4";
 import type { JSONSchema } from "zod/v4/core";
-import {
-  zObjectId,
-  zObjectIdMini,
-  zodToMongoSchema,
-} from "@scripts/common/zod-to-mongo-schema";
+import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
+import { zObjectId, zObjectIdMini } from "@core/types/type.utils";
 
 describe("zodToMongoSchema", () => {
   it("should convert zod object properly", () => {

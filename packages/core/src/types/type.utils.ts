@@ -1,6 +1,7 @@
 import { ObjectId } from "bson";
 import { z } from "zod";
 import { z as zod4 } from "zod/v4";
+import { z as zod4Mini } from "zod/v4-mini";
 
 export type KeyOfType<T, V> = keyof {
   [P in keyof T as T[P] extends V ? P : never]: unknown;
@@ -18,6 +19,16 @@ export const IDSchema = z.string().refine(ObjectId.isValid, {
 export const IDSchemaV4 = zod4.string().refine(ObjectId.isValid, {
   message: "Invalid id",
 });
+
+export const zObjectIdMini = zod4Mini.pipe(
+  zod4Mini.custom<ObjectId | string>(ObjectId.isValid),
+  zod4Mini.transform((v) => new ObjectId(v)),
+);
+
+export const zObjectId = zod4.pipe(
+  zod4.custom<ObjectId | string>((v) => ObjectId.isValid(v as string)),
+  zod4.transform((v) => new ObjectId(v)),
+);
 
 export const TimezoneSchema = zod4.string().refine(
   (timeZone) => {

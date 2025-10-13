@@ -1,7 +1,8 @@
+import { ObjectId, WithId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import Migration from "@scripts/migrations/2025.10.13T14.18.20.watch-collection";
-import { Watch, WatchSchema } from "@core/types/watch.types";
+import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -9,6 +10,8 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
+
+type PartialWatch = Partial<WithId<Omit<Schema_Watch, "_id">>>;
 
 describe("2025.10.13T14.18.20.watch-collection", () => {
   const migration = new Migration();
@@ -19,9 +22,9 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
   afterEach(() => mongoService.watch.drop());
   afterAll(cleanupTestDb);
 
-  function generateWatch(): Watch {
+  function generateWatch(): WithId<Omit<Schema_Watch, "_id">> {
     return {
-      _id: faker.string.uuid(),
+      _id: new ObjectId(),
       user: faker.database.mongodbObjectId(),
       resourceId: faker.string.alphanumeric(20),
       expiration: faker.date.future(),
@@ -124,8 +127,8 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
     it("rejects documents with missing required fields", async () => {
       const incompleteWatch = generateWatch();
 
-      delete (incompleteWatch as Partial<Watch>).resourceId;
-      delete (incompleteWatch as Partial<Watch>).expiration;
+      delete (incompleteWatch as PartialWatch).resourceId;
+      delete (incompleteWatch as PartialWatch).expiration;
 
       await expect(
         mongoService.watch.insertOne(incompleteWatch),
@@ -135,7 +138,7 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
     it("rejects documents with missing user", async () => {
       const watchWithoutUserId = generateWatch();
 
-      delete (watchWithoutUserId as Partial<Watch>).user;
+      delete (watchWithoutUserId as PartialWatch).user;
 
       await expect(
         mongoService.watch.insertOne(watchWithoutUserId),

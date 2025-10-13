@@ -5,6 +5,7 @@ import {
   IDSchemaV4,
   RGBHexSchema,
   TimezoneSchema,
+  zObjectId,
 } from "@core/types/type.utils";
 
 // @deprecated - will be replaced by Schema_Calendar
@@ -55,7 +56,7 @@ export const GoogleCalendarMetadataSchema = z.object({
 });
 
 export const CompassCalendarSchema = z.object({
-  _id: IDSchemaV4,
+  _id: zObjectId,
   user: IDSchemaV4,
   backgroundColor: RGBHexSchema,
   color: RGBHexSchema,
@@ -67,4 +68,4 @@ export const CompassCalendarSchema = z.object({
   metadata: GoogleCalendarMetadataSchema, // use union when other providers present
 });
 
-export type CompassCalendar = z.infer<typeof CompassCalendarSchema>;
+export type Schema_Calendar = z.infer<typeof CompassCalendarSchema>;

@@ -1,9 +1,10 @@
+import { ObjectId } from "bson";
 import { faker } from "@faker-js/faker";
-import { Watch, WatchSchema } from "@core/types/watch.types";
+import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
 
 describe("Watch Types", () => {
-  const validWatch: Watch = {
-    _id: faker.string.uuid(),
+  const validWatch: Schema_Watch = {
+    _id: new ObjectId(),
     user: faker.database.mongodbObjectId(),
     resourceId: faker.string.alphanumeric(20),
     expiration: faker.date.future(),
@@ -48,19 +49,10 @@ describe("Watch Types", () => {
 
       requiredFields.forEach((field) => {
         const incompleteWatch = { ...validWatch };
-        delete incompleteWatch[field as keyof Watch];
+        delete incompleteWatch[field as keyof Schema_Watch];
 
         expect(() => WatchSchema.parse(incompleteWatch)).toThrow();
       });
-    });
-
-    it("accepts string for _id (channelId)", () => {
-      const watchData = {
-        ...validWatch,
-        _id: "test-channel-id-123",
-      };
-
-      expect(() => WatchSchema.parse(watchData)).not.toThrow();
     });
 
     it("requires expiration to be a Date", () => {

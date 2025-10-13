@@ -1,3 +1,4 @@
+import { ObjectId } from "bson";
 import { faker } from "@faker-js/faker";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import Migration from "@scripts/migrations/2025.10.03T01.19.59.calendar-schema";
@@ -121,7 +122,7 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
       const gCalendar = GoogleCalendarMetadataSchema.parse(gCalendarEntry);
 
       return CompassCalendarSchema.parse({
-        _id: faker.database.mongodbObjectId(),
+        _id: new ObjectId(),
         user: faker.database.mongodbObjectId(),
         backgroundColor: gCalendarEntry.backgroundColor!,
         color: gCalendarEntry.foregroundColor!,

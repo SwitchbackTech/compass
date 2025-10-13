@@ -1,9 +1,7 @@
 // derived from https://github.com/mission-apprentissage/zod-to-mongodb-schema/tree/main/index.ts
-import { ObjectId } from "bson";
-import { z } from "zod/v4";
-import { z as zMini } from "zod/v4-mini";
 import type { $ZodType, JSONSchema } from "zod/v4/core";
 import { registry, toJSONSchema } from "zod/v4/core";
+import { zObjectId, zObjectIdMini } from "@core/types/type.utils";
 
 type MongoType = "object" | "array" | "number" | "boolean" | "string" | "null";
 
@@ -123,16 +121,6 @@ function convertTypeToBsonType(
       return "null";
   }
 }
-
-export const zObjectIdMini = zMini.pipe(
-  zMini.custom<ObjectId | string>(ObjectId.isValid),
-  zMini.transform((v) => new ObjectId(v)),
-);
-
-export const zObjectId = z.pipe(
-  z.custom<ObjectId | string>((v) => ObjectId.isValid(v as string)),
-  z.transform((v) => new ObjectId(v)),
-);
 
 function resolveRef(root: JSONSchema.Schema, ref: string) {
   const parts: string[] = ref.split("/").slice(1);
