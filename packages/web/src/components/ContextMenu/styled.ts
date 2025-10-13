@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { darken } from "@core/util/color.utils";
 
 export const PriorityContainer = styled.div`
   display: flex;
@@ -46,7 +47,19 @@ export const PriorityCircle = styled.div<{ color: string; selected: boolean }>`
   background-color: ${({ selected, color }) =>
     selected ? color : "transparent"};
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: ${({ theme }) => theme.transition.default};
+
+  &:hover {
+    ${({ selected, theme }) =>
+      selected
+        ? `filter: brightness(85%);`
+        : `background-color: ${theme.color.border.primary};`}
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
+  }
 `;
 
 export const MenuItem = styled.li`

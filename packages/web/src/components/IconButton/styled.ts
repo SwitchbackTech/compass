@@ -28,15 +28,14 @@ export const StyledIconButton = styled.button<IconButtonProps>`
   display: flex;
   align-items: center;
   justify-content: center;
-  transition:
-    background-color 0.3s ease,
-    transform 0.2s ease,
-    border-color 0.2s ease;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
+  transition: ${({ theme }) => theme.transition.default};
   font-size: ${({ size = "medium" }) => sizeMap[size]}px;
   border: 2px solid transparent;
 
   &:hover {
     transform: scale(1.05);
+    background-color: ${({ theme }) => theme.color.border.primary};
   }
 
   &:active {
@@ -49,6 +48,6 @@ export const StyledIconButton = styled.button<IconButtonProps>`
   }
 
   &:focus-visible {
-    border-color: ${({ theme }) => theme.color.border.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
   }
 `;

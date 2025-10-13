@@ -2,7 +2,7 @@ import classNames from "classnames";
 import React, { useEffect, useRef } from "react";
 import ReactDatePicker, { ReactDatePickerProps } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { isDark } from "@core/util/color.utils";
+import { darken, isDark } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import {
@@ -16,6 +16,7 @@ import { Flex } from "@web/components/Flex";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { StyledInput } from "@web/components/Input/styled";
 import { Text } from "@web/components/Text";
+import { Focusable } from "../Focusable/Focusable";
 
 export interface Props extends ReactDatePickerProps {
   animationOnToggle?: boolean;
@@ -80,7 +81,14 @@ export const DatePicker: React.FC<Props> = ({
           view={view}
         />
       )}
-      customInput={<StyledInput bgColor={inputColor} />}
+      customInput={
+        <Focusable
+          Component={StyledInput}
+          underlineColor={darken(bgColor, -15)}
+          bgColor={inputColor}
+          withUnderline
+        />
+      }
       dateFormat={"M-d-yyyy"}
       formatWeekDay={(day) => day[0]}
       open={isOpen}
