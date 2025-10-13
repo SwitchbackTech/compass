@@ -28,6 +28,7 @@ import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/g
 import {
   deleteWatchData,
   getSync,
+  isWatchingCalendars,
   isWatchingEventsByGcalId,
   updateSync,
 } from "@backend/sync/util/sync.queries";
@@ -317,6 +318,37 @@ class SyncService {
     }
   };
 
+  startWatchingGcalCalendars = async (userId: string, gcal: gCalendar) => {
+    const alreadyWatching = await isWatchingCalendars(userId);
+
+    if (alreadyWatching) {
+      throw error(SyncError.CalendarWatchExists, "Skipped Start Watch");
+    }
+
+    const channelId = uuidv4();
+    const expiration = getChannelExpiration();
+
+    const watchParams: Omit<Params_WatchEvents, "gCalendarId"> = {
+      channelId: channelId,
+      expiration,
+    };
+
+    const { watch } = await gcalService.watchCalendars(gcal, watchParams);
+    const { resourceId } = watch;
+
+    if (!resourceId) {
+      throw error(SyncError.NoResourceId, "Calendar Watch Failed");
+    }
+
+    const sync = await updateSync(Resource_Sync.CALENDAR, userId, null, {
+      channelId,
+      resourceId,
+      expiration,
+    });
+
+    return sync;
+  };
+
   startWatchingGcalEvents = async (
     userId: string,
     params: { gCalendarId: string },
@@ -327,7 +359,7 @@ class SyncService {
       params.gCalendarId,
     );
     if (alreadyWatching) {
-      throw error(SyncError.CalendarWatchExists, "Skipped Start Watch");
+      throw error(SyncError.EventWatchExists, "Skipped Start Watch");
     }
 
     const channelId = uuidv4();
@@ -342,7 +374,7 @@ class SyncService {
     const { resourceId } = watch;
 
     if (!resourceId) {
-      throw error(SyncError.NoResourceId, "Calendar Watch Failed");
+      throw error(SyncError.NoResourceId, "Event Watch Failed");
     }
 
     const sync = await updateSync(

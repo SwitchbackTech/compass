@@ -3,6 +3,7 @@ import { ErrorMetadata } from "@backend/common/types/error.types";
 
 interface SyncErrors {
   AccessRevoked: ErrorMetadata;
+  EventWatchExists: ErrorMetadata;
   CalendarWatchExists: ErrorMetadata;
   NoGCalendarId: ErrorMetadata;
   NoResourceId: ErrorMetadata;
@@ -17,8 +18,13 @@ export const SyncError: SyncErrors = {
     status: Status.GONE,
     isOperational: true,
   },
+  EventWatchExists: {
+    description: "Event watch already exists",
+    status: Status.BAD_REQUEST,
+    isOperational: true,
+  },
   CalendarWatchExists: {
-    description: "Watch already exists",
+    description: "Calendar watch already exists",
     status: Status.BAD_REQUEST,
     isOperational: true,
   },

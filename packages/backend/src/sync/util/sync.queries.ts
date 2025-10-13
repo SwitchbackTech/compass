@@ -185,6 +185,18 @@ export const isWatchingEventsByGcalId = async (
   return hasSyncFields;
 };
 
+export const isWatchingCalendars = async (userId: string) => {
+  const sync = await mongoService.sync.countDocuments({
+    user: userId,
+    "google.calendarlist.$.channelId": { $exists: true },
+    "google.calendarlist.$.expiration": { $exists: true },
+  });
+
+  const hasSyncFields = sync === 1;
+
+  return hasSyncFields;
+};
+
 export const updateSync = async (
   resource: Exclude<Resource_Sync, "settings">,
   userId: string,
