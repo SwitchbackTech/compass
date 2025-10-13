@@ -18,6 +18,7 @@ import { Schema_Event } from "@core/types/event.types";
 import { Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
 import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
+import { Watch } from "@core/types/watch.types";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
 import { waitUntilEvent } from "@backend/common/helpers/common.util";
@@ -33,6 +34,7 @@ interface InternalClient {
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
   waitlist: Collection<Schema_Waitlist>;
+  watch: Collection<Watch>;
 }
 
 class MongoService {
@@ -96,6 +98,15 @@ class MongoService {
     return this.#accessInternalCollectionProps("waitlist");
   }
 
+  /**
+   * watch
+   *
+   * mongo collection
+   */
+  get watch(): InternalClient["watch"] {
+    return this.#accessInternalCollectionProps("watch");
+  }
+
   private onConnect(client: MongoClient, useDynamicDb = false) {
     this.#internalClient = this.createInternalClient(client, useDynamicDb);
 
@@ -133,6 +144,7 @@ class MongoService {
       sync: db.collection<Schema_Sync>(Collections.SYNC),
       user: db.collection<Schema_User>(Collections.USER),
       waitlist: db.collection<Schema_Waitlist>(Collections.WAITLIST),
+      watch: db.collection<Watch>(Collections.WATCH),
     };
   }
 
