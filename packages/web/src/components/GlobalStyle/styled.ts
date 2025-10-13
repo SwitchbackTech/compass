@@ -41,4 +41,12 @@ export const GlobalStyle = createGlobalStyle`
       background-color: ${theme.color.panel.scrollbarActive};
     }
   }
+
+  /* Hide PostHog beta feature button 
+  Posthog adds this by default, but we're using our
+  own beta feature button, so we don't need both 
+  */
+  .beta-feature-button {
+    visibility: hidden !important;
+  }
 `;
