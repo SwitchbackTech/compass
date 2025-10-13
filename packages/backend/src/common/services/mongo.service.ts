@@ -11,13 +11,14 @@ import {
 } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import {
-  CompassCalendar,
-  Schema_CalendarList as Schema_Calendar,
+  Schema_CalendarList as Schema_CalList,
+  Schema_Calendar,
 } from "@core/types/calendar.types";
 import { Schema_Event } from "@core/types/event.types";
 import { Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
 import { Schema_Waitlist } from "@core/types/waitlist/waitlist.types";
+import { Schema_Watch } from "@core/types/watch.types";
 import { Collections } from "@backend/common/constants/collections";
 import { ENV } from "@backend/common/constants/env.constants";
 import { waitUntilEvent } from "@backend/common/helpers/common.util";
@@ -27,12 +28,13 @@ const logger = Logger("app:mongo.service");
 interface InternalClient {
   db: Db;
   client: MongoClient;
-  calendar: Collection<CompassCalendar>;
-  calendarList: Collection<Schema_Calendar>;
+  calendar: Collection<Schema_Calendar>;
+  calendarList: Collection<Schema_CalList>;
   event: Collection<Omit<Schema_Event, "_id">>;
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
   waitlist: Collection<Schema_Waitlist>;
+  watch: Collection<Omit<Schema_Watch, "_id">>;
 }
 
 class MongoService {
@@ -96,6 +98,15 @@ class MongoService {
     return this.#accessInternalCollectionProps("waitlist");
   }
 
+  /**
+   * watch
+   *
+   * mongo collection
+   */
+  get watch(): InternalClient["watch"] {
+    return this.#accessInternalCollectionProps("watch");
+  }
+
   private onConnect(client: MongoClient, useDynamicDb = false) {
     this.#internalClient = this.createInternalClient(client, useDynamicDb);
 
@@ -127,12 +138,13 @@ class MongoService {
     return {
       db,
       client,
-      calendar: db.collection<CompassCalendar>(Collections.CALENDAR),
-      calendarList: db.collection<Schema_Calendar>(Collections.CALENDARLIST),
+      calendar: db.collection<Schema_Calendar>(Collections.CALENDAR),
+      calendarList: db.collection<Schema_CalList>(Collections.CALENDARLIST),
       event: db.collection<Omit<Schema_Event, "_id">>(Collections.EVENT),
       sync: db.collection<Schema_Sync>(Collections.SYNC),
       user: db.collection<Schema_User>(Collections.USER),
       waitlist: db.collection<Schema_Waitlist>(Collections.WAITLIST),
+      watch: db.collection<Omit<Schema_Watch, "_id">>(Collections.WATCH),
     };
   }
 

@@ -9,4 +9,5 @@ export const Collections = {
   SYNC: IS_DEV ? "_dev.sync" : "sync",
   USER: IS_DEV ? "_dev.user" : "user",
   WAITLIST: IS_DEV ? "_dev.waitlist" : "waitlist",
+  WATCH: IS_DEV ? "_dev.watch" : "watch",
 };
