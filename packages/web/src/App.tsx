@@ -76,6 +76,8 @@ export const App = () => {
               capture_unhandled_rejections: true,
               capture_console_errors: true,
             },
+            opt_in_site_apps: true,
+            person_profiles: "always",
           }}
         >
           {wrappedChildren}
