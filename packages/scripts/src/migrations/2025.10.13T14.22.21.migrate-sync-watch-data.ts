@@ -63,11 +63,12 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         }),
       ]);
 
-      const result = await mongoService.watch.insertMany(watchDocuments, {
-        session,
-      });
-
-      migratedCount += result.insertedCount;
+      if (watchDocuments.length > 0) {
+        const result = await mongoService.watch.insertMany(watchDocuments, {
+          session,
+        });
+        migratedCount += result.insertedCount;
+      }
     }
 
     logger.info(
