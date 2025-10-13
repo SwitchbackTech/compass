@@ -1,19 +1,21 @@
 import type { RunnableMigration } from "umzug";
 import { MigrationContext } from "@scripts/common/cli.types";
-import { Schema_Sync } from "@core/types/sync.types";
 import { Watch } from "@core/types/watch.types";
 import mongoService from "@backend/common/services/mongo.service";
+import dayjs from "../../../core/src/util/date/dayjs";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.13T14.22.21.migrate-events-watch-data";
   readonly path: string = "2025.10.13T14.22.21.migrate-events-watch-data.ts";
 
   async up(): Promise<void> {
+    const session = await mongoService.startSession();
     // This is a non-destructive migration to copy events watch data from sync collection to watch collection
 
-    const cursor = mongoService.sync.find({
-      "google.events": { $exists: true, $ne: [] },
-    });
+    const cursor = mongoService.sync.find(
+      { "google.events": { $exists: true, $ne: [] } },
+      { batchSize: 100, session },
+    );
 
     let migratedCount = 0;
 
@@ -33,22 +35,19 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
         // Convert expiration string to Date
         let expirationDate: Date;
+
         try {
           // Google Calendar expiration is typically a timestamp in milliseconds
           const expirationMs = parseInt(eventSync.expiration);
+
           if (isNaN(expirationMs)) {
             console.warn(
-              `Invalid expiration format for channelId ${eventSync.channelId}: ${eventSync.expiration}`,
+              `Invalid expiration ms for channelId ${eventSync.channelId}: ${eventSync.expiration}`,
             );
             continue;
           }
-          expirationDate = new Date(expirationMs);
-          if (isNaN(expirationDate.getTime())) {
-            console.warn(
-              `Invalid expiration date for channelId ${eventSync.channelId}: ${eventSync.expiration}`,
-            );
-            continue;
-          }
+
+          expirationDate = dayjs(expirationMs).toDate();
         } catch {
           // If parsing fails, skip this watch entry
           console.warn(
@@ -59,7 +58,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
         const watchDoc: Watch = {
           _id: eventSync.channelId,
-          userId: syncDoc.user,
+          user: syncDoc.user,
           resourceId: eventSync.resourceId,
           expiration: expirationDate,
           createdAt: new Date(), // Set current time as creation time for migration
@@ -71,11 +70,13 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       if (watchDocuments.length > 0) {
         try {
           // Use insertMany with ordered: false to continue on duplicates
-          await mongoService.watch.insertMany(watchDocuments, {
+          const result = await mongoService.watch.insertMany(watchDocuments, {
             ordered: false,
+            session,
           });
-          migratedCount += watchDocuments.length;
-        } catch (error: any) {
+
+          migratedCount += result.insertedCount;
+        } catch (error: unknown) {
           // Log errors but continue migration (some channels might already exist)
           if (error?.writeErrors) {
             const duplicateErrors = error.writeErrors.filter(

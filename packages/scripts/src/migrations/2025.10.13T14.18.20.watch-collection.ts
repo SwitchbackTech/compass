@@ -1,7 +1,7 @@
 import type { RunnableMigration } from "umzug";
 import { MigrationContext } from "@scripts/common/cli.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
-import { WatchSchemaStrict } from "@core/types/watch.types";
+import { WatchSchema } from "@core/types/watch.types";
 import mongoService from "@backend/common/services/mongo.service";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
@@ -11,8 +11,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
   async up(): Promise<void> {
     const { collectionName } = mongoService.watch;
     const exists = await mongoService.collectionExists(collectionName);
-
-    const $jsonSchema = zodToMongoSchema(WatchSchemaStrict);
+    const $jsonSchema = zodToMongoSchema(WatchSchema);
 
     if (exists) {
       // do not run in session
@@ -28,18 +27,16 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       });
     }
 
-    // _id is unique by default in MongoDB, no need to create explicit index
-
-    // Create index on userId for efficient user-based queries
+    // Create index on user for efficient user-based queries
     await mongoService.watch.createIndex(
-      { userId: 1 },
-      { name: `${collectionName}_userId_index` },
+      { user: 1 },
+      { name: `${collectionName}_user_index` },
     );
 
-    // Create compound index on userId and expiration for cleanup operations
+    // Create compound index on user and expiration for cleanup operations
     await mongoService.watch.createIndex(
-      { userId: 1, expiration: 1 },
-      { name: `${collectionName}_userId_expiration_index` },
+      { user: 1, expiration: 1 },
+      { name: `${collectionName}_user_expiration_index` },
     );
   }
 
@@ -57,9 +54,9 @@ export default class Migration implements RunnableMigration<MigrationContext> {
     });
 
     // _id index is built-in, no need to drop
-    await mongoService.watch.dropIndex(`${collectionName}_userId_index`);
+    await mongoService.watch.dropIndex(`${collectionName}_user_index`);
     await mongoService.watch.dropIndex(
-      `${collectionName}_userId_expiration_index`,
+      `${collectionName}_user_expiration_index`,
     );
   }
 }

@@ -10,18 +10,13 @@ import { IDSchemaV4 } from "@core/types/type.utils";
  */
 export const WatchSchema = z.object({
   _id: z.string(), // channel_id - unique identifier for the notification channel
-  userId: IDSchemaV4, // user who owns this watch channel
+  user: IDSchemaV4, // user who owns this watch channel
   resourceId: z.string(), // Google Calendar resource identifier
   expiration: z.date(), // when the channel expires
-  createdAt: z.date().default(() => new Date()), // when this watch was created
+  createdAt: z
+    .date()
+    .optional()
+    .default(() => new Date()), // when this watch was created
 });
 
 export type Watch = z.infer<typeof WatchSchema>;
-
-// Type for creating a new watch (without auto-generated fields)
-export type WatchInput = Omit<Watch, "createdAt"> & {
-  createdAt?: Date;
-};
-
-// Schema for database storage (with strict validation)
-export const WatchSchemaStrict = WatchSchema.strict();

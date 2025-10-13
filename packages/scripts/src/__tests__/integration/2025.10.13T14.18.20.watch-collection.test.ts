@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import Migration from "@scripts/migrations/2025.10.13T14.18.20.watch-collection";
-import { Watch, WatchSchemaStrict } from "@core/types/watch.types";
+import { Watch, WatchSchema } from "@core/types/watch.types";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -22,7 +22,7 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
   function generateWatch(): Watch {
     return {
       _id: faker.string.uuid(),
-      userId: faker.database.mongodbObjectId(),
+      user: faker.database.mongodbObjectId(),
       resourceId: faker.string.alphanumeric(20),
       expiration: faker.date.future(),
       createdAt: faker.date.recent(),
@@ -32,7 +32,7 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
   async function validateUpMigration() {
     const indexes = await mongoService.watch.indexes();
     const collectionInfo = await mongoService.watch.options();
-    const $jsonSchema = zodToMongoSchema(WatchSchemaStrict);
+    const $jsonSchema = zodToMongoSchema(WatchSchema);
 
     expect(collectionInfo["validationLevel"]).toBe("strict");
     expect(collectionInfo["validator"]).toBeDefined();
@@ -43,12 +43,12 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
       expect.arrayContaining([
         expect.objectContaining({ name: "_id_", key: { _id: 1 } }),
         expect.objectContaining({
-          name: `${collectionName}_userId_index`,
-          key: { userId: 1 },
+          name: `${collectionName}_user_index`,
+          key: { user: 1 },
         }),
         expect.objectContaining({
-          name: `${collectionName}_userId_expiration_index`,
-          key: { userId: 1, expiration: 1 },
+          name: `${collectionName}_user_expiration_index`,
+          key: { user: 1, expiration: 1 },
         }),
       ]),
     );
@@ -110,20 +110,10 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
   });
 
   describe("mongo $jsonSchema validation", () => {
-    function generateValidWatch() {
-      return {
-        _id: faker.string.uuid(),
-        userId: faker.database.mongodbObjectId(),
-        resourceId: faker.string.alphanumeric(20),
-        expiration: new Date(faker.date.future()),
-        createdAt: new Date(faker.date.recent()),
-      };
-    }
-
     beforeEach(migration.up.bind(migration));
 
     it("allows valid watch documents", async () => {
-      const watch = generateValidWatch();
+      const watch = generateWatch();
 
       await expect(mongoService.watch.insertOne(watch)).resolves.toMatchObject({
         acknowledged: true,
@@ -132,24 +122,20 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
     });
 
     it("rejects documents with missing required fields", async () => {
-      const incompleteWatch = {
-        _id: faker.string.uuid(),
-        userId: faker.database.mongodbObjectId(),
-        // missing resourceId and expiration
-        createdAt: new Date(),
-      };
+      const incompleteWatch = generateWatch();
+
+      delete (incompleteWatch as Partial<Watch>).resourceId;
+      delete (incompleteWatch as Partial<Watch>).expiration;
 
       await expect(
         mongoService.watch.insertOne(incompleteWatch),
       ).rejects.toThrow();
     });
 
-    it("rejects documents with missing userId", async () => {
-      const watchWithoutUserId = {
-        ...generateValidWatch(),
-      };
-      // @ts-expect-error testing missing userId field
-      delete watchWithoutUserId.userId;
+    it("rejects documents with missing user", async () => {
+      const watchWithoutUserId = generateWatch();
+
+      delete (watchWithoutUserId as Partial<Watch>).user;
 
       await expect(
         mongoService.watch.insertOne(watchWithoutUserId),
@@ -158,7 +144,7 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
 
     it("rejects documents with additional properties", async () => {
       const watchWithExtra = {
-        ...generateValidWatch(),
+        ...generateWatch(),
         extraProperty: "should-not-be-allowed",
       };
 
@@ -168,15 +154,11 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
     });
 
     it("enforces unique constraint on _id (channelId)", async () => {
-      const watch1 = generateValidWatch();
-      const watch2 = {
-        ...generateValidWatch(),
-        _id: watch1._id, // Same channelId
-      };
+      const watch = generateWatch();
 
-      await mongoService.watch.insertOne(watch1);
+      await mongoService.watch.insertOne(watch);
 
-      await expect(mongoService.watch.insertOne(watch2)).rejects.toThrow();
+      await expect(mongoService.watch.insertOne(watch)).rejects.toThrow();
     });
   });
 });
