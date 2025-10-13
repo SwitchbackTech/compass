@@ -83,7 +83,18 @@ module.exports = (env, argv) => {
         // css/scss
         {
           test: /\.css/,
-          use: [styleLoader, "css-loader"],
+          use: [
+            styleLoader,
+            "css-loader",
+            {
+              loader: "postcss-loader",
+              options: {
+                postcssOptions: {
+                  config: path.resolve(__dirname, "postcss.config.js"),
+                },
+              },
+            },
+          ],
         },
 
         {
