@@ -36,7 +36,19 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         try {
           // Google Calendar expiration is typically a timestamp in milliseconds
           const expirationMs = parseInt(eventSync.expiration);
+          if (isNaN(expirationMs)) {
+            console.warn(
+              `Invalid expiration format for channelId ${eventSync.channelId}: ${eventSync.expiration}`,
+            );
+            continue;
+          }
           expirationDate = new Date(expirationMs);
+          if (isNaN(expirationDate.getTime())) {
+            console.warn(
+              `Invalid expiration date for channelId ${eventSync.channelId}: ${eventSync.expiration}`,
+            );
+            continue;
+          }
         } catch {
           // If parsing fails, skip this watch entry
           console.warn(
