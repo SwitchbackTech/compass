@@ -30,7 +30,7 @@ interface Action_ReminderChange extends Action {
 
 const initialState: State_View = {
   dates: {
-    start: dayjs().format(),
+    start: dayjs().startOf("week").format(),
     end: dayjs().endOf("week").format(),
   },
   sidebar: { tab: "tasks", isOpen: true },
