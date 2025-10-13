@@ -84,7 +84,7 @@ export const SidebarIconRow = () => {
             }
           />
         </TooltipWrapper>
-        <TooltipWrapper description="Early Access" shortcut="SHIFT + 3">
+        <TooltipWrapper description="Early Access">
           <FlaskIcon
             id={PH_ID_BETA_BUTTON}
             color={theme.color.text.darkPlaceholder}
