@@ -31,6 +31,4 @@ jobs:
           GOOGLE_CLIENT_ID: test-client-id
           API_BASEURL: http://localhost:3000/api
           API_PORT: 3000
-          POSTHOG_KEY: test-posthog-key
-          POSTHOG_HOST: https://app.posthog.com
         run: yarn test:e2e
