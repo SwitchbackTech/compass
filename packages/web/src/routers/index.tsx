@@ -8,6 +8,7 @@ import { LogoutView } from "@web/views/Logout";
 import { NotFoundView } from "@web/views/NotFound";
 import OnboardingFlow from "@web/views/Onboarding/OnboardingFlow";
 import { RootView } from "@web/views/Root";
+import { TodayView } from "@web/views/Today";
 
 const router = createBrowserRouter(
   [
@@ -18,6 +19,18 @@ const router = createBrowserRouter(
           <UserProvider>
             <SocketProvider>
               <RootView />
+            </SocketProvider>
+          </UserProvider>
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: ROOT_ROUTES.TODAY,
+      element: (
+        <ProtectedRoute>
+          <UserProvider>
+            <SocketProvider>
+              <TodayView />
             </SocketProvider>
           </UserProvider>
         </ProtectedRoute>
