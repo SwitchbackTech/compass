@@ -25,7 +25,7 @@ module.exports = (env, argv) => {
   if (GOOGLE_CLIENT_ID === "undefined") {
     console.error(`Oopsies, you're missing the GOOGLE_CLIENT_ID variable.
       Make sure you include all required environment variables in the .env file.
-      Reference: https://docs.compasscalendar.com/docs/get-started/setup 
+      Reference: https://docs.compasscalendar.com/docs/get-started/setup
     `);
     return;
   }
