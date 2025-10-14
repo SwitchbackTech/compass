@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { useKeyboardShortcuts } from "../useKeyboardShortcuts";
+import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 
 describe("useKeyboardShortcuts", () => {
   let mockConfig: ReturnType<typeof jest.fn>;

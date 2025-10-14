@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { renderHook } from "@testing-library/react";
-import { useAutofocus } from "../useAutofocus";
+import { useAutofocus } from "./useAutofocus";
 
 describe("useAutofocus", () => {
   let mockInput: HTMLInputElement;

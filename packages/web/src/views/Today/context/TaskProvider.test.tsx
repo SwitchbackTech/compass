@@ -1,6 +1,6 @@
 import React from "react";
 import { act, render, renderHook } from "@testing-library/react";
-import { TaskProvider, useTasks } from "../context/TaskProvider";
+import { TaskProvider, useTasks } from "./TaskProvider";
 
 describe("TaskProvider", () => {
   beforeEach(() => {

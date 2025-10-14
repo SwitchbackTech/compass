@@ -3,7 +3,7 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
-import { CalendarAgenda } from "../CalendarAgenda";
+import { CalendarAgenda } from "./CalendarAgenda";
 
 const createMockStore = (eventEntities = {}) => {
   return configureStore({
