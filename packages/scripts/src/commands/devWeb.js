@@ -5,7 +5,7 @@ const path = require("path");
 const envPath = path.join(__dirname, "..", "..", "..", "backend", ".env");
 dotenv.config({ path: envPath });
 
-const clientId = process.env.CLIENT_ID;
+const clientId = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID;
 const port = process.env.PORT;
 const baseUrl = process.env.BASEURL || `http://localhost:${port}/api`;
 const posthogKey = process.env.POSTHOG_KEY;
