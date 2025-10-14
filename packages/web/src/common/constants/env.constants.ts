@@ -2,18 +2,8 @@ import { z } from "zod";
 import { isDev } from "@core/util/env.util";
 
 const API_BASEURL =
-  process.env["API_BASEURL"] ||
-  `http://localhost:${process.env["PORT"] || "3000"}`;
+  process.env["API_BASEURL"] || `http://localhost:${process.env["PORT"]}`;
 const BACKEND_BASEURL = API_BASEURL.replace(/\/[^/]*$/, "");
-
-// Debug logging for CI
-if (process.env.CI) {
-  console.log("Environment Debug:");
-  console.log("API_BASEURL:", API_BASEURL);
-  console.log("BACKEND_BASEURL:", BACKEND_BASEURL);
-  console.log("process.env.API_BASEURL:", process.env["API_BASEURL"]);
-  console.log("process.env.PORT:", process.env["PORT"]);
-}
 
 const webEnvSchema = z.object({
   API_BASEURL: z.string().url(),
@@ -31,10 +21,10 @@ const webEnvSchema = z.object({
 });
 
 export const ENV_WEB = webEnvSchema.parse({
-  API_BASEURL: API_BASEURL || "http://localhost:3000/api",
-  BACKEND_BASEURL: BACKEND_BASEURL || "http://localhost:3000",
+  API_BASEURL,
+  BACKEND_BASEURL,
   CLIENT_ID: process.env["GOOGLE_CLIENT_ID"],
-  NODE_ENV: process.env["NODE_ENV"] || "development",
+  NODE_ENV: process.env["NODE_ENV"],
   POSTHOG_KEY: process.env["POSTHOG_KEY"],
   POSTHOG_HOST: process.env["POSTHOG_HOST"],
 });
