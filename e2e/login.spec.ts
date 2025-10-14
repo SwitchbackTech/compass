@@ -94,6 +94,17 @@ test("redirects unauthenticated users from / to /login", async ({ page }) => {
 
   console.log("Navigation complete. Current URL:", page.url());
 
+  // Check if the app loaded properly by looking for any error messages
+  const hasError =
+    (await page.locator("text=/error|Error|invalid|Invalid/").count()) > 0;
+  if (hasError) {
+    console.log(
+      "App error detected - checking for environment validation errors",
+    );
+    const errorText = await page.textContent("body");
+    console.log("Error content:", errorText);
+  }
+
   // Wait a bit to see what happens
   console.log("Waiting 3 seconds to observe behavior...");
   await page.waitForTimeout(3000);
