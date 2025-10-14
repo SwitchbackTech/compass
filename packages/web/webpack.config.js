@@ -22,8 +22,8 @@ module.exports = (env, argv) => {
   const POSTHOG_KEY = env.POSTHOG_KEY;
   const POSTHOG_HOST = env.POSTHOG_HOST;
 
-  if (!argv.mode || GOOGLE_CLIENT_ID === "undefined") {
-    console.error(`Oopsies, you're missing a required parameter.
+  if (GOOGLE_CLIENT_ID === "undefined") {
+    console.error(`Oopsies, you're missing the GOOGLE_CLIENT_ID variable.
       Make sure you include all required environment variables in the .env file.
       Reference: https://docs.compasscalendar.com/docs/get-started/setup 
     `);
