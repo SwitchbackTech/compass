@@ -28,6 +28,9 @@ build/
 buildcache/
 logs/
 node_modules/
+playwright-report/
+test-results/
+blob-report/
 
 #core
 packages/core/build/
