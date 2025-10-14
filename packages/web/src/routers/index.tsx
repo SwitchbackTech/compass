@@ -9,6 +9,7 @@ import { NotFoundView } from "@web/views/NotFound";
 import OnboardingFlow from "@web/views/Onboarding/OnboardingFlow";
 import { RootView } from "@web/views/Root";
 import { TodayView } from "@web/views/Today/TodayView";
+import { TodayMinimalView } from "@web/views/TodayMinimal/TodayMinimalView";
 
 const router = createBrowserRouter(
   [
@@ -31,6 +32,18 @@ const router = createBrowserRouter(
           <UserProvider>
             <SocketProvider>
               <TodayView />
+            </SocketProvider>
+          </UserProvider>
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: ROOT_ROUTES.TODAY_MINIMAL,
+      element: (
+        <ProtectedRoute>
+          <UserProvider>
+            <SocketProvider>
+              <TodayMinimalView />
             </SocketProvider>
           </UserProvider>
         </ProtectedRoute>

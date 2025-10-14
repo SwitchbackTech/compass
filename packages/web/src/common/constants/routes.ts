@@ -4,4 +4,5 @@ export const ROOT_ROUTES = {
   LOGOUT: "/logout",
   ROOT: "/",
   TODAY: "/today",
+  TODAY_MINIMAL: "/today-minimal",
 };
