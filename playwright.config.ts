@@ -32,7 +32,6 @@ export default defineConfig({
       POSTHOG_HOST: "https://app.posthog.com",
     },
     port: 9080,
-    timeout: 180_000,
     reuseExistingServer: !process.env.CI,
   },
 });
