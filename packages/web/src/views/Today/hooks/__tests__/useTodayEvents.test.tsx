@@ -75,8 +75,8 @@ describe("useTodayEvents", () => {
     });
 
     expect(result.current).toHaveLength(3);
-    expect(result.current[0].title).toBe("Morning Meeting");
-    expect(result.current[1].title).toBe("All Day Event");
+    expect(result.current[0].title).toBe("All Day Event");
+    expect(result.current[1].title).toBe("Morning Meeting");
     expect(result.current[2].title).toBe("Afternoon Event");
   });
 

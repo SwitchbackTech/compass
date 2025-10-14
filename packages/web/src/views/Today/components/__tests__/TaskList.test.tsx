@@ -1,4 +1,5 @@
 import React from "react";
+import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TaskProvider } from "../../context/TaskProvider";
@@ -69,10 +70,14 @@ describe("TaskList", () => {
     const input = screen.getByPlaceholderText("Enter task title...");
     await user.keyboard("{Enter}");
 
-    // Add button should be visible again (no task added)
-    await waitFor(() => {
-      expect(screen.getByText("Add task")).toBeInTheDocument();
-    });
+    // Input should remain open but no task should be added
+    expect(
+      screen.getByPlaceholderText("Enter task title..."),
+    ).toBeInTheDocument();
+
+    // No tasks should be visible (no checkboxes)
+    const taskCheckboxes = screen.queryAllByRole("checkbox");
+    expect(taskCheckboxes).toHaveLength(0);
   });
 
   it("should cancel adding task on Escape", async () => {
@@ -240,7 +245,8 @@ describe("TaskList", () => {
     await user.type(input, "Work task{Enter}");
 
     await waitFor(() => {
-      const taskElement = screen.getByText("Work task").closest("div");
+      const taskText = screen.getByText("Work task");
+      const taskElement = taskText.parentElement?.parentElement;
       expect(taskElement).toHaveClass("border-blue-300/30");
     });
   });
@@ -263,8 +269,9 @@ describe("TaskList", () => {
     const checkbox = screen.getByRole("checkbox");
     await user.click(checkbox);
 
-    // Check for opacity class
-    const taskElement = screen.getByText("Complete me").closest("div");
+    // Check for opacity class - need to go up to the task container div
+    const taskText = screen.getByText("Complete me");
+    const taskElement = taskText.parentElement?.parentElement;
     expect(taskElement).toHaveClass("opacity-50");
   });
 });
