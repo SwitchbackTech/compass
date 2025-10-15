@@ -6,18 +6,14 @@ import React, {
   useState,
 } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { Task, TaskContextValue, isTask } from "../types";
+import { Task, TaskContextValue } from "../types";
+import {
+  getDateKey,
+  loadTasksFromStorage,
+  saveTasksToStorage,
+} from "../util/storage.util";
 
 const TaskContext = createContext<TaskContextValue | undefined>(undefined);
-
-const STORAGE_KEY_PREFIX = "compass.today.tasks";
-
-function getDateKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 interface TaskProviderProps {
   children: React.ReactNode;
@@ -37,40 +33,12 @@ export function TaskProvider({
     if (lastLoadedKeyRef.current === dateKey) return;
     lastLoadedKeyRef.current = dateKey;
 
-    try {
-      if (typeof window === "undefined") return;
-
-      const storageKey = `${STORAGE_KEY_PREFIX}.${dateKey}`;
-      const rawTasks = window.localStorage.getItem(storageKey);
-
-      if (rawTasks) {
-        const parsed = JSON.parse(rawTasks);
-        if (Array.isArray(parsed)) {
-          // Validate each task using the schema
-          const validTasks = parsed.filter(isTask);
-          setTasks(validTasks);
-          return;
-        }
-      }
-
-      // If no data or invalid data, start fresh
-      setTasks([]);
-    } catch (error) {
-      console.error("Error loading tasks from localStorage:", error);
-      setTasks([]);
-    }
+    setTasks(loadTasksFromStorage(dateKey));
   }, [dateKey]);
 
   // Save tasks to localStorage whenever they change
   useEffect(() => {
-    try {
-      if (typeof window === "undefined") return;
-
-      const storageKey = `${STORAGE_KEY_PREFIX}.${dateKey}`;
-      window.localStorage.setItem(storageKey, JSON.stringify(tasks));
-    } catch (error) {
-      console.error("Error saving tasks to localStorage:", error);
-    }
+    saveTasksToStorage(dateKey, tasks);
   }, [tasks, dateKey]);
 
   const addTask = (title: string): Task => {
