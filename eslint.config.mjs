@@ -1,5 +1,6 @@
 import pluginJest from "eslint-plugin-jest";
 import jestDom from "eslint-plugin-jest-dom";
+import jsxA11y from "eslint-plugin-jsx-a11y";
 import prettierEslint from "eslint-plugin-prettier";
 import pluginReact from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -46,6 +47,19 @@ export default [
     rules: {
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+    },
+  },
+  {
+    // Accessibility linting for JSX/TSX files
+    files: ["**/*.{jsx,tsx}"],
+    ...jsxA11y.flatConfigs.recommended,
+    rules: {
+      // Convert all jsx-a11y rules to warnings to avoid breaking builds/tests
+      ...Object.fromEntries(
+        Object.entries(jsxA11y.flatConfigs.recommended.rules || {}).map(
+          ([rule, _config]) => [rule, "warn"],
+        ),
+      ),
     },
   },
   {
