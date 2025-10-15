@@ -52,7 +52,7 @@ export function TaskProvider({
       createdAt: new Date().toISOString(),
     };
 
-    setTasks((prev) => [...prev, newTask]);
+    setTasks((prev) => sortTasksByStatus([...prev, newTask]));
     return newTask;
   };
 

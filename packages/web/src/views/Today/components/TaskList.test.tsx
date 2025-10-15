@@ -81,7 +81,6 @@ describe("TaskList", () => {
     const addButton = screen.getByText("Add task");
     await user.click(addButton);
 
-    const input = screen.getByPlaceholderText("Enter task title...");
     await user.keyboard("{Enter}");
 
     // Input should remain open but no task should be added
@@ -270,5 +269,48 @@ describe("TaskList", () => {
     const taskText = screen.getByText("Complete me");
     const taskElement = taskText.parentElement?.parentElement;
     expect(taskElement).toHaveClass("opacity-50");
+  });
+
+  it("should add new tasks above completed tasks", async () => {
+    const user = userEvent.setup();
+    renderTaskList();
+
+    // Add first task
+    const addButton = screen.getByText("Add task");
+    await user.click(addButton);
+    const input = screen.getByPlaceholderText("Enter task title...");
+    await user.type(input, "First task{Enter}");
+
+    await waitFor(() => {
+      expect(screen.getByText("First task")).toBeInTheDocument();
+    });
+
+    // Complete the first task
+    const checkbox = screen.getByRole("checkbox", {
+      name: "Toggle First task",
+    });
+    await user.click(checkbox);
+
+    // Add a second task
+    const addButton2 = screen.getByText("Add task");
+    await user.click(addButton2);
+    const input2 = screen.getByPlaceholderText("Enter task title...");
+    await user.type(input2, "Second task{Enter}");
+
+    await waitFor(() => {
+      expect(screen.getByText("Second task")).toBeInTheDocument();
+    });
+
+    // Get all checkboxes and verify order
+    const checkboxes = screen.getAllByRole("checkbox");
+    expect(checkboxes).toHaveLength(2);
+
+    // The second task (incomplete) should appear first
+    expect(checkboxes[0]).toHaveAttribute("aria-label", "Toggle Second task");
+    expect(checkboxes[0]).toHaveAttribute("aria-checked", "false");
+
+    // The first task (completed) should appear second
+    expect(checkboxes[1]).toHaveAttribute("aria-label", "Toggle First task");
+    expect(checkboxes[1]).toHaveAttribute("aria-checked", "true");
   });
 });
