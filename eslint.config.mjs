@@ -56,9 +56,10 @@ export default [
     rules: {
       // Convert all jsx-a11y rules to warnings to avoid breaking builds/tests
       ...Object.fromEntries(
-        Object.entries(jsxA11y.flatConfigs.recommended.rules || {}).map(
-          ([rule, _config]) => [rule, "warn"],
-        ),
+        Object.keys(jsxA11y.flatConfigs.recommended.rules || {}).map((rule) => [
+          rule,
+          "warn",
+        ]),
       ),
     },
   },
