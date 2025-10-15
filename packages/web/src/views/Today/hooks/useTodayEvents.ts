@@ -41,10 +41,9 @@ export function useTodayEvents(currentDate: Date = new Date()): TodayEvent[] {
       .map((event: Schema_Event) => ({
         id: event._id || "",
         title: event.title || "Untitled",
-        startTime: new Date(event.startDate!),
-        endTime: new Date(event.endDate!),
+        startTime: new Date(event.startDate as string),
+        endTime: new Date(event.endDate as string),
         isAllDay: event.isAllDay || false,
-        category: event.category,
       }))
       .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 

@@ -1,15 +1,11 @@
-import React, { useRef } from "react";
+import React from "react";
 import { CalendarAgenda } from "../components/CalendarAgenda/CalendarAgenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/ShortcutsOverlay";
 import { TaskList } from "../components/Tasks/TaskList";
-import { useTasks } from "../context/TaskProvider";
 import { useTodayViewShortcuts } from "../hooks/useTodayViewShortcuts";
 import { focusOnAddTaskInput } from "../util/shortcut.util";
 
 export const TodayViewContent = () => {
-  const { tasks } = useTasks();
-  const tasksScrollRef = useRef<HTMLDivElement>(null);
-
   const activeElement =
     typeof document !== "undefined"
       ? (document.activeElement as HTMLElement | null)
@@ -21,69 +17,8 @@ export const TodayViewContent = () => {
       activeElement instanceof HTMLTextAreaElement) ||
     activeElement?.getAttribute("contenteditable") === "true";
 
-  const focusTaskAtIndex = (index: number) => {
-    if (index < 0 || index >= tasks.length) return;
-    const task = tasks[index];
-    if (!task) return;
-
-    const button = tasksScrollRef.current?.querySelector<HTMLButtonElement>(
-      `[data-task-id="${task.id}"]`,
-    );
-    if (button) {
-      try {
-        button.focus({ preventScroll: true });
-      } catch {
-        try {
-          button.focus();
-        } catch {
-          // Ignore if focus fails
-        }
-      }
-      try {
-        button.scrollIntoView({
-          block: "nearest",
-          inline: "nearest",
-          behavior: "smooth",
-        });
-      } catch {
-        // Ignore if scrollIntoView fails
-      }
-    }
-  };
-
-  const focusFirstTask = () => {
-    if (!tasks.length) return;
-    focusTaskAtIndex(0);
-  };
-
-  const handleNextTask = () => {
-    if (!tasks.length) return;
-    const currentIndex = tasks.findIndex((task) => task.id === focusedTaskId);
-    if (currentIndex === -1) {
-      focusTaskAtIndex(0);
-      return;
-    }
-    const nextIndex = (currentIndex + 1) % tasks.length;
-    focusTaskAtIndex(nextIndex);
-  };
-
-  const handlePrevTask = () => {
-    if (!tasks.length) return;
-    const currentIndex = tasks.findIndex((task) => task.id === focusedTaskId);
-    if (currentIndex === -1) {
-      focusTaskAtIndex(tasks.length - 1);
-      return;
-    }
-    const prevIndex = (currentIndex - 1 + tasks.length) % tasks.length;
-    focusTaskAtIndex(prevIndex);
-  };
-
   useTodayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
-    onFocusTasks: focusFirstTask,
-    // onNextTask: handleNextTask,
-    onPrevTask: handlePrevTask,
-    // hasFocusedTask: !!focusedTaskId,
     isInInput: isEditableElement,
   });
 

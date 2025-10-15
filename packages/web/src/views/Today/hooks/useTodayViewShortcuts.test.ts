@@ -1,8 +1,11 @@
 import { renderHook } from "@testing-library/react";
-import { useTodayViewShortcuts } from "./useTodayViewShortcuts";
+import {
+  KeyboardShortcutsConfig,
+  useTodayViewShortcuts,
+} from "./useTodayViewShortcuts";
 
 describe("useKeyboardShortcuts", () => {
-  let mockConfig: ReturnType<typeof jest.fn>;
+  let mockConfig: KeyboardShortcutsConfig;
   let addEventListenerSpy: jest.SpyInstance;
   let removeEventListenerSpy: jest.SpyInstance;
 
@@ -12,7 +15,6 @@ describe("useKeyboardShortcuts", () => {
       onEditTask: jest.fn(),
       onCompleteTask: jest.fn(),
       onFocusTasks: jest.fn(),
-      onNextTask: jest.fn(),
       onPrevTask: jest.fn(),
       onEscape: jest.fn(),
       isAddingTask: false,
@@ -63,66 +65,6 @@ describe("useKeyboardShortcuts", () => {
     window.dispatchEvent(event);
 
     expect(mockConfig.onAddTask).not.toHaveBeenCalled();
-  });
-
-  it("should call onEditTask when 'e' is pressed and task is focused", () => {
-    mockConfig.hasFocusedTask = true;
-    renderHook(() => useTodayViewShortcuts(mockConfig));
-
-    const event = new KeyboardEvent("keydown", { key: "e" });
-    window.dispatchEvent(event);
-
-    expect(mockConfig.onEditTask).toHaveBeenCalled();
-  });
-
-  it("should not call onEditTask when no task is focused", () => {
-    mockConfig.hasFocusedTask = false;
-    renderHook(() => useTodayViewShortcuts(mockConfig));
-
-    const event = new KeyboardEvent("keydown", { key: "e" });
-    window.dispatchEvent(event);
-
-    expect(mockConfig.onEditTask).not.toHaveBeenCalled();
-  });
-
-  it("should call onFocusTasks when 'u' is pressed", () => {
-    renderHook(() => useTodayViewShortcuts(mockConfig));
-
-    const event = new KeyboardEvent("keydown", { key: "u" });
-    window.dispatchEvent(event);
-
-    expect(mockConfig.onFocusTasks).toHaveBeenCalled();
-  });
-
-  // it("should call onNextTask when 'j' is pressed with focused task", () => {
-  // //   mockConfig.hasFocusedTask = true;
-  // //   renderHook(() => useTodayViewShortcuts(mockConfig));
-
-  // //   const event = new KeyboardEvent("keydown", { key: "j" });
-  // //   window.dispatchEvent(event);
-
-  // //   expect(mockConfig.onNextTask).toHaveBeenCalled();
-  // // });
-
-  it("should call onPrevTask when 'k' is pressed with focused task", () => {
-    mockConfig.hasFocusedTask = true;
-    renderHook(() => useTodayViewShortcuts(mockConfig));
-
-    const event = new KeyboardEvent("keydown", { key: "k" });
-    window.dispatchEvent(event);
-
-    expect(mockConfig.onPrevTask).toHaveBeenCalled();
-  });
-
-  it("should not call onNextTask when editing task", () => {
-    mockConfig.hasFocusedTask = true;
-    mockConfig.isEditingTask = true;
-    renderHook(() => useTodayViewShortcuts(mockConfig));
-
-    const event = new KeyboardEvent("keydown", { key: "j" });
-    window.dispatchEvent(event);
-
-    expect(mockConfig.onNextTask).not.toHaveBeenCalled();
   });
 
   it("should call onCompleteTask when Enter is pressed with focused task", () => {

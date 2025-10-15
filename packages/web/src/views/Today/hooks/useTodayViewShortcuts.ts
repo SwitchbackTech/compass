@@ -8,7 +8,6 @@ export interface KeyboardShortcutsConfig {
   onFocusTasks?: () => void;
 
   // Task navigation
-  // onNextTask?: () => void;
   onPrevTask?: () => void;
 
   // General
@@ -25,6 +24,17 @@ export interface KeyboardShortcutsConfig {
  * Hook to handle keyboard shortcuts for the Today view
  */
 export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
+  const {
+    onAddTask,
+    onEditTask,
+    onCompleteTask,
+    onEscape,
+    isAddingTask,
+    isEditingTask,
+    hasFocusedTask,
+    isInInput,
+  } = config;
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
@@ -41,39 +51,20 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       }
 
       // Task management shortcuts
-      if (key === "t" && !config.isAddingTask && !config.isInInput) {
+      if (key === "t" && !isAddingTask && !isInInput) {
         e.preventDefault();
-        config.onAddTask?.();
+        onAddTask?.();
         return;
       }
 
-      if (key === "e" && !config.isInInput && config.hasFocusedTask) {
+      if (key === "e" && !isInInput && hasFocusedTask) {
         e.preventDefault();
-        config.onEditTask?.();
-        return;
-      }
-
-      if (key === "u" && !config.isInInput) {
-        e.preventDefault();
-        config.onFocusTasks?.();
-        return;
-      }
-
-      // Task navigation
-      if (key === "j" && config.hasFocusedTask && !config.isEditingTask) {
-        e.preventDefault();
-        // config.onNextTask?.();
-        return;
-      }
-
-      if (key === "k" && config.hasFocusedTask && !config.isEditingTask) {
-        e.preventDefault();
-        config.onPrevTask?.();
+        onEditTask?.();
         return;
       }
 
       // Task completion with Enter
-      if (e.key === "Enter" && config.hasFocusedTask && !config.isEditingTask) {
+      if (e.key === "Enter" && hasFocusedTask && !isEditingTask) {
         const activeElement = document.activeElement as HTMLElement | null;
         const isTaskButton =
           activeElement?.getAttribute("role") === "checkbox" &&
@@ -82,7 +73,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
         // Let the task button handle Enter if it's focused
         if (!isTaskButton) {
           e.preventDefault();
-          config.onCompleteTask?.();
+          onCompleteTask?.();
           return;
         }
       }
@@ -90,11 +81,20 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       // Escape handling
       if (e.key === "Escape") {
         e.preventDefault();
-        config.onEscape?.();
+        onEscape?.();
         return;
       }
     },
-    [config],
+    [
+      onAddTask,
+      onEditTask,
+      onCompleteTask,
+      onEscape,
+      isAddingTask,
+      isEditingTask,
+      hasFocusedTask,
+      isInInput,
+    ],
   );
 
   useEffect(() => {
