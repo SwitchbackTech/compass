@@ -44,6 +44,20 @@ describe("TaskList", () => {
     expect(input).toBeInTheDocument();
   });
 
+  it("should focus add task input on first click and allow typing", async () => {
+    const user = userEvent.setup();
+    renderTaskList();
+
+    const addButton = screen.getByRole("button", { name: /add task/i });
+    await user.click(addButton);
+
+    const input = screen.getByRole("textbox", { name: /task title/i });
+    expect(input).toHaveFocus();
+
+    await user.type(input, "My new task");
+    expect(input).toHaveValue("My new task");
+  });
+
   it("should add a task when entering text and pressing Enter", async () => {
     const user = userEvent.setup();
     renderTaskList();

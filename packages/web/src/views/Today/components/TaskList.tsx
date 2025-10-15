@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import React, { useRef, useState } from "react";
 import { useTasks } from "../context/TaskProvider";
+import { useTaskListInputFocus } from "./useTaskListInputFocus";
 
 interface TaskListProps {
   onTaskFocus?: (taskId: string | null) => void;
@@ -20,6 +21,20 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
   const editInputRef = useRef<HTMLInputElement>(null);
   const addTaskInputRef = useRef<HTMLInputElement>(null);
   const tasksScrollRef = useRef<HTMLDivElement>(null);
+  const todayHeading = dayjs().locale("en").format("dddd, MMMM D");
+
+  useTaskListInputFocus({
+    isAddingTask,
+    editingTaskId,
+    addTaskInputRef,
+    editInputRef,
+  });
+
+  const beginAddingTask = () => {
+    setIsAddingTask(true);
+    setNewTaskTitle("");
+    setIsHoveringAddBlock(false);
+  };
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
@@ -37,8 +52,6 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
       setIsAddingTask(false);
     }
   };
-
-  const todayHeading = dayjs().locale("en").format("dddd, MMMM D");
 
   return (
     <div className="bg-darkBlue-400 flex h-full min-w-xs flex-col border-r border-gray-400/20 text-white">
@@ -155,7 +168,12 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
 
           {isAddingTask ? (
             <div className="flex items-start gap-3 rounded border border-blue-200/30 bg-blue-200/5 p-2">
-              <button onClick={handleAddTask} className="mt-1">
+              <button
+                type="button"
+                onClick={handleAddTask}
+                aria-label="Add task"
+                className="mt-1"
+              >
                 <svg
                   className="h-4 w-4 text-blue-200"
                   fill="none"
@@ -183,14 +201,16 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
                     }
                   }}
                   placeholder="Enter task title..."
+                  aria-label="Task title"
                   className="text-white-100 w-full bg-transparent text-sm placeholder-gray-200 outline-none"
                 />
               </div>
             </div>
           ) : (
-            <div
-              className="group flex cursor-pointer items-start gap-3 rounded border border-gray-400/30 bg-gray-400/5 p-2 transition-colors hover:border-blue-200/30 hover:bg-blue-200/5"
-              onClick={() => setIsAddingTask(true)}
+            <button
+              type="button"
+              className="group flex w-full cursor-pointer items-start gap-3 rounded border border-gray-400/30 bg-gray-400/5 p-2 text-left transition-colors hover:border-blue-200/30 hover:bg-blue-200/5"
+              onClick={beginAddingTask}
               onMouseEnter={() => setIsHoveringAddBlock(true)}
               onMouseLeave={() => setIsHoveringAddBlock(false)}
             >
@@ -217,7 +237,7 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
                   </span>
                 )}
               </div>
-            </div>
+            </button>
           )}
         </div>
       </div>
