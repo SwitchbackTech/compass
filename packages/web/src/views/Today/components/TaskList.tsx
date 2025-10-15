@@ -1,6 +1,6 @@
+import dayjs from "dayjs";
 import React, { useRef, useState } from "react";
 import { useTasks } from "../context/TaskProvider";
-import { Task } from "../types";
 
 interface TaskListProps {
   onTaskFocus?: (taskId: string | null) => void;
@@ -21,19 +21,6 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
   const addTaskInputRef = useRef<HTMLInputElement>(null);
   const tasksScrollRef = useRef<HTMLDivElement>(null);
 
-  const getPriorityColor = (priority: Task["priority"]) => {
-    switch (priority) {
-      case "Work":
-        return "border-blue-300/30 bg-blue-300/5";
-      case "Self":
-        return "border-green/30 bg-green/5";
-      case "Relationships":
-        return "border-purple/30 bg-purple/5";
-      default:
-        return "border-gray-400/30 bg-gray-400/5";
-    }
-  };
-
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
       addTask(newTaskTitle.trim());
@@ -51,16 +38,12 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
     }
   };
 
-  const todayHeading = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+  const todayHeading = dayjs().locale("en").format("dddd, MMMM D");
 
   return (
-    <div className="text-white min-w-xs flex h-full flex-col bg-darkBlue-400 border-r border-gray-400/20">
-      <div className="p-4 border-b border-gray-400/20">
-        <h2 className="text-xl font-semibold text-white-100" aria-live="polite">
+    <div className="bg-darkBlue-400 flex h-full min-w-xs flex-col border-r border-gray-400/20 text-white">
+      <div className="border-b border-gray-400/20 p-4">
+        <h2 className="text-white-100 text-xl font-semibold" aria-live="polite">
           {todayHeading}
         </h2>
       </div>
@@ -75,9 +58,7 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
           {tasks.map((task, index) => (
             <div
               key={task.id}
-              className={`flex items-start gap-3 p-2 rounded border ${getPriorityColor(
-                task.priority,
-              )} group ${task.status === "completed" ? "opacity-50" : ""}`}
+              className={`group flex items-start gap-3 rounded border p-2 ${task.status === "completed" ? "opacity-50" : ""}`}
             >
               <button
                 data-task-id={task.id}
@@ -102,11 +83,11 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
                   }
                 }}
                 onClick={() => toggleTaskStatus(task.id)}
-                className="mt-1 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-full"
+                className="mt-1 rounded-full focus:ring-2 focus:ring-blue-200 focus:outline-none"
               >
                 {task.status === "completed" ? (
                   <svg
-                    className="w-4 h-4 text-green"
+                    className="text-green h-4 w-4"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -118,7 +99,7 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
                   </svg>
                 ) : (
                   <svg
-                    className="w-4 h-4 text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-4 w-4 text-gray-200 opacity-0 transition-opacity group-hover:opacity-100"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -154,12 +135,12 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
                       setEditingTaskId(null);
                       setEditingTitle("");
                     }}
-                    className="w-full bg-transparent text-sm text-white-100 placeholder-gray-200 outline-none border-b border-white-100/20"
+                    className="text-white-100 border-white-100/20 w-full border-b bg-transparent text-sm placeholder-gray-200 outline-none"
                     aria-label={`Edit ${task.title}`}
                   />
                 ) : (
                   <p
-                    className="text-sm text-white-100 leading-relaxed cursor-text"
+                    className="text-white-100 cursor-text text-sm leading-relaxed"
                     onClick={() => {
                       setEditingTaskId(task.id);
                       setEditingTitle(task.title);
@@ -173,10 +154,10 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
           ))}
 
           {isAddingTask ? (
-            <div className="flex items-start gap-3 p-2 rounded border border-blue-200/30 bg-blue-200/5">
+            <div className="flex items-start gap-3 rounded border border-blue-200/30 bg-blue-200/5 p-2">
               <button onClick={handleAddTask} className="mt-1">
                 <svg
-                  className="w-4 h-4 text-blue-200"
+                  className="h-4 w-4 text-blue-200"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -196,26 +177,25 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   onKeyDown={handleAddTaskKeyDown}
-                  tabIndex={-1}
                   onBlur={() => {
                     if (!newTaskTitle.trim()) {
                       setIsAddingTask(false);
                     }
                   }}
                   placeholder="Enter task title..."
-                  className="w-full bg-transparent text-sm text-white-100 placeholder-gray-200 outline-none"
+                  className="text-white-100 w-full bg-transparent text-sm placeholder-gray-200 outline-none"
                 />
               </div>
             </div>
           ) : (
             <div
-              className="flex items-start gap-3 p-2 rounded border border-gray-400/30 bg-gray-400/5 cursor-pointer hover:border-blue-200/30 hover:bg-blue-200/5 transition-colors group"
+              className="group flex cursor-pointer items-start gap-3 rounded border border-gray-400/30 bg-gray-400/5 p-2 transition-colors hover:border-blue-200/30 hover:bg-blue-200/5"
               onClick={() => setIsAddingTask(true)}
               onMouseEnter={() => setIsHoveringAddBlock(true)}
               onMouseLeave={() => setIsHoveringAddBlock(false)}
             >
               <svg
-                className="w-4 h-4 text-gray-200 group-hover:text-blue-200 mt-1 transition-colors"
+                className="h-4 w-4 text-gray-200 transition-colors group-hover:text-blue-200"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -227,12 +207,12 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-              <div className="flex-1 flex items-center justify-between">
-                <span className="text-sm text-gray-200 group-hover:text-white-100 transition-colors">
+              <div className="flex flex-1 items-center justify-between">
+                <span className="group-hover:text-white-100 text-sm text-gray-200 transition-colors">
                   Add task
                 </span>
                 {isHoveringAddBlock && (
-                  <span className="text-xs text-gray-300 bg-gray-400 px-1.5 py-0.5 rounded">
+                  <span className="rounded bg-gray-400 px-1.5 py-0.5 text-xs text-gray-300">
                     T
                   </span>
                 )}

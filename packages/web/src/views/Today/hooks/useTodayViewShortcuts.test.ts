@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
+import { useTodayViewShortcuts } from "./useTodayViewShortcuts";
 
 describe("useKeyboardShortcuts", () => {
   let mockConfig: ReturnType<typeof jest.fn>;
@@ -30,7 +30,7 @@ describe("useKeyboardShortcuts", () => {
   });
 
   it("should add keydown event listener on mount", () => {
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
     expect(addEventListenerSpy).toHaveBeenCalledWith(
       "keydown",
       expect.any(Function),
@@ -38,7 +38,7 @@ describe("useKeyboardShortcuts", () => {
   });
 
   it("should remove keydown event listener on unmount", () => {
-    const { unmount } = renderHook(() => useKeyboardShortcuts(mockConfig));
+    const { unmount } = renderHook(() => useTodayViewShortcuts(mockConfig));
     unmount();
     expect(removeEventListenerSpy).toHaveBeenCalledWith(
       "keydown",
@@ -47,7 +47,7 @@ describe("useKeyboardShortcuts", () => {
   });
 
   it("should call onAddTask when 't' is pressed", () => {
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "t" });
     window.dispatchEvent(event);
@@ -57,7 +57,7 @@ describe("useKeyboardShortcuts", () => {
 
   it("should not call onAddTask when already adding a task", () => {
     mockConfig.isAddingTask = true;
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "t" });
     window.dispatchEvent(event);
@@ -67,7 +67,7 @@ describe("useKeyboardShortcuts", () => {
 
   it("should call onEditTask when 'e' is pressed and task is focused", () => {
     mockConfig.hasFocusedTask = true;
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "e" });
     window.dispatchEvent(event);
@@ -77,7 +77,7 @@ describe("useKeyboardShortcuts", () => {
 
   it("should not call onEditTask when no task is focused", () => {
     mockConfig.hasFocusedTask = false;
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "e" });
     window.dispatchEvent(event);
@@ -86,7 +86,7 @@ describe("useKeyboardShortcuts", () => {
   });
 
   it("should call onFocusTasks when 'u' is pressed", () => {
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "u" });
     window.dispatchEvent(event);
@@ -96,7 +96,7 @@ describe("useKeyboardShortcuts", () => {
 
   it("should call onNextTask when 'j' is pressed with focused task", () => {
     mockConfig.hasFocusedTask = true;
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "j" });
     window.dispatchEvent(event);
@@ -106,7 +106,7 @@ describe("useKeyboardShortcuts", () => {
 
   it("should call onPrevTask when 'k' is pressed with focused task", () => {
     mockConfig.hasFocusedTask = true;
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "k" });
     window.dispatchEvent(event);
@@ -117,7 +117,7 @@ describe("useKeyboardShortcuts", () => {
   it("should not call onNextTask when editing task", () => {
     mockConfig.hasFocusedTask = true;
     mockConfig.isEditingTask = true;
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "j" });
     window.dispatchEvent(event);
@@ -127,7 +127,7 @@ describe("useKeyboardShortcuts", () => {
 
   it("should call onCompleteTask when Enter is pressed with focused task", () => {
     mockConfig.hasFocusedTask = true;
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "Enter" });
     window.dispatchEvent(event);
@@ -138,7 +138,7 @@ describe("useKeyboardShortcuts", () => {
   it("should not call onCompleteTask when editing task", () => {
     mockConfig.hasFocusedTask = true;
     mockConfig.isEditingTask = true;
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "Enter" });
     window.dispatchEvent(event);
@@ -147,7 +147,7 @@ describe("useKeyboardShortcuts", () => {
   });
 
   it("should call onEscape when Escape is pressed", () => {
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "Escape" });
     window.dispatchEvent(event);
@@ -160,7 +160,7 @@ describe("useKeyboardShortcuts", () => {
     document.body.appendChild(input);
     input.focus();
 
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", { key: "t", bubbles: true });
     input.dispatchEvent(event);
@@ -175,7 +175,7 @@ describe("useKeyboardShortcuts", () => {
     document.body.appendChild(input);
     input.focus();
 
-    renderHook(() => useKeyboardShortcuts(mockConfig));
+    renderHook(() => useTodayViewShortcuts(mockConfig));
 
     const event = new KeyboardEvent("keydown", {
       key: "Escape",

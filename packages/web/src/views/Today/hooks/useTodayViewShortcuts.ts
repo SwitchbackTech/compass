@@ -24,7 +24,7 @@ export interface KeyboardShortcutsConfig {
 /**
  * Hook to handle keyboard shortcuts for the Today view
  */
-export function useKeyboardShortcuts(config: KeyboardShortcutsConfig) {
+export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();

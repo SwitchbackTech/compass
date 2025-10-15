@@ -1,5 +1,6 @@
 import React from "react";
-import { act, render, renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
+import { Task } from "../types";
 import { TaskProvider, useTasks } from "./TaskProvider";
 
 describe("TaskProvider", () => {
@@ -22,12 +23,11 @@ describe("TaskProvider", () => {
     });
 
     act(() => {
-      result.current.addTask("Test task", "Work");
+      result.current.addTask("Test task");
     });
 
     expect(result.current.tasks).toHaveLength(1);
     expect(result.current.tasks[0].title).toBe("Test task");
-    expect(result.current.tasks[0].priority).toBe("Work");
     expect(result.current.tasks[0].status).toBe("todo");
   });
 
@@ -38,7 +38,7 @@ describe("TaskProvider", () => {
 
     let taskId: string;
     act(() => {
-      const task = result.current.addTask("Old title", "Work");
+      const task = result.current.addTask("Old title");
       taskId = task.id;
     });
 
@@ -56,7 +56,7 @@ describe("TaskProvider", () => {
 
     let taskId: string;
     act(() => {
-      const task = result.current.addTask("Test task", "Work");
+      const task = result.current.addTask("Test task");
       taskId = task.id;
     });
 
@@ -83,9 +83,9 @@ describe("TaskProvider", () => {
     let task1Id: string, task2Id: string, task3Id: string;
 
     act(() => {
-      const t1 = result.current.addTask("Task 1", "Work");
-      const t2 = result.current.addTask("Task 2", "Work");
-      const t3 = result.current.addTask("Task 3", "Work");
+      const t1 = result.current.addTask("Task 1");
+      const t2 = result.current.addTask("Task 2");
+      const t3 = result.current.addTask("Task 3");
       task1Id = t1.id;
       task2Id = t2.id;
       task3Id = t3.id;
@@ -109,7 +109,7 @@ describe("TaskProvider", () => {
 
     let taskId: string;
     act(() => {
-      const task = result.current.addTask("Test task", "Work");
+      const task = result.current.addTask("Test task");
       taskId = task.id;
     });
 
@@ -128,7 +128,7 @@ describe("TaskProvider", () => {
     });
 
     act(() => {
-      result.current.addTask("Persisted task", "Self");
+      result.current.addTask("Persisted task");
     });
 
     // Check localStorage
@@ -141,7 +141,6 @@ describe("TaskProvider", () => {
     const parsed = JSON.parse(stored!);
     expect(parsed).toHaveLength(1);
     expect(parsed[0].title).toBe("Persisted task");
-    expect(parsed[0].priority).toBe("Self");
   });
 
   it("should load tasks from localStorage on mount", () => {
@@ -149,11 +148,10 @@ describe("TaskProvider", () => {
     const today = new Date();
     const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const storageKey = `compass.today.tasks.${dateKey}`;
-    const mockTasks = [
+    const mockTasks: Task[] = [
       {
         id: "task-1",
         title: "Loaded task",
-        priority: "Relationships" as const,
         status: "todo" as const,
         createdAt: new Date().toISOString(),
       },
@@ -166,6 +164,5 @@ describe("TaskProvider", () => {
 
     expect(result.current.tasks).toHaveLength(1);
     expect(result.current.tasks[0].title).toBe("Loaded task");
-    expect(result.current.tasks[0].priority).toBe("Relationships");
   });
 });

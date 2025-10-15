@@ -5,7 +5,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Task, TaskContextValue } from "../types";
+import { v4 as uuidv4 } from "uuid";
+import { Task, TaskContextValue, isTask } from "../types";
 
 const TaskContext = createContext<TaskContextValue | undefined>(undefined);
 
@@ -43,9 +44,11 @@ export function TaskProvider({
       const rawTasks = window.localStorage.getItem(storageKey);
 
       if (rawTasks) {
-        const parsed: Task[] = JSON.parse(rawTasks);
+        const parsed = JSON.parse(rawTasks);
         if (Array.isArray(parsed)) {
-          setTasks(parsed);
+          // Validate each task using the schema
+          const validTasks = parsed.filter(isTask);
+          setTasks(validTasks);
           return;
         }
       }
@@ -70,14 +73,10 @@ export function TaskProvider({
     }
   }, [tasks, dateKey]);
 
-  const addTask = (
-    title: string,
-    priority: Task["priority"] = "Work",
-  ): Task => {
+  const addTask = (title: string): Task => {
     const newTask: Task = {
-      id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      id: `task-${uuidv4()}`,
       title,
-      priority,
       status: "todo",
       createdAt: new Date().toISOString(),
     };
@@ -98,8 +97,7 @@ export function TaskProvider({
         task.id === taskId
           ? {
               ...task,
-              status:
-                task.status === "completed" ? "todo" : ("completed" as const),
+              status: task.status === "completed" ? "todo" : "completed",
             }
           : task,
       );

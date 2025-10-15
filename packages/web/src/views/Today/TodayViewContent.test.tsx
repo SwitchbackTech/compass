@@ -14,8 +14,8 @@ jest.mock("./components/CalendarAgenda", () => ({
 }));
 
 // Mock the keyboard shortcuts hook
-jest.mock("./hooks/useKeyboardShortcuts", () => ({
-  useKeyboardShortcuts: jest.fn(),
+jest.mock("./hooks/useTodayViewShortcuts", () => ({
+  useTodayViewShortcuts: jest.fn(),
 }));
 
 const renderWithProvider = (component: React.ReactElement) => {

@@ -2,10 +2,10 @@ import React, { useRef, useState } from "react";
 import { CalendarAgenda } from "./components/CalendarAgenda";
 import { TaskList } from "./components/TaskList";
 import { useTasks } from "./context/TaskProvider";
-import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useTodayViewShortcuts } from "./hooks/useTodayViewShortcuts";
 
 export const TodayViewContent = () => {
-  const { tasks } = useTasks();
+  const { tasks, addTask } = useTasks();
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
   const tasksScrollRef = useRef<HTMLDivElement>(null);
@@ -59,6 +59,10 @@ export const TodayViewContent = () => {
     focusTaskAtIndex(0);
   };
 
+  const handleAddTask = () => {
+    addTask("New task");
+  };
+
   const handleNextTask = () => {
     if (!tasks.length) return;
     const currentIndex = tasks.findIndex((task) => task.id === focusedTaskId);
@@ -81,7 +85,8 @@ export const TodayViewContent = () => {
     focusTaskAtIndex(prevIndex);
   };
 
-  useKeyboardShortcuts({
+  useTodayViewShortcuts({
+    onAddTask: handleAddTask,
     onFocusTasks: focusFirstTask,
     onNextTask: handleNextTask,
     onPrevTask: handlePrevTask,

@@ -234,23 +234,6 @@ describe("TaskList", () => {
     });
   });
 
-  it("should show different priority colors", async () => {
-    const user = userEvent.setup();
-    renderTaskList();
-
-    // Add a task (default priority is Work)
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "Work task{Enter}");
-
-    await waitFor(() => {
-      const taskText = screen.getByText("Work task");
-      const taskElement = taskText.parentElement?.parentElement;
-      expect(taskElement).toHaveClass("border-blue-300/30");
-    });
-  });
-
   it("should display completed tasks with reduced opacity", async () => {
     const user = userEvent.setup();
     renderTaskList();
