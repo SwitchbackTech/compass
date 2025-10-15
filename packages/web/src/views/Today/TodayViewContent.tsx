@@ -3,9 +3,10 @@ import { CalendarAgenda } from "./components/CalendarAgenda";
 import { TaskList } from "./components/TaskList";
 import { useTasks } from "./context/TaskProvider";
 import { useTodayViewShortcuts } from "./hooks/useTodayViewShortcuts";
+import { focusOnAddTaskInput } from "./util/shortcut.util";
 
 export const TodayViewContent = () => {
-  const { tasks, addTask } = useTasks();
+  const { tasks } = useTasks();
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
   const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
   const tasksScrollRef = useRef<HTMLDivElement>(null);
@@ -59,10 +60,6 @@ export const TodayViewContent = () => {
     focusTaskAtIndex(0);
   };
 
-  const handleAddTask = () => {
-    addTask("New task");
-  };
-
   const handleNextTask = () => {
     if (!tasks.length) return;
     const currentIndex = tasks.findIndex((task) => task.id === focusedTaskId);
@@ -86,7 +83,7 @@ export const TodayViewContent = () => {
   };
 
   useTodayViewShortcuts({
-    onAddTask: handleAddTask,
+    onAddTask: focusOnAddTaskInput,
     onFocusTasks: focusFirstTask,
     onNextTask: handleNextTask,
     onPrevTask: handlePrevTask,

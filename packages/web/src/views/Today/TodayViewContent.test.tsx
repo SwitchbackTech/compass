@@ -14,9 +14,17 @@ jest.mock("./components/CalendarAgenda", () => ({
 }));
 
 // Mock the keyboard shortcuts hook
-jest.mock("./hooks/useTodayViewShortcuts", () => ({
-  useTodayViewShortcuts: jest.fn(),
-}));
+const mockUseTodayViewShortcuts = jest.fn();
+
+jest.mock("./hooks/useTodayViewShortcuts", () => {
+  const actual = jest.requireActual("./hooks/useTodayViewShortcuts");
+  return {
+    ...actual,
+    useTodayViewShortcuts: (
+      ...args: Parameters<typeof actual.useTodayViewShortcuts>
+    ) => mockUseTodayViewShortcuts(...args),
+  };
+});
 
 const renderWithProvider = (component: React.ReactElement) => {
   return render(<TaskProvider>{component}</TaskProvider>);
@@ -24,6 +32,7 @@ const renderWithProvider = (component: React.ReactElement) => {
 
 describe("TodayViewContent", () => {
   beforeEach(() => {
+    mockUseTodayViewShortcuts.mockReset();
     localStorage.clear();
   });
 
@@ -33,6 +42,27 @@ describe("TodayViewContent", () => {
     // Verify the main components are present
     expect(screen.getByText("Add task")).toBeInTheDocument();
     expect(screen.getByText("Calendar Content")).toBeInTheDocument();
+  });
+
+  it("focuses the add task input when typing the 't' shortcut", async () => {
+    const actualShortcuts = jest.requireActual("./hooks/useTodayViewShortcuts");
+
+    mockUseTodayViewShortcuts.mockImplementation((config) =>
+      actualShortcuts.useTodayViewShortcuts(config),
+    );
+
+    const user = userEvent.setup();
+    renderWithProvider(<TodayViewContent />);
+
+    await act(async () => {
+      await user.keyboard("t");
+    });
+
+    const addTaskInput = await screen.findByRole("textbox", {
+      name: "Task title",
+    });
+
+    expect(addTaskInput).toHaveFocus();
   });
 
   it("should display today's date in the tasks section", () => {
