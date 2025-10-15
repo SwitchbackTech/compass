@@ -61,6 +61,7 @@ export class SyncController {
       if (e instanceof ZodError) {
         logger.error(e);
         res.status(Status.FORBIDDEN).send("Invalid notification payload");
+        return;
       }
 
       if (isInvalidGoogleToken(e as Error)) {

@@ -455,10 +455,10 @@ class SyncService {
       await session.commitTransaction();
 
       return watch;
-    } catch (error) {
+    } catch (err) {
       await session.abortTransaction();
 
-      throw error;
+      throw err;
     }
   };
 
@@ -519,10 +519,10 @@ class SyncService {
       await session.commitTransaction();
 
       return watch;
-    } catch (error) {
+    } catch (err) {
       await session.abortTransaction();
 
-      throw error;
+      throw err;
     }
   };
 
