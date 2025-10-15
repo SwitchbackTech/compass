@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { CalendarAgenda } from "./components/CalendarAgenda";
+import { ShortcutsOverlay } from "./components/ShortcutsOverlay";
 import { TaskList } from "./components/TaskList";
 import { useTasks } from "./context/TaskProvider";
 import { useTodayViewShortcuts } from "./hooks/useTodayViewShortcuts";
@@ -93,6 +94,7 @@ export const TodayViewContent = () => {
 
   return (
     <div className="flex h-screen w-full items-center justify-center gap-8 overflow-hidden px-6 py-8">
+      <ShortcutsOverlay />
       <TaskList
         onTaskFocus={setFocusedTaskId}
         focusedTaskId={focusedTaskId}

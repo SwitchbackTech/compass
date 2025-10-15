@@ -2,7 +2,7 @@ import React from "react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { TodayView } from "./TodayView";
 
 // Mock PostHog
@@ -59,14 +59,14 @@ describe("TodayView", () => {
 
   it("should render TaskList component", () => {
     const store = createMockStore();
-
     render(
       <Provider store={store}>
         <TodayView />
       </Provider>,
     );
 
-    expect(screen.getByText("Add task")).toBeInTheDocument();
+    const taskpanel = screen.getByRole("region", { name: "daily-tasks" });
+    expect(within(taskpanel).getByText("Add task")).toBeInTheDocument();
   });
 
   it("should render CalendarAgenda component", () => {

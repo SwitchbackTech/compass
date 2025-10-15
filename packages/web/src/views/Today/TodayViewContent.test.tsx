@@ -40,7 +40,9 @@ describe("TodayViewContent", () => {
     renderWithProvider(<TodayViewContent />);
 
     // Verify the main components are present
-    expect(screen.getByText("Add task")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /add task/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Calendar Content")).toBeInTheDocument();
   });
 
@@ -82,7 +84,7 @@ describe("TodayViewContent", () => {
     renderWithProvider(<TodayViewContent />);
 
     // Click the add task button
-    const addTaskButton = screen.getByText("Add task");
+    const addTaskButton = screen.getByRole("button", { name: /add task/i });
     await act(() => user.click(addTaskButton));
 
     // Verify input field appears
@@ -95,7 +97,9 @@ describe("TodayViewContent", () => {
     renderWithProvider(<TodayViewContent />);
 
     // The layout should be present and functional
-    expect(screen.getByText("Add task")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /add task/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Calendar Content")).toBeInTheDocument();
   });
 
@@ -103,9 +107,10 @@ describe("TodayViewContent", () => {
     renderWithProvider(<TodayViewContent />);
 
     // The tasks section should be present and functional
-    expect(screen.getByText("Add task")).toBeInTheDocument();
+    const addTaskButton = screen.getByRole("button", { name: /add task/i });
+    expect(addTaskButton).toBeInTheDocument();
 
     // Users should be able to interact with the tasks section
-    expect(screen.getByText("Add task")).toBeEnabled();
+    expect(addTaskButton).toBeEnabled();
   });
 });

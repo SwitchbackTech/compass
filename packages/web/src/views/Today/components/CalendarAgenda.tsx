@@ -37,7 +37,10 @@ export function CalendarAgenda() {
   };
 
   return (
-    <div className="bg-darkBlue-400 flex h-full min-w-xs flex-col">
+    <section
+      aria-label="calendar-agenda"
+      className="bg-darkBlue-400 flex h-full min-w-xs flex-col"
+    >
       <div
         ref={scrollRef}
         className="relative flex flex-1 overflow-x-hidden overflow-y-auto"
@@ -145,6 +148,6 @@ export function CalendarAgenda() {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
