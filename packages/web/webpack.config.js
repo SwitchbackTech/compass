@@ -173,6 +173,7 @@ module.exports = (env, argv) => {
       },
       compress: true,
       port: 9080,
+      historyApiFallback: true,
     },
 
     plugins: _plugins,
