@@ -1,41 +1,27 @@
 import type { AnyBulkWriteOperation, BulkWriteResult } from "mongodb";
+import { z } from "zod/v4";
 import { BaseError } from "@core/errors/errors.base";
+import { ExpirationDateSchema, zObjectId } from "@core/types/type.utils";
 
 export interface Params_Sync_Gcal extends Payload_Sync_Notif {
   nextSyncToken: string;
   userId: string;
   calendarId?: string;
 }
+
 export interface Params_WatchEvents {
   gCalendarId: string;
-  channelId: string;
-  expiration: string;
-  nextSyncToken?: string;
-}
-export interface Payload_Resource_Events {
-  gCalendarId: string;
-  channelId: string;
-  expiration: string;
+  channelId: string; // use a valid mongo object id string
   resourceId: string;
+  expiration: string;
+  quotaUser?: string; // added to aid gcal API quota calculations
 }
 
-export interface Payload_Sync_Events extends Payload_Resource_Events {
+export interface SyncDetails {
+  gCalendarId: string;
   nextSyncToken: string;
   nextPageToken?: string;
-  lastRefreshedAt?: Date;
   lastSyncedAt?: Date;
-}
-
-export interface Payload_Sync_Notif {
-  channelId: string;
-  resourceId: string;
-  resourceState: string;
-  expiration: string;
-}
-
-export interface Payload_Sync_Refresh {
-  userId: string;
-  payloads: Payload_Sync_Events[];
 }
 
 export enum Resource_Sync {
@@ -43,6 +29,16 @@ export enum Resource_Sync {
   EVENTS = "events",
   SETTINGS = "settings",
 }
+
+export const GcalNotificationSchema = z.object({
+  resource: z.enum([Resource_Sync.EVENTS, Resource_Sync.CALENDAR]),
+  channelId: zObjectId,
+  resourceId: z.string().nonempty(),
+  resourceState: z.string().nonempty(),
+  expiration: ExpirationDateSchema,
+});
+
+export type Payload_Sync_Notif = z.infer<typeof GcalNotificationSchema>;
 
 export interface Result_Import_Gcal {
   total: number;
@@ -79,11 +75,7 @@ export type Result_Watch_Stop = {
 export interface Schema_Sync {
   user: string;
   google: {
-    calendarlist: {
-      gCalendarId: string;
-      nextSyncToken: string;
-      lastSyncedAt: Date;
-    }[];
-    events: Payload_Sync_Events[];
+    calendarlist: SyncDetails[];
+    events: SyncDetails[];
   };
 }

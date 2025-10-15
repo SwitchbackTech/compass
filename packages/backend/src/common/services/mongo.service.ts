@@ -34,7 +34,7 @@ interface InternalClient {
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
   waitlist: Collection<Schema_Waitlist>;
-  watch: Collection<Omit<Schema_Watch, "_id">>;
+  watch: Collection<Schema_Watch>;
 }
 
 class MongoService {
@@ -144,7 +144,7 @@ class MongoService {
       sync: db.collection<Schema_Sync>(Collections.SYNC),
       user: db.collection<Schema_User>(Collections.USER),
       waitlist: db.collection<Schema_Waitlist>(Collections.WAITLIST),
-      watch: db.collection<Omit<Schema_Watch, "_id">>(Collections.WATCH),
+      watch: db.collection<Schema_Watch>(Collections.WATCH),
     };
   }
 

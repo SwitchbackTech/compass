@@ -1,4 +1,4 @@
-import { WithId } from "mongodb";
+import { ObjectId, WithId } from "mongodb";
 import { randomUUID } from "node:crypto";
 import { DefaultEventsMap } from "socket.io";
 import { Socket } from "socket.io-client";
@@ -22,9 +22,9 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { waitUntilEvent } from "@backend/common/helpers/common.util";
 import gcalService from "@backend/common/services/gcal/gcal.service";
+import mongoService from "@backend/common/services/mongo.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
@@ -83,38 +83,49 @@ describe("SyncController", () => {
   });
 
   describe("handleGoogleNotification", () => {
-    it("should throw error when no sync record found", async () => {
-      const response = await syncDriver.handleGoogleNotification(
+    it("should throw error when no watch record found", async () => {
+      await syncDriver.handleGoogleNotification(
         {
-          channelId: faker.string.uuid(),
+          resource: Resource_Sync.EVENTS,
+          channelId: new ObjectId(),
           resourceId: faker.string.uuid(),
           resourceState: "exists",
-          expiration: faker.date.future().toISOString(),
+          expiration: faker.date.future(),
         },
         Status.BAD_REQUEST,
       );
-
-      expect(response.body).toEqual(SyncError.NoSyncRecordForUser);
     });
 
     it("should ignore notification when no sync token found", async () => {
       // Setup
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const calendarId = "test-calendar";
-      const channelId = faker.string.uuid();
-      const resourceId = faker.string.uuid();
-      const expiration = faker.date.future().toISOString();
+
+      const watch = await mongoService.watch.findOne({
+        user: userId,
+        gCalendarId: { $ne: Resource_Sync.CALENDAR },
+      });
+
+      expect(watch).toBeDefined();
+
+      const calendarId = watch!.gCalendarId;
+      const resource = Resource_Sync.EVENTS;
+      const channelId = watch!._id;
+      const resourceId = watch!.resourceId;
+      const expiration = watch!.expiration;
 
       await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
-        channelId,
-        resourceId,
-        expiration,
         nextSyncToken: undefined,
       });
 
       await syncDriver.handleGoogleNotification(
-        { channelId, resourceId, resourceState: "exists", expiration },
+        {
+          resource,
+          channelId,
+          resourceId,
+          resourceState: "exists",
+          expiration,
+        },
         Status.NO_CONTENT,
       );
     });
@@ -123,16 +134,24 @@ describe("SyncController", () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const calendarId = "test-calendar";
-      const channelId = faker.string.uuid();
+      const resource = Resource_Sync.EVENTS;
+      const channelId = new ObjectId();
       const resourceId = "test-resource-id";
-      const expiration = faker.date.future().toISOString();
+      const expiration = faker.date.future();
 
-      await updateSync(Resource_Sync.EVENTS, userId, calendarId, {
-        resourceId,
-      });
+      await mongoService.watch.updateOne(
+        { user: userId, gCalendarId: calendarId },
+        { $set: { resourceId } },
+      );
 
       await syncDriver.handleGoogleNotification(
-        { channelId, resourceId, resourceState: "exists", expiration },
+        {
+          resource,
+          channelId,
+          resourceId,
+          resourceState: "exists",
+          expiration,
+        },
         Status.OK,
       );
     });

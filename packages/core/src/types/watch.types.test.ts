@@ -1,19 +1,24 @@
 import { ObjectId } from "bson";
 import { faker } from "@faker-js/faker";
 import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
+import dayjs from "@core/util/date/dayjs";
 
 describe("Watch Types", () => {
   const validWatch: Schema_Watch = {
     _id: new ObjectId(),
+    gCalendarId: "primary",
     user: faker.database.mongodbObjectId(),
     resourceId: faker.string.alphanumeric(20),
-    expiration: faker.date.future(),
+    expiration: faker.date.future({
+      refDate: dayjs().add(5, "minutes").toDate(),
+    }),
     createdAt: new Date(),
   };
 
   describe("WatchSchema", () => {
     it("parses valid watch data", () => {
       expect(() => WatchSchema.parse(validWatch)).not.toThrow();
+      expect(WatchSchema.parse(validWatch).expiration).toBeInstanceOf(Date);
     });
 
     it("defaults createdAt to current date when not provided", () => {
@@ -23,6 +28,7 @@ describe("Watch Types", () => {
       };
 
       const parsed = WatchSchema.parse(watchWithoutCreatedAt);
+
       expect(parsed.createdAt).toBeInstanceOf(Date);
     });
 
@@ -55,13 +61,66 @@ describe("Watch Types", () => {
       });
     });
 
-    it("requires expiration to be a Date", () => {
-      const watchData = {
-        ...validWatch,
-        expiration: "2024-12-31T23:59:59Z", // string instead of Date
-      };
+    it("rejects empty gCalendarId", () => {
+      const watchData = { ...validWatch, gCalendarId: "" };
 
       expect(() => WatchSchema.parse(watchData)).toThrow();
+    });
+
+    it("rejects empty resourceId", () => {
+      const watchData = { ...validWatch, resourceId: "" };
+
+      expect(() => WatchSchema.parse(watchData)).toThrow();
+    });
+
+    it("accepts missing createdAt and sets default", () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { createdAt, ...watchData } = validWatch;
+      const parsed = WatchSchema.parse(watchData);
+
+      expect(parsed.createdAt).toBeInstanceOf(Date);
+    });
+
+    it("rejects missing gCalendarId", () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { gCalendarId, ...watchData } = validWatch;
+
+      expect(() => WatchSchema.parse(watchData)).toThrow();
+    });
+
+    it("rejects missing resourceId", () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { resourceId, ...watchData } = validWatch;
+
+      expect(() => WatchSchema.parse(watchData)).toThrow();
+    });
+
+    it("rejects expiration dates in the past", () => {
+      const pastExpiration = faker.date.past();
+      const watchData = { ...validWatch, expiration: pastExpiration };
+
+      expect(() => WatchSchema.parse(watchData)).toThrow();
+    });
+
+    it("parses string expiration if it is a valid timestamp and in future", () => {
+      const isoExpiration = faker.date.future().getTime().toString();
+      const watchData = { ...validWatch, expiration: isoExpiration };
+
+      expect(() => WatchSchema.parse(watchData)).not.toThrow();
+      expect(WatchSchema.parse(watchData).expiration).toBeInstanceOf(Date);
+    });
+
+    it("rejects invalid expiration string", () => {
+      expect(() =>
+        WatchSchema.parse({ ...validWatch, expiration: "not-a-date" }),
+      ).toThrow();
+
+      expect(() =>
+        WatchSchema.parse({
+          ...validWatch,
+          expiration: faker.date.future().toISOString(),
+        }),
+      ).toThrow();
     });
   });
 });

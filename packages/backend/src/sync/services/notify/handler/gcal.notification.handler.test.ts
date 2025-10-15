@@ -1,4 +1,5 @@
 import { gCalendar } from "@core/types/gcal";
+import { Resource_Sync } from "@core/types/sync.types";
 import {
   cleanupTestDb,
   setupTestDb,
@@ -43,6 +44,7 @@ describe("GCalNotificationHandler", () => {
 
     handler = new GCalNotificationHandler(
       mockGcal,
+      Resource_Sync.EVENTS,
       mockUserId,
       mockCalendarId,
       mockSyncToken,
@@ -84,6 +86,31 @@ describe("GCalNotificationHandler", () => {
       // Execute and verify
       const result = await handler.handleNotification();
       expect(result.summary).toEqual("IGNORED");
+    });
+
+    it("should return IGNORED if resource is not EVENTS", async () => {
+      handler = new GCalNotificationHandler(
+        mockGcal,
+        Resource_Sync.SETTINGS, // Not EVENTS
+        mockUserId,
+        mockCalendarId,
+        mockSyncToken,
+      );
+      const result = await handler.handleNotification();
+      expect(result.summary).toBe("IGNORED");
+      expect(result.changes).toEqual([]);
+    });
+
+    it("should return IGNORED if no changes and nextSyncToken is different", async () => {
+      (gcalService.getEvents as jest.Mock).mockResolvedValue({
+        data: {
+          items: [],
+          nextSyncToken: "different-token",
+        },
+      });
+      const result = await handler.handleNotification();
+      expect(result.summary).toBe("IGNORED");
+      expect(result.changes).toEqual([]);
     });
   });
 });
