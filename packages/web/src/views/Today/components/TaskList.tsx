@@ -54,7 +54,10 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
   };
 
   return (
-    <div className="bg-darkBlue-400 flex h-full min-w-xs flex-col border-r border-gray-400/20 text-white">
+    <section
+      aria-label="daily-tasks"
+      className="bg-darkBlue-400 flex h-full min-w-xs flex-col border-r border-gray-400/20 text-white"
+    >
       <div className="border-b border-gray-400/20 p-4">
         <h2 className="text-white-100 text-xl font-semibold" aria-live="polite">
           {todayHeading}
@@ -241,6 +244,6 @@ export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
           )}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

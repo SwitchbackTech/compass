@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Task, TaskContextValue } from "../types";
+import { sortTasksByStatus } from "../util/sort.task";
 import {
   getDateKey,
   loadTasksFromStorage,
@@ -33,7 +34,9 @@ export function TaskProvider({
     if (lastLoadedKeyRef.current === dateKey) return;
     lastLoadedKeyRef.current = dateKey;
 
-    setTasks(loadTasksFromStorage(dateKey));
+    const loadedTasks = loadTasksFromStorage(dateKey);
+    const sortedTasks = sortTasksByStatus(loadedTasks);
+    setTasks(sortedTasks);
   }, [dateKey]);
 
   // Save tasks to localStorage whenever they change
@@ -61,24 +64,16 @@ export function TaskProvider({
 
   const toggleTaskStatus = (taskId: string) => {
     setTasks((prev) => {
-      const updatedTasks = prev.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              status: task.status === "completed" ? "todo" : "completed",
-            }
-          : task,
-      );
+      const updatedTasks = prev.map((task) => {
+        if (task.id === taskId) {
+          const newStatus: "todo" | "completed" =
+            task.status === "completed" ? "todo" : "completed";
+          return { ...task, status: newStatus };
+        }
+        return task;
+      });
 
-      // Move completed tasks to the end
-      const incompleteTasks = updatedTasks.filter(
-        (task) => task.status !== "completed",
-      );
-      const completedTasks = updatedTasks.filter(
-        (task) => task.status === "completed",
-      );
-
-      return [...incompleteTasks, ...completedTasks];
+      return sortTasksByStatus(updatedTasks);
     });
   };
 

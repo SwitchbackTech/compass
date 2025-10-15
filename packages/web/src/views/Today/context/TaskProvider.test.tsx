@@ -165,4 +165,76 @@ describe("TaskProvider", () => {
     expect(result.current.tasks).toHaveLength(1);
     expect(result.current.tasks[0].title).toBe("Loaded task");
   });
+
+  it("should sort tasks on load when there are mixed statuses", () => {
+    // Pre-populate localStorage with mixed statuses
+    const today = new Date();
+    const dateKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const storageKey = `compass.today.tasks.${dateKey}`;
+    const mockTasks: Task[] = [
+      {
+        id: "task-1",
+        title: "Todo 1",
+        status: "todo" as const,
+        createdAt: "2024-01-01T10:00:00Z",
+      },
+      {
+        id: "task-2",
+        title: "Completed 1",
+        status: "completed" as const,
+        createdAt: "2024-01-01T11:00:00Z",
+      },
+      {
+        id: "task-3",
+        title: "Todo 2",
+        status: "todo" as const,
+        createdAt: "2024-01-01T12:00:00Z",
+      },
+    ];
+    localStorage.setItem(storageKey, JSON.stringify(mockTasks));
+
+    const { result } = renderHook(() => useTasks(), {
+      wrapper: TaskProvider,
+    });
+
+    // Tasks should be sorted with todos first, completed last
+    expect(result.current.tasks[0].id).toBe("task-1");
+    expect(result.current.tasks[1].id).toBe("task-3");
+    expect(result.current.tasks[2].id).toBe("task-2");
+  });
+
+  it("should move uncompleted task back to top section", () => {
+    const { result } = renderHook(() => useTasks(), {
+      wrapper: TaskProvider,
+    });
+
+    let task2Id: string;
+
+    act(() => {
+      result.current.addTask("Task 1");
+      const t2 = result.current.addTask("Task 2");
+      result.current.addTask("Task 3");
+      task2Id = t2.id;
+    });
+
+    // Complete the second task
+    act(() => {
+      result.current.toggleTaskStatus(task2Id);
+    });
+
+    // Task 2 should be at the end
+    expect(result.current.tasks[0].title).toBe("Task 1");
+    expect(result.current.tasks[1].title).toBe("Task 3");
+    expect(result.current.tasks[2].title).toBe("Task 2");
+
+    // Uncomplete the second task
+    act(() => {
+      result.current.toggleTaskStatus(task2Id);
+    });
+
+    // Task 2 should be back in the incomplete section (at the end of incomplete tasks)
+    expect(result.current.tasks[0].title).toBe("Task 1");
+    expect(result.current.tasks[1].title).toBe("Task 3");
+    expect(result.current.tasks[2].title).toBe("Task 2");
+  });
 });
