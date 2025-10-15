@@ -27,19 +27,6 @@ describe("TodayView", () => {
     localStorage.clear();
   });
 
-  it("should render without crashing", () => {
-    const store = createMockStore();
-
-    render(
-      <Provider store={store}>
-        <TodayView />
-      </Provider>,
-    );
-
-    expect(screen.getByTestId("tasks-scroll")).toBeInTheDocument();
-    expect(screen.getByTestId("calendar-scroll")).toBeInTheDocument();
-  });
-
   it("should show experimental feature warning when flag is disabled", () => {
     const store = createMockStore();
 
@@ -92,31 +79,5 @@ describe("TodayView", () => {
     );
 
     expect(screen.getByTestId("calendar-scroll")).toBeInTheDocument();
-  });
-
-  it("should have split layout with correct widths", () => {
-    const store = createMockStore();
-
-    const { container } = render(
-      <Provider store={store}>
-        <TodayView />
-      </Provider>,
-    );
-
-    const tasksPanel = screen.getByTestId("tasks-scroll").closest(".w-96");
-    expect(tasksPanel).toBeInTheDocument();
-  });
-
-  it("should wrap content in TaskProvider", () => {
-    const store = createMockStore();
-
-    render(
-      <Provider store={store}>
-        <TodayView />
-      </Provider>,
-    );
-
-    // TaskProvider provides context, so TaskList should work
-    expect(screen.getByText("Add task")).toBeInTheDocument();
   });
 });

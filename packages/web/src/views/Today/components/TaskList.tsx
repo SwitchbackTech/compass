@@ -81,7 +81,7 @@ export function TaskList({
   });
 
   return (
-    <div className="flex h-full flex-col bg-darkBlue-400 border-r border-gray-400/20">
+    <div className="text-white min-w-xs flex h-full flex-col bg-darkBlue-400 border-r border-gray-400/20">
       <div className="p-4 border-b border-gray-400/20">
         <h2 className="text-xl font-semibold text-white-100" aria-live="polite">
           {todayHeading}

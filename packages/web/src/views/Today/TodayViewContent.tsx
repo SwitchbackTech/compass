@@ -91,20 +91,14 @@ export const TodayViewContent = () => {
 
   return (
     <div className="bg-red-400 flex w-full max-w-items-stretch gap-8 px-6 py-8 overflow-hidden h-screen">
-      {/* Tasks Panel */}
-      <div className="flex w-96 text-white flex-shrink-0 overflow-y-auto">
-        <TaskList
-          onTaskFocus={setFocusedTaskId}
-          focusedTaskId={focusedTaskId}
-          onSelectTask={setSelectedTaskIndex}
-          selectedTaskIndex={selectedTaskIndex}
-        />
-      </div>
+      <TaskList
+        onTaskFocus={setFocusedTaskId}
+        focusedTaskId={focusedTaskId}
+        onSelectTask={setSelectedTaskIndex}
+        selectedTaskIndex={selectedTaskIndex}
+      />
 
-      {/* Calendar Panel */}
-      <div className="flex flex-1 min-w-0 overflow-y-auto">
-        <CalendarAgenda />
-      </div>
+      <CalendarAgenda />
     </div>
   );
 };

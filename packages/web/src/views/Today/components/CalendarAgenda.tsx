@@ -41,7 +41,7 @@ export function CalendarAgenda() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-darkBlue-400">
+    <div className="flex h-full flex-col bg-darkBlue-400 min-w-xs">
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto overflow-x-hidden relative flex"
