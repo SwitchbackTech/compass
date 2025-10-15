@@ -10,6 +10,7 @@ export const SOMEDAY_WEEK_LIMIT_MSG = `Sorry, you can only have ${SOMEDAY_WEEKLY
 export const SOMEDAY_MONTH_LIMIT_MSG = `Sorry, you can only have ${SOMEDAY_MONTHLY_LIMIT} unscheduled events per month.`;
 export const SYNC_DEBUG = "/api/sync/debug";
 export const ID_OPTIMISTIC_PREFIX = "optimistic";
+export const COMPASS_RESOURCE_HEADER = "x-compass-resource";
 
 export enum NodeEnv {
   Development = "development",

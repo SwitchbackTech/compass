@@ -1,34 +1,33 @@
 import { GaxiosError } from "gaxios";
-import { v4 as uuidv4 } from "uuid";
+import { ObjectId } from "mongodb";
 import { RESULT_NOTIFIED_CLIENT } from "@core/constants/websocket.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { gCalendar } from "@core/types/gcal";
 import {
   Params_WatchEvents,
-  Payload_Sync_Events,
   Payload_Sync_Notif,
   Resource_Sync,
+  Result_Watch_Stop,
 } from "@core/types/sync.types";
+import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
+import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
 import {
-  prepSyncMaintenance,
-  prepSyncMaintenanceForUser,
+  prepWatchMaintenanceForUser,
   pruneSync,
-  refreshSync,
+  refreshWatch,
 } from "@backend/sync/services/maintain/sync.maintenance";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
 import {
-  deleteWatchData,
   getSync,
-  isWatchingEventsByGcalId,
+  isWatchingGoogleResource,
   updateSync,
 } from "@backend/sync/util/sync.queries";
 import {
@@ -86,7 +85,7 @@ class SyncService {
         const userId = sync.user;
         const result = await this.stopWatch(userId, channelId, resourceId);
 
-        if (result.channelId) {
+        if (result?.channelId) {
           logger.warn(
             `Cleaned up stale watch for channelId: ${channelId} with resourceId: ${resourceId}`,
           );
@@ -102,16 +101,23 @@ class SyncService {
   }
 
   handleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    const { channelId, resourceId, resourceState } = payload;
+    const { channelId, resourceId, resourceState, resource } = payload;
 
     if (resourceState !== "exists") {
-      logger.info(`Sync initialized for channelId: ${payload.channelId}`);
+      logger.info(
+        `${resource} sync initialized for channelId: ${payload.channelId}`,
+      );
+
       return "INITIALIZED";
     }
 
-    const sync = await getSync({ channelId, resourceId });
+    const _id = new ObjectId(channelId);
+    const watch = await mongoService.watch.findOne({ _id, resourceId });
+    const sync = watch?.user
+      ? await getSync({ userId: watch.user, resource })
+      : undefined;
 
-    if (!sync) {
+    if (!sync || !watch) {
       // clean up stale watch channel;
       const cleanedUp = await this.cleanupStaleWatchChannel(payload);
 
@@ -124,9 +130,11 @@ class SyncService {
     }
 
     const userId = sync.user;
-    const channel = sync.google.events.find((e) => e.channelId === channelId)!;
-    const calendarId = channel.gCalendarId;
-    const nextSyncToken = channel.nextSyncToken;
+    const { events, calendarlist } = sync.google;
+    const channels = [...events, ...calendarlist];
+    const channel = channels.find((e) => e.gCalendarId === watch.gCalendarId);
+    const calendarId = channel?.gCalendarId;
+    const nextSyncToken = channel?.nextSyncToken;
 
     if (!nextSyncToken) {
       throw error(
@@ -142,7 +150,7 @@ class SyncService {
     const handler = new GCalNotificationHandler(
       gcal,
       userId,
-      calendarId,
+      watch.gCalendarId,
       nextSyncToken,
     );
 
@@ -223,179 +231,256 @@ class SyncService {
 
   refreshWatch = async (
     userId: string,
-    payload: Payload_Sync_Events,
+    payload: Params_WatchEvents,
     gcal?: gCalendar,
   ) => {
     if (!gcal) gcal = await getGcalClient(userId);
 
     const watchExists = payload.channelId && payload.resourceId;
+
     if (watchExists) {
-      await this.stopWatch(
-        userId,
-        payload.channelId!,
-        payload.resourceId!,
-        gcal,
-      );
+      await this.stopWatch(userId, payload.channelId, payload.resourceId, gcal);
     }
 
-    const watchResult = await this.startWatchingGcalEvents(
+    const watchResult = await this.startWatchingGcalResources(
       userId,
-      {
-        gCalendarId: payload.gCalendarId,
-      },
+      [{ gCalendarId: payload.gCalendarId, quotaUser: payload.quotaUser }],
       gcal,
     );
 
-    return watchResult;
+    return watchResult[0];
   };
 
   runMaintenance = async () => {
-    const { ignored, toPrune, toRefresh } = await prepSyncMaintenance();
+    const cursor = mongoService.user.find().batchSize(1000);
+    const refresh: Array<{ user: string; payload: Schema_Watch[] }> = [];
+    const prune: Array<{ user: string; payload: Schema_Watch[] }> = [];
+    const ignore: Array<{ user: string; payload: Schema_Watch[] }> = [];
 
-    const pruneResult = await pruneSync(toPrune);
+    let ignored = 0;
+    let pruned = 0;
+    let revoked = 0;
+    let deleted = 0;
+    let refreshed = 0;
+    let resynced = 0;
+
+    while (await cursor.hasNext()) {
+      const user = await cursor.next();
+
+      if (!user) continue;
+
+      const run = await this.runMaintenanceByUser(user._id.toString(), {
+        log: false,
+      });
+
+      ignore.push(...run.ignore);
+      prune.push(...run.prune);
+      refresh.push(...run.refresh);
+
+      deleted += run.deleted;
+      refreshed += run.refreshed;
+      ignored += run.ignored;
+      pruned += run.pruned;
+      revoked += run.revoked;
+      resynced += run.resynced;
+    }
+
+    logger.debug(`Sync Maintenance Results:
+      IGNORED: ${ignored}
+      PRUNED: ${pruned}
+      REFRESHED: ${refreshed}
+
+      DELETED DURING PRUNE: ${deleted}
+      REVOKED SESSION DURING REFRESH: ${revoked}
+      RESYNCED DURING REFRESH: ${resynced}
+    `);
+
+    return { ignored, pruned, refreshed, revoked, deleted, resynced };
+  };
+
+  runMaintenanceByUser = async (
+    userId: string,
+    params: { dry?: boolean; log?: boolean } = { log: true },
+  ) => {
+    const user = await findCompassUserBy("_id", userId);
+    const maintenance = await prepWatchMaintenanceForUser(userId);
+    const ignore = [{ user: userId, payload: maintenance.ignore }];
+    const prune = [{ user: userId, payload: maintenance.prune }];
+    const refresh = [{ user: userId, payload: maintenance.refresh }];
+
+    const result = {
+      ignore,
+      prune,
+      refresh,
+      user: user?.email || "Not found",
+      ignored: 0,
+      pruned: 0,
+      refreshed: 0,
+      revoked: 0,
+      deleted: 0,
+      resynced: 0,
+    };
+
+    if (params?.dry) return result;
+
+    const pruneResult = await pruneSync(prune);
     const pruned = pruneResult.filter((p) => !p.deletedUserData);
     const deletedDuringPrune = pruneResult.filter((p) => p.deletedUserData);
-
-    const refreshResult = await refreshSync(toRefresh);
+    const refreshResult = await refreshWatch(refresh);
     const refreshed = refreshResult.filter((r) => !r.revokedSession);
     const revokedSession = refreshResult.filter((r) => r.revokedSession);
     const resynced = refreshResult.filter((r) => r.resynced);
 
-    logger.debug(`Sync Maintenance Results:
-      IGNORED: ${ignored.length}
-      PRUNED: ${pruned.map((p) => p.user).toString()}
-      REFRESHED: ${refreshed.map((r) => r.user).toString()}
+    if (params?.log) {
+      logger.debug(`Sync Maintenance Results:
+        IGNORED: ${ignore.length}
+        PRUNED: ${pruned.map((p) => p.user).toString()}
+        REFRESHED: ${refreshed.map((r) => r.user).toString()}
 
-      DELETED DURING PRUNE: ${deletedDuringPrune.map((r) => r.user).toString()}
-      REVOKED SESSION DURING REFRESH: ${revokedSession
-        .map((r) => r.user)
-        .toString()}
-      RESYNCED DURING REFRESH: ${resynced.map((r) => r.user).toString()}
-    `);
+        DELETED DURING PRUNE: ${deletedDuringPrune.map((r) => r.user).toString()}
+        REVOKED SESSION DURING REFRESH: ${revokedSession
+          .map((r) => r.user)
+          .toString()}
+        RESYNCED DURING REFRESH: ${resynced.map((r) => r.user).toString()}
+      `);
+    }
 
     return {
-      ignored: ignored.length,
+      ...result,
+      ignored: ignore.length,
       pruned: pruned.length,
       refreshed: refreshed.length,
       revoked: revokedSession.length,
       deleted: deletedDuringPrune.length,
+      resynced: resynced.length,
     };
   };
 
-  runMaintenanceByUser = async (userId: string, params: { dry: boolean }) => {
-    const user = await findCompassUserBy("_id", userId);
-    const _result = await prepSyncMaintenanceForUser(userId);
-    const result = { ..._result, user: user?.email || "Not found" };
+  startWatchingGcalCalendars = async (
+    user: string,
+    params: Pick<Params_WatchEvents, "quotaUser">,
+    gcal: gCalendar,
+  ) => {
+    const alreadyWatching = await isWatchingGoogleResource(user);
 
-    if (params.dry) {
-      return result;
+    if (alreadyWatching) {
+      throw error(
+        WatchError.CalendarWatchExists,
+        `Skipped Start Watch for ${Resource_Sync.CALENDAR}`,
+      );
     }
 
-    switch (result.action) {
-      case "ignore": {
-        return result;
-      }
-      case "prune": {
-        const pruneResult = await pruneSync([userId]);
-        return { ...result, result: pruneResult };
-      }
-      case "refresh": {
-        if (!result.payload) {
-          return {
-            ...result,
-            result: { error: "Didn't refresh because payloads not included" },
-          };
-        }
-        const refreshResult = await refreshSync([
-          { userId, payloads: result.payload },
-        ]);
-        return { ...result, result: refreshResult };
-      }
-      default: {
-        return { ...result, error: "No maintenance action" };
-      }
-    }
+    const { watch: gcalWatch } = await gcalService.watchCalendars(gcal, {
+      ...params,
+      channelId: new ObjectId().toString(),
+      expiration: getChannelExpiration(),
+    });
+
+    const watch = await mongoService.watch.insertOne(
+      WatchSchema.parse({
+        _id: gcalWatch.id,
+        user,
+        gCalendarId: Resource_Sync.CALENDAR,
+        resourceId: gcalWatch.resourceId,
+        expiration: gcalWatch.expiration,
+        createdAt: new Date(),
+        lastNotifiedAt: new Date(0),
+      }),
+    );
+
+    return watch;
   };
 
   startWatchingGcalEvents = async (
-    userId: string,
-    params: { gCalendarId: string },
+    user: string,
+    params: Pick<Params_WatchEvents, "gCalendarId" | "quotaUser">,
     gcal: gCalendar,
   ) => {
-    const alreadyWatching = await isWatchingEventsByGcalId(
-      userId,
+    const alreadyWatching = await isWatchingGoogleResource(
+      user,
       params.gCalendarId,
     );
+
     if (alreadyWatching) {
-      throw error(SyncError.CalendarWatchExists, "Skipped Start Watch");
-    }
-
-    const channelId = uuidv4();
-    const expiration = getChannelExpiration();
-    const watchParams: Params_WatchEvents = {
-      gCalendarId: params.gCalendarId,
-      channelId: channelId,
-      expiration,
-    };
-
-    const { watch } = await gcalService.watchEvents(gcal, watchParams);
-    const { resourceId } = watch;
-
-    if (!resourceId) {
-      throw error(SyncError.NoResourceId, "Calendar Watch Failed");
-    }
-
-    const sync = await updateSync(
-      Resource_Sync.EVENTS,
-      userId,
-      params.gCalendarId,
-      { channelId, resourceId, expiration },
-    );
-
-    return sync;
-  };
-
-  startWatchingGcalEventsById = async (
-    userId: string,
-    watchParams: { gCalId: string; nextSyncToken?: string }[],
-    gcal: gCalendar,
-  ) => {
-    const eventWatches = watchParams.map(async (gInfo) => {
-      await this.startWatchingGcalEvents(
-        userId,
-        { gCalendarId: gInfo.gCalId },
-        gcal,
+      throw error(
+        WatchError.EventWatchExists,
+        `Skipped Start Watch for ${params.gCalendarId}`,
       );
+    }
 
-      await updateSync(Resource_Sync.EVENTS, userId, gInfo.gCalId);
+    const { watch: gcalWatch } = await gcalService.watchEvents(gcal, {
+      ...params,
+      channelId: new ObjectId().toString(),
+      expiration: getChannelExpiration(),
     });
 
-    await Promise.all(eventWatches);
+    const watch = await mongoService.watch.insertOne(
+      WatchSchema.parse({
+        _id: gcalWatch.id,
+        user,
+        gCalendarId: Resource_Sync.CALENDAR,
+        resourceId: gcalWatch.resourceId,
+        expiration: gcalWatch.expiration,
+        createdAt: new Date(),
+        lastNotifiedAt: new Date(0),
+      }),
+    );
+
+    return watch;
+  };
+
+  startWatchingGcalResources = async (
+    userId: string,
+    watchParams: Pick<Params_WatchEvents, "gCalendarId" | "quotaUser">[],
+    gcal: gCalendar,
+  ) => {
+    return Promise.all(
+      watchParams.map(async (params) => {
+        switch (params.gCalendarId) {
+          case Resource_Sync.CALENDAR: {
+            return this.startWatchingGcalCalendars(userId, params, gcal).catch(
+              (error) => {
+                logger.error(error.message, error);
+
+                return undefined;
+              },
+            );
+          }
+          default: {
+            return this.startWatchingGcalEvents(userId, params, gcal).catch(
+              (error) => {
+                logger.error(error.message, error);
+
+                return undefined;
+              },
+            );
+          }
+        }
+      }),
+    ).then((results) => results.filter((r) => r !== undefined));
   };
 
   stopWatch = async (
-    userId: string,
+    user: string,
     channelId: string,
     resourceId: string,
     gcal?: gCalendar,
+    quotaUser?: string,
   ) => {
-    if (!gcal) gcal = await getGcalClient(userId);
-
-    const params = {
-      requestBody: {
-        id: channelId,
-        resourceId: resourceId,
-      },
-    };
+    if (!gcal) gcal = await getGcalClient(user);
 
     try {
-      const stopResult = await gcal.channels.stop(params);
+      await gcalService.stopWatch(gcal, {
+        quotaUser,
+        channelId,
+        resourceId: resourceId,
+      });
 
-      if (stopResult.status !== 204) {
-        throw error(GenericError.NotSure, "Stop Failed");
-      }
-
-      await deleteWatchData({ events: { channelId, resourceId } });
+      await mongoService.watch.deleteOne({
+        user,
+        _id: new ObjectId(channelId),
+        resourceId,
+      });
 
       return { channelId, resourceId };
     } catch (e) {
@@ -403,50 +488,64 @@ class SyncService {
       const code = (_e.code as unknown as number) || 0;
 
       if (_e.code === "404" || code === 404) {
-        await deleteWatchData({ events: { channelId, resourceId } });
+        await mongoService.watch.deleteOne({
+          user,
+          _id: new ObjectId(channelId),
+          resourceId,
+        });
 
         logger.warn(
           "Channel no longer exists. Corresponding sync record deleted",
         );
 
-        return {};
+        return undefined;
       }
 
       throw e;
     }
   };
 
-  stopWatches = async (userId: string) => {
-    const sync = await getSync({ userId });
+  stopWatches = async (
+    user: string,
+    gcal?: gCalendar,
+    quotaUser?: string,
+  ): Promise<Result_Watch_Stop> => {
+    logger.debug(`Stopping all gcal event watches for user: ${user}`);
 
-    if (!sync || !sync.google.events) {
-      return [];
-    }
+    if (!gcal) gcal = await getGcalClient(user);
 
-    logger.debug(`Stopping all gcal event watches for user: ${userId}`);
+    const watches = await mongoService.watch.find({ user }).toArray();
 
-    const gcal = await getGcalClient(userId);
+    const result = await Promise.all(
+      watches.map(async ({ _id, resourceId }) =>
+        gcalService
+          .stopWatch(gcal, {
+            quotaUser,
+            channelId: _id.toString(),
+            resourceId: resourceId,
+          })
+          .then(({ status }) =>
+            status < 400 ? { _id, resourceId, user } : undefined,
+          )
+          .catch((error) => {
+            logger.error(
+              `Error stopping watch for user: ${user}, channelId: ${_id.toString()}`,
+              error,
+            );
 
-    const stopped = [];
-    for (const es of sync.google.events) {
-      if (!es.channelId || !es.resourceId) {
-        logger.debug(
-          `Skipped stop for calendarId: ${es.gCalendarId} due to missing field(s):
-            channelId: ${es.channelId}
-            resourceid: ${es.resourceId}`,
-        );
-        continue;
-      }
+            return undefined;
+          }),
+      ),
+    );
 
-      await this.stopWatch(userId, es.channelId, es.resourceId, gcal);
+    const stopped = result.filter((identity) => identity !== undefined);
 
-      stopped.push({
-        channelId: es.channelId,
-        resourceId: es.resourceId,
-      });
-    }
+    await mongoService.watch.deleteMany(stopped);
 
-    return stopped;
+    return stopped.map(({ _id, resourceId }) => ({
+      channelId: _id.toString(),
+      resourceId,
+    }));
   };
 }
 

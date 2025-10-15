@@ -8,6 +8,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import { UserInfo_Google } from "@core/types/auth.types";
+import { Resource_Sync } from "@core/types/sync.types";
 import { Schema_User, UserMetadata } from "@core/types/user.types";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
@@ -25,7 +26,6 @@ import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
 import syncService from "@backend/sync/services/sync.service";
-import { watchEventsByGcalIds } from "@backend/sync/services/watch/sync.watch";
 import { reInitSyncByIntegration } from "@backend/sync/util/sync.queries";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
@@ -177,14 +177,14 @@ class UserService {
 
     const events = await eventService.deleteByIntegration("google", userId);
 
-    const eventWatches = await syncService.stopWatches(userId);
+    const watches = await syncService.stopWatches(userId);
 
     const sync = await syncService.deleteByIntegration("google", userId);
 
     return {
       calendarlist,
       events,
-      eventWatches,
+      watches,
       sync,
     };
   };
@@ -209,13 +209,22 @@ class UserService {
       calListNextSyncToken,
     );
 
-    const eventWatches = await Promise.resolve(isUsingHttps()).then((yes) =>
-      yes ? watchEventsByGcalIds(userId, gCalendarIds, gcal) : [],
+    const watches = await Promise.resolve(isUsingHttps()).then((yes) =>
+      yes
+        ? syncService.startWatchingGcalResources(
+            userId,
+            [
+              { gCalendarId: Resource_Sync.CALENDAR },
+              ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
+            ],
+            gcal,
+          )
+        : [],
     );
 
     await syncService.importFull(gcal, gCalendarIds, userId);
 
-    return { calendarlist, eventWatches, events: "success", sync };
+    return { calendarlist, watches, events: "success", sync };
   };
 
   /*

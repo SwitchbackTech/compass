@@ -6,6 +6,8 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SReqBody } from "@backend/common/types/express.types";
 import { hasGoogleHeaders } from "@backend/sync/util/sync.util";
+import { COMPASS_RESOURCE_HEADER } from "../../../../core/src/constants/core.constants";
+import { decodeChannelToken } from "../../sync/util/watch.util";
 
 class AuthMiddleware {
   verifyIsDev = (_req: Request, res: Response, next: NextFunction) => {
@@ -35,19 +37,22 @@ class AuthMiddleware {
   };
 
   verifyIsFromGoogle = (req: Request, res: Response, next: NextFunction) => {
-    const tokenIsInvalid =
-      (req.headers["x-goog-channel-token"] as string) !==
-      ENV.TOKEN_GCAL_NOTIFICATION;
-    const isMissingHeaders = !hasGoogleHeaders(req.headers);
+    try {
+      const isMissingHeaders = !hasGoogleHeaders(req.headers);
 
-    if (isMissingHeaders || tokenIsInvalid) {
-      res
-        .status(Status.FORBIDDEN)
-        .send({ error: error(GcalError.Unauthorized, "Notification Failed") });
-      return;
+      if (isMissingHeaders) {
+        throw error(GcalError.Unauthorized, "Notification Failed");
+      }
+
+      const token = req.headers["x-goog-channel-token"] as string;
+      const { resource } = decodeChannelToken(token);
+
+      res.set(COMPASS_RESOURCE_HEADER, resource);
+
+      next();
+    } catch (e) {
+      next(e);
     }
-
-    next();
   };
 
   verifyGoogleOauthCode = (

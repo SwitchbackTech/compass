@@ -1,16 +1,16 @@
-import { DeleteResult, UpdateResult } from "mongodb";
+import { DeleteResult, InsertOneResult, UpdateResult } from "mongodb";
 import { Result_Watch_Stop } from "@core/types/sync.types";
 
 export interface Summary_Resync {
   _delete: {
     calendarlist?: UpdateResult;
     events?: DeleteResult;
-    eventWatches?: Result_Watch_Stop;
+    watches?: Result_Watch_Stop;
     sync?: UpdateResult;
   };
   recreate: {
     calendarlist?: UpdateResult;
-    eventWatches?: UpdateResult[];
+    watches?: InsertOneResult[];
     events?: "success";
     sync?: UpdateResult;
   };

@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
+import { ObjectId } from "mongodb";
+import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
-import { Payload_Sync_Notif } from "@core/types/sync.types";
+import { Payload_Sync_Notif, Resource_Sync } from "@core/types/sync.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import {
@@ -12,18 +14,27 @@ import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
+import mongoService from "../../common/services/mongo.service";
 
 const logger = Logger("app:sync.controller");
 
 export class SyncController {
   static handleGoogleNotification = async (req: Request, res: Response) => {
+    const resource = res.getHeader(COMPASS_RESOURCE_HEADER) as Exclude<
+      Resource_Sync,
+      Resource_Sync.SETTINGS
+    >;
+
+    res.removeHeader(COMPASS_RESOURCE_HEADER);
+
     try {
-      const syncPayload = {
-        channelId: req.headers["x-goog-channel-id"],
-        resourceId: req.headers["x-goog-resource-id"],
-        resourceState: req.headers["x-goog-resource-state"],
-        expiration: req.headers["x-goog-channel-expiration"],
-      } as Payload_Sync_Notif;
+      const syncPayload: Payload_Sync_Notif = {
+        resource,
+        channelId: req.headers["x-goog-channel-id"] as string,
+        resourceId: req.headers["x-goog-resource-id"] as string,
+        resourceState: req.headers["x-goog-resource-state"] as string,
+        expiration: req.headers["x-goog-channel-expiration"] as string,
+      };
 
       const response = await syncService.handleGcalNotification(syncPayload);
 
@@ -33,11 +44,24 @@ export class SyncController {
       const resourceId = req.headers["x-goog-resource-id"] as string;
 
       if (isInvalidGoogleToken(e as Error)) {
-        const sync = await getSync({ channelId, resourceId });
-        const userId = sync!.user;
+        const _id = new ObjectId(channelId);
+        const watch = await mongoService.watch.findOne({ _id, resourceId });
+        const sync = watch?.user
+          ? await getSync({
+              userId: watch.user,
+              gCalendarId: watch.gCalendarId,
+            })
+          : undefined;
 
-        console.warn(`Cleaning data after this user revoked access: ${userId}`);
-        await userService.deleteCompassDataForUser(userId, false);
+        const userId = sync?.user;
+
+        if (userId) {
+          console.warn(
+            `Cleaning data after this user revoked access: ${userId}`,
+          );
+          await userService.deleteCompassDataForUser(userId, false);
+        }
+
         res.status(Status.GONE).send("User revoked access, deleted all data");
         return;
 

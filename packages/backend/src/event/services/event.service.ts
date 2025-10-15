@@ -528,7 +528,7 @@ export const _deleteGcal = async (
 
     const response = await gcalService.deleteEvent(gcal, gEventId);
 
-    return response.status < 300;
+    return response.status < 400;
   } catch (e) {
     const error = e as GaxiosError<gSchema$Event>;
 

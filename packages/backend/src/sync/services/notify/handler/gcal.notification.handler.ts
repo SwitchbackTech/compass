@@ -20,6 +20,13 @@ export class GCalNotificationHandler {
    * Handle a Google Calendar notification
    */
   async handleNotification(): Promise<Summary_Sync> {
+    const isCalendarChanges = this.calendarId === Resource_Sync.CALENDAR;
+
+    if (isCalendarChanges) {
+      console.log("CALENDAR CHANGES - NOT IMPLEMENTED");
+      return { summary: "IGNORED", changes: [] };
+    }
+
     const { hasChanges, changes } = await this.getLatestChanges();
 
     if (hasChanges) {

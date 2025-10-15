@@ -3,15 +3,6 @@ import { z } from "zod";
 import { z as zod4 } from "zod/v4";
 import { z as zod4Mini } from "zod/v4-mini";
 
-export type KeyOfType<T, V> = keyof {
-  [P in keyof T as T[P] extends V ? P : never]: unknown;
-};
-
-//example:
-//data: Omit<Payload_Resource_Events, "nextSyncToken">
-// same as Payload..., except for "nextSyncToken"
-export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
-
 export const IDSchema = z.string().refine(ObjectId.isValid, {
   message: "Invalid id",
 });
@@ -29,6 +20,8 @@ export const zObjectId = zod4.pipe(
   zod4.custom<ObjectId | string>((v) => ObjectId.isValid(v as string)),
   zod4.transform((v) => new ObjectId(v)),
 );
+
+export const zBase64String = zod4Mini.base64();
 
 export const TimezoneSchema = zod4.string().refine(
   (timeZone) => {

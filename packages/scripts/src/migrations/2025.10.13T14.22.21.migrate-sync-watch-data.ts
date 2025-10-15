@@ -1,6 +1,7 @@
 import { ObjectId, WithId } from "mongodb";
 import type { MigrationParams, RunnableMigration } from "umzug";
 import { MigrationContext } from "@scripts/common/cli.types";
+import { Resource_Sync } from "@core/types/sync.types";
 import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import gcalService from "@backend/common/services/gcal/gcal.service";
@@ -14,31 +15,38 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
   async up(params: MigrationParams<MigrationContext>): Promise<void> {
     const { logger } = params.context;
-    const session = await mongoService.startSession();
+
     // This is a non-destructive migration to copy events watch data
     // from sync collection to watch collection
 
     const cursor = mongoService.sync.find(
       { "google.events": { $exists: true, $ne: [] } },
-      { batchSize: 100, session },
+      { batchSize: 1000 },
     );
 
     let migratedCount = 0;
 
-    for await (const syncDoc of cursor) {
-      if (!syncDoc.google?.events?.length) continue;
+    while (await cursor.hasNext()) {
+      const syncDoc = await cursor.next();
+
+      if (!syncDoc) continue;
+      if ((syncDoc?.google?.events?.length ?? 0) < 1) continue;
 
       const watchDocuments: Array<WithId<Omit<Schema_Watch, "_id">>> = [];
       // we will not migrate calendarlist watches as we do not store resourceId
       // for them currently and they are unused
-      const syncDocs = syncDoc.google.events;
+      const syncDocs = syncDoc.google.events as unknown as Array<
+        Schema_Watch & { channelId: string }
+      >;
+
       const gcal = await getGcalClient(syncDoc.user);
       const expiration = getChannelExpiration();
+      const quotaUser = new ObjectId().toString();
 
       await Promise.allSettled([
         ...syncDocs.map(async (s) => {
           await syncService
-            .stopWatch(syncDoc.user, s.channelId, s.resourceId, gcal)
+            .stopWatch(syncDoc.user, s.channelId, s.resourceId, gcal, quotaUser)
             .catch(logger.error);
 
           const _id = new ObjectId();
@@ -48,7 +56,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
             channelId,
             expiration,
             gCalendarId: s.gCalendarId,
-            nextSyncToken: s.nextSyncToken,
+            quotaUser,
           });
 
           watchDocuments.push(
@@ -56,17 +64,37 @@ export default class Migration implements RunnableMigration<MigrationContext> {
               _id,
               user: syncDoc.user,
               resourceId: watch.resourceId!,
-              expiration: new Date(parseInt(watch.expiration!)),
+              gCalendarId: s.gCalendarId,
+              expiration: watch.expiration,
               createdAt: new Date(), // Set current time as creation time for migration
             }),
           );
         }),
+        gcalService
+          .watchCalendars(gcal, {
+            channelId: new ObjectId().toString(),
+            expiration,
+            quotaUser,
+          })
+          .then(({ watch }) => {
+            watchDocuments.push(
+              WatchSchema.parse({
+                _id: watch.id!,
+                user: syncDoc.user,
+                resourceId: watch.resourceId!,
+                gCalendarId: Resource_Sync.CALENDAR,
+                expiration: watch.expiration,
+                createdAt: new Date(), // Set current time as creation time for migration
+              }),
+            );
+          }),
       ]);
 
       if (watchDocuments.length > 0) {
         const result = await mongoService.watch.insertMany(watchDocuments, {
-          session,
+          ordered: false,
         });
+
         migratedCount += result.insertedCount;
       }
     }

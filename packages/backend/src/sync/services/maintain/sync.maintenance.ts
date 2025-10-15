@@ -1,10 +1,6 @@
+import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import {
-  Payload_Sync_Events,
-  Payload_Sync_Refresh,
-  Result_Watch_Stop,
-  Schema_Sync,
-} from "@core/types/sync.types";
+import { Result_Watch_Stop } from "@core/types/sync.types";
 import dayjs from "@core/util/date/dayjs";
 import compassAuthService from "@backend/auth/services/compass.auth.service";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
@@ -14,16 +10,10 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import syncService from "@backend/sync/services/sync.service";
-import {
-  getSync,
-  hasUpdatedCompassEventRecently,
-} from "@backend/sync/util/sync.queries";
-import {
-  hasAnyActiveEventSync,
-  syncExpired,
-  syncExpiresSoon,
-} from "@backend/sync/util/sync.util";
+import { hasUpdatedCompassEventRecently } from "@backend/sync/util/sync.queries";
+import { syncExpired, syncExpiresSoon } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
+import { Schema_Watch } from "../../../../../core/src/types/watch.types";
 
 const logger = Logger("app:sync.maintenance");
 
@@ -38,102 +28,67 @@ const getActiveDeadline = () => {
   return deadline;
 };
 
-const getSyncsToRefresh = (sync: Schema_Sync) => {
-  const syncsToRefresh: Payload_Sync_Events[] = [];
+const getWatchesToRefresh = async (user: string) => {
+  const watches = await mongoService.watch.find({ user }).toArray();
+  const refresh: Schema_Watch[] = [];
+  const active: Schema_Watch[] = [];
+  const expired: Schema_Watch[] = [];
 
-  sync.google.events.map((s) => {
-    const expiry = s.expiration;
+  watches.forEach((watch) => {
+    const { expiration } = watch;
+    const isExpired = syncExpired(expiration);
+    const toRefresh = !isExpired && syncExpiresSoon(expiration);
+    const isActive = !isExpired && !toRefresh;
 
-    if (!syncExpired(expiry) && syncExpiresSoon(expiry)) {
-      syncsToRefresh.push(s);
-    }
+    if (isExpired) expired.push(watch);
+    else if (toRefresh) refresh.push(watch);
+    else if (isActive) active.push(watch);
   });
 
-  return syncsToRefresh;
+  return { refresh, active, expired };
 };
-export const prepSyncMaintenance = async () => {
-  const toRefresh = [];
-  const toPrune = [];
-  const ignored = [];
 
+export const prepWatchMaintenanceForUser = async (
+  userId: string,
+): Promise<Record<"prune" | "ignore" | "refresh", Schema_Watch[]>> => {
   const deadline = getActiveDeadline();
-
-  const cursor = mongoService.user.find();
-  while (await cursor.hasNext()) {
-    const user = await cursor.next();
-    const userId = user?._id.toString() as string;
-
-    const sync = await getSync({ userId });
-    if (!sync) {
-      ignored.push(userId);
-      continue;
-    }
-
-    const isUserActive = await hasUpdatedCompassEventRecently(userId, deadline);
-    if (isUserActive) {
-      const syncsToRefresh = getSyncsToRefresh(sync);
-
-      if (syncsToRefresh.length > 0) {
-        toRefresh.push({ userId, payloads: syncsToRefresh });
-      } else {
-        ignored.push(userId);
-      }
-    } else {
-      if (hasAnyActiveEventSync(sync)) {
-        toPrune.push(sync.user);
-      } else {
-        ignored.push(userId);
-      }
-    }
-  }
+  const isUserActive = await hasUpdatedCompassEventRecently(userId, deadline);
+  const { active, expired, refresh } = await getWatchesToRefresh(userId);
 
   return {
-    ignored,
-    toPrune,
-    toRefresh,
+    refresh: isUserActive ? refresh : [],
+    prune: expired.concat(isUserActive ? [] : [...active, ...refresh]),
+    ignore: isUserActive ? active : [],
   };
 };
 
-export const prepSyncMaintenanceForUser = async (userId: string) => {
-  const sync = await getSync({ userId });
-  if (!sync) {
-    return { action: "ignore", reason: "no sync" };
-  }
-
-  const deadline = getActiveDeadline();
-  const isUserActive = await hasUpdatedCompassEventRecently(userId, deadline);
-  if (isUserActive) {
-    const syncsToRefresh = getSyncsToRefresh(sync);
-
-    if (syncsToRefresh.length > 0) {
-      return {
-        action: "refresh",
-        reason: "Active user + expiring soon",
-        payload: syncsToRefresh,
-      };
-    } else {
-      return {
-        action: "ignore",
-        reason: "Active user + not expired/expiring soon",
-      };
-    }
-  } else {
-    const result = hasAnyActiveEventSync(sync)
-      ? { action: "prune", reason: "Inactive user + active sync" }
-      : { action: "ignore", reason: "Inactive user + no active syncs" };
-    return result;
-  }
-};
-
-export const pruneSync = async (toPrune: string[]) => {
-  const _prunes = toPrune.map(async (u) => {
+export const pruneSync = async (
+  records: Array<{ user: string; payload: Schema_Watch[] }>,
+) => {
+  const _prunes = records.map(async ({ user, payload }) => {
     let deletedUserData = false;
     let stopped: Result_Watch_Stop = [];
+
+    const quotaUser = new ObjectId().toString();
+    const gcal = await getGcalClient(user);
+
     try {
-      stopped = await syncService.stopWatches(u);
+      const results = await Promise.all(
+        payload.map(({ _id, resourceId }) =>
+          syncService.stopWatch(
+            user,
+            _id.toString(),
+            resourceId,
+            gcal,
+            quotaUser,
+          ),
+        ),
+      );
+
+      stopped = results.filter((r) => r !== undefined);
     } catch (e) {
       if (isInvalidGoogleToken(e as Error)) {
-        await userService.deleteCompassDataForUser(u, false);
+        await userService.deleteCompassDataForUser(user, false);
         deletedUserData = true;
       } else {
         logger.warn("Unexpected error during prune:", e);
@@ -142,52 +97,69 @@ export const pruneSync = async (toPrune: string[]) => {
     }
 
     const { sessionsRevoked } =
-      await compassAuthService.revokeSessionsByUser(u);
+      await compassAuthService.revokeSessionsByUser(user);
 
-    return { user: u, results: stopped, sessionsRevoked, deletedUserData };
+    return { user, results: stopped, sessionsRevoked, deletedUserData };
   });
 
   const pruneResult = await Promise.all(_prunes);
   return pruneResult;
 };
 
-export const refreshSync = async (toRefresh: Payload_Sync_Refresh[]) => {
+export const refreshWatch = async (
+  toRefresh: {
+    user: string;
+    payload: Schema_Watch[];
+  }[],
+) => {
   const _refreshes = toRefresh.map(async (r) => {
     let revokedSession = false;
     let resynced = false;
 
     try {
-      const gcal = await getGcalClient(r.userId);
+      const gcal = await getGcalClient(r.user);
 
-      const refreshesByUser = r.payloads.map(async (syncPayload) => {
-        const _refresh = await syncService.refreshWatch(
-          r.userId,
-          syncPayload,
-          gcal,
-        );
-        return {
-          gcalendarId: syncPayload.gCalendarId,
-          success: _refresh.acknowledged && _refresh.modifiedCount === 1,
-        };
-      });
+      const refreshesByUser = await Promise.all(
+        r.payload.map(async ({ _id, user, expiration, ...syncPayload }) => {
+          const _refresh = await syncService.refreshWatch(
+            user,
+            {
+              ...syncPayload,
+              channelId: _id.toString(),
+              expiration: expiration.getTime().toString(),
+            },
+            gcal,
+          );
 
-      const refreshes = await Promise.all(refreshesByUser);
-      return { user: r.userId, results: refreshes, resynced, revokedSession };
+          return {
+            gcalendarId: syncPayload.gCalendarId,
+            success:
+              _refresh?.acknowledged && ObjectId.isValid(_refresh.insertedId),
+          };
+        }),
+      );
+
+      return {
+        user: r.user,
+        results: refreshesByUser,
+        resynced,
+        revokedSession,
+      };
     } catch (e) {
       if (isInvalidGoogleToken(e as Error)) {
-        await compassAuthService.revokeSessionsByUser(r.userId);
+        await compassAuthService.revokeSessionsByUser(r.user);
         revokedSession = true;
       } else if (isFullSyncRequired(e as Error)) {
-        await userService.reSyncGoogleData(r.userId);
+        await userService.reSyncGoogleData(r.user);
         resynced = true;
       } else {
         logger.error(
-          `Unexpected error during refresh for user: ${r.userId}:\n`,
+          `Unexpected error during refresh for user: ${r.user}:\n`,
           e,
         );
         throw e;
       }
-      return { user: r.userId, results: [], resynced, revokedSession };
+      return { user: r.user, results: [], resynced, revokedSession };
     }
   });
 

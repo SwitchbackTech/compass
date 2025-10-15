@@ -10,7 +10,11 @@ import {
   WithoutCompassId,
 } from "@core/types/event.types";
 import { gCalendar, gSchema$Event, gSchema$EventBase } from "@core/types/gcal";
-import { Resource_Sync, Schema_Sync } from "@core/types/sync.types";
+import {
+  Resource_Sync,
+  Schema_Sync,
+  SyncDetails,
+} from "@core/types/sync.types";
 import { isBaseGCalEvent } from "@core/util/event/gcal.event.util";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import { Collections } from "@backend/common/constants/collections";
@@ -26,16 +30,12 @@ import { EventsToModify } from "@backend/sync/services/import/sync.import.types"
 import { organizeGcalEventsByType } from "@backend/sync/services/import/sync.import.util";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
 import syncService from "@backend/sync/services/sync.service";
-import { assembleEventWatchPayloads } from "@backend/sync/services/watch/sync.watch";
 import {
   getGCalEventsSyncPageToken,
   getSync,
   updateSync,
 } from "@backend/sync/util/sync.queries";
-import {
-  hasAnyActiveEventSync,
-  isUsingHttps,
-} from "@backend/sync/util/sync.util";
+import { isUsingHttps } from "@backend/sync/util/sync.util";
 
 const logger = Logger("app:sync.import");
 
@@ -58,7 +58,7 @@ export class SyncImport {
    */
   private async assembleIncrementalEventImports(
     userId: string,
-    eventSyncPayloads: Schema_Sync["google"]["events"],
+    eventSyncPayloads: SyncDetails[],
     perPage = 1000,
   ) {
     const syncEvents = await Promise.all(
@@ -520,26 +520,13 @@ export class SyncImport {
    * Prepares for incremental import of events by ensuring sync records and watch channels exist.
    */
   private async prepIncrementalImport(userId: string) {
-    const { gCalendarIds, calListNextSyncToken } = await getCalendarsToSync(
-      userId,
-      this.gcal,
-    );
-
     const sync = await getSync({ userId });
+
     if (!sync) {
       throw error(
         SyncError.NoSyncRecordForUser,
         "Prepping for incremental import failed",
       );
-    }
-
-    const noRefreshNeeded =
-      sync !== null &&
-      sync.google.events.length > 0 &&
-      hasAnyActiveEventSync(sync) &&
-      sync.google.calendarlist.length === gCalendarIds.length;
-    if (noRefreshNeeded) {
-      return sync.google.events;
     }
 
     if (!isUsingHttps()) {
@@ -548,31 +535,32 @@ export class SyncImport {
           ENV.BASEURL || ""
         }'`,
       );
+
       return sync.google.events;
     }
 
-    await Promise.all(
-      gCalendarIds.map((gCalendarId) =>
-        updateSync(
-          Resource_Sync.CALENDAR,
-          userId,
-          gCalendarId,
-          { nextSyncToken: calListNextSyncToken },
-          undefined,
-        ),
-      ),
-    );
-
-    const eventWatchPayloads = assembleEventWatchPayloads(
-      sync as Schema_Sync,
-      gCalendarIds,
-    );
-
-    await syncService.startWatchingGcalEventsById(
+    const { gCalendarIds, calListNextSyncToken } = await getCalendarsToSync(
       userId,
-      eventWatchPayloads, // Watch all selected calendars
       this.gcal,
     );
+
+    await updateSync(
+      Resource_Sync.CALENDAR,
+      userId,
+      Resource_Sync.CALENDAR,
+      { nextSyncToken: calListNextSyncToken },
+      undefined,
+    );
+
+    await syncService.startWatchingGcalResources(
+      userId,
+      [
+        ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
+        { gCalendarId: Resource_Sync.CALENDAR },
+      ], // Watch all selected calendars and calendar list
+      this.gcal,
+    );
+
     const newSync = (await getSync({ userId })) as Schema_Sync;
 
     return newSync.google.events;

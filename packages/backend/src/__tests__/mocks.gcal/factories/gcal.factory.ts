@@ -15,6 +15,7 @@ import type {
   gSchema$EventBase,
   gSchema$Events,
 } from "@core/types/gcal";
+import { Resource_Sync } from "@core/types/sync.types";
 import {
   isBaseGCalEvent,
   isInstanceGCalEvent,
@@ -389,6 +390,23 @@ export const mockGcal = ({
             ),
           });
         },
+      ),
+      watch: jest.fn(
+        async (
+          params: calendar_v3.Params$Resource$Calendarlist$Watch,
+          options: MethodOptions = {},
+        ): GaxiosPromise<gSchema$Channel> =>
+          Promise.resolve({
+            config: options,
+            statusText: "OK",
+            status: 200,
+            data: {
+              ...params.requestBody,
+              resourceId: Resource_Sync.CALENDAR,
+            },
+            headers: options.headers!,
+            request: { responseURL: params.requestBody!.address! },
+          }),
       ),
     },
     channels: {
