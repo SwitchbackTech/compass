@@ -53,15 +53,6 @@ export default [
     // Accessibility linting for JSX/TSX files
     files: ["**/*.{jsx,tsx}"],
     ...jsxA11y.flatConfigs.recommended,
-    rules: {
-      // Convert all jsx-a11y rules to warnings to avoid breaking builds/tests
-      ...Object.fromEntries(
-        Object.keys(jsxA11y.flatConfigs.recommended.rules || {}).map((rule) => [
-          rule,
-          "warn",
-        ]),
-      ),
-    },
   },
   {
     // Rules and plugins for tests only
