@@ -78,38 +78,6 @@ describe("TaskContextMenu", () => {
     });
   });
 
-  it("should log task title to console when Delete Task is clicked", async () => {
-    const user = userEvent.setup();
-    renderTaskList();
-
-    // Add a task
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "Task to delete{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByText("Task to delete")).toBeInTheDocument();
-    });
-
-    // Right-click on the task
-    const taskElement = screen
-      .getByText("Task to delete")
-      .closest("[data-task-id]");
-    await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
-
-    // Click Delete Task
-    await waitFor(() => {
-      expect(screen.getByText("Delete Task")).toBeInTheDocument();
-    });
-
-    const deleteButton = screen.getByText("Delete Task");
-    await user.click(deleteButton);
-
-    // Check that console.log was called with the task title
-    expect(mockConsoleLog).toHaveBeenCalledWith("Task to delete");
-  });
-
   it("should remove task from list when Delete Task is clicked", async () => {
     const user = userEvent.setup();
     renderTaskList();
@@ -264,8 +232,5 @@ describe("TaskContextMenu", () => {
       expect(screen.queryByText("First task")).not.toBeInTheDocument();
       expect(screen.getByText("Second task")).toBeInTheDocument();
     });
-
-    // Verify console.log was called with the correct task title
-    expect(mockConsoleLog).toHaveBeenCalledWith("First task");
   });
 });

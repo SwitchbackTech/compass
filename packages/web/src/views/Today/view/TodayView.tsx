@@ -13,7 +13,7 @@ export function TodayView() {
     );
   } else {
     return (
-      <div className="bg-orange/20 border-orange/30 text-white-100 border-b px-4 py-2 text-sm text-white">
+      <div className="bg-orange/20 border-orange/30 border-b px-4 py-2 text-sm text-white">
         <p>
           <strong>Experimental Feature:</strong> This feature is currently in
           beta. Click the flask icon and toggle the "experiment_planner" feature
