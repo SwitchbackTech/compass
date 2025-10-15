@@ -90,7 +90,7 @@ export const TodayViewContent = () => {
   });
 
   return (
-    <div className="bg-red-400 flex w-full max-w-items-stretch gap-8 px-6 py-8 overflow-hidden h-screen">
+    <div className="flex h-screen w-full items-center justify-center gap-8 overflow-hidden px-6 py-8">
       <TaskList
         onTaskFocus={setFocusedTaskId}
         focusedTaskId={focusedTaskId}

@@ -37,10 +37,10 @@ export function CalendarAgenda() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-darkBlue-400 min-w-xs">
+    <div className="bg-darkBlue-400 flex h-full min-w-xs flex-col">
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden relative flex"
+        className="relative flex flex-1 overflow-x-hidden overflow-y-auto"
         data-testid="calendar-scroll"
         style={{
           overscrollBehavior: "contain",
@@ -48,7 +48,7 @@ export function CalendarAgenda() {
         }}
       >
         {/* Time labels column */}
-        <div className="w-16 flex-shrink-0 relative bg-darkBlue-400">
+        <div className="bg-darkBlue-400 relative w-16 flex-shrink-0">
           {Array.from({ length: 96 }, (_, i) => {
             const hour = Math.floor(i / 4);
             const minute = (i % 4) * 15;
@@ -62,7 +62,7 @@ export function CalendarAgenda() {
             return (
               <div
                 key={`time-${i}`}
-                className="absolute z-20 text-xs text-gray-200 flex items-center pointer-events-none"
+                className="pointer-events-none absolute z-20 flex items-center text-xs text-gray-200"
                 style={{
                   top: `${i * 20}px`,
                   left: "0px",
@@ -71,7 +71,7 @@ export function CalendarAgenda() {
                 }}
               >
                 {displayTime && (
-                  <span className="w-full pr-2 bg-darkBlue-400 text-right">
+                  <span className="bg-darkBlue-400 w-full pr-2 text-right">
                     {displayTime}
                   </span>
                 )}
@@ -83,27 +83,27 @@ export function CalendarAgenda() {
           <div
             ref={nowMarkerRef}
             data-now-marker="true"
-            className="absolute left-0 right-0 border-t-2 border-red z-30"
+            className="border-red absolute right-0 left-0 z-30 border-t-2"
             style={{
               top: `${(currentHour * 4 + Math.floor(currentMinute / 15)) * 20}px`,
             }}
           >
-            <div className="absolute -left-2 -top-1 w-4 h-2 bg-red rounded-full"></div>
-            <div className="absolute left-0 -top-2 w-16 z-20 text-[11px] leading-none text-red font-medium bg-darkBlue-400/90 px-1 rounded-sm pointer-events-none shadow-sm">
+            <div className="bg-red absolute -top-1 -left-2 h-2 w-4 rounded-full"></div>
+            <div className="text-red bg-darkBlue-400/90 pointer-events-none absolute -top-2 left-0 z-20 w-16 rounded-sm px-1 text-[11px] leading-none font-medium shadow-sm">
               {formatTime(currentTime)}
             </div>
           </div>
         </div>
 
         {/* Events column */}
-        <div className="flex-1 relative ml-1">
+        <div className="relative ml-1 flex-1">
           <div
             data-testid="calendar-surface"
             style={{ height: `${24 * 4 * 20}px`, position: "relative" }}
           >
             {/* Current time indicator for events column */}
             <div
-              className="absolute left-0 right-0 border-t-2 border-red z-30"
+              className="border-red absolute right-0 left-0 z-30 border-t-2"
               style={{
                 top: `${(currentHour * 4 + Math.floor(currentMinute / 15)) * 20}px`,
               }}
@@ -126,7 +126,7 @@ export function CalendarAgenda() {
                 return (
                   <div
                     key={event.id}
-                    className={`absolute left-2 right-2 rounded px-2 text-xs flex items-center bg-blue-200 text-white-100 ${
+                    className={`text-white-100 absolute right-2 left-2 flex items-center rounded bg-blue-200 px-2 text-xs ${
                       isPast ? "opacity-60" : ""
                     }`}
                     style={{
@@ -135,7 +135,7 @@ export function CalendarAgenda() {
                     }}
                     title={`${event.title}\n${formatTime(event.startTime)} - ${formatTime(event.endTime)}`}
                   >
-                    <span className="truncate flex-1">
+                    <span className="flex-1 truncate">
                       {event.title || "Untitled"}
                     </span>
                   </div>
