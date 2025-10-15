@@ -1,6 +1,5 @@
 import React, { useRef, useState } from "react";
 import { useTasks } from "../context/TaskProvider";
-import { useAutofocus } from "../hooks/useAutofocus";
 import { Task } from "../types";
 
 interface TaskListProps {
@@ -10,12 +9,7 @@ interface TaskListProps {
   selectedTaskIndex?: number;
 }
 
-export function TaskList({
-  onTaskFocus,
-  focusedTaskId,
-  onSelectTask,
-  selectedTaskIndex = 0,
-}: TaskListProps) {
+export function TaskList({ onTaskFocus, onSelectTask }: TaskListProps) {
   const { tasks, addTask, updateTaskTitle, toggleTaskStatus } = useTasks();
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -26,23 +20,6 @@ export function TaskList({
   const editInputRef = useRef<HTMLInputElement>(null);
   const addTaskInputRef = useRef<HTMLInputElement>(null);
   const tasksScrollRef = useRef<HTMLDivElement>(null);
-
-  // Auto-focus edit input
-  useAutofocus({
-    shouldFocus: !!editingTaskId,
-    inputRef: editInputRef,
-    selectText: true,
-    preventScroll: true,
-    dependencies: [editingTaskId],
-  });
-
-  // Auto-focus add task input
-  useAutofocus({
-    shouldFocus: isAddingTask,
-    inputRef: addTaskInputRef,
-    selectText: false,
-    dependencies: [isAddingTask],
-  });
 
   const getPriorityColor = (priority: Task["priority"]) => {
     switch (priority) {

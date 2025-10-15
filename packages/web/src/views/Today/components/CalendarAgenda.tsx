@@ -12,15 +12,11 @@ export function CalendarAgenda() {
 
   // Center the calendar around the current time when the view mounts
   useEffect(() => {
-    try {
-      nowMarkerRef.current?.scrollIntoView({
-        block: "center",
-        inline: "nearest",
-        behavior: "smooth",
-      });
-    } catch {
-      // Ignore if scrollIntoView fails
-    }
+    nowMarkerRef.current?.scrollIntoView({
+      block: "center",
+      inline: "nearest",
+      behavior: "smooth",
+    });
   }, []);
 
   // Format time for display
