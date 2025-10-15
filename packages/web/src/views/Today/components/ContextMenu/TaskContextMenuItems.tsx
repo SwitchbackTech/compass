@@ -15,7 +15,6 @@ export function TaskContextMenuItems({
   const { deleteTask } = useTasks();
 
   const handleDelete = () => {
-    console.log(task.title);
     deleteTask(task.id);
     close();
   };

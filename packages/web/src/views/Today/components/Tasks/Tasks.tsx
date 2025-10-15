@@ -8,7 +8,6 @@ export const Tasks = () => {
     editInputRef,
     editingTaskId,
     editingTitle,
-    setFocusedTaskId,
     setEditingTaskId,
     setEditingTitle,
     setSelectedTaskIndex,
@@ -30,14 +29,8 @@ export const Tasks = () => {
             tabIndex={0}
             onFocus={() => {
               setSelectedTaskIndex?.(index);
-              setFocusedTaskId?.(task.id);
             }}
-            onBlur={(e) => {
-              const next = e.relatedTarget as HTMLElement | null;
-              if (!next?.dataset?.taskId) {
-                setFocusedTaskId?.(null);
-              }
-            }}
+            onBlur={() => {}}
             onKeyDown={(e) => {
               if (e.key === " " || e.key === "Enter") {
                 e.preventDefault();
