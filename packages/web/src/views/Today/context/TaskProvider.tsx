@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { Task, TaskContextValue } from "../types";
+import { Task } from "../task.types";
 import { sortTasksByStatus } from "../util/sort.task";
 import {
   getDateKey,
@@ -14,6 +14,20 @@ import {
   saveTasksToStorage,
 } from "../util/storage.util";
 
+interface TaskContextValue {
+  tasks: Task[];
+  addTask: (title: string) => Task;
+  updateTaskTitle: (taskId: string, title: string) => void;
+  toggleTaskStatus: (taskId: string) => void;
+  deleteTask: (taskId: string) => void;
+  editInputRef: React.RefObject<HTMLInputElement>;
+  editingTitle: string;
+  selectedTaskIndex: number;
+  setSelectedTaskIndex: (index: number) => void;
+  setEditingTitle: (title: string) => void;
+  editingTaskId: string | null;
+  setEditingTaskId: (taskId: string | null) => void;
+}
 const TaskContext = createContext<TaskContextValue | undefined>(undefined);
 
 interface TaskProviderProps {
@@ -26,6 +40,11 @@ export function TaskProvider({
   currentDate = new Date(),
 }: TaskProviderProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
+
+  const editInputRef = useRef<HTMLInputElement>(null);
   const lastLoadedKeyRef = useRef<string | null>(null);
   const dateKey = getDateKey(currentDate);
 
@@ -87,6 +106,13 @@ export function TaskProvider({
     updateTaskTitle,
     toggleTaskStatus,
     deleteTask,
+    editInputRef,
+    editingTitle,
+    setEditingTitle,
+    editingTaskId,
+    setEditingTaskId,
+    selectedTaskIndex,
+    setSelectedTaskIndex,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

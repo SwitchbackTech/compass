@@ -1,4 +1,4 @@
-import { Task, isTask } from "../types";
+import { Task, isTask } from "../task.types";
 
 const STORAGE_KEY_PREFIX = "compass.today.tasks";
 

@@ -3,11 +3,11 @@ import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { TaskProvider } from "../context/TaskProvider";
 import { TodayViewContent } from "./TodayViewContent";
-import { TaskProvider } from "./context/TaskProvider";
 
 // Mock the CalendarAgenda component
-jest.mock("./components/CalendarAgenda", () => ({
+jest.mock("../components/CalendarAgenda/CalendarAgenda", () => ({
   CalendarAgenda: () => (
     <div className="h-96 bg-gray-100">Calendar Content</div>
   ),
@@ -16,8 +16,8 @@ jest.mock("./components/CalendarAgenda", () => ({
 // Mock the keyboard shortcuts hook
 const mockUseTodayViewShortcuts = jest.fn();
 
-jest.mock("./hooks/useTodayViewShortcuts", () => {
-  const actual = jest.requireActual("./hooks/useTodayViewShortcuts");
+jest.mock("../hooks/useTodayViewShortcuts", () => {
+  const actual = jest.requireActual("../hooks/useTodayViewShortcuts");
   return {
     ...actual,
     useTodayViewShortcuts: (
@@ -47,7 +47,9 @@ describe("TodayViewContent", () => {
   });
 
   it("focuses the add task input when typing the 't' shortcut", async () => {
-    const actualShortcuts = jest.requireActual("./hooks/useTodayViewShortcuts");
+    const actualShortcuts = jest.requireActual(
+      "../hooks/useTodayViewShortcuts",
+    );
 
     mockUseTodayViewShortcuts.mockImplementation((config) =>
       actualShortcuts.useTodayViewShortcuts(config),

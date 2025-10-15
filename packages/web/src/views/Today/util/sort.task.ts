@@ -1,4 +1,4 @@
-import { Task } from "../types";
+import { Task } from "../task.types";
 
 /**
  * Sorts tasks by status, placing incomplete tasks first and completed tasks last.

@@ -8,7 +8,7 @@ export interface KeyboardShortcutsConfig {
   onFocusTasks?: () => void;
 
   // Task navigation
-  onNextTask?: () => void;
+  // onNextTask?: () => void;
   onPrevTask?: () => void;
 
   // General
@@ -62,7 +62,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       // Task navigation
       if (key === "j" && config.hasFocusedTask && !config.isEditingTask) {
         e.preventDefault();
-        config.onNextTask?.();
+        // config.onNextTask?.();
         return;
       }
 

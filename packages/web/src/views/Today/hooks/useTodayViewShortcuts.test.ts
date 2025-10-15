@@ -94,15 +94,15 @@ describe("useKeyboardShortcuts", () => {
     expect(mockConfig.onFocusTasks).toHaveBeenCalled();
   });
 
-  it("should call onNextTask when 'j' is pressed with focused task", () => {
-    mockConfig.hasFocusedTask = true;
-    renderHook(() => useTodayViewShortcuts(mockConfig));
+  // it("should call onNextTask when 'j' is pressed with focused task", () => {
+  // //   mockConfig.hasFocusedTask = true;
+  // //   renderHook(() => useTodayViewShortcuts(mockConfig));
 
-    const event = new KeyboardEvent("keydown", { key: "j" });
-    window.dispatchEvent(event);
+  // //   const event = new KeyboardEvent("keydown", { key: "j" });
+  // //   window.dispatchEvent(event);
 
-    expect(mockConfig.onNextTask).toHaveBeenCalled();
-  });
+  // //   expect(mockConfig.onNextTask).toHaveBeenCalled();
+  // // });
 
   it("should call onPrevTask when 'k' is pressed with focused task", () => {
     mockConfig.hasFocusedTask = true;

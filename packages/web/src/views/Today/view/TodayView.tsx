@@ -1,7 +1,7 @@
 import { useFeatureFlagEnabled } from "posthog-js/react";
 import React from "react";
+import { TaskProvider } from "../context/TaskProvider";
 import { TodayViewContent } from "./TodayViewContent";
-import { TaskProvider } from "./context/TaskProvider";
 
 export function TodayView() {
   const isPlannerEnabled = useFeatureFlagEnabled("experiment_planner");

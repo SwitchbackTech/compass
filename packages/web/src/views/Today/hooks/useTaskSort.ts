@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Task } from "../types";
+import { Task } from "../task.types";
 import { sortTasksByStatus } from "../util/sort.task";
 
 /**

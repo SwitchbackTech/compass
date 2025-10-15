@@ -1,8 +1,8 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { TaskProvider } from "../context/TaskProvider";
+import { TaskProvider } from "../../context/TaskProvider";
 import { TaskList } from "./TaskList";
 
 const renderTaskList = (props = {}) => {
@@ -210,29 +210,6 @@ describe("TaskList", () => {
     await waitFor(() => {
       expect(screen.getByText("Original")).toBeInTheDocument();
     });
-  });
-
-  it("should call onTaskFocus when task is focused", async () => {
-    const onTaskFocus = jest.fn();
-    const user = userEvent.setup();
-
-    renderTaskList({ onTaskFocus });
-
-    // Add a task
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "Focus task{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByText("Focus task")).toBeInTheDocument();
-    });
-
-    // Focus the checkbox
-    const checkbox = screen.getByRole("checkbox");
-    fireEvent.focus(checkbox);
-
-    expect(onTaskFocus).toHaveBeenCalled();
   });
 
   it("should show keyboard shortcut hint on hover over add button", async () => {

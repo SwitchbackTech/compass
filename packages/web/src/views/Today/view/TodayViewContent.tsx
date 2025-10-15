@@ -1,15 +1,13 @@
-import React, { useRef, useState } from "react";
-import { CalendarAgenda } from "./components/CalendarAgenda";
-import { ShortcutsOverlay } from "./components/ShortcutsOverlay";
-import { TaskList } from "./components/TaskList";
-import { useTasks } from "./context/TaskProvider";
-import { useTodayViewShortcuts } from "./hooks/useTodayViewShortcuts";
-import { focusOnAddTaskInput } from "./util/shortcut.util";
+import React, { useRef } from "react";
+import { CalendarAgenda } from "../components/CalendarAgenda/CalendarAgenda";
+import { ShortcutsOverlay } from "../components/Shortcuts/ShortcutsOverlay";
+import { TaskList } from "../components/Tasks/TaskList";
+import { useTasks } from "../context/TaskProvider";
+import { useTodayViewShortcuts } from "../hooks/useTodayViewShortcuts";
+import { focusOnAddTaskInput } from "../util/shortcut.util";
 
 export const TodayViewContent = () => {
   const { tasks } = useTasks();
-  const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
-  const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
   const tasksScrollRef = useRef<HTMLDivElement>(null);
 
   const activeElement =
@@ -27,9 +25,6 @@ export const TodayViewContent = () => {
     if (index < 0 || index >= tasks.length) return;
     const task = tasks[index];
     if (!task) return;
-
-    setSelectedTaskIndex(index);
-    setFocusedTaskId(task.id);
 
     const button = tasksScrollRef.current?.querySelector<HTMLButtonElement>(
       `[data-task-id="${task.id}"]`,
@@ -86,21 +81,16 @@ export const TodayViewContent = () => {
   useTodayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
     onFocusTasks: focusFirstTask,
-    onNextTask: handleNextTask,
+    // onNextTask: handleNextTask,
     onPrevTask: handlePrevTask,
-    hasFocusedTask: !!focusedTaskId,
+    // hasFocusedTask: !!focusedTaskId,
     isInInput: isEditableElement,
   });
 
   return (
     <div className="flex h-screen w-full items-center justify-center gap-8 overflow-hidden px-6 py-8">
       <ShortcutsOverlay />
-      <TaskList
-        onTaskFocus={setFocusedTaskId}
-        focusedTaskId={focusedTaskId}
-        onSelectTask={setSelectedTaskIndex}
-        selectedTaskIndex={selectedTaskIndex}
-      />
+      <TaskList />
 
       <CalendarAgenda />
     </div>
