@@ -130,7 +130,7 @@ class SyncService {
     const { channelId, resourceId, resourceState, resource } = payload;
     const { expiration } = payload;
 
-    if (resourceState !== "exists") {
+    if (resourceState === "sync") {
       logger.info(
         `${resource} sync initialized for channelId: ${payload.channelId}`,
       );

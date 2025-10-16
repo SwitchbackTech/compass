@@ -5,7 +5,7 @@ import { Socket } from "socket.io-client";
 import { faker } from "@faker-js/faker";
 import { EVENT_CHANGED } from "@core/constants/websocket.constants";
 import { Status } from "@core/errors/status.codes";
-import { Resource_Sync } from "@core/types/sync.types";
+import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
 import { isBase, isInstance } from "@core/util/event/event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -22,6 +22,7 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import { waitUntilEvent } from "@backend/common/helpers/common.util";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
@@ -84,16 +85,35 @@ describe("SyncController", () => {
 
   describe("handleGoogleNotification", () => {
     it("should throw error when no watch record found", async () => {
-      await syncDriver.handleGoogleNotification(
+      const response = await syncDriver.handleGoogleNotification(
         {
           resource: Resource_Sync.EVENTS,
           channelId: new ObjectId(),
           resourceId: faker.string.uuid(),
-          resourceState: "exists",
+          resourceState: XGoogleResourceState.EXISTS,
           expiration: faker.date.future(),
         },
         Status.BAD_REQUEST,
       );
+
+      expect(response.text).toContain(
+        WatchError.NoWatchRecordForUser.description,
+      );
+    });
+
+    it("should ignore notification when watch channel is initialized", async () => {
+      const response = await syncDriver.handleGoogleNotification(
+        {
+          resource: Resource_Sync.EVENTS,
+          channelId: new ObjectId(),
+          resourceId: faker.string.uuid(),
+          resourceState: XGoogleResourceState.SYNC,
+          expiration: faker.date.future(),
+        },
+        Status.OK,
+      );
+
+      expect(response.text).toEqual("INITIALIZED");
     });
 
     it("should ignore notification when no sync token found", async () => {
@@ -118,16 +138,18 @@ describe("SyncController", () => {
         nextSyncToken: undefined,
       });
 
-      await syncDriver.handleGoogleNotification(
+      const response = await syncDriver.handleGoogleNotification(
         {
           resource,
           channelId,
           resourceId,
-          resourceState: "exists",
+          resourceState: XGoogleResourceState.EXISTS,
           expiration,
         },
         Status.NO_CONTENT,
       );
+
+      expect(response.text).toEqual("");
     });
 
     it("should cleanup stale gcal watches for unknown channels if resourceId exists", async () => {
@@ -144,16 +166,18 @@ describe("SyncController", () => {
         { $set: { resourceId } },
       );
 
-      await syncDriver.handleGoogleNotification(
+      const response = await syncDriver.handleGoogleNotification(
         {
           resource,
           channelId,
           resourceId,
-          resourceState: "exists",
+          resourceState: XGoogleResourceState.EXISTS,
           expiration,
         },
         Status.OK,
       );
+
+      expect(response.text).toEqual("IGNORED");
     });
   });
 

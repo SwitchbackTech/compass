@@ -30,11 +30,17 @@ export enum Resource_Sync {
   SETTINGS = "settings",
 }
 
+export enum XGoogleResourceState {
+  EXISTS = "exists",
+  NOT_EXISTS = "not_exists",
+  SYNC = "sync",
+}
+
 export const GcalNotificationSchema = z.object({
   resource: z.enum([Resource_Sync.EVENTS, Resource_Sync.CALENDAR]),
   channelId: zObjectId,
   resourceId: z.string().nonempty(),
-  resourceState: z.string().nonempty(),
+  resourceState: z.enum(XGoogleResourceState),
   expiration: ExpirationDateSchema,
 });
 
