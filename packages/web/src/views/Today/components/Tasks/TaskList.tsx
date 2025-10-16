@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import React, { useRef, useState } from "react";
+import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 import { useTasks } from "../../context/TaskProvider";
 import { TaskContextMenuWrapper } from "../ContextMenu/TaskContextMenuWrapper";
 import { ShortcutTip } from "../Shortcuts/ShortcutTip";
@@ -109,6 +110,7 @@ export function TaskList() {
           </div>
         ) : (
           <button
+            id={ID_ADD_TASK_BUTTON}
             type="button"
             className="group flex w-full cursor-pointer items-start gap-3 rounded border border-gray-400/30 bg-gray-400/5 p-2 text-left transition-colors hover:border-blue-200/30 hover:bg-blue-200/5"
             onClick={beginAddingTask}

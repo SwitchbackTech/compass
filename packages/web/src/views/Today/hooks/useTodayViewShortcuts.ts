@@ -29,6 +29,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     onEditTask,
     onCompleteTask,
     onEscape,
+    onFocusTasks,
     isAddingTask,
     isEditingTask,
     hasFocusedTask,
@@ -51,6 +52,12 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       }
 
       // Task management shortcuts
+      if (key === "u" && !isInInput) {
+        e.preventDefault();
+        onFocusTasks?.();
+        return;
+      }
+
       if (key === "t" && !isAddingTask && !isInInput) {
         e.preventDefault();
         onAddTask?.();
@@ -90,6 +97,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       onEditTask,
       onCompleteTask,
       onEscape,
+      onFocusTasks,
       isAddingTask,
       isEditingTask,
       hasFocusedTask,

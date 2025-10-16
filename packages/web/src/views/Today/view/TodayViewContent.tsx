@@ -3,7 +3,7 @@ import { CalendarAgenda } from "../components/CalendarAgenda/CalendarAgenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/ShortcutsOverlay";
 import { TaskList } from "../components/Tasks/TaskList";
 import { useTodayViewShortcuts } from "../hooks/useTodayViewShortcuts";
-import { focusOnAddTaskInput } from "../util/shortcut.util";
+import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
 
 export const TodayViewContent = () => {
   const activeElement =
@@ -19,6 +19,7 @@ export const TodayViewContent = () => {
 
   useTodayViewShortcuts({
     onAddTask: focusOnAddTaskInput,
+    onFocusTasks: focusOnFirstTask,
     isInInput: isEditableElement,
   });
 

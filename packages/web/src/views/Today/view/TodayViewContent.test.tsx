@@ -52,7 +52,10 @@ describe("TodayViewContent", () => {
     );
 
     mockUseTodayViewShortcuts.mockImplementation((config) =>
-      actualShortcuts.useTodayViewShortcuts(config),
+      actualShortcuts.useTodayViewShortcuts({
+        ...config,
+        onFocusTasks: config.onFocusTasks || jest.fn(),
+      }),
     );
 
     const user = userEvent.setup();

@@ -20,6 +20,7 @@ export const ID_EVENT_FORM_ACTION_MENU = "event-action-menu";
 export const ID_SOMEDAY_EVENT_ACTION_MENU = "someday-event-action-menu";
 export const DATA_EVENT_ELEMENT_ID = "data-event-id";
 export const ID_CONTEXT_MENU_ITEMS = "context-menu-items";
+export const ID_ADD_TASK_BUTTON = "add-task-button";
 
 export const WAITLIST_URL = "https://www.compasscalendar.com/waitlist";
 
