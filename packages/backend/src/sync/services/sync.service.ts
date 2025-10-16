@@ -516,6 +516,8 @@ class SyncService {
 
       return watch;
     } catch (err) {
+      logger.error(`Error starting watch for user: ${user}`, err);
+
       await session.abortTransaction();
 
       throw err;
