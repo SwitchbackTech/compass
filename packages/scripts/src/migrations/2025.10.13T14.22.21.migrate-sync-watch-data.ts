@@ -29,6 +29,8 @@ export default class Migration implements RunnableMigration<MigrationContext> {
   async up(params: MigrationParams<MigrationContext>): Promise<void> {
     const { logger } = params.context;
 
+    await mongoService.watch.deleteMany();
+
     // This is a non-destructive migration to copy events watch data
     // from sync collection to watch collection.
     // We will not migrate calendarlist watches as we do not store resourceId
@@ -54,7 +56,16 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         .filter((d) => ExpirationDateSchema.safeParse(d?.expiration).success)
         .filter((doc) => doc !== undefined);
 
-      const gcal = await getGcalClient(syncDoc.user);
+      const gcal = await getGcalClient(syncDoc.user).catch((err) => {
+        logger.error(
+          `Failed to get gcal client for user ${syncDoc.user}: ${err}`,
+        );
+
+        return null;
+      });
+
+      if (!gcal) continue;
+
       const expiration = getChannelExpiration();
       const quotaUser = new ObjectId().toString();
 
