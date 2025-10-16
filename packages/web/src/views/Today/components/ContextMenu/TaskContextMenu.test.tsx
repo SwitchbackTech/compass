@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TaskProvider } from "../../context/TaskProvider";
-import { TaskList } from "../Tasks/TaskList";
+import { TaskList } from "../TaskList/TaskList";
 
 // Mock console.log to test the delete action
 const mockConsoleLog = jest.spyOn(console, "log").mockImplementation(() => {});

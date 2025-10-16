@@ -4,8 +4,8 @@ import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 import { useTasks } from "../../context/TaskProvider";
 import { TaskContextMenuWrapper } from "../ContextMenu/TaskContextMenuWrapper";
 import { ShortcutTip } from "../Shortcuts/ShortcutTip";
-import { Tasks } from "./Tasks";
-import { useTaskListInputFocus } from "./useTaskListInputFocus";
+import { Tasks } from "../Tasks/Tasks";
+import { useTaskListInputFocus } from "../Tasks/useTaskListInputFocus";
 
 export function TaskList() {
   const {

@@ -1,7 +1,7 @@
 import React from "react";
 import { CalendarAgenda } from "../components/CalendarAgenda/CalendarAgenda";
 import { ShortcutsOverlay } from "../components/Shortcuts/ShortcutsOverlay";
-import { TaskList } from "../components/Tasks/TaskList";
+import { TaskList } from "../components/TaskList/TaskList";
 import { useTasks } from "../context/TaskProvider";
 import { useTodayViewShortcuts } from "../hooks/useTodayViewShortcuts";
 import { focusOnAddTaskInput, focusOnFirstTask } from "../util/shortcut.util";
