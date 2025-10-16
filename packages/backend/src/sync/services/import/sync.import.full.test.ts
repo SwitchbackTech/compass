@@ -33,7 +33,9 @@ describe("SyncImport: Full", () => {
     const firstInstance = currentEventsInDb.find(isInstance)!;
 
     expect(baseEvent).toBeDefined();
+    expect(baseEvent).not.toBeNull();
     expect(firstInstance).toBeDefined();
+    expect(firstInstance).not.toBeNull();
 
     expect(baseEvent.startDate).toEqual(firstInstance.startDate);
   });

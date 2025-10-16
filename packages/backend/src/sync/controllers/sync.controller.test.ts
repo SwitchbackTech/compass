@@ -127,6 +127,7 @@ describe("SyncController", () => {
       });
 
       expect(watch).toBeDefined();
+      expect(watch).not.toBeNull();
 
       const calendarId = watch!.gCalendarId;
       const resource = Resource_Sync.EVENTS;
@@ -196,7 +197,9 @@ describe("SyncController", () => {
         const firstInstance = currentEventsInDb.find(isInstance)!;
 
         expect(baseEvent).toBeDefined();
+        expect(baseEvent).not.toBeNull();
         expect(firstInstance).toBeDefined();
+        expect(firstInstance).not.toBeNull();
 
         expect(baseEvent.startDate).toEqual(firstInstance.startDate);
       });
