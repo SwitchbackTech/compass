@@ -49,7 +49,7 @@ describe("useTaskListInputFocus", () => {
     });
   });
 
-  it("focuses and selects the edit task input when a task enters edit mode", async () => {
+  it("focuses and positions cursor at end of edit task input when a task enters edit mode", async () => {
     const { rerender } = render(
       <HookTestHarness isAddingTask={false} editingTaskId={null} />,
     );
@@ -59,7 +59,7 @@ describe("useTaskListInputFocus", () => {
     const editInput = await screen.findByLabelText("Edit task title");
     await waitFor(() => {
       expect(editInput).toHaveFocus();
-      expect(editInput.selectionStart).toBe(0);
+      expect(editInput.selectionStart).toBe(editInput.value.length);
       expect(editInput.selectionEnd).toBe(editInput.value.length);
     });
   });

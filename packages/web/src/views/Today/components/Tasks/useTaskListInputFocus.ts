@@ -24,7 +24,8 @@ export function useTaskListInputFocus({
       const input = editInputRef.current;
       if (input) {
         input.focus();
-        input.select();
+        const length = input.value.length;
+        input.setSelectionRange(length, length);
       }
     }
   }, [editingTaskId, editInputRef]);

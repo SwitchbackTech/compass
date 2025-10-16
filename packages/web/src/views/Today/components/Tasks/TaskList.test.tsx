@@ -290,4 +290,54 @@ describe("TaskList", () => {
     expect(checkboxes[1]).toHaveAttribute("aria-label", "Toggle First task");
     expect(checkboxes[1]).toHaveAttribute("aria-checked", "true");
   });
+
+  it("should maintain focus after pressing ESC in edit mode, allowing re-edit with 'e'", async () => {
+    const user = userEvent.setup();
+    renderTaskList();
+
+    // Add a task
+    const addButton = screen.getByText("Add task");
+    await user.click(addButton);
+    const input = screen.getByPlaceholderText("Enter task title...");
+    await user.type(input, "Test task{Enter}");
+
+    await waitFor(() => {
+      expect(screen.getByText("Test task")).toBeInTheDocument();
+    });
+
+    // Focus the task checkbox
+    const checkbox = screen.getByRole("checkbox", {
+      name: /Toggle Test task/i,
+    });
+    checkbox.focus();
+    expect(checkbox).toHaveFocus();
+
+    // Press 'e' directly on the button
+    await user.keyboard("e");
+
+    await waitFor(() => {
+      const editInput = screen.getByDisplayValue("Test task");
+      expect(editInput).toBeInTheDocument();
+      expect(editInput).toHaveFocus();
+    });
+
+    // Press ESC
+    await user.keyboard("{Escape}");
+
+    // Button should have focus again
+    await waitFor(() => {
+      expect(screen.queryByDisplayValue("Test task")).not.toBeInTheDocument();
+      expect(checkbox).toHaveFocus();
+    });
+
+    // Press 'e' again on the button
+    await user.keyboard("e");
+
+    await waitFor(() => {
+      const editInput2 = screen.getByDisplayValue("Test task");
+      expect(editInput2).toBeInTheDocument();
+      expect(editInput2).toHaveFocus();
+      expect((editInput2 as HTMLInputElement).selectionStart).toBe(9); // "Test task".length
+    });
+  });
 });

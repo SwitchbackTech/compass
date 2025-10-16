@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useTasks } from "../../context/TaskProvider";
 
 export const Tasks = () => {
@@ -13,6 +13,9 @@ export const Tasks = () => {
     setSelectedTaskIndex,
     updateTaskTitle,
   } = useTasks();
+
+  const taskButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const escPressedRef = useRef(false);
   return (
     <div className="space-y-3">
       {tasks.map((task, index) => (
@@ -22,6 +25,9 @@ export const Tasks = () => {
           className={`group flex items-start gap-3 rounded border p-2 ${task.status === "completed" ? "opacity-50" : ""}`}
         >
           <button
+            ref={(el) => {
+              taskButtonRefs.current[index] = el;
+            }}
             data-task-id={task.id}
             role="checkbox"
             aria-checked={task.status === "completed"}
@@ -35,6 +41,10 @@ export const Tasks = () => {
               if (e.key === " " || e.key === "Enter") {
                 e.preventDefault();
                 toggleTaskStatus(task.id);
+              } else if (e.key === "e" || e.key === "E") {
+                e.preventDefault();
+                setEditingTaskId(task.id);
+                setEditingTitle(task.title);
               }
             }}
             onClick={() => toggleTaskStatus(task.id)}
@@ -76,30 +86,45 @@ export const Tasks = () => {
                     setEditingTaskId(null);
                     setEditingTitle("");
                   } else if (e.key === "Escape") {
+                    escPressedRef.current = true;
                     setEditingTaskId(null);
                     setEditingTitle("");
+                    // Refocus the button
+                    taskButtonRefs.current[index]?.focus();
                   }
                 }}
                 onBlur={() => {
-                  if (editingTitle.trim()) {
+                  if (editingTitle.trim() && !escPressedRef.current) {
                     updateTaskTitle(task.id, editingTitle.trim());
                   }
                   setEditingTaskId(null);
                   setEditingTitle("");
+                  // Reset the ESC flag
+                  escPressedRef.current = false;
+                  // Refocus the button
+                  taskButtonRefs.current[index]?.focus();
                 }}
                 className="text-white-100 border-white-100/20 w-full border-b bg-transparent text-sm placeholder-gray-200 outline-none"
                 aria-label={`Edit ${task.title}`}
               />
             ) : (
-              <p
-                className="text-white-100 cursor-text text-sm leading-relaxed"
+              <button
+                type="button"
+                className="text-white-100 w-full cursor-text border-none bg-transparent p-0 text-left text-sm leading-relaxed"
                 onClick={() => {
                   setEditingTaskId(task.id);
                   setEditingTitle(task.title);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setEditingTaskId(task.id);
+                    setEditingTitle(task.title);
+                  }
+                }}
               >
                 {task.title}
-              </p>
+              </button>
             )}
           </div>
         </div>
