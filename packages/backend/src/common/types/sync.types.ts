@@ -3,13 +3,13 @@ import { Result_Watch_Stop } from "@core/types/sync.types";
 
 export interface Summary_Resync {
   _delete: {
-    calendarlist?: UpdateResult;
+    calendars?: UpdateResult;
     events?: DeleteResult;
     watches?: Result_Watch_Stop;
     sync?: UpdateResult;
   };
   recreate: {
-    calendarlist?: UpdateResult;
+    calendars?: UpdateResult;
     watches?: InsertOneResult[];
     events?: "success";
     sync?: UpdateResult;

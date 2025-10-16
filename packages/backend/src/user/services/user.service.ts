@@ -67,7 +67,7 @@ class UserService {
       summary.priorities = priorities.deletedCount;
 
       const calendars = await calendarService.deleteAllByUser(userId);
-      summary.calendarlist = calendars.deletedCount;
+      summary.calendars = calendars.deletedCount;
 
       const events = await eventService.deleteAllByUser(userId);
       summary.events = events.deletedCount;
@@ -170,7 +170,7 @@ class UserService {
   _deleteBeforeReSyncingGoogle = async (
     userId: string,
   ): Promise<Summary_Resync["_delete"]> => {
-    const calendarlist = await calendarService.deleteByIntegrateion(
+    const calendars = await calendarService.deleteByIntegration(
       "google",
       userId,
     );
@@ -182,7 +182,7 @@ class UserService {
     const sync = await syncService.deleteByIntegration("google", userId);
 
     return {
-      calendarlist,
+      calendars,
       events,
       watches,
       sync,
@@ -193,14 +193,14 @@ class UserService {
     userId: string,
   ): Promise<Summary_Resync["recreate"]> => {
     const gcal = await getGcalClient(userId);
-    const { cCalendarList, gCalendarIds, calListNextSyncToken } =
+    const { updatedCalendars, gCalendarIds, calListNextSyncToken } =
       await getCalendarsToSync(userId, gcal);
 
-    const calendarlist = await calendarService.add(
-      "google",
-      cCalendarList,
-      userId,
-    );
+    // Calendars are already stored by getCalendarsToSync
+    const calendars = {
+      acknowledged: true,
+      insertedCount: updatedCalendars.length,
+    };
 
     const sync = await reInitSyncByIntegration(
       "google",
@@ -224,7 +224,7 @@ class UserService {
 
     await syncService.importFull(gcal, gCalendarIds, userId);
 
-    return { calendarlist, watches, events: "success", sync };
+    return { calendars, watches, events: "success", sync };
   };
 
   /*

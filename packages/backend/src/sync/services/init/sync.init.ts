@@ -1,10 +1,5 @@
-import { MapCalendarList } from "@core/mappers/map.calendarlist";
-import { Schema_CalendarList } from "@core/types/calendar.types";
-import {
-  gCalendar,
-  gSchema$CalendarList,
-  gSchema$CalendarListEntry,
-} from "@core/types/gcal";
+import { gCalendar, gSchema$CalendarListEntry } from "@core/types/gcal";
+import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
@@ -19,19 +14,37 @@ export const getCalendarsToSync = async (userId: string, gcal: gCalendar) => {
 
   const gCalendarList = items as gSchema$CalendarListEntry[];
 
-  const primaryGcal = gCalendarList.filter((c) => {
-    return c.primary === true;
-  })[0] as gSchema$CalendarList;
+  // Store/update calendars in our database
+  const existingCalendars = await calendarService.getByUser(userId);
 
-  const _ccalList = MapCalendarList.toCompass(primaryGcal);
-  const cCalendarList = { ..._ccalList, user: userId } as Schema_CalendarList;
+  if (existingCalendars.length === 0) {
+    // First sync - add all calendars
+    await calendarService.add("google", gCalendarList, userId);
+  } else {
+    // Update existing calendars or add new ones
+    // For now, we'll add any new calendars that don't exist
+    const existingCalendarIds = new Set(
+      existingCalendars.map((cal) => cal.metadata.id),
+    );
 
-  const gCalendarIds = cCalendarList.google.items.map(
-    (gcal) => gcal.id,
+    const newCalendars = gCalendarList.filter(
+      (cal) => !existingCalendarIds.has(cal.id),
+    );
+
+    if (newCalendars.length > 0) {
+      await calendarService.add("google", newCalendars, userId);
+    }
+  }
+
+  // Get updated calendar list from our database
+  const updatedCalendars = await calendarService.getSelectedByUser(userId);
+
+  const gCalendarIds = updatedCalendars.map(
+    (calendar) => calendar.metadata.id,
   ) as string[];
 
   return {
-    cCalendarList,
+    updatedCalendars,
     gCalendarIds,
     calListNextSyncToken,
   };
