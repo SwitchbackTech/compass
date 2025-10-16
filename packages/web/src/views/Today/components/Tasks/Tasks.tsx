@@ -23,7 +23,7 @@ export const Tasks = () => {
     null,
   );
   return (
-    <div className="space-y-3">
+    <div className="mb-3 space-y-3">
       {tasks.map((task, index) => (
         <div
           key={task.id}

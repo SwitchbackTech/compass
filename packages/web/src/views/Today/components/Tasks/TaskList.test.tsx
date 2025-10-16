@@ -424,4 +424,53 @@ describe("TaskList", () => {
     const taskCheckboxes = screen.queryAllByRole("checkbox");
     expect(taskCheckboxes).toHaveLength(0);
   });
+
+  it("should not enable editing when tabbing to input until 'e' is pressed or input is clicked", async () => {
+    renderTaskList();
+
+    // Add a task
+    await addTasks(["Test task"]);
+
+    // Focus the task checkbox
+    const checkbox = screen.getByRole("checkbox", {
+      name: /Toggle Test task/i,
+    });
+    await act(async () => {
+      checkbox.focus();
+    });
+
+    // Tab to the input
+    await act(async () => {
+      await user.keyboard("{Tab}");
+    });
+
+    const taskInput = screen.getByDisplayValue("Test task");
+    expect(taskInput).toHaveFocus();
+
+    // Try typing - should be ignored since not in edit mode
+    await act(async () => {
+      await user.type(taskInput, "modified");
+    });
+
+    // Title should not have changed
+    expect(taskInput).toHaveValue("Test task");
+
+    // Press 'e' to enter edit mode
+    await act(async () => {
+      await user.keyboard("e");
+    });
+
+    // Wait a moment for the edit mode to be set
+    await waitFor(() => {
+      expect(taskInput).toHaveValue("Test task");
+    });
+
+    // Now typing should work (the 'e' should not appear in the input)
+    await act(async () => {
+      await user.type(taskInput, "-modified");
+    });
+
+    // Title should now be updated (without the 'e' character)
+    expect(taskInput).toHaveValue("Test task-modified");
+  });
 });
