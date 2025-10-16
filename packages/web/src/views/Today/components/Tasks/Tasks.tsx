@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useTasks } from "../../context/TaskProvider";
 import { TaskCircle } from "./TaskCircle";
 
@@ -16,7 +16,11 @@ export const Tasks = () => {
   } = useTasks();
 
   const taskButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const taskInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const escPressedRef = useRef(false);
+  const [focusedInputIndex, setFocusedInputIndex] = useState<number | null>(
+    null,
+  );
   return (
     <div className="space-y-3">
       {tasks.map((task, index) => (
@@ -46,6 +50,10 @@ export const Tasks = () => {
                 e.preventDefault();
                 setEditingTaskId(task.id);
                 setEditingTitle(task.title);
+                // Focus the input after entering edit mode
+                setTimeout(() => {
+                  taskInputRefs.current[index]?.focus();
+                }, 0);
               }
             }}
             onClick={() => toggleTaskStatus(task.id)}
@@ -54,58 +62,77 @@ export const Tasks = () => {
             <TaskCircle status={task.status} />
           </button>
           <div className="flex-1">
-            {editingTaskId === task.id ? (
-              <input
-                ref={editInputRef}
-                type="text"
-                value={editingTitle}
-                onChange={(e) => setEditingTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    updateTaskTitle(task.id, editingTitle.trim() || task.title);
-                    setEditingTaskId(null);
-                    setEditingTitle("");
-                  } else if (e.key === "Escape") {
-                    escPressedRef.current = true;
-                    setEditingTaskId(null);
-                    setEditingTitle("");
-                    // Refocus the button
-                    taskButtonRefs.current[index]?.focus();
+            <input
+              ref={(el) => {
+                taskInputRefs.current[index] = el;
+                if (editingTaskId === task.id && editInputRef) {
+                  (
+                    editInputRef as React.MutableRefObject<HTMLInputElement | null>
+                  ).current = el;
+                }
+              }}
+              type="text"
+              value={editingTaskId === task.id ? editingTitle : task.title}
+              onChange={(e) => {
+                if (editingTaskId === task.id) {
+                  setEditingTitle(e.target.value);
+                } else {
+                  // Direct editing when not in explicit edit mode
+                  updateTaskTitle(task.id, e.target.value);
+                }
+              }}
+              onFocus={() => {
+                setFocusedInputIndex(index);
+                setEditingTaskId(task.id);
+                setEditingTitle(task.title);
+                setSelectedTaskIndex?.(index);
+                // Select all text when focused
+                setTimeout(() => {
+                  if (taskInputRefs.current[index]) {
+                    taskInputRefs.current[index]?.select();
                   }
-                }}
-                onBlur={() => {
-                  if (editingTitle.trim() && !escPressedRef.current) {
-                    updateTaskTitle(task.id, editingTitle.trim());
-                  }
+                }, 0);
+              }}
+              onBlur={() => {
+                setFocusedInputIndex(null);
+                if (editingTitle.trim() && !escPressedRef.current) {
+                  updateTaskTitle(task.id, editingTitle.trim());
+                }
+                setEditingTaskId(null);
+                setEditingTitle("");
+                // Reset the ESC flag
+                escPressedRef.current = false;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  updateTaskTitle(task.id, editingTitle.trim() || task.title);
                   setEditingTaskId(null);
                   setEditingTitle("");
-                  // Reset the ESC flag
-                  escPressedRef.current = false;
+                  // Move to next task input or circle
+                  if (index < tasks.length - 1) {
+                    taskInputRefs.current[index + 1]?.focus();
+                  } else {
+                    // If last task, focus the next circle
+                    taskButtonRefs.current[index + 1]?.focus();
+                  }
+                } else if (e.key === "Escape") {
+                  e.preventDefault();
+                  escPressedRef.current = true;
+                  setEditingTaskId(null);
+                  setEditingTitle("");
                   // Refocus the button
                   taskButtonRefs.current[index]?.focus();
-                }}
-                className="text-white-100 border-white-100/20 w-full border-b bg-transparent text-sm placeholder-gray-200 outline-none"
-                aria-label={`Edit ${task.title}`}
-              />
-            ) : (
-              <button
-                type="button"
-                className="text-white-100 w-full cursor-text border-none bg-transparent p-0 text-left text-sm leading-relaxed"
-                onClick={() => {
-                  setEditingTaskId(task.id);
-                  setEditingTitle(task.title);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setEditingTaskId(task.id);
-                    setEditingTitle(task.title);
-                  }
-                }}
-              >
-                {task.title}
-              </button>
-            )}
+                }
+              }}
+              className={`text-white-100 w-full bg-transparent text-sm outline-none ${
+                focusedInputIndex === index || editingTaskId === task.id
+                  ? "white-100/20 border-b"
+                  : "border-b border-transparent"
+              }`}
+              aria-label={`Edit ${task.title}`}
+              tabIndex={0}
+            />
           </div>
         </div>
       ))}

@@ -37,11 +37,13 @@ describe("TaskContextMenu", () => {
     await user.type(input, "Test task{Enter}");
 
     await waitFor(() => {
-      expect(screen.getByText("Test task")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Test task")).toBeInTheDocument();
     });
 
     // Right-click on the task
-    const taskElement = screen.getByText("Test task").closest("[data-task-id]");
+    const taskElement = screen
+      .getByDisplayValue("Test task")
+      .closest("[data-task-id]");
     expect(taskElement).toBeInTheDocument();
 
     await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
@@ -63,11 +65,13 @@ describe("TaskContextMenu", () => {
     await user.type(input, "Test task{Enter}");
 
     await waitFor(() => {
-      expect(screen.getByText("Test task")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Test task")).toBeInTheDocument();
     });
 
     // Right-click on the task
-    const taskElement = screen.getByText("Test task").closest("[data-task-id]");
+    const taskElement = screen
+      .getByDisplayValue("Test task")
+      .closest("[data-task-id]");
     await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Check that Delete Task menu item is visible
@@ -89,12 +93,12 @@ describe("TaskContextMenu", () => {
     await user.type(input, "Task to delete{Enter}");
 
     await waitFor(() => {
-      expect(screen.getByText("Task to delete")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Task to delete")).toBeInTheDocument();
     });
 
     // Right-click on the task
     const taskElement = screen
-      .getByText("Task to delete")
+      .getByDisplayValue("Task to delete")
       .closest("[data-task-id]");
     await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
@@ -123,11 +127,13 @@ describe("TaskContextMenu", () => {
     await user.type(input, "Test task{Enter}");
 
     await waitFor(() => {
-      expect(screen.getByText("Test task")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Test task")).toBeInTheDocument();
     });
 
     // Right-click on the task
-    const taskElement = screen.getByText("Test task").closest("[data-task-id]");
+    const taskElement = screen
+      .getByDisplayValue("Test task")
+      .closest("[data-task-id]");
     await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Check that menu is open
@@ -156,11 +162,13 @@ describe("TaskContextMenu", () => {
     await user.type(input, "Test task{Enter}");
 
     await waitFor(() => {
-      expect(screen.getByText("Test task")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Test task")).toBeInTheDocument();
     });
 
     // Right-click on the task
-    const taskElement = screen.getByText("Test task").closest("[data-task-id]");
+    const taskElement = screen
+      .getByDisplayValue("Test task")
+      .closest("[data-task-id]");
     await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Check that menu is open
@@ -200,7 +208,7 @@ describe("TaskContextMenu", () => {
     await user.type(input, "First task{Enter}");
 
     await waitFor(() => {
-      expect(screen.getByText("First task")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("First task")).toBeInTheDocument();
     });
 
     const addButton2 = screen.getByText("Add task");
@@ -209,12 +217,12 @@ describe("TaskContextMenu", () => {
     await user.type(input2, "Second task{Enter}");
 
     await waitFor(() => {
-      expect(screen.getByText("Second task")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Second task")).toBeInTheDocument();
     });
 
     // Right-click on the first task
     const firstTaskElement = screen
-      .getByText("First task")
+      .getByDisplayValue("First task")
       .closest("[data-task-id]");
     await user.pointer({ target: firstTaskElement!, keys: "[MouseRight]" });
 
@@ -230,7 +238,7 @@ describe("TaskContextMenu", () => {
     // Check that only the first task is deleted
     await waitFor(() => {
       expect(screen.queryByText("First task")).not.toBeInTheDocument();
-      expect(screen.getByText("Second task")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Second task")).toBeInTheDocument();
     });
   });
 });
