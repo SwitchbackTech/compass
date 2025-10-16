@@ -206,6 +206,25 @@ class GCalService {
     return response.data;
   }
 
+  watchCalendars = async (
+    gcal: gCalendar,
+    params: Omit<Params_WatchEvents, "gCalendarId">,
+  ) => {
+    const { data } = await gcal.calendarList.watch({
+      syncToken: params.nextSyncToken,
+      requestBody: {
+        // reminder: address always needs to be HTTPS
+        address: getBaseURL() + GCAL_NOTIFICATION_ENDPOINT,
+        expiration: params.expiration,
+        id: `${params.channelId}_calendars`,
+        token: ENV.TOKEN_GCAL_NOTIFICATION,
+        type: "web_hook",
+      },
+    });
+
+    return { watch: data };
+  };
+
   watchEvents = async (gcal: gCalendar, params: Params_WatchEvents) => {
     const { data } = await gcal.events.watch({
       calendarId: params.gCalendarId,
@@ -213,7 +232,7 @@ class GCalService {
         // reminder: address always needs to be HTTPS
         address: getBaseURL() + GCAL_NOTIFICATION_ENDPOINT,
         expiration: params.expiration,
-        id: params.channelId,
+        id: `${params.channelId}_events`,
         token: ENV.TOKEN_GCAL_NOTIFICATION,
         type: "web_hook",
       },
