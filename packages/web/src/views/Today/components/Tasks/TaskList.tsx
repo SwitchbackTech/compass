@@ -112,13 +112,13 @@ export function TaskList() {
           <button
             id={ID_ADD_TASK_BUTTON}
             type="button"
-            className="group flex w-full cursor-pointer items-start gap-3 rounded border border-gray-400/30 bg-gray-400/5 p-2 text-left transition-colors hover:border-blue-200/30 hover:bg-blue-200/5"
+            className="group flex w-full cursor-pointer items-start gap-3 rounded border border-gray-400/30 bg-gray-400/5 p-2 text-left transition-colors hover:border-blue-200/30 hover:bg-blue-200/5 focus:border-blue-200/50 focus:bg-blue-200/10 focus:ring-2 focus:ring-blue-200/30 focus:outline-none"
             onClick={beginAddingTask}
             onMouseEnter={() => setIsHoveringAddBlock(true)}
             onMouseLeave={() => setIsHoveringAddBlock(false)}
           >
             <svg
-              className="h-4 w-4 text-gray-200 transition-colors group-hover:text-blue-200"
+              className="h-4 w-4 text-gray-200 transition-colors group-hover:text-blue-200 group-focus:text-blue-200"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -131,7 +131,7 @@ export function TaskList() {
               />
             </svg>
             <div className="flex flex-1 items-center justify-between">
-              <span className="group-hover:text-white-100 text-sm text-gray-200 transition-colors">
+              <span className="group-hover:text-white-100 group-focus:text-white-100 text-sm text-gray-200 transition-colors">
                 Add task
               </span>
               {isHoveringAddBlock && <ShortcutTip shortcut="T" />}
