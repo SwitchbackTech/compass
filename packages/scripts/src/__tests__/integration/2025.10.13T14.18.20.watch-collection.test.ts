@@ -52,6 +52,14 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
           key: { user: 1 },
         }),
         expect.objectContaining({
+          name: `${collectionName}_channelId_resourceId_index`,
+          key: { _id: 1, resourceId: 1 },
+        }),
+        expect.objectContaining({
+          name: `${collectionName}_channelId_resourceId_expiration_index`,
+          key: { _id: 1, resourceId: 1, expiration: 1 },
+        }),
+        expect.objectContaining({
           name: `${collectionName}_user_gCalendarId_unique`,
           key: { user: 1, gCalendarId: 1 },
         }),
