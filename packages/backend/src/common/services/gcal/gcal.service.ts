@@ -23,11 +23,9 @@ class GCalService {
     response: GaxiosResponse<T>,
     message = "Gcal request failed.",
   ) {
-    const { status, statusText } = response;
+    const { status } = response;
 
-    if (status >= 400 || !["OK", "No Content"].includes(statusText)) {
-      throw error(GcalError.Unsure, message);
-    }
+    if (status >= 400) throw error(GcalError.Unsure, message);
 
     return response;
   }
