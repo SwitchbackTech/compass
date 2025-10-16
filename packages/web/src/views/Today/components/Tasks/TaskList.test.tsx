@@ -387,4 +387,41 @@ describe("TaskList", () => {
     const allTasks = screen.getAllByRole("checkbox");
     expect(allTasks).toHaveLength(3);
   });
+
+  it("should delete task when title is cleared and Enter is pressed", async () => {
+    renderTaskList();
+
+    // Add a task
+    await addTasks(["Task to delete"]);
+
+    // Verify task exists
+    expect(screen.getByDisplayValue("Task to delete")).toBeInTheDocument();
+
+    // Focus on the task input
+    const taskInput = screen.getByDisplayValue("Task to delete");
+    await act(async () => {
+      await user.click(taskInput);
+    });
+
+    // Clear the input (making title "")
+    await act(async () => {
+      await user.clear(taskInput);
+    });
+
+    // Press Enter
+    await act(async () => {
+      await user.keyboard("{Enter}");
+    });
+
+    // Assert that the task is gone (deleted)
+    await waitFor(() => {
+      expect(
+        screen.queryByDisplayValue("Task to delete"),
+      ).not.toBeInTheDocument();
+    });
+
+    // Verify no tasks remain
+    const taskCheckboxes = screen.queryAllByRole("checkbox");
+    expect(taskCheckboxes).toHaveLength(0);
+  });
 });

@@ -13,6 +13,7 @@ export const Tasks = () => {
     setEditingTitle,
     setSelectedTaskIndex,
     updateTaskTitle,
+    deleteTask,
   } = useTasks();
 
   const taskButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -104,7 +105,14 @@ export const Tasks = () => {
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  updateTaskTitle(task.id, editingTitle.trim() || task.title);
+                  const trimmedTitle = editingTitle.trim();
+                  if (trimmedTitle === "") {
+                    // Delete task if title is empty
+                    deleteTask(task.id);
+                  } else {
+                    // Update task with new title
+                    updateTaskTitle(task.id, trimmedTitle);
+                  }
                   setEditingTaskId(null);
                   setEditingTitle("");
                   // Move to next task input or circle
