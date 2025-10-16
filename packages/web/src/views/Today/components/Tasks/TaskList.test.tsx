@@ -343,4 +343,68 @@ describe("TaskList", () => {
       expect(editInput2).toHaveValue("Test task");
     });
   });
+
+  it("should activate add task input when pressing Enter on Add task button after tabbing", async () => {
+    const user = userEvent.setup();
+    renderTaskList();
+
+    // First add some existing tasks to create a realistic scenario
+    const addButton = screen.getByText("Add task");
+    await user.click(addButton);
+    const input = screen.getByPlaceholderText("Enter task title...");
+    await user.type(input, "First task{Enter}");
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("First task")).toBeInTheDocument();
+    });
+
+    // Add another task
+    const addButton2 = screen.getByText("Add task");
+    await user.click(addButton2);
+    const input2 = screen.getByPlaceholderText("Enter task title...");
+    await user.type(input2, "Second task{Enter}");
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Second task")).toBeInTheDocument();
+    });
+
+    // Now tab to the Add task button
+    const addTaskButton = screen.getByRole("button", { name: /add task/i });
+    addTaskButton.focus();
+    expect(addTaskButton).toHaveFocus();
+
+    // Press Enter on the Add task button
+    await user.keyboard("{Enter}");
+
+    // Verify the input is activated and focused
+    await waitFor(() => {
+      const newInput = screen.getByPlaceholderText("Enter task title...");
+      expect(newInput).toBeInTheDocument();
+      expect(newInput).toHaveFocus();
+    });
+
+    // Type a new task title
+    await user.type(
+      screen.getByPlaceholderText("Enter task title..."),
+      "New task via Enter",
+    );
+
+    // Press Enter to submit the task
+    await user.keyboard("{Enter}");
+
+    // Verify the task is created and no longer in edit mode
+    await waitFor(() => {
+      expect(
+        screen.getByDisplayValue("New task via Enter"),
+      ).toBeInTheDocument();
+      // The add button should be visible again (not in edit mode)
+      expect(
+        screen.getByRole("button", { name: /add task/i }),
+      ).toBeInTheDocument();
+    });
+
+    // Verify we have all three tasks
+    const allTasks = screen.getAllByRole("checkbox");
+    expect(allTasks).toHaveLength(3);
+  });
 });
