@@ -10,17 +10,6 @@ export const TodayViewContent = () => {
   const { tasks, setEditingTaskId, setEditingTitle, selectedTaskIndex } =
     useTasks();
 
-  const activeElement =
-    typeof document !== "undefined"
-      ? (document.activeElement as HTMLElement | null)
-      : null;
-  const isEditableElement =
-    (typeof HTMLInputElement !== "undefined" &&
-      activeElement instanceof HTMLInputElement) ||
-    (typeof HTMLTextAreaElement !== "undefined" &&
-      activeElement instanceof HTMLTextAreaElement) ||
-    activeElement?.getAttribute("contenteditable") === "true";
-
   const handleEditTask = () => {
     const selectedTask = tasks[selectedTaskIndex];
     if (selectedTask) {
@@ -36,7 +25,6 @@ export const TodayViewContent = () => {
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
     onFocusTasks: focusOnFirstTask,
-    isInInput: isEditableElement,
     hasFocusedTask,
   });
 

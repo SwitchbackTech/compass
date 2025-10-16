@@ -16,7 +16,6 @@ export interface KeyboardShortcutsConfig {
   // Conditions
   isEditingTask?: boolean;
   hasFocusedTask?: boolean;
-  isInInput?: boolean;
 }
 
 /**
@@ -31,7 +30,6 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
     onFocusTasks,
     isEditingTask,
     hasFocusedTask,
-    isInInput,
   } = config;
 
   const handleKeyDown = useCallback(
@@ -50,7 +48,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       }
 
       // Task management shortcuts
-      if (key === "u" && !isInInput) {
+      if (key === "u") {
         e.preventDefault();
         onFocusTasks?.();
         return;
@@ -62,7 +60,7 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
         return;
       }
 
-      if (key === "e" && !isInInput && hasFocusedTask) {
+      if (key === "e" && hasFocusedTask) {
         e.preventDefault();
         onEditTask?.();
         return;
@@ -98,7 +96,6 @@ export function useTodayViewShortcuts(config: KeyboardShortcutsConfig) {
       onFocusTasks,
       isEditingTask,
       hasFocusedTask,
-      isInInput,
     ],
   );
 

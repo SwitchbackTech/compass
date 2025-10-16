@@ -19,7 +19,6 @@ describe("useKeyboardShortcuts", () => {
       onEscape: jest.fn(),
       isEditingTask: false,
       hasFocusedTask: false,
-      isInInput: false,
     };
 
     addEventListenerSpy = jest.spyOn(window, "addEventListener");
