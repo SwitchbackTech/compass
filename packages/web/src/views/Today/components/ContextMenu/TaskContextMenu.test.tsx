@@ -41,9 +41,7 @@ describe("TaskContextMenu", () => {
     });
 
     // Right-click on the task
-    const taskElement = screen
-      .getByDisplayValue("Test task")
-      .closest("[data-task-id]");
+    const taskElement = screen.getByDisplayValue("Test task").closest(".group");
     expect(taskElement).toBeInTheDocument();
 
     await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
@@ -69,9 +67,7 @@ describe("TaskContextMenu", () => {
     });
 
     // Right-click on the task
-    const taskElement = screen
-      .getByDisplayValue("Test task")
-      .closest("[data-task-id]");
+    const taskElement = screen.getByDisplayValue("Test task").closest(".group");
     await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Check that Delete Task menu item is visible
@@ -99,7 +95,7 @@ describe("TaskContextMenu", () => {
     // Right-click on the task
     const taskElement = screen
       .getByDisplayValue("Task to delete")
-      .closest("[data-task-id]");
+      .closest(".group");
     await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Click Delete Task
@@ -131,9 +127,7 @@ describe("TaskContextMenu", () => {
     });
 
     // Right-click on the task
-    const taskElement = screen
-      .getByDisplayValue("Test task")
-      .closest("[data-task-id]");
+    const taskElement = screen.getByDisplayValue("Test task").closest(".group");
     await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Check that menu is open
@@ -166,9 +160,7 @@ describe("TaskContextMenu", () => {
     });
 
     // Right-click on the task
-    const taskElement = screen
-      .getByDisplayValue("Test task")
-      .closest("[data-task-id]");
+    const taskElement = screen.getByDisplayValue("Test task").closest(".group");
     await user.pointer({ target: taskElement!, keys: "[MouseRight]" });
 
     // Check that menu is open
@@ -223,7 +215,7 @@ describe("TaskContextMenu", () => {
     // Right-click on the first task
     const firstTaskElement = screen
       .getByDisplayValue("First task")
-      .closest("[data-task-id]");
+      .closest(".group");
     await user.pointer({ target: firstTaskElement!, keys: "[MouseRight]" });
 
     // Check that menu appears and shows correct task

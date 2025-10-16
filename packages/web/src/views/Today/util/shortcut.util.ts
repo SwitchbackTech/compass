@@ -26,9 +26,9 @@ export const focusOnAddTaskInput = () => {
 };
 
 export const focusOnFirstTask = () => {
-  // Find the first task checkbox button
+  // Find the first task checkbox button using aria-label pattern
   const firstTaskButton = document.querySelector<HTMLButtonElement>(
-    'button[role="checkbox"][data-task-id]',
+    'button[role="checkbox"][aria-label^="Toggle"]',
   );
 
   if (firstTaskButton) {

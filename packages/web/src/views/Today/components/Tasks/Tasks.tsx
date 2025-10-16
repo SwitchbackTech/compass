@@ -26,14 +26,12 @@ export const Tasks = () => {
       {tasks.map((task, index) => (
         <div
           key={task.id}
-          data-task-id={task.id}
           className={`group flex items-start gap-3 rounded border p-2 transition-colors duration-200 focus-within:border-blue-200/50 focus-within:ring-1 focus-within:ring-blue-200/30 ${task.status === "completed" ? "opacity-50" : ""}`}
         >
           <button
             ref={(el) => {
               taskButtonRefs.current[index] = el;
             }}
-            data-task-id={task.id}
             role="checkbox"
             aria-checked={task.status === "completed"}
             aria-label={`Toggle ${task.title}`}

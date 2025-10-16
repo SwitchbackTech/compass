@@ -39,14 +39,24 @@ export const TaskContextMenuWrapper = ({ children }: TaskItemsWrapperProps) => {
       return;
     }
 
-    // Find the task element by looking for data-task-id attribute
-    const taskElement = target.closest("[data-task-id]");
+    // Find the task element by looking for the group class (task container)
+    const taskElement = target.closest(".group");
     if (!taskElement) {
       return;
     }
 
-    const taskId = taskElement.getAttribute("data-task-id");
-    if (!taskId) {
+    // Find the task input within the container to get the task title
+    const taskInput = taskElement.querySelector(
+      'input[type="text"]',
+    ) as HTMLInputElement;
+    if (!taskInput) {
+      return;
+    }
+
+    // Find the task by matching the input value to task title
+    const taskTitle = taskInput.value;
+    const task = tasks.find((t) => t.title === taskTitle);
+    if (!task) {
       return;
     }
 
@@ -67,12 +77,7 @@ export const TaskContextMenuWrapper = ({ children }: TaskItemsWrapperProps) => {
       }),
     });
 
-    // Find the actual task from the tasks array
-    const task = tasks.find((t) => t.id === taskId);
-    if (!task) {
-      console.error("Task not found for id:", taskId);
-      return;
-    }
+    // Task is already found above
 
     setSelectedTask(task);
     setIsOpen(true);

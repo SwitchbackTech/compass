@@ -66,7 +66,6 @@ export function TaskList() {
       <div
         ref={tasksScrollRef}
         className="flex-1 overflow-y-auto p-4"
-        data-testid="tasks-scroll"
         style={{ overscrollBehavior: "contain" }}
       >
         <TaskContextMenuWrapper>
