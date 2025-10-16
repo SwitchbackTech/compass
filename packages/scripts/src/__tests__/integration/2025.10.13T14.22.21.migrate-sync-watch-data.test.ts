@@ -5,7 +5,7 @@ import WatchMigration from "@scripts/migrations/2025.10.13T14.18.20.watch-collec
 import Migration from "@scripts/migrations/2025.10.13T14.22.21.migrate-sync-watch-data";
 import { Logger } from "@core/logger/winston.logger";
 import { Resource_Sync } from "@core/types/sync.types";
-import dayjs from "@core/util/date/dayjs";
+import { ExpirationDateSchema } from "@core/types/type.utils";
 import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
 import {
   cleanupCollections,
@@ -33,9 +33,10 @@ describe.each([
     };
 
     beforeAll(setupTestDb);
-    beforeAll(() => SyncDriver.generateV0Data(count, generateExpiredWatches));
+    beforeEach(() => SyncDriver.generateV0Data(count, generateExpiredWatches));
     beforeEach(WatchMigration.prototype.up);
     afterEach(cleanupCollections);
+    afterEach(() => mongoService.sync.deleteMany());
     afterEach(() => mongoService.watch.drop());
     afterAll(cleanupTestDb);
 
@@ -53,10 +54,12 @@ describe.each([
 
       const watchCount = syncDocs.reduce(
         (acc, { google: { events, calendarlist } }) => {
-          const futureExpiry = (
-            events as unknown as Array<{ expiration: string }>
-          ).filter(({ expiration }) =>
-            dayjs(parseInt(expiration, 10)).isAfter(dayjs()),
+          const futureExpiry = events.filter(
+            (event) =>
+              ExpirationDateSchema.safeParse(
+                Migration.OldSyncDetailsSchema.safeParse(event).data
+                  ?.expiration,
+              )?.success,
           );
 
           return acc + futureExpiry.length + calendarlist.length;
@@ -73,7 +76,9 @@ describe.each([
             google.events.map(() => {
               const watch = watchDocs[index];
 
-              expect(dayjs(watch?.expiration).isAfter(dayjs())).toBe(true);
+              expect(
+                ExpirationDateSchema.safeParse(watch?.expiration).success,
+              ).toBe(true);
 
               return expect.objectContaining({
                 _id: expect.any(ObjectId),

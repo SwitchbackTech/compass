@@ -2,6 +2,7 @@ import { ObjectId, WithId } from "mongodb";
 import { faker } from "@faker-js/faker";
 import { Resource_Sync, Schema_Sync } from "@core/types/sync.types";
 import { Schema_User } from "@core/types/user.types";
+import dayjs from "@core/util/date/dayjs";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import mongoService from "@backend/common/services/mongo.service";
@@ -36,10 +37,9 @@ export class SyncDriver {
     generateExpiredWatches = false,
   ): Promise<Array<WithId<Omit<Schema_Sync, "_id">>>> {
     const users = await UserDriver.createUsers(numUsers);
-
-    const futureOrPastProbability = generateExpiredWatches
-      ? faker.number.float({ min: 0, max: 1 })
-      : 1;
+    const minProbability = generateExpiredWatches ? 0 : 1;
+    const probability = faker.number.float({ min: minProbability, max: 1 });
+    const futureOrPastProbability = parseFloat(probability.toFixed(2));
 
     const data = users.map((user) => ({
       _id: new ObjectId(),
@@ -47,16 +47,20 @@ export class SyncDriver {
       google: {
         events: Array.from(
           { length: faker.number.int({ min: 1, max: 5 }) },
-          (_, index) => ({
-            resourceId: faker.string.ulid(),
-            gCalendarId: index === 0 ? user.email : faker.string.ulid(),
-            lastSyncedAt: faker.date.past(),
-            nextSyncToken: faker.string.alphanumeric(32),
-            channelId: faker.string.uuid(),
-            expiration: faker.datatype.boolean(futureOrPastProbability)
-              ? faker.date.future().getTime().toString()
-              : faker.date.past().getTime().toString(),
-          }),
+          (_, index) => {
+            const expired = faker.datatype.boolean(futureOrPastProbability);
+            const period = faker.number.int({ min: 1, max: 31 });
+            const action = expired ? "subtract" : "add";
+
+            return {
+              resourceId: faker.string.ulid(),
+              gCalendarId: index === 0 ? user.email : faker.string.ulid(),
+              lastSyncedAt: faker.date.past(),
+              nextSyncToken: faker.string.alphanumeric(32),
+              channelId: faker.string.uuid(),
+              expiration: dayjs()[action](period, "days").valueOf().toString(),
+            };
+          },
         ),
         calendarlist: [
           {

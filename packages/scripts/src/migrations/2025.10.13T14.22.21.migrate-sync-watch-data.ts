@@ -1,8 +1,9 @@
-import dayjs from "dayjs";
 import { ObjectId, WithId } from "mongodb";
 import type { MigrationParams, RunnableMigration } from "umzug";
+import { z } from "zod/v4";
 import { MigrationContext } from "@scripts/common/cli.types";
 import { Resource_Sync } from "@core/types/sync.types";
+import { ExpirationDateSchema } from "@core/types/type.utils";
 import { Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { getGcalClient } from "@backend/auth/services/google.auth.service";
 import gcalService from "@backend/common/services/gcal/gcal.service";
@@ -13,6 +14,17 @@ import { getChannelExpiration } from "@backend/sync/util/sync.util";
 export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.13T14.22.21.migrate-sync-watch-data";
   readonly path: string = "2025.10.13T14.22.21.migrate-sync-watch-data.ts";
+  static readonly OldSyncDetailsSchema = z.object({
+    gCalendarId: z.string().nonempty(),
+    channelId: z.string().nonempty(),
+    resourceId: z.string().nonempty(),
+    nextSyncToken: z.string().optional(),
+    nextPageToken: z.string().optional(),
+    expiration: z.string().optional(),
+    createdAt: z.date().optional(),
+    lastSyncedAt: z.date().optional(),
+    lastRefreshedAt: z.date().optional(),
+  });
 
   async up(params: MigrationParams<MigrationContext>): Promise<void> {
     const { logger } = params.context;
@@ -25,10 +37,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
     const cursor = mongoService.sync.find(
       {
         "google.events": { $exists: true, $ne: [] },
-        "google.events.expiration": {
-          $exists: true,
-          $gt: dayjs().valueOf().toString(),
-        },
+        "google.events.expiration": { $exists: true },
       },
       { batchSize: 100 },
     );
@@ -43,9 +52,10 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
       const watchDocuments: Array<WithId<Omit<Schema_Watch, "_id">>> = [];
 
-      const syncDocs = syncDoc.google.events as unknown as Array<
-        Schema_Watch & { channelId: string }
-      >;
+      const syncDocs = syncDoc.google.events
+        .map((doc) => Migration.OldSyncDetailsSchema.safeParse(doc).data)
+        .filter((d) => ExpirationDateSchema.safeParse(d?.expiration).success)
+        .filter((doc) => doc !== undefined);
 
       const gcal = await getGcalClient(syncDoc.user);
       const expiration = getChannelExpiration();
