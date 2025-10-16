@@ -3,7 +3,6 @@ import { ErrorMetadata } from "@backend/common/types/error.types";
 
 interface SyncErrors {
   AccessRevoked: ErrorMetadata;
-  CalendarWatchExists: ErrorMetadata;
   NoGCalendarId: ErrorMetadata;
   NoResourceId: ErrorMetadata;
   NoSyncToken: ErrorMetadata;
@@ -15,11 +14,6 @@ export const SyncError: SyncErrors = {
   AccessRevoked: {
     description: "User revoked access to their 3rd-party calendar (GCal)",
     status: Status.GONE,
-    isOperational: true,
-  },
-  CalendarWatchExists: {
-    description: "Watch already exists",
-    status: Status.BAD_REQUEST,
     isOperational: true,
   },
   NoGCalendarId: {

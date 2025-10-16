@@ -33,7 +33,30 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       { name: `${collectionName}_user_index` },
     );
 
-    // Create compound index on user and expiration for cleanup operations
+    await mongoService.watch.createIndex(
+      { _id: 1, resourceId: 1 },
+      { name: `${collectionName}_channelId_resourceId_index` },
+    );
+
+    await mongoService.watch.createIndex(
+      { _id: 1, resourceId: 1, expiration: 1 },
+      { name: `${collectionName}_channelId_resourceId_expiration_index` },
+    );
+
+    // Create a unique compound index on user and gCalendarId
+    // to prevent multiple watches for the same calendar per user
+    await mongoService.watch.createIndex(
+      { user: 1, gCalendarId: 1 },
+      { name: `${collectionName}_user_gCalendarId_unique`, unique: true },
+    );
+
+    // Create index on expiration for cron cleanup operations
+    await mongoService.watch.createIndex(
+      { expiration: 1 },
+      { name: `${collectionName}_expiration_index` },
+    );
+
+    // Create compound index on user and expiration for user cleanup operations
     await mongoService.watch.createIndex(
       { user: 1, expiration: 1 },
       { name: `${collectionName}_user_expiration_index` },
@@ -55,6 +78,21 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
     // _id index is built-in, no need to drop
     await mongoService.watch.dropIndex(`${collectionName}_user_index`);
+
+    await mongoService.watch.dropIndex(
+      `${collectionName}_channelId_resourceId_index`,
+    );
+
+    await mongoService.watch.dropIndex(
+      `${collectionName}_channelId_resourceId_expiration_index`,
+    );
+
+    await mongoService.watch.dropIndex(
+      `${collectionName}_user_gCalendarId_unique`,
+    );
+
+    await mongoService.watch.dropIndex(`${collectionName}_expiration_index`);
+
     await mongoService.watch.dropIndex(
       `${collectionName}_user_expiration_index`,
     );

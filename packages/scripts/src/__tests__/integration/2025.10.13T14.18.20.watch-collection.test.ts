@@ -8,6 +8,7 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 
@@ -26,6 +27,7 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
     return {
       _id: new ObjectId(),
       user: faker.database.mongodbObjectId(),
+      gCalendarId: GCAL_PRIMARY,
       resourceId: faker.string.alphanumeric(20),
       expiration: faker.date.future(),
       createdAt: faker.date.recent(),
@@ -48,6 +50,22 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
         expect.objectContaining({
           name: `${collectionName}_user_index`,
           key: { user: 1 },
+        }),
+        expect.objectContaining({
+          name: `${collectionName}_channelId_resourceId_index`,
+          key: { _id: 1, resourceId: 1 },
+        }),
+        expect.objectContaining({
+          name: `${collectionName}_channelId_resourceId_expiration_index`,
+          key: { _id: 1, resourceId: 1, expiration: 1 },
+        }),
+        expect.objectContaining({
+          name: `${collectionName}_user_gCalendarId_unique`,
+          key: { user: 1, gCalendarId: 1 },
+        }),
+        expect.objectContaining({
+          name: `${collectionName}_expiration_index`,
+          key: { expiration: 1 },
         }),
         expect.objectContaining({
           name: `${collectionName}_user_expiration_index`,
@@ -127,6 +145,7 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
     it("rejects documents with missing required fields", async () => {
       const incompleteWatch = generateWatch();
 
+      delete (incompleteWatch as PartialWatch).gCalendarId;
       delete (incompleteWatch as PartialWatch).resourceId;
       delete (incompleteWatch as PartialWatch).expiration;
 
@@ -139,6 +158,16 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
       const watchWithoutUserId = generateWatch();
 
       delete (watchWithoutUserId as PartialWatch).user;
+
+      await expect(
+        mongoService.watch.insertOne(watchWithoutUserId),
+      ).rejects.toThrow(/Document failed validation/);
+    });
+
+    it("rejects documents with missing gCalendarId", async () => {
+      const watchWithoutUserId = generateWatch();
+
+      delete (watchWithoutUserId as PartialWatch).gCalendarId;
 
       await expect(
         mongoService.watch.insertOne(watchWithoutUserId),
@@ -161,7 +190,23 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
 
       await mongoService.watch.insertOne(watch);
 
-      await expect(mongoService.watch.insertOne(watch)).rejects.toThrow();
+      await expect(mongoService.watch.insertOne(watch)).rejects.toThrow(
+        /E11000 duplicate .+: test.watch index: _id_ dup key/,
+      );
+    });
+
+    it("enforces unique constraint on user and gCalendarId", async () => {
+      const watch = generateWatch();
+
+      const duplicateCalendarWatch = { ...watch, _id: new ObjectId() };
+
+      await mongoService.watch.insertOne(watch);
+
+      await expect(
+        mongoService.watch.insertOne(duplicateCalendarWatch),
+      ).rejects.toThrow(
+        /E11000 duplicate .+: test.watch index: watch_user_gCalendarId_unique/,
+      );
     });
   });
 });

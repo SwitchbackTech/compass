@@ -1,6 +1,6 @@
 import { Logger } from "@core/logger/winston.logger";
 import type { Schema_Sync } from "@core/types/sync.types";
-import { minutesFromNow } from "@core/util/date/date.util";
+import dayjs from "@core/util/date/dayjs";
 import { SYNC_BUFFER_DAYS } from "@backend/common/constants/backend.constants";
 import { ENV } from "@backend/common/constants/env.constants";
 import { getBaseURL } from "@backend/servers/ngrok/ngrok.utils";
@@ -12,11 +12,21 @@ const logger = Logger("app:sync.helpers");
  * or multiple parts of the sync service's components
  */
 
-export const getChannelExpiration = () => {
+/**
+ * getChannelExpiration
+ *
+ * Calculates the channel expiration date based on the
+ * CHANNEL_EXPIRATION_MIN environment variable.
+ *
+ * @returns {string} Channel expiration as a string representing a Unix timestamp in milliseconds.
+ */
+export const getChannelExpiration = (): string => {
   const numMin = parseInt(ENV.CHANNEL_EXPIRATION_MIN);
+  const expiration = dayjs().add(numMin, "minutes");
+
   logExpirationReminder(numMin);
-  const expiration = minutesFromNow(numMin, "ms").toString();
-  return expiration;
+
+  return expiration.valueOf().toString();
 };
 
 export const hasGoogleHeaders = (headers: object) => {
@@ -39,18 +49,6 @@ export const canDoIncrementalSync = (sync: Schema_Sync) => {
   return everyCalendarHasSyncToken;
 };
 
-export const hasAnyActiveEventSync = (sync: Schema_Sync) => {
-  if (sync.google?.events === undefined) return false;
-
-  for (const es of sync.google.events) {
-    const hasSyncFields = es.channelId && es.expiration;
-    if (hasSyncFields && !syncExpired(es.expiration)) {
-      return true;
-    }
-  }
-  return false;
-};
-
 export const isUsingHttps = () => getBaseURL().includes("https");
 
 export const logExpirationReminder = (min: number) => {
@@ -61,20 +59,12 @@ export const logExpirationReminder = (min: number) => {
   logger.debug(`REMINDER: Channel will expire in ${min} minutes (${label})`);
 };
 
-export const syncExpired = (expiry: string) => {
-  const expiration = new Date(parseInt(expiry)).getTime();
-  const now = new Date().getTime();
-
-  const expired = now > expiration;
-  return expired;
+export const syncExpired = (expiration: Date) => {
+  return dayjs(expiration).isSameOrBefore(dayjs());
 };
 
-export const syncExpiresSoon = (expiry: string) => {
-  const MIN_IN_DAY = 1440;
-  const deadline = minutesFromNow(MIN_IN_DAY * SYNC_BUFFER_DAYS, "ms");
+export const syncExpiresSoon = (expiration: Date) => {
+  const deadline = dayjs().add(SYNC_BUFFER_DAYS, "days");
 
-  const expiration = new Date(parseInt(expiry)).getTime();
-
-  const expiresSoon = expiration < deadline;
-  return expiresSoon;
+  return dayjs(expiration).isSameOrBefore(deadline);
 };

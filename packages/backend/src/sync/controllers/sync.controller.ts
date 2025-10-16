@@ -1,13 +1,23 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
+import { ObjectId } from "mongodb";
+import { ZodError } from "zod/v4";
+import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
-import { Payload_Sync_Notif } from "@core/types/sync.types";
+import {
+  GcalNotificationSchema,
+  Payload_Sync_Notif,
+  Resource_Sync,
+} from "@core/types/sync.types";
 import { shouldImportGCal } from "@core/util/event/event.util";
+import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
+import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import {
   isFullSyncRequired,
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
+import mongoService from "@backend/common/services/mongo.service";
 import { webSocketServer } from "@backend/servers/websocket/websocket.server";
 import syncService from "@backend/sync/services/sync.service";
 import { getSync } from "@backend/sync/util/sync.queries";
@@ -16,28 +26,69 @@ import userService from "@backend/user/services/user.service";
 const logger = Logger("app:sync.controller");
 
 export class SyncController {
-  static handleGoogleNotification = async (req: Request, res: Response) => {
+  static handleGoogleNotification = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    const resource = res.getHeader(COMPASS_RESOURCE_HEADER) as Exclude<
+      Resource_Sync,
+      Resource_Sync.SETTINGS
+    >;
+
+    const channelId = req.headers["x-goog-channel-id"] as string;
+
+    res.removeHeader(COMPASS_RESOURCE_HEADER);
+
     try {
-      const syncPayload = {
-        channelId: req.headers["x-goog-channel-id"],
-        resourceId: req.headers["x-goog-resource-id"],
-        resourceState: req.headers["x-goog-resource-state"],
-        expiration: req.headers["x-goog-channel-expiration"],
-      } as Payload_Sync_Notif;
+      const syncPayload: Payload_Sync_Notif = GcalNotificationSchema.parse({
+        resource,
+        channelId,
+        resourceId: req.headers["x-goog-resource-id"] as string,
+        resourceState: req.headers["x-goog-resource-state"] as string,
+        expiration: new Date(
+          req.headers["x-goog-channel-expiration"] as string,
+        ),
+      });
 
       const response = await syncService.handleGcalNotification(syncPayload);
 
       res.promise(response);
     } catch (e) {
-      const channelId = req.headers["x-goog-channel-id"] as string;
+      logger.error(e);
       const resourceId = req.headers["x-goog-resource-id"] as string;
 
-      if (isInvalidGoogleToken(e as Error)) {
-        const sync = await getSync({ channelId, resourceId });
-        const userId = sync!.user;
+      if (e instanceof ZodError) {
+        logger.error(e);
+        res.status(Status.FORBIDDEN).send("Invalid notification payload");
+        return;
+      }
 
-        console.warn(`Cleaning data after this user revoked access: ${userId}`);
-        await userService.deleteCompassDataForUser(userId, false);
+      if (isInvalidGoogleToken(e as Error)) {
+        const _id = new ObjectId(channelId);
+        const watch = await mongoService.watch.findOne({ _id, resourceId });
+
+        if (!watch) {
+          throw error(
+            WatchError.NoWatchRecordForUser,
+            `Clean up failed because no watch record found for channel: ${channelId}`,
+          );
+        }
+
+        const sync = await getSync({
+          userId: watch.user,
+          gCalendarId: watch.gCalendarId,
+        });
+
+        const userId = sync?.user;
+
+        if (userId) {
+          console.warn(
+            `Cleaning data after this user revoked access: ${userId}`,
+          );
+          await userService.deleteCompassDataForUser(userId, false);
+        }
+
         res.status(Status.GONE).send("User revoked access, deleted all data");
         return;
 
@@ -80,7 +131,7 @@ export class SyncController {
 
       logger.error("Not sure how to handle this error:");
       logger.error(e);
-      res.promise(e);
+      next(e);
     }
   };
 
