@@ -13,6 +13,23 @@ const renderTaskList = (props = {}) => {
   );
 };
 
+// Reusable utility to add multiple tasks
+const addTasks = async (
+  user: ReturnType<typeof userEvent.setup>,
+  taskTitles: string[],
+) => {
+  for (const title of taskTitles) {
+    const addButton = screen.getByText("Add task");
+    await user.click(addButton);
+    const input = screen.getByPlaceholderText("Enter task title...");
+    await user.type(input, `${title}{Enter}`);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue(title)).toBeInTheDocument();
+    });
+  }
+};
+
 describe("TaskList", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -62,16 +79,7 @@ describe("TaskList", () => {
     const user = userEvent.setup();
     renderTaskList();
 
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "New task");
-    await user.keyboard("{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("New task")).toBeInTheDocument();
-    });
+    await addTasks(user, ["New task"]);
   });
 
   it("should not add empty task", async () => {
@@ -115,14 +123,7 @@ describe("TaskList", () => {
     renderTaskList();
 
     // Add a task first
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "Task to complete{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("Task to complete")).toBeInTheDocument();
-    });
+    await addTasks(user, ["Task to complete"]);
 
     // Click the checkbox
     const checkbox = screen.getByRole("checkbox", {
@@ -139,14 +140,7 @@ describe("TaskList", () => {
     renderTaskList();
 
     // Add a task
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "Edit me{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("Edit me")).toBeInTheDocument();
-    });
+    await addTasks(user, ["Edit me"]);
 
     // Click on the task input
     const taskInput = screen.getByDisplayValue("Edit me");
@@ -162,14 +156,7 @@ describe("TaskList", () => {
     renderTaskList();
 
     // Add a task
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "Original title{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("Original title")).toBeInTheDocument();
-    });
+    await addTasks(user, ["Original title"]);
 
     // Edit the task
     const taskInput = screen.getByDisplayValue("Original title");
@@ -189,14 +176,7 @@ describe("TaskList", () => {
     renderTaskList();
 
     // Add a task
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "Original{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("Original")).toBeInTheDocument();
-    });
+    await addTasks(user, ["Original"]);
 
     // Start editing
     const taskInput = screen.getByDisplayValue("Original");
@@ -229,14 +209,7 @@ describe("TaskList", () => {
     renderTaskList();
 
     // Add a task
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "Complete me{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("Complete me")).toBeInTheDocument();
-    });
+    await addTasks(user, ["Complete me"]);
 
     // Complete the task
     const checkbox = screen.getByRole("checkbox");
@@ -253,14 +226,7 @@ describe("TaskList", () => {
     renderTaskList();
 
     // Add first task
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "First task{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("First task")).toBeInTheDocument();
-    });
+    await addTasks(user, ["First task"]);
 
     // Complete the first task
     const checkbox = screen.getByRole("checkbox", {
@@ -269,14 +235,7 @@ describe("TaskList", () => {
     await user.click(checkbox);
 
     // Add a second task
-    const addButton2 = screen.getByText("Add task");
-    await user.click(addButton2);
-    const input2 = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input2, "Second task{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("Second task")).toBeInTheDocument();
-    });
+    await addTasks(user, ["Second task"]);
 
     // Get all checkboxes and verify order
     const checkboxes = screen.getAllByRole("checkbox");
@@ -296,14 +255,7 @@ describe("TaskList", () => {
     renderTaskList();
 
     // Add a task
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "Test task{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("Test task")).toBeInTheDocument();
-    });
+    await addTasks(user, ["Test task"]);
 
     // Focus the task checkbox
     const checkbox = screen.getByRole("checkbox", {
@@ -349,24 +301,7 @@ describe("TaskList", () => {
     renderTaskList();
 
     // First add some existing tasks to create a realistic scenario
-    const addButton = screen.getByText("Add task");
-    await user.click(addButton);
-    const input = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input, "First task{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("First task")).toBeInTheDocument();
-    });
-
-    // Add another task
-    const addButton2 = screen.getByText("Add task");
-    await user.click(addButton2);
-    const input2 = screen.getByPlaceholderText("Enter task title...");
-    await user.type(input2, "Second task{Enter}");
-
-    await waitFor(() => {
-      expect(screen.getByDisplayValue("Second task")).toBeInTheDocument();
-    });
+    await addTasks(user, ["First task", "Second task"]);
 
     // Now tab to the Add task button
     const addTaskButton = screen.getByRole("button", { name: /add task/i });
